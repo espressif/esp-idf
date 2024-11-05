@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,21 @@ exit:
     s_previous_role = role;
 }
 
+static void handle_ot_dataset_change(esp_openthread_dataset_type_t type, otInstance *instance)
+{
+    esp_openthread_dataset_changed_event_t event_data;
+    event_data.type = type;
+    memset(&event_data.new_dataset, 0, sizeof(event_data.new_dataset));
+    if (type == OPENTHREAD_ACTIVE_DATASET) {
+        (void)otDatasetGetActive(instance, &event_data.new_dataset);
+    } else if (type == OPENTHREAD_PENDING_DATASET) {
+        (void)otDatasetGetPending(instance, &event_data.new_dataset);
+    }
+    if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_DATASET_CHANGED, &event_data, sizeof(event_data), 0) != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to post dataset changed event");
+    }
+}
+
 static void ot_state_change_callback(otChangedFlags changed_flags, void* ctx)
 {
     OT_UNUSED_VARIABLE(ctx);
@@ -98,6 +113,14 @@ static void ot_state_change_callback(otChangedFlags changed_flags, void* ctx)
 
     if (changed_flags & OT_CHANGED_THREAD_NETIF_STATE) {
         handle_ot_netif_state_change(instance);
+    }
+
+    if (changed_flags & OT_CHANGED_ACTIVE_DATASET) {
+        handle_ot_dataset_change(OPENTHREAD_ACTIVE_DATASET, instance);
+    }
+
+    if (changed_flags & OT_CHANGED_PENDING_DATASET) {
+        handle_ot_dataset_change(OPENTHREAD_PENDING_DATASET, instance);
     }
 }
 
