@@ -325,12 +325,10 @@ static void sleep_retention_entries_stats(void)
 
 void sleep_retention_dump_modules(FILE *out)
 {
-    uint32_t inited_modules = sleep_retention_get_inited_modules();
-    uint32_t created_modules = sleep_retention_get_created_modules();
     for (int i = SLEEP_RETENTION_MODULE_MIN; i <= SLEEP_RETENTION_MODULE_MAX; i++) {
-        bool inited = (inited_modules & BIT(i)) != 0;
-        bool created = (created_modules & BIT(i)) != 0;
-        bool is_top = (TOP_DOMAIN_PERIPHERALS_BM & BIT(i)) != 0;
+        bool inited = sleep_retention_is_module_inited(i);
+        bool created = sleep_retention_is_module_created(i);
+        bool is_top = is_top_domain_module(i);
 
         const char* status = !inited? "-":
                         created? "CREATED":

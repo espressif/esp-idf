@@ -58,6 +58,34 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
 
+#define is_top_domain_module(m)                           \
+    ( ((m) == SLEEP_RETENTION_MODULE_NULL)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_CLOCK_SYSTEM) ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_SYS_PERIPH)   ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG0_WDT)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_WDT)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER)    ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER)    ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH0)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH1)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH2)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_ADC)          ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_I2C0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_RMT0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_UART0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_UART1)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_I2S0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_ETM0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TEMP_SENSOR)  ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TWAI0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TWAI1)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_PARLIO0)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
+    : false)
+
 #ifdef __cplusplus
 }
 #endif
