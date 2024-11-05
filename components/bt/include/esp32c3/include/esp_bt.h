@@ -727,16 +727,6 @@ void esp_bt_controller_wakeup_request(void);
 int esp_bt_h4tl_eif_io_event_notify(int event);
 
 /**
- * @brief bt Wi-Fi power domain power on
- */
-void esp_wifi_bt_power_domain_on(void);
-
-/**
- * @brief bt Wi-Fi power domain power off
- */
-void esp_wifi_bt_power_domain_off(void);
-
-/**
  * @brief Get the Bluetooth module sleep clock source.
  *
  * Note that this function shall not be invoked before esp_bt_controller_init()
