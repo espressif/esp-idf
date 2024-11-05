@@ -30,9 +30,9 @@ IRAM_ATTR void esp_rom_uart_set_clock_baudrate(uint8_t uart_no, uint32_t clock_h
 
 #if CONFIG_IDF_TARGET_ESP32C3
 /**
- * The ESP32-C3 ROM has released two versions, one is the ECO3 version,
- * and the other is the version before ECO3 (include ECO0 ECO1 ECO2).
- * These two versions of the ROM code do not list uart_tx_switch wrap
+ * The ESP32-C3 ROM has released three versions, ECO7 (v1.1), ECO3, and
+ * the version before ECO3 (include ECO0 ECO1 ECO2).
+ * These three versions of the ROM code do not list uart_tx_switch wrap
  * function in the ROM interface, so here use the uart_tx_switch direct
  * address instead.
  */
@@ -43,6 +43,8 @@ IRAM_ATTR void esp_rom_uart_set_as_console(uint8_t uart_no)
 
     if (efuse_hal_chip_revision() < 3) {
         uart_tx_switch = (rom_func_t)0x4004b8ca;
+    } else if (efuse_hal_chip_revision() >= 101) {
+        uart_tx_switch = (rom_func_t)0x40001c44;
     } else {
         uart_tx_switch = (rom_func_t)0x4004c166;
     }
