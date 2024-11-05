@@ -647,20 +647,6 @@ esp_err_t esp_bt_sleep_disable(void);
  */
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
-/**
- * @brief Power on Bluetooth Wi-Fi power domain
- *
- * @note This function is not recommended to use due to potential risk.
-*/
-void esp_wifi_bt_power_domain_on(void);
-
-/**
- * @brief Power off Bluetooth Wi-Fi power domain
- *
- * @note This function is not recommended to use due to potential risk.
-*/
-void esp_wifi_bt_power_domain_off(void);
-
 #ifdef __cplusplus
 }
 #endif
