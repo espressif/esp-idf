@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,7 +114,7 @@ static void spi_flash_enable_high_performance_send_cmd(void)
 {
     uint32_t dummy = 24;
     bootloader_flash_execute_command_common(CMD_HPMEN, 0, 0, dummy, 0, 0, 0);
-    // Delay for T(HPM) refering to datasheet.
+    // Delay for T(HPM) referring to datasheet.
     esp_rom_delay_us(20);
 }
 
@@ -149,6 +149,8 @@ static esp_err_t spi_flash_hpm_probe_chip_with_dummy(uint32_t flash_id)
     // XMC chips.
     case 0x204017:
     case 0x204018:
+    case 0x464017:
+    case 0x464018:
         break;
     // GD chips.
     case 0xC84017:
@@ -397,7 +399,7 @@ bool spi_flash_hpm_dummy_adjust(void)
 //-----------------------generic functions-------------------------------------//
 
 /**
- * @brief Default dummy for almost all flash chips. If your flash does't need to reconfigure dummy,
+ * @brief Default dummy for almost all flash chips. If your flash doesn't need to reconfigure dummy,
  *        just call this function.
  */
 void __attribute__((weak)) spi_flash_hpm_get_dummy_generic(spi_flash_hpm_dummy_conf_t *dummy_conf)
