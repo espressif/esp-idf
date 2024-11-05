@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2023 Brian Pugh
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -85,11 +85,11 @@ void app_main(void)
         return;
     }
 
-    char line[128];
+    char line[128] = {0};
     fgets(line, sizeof(line), f);
     fclose(f);
     // strip newline
-    char*pos = strchr(line, '\n');
+    char* pos = strpbrk(line, "\r\n");
     if (pos) {
         *pos = '\0';
     }
@@ -104,7 +104,7 @@ void app_main(void)
     fgets(line, sizeof(line), f);
     fclose(f);
     // strip newline
-    pos = strchr(line, '\n');
+    pos = strpbrk(line, "\r\n");
     if (pos) {
         *pos = '\0';
     }
