@@ -64,7 +64,7 @@ __attribute__((weak)) void bootloader_clock_configure(void)
         // RTC_FAST clock source will be switched to RC_FAST at application startup
         clk_cfg.fast_clk_src = rtc_clk_fast_src_get();
         if (clk_cfg.fast_clk_src == SOC_RTC_FAST_CLK_SRC_INVALID) {
-            clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_XTAL_DIV;
+            clk_cfg.fast_clk_src = SOC_RTC_FAST_CLK_SRC_DEFAULT;
         }
 
 #if CONFIG_IDF_TARGET_ESP32C6

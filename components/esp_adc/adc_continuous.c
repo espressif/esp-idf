@@ -24,6 +24,7 @@
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
@@ -242,11 +243,6 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 
     adc_apb_periph_claim();
 
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_UNIT_1);
-    adc_hal_calibration_init(ADC_UNIT_2);
-#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-
     return ret;
 
 cleanup:
@@ -258,6 +254,12 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_STATE, ADC_TAG, "The driver isn't initialised");
     ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_INIT, ESP_ERR_INVALID_STATE, ADC_TAG, "ADC continuous mode isn't in the init state, it's started already");
+
+    ANALOG_CLOCK_ENABLE();
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+    adc_hal_calibration_init(ADC_UNIT_1);
+    adc_hal_calibration_init(ADC_UNIT_2);
+#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
     //reset ADC digital part to reset ADC sampling EOF counter
     ADC_BUS_CLK_ATOMIC() {
@@ -355,6 +357,8 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(handle->pm_lock), ADC_TAG, "release pm_lock failed");
     }
+
+    ANALOG_CLOCK_DISABLE();
 
     return ESP_OK;
 }

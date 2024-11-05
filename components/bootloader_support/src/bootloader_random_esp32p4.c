@@ -62,6 +62,9 @@ void bootloader_random_enable(void)
 
     SET_PERI_REG_MASK(ADC_CTRL_REG_REG, ADC_START_FORCE); //start force 1
 
+    // enable analog i2c master clock for RNG runtime
+    ANALOG_CLOCK_ENABLE();
+
     adc1_fix_initcode_set(I2C_SAR_ADC_INIT_CODE_VAL);
 
     //  cfg pattern table
@@ -94,6 +97,9 @@ void bootloader_random_enable(void)
 
 void bootloader_random_disable(void)
 {
+    // disable analog i2c master clock
+    ANALOG_CLOCK_DISABLE();
+
     // No-op for now TODO IDF-6497
     // ADC should be set to defaults here, once ADC API is implemented
     // OR just keep this empty and let application continue to use RNG initialized by the bootloader

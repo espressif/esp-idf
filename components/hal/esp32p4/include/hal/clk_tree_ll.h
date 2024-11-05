@@ -347,7 +347,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpll_get_freq_mhz(u
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         return xtal_freq_mhz * (div + 4) / (ref_div + 1);
-    } else
+    }
     return xtal_freq_mhz * div / (ref_div + 1);
 }
 

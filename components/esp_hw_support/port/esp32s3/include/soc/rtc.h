@@ -842,7 +842,7 @@ typedef soc_rtc_slow_clk_src_t rtc_slow_freq_t;
  * @brief RTC FAST_CLK frequency values
  */
 typedef soc_rtc_fast_clk_src_t rtc_fast_freq_t;
-#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_DIV  //!< Main XTAL, divided by 2
+#define RTC_FAST_FREQ_XTALD4 SOC_RTC_FAST_CLK_SRC_XTAL_D2  //!< Main XTAL, divided by 2
 #define RTC_FAST_FREQ_8M SOC_RTC_FAST_CLK_SRC_RC_FAST       //!< Internal 17.5 MHz RC oscillator
 
 /**

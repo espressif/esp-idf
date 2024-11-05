@@ -90,7 +90,7 @@ static inline void bootloader_hardware_init(void)
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_RFPLL);
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_FORCE_RFPLL);
 
-    regi2c_ctrl_ll_master_enable_clock(true);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_configure_clock();
 }
 

@@ -20,32 +20,40 @@ static DRAM_ATTR __attribute__((unused)) const char *TAG = "REGI2C";
 
 uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
+    REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
     uint8_t value = regi2c_read_reg_raw(block, host_id, reg_add);
     portEXIT_CRITICAL_SAFE(&mux);
+    REGI2C_CLOCK_DISABLE();
     return value;
 }
 
 uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
+    REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
     uint8_t value = regi2c_read_reg_mask_raw(block, host_id, reg_add, msb, lsb);
     portEXIT_CRITICAL_SAFE(&mux);
+    REGI2C_CLOCK_DISABLE();
     return value;
 }
 
 void IRAM_ATTR regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
+    REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
     regi2c_write_reg_raw(block, host_id, reg_add, data);
     portEXIT_CRITICAL_SAFE(&mux);
+    REGI2C_CLOCK_DISABLE();
 }
 
 void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
+    REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
     regi2c_write_reg_mask_raw(block, host_id, reg_add, msb, lsb, data);
     portEXIT_CRITICAL_SAFE(&mux);
+    REGI2C_CLOCK_DISABLE();
 }
 
 void IRAM_ATTR regi2c_enter_critical(void)

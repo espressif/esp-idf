@@ -1075,6 +1075,10 @@ config SOC_CLK_XTAL32K_SUPPORTED
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
     bool
     default y
