@@ -14,7 +14,7 @@ from subprocess import SubprocessError
 
 
 def die(msg: str) -> None:
-    sys.exit(f'error: {msg}')
+    sys.exit(f'\nERROR: {msg}')
 
 
 idf_tools_path = os.path.realpath(os.path.dirname(__file__))
@@ -37,7 +37,11 @@ os.environ['IDF_PATH'] = idf_path
 os.environ['IDF_PYTHON_ENV_PATH'] = idf_python_env_path
 os.environ['ESP_IDF_VERSION'] = idf_version
 
+if not os.path.exists(virtualenv_python):
+    die(f'ESP-IDF Python virtual environment not found. Please run the install script to set it up before proceeding.')
+
 try:
     run([virtualenv_python, os.path.join(idf_path, 'tools', 'export_utils', 'activate_venv.py')] + sys.argv[1:], check=True)
 except (OSError, SubprocessError):
-    die(f'Activation script failed')
+    die('\n'.join(['Activation script failed',
+                   'To view detailed debug information, set ESP_IDF_EXPORT_DEBUG=1 and run the export script again.']))
