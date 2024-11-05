@@ -67,7 +67,7 @@ static void IRAM_ATTR gpio_isr_handler(void *arg)
 }
 
 /**
- * @brief Enable GPIO (switchs refer to) isr
+ * @brief Enable GPIO (switches refer to) isr
  *
  * @param enabled      enable isr if true.
  */
@@ -159,7 +159,7 @@ static bool switch_driver_gpio_init(switch_func_pair_t *button_func_pair, uint8_
         return false;
     }
     /* start gpio task */
-    xTaskCreate(switch_driver_button_detected, "button_detected", 2048, NULL, 10, NULL);
+    xTaskCreate(switch_driver_button_detected, "button_detected", 4096, NULL, 10, NULL);
     /* install gpio isr service */
     gpio_install_isr_service(ESP_INTR_FLAG_DEFAULT);
     for (int i = 0; i < button_num; ++i) {
