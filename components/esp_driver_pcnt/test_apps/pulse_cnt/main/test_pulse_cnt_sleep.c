@@ -27,7 +27,7 @@
 /**
  * @brief Test the PCNT driver can still work after light sleep
  */
-static void test_pcnt_sleep_retention()
+static void test_pcnt_sleep_retention(void)
 {
     test_gpio_init_for_simulation(TEST_PCNT_GPIO_A);
     test_gpio_init_for_simulation(TEST_PCNT_GPIO_B);
