@@ -976,6 +976,11 @@ MCPWM 捕获通道支持在信号上检测到有效边沿时发送通知。须�
 
 同理，每当驱动创建 MCPWM 捕获定时器实例时，都会在通过 :cpp:func:`mcpwm_capture_timer_enable` 启用定时器时获取电源管理锁，并在调用 :cpp:func:`mcpwm_capture_timer_disable` 时释放锁。
 
+.. only:: SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+
+    {IDF_TARGET_NAME} 支持在进入 **Light-sleep** 之前保留 MCPWM 寄存器中的内容，并在唤醒后恢复。也就是说程序不需要在 **Light-sleep** 唤醒后重新配置 MCPWM。
+
+    该特性可以通过置位配置中的 :cpp:member:`mcpwm_timer_config_t::allow_pd` 或 :cpp:member:`mcpwm_capture_timer_config_t::allow_pd` 标志位启用。启用后驱动允许系统在 Light-sleep 时对 MCPWM 掉电，同时保存 MCPWM 的寄存器内容。它可以帮助降低 Light-sleep 时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
 
 .. _mcpwm-iram-safe:
 

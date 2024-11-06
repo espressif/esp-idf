@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "hal/mcpwm_hal.h"
 #include "hal/mcpwm_types.h"
 #include "driver/mcpwm_types.h"
+#include "esp_private/sleep_retention.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,6 +34,9 @@ extern "C" {
 #else
 #define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
 #endif
+
+// Use retention link only when the target supports sleep retention is enabled
+#define MCPWM_USE_RETENTION_LINK  (SOC_MCPWM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define MCPWM_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
@@ -258,6 +262,10 @@ esp_err_t mcpwm_check_intr_priority(mcpwm_group_t *group, int intr_priority);
 int mcpwm_get_intr_priority_flag(mcpwm_group_t *group);
 esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_src);
 esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolution_hz, uint32_t module_prescale_max, uint32_t *ret_module_prescale);
+
+#if MCPWM_USE_RETENTION_LINK
+void mcpwm_create_retention_module(mcpwm_group_t *group);
+#endif
 
 #ifdef __cplusplus
 }
