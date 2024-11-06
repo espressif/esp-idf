@@ -17,7 +17,7 @@ How Configuration Works in ESP-IDF
     More detailed information about the configuration system in ESP-IDF can be found in the :ref:`configuration-overview`.
 
 
-ESP-IDF uses unified way to configure the project, build system, ESP-IDF framework itself and external components. This configuration tool is called `Kconfig <https://docs.espressif.com/projects/esp-idf-kconfig/en/kconfiglib/language.html>`_.
+ESP-IDF uses unified way to configure the project, build system, ESP-IDF framework itself and external components. This configuration tool is called `Kconfig <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/index.html>`_.
 
 Configuration options are **defined** in ``Kconfig`` files. ESP-IDF contains the top-level ``Kconfig`` file in the root of the framework. Each component can have its own ``Kconfig`` file defining configuration options specific to that component, as well as relations between the options. Relations between config options can spread across multiple Kconfig files from different sources. In other words, configuration option from ``Component_A`` can depend on a configuration option from ``Component_B``, even if ``Component_B`` is e.g. maintained by another developer.
 
@@ -27,12 +27,12 @@ How to Define New Configuration Options for Your Component
 ----------------------------------------------------------
 .. note::
 
-    If you plan to write ``Kconfig`` configuration files for your component, but you are not familiar with ``Kconfig language`` it is recommended to refer to the `esp-idf-kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/index.html>`_, where an in-depth guide is provided.
+    If you plan to write ``Kconfig`` configuration files for your component, but you are not familiar with ``Kconfig language`` it is recommended to refer to the `esp-idf-kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/index.html>`_, where an in-depth guide is provided.
 
 To define new configuration options for components, you need to:
 
 1. Create the ``Kconfig`` and/or ``Kconfig.projbuild`` in the root folder of the component.
-2. Define the configuration options in the ``Kconfig`` and/or ``Kconfig.projbuild`` file. It is generally a good practice to wrap them in the ``menu-endmenu`` block. You can see a minimal example below. Complete documentation of the Kconfig language can be found in the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/kconfiglib/language.html>`_.
+2. Define the configuration options in the ``Kconfig`` and/or ``Kconfig.projbuild`` file. It is generally a good practice to wrap them in the ``menu-endmenu`` block. You can see a minimal example below. Complete documentation of the Kconfig language can be found in the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_.
 
 When your component is used in a project, the ``Kconfig`` and/or ``Kconfig.projbuild`` will be automatically discovered and shown in the ``menuconfig`` tool.
 
@@ -64,7 +64,7 @@ Example:
 
     In the example above, the ``SUBLIGHT_DRIVE_ENABLED`` configuration option has a dependency on the ``SPACE_SHIP`` configuration option. This option can origin from a different component. If the ``SPACE_SHIP`` option is not set or is not defined in the current configuration (e.g. the component containing this option was  not included in the project), the dependency will not be satisfied and the ``SUBLIGHT_DRIVE_ENABLED`` option will not be shown in the ``menuconfig`` tool.
 
-    For more information about the visibility and dependencies, please refer to the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/kconfiglib/language.html>`_.
+    For more information about the visibility and dependencies, please refer to the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_.
 
 
 .. _configuration-options-compatibility:

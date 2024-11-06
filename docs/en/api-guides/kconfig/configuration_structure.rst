@@ -7,7 +7,7 @@ Configuration Files Structure and Relationships
 
     This article primarily focuses on the structure of the files. For more information about project configuration, please refer to the :ref:`Project Configuration Guide <project-configuration-guide>`. For the component configuration, please refer to the :ref:`Component Configuration Guide <component-configuration-guide>`.
 
-ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g. ``CONFIG_IDF_TARGET``) and their values (e.g. ``esp32``). Every config option has a prefix ``CONFIG_`` to distinguish it from e.g. environment variables.
+ESP-IDF uses `Kconfig language <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_ for configuration of the project. Configuration consists of config options (e.g. ``CONFIG_IDF_TARGET``) and their values (e.g. ``esp32``). Every config option has a prefix ``CONFIG_`` to distinguish it from e.g. environment variables.
 
 In context of ESP-IDF, configuration consists of several files, most importantly:
 
@@ -44,7 +44,7 @@ Example of ``Kconfig`` file:
             help
                 This option enables sublight on our spaceship.
 
-For more information about the Kconfig language, please refer to the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/kconfiglib/language.html>`_.
+For more information about the Kconfig language, please refer to the `Kconfig Documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfiglib/language.html>`_.
 
 .. _sdkconfig-file:
 

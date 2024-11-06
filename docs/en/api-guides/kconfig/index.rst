@@ -23,7 +23,7 @@ For the purpose of setting **user-defined default values** for configuration opt
 
 .. note::
 
-    For the detailed information about Kconfig language or ``esp-idf-kconfig``, which is the package of tools for the ESP-IDF configuration, please refer to the to the lower-level and more implementation-focused `esp-idf-kconfig documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/index.html>`_.
+    For the detailed information about Kconfig language or ``esp-idf-kconfig``, which is the package of tools for the ESP-IDF configuration, please refer to the to the lower-level and more implementation-focused `esp-idf-kconfig documentation <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/>`_.
 
 .. note::
     For the complete list of configuration options, please refer to the :ref:`Configuration Options Reference <configuration-options-reference>` and in the top left corner, choose your combination of a chip and ESP-IDF version.
