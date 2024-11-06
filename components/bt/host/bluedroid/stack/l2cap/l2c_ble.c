@@ -376,6 +376,7 @@ void l2cble_scanner_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE type,
     p_lcb->waiting_update_conn_latency = p_lcb->current_used_conn_latency = conn_latency;
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
     p_lcb->updating_param_flag = false;
+    p_lcb->ble_addr_type = type;
 
     /* If there are any preferred connection parameters, set them now */
     if ( (p_dev_rec->conn_params.min_conn_int     >= BTM_BLE_CONN_INT_MIN ) &&
@@ -476,6 +477,7 @@ void l2cble_advertiser_conn_comp (UINT16 handle, BD_ADDR bda, tBLE_ADDR_TYPE typ
     p_lcb->waiting_update_conn_latency      =  p_lcb->current_used_conn_latency = conn_latency;
     p_lcb->conn_update_mask = L2C_BLE_NOT_DEFAULT_PARAM;
     p_lcb->updating_param_flag = false;
+    p_lcb->ble_addr_type = type;
 
     /* Tell BTM Acl management about the link */
     p_dev_rec = btm_find_or_alloc_dev (bda);
