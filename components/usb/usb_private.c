@@ -15,10 +15,18 @@ urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets)
     if (urb == NULL || data_buffer == NULL)     {
         goto err;
     }
+
+#if CONFIG_IDF_TARGET_LINUX
+    // heap_caps_get_allocated_size() return 0 on Linux target
+    const size_t allocated_size = data_buffer_size;
+#else
+    const size_t allocated_size = heap_caps_get_allocated_size(data_buffer);
+#endif
+
     // Cast as dummy transfer so that we can assign to const fields
     usb_transfer_dummy_t *dummy_transfer = (usb_transfer_dummy_t *)&urb->transfer;
     dummy_transfer->data_buffer = data_buffer;
-    dummy_transfer->data_buffer_size = heap_caps_get_allocated_size(data_buffer);
+    dummy_transfer->data_buffer_size = allocated_size;
     dummy_transfer->num_isoc_packets = num_isoc_packets;
     return urb;
 err:
