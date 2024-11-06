@@ -20,8 +20,9 @@
 #include "driver/sdmmc_host.h"
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
-#include "sdmmc_private.h"
+#include "sdmmc_internal.h"
 #include "soc/soc_caps.h"
+#include "hal/sdmmc_ll.h"
 
 /* Number of DMA descriptors used for transfer.
  * Increasing this value above 4 doesn't improve performance for the usual case
@@ -350,7 +351,7 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
     if (cmd->opcode == MMC_GO_IDLE_STATE) {
         res.send_init = 1;
     }
-    
+
     if (cmd->flags & SCF_RSP_PRESENT) {
         res.response_expect = 1;
         if (cmd->flags & SCF_RSP_136) {
@@ -450,7 +451,7 @@ static esp_err_t process_events(int slot, sdmmc_event_t evt, sdmmc_command_t* cm
     };
     sdmmc_event_t orig_evt = evt;
     ESP_LOGV(TAG, "%s: slot=%d state=%s evt=%"PRIx32" dma=%"PRIx32, __func__, slot,
-            s_state_names[*pstate], evt.sdmmc_status, evt.dma_status);
+             s_state_names[*pstate], evt.sdmmc_status, evt.dma_status);
     sdmmc_req_state_t next_state = *pstate;
     sdmmc_req_state_t state = (sdmmc_req_state_t) -1;
     while (next_state != state) {

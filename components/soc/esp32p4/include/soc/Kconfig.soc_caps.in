@@ -1363,6 +1363,10 @@ config SOC_SDMMC_PSRAM_DMA_CAPABLE
     bool
     default y
 
+config SOC_SDMMC_UHS_I_SUPPORTED
+    bool
+    default y
+
 config SOC_SHA_DMA_MAX_BUFFER_SIZE
     int
     default 3968
@@ -1944,6 +1948,10 @@ config SOC_CLK_APLL_SUPPORTED
     default y
 
 config SOC_CLK_MPLL_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_SDIO_PLL_SUPPORTED
     bool
     default y
 

@@ -46,6 +46,7 @@ extern "C" {
 #define MMC_SET_BLOCKLEN                16      /* R1 */
 #define MMC_READ_BLOCK_SINGLE           17      /* R1 */
 #define MMC_READ_BLOCK_MULTIPLE         18      /* R1 */
+#define MMC_SEND_TUNING_BLOCK           19      /* R1 */
 #define MMC_WRITE_DAT_UNTIL_STOP        20      /* R1 */
 #define MMC_SET_BLOCK_COUNT             23      /* R1 */
 #define MMC_WRITE_BLOCK_SINGLE          24      /* R1 */
@@ -305,6 +306,8 @@ extern "C" {
 #define SD_CSD_SPEED(resp)              MMC_RSP_BITS((resp), 96, 8)
 #define  SD_CSD_SPEED_25_MHZ            0x32
 #define  SD_CSD_SPEED_50_MHZ            0x5a
+#define  SD_CSD_SPEED_100_MHZ           0xb
+#define  SD_CSD_SPEED_200_MHZ           0x2b
 #define SD_CSD_CCC(resp)                MMC_RSP_BITS((resp), 84, 12)
 #define  SD_CSD_CCC_BASIC               (1 << 0)        /* basic */
 #define  SD_CSD_CCC_BR                  (1 << 2)        /* block read */
@@ -418,6 +421,14 @@ extern "C" {
 #define SD_SFUNC_FUNC_MAX       15
 
 #define SD_ACCESS_MODE          1       /* Function group 1, Access Mode */
+#define SD_COMMAND_SYSTEM       2       /* Function group 1, Command System */
+#define SD_DRIVER_STRENGTH      3       /* Function group 1, Driver Strength */
+#define SD_CURRENT_LIMIT        4       /* Function group 1, Current Limit */
+
+#define SD_DRIVER_STRENGTH_B    0       /* Type B */
+#define SD_DRIVER_STRENGTH_A    1       /* Type A */
+#define SD_DRIVER_STRENGTH_C    2       /* Type C */
+#define SD_DRIVER_STRENGTH_D    3       /* Type D */
 
 #define SD_ACCESS_MODE_SDR12    0       /* 25 MHz clock */
 #define SD_ACCESS_MODE_SDR25    1       /* 50 MHz clock */

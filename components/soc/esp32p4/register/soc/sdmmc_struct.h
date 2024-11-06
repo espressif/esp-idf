@@ -914,7 +914,7 @@ typedef union {
 typedef union {
     struct {
         /** volt: R/W; bitpos: [1:0]; default: 0;
-         *  Voltage mode selection, 1 bit for each card.
+         *  Voltage mode selection, 1 bit for each card. On the ESP32-P4, this bit doesn't do anything, I/O voltage is controlled using LDO API instead.
          *  0: 3.3V mode.
          *  1: 1.8V mode.
          */

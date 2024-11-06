@@ -24,6 +24,7 @@
 #include "soc/sdmmc_reg.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/lp_clkrst_struct.h"
+#include "soc/pmu_reg.h"
 
 
 #ifdef __cplusplus
@@ -125,6 +126,37 @@ static inline void sdmmc_ll_reset_register(sdmmc_dev_t *hw)
 #define sdmmc_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_reset_register(__VA_ARGS__)
 
 /**
+ * @brief Enable the bus clock for SDIO PLL
+ *
+ * @param hw    hardware instance address
+ * @param en    enable / disable
+ */
+static inline void sdmmc_ll_enable_sdio_pll(sdmmc_dev_t *hw, bool en)
+{
+    if (en) {
+        REG_SET_BIT(PMU_RF_PWC_REG, PMU_SDIO_PLL_XPD);
+        REG_SET_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_SDIOPLL_I2C);
+        REG_SET_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_SDIOPLL);
+        REG_SET_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_SDIOPLL_ICG);
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll0_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll1_clk_en = 1;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll2_clk_en = 1;
+    } else {
+        REG_CLR_BIT(PMU_RF_PWC_REG, PMU_SDIO_PLL_XPD);
+        REG_CLR_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_SDIOPLL_I2C);
+        REG_CLR_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_XPD_SDIOPLL);
+        REG_CLR_BIT(PMU_IMM_HP_CK_POWER_REG, PMU_TIE_HIGH_GLOBAL_SDIOPLL_ICG);
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll0_clk_en = 0;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll0_clk_en = 0;
+        LP_AON_CLKRST.hp_clk_ctrl.hp_sdio_pll2_clk_en = 0;
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define sdmmc_ll_enable_sdio_pll(...) (void)__DECLARE_RCC_ATOMIC_ENV; sdmmc_ll_enable_sdio_pll(__VA_ARGS__)
+
+/**
  * @brief Select SDMMC clock source
  *
  * @param hw       hardware instance address
@@ -137,9 +169,9 @@ static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_
     case SDMMC_CLK_SRC_PLL160M:
         clk_val = 0;
         break;
-    // case SDMMC_CLK_SRC_PLL200M: // TODO: IDF-8886
-    //     clk_val = 1;
-    //     break;
+    case SDMMC_CLK_SRC_SDIO_200M:
+        clk_val = 1;
+        break;
     default:
         HAL_ASSERT(false);
         break;
@@ -161,12 +193,18 @@ static inline void sdmmc_ll_select_clk_source(sdmmc_dev_t *hw, soc_periph_sdmmc_
  */
 static inline void sdmmc_ll_set_clock_div(sdmmc_dev_t *hw, uint32_t div)
 {
-    HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_h = div / 2 - 1;
-    HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_n = div - 1;
-    HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l = div - 1;
-
-    HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_cfg_update = 1;
-    HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_cfg_update = 0;
+    if (div > 1) {
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_h = div / 2 - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_n = div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l = div - 1;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_cfg_update = 1;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_cfg_update = 0;
+    } else {
+        HP_SYS_CLKRST.peri_clk_ctrl01.reg_sdio_hs_mode = 1;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_h = 0;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_n = 0;
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l = 0;
+    }
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -192,7 +230,16 @@ static inline void sdmmc_ll_deinit_clk(sdmmc_dev_t *hw)
  */
 static inline uint32_t sdmmc_ll_get_clock_div(sdmmc_dev_t *hw)
 {
-    return HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l + 1;
+    uint32_t div = 0;
+    if (HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_h == 0 &&
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_n == 0 &&
+        HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l == 0) {
+        div = 1;
+    } else {
+        div = HP_SYS_CLKRST.peri_clk_ctrl02.reg_sdio_ls_clk_edge_l + 1;
+    }
+
+    return div;
 }
 
 /**
@@ -458,7 +505,7 @@ static inline bool sdmmc_ll_is_card_write_protected(sdmmc_dev_t *hw, uint32_t sl
  * @param slot  slot
  * @param en    enable / disable 1.8V (3.3V on disable)
  */
-static inline void sdmmc_ll_enable_18v_mode(sdmmc_dev_t *hw, uint32_t slot, bool en)
+static inline void sdmmc_ll_enable_1v8_mode(sdmmc_dev_t *hw, uint32_t slot, bool en)
 {
     if (en) {
         hw->uhs.volt |= BIT(slot);

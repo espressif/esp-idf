@@ -154,6 +154,7 @@ typedef enum {
     SOC_MOD_CLK_CPLL,                          /*!< CPLL is from 40MHz XTAL oscillator frequency multipliers */
     SOC_MOD_CLK_SPLL,                          /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
     SOC_MOD_CLK_MPLL,                          /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers */
+    SOC_MOD_CLK_SDIO_PLL,                      /*!< SDIO PLL is from 40MHz XTAL oscillator frequency multipliers, it has a "fixed" frequency of 200MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
@@ -709,7 +710,7 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of SDMMC
  */
-#define SOC_SDMMC_CLKS {SOC_MOD_CLK_PLL_F160M}
+#define SOC_SDMMC_CLKS {SOC_MOD_CLK_PLL_F160M, SOC_MOD_CLK_SDIO_PLL}
 
 /**
  * @brief Type of SDMMC clock source
@@ -717,7 +718,7 @@ typedef enum {
 typedef enum {
     SDMMC_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_160M as the default choice */
     SDMMC_CLK_SRC_PLL160M = SOC_MOD_CLK_PLL_F160M,  /*!< Select PLL_160M as the source clock */
-    // SOC_MOD_CLK_SDIO_PLL TODO:IDF-8886
+    SDMMC_CLK_SRC_SDIO_200M = SOC_MOD_CLK_SDIO_PLL,
 } soc_periph_sdmmc_clk_src_t;
 
 //////////////////////////////////////////////////Temp Sensor///////////////////////////////////////////////////////////
