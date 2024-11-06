@@ -11,11 +11,13 @@
 #include "esp_gap_ble_api.h"
 
 #if BTC_DYNAMIC_MEMORY == TRUE
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
 #include "bta/bta_api.h"
 extern tBTA_BLE_ADV_DATA *gl_bta_adv_data_ptr;
 extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 #define gl_bta_adv_data     (*gl_bta_adv_data_ptr)
 #define gl_bta_scan_rsp_data    (*gl_bta_scan_rsp_data_ptr)
+#endif // BLE_42_FEATURE_SUPPORT
 #endif
 
 #define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
