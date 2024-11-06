@@ -23,6 +23,10 @@
 
 #ifdef CONFIG_SECURE_BOOT_V2_ENABLED
 
+#if CONFIG_SECURE_ENABLE_TEE
+extern esp_image_metadata_t tee_data;
+#endif
+
 #define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 static const char *TAG = "secure_boot_v2";
 
@@ -268,6 +272,28 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
         ESP_LOGW(TAG, "App has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?", app_key_digests.num_digests, boot_key_digests.num_digests);
     }
 
+#if CONFIG_SECURE_ENABLE_TEE
+    /* Generate the TEE public key digests */
+    bool tee_match = false;
+    esp_image_sig_public_key_digests_t tee_key_digests = {0};
+
+    ret = s_calculate_image_public_key_digests(tee_data.start_addr, tee_data.image_len - SIG_BLOCK_PADDING, &tee_key_digests);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "TEE signature block is invalid.");
+        return ret;
+    }
+
+    if (tee_key_digests.num_digests == 0) {
+        ESP_LOGE(TAG, "No valid TEE signature blocks found.");
+        return ESP_FAIL;
+    }
+
+    ESP_LOGI(TAG, "%d signature block(s) found appended to the tee.", tee_key_digests.num_digests);
+    if (tee_key_digests.num_digests > boot_key_digests.num_digests) {
+        ESP_LOGW(TAG, "TEE has %d signature blocks but bootloader only has %d. Some keys missing from bootloader?", tee_key_digests.num_digests, boot_key_digests.num_digests);
+    }
+#endif
+
     /* Confirm if at least one public key from the application matches a public key in the bootloader
         (Also, ensure if that public revoke bit is not set for the matched key) */
     bool match = false;
@@ -285,12 +311,31 @@ static esp_err_t check_and_generate_secure_boot_keys(const esp_image_metadata_t 
                 match = true;
             }
         }
+#if CONFIG_SECURE_ENABLE_TEE
+        if (!match) {
+             continue;
+        }
+
+        for (unsigned j = 0; j < tee_key_digests.num_digests; j++) {
+            if (!memcmp(boot_key_digests.key_digests[i], tee_key_digests.key_digests[j], ESP_SECURE_BOOT_DIGEST_LEN)) {
+                ESP_LOGI(TAG, "TEE key(%d) matches with bootloader key(%d).", j, i);
+                tee_match = true;
+            }
+        }
+#endif
     }
 
     if (match == false) {
         ESP_LOGE(TAG, "No application key digest matches the bootloader key digest.");
         return ESP_FAIL;
     }
+
+#if CONFIG_SECURE_ENABLE_TEE
+    if (tee_match == false) {
+        ESP_LOGE(TAG, "No TEE key digest matches the bootloader key digest.");
+        return ESP_FAIL;
+    }
+#endif
 
 #if SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
     /* Revoke the empty signature blocks */
