@@ -593,7 +593,11 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         }
 #endif
         pkt_size = BT_PKT_LINKED_HDR_SIZE + BT_HDR_SIZE + len;
+        #if HEAP_MEMORY_DEBUG
+        linked_pkt = (pkt_linked_item_t *) osi_calloc(pkt_size);
+        #else
         linked_pkt = (pkt_linked_item_t *) osi_calloc_base(pkt_size);
+        #endif
         if (!linked_pkt) {
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
             hci_adv_credits_consumed(1);

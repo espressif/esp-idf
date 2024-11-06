@@ -773,6 +773,14 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
             }
             break;
         }
+        case HCI_VENDOR_BLE_SET_CSA_SUPPORT: {
+            uint8_t status;
+            STREAM_TO_UINT8(status, p);
+            if (ble_cb && ble_cb->set_csa_support_cmpl_cb) {
+                ble_cb->set_csa_support_cmpl_cb(status);
+            }
+            break;
+        }
         default:
             break;
     }

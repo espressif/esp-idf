@@ -106,6 +106,7 @@ typedef enum {
     BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST,
     BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
     BTC_GAP_BLE_SET_PRIVACY_MODE,
+    BTC_GAP_BLE_SET_CSA_SUPPORT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -274,6 +275,10 @@ typedef union {
         esp_bd_addr_t addr;
         uint8_t privacy_mode;
     } set_privacy_mode;
+    // BTC_GAP_BLE_SET_CSA_SUPPORT
+    struct set_csa_support_args {
+        uint8_t csa_select;
+    } set_csa_support;
 } btc_ble_gap_args_t;
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)

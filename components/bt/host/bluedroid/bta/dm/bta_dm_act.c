@@ -5832,6 +5832,12 @@ void bta_dm_ble_gap_set_privacy_mode(tBTA_DM_MSG *p_data)
                         p_data->ble_set_privacy_mode.privacy_mode, p_data->ble_set_privacy_mode.p_cback);
 }
 
+void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, csa_select = %d", __func__, p_data->ble_set_csa_support.csa_select);
+    BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
+}
+
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {
