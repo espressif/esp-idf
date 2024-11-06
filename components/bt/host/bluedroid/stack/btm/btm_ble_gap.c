@@ -4768,6 +4768,17 @@ BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type, BD_ADDR bd_addr, UINT8 privacy_mo
     return TRUE;
 }
 
+BOOLEAN BTM_BleSetCsaSupport(UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback)
+{
+    if (btsnd_hcic_ble_set_csa_support(csa_select) != TRUE) {
+        BTM_TRACE_ERROR("LE SetCsaSupport csa_select=%d: error", csa_select);
+        return FALSE;
+    }
+
+    btm_cb.ble_ctr_cb.set_csa_support_cmpl_cb = p_callback;
+    return TRUE;
+}
+
 bool btm_ble_adv_pkt_ready(void)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
