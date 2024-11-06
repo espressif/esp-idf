@@ -128,7 +128,6 @@ r_llm_update_duplicate_scan_count = 0x40001d4c;
 r_llc_hci_command_handler_pre = 0x40001d50;
 r_llc_hci_command_handler_get = 0x40001d54;
 r_llc_hci_command_handler_search = 0x40001d58;
-r_llc_llcp_pdu_handler_get_overwrite = 0x40001d5c;
 r_llc_llcp_pdu_handler_pre = 0x40001d60;
 r_llc_llcp_pdu_handler_end = 0x40001d64;
 r_llc_con_conflict_check = 0x40001d6c;
@@ -216,6 +215,7 @@ r_ke_task_handler_get_overwrite = 0x40001da8;
 r_hci_register_vendor_desc_tab = 0x40000d9c;
 r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
 r_register_esp_vendor_cmd_handler = 0x40001400;
+r_llc_llcp_pdu_handler_get_overwrite = 0x40001d5c;
 */
 
 
