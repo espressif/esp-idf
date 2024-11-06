@@ -13,6 +13,7 @@
 
 #include "esp_log.h"
 #include "esp_chip_info.h"
+#include "esp_app_format.h"
 
 #include "esp_efuse.h"
 #include "esp_private/cache_err_int.h"
@@ -674,9 +675,14 @@ void IRAM_ATTR call_start_cpu0(void)
 
     bootloader_flash_unlock();
 #else
-    // This assumes that DROM is the first segment in the application binary, i.e. that we can read
-    // the binary header through cache by accessing SOC_DROM_LOW address.
-    hal_memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
+    // We can access the image header through the cache by reading from the memory-mapped virtual DROM start offset
+    uint32_t fhdr_src_addr = (uint32_t)(&_rodata_reserved_start) - sizeof(esp_image_header_t) - sizeof(esp_image_segment_header_t);
+    hal_memcpy(&fhdr, (void *) fhdr_src_addr, sizeof(fhdr));
+    if (fhdr.magic != ESP_IMAGE_HEADER_MAGIC) {
+        ESP_EARLY_LOGE(TAG, "Invalid app image header");
+        abort();
+    }
+
 
 #endif // CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
