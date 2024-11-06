@@ -3,6 +3,10 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
+config SOC_ADC_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -167,15 +171,87 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
+config SOC_ADC_DIG_CTRL_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DIG_IIR_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_MONITOR_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_DMA_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_PERIPH_NUM
-    int
-    default 1
+    bool
+    default y
 
 config SOC_ADC_MAX_CHANNEL_NUM
     int
-    default 7
+    default 4
+
+config SOC_ADC_ATTEN_NUM
+    int
+    default 4
+
+config SOC_ADC_DIGI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_ADC_PATT_LEN_MAX
+    int
+    default 8
+
+config SOC_ADC_DIGI_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_IIR_FILTER_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_MONITOR_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
+
+config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+    int
+    default 83333
+
+config SOC_ADC_SAMPLE_FREQ_THRES_LOW
+    int
+    default 611
+
+config SOC_ADC_RTC_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_RTC_MAX_BITWIDTH
+    int
+    default 12
 
 config SOC_ADC_TEMPERATURE_SHARE_INTR
+    bool
+    default y
+
+config SOC_ADC_SHARED_POWER
     bool
     default y
 

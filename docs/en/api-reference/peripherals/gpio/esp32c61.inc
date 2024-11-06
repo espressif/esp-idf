@@ -23,7 +23,7 @@ The table below provides more information on pin usage, and please note the comm
       - Comments
 
     * - GPIO0
-      - ADC2_CH0
+      -
       - LP_GPIO0
       -
 
@@ -53,7 +53,7 @@ The table below provides more information on pin usage, and please note the comm
       -
 
     * - GPIO6
-      - ADC1_CH5
+      -
       - LP_GPIO6
       -
 

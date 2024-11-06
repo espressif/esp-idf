@@ -35,8 +35,6 @@ api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/isp.rst
-api-reference/peripherals/adc_continuous.rst
-api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/usb_host/usb_host_notes_arch.rst
 api-reference/peripherals/usb_host/usb_host_notes_index.rst

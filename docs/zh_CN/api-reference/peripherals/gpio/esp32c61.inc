@@ -23,7 +23,7 @@
       - 注释
 
     * - GPIO0
-      - ADC2_CH0
+      -
       - LP_GPIO0
       -
 
