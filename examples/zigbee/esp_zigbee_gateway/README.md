@@ -127,7 +127,7 @@ I (6339) ESP_ZB_GATEWAY: Network steering started
 ## Gateway Functions
 
  * When the device starts up, it will attempt to connect to a Wi-Fi network and then interface with the OT-RCP via UART to form a Zigbee network.
- * For more Gateway functionalities, please refer to [matter zigbee bridge](https://github.com/espressif/esp-matter/tree/main/examples/zigbee_bridge/) and [Rainmaker Zigbee Gateway](https://github.com/espressif/esp-rainmaker/tree/master/examples/zigbee_gateway) examples.
+ * For more Gateway functionalities, please refer to [matter zigbee bridge](https://github.com/espressif/esp-matter/tree/main/examples/bridge_apps/zigbee_bridge/) and [Rainmaker Zigbee Gateway](https://github.com/espressif/esp-rainmaker/tree/master/examples/zigbee_gateway) examples.
 
 ## Troubleshooting
 
