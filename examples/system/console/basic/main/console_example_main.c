@@ -97,7 +97,7 @@ void app_main(void)
 #if SOC_DEEP_SLEEP_SUPPORTED
     register_system_deep_sleep();
 #endif
-#if SOC_WIFI_SUPPORTED
+#if (CONFIG_ESP_WIFI_ENABLED || CONFIG_ESP_HOST_WIFI_ENABLED)
     register_wifi();
 #endif
     register_nvs();
