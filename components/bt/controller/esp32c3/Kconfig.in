@@ -489,3 +489,26 @@ config BT_CTRL_LE_PING_EN
     help
         If this option is disabled, The Controller will not start the LE authenticated payload timer.
         This option is used for some compatibility problems related to LE ping procedure.
+
+menu "BLE disconnect when instant passed"
+    config BT_CTRL_BLE_LLCP_CONN_UPDATE
+        bool "BLE ACL connection update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when instant passed during connection update procedure.
+
+    config BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE
+        bool "BLE ACL channel map update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when instant passed in channel map update procedure.
+
+    config BT_CTRL_BLE_LLCP_PHY_UPDATE
+        bool "BLE ACL PHY update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when instant passed in PHY update procedure.
+endmenu
