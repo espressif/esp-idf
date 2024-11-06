@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -392,54 +392,54 @@ esp_err_t httpd_resp_send_err(httpd_req_t *req, httpd_err_code_t error, const ch
     const char *status;
 
     switch (error) {
-        case HTTPD_501_METHOD_NOT_IMPLEMENTED:
-            status = "501 Method Not Implemented";
-            msg    = "Server does not support this method";
-            break;
-        case HTTPD_505_VERSION_NOT_SUPPORTED:
-            status = "505 Version Not Supported";
-            msg    = "HTTP version not supported by server";
-            break;
-        case HTTPD_400_BAD_REQUEST:
-            status = "400 Bad Request";
-            msg    = "Bad request syntax";
-            break;
-        case HTTPD_401_UNAUTHORIZED:
-            status = "401 Unauthorized";
-            msg    = "No permission -- see authorization schemes";
-            break;
-        case HTTPD_403_FORBIDDEN:
-            status = "403 Forbidden";
-            msg    = "Request forbidden -- authorization will not help";
-            break;
-        case HTTPD_404_NOT_FOUND:
-            status = "404 Not Found";
-            msg    = "Nothing matches the given URI";
-            break;
-        case HTTPD_405_METHOD_NOT_ALLOWED:
-            status = "405 Method Not Allowed";
-            msg    = "Specified method is invalid for this resource";
-            break;
-        case HTTPD_408_REQ_TIMEOUT:
-            status = "408 Request Timeout";
-            msg    = "Server closed this connection";
-            break;
-        case HTTPD_414_URI_TOO_LONG:
-            status = "414 URI Too Long";
-            msg    = "URI is too long";
-            break;
-        case HTTPD_411_LENGTH_REQUIRED:
-            status = "411 Length Required";
-            msg    = "Client must specify Content-Length";
-            break;
-        case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
-            status = "431 Request Header Fields Too Large";
-            msg    = "Header fields are too long";
-            break;
-        case HTTPD_500_INTERNAL_SERVER_ERROR:
-        default:
-            status = "500 Internal Server Error";
-            msg    = "Server has encountered an unexpected error";
+    case HTTPD_501_METHOD_NOT_IMPLEMENTED:
+        status = "501 Method Not Implemented";
+        msg    = "Server does not support this method";
+        break;
+    case HTTPD_505_VERSION_NOT_SUPPORTED:
+        status = "505 Version Not Supported";
+        msg    = "HTTP version not supported by server";
+        break;
+    case HTTPD_400_BAD_REQUEST:
+        status = "400 Bad Request";
+        msg    = "Bad request syntax";
+        break;
+    case HTTPD_401_UNAUTHORIZED:
+        status = "401 Unauthorized";
+        msg    = "No permission -- see authorization schemes";
+        break;
+    case HTTPD_403_FORBIDDEN:
+        status = "403 Forbidden";
+        msg    = "Request forbidden -- authorization will not help";
+        break;
+    case HTTPD_404_NOT_FOUND:
+        status = "404 Not Found";
+        msg    = "Nothing matches the given URI";
+        break;
+    case HTTPD_405_METHOD_NOT_ALLOWED:
+        status = "405 Method Not Allowed";
+        msg    = "Specified method is invalid for this resource";
+        break;
+    case HTTPD_408_REQ_TIMEOUT:
+        status = "408 Request Timeout";
+        msg    = "Server closed this connection";
+        break;
+    case HTTPD_414_URI_TOO_LONG:
+        status = "414 URI Too Long";
+        msg    = "URI is too long";
+        break;
+    case HTTPD_411_LENGTH_REQUIRED:
+        status = "411 Length Required";
+        msg    = "Client must specify Content-Length";
+        break;
+    case HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE:
+        status = "431 Request Header Fields Too Large";
+        msg    = "Header fields are too long";
+        break;
+    case HTTPD_500_INTERNAL_SERVER_ERROR:
+    default:
+        status = "500 Internal Server Error";
+        msg    = "Server has encountered an unexpected error";
     }
 
     /* If user has provided custom message, override default message */
@@ -575,9 +575,24 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
     }
     memcpy(async->aux, r->aux, sizeof(struct httpd_req_aux));
 
+    // Copy response header block
+    struct httpd_data *hd = (struct httpd_data *) r->handle;
+    struct httpd_req_aux *async_aux = (struct httpd_req_aux *) async->aux;
+    struct httpd_req_aux *r_aux = (struct httpd_req_aux *) r->aux;
+
+    async_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
+    if (async_aux->resp_hdrs == NULL) {
+        free(async_aux);
+        free(async);
+        return ESP_ERR_NO_MEM;
+    }
+    memcpy(async_aux->resp_hdrs, r_aux->resp_hdrs, hd->config.max_resp_headers * sizeof(struct resp_hdr));
+
+    // Prevent the main thread from reading the rest of the request after the handler returns.
+    r_aux->remaining_len = 0;
+
     // mark socket as "in use"
-    struct httpd_req_aux *ra = r->aux;
-    ra->sd->for_async_req = true;
+    r_aux->sd->for_async_req = true;
 
     *out = async;
 
@@ -593,6 +608,7 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
     struct httpd_req_aux *ra = r->aux;
     ra->sd->for_async_req = false;
 
+    free(ra->resp_hdrs);
     free(r->aux);
     free(r);
 
@@ -619,7 +635,7 @@ static int httpd_sock_err(const char *ctx, int sockfd)
     int errval;
     ESP_LOGW(TAG, LOG_FMT("error in %s : %d"), ctx, errno);
 
-    switch(errno) {
+    switch (errno) {
     case EAGAIN:
     case EINTR:
         errval = HTTPD_SOCK_ERR_TIMEOUT;
