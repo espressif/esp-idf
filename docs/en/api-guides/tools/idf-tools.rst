@@ -43,6 +43,8 @@ Inside the ``IDF_TOOLS_PATH`` directory, the tools installation scripts create t
 - ``tools`` — where the tools are extracted. The tools are extracted into subdirectories: ``tools/TOOL_NAME/VERSION/``. This arrangement allows different versions of tools to be installed side by side.
 - ``idf-env.json`` — user install options, such as targets and features, are stored in this file. Targets are selected chip targets for which tools are installed and kept up-to-date. Features determine the Python package set which should be installed. These options will be discussed later.
 - ``python_env`` —  not related to the tools; virtual Python environments are installed in the sub-directories. Note that the Python environment directory can be placed elsewhere by setting the ``IDF_PYTHON_ENV_PATH`` environment variable.
+
+  - ``idf_version.txt`` — located within each specific Python environment sub-directory under ``python_env``, this file records the ESP-IDF version corresponding to that environment. The version is stored in a format like `5.3` to represent ESP-IDF version `v5.3`.
 - ``espidf.constraints.*.txt`` — one constraint file for each ESP-IDF release containing Python package version requirements.
 
 GitHub Assets Mirror
@@ -213,6 +215,8 @@ Custom Installation
 -------------------
 
 Although the methods above are recommended for ESP-IDF users, they are not a must for building ESP-IDF applications. ESP-IDF build system expects that all the necessary tools are installed somewhere, and made available in the ``PATH``.
+
+When performing a custom installation, ensure that the ``ESP_IDF_VERSION`` environment variable is set to reflect the current ESP-IDF version, using a format like ``5.3`` to represent ESP-IDF version v5.3. This variable is required by some components for version-specific configurations and is typically set by the ``idf_tools.py export`` script in standard installations.
 
 .. _idf-tools-uninstall:
 
