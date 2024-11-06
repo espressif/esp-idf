@@ -20,7 +20,7 @@
 #include "driver/sdmmc_host.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
-#include "sdmmc_private.h"
+#include "sdmmc_internal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "esp_clk_tree.h"
@@ -32,6 +32,8 @@
 #include "hal/sdmmc_ll.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH    32
+
+#define SDMMC_FREQ_SDR104           208000      /*!< MMC 208MHz speed */
 
 #if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
@@ -65,9 +67,11 @@ if (!GPIO_IS_VALID_GPIO(_gpio_num)) { \
  * Slot contexts
  */
 typedef struct slot_ctx_t {
+    int slot_id;
     size_t slot_width;
     sdmmc_slot_io_info_t slot_gpio_num;
     bool use_gpio_matrix;
+    bool is_uhs1;
 #if SOC_SDMMC_NUM_SLOTS >= 2
     int slot_host_div;
     uint32_t slot_freq_khz;
@@ -79,14 +83,15 @@ typedef struct slot_ctx_t {
  * Host contexts
  */
 typedef struct host_ctx_t {
-    intr_handle_t        intr_handle;
-    QueueHandle_t        event_queue;
-    SemaphoreHandle_t    io_intr_event;
-    sdmmc_hal_context_t  hal;
-    slot_ctx_t           slot_ctx[SOC_SDMMC_NUM_SLOTS];
+    intr_handle_t              intr_handle;
+    QueueHandle_t              event_queue;
+    SemaphoreHandle_t          io_intr_event;
+    sdmmc_hal_context_t        hal;
+    soc_periph_sdmmc_clk_src_t clk_src;
+    slot_ctx_t                 slot_ctx[SOC_SDMMC_NUM_SLOTS];
 #if SOC_SDMMC_NUM_SLOTS >= 2
-    uint8_t              num_of_init_slots;
-    int8_t               active_slot_num;
+    uint8_t                    num_of_init_slots;
+    int8_t                     active_slot_num;
 #endif
 } host_ctx_t;
 
@@ -163,13 +168,18 @@ esp_err_t sdmmc_host_reset(void)
  * Of the second stage dividers, div0 is used for card 0, and div1 is used
  * for card 1.
  */
-static void sdmmc_host_set_clk_div(int div)
+static void sdmmc_host_set_clk_div(soc_periph_sdmmc_clk_src_t src, int div)
 {
-    esp_clk_tree_enable_src((soc_module_clk_t)SDMMC_CLK_SRC_DEFAULT, true);
+    esp_clk_tree_enable_src((soc_module_clk_t)src, true);
     SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(s_host_ctx.hal.dev, div);
-        sdmmc_ll_select_clk_source(s_host_ctx.hal.dev, SDMMC_CLK_SRC_DEFAULT);
+        sdmmc_ll_select_clk_source(s_host_ctx.hal.dev, src);
         sdmmc_ll_init_phase_delay(s_host_ctx.hal.dev);
+#if SOC_CLK_SDIO_PLL_SUPPORTED
+        if (src == SDMMC_CLK_SRC_SDIO_200M) {
+            sdmmc_ll_enable_sdio_pll(s_host_ctx.hal.dev, true);
+        }
+#endif
     }
 
     // Wait for the clock to propagate
@@ -192,11 +202,23 @@ static esp_err_t sdmmc_host_clock_update_command(int slot, bool is_cmd11)
     return ESP_OK;
 }
 
-void sdmmc_host_get_clk_dividers(uint32_t freq_khz, int *host_div, int *card_div)
+void sdmmc_host_get_clk_dividers(uint32_t freq_khz, int *host_div, int *card_div, soc_periph_sdmmc_clk_src_t *src)
 {
     uint32_t clk_src_freq_hz = 0;
-    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
-    assert(clk_src_freq_hz == (160 * 1000 * 1000));
+    soc_periph_sdmmc_clk_src_t clk_src = 0;
+#if SOC_SDMMC_UHS_I_SUPPORTED
+    if (freq_khz > SDMMC_FREQ_HIGHSPEED) {
+        clk_src = SDMMC_CLK_SRC_SDIO_200M;
+    } else
+#endif
+    {
+        clk_src = SDMMC_CLK_SRC_DEFAULT;
+    }
+    s_host_ctx.clk_src = clk_src;
+
+    esp_err_t ret = esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    assert(ret == ESP_OK);
+    ESP_LOGD(TAG, "clk_src_freq_hz: %"PRId32" hz", clk_src_freq_hz);
 
 #if SDMMC_LL_MAX_FREQ_KHZ_FPGA
     if (freq_khz >= SDMMC_LL_MAX_FREQ_KHZ_FPGA) {
@@ -204,40 +226,53 @@ void sdmmc_host_get_clk_dividers(uint32_t freq_khz, int *host_div, int *card_div
         freq_khz = SDMMC_LL_MAX_FREQ_KHZ_FPGA;
     }
 #endif
+
     // Calculate new dividers
-    if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
-        *host_div = 4;       // 160 MHz / 4 = 40 MHz
+#if SOC_SDMMC_UHS_I_SUPPORTED
+    if (freq_khz == SDMMC_FREQ_SDR104) {
+        *host_div = 1;       // 200 MHz / 1 = 200 MHz
         *card_div = 0;
-    } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
-        *host_div = 8;       // 160 MHz / 8 = 20 MHz
+    } else if (freq_khz == SDMMC_FREQ_SDR50) {
+        *host_div = 2;       // 200 MHz / 2 = 100 MHz
         *card_div = 0;
-    } else if (freq_khz == SDMMC_FREQ_PROBING) {
-        *host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
-        *card_div = 20;
-    } else {
-        /*
-         * for custom frequencies use maximum range of host divider (1-16), find the closest <= div. combination
-         * if exceeded, combine with the card divider to keep reasonable precision (applies mainly to low frequencies)
-         * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
-         */
-        *host_div = (clk_src_freq_hz) / (freq_khz * 1000);
-        if (*host_div > 15) {
-            *host_div = 2;
-            *card_div = (clk_src_freq_hz / 2) / (2 * freq_khz * 1000);
-            if (((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0) {
-                (*card_div)++;
+    } else
+#endif
+        if (freq_khz >= SDMMC_FREQ_HIGHSPEED) {
+            *host_div = 4;       // 160 MHz / 4 = 40 MHz
+            *card_div = 0;
+        } else if (freq_khz == SDMMC_FREQ_DEFAULT) {
+            *host_div = 8;       // 160 MHz / 8 = 20 MHz
+            *card_div = 0;
+        } else if (freq_khz == SDMMC_FREQ_PROBING) {
+            *host_div = 10;      // 160 MHz / 10 / (20 * 2) = 400 kHz
+            *card_div = 20;
+        } else {
+            /*
+             * for custom frequencies use maximum range of host divider (1-16), find the closest <= div. combination
+             * if exceeded, combine with the card divider to keep reasonable precision (applies mainly to low frequencies)
+             * effective frequency range: 400 kHz - 32 MHz (32.1 - 39.9 MHz cannot be covered with given divider scheme)
+             */
+            *host_div = (clk_src_freq_hz) / (freq_khz * 1000);
+            if (*host_div > 15) {
+                *host_div = 2;
+                *card_div = (clk_src_freq_hz / 2) / (2 * freq_khz * 1000);
+                if (((clk_src_freq_hz / 2) % (2 * freq_khz * 1000)) > 0) {
+                    (*card_div)++;
+                }
+            } else if ((clk_src_freq_hz % (freq_khz * 1000)) > 0) {
+                (*host_div)++;
             }
-        } else if ((clk_src_freq_hz % (freq_khz * 1000)) > 0) {
-            (*host_div)++;
         }
-    }
+
+    *src = clk_src;
 }
 
-static int sdmmc_host_calc_freq(const int host_div, const int card_div)
+static int sdmmc_host_calc_freq(soc_periph_sdmmc_clk_src_t src, const int host_div, const int card_div)
 {
     uint32_t clk_src_freq_hz = 0;
-    esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
-    assert(clk_src_freq_hz == (160 * 1000 * 1000));
+    esp_err_t ret = esp_clk_tree_src_get_freq_hz(src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz);
+    assert(ret == ESP_OK);
+
     return clk_src_freq_hz / host_div / ((card_div == 0) ? 1 : card_div * 2) / 1000;
 }
 
@@ -261,16 +296,17 @@ esp_err_t sdmmc_host_set_card_clk(int slot, uint32_t freq_khz)
         return err;
     }
 
+    soc_periph_sdmmc_clk_src_t clk_src = 0;
     int host_div = 0;   /* clock divider of the host (SDMMC.clock) */
     int card_div = 0;   /* 1/2 of card clock divider (SDMMC.clkdiv) */
-    sdmmc_host_get_clk_dividers(freq_khz, &host_div, &card_div);
+    sdmmc_host_get_clk_dividers(freq_khz, &host_div, &card_div, &clk_src);
 
-    int real_freq = sdmmc_host_calc_freq(host_div, card_div);
-    ESP_LOGD(TAG, "slot=%d host_div=%d card_div=%d freq=%dkHz (max %" PRIu32 "kHz)", slot, host_div, card_div, real_freq, freq_khz);
+    int real_freq = sdmmc_host_calc_freq(clk_src, host_div, card_div);
+    ESP_LOGD(TAG, "slot=%d clk_src=%d host_div=%d card_div=%d freq=%dkHz (max %" PRIu32 "kHz)", slot, clk_src, host_div, card_div, real_freq, freq_khz);
 
     // Program card clock settings, send them to the CIU
     sdmmc_ll_set_card_clock_div(s_host_ctx.hal.dev, slot, card_div);
-    sdmmc_host_set_clk_div(host_div);
+    sdmmc_host_set_clk_div(clk_src, host_div);
     err = sdmmc_host_clock_update_command(slot, false);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "setting clk div failed");
@@ -310,7 +346,7 @@ esp_err_t sdmmc_host_get_real_freq(int slot, int *real_freq_khz)
 
     int host_div = sdmmc_ll_get_clock_div(s_host_ctx.hal.dev);
     int card_div = sdmmc_ll_get_card_clock_div(s_host_ctx.hal.dev, slot);
-    *real_freq_khz = sdmmc_host_calc_freq(host_div, card_div);
+    *real_freq_khz = sdmmc_host_calc_freq(s_host_ctx.clk_src, host_div, card_div);
 
     return ESP_OK;
 }
@@ -326,7 +362,7 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase)
     ESP_RETURN_ON_FALSE(delay_phase < SOC_SDMMC_DELAY_PHASE_NUM, ESP_ERR_INVALID_ARG, TAG, "invalid delay phase");
 
     uint32_t clk_src_freq_hz = 0;
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(SDMMC_CLK_SRC_DEFAULT, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz),
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(s_host_ctx.clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clk_src_freq_hz),
                         TAG, "get source clock frequency failed");
 
     //Now we're in high speed. Note ESP SDMMC Host HW only supports integer divider.
@@ -459,7 +495,7 @@ esp_err_t sdmmc_host_init(void)
     sdmmc_hal_init(&s_host_ctx.hal);
 
     // Enable clock to peripheral. Use smallest divider first.
-    sdmmc_host_set_clk_div(2);
+    sdmmc_host_set_clk_div(SDMMC_CLK_SRC_DEFAULT, 2);
 
     // Reset
     esp_err_t err = sdmmc_host_reset();
@@ -567,6 +603,18 @@ static bool s_check_pin_not_set(const sdmmc_slot_config_t *slot_config)
 #endif
 }
 
+esp_err_t sdmmc_host_is_slot_set_to_uhs1(int slot, bool *is_uhs1)
+{
+    if (s_host_ctx.slot_ctx[slot].slot_id != slot) {
+        ESP_LOGE(TAG, "%s: slot %d isn't initialized", __func__, slot);
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    *is_uhs1 = s_host_ctx.slot_ctx[slot].is_uhs1;
+
+    return ESP_OK;
+}
+
 esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 {
     if (!s_host_ctx.intr_handle) {
@@ -578,6 +626,11 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (slot_config == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
+
+    if (slot_config->flags & SDMMC_SLOT_FLAG_UHS1) {
+        s_host_ctx.slot_ctx[slot].is_uhs1 = true;
+    }
+
     int gpio_cd = slot_config->cd;
     int gpio_wp = slot_config->wp;
     bool gpio_wp_polarity = slot_config->flags & SDMMC_SLOT_FLAG_WP_ACTIVE_HIGH;
@@ -603,12 +656,12 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (slot == 0) {
 #if !SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(0)
         if (use_gpio_matrix &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_CLK == slot_config->clk &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_CMD == slot_config->cmd &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_D0 == slot_config->d0 &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_D1 == slot_config->d1 &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_D2 == slot_config->d2 &&
-            SDMMC_SLOT0_IOMUX_PIN_NUM_D3 == slot_config->d3) {
+                SDMMC_SLOT0_IOMUX_PIN_NUM_CLK == slot_config->clk &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_CMD == slot_config->cmd &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D0 == slot_config->d0 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D1 == slot_config->d1 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D2 == slot_config->d2 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D3 == slot_config->d3) {
             use_gpio_matrix = false;
         } else {
             ESP_RETURN_ON_FALSE(!use_gpio_matrix, ESP_ERR_INVALID_ARG, TAG, "doesn't support routing from GPIO matrix, driver uses dedicated IOs");
@@ -685,20 +738,23 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (slot_width >= 4) {
         configure_pin(slot_gpio->d1, sdmmc_slot_gpio_sig[slot].d1, GPIO_MODE_INPUT_OUTPUT, "d1", use_gpio_matrix);
         configure_pin(slot_gpio->d2, sdmmc_slot_gpio_sig[slot].d2, GPIO_MODE_INPUT_OUTPUT, "d2", use_gpio_matrix);
-        configure_pin(slot_gpio->d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", use_gpio_matrix);
-        // // Force D3 high to make slave enter SD mode.
-        // // Connect to peripheral after width configuration.
-        // if (slot_gpio->d3 > GPIO_NUM_NC) {
-        //     gpio_config_t gpio_conf = {
-        //         .pin_bit_mask = BIT64(slot_gpio->d3),
-        //         .mode = GPIO_MODE_OUTPUT,
-        //         .pull_up_en = 0,
-        //         .pull_down_en = 0,
-        //         .intr_type = GPIO_INTR_DISABLE,
-        //     };
-        //     gpio_config(&gpio_conf);
-        //     gpio_set_level(slot_gpio->d3, 1);
-        // }
+        if (s_host_ctx.slot_ctx[slot].is_uhs1) {
+            configure_pin(slot_gpio->d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", use_gpio_matrix);
+        } else {
+            // Force D3 high to make slave enter SD mode.
+            // Connect to peripheral after width configuration.
+            if (slot_gpio->d3 > GPIO_NUM_NC) {
+                gpio_config_t gpio_conf = {
+                    .pin_bit_mask = BIT64(slot_gpio->d3),
+                    .mode = GPIO_MODE_OUTPUT,
+                    .pull_up_en = 0,
+                    .pull_down_en = 0,
+                    .intr_type = GPIO_INTR_DISABLE,
+                };
+                gpio_config(&gpio_conf);
+                gpio_set_level(slot_gpio->d3, 1);
+            }
+        }
     }
     if (slot_width == 8) {
         configure_pin(slot_gpio->d4, sdmmc_slot_gpio_sig[slot].d4, GPIO_MODE_INPUT_OUTPUT, "d4", use_gpio_matrix);
@@ -751,6 +807,8 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
     if (ret != ESP_OK) {
         return ret;
     }
+
+    s_host_ctx.slot_ctx[slot].slot_id = slot;
 
 #if SOC_SDMMC_NUM_SLOTS >= 2
     if (s_host_ctx.num_of_init_slots < SOC_SDMMC_NUM_SLOTS && s_host_ctx.active_slot_num != slot) {
@@ -893,12 +951,12 @@ esp_err_t sdmmc_host_set_bus_width(int slot, size_t width)
         sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_1_BIT);
     } else if (width == 4) {
         sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_4_BIT);
-        // // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
-        // configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
+        // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
+        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
     } else if (width == 8) {
         sdmmc_ll_set_card_width(s_host_ctx.hal.dev, slot, SD_BUS_WIDTH_8_BIT);
-        // // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
-        // configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
+        // D3 was set to GPIO high to force slave into SD mode, until 4-bit mode is set
+        configure_pin(s_host_ctx.slot_ctx[slot].slot_gpio_num.d3, sdmmc_slot_gpio_sig[slot].d3, GPIO_MODE_INPUT_OUTPUT, "d3", s_host_ctx.slot_ctx[slot].use_gpio_matrix);
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -946,7 +1004,9 @@ void sdmmc_host_enable_clk_cmd11(int slot, bool enable)
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, enable);
     sdmmc_host_clock_update_command(slot, true);
     if (enable) {
-        sdmmc_ll_enable_18v_mode(s_host_ctx.hal.dev, slot, true);
+        sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, true);
+    } else {
+        sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, false);
     }
 }
 

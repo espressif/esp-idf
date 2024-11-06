@@ -97,6 +97,7 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
 
     /* switch to 1.8V if supported (UHS-I) */
     bool is_uhs1 = is_sdmem && (card->ocr & SD_OCR_S18_RA) && (card->ocr & SD_OCR_SDHC_CAP);
+    ESP_LOGV(TAG, "is_uhs1: %d", is_uhs1);
     SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_uhs1);
 
     /* Read the contents of CID register*/
@@ -146,11 +147,20 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         SDMMC_INIT_STEP(always, sdmmc_init_host_bus_width);
     }
 
+    /* Driver Strength */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_driver_strength);
+
+    /* Current Limit */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_current_limit);
+
     /* SD card: read SD Status register */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_init_sd_ssr);
 
     /* Switch to the host to use card->max_freq_khz frequency. */
     SDMMC_INIT_STEP(always, sdmmc_init_host_frequency);
+
+    /* Timing tuning */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_timing_tuning);
 
     /* Sanity check after switching the bus mode and frequency */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);

@@ -40,6 +40,8 @@ typedef int sdspi_dev_handle_t;
     .slot = SDSPI_DEFAULT_HOST, \
     .max_freq_khz = SDMMC_FREQ_DEFAULT, \
     .io_voltage = 3.3f, \
+    .driver_strength = SDMMC_DRIVER_STRENGTH_B, \
+    .current_limit = SDMMC_CURRENT_LIMIT_200MA, \
     .init = &sdspi_host_init, \
     .set_bus_width = NULL, \
     .get_bus_width = NULL, \
@@ -57,6 +59,7 @@ typedef int sdspi_dev_handle_t;
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
     .get_dma_info = &sdspi_host_get_dma_info, \
+    .is_slot_set_to_uhs1 = NULL, \
 }
 
 /**
