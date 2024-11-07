@@ -717,6 +717,14 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
 endif
 
 
+config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
+    bool "Do not start discovery procedure automatically upon receiving Out of Sync"
+    depends on BT_NIMBLE_GATT_CACHING
+    default n
+    help
+        When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
+        to correct the invalid cache.
+
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
