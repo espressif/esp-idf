@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -936,11 +936,6 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     uart_event.type = UART_DATA;
                     uart_event.size = rx_fifo_len;
                     uart_event.timeout_flag = (uart_intr_status & UART_INTR_RXFIFO_TOUT) ? true : false;
-                    UART_ENTER_CRITICAL_ISR(&uart_selectlock);
-                    if (p_uart->uart_select_notif_callback) {
-                        p_uart->uart_select_notif_callback(uart_num, UART_SELECT_READ_NOTIF, &HPTaskAwoken);
-                    }
-                    UART_EXIT_CRITICAL_ISR(&uart_selectlock);
                 }
                 p_uart->rx_stash_len = rx_fifo_len;
                 //If we fail to push data to ring buffer, we will have to stash the data, and send next time.
@@ -984,6 +979,14 @@ static void UART_ISR_ATTR uart_rx_intr_handler_default(void *param)
                     }
                     p_uart->rx_buffered_len += p_uart->rx_stash_len;
                     UART_EXIT_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
+                }
+
+                if (uart_event.type == UART_DATA) {
+                    UART_ENTER_CRITICAL_ISR(&uart_selectlock);
+                    if (p_uart->uart_select_notif_callback) {
+                        p_uart->uart_select_notif_callback(uart_num, UART_SELECT_READ_NOTIF, &HPTaskAwoken);
+                    }
+                    UART_EXIT_CRITICAL_ISR(&uart_selectlock);
                 }
             } else {
                 UART_ENTER_CRITICAL_ISR(&(uart_context[uart_num].spinlock));
