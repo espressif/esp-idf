@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,11 +51,11 @@ enum {
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[] = {
-    /*                       Mem Type Name | High Priority Matching     | Medium Priorty Matching  | Low Priority Matching */
+    /*                       Mem Type Name | High Priority Matching     | Medium Priority Matching  | Low Priority Matching */
     [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS,    0,                         0 }},
     //TODO, in fact, part of them support EDMA, to be supported.
     [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,         ESP32S2_MEM_COMMON_CAPS,   0 }},
@@ -113,7 +113,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FFF8000, 0x4000, SOC_MEMORY_TYPE_DIRAM, 0x40068000, false}, //Block 20,  can be used for MAC dump, can be used as trace memory
     { 0x3FFFC000, 0x4000, SOC_MEMORY_TYPE_DIRAM, 0x4006C000, true},  //Block 21,  can be used for MAC dump, can be used as trace memory, used for startup stack
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { SOC_RTC_DRAM_LOW, 0x2000, SOC_MEMORY_TYPE_RTCRAM, 0, false}, //RTC Fast Memory
+    { SOC_RTC_DRAM_LOW, 0x2000, SOC_MEMORY_TYPE_RTCRAM, SOC_RTC_IRAM_LOW, false}, //RTC Fast Memory
 #endif
 };
 
