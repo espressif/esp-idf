@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,7 +113,7 @@ const soc_memory_region_t soc_memory_regions[] = {
     { 0x3FFF8000, 0x4000, SOC_MEMORY_TYPE_DIRAM, 0x40068000, false}, //Block 20,  can be used for MAC dump, can be used as trace memory
     { 0x3FFFC000, 0x4000, SOC_MEMORY_TYPE_DIRAM, 0x4006C000, true},  //Block 21,  can be used for MAC dump, can be used as trace memory, used for startup stack
 #ifdef CONFIG_ESP_SYSTEM_ALLOW_RTC_FAST_MEM_AS_HEAP
-    { SOC_RTC_DRAM_LOW, 0x2000, SOC_MEMORY_TYPE_RTCRAM, 0, false}, //RTC Fast Memory
+    { SOC_RTC_DRAM_LOW, 0x2000, SOC_MEMORY_TYPE_RTCRAM, SOC_RTC_IRAM_LOW, false}, //RTC Fast Memory
 #endif
 };
 
