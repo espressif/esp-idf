@@ -354,15 +354,15 @@ static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t
 {
     if (level) {
         if (gpio_num < 32) {
-            hw->out_w1ts = (1 << gpio_num);
+            hw->out_w1ts = 1 << gpio_num;
         } else {
-            hw->out1_w1ts.data = (1 << (gpio_num - 32));
+            hw->out1_w1ts.val = 1 << (gpio_num - 32);
         }
     } else {
         if (gpio_num < 32) {
-            hw->out_w1tc = (1 << gpio_num);
+            hw->out_w1tc = 1 << gpio_num;
         } else {
-            hw->out1_w1tc.data = (1 << (gpio_num - 32));
+            hw->out1_w1tc.val = 1 << (gpio_num - 32);
         }
     }
 }
