@@ -15,6 +15,8 @@
 #include "soc/lp_analog_peri_struct.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_brownout.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,7 +64,11 @@ static inline void brownout_ll_reset_config(bool reset_ena, uint32_t reset_wait,
  */
 static inline void brownout_ll_set_threshold(uint8_t threshold)
 {
-    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD, threshold);
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+        threshold = 0; // Fix this level as 0 so that on v0.x brownout value will be fixed around 2.52v.
+    }
+    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD_L, threshold);
+    REGI2C_WRITE_MASK(I2C_BOD, I2C_BOD_THRESHOLD_H, threshold);
 }
 
 /**
