@@ -47,7 +47,7 @@ if not exist "%IDF_PATH%\tools\activate.py" (
 )
 
 
-for /f "delims=" %%i in ('python "%IDF_PATH%/tools/activate.py" --export') do set activate=%%i
+for /f "delims=" %%i in ('python "%IDF_PATH%\tools\activate.py" --export') do set activate=%%i
 %activate%
 
 goto :__end
@@ -64,8 +64,8 @@ goto :__end
     goto :__end
 
 :__missing_file
-    echo Could not detect correct IDF_PATH. Please set it before running this script:
-    echo   set IDF_PATH=(add path here)
+    echo Could not detect IDF_PATH. Please navigate to your ESP-IDF directory and run:
+    echo export.bat
     goto :__end
 
 :__end
