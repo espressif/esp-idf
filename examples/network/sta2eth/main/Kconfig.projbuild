@@ -4,7 +4,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_WIFI_CONFIGURATION
         prompt "WiFi configuration"
-        default EXAMPLE_WIFI_CONFIGURATION_MANUAL
+        default EXAMPLE_WIFI_CONFIGURATION_PROVISIONING
         help
             Choose how the WiFi settings should be configured.
 
@@ -85,5 +85,27 @@ menu "Example Configuration"
             The button on this GPIO is used to reset the board to
             the reconfiguration mode, i.e. to restart provisioning
             or manual configuration of Wi-Fi settings (ssid, password)
+
+    if EXAMPLE_WIRED_INTERFACE_IS_ETHERNET
+
+        config EXAMPLE_MODIFY_DHCP_MESSAGES
+            bool "Modify DHCP messages"
+            default y
+            help
+                This is needed if the client uses 61 option and the DHCP server applies strict rules
+                on assigning addresses.
+                Set this to 'n' if you don't need DHCP or you're using simplified DHCP workflow
+                without HW address options in DHCP messages.
+
+        config EXAMPLE_ETHERNET_USE_PROMISCUOUS
+            bool "Enable promiscuous mode on Ethernet interface"
+            default n
+            help
+                Enable promiscuous mode on the Ethernet interface.
+                Note: Enabling promiscuous mode results in better throughput as MAC addresses
+                in frames are not rewritten with the Ethernet interface's actual MAC address.
+                Note: Enabling promiscuous mode may cause ARP conflicts if the PC
+                is also connected to the same network with another NIC.
+    endif
 
 endmenu
