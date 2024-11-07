@@ -43,7 +43,7 @@ BSD Sockets API
 
 The BSD Sockets API is a common cross-platform TCP/IP sockets API that originated in the Berkeley Standard Distribution of UNIX but is now standardized in a section of the POSIX specification. BSD Sockets are sometimes called POSIX Sockets or Berkeley Sockets.
 
-As implemented in ESP-IDF, lwIP supports all of the common usages of the BSD Sockets API.
+As implemented in ESP-IDF, lwIP supports all of the common usages of the BSD Sockets API. However, not all operations are fully thread-safe, and simultaneous reads and writes from multiple threads may require additional synchronization mechanisms, see :ref:`lwip-limitations` for more details.
 
 References
 ^^^^^^^^^^
@@ -461,8 +461,12 @@ This approach may not work for function-like macros, as there is no guarantee th
 
 Alternatively, you can define your function-like macro in a header file which will be pre-included as an lwIP hook file, see :ref:`lwip-custom-hooks`.
 
+.. _lwip-limitations:
+
 Limitations
 ^^^^^^^^^^^
+
+lwIP in ESP-IDF supports thread safety in certain scenarios, but with limitations. It is possible to perform read, write, and close operations from different threads on the same socket simultaneously. However, performing multiple reads or multiple writes from more than one thread on the same socket at the same time is not supported. Applications that require simultaneous reads or writes from multiple threads on the same socket must implement additional synchronization mechanisms, such as locking around socket operations.
 
 ESP-IDF additions to lwIP still suffer from the global DNS limitation, described in :ref:`lwip-dns-limitation`. To address this limitation from application code, the ``FALLBACK_DNS_SERVER_ADDRESS()`` macro can be utilized to define a global DNS fallback server accessible from all interfaces. Alternatively, you have the option to maintain per-interface DNS servers and reconfigure them whenever the default interface changes.
 
