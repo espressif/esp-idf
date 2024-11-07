@@ -129,8 +129,8 @@ typedef union {
 
 
 typedef struct {
-    volatile io_mux_gpion_reg_t gpion[22];
-    uint32_t reserved_058[105];
+    volatile io_mux_gpion_reg_t gpion[25];
+    uint32_t reserved_064[102];
     volatile io_mux_date_reg_t date;
 } io_mux_dev_t;
 

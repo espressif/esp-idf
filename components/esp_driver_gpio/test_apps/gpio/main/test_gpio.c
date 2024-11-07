@@ -83,16 +83,16 @@ TEST_CASE("GPIO_config_parameters_test", "[gpio]")
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
     // test a non-exist pin
-    io_config.pin_bit_mask = ((uint64_t)1 << GPIO_NUM_MAX);
+    io_config.pin_bit_mask = BIT64(GPIO_NUM_MAX);
     TEST_ASSERT(gpio_config(&io_config) == ESP_ERR_INVALID_ARG);
 
     // test an available pin
-    io_config.pin_bit_mask = ((uint64_t)1 << TEST_GPIO_EXT_OUT_IO);
+    io_config.pin_bit_mask = BIT64(TEST_GPIO_EXT_OUT_IO);
     TEST_ESP_OK(gpio_config(&io_config));
 
     //This IO is just used for input, C3 and S3 doesn't have input only pin.
 #if SOC_HAS_INPUT_ONLY_PIN
-    io_config.pin_bit_mask = ((uint64_t)1 << TEST_GPIO_INPUT_ONLY_PIN);
+    io_config.pin_bit_mask = BIT64(TEST_GPIO_INPUT_ONLY_PIN);
     io_config.mode = GPIO_MODE_INPUT;
     TEST_ESP_OK(gpio_config(&io_config));
     io_config.mode = GPIO_MODE_OUTPUT;

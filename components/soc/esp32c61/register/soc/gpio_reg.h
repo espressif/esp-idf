@@ -1844,6 +1844,225 @@ extern "C" {
 #define GPIO_PIN21_INT_ENA_V  0x0000001FU
 #define GPIO_PIN21_INT_ENA_S  13
 
+/** GPIO_PIN22_REG register
+ *  GPIO22 configuration register
+ */
+#define GPIO_PIN22_REG (DR_REG_GPIO_BASE + 0x11c)
+/** GPIO_PIN22_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the second-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN22_SYNC2_BYPASS    0x00000003U
+#define GPIO_PIN22_SYNC2_BYPASS_M  (GPIO_PIN22_SYNC2_BYPASS_V << GPIO_PIN22_SYNC2_BYPASS_S)
+#define GPIO_PIN22_SYNC2_BYPASS_V  0x00000003U
+#define GPIO_PIN22_SYNC2_BYPASS_S  0
+/** GPIO_PIN22_PAD_DRIVER : R/W; bitpos: [2]; default: 0;
+ *  Configures to select pin drive mode. \\
+ *  0: Normal output\\
+ *  1: Open drain output \\
+ */
+#define GPIO_PIN22_PAD_DRIVER    (BIT(2))
+#define GPIO_PIN22_PAD_DRIVER_M  (GPIO_PIN22_PAD_DRIVER_V << GPIO_PIN22_PAD_DRIVER_S)
+#define GPIO_PIN22_PAD_DRIVER_V  0x00000001U
+#define GPIO_PIN22_PAD_DRIVER_S  2
+/** GPIO_PIN22_SYNC1_BYPASS : R/W; bitpos: [4:3]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the first-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN22_SYNC1_BYPASS    0x00000003U
+#define GPIO_PIN22_SYNC1_BYPASS_M  (GPIO_PIN22_SYNC1_BYPASS_V << GPIO_PIN22_SYNC1_BYPASS_S)
+#define GPIO_PIN22_SYNC1_BYPASS_V  0x00000003U
+#define GPIO_PIN22_SYNC1_BYPASS_S  3
+/** GPIO_PIN22_INT_TYPE : R/W; bitpos: [9:7]; default: 0;
+ *  Configures GPIO interrupt type.\\
+ *  0: GPIO interrupt disabled\\
+ *  1: Rising edge trigger\\
+ *  2: Falling edge trigger\\
+ *  3: Any edge trigger\\
+ *  4: Low level trigger\\
+ *  5: High level trigger\\
+ */
+#define GPIO_PIN22_INT_TYPE    0x00000007U
+#define GPIO_PIN22_INT_TYPE_M  (GPIO_PIN22_INT_TYPE_V << GPIO_PIN22_INT_TYPE_S)
+#define GPIO_PIN22_INT_TYPE_V  0x00000007U
+#define GPIO_PIN22_INT_TYPE_S  7
+/** GPIO_PIN22_WAKEUP_ENABLE : R/W; bitpos: [10]; default: 0;
+ *  Configures whether or not to enable GPIO wake-up function.\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  This function only wakes up the CPU from Light-sleep. \\
+ */
+#define GPIO_PIN22_WAKEUP_ENABLE    (BIT(10))
+#define GPIO_PIN22_WAKEUP_ENABLE_M  (GPIO_PIN22_WAKEUP_ENABLE_V << GPIO_PIN22_WAKEUP_ENABLE_S)
+#define GPIO_PIN22_WAKEUP_ENABLE_V  0x00000001U
+#define GPIO_PIN22_WAKEUP_ENABLE_S  10
+/** GPIO_PIN22_INT_ENA : R/W; bitpos: [17:13]; default: 0;
+ *  Configures whether or not to enable CPU interrupt.
+ *
+ *  - bit13: Configures whether or not to enable CPU interrupt:\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  - bit14 ~ bit17: invalid
+ */
+#define GPIO_PIN22_INT_ENA    0x0000001FU
+#define GPIO_PIN22_INT_ENA_M  (GPIO_PIN22_INT_ENA_V << GPIO_PIN22_INT_ENA_S)
+#define GPIO_PIN22_INT_ENA_V  0x0000001FU
+#define GPIO_PIN22_INT_ENA_S  13
+
+/** GPIO_PIN23_REG register
+ *  GPIO23 configuration register
+ */
+#define GPIO_PIN23_REG (DR_REG_GPIO_BASE + 0x120)
+/** GPIO_PIN23_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the second-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN23_SYNC2_BYPASS    0x00000003U
+#define GPIO_PIN23_SYNC2_BYPASS_M  (GPIO_PIN23_SYNC2_BYPASS_V << GPIO_PIN23_SYNC2_BYPASS_S)
+#define GPIO_PIN23_SYNC2_BYPASS_V  0x00000003U
+#define GPIO_PIN23_SYNC2_BYPASS_S  0
+/** GPIO_PIN23_PAD_DRIVER : R/W; bitpos: [2]; default: 0;
+ *  Configures to select pin drive mode. \\
+ *  0: Normal output\\
+ *  1: Open drain output \\
+ */
+#define GPIO_PIN23_PAD_DRIVER    (BIT(2))
+#define GPIO_PIN23_PAD_DRIVER_M  (GPIO_PIN23_PAD_DRIVER_V << GPIO_PIN23_PAD_DRIVER_S)
+#define GPIO_PIN23_PAD_DRIVER_V  0x00000001U
+#define GPIO_PIN23_PAD_DRIVER_S  2
+/** GPIO_PIN23_SYNC1_BYPASS : R/W; bitpos: [4:3]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the first-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN23_SYNC1_BYPASS    0x00000003U
+#define GPIO_PIN23_SYNC1_BYPASS_M  (GPIO_PIN23_SYNC1_BYPASS_V << GPIO_PIN23_SYNC1_BYPASS_S)
+#define GPIO_PIN23_SYNC1_BYPASS_V  0x00000003U
+#define GPIO_PIN23_SYNC1_BYPASS_S  3
+/** GPIO_PIN23_INT_TYPE : R/W; bitpos: [9:7]; default: 0;
+ *  Configures GPIO interrupt type.\\
+ *  0: GPIO interrupt disabled\\
+ *  1: Rising edge trigger\\
+ *  2: Falling edge trigger\\
+ *  3: Any edge trigger\\
+ *  4: Low level trigger\\
+ *  5: High level trigger\\
+ */
+#define GPIO_PIN23_INT_TYPE    0x00000007U
+#define GPIO_PIN23_INT_TYPE_M  (GPIO_PIN23_INT_TYPE_V << GPIO_PIN23_INT_TYPE_S)
+#define GPIO_PIN23_INT_TYPE_V  0x00000007U
+#define GPIO_PIN23_INT_TYPE_S  7
+/** GPIO_PIN23_WAKEUP_ENABLE : R/W; bitpos: [10]; default: 0;
+ *  Configures whether or not to enable GPIO wake-up function.\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  This function only wakes up the CPU from Light-sleep. \\
+ */
+#define GPIO_PIN23_WAKEUP_ENABLE    (BIT(10))
+#define GPIO_PIN23_WAKEUP_ENABLE_M  (GPIO_PIN23_WAKEUP_ENABLE_V << GPIO_PIN23_WAKEUP_ENABLE_S)
+#define GPIO_PIN23_WAKEUP_ENABLE_V  0x00000001U
+#define GPIO_PIN23_WAKEUP_ENABLE_S  10
+/** GPIO_PIN23_INT_ENA : R/W; bitpos: [17:13]; default: 0;
+ *  Configures whether or not to enable CPU interrupt.
+ *
+ *  - bit13: Configures whether or not to enable CPU interrupt:\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  - bit14 ~ bit17: invalid
+ */
+#define GPIO_PIN23_INT_ENA    0x0000001FU
+#define GPIO_PIN23_INT_ENA_M  (GPIO_PIN23_INT_ENA_V << GPIO_PIN23_INT_ENA_S)
+#define GPIO_PIN23_INT_ENA_V  0x0000001FU
+#define GPIO_PIN23_INT_ENA_S  13
+
+/** GPIO_PIN24_REG register
+ *  GPIO24 configuration register
+ */
+#define GPIO_PIN24_REG (DR_REG_GPIO_BASE + 0x124)
+/** GPIO_PIN24_SYNC2_BYPASS : R/W; bitpos: [1:0]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the second-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN24_SYNC2_BYPASS    0x00000003U
+#define GPIO_PIN24_SYNC2_BYPASS_M  (GPIO_PIN24_SYNC2_BYPASS_V << GPIO_PIN24_SYNC2_BYPASS_S)
+#define GPIO_PIN24_SYNC2_BYPASS_V  0x00000003U
+#define GPIO_PIN24_SYNC2_BYPASS_S  0
+/** GPIO_PIN24_PAD_DRIVER : R/W; bitpos: [2]; default: 0;
+ *  Configures to select pin drive mode. \\
+ *  0: Normal output\\
+ *  1: Open drain output \\
+ */
+#define GPIO_PIN24_PAD_DRIVER    (BIT(2))
+#define GPIO_PIN24_PAD_DRIVER_M  (GPIO_PIN24_PAD_DRIVER_V << GPIO_PIN24_PAD_DRIVER_S)
+#define GPIO_PIN24_PAD_DRIVER_V  0x00000001U
+#define GPIO_PIN24_PAD_DRIVER_S  2
+/** GPIO_PIN24_SYNC1_BYPASS : R/W; bitpos: [4:3]; default: 0;
+ *  Configures whether or not to synchronize GPIO input data on either edge of IO MUX
+ *  operating clock for the first-level synchronization.\\
+ *  0: Not synchronize\\
+ *  1: Synchronize on falling edge\\
+ *  2: Synchronize on rising edge\\
+ *  3: Synchronize on rising edge\\
+ */
+#define GPIO_PIN24_SYNC1_BYPASS    0x00000003U
+#define GPIO_PIN24_SYNC1_BYPASS_M  (GPIO_PIN24_SYNC1_BYPASS_V << GPIO_PIN24_SYNC1_BYPASS_S)
+#define GPIO_PIN24_SYNC1_BYPASS_V  0x00000003U
+#define GPIO_PIN24_SYNC1_BYPASS_S  3
+/** GPIO_PIN24_INT_TYPE : R/W; bitpos: [9:7]; default: 0;
+ *  Configures GPIO interrupt type.\\
+ *  0: GPIO interrupt disabled\\
+ *  1: Rising edge trigger\\
+ *  2: Falling edge trigger\\
+ *  3: Any edge trigger\\
+ *  4: Low level trigger\\
+ *  5: High level trigger\\
+ */
+#define GPIO_PIN24_INT_TYPE    0x00000007U
+#define GPIO_PIN24_INT_TYPE_M  (GPIO_PIN24_INT_TYPE_V << GPIO_PIN24_INT_TYPE_S)
+#define GPIO_PIN24_INT_TYPE_V  0x00000007U
+#define GPIO_PIN24_INT_TYPE_S  7
+/** GPIO_PIN24_WAKEUP_ENABLE : R/W; bitpos: [10]; default: 0;
+ *  Configures whether or not to enable GPIO wake-up function.\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  This function only wakes up the CPU from Light-sleep. \\
+ */
+#define GPIO_PIN24_WAKEUP_ENABLE    (BIT(10))
+#define GPIO_PIN24_WAKEUP_ENABLE_M  (GPIO_PIN24_WAKEUP_ENABLE_V << GPIO_PIN24_WAKEUP_ENABLE_S)
+#define GPIO_PIN24_WAKEUP_ENABLE_V  0x00000001U
+#define GPIO_PIN24_WAKEUP_ENABLE_S  10
+/** GPIO_PIN24_INT_ENA : R/W; bitpos: [17:13]; default: 0;
+ *  Configures whether or not to enable CPU interrupt.
+ *
+ *  - bit13: Configures whether or not to enable CPU interrupt:\\
+ *  0: Disable\\
+ *  1: Enable\\
+ *  - bit14 ~ bit17: invalid
+ */
+#define GPIO_PIN24_INT_ENA    0x0000001FU
+#define GPIO_PIN24_INT_ENA_M  (GPIO_PIN24_INT_ENA_V << GPIO_PIN24_INT_ENA_S)
+#define GPIO_PIN24_INT_ENA_V  0x0000001FU
+#define GPIO_PIN24_INT_ENA_S  13
+
 /** GPIO_FUNC0_IN_SEL_CFG_REG register
  *  Configuration register for input signal 0
  */
@@ -4781,6 +5000,162 @@ extern "C" {
 #define GPIO_FUNC21_OE_INV_SEL_M  (GPIO_FUNC21_OE_INV_SEL_V << GPIO_FUNC21_OE_INV_SEL_S)
 #define GPIO_FUNC21_OE_INV_SEL_V  0x00000001U
 #define GPIO_FUNC21_OE_INV_SEL_S  11
+
+/** GPIO_FUNC22_OUT_SEL_CFG_REG register
+ *  Configuration register for GPIO22 output
+ */
+#define GPIO_FUNC22_OUT_SEL_CFG_REG (DR_REG_GPIO_BASE + 0xb1c)
+/** GPIO_FUNC22_OUT_SEL : R/W/SC; bitpos: [8:0]; default: 256;
+ *  Configures to select a signal $Y (0 <= $Y < 256) from 256 peripheral signals to be
+ *  output from GPIO22.\\
+ *  0: Select signal 0\\
+ *  1: Select signal 1\\
+ *  ......\\
+ *  254: Select signal 254\\
+ *  255: Select signal 255\\
+ *  Or\\
+ *  256: Bit 22 of GPIO_OUT_REG and GPIO_ENABLE_REG are selected as the output value
+ *  and output enable.
+ *
+ *  For the detailed signal list, see Table <a
+ *  href=tab:iomuxgpio-periph-signals-via-gpio-matrix">link</a>.
+ *  "
+ */
+#define GPIO_FUNC22_OUT_SEL    0x000001FFU
+#define GPIO_FUNC22_OUT_SEL_M  (GPIO_FUNC22_OUT_SEL_V << GPIO_FUNC22_OUT_SEL_S)
+#define GPIO_FUNC22_OUT_SEL_V  0x000001FFU
+#define GPIO_FUNC22_OUT_SEL_S  0
+/** GPIO_FUNC22_OUT_INV_SEL : R/W/SC; bitpos: [9]; default: 0;
+ *  Configures whether or not to invert the output value.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC22_OUT_INV_SEL    (BIT(9))
+#define GPIO_FUNC22_OUT_INV_SEL_M  (GPIO_FUNC22_OUT_INV_SEL_V << GPIO_FUNC22_OUT_INV_SEL_S)
+#define GPIO_FUNC22_OUT_INV_SEL_V  0x00000001U
+#define GPIO_FUNC22_OUT_INV_SEL_S  9
+/** GPIO_FUNC22_OE_SEL : R/W; bitpos: [10]; default: 0;
+ *  Configures to select the source of output enable signal.\\
+ *  0: Use output enable signal from peripheral.\\
+ *  1: Force the output enable signal to be sourced from bit 22 of GPIO_ENABLE_REG. \\
+ */
+#define GPIO_FUNC22_OE_SEL    (BIT(10))
+#define GPIO_FUNC22_OE_SEL_M  (GPIO_FUNC22_OE_SEL_V << GPIO_FUNC22_OE_SEL_S)
+#define GPIO_FUNC22_OE_SEL_V  0x00000001U
+#define GPIO_FUNC22_OE_SEL_S  10
+/** GPIO_FUNC22_OE_INV_SEL : R/W; bitpos: [11]; default: 0;
+ *  Configures whether or not to invert the output enable signal.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC22_OE_INV_SEL    (BIT(11))
+#define GPIO_FUNC22_OE_INV_SEL_M  (GPIO_FUNC22_OE_INV_SEL_V << GPIO_FUNC22_OE_INV_SEL_S)
+#define GPIO_FUNC22_OE_INV_SEL_V  0x00000001U
+#define GPIO_FUNC22_OE_INV_SEL_S  11
+
+/** GPIO_FUNC23_OUT_SEL_CFG_REG register
+ *  Configuration register for GPIO23 output
+ */
+#define GPIO_FUNC23_OUT_SEL_CFG_REG (DR_REG_GPIO_BASE + 0xb20)
+/** GPIO_FUNC23_OUT_SEL : R/W/SC; bitpos: [8:0]; default: 256;
+ *  Configures to select a signal $Y (0 <= $Y < 256) from 256 peripheral signals to be
+ *  output from GPIO23.\\
+ *  0: Select signal 0\\
+ *  1: Select signal 1\\
+ *  ......\\
+ *  254: Select signal 254\\
+ *  255: Select signal 255\\
+ *  Or\\
+ *  256: Bit 23 of GPIO_OUT_REG and GPIO_ENABLE_REG are selected as the output value
+ *  and output enable.
+ *
+ *  For the detailed signal list, see Table <a
+ *  href=tab:iomuxgpio-periph-signals-via-gpio-matrix">link</a>.
+ *  "
+ */
+#define GPIO_FUNC23_OUT_SEL    0x000001FFU
+#define GPIO_FUNC23_OUT_SEL_M  (GPIO_FUNC23_OUT_SEL_V << GPIO_FUNC23_OUT_SEL_S)
+#define GPIO_FUNC23_OUT_SEL_V  0x000001FFU
+#define GPIO_FUNC23_OUT_SEL_S  0
+/** GPIO_FUNC23_OUT_INV_SEL : R/W/SC; bitpos: [9]; default: 0;
+ *  Configures whether or not to invert the output value.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC23_OUT_INV_SEL    (BIT(9))
+#define GPIO_FUNC23_OUT_INV_SEL_M  (GPIO_FUNC23_OUT_INV_SEL_V << GPIO_FUNC23_OUT_INV_SEL_S)
+#define GPIO_FUNC23_OUT_INV_SEL_V  0x00000001U
+#define GPIO_FUNC23_OUT_INV_SEL_S  9
+/** GPIO_FUNC23_OE_SEL : R/W; bitpos: [10]; default: 0;
+ *  Configures to select the source of output enable signal.\\
+ *  0: Use output enable signal from peripheral.\\
+ *  1: Force the output enable signal to be sourced from bit 23 of GPIO_ENABLE_REG. \\
+ */
+#define GPIO_FUNC23_OE_SEL    (BIT(10))
+#define GPIO_FUNC23_OE_SEL_M  (GPIO_FUNC23_OE_SEL_V << GPIO_FUNC23_OE_SEL_S)
+#define GPIO_FUNC23_OE_SEL_V  0x00000001U
+#define GPIO_FUNC23_OE_SEL_S  10
+/** GPIO_FUNC23_OE_INV_SEL : R/W; bitpos: [11]; default: 0;
+ *  Configures whether or not to invert the output enable signal.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC23_OE_INV_SEL    (BIT(11))
+#define GPIO_FUNC23_OE_INV_SEL_M  (GPIO_FUNC23_OE_INV_SEL_V << GPIO_FUNC23_OE_INV_SEL_S)
+#define GPIO_FUNC23_OE_INV_SEL_V  0x00000001U
+#define GPIO_FUNC23_OE_INV_SEL_S  11
+
+/** GPIO_FUNC24_OUT_SEL_CFG_REG register
+ *  Configuration register for GPIO24 output
+ */
+#define GPIO_FUNC24_OUT_SEL_CFG_REG (DR_REG_GPIO_BASE + 0xb24)
+/** GPIO_FUNC24_OUT_SEL : R/W/SC; bitpos: [8:0]; default: 256;
+ *  Configures to select a signal $Y (0 <= $Y < 256) from 256 peripheral signals to be
+ *  output from GPIO24.\\
+ *  0: Select signal 0\\
+ *  1: Select signal 1\\
+ *  ......\\
+ *  254: Select signal 254\\
+ *  255: Select signal 255\\
+ *  Or\\
+ *  256: Bit 24 of GPIO_OUT_REG and GPIO_ENABLE_REG are selected as the output value
+ *  and output enable.
+ *
+ *  For the detailed signal list, see Table <a
+ *  href=tab:iomuxgpio-periph-signals-via-gpio-matrix">link</a>.
+ *  "
+ */
+#define GPIO_FUNC24_OUT_SEL    0x000001FFU
+#define GPIO_FUNC24_OUT_SEL_M  (GPIO_FUNC24_OUT_SEL_V << GPIO_FUNC24_OUT_SEL_S)
+#define GPIO_FUNC24_OUT_SEL_V  0x000001FFU
+#define GPIO_FUNC24_OUT_SEL_S  0
+/** GPIO_FUNC24_OUT_INV_SEL : R/W/SC; bitpos: [9]; default: 0;
+ *  Configures whether or not to invert the output value.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC24_OUT_INV_SEL    (BIT(9))
+#define GPIO_FUNC24_OUT_INV_SEL_M  (GPIO_FUNC24_OUT_INV_SEL_V << GPIO_FUNC24_OUT_INV_SEL_S)
+#define GPIO_FUNC24_OUT_INV_SEL_V  0x00000001U
+#define GPIO_FUNC24_OUT_INV_SEL_S  9
+/** GPIO_FUNC24_OE_SEL : R/W; bitpos: [10]; default: 0;
+ *  Configures to select the source of output enable signal.\\
+ *  0: Use output enable signal from peripheral.\\
+ *  1: Force the output enable signal to be sourced from bit 24 of GPIO_ENABLE_REG. \\
+ */
+#define GPIO_FUNC24_OE_SEL    (BIT(10))
+#define GPIO_FUNC24_OE_SEL_M  (GPIO_FUNC24_OE_SEL_V << GPIO_FUNC24_OE_SEL_S)
+#define GPIO_FUNC24_OE_SEL_V  0x00000001U
+#define GPIO_FUNC24_OE_SEL_S  10
+/** GPIO_FUNC24_OE_INV_SEL : R/W; bitpos: [11]; default: 0;
+ *  Configures whether or not to invert the output enable signal.\\
+ *  0: Not invert\\
+ *  1: Invert\\
+ */
+#define GPIO_FUNC24_OE_INV_SEL    (BIT(11))
+#define GPIO_FUNC24_OE_INV_SEL_M  (GPIO_FUNC24_OE_INV_SEL_V << GPIO_FUNC24_OE_INV_SEL_S)
+#define GPIO_FUNC24_OE_INV_SEL_V  0x00000001U
+#define GPIO_FUNC24_OE_INV_SEL_S  11
 
 /** GPIO_CLOCK_GATE_REG register
  *  GPIO clock gate register
