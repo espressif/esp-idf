@@ -192,7 +192,6 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
     :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
-    :SOC_DEBUG_HAVE_OCD_STUB_BINS: - Disabling :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` frees 8 KB IRAM but overall speed of debugging might be impacted due to the added overhead of runtime stub loading especially when using flash breakpoints.
 
 .. only:: esp32
 

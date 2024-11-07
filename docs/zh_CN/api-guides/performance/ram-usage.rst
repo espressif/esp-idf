@@ -192,7 +192,6 @@ IRAM 优化
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
     :SOC_GPSPI_SUPPORTED: - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
     :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
-    :SOC_DEBUG_HAVE_OCD_STUB_BINS: - 禁用 :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` 选项可以释放 8 KB 的 IRAM, 但由于运行时加载存根的额外开销，特别是在使用 flash 断点时，可能会影响调试的整体速度。
 
 .. only:: esp32
 

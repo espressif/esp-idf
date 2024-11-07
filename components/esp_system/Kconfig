@@ -537,7 +537,7 @@ menu "ESP System Settings"
 
     config ESP_DEBUG_INCLUDE_OCD_STUB_BINS
         bool "Preload OpenOCD stub binaries to speed up debugging. 8K memory will be reserved"
-        default y
+        default n
         depends on SOC_DEBUG_HAVE_OCD_STUB_BINS
         help
             OpenOCD uses stub code to access flash during programming or when inserting and removing
