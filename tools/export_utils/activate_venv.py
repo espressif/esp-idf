@@ -13,6 +13,7 @@ from console_output import die
 from console_output import eprint
 from console_output import oprint
 from console_output import status_message
+from console_output import warn
 from shell_types import SHELL_CLASSES
 from shell_types import SUPPORTED_SHELLS
 from utils import conf
@@ -161,7 +162,11 @@ def main() -> None:
         sys.exit()
 
     eprint(f'[dark_orange]Activating ESP-IDF {conf.IDF_VERSION}')
-    debug(f'IDF_PATH {conf.IDF_PATH}')
+    if conf.IDF_PATH_OLD and conf.IDF_PATH != conf.IDF_PATH_OLD:
+        warn(f"IDF_PATH is changed from '{conf.IDF_PATH_OLD}' to '{conf.IDF_PATH}'.")
+    else:
+        eprint(f"Setting IDF_PATH to '{conf.IDF_PATH}'.")
+
     debug(f'IDF_PYTHON_ENV_PATH {conf.IDF_PYTHON_ENV_PATH}')
 
     check_python_version()
