@@ -790,30 +790,27 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
         i2c_common_deinit_pins(i2c_master->base);
 
         if (i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
-            if (i2c_master) {
-                if (i2c_master->bus_lock_mux) {
-                    vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
-                    i2c_master->bus_lock_mux = NULL;
-                }
-                if (i2c_master->cmd_semphr) {
-                    vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
-                    i2c_master->cmd_semphr = NULL;
-                }
-                if (i2c_master->event_queue) {
-                    vQueueDeleteWithCaps(i2c_master->event_queue);
-                }
-                if (i2c_master->queues_storage) {
-                    free(i2c_master->queues_storage);
-                }
-                free(i2c_master->i2c_async_ops);
-                for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
-                    if (i2c_master->trans_queues[i]) {
-                        vQueueDelete(i2c_master->trans_queues[i]);
-                    }
-                }
-                bus_handle = NULL;
+            if (i2c_master->bus_lock_mux) {
+                vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
+                i2c_master->bus_lock_mux = NULL;
             }
-
+            if (i2c_master->cmd_semphr) {
+                vSemaphoreDeleteWithCaps(i2c_master->cmd_semphr);
+                i2c_master->cmd_semphr = NULL;
+            }
+            if (i2c_master->event_queue) {
+                vQueueDeleteWithCaps(i2c_master->event_queue);
+            }
+            if (i2c_master->queues_storage) {
+                free(i2c_master->queues_storage);
+            }
+            free(i2c_master->i2c_async_ops);
+            for (int i = 0; i < I2C_TRANS_QUEUE_MAX; i++) {
+                if (i2c_master->trans_queues[i]) {
+                    vQueueDelete(i2c_master->trans_queues[i]);
+                }
+            }
+            bus_handle = NULL;
             free(i2c_master);
         } else {
             free(i2c_master);
