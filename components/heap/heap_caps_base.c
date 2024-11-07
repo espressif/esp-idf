@@ -38,14 +38,19 @@ HEAP_IRAM_ATTR static void *dram_alloc_to_iram_addr(void *addr, size_t len)
 {
     uintptr_t dstart = (uintptr_t)addr; //First word
     uintptr_t dend __attribute__((unused)) = dstart + len - 4; //Last word
-    assert(esp_ptr_in_diram_dram((void *)dstart));
-    assert(esp_ptr_in_diram_dram((void *)dend));
+    assert(esp_ptr_in_diram_dram((void *)dstart) || esp_ptr_in_rtc_dram_fast((void *)dstart));
+    assert(esp_ptr_in_diram_dram((void *)dend) || esp_ptr_in_rtc_dram_fast((void *)dend));
     assert((dstart & 3) == 0);
     assert((dend & 3) == 0);
 #if SOC_DIRAM_INVERTED // We want the word before the result to hold the DRAM address
     uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dend);
 #else
-    uint32_t *iptr = esp_ptr_diram_dram_to_iram((void *)dstart);
+    uint32_t *iptr = NULL;
+    if (esp_ptr_in_rtc_dram_fast((void *)dstart)) {
+        iptr = esp_ptr_rtc_dram_to_iram((void *)dstart);
+    } else {
+        iptr = esp_ptr_diram_dram_to_iram((void *)dstart);
+    }
 #endif
     *iptr = dstart;
     return iptr + 1;
@@ -57,7 +62,7 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
         return;
     }
 
-    if (esp_ptr_in_diram_iram(ptr)) {
+    if (esp_ptr_in_diram_iram(ptr) || esp_ptr_in_rtc_iram_fast(ptr)) {
         //Memory allocated here is actually allocated in the DRAM alias region and
         //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
         //the equivalent DRAM address, though; free that.
@@ -132,7 +137,8 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     // If MALLOC_CAP_EXEC is requested but the DRAM and IRAM are on the same addresses (like on esp32c6)
                     // proceed as for a default allocation.
-                    if ((caps & MALLOC_CAP_EXEC) && !esp_dram_match_iram() && esp_ptr_in_diram_dram((void *)heap->start)) {
+                    if (((caps & MALLOC_CAP_EXEC) && !esp_dram_match_iram()) &&
+                        (esp_ptr_in_diram_dram((void *)heap->start) || esp_ptr_in_rtc_dram_fast((void *)heap->start))) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
