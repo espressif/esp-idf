@@ -700,7 +700,15 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
         default 64
         help
             Set this option to set the upper limit on number of descriptors per connection to be cached.
+    config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
+        bool "Do not start discovery procedure automatically upon receiving Out of Sync"
+        depends on BT_NIMBLE_GATT_CACHING
+        default n
+        help
+            When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
+            to correct the invalid cache.
 endif
+
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
