@@ -1368,6 +1368,7 @@ PROVIDE ( esp_rom_spiflash_config_clk = 0x40062bc8 );
 PROVIDE ( g_rom_spiflash_chip = 0x3ffae270 );
 PROVIDE ( SPI_write_enable = 0x40062320 );
 PROVIDE ( hci_le_rd_rem_used_feats_cmd_handler = 0x400417b4 );
+PROVIDE ( hci_per_inq_mode_cmd_handler = 0x400519b0 );
 PROVIDE ( llcp_length_req_handler = 0x40043808 );
 PROVIDE ( llcp_unknown_rsp_handler = 0x40043ba8 );
 PROVIDE ( llcp_channel_map_req_handler = 0x4004291c );
