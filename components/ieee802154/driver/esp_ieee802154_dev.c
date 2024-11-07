@@ -161,7 +161,7 @@ uint8_t ieee802154_get_recent_lqi(void)
     return s_rx_frame_info[s_recent_rx_frame_info_index].lqi;
 }
 
-IEEE802154_STATIC void set_next_rx_buffer(void)
+IEEE802154_STATIC IEEE802154_NOINLINE void set_next_rx_buffer(void)
 {
     uint8_t* next_rx_buffer = NULL;
     uint8_t index = 0;
@@ -194,7 +194,7 @@ IEEE802154_STATIC void set_next_rx_buffer(void)
     ieee802154_ll_set_rx_addr(next_rx_buffer);
 }
 
-static bool stop_rx(void)
+IEEE802154_NOINLINE static bool stop_rx(void)
 {
     ieee802154_ll_events events;
 
@@ -210,7 +210,7 @@ static bool stop_rx(void)
     return true;
 }
 
-static bool stop_tx_ack(void)
+IEEE802154_NOINLINE static bool stop_tx_ack(void)
 {
     ieee802154_set_cmd(IEEE802154_CMD_STOP);
 
@@ -221,7 +221,7 @@ static bool stop_tx_ack(void)
     return true;
 }
 
-static bool stop_tx(void)
+IEEE802154_NOINLINE static bool stop_tx(void)
 {
     ieee802154_ll_events events;
 
@@ -245,21 +245,21 @@ static bool stop_tx(void)
     return true;
 }
 
-static bool stop_cca(void)
+IEEE802154_NOINLINE static bool stop_cca(void)
 {
     ieee802154_set_cmd(IEEE802154_CMD_STOP);
     ieee802154_ll_clear_events(IEEE802154_EVENT_ED_DONE | IEEE802154_EVENT_RX_ABORT);
     return true;
 }
 
-static bool stop_tx_cca(void)
+IEEE802154_NOINLINE static bool stop_tx_cca(void)
 {
     stop_tx(); // in case the transmission already started
     ieee802154_ll_clear_events(IEEE802154_EVENT_TX_ABORT);
     return true;
 }
 
-static bool stop_rx_ack(void)
+IEEE802154_NOINLINE static bool stop_rx_ack(void)
 {
     ieee802154_ll_events events;
 
@@ -281,7 +281,7 @@ static bool stop_rx_ack(void)
     return true;
 }
 
-static bool stop_ed(void)
+IEEE802154_NOINLINE static bool stop_ed(void)
 {
     ieee802154_set_cmd(IEEE802154_CMD_STOP);
 
@@ -290,7 +290,7 @@ static bool stop_ed(void)
     return true;
 }
 
-IEEE802154_STATIC bool stop_current_operation(void)
+IEEE802154_NOINLINE IEEE802154_STATIC bool stop_current_operation(void)
 {
     event_end_process();
     switch (s_ieee802154_state) {
@@ -629,7 +629,7 @@ IEEE802154_STATIC IRAM_ATTR void ieee802154_exit_critical(void)
     portEXIT_CRITICAL(&s_ieee802154_spinlock);
 }
 
-static void ieee802154_isr(void *arg)
+IEEE802154_NOINLINE static void ieee802154_isr(void *arg)
 {
     ieee802154_enter_critical();
     ieee802154_ll_events events = ieee802154_ll_get_events();
@@ -878,7 +878,7 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
     return ieee802154_transmit_internal(frame, cca);
 }
 
-static inline bool is_target_time_expired(uint32_t target, uint32_t now)
+IEEE802154_NOINLINE static bool is_target_time_expired(uint32_t target, uint32_t now)
 {
     return (((now - target) & (1 << 31)) == 0);
 }
