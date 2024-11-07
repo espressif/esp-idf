@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,7 +49,11 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Up");
-        esp_netif_dhcps_start(netif);
+        if (netif) {
+            // Start DHCP server only if we "have" the actual netif (provisioning mode)
+            // (if netif==NULL we are only forwarding frames, no lwip involved)
+            esp_netif_dhcps_start(netif);
+        }
         esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
@@ -57,7 +61,9 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
-        esp_netif_dhcps_stop(netif);
+        if (netif) {
+            esp_netif_dhcps_stop(netif);
+        }
         s_ethernet_is_connected = false;
         break;
     case ETHERNET_EVENT_START:
