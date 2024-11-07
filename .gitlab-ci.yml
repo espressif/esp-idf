@@ -54,7 +54,6 @@ variables:
   BATCH_BUILD: "1"
   V: "0"
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
-  PYTHON_VER: 3.7.10
 
   # Docker images
   BOT_DOCKER_IMAGE_TAG: ":latest"
