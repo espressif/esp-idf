@@ -34,31 +34,34 @@ Build the project, flash it to the board, and start the monitor tool to view the
 As you run the example, you will see the following log:
 
 ```
-I (388) main_task: Calling app_main()
-I (398) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2
-I (398) phy_init: phy_version 220,2dbbbe7,Sep 25 2023,20:39:25
-I (478) phy: libbtbb version: 90c587c, Sep 25 2023, 20:39:57
-I (488) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL
-I (488) ESP_ZB_ON_OFF_SWITCH: Zigbee stack initialized
-I (488) ESP_ZB_ON_OFF_SWITCH: Start network formation
-I (498) main_task: Returned from app_main()
-I (998) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
-I (998) ESP_ZB_ON_OFF_SWITCH: Formed network successfully (Extended PAN ID: 60:55:f9:00:00:f6:07:b4, PAN ID: 0x2a74, Channel:13)
-I (1468) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
-I (1468) ESP_ZB_ON_OFF_SWITCH: Network steering started
-I (14228) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Device Associated (0x12), status: ESP_OK
-I (14728) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Update (0x30), status: ESP_OK
-I (14788) ESP_ZB_ON_OFF_SWITCH: New device commissioned or rejoined (short: 0xe399)
-I (14858) ESP_ZB_ON_OFF_SWITCH: Found light
-I (14858) ESP_ZB_ON_OFF_SWITCH: Try to bind On/Off
-I (14858) ESP_ZB_ON_OFF_SWITCH: Bound successfully!
-I (14858) ESP_ZB_ON_OFF_SWITCH: The light originating from address(0xe399) on endpoint(10)
-I (15338) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Authorized (0x2f), status: ESP_OK
-I (15408) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Permit Join (0x36), status: ESP_OK
-I (35838) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NLME Status Indication (0x32), status: ESP_OK
-I (38548) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
-I (39598) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
-I (41148) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
+I (441) main_task: Started on CPU0                                                                                                                                                                                                                                                        
+I (441) main_task: Calling app_main()                                                                                                        
+I (461) phy: phy_version: 230,2, 9aae6ea, Jan 15 2024, 11:17:12       
+I (461) phy: libbtbb version: 944f18e, Jan 15 2024, 11:17:25                                                                                 
+I (471) main_task: Returned from app_main()                                                                                                  
+I (601) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Config Ready (0x17), status: ESP_FAIL                                                          
+I (601) ESP_ZB_ON_OFF_SWITCH: Initialize Zigbee stack                                                                                        
+I (611) gpio: GPIO[9]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:2                                                 
+I (611) ESP_ZB_ON_OFF_SWITCH: Deferred driver initialization successful                                                                      
+I (621) ESP_ZB_ON_OFF_SWITCH: Device started up in  factory-reset mode                                                                       
+I (621) ESP_ZB_ON_OFF_SWITCH: Start network formation                                                                                        
+W (781) ESP_ZB_ON_OFF_SWITCH: Network(0x13af) closed, devices joining not allowed.                                                           
+I (781) ESP_ZB_ON_OFF_SWITCH: Formed network successfully (Extended PAN ID: 74:4d:bd:ff:fe:63:f7:30, PAN ID: 0x13af, Channel:13, Short Address: 0x0000)
+I (1391) ESP_ZB_ON_OFF_SWITCH: Network(0x13af) is open for 180 seconds                                                                       
+I (1391) ESP_ZB_ON_OFF_SWITCH: Network steering started                                                                                      
+I (9561) ESP_ZB_ON_OFF_SWITCH: ZDO signal: NWK Device Associated (0x12), status: ESP_OK                                                      
+I (9561) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Update (0x30), status: ESP_OK                                                          
+I (9601) ESP_ZB_ON_OFF_SWITCH: New device commissioned or rejoined (short: 0x7c16)                                                           
+I (9671) ESP_ZB_ON_OFF_SWITCH: Found light                            
+I (9671) ESP_ZB_ON_OFF_SWITCH: Try to bind On/Off                                                                                            
+I (9681) ESP_ZB_ON_OFF_SWITCH: Bound successfully!                                                                                           
+I (9681) ESP_ZB_ON_OFF_SWITCH: The light originating from address(0x7c16) on endpoint(10)                                                    
+I (9751) ESP_ZB_ON_OFF_SWITCH: ZDO signal: ZDO Device Authorized (0x2f), status: ESP_OK                                                      
+I (9781) ESP_ZB_ON_OFF_SWITCH: Network(0x13af) is open for 180 seconds                                                                       
+I (16451) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command                                                                                 
+I (17011) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command                                                                                 
+I (17441) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command                                                                                 
+I (17831) ESP_ZB_ON_OFF_SWITCH: Send 'on_off toggle' command
 ```
 
 ## Light Control Functions

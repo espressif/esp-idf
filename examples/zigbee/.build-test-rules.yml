@@ -1,29 +1,22 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 .zigbee_dependencies: &zigbee_dependencies
+  depends_components:
+    - ieee802154
   depends_filepatterns:
-    - components/ieee802154/**/*
     - examples/zigbee/light_sample/**/*
 
 examples/zigbee/esp_zigbee_gateway:
-  disable:
-    - if: IDF_TARGET in ["esp32c2", "esp32h2", "esp32p4"]
-      temporary: true
-      reason: target(s) not supported yet
-  <<: *zigbee_dependencies
-
-examples/zigbee/esp_zigbee_rcp:
   enable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
-      reason: should able to run on esp32h2 and esp32c6
+    - if: SOC_WIFI_SUPPORTED == 1 and IDF_TARGET not in ["esp32c2", "esp32c61"]
+      reason: not supported esp32c2 and esp32c61
   <<: *zigbee_dependencies
 
 examples/zigbee/light_sample:
   enable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
-      reason: should able to run on esp32h2 and esp32c6
+    - if: SOC_IEEE802154_SUPPORTED == 1
   disable_test:
-    - if: IDF_TARGET == "esp32c6"
+    - if: IDF_TARGET != "esp32h2"
       temporary: true
       reason: only test on esp32h2
   <<: *zigbee_dependencies
