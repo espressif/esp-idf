@@ -204,16 +204,6 @@
 #endif
 
 /**
- * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
- *
- * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
- *
- */
-#ifndef OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
-#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 0
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
  *
  * Define to 1 to enable Backbone Router support.
@@ -224,6 +214,28 @@
 #endif
 
 #endif // CONFIG_OPENTHREAD_BORDER_ROUTER
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+ *
+ * Set to 1 to enable support for Thread Radio Encapsulation Link (TREL).
+ *
+ */
+#if CONFIG_OPENTHREAD_RADIO_TREL
+#define OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE 1
+#endif // CONFIG_OPENTHREAD_RADIO_TREL
+
+/**
+ * @def OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE
+ *
+ * Set to 1 to enable support for IEEE802.15.4 radio link.
+ *
+ */
+#if !CONFIG_OPENTHREAD_RADIO_154_NONE
+#define OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE 1
+#else
+#define OPENTHREAD_CONFIG_RADIO_LINK_IEEE_802_15_4_ENABLE 0
+#endif
 
 #if !CONFIG_OPENTHREAD_RADIO_NATIVE
 /**

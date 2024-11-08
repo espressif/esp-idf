@@ -309,7 +309,7 @@ uint8_t IEEE802154_INLINE ieee802154_frame_get_version(const uint8_t *frame)
 
 bool IEEE802154_INLINE ieee802154_frame_is_ack_required(const uint8_t *frame)
 {
-    return frame[IEEE802154_FRAME_AR_OFFSET] & IEEE802154_FRAME_AR_BIT;
+    return (is_suported_frame_type(ieee802154_frame_get_type(frame))) && (frame[IEEE802154_FRAME_AR_OFFSET] & IEEE802154_FRAME_AR_BIT);
 }
 
 uint8_t ieee802154_frame_get_dst_addr(const uint8_t *frame, uint8_t *addr)

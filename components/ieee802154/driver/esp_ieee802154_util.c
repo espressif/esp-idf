@@ -21,7 +21,7 @@ uint8_t ieee802154_channel_to_freq(uint8_t channel)
     return (channel - 11) * 5 + 3;
 }
 
-#if !CONFIG_IEEE802154_TEST && CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 void ieee802154_set_txrx_pti(ieee802154_txrx_scene_t txrx_scene)
 {
 
