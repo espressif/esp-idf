@@ -66,7 +66,6 @@ typedef struct {
     uint32_t flow_control_high_water_mark;
     uint32_t flow_control_low_water_mark;
     uint8_t addr[ETH_ADDR_LEN];
-    bool isr_need_yield;
     bool flow_ctrl_enabled; // indicates whether the user want to do flow control
     bool do_flow_ctrl;  // indicates whether we need to do software flow control
     bool use_pll;  // Only use (A/M)PLL in EMAC_DATA_INTERFACE_RMII && EMAC_CLK_OUT
@@ -78,6 +77,9 @@ typedef struct {
     // ---- Chip specifics ----
 #ifdef CONFIG_IDF_TARGET_ESP32
     esp_clock_output_mapping_handle_t rmii_clk_hdl; // we use the esp_clock_output driver to output a pre-configured APLL clock as the RMII reference clock
+#endif
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    ts_target_exceed_cb_from_isr_t ts_target_exceed_cb_from_isr;
 #endif
 } emac_esp32_t;
 
@@ -167,15 +169,12 @@ err:
 static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
-    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     switch (link) {
     case ETH_LINK_UP:
-        ESP_GOTO_ON_ERROR(esp_intr_enable(emac->intr_hdl), err, TAG, "enable interrupt failed");
         emac_esp32_start(mac);
         ESP_LOGD(TAG, "emac started");
         break;
     case ETH_LINK_DOWN:
-        ESP_GOTO_ON_ERROR(esp_intr_disable(emac->intr_hdl), err, TAG, "disable interrupt failed");
         emac_esp32_stop(mac);
         ESP_LOGD(TAG, "emac stopped");
         break;
@@ -260,9 +259,78 @@ esp_err_t emac_esp_custom_ioctl(esp_eth_mac_t *mac, int cmd, void *data)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
 
-    switch (cmd) {
+    switch (cmd)
+    {
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    case ETH_MAC_ESP_CMD_PTP_ENABLE: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP enable invalid argument, cant' be NULL");
+        bool enable = *((bool *)data);
+        if (enable) {
+            EMAC_IF_RCC_ATOMIC() {
+                emac_hal_clock_enable_ptp(&emac->hal, EMAC_PTP_CLK_SRC_XTAL, true);
+            }
+            emac_hal_ptp_config_t ptp_config = {
+                .upd_method = ETH_PTP_UPDATE_METHOD_FINE,
+                .roll = ETH_PTP_DIGITAL_ROLLOVER,
+                .ptp_clk_src_period_ns = 25,  // = 1 / 40MHz
+                .ptp_req_accuracy_ns = 40     // required accuracy (must be worse than ptp_ref_clk)
+            };
+            ESP_RETURN_ON_ERROR(emac_hal_ptp_start(&emac->hal, &ptp_config), TAG, "failed to start PTP module");
+            emac_esp_dma_ts_enable(emac->emac_dma_hndl, true);
+        } else {
+            ESP_RETURN_ON_ERROR(emac_hal_ptp_stop(&emac->hal), TAG, "failed to stop PTP module");
+            emac_esp_dma_ts_enable(emac->emac_dma_hndl, false);
+            EMAC_IF_RCC_ATOMIC() {
+                emac_hal_clock_enable_ptp(&emac->hal, 0, false);
+            }
+        }
+        break;
+    }
+    case ETH_MAC_ESP_CMD_S_PTP_TIME: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set time invalid argument, cant' be NULL");
+        eth_mac_time_t *time = (eth_mac_time_t *)data;
+        ESP_RETURN_ON_ERROR(emac_hal_ptp_set_sys_time(&emac->hal, time->seconds, time->nanoseconds), TAG, "failed to set PTP time");
+        break;
+    }
+    case ETH_MAC_ESP_CMD_G_PTP_TIME: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP get time invalid argument, cant' be NULL");
+        eth_mac_time_t *time = (eth_mac_time_t *)data;
+        ESP_RETURN_ON_ERROR(emac_hal_ptp_get_sys_time(&emac->hal, &time->seconds, &time->nanoseconds), TAG, "failed to get PTP time");
+        break;
+    }
+    case ETH_MAC_ESP_CMD_ADJ_PTP_TIME: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP adjust time invalid argument, cant' be NULL");
+        int32_t adj_ppb = *((int32_t *)data);
+        ESP_RETURN_ON_ERROR(emac_hal_ptp_adj_inc(&emac->hal, adj_ppb), TAG, "failed to adjust PTP time base");
+        break;
+    }
+    case ETH_MAC_ESP_CMD_ADJ_PTP_FREQ: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP adjust frequency invalid argument, cant' be NULL");
+        double scale_factor = *((double *)data);
+        ESP_RETURN_ON_ERROR(emac_hal_adj_freq_factor(&emac->hal, scale_factor), TAG, "failed to aject PTP time base by scale factor");
+        break;
+    }
+    case ETH_MAC_ESP_CMD_S_TARGET_CB:
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set target callback function invalid argument, cant' be NULL");
+        emac->ts_target_exceed_cb_from_isr = (ts_target_exceed_cb_from_isr_t)data;
+        break;
+    case ETH_MAC_ESP_CMD_S_TARGET_TIME: {
+        ESP_RETURN_ON_FALSE(data, ESP_ERR_INVALID_ARG, TAG, "PTP set target time invalid argument, cant' be NULL");
+        eth_mac_time_t *start_time = (eth_mac_time_t *)data;
+        ESP_RETURN_ON_ERROR(emac_hal_ptp_set_target_time(&emac->hal, start_time->seconds, start_time->nanoseconds), TAG,
+                            "failed to set PTP target time");
+        break;
+    }
+#else
     case ETH_MAC_ESP_CMD_PTP_ENABLE:
+    case ETH_MAC_ESP_CMD_S_PTP_TIME:
+    case ETH_MAC_ESP_CMD_G_PTP_TIME:
+    case ETH_MAC_ESP_CMD_ADJ_PTP_TIME:
+    case ETH_MAC_ESP_CMD_ADJ_PTP_FREQ:
+    case ETH_MAC_ESP_CMD_S_TARGET_CB:
+    case ETH_MAC_ESP_CMD_S_TARGET_TIME:
         return ESP_ERR_NOT_SUPPORTED;
+#endif
     case ETH_MAC_ESP_CMD_SET_TDES0_CFG_BITS:
         ESP_RETURN_ON_FALSE(data != NULL, ESP_ERR_INVALID_ARG, TAG, "cannot set DMA tx desc flag to null");
         emac_esp_dma_set_tdes0_ctrl_bits(emac->emac_dma_hndl, *(uint32_t *)data);
@@ -288,23 +356,28 @@ static esp_err_t emac_esp32_transmit(esp_eth_mac_t *mac, uint8_t *buf, uint32_t 
     return ESP_OK;
 }
 
-static esp_err_t emac_esp32_transmit_multiple_bufs(esp_eth_mac_t *mac, uint32_t argc, va_list args)
+static esp_err_t emac_esp32_transmit_ctrl_vargs(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args)
 {
-    esp_err_t ret = ESP_OK;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
-    uint8_t *bufs[argc];
-    uint32_t len[argc];
+    uint32_t buf_num = argc / 2;
+
+    emac_esp_dma_transmit_buff_t buff_array[buf_num];
+
     uint32_t exp_len = 0;
-    for (int i = 0; i < argc; i++) {
-        bufs[i] = va_arg(args, uint8_t *);
-        len[i] = va_arg(args, uint32_t);
-        exp_len += len[i];
+    for (int i = 0; i < buf_num; i++) {
+        buff_array[i].buf = va_arg(args, uint8_t *);
+        buff_array[i].size = va_arg(args, uint32_t);
+        exp_len += buff_array[i].size;
     }
-    uint32_t sent_len = emac_esp_dma_transmit_multiple_buf_frame(emac->emac_dma_hndl, bufs, len, argc);
-    ESP_GOTO_ON_FALSE(sent_len == exp_len, ESP_ERR_INVALID_SIZE, err, TAG, "insufficient TX buffer size");
+
+    eth_mac_time_t *ts = (eth_mac_time_t *)ctrl;
+    uint32_t sent_len = emac_esp_dma_transmit_frame_ext(emac->emac_dma_hndl, buff_array, buf_num, ts);
+
+    if(sent_len != exp_len) {
+        ESP_LOGD(TAG, "insufficient TX buffer size");
+        return ESP_ERR_NO_MEM;
+    }
     return ESP_OK;
-err:
-    return ret;
 }
 
 static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *length)
@@ -313,7 +386,7 @@ static esp_err_t emac_esp32_receive(esp_eth_mac_t *mac, uint8_t *buf, uint32_t *
     uint32_t expected_len = *length;
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     ESP_GOTO_ON_FALSE(buf && length, ESP_ERR_INVALID_ARG, err, TAG, "can't set buf and length to null");
-    uint32_t receive_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buf, expected_len);
+    uint32_t receive_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buf, expected_len, NULL);
     emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
     /* we need to check the return value in case the buffer size is not enough */
     ESP_GOTO_ON_FALSE(expected_len >= receive_len, ESP_ERR_INVALID_SIZE, err, TAG, "received buffer longer than expected");
@@ -337,23 +410,29 @@ static void emac_esp32_rx_task(void *arg)
             buffer = emac_esp_dma_alloc_recv_buf(emac->emac_dma_hndl, &frame_len);
             /* we have memory to receive the frame of maximal size previously defined */
             if (buffer != NULL) {
-                uint32_t recv_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buffer, EMAC_DMA_BUF_SIZE_AUTO);
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+                eth_mac_time_t ts;
+                eth_mac_time_t *p_ts = &ts;
+#else
+                eth_mac_time_t *p_ts = NULL;
+#endif
+                uint32_t recv_len = emac_esp_dma_receive_frame(emac->emac_dma_hndl, buffer, EMAC_DMA_BUF_SIZE_AUTO, p_ts);
                 if (recv_len == 0) {
                     ESP_LOGE(TAG, "frame copy error");
                     free(buffer);
-                    /* ensure that interface to EMAC does not get stuck with unprocessed frames */
+                    /* ensures that interface to EMAC does not get stuck with unprocessed frames */
                     emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl);
                 } else if (frame_len > recv_len) {
                     ESP_LOGE(TAG, "received frame was truncated");
                     free(buffer);
                 } else {
                     ESP_LOGD(TAG, "receive len= %" PRIu32, recv_len);
-                    emac->eth->stack_input(emac->eth, buffer, recv_len);
+                    emac->eth->stack_input_info(emac->eth, buffer, recv_len, (void *)p_ts);
                 }
-                /* if allocation failed and there is a waiting frame */
+            /* if allocation failed and there is a waiting frame */
             } else if (frame_len) {
                 ESP_LOGE(TAG, "no mem for receive buffer");
-                /* ensure that interface to EMAC does not get stuck with unprocessed frames */
+                /* ensures that interface to EMAC does not get stuck with unprocessed frames */
                 emac_esp_dma_flush_recv_frame(emac->emac_dma_hndl);
             }
             emac_esp_dma_get_remain_frames(emac->emac_dma_hndl, &emac->frames_remain, &emac->free_rx_descriptor);
@@ -498,18 +577,33 @@ IRAM_ATTR void emac_isr_default_handler(void *args)
     emac_hal_context_t *hal = (emac_hal_context_t *)args;
     uint32_t intr_stat = emac_hal_get_intr_status(hal);
     emac_hal_clear_corresponding_intr(hal, intr_stat);
+    emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
+    bool high_task_woken = false;
+
+#if SOC_EMAC_IEEE1588V2_SUPPORTED && EMAC_LL_CONFIG_ENABLE_MAC_INTR_MASK & EMAC_LL_MAC_INTR_TIME_STAMP_ENABLE
+    if (intr_stat & EMAC_LL_DMA_TIMESTAMP_TRIGGER_INTR) {
+        uint32_t ts_stat = emac_hal_get_ts_status(hal);
+        if (ts_stat & EMAC_LL_TS_TARGET_TIME_REACHED) {
+            if (emac->ts_target_exceed_cb_from_isr) {
+                bool ts_high_task_woken = emac->ts_target_exceed_cb_from_isr(emac->eth, NULL);
+                high_task_woken |= ts_high_task_woken;
+            }
+        }
+    }
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 #if EMAC_LL_CONFIG_ENABLE_INTR_MASK & EMAC_LL_INTR_RECEIVE_ENABLE
     if (intr_stat & EMAC_LL_DMA_RECEIVE_FINISH_INTR) {
-        emac_esp32_t *emac = __containerof(hal, emac_esp32_t, hal);
-        BaseType_t high_task_wakeup = pdFALSE;
+        BaseType_t rx_high_task_woken = pdFALSE;
         /* notify receive task */
-        vTaskNotifyGiveFromISR(emac->rx_task_hdl, &high_task_wakeup);
-        if (high_task_wakeup == pdTRUE) {
-            portYIELD_FROM_ISR();
-        }
+        vTaskNotifyGiveFromISR(emac->rx_task_hdl, &rx_high_task_woken);
+        high_task_woken |= (bool)rx_high_task_woken;
     }
-#endif
+#endif // EMAC_LL_CONFIG_ENABLE_INTR_MASK & EMAC_LL_INTR_RECEIVE_ENABLE
+
+    if (high_task_woken) {
+        portYIELD_FROM_ISR();
+    }
 }
 
 static void emac_esp_free_driver_obj(emac_esp32_t *emac)
@@ -684,6 +778,8 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     ret_code = esp_intr_alloc(ETS_ETH_MAC_INTR_SOURCE, isr_flags,
                               emac_isr_default_handler, &emac->hal, &(emac->intr_hdl));
     ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "alloc emac interrupt failed");
+    ret_code = esp_intr_enable(emac->intr_hdl);
+    ESP_GOTO_ON_FALSE(ret_code == ESP_OK, NULL, err, TAG, "enable interrupt failed");
 
     /* init GPIO used by SMI interface */
     ret_code = emac_esp_gpio_init_smi(&esp32_config->smi_gpio);
@@ -714,9 +810,12 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     emac->parent.set_peer_pause_ability = emac_esp32_set_peer_pause_ability;
     emac->parent.enable_flow_ctrl = emac_esp32_enable_flow_ctrl;
     emac->parent.transmit = emac_esp32_transmit;
-    emac->parent.transmit_vargs = emac_esp32_transmit_multiple_bufs;
+    emac->parent.transmit_ctrl_vargs = emac_esp32_transmit_ctrl_vargs;
     emac->parent.receive = emac_esp32_receive;
     emac->parent.custom_ioctl = emac_esp_custom_ioctl;
+#ifdef SOC_EMAC_IEEE1588V2_SUPPORTED
+    emac->ts_target_exceed_cb_from_isr = NULL;
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
     return &(emac->parent);
 
 err:

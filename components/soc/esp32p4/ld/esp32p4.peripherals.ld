@@ -116,6 +116,7 @@ PROVIDE ( USB_DWC_FS         = 0x50040000 );
 PROVIDE ( USB_UTMI           = 0x5009C000 );
 
 PROVIDE ( EMAC_MAC           = 0x50098000 );
+PROVIDE ( EMAC_PTP           = 0x50098700 );
 PROVIDE ( EMAC_DMA           = 0x50099000 );
 
 PROVIDE ( CACHE              = 0x3FF10000);

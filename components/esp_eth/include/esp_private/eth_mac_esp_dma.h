@@ -9,7 +9,9 @@
 extern "C" {
 #endif
 
+#include <stdbool.h>
 #include "esp_err.h"
+#include "esp_eth_mac.h"
 
 /**
  * @brief Indicate to ::emac_esp_dma_receive_frame that receive frame buffer was allocated by ::emac_esp_dma_alloc_recv_buf
@@ -32,6 +34,15 @@ typedef struct emac_esp_dma_t *emac_esp_dma_handle_t;
 typedef struct emac_esp_dma_config_t emac_esp_dma_config_t;
 
 /**
+ * @brief Supplementary properties for the ESP EMAC DMA transmit buffer
+ *
+ */
+typedef struct {
+    uint8_t* buf;
+    uint32_t size;
+} emac_esp_dma_transmit_buff_t;
+
+/**
  * @brief Reset DMA
  * @note This function should be called prior each EMAC start
  *
@@ -49,22 +60,23 @@ void emac_esp_dma_reset(emac_esp_dma_handle_t emac_esp_dma);
  *         zero on fail
  */
 uint32_t emac_esp_dma_transmit_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t *buf, uint32_t length);
-
 /**
- * @brief Transmit data from multiple buffers over EMAC in single Ethernet frame. Data will be joint into
- *        single frame in order in which the buffers are stored in input array.
+ * @brief Extended version of Transmit data function. It is capable to transmit from multiple buffers to appear as single Ethernet frame.
+ *        The function also provides hardware time stamp of the transmission on supported targets.
+ *
+ * @note Data is joint into single frame in order in which the buffers are stored in input array.
  *
  * @param[in] emac_esp_dma EMAC DMA handle
- * @param[in] buffs array of pointers to buffers to be transmitted
- * @param[in] lengths array of lengths of the buffers
- * @param[in] inbuffs_cnt number of buffers (i.e. input arrays size)
+ * @param[in] buffs_array array of buffers to be transmitted
+ * @param[in] buffs_cnt number of buffers (i.e. buffs array sizes can be 1 to n)
+ * @param[out] ts time stamp at which the frame was transmitted by EMAC. Valid time stamp returned only on supported targets. Pass NULL
+ *                if time stamp is not required.
+ *
  * @return number of transmitted bytes on success
  *         zero on fail
  *
- * @pre @p lengths array must have the same size as @p buffs array and their elements need to be stored in the same
- *      order, i.e. lengths[1] is a length associated with data buffer referenced at buffs[1] position.
  */
-uint32_t emac_esp_dma_transmit_multiple_buf_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t **buffs, uint32_t *lengths, uint32_t buffs_cnt);
+uint32_t emac_esp_dma_transmit_frame_ext(emac_esp_dma_handle_t emac_esp_dma, emac_esp_dma_transmit_buff_t *buffs_array, uint32_t buffs_cnt, eth_mac_time_t *ts);
 
 /**
  * @brief Allocate buffer with size equal to actually received Ethernet frame size.
@@ -89,6 +101,8 @@ uint8_t *emac_esp_dma_alloc_recv_buf(emac_esp_dma_handle_t emac_esp_dma, uint32_
  * @param[in] buf buffer into which the Ethernet frame is to be copied
  * @param[in] size buffer size. When buffer was allocated by ::emac_esp_dma_alloc_recv_buf, this parameter needs to be set
  *                 to @c EMAC_DMA_BUF_SIZE_AUTO
+ * @param[out] ts time stamp at which the frame was received by EMAC. Only available on supported targets. Can be NULL
+ *                when time stamp is not required.
  *
  * @return - number of copied bytes when success
  *         - number of bytes of received Ethernet frame when maximum allowed buffer @p size is less than actual size of
@@ -101,7 +115,7 @@ uint8_t *emac_esp_dma_alloc_recv_buf(emac_esp_dma_handle_t emac_esp_dma, uint32_
  *       is less than actual size of received Ethernet frame, the frame will be truncated.
  * @note FCS field is never copied
  */
-uint32_t emac_esp_dma_receive_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t *buf, uint32_t size);
+uint32_t emac_esp_dma_receive_frame(emac_esp_dma_handle_t emac_esp_dma, uint8_t *buf, uint32_t size, eth_mac_time_t *ts);
 
 /**
  * @brief Flush frame stored in Rx DMA
@@ -134,6 +148,14 @@ void emac_esp_dma_set_tdes0_ctrl_bits(emac_esp_dma_handle_t emac_esp_dma, uint32
  * @param[in] bit_mask mask of control bits to be cleared
  */
 void emac_esp_dma_clear_tdes0_ctrl_bits(emac_esp_dma_handle_t emac_esp_dma, uint32_t bit_mask);
+
+/**
+ * @brief Enables DMA time stamping feature
+ *
+ * @param[in] emac_esp_dma EMAC DMA handle
+ * @param[in] enable enable when true
+ */
+void emac_esp_dma_ts_enable(emac_esp_dma_handle_t emac_esp_dma, bool enable);
 
 /**
  * @brief Creates a new instance of the ESP EMAC DMA

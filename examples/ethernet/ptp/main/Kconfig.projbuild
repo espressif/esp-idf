@@ -1,0 +1,22 @@
+menu "Example Configuration"
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config EXAMPLE_PTP_PULSE_GPIO
+        int "PPS GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 20
+        help
+            Set the GPIO number at which the Pulse signal is outputted.
+
+    config EXAMPLE_PTP_PULSE_WIDTH_NS
+        int "Pulse width (ns)"
+        range 5000 999999999
+        default 500000000
+        help
+            Set pulse width in ns.
+            WARNING: Since the new pulse target time is set programmatically in the callback
+            function, width accuracy may vary or it may be lost completely when you select
+            very short pulse width.
+
+endmenu

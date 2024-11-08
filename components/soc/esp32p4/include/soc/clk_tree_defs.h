@@ -735,6 +735,19 @@ typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
 
+//////////////////////////////////////////////////EMAC PTP///////////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of EMAC PTP
+ */
+#define SOC_EMAC_PTP_CLK {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F80M}
+
+typedef enum {
+    EMAC_PTP_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    EMAC_PTP_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,
+    EMAC_PTP_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+} soc_periph_emac_ptp_clk_src_t;
+
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
     CLKOUT_SIG_MPLL     = 0,    /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers */

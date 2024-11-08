@@ -132,8 +132,9 @@ The newly opened ESP-NETIF L2 TAP file descriptor needs to be configured prior t
   * ``L2TAP_S_INTF_DEVICE`` - bounds the file descriptor to a specific Network Interface that is identified by its ``if_key``. ESP-NETIF Network Interface ``if_key`` is passed to ``ioctl()`` as the third parameter. Note that default Network Interfaces ``if_key``'s used in ESP-IDF can be found in :component_file:`esp_netif/include/esp_netif_defaults.h`.
   * ``L2TAP_S_DEVICE_DRV_HNDL`` - is another way to bound the file descriptor to a specific Network Interface. In this case, the Network interface is identified directly by IO Driver handle (e.g., :cpp:type:`esp_eth_handle_t` in case of Ethernet). The IO Driver handle is passed to ``ioctl()`` as the third parameter.
   * ``L2TAP_S_RCV_FILTER`` - sets the filter to frames with the type to be passed to the file descriptor. In the case of Ethernet frames, the frames are to be filtered based on the Length and Ethernet type field. In case the filter value is set less than or equal to 0x05DC, the Ethernet type field is considered to represent IEEE802.3 Length Field, and all frames with values in interval <0, 0x05DC> at that field are passed to the file descriptor. The IEEE802.2 logical link control (LLC) resolution is then expected to be performed by the user's application. In case the filter value is set greater than 0x05DC, the Ethernet type field is considered to represent protocol identification and only frames that are equal to the set value are to be passed to the file descriptor.
+  * ``L2TAP_S_TIMESTAMP_EN`` - enables the hardware Time Stamping processing inside the file descriptor. The Time Stamps are retrieved to user space by using :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism when accessing the file descriptor by ``read()`` and ``write()`` functions. Hardware time stamping needs to be supported by target and needs to be enabled in IO Driver to this option work as expected.
 
-All above-set configuration options have a getter counterpart option to read the current settings.
+All above-set configuration options have a getter counterpart option to read the current settings except for ``L2TAP_S_TIMESTAMP_EN``.
 
 .. warning::
     The file descriptor needs to be firstly bounded to a specific Network Interface by ``L2TAP_S_INTF_DEVICE`` or ``L2TAP_S_DEVICE_DRV_HNDL`` to make ``L2TAP_S_RCV_FILTER`` option available.
@@ -153,14 +154,14 @@ All above-set configuration options have a getter counterpart option to read the
 
 ``fcntl()``
 ^^^^^^^^^^^
-``fcntl()`` is used to manipulate with properties of opened ESP-NETIF L2 TAP file descriptor.
+The ``fcntl()`` is used to manipulate with properties of opened ESP-NETIF L2 TAP file descriptor.
 
 The following commands manipulate the status flags associated with the file descriptor:
 
   * ``F_GETFD`` - the function returns the file descriptor flags, and the third argument is ignored.
   * ``F_SETFD`` - sets the file descriptor flags to the value specified by the third argument. Zero is returned.
 
-| On success, ``ioctl()`` returns 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
+| On success, ``fcntl()`` returns 0. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
 | * ENOSYS - unsupported command.
 
@@ -172,23 +173,24 @@ Opened and configured ESP-NETIF L2 TAP file descriptor can be accessed by ``read
 | * EBADF - not a valid file descriptor.
 | * EAGAIN - the file descriptor has been marked non-blocking (``O_NONBLOCK``), and the read would block.
 
+.. note::
+    ESP-NETIF L2 TAP ``read()`` implementation extends the standard and offers Extended Buffer mechanism to retrieve additional information about received frame. See :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` section for more information.
+
 ``write()``
 ^^^^^^^^^^^
 A raw Data Link Layer frame can be sent to Network Interface via opened and configured ESP-NETIF L2 TAP file descriptor. The user's application is responsible to construct the whole frame except for fields which are added automatically by the physical interface device. The following fields need to be constructed by the user's application in case of an Ethernet link: source/destination MAC addresses, Ethernet type, actual protocol header, and user data. The length of these fields is as follows:
 
-.. list-table::
-    :header-rows: 1
-    :widths: 20 20 20 30
-    :align: center
+.. packetdiag::
 
-    * - Destination MAC
-      - Source MAC
-      - Type/Length
-      - Payload (protocol header/data)
-    * - 6 B
-      - 6 B
-      - 2 B
-      - 0-1486 B
+   packetdiag {
+     colwidth = 16;
+     node_width = 38;
+     0-5: Destination MAC (6B) [color = "#ffcccc"];
+     6-11: Source MAC Port (6B) [color = "#ffcccc"];
+     12-13: Type/Length (2B) [color = "#ccccff"];
+     14-15: [color = "#ffffcc"];
+     16-31: Payload (protocol header/data - 1486B) [color = "#ffffcc", colheight = 3];
+   }
 
 In other words, there is no additional frame processing performed by the ESP-NETIF L2 TAP interface. It only checks the Ethernet type of the frame is the same as the filter configured in the file descriptor. If the Ethernet type is different, an error is returned and the frame is not sent. Note that the ``write()`` may block in the current implementation when accessing a Network interface since it is a shared resource among multiple ESP-NETIF L2 TAP file descriptors and IP stack, and there is currently no queuing mechanism deployed.
 
@@ -197,9 +199,12 @@ In other words, there is no additional frame processing performed by the ESP-NET
 | * EBADMSG - The Ethernet type of the frame is different from the file descriptor configured filter.
 | * EIO - Network interface not available or busy.
 
+.. note::
+    ESP-NETIF L2 TAP ``write()`` implementation extends the standard and offers Extended Buffer mechanism to retrieve additional information about transmitted frame. See :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` section for more information.
+
 ``close()``
 ^^^^^^^^^^^
-Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free its allocated resources. The ESP-NETIF L2 TAP implementation of ``close()`` may block. On the other hand, it is thread-safe and can be called from a different task than the file descriptor is actually used. If such a situation occurs and one task is blocked in the I/O operation and another task tries to close the file descriptor, the first task is unblocked. The first's task read operation then ends with an error.
+Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free its allocated resources. The ESP-NETIF L2 TAP implementation of ``close()`` may block. On the other hand, it is thread-safe and can be called from a different task than the file descriptor is actually used. If such a situation occurs and one task is blocked in the I/O operation and another task tries to close the file descriptor, the first task is unblocked. The first's task ``read`` operation then ends with returning `0` bytes was read.
 
 | On success, ``close()`` returns zero. On error, -1 is returned, and ``errno`` is set to indicate the error.
 | * EBADF - not a valid file descriptor.
@@ -208,6 +213,77 @@ Opened ESP-NETIF L2 TAP file descriptor can be closed by the ``close()`` to free
 ^^^^^^^^^^^^
 Select is used in a standard way, just :ref:`CONFIG_VFS_SUPPORT_SELECT` needs to be enabled to make the ``select()`` function available.
 
+.. _esp_netif_l2tap_ext_buff:
+
+Extended Buffer
+^^^^^^^^^^^^^^^
+
+The Extended Buffer is ESP-NETIF L2 TAP's mechanism of how to retrieve additional information about transmitted or received IO frame via ``write()`` or ``read()`` functions. The Extended Buffer must be only used when specific functionality is enabled in the file descriptor (such as ``L2TAP_S_TIMESTAMP_EN``) and you want to access the additional data (such as Time Stamp) or control the frame processing.
+
+The **Extended Buffer** is a structure with fields which serve as arguments to drive underlying functionality in the ESP-NETIF L2 TAP file descriptor. The structure is defined as follows:
+
+.. code-block:: c
+
+    typedef struct {
+        size_t info_recs_len;       /*!< Length of Information Records buffer */
+        void *info_recs_buff;       /*!< Buffer holding extended information (IRECs) related to IO frames */
+        size_t buff_len;            /*!< Length of the actual IO Frame buffer */
+        void *buff;                 /*!< Pointer to the IO Frame buffer */
+    } l2tap_extended_buff_t;
+
+One Extended buffer may hold multiple **Information Records** (IRECs). These are variable data typed (and sized) records which may hold any datatype of additional information associated with the IO frame. The IREC structure is defined as follows:
+
+.. code-block:: c
+
+    typedef struct
+    {
+        size_t len;                         /*!< Length of the record including header and data*/
+        l2tap_irec_type_t type;             /*!< Type of the record */
+        alignas(long long) uint8_t data[];  /*!< Records Data aligned to double word */
+    } l2tap_irec_hdr_t;
+
+Currently implement and used IREC data types are defined in :cpp:type:`l2tap_irec_type_t`.
+
+Since the flexible array to hold data is used, proper memory alignment of multiple IRECs in the records buffer is required to correctly access memory. Improper alignment can result in slower memory access due to misaligned read/write operations, or in the worst case, cause undefined behavior on certain architectures. Therefore it is strictly recommended to use the below macros when manipulating with IRECs:
+
+* ``L2TAP_IREC_SPACE()`` - determines the space required for an IREC, ensuring that it is properly aligned.
+* ``L2TAP_IREC_LEN()`` - calculates the total length of one IREC, including the header and the data section of the record.
+* ``L2TAP_IREC_FIRST()`` - retrieves the first IREC from the :cpp:member:`l2tap_extended_buff_t::info_recs_buff` pool of Extended Buffer. If the :cpp:member:`l2tap_extended_buff_t::info_recs_len` is smaller than the size of a record header, it returns NULL.
+* ``L2TAP_IREC_NEXT()`` - retrieves the next IREC in the Extended Buffer after the current record. If the current record is NULL, it returns the first record.
+
+Extended Buffer Usage
+"""""""""""""""""""""
+
+Prior any Extended Buffer IO operation (either ``write()`` or ``read()``), you first need to fully populate the Extended Buffer and its IREC fields. For example, when you want to retrieve Time Stamp, you need to set type of the IREC to :cpp:enumerator:`L2TAP_IREC_TIME_STAMP` and configure appropriate length. If you don't set the type correctly, the frame is still received or transmitted but information to be retrieved is lost. Similarly, when the IREC length is less than expected length, the frame is still received or transmitted but the type of affected IREC is marked to :cpp:enumerator:`L2TAP_IREC_INVALID` by the ESP-NETIF L2 TAP and information to be retrieved is lost.
+
+When accessing the file descriptor using Extended Buffer, ``size`` parameter of ``write()`` or ``read()`` function must be set equal to ``0``. Failing to do so (i.e. accessing such file descriptor in a standard way with ``size`` parameter set to data length) will result in an -1 error and ``errno`` set to EINVAL.
+
+.. code-block:: c
+
+    // wrap "Info Records Buffer" into union to ensure proper alignment of data (this is typically needed when
+    // accessing double word variables or structs containing double word variables)
+    union {
+        uint8_t info_recs_buff[L2TAP_IREC_SPACE(sizeof(struct timespec))];
+        l2tap_irec_hdr_t align;
+    } u;
+
+    l2tap_extended_buff_t ptp_msg_ext_buff;
+
+    ptp_msg_ext_buff.info_recs_len = sizeof(u.info_recs_buff);
+    ptp_msg_ext_buff.info_recs_buff = u.info_recs_buff;
+    ptp_msg_ext_buff.buff = eth_frame;
+    ptp_msg_ext_buff.buff_len = sizeof(eth_frame);
+
+    l2tap_irec_hdr_t *ts_info = L2TAP_IREC_FIRST(&ptp_msg_ext_buff);
+    ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+
+    int ret = write(state->ptp_socket, &ptp_msg_ext_buff, 0);
+
+    // check if write was successful and ts_info is valid
+    if (ret > 0 && ts_info->type == L2TAP_IREC_TIME_STAMP) {
+        *ts = *(struct timespec *)ts_info->data;
+    }
 
 .. _esp_netif_other_events:
 
