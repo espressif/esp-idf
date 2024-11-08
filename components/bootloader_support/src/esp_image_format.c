@@ -784,21 +784,18 @@ static esp_err_t verify_segment_header(int index, const esp_image_segment_header
 #if SOC_MMU_PAGE_SIZE_CONFIGURABLE
     /* ESP APP descriptor is present in the DROM segment #0 */
     if (index == 0 && !is_bootloader(metadata->start_addr)) {
-        uint32_t data_len = segment->data_len;
-        const uint32_t *data = (const uint32_t *)bootloader_mmap(segment_data_offs, data_len);
-        if (!data) {
-            ESP_LOGE(TAG, "bootloader_mmap(0x%"PRIx32", 0x%"PRIx32") failed",
-                     segment_data_offs, data_len);
+        const esp_app_desc_t *app_desc = (const esp_app_desc_t *)bootloader_mmap(segment_data_offs, sizeof(esp_app_desc_t));
+        if (!app_desc || app_desc->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+            ESP_LOGE(TAG, "Failed to fetch app description header!");
             return ESP_FAIL;
         }
 
-        esp_app_desc_t *app_desc = (esp_app_desc_t *)data;
         // Convert from log base 2 number to actual size while handling legacy image case (value 0)
         metadata->mmu_page_size = (app_desc->mmu_page_size > 0) ? (1UL << app_desc->mmu_page_size) : SPI_FLASH_MMU_PAGE_SIZE;
         if (metadata->mmu_page_size != SPI_FLASH_MMU_PAGE_SIZE) {
             ESP_LOGI(TAG, "MMU page size mismatch, configured: 0x%x, found: 0x%"PRIx32, SPI_FLASH_MMU_PAGE_SIZE, metadata->mmu_page_size);
         }
-        bootloader_munmap(data);
+        bootloader_munmap(app_desc);
     } else if (index == 0 && is_bootloader(metadata->start_addr)) {
         // Bootloader always uses the default MMU page size
         metadata->mmu_page_size = SPI_FLASH_MMU_PAGE_SIZE;
