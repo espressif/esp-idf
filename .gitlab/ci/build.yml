@@ -12,7 +12,7 @@
     IDF_CCACHE_ENABLE: "1"
   dependencies: []
 
-.build_cmake_template:
+.build_cmake_clang_template:
   extends:
     - .build_template
     - .before_script:build
@@ -34,29 +34,11 @@
       - "**/build*/size.json"
     expire_in: 1 week
     when: always
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      --copy-sdkconfig
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --extra-preserve-dirs
-        examples/bluetooth/esp_ble_mesh/ble_mesh_console
-        examples/bluetooth/hci/controller_hci_uart_esp32
-        examples/wifi/iperf
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
-    - python tools/ci/artifacts_handler.py upload
-
-.build_cmake_clang_template:
-  extends:
-    - .build_cmake_template
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
     TEST_DIR: tools/test_apps/system/clang_build_test
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
