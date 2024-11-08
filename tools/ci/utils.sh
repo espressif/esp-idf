@@ -35,7 +35,9 @@ function add_doc_server_ssh_keys() {
 }
 
 function fetch_submodules() {
+  section_start "fetch_submodules" "Fetching submodules..."
   python "${SUBMODULE_FETCH_TOOL}" -s "${SUBMODULES_TO_FETCH}"
+  section_end "fetch_submodules"
 }
 
 function get_all_submodules() {
@@ -47,6 +49,19 @@ function set_component_ut_vars() {
   export COMPONENT_UT_DIRS=$(find components/ -name test_apps -type d | xargs)
   export COMPONENT_UT_EXCLUDES=$([ -r $exclude_list_fp ] && cat $exclude_list_fp | xargs)
   echo "exported variables COMPONENT_UT_DIRS, COMPONENT_UT_EXCLUDES"
+}
+
+# https://docs.gitlab.com/ee/ci/yaml/script.html#use-a-script-to-improve-display-of-collapsible-sections
+function section_start() {
+  local section_title="${1}"
+  local section_description="${2:-$section_title}"
+
+  echo -e "section_start:`date +%s`:${section_title}[collapsed=true]\r\e[0K${section_description}"
+}
+function section_end() {
+  local section_title="${1}"
+
+  echo -e "section_end:`date +%s`:${section_title}\r\e[0K"
 }
 
 function error() {
