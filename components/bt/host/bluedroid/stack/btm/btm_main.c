@@ -110,6 +110,9 @@ void btm_free(void)
     fixed_queue_free(btm_cb.sec_pending_q, osi_free_func);
     btm_acl_free();
     btm_sec_dev_free();
+#if BTM_SCO_INCLUDED == TRUE
+    btm_sco_free();
+#endif
 #if BTM_DYNAMIC_MEMORY
     FREE_AND_RESET(btm_cb_ptr);
 #endif
