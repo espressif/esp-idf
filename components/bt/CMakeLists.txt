@@ -30,6 +30,10 @@ if(CONFIG_BT_ENABLED)
         list(APPEND srcs "controller/esp32c2/bt.c")
         list(APPEND include_dirs include/esp32c2/include)
         set(ldscripts "linker_esp32c2.lf")
+
+        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+            list(APPEND srcs "controller/esp32c2/dummy.c")
+        endif()
     endif()
 
 
@@ -726,7 +730,11 @@ if(CONFIG_BT_ENABLED)
         endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
     elseif(CONFIG_IDF_TARGET_ESP32C2 AND CONFIG_BT_CONTROLLER_ENABLED)
-        add_prebuilt_library(nimblelib "controller/lib_esp32c2/esp32c2-bt-lib/libble_app.a")
+        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+            add_prebuilt_library(nimblelib "controller/lib_esp32c2/esp32c2-bt-lib/libble_app_flash.a")
+        else()
+            add_prebuilt_library(nimblelib "controller/lib_esp32c2/esp32c2-bt-lib/libble_app.a")
+        endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE nimblelib)
     endif()
 

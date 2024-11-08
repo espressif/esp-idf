@@ -2,6 +2,14 @@
 entries:
     .iram1+
 
+[sections:bt_isr_iram_text]
+entries:
+    .isr_iram1+
+
+[sections:bt_conn_iram_text]
+entries:
+    .conn_iram1+
+
 [sections:bt_bss]
 entries:
     .bss+
@@ -19,10 +27,26 @@ entries:
 
 [scheme:bt_default]
 entries:
-    bt_iram_text -> iram0_bt_text
-    bt_bss -> dram0_bt_bss
-    bt_common -> dram0_bt_bss
-    bt_data -> dram0_bt_data
+    if BT_CTRL_RUN_IN_FLASH_ONLY = y:
+        bt_iram_text -> flash_text
+        bt_bss -> dram0_bt_bss
+        bt_common -> dram0_bt_bss
+        bt_data -> dram0_bt_data
+
+        if BT_LE_PLACE_CONN_RELATED_INTO_IRAM = y:
+            bt_conn_iram_text -> iram0_bt_text
+            bt_isr_iram_text -> iram0_bt_text
+        else:
+            bt_conn_iram_text -> flash_text
+            bt_isr_iram_text -> flash_text
+    else:
+        bt_iram_text -> iram0_bt_text
+        bt_bss -> dram0_bt_bss
+        bt_common -> dram0_bt_bss
+        bt_data -> dram0_bt_data
+
+        bt_conn_iram_text -> iram0_bt_text
+        bt_isr_iram_text -> iram0_bt_text
 
 # For the following fragments, order matters for
 # 'ALIGN(4) ALIGN(4, post) SURROUND(sym)', which generates:
@@ -43,6 +67,14 @@ entries:
 
 [mapping:ble_app]
 archive: libble_app.a
+entries:
+    * (bt_default);
+        bt_bss -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),
+        bt_common -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_common),
+        bt_data -> dram0_bt_data ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_data)
+
+[mapping:ble_app_flash]
+archive: libble_app_flash.a
 entries:
     * (bt_default);
         bt_bss -> dram0_bt_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_controller_bss),

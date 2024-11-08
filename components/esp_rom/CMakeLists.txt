@@ -231,6 +231,14 @@ else() # Regular app build
             endif()
         endif()
 
+        if(NOT CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+            if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
+                rom_linker_script("ble-eco4")
+            else()
+                rom_linker_script("ble")
+            endif()
+        endif()
+
         if(time_t_size EQUAL 8)
             # The ROM functions listed in this linker script depend on sizeof(time_t).
             # Since ROM for ESP32-C2 was compiled for 64-bit time_t, only link these functions
