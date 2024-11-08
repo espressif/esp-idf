@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -917,13 +917,27 @@ extern "C" {
 #define EFUSE_DIG_DBIAS_HVT_M  (EFUSE_DIG_DBIAS_HVT_V << EFUSE_DIG_DBIAS_HVT_S)
 #define EFUSE_DIG_DBIAS_HVT_V  0x0000001FU
 #define EFUSE_DIG_DBIAS_HVT_S  11
-/** EFUSE_RESERVED_1_176 : R; bitpos: [22:16]; default: 0;
+/** EFUSE_RESERVED_1_176 : R; bitpos: [18:16]; default: 0;
  *  reserved
  */
-#define EFUSE_RESERVED_1_176    0x0000007FU
+#define EFUSE_RESERVED_1_176    0x00000007U
 #define EFUSE_RESERVED_1_176_M  (EFUSE_RESERVED_1_176_V << EFUSE_RESERVED_1_176_S)
-#define EFUSE_RESERVED_1_176_V  0x0000007FU
+#define EFUSE_RESERVED_1_176_V  0x00000007U
 #define EFUSE_RESERVED_1_176_S  16
+/** EFUSE_PSRAM_CAP_3 : R; bitpos: [19]; default: 0;
+ *  PSRAM capacity bit 3
+ */
+#define EFUSE_PSRAM_CAP_3    (BIT(19))
+#define EFUSE_PSRAM_CAP_3_M  (EFUSE_PSRAM_CAP_3_V << EFUSE_PSRAM_CAP_3_S)
+#define EFUSE_PSRAM_CAP_3_V  0x00000001U
+#define EFUSE_PSRAM_CAP_3_S  19
+/** EFUSE_RESERVED_1_180 : R; bitpos: [22:20]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_180    0x00000007U
+#define EFUSE_RESERVED_1_180_M  (EFUSE_RESERVED_1_180_V << EFUSE_RESERVED_1_180_S)
+#define EFUSE_RESERVED_1_180_V  0x00000007U
+#define EFUSE_RESERVED_1_180_S  20
 /** EFUSE_WAFER_VERSION_MINOR_HI : R; bitpos: [23]; default: 0;
  *  WAFER_VERSION_MINOR most significant bit
  */
