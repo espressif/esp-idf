@@ -251,6 +251,14 @@ else() # Regular app build
             endif()
         endif()
 
+        if(NOT CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+            if(CONFIG_ESP32C2_REV_MIN_FULL GREATER_EQUAL 200)
+                rom_linker_script("ble-eco4")
+            else()
+                rom_linker_script("ble")
+            endif()
+        endif()
+
         if(CONFIG_NEWLIB_NANO_FORMAT)
             # nano formatting functions in ROM are also built for 64-bit time_t.
             rom_linker_script("newlib-nano")

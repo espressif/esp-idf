@@ -544,131 +544,148 @@ menuconfig BT_NIMBLE_50_FEATURE_SUPPORT
     help
             Enable BLE 5 feature
 
-config BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY
-    bool "Enable 2M Phy"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable 2M-PHY
-
-config BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY
-    bool "Enable coded Phy"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    default y
-    help
-            Enable coded-PHY
-
-config BT_NIMBLE_EXT_ADV
-    bool "Enable extended advertising"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    default n
-    help
-        Enable this option to do extended advertising. Extended advertising
-        will be supported from BLE 5.0 onwards.
-
-if BT_NIMBLE_EXT_ADV
-    config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
-        int "Maximum number of extended advertising instances."
-        range 0 4
-        default 1 if BT_NIMBLE_EXT_ADV
-        default 0
-        depends on BT_NIMBLE_EXT_ADV
-        help
-            Change this option to set maximum number of extended advertising
-            instances. Minimum there is always one instance of
-            advertising. Enter how many more advertising instances you
-            want.
-            For ESP32C2, ESP32C6 and ESP32H2, each extended advertising instance
-            will take about 0.5k DRAM.
-
-    config BT_NIMBLE_EXT_ADV_MAX_SIZE
-        int "Maximum length of the advertising data."
-        range 0 1650
-        default 1650 if BT_NIMBLE_EXT_ADV
-        default 0
-        depends on BT_NIMBLE_EXT_ADV
-        help
-            Defines the length of the extended adv data. The value should not
-            exceed 1650.
-
-    config BT_NIMBLE_ENABLE_PERIODIC_ADV
-        bool "Enable periodic advertisement."
-        default y
-        depends on BT_NIMBLE_EXT_ADV
-        help
-            Enable this option to start periodic advertisement.
-
-    config BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
-        bool "Enable Transfer Sync Events"
-        depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+if BT_NIMBLE_50_FEATURE_SUPPORT
+    config BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY
+        bool "Enable 2M Phy"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT
         default y
         help
-                This enables controller transfer periodic sync events to host
+                Enable 2M-PHY
+
+    config BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY
+        bool "Enable coded Phy"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT
+        default y
+        help
+                Enable coded-PHY
+
+    config BT_NIMBLE_EXT_ADV
+        bool "Enable extended advertising"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT
+        default n
+        help
+            Enable this option to do extended advertising. Extended advertising
+            will be supported from BLE 5.0 onwards.
+
+    if BT_NIMBLE_EXT_ADV
+        config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
+            int "Maximum number of extended advertising instances."
+            range 0 4
+            default 1 if BT_NIMBLE_EXT_ADV
+            default 0
+            depends on BT_NIMBLE_EXT_ADV
+            help
+                Change this option to set maximum number of extended advertising
+                instances. Minimum there is always one instance of
+                advertising. Enter how many more advertising instances you
+                want.
+                For ESP32C2, ESP32C6 and ESP32H2, each extended advertising instance
+                will take about 0.5k DRAM.
+
+        config BT_NIMBLE_EXT_ADV_MAX_SIZE
+            int "Maximum length of the advertising data."
+            range 0 1650
+            default 1650 if BT_NIMBLE_EXT_ADV
+            default 0
+            depends on BT_NIMBLE_EXT_ADV
+            help
+                Defines the length of the extended adv data. The value should not
+                exceed 1650.
+
+        config BT_NIMBLE_ENABLE_PERIODIC_ADV
+            bool "Enable periodic advertisement."
+            default y
+            depends on BT_NIMBLE_EXT_ADV
+            help
+                Enable this option to start periodic advertisement.
+
+        config BT_NIMBLE_PERIODIC_ADV_ENH
+            bool "Periodic adv enhancements(adi support)"
+            depends on BT_NIMBLE_ENABLE_PERIODIC_ADV && SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
+            help
+                Enable the periodic advertising enhancements
+
+        config BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER
+            bool "Enable Transfer Sync Events"
+            depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+            default y
+            help
+                    This enables controller transfer periodic sync events to host
+    endif
+
+    config BT_NIMBLE_EXT_SCAN
+        bool "Enable extended scanning"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT && BT_NIMBLE_ROLE_OBSERVER
+        default y
+        help
+            Enable this option to do extended scanning.
+
+    config BT_NIMBLE_ENABLE_PERIODIC_SYNC
+        bool "Enable periodic sync"
+        default y
+        depends on BT_NIMBLE_EXT_SCAN
+        help
+            Enable this option to receive periodic advertisement.
+
+    if BT_NIMBLE_ENABLE_PERIODIC_SYNC
+        config BT_NIMBLE_MAX_PERIODIC_SYNCS
+            int "Maximum number of periodic advertising syncs"
+            range 0 3 if IDF_TARGET_ESP32C2
+            range 0 8
+            default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
+            default 0
+            help
+                Set this option to set the upper limit for number of periodic sync
+                connections. This should be less than maximum connections allowed by
+                controller.
+
+        config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
+            int "Maximum number of periodic advertiser list"
+            depends on SOC_ESP_NIMBLE_CONTROLLER
+            range 1 5
+            default 5 if BT_NIMBLE_50_FEATURE_SUPPORT
+            help
+                Set this option to set the upper limit for number of periodic advertiser list.
+    endif
+
+    config BT_NIMBLE_BLE_POWER_CONTROL
+        bool "Enable support for BLE Power Control"
+        depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_POWER_CONTROL_SUPPORTED
+        default n
+        help
+            Set this option to enable the Power Control feature
+
+    menuconfig BT_NIMBLE_GATT_CACHING
+        bool "Enable GATT caching"
+        depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
+        select BT_NIMBLE_DYNAMIC_SERVICE
+        help
+                Enable GATT caching
+    config BT_NIMBLE_GATT_CACHING_MAX_CONNS
+        int "Maximum connections to be cached"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 1
+        help
+            Set this option to set the upper limit on number of connections to be cached.
+    config BT_NIMBLE_GATT_CACHING_MAX_SVCS
+        int "Maximum number of services per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of services per connection to be cached.
+    config BT_NIMBLE_GATT_CACHING_MAX_CHRS
+        int "Maximum number of characteristics per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of characteristics per connection to be cached.
+    config BT_NIMBLE_GATT_CACHING_MAX_DSCS
+        int "Maximum number of descriptors per connection"
+        depends on BT_NIMBLE_GATT_CACHING
+        default 64
+        help
+            Set this option to set the upper limit on number of descriptors per connection to be cached.
 endif
-
-config BT_NIMBLE_MAX_PERIODIC_SYNCS
-    int "Maximum number of periodic advertising syncs"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
-    range 0 3 if IDF_TARGET_ESP32C2
-    range 0 8
-    default 1 if BT_NIMBLE_ENABLE_PERIODIC_ADV
-    default 0
-    help
-        Set this option to set the upper limit for number of periodic sync
-        connections. This should be less than maximum connections allowed by
-        controller.
-
-config BT_NIMBLE_MAX_PERIODIC_ADVERTISER_LIST
-    int "Maximum number of periodic advertiser list"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_ESP_NIMBLE_CONTROLLER
-    range 1 5
-    default 5 if BT_NIMBLE_50_FEATURE_SUPPORT
-    help
-        Set this option to set the upper limit for number of periodic advertiser list.
-
-config BT_NIMBLE_BLE_POWER_CONTROL
-    bool "Enable support for BLE Power Control"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_POWER_CONTROL_SUPPORTED
-    default n
-    help
-        Set this option to enable the Power Control feature
-
-config BT_NIMBLE_PERIODIC_ADV_ENH
-    bool "Periodic adv enhancements(adi support)"
-    depends on BT_NIMBLE_ENABLE_PERIODIC_ADV && BT_NIMBLE_50_FEATURE_SUPPORT && SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
-    help
-        Enable the periodic advertising enhancements
-
-menuconfig BT_NIMBLE_GATT_CACHING
-    bool "Enable GATT caching"
-    depends on BT_NIMBLE_ENABLED && BT_NIMBLE_50_FEATURE_SUPPORT
-    select BT_NIMBLE_DYNAMIC_SERVICE
-    help
-        Enable GATT caching
-config BT_NIMBLE_GATT_CACHING_MAX_CONNS
-    int "Maximum connections to be cached"
-    depends on BT_NIMBLE_GATT_CACHING
-    default 1
-    help
-        Set this option to set the upper limit on number of connections to be cached.
-config BT_NIMBLE_GATT_CACHING_MAX_SVCS
-    int "Maximum number of services per connection"
-    depends on BT_NIMBLE_GATT_CACHING
-    default 64
-    help
-        Set this option to set the upper limit on number of services per connection to be cached.
-config BT_NIMBLE_GATT_CACHING_MAX_CHRS
-    int "Maximum number of characteristics per connection"
-    depends on BT_NIMBLE_GATT_CACHING
-    default 64
-    help
-        Set this option to set the upper limit on number of characteristics per connection to be cached.
-config BT_NIMBLE_GATT_CACHING_MAX_DSCS
-    int "Maximum number of descriptors per connection"
-    depends on BT_NIMBLE_GATT_CACHING
-    default 64
-    help
-        Set this option to set the upper limit on number of descriptors per connection to be cached.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
