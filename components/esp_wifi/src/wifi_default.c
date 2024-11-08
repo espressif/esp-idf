@@ -26,6 +26,9 @@ static esp_netif_t *s_wifi_netifs[MAX_WIFI_IFS] = { NULL };
 static bool wifi_default_handlers_set = false;
 
 static esp_err_t disconnect_and_destroy(esp_netif_t* esp_netif);
+#ifdef ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+static bool roaming_ongoing = false;
+#endif
 
 //
 // Default event handlers
@@ -84,6 +87,13 @@ static void wifi_default_action_sta_stop(void *arg, esp_event_base_t base, int32
 
 static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
+#ifdef ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+    if (roaming_ongoing) {
+        /* IP stack is already in ready state */
+        roaming_ongoing = false;
+        return;
+    }
+#endif
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_err_t ret;
         esp_netif_t *esp_netif = s_wifi_netifs[WIFI_IF_STA];
@@ -103,6 +113,15 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
 
 static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
+    wifi_event_sta_disconnected_t *disconn = data;
+#ifdef ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+    if (disconn->reason == WIFI_REASON_ROAMING) {
+        roaming_ongoing = true;
+        /* do nothing else */
+        return;
+    }
+    roaming_ongoing = false;
+#endif
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_netif_action_disconnected(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }

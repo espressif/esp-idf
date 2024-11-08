@@ -90,6 +90,14 @@ menu "Roaming Methods"
             Retry threshold after which the station should stop using Network Assisted
             roaming methods and start using legacy roaming instead.
 
+    config ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+        bool "Skip IP renew during BTM based roaming"
+        depends on ESP_WIFI_ROAMING_NETWORK_ASSISTED_ROAM
+        default y
+        help
+            Station will not ask for IP renew after a BTM based roaming. Before enabling please
+            make sure your network supports this.
+
 endmenu #"Roaming Methods"
 
 menu "Scan Configuration"
