@@ -246,10 +246,10 @@ esp_err_t lp_i2s_del_channel(lp_i2s_chan_handle_t chan)
 _Static_assert(sizeof(lp_i2s_evt_cbs_t) == sizeof(lp_i2s_evt_cbs_internal_t), "Invalid size of lp_i2s_evt_cbs_t structure");
 #endif
 
-esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t handle, const lp_i2s_evt_cbs_t *cbs, void *user_data)
+esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t chan, const lp_i2s_evt_cbs_t *cbs, void *user_data)
 {
-    ESP_RETURN_ON_FALSE(handle && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(handle->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
+    ESP_RETURN_ON_FALSE(chan && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(chan->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
 
     if (cbs->on_thresh_met) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_thresh_met), ESP_ERR_INVALID_ARG, TAG, "on_thresh_met callback not in IRAM");
@@ -258,9 +258,9 @@ esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t handle, const lp_
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_request_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_request_new_trans callback not in IRAM");
     }
 
-    handle->cbs.on_thresh_met = cbs->on_thresh_met;
-    handle->cbs.on_request_new_trans = cbs->on_request_new_trans;
-    handle->user_data = user_data;
+    chan->cbs.on_thresh_met = cbs->on_thresh_met;
+    chan->cbs.on_request_new_trans = cbs->on_request_new_trans;
+    chan->user_data = user_data;
 
     return ESP_OK;
 }

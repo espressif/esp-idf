@@ -55,7 +55,7 @@ esp_err_t lp_i2s_new_channel(const lp_i2s_chan_config_t *chan_cfg, lp_i2s_chan_h
 /**
  * @brief Register LP I2S event callbacks
  *
- * @param[in] handle     LP I2S channel handle
+ * @param[in] chan       LP I2S channel handle
  * @param[in] cbs        Callbacks
  * @param[in] user_data  User data
  *
@@ -64,12 +64,12 @@ esp_err_t lp_i2s_new_channel(const lp_i2s_chan_config_t *chan_cfg, lp_i2s_chan_h
  *        - ESP_ERR_INVALID_ARG:   Invalid argument
  *        - ESP_ERR_INVALID_STATE: Invalid state
  */
-esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t handle, const lp_i2s_evt_cbs_t *cbs, void *user_data);
+esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t chan, const lp_i2s_evt_cbs_t *cbs, void *user_data);
 
 /**
  * @brief Enable LP I2S driver
  *
- * @param[in] handle     LP I2S channel handle
+ * @param[in] chan     LP I2S channel handle
  *
  * @return
  *        - ESP_OK:                On success
@@ -81,7 +81,7 @@ esp_err_t lp_i2s_channel_enable(lp_i2s_chan_handle_t chan);
 /**
  * @brief Read LP I2S received data
  *
- * @param[in] handle      LP I2S channel handle
+ * @param[in] chan        LP I2S channel handle
  * @param[in] trans       LP I2S transaction
  * @param[in] timeout_ms  Timeout in ms, set to `LP_I2S_MAX_DELAY` to wait until read is done
  *
@@ -95,7 +95,7 @@ esp_err_t lp_i2s_channel_read(lp_i2s_chan_handle_t chan, lp_i2s_trans_t *trans, 
 /**
  * @brief Read LP I2S received data until certain bytes
  *
- * @param[in] handle      LP I2S channel handle
+ * @param[in] chan        LP I2S channel handle
  * @param[in] trans       LP I2S transaction
  *
  * @return
@@ -108,7 +108,7 @@ esp_err_t lp_i2s_channel_read_until_bytes(lp_i2s_chan_handle_t chan, lp_i2s_tran
 /**
  * @brief Disable LP I2S driver
  *
- * @param[in] handle     LP I2S channel handle
+ * @param[in] chan       LP I2S channel handle
  *
  * @return
  *        - ESP_OK:                On success
@@ -120,13 +120,13 @@ esp_err_t lp_i2s_channel_disable(lp_i2s_chan_handle_t chan);
 /**
  * @brief Delete the LP I2S channel
  *
- * @param[in]   handle      LP I2S channel handler
+ * @param[in]   chan        LP I2S channel handler
  *
  * @return
  *      - ESP_OK                Delete successfully
  *      - ESP_ERR_INVALID_ARG   NULL pointer
  */
-esp_err_t lp_i2s_del_channel(lp_i2s_chan_handle_t handle);
+esp_err_t lp_i2s_del_channel(lp_i2s_chan_handle_t chan);
 
 #ifdef __cplusplus
 }
