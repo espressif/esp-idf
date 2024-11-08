@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -8,7 +8,6 @@
 #
 # You don't have to use idf.py, you can use cmake directly
 # (or use cmake in an IDE)
-
 # WARNING: we don't check for Python build-time dependencies until
 # check_environment() function below. If possible, avoid importing
 # any external libraries here - put in external script, or import in
@@ -18,16 +17,22 @@ from __future__ import annotations
 import codecs
 import json
 import locale
-import os
 import os.path
 import signal
 import subprocess
 import sys
-from collections import Counter, OrderedDict, _OrderedDictKeysView
+from collections import Counter
+from collections import OrderedDict
+from collections.abc import KeysView
 from importlib import import_module
 from pkgutil import iter_modules
 from types import FrameType
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any
+from typing import Callable
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import Union
 
 # pyc files remain in the filesystem when switching between branches which might raise errors for incompatible
 # idf.py extensions. Therefore, pyc file generation is turned off:
@@ -42,13 +47,19 @@ try:
     if os.getenv('IDF_COMPONENT_MANAGER') != '0':
         from idf_component_manager import idf_extensions
 except ImportError as e:
-    # For example, importing click could cause this.
-    print((f'Cannot import module "{e.name}". This usually means that "idf.py" was not '
+    print((f'{e}\n'
+           f'This usually means that "idf.py" was not '
            f'spawned within an ESP-IDF shell environment or the python virtual '
            f'environment used by "idf.py" is corrupted.\n'
            f'Please use idf.py only in an ESP-IDF shell environment. If problem persists, '
            f'please try to install ESP-IDF tools again as described in the Get Started guide.'),
           file=sys.stderr)
+    if e.name is None:
+        # The ImportError or ModuleNotFoundError might be raised without
+        # specifying a module name. In this not so common situation, re-raise
+        # the exception to print all the information that could assist in
+        # identifying the problem.
+        raise
 
     sys.exit(1)
 
@@ -122,7 +133,7 @@ def _safe_relpath(path: str, start: Optional[str]=None) -> str:
         return os.path.abspath(path)
 
 
-def init_cli(verbose_output: List=None) -> Any:
+def init_cli(verbose_output: Optional[List]=None) -> Any:
     # Click is imported here to run it after check_environment()
     import click
 
@@ -188,7 +199,7 @@ def init_cli(verbose_output: List=None) -> Any:
             self.action_args = action_args
             self.aliases = aliases
 
-        def __call__(self, context: click.core.Context, global_args: PropertyDict, action_args: Dict=None) -> None:
+        def __call__(self, context: click.core.Context, global_args: PropertyDict, action_args: Optional[Dict]=None) -> None:
             if action_args is None:
                 action_args = self.action_args
 
@@ -289,7 +300,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
         SCOPES = ('default', 'global', 'shared')
 
-        def __init__(self, scope: Union['Scope', str]=None) -> None:
+        def __init__(self, scope: Optional[Union['Scope', str]]=None) -> None:  # noqa: F821
             if scope is None:
                 self._scope = 'default'
             elif isinstance(scope, str) and scope in self.SCOPES:
@@ -312,7 +323,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
     class Option(click.Option):
         """Option that knows whether it should be global"""
-        def __init__(self, scope: Union[Scope, str]=None, deprecated: Union[Dict, str, bool]=False, hidden: bool=False, **kwargs: str) -> None:
+        def __init__(self, scope: Optional[Union[Scope, str]]=None, deprecated: Union[Dict, str, bool]=False, hidden: bool=False, **kwargs: str) -> None:
             """
             Keyword arguments additional to Click's Option class:
 
@@ -350,7 +361,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
     class CLI(click.MultiCommand):
         """Action list contains all actions with options available for CLI"""
-        def __init__(self, all_actions: Dict=None, verbose_output: List=None, help: str=None) -> None:
+        def __init__(self, all_actions: Optional[Dict]=None, verbose_output: Optional[List]=None, help: Optional[str]=None) -> None:
             super(CLI, self).__init__(
                 chain=True,
                 invoke_without_command=True,
@@ -434,7 +445,7 @@ def init_cli(verbose_output: List=None) -> Any:
                     return Action(name=name, callback=callback.unwrapped_callback)
                 return None
 
-        def _print_closing_message(self, args: PropertyDict, actions: _OrderedDictKeysView) -> None:
+        def _print_closing_message(self, args: PropertyDict, actions: KeysView) -> None:
             # print a closing message of some kind
             #
             if any(t in str(actions) for t in ('flash', 'dfu', 'uf2', 'uf2-app')):
@@ -562,7 +573,7 @@ def init_cli(verbose_output: List=None) -> Any:
 
                 dependecies_processed = True
 
-                # If task have some dependecies they have to be executed before the task.
+                # If task have some dependencies they have to be executed before the task.
                 for dep in task.dependencies:
                     if dep not in tasks_to_run.keys():
                         # If dependent task is in the list of unprocessed tasks move to the front of the list
@@ -707,7 +718,7 @@ def main() -> None:
     # Check the environment only when idf.py is invoked regularly from command line.
     checks_output = None if SHELL_COMPLETE_RUN else check_environment()
 
-    # Check existance of the current working directory to prevent exceptions from click cli.
+    # Check existence of the current working directory to prevent exceptions from click cli.
     try:
         os.getcwd()
     except FileNotFoundError as e:
