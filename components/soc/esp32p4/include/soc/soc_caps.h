@@ -454,6 +454,7 @@
 #define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
 #define SOC_MCPWM_SUPPORT_EVENT_COMPARATOR   (1)    ///< Support event comparator (based on ETM)
 #define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
+// #define SOC_MCPWM_SUPPORT_SLEEP_RETENTION    (1)   // TODO: IDF-9928 Waiting for expansion of module ID  ///< Support back up registers before sleep
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 // USB Serial JTAG Caps
