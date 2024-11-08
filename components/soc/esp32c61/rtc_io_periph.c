@@ -29,4 +29,7 @@ const int rtc_io_num_map[SOC_GPIO_PIN_COUNT] = {
     -1,//GPIO19
     -1,//GPIO20
     -1,//GPIO21
+    -1,//GPIO22
+    -1,//GPIO23
+    -1,//GPIO24
 };

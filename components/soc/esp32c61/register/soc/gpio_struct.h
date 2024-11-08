@@ -468,12 +468,12 @@ typedef struct {
     uint32_t reserved_0a8[3];
     volatile gpio_status_next_reg_t status_next;
     uint32_t reserved_0b8[3];
-    volatile gpio_pinn_reg_t pinn[22];  // 0-21 are fanned out, 22-24 are not fanned out but padded out, 25-28 are not padded out. Only 0-21 are available.
-    uint32_t reserved_11c[106];
+    volatile gpio_pinn_reg_t pinn[25];  // 0-24 are fanned out, 25-28 are not padded out. Only 0-24 are available.
+    uint32_t reserved_128[103];
     volatile gpio_func_in_sel_cfg_reg_t func_in_sel_cfg[256];  //0-255. reserved: 1-5, 18-26, 36-40, 44-45, 48-63, 70-71, 75-81, 84-96, 101-117, 122-255;
     uint32_t reserved_4ac[256];
-    volatile gpio_funcn_out_sel_cfg_reg_t funcn_out_sel_cfg[22];
-    uint32_t reserved_b1c[183];
+    volatile gpio_funcn_out_sel_cfg_reg_t funcn_out_sel_cfg[25];
+    uint32_t reserved_b28[180];
     volatile gpio_clock_gate_reg_t clock_gate;
     volatile gpio_date_reg_t date;
 } gpio_dev_t;
