@@ -2,6 +2,7 @@
 archive: libieee802154.a
 entries:
     if IEEE802154_ENABLED = y:
+        # When adding static functions here, add IEEE802154_NOINLINE attribute to them
         esp_ieee802154_ack: ieee802154_ack_config_pending_bit (noflash)
         esp_ieee802154_dev: ieee802154_rx_frame_info_update (noflash)
         esp_ieee802154_dev: ieee802154_isr (noflash)
@@ -43,7 +44,6 @@ entries:
             esp_ieee802154_dev: ieee802154_receive (noflash)
             esp_ieee802154_pib: ieee802154_pib_update (noflash)
             esp_ieee802154_pib: ieee802154_txpower_convert (noflash)
-            esp_ieee802154_pib: ieee802154_set_panid_addr (noflash)
             esp_ieee802154_util: ieee802154_channel_to_freq (noflash)
             esp_ieee802154: esp_ieee802154_transmit_at (noflash)
             esp_ieee802154: esp_ieee802154_receive_at (noflash)
@@ -54,7 +54,6 @@ entries:
             esp_ieee802154: esp_ieee802154_enh_ack_generator (noflash)
             esp_ieee802154: esp_ieee802154_get_extended_address (noflash)
             esp_ieee802154: esp_ieee802154_set_transmit_security  (noflash)
-            esp_ieee802154_pib: ieee802154_pib_get_extended_address (noflash)
 
         if OPENTHREAD_LINK_METRICS = y:
             esp_ieee802154: esp_ieee802154_get_recent_lqi (noflash)
