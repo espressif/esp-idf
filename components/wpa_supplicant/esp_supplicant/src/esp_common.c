@@ -297,10 +297,10 @@ static int ieee80211_handle_rx_frm(u8 type, u8 *frame, size_t len, u8 *sender,
 #endif /* CONFIG_IEEE80211R */
     case WLAN_FC_STYPE_ASSOC_RESP:
     case WLAN_FC_STYPE_REASSOC_RESP:
-        wpa_sm_notify_assoc(&gWpaSm, sender);
 #ifdef CONFIG_IEEE80211R
         ret = handle_assoc_frame(frame, len, sender, rssi, channel);
 #endif /* CONFIG_IEEE80211R */
+        wpa_sm_notify_assoc(&gWpaSm, sender);
         break;
 #if defined(CONFIG_IEEE80211KV)
     case WLAN_FC_STYPE_ACTION:
