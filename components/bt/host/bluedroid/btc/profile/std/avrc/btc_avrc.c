@@ -175,8 +175,7 @@ bool btc_avrc_ct_init_p(void)
 bool btc_avrc_tg_connected_p(void)
 {
     return (s_rc_tg_init == BTC_RC_TG_INIT_MAGIC) &&
-           (btc_rc_cb.rc_connected == TRUE) &&
-           (btc_rc_cb.rc_features & BTA_AV_FEAT_RCCT);
+           (btc_rc_cb.rc_connected == TRUE);
 }
 
 bool btc_avrc_ct_connected_p(void)
@@ -507,7 +506,7 @@ static void handle_rc_connect (tBTA_AV_RC_OPEN *p_rc_open)
             btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
         }
 
-        if (p_rc_open->peer_features & BTA_AV_FEAT_RCCT) {
+        if (btc_avrc_tg_init_p()) {
             esp_avrc_tg_cb_param_t param;
             memset(&param, 0, sizeof(esp_avrc_tg_cb_param_t));
             param.conn_stat.connected = true;
@@ -580,7 +579,7 @@ static void handle_rc_disconnect (tBTA_AV_RC_CLOSE *p_rc_close)
         btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
     }
 
-    if (rc_features & BTA_AV_FEAT_RCCT) {
+    if (btc_avrc_tg_init_p()) {
         esp_avrc_tg_cb_param_t param;
         memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
         param.conn_stat.connected = false;
@@ -1006,14 +1005,10 @@ void btc_rc_handler(tBTA_AV_EVT event, tBTA_AV *p_data)
                 memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
                 btc_avrc_ct_cb_to_app(ESP_AVRC_CT_CONNECTION_STATE_EVT, &param);
             }
-            if ((p_data->rc_feat.peer_features & BTA_AV_FEAT_RCCT) &&
-                !(old_feats & BTA_AV_FEAT_RCCT)) {
-                esp_avrc_tg_cb_param_t param;
-                memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
-                param.conn_stat.connected = true;
-                memcpy(param.conn_stat.remote_bda, btc_rc_cb.rc_addr, sizeof(esp_bd_addr_t));
-                btc_avrc_tg_cb_to_app(ESP_AVRC_TG_CONNECTION_STATE_EVT, &param);
-            }
+            /**
+             * @note ESP_AVRC_TG_CONNECTION_STATE_EVT has been reported on rc connect/disconnect event,
+             * it doesn't rely on the SDP results.
+             */
         } while (0);
         btc_rc_cb.rc_features = p_data->rc_feat.peer_features;
         btc_rc_cb.rc_ct_features = p_data->rc_feat.peer_ct_features;
