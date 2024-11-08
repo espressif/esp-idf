@@ -67,10 +67,12 @@ typedef enum {
 // Get the I2C hardware instance
 #define I2C_LL_GET_HW(i2c_num)        (((i2c_num) == 0) ? &I2C0 : &I2C1)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_ACK_ERR_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
-#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
+#define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_EMPTY_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M|I2C_RXFIFO_FULL_INT_ENA)
 #define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_RX_REC_FULL_INT_ST_M)
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_EMPTY_INT_ENA_M)
 #define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2000)  // 2000 is not default value on esp32, but 0 is not good to be default
+
+#define I2C_LL_STRETCH_PROTECT_TIME  (0x3ff) // Not supported on esp32, keep consistent with other chips.
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -809,6 +811,16 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 }
 
 /**
+ * @brief Set I2C clock stretch protect num
+ *
+ * @param dev Beginning address of the peripheral registers
+ */
+static inline void i2c_ll_slave_set_stretch_protect_num(i2c_dev_t *dev, uint32_t protect_num)
+{
+    // Not supported on esp32
+}
+
+/**
  * @brief Check if i2c command is done.
  *
  * @param  hw Beginning address of the peripheral registers
@@ -833,6 +845,18 @@ static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_h
 {
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
     return clk_cycle_num_per_us * timeout_us;
+}
+
+/**
+ * @brief Get status of i2c slave
+ *
+ * @param Beginning address of the peripheral registers
+ * @return i2c slave working status
+ */
+__attribute__((always_inline))
+static inline i2c_slave_read_write_status_t i2c_ll_slave_get_read_write_status(i2c_dev_t *hw)
+{
+    return (hw->status_reg.slave_rw == 0) ? I2C_SLAVE_WRITE_BY_MASTER : I2C_SLAVE_READ_BY_MASTER;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

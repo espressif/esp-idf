@@ -10,7 +10,11 @@ if(CONFIG_SOC_I2C_SUPPORTED)
                      "i2c_common.c"
         )
     if(CONFIG_SOC_I2C_SUPPORT_SLAVE)
-        list(APPEND srcs "i2c_slave.c")
+        if(CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2)
+            list(APPEND srcs "i2c_slave_v2.c")
+        else()
+            list(APPEND srcs "i2c_slave.c")
+        endif()
     endif()
 
 endif()

@@ -219,6 +219,7 @@
 #define SOC_I2C_SUPPORT_10BIT_ADDR  (1)
 #define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2U)

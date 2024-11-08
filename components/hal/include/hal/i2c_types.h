@@ -98,6 +98,11 @@ typedef enum {
     I2C_SLAVE_STRETCH_CAUSE_SENDING_ACK = 3,     /*!< Stretching SCL low when slave sending ACK */
 } i2c_slave_stretch_cause_t;
 
+typedef enum {
+    I2C_SLAVE_WRITE_BY_MASTER = 0,
+    I2C_SLAVE_READ_BY_MASTER = 1,
+} i2c_slave_read_write_status_t;
+
 #if SOC_I2C_SUPPORTED
 /**
  * @brief I2C group clock source
