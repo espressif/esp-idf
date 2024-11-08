@@ -10,3 +10,4 @@
     system
     bluetooth-classic
     storage
+    wifi

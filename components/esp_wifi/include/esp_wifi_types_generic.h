@@ -270,6 +270,19 @@ typedef enum {
 } wifi_cipher_type_t;
 
 /**
+  * @brief Wi-Fi bandwidth type
+  */
+typedef enum {
+    WIFI_BW_HT20   = 1,       /**< Bandwidth is HT20      */
+    WIFI_BW20 = WIFI_BW_HT20, /**< Bandwidth is 20 MHz    */
+    WIFI_BW_HT40   = 2,       /**< Bandwidth is HT40      */
+    WIFI_BW40 = WIFI_BW_HT40, /**< Bandwidth is 40 MHz    */
+    WIFI_BW80      = 3,       /**< Bandwidth is 80 MHz    */
+    WIFI_BW160     = 4,       /**< Bandwidth is 160 MHz   */
+    WIFI_BW80_BW80 = 5,       /**< Bandwidth is 80 + 80 MHz */
+} wifi_bandwidth_t;
+
+/**
   * @brief Wi-Fi antenna
   */
 typedef enum {
@@ -314,9 +327,7 @@ typedef struct {
     uint32_t reserved: 22;                /**< Bit: 10..31 reserved */
     wifi_country_t country;               /**< Country information of AP */
     wifi_he_ap_info_t he_ap;              /**< HE AP info */
-    uint8_t bandwidth;                    /**< For either 20 MHz or 40 MHz operation, the channel width field is set to 0.
-                                               For AP 80 MHz, this value is set to 1. For AP 160 MHz, this value is set to 2.
-                                               For AP 80 + 80 MHz, this value is set to 3.*/
+    wifi_bandwidth_t bandwidth;           /**< Bandwidth of AP */
     uint8_t vht_ch_freq1;                 /**< This fields are used only AP bandwidth is 80 and 160 MHz, to transmit the center channel
                                                frequency of the BSS. For AP bandwidth is 80 + 80 MHz, it is the center channel frequency
                                                of the lower frequency segment.*/
@@ -457,19 +468,6 @@ typedef struct {
     uint16_t ghz_2g;            /**< Represents 2.4 GHz protocol, support 802.11b or 802.11g or 802.11n or 802.11ax or LR mode */
     uint16_t ghz_5g;            /**< Represents 5 GHz protocol, support 802.11a or 802.11n or 802.11ac or 802.11ax */
 } wifi_protocols_t;
-
-/**
-  * @brief Wi-Fi bandwidth type
-  */
-typedef enum {
-    WIFI_BW_HT20   = 1,       /**< Bandwidth is HT20      */
-    WIFI_BW20 = WIFI_BW_HT20, /**< Bandwidth is 20 MHz    */
-    WIFI_BW_HT40   = 2,       /**< Bandwidth is HT40      */
-    WIFI_BW40 = WIFI_BW_HT40, /**< Bandwidth is 40 MHz    */
-    WIFI_BW80      = 3,       /**< Bandwidth is 80 MHz    */
-    WIFI_BW160     = 4,       /**< Bandwidth is 160 MHz   */
-    WIFI_BW80_BW80 = 5,       /**< Bandwidth is 80 + 80 MHz */
-} wifi_bandwidth_t;
 
 /**
   * @brief Description of a Wi-Fi band bandwidths

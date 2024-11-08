@@ -224,10 +224,10 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_ENABLE_WPA3_SAE 0
 #endif
 
-#if CONFIG_SPIRAM
-#define WIFI_ENABLE_SPIRAM (1<<1)
+#if WIFI_CACHE_TX_BUFFER_NUM > 0
+#define WIFI_ENABLE_CACHE_TX_BUFFER (1<<1)
 #else
-#define WIFI_ENABLE_SPIRAM 0
+#define WIFI_ENABLE_CACHE_TX_BUFFER 0
 #endif
 
 #if CONFIG_ESP_WIFI_FTM_INITIATOR_SUPPORT
@@ -289,7 +289,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
-                           WIFI_ENABLE_SPIRAM  | \
+                           WIFI_ENABLE_CACHE_TX_BUFFER  | \
                            WIFI_FTM_INITIATOR | \
                            WIFI_FTM_RESPONDER | \
                            WIFI_ENABLE_GCMP | \
