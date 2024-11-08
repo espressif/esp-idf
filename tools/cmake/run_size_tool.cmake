@@ -32,6 +32,10 @@ if(DEFINED IDF_SIZE_MODE)
     list(APPEND IDF_SIZE_CMD ${IDF_SIZE_MODE})
 endif()
 
+if(DEFINED ENV{ESP_IDF_SIZE_NG})
+    list(APPEND IDF_SIZE_CMD "--unify")
+endif()
+
 list(APPEND IDF_SIZE_CMD ${MAP_FILE})
 
 execute_process(COMMAND ${IDF_SIZE_CMD}
