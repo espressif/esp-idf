@@ -811,14 +811,10 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
                 }
             }
             bus_handle = NULL;
-            free(i2c_master);
-        } else {
-            free(i2c_master);
-        }
-    } else {
-        free(i2c_master);
+        } 
     }
-
+    
+    free(i2c_master);
     return ESP_OK;
 }
 
