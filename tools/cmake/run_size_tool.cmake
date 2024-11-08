@@ -36,6 +36,10 @@ if(DEFINED ENV{SIZE_DIFF_FILE})
     list(APPEND IDF_SIZE_CMD "--diff=$ENV{SIZE_DIFF_FILE}")
 endif()
 
+if(DEFINED ENV{ESP_IDF_SIZE_NG})
+    list(APPEND IDF_SIZE_CMD "--unify")
+endif()
+
 list(APPEND IDF_SIZE_CMD ${MAP_FILE})
 
 execute_process(COMMAND ${IDF_SIZE_CMD}
