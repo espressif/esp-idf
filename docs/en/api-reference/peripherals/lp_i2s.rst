@@ -24,7 +24,7 @@ A basic I2S data bus has one master and one slave. The roles remain unchanged th
 
     LP I2S on {IDF_TARGET_NAME} only supports working as an I2S Slave.
 
-The LP I2S module on {IDF_TARGET_NAME} provides an independent RX unit, which supports receiving data when the chip is running with the lowest power consumption. Compared to HP I2S, LP I2S does not support DMA access. Instead, it uses a piece of separate internal memory to store data.
+The LP I2S module on {IDF_TARGET_NAME} provides an independent RX unit, which supports receiving data when the chip is running under sleep modes. Compared to HP I2S, LP I2S does not support DMA access. Instead, it uses a piece of separate internal memory to store data.
 
 
 I2S Communication Mode
@@ -33,24 +33,12 @@ I2S Communication Mode
 Standard Mode
 ^^^^^^^^^^^^^
 
-In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 16-bit-width sample data. The communication format for the slots mainly includes the following:
-
-- **Philips Format**: Data signal has one-bit shift comparing to the WS signal, and the duty of WS signal is 50%.
-
-.. wavedrom:: /../_static/diagrams/i2s/std_philips.json
-
-- **MSB Format**: Basically the same as Philips format, but without data shift.
-
-.. wavedrom:: /../_static/diagrams/i2s/std_msb.json
-
-- **PCM Short Format**: Data has one-bit shift and meanwhile the WS signal becomes a pulse lasting for one BCLK cycle.
-
-.. wavedrom:: /../_static/diagrams/i2s/std_pcm.json
+In standard mode, there are always two sound channels, i.e., the left and right channels, which are called "slots". These slots support 16-bit-width sample data. The communication format for the slots can be found in this :ref:`i2s-communication-mode` section.
 
 PDM Mode (RX)
 ^^^^^^^^^^^^^
 
-PDM (Pulse-density Modulation) mode for RX channel can receive PDM-format data. Only 16-bit-width sample data are supported.
+PDM (Pulse-density Modulation) mode for RX channel can receive PDM-format data. Only 16-bit-width sample data are supported. The communication format for the slots can be found in this :ref:`i2s-communication-mode` section.
 
 
 Functional Overview
@@ -144,4 +132,3 @@ API Reference
 .. include-build-file:: inc/lp_i2s.inc
 .. include-build-file:: inc/lp_i2s_std.inc
 .. include-build-file:: inc/lp_i2s_pdm.inc
-.. include-build-file:: inc/components/esp_driver_i2s/include/driver/i2s_types.inc
