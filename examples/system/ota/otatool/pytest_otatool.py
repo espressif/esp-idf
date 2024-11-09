@@ -8,7 +8,11 @@ import pytest
 from pytest_embedded import Dut
 
 
-def _real_test_func(dut: Dut) -> None:
+@pytest.mark.parametrize('config', [
+    pytest.param('default', marks=[pytest.mark.supported_targets, pytest.mark.generic, pytest.mark.temp_skip(targets=['esp32c2'], reason='must have 4MB')]),
+    pytest.param('default', marks=[pytest.mark.esp32c2, pytest.mark.generic, pytest.mark.flash_4mb]),
+], indirect=True)
+def test_otatool_example(dut: Dut) -> None:
     # Verify factory firmware
     dut.expect('OTA Tool Example')
     dut.expect('Example end')
@@ -24,16 +28,3 @@ def _real_test_func(dut: Dut) -> None:
             binary_path = flash_file[1]
             break
     subprocess.check_call([sys.executable, script_path, '--binary', binary_path])
-
-
-@pytest.mark.supported_targets
-@pytest.mark.generic
-def test_otatool_example(dut: Dut) -> None:
-    _real_test_func(dut)
-
-
-@pytest.mark.esp32c2
-@pytest.mark.generic
-@pytest.mark.flash_4mb
-def test_otatool_example_c2_4mb(dut: Dut) -> None:
-    _real_test_func(dut)

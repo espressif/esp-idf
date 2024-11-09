@@ -240,8 +240,9 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S
                            test_i2s_tdm_master_48k_8bits_4slots, test_i2s_tdm_slave_48k_8bits_4slots);
 
 /* The I2S source clock can only reach 96Mhz on ESP32H2,
+   and the max clock source APLL on P4 is 125M,
    which can't satisfy the following configurations in slave mode */
-#if !CONFIG_IDF_TARGET_ESP32H2
+#if !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4
 static void test_i2s_tdm_master_48k_16bits_8slots(void)
 {
     test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
@@ -257,8 +258,6 @@ static void test_i2s_tdm_slave_48k_16bits_8slots(void)
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_8slots", "[I2S_TDM]",
                            test_i2s_tdm_master_48k_16bits_8slots, test_i2s_tdm_slave_48k_16bits_8slots);
 
-// The max clock source APLL on P4 is 125M which can't satisfy the following config in slave mode
-#if !CONFIG_IDF_TARGET_ESP32P4
 static void test_i2s_tdm_master_96k_16bits_4slots(void)
 {
     test_i2s_tdm_master(96000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
@@ -271,8 +270,7 @@ static void test_i2s_tdm_slave_96k_16bits_4slots(void)
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_96k_16bits_4slots", "[I2S_TDM]",
                            test_i2s_tdm_master_96k_16bits_4slots, test_i2s_tdm_slave_96k_16bits_4slots);
-#endif  // !CONFIG_IDF_TARGET_ESP32P4
-#endif  // !CONFIG_IDF_TARGET_ESP32H2
+#endif  // !CONFIG_IDF_TARGET_ESP32H2 && !CONFIG_IDF_TARGET_ESP32P4
 
 static void test_i2s_external_clk_src(bool is_master, bool is_external)
 {
@@ -285,22 +283,15 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
         .slot_cfg = I2S_STD_MSB_SLOT_DEFAULT_CONFIG(16, I2S_SLOT_MODE_STEREO),
         .gpio_cfg = TEST_I2S_DEFAULT_GPIO(TEST_I2S_MCK_IO, is_master),
     };
+    std_cfg.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
     if (is_external) {
         std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_EXTERNAL;
-        std_cfg.clk_cfg.ext_clk_freq_hz = 11289600;
+        std_cfg.clk_cfg.ext_clk_freq_hz = 22579200;
     }
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
-    if (is_master && !is_external) {
-        i2s_std_slot_config_t slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(16, I2S_SLOT_MODE_STEREO);
-        memcpy(&std_cfg.slot_cfg, &slot_cfg, sizeof(i2s_std_slot_config_t));
-    }
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
     if (is_master) {
-        if (!is_external) {
-            // Delay bclk to get compensate the data delay
-            I2S0.rx_timing.rx_bck_out_dm = 1;
-        }
         uint8_t mst_tx_data[4] = {0x12, 0x34, 0x56, 0x78};
         size_t w_bytes = 4;
         while (w_bytes == 4) {

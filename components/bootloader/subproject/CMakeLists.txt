@@ -34,8 +34,8 @@ set(COMPONENTS
     esp_system
     newlib)
 
-# Make EXTRA_COMPONENT_DIRS variable to point to the bootloader_components directory
-# of the project being compiled
+# EXTRA_COMPONENT_DIRS can be populated with directories containing one or several components.
+# Make sure this variable contains `bootloader_components` directory of the project being compiled.
 set(PROJECT_EXTRA_COMPONENTS "${PROJECT_SOURCE_DIR}/bootloader_components")
 if(EXISTS ${PROJECT_EXTRA_COMPONENTS})
     list(APPEND EXTRA_COMPONENT_DIRS "${PROJECT_EXTRA_COMPONENTS}")

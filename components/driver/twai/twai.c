@@ -18,14 +18,15 @@
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
-#include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
+#include "soc/io_mux_reg.h"
 #include "soc/twai_periph.h"
-#include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
 #include "esp_rom_gpio.h"
 #if SOC_TWAI_SUPPORT_SLEEP_RETENTION
@@ -34,6 +35,7 @@
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
+#define TWAI_TAG "TWAI"
 #define TWAI_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
@@ -46,7 +48,6 @@
 #ifdef CONFIG_TWAI_ISR_IN_IRAM
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define TWAI_TAG "TWAI"
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif  //CONFIG_TWAI_ISR_IN_IRAM
 
@@ -74,6 +75,10 @@
 //Control structure for TWAI driver
 typedef struct twai_obj_t {
     int controller_id;
+    gpio_num_t tx_io;
+    gpio_num_t rx_io;
+    gpio_num_t clkout_io;
+    gpio_num_t bus_off_io;
     twai_hal_context_t hal;  // hal context
     //Control and status members
     twai_state_t state;
@@ -285,42 +290,59 @@ static void twai_intr_handler_main(void *arg)
 
 /* -------------------------- Helper functions  ----------------------------- */
 
-static void twai_configure_gpio(int controller_id, gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout, gpio_num_t bus_status)
+static void twai_configure_gpio(twai_obj_t *p_obj)
 {
-    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
-    assert(tx >= 0 && rx >= 0);
-    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
-    bool io_loop_back = (tx == rx);
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
-    };
+    uint8_t controller_id = p_obj->controller_id;
+    uint64_t gpio_mask = BIT64(p_obj->tx_io);
+
     //Set RX pin
-    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << rx;
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_in_signal(rx, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
+    gpio_func_sel(p_obj->rx_io, PIN_FUNC_GPIO);
+    gpio_input_enable(p_obj->rx_io);
+    esp_rom_gpio_connect_in_signal(p_obj->rx_io, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
 
     //Set TX pin
-    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << tx;
-    gpio_config(&gpio_conf);
-    esp_rom_gpio_connect_out_signal(tx, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
+    gpio_func_sel(p_obj->tx_io, PIN_FUNC_GPIO);
+    esp_rom_gpio_connect_out_signal(p_obj->tx_io, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
-    if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(clkout, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(clkout, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(clkout);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
+        gpio_mask |= BIT64(p_obj->clkout_io);
+        gpio_func_sel(p_obj->clkout_io, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(p_obj->clkout_io, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
     }
 
     //Configure bus status pin (Optional)
-    if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(bus_status, GPIO_FLOATING);
-        esp_rom_gpio_connect_out_signal(bus_status, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(bus_status);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->bus_off_io)) {
+        gpio_mask |= BIT64(p_obj->bus_off_io);
+        gpio_func_sel(p_obj->bus_off_io, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(p_obj->bus_off_io, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
     }
+
+    uint64_t busy_mask = esp_gpio_reserve(gpio_mask);
+    uint64_t conflict_mask = busy_mask & gpio_mask;
+    for (; conflict_mask > 0;) {
+        uint8_t pos = __builtin_ctz(conflict_mask);
+        conflict_mask &= ~(1 << pos);
+        ESP_LOGW(TWAI_TAG, "GPIO %d is not usable, maybe used by others", pos);
+    }
+}
+
+static void twai_release_gpio(twai_obj_t *p_obj)
+{
+    assert(p_obj);
+    uint64_t gpio_mask = BIT64(p_obj->tx_io);
+
+    esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_controller_periph_signals.controllers[p_obj->controller_id].rx_sig, false);
+    gpio_output_disable(p_obj->tx_io);
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->clkout_io)) {
+        gpio_mask |= BIT64(p_obj->clkout_io);
+        gpio_output_disable(p_obj->clkout_io);
+    }
+    if (GPIO_IS_VALID_OUTPUT_GPIO(p_obj->bus_off_io)) {
+        gpio_mask |= BIT64(p_obj->bus_off_io);
+        gpio_output_disable(p_obj->bus_off_io);
+    }
+    esp_gpio_revoke(gpio_mask);
 }
 
 static void twai_free_driver_obj(twai_obj_t *p_obj)
@@ -449,6 +471,7 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     TWAI_CHECK(f_config != NULL, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->controller_id < SOC_TWAI_CONTROLLER_NUM, ESP_ERR_INVALID_ARG);
     TWAI_CHECK(g_config->rx_queue_len > 0, ESP_ERR_INVALID_ARG);
+    // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     TWAI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(g_config->tx_io), ESP_ERR_INVALID_ARG);
     TWAI_CHECK(GPIO_IS_VALID_GPIO(g_config->rx_io), ESP_ERR_INVALID_ARG);
 #ifndef CONFIG_TWAI_ISR_IN_IRAM
@@ -491,6 +514,10 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     p_twai_obj->state = TWAI_STATE_STOPPED;
     p_twai_obj->mode = g_config->mode;
     p_twai_obj->alerts_enabled = g_config->alerts_enabled;
+    p_twai_obj->tx_io = g_config->tx_io;
+    p_twai_obj->rx_io = g_config->rx_io;
+    p_twai_obj->clkout_io = g_config->clkout_io;
+    p_twai_obj->bus_off_io = g_config->bus_off_io;
 
     //Assign the TWAI object
     portENTER_CRITICAL(&g_spinlock);
@@ -525,7 +552,7 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
     twai_hal_configure(&p_twai_obj->hal, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
 
     //Assign GPIO and Interrupts
-    twai_configure_gpio(controller_id, g_config->tx_io, g_config->rx_io, g_config->clkout_io, g_config->bus_off_io);
+    twai_configure_gpio(p_twai_obj);
 
 #if CONFIG_PM_ENABLE
     //Acquire PM lock
@@ -573,6 +600,9 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
     g_twai_objs[controller_id] = NULL;
     portEXIT_CRITICAL(&g_spinlock);
 
+    //Disable interrupt
+    ESP_ERROR_CHECK(esp_intr_disable(p_twai_obj->isr_handle));
+
     //Clear registers by reading
     twai_hal_deinit(&p_twai_obj->hal);
     TWAI_PERI_ATOMIC() {
@@ -589,8 +619,7 @@ esp_err_t twai_driver_uninstall_v2(twai_handle_t handle)
     }
 #endif //CONFIG_PM_ENABLE
 
-    //Disable interrupt
-    ESP_ERROR_CHECK(esp_intr_disable(p_twai_obj->isr_handle));
+    twai_release_gpio(p_twai_obj);
     //Free twai driver object
     twai_free_driver_obj(p_twai_obj);
     return ESP_OK;

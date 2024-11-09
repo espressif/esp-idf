@@ -29,6 +29,7 @@
 // Set the maximum log level for this source file
 #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
 #endif
+#include "esp_log.h"
 #include "esp_check.h"
 
 static const char *TAG = "touch";
@@ -44,10 +45,6 @@ void touch_priv_enable_module(bool enable)
     TOUCH_ENTER_CRITICAL(TOUCH_RTC_LOCK);
     touch_ll_enable_module_clock(enable);
     touch_ll_enable_out_gate(enable);
-#if SOC_TOUCH_SENSOR_VERSION >= 2
-    // Reset the benchmark after finished the scanning
-    touch_ll_reset_chan_benchmark(TOUCH_LL_FULL_CHANNEL_MASK);
-#endif
     TOUCH_EXIT_CRITICAL(TOUCH_RTC_LOCK);
 }
 
@@ -60,7 +57,7 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     bool need_yield = false;
     uint32_t status = touch_ll_get_intr_status_mask();
     g_touch->is_meas_timeout = false;
-    touch_ll_intr_clear(status);
+    touch_ll_interrupt_clear(status);
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
     data.chan = g_touch->ch[touch_ll_get_current_meas_channel()];
@@ -253,7 +250,7 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
             TOUCH_EXIT_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
         }
     } else {
-        if (!chan_handle->is_prox_chan) {
+        if (!chan_handle->prox_id) {
             ESP_EARLY_LOGW(TAG, "This is not a proximity sensing channel");
         }
         TOUCH_ENTER_CRITICAL_SAFE(TOUCH_PERIPH_LOCK);
@@ -287,7 +284,7 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     }
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
 
     if (filter_cfg) {
@@ -307,7 +304,7 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     }
 
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -323,7 +320,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     };
     touch_hal_config_t *hal_cfg_ptr = NULL;
 
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
     if (sleep_cfg) {
@@ -374,7 +371,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -384,7 +381,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
     TOUCH_NULL_POINTER_CHECK(sens_handle);
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
@@ -419,7 +416,7 @@ esp_err_t touch_sensor_config_waterproof(touch_sensor_handle_t sens_handle, cons
         TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
     }
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }
 
@@ -428,7 +425,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     TOUCH_NULL_POINTER_CHECK(sens_handle);
 
     esp_err_t ret = ESP_OK;
-    xSemaphoreTake(sens_handle->mutex, portMAX_DELAY);
+    xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
 
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
 
@@ -436,8 +433,8 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
 
     /* Reset proximity sensing part of all channels */
     FOR_EACH_TOUCH_CHANNEL(i) {
-        if (sens_handle->ch[i] && sens_handle->ch[i]->is_prox_chan) {
-            sens_handle->ch[i]->is_prox_chan = false;
+        if (sens_handle->ch[i] && sens_handle->ch[i]->prox_id > 0) {
+            sens_handle->ch[i]->prox_id = 0;
             sens_handle->ch[i]->prox_cnt = 0;
             for (int i = 0; i < TOUCH_SAMPLE_CFG_NUM; i++) {
                 sens_handle->ch[i]->prox_val[i] = 0;
@@ -450,7 +447,7 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
         uint8_t sample_cfg_num = sens_handle->sample_cfg_num;
         for (int i = 0; i < TOUCH_PROXIMITY_CHAN_NUM; i++) {
             if (prox_cfg->proximity_chan[i]) {
-                prox_cfg->proximity_chan[i]->is_prox_chan = true;
+                prox_cfg->proximity_chan[i]->prox_id = i + 1;
                 touch_ll_set_proximity_sensing_channel(i, prox_cfg->proximity_chan[i]->id);
             } else {
                 touch_ll_set_proximity_sensing_channel(i, TOUCH_LL_NULL_CHANNEL);
@@ -469,6 +466,6 @@ esp_err_t touch_sensor_config_proximity_sensing(touch_sensor_handle_t sens_handl
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:
-    xSemaphoreGive(sens_handle->mutex);
+    xSemaphoreGiveRecursive(sens_handle->mutex);
     return ret;
 }

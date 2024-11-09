@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include "driver/touch_sensor.h"
+#include "driver/touch_sensor_legacy.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -274,9 +274,9 @@ esp_err_t touch_element_waterproof_remove(touch_elem_handle_t element_handle);
  * @return
  *      - ESP_OK: Successfully initialized touch sleep
  *      - ESP_ERR_INVALID_STATE: Touch element is not installed or touch sleep has been installed
- *      - ESP_ERR_INVALID_ARG: inputed argument is NULL
+ *      - ESP_ERR_INVALID_ARG: inputted argument is NULL
  *      - ESP_ERR_NO_MEM: no memory for touch sleep struct
- *      - ESP_ERR_NOT_SUPPORTED: inputed wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
+ *      - ESP_ERR_NOT_SUPPORTED: inputted wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
  */
 esp_err_t touch_element_enable_light_sleep(const touch_elem_sleep_config_t *sleep_config);
 
@@ -305,9 +305,9 @@ esp_err_t touch_element_disable_light_sleep(void);
  * @return
  *      - ESP_OK: Successfully initialized touch sleep
  *      - ESP_ERR_INVALID_STATE: Touch element is not installed or touch sleep has been installed
- *      - ESP_ERR_INVALID_ARG: inputed argument is NULL
+ *      - ESP_ERR_INVALID_ARG: inputted argument is NULL
  *      - ESP_ERR_NO_MEM: no memory for touch sleep struct
- *      - ESP_ERR_NOT_SUPPORTED: inputed wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
+ *      - ESP_ERR_NOT_SUPPORTED: inputted wakeup_elem_handle is not touch_button_handle_t type, currently only touch_button_handle_t supported
  */
 esp_err_t touch_element_enable_deep_sleep(touch_elem_handle_t wakeup_elem_handle, const touch_elem_sleep_config_t *sleep_config);
 

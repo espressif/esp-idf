@@ -7,7 +7,7 @@
 // The HAL layer for Touch Sensor (common part)
 
 #include "hal/touch_sensor_hal.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #include "soc/soc_caps.h"
 
 void touch_hal_config(touch_pad_t touch_num)

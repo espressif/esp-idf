@@ -279,7 +279,6 @@
 #define SOC_I2S_HW_VERSION_2        (1)
 #define SOC_I2S_SUPPORTS_ETM        (1)
 #define SOC_I2S_SUPPORTS_TX_SYNC_CNT (1)
-// #define SOC_I2S_SUPPORTS_RX_RECOMB  (1) //TODO[C5] IDF-9966
 #define SOC_I2S_SUPPORTS_XTAL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PLL_F240M  (1)
@@ -323,6 +322,7 @@
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 #define SOC_PCNT_SUPPORT_CLEAR_SIGNAL         1
 #define SOC_PCNT_SUPPORT_STEP_NOTIFY          1
+#define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  /*!< The sleep retention feature can help back up PCNT registers before sleep */
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */
@@ -498,6 +498,10 @@
 // #define SOC_EFUSE_SOFT_DIS_JTAG 1
 // #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_ECDSA_KEY 1
+
+/*-------------------------- Key Manager CAPS----------------------------*/
+#define SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY    1 /*!< Key manager responsible to deploy ECDSA key */
+#define SOC_KEY_MANAGER_FE_KEY_DEPLOY       1 /*!< Key manager responsible to deploy Flash Encryption key */
 
 /*-------------------------- Secure Boot CAPS----------------------------*/
 #define SOC_SECURE_BOOT_V2_ECC              1

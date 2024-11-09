@@ -62,6 +62,7 @@
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
+#include "hal/touch_sens_hal.h"
 #endif
 
 #if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
@@ -301,7 +302,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
@@ -881,11 +882,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-#if SOC_TOUCH_SENSOR_VERSION == 3
         bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
-#else
-        bool keep_rtc_power_on = touch_ll_get_fsm_state();
-#endif
         if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
@@ -1132,12 +1129,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {
-        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
+        if (result == ESP_OK) {
+            s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
-        if (pd_flags & PMU_SLEEP_PD_TOP) {
-            sleep_retention_do_system_retention(false);
-        }
+            if (pd_flags & PMU_SLEEP_PD_TOP) {
+                sleep_retention_do_system_retention(false);
+            }
 #endif
+        }
         misc_modules_wake_prepare(pd_flags);
     }
 
@@ -1298,7 +1297,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 #endif
 
     // If SPI flash was powered down, wait for it to become ready
-    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+    if (!reject && (pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
 #if SOC_PM_SUPPORT_TOP_PD
         if (pd_flags & PMU_SLEEP_PD_TOP) {
             uint32_t flash_ready_hw_waited_time_us = pmu_sleep_get_wakup_retention_cost();
@@ -1524,33 +1523,28 @@ esp_err_t esp_light_sleep_start(void)
         // Enter sleep, then wait for flash to be ready on wakeup
         err = esp_light_sleep_inner(pd_flags, flash_enable_time_us);
     }
-#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
-        if (err != ESP_OK) {
-            esp_sleep_cpu_skip_retention();
-        }
-#endif
 
     // light sleep wakeup flag only makes sense after a successful light sleep
     s_light_sleep_wakeup = (err == ESP_OK);
 
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
 
-#if CONFIG_ESP_SLEEP_DEBUG
-    if (s_sleep_ctx != NULL) {
-        s_sleep_ctx->sleep_out_rtc_time_stamp = rtc_ticks_at_end;
-    }
+    if (s_light_sleep_wakeup) {
+        uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
+        /**
+         * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
+         * In this case, just ignore the time compensation and keep esp_timer monotonic.
+         */
+        if (rtc_time_diff > 0) {
+            esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
+        }
+        esp_set_time_from_rtc();
+    } else {
+#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+        esp_sleep_cpu_skip_retention();
 #endif
-
-    /**
-     * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
-     * In this case, just ignore the time compensation and keep esp_timer monotonic.
-     */
-    if (rtc_time_diff > 0) {
-        esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
     }
-    esp_set_time_from_rtc();
 
     esp_clk_private_unlock();
     esp_timer_private_unlock();
@@ -1585,13 +1579,17 @@ esp_err_t esp_light_sleep_start(void)
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_EXIT_SLEEP, (void *)0);
-    s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
+        s_sleep_ctx->sleep_out_rtc_time_stamp = rtc_ticks_at_end;
         s_sleep_ctx->sleep_request_result = err;
     }
 #endif
+
+    if (s_light_sleep_wakeup) {
+        s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+    }
 
     portEXIT_CRITICAL(&s_config.lock);
     return err;
@@ -1711,26 +1709,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if SOC_TOUCH_SENSOR_VERSION == 2
-/* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
-static void touch_wakeup_prepare(void)
-{
-    uint16_t sleep_cycle = 0;
-    uint16_t meas_times = 0;
-    touch_pad_t touch_num = TOUCH_PAD_NUM0;
-    touch_ll_sleep_get_channel_num(&touch_num); // Check if the sleep pad is enabled.
-    if ((touch_num > TOUCH_PAD_NUM0) && (touch_num < TOUCH_PAD_MAX) && touch_ll_get_fsm_state()) {
-        touch_ll_stop_fsm();
-        touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
-        touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
-        touch_hal_sleep_channel_get_work_time(&sleep_cycle, &meas_times);
-        touch_ll_set_meas_times(meas_times);
-        touch_ll_set_sleep_time(sleep_cycle);
-        touch_ll_set_channel_mask(BIT(touch_num));
-        touch_ll_start_fsm();
-    }
-}
-#elif SOC_TOUCH_SENSOR_VERSION == 3
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void)
 {
     touch_hal_prepare_deep_sleep();

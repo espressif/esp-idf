@@ -58,11 +58,11 @@ def get_ptype_as_int(ptype):
 # Keep this map in sync with esp_partition_subtype_t enum in esp_partition.h
 SUBTYPES = {
     BOOTLOADER_TYPE: {
-        # 'primary': 0x00,  # The tool does not allow to define this partition yet.
+        'primary': 0x00,
         'ota': 0x01,
     },
     PARTITION_TABLE_TYPE: {
-        # 'primary': 0x00,  # The tool does not allow to define this partition yet.
+        'primary': 0x00,
         'ota': 0x01,
     },
     APP_TYPE: {
@@ -153,6 +153,7 @@ quiet = False
 md5sum = True
 secure = SECURE_NONE
 offset_part_table = 0
+primary_bootloader_offset = None
 
 
 def status(msg):
@@ -210,6 +211,11 @@ class PartitionTable(list):
         # fix up missing offsets & negative sizes
         last_end = offset_part_table + PARTITION_TABLE_SIZE  # first offset after partition table
         for e in res:
+            is_primary_bootloader = (e.type == BOOTLOADER_TYPE and e.subtype == SUBTYPES[e.type]['primary'])
+            is_primary_partition_table = (e.type == PARTITION_TABLE_TYPE and e.subtype == SUBTYPES[e.type]['primary'])
+            if is_primary_bootloader or is_primary_partition_table:
+                # They do not participate in the restoration of missing offsets
+                continue
             if e.offset is not None and e.offset < last_end:
                 if e == res[0]:
                     raise InputError('CSV Error at line %d: Partitions overlap. Partition sets offset 0x%x. '
@@ -280,7 +286,10 @@ class PartitionTable(list):
         last = None
         for p in sorted(self, key=lambda x:x.offset):
             if p.offset < offset_part_table + PARTITION_TABLE_SIZE:
-                raise InputError('Partition offset 0x%x is below 0x%x' % (p.offset, offset_part_table + PARTITION_TABLE_SIZE))
+                is_primary_bootloader = (p.type == BOOTLOADER_TYPE and p.subtype == SUBTYPES[p.type]['primary'])
+                is_primary_partition_table = (p.type == PARTITION_TABLE_TYPE and p.subtype == SUBTYPES[p.type]['primary'])
+                if not (is_primary_bootloader or is_primary_partition_table):
+                    raise InputError('Partition offset 0x%x is below 0x%x' % (p.offset, offset_part_table + PARTITION_TABLE_SIZE))
             if last is not None and p.offset < last.offset + last.size:
                 raise InputError('Partition at 0x%x overlaps 0x%x-0x%x' % (p.offset, last.offset, last.offset + last.size - 1))
             last = p
@@ -388,8 +397,8 @@ class PartitionDefinition(object):
         res.name = fields[0]
         res.type = res.parse_type(fields[1])
         res.subtype = res.parse_subtype(fields[2])
-        res.offset = res.parse_address(fields[3])
-        res.size = res.parse_address(fields[4])
+        res.offset = res.parse_address(fields[3], res.type, res.subtype)
+        res.size = res.parse_size(fields[4], res.type)
         if res.size is None:
             raise InputError("Size field can't be empty")
 
@@ -443,7 +452,24 @@ class PartitionDefinition(object):
             return SUBTYPES[DATA_TYPE]['undefined']
         return parse_int(strval, SUBTYPES.get(self.type, {}))
 
-    def parse_address(self, strval):
+    def parse_size(self, strval, ptype):
+        if ptype == BOOTLOADER_TYPE:
+            if primary_bootloader_offset is None:
+                raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
+            return offset_part_table - primary_bootloader_offset
+        if ptype == PARTITION_TABLE_TYPE:
+            return PARTITION_TABLE_SIZE
+        if strval == '':
+            return None  # PartitionTable will fill in default
+        return parse_int(strval)
+
+    def parse_address(self, strval, ptype, psubtype):
+        if ptype == BOOTLOADER_TYPE and psubtype == SUBTYPES[ptype]['primary']:
+            if primary_bootloader_offset is None:
+                raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
+            return primary_bootloader_offset
+        if ptype == PARTITION_TABLE_TYPE and psubtype == SUBTYPES[ptype]['primary']:
+            return offset_part_table
         if strval == '':
             return None  # PartitionTable will fill in default
         return parse_int(strval)
@@ -563,6 +589,7 @@ def main():
     global md5sum
     global offset_part_table
     global secure
+    global primary_bootloader_offset
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
@@ -573,6 +600,7 @@ def main():
                                                'enabled by default and this flag does nothing.', action='store_true')
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
+    parser.add_argument('--primary-bootloader-offset', help='Set primary bootloader offset', default=None)
     parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', nargs='?', const=SECURE_V1, choices=[SECURE_V1, SECURE_V2])
     parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
     parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
@@ -585,6 +613,13 @@ def main():
     md5sum = not args.disable_md5sum
     secure = args.secure
     offset_part_table = int(args.offset, 0)
+    if args.primary_bootloader_offset is not None:
+        primary_bootloader_offset = int(args.primary_bootloader_offset, 0)
+        if primary_bootloader_offset >= offset_part_table:
+            raise InputError(
+                f'Unsupported configuration. Primary bootloader must be below partition table. '
+                f'Check --primary-bootloader-offset={primary_bootloader_offset:#x} and --offset={offset_part_table:#x}'
+            )
     if args.extra_partition_subtypes:
         add_extra_subtypes(args.extra_partition_subtypes)
 

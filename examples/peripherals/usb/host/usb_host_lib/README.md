@@ -32,11 +32,8 @@ The example demonstrates the following aspects of the USB Host Library API:
 
 ### Hardware Required
 
-An ESP board that has a push button and supports USB-OTG. The example uses the ESP's internal USB PHY, however the internal USB PHY's pins will need to be connected to a USB port (i.e., a USB breakout board) as follows:
-
-- GND and 5V signals of the ESP board to the GND and 5V lines of the USB port
-- GPIO 19 to D-
-- GPIO 20 to D+
+* Development board with USB-OTG support.
+* Follow instruction in [examples/usb/README.md](../../README.md) for specific hardware setup.
 
 ### Configure the project
 

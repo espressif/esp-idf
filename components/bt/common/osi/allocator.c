@@ -241,5 +241,8 @@ void *osi_calloc_func(size_t size)
 
 void osi_free_func(void *ptr)
 {
+#if HEAP_MEMORY_DEBUG
+    osi_mem_dbg_clean(ptr, __func__, __LINE__);
+#endif
     free(ptr);
 }

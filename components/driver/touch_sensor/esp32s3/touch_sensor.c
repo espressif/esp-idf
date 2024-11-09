@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,13 +16,13 @@
 #include "freertos/timers.h"
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
-#include "driver/touch_pad.h"
+#include "driver/touch_sensor_common.h"
 #include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 #include "esp_check.h"
 
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #include "hal/touch_sensor_hal.h"
 
 #ifndef NDEBUG
@@ -379,7 +379,7 @@ esp_err_t touch_pad_filter_get_config(touch_filter_config_t *filter_info)
 esp_err_t touch_pad_filter_enable(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_filter_enable();
+    touch_hal_filter_enable(true);
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -387,7 +387,7 @@ esp_err_t touch_pad_filter_enable(void)
 esp_err_t touch_pad_filter_disable(void)
 {
     TOUCH_ENTER_CRITICAL();
-    touch_hal_filter_disable();
+    touch_hal_filter_enable(false);
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }
@@ -569,9 +569,9 @@ esp_err_t touch_pad_sleep_channel_enable_proximity(touch_pad_t pad_num, bool ena
 
     TOUCH_ENTER_CRITICAL();
     if (enable) {
-        touch_hal_sleep_enable_approach();
+        touch_hal_sleep_enable_approach(true);
     } else {
-        touch_hal_sleep_disable_approach();
+        touch_hal_sleep_enable_approach(false);
     }
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
@@ -655,4 +655,18 @@ esp_err_t touch_pad_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t m
 {
     touch_hal_sleep_channel_set_work_time(sleep_cycle, meas_times);
     return ESP_OK;
+}
+
+/**
+ * @brief This function will be called during start up, to check that the new touch driver is not running along with the legacy touch driver
+ */
+static __attribute__((constructor)) void check_touch_driver_conflict(void)
+{
+    extern __attribute__((weak)) esp_err_t touch_sensor_new_controller(const void*, void *);
+    /* If the new Touch driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
+    if ((void *)touch_sensor_new_controller != NULL) {
+        ESP_EARLY_LOGE("legacy_touch_driver", "CONFLICT! The new touch driver can't work along with the legacy touch driver");
+        abort();
+    }
+    ESP_EARLY_LOGW("legacy_touch_driver", "legacy touch driver is deprecated, please migrate to use driver/touch_sens.h");
 }

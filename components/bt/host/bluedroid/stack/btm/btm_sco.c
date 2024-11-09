@@ -125,6 +125,22 @@ void btm_sco_init (void)
 
 /*******************************************************************************
 **
+** Function         btm_sco_free
+**
+** Description      Free sco specific fixed_queue from btm control block
+**
+*******************************************************************************/
+void btm_sco_free(void)
+{
+#if (BTM_SCO_HCI_INCLUDED == TRUE)
+    for (int i = 0; i < BTM_MAX_SCO_LINKS; i++) {
+        fixed_queue_free(btm_cb.sco_cb.sco_db[i].xmit_data_q, osi_free_func);
+    }
+#endif
+}
+
+/*******************************************************************************
+**
 ** Function         btm_esco_conn_rsp
 **
 ** Description      This function is called upon receipt of an (e)SCO connection
@@ -233,7 +249,7 @@ void btm_sco_process_num_bufs (UINT16 num_lm_sco_bufs)
 **                               pointer is used, PCM parameter maintained in
 **                               the control block will be used; otherwise update
 **                               control block value.
-**                  err_data_rpt: Lisbon feature to enable the erronous data report
+**                  err_data_rpt: Lisbon feature to enable the erroneous data report
 **                                or not.
 **
 ** Returns          BTM_SUCCESS if the successful.
@@ -947,7 +963,7 @@ void btm_sco_conn_req (BD_ADDR bda,  DEV_CLASS dev_class, UINT8 link_type)
     for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
         /*
          * If the sco state is in the SCO_ST_CONNECTING state, we still need
-         * to return accept sco to avoid race conditon for sco creation
+         * to return accept sco to avoid race condition for sco creation
          */
         int rem_bd_matches = p->rem_bd_known &&
                              !memcmp (p->esco.data.bd_addr, bda, BD_ADDR_LEN);

@@ -206,10 +206,10 @@ void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
     while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
         temp = mipi_dsi_host_ll_gen_read_payload_fifo(hal->host);
         for (int i = 0; i < 4; i++) {
-            if ((counter + i) < buffer_size) {
-                receive_buffer[counter + i] = (temp >> (8 * i)) & 0xFF;
+            if (counter < buffer_size) {
+                receive_buffer[counter] = (temp >> (8 * i)) & 0xFF;
+                counter++;
             }
-            counter++;
         }
     }
 }

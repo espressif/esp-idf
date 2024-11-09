@@ -5,6 +5,7 @@
  */
 
 #include "unity.h"
+#include "test_utils.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/ledc.h"
@@ -15,6 +16,7 @@
 #include "esp_private/esp_pmu.h"
 #include "soc/ledc_periph.h"
 #include "esp_private/sleep_retention.h"
+#include "esp_rom_uart.h"
 
 // Note. Test cases in this file cannot run one after another without reset
 
@@ -51,7 +53,7 @@ static void test_ledc_sleep_retention(bool allow_pd)
 #endif
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(2 * 1000 * 1000));
 
-    printf("go to light sleep for 2 seconds\n");
+    printf("Go to light sleep for 2 seconds\n");
     TEST_ESP_OK(esp_light_sleep_start());
     printf("Waked up! Let's see if LEDC peripheral can still work...\n");
 
@@ -59,7 +61,7 @@ static void test_ledc_sleep_retention(bool allow_pd)
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 
-    printf("check if the sleep happened as expected\r\n");
+    printf("Check if the sleep happened as expected\r\n");
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
 #if SOC_PMU_SUPPORTED
     // check if the TOP power domain on/off as desired
@@ -97,3 +99,61 @@ TEST_CASE("ledc can output after light sleep (LEDC power domain pd)", "[ledc]")
     sleep_retention_module_deinit(module);
 }
 #endif
+
+#if SOC_PCNT_SUPPORTED
+static const ledc_clk_src_t test_ledc_clk_in_slp[] = {
+    LEDC_USE_RC_FAST_CLK,
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+    LEDC_USE_XTAL_CLK,
+#endif
+};
+
+static const int test_clks_num = sizeof(test_ledc_clk_in_slp) / sizeof(test_ledc_clk_in_slp[0]);
+
+static void ledc_output_monitor(void)
+{
+    setup_testbench();
+
+    for (int i = 0; i < test_clks_num; i++) {
+        unity_wait_for_signal("Go to light sleep for 3 seconds");
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+        int pulse_count = wave_count(1000);
+        uint32_t acceptable_delta = (test_ledc_clk_in_slp[i] == (ledc_clk_src_t)LEDC_USE_RC_FAST_CLK) ? 20 : 5; // RC_FAST as the clk src has a bigger error range is reasonable
+        TEST_ASSERT_UINT32_WITHIN(acceptable_delta, TEST_PWM_LOW_FREQ, pulse_count);
+        unity_wait_for_signal("Waked up!");
+    }
+
+    tear_testbench();
+}
+
+static void ledc_output_in_sleep(void)
+{
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(3 * 1000 * 1000));
+
+    ledc_channel_config_t ledc_ch_config = initialize_channel_config();
+    ledc_ch_config.speed_mode = LEDC_LOW_SPEED_MODE;
+    ledc_ch_config.sleep_mode = LEDC_SLEEP_MODE_KEEP_ALIVE;
+    TEST_ESP_OK(ledc_channel_config(&ledc_ch_config));
+
+    for (int i = 0; i < test_clks_num; i++) {
+        ledc_timer_config_t ledc_time_config = create_default_timer_config();
+        ledc_time_config.speed_mode = LEDC_LOW_SPEED_MODE;
+        ledc_time_config.clk_cfg = test_ledc_clk_in_slp[i];
+        ledc_time_config.freq_hz = TEST_PWM_LOW_FREQ;
+        TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+
+        TEST_ESP_OK(ledc_update_duty(ledc_ch_config.speed_mode, ledc_ch_config.channel));
+
+        unity_send_signal("Go to light sleep for 3 seconds");
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_ROM_SERIAL_PORT_NUM); // wait until the signal sent
+        TEST_ESP_OK(esp_light_sleep_start());
+        unity_send_signal("Waked up!");
+
+        TEST_ESP_OK(ledc_timer_pause(ledc_time_config.speed_mode, ledc_time_config.timer_num));
+        ledc_time_config.deconfigure = 1;
+        TEST_ESP_OK(ledc_timer_config(&ledc_time_config));
+    }
+}
+
+TEST_CASE_MULTIPLE_DEVICES("ledc can output during light sleep", "[ledc][test_env=generic_multi_device]", ledc_output_in_sleep, ledc_output_monitor);
+#endif // SOC_PCNT_SUPPORTED

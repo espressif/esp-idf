@@ -10,29 +10,36 @@
 #include "unity.h"
 #include "driver/touch_sens.h"
 #include "hal/touch_sensor_ll.h"
+#include "esp_private/touch_sens_helper.h"
 #include "esp_log.h"
 #include "esp_attr.h"
 
 static touch_sensor_sample_config_t s_sample_cfg[TOUCH_SAMPLE_CFG_NUM] = {
+#if SOC_TOUCH_SENSOR_VERSION == 2
+    TOUCH_SENSOR_V2_DEFAULT_SAMPLE_CONFIG(500, TOUCH_VOLT_LIM_L_0V5, TOUCH_VOLT_LIM_H_2V2),
+#elif SOC_TOUCH_SENSOR_VERSION == 3
     TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(1, 1, 1),
-#if TOUCH_SAMPLE_CFG_NUM > 1
     TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(2, 1, 1),
-#endif
-#if TOUCH_SAMPLE_CFG_NUM > 2
     TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(4, 1, 1),
+#else
+#error "Target not support"
 #endif
 };
 
 static touch_channel_config_t s_chan_cfg = {
+#if SOC_TOUCH_SENSOR_VERSION == 2
+    .active_thresh = {
+        2000,
+    },
+    .charge_speed = TOUCH_CHARGE_SPEED_7,
+    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_LOW,
+#elif SOC_TOUCH_SENSOR_VERSION == 3
     .active_thresh = {
         5000,
-#if TOUCH_SAMPLE_CFG_NUM > 1
         2500,
-#endif
-#if TOUCH_SAMPLE_CFG_NUM > 2
         1000,
-#endif
     },
+#endif
 };
 
 TEST_CASE("touch_sens_install_uninstall_test", "[touch]")
@@ -48,20 +55,20 @@ TEST_CASE("touch_sens_install_uninstall_test", "[touch]")
     touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
     TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
 
-    for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++) {
+    for (int i = TOUCH_MIN_CHAN_ID; i <= TOUCH_MAX_CHAN_ID; i++) {
         TEST_ESP_OK(touch_sensor_new_channel(touch, i, &s_chan_cfg, &touch_chan[i]));
     }
     touch_channel_handle_t fault_chan = NULL;
     TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_TOTAL_CHAN_NUM, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_ARG);
-    TEST_ASSERT(touch_sensor_new_channel(touch, 0, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_STATE);
+    TEST_ASSERT(touch_sensor_new_channel(touch, TOUCH_MIN_CHAN_ID, &s_chan_cfg, &fault_chan) == ESP_ERR_INVALID_STATE);
 
     TEST_ESP_OK(touch_sensor_enable(touch));
-    TEST_ASSERT(touch_sensor_del_channel(touch_chan[0]) == ESP_ERR_INVALID_STATE);
+    TEST_ASSERT(touch_sensor_del_channel(touch_chan[TOUCH_MIN_CHAN_ID]) == ESP_ERR_INVALID_STATE);
     TEST_ESP_OK(touch_sensor_disable(touch));
 
     TEST_ASSERT(touch_sensor_del_controller(touch) == ESP_ERR_INVALID_STATE);
 
-    for (int i = 0; i < TOUCH_TOTAL_CHAN_NUM; i++) {
+    for (int i = TOUCH_MIN_CHAN_ID; i <= TOUCH_MAX_CHAN_ID; i++) {
         TEST_ESP_OK(touch_sensor_del_channel(touch_chan[i]));
     }
     TEST_ESP_OK(touch_sensor_del_controller(touch));
@@ -119,7 +126,13 @@ static bool TEST_TCH_IRAM_ATTR s_test_touch_on_inactive_callback(touch_sensor_ha
 
 static void s_test_touch_simulate_touch(touch_sensor_handle_t touch, touch_channel_handle_t touch_chan, bool active)
 {
+#if SOC_TOUCH_SENSOR_VERSION == 2
+    touch_chan_info_t chan_info = {};
+    touch_sensor_get_channel_info(touch_chan, &chan_info);
+    touch_ll_set_charge_speed(chan_info.chan_id, active ? TOUCH_CHARGE_SPEED_4 : TOUCH_CHARGE_SPEED_7);
+#elif SOC_TOUCH_SENSOR_VERSION == 3
     touch_ll_set_internal_capacitor(active ? 0x7f : 0);
+#endif
 }
 
 static void s_test_touch_log_data(touch_channel_handle_t touch_chan, uint32_t sample_cfg_num, const char *tag)
@@ -146,15 +159,21 @@ TEST_CASE("touch_sens_active_inactive_test", "[touch]")
     /* Configuring the filter */
     touch_sensor_filter_config_t filter_cfg = TOUCH_SENSOR_DEFAULT_FILTER_CONFIG();
     TEST_ESP_OK(touch_sensor_config_filter(touch, &filter_cfg));
-    TEST_ESP_OK(touch_sensor_new_channel(touch, 0, &s_chan_cfg, &touch_chan));
+    TEST_ESP_OK(touch_sensor_new_channel(touch, TOUCH_MIN_CHAN_ID, &s_chan_cfg, &touch_chan));
+#if SOC_TOUCH_SENSOR_VERSION == 3
     /* Connect the touch channels to the internal capacitor */
     touch_ll_enable_internal_capacitor(true);
+#endif  // SOC_TOUCH_SENSOR_VERSION == 3
 
     s_test_touch_do_initial_scanning(touch, 3);
 
     /* Read benchmark */
     uint32_t benchmark[TOUCH_SAMPLE_CFG_NUM] = {0};
     TEST_ESP_OK(touch_channel_read_data(touch_chan, TOUCH_CHAN_DATA_TYPE_BENCHMARK, benchmark));
+    /* Test whether success to finish the initial scanning */
+    for (int i = 0; i < TOUCH_SAMPLE_CFG_NUM; i++) {
+        TEST_ASSERT_GREATER_THAN(0, benchmark[i]);
+    }
     /* Re-configure the threshold according to the benchmark */
     touch_channel_config_t chan_cfg = s_test_get_chan_cfg_by_benchmark(benchmark, TOUCH_SAMPLE_CFG_NUM, TEST_ACTIVE_THRESH_RATIO);
     TEST_ESP_OK(touch_sensor_reconfig_channel(touch_chan, &chan_cfg));

@@ -11,9 +11,9 @@
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_saradc.h"
 
-//Not supported but common bootloader calls the function. Do nothing
 void bootloader_ana_clock_glitch_reset_config(bool enable)
 {
+    // TODO: IDF-9274
     (void)enable;
 }
 

@@ -171,13 +171,23 @@ typedef struct {
  * @brief HAL context structure
  */
 typedef struct {
-    //Context
-    usb_dwc_dev_t *dev;                            /**< Pointer to base address of DWC_OTG registers */
-    //Host Port related
-    uint32_t *periodic_frame_list;                 /**< Pointer to scheduling frame list */
-    usb_hal_frame_list_len_t frame_list_len;       /**< Length of the periodic scheduling frame list */
-    //FIFO related
-    usb_dwc_hal_fifo_config_t fifo_config;         /**< FIFO sizes configuration */
+    // HW context
+    usb_dwc_dev_t *dev;                         /**< Pointer to base address of DWC_OTG registers */
+
+    // Host Port related
+    uint32_t *periodic_frame_list;              /**< Pointer to scheduling frame list */
+    usb_hal_frame_list_len_t frame_list_len;    /**< Length of the periodic scheduling frame list */
+
+    // FIFO related
+    usb_dwc_hal_fifo_config_t fifo_config;      /**< FIFO sizes configuration */
+
+    // Configuration of the USB-DWC core. Read from read-only HW registers
+    struct {
+        unsigned chan_num_total;                /**< Total number of channels for this configuration */
+        unsigned hsphy_type;                    /**< HS PHY type of this configuration */
+        unsigned fifo_size;                     /**< Total FIFO size [in lines] in this configuration */
+    } constant_config;
+
     union {
         struct {
             uint32_t dbnc_lock_enabled: 1;      /**< Debounce lock enabled */
@@ -188,11 +198,12 @@ typedef struct {
         };
         uint32_t val;
     } flags;
-    //Channel related
+
+    // Channel related
     struct {
-        int num_allocd;                             /**< Number of channels currently allocated */
-        uint32_t chan_pend_intrs_msk;               /**< Bit mask of channels with pending interrupts */
-        usb_dwc_hal_chan_t *hdls[OTG_NUM_HOST_CHAN];    /**< Handles of each channel. Set to NULL if channel has not been allocated */
+        int num_allocated;                      /**< Number of channels currently allocated */
+        uint32_t chan_pend_intrs_msk;           /**< Bit mask of channels with pending interrupts */
+        usb_dwc_hal_chan_t **hdls;              /**< Handles of each channel. Set to NULL if channel has not been allocated */
     } channels;
 } usb_dwc_hal_context_t;
 
@@ -208,16 +219,20 @@ typedef struct {
  * - Interrupt allocated but DISABLED (in case of an unknown interrupt state)
  * Exit:
  * - Checks to see if DWC_OTG is alive, and if HW version/config is correct
- * - HAl context initialized
+ * - HAL context initialized
+ * - Read and save relevant USB-DWC configuration parameters
  * - Sets default values to some global and OTG registers (GAHBCFG and GUSBCFG)
  * - Umask global interrupt signal
  * - Put DWC_OTG into host mode. Require 25ms delay before this takes effect.
  * - State -> USB_DWC_HAL_PORT_STATE_OTG
  * - Interrupts cleared. Users can now enable their ISR
  *
- * @param[inout] hal Context of the HAL layer
+ * @attention The user must allocate memory for channel handlers with
+ *            `hal->channels.hdls = malloc(hal->constant_config.chan_num_total * sizeof(usb_dwc_hal_chan_t*))`
+ * @param[inout] hal     Context of the HAL layer
+ * @param[in]    port_id USB port ID
  */
-void usb_dwc_hal_init(usb_dwc_hal_context_t *hal);
+void usb_dwc_hal_init(usb_dwc_hal_context_t *hal, int port_id);
 
 /**
  * @brief Deinitialize the HAL context
@@ -241,7 +256,7 @@ void usb_dwc_hal_deinit(usb_dwc_hal_context_t *hal);
  *
  * @note This has nothing to do with a USB bus reset. It simply resets the peripheral
  *
- * @param hal Context of the HAL layer
+ * @param[in] hal Context of the HAL layer
  */
 void usb_dwc_hal_core_soft_reset(usb_dwc_hal_context_t *hal);
 

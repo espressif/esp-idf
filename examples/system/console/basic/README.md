@@ -147,6 +147,10 @@ Use UP/DOWN arrows to navigate through command history.
 Press TAB when typing command name to auto-complete.
 Your terminal application does not support escape sequences.
 Line editing and history features are disabled.
-On Windows, try using Putty instead.
+On Windows, try using Windows Terminal or Putty instead.
 esp32>
 ```
+
+### Escape Sequences on Windows 10
+
+When using the default command line or PowerShell on Windows 10, you may see a message indicating that the console does not support escape sequences, as shown in the above output. To avoid such issues, it is recommended to run the serial monitor under [Windows Terminal](https://en.wikipedia.org/wiki/Windows_Terminal), which supports all required escape sequences for the app, unlike the default terminal. The main escape sequence of concern is the Device Status Report (`0x1b[5n`), which is used to check terminal capabilities. Any response to this sequence indicates support. This should not be an issue on Windows 11, where Windows Terminal is the default.

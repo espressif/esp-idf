@@ -140,13 +140,13 @@ bool bootloader_common_erase_part_type_data(const char *list_erase, bool ota_dat
     return ret;
 }
 
-esp_err_t bootloader_common_get_sha256_of_partition (uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
+esp_err_t bootloader_common_get_sha256_of_partition(uint32_t address, uint32_t size, int type, uint8_t *out_sha_256)
 {
     if (out_sha_256 == NULL || size == 0) {
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (type == PART_TYPE_APP) {
+    if (type == PART_TYPE_APP || type == PART_TYPE_BOOTLOADER) {
         const esp_partition_pos_t partition_pos = {
             .offset = address,
             .size = size,

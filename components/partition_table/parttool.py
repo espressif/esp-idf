@@ -56,12 +56,13 @@ PARTITION_BOOT_DEFAULT = _PartitionId()
 
 class ParttoolTarget():
 
-    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, partition_table_file=None,
+    def __init__(self, port=None, baud=None, partition_table_offset=PARTITION_TABLE_OFFSET, primary_bootloader_offset=None, partition_table_file=None,
                  esptool_args=[], esptool_write_args=[], esptool_read_args=[], esptool_erase_args=[]):
         self.port = port
         self.baud = baud
 
         gen.offset_part_table = partition_table_offset
+        gen.primary_bootloader_offset = primary_bootloader_offset
 
         def parse_esptool_args(esptool_args):
             results = list()
@@ -239,6 +240,7 @@ def main():
     parser.add_argument('--baud', '-b', help='baudrate to use', type=int)
 
     parser.add_argument('--partition-table-offset', '-o', help='offset to read the partition table from', type=str)
+    parser.add_argument('--primary-bootloader-offset', help='offset for primary bootloader', type=str)
     parser.add_argument('--partition-table-file', '-f', help='file (CSV/binary) to read the partition table from; \
                                                             overrides device attached to specified port as the partition table source when defined')
 
@@ -312,6 +314,9 @@ def main():
 
     if args.partition_table_offset:
         target_args['partition_table_offset'] = int(args.partition_table_offset, 0)
+
+    if args.primary_bootloader_offset:
+        target_args['primary_bootloader_offset'] = int(args.primary_bootloader_offset, 0)
 
     if args.esptool_args:
         target_args['esptool_args'] = args.esptool_args

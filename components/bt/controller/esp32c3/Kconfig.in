@@ -226,6 +226,7 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
+    depends on (!BT_CTRL_RUN_IN_FLASH_ONLY) || (BT_CTRL_RUN_IN_FLASH_ONLY && BT_CTRL_BLE_SCAN)
     default y
     help
         The function is mainly used to enable flow control for advertising reports. When it is enabled,
@@ -512,3 +513,38 @@ menu "BLE disconnect when instant passed"
             If this option is enabled, Controller will terminate the connection
             when instant passed in PHY update procedure.
 endmenu
+config BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Put all BLE Controller code in flash"
+    default n
+    help
+        If this option is enabled, all code for the Bluetooth controller will be moved from ROM and IRAM
+        to flash, saving over 20K bytes of memory. However, it will require more flash resources and the
+        performance of Bluetooth will decrease If this option is enabled, Bluetooth may not work properly
+        during erasing flash. It is recommended to turn on the auto suspend function of flash. After auto
+        suspend is turned on, Bluetooth interrupts can be executed normally during erasing flash, with less
+        impact on Bluetooth performance.
+
+config BT_CTRL_DTM_ENABLE
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Enable direct test mode feature"
+    default n
+
+config BT_CTRL_BLE_MASTER
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Enable BLE master role feature"
+    default y
+
+config BT_CTRL_BLE_TEST
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Enable BLE QA test feature"
+    default n
+
+config BT_CTRL_BLE_SCAN
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Enable BLE scan feature"
+    default y
+
+config BT_CTRL_BLE_SECURITY_ENABLE
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY && BT_CONTROLLER_ONLY
+    bool "Enable BLE security feature"
+    default y
