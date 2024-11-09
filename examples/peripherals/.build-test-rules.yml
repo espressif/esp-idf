@@ -67,6 +67,12 @@ examples/peripherals/i2c/i2c_eeprom:
   depends_components:
     - esp_driver_i2c
 
+examples/peripherals/i2c/i2c_slave_network_sensor:
+  disable:
+    - if: SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE != 1 or (SOC_WIFI_SUPPORTED != 1 and SOC_EMAC_SUPPORTED != 1)
+  depends_components:
+    - esp_driver_i2c
+
 examples/peripherals/i2c/i2c_tools:
   disable:
     - if: SOC_I2C_SUPPORTED != 1

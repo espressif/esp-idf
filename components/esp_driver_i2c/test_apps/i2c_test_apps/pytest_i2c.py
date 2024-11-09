@@ -33,6 +33,7 @@ def test_i2c(dut: Dut) -> None:
         (2, 'defaults',),
         (2, 'release',),
         (2, 'iram_safe',),
+        (2, 'slave_v2',),
     ],
     indirect=True
 )
