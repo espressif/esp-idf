@@ -487,16 +487,38 @@ static bool s_mac_bb_pu = true;
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
 static esp_err_t sleep_retention_wifi_bb_init(void *arg)
 {
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
+    #define N_REGS_WIFI_AGC()       (121)
+    #define N_REGS_WIFI_TX()        (14)
+    #define N_REGS_WIFI_NRX()       (136)
+    #define N_REGS_WIFI_BB()        (53)
+    #define N_REGS_WIFI_BRX()       (39)
+    #define N_REGS_WIFI_FE_COEX()   (58)
+    #define N_REGS_WIFI_FE_DATA()   (41)
+    #define N_REGS_WIFI_FE_CTRL()   (87)
+#elif CONFIG_IDF_TARGET_ESP32C5
+    #define N_REGS_WIFI_AGC()       (126)
+    #define N_REGS_WIFI_TX()        (20)
+    #define N_REGS_WIFI_NRX()       (141)
+    #define N_REGS_WIFI_BB()        (63)
+    #define N_REGS_WIFI_BRX()       (39)
+    #define N_REGS_WIFI_FE_COEX()   (19)
+    #define N_REGS_WIFI_FE_DATA()   (31)
+    #define N_REGS_WIFI_FE_CTRL()   (55)
+#endif
     const static sleep_retention_entries_config_t bb_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, 121, 0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, 14,  0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, 136, 0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
-        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, 53,  0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
-        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, 58,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
+        [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b00, 0x600a7000, 0x600a7000, N_REGS_WIFI_AGC(),     0, 0), .owner = BIT(0) | BIT(1) }, /* AGC */
+        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b01, 0x600a7400, 0x600a7400, N_REGS_WIFI_TX(),      0, 0), .owner = BIT(0) | BIT(1) }, /* TX */
+        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b02, 0x600a7800, 0x600a7800, N_REGS_WIFI_NRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* NRX */
+        [3] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b03, 0x600a7c00, 0x600a7c00, N_REGS_WIFI_BB(),      0, 0), .owner = BIT(0) | BIT(1) }, /* BB */
+        [4] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b05, 0x600a0000, 0x600a0000, N_REGS_WIFI_FE_COEX(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE COEX */
 #ifndef SOC_PM_RETENTION_HAS_CLOCK_BUG
-        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x000a8000, 39,  0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
-        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, 41,  0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
-        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, 87,  0, 0), .owner = BIT(0) | BIT(1) }  /* FE CTRL */
+        [5] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b06, 0x600a8000, 0x600a8000, N_REGS_WIFI_BRX(),     0, 0), .owner = BIT(0) | BIT(1) }, /* BRX */
+        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b07, 0x600a0400, 0x600a0400, N_REGS_WIFI_FE_DATA(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE DATA */
+        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b08, 0x600a0800, 0x600a0800, N_REGS_WIFI_FE_CTRL(), 0, 0), .owner = BIT(0) | BIT(1) }, /* FE CTRL */
+#endif
+#if CONFIG_IDF_TARGET_ESP32C5
+        [8] = { .config = REGDMA_LINK_CONTINUOUS_INIT(0x0b09, 0x600a0c00, 0x600a0c00, 20,                0, 0), .owner = BIT(0) | BIT(1) }  /* FE WIFI DATA */
 #endif
     };
     esp_err_t err = sleep_retention_entries_create(bb_regs_retention, ARRAY_SIZE(bb_regs_retention), 3, SLEEP_RETENTION_MODULE_WIFI_BB);
