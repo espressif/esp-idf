@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,10 @@
 #define _ESP_BLE_MESH_BLE_API_H_
 
 #include "esp_ble_mesh_defs.h"
+
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED
+#include "host/ble_gap.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +24,37 @@ typedef enum {
     ESP_BLE_MESH_START_BLE_SCANNING_COMP_EVT,    /*!< Start BLE scanning completion event */
     ESP_BLE_MESH_STOP_BLE_SCANNING_COMP_EVT,     /*!< Stop BLE scanning completion event */
     ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT,   /*!< Scanning BLE advertising packets event */
+    ESP_BLE_MESH_SCAN_PARAMS_UPDATE_COMP_EVT,    /*!< Scan parameters update completion event */
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED
+    ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT,           /*!< NIMBLE GAP event */
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED */
     ESP_BLE_MESH_BLE_EVT_MAX,
 } esp_ble_mesh_ble_cb_event_t;
+
+/** Context of BLE advertising report. */
+typedef struct {
+    uint8_t   addr[6];                                /*!< Device address */
+    uint8_t   addr_type;                              /*!< Device address type */
+#if CONFIG_BLE_MESH_USE_BLE_50
+    uint8_t   adv_type __attribute__((deprecated("`event_type` should be used to determine the advertising type")));   /*!< advertising type  */
+#else
+    uint8_t   adv_type;                               /*!< Advertising type  */
+#endif
+    uint8_t   *data;                                  /*!< Advertising data */
+    uint16_t  length;                                 /*!< Advertising data length */
+    int8_t    rssi;                                   /*!< RSSI of the advertising packet */
+#if CONFIG_BLE_MESH_USE_BLE_50
+    uint8_t   event_type;                             /*!< Extended advertising event type */
+    uint8_t   primary_phy;                            /*!< Extended advertising primary PHY */
+    uint8_t   secondary_phy;                          /*!< Extended advertising secondary PHY */
+    uint8_t   sid;                                    /*!< Extended advertising set ID */
+    uint8_t   tx_power;                               /*!< Extended advertising TX power */
+    uint8_t   dir_addr_type;                          /*!< Direct address type */
+    uint8_t   dir_addr[6];                            /*!< Direct address */
+    uint8_t   data_status;                            /*!< Data type */
+    uint16_t  per_adv_interval;                       /*!< Periodic advertising interval */
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+} esp_ble_mesh_ble_adv_rpt_t;
 
 /** BLE operation callback parameters */
 typedef union {
@@ -52,16 +85,24 @@ typedef union {
         int err_code;     /*!< Indicate the result of stopping BLE scanning */
     } stop_ble_scan_comp; /*!< Event parameters of ESP_BLE_MESH_STOP_BLE_SCANNING_COMP_EVT */
     /**
-     * @brief ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT
+     * @brief Event parameters of ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT
      */
-    struct {
-        uint8_t  addr[6];   /*!< Device address */
-        uint8_t  addr_type; /*!< Device address type */
-        uint8_t  adv_type;  /*!< Advertising data type */
-        uint8_t *data;      /*!< Advertising data */
-        uint16_t length;    /*!< Advertising data length */
-        int8_t   rssi;      /*!< RSSI of the advertising packet */
-    } scan_ble_adv_pkt;     /*!< Event parameters of ESP_BLE_MESH_SCAN_BLE_ADVERTISING_PKT_EVT */
+    esp_ble_mesh_ble_adv_rpt_t scan_ble_adv_pkt;
+    /**
+     * @brief Event parameter of ESP_BLE_MESH_SCAN_PARAMS_UPDATE_COMP_EVT
+     */
+    struct ble_mesh_scan_params_update_comp_param {
+        int err_code;                           /*!< Indicates the result of updating scan parameters */
+    } scan_params_update_comp;                  /*!< Event parameter of ESP_BLE_MESH_SCAN_PARAMS_UPDATE_COMP_EVT */
+#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED
+    /**
+     * @brief Event parameters of ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT
+     */
+    struct ble_mesh_nimble_gap_event_evt_param {
+        struct ble_gap_event event;             /*!< GAP event parameters for NimBLE Host */
+        void *arg;                              /*!< User parameters */
+    } nimble_gap_evt;                           /*!< Event parameters of ESP_BLE_MESH_NIMBLE_GAP_EVENT_EVT */
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BT_NIMBLE_ENABLED */
 } esp_ble_mesh_ble_cb_param_t;
 
 /**
@@ -174,6 +215,33 @@ esp_err_t esp_ble_mesh_start_ble_scanning(esp_ble_mesh_ble_scan_param_t *param);
  *
  */
 esp_err_t esp_ble_mesh_stop_ble_scanning(void);
+
+/**
+ * @brief           Update BLE Mesh scan parameters.
+ *
+ * @note
+ *                  1. This function shall be used after ESP BLE Mesh is initialized!
+ *                    Parameters `scan_interval` and `uncoded_scan_window` must both
+ *                    be multiples of 8.
+ *
+ *                  2. If the config BLE_MESH_USE_BLE_50 is enabled, within the scan_interval:
+ *                     - If uncoded_scan_window is not zero, the scan_interval is divided into
+ *                       two parts:
+ *                          - uncoded_scan_window: Used for performing uncoded scanning.
+ *                          - (scan_interval - uncoded_scan_window): The remaining time is
+ *                             used for coded scanning (coded_scan).
+ *                     - If uncoded_scan_window is set to 0, it means the entire scan_interval
+ *                      is used for coded scanning.
+ *                     - If uncoded_scan_window is equal to scan_interval, it means the entire
+ *                      scan_interval is used for uncoded scanning.
+ *
+ * @param[in]      scan_param: Scan parameters
+ *
+ * @return
+ *                 - ESP_OK: Success
+ *                 - ESP_FAIL: Invalid parameters or unable transfer this command to the stack
+*/
+esp_err_t esp_ble_mesh_scan_params_update(esp_ble_mesh_scan_param_t *scan_param);
 
 #ifdef __cplusplus
 }

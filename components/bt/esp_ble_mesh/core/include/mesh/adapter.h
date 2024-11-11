@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2017 Nordic Semiconductor ASA
  * SPDX-FileCopyrightText: 2015-2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,18 @@ extern "C" {
 
 #define BLE_MESH_GATT_DEF_MTU_SIZE  23
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+#define BLE_MESH_ADV_PHY_UNASSIGNED                                 0
+#define BLE_MESH_ADV_PHY_1M                                         1
+#define BLE_MESH_ADV_PHY_2M                                         2
+#define BLE_MESH_ADV_PHY_CODED                                      3
+#define BLE_MESH_ADV_PHY_OPTION_NO_PREFER                           0
+#define BLE_MESH_ADV_PHY_OPTION_PREFER_S2                           1
+#define BLE_MESH_ADV_PHY_OPTION_PREFER_S8                           2
+#define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S2                          3
+#define BLE_MESH_ADV_PHY_OPTION_REQUIRE_S8                          4
+#endif
+
 /* BD ADDR types */
 #define BLE_MESH_ADDR_PUBLIC         0x00
 #define BLE_MESH_ADDR_RANDOM         0x01
@@ -43,11 +55,22 @@ extern "C" {
 #define BLE_MESH_ADDR_LEN                   0x06
 
 /* Advertising types */
+#if !CONFIG_BLE_MESH_USE_BLE_50
 #define BLE_MESH_ADV_IND                    0x00
 #define BLE_MESH_ADV_DIRECT_IND             0x01
 #define BLE_MESH_ADV_SCAN_IND               0x02
 #define BLE_MESH_ADV_NONCONN_IND            0x03
 #define BLE_MESH_ADV_DIRECT_IND_LOW_DUTY    0x04
+#define BLE_MESH_ADV_SCAN_RSP               0x04
+#else
+/* Bluetooth Core Spec 6.0, Vol 4, Part E, 7.7.65.13 */
+#define BLE_MESH_ADV_IND                   (0x13)
+#define BLE_MESH_ADV_DIRECT_IND            (0x15)
+#define BLE_MESH_ADV_SCAN_IND              (0x12)
+#define BLE_MESH_ADV_NONCONN_IND           (0x10)
+#define BLE_MESH_ADV_DIRECT_IND_LOW_DUTY   (0x1b)
+#define BLE_MESH_ADV_SCAN_RSP              (0x1b)
+#endif
 
 /* advertising channel map */
 #define BLE_MESH_ADV_CHNL_37                BIT(0)
@@ -400,7 +423,31 @@ struct bt_mesh_adv_param {
 
     /** Maximum Advertising Interval (N * 0.625) */
     uint16_t interval_max;
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+    /** Maximum Advertising Duration (N * 0.625) */
+    uint16_t adv_duration;
+
+    /** Advertising Packages Number */
+    uint16_t adv_count;
+
+    /** Advertising Primary PHY */
+    uint8_t primary_phy;
+
+    /** Advertising Secondary PHY */
+    uint8_t secondary_phy;
+#endif
 };
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+enum bt_mesh_adv_inst_type {
+    BLE_MESH_ADV_PROXY_INS,
+    BLE_MESH_ADV_INS,
+    BLE_MESH_EXT_ADV_INS,
+    BLE_MESH_BLE_ADV_INS,
+    BLE_MESH_ADV_INS_TYPE_NUMS,
+};
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 enum bt_mesh_ble_adv_priority {
@@ -441,7 +488,7 @@ struct bt_mesh_scan_param {
     /** Scan interval (N * 0.625 ms) */
     uint16_t interval;
 
-    /** Scan window (N * 0.625 ms) */
+    /** Uncoded phy Scan window (N * 0.625 ms) */
     uint16_t window;
 
     /** BLE scan filter policy */
@@ -453,21 +500,38 @@ struct bt_mesh_conn {
     bt_mesh_atomic_t ref;
 };
 
+/* BLE Mesh advertising report  */
+struct bt_mesh_adv_report {
+    /* Advertiser LE address and type. */
+    bt_mesh_addr_t addr;
+
+    /* Strength of advertiser signal. */
+    int8_t rssi;
+
+    /* Type of advertising response from advertiser. */
+    uint8_t adv_type;
+
+    /* Buffer containing advertiser data. */
+    struct net_buf_simple adv_data;
+
+#if CONFIG_BLE_MESH_USE_BLE_50
+    /* Primary advertising PHY */
+    uint8_t primary_phy;
+
+    /* Secondary advertising PHY */
+    uint8_t secondary_phy;
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+};
+
 /** @typedef bt_mesh_scan_cb_t
  *  @brief Callback type for reporting LE scan results.
  *
  *  A function of this type is given to the bt_le_scan_start() function
  *  and will be called for any discovered LE device.
  *
- *  @param addr Advertiser LE address and type.
- *  @param rssi Strength of advertiser signal.
- *  @param adv_type Type of advertising response from advertiser.
- *  @param data Buffer containing advertiser data.
- *  @param scan_rsp_len Scan Response data length.
+ *  @param adv_rpt: BLE Mesh advertising report.
  */
-typedef void bt_mesh_scan_cb_t(const bt_mesh_addr_t *addr, int8_t rssi,
-                               uint8_t adv_type, struct net_buf_simple *buf,
-                               uint8_t scan_rsp_len);
+typedef void bt_mesh_scan_cb_t(struct bt_mesh_adv_report *adv_rpt);
 
 /*  @typedef bt_mesh_dh_key_cb_t
  *  @brief Callback type for DH Key calculation.
@@ -553,7 +617,7 @@ struct bt_mesh_gatt_attr {
      *  @param len    Length of data to read
      *  @param offset Offset to start reading from
      *
-     *  @return Number fo bytes read, or in case of an error
+     *  @return Number of bytes read, or in case of an error
      *          BLE_MESH_GATT_ERR() with a specific ATT error code.
      */
     ssize_t (*read)(struct bt_mesh_conn *conn,
@@ -684,6 +748,21 @@ struct bt_mesh_gatt_attr {
 int bt_mesh_host_init(void);
 int bt_mesh_host_deinit(void);
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+int bt_le_ext_adv_start(const uint8_t inst_id,
+                        const struct bt_mesh_adv_param *param,
+                        const struct bt_mesh_adv_data *ad, size_t ad_len,
+                        const struct bt_mesh_adv_data *sd, size_t sd_len);
+
+#if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
+                              const struct bt_mesh_ble_adv_param *param,
+                              const struct bt_mesh_ble_adv_data *adv_data);
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+
+int bt_le_ext_adv_stop(uint8_t inst_id);
+
+#else /* CONFIG_BLE_MESH_USE_BLE_50 */
 int bt_le_adv_start(const struct bt_mesh_adv_param *param,
                     const struct bt_mesh_adv_data *ad, size_t ad_len,
                     const struct bt_mesh_adv_data *sd, size_t sd_len);
@@ -691,9 +770,10 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 int bt_mesh_ble_adv_start(const struct bt_mesh_ble_adv_param *param,
                           const struct bt_mesh_ble_adv_data *data);
-#endif
+#endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
 
 int bt_le_adv_stop(void);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
 
 int bt_le_scan_start(const struct bt_mesh_scan_param *param, bt_mesh_scan_cb_t cb);
 
