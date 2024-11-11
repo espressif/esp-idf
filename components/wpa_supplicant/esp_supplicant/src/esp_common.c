@@ -356,7 +356,25 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
         ret = -1;
         goto err;
     }
-    ret = os_task_create(btm_rrm_task, "btm_rrm_t", SUPPLICANT_TASK_STACK_SIZE, NULL, 2, &s_supplicant_task_hdl);
+    // Define the core to pin the task based on configuration
+    #ifdef CONFIG_ESP_WIFI_TASK_PINNED_TO_CORE_0
+    #define SUPPLICANT_TASK_CORE 0
+    #elif defined(CONFIG_ESP_WIFI_TASK_PINNED_TO_CORE_1)
+    #define SUPPLICANT_TASK_CORE 1
+    #else
+    #define SUPPLICANT_TASK_CORE tskNO_AFFINITY  // If no specific core, run on any core
+    #endif
+    // Create the task pinned to the specified core
+    ret = xTaskCreatePinnedToCore(
+        btm_rrm_task,                     // Task function
+        "btm_rrm_t",                      // Task name
+        SUPPLICANT_TASK_STACK_SIZE,       // Stack size
+        NULL,                             // Task parameter (NULL in this case)
+        2,                                // Task priority
+        &s_supplicant_task_hdl,           // Task handle
+        SUPPLICANT_TASK_CORE              // Core to pin the task to
+    );
+    // ret = os_task_create(btm_rrm_task, "btm_rrm_t", SUPPLICANT_TASK_STACK_SIZE, NULL, 2, &s_supplicant_task_hdl);
     if (ret != TRUE) {
         wpa_printf(MSG_ERROR, "btm: failed to create task");
         ret = -1;
