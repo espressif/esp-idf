@@ -697,3 +697,7 @@
         -
             re_variables: ['w5500']
             hint_variables: ['W5500', 'w5500']
+
+-
+    re: "error: 'MALLOC_CAP_EXEC' undeclared \\(first use in this function\\)"
+    hint: "MALLOC_CAP_EXEC capability cannot be used if CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT or CONFIG_ESP_SYSTEM_MEMPROT_FEATURE is enlabled. \nFor further information about those configurations, run 'idf.py docs -sp api-reference/kconfig-reference.html#memory-protection'"

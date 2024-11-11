@@ -45,10 +45,6 @@ TEST_CASE("Capabilities aligned allocator test", "[heap][psram]")
         }
     }
 
-    //Alloc from a non permitted area:
-    uint32_t *not_permitted_buf = (uint32_t *)heap_caps_aligned_alloc(alignments, (alignments + 137), MALLOC_CAP_EXEC | MALLOC_CAP_32BIT);
-    TEST_ASSERT( not_permitted_buf == NULL );
-
 #if CONFIG_SPIRAM
     alignments = 0;
     printf("[ALIGNED_ALLOC] Allocating from external memory: \n");
