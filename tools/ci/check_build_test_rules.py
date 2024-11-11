@@ -36,6 +36,7 @@ USUAL_TO_FORMAL = {
     'esp32h2': 'ESP32-H2',
     'esp32p4': 'ESP32-P4',
     'esp32c61': 'ESP32-C61',
+    'esp32h21': 'ESP32-H21',
     'linux': 'Linux',
 }
 
@@ -50,6 +51,7 @@ FORMAL_TO_USUAL = {
     'ESP32-H2': 'esp32h2',
     'ESP32-P4': 'esp32p4',
     'ESP32-C61': 'esp32c61',
+    'ESP32-H21': 'esp32h21',
     'Linux': 'linux',
 }
 
