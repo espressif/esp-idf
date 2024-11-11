@@ -178,7 +178,7 @@ void app_main(void)
                                            0);
     assert(task_created == pdTRUE);
 
-    // Wait unit the USB host library is installed
+    // Wait until the USB host library is installed
     ulTaskNotifyTake(false, 1000);
 
     // Create class driver task
