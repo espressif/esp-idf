@@ -14,6 +14,9 @@ examples/peripherals/adc/continuous_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
@@ -23,6 +26,9 @@ examples/peripherals/adc/oneshot_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runner, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:

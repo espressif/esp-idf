@@ -842,8 +842,10 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
+#if SOC_ADC_ARBITER_SUPPORTED
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_arbiter_config(&config);
+#endif
 
     adc_atten_t atten = s_atten2_single[channel];
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED

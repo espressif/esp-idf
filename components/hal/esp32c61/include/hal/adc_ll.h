@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,12 +31,13 @@ extern "C" {
 #define ADC_LL_EVENT_ADC1_ONESHOT_DONE    BIT(31)
 #define ADC_LL_EVENT_ADC2_ONESHOT_DONE    BIT(30)
 
-#define ADC_LL_THRES_ALL_INTR_ST_M  (APB_SARADC_APB_SARADC_THRES0_HIGH_INT_ST_M | \
-                                     APB_SARADC_APB_SARADC_THRES1_HIGH_INT_ST_M | \
-                                     APB_SARADC_APB_SARADC_THRES0_LOW_INT_ST_M  | \
-                                     APB_SARADC_APB_SARADC_THRES1_LOW_INT_ST_M)
-#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? APB_SARADC_APB_SARADC_THRES0_HIGH_INT_ST_M : APB_SARADC_APB_SARADC_THRES1_HIGH_INT_ST_M)
-#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? APB_SARADC_APB_SARADC_THRES0_LOW_INT_ST_M : APB_SARADC_APB_SARADC_THRES1_LOW_INT_ST_M)
+#define ADC_LL_THRES_ALL_INTR_ST_M  (SARADC_THRES0_HIGH_INT_ST_M | \
+                                     SARADC_THRES1_HIGH_INT_ST_M | \
+                                     SARADC_THRES0_LOW_INT_ST_M  | \
+                                     SARADC_THRES1_LOW_INT_ST_M)
+
+#define ADC_LL_GET_HIGH_THRES_MASK(monitor_id)    ((monitor_id == 0) ? SARADC_THRES0_HIGH_INT_ST_M : SARADC_THRES1_HIGH_INT_ST_M)
+#define ADC_LL_GET_LOW_THRES_MASK(monitor_id)     ((monitor_id == 0) ? SARADC_THRES0_LOW_INT_ST_M : SARADC_THRES1_LOW_INT_ST_M)
 
 /*---------------------------------------------------------------
                     Oneshot
@@ -59,7 +60,7 @@ extern "C" {
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
-#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C6 supported to manage power mode
+#define ADC_LL_POWER_MANAGE_SUPPORTED     1 //ESP32C61 supported to manage power mode
 /*---------------------------------------------------------------
                     PWDET (Power Detect)
 ---------------------------------------------------------------*/
@@ -79,7 +80,7 @@ typedef enum {
  * @brief ADC digital controller (DMA mode) work mode.
  *
  * @note  The conversion mode affects the sampling frequency:
- *        ESP32C6 only support ONLY_ADC1 mode
+ *        ESP32C61 only support ONLY_ADC1 mode
  *        SINGLE_UNIT_1: When the measurement is triggered, only ADC1 is sampled once.
  */
 typedef enum {
@@ -112,11 +113,11 @@ typedef struct  {
 static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wait, uint32_t standby_wait)
 {
     // Internal FSM reset wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_rstb_wait, rst_wait);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_fsm_wait, saradc_rstb_wait, rst_wait);
     // Internal FSM start wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_xpd_wait, start_wait);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_fsm_wait, saradc_xpd_wait, start_wait);
     // Internal FSM standby wait time
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_fsm_wait, saradc_saradc_standby_wait, standby_wait);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_fsm_wait, saradc_standby_wait, standby_wait);
 }
 
 /**
@@ -128,7 +129,7 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    /* Analog i2c master clock needs to be enabled for regi2c operations (done inside REGI2C_WRITE_MASK) */
+    /* Peripheral reg i2c has powered up in rtc_init, write directly */
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
@@ -141,7 +142,7 @@ static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 static inline void adc_ll_digi_set_clk_div(uint32_t div)
 {
     /* ADC clock divided from digital controller clock clk */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl, saradc_saradc_sar_clk_div, div);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_ctrl, saradc_sar_clk_div, div);
 }
 
 /**
@@ -152,7 +153,7 @@ static inline void adc_ll_digi_set_clk_div(uint32_t div)
  */
 static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_ctrl2, saradc_saradc_max_meas_num, meas_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_ctrl2, saradc_max_meas_num, meas_num);
 }
 
 /**
@@ -163,19 +164,19 @@ static inline void adc_ll_digi_set_convert_limit_num(uint32_t meas_num)
  */
 static inline void adc_ll_digi_convert_limit_enable(bool enable)
 {
-    APB_SARADC.saradc_ctrl2.saradc_saradc_meas_num_limit = enable;
+    ADC.saradc_ctrl2.saradc_meas_num_limit = enable;
 }
 
 /**
  * Set adc conversion mode for digital controller.
  *
- * @note ESP32C6 only support ADC1 single mode.
+ * @note ESP32C61 only support ADC1 single mode.
  *
  * @param mode Conversion mode select.
  */
 static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 {
-    //ESP32C6 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
+    //ESP32C61 only supports ADC_LL_DIGI_CONV_ONLY_ADC1 mode
 }
 
 /**
@@ -189,7 +190,7 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
  */
 static inline void adc_ll_digi_set_pattern_table_len(adc_unit_t adc_n, uint32_t patt_len)
 {
-    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_len = patt_len - 1;
+    ADC.saradc_ctrl.saradc_sar_patt_len = patt_len - 1;
 }
 
 /**
@@ -211,15 +212,15 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
 
     pattern.val = (table.atten & 0x3) | ((table.channel & 0x7) << 2) | ((table.unit & 0x1) << 5);
     if (index == 0) {
-        tab = APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1;         // Read old register value
+        tab = ADC.saradc_sar_patt_tab1.saradc_sar_patt_tab1;         // Read old register value
         tab &= (~(0xFC0000 >> offset));                             // Clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
-        APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = tab;         // Write back
+        ADC.saradc_sar_patt_tab1.saradc_sar_patt_tab1 = tab;         // Write back
     } else {
-        tab = APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2;         // Read old register value
+        tab = ADC.saradc_sar_patt_tab2.saradc_sar_patt_tab2;         // Read old register value
         tab &= (~(0xFC0000 >> offset));                             // Clear old data
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
-        APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = tab;         // Write back
+        ADC.saradc_sar_patt_tab2.saradc_sar_patt_tab2 = tab;         // Write back
     }
 }
 
@@ -230,8 +231,8 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
  */
 static inline void adc_ll_digi_clear_pattern_table(adc_unit_t adc_n)
 {
-    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_p_clear = 1;
-    APB_SARADC.saradc_ctrl.saradc_saradc_sar_patt_p_clear = 0;
+    ADC.saradc_ctrl.saradc_sar_patt_p_clear = 1;
+    ADC.saradc_ctrl.saradc_sar_patt_p_clear = 0;
 }
 
 /**
@@ -242,7 +243,7 @@ static inline void adc_ll_digi_clear_pattern_table(adc_unit_t adc_n)
  */
 static inline void adc_ll_digi_set_arbiter_stable_cycle(uint32_t cycle)
 {
-    APB_SARADC.saradc_ctrl.saradc_saradc_wait_arb_cycle = cycle;
+    ADC.saradc_ctrl.saradc_wait_arb_cycle = cycle;
 }
 
 /**
@@ -254,7 +255,9 @@ static inline void adc_ll_digi_set_arbiter_stable_cycle(uint32_t cycle)
 static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
 {
     if (adc_n == ADC_UNIT_1) {
-        APB_SARADC.saradc_ctrl2.saradc_saradc_sar1_inv = inv_en;   // Enable / Disable ADC data invert
+        ADC.saradc_ctrl2.saradc_sar1_inv = inv_en;   // Enable / Disable ADC data invert
+    } else { // adc_n == ADC_UNIT_2
+        ADC.saradc_ctrl2.saradc_sar2_inv = inv_en;   // Enable / Disable ADC data invert
     }
 }
 
@@ -267,7 +270,7 @@ static inline void adc_ll_digi_output_invert(adc_unit_t adc_n, bool inv_en)
  */
 static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
 {
-    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_target = cycle;
+    ADC.saradc_ctrl2.saradc_timer_target = cycle;
 }
 
 /**
@@ -275,7 +278,7 @@ static inline void adc_ll_digi_set_trigger_interval(uint32_t cycle)
  */
 static inline void adc_ll_digi_trigger_enable(void)
 {
-    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 1;
+    ADC.saradc_ctrl2.saradc_timer_en = 1;
 }
 
 /**
@@ -283,7 +286,7 @@ static inline void adc_ll_digi_trigger_enable(void)
  */
 static inline void adc_ll_digi_trigger_disable(void)
 {
-    APB_SARADC.saradc_ctrl2.saradc_saradc_timer_en = 0;
+    ADC.saradc_ctrl2.saradc_timer_en = 0;
 }
 
 /**
@@ -312,17 +315,17 @@ static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
         case ADC_DIGI_CLK_SRC_XTAL:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 0;
             break;
-        case ADC_DIGI_CLK_SRC_PLL_F80M:
+        case ADC_DIGI_CLK_SRC_RC_FAST:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 1;
             break;
-        case ADC_DIGI_CLK_SRC_RC_FAST:
+        case ADC_DIGI_CLK_SRC_PLL_F80M:
             PCR.saradc_clkm_conf.saradc_clkm_sel = 2;
             break;
         default:
             HAL_ASSERT(false && "unsupported clock");
     }
     // Enable ADC_CTRL_CLK (i.e. digital domain clock)
-    APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 1;
+    ADC.saradc_ctrl.saradc_sar_clk_gated = 1;
 }
 
 /**
@@ -330,7 +333,7 @@ static inline void adc_ll_digi_clk_sel(adc_continuous_clk_src_t clk_src)
  */
 static inline void adc_ll_digi_controller_clk_disable(void)
 {
-    APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 0;
+    ADC.saradc_ctrl.saradc_sar_clk_gated = 0;
 }
 
 /**
@@ -342,8 +345,8 @@ static inline void adc_ll_digi_controller_clk_disable(void)
 static inline void adc_ll_digi_filter_reset(adc_digi_iir_filter_t idx, adc_unit_t adc_n)
 {
     (void)adc_n;
-    APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_reset = 1;
-    APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_reset = 0;
+    ADC.saradc_filter_ctrl0.saradc_adc_filter_reset = 1;
+    ADC.saradc_filter_ctrl0.saradc_adc_filter_reset = 0;
 }
 
 /**
@@ -378,11 +381,11 @@ static inline void adc_ll_digi_filter_set_factor(adc_digi_iir_filter_t idx, adc_
     }
 
     if (idx == ADC_DIGI_IIR_FILTER_0) {
-        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 = ((adc_n + 1) << 3) | (channel & 0x7);
-        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor0 = factor_reg_val;
+        ADC.saradc_filter_ctrl0.saradc_adc_filter_channel0 = ((adc_n + 1) << 3) | (channel & 0x7);
+        ADC.saradc_filter_ctrl1.saradc_adc_filter_factor0 = factor_reg_val;
     } else if (idx == ADC_DIGI_IIR_FILTER_1) {
-        APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 = ((adc_n + 1) << 3) | (channel & 0x7);
-        APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor1 = factor_reg_val;
+        ADC.saradc_filter_ctrl0.saradc_adc_filter_channel1 = ((adc_n + 1) << 3) | (channel & 0x7);
+        ADC.saradc_filter_ctrl1.saradc_adc_filter_factor1 = factor_reg_val;
     }
 }
 
@@ -399,11 +402,11 @@ static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit
     (void)adc_n;
     if (!enable) {
         if (idx == ADC_DIGI_IIR_FILTER_0) {
-            APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel0 = 0xF;
-            APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor0 = 0;
+            ADC.saradc_filter_ctrl0.saradc_adc_filter_channel0 = 0xF;
+            ADC.saradc_filter_ctrl1.saradc_adc_filter_factor0 = 0;
         } else if (idx == ADC_DIGI_IIR_FILTER_1) {
-            APB_SARADC.saradc_filter_ctrl0.saradc_apb_saradc_filter_channel1 = 0xF;
-            APB_SARADC.saradc_filter_ctrl1.saradc_apb_saradc_filter_factor1 = 0;
+            ADC.saradc_filter_ctrl0.saradc_adc_filter_channel1 = 0xF;
+            ADC.saradc_filter_ctrl1.saradc_adc_filter_factor1 = 0;
         }
     }
     //nothing to do to enable, after adc_ll_digi_filter_set_factor, it's enabled.
@@ -421,13 +424,13 @@ static inline void adc_ll_digi_filter_enable(adc_digi_iir_filter_t idx, adc_unit
 static inline void adc_ll_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t channel, int32_t h_thresh, int32_t l_thresh)
 {
     if (monitor_id == ADC_MONITOR_0) {
-        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_channel = (adc_n << 3) | (channel & 0x7);
-        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_high = h_thresh;
-        APB_SARADC.saradc_thres0_ctrl.saradc_apb_saradc_thres0_low = l_thresh;
+        ADC.saradc_thres0_ctrl.saradc_adc_thres0_channel = (adc_n << 3) | (channel & 0x7);
+        ADC.saradc_thres0_ctrl.saradc_adc_thres0_high = h_thresh;
+        ADC.saradc_thres0_ctrl.saradc_adc_thres0_low = l_thresh;
     } else { // ADC_MONITOR_1
-        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_channel = (adc_n << 3) | (channel & 0x7);
-        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_high = h_thresh;
-        APB_SARADC.saradc_thres1_ctrl.saradc_apb_saradc_thres1_low = l_thresh;
+        ADC.saradc_thres1_ctrl.saradc_adc_thres1_channel = (adc_n << 3) | (channel & 0x7);
+        ADC.saradc_thres1_ctrl.saradc_adc_thres1_high = h_thresh;
+        ADC.saradc_thres1_ctrl.saradc_adc_thres1_low = l_thresh;
     }
 }
 
@@ -440,9 +443,9 @@ static inline void adc_ll_digi_monitor_set_thres(adc_monitor_id_t monitor_id, ad
 static inline void adc_ll_digi_monitor_user_start(adc_monitor_id_t monitor_id, bool start)
 {
     if (monitor_id == ADC_MONITOR_0) {
-        APB_SARADC.saradc_thres_ctrl.saradc_apb_saradc_thres0_en = start;
+        ADC.saradc_thres_ctrl.saradc_adc_thres0_en = start;
     } else {
-        APB_SARADC.saradc_thres_ctrl.saradc_apb_saradc_thres1_en = start;
+        ADC.saradc_thres_ctrl.saradc_adc_thres1_en = start;
     }
 }
 
@@ -457,16 +460,16 @@ static inline void adc_ll_digi_monitor_enable_intr(adc_monitor_id_t monitor_id, 
 {
     if (monitor_id == ADC_MONITOR_0) {
         if (mode == ADC_MONITOR_MODE_HIGH) {
-            APB_SARADC.saradc_int_ena.saradc_apb_saradc_thres0_high_int_ena = enable;
+            ADC.saradc_int_ena.saradc_adc_thres0_high_int_ena = enable;
         } else {
-            APB_SARADC.saradc_int_ena.saradc_apb_saradc_thres0_low_int_ena = enable;
+            ADC.saradc_int_ena.saradc_adc_thres0_low_int_ena = enable;
         }
     }
     if (monitor_id == ADC_MONITOR_1) {
         if (mode == ADC_MONITOR_MODE_HIGH) {
-            APB_SARADC.saradc_int_ena.saradc_apb_saradc_thres1_high_int_ena = enable;
+            ADC.saradc_int_ena.saradc_adc_thres1_high_int_ena = enable;
         } else {
-            APB_SARADC.saradc_int_ena.saradc_apb_saradc_thres1_low_int_ena = enable;
+            ADC.saradc_int_ena.saradc_adc_thres1_low_int_ena = enable;
         }
     }
 }
@@ -477,7 +480,7 @@ static inline void adc_ll_digi_monitor_enable_intr(adc_monitor_id_t monitor_id, 
 __attribute__((always_inline))
 static inline void adc_ll_digi_monitor_clear_intr(void)
 {
-    APB_SARADC.saradc_int_clr.val |= ADC_LL_THRES_ALL_INTR_ST_M;
+    ADC.saradc_int_clr.val |= ADC_LL_THRES_ALL_INTR_ST_M;
 }
 
 /**
@@ -488,7 +491,7 @@ static inline void adc_ll_digi_monitor_clear_intr(void)
 __attribute__((always_inline))
 static inline volatile const void *adc_ll_digi_monitor_get_intr_status_addr(void)
 {
-    return &APB_SARADC.saradc_int_st.val;
+    return &ADC.saradc_int_st.val;
 }
 
 /**
@@ -499,7 +502,7 @@ static inline volatile const void *adc_ll_digi_monitor_get_intr_status_addr(void
  */
 static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(APB_SARADC.saradc_dma_conf, saradc_apb_adc_eof_num, num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(ADC.saradc_dma_conf, saradc_apb_adc_eof_num, num);
 }
 
 /**
@@ -507,7 +510,7 @@ static inline void adc_ll_digi_dma_set_eof_num(uint32_t num)
  */
 static inline void adc_ll_digi_dma_enable(void)
 {
-    APB_SARADC.saradc_dma_conf.saradc_apb_adc_trans = 1;
+    ADC.saradc_dma_conf.saradc_apb_adc_trans = 1;
 }
 
 /**
@@ -515,7 +518,7 @@ static inline void adc_ll_digi_dma_enable(void)
  */
 static inline void adc_ll_digi_dma_disable(void)
 {
-    APB_SARADC.saradc_dma_conf.saradc_apb_adc_trans = 0;
+    ADC.saradc_dma_conf.saradc_apb_adc_trans = 0;
 }
 
 /**
@@ -523,8 +526,8 @@ static inline void adc_ll_digi_dma_disable(void)
  */
 static inline void adc_ll_digi_reset(void)
 {
-    APB_SARADC.saradc_dma_conf.saradc_apb_adc_reset_fsm = 1;
-    APB_SARADC.saradc_dma_conf.saradc_apb_adc_reset_fsm = 0;
+    ADC.saradc_dma_conf.saradc_apb_adc_reset_fsm = 1;
+    ADC.saradc_dma_conf.saradc_apb_adc_reset_fsm = 0;
 }
 
 /*---------------------------------------------------------------
@@ -557,7 +560,7 @@ static inline uint32_t adc_ll_pwdet_get_cct(void)
 ---------------------------------------------------------------*/
 
 /**
- * @brief Enable the ADC clock
+ * @brief Enable the ADC APB clock
  * @param enable true to enable, false to disable
  */
 static inline void adc_ll_enable_bus_clock(bool enable)
@@ -594,80 +597,21 @@ static inline void adc_ll_set_power_manage(adc_unit_t adc_n, adc_ll_power_t mana
     /* Bit1  0:Fsm  1: SW mode
        Bit0  0:SW mode power down  1: SW mode power on */
     if (manage == ADC_LL_POWER_SW_ON) {
-        APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 1;
-        APB_SARADC.saradc_ctrl.saradc_saradc_xpd_sar_force = 3;
+        ADC.saradc_ctrl.saradc_sar_clk_gated = 1;
+        ADC.saradc_ctrl.saradc_xpd_sar_force = 3;
     } else if (manage == ADC_LL_POWER_BY_FSM) {
-        APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 1;
-        APB_SARADC.saradc_ctrl.saradc_saradc_xpd_sar_force = 0;
+        ADC.saradc_ctrl.saradc_sar_clk_gated = 1;
+        ADC.saradc_ctrl.saradc_xpd_sar_force = 0;
     } else if (manage == ADC_LL_POWER_SW_OFF) {
-        APB_SARADC.saradc_ctrl.saradc_saradc_sar_clk_gated = 0;
-        APB_SARADC.saradc_ctrl.saradc_saradc_xpd_sar_force = 2;
+        ADC.saradc_ctrl.saradc_sar_clk_gated = 0;
+        ADC.saradc_ctrl.saradc_xpd_sar_force = 2;
     }
 }
 
 __attribute__((always_inline))
 static inline void adc_ll_set_controller(adc_unit_t adc_n, adc_ll_controller_t ctrl)
 {
-    //Not used on ESP32C6
-}
-
-/* ADC calibration code. */
-/**
- * @brief Set common calibration configuration. Should be shared with other parts (PWDET).
- */
-__attribute__((always_inline))
-static inline void adc_ll_calibration_init(adc_unit_t adc_n)
-{
-    (void)adc_n;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_DREF_ADDR, 1);
-}
-
-/**
- * Configure the registers for ADC calibration. You need to call the ``adc_ll_calibration_finish`` interface to resume after calibration.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- * @param internal_gnd true:  Disconnect from the IO port and use the internal GND as the calibration voltage.
- *                     false: Use IO external voltage as calibration voltage.
- */
-static inline void adc_ll_calibration_prepare(adc_unit_t adc_n, bool internal_gnd)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    /* Enable/disable internal connect GND (for calibration). */
-    if (internal_gnd) {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 1);
-    } else {
-        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-    }
-}
-
-/**
- * Resume register status after calibration.
- *
- * @param adc_n ADC index number.
- */
-static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_ENCAL_GND_ADDR, 0);
-}
-
-/**
- * Set the calibration result to ADC.
- *
- * @note  Different ADC units and different attenuation options use different calibration data (initial data).
- *
- * @param adc_n ADC index number.
- */
-__attribute__((always_inline))
-static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
-{
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    uint8_t msb = param >> 8;
-    uint8_t lsb = param & 0xFF;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    //Not used on ESP32C61
 }
 
 /*---------------------------------------------------------------
@@ -676,13 +620,14 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
 /**
  * Set adc output data format for oneshot mode
  *
- * @note ESP32C6 Oneshot mode only supports 12bit.
+ * @note ESP32C61 Oneshot mode only supports 12bit.
  * @param adc_n ADC unit.
  * @param bits  Output data bits width option.
  */
 static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth_t bits)
 {
-    //ESP32C6 only supports 12bit, leave here for compatibility
+    (void) adc_n;
+    //ESP32C61 only supports 12bit, leave here for compatibility
     HAL_ASSERT(bits == ADC_BITWIDTH_12 || bits == ADC_BITWIDTH_DEFAULT);
 }
 
@@ -696,8 +641,7 @@ static inline void adc_oneshot_ll_set_output_bits(adc_unit_t adc_n, adc_bitwidth
  */
 static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, adc_channel_t channel)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_channel = ((adc_n << 3) | channel);
+    ADC.saradc_onetime_sample.saradc_onetime_channel = ((adc_n << 3) | channel);
 }
 
 /**
@@ -709,8 +653,7 @@ static inline void adc_oneshot_ll_set_channel(adc_unit_t adc_n, adc_channel_t ch
  */
 static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_channel = ((adc_n << 3) | 0xF);
+    ADC.saradc_onetime_sample.saradc_onetime_channel = ((adc_n << 3) | 0xF);
 }
 
 /**
@@ -722,7 +665,7 @@ static inline void adc_oneshot_ll_disable_channel(adc_unit_t adc_n)
  */
 static inline void adc_oneshot_ll_start(bool val)
 {
-    APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_start = val;
+    ADC.saradc_onetime_sample.saradc_onetime_start = val;
 }
 
 /**
@@ -732,7 +675,7 @@ static inline void adc_oneshot_ll_start(bool val)
  */
 static inline void adc_oneshot_ll_clear_event(uint32_t event_mask)
 {
-    APB_SARADC.saradc_int_clr.val |= event_mask;
+    ADC.saradc_int_clr.val |= event_mask;
 }
 
 /**
@@ -746,7 +689,7 @@ static inline void adc_oneshot_ll_clear_event(uint32_t event_mask)
  */
 static inline bool adc_oneshot_ll_get_event(uint32_t event_mask)
 {
-    return (APB_SARADC.saradc_int_raw.val & event_mask);
+    return (ADC.saradc_int_raw.val & event_mask);
 }
 
 /**
@@ -758,11 +701,15 @@ static inline bool adc_oneshot_ll_get_event(uint32_t event_mask)
  */
 static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
     uint32_t ret_val = 0;
-    ret_val = APB_SARADC.saradc_sar1data_status.saradc_apb_saradc1_data & 0xfff;
+    if (adc_n == ADC_UNIT_1) {
+        ret_val = ADC.saradc_sar1data_status.saradc_adc1_data & 0xfff;
+    } else { // adc_n == ADC_UNIT_2
+        ret_val = ADC.saradc_sar2data_status.saradc_adc2_data & 0xfff;
+    }
     return ret_val;
 }
+
 
 /**
  * Analyze whether the obtained raw data is correct.
@@ -776,7 +723,7 @@ static inline uint32_t adc_oneshot_ll_get_raw_result(adc_unit_t adc_n)
  */
 static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw_data)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    (void)adc_n;
     return true;
 }
 
@@ -788,7 +735,7 @@ static inline bool adc_oneshot_ll_raw_check_valid(adc_unit_t adc_n, uint32_t raw
  */
 static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    (void)adc_n;
     (void)inv_en;
     //For compatibility
 }
@@ -800,8 +747,11 @@ static inline void adc_oneshot_ll_output_invert(adc_unit_t adc_n, bool inv_en)
  */
 static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
-    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
+    if (adc_n == ADC_UNIT_1) {
+        ADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 1;
+    } else {
+        ADC.saradc_onetime_sample.saradc_saradc2_onetime_sample = 1;
+    }
 }
 
 /**
@@ -809,8 +759,8 @@ static inline void adc_oneshot_ll_enable(adc_unit_t adc_n)
  */
 static inline void adc_oneshot_ll_disable_all_unit(void)
 {
-    APB_SARADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 0;
-    APB_SARADC.saradc_onetime_sample.saradc_saradc2_onetime_sample = 0;
+    ADC.saradc_onetime_sample.saradc_saradc1_onetime_sample = 0;
+    ADC.saradc_onetime_sample.saradc_saradc2_onetime_sample = 0;
 }
 
 /**
@@ -824,10 +774,10 @@ static inline void adc_oneshot_ll_disable_all_unit(void)
  */
 static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t channel, adc_atten_t atten)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    (void)adc_n;
     (void)channel;
     // Attenuation is for all channels, unit and channel are for compatibility
-    APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten = atten;
+    ADC.saradc_onetime_sample.saradc_onetime_atten = atten;
 }
 
 /**
@@ -840,9 +790,9 @@ static inline void adc_oneshot_ll_set_atten(adc_unit_t adc_n, adc_channel_t chan
 __attribute__((always_inline))
 static inline adc_atten_t adc_ll_get_atten(adc_unit_t adc_n, adc_channel_t channel)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    (void)adc_n;
     (void)channel;
-    return (adc_atten_t)APB_SARADC.saradc_onetime_sample.saradc_saradc_onetime_atten;
+    return (adc_atten_t)ADC.saradc_onetime_sample.saradc_onetime_atten;
 }
 
 #ifdef __cplusplus

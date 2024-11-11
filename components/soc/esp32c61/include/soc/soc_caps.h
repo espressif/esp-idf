@@ -17,7 +17,7 @@
 #pragma once
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
-//  \#define SOC_ADC_SUPPORTED               1    //TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
+#define SOC_ADC_SUPPORTED               1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
@@ -67,35 +67,34 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
 
-//TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
-//  \#define SOC_ADC_DIG_CTRL_SUPPORTED              1
-//  \#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
-//  \#define SOC_ADC_MONITOR_SUPPORTED               1
-//  \#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
-//  \#define SOC_ADC_DMA_SUPPORTED                   1
-#define SOC_ADC_PERIPH_NUM                      (1U)
-#define SOC_ADC_MAX_CHANNEL_NUM                 (7)
-//  \#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (7)
-//  \#define SOC_ADC_ATTEN_NUM                       (4)
+#define SOC_ADC_DIG_CTRL_SUPPORTED              1
+#define SOC_ADC_DIG_IIR_FILTER_SUPPORTED        1
+#define SOC_ADC_MONITOR_SUPPORTED               1
+#define SOC_ADC_DIG_SUPPORTED_UNIT(UNIT)        1    //Digital controller supported ADC unit
+#define SOC_ADC_DMA_SUPPORTED                   1
+#define SOC_ADC_PERIPH_NUM                      (1)
+#define SOC_ADC_MAX_CHANNEL_NUM                 (4)
+#define SOC_ADC_CHANNEL_NUM(PERIPH_NUM)         (4)
+#define SOC_ADC_ATTEN_NUM                       (4)
 
-// /*!< Digital */
-//  \#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
-//  \#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
-//  \#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
-//  \#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
-//  \#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
-//  \#define SOC_ADC_DIGI_MONITOR_NUM                (2)
-//  \#define SOC_ADC_DIGI_RESULT_BYTES               (4)
-//  \#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
-// /*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval <= 4095 */
-//  \#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
-//  \#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
+/*!< Digital */
+#define SOC_ADC_DIGI_CONTROLLER_NUM             (1U)
+#define SOC_ADC_PATT_LEN_MAX                    (8) /*!< Two pattern tables, each contains 4 items. Each item takes 1 byte */
+#define SOC_ADC_DIGI_MAX_BITWIDTH               (12)
+#define SOC_ADC_DIGI_MIN_BITWIDTH               (12)
+#define SOC_ADC_DIGI_IIR_FILTER_NUM             (2)
+#define SOC_ADC_DIGI_MONITOR_NUM                (2)
+#define SOC_ADC_DIGI_RESULT_BYTES               (4)
+#define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
+/*!< F_sample = F_digi_con / 2 / interval. F_digi_con = 5M for now. 30 <= interval <= 4095 */
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          83333
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           611
 
-// /*!< RTC */
-//  \#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
-//  \#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
+/*!< RTC */
+#define SOC_ADC_RTC_MIN_BITWIDTH                (12)
+#define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 // /*!< Calibration */  // TODO: [ESP32C61] IDF-9303
 //  \#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
@@ -106,7 +105,7 @@
 #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
 
 /*!< ADC power control is shared by PWDET */
-//  \#define SOC_ADC_SHARED_POWER                    1
+#define SOC_ADC_SHARED_POWER                    1
 
 /*-------------------------- APB BACKUP DMA CAPS -------------------------------*/
 #define SOC_APB_BACKUP_DMA              (0)

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,7 +43,7 @@ static const char* TAG = "test_adc_wifi";
 static int read_raw;
 static int target_value;
 static int test_adc_io;
-static bool test_list[TEST_NUM] = {1, 1, 0, 0, 1, 0, 1, 0};
+static bool test_list[TEST_NUM] = {0, 1, 0, 0, 1, 0, 1, 0};
 
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                                int32_t event_id, void* event_data)
@@ -215,14 +215,14 @@ __attribute__((unused)) static void adc_work_with_wifi(adc_unit_t unit_id, adc_c
     TEST_IGNORE_MESSAGE("this test case is ignored due to the critical memory leak of esp_netif and event_loop.");
 }
 
-#if CONFIG_IDF_TARGET_ESP32C6
-// On ESP32C6, ADC need to call two modem clocks: modem_syscon_ll_enable_fe_80m_clock and modem_syscon_ll_enable_fe_apb_clock.
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32C61
+// ADC need to call two modem clocks: modem_syscon_ll_enable_fe_80m_clock and modem_syscon_ll_enable_fe_apb_clock.
 // Without calling these two clocks, PWDET mode will not take into effect, so ADC readings will be wrong.
 TEST_CASE("ADC1 work with WiFi", "[adc]")
 {
     adc_work_with_wifi(ADC_UNIT_1, ADC1_WIFI_TEST_CHAN0);
 }
-#endif  // CONFIG_IDF_TARGET_ESP32C6
+#endif
 
 #if (SOC_ADC_PERIPH_NUM >= 2) && !CONFIG_IDF_TARGET_ESP32C3
 // On ESP32C3, ADC2 is no longer supported, due to its HW limitation.
