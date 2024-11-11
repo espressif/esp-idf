@@ -382,7 +382,7 @@ SPI-Ethernet 模块
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`：以太网驱动程序会启用操作系统定时器来定期检查链接状态。该字段用于设置间隔时间，单位为毫秒。
 
-* :cpp:member:`esp_eth_config_t::stack_input`：在大多数的以太网物联网应用中，驱动器接收的以太网帧会被传递到上层（如 TCP/IP 栈）。经配置，该字段为负责处理传入帧的函数。可以在安装驱动程序后，通过函数 :cpp:func:`esp_eth_update_input_path` 更新该字段。该字段支持在运行过程中进行更新。
+* :cpp:member:`esp_eth_config_t::stack_input` 或 :cpp:member:`esp_eth_config_t::stack_input_info`：在大多数的以太网物联网应用中，驱动器接收的以太网帧会被传递到上层（如 TCP/IP 栈）。经配置，该字段为负责处理传入帧的函数。可以在安装驱动程序后，通过函数 :cpp:func:`esp_eth_update_input_path` 更新该字段。该字段支持在运行过程中进行更新。
 
 * :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` 和 :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`：这两个字段用于指定钩子函数，当去初始化或初始化低级别硬件时，会调用钩子函数。
 
@@ -517,6 +517,58 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
     esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr);
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
 
+.. _time-stamping:
+
+.. only:: SOC_EMAC_IEEE1588V2_SUPPORTED
+
+    EMAC 硬件时间戳
+    -----------------
+
+    EMAC 时间戳功能可以精确记录以太网帧的发送和接收时间。硬件时间戳对于精确时间协议 (PTP) 等应用至关重要，因为它减少了依赖软件时间戳可能出现的抖动和不准确性。将时间戳直接嵌入硬件，避免了由软件层或处理开销引入的延迟，从而实现纳秒级精度。
+
+    .. 警告::
+
+        请注意：时间戳相关的 API 当前属于 **“实验特性”**，未来版本中可能会有所更改。
+
+    以下内容介绍如何在 EMAC 中启用时间戳、获取和设置时间。
+
+    .. highlight:: c
+
+    ::
+
+        // 启用硬件时间戳
+        bool ptp_enable = true;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_PTP_ENABLE, &ptp_enable);
+
+        // 获取当前 EMAC 时间
+        eth_mac_time_t ptp_time;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_G_PTP_TIME, &ptp_time);
+
+        // 设置 EMAC 时间
+        ptp_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+
+    您可以通过注册回调函数和设置事件触发的目标时间，在精确的时间点调度事件。请注意，回调函数将在中断服务程序 (ISR) 上下文中调用，因此应尽量简洁。
+
+    .. highlight:: c
+
+    ::
+
+        // 注册回调函数
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_CB, ts_callback);
+
+        // 设置事件的触发时间
+        eth_mac_time_t mac_target_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(s_eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_TIME, &mac_target_time);
+
+    接收帧的时间戳可以通过注册的 :cpp:member:`esp_eth_config_t::stack_input_info` 函数的最后一个参数进行访问，传输帧的时间戳可以通过注册的 :cpp:func:`esp_eth_transmit_ctrl_vargs` 函数的 ``ctrl`` 参数进行访问。然而，对于用户获取时间戳信息，更简便的方式是利用 L2 TAP :ref:`扩展缓冲区 <esp_netif_l2tap_ext_buff>` 机制。
+
 .. _flow-control:
 
 数据流量控制
@@ -545,6 +597,8 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
   * :example:`ethernet/basic` 演示了如何使用以太网驱动程序，包括驱动程序的安装、将其连接到 ``esp_netif``、发送 DHCP 请求以及获取可 ping 的 IP 地址。
 
   * :example:`ethernet/iperf` 演示了如何使用以太网功能，使用 iPerf 测量吞吐量/带宽。
+
+  * :example:`ethernet/ptp` 演示了如何在以太网上使用精确时间协议 (PTP) 同步时间。
 
   * :example:`network/vlan_support` 演示了如何在以太网上创建虚拟网络接口，包括 VLAN 和非 VLAN 接口。
 

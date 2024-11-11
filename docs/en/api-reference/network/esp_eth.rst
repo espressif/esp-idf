@@ -524,9 +524,10 @@ The following functions should only be invoked after the Ethernet driver has bee
     EMAC Hardware Time Stamping
     ---------------------------
 
-    Time stamping in EMAC allows precise tracking of when Ethernet frames are transmitted or received. Hardware time stamping is crucial for applications like Precision Time Protocol (PTP) because it minimizes jitter and inaccuracies that can occur when relying on software-based time stamps. By embedding time stamps directly in hardware, delays introduced by software layers or processing overhead are avoided, ensuring nanosecond-level precision.
+    Time stamping in EMAC allows precise tracking of when Ethernet frames are transmitted or received. Hardware time stamping is crucial for applications like Precision Time Protocol (PTP) because it minimizes jitter and inaccuracies that can occur when relying on software time stamps. Embedded time stamps in hardware avoid delays introduced by software layers or processing overhead. Therefore, it ensures nanosecond-level precision.
 
     .. warning::
+
         Time stamp associated API is currently in **"Experimental Feature"** state so be aware it may change with future releases.
 
     The basic way how to enable time stamping, get and set time in the EMAC is demonstrated below.
