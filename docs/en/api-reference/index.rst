@@ -13,7 +13,7 @@ API Reference
    error-codes
    network/index
    peripherals/index
-   kconfig
    provisioning/index
    storage/index
    system/index
+   kconfig-reference

@@ -181,7 +181,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - 顶层项目 CMakeLists.txt 文件，这是 CMake 用于学习如何构建项目的主要文件，可以在这个文件中设置项目全局的 CMake 变量。顶层项目 CMakeLists.txt 文件会导入 :idf_file:`/tools/cmake/project.cmake` 文件，由它负责实现构建系统的其余部分。该文件最后会设置项目的名称，并定义该项目。
 
-- "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。
+- "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。更多有关本配置文件的信息，请参阅配置指南中的 :ref:`sdkconfig file <sdkconfig-file>` 章节。
 
 - "dependencies.lock" 文件包含项目中当前使用的所有托管的组件及其版本。使用 IDF 组件管理器添加或更新项目组件时，会自动生成或更新 ``dependencies.lock`` 文件。因此，请勿手动编辑此文件！如果项目中没有组件包含 ``idf_component.yml`` 文件，则不会创建 ``dependencies.lock`` 文件。
 
@@ -364,7 +364,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
-- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :doc:`Kconfig </api-reference/kconfig>`。
+- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多有关项目配置的信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。
 - ``ESP_PLATFORM``：ESP-IDF 构建系统处理 CMake 文件时，其值设为 1。
 
 
@@ -430,7 +430,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 创建一个组件的 Kconfig 文件，最简单的方法就是使用 ESP-IDF 中现有的 Kconfig 文件作为模板，在这基础上进行修改。
 
-有关示例请参阅 :ref:`add_conditional_config`。
+有关示例请参阅 :ref:`add_conditional_config`。详细信息请参阅 :ref:`组件配置指南 <component-configuration-guide>`。
 
 
 预处理器定义
@@ -463,7 +463,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 
 - ``PRIV_REQUIRES`` 需要包含被当前组件的源文件 `#include` 的头文件所在的组件（除非已经被设置在了 ``REQUIRES`` 中）。以及是当前组件正常工作必须要链接的组件。
 
-- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx`` 宏）。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选择。
+- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx`` 宏）。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选项。
 
 - 如果当前组件除了 `通用组件依赖项`_ 中设置的通用组件（比如 RTOS、libc 等）外，并不依赖其它组件，那么对于上述两个 ``REQUIRES`` 变量，可以选择其中一个或是两个都不设置。
 
@@ -726,13 +726,14 @@ project_include.cmake
 在 ``project_include.cmake`` 文件中设置变量或目标时要格外小心，这些值被包含在项目的顶层 CMake 文件中，因此他们会影响或破坏所有组件的功能。
 
 
-KConfig.projbuild
+Kconfig.projbuild
 -----------------
 
-与 ``project_include.cmake`` 类似，也可以为组件定义一个 KConfig 文件以实现全局的 :ref:`component-configuration`。如果要在 menuconfig 的顶层添加配置选项，而不是在 “Component Configuration” 子菜单中，则可以在 ``CMakeLists.txt`` 文件所在目录的 KConfig.projbuild 文件中定义这些选项。
+与 ``project_include.cmake`` 类似，也可以为组件定义一个 Kconfig 文件以实现全局的 :ref:`component-configuration`。如果要在 menuconfig 的顶层添加配置选项，而不是在 “Component Configuration” 子菜单中，则可以在 ``CMakeLists.txt`` 文件所在目录的 Kconfig.projbuild 文件中定义这些选项。
 
-在此文件中添加配置时要小心，因为这些配置会包含在整个项目配置中。在可能的情况下，请为 :ref:`component-configuration` 创建 KConfig 文件。
+在此文件中添加配置时要小心，因为这些配置会包含在整个项目配置中。在可能的情况下，请为 :ref:`component-configuration` 创建 Kconfig 文件。
 
+详情请参阅配置指南中的 :ref:`Kconfig 文件 <kconfig-files>` 章节。
 
 通过封装对现有函数进行重新定义或扩展
 -------------------------------------
@@ -798,7 +799,7 @@ KConfig.projbuild
 仅配置组件
 ===========
 
-仅配置组件是一类不包含源文件的特殊组件，仅包含 ``Kconfig.projbuild``、``KConfig`` 和 ``CMakeLists.txt`` 文件，该 ``CMakeLists.txt`` 文件仅有一行代码，调用了 ``idf_component_register()`` 函数。此函数会将组件导入到项目构建中，但不会构建任何库，也不会将头文件添加到任何 include 搜索路径中。
+仅配置组件是一类不包含源文件的特殊组件，仅包含 ``Kconfig.projbuild``、``Kconfig`` 和 ``CMakeLists.txt`` 文件，该 ``CMakeLists.txt`` 文件仅有一行代码，调用了 ``idf_component_register()`` 函数。此函数会将组件导入到项目构建中，但不会构建任何库，也不会将头文件添加到任何 include 搜索路径中。
 
 
 CMake 调试
@@ -1076,6 +1077,10 @@ ExternalProject 的依赖与构建清理
 自定义 sdkconfig 的默认值
 =========================
 
+.. note::
+
+  有关 ``sdkconfig.defaults`` 文件的详细信息，请参阅项目配置章节的 :ref:`sdkconfig.defaults 文件 <sdkconfig-defaults-file>`。
+
 对于示例工程或者其他你不想指定完整 sdkconfig 配置的项目，但是你确实希望覆盖 ESP-IDF 默认值中的某些键值，则可以在项目中创建 ``sdkconfig.defaults`` 文件。重新创建新配置时将会用到此文件，另外在 ``sdkconfig`` 没有设置新配置值时，上述文件也会被用到。
 
 如若需要覆盖此文件的名称或指定多个文件，请设置 ``SDKCONFIG_DEFAULTS`` 环境变量或在顶层 CMakeLists.txt 文件中设置 ``SDKCONFIG_DEFAULTS``。非绝对路径的文件名将以当前项目的相对路径来解析。
@@ -1094,6 +1099,7 @@ ExternalProject 的依赖与构建清理
 
 例如，如果 ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``，并且在同一文件夹中有一个 ``sdkconfig.defaults.esp32`` 文件，那么这些文件将按以下顺序应用：（1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1。
 
+关于项目配置的详细信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。关于配置文件的详细信息，请参阅 :ref:`配置文件的结构和关系 <configuration-structure>`。
 
 .. _flash_parameters:
 
@@ -1681,7 +1687,7 @@ CMake 中不可用的功能
 
 - :example:`build_system/wrappers` 演示了如何使用链接器功能在 ESP-IDF 和引导加载程序中重新定义或覆盖任何公共函数，以修改或扩展函数的默认行为。
 
-- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导加载程序，提供一个自定义引导加载程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 KConfig 选项）有条件地覆盖引导加载程序。
+- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导加载程序，提供一个自定义引导加载程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 Kconfig 选项）有条件地覆盖引导加载程序。
 
 - :example:`build_system/cmake/import_lib` 演示了如何使用 ExternalProject CMake 模块导入和使用第三方库。
 
