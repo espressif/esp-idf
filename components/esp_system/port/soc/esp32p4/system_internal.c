@@ -127,6 +127,9 @@ void IRAM_ATTR esp_restart_noos(void)
     wdt_hal_write_protect_enable(&wdt1_context);
 
     // Disable cache
+#if CONFIG_SPIRAM
+    Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+#endif
     Cache_Disable_L2_Cache();
 
     esp_system_reset_modules_on_exit();
