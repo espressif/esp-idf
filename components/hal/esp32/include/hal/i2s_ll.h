@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,7 +81,7 @@ static inline void i2s_ll_dma_enable_auto_write_back(i2s_dev_t *hw, bool en)
 }
 
 /**
- * @brief I2S DMA generate EOF event on data in FIFO poped out
+ * @brief I2S DMA generate EOF event on data in FIFO popped out
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param en True to enable, False to disable
@@ -314,11 +314,6 @@ static inline void i2s_ll_set_raw_mclk_div(i2s_dev_t *hw, uint32_t mclk_div, uin
  */
 static inline void i2s_ll_tx_set_mclk(i2s_dev_t *hw, const i2s_ll_mclk_div_t *mclk_div)
 {
-    /* Workaround for inaccurate clock while switching from a relatively low sample rate to a high sample rate
-     * Set to particular coefficients first then update to the target coefficients,
-     * otherwise the clock division might be inaccurate.
-     * the general idea is to set a value that unlike to calculate from the regular decimal */
-    i2s_ll_set_raw_mclk_div(hw, 7, 47, 3);
     i2s_ll_set_raw_mclk_div(hw, mclk_div->integ, mclk_div->denom, mclk_div->numer);
 }
 
@@ -623,7 +618,7 @@ static inline void i2s_ll_tx_set_bits_mod(i2s_dev_t *hw, uint32_t val)
 }
 
 /**
- * @brief Congfigure TX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Configure TX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
@@ -636,7 +631,7 @@ static inline void i2s_ll_tx_set_sample_bit(i2s_dev_t *hw, uint8_t chan_bit, int
 }
 
 /**
- * @brief Congfigure RX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
+ * @brief Configure RX chan bit and audio data bit, on ESP32, sample_bit should equals to data_bit
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param chan_bit The chan bit width
