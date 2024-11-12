@@ -73,7 +73,7 @@ __attribute__((always_inline)) static inline bool efuse_ll_get_disable_wafer_ver
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_major(void)
 {
-    return EFUSE.rd_mac_sys_2.disable_blk_version_major;
+    return EFUSE.rd_mac_sys_2.blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_minor(void)
@@ -83,7 +83,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_blk_version_m
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_disable_blk_version_major(void)
 {
-    return EFUSE.rd_mac_sys_2.blk_version_major;
+    return EFUSE.rd_mac_sys_2.disable_blk_version_major;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(void)
