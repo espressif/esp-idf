@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -241,7 +241,7 @@ typedef volatile struct uart_dev_s {
     union {
         struct {
             uint32_t xoff_threshold: 9;
-            uint32_t xoff_char:      8;
+            uint32_t xoff_character: 8;
             uint32_t reserved17:    15;
         };
         uint32_t val;
@@ -249,7 +249,7 @@ typedef volatile struct uart_dev_s {
     union {
         struct {
             uint32_t xon_threshold: 9;
-            uint32_t xon_char:      8;
+            uint32_t xon_character: 8;
             uint32_t reserved17:   15;
         };
         uint32_t val;
@@ -300,7 +300,7 @@ typedef volatile struct uart_dev_s {
     union {
         struct {
             uint32_t data:        8;
-            uint32_t char_num:    8;
+            uint32_t at_char_num: 8;
             uint32_t reserved16: 16;
         };
         uint32_t val;
