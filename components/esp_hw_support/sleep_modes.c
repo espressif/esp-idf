@@ -687,12 +687,10 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4
-    // TODO: IDF-7370
     if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
+        // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
-#endif
 }
 
 /**
