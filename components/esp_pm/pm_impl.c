@@ -109,6 +109,9 @@
 #endif
 
 static portMUX_TYPE s_switch_lock = portMUX_INITIALIZER_UNLOCKED;
+static portMUX_TYPE s_cpu_freq_switch_lock[CONFIG_FREERTOS_NUMBER_OF_CORES] = {
+    [0 ... (CONFIG_FREERTOS_NUMBER_OF_CORES - 1)] = portMUX_INITIALIZER_UNLOCKED
+};
 /* The following state variables are protected using s_switch_lock: */
 /* Current sleep mode; When switching, contains old mode until switch is complete */
 static pm_mode_t s_mode = PM_MODE_CPU_MAX;
@@ -639,6 +642,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     s_is_switching = true;
     bool config_changed = s_config_changed;
     s_config_changed = false;
+    portENTER_CRITICAL_ISR(&s_cpu_freq_switch_lock[core_id]);
     portEXIT_CRITICAL_ISR(&s_switch_lock);
 
     rtc_cpu_freq_config_t new_config = s_cpu_freq_by_mode[new_mode];
@@ -678,6 +682,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
     }
 
     portENTER_CRITICAL_ISR(&s_switch_lock);
+    portEXIT_CRITICAL_ISR(&s_cpu_freq_switch_lock[core_id]);
     s_mode = new_mode;
     s_is_switching = false;
     portEXIT_CRITICAL_ISR(&s_switch_lock);
