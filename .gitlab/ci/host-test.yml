@@ -347,6 +347,7 @@ test_pytest_macos:
     reports:
       junit: XUNIT_RESULT.xml
   variables:
+    PYENV_VERSION: "3.9"
     PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
