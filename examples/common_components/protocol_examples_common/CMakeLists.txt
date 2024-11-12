@@ -22,6 +22,9 @@ if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     list(APPEND srcs "eth_connect.c")
 endif()
 
+if(CONFIG_EXAMPLE_CONNECT_THREAD)
+    list(APPEND srcs "thread_connect.c")
+endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include"
@@ -33,4 +36,8 @@ endif()
 
 if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     idf_component_optional_requires(PRIVATE esp_eth)
+endif()
+
+if(CONFIG_EXAMPLE_CONNECT_THREAD)
+    idf_component_optional_requires(PRIVATE openthread)
 endif()

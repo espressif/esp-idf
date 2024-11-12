@@ -31,6 +31,10 @@ extern "C" {
 #define EXAMPLE_NETIF_DESC_ETH "example_netif_eth"
 #endif
 
+#if CONFIG_EXAMPLE_CONNECT_THREAD
+#define EXAMPLE_NETIF_DESC_THREAD "example_netif_thread"
+#endif
+
 #if CONFIG_EXAMPLE_CONNECT_PPP
 #define EXAMPLE_NETIF_DESC_PPP "example_netif_ppp"
 #endif
@@ -74,6 +78,9 @@ extern "C" {
 #elif CONFIG_EXAMPLE_CONNECT_WIFI
 #define EXAMPLE_INTERFACE get_example_netif_from_desc(EXAMPLE_NETIF_DESC_STA)
 #define get_example_netif() get_example_netif_from_desc(EXAMPLE_NETIF_DESC_STA)
+#elif CONFIG_EXAMPLE_CONNECT_THREAD
+#define EXAMPLE_INTERFACE get_example_netif_from_desc(EXAMPLE_NETIF_DESC_THREAD)
+#define get_example_netif() get_example_netif_from_desc(EXAMPLE_NETIF_DESC_THREAD)
 #endif
 
 /**
