@@ -495,7 +495,11 @@ static int interrupt_alloc_wrapper(int cpu_id, int source, intr_handler_t handle
 {
     btdm_isr_alloc_t p;
     p.source = source;
+#if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+    p.flags = ESP_INTR_FLAG_LEVEL3;
+#else
     p.flags = ESP_INTR_FLAG_LEVEL3 | ESP_INTR_FLAG_IRAM;
+#endif
     p.fn = handler;
     p.arg = arg;
     p.handle = (intr_handle_t *)ret_handle;
@@ -1421,6 +1425,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     }
 
     ESP_LOGI(BT_LOG_TAG, "BT controller compile version [%s]", btdm_controller_get_compile_version());
+
+#if (CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+    ESP_LOGI(BT_LOG_TAG,"Put all controller code in flash");
+#endif
 
     if ((err = btdm_low_power_mode_init(cfg)) != ESP_OK) {
         ESP_LOGE(BT_LOG_TAG, "Low power module initialization failed");

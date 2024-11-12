@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 #define ESP_BT_CTRL_CONFIG_MAGIC_VAL    0x5A5AA5A5
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02404010
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02410230
 
 #define ESP_BT_HCI_TL_MAGIC_VALUE   0xfadebead
 #define ESP_BT_HCI_TL_VERSION       0x00010000
@@ -217,6 +217,76 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BLE_HW_TARGET_CODE_CHIP_ECO0                      (0x02010000)
 #endif
 
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_CONN_UPDATE
+#define BT_CTRL_BLE_LLCP_CONN_UPDATE (1<<0)
+#else
+#define BT_CTRL_BLE_LLCP_CONN_UPDATE (0<<0)
+#endif
+
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE
+#define BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE (1<<1)
+#else
+#define BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE (0<<1)
+#endif
+
+#ifdef CONFIG_BT_CTRL_BLE_LLCP_PHY_UPDATE
+#define BT_CTRL_BLE_LLCP_PHY_UPDATE (1<<2)
+#else
+#define BT_CTRL_BLE_LLCP_PHY_UPDATE (0<<2)
+#endif
+
+#define BT_CTRL_BLE_LLCP_DISC_FLAG (BT_CTRL_BLE_LLCP_CONN_UPDATE | BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE | BT_CTRL_BLE_LLCP_PHY_UPDATE)
+#if defined(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+#define BT_CTRL_RUN_IN_FLASH_ONLY  CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+#else
+#define BT_CTRL_RUN_IN_FLASH_ONLY  (0)
+#endif
+
+#if (BT_CTRL_RUN_IN_FLASH_ONLY == 1)
+
+#if defined(CONFIG_BT_CTRL_DTM_ENABLE)
+#define BT_CTRL_DTM_ENABLE  CONFIG_BT_CTRL_DTM_ENABLE
+#else
+#define BT_CTRL_DTM_ENABLE  (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_BLE_MASTER)
+#define BT_CTRL_BLE_MASTER  CONFIG_BT_CTRL_BLE_MASTER
+#else
+#define BT_CTRL_BLE_MASTER  (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_BLE_TEST)
+#define BT_CTRL_BLE_TEST  CONFIG_BT_CTRL_BLE_TEST
+#else
+#define BT_CTRL_BLE_TEST  (0)
+#endif
+
+#if defined (CONFIG_BT_NIMBLE_SECURITY_ENABLE) || defined (CONFIG_BT_BLE_SMP_ENABLE)
+#ifdef CONFIG_BT_NIMBLE_SECURITY_ENABLE
+#define BLE_SECURITY_ENABLE  (CONFIG_BT_NIMBLE_SECURITY_ENABLE)
+#endif //CONFIG_BT_NIMBLE_SECURITY_ENABLE
+#ifdef CONFIG_BT_BLE_SMP_ENABLE
+#define BLE_SECURITY_ENABLE  (CONFIG_BT_BLE_SMP_ENABLE)
+#endif //CONFIG_BT_BLE_SMP_ENABLE
+#else
+#define BLE_SECURITY_ENABLE  (0)
+#endif // (CONFIG_BT_NIMBLE_SECURITY_ENABLE) || (CONFIG_BT_BLE_SMP_ENABLE)
+
+#if defined (CONFIG_BT_CTRL_BLE_SCAN)
+#define BT_CTRL_BLE_SCAN    CONFIG_BT_CTRL_BLE_SCAN
+#else
+#define BT_CTRL_BLE_SCAN    (0)
+#endif
+
+#else
+#define BT_CTRL_BLE_MASTER   (1)
+#define BT_CTRL_DTM_ENABLE   (1)
+#define BT_CTRL_BLE_TEST     (1)
+#define BLE_SECURITY_ENABLE  (1)
+#define BT_CTRL_BLE_SCAN     (1)
+#endif // (BT_CTRL_RUN_IN_FLASH_ONLY == 1)
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
     .version = ESP_BT_CTRL_CONFIG_VERSION,                                 \
@@ -255,6 +325,13 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .ble_data_lenth_zero_aux = BT_BLE_ADV_DATA_LENGTH_ZERO_AUX,            \
     .ble_chan_ass_en = BT_CTRL_CHAN_ASS_EN,                                \
     .ble_ping_en = BT_CTRL_LE_PING_EN,                                     \
+    .ble_llcp_disc_flag = BT_CTRL_BLE_LLCP_DISC_FLAG,                      \
+    .run_in_flash = BT_CTRL_RUN_IN_FLASH_ONLY,                             \
+    .dtm_en = BT_CTRL_DTM_ENABLE,                                          \
+    .enc_en = BLE_SECURITY_ENABLE,                                         \
+    .qa_test = BT_CTRL_BLE_TEST,                                           \
+    .master_en = BT_CTRL_BLE_MASTER,                                       \
+    .scan_en = BT_CTRL_BLE_SCAN,                                           \
 }
 
 #else
@@ -329,6 +406,13 @@ typedef struct {
     uint8_t ble_data_lenth_zero_aux;        /*!< Config ext adv aux option */
     uint8_t ble_chan_ass_en;                /*!< BLE channel assessment enable */
     uint8_t ble_ping_en;                    /*!< BLE ping procedure enable */
+    uint8_t ble_llcp_disc_flag;             /*!< BLE disconnect flag when instant passed */
+    bool run_in_flash;                      /*!< Check if controller code is in flash */
+    bool dtm_en;                            /*!< Controller DTM feature is enabled or not */
+    bool enc_en;                            /*!< Controller encryption feature is enabled or not */
+    bool qa_test;                           /*!< Controller QA test feature is enabled or not */
+    bool master_en;                         /*!< Controller master feature is enabled or not */
+    bool scan_en;                           /*!< Controller scan feature is enabled or not */
 } esp_bt_controller_config_t;
 
 /**
