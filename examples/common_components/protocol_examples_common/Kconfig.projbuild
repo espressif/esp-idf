@@ -7,7 +7,7 @@ menu "Example Connection Configuration"
         depends on !IDF_TARGET_LINUX && (SOC_WIFI_SUPPORTED || ESP_WIFI_REMOTE_ENABLED)
         default y if SOC_WIFI_SUPPORTED
         help
-            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
             Choose this option to connect with WiFi
 
     if EXAMPLE_CONNECT_WIFI
@@ -119,9 +119,9 @@ menu "Example Connection Configuration"
     config EXAMPLE_CONNECT_ETHERNET
         bool "connect using Ethernet interface"
         depends on !IDF_TARGET_LINUX
-        default y if !EXAMPLE_CONNECT_WIFI
+        default y if !EXAMPLE_CONNECT_WIFI && !EXAMPLE_CONNECT_THREAD
         help
-            Protocol examples can use Wi-Fi and/or Ethernet to connect to the network.
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
             Choose this option to connect with Ethernet
 
     if EXAMPLE_CONNECT_ETHERNET
@@ -372,13 +372,83 @@ menu "Example Connection Configuration"
 
     endif # EXAMPLE_CONNECT_PPP
 
+    config EXAMPLE_CONNECT_THREAD
+        bool "Connect using Thread interface"
+        depends on !IDF_TARGET_LINUX && OPENTHREAD_ENABLED
+        default y if SOC_IEEE802154_SUPPORTED
+        select EXAMPLE_CONNECT_IPV6
+        help
+            Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
+            Choose this option to connect with Thread.
+            The operational active dataset of the Thread network can be configured in openthread
+            component at '->Components->OpenThread->Thread Core Features->Thread Operational Dataset'
+
+    if EXAMPLE_CONNECT_THREAD
+        config EXAMPLE_THREAD_TASK_STACK_SIZE
+            int "Example Thread task stack size"
+            default 8192
+            help
+                Thread task stack size
+
+        menu "Radio Spinel Options"
+            depends on OPENTHREAD_RADIO_SPINEL_UART || OPENTHREAD_RADIO_SPINEL_SPI
+
+            config EXAMPLE_THREAD_UART_RX_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart Rx Pin"
+                default 17
+
+            config EXAMPLE_THREAD_UART_TX_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart Tx pin"
+                default 18
+
+            config EXAMPLE_THREAD_UART_BAUD
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart baud rate"
+                default 460800
+
+            config EXAMPLE_THREAD_UART_PORT
+                depends on OPENTHREAD_RADIO_SPINEL_UART
+                int "Uart port"
+                default 1
+
+            config EXAMPLE_THREAD_SPI_CS_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI CS Pin"
+                default 10
+
+            config EXAMPLE_THREAD_SPI_SCLK_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI SCLK Pin"
+                default 12
+
+            config EXAMPLE_THREAD_SPI_MISO_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI MISO Pin"
+                default 13
+
+            config EXAMPLE_THREAD_SPI_MOSI_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI MOSI Pin"
+                default 11
+
+            config EXAMPLE_THREAD_SPI_INTR_PIN
+                depends on OPENTHREAD_RADIO_SPINEL_SPI
+                int "SPI Interrupt Pin"
+                default 8
+        endmenu
+
+    endif
+
     config EXAMPLE_CONNECT_IPV4
         bool
         depends on LWIP_IPV4
+        default n if EXAMPLE_CONNECT_THREAD
         default y
 
     config EXAMPLE_CONNECT_IPV6
-        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP
+        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET || EXAMPLE_CONNECT_PPP || EXAMPLE_CONNECT_THREAD
         bool "Obtain IPv6 address"
         default y
         select LWIP_IPV6
