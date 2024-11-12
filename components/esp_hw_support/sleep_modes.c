@@ -759,7 +759,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
     }
 
     // If SPI flash was powered down, wait for it to become ready
-    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+    if (!reject && (pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
         // Wait for the flash chip to start up
         esp_rom_delay_us(flash_enable_time_us);
     }
@@ -941,16 +941,18 @@ esp_err_t esp_light_sleep_start(void)
 
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
 
-    /**
-     * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
-     * In this case, just ignore the time compensation and keep esp_timer monotonic.
-     */
-    if (rtc_time_diff > 0) {
-        esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
+    if (s_light_sleep_wakeup) {
+        uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
+        /**
+         * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
+         * In this case, just ignore the time compensation and keep esp_timer monotonic.
+         */
+        if (rtc_time_diff > 0) {
+            esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
+        }
+        esp_set_time_from_rtc();
     }
-    esp_set_time_from_rtc();
 
     esp_clk_private_unlock();
     esp_timer_private_unlock();
@@ -960,8 +962,6 @@ esp_err_t esp_light_sleep_start(void)
         wdt_hal_disable(&rtc_wdt_ctx);
         wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     }
-    portEXIT_CRITICAL(&light_sleep_lock);
-    s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
 #if CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
     /* Restart the Task Watchdog timer as it was stopped before sleeping. */
@@ -970,6 +970,11 @@ esp_err_t esp_light_sleep_start(void)
     }
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
+    if (s_light_sleep_wakeup) {
+        s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+    }
+
+    portEXIT_CRITICAL(&light_sleep_lock);
     return err;
 }
 
