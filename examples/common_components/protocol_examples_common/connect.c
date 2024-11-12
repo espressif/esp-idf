@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -35,7 +35,7 @@ const char *example_ipv6_addr_types_to_str[6] = {
 
 /**
  * @brief Checks the netif description if it contains specified prefix.
- * All netifs created withing common connect component are prefixed with the module TAG,
+ * All netifs created within common connect component are prefixed with the module TAG,
  * so it returns true if the specified netif is owned by this module
  */
 bool example_is_our_netif(const char *prefix, esp_netif_t *netif)
@@ -61,7 +61,7 @@ static esp_err_t print_all_ips_tcpip(void* ctx)
     while ((netif = esp_netif_next_unsafe(netif)) != NULL) {
         if (example_is_our_netif(prefix, netif)) {
             ESP_LOGI(TAG, "Connected to %s", esp_netif_get_desc(netif));
-#if CONFIG_LWIP_IPV4
+#if CONFIG_EXAMPLE_CONNECT_IPV4
             esp_netif_ip_info_t ip;
             ESP_ERROR_CHECK(esp_netif_get_ip_info(netif, &ip));
 
@@ -101,6 +101,12 @@ esp_err_t example_connect(void)
     }
     ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_wifi_shutdown));
 #endif
+#if CONFIG_EXAMPLE_CONNECT_THREAD
+    if (example_thread_connect() != ESP_OK) {
+        return ESP_FAIL;
+    }
+    ESP_ERROR_CHECK(esp_register_shutdown_handler(&example_thread_shutdown));
+#endif
 #if CONFIG_EXAMPLE_CONNECT_PPP
     if (example_ppp_connect() != ESP_OK) {
         return ESP_FAIL;
@@ -114,6 +120,10 @@ esp_err_t example_connect(void)
 
 #if CONFIG_EXAMPLE_CONNECT_WIFI
     example_print_all_netif_ips(EXAMPLE_NETIF_DESC_STA);
+#endif
+
+#if CONFIG_EXAMPLE_CONNECT_THREAD
+    example_print_all_netif_ips(EXAMPLE_NETIF_DESC_THREAD);
 #endif
 
 #if CONFIG_EXAMPLE_CONNECT_PPP
