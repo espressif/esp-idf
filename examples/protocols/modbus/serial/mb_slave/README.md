@@ -57,7 +57,7 @@ Configure the UART pins used for modbus communication using the command and tabl
 ```
 Note: Each target chip has different GPIO pins available for UART connection. Please refer to UART documentation for selected target for more information.
 
-Define the ```Modbus communiction mode``` for slave in Kconfig - CONFIG_MB_COMM_MODE (must be the same for master and slave application).
+Define the ```Modbus communication mode``` for slave in Kconfig - CONFIG_MB_COMM_MODE (must be the same for master and slave application).
 Set ```Modbus slave address``` for the example application (by default for example script is set to 1).
 The communication parameters of freemodbus stack (Component config->Modbus configuration) allow to configure it appropriately but usually it is enough to use default settings.
 See the help strings of parameters for more information.
@@ -69,7 +69,7 @@ As an example the Modbus Poll application can be used with this example.
 Option 2:
 Setup ESP32 based board and set modbus_master example configuration as described in its README.md file.
 Setup one or more slave boards with different slave addresses and connect them into the same Modbus segment (See configuration above).
-Note: The ```Modbus communiction mode``` parameter must be the same for master and slave example application to be able to communicate with each other.
+Note: The ```Modbus communication mode``` parameter must be the same for master and slave example application to be able to communicate with each other.
 
 ### Build and flash software
 Build the project and flash it to the board, then run monitor tool to view serial output:
