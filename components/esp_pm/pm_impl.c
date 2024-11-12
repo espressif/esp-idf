@@ -626,6 +626,7 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         }
 #ifdef CONFIG_FREERTOS_SYSTICK_USES_CCOUNT
         if (s_need_update_ccompare[core_id]) {
+            update_ccompare();
             s_need_update_ccompare[core_id] = false;
         }
 #endif
