@@ -37,3 +37,6 @@ The steps include:
 * Generating token data from the key.
 * Using commands to re-enable JTAG access.
 
+# ESP-TEE (Trusted Execution Environment)
+
+For examples demonstrating the ESP-TEE framework, please refer to the [ESP-TEE examples](tee/README.md) directory. It contains examples showcasing operations like AES encryption/decryption in the TEE, secure storage with signing and encryption capabilities, secure OTA updates for TEE applications, and entity attestation token generation.
