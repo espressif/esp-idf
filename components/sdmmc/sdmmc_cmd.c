@@ -410,27 +410,38 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
 
 esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks)
 {
+    size_t datalen = sizeof(uint32_t);
     esp_err_t err = ESP_OK;
-    uint32_t buf = 0;
+    void* buf = NULL;
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    size_t actual_size = 0;
+    err = esp_dma_capable_malloc(datalen, &dma_mem_info, &buf, &actual_size);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     sdmmc_command_t cmd = {
-        .data = &buf,
-        .datalen = sizeof(buf),
-        .buflen = sizeof(buf),
-        .blklen = sizeof(buf),
+        .data = buf,
+        .datalen = datalen,
+        .buflen = actual_size,
+        .blklen = datalen,
         .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ,
         .opcode = SD_APP_SEND_NUM_WR_BLOCKS
     };
 
     err = sdmmc_send_app_cmd(card, &cmd);
     if (err != ESP_OK) {
+        free(buf);
         ESP_LOGE(TAG, "%s: sdmmc_send_app_cmd returned 0x%x, failed to get number of written write blocks", __func__, err);
         return err;
     }
 
-    size_t result = __builtin_bswap32(buf);
+    size_t result = __builtin_bswap32(*(uint32_t*)buf);
     if (out_num_blocks) {
         *out_num_blocks = result;
     }
+    free(buf);
     return err;
 }
 
