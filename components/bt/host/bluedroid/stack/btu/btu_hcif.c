@@ -145,6 +145,7 @@ static void btu_ble_periodic_adv_sync_lost_evt(UINT8 *p);
 static void btu_ble_scan_timeout_evt(UINT8 *p);
 static void btu_ble_adv_set_terminate_evt(UINT8 *p);
 static void btu_ble_scan_req_received_evt(UINT8 *p);
+static void btu_ble_channel_select_alg_evt(UINT8 *p);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
@@ -413,6 +414,7 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_scan_req_received_evt(p);
             break;
         case HCI_BLE_CHANNEL_SELECT_ALG:
+            btu_ble_channel_select_alg_evt(p);
             break;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -2342,6 +2344,21 @@ static void btu_ble_scan_req_received_evt(UINT8 *p)
     STREAM_TO_BDADDR(req_received.scan_addr, p);
 
     btm_ble_scan_req_received_evt(&req_received);
+}
+
+static void btu_ble_channel_select_alg_evt(UINT8 *p)
+{
+    tBTM_BLE_CHANNEL_SEL_ALG chan_sel_alg = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(chan_sel_alg.conn_handle, p);
+    STREAM_TO_UINT8(chan_sel_alg.channel_sel_alg, p);
+
+    btm_ble_channel_select_algorithm_evt(&chan_sel_alg);
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
