@@ -80,6 +80,7 @@ const char *esp_partition_subtype_to_str(const uint32_t type, const uint32_t sub
         switch (subtype) {
         case PART_SUBTYPE_BOOTLOADER_PRIMARY: return "primary";
         case PART_SUBTYPE_BOOTLOADER_OTA: return "ota";
+        case PART_SUBTYPE_BOOTLOADER_RECOVERY: return "recovery";
         default: return "unknown";
         }
     case PART_TYPE_PARTITION_TABLE:

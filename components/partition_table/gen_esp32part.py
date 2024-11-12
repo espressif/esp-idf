@@ -29,7 +29,7 @@ SECURE_NONE = None
 SECURE_V1 = 'v1'
 SECURE_V2 = 'v2'
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
@@ -60,6 +60,7 @@ SUBTYPES = {
     BOOTLOADER_TYPE: {
         'primary': 0x00,
         'ota': 0x01,
+        'recovery': 0x02,
     },
     PARTITION_TABLE_TYPE: {
         'primary': 0x00,
@@ -154,6 +155,7 @@ md5sum = True
 secure = SECURE_NONE
 offset_part_table = 0
 primary_bootloader_offset = None
+recovery_bootloader_offset = None
 
 
 def status(msg):
@@ -464,10 +466,15 @@ class PartitionDefinition(object):
         return parse_int(strval)
 
     def parse_address(self, strval, ptype, psubtype):
-        if ptype == BOOTLOADER_TYPE and psubtype == SUBTYPES[ptype]['primary']:
-            if primary_bootloader_offset is None:
-                raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
-            return primary_bootloader_offset
+        if ptype == BOOTLOADER_TYPE:
+            if psubtype == SUBTYPES[ptype]['primary']:
+                if primary_bootloader_offset is None:
+                    raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
+                return primary_bootloader_offset
+            if psubtype == SUBTYPES[ptype]['recovery']:
+                if recovery_bootloader_offset is None:
+                    raise InputError(f'Recovery bootloader offset is not defined. Please use --recovery-bootloader-offset')
+                return recovery_bootloader_offset
         if ptype == PARTITION_TABLE_TYPE and psubtype == SUBTYPES[ptype]['primary']:
             return offset_part_table
         if strval == '':
@@ -590,6 +597,7 @@ def main():
     global offset_part_table
     global secure
     global primary_bootloader_offset
+    global recovery_bootloader_offset
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
@@ -601,6 +609,7 @@ def main():
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     parser.add_argument('--primary-bootloader-offset', help='Set primary bootloader offset', default=None)
+    parser.add_argument('--recovery-bootloader-offset', help='Set recovery bootloader offset', default=None)
     parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', nargs='?', const=SECURE_V1, choices=[SECURE_V1, SECURE_V2])
     parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
     parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
@@ -620,6 +629,8 @@ def main():
                 f'Unsupported configuration. Primary bootloader must be below partition table. '
                 f'Check --primary-bootloader-offset={primary_bootloader_offset:#x} and --offset={offset_part_table:#x}'
             )
+    if args.recovery_bootloader_offset is not None:
+        recovery_bootloader_offset = int(args.recovery_bootloader_offset, 0)
     if args.extra_partition_subtypes:
         add_extra_subtypes(args.extra_partition_subtypes)
 
