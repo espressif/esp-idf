@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value.
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20240722
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241015
 
 /**
  * @brief Bluetooth Controller mode
@@ -178,6 +178,27 @@ the adv packet will be discarded until the memory is restored. */
 #else
 #define BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX  0
 #endif
+
+#ifdef CONFIG_BTDM_BLE_LLCP_CONN_UPDATE
+#define BTDM_BLE_LLCP_CONN_UPDATE (1<<0)
+#else
+#define BTDM_BLE_LLCP_CONN_UPDATE (0<<0)
+#endif
+
+#ifdef CONFIG_BTDM_BLE_LLCP_CHAN_MAP_UPDATE
+#define BTDM_BLE_LLCP_CHAN_MAP_UPDATE (1<<1)
+#else
+#define BTDM_BLE_LLCP_CHAN_MAP_UPDATE (0<<1)
+#endif
+
+#define BTDM_BLE_LLCP_DISC_FLAG (BTDM_BLE_LLCP_CONN_UPDATE | BTDM_BLE_LLCP_CHAN_MAP_UPDATE)
+
+#ifdef CONFIG_BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#define BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED CONFIG_BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#else
+#define BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
+#endif
+
 /**
 * @brief  Default Bluetooth Controller configuration
 */
@@ -206,6 +227,8 @@ the adv packet will be discarded until the memory is restored. */
     .hli = BTDM_CTRL_HLI,                                                  \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
+    .ble_llcp_disc_flag = BTDM_BLE_LLCP_DISC_FLAG,                         \
+    .ble_aa_check = BTDM_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,    \
     .magic = ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL,                           \
 }
 
@@ -258,6 +281,8 @@ typedef struct {
     bool hli;                               /*!< True if using high level interrupt; false otherwise. Configurable in menuconfig. */
     uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig.*/
     bool ble_scan_backoff;                  /*!< True if BLE scan backoff is enabled; false otherwise. Configurable in menuconfig.*/
+    uint8_t ble_llcp_disc_flag;             /*!< BLE disconnect flag when instant passed. Configurable in menuconfig. */
+    bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig. */
     uint32_t magic;                         /*!< Magic number */
 } esp_bt_controller_config_t;
 
