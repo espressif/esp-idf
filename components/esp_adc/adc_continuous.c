@@ -296,6 +296,22 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     }
 #endif  //#if SOC_ADC_ARBITER_SUPPORTED
 
+#if SOC_ADC_MONITOR_SUPPORTED
+    adc_ll_digi_monitor_clear_intr();
+    for (int i = 0; i < SOC_ADC_DIGI_MONITOR_NUM; i++) {
+        adc_monitor_t *monitor_ctx = handle->adc_monitor[i];
+        if (monitor_ctx) {
+            // config monitor hardware
+            adc_hal_digi_monitor_set_thres(monitor_ctx->monitor_id, monitor_ctx->config.adc_unit, monitor_ctx->config.channel, monitor_ctx->config.h_threshold, monitor_ctx->config.l_threshold);
+            // if monitor not enabled now, just using monitor api later
+            if (monitor_ctx->fsm == ADC_MONITOR_FSM_ENABLED) {
+                // restore the started FSM
+                adc_ll_digi_monitor_user_start(monitor_ctx->monitor_id, ((monitor_ctx->config.h_threshold >= 0) || (monitor_ctx->config.l_threshold >= 0)));
+            }
+        }
+    }
+#endif  //#if SOC_ADC_MONITOR_SUPPORTED
+
     if (handle->use_adc1) {
         adc_hal_set_controller(ADC_UNIT_1, ADC_HAL_CONTINUOUS_READ_MODE);
     }
