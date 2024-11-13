@@ -182,8 +182,17 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     };
 #if SOC_I2S_SUPPORTS_APLL
     i2s_tdm_config.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    /* APLL clock source can only reach upto 125MHz, and the max BCLK among these cases is 6.144 MHz
+       The BCLK can only be 10 using APLL clock source, see the reason below
+       Formula: MAX_BCLK = 48K * 32 * 4 = 6.144 MHz.  MAX_BCLK_DIV <= (125 /2) / MAX_BCLK */
     i2s_tdm_config.clk_cfg.bclk_div = 10;
 #else
+    /* The greater the bclk division is, the greater mclk frequency will be, and the less data latency the slave will have
+       As the sample rate of the test cases are high, we need a greater BCLK division to reduce the slave data latency,
+       Otherwise the large data latency will cause the data shifted when receiving on the master side.
+       However, due to the MCLK limitation(i.e., less or equal than half of the source clock),
+       the max bclk division is depended on the source clock, sample rate and the bclk ticks in one frame
+       Formula: MAX_BCLK = 48K * 32 * 4 = 6.144 MHz.  MAX_BCLK_DIV <= (160 /2) / MAX_BCLK */
     i2s_tdm_config.clk_cfg.bclk_div = 12;
 #endif
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
