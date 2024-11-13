@@ -184,7 +184,7 @@ ESP-IDF 的根目录中提供了针对不同 shell 的用户安装脚本，包�
 
     在 Bash 中修改 shell 环境时，必须使用 ``. ./export.sh`` 命令加载 ``export.sh``，注意添加前面的点和空格。
 
-    ``export.sh`` 可以在除了 Bash 外的其他 shell（如 zsh）中使用。但在这种情况下，必须在运行脚本前设置 ``IDF_PATH`` 环境变量。在 Bash 中使用时，脚本会从当前目录猜测 ``IDF_PATH`` 的值。
+    ``export.sh`` 可以在多种 shell 中使用，例如 bash、sh、zsh、dash 等。在使用 bash 或 zsh 时，可以在任何路径中直接运行（例如 ``. ./<<some_path>>/export.sh``），这是因为它能够自动检测到 ``IDF_PATH``。若使用其它 shell, 则必须在 ESP-IDF 路径中运行 (``. ./export.sh``)，才能正确找到 ``IDF_PATH``。
 
 activate.py
 ~~~~~~~~~~~
