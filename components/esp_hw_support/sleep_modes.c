@@ -665,12 +665,10 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep)
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4
-    // TODO: IDF-7370
     if (!(deep_sleep && s_adc_tsen_enabled)){
+        // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
-#endif
 }
 
 /**
