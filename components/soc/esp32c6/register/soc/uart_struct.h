@@ -883,27 +883,16 @@ typedef union {
         /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
          *  The  denominator of the frequency divider factor.
          */
-        uint32_t sclk_div_b:6;
+        uint32_t sclk_div_b:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
         /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
          *  The numerator of the frequency divider factor.
          */
-        uint32_t sclk_div_a:6;
+        uint32_t sclk_div_a:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
         /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
          *  The integral part of the frequency divider factor.
          */
-        uint32_t sclk_div_num:8;
-        /** sclk_sel : R/W; bitpos: [21:20]; default: 3;
-         *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
-         */
-        uint32_t sclk_sel:2;
-        /** sclk_en : R/W; bitpos: [22]; default: 1;
-         *  Set this bit to enable UART Tx/Rx clock.
-         */
-        uint32_t sclk_en:1;
-        /** rst_core : R/W; bitpos: [23]; default: 0;
-         *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
-         */
-        uint32_t rst_core:1;
+        uint32_t sclk_div_num:8;                                    /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
+        uint32_t reserved_20:4;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Set this bit to enable UART Tx clock.
          */
@@ -1273,7 +1262,7 @@ typedef struct uart_dev_s {
     volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
     volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
     volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
-    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1 instance have this register reserved, configure in corresponding PCR registers */
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;
