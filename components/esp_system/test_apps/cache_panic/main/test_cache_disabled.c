@@ -96,7 +96,7 @@ static void IRAM_ATTR cache_access_test_func(void* arg)
 #endif
 
 // These tests works properly if they resets the chip with the
-// "Cache disabled but cached memory region accessed" reason and the correct CPU is logged.
+// "Cache Error" reason and the correct CPU is logged.
 static void invalid_access_to_cache_pro_cpu(void)
 {
     xTaskCreatePinnedToCore(&cache_access_test_func, "ia", 2048, NULL, 5, NULL, 0);

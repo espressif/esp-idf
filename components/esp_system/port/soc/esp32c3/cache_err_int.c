@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "soc/periph_defs.h"
 #include "riscv/interrupt.h"
 #include "hal/cache_ll.h"
+#include "esp_private/cache_err_int.h"
 
 static const char *TAG = "CACHE_ERR";
 
@@ -106,25 +107,26 @@ static inline const char* test_and_print_register_bits(const uint32_t status,
     return NULL;
 }
 
-const char *esp_cache_err_panic_string(void)
+void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 {
+    if (err_info == NULL) {
+        return;
+    }
     /* Read the status register EXTMEM_CORE0_ACS_CACHE_INT_ST_REG. This status
-     * register is not equal to 0 when a cache access error occured. */
+     * register is not equal to 0 when a cache access error occurred. */
     const uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 
     /* If the panic is due to a cache access error, one of the bit of the
      * register is set. Thus, this function will return an error string. */
-    const char* err_str = test_and_print_register_bits(access_err_status, core0_acs_bits, DIM(core0_acs_bits));
+    err_info->err_str = test_and_print_register_bits(access_err_status, core0_acs_bits, DIM(core0_acs_bits));
 
     /* If the panic was due to a cache illegal error, the previous call returned NULL and this
      * EXTMEM_CACHE_ILG_INT_ST_REG register should not be equal to 0.
      * Check each bit of it and return the message associated if found. */
-    if (err_str == NULL) {
+    if (err_info->err_str == NULL) {
         const uint32_t cache_ilg_status = cache_ll_l1_get_illegal_error_intr_status(0, CACHE_LL_L1_ILG_EVENT_MASK);
-        err_str = test_and_print_register_bits(cache_ilg_status, cache_ilg_bits, DIM(cache_ilg_bits));
+        err_info->err_str = test_and_print_register_bits(cache_ilg_status, cache_ilg_bits, DIM(cache_ilg_bits));
     }
-
-    return err_str;
 }
 
 bool esp_cache_err_has_active_err(void)
@@ -169,7 +171,7 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
-    /* On the hardware side, start by clearing all the bits reponsible for cache access error */
+    /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* Then enable cache access error interrupts. */
     cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);

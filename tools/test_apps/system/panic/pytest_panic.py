@@ -309,7 +309,8 @@ def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> Non
         # Cache error interrupt is not enabled, IDF-1558
         dut.expect_gme('IllegalInstruction')
     elif dut.target in ['esp32', 'esp32s3']:
-        dut.expect_gme('Cache disabled but cached memory region accessed')
+        dut.expect_gme('Cache error')
+        dut.expect_exact('Cache disabled but cached memory region accessed')
     else:
         dut.expect_gme('Cache error')
         dut.expect_exact('Cache access error')
@@ -572,7 +573,7 @@ def test_assert_cache_disabled(
 def cache_error_log_check(dut: PanicTestDut) -> None:
     if dut.is_xtensa:
         if dut.target == 'esp32s3':
-            dut.expect_exact("Guru Meditation Error: Core  / panic'ed (Cache disabled but cached memory region accessed)")
+            dut.expect_exact("Guru Meditation Error: Core  / panic'ed (Cache error)")
             dut.expect_exact('Write back error occurred while dcache tries to write back to flash')
             dut.expect_exact('The following backtrace may not indicate the code that caused Cache invalid access')
         else:
