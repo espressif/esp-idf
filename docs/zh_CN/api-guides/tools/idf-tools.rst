@@ -43,6 +43,8 @@
 - ``tools`` — 工具解压缩位置。工具会解压缩到子目录 ``tools/TOOL_NAME/VERSION/`` 中，该操作支持同时安装不同版本的工具。
 - ``idf-env.json`` — “目标 (target)”和“功能 (feature)”等用户安装选项均存储在此文件中。“目标”为选择需要安装和保持更新的工具的芯片目标；“功能”则决定应安装哪些 Python 软件包。有关用户安装选项的详情，请参阅下文。
 - ``python_env`` —  与工具无关；虚拟 Python 环境安装在其子目录中。注意，设置 ``IDF_PYTHON_ENV_PATH`` 环境变量可以将 Python 环境目录放置到其他位置。
+
+  - ``idf_version.txt`` — 位于 ``python_env`` 目录下每个特定 Python 环境的子目录中，记录了该 Python 环境所对应的 ESP-IDF 版本。版本信息的存储格式如 ``5.3`` ，表示 ESP-IDF 版本 ``v5.3``。
 - ``espidf.constraints.*.txt`` — 每个 ESP-IDF 版本都有的约束文件，包含 Python 包版本要求。
 
 GitHub 资源镜像
@@ -213,6 +215,8 @@ activate.py
 -------------------
 
 推荐用户使用上述方法安装 ESP-IDF 工具，但也可以选择其他方式来构建 ESP-IDF 应用程序。自定义安装时，用户需将所有必要的工具都安装在某个位置，并在 ``PATH`` 中定义，以保证 ESP-IDF 构建系统可用。
+
+在进行自定义安装时，确保设置 ``ESP_IDF_VERSION`` 环境变量以反映当前的 ESP-IDF 版本，例如，使用 ``5.3`` 的格式表示 ESP-IDF 版本 ``v5.3``。该变量是某些组件进行特定的版本配置时所必需的，通常在标准安装过程中由 ``idf_tools.py export`` 脚本设置。
 
 .. _idf-tools-uninstall:
 
