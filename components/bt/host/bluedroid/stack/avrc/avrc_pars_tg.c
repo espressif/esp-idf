@@ -71,7 +71,7 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR *p_msg, tAVRC_COMMAND *p_
     p++; /* skip the reserved byte */
     BE_STREAM_TO_UINT16 (len, p);
     if ((len + 4) != (p_msg->vendor_len)) {
-        status = AVRC_STS_INTERNAL_ERR;
+        status = AVRC_STS_NOT_FOUND;
     }
 
     if (status != AVRC_STS_NO_ERROR) {
