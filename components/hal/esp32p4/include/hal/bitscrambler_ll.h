@@ -12,11 +12,8 @@
 #include <stdbool.h>
 #include "soc/bitscrambler_struct.h"
 #include "hal/bitscrambler_types.h"
-#include "hal/bitscrambler_hal.h"
-#include "hal/misc.h"
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/hp_system_struct.h"
-#include "hal/hal_utils.h"
 #include "hal/misc.h"
 
 #ifdef __cplusplus
@@ -25,20 +22,12 @@ extern "C" {
 
 #define BITSCRAMBLER_LL_GET_HW(num)      (((num) == 0) ? (&BITSCRAMBLER) : NULL)
 
-//Note: Most of the register operations refer tx_something fields. Because they
-//are done to bitscramblers_reg[dir] members and rx register fields are the
-//same, this code works for RX as well.
-
-//Note: This code entirely ignores the 'hw' argument, which is fine, as for now
-//we only have one BitScrambler peripheral. If we have a chip that has more, we
-//need to do something to use hw to select one of multiple bitscramblers_reg
-//versions.
-
 /**
  * @brief Select peripheral BitScrambler is attached to
  *
  * @param hw BitScrambler hardware instance address.
  * @param dir Direction, BITSCRAMBLER_DIR_TX or BITSCRAMBLER_DIR_RX
+ * @param peri Peripheral to select, should pick the value from soc/bitscrambler_peri_select.h
  */
 static inline void bitscrambler_ll_select_peripheral(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int peri)
 {
@@ -57,7 +46,7 @@ static inline void bitscrambler_ll_select_peripheral(bitscrambler_dev_t *hw, bit
  */
 static inline void bitscrambler_ll_enable(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    bitscramblers_reg[dir].ctrl->tx_ena=1;
+    hw->ctrl[dir].ena = 1;
 }
 
 /**
@@ -68,7 +57,7 @@ static inline void bitscrambler_ll_enable(bitscrambler_dev_t *hw, bitscrambler_d
  */
 static inline void bitscrambler_ll_disable(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    bitscramblers_reg[dir].ctrl->tx_ena=0;
+    hw->ctrl[dir].ena = 0;
 }
 
 
@@ -83,9 +72,9 @@ static inline void bitscrambler_ll_disable(bitscrambler_dev_t *hw, bitscrambler_
  */
 static inline void bitscrambler_ll_instmem_write(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int inst_idx, int word_idx, uint32_t data)
 {
-    bitscramblers_reg[dir].inst_cfg0->tx_inst_idx=inst_idx;
-    bitscramblers_reg[dir].inst_cfg0->tx_inst_pos=word_idx;
-    bitscramblers_reg[dir].inst_cfg1->tx_inst=data;
+    hw->inst_cfg[dir].cfg0.inst_idx = inst_idx;
+    hw->inst_cfg[dir].cfg0.inst_pos = word_idx;
+    hw->inst_cfg[dir].cfg1.inst = data;
 }
 
 /**
@@ -100,9 +89,9 @@ static inline void bitscrambler_ll_instmem_write(bitscrambler_dev_t *hw, bitscra
  */
 static inline uint32_t bitscrambler_ll_instmem_read(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int inst_idx, int word_idx)
 {
-    bitscramblers_reg[dir].inst_cfg0->tx_inst_idx=inst_idx;
-    bitscramblers_reg[dir].inst_cfg0->tx_inst_pos=word_idx;
-    return bitscramblers_reg[dir].inst_cfg1->tx_inst;
+    hw->inst_cfg[dir].cfg0.inst_idx = inst_idx;
+    hw->inst_cfg[dir].cfg0.inst_pos = word_idx;
+    return hw->inst_cfg[dir].cfg1.inst;
 }
 
 /**
@@ -113,9 +102,10 @@ static inline uint32_t bitscrambler_ll_instmem_read(bitscrambler_dev_t *hw, bits
  * @param word_idx Word within the LUT to write to
  * @param data Data to write
  */
-static inline void bitscrambler_ll_lutmem_write(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int word_idx, uint32_t data) {
-    bitscramblers_reg[dir].lut_cfg0->tx_lut_idx=word_idx;
-    bitscramblers_reg[dir].lut_cfg1->tx_lut=data;
+static inline void bitscrambler_ll_lutmem_write(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int word_idx, uint32_t data)
+{
+    hw->lut_cfg[dir].cfg0.lut_idx = word_idx;
+    hw->lut_cfg[dir].cfg1.lut = data;
 }
 
 /**
@@ -127,7 +117,7 @@ static inline void bitscrambler_ll_lutmem_write(bitscrambler_dev_t *hw, bitscram
  */
 static inline void bitscrambler_ll_set_lut_width(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_lut_width_t width)
 {
-    bitscramblers_reg[dir].lut_cfg0->tx_lut_mode=width;
+    hw->lut_cfg[dir].cfg0.lut_mode = width;
 }
 
 /**
@@ -138,7 +128,7 @@ static inline void bitscrambler_ll_set_lut_width(bitscrambler_dev_t *hw, bitscra
  */
 static inline int bitscrambler_ll_get_lut_width(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    return bitscramblers_reg[dir].lut_cfg0->tx_lut_mode;
+    return hw->lut_cfg[dir].cfg0.lut_mode;
 }
 
 /**
@@ -150,7 +140,7 @@ static inline int bitscrambler_ll_get_lut_width(bitscrambler_dev_t *hw, bitscram
  */
 static inline void bitscrambler_ll_enable_loopback(bitscrambler_dev_t *hw, bool en)
 {
-    hw->sys.loop_mode=en?1:0;
+    hw->sys.loop_mode = en ? 1 : 0;
 }
 
 /**
@@ -162,7 +152,7 @@ static inline void bitscrambler_ll_enable_loopback(bitscrambler_dev_t *hw, bool 
  */
 static inline void bitscrambler_ll_set_cond_mode(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_cond_mode_t mode)
 {
-    bitscramblers_reg[dir].ctrl->tx_cond_mode=mode;
+    hw->ctrl[dir].cond_mode = mode;
 }
 
 /**
@@ -174,7 +164,7 @@ static inline void bitscrambler_ll_set_cond_mode(bitscrambler_dev_t *hw, bitscra
  */
 static inline void bitscrambler_ll_set_prefetch_mode(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_prefetch_mode_t mode)
 {
-    bitscramblers_reg[dir].ctrl->tx_fetch_mode=mode;
+    hw->ctrl[dir].fetch_mode = mode;
 }
 
 /**
@@ -186,7 +176,7 @@ static inline void bitscrambler_ll_set_prefetch_mode(bitscrambler_dev_t *hw, bit
  */
 static inline void bitscrambler_ll_set_eof_mode(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_eof_mode_t mode)
 {
-    bitscramblers_reg[dir].ctrl->tx_eof_mode=mode;
+    hw->ctrl[dir].eof_mode = mode;
 }
 
 /**
@@ -198,7 +188,7 @@ static inline void bitscrambler_ll_set_eof_mode(bitscrambler_dev_t *hw, bitscram
  */
 static inline void bitscrambler_ll_set_dummy_mode(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_dummy_mode_t mode)
 {
-    bitscramblers_reg[dir].ctrl->tx_rd_dummy=mode;
+    hw->ctrl[dir].rd_dummy = mode;
 }
 
 /**
@@ -210,7 +200,7 @@ static inline void bitscrambler_ll_set_dummy_mode(bitscrambler_dev_t *hw, bitscr
  */
 static inline void bitscrambler_ll_set_halt_mode(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_halt_mode_t mode)
 {
-    bitscramblers_reg[dir].ctrl->tx_halt_mode=mode;
+    hw->ctrl[dir].halt_mode = mode;
 }
 
 /**
@@ -222,7 +212,7 @@ static inline void bitscrambler_ll_set_halt_mode(bitscrambler_dev_t *hw, bitscra
  */
 static inline void bitscrambler_ll_set_tailing_bits(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int bitcount)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD((*bitscramblers_reg[dir].trailing_bits), tx_tailing_bits, bitcount);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->tailing_bits[dir], tailing_bits, bitcount);
 }
 
 /**
@@ -233,8 +223,8 @@ static inline void bitscrambler_ll_set_tailing_bits(bitscrambler_dev_t *hw, bits
  */
 static inline void bitscrambler_ll_reset_fifo(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    bitscramblers_reg[dir].ctrl->tx_fifo_rst=1;
-    bitscramblers_reg[dir].ctrl->tx_fifo_rst=0;
+    hw->ctrl[dir].fifo_rst = 1;
+    hw->ctrl[dir].fifo_rst = 0;
 }
 
 /**
@@ -245,8 +235,8 @@ static inline void bitscrambler_ll_reset_fifo(bitscrambler_dev_t *hw, bitscrambl
  */
 static inline void bitscrambler_ll_clear_eof_trace(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    bitscramblers_reg[dir].state->tx_eof_trace_clr=1;
-    bitscramblers_reg[dir].state->tx_eof_trace_clr=0;
+    hw->state[dir].eof_trace_clr = 1;
+    hw->state[dir].eof_trace_clr = 0;
 }
 
 /**
@@ -258,8 +248,8 @@ static inline void bitscrambler_ll_clear_eof_trace(bitscrambler_dev_t *hw, bitsc
  */
 static inline void bitscrambler_ll_set_state(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bitscrambler_set_state_t state)
 {
-    bitscramblers_reg[dir].ctrl->tx_pause=(state==BITSCRAMBLER_SET_STATE_PAUSE)?1:0;
-    bitscramblers_reg[dir].ctrl->tx_halt=(state==BITSCRAMBLER_SET_STATE_HALT)?1:0;
+    hw->ctrl[dir].pause = (state == BITSCRAMBLER_SET_STATE_PAUSE) ? 1 : 0;
+    hw->ctrl[dir].halt = (state == BITSCRAMBLER_SET_STATE_HALT) ? 1 : 0;
 }
 
 /**
@@ -272,10 +262,18 @@ static inline void bitscrambler_ll_set_state(bitscrambler_dev_t *hw, bitscramble
  */
 static inline bitscrambler_state_t bitscrambler_ll_current_state(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
 {
-    if (bitscramblers_reg[dir].state->tx_in_idle) return BITSCRAMBLER_STATE_IDLE;
-    if (bitscramblers_reg[dir].state->tx_in_run) return BITSCRAMBLER_STATE_RUN;
-    if (bitscramblers_reg[dir].state->tx_in_wait) return BITSCRAMBLER_STATE_WAIT;
-    if (bitscramblers_reg[dir].state->tx_in_pause) return BITSCRAMBLER_STATE_PAUSED;
+    if (hw->state[dir].in_idle) {
+        return BITSCRAMBLER_STATE_IDLE;
+    }
+    if (hw->state[dir].in_run) {
+        return BITSCRAMBLER_STATE_RUN;
+    }
+    if (hw->state[dir].in_wait) {
+        return BITSCRAMBLER_STATE_WAIT;
+    }
+    if (hw->state[dir].in_pause) {
+        return BITSCRAMBLER_STATE_PAUSED;
+    }
     return BITSCRAMBLER_STATE_UNKNOWN;
 }
 

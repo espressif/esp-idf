@@ -30,11 +30,6 @@ if(CONFIG_SOC_KEY_MANAGER_SUPPORTED)
     list(APPEND srcs "huk_hal.c")
 endif()
 
-if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
-    list(APPEND srcs "${target}/bitscrambler_periph.c")
-endif()
-
-
 if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     if(CONFIG_SOC_MMU_PERIPH_NUM)
         list(APPEND srcs "mmu_hal.c")

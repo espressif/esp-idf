@@ -54,6 +54,7 @@
 #include "hal/usb_serial_jtag_ll.h"
 #include "hal/usb_utmi_ll.h"
 #include "hal/wdt_hal.h"
+#include "hal/bitscrambler_ll.h"
 
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -253,9 +254,9 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _pau_ll_enable_bus_clock(false);
         _parlio_ll_enable_bus_clock(0, false);
         _etm_ll_enable_bus_clock(0, false);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSCRAMBLER_SYS_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSCRAMBLER_RX_SYS_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSCRAMBLER_TX_SYS_CLK_EN);
+        _bitscrambler_ll_set_bus_clock_sys_enable(false);
+        _bitscrambler_ll_set_bus_clock_rx_enable(false);
+        _bitscrambler_ll_set_bus_clock_tx_enable(false);
 
 // Non-Console UART
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
