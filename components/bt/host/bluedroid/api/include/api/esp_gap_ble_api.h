@@ -229,6 +229,7 @@ typedef enum {
     ESP_GAP_BLE_ADD_DEV_TO_RESOLVING_LIST_COMPLETE_EVT,          /*!< when add a device to the resolving list completes, the event comes*/
     ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT,                         /*!< When vendor hci command complete, the event comes */
     ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT,                   /*!< When set privacy mode complete, the event comes */
+    ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT,                    /*!< When set CSA support complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1572,6 +1573,12 @@ typedef union {
     struct ble_set_privacy_mode_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate privacy mode set operation success status */
     } set_privacy_mode_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT
+     */
+    struct ble_set_csa_support_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Indicate CSA support set operation success status */
+    } set_csa_support_cmpl;                        /*!< Event parameter of ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2743,6 +2750,23 @@ esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cm
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode);
+
+/**
+ * @brief           This function is used to set which channel selection algorithm(CSA) is supported.
+ *
+ * @note            - This function should only be used when there are BLE compatibility issues about channel hopping after connected.
+ *                    For example, if the peer device only supports CSA#1, this function can be called to make the Controller use CSA#1.
+ *                  - This function is not supported on ESP32.
+ *
+ * @param[in]       csa_select: 0: Channel Selection Algorighm will be selected by Controller
+ *                              1: Select the LE Channel Selection Algorighm #1
+ *                              2: Select the LE Channel Selection Algorighm #2
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_csa_support(uint8_t csa_select);
 
 #ifdef __cplusplus
 }
