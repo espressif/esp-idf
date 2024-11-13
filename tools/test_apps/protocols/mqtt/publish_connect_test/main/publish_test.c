@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include <freertos/event_groups.h>
 #include "esp_system.h"
+#include "esp_random.h"
 
 #include "esp_log.h"
 #include "mqtt_client.h"
@@ -24,7 +25,7 @@ static const char *TAG = "publish_test";
 
 static EventGroupHandle_t mqtt_event_group;
 const static int CONNECTED_BIT = BIT0;
-
+#define CLIENT_ID_SUFFIX_SIZE 12
 #if CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN == 1
 static const uint8_t mqtt_eclipseprojects_io_pem_start[]  = "-----BEGIN CERTIFICATE-----\n" CONFIG_EXAMPLE_BROKER_CERTIFICATE_OVERRIDE "\n-----END CERTIFICATE-----";
 #else
@@ -101,8 +102,6 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     }
 }
 
-
-
 void test_init(void)
 {
     ESP_LOGI(TAG, "[APP] Free memory: %d bytes", esp_get_free_heap_size());
@@ -169,6 +168,10 @@ static void configure_client(command_context_t * ctx, const char *transport)
             ESP_LOGI(TAG, "Set certificate");
             config.broker.verification.certificate = (const char *)mqtt_eclipseprojects_io_pem_start;
         }
+        // Generate a random client id for each iteration
+        char client_id[CLIENT_ID_SUFFIX_SIZE] = {0};
+        snprintf(client_id, sizeof(client_id), "esp32-%08X", esp_random());
+        config.credentials.client_id = client_id;
         esp_mqtt_set_config(ctx->mqtt_client, &config);
     }
 }

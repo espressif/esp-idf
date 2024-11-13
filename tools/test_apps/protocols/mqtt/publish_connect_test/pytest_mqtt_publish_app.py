@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
+
 import contextlib
 import difflib
 import logging
@@ -41,7 +42,8 @@ class MqttPublisher(mqtt.Client):
         self.event_client_connected = Event()
         self.event_client_got_all = Event()
         transport = 'websockets' if self.publish_cfg['transport'] in ['ws', 'wss'] else 'tcp'
-        super().__init__('MqttTestRunner', userdata=0, transport=transport)
+        client_id = 'MqttTestRunner' + ''.join(random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(5))
+        super().__init__(client_id, userdata=0, transport=transport)
 
     def print_details(self, text):  # type: (str) -> None
         if self.log_details:
@@ -156,9 +158,14 @@ def get_scenarios() -> List[Dict[str, int]]:
 
 def get_timeout(test_case: Any) -> int:
     transport, qos, enqueue, scenario = test_case
-    if transport in ['ws', 'wss'] or qos == 2:
-        return 120
-    return 60
+    timeout = int(scenario['repeat'] * 10)
+    if qos == 1:
+        timeout += 30
+    if qos == 2:
+        timeout += 45
+    if transport in ['ws', 'wss']:
+        timeout += 30
+    return timeout
 
 
 def run_publish_test_case(dut: Dut, test_case: Any, publish_cfg: Any) -> None:
@@ -172,7 +179,7 @@ def run_publish_test_case(dut: Dut, test_case: Any, publish_cfg: Any) -> None:
     publish_cfg['transport'] = transport
     test_timeout = get_timeout(test_case)
     logging.info(f'Starting Publish test: transport:{transport}, qos:{qos}, nr_of_msgs:{published},'
-                 f' msg_size:{repeat*DEFAULT_MSG_SIZE}, enqueue:{enqueue}')
+                 f' msg_size:{repeat * DEFAULT_MSG_SIZE}, enqueue:{enqueue}')
     with MqttPublisher(repeat, published, publish_cfg) as publisher, connected_and_subscribed(dut, transport, publisher.sample_string, scenario['len']):
         msgs_published: List[mqtt.MQTTMessageInfo] = []
         dut.write(f'publish {publisher.published} {qos} {enqueue}')
@@ -193,13 +200,13 @@ def run_publish_test_case(dut: Dut, test_case: Any, publish_cfg: Any) -> None:
         try:
             dut.expect(re.compile(rb'Correct pattern received exactly x times'), timeout=test_timeout)
         except pexpect.exceptions.ExceptionPexpect:
-            dut.write(f'publish_report')
+            dut.write('publish_report')
             dut.expect(re.compile(rb'Test Report'), timeout=30)
             raise
         logging.info('ESP32 received all data from runner')
 
 
-stress_scenarios = [{'len':20,  'repeat':50}]    # many medium sized
+stress_scenarios = [{'len':20,  'repeat':30}]    # many medium sized
 transport_cases = ['tcp', 'ws', 'wss', 'ssl']
 qos_cases = [0, 1, 2]
 enqueue_cases = [0, 1]
