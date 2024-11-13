@@ -101,9 +101,9 @@ void app_main(void)
 
     // Setup communication parameters and start stack
 #if CONFIG_MB_COMM_MODE_ASCII
-    comm_info.mode = MB_MODE_ASCII,
+    comm_info.mode = MB_MODE_ASCII;
 #elif CONFIG_MB_COMM_MODE_RTU
-    comm_info.mode = MB_MODE_RTU,
+    comm_info.mode = MB_MODE_RTU;
 #endif
     comm_info.slave_addr = MB_SLAVE_ADDR;
     comm_info.port = MB_PORT_NUM;
