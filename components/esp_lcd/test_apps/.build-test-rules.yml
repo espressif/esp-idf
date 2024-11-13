@@ -40,6 +40,13 @@ components/esp_lcd/test_apps/mipi_dsi_lcd:
       temporary: true
       reason: lack of runners, DSI can't work without an LCD connected
 
+components/esp_lcd/test_apps/parlio_lcd:
+  depends_components:
+    - esp_lcd
+    - esp_driver_parlio
+  disable:
+    - if: SOC_PARLIO_SUPPORT_SPI_LCD != 1
+
 components/esp_lcd/test_apps/rgb_lcd:
   depends_components:
     - esp_lcd

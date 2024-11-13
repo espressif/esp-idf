@@ -30,6 +30,10 @@ if(CONFIG_SOC_I2S_SUPPORTS_LCD_CAMERA)
     list(APPEND srcs "i80/esp_lcd_panel_io_i2s.c")
 endif()
 
+if(CONFIG_SOC_PARLIO_SUPPORT_SPI_LCD)
+    list(APPEND srcs "parl/esp_lcd_panel_io_parl.c")
+endif()
+
 if(CONFIG_SOC_LCDCAM_I80_LCD_SUPPORTED)
     list(APPEND srcs "i80/esp_lcd_panel_io_i80.c")
 endif()

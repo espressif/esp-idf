@@ -24,6 +24,7 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_rom_gpio.h"
+#include "soc/gpio_sig_map.h"
 #include "esp_intr_alloc.h"
 #include "esp_pm.h"
 #include "soc/parlio_periph.h"
@@ -166,7 +167,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
-                                        false, false);
+                                        config->flags.invert_valid_out, false);
     }
     if (config->clk_out_gpio_num >= 0) {
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
@@ -229,6 +230,18 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
 
     // throw the error to the caller
     ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &tx_unit->dma_link), TAG, "create DMA link list failed");
+    return ESP_OK;
+}
+
+esp_err_t parlio_tx_get_alignment_constraints(parlio_tx_unit_t *tx_unit, size_t *int_mem_align, size_t *ext_mem_align)
+{
+    ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (int_mem_align) {
+        *int_mem_align = tx_unit->int_mem_align;
+    }
+    if (ext_mem_align) {
+        *ext_mem_align = tx_unit->ext_mem_align;
+    }
     return ESP_OK;
 }
 
@@ -640,8 +653,15 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
         parlio_ll_tx_start(hal->regs, false);
 
-        parlio_tx_trans_desc_t *trans_desc = NULL;
+        // invoke callback before sending the transaction to complete queue
+        parlio_tx_done_callback_t done_cb = tx_unit->on_trans_done;
+        if (done_cb) {
+            if (done_cb(tx_unit, NULL, tx_unit->user_data)) {
+                need_yield = true;
+            }
+        }
 
+        parlio_tx_trans_desc_t *trans_desc = NULL;
         parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_RUN;
         if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
             trans_desc = tx_unit->cur_trans;
@@ -652,14 +672,6 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
             }
             tx_unit->cur_trans = NULL;
             atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
-        }
-
-        // invoke callback
-        parlio_tx_done_callback_t done_cb = tx_unit->on_trans_done;
-        if (done_cb) {
-            if (done_cb(tx_unit, NULL, tx_unit->user_data)) {
-                need_yield = true;
-            }
         }
 
         // if the tx unit is till in enable state (i.e. not disabled by user), let's try start the next pending transaction
