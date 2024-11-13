@@ -804,26 +804,26 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "6f98805688d19672bd699fbbfa2c2cf0fc054ac3df1f0e6a47664d963d530255",
-            "size": 123084,
-            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip"
+            "sha256": "68f750dd763ba1a0dd976c3b4145d715cf7806191e05e871e5f5d1a8de4e1cd0",
+            "size": 126128,
+            "url": "https://dl.espressif.com/dl/ninja-1.12.1-linux64.tar.gz"
           },
           "macos": {
-            "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9",
-            "size": 281130,
-            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip"
+            "sha256": "9087d29e959612b91027ce75151c72910b6a1f42832af70eeae94353e3b05b2e",
+            "size": 287705,
+            "url": "https://dl.espressif.com/dl/ninja-1.12.1-osx.tar.gz"
           },
           "macos-arm64": {
-            "sha256": "89a287444b5b3e98f88a945afa50ce937b8ffd1dcc59c555ad9b1baf855298c9",
-            "size": 281130,
-            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-mac.zip"
+            "sha256": "9087d29e959612b91027ce75151c72910b6a1f42832af70eeae94353e3b05b2e",
+            "size": 287705,
+            "url": "https://dl.espressif.com/dl/ninja-1.12.1-osx.tar.gz"
           },
           "name": "1.12.1",
           "status": "recommended",
           "win64": {
             "sha256": "f550fec705b6d6ff58f2db3c374c2277a37691678d6aba463adcbb129108467a",
             "size": 275425,
-            "url": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip"
+            "url": "https://dl.espressif.com/dl/ninja-1.12.1-win64.zip"
           }
         }
       ]
