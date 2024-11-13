@@ -83,14 +83,17 @@ SDMMC 主机驱动
 
 SDMMC 主机驱动支持以下速率模式：
 
-- 默认速率 (20 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
-- 高速模式 (40 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
-- 高速 DDR 模式 (40 MHz)：对于 3.3 V eMMC，支持 4 线传输。
+.. list::
+
+  - 默认速率 (20 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
+  - 高速模式 (40 MHz)：对于 SD 卡，支持 1 线或 4 线传输；对于 3.3 V eMMC，支持 1 线、4 线或 8 线传输。
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V SDR50 模式 (100 MHz)：支持 4 线 SD 卡传输。
+  :SOC_SDMMC_UHS_I_SUPPORTED: - UHS-I 1.8 V DDR50 模式 (50 MHz)：支持 4 线 SD 卡传输。
+  - 高速 DDR 模式 (40 MHz)：对于 3.3 V eMMC，支持 4 线传输。
 
 当前尚不支持的速率模式：
 
 - 高速 DDR 模式：不支持 8 线 eMMC 传输
-- UHS-I 1.8 V 模式：不支持 4 线 SD 卡传输
 
 
 使用 SDMMC 主机驱动

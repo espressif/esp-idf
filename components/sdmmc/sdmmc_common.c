@@ -44,6 +44,16 @@ esp_err_t sdmmc_init_ocr(sdmmc_card_t* card)
         acmd41_arg |= SD_OCR_SDHC_CAP;
     }
 
+    bool to_set_to_uhs1 = false;
+    if (card->host.is_slot_set_to_uhs1) {
+        ESP_RETURN_ON_ERROR(card->host.is_slot_set_to_uhs1(card->host.slot, &to_set_to_uhs1), TAG, "failed to get slot info");
+    }
+    if (to_set_to_uhs1) {
+        acmd41_arg |= SD_OCR_S18_RA;
+        acmd41_arg |= SD_OCR_XPC;
+    }
+    ESP_LOGV(TAG, "%s: acmd41_arg=0x%08" PRIx32, __func__, card->ocr);
+
     /* Send SEND_OP_COND (ACMD41) command to the card until it becomes ready. */
     err = sdmmc_send_cmd_send_op_cond(card, acmd41_arg, &card->ocr);
 
@@ -184,6 +194,21 @@ esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_init_sd_driver_strength(sdmmc_card_t *card)
+{
+    return sdmmc_select_driver_strength(card, card->host.driver_strength);
+}
+
+esp_err_t sdmmc_init_sd_current_limit(sdmmc_card_t *card)
+{
+    return sdmmc_select_current_limit(card, card->host.current_limit);
+}
+
+esp_err_t sdmmc_init_sd_timing_tuning(sdmmc_card_t *card)
+{
+    return sdmmc_do_timing_tuning(card);
+}
+
 esp_err_t sdmmc_init_host_bus_width(sdmmc_card_t* card)
 {
     int bus_width = 1;
@@ -210,6 +235,14 @@ esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card)
 {
     esp_err_t err;
     assert(card->max_freq_khz <= card->host.max_freq_khz);
+
+#if !SOC_SDMMC_UHS_I_SUPPORTED
+    ESP_RETURN_ON_FALSE(card->host.input_delay_phase != SDMMC_DELAY_PHASE_AUTO, ESP_ERR_INVALID_ARG, TAG, "auto tuning not supported");
+#endif
+
+    if (card->host.input_delay_phase == SDMMC_DELAY_PHASE_AUTO) {
+        ESP_RETURN_ON_FALSE((card->host.max_freq_khz == SDMMC_FREQ_SDR50 || card->host.max_freq_khz == SDMMC_FREQ_SDR104), ESP_ERR_INVALID_ARG, TAG, "auto tuning only supported for SDR50 / SDR104");
+    }
 
     if (card->max_freq_khz > SDMMC_FREQ_PROBING) {
         err = (*card->host.set_card_clk)(card->host.slot, card->max_freq_khz);
@@ -280,7 +313,15 @@ void sdmmc_card_print_info(FILE* stream, const sdmmc_card_t* card)
         type = "MMC";
         print_csd = true;
     } else {
-        type = (card->ocr & SD_OCR_SDHC_CAP) ? "SDHC/SDXC" : "SDSC";
+        if ((card->ocr & SD_OCR_SDHC_CAP) == 0) {
+            type = "SDSC";
+        } else {
+            if (card->ocr & SD_OCR_S18_RA) {
+                type = "SDHC/SDXC (UHS-I)";
+            } else {
+                type = "SDHC";
+            }
+        }
         print_csd = true;
     }
     fprintf(stream, "Type: %s\n", type);
@@ -334,6 +375,19 @@ esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card)
             card->host.flags |= width_4bit;
         }
     }
+
+#if !SOC_SDMMC_UHS_I_SUPPORTED
+    if ((card->host.max_freq_khz == SDMMC_FREQ_SDR50) ||
+        (card->host.max_freq_khz == SDMMC_FREQ_DDR50) ||
+        (card->host.max_freq_khz == SDMMC_FREQ_SDR104)) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "UHS-I is not supported");
+    }
+#else
+    if (card->host.max_freq_khz == SDMMC_FREQ_DDR50) {
+        ESP_RETURN_ON_FALSE(((card->host.flags & SDMMC_HOST_FLAG_DDR) != 0), ESP_ERR_INVALID_ARG, TAG, "DDR is not selected");
+    }
+#endif
+
     return ESP_OK;
 }
 
