@@ -776,14 +776,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xon_char : R/W; bitpos: [7:0]; default: 17;
+        /** xon_character : R/W; bitpos: [7:0]; default: 17;
          *  Configures the XON character for flow control.
          */
-        uint32_t xon_char:8;
-        /** xoff_char : R/W; bitpos: [15:8]; default: 19;
+        uint32_t xon_character:8;
+        /** xoff_character : R/W; bitpos: [15:8]; default: 19;
          *  Configures the XOFF character for flow control.
          */
-        uint32_t xoff_char:8;
+        uint32_t xoff_character:8;
         /** xon_xoff_still_send : R/W; bitpos: [16]; default: 0;
          *  Configures whether the UART transmitter can send XON or XOFF characters when it is
          *  disabled.\\
@@ -1178,10 +1178,10 @@ typedef union {
          *  Configures the AT_CMD character.
          */
         uint32_t at_cmd_char:8;
-        /** char_num : R/W; bitpos: [15:8]; default: 3;
+        /** at_char_num : R/W; bitpos: [15:8]; default: 3;
          *  Configures the number of continuous AT_CMD characters a receiver can receive.
          */
-        uint32_t char_num:8;
+        uint32_t at_char_num:8;
         uint32_t reserved_16:16;
     };
     uint32_t val;
