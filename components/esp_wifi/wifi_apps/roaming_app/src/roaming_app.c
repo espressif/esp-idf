@@ -915,3 +915,53 @@ void deinit_roaming_app(void)
         scan_results_lock = NULL;
     }
 }
+
+esp_err_t roam_get_config_params(struct roam_config *config)
+{
+    memcpy(config, &g_roaming_app.config, sizeof(*config));
+
+    return ESP_OK;
+}
+
+esp_err_t roam_set_config_params(struct roam_config *config)
+{
+    g_roaming_app.config.backoff_time = config->backoff_time;
+
+    g_roaming_app.config.low_rssi_roam_trigger = config->low_rssi_roam_trigger;
+    g_roaming_app.config.low_rssi_threshold = config->low_rssi_threshold;
+    g_roaming_app.config.rssi_threshold_reduction_offset = config->rssi_threshold_reduction_offset;
+
+    g_roaming_app.config.scan_monitor = config->scan_monitor;
+    g_roaming_app.config.scan_interval = config->scan_interval;
+    g_roaming_app.config.scan_rssi_threshold = config->scan_rssi_threshold;
+    g_roaming_app.config.scan_rssi_diff = config->scan_rssi_diff;
+
+    g_roaming_app.config.legacy_roam_enabled = config->legacy_roam_enabled;
+    g_roaming_app.config.btm_retry_cnt = config->btm_retry_cnt;
+    g_roaming_app.config.btm_roaming_enabled = config->btm_roaming_enabled;
+
+    g_roaming_app.config.rrm_monitor = config->rrm_monitor;
+    g_roaming_app.config.rrm_monitor_time = config->rrm_monitor_time;
+    g_roaming_app.config.rrm_monitor_rssi_threshold = config->rrm_monitor_rssi_threshold;
+
+    ESP_LOGD(ROAMING_TAG, "Updated Roaming app config :");
+
+    ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d",
+                            g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
+                            g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
+
+    ESP_LOGD(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
+                        g_roaming_app.config.scan_monitor, g_roaming_app.config.scan_interval,
+                        g_roaming_app.config.scan_rssi_threshold, g_roaming_app.config.scan_rssi_diff);
+
+    ESP_LOGD(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
+                        g_roaming_app.config.legacy_roam_enabled,
+                        g_roaming_app.config.btm_retry_cnt, g_roaming_app.config.btm_roaming_enabled);
+
+    ESP_LOGD(ROAMING_TAG, "rrm_monitor=%d, rrm_monitor_time=%d rrm_monitor_rssi_threshold=%d",
+                        g_roaming_app.config.rrm_monitor,
+                        g_roaming_app.config.rrm_monitor_time,
+                        g_roaming_app.config.rrm_monitor_rssi_threshold);
+
+    return ESP_OK;
+}
