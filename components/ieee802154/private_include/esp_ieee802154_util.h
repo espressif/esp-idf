@@ -168,19 +168,27 @@ typedef struct {
 
 extern ieee802154_probe_info_t g_ieee802154_probe;
 
-#if CONFIG_IEEE802154_ASSERT
+#if CONFIG_IEEE802154_RECORD
 /**
  * @brief  This function print rich information, which is useful for debug.
  *         Only can be used when `IEEE802154_ASSERT` is enabled.
  *
  */
-void ieee802154_assert_print(void);
+void ieee802154_record_print(void);
+#endif
+
+#if CONFIG_IEEE802154_ASSERT
+
+#if CONFIG_IEEE802154_RECORD
 #define IEEE802154_ASSERT(a) do { \
                                     if(unlikely(!(a))) { \
-                                        ieee802154_assert_print(); \
+                                        ieee802154_record_print(); \
                                         assert(a); \
                                     } \
                                 } while (0)
+#else
+#error "CONFIG_IEEE802154_RECORD must be enabled when CONFIG_IEEE802154_ASSERT enabled"
+#endif
 #else // CONFIG_IEEE802154_ASSERT
 #define IEEE802154_ASSERT(a) assert(a)
 #endif // CONFIG_IEEE802154_ASSERT
@@ -248,6 +256,33 @@ void ieee802154_tx_break_coex_nums_update(void);
 #define IEEE802154_TXRX_STATISTIC_CLEAR()
 #define IEEE802154_TX_BREAK_COEX_NUMS_UPDATE()
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+/**
+ * @brief  Count the rx buffer used.
+ *
+ * @param[in]  is_free  True for rx buffer frees and false for rx buffer allocates.
+ *
+ */
+void ieee802154_rx_buffer_statistic_is_free(bool is_free);
+
+/**
+ * @brief  Clear the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void ieee802154_rx_buffer_statistic_clear(void);
+
+/**
+ * @brief  Print the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void ieee802154_rx_buffer_statistic_printf(void);
+
+#define IEEE802154_RX_BUFFER_STAT_IS_FREE(a) ieee802154_rx_buffer_statistic_is_free(a)
+#else
+#define IEEE802154_RX_BUFFER_STAT_IS_FREE(a)
+#endif
 
 // TODO: replace etm code using common interface
 

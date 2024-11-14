@@ -171,8 +171,8 @@ static char *ieee80154_tx_abort_reason_string[] = {
 
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 
-#if CONFIG_IEEE802154_ASSERT
-void ieee802154_assert_print(void)
+#if CONFIG_IEEE802154_RECORD
+void ieee802154_record_print(void)
 {
 #if CONFIG_IEEE802154_RECORD_EVENT
     ESP_EARLY_LOGW(IEEE802154_TAG, "Print the record event, current event index: %d", g_ieee802154_probe.event_index);
@@ -235,7 +235,7 @@ void ieee802154_assert_print(void)
     ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record abort done.");
 #endif // CONFIG_IEEE802154_RECORD_ABORT
 }
-#endif // CONFIG_IEEE802154_ASSERT
+#endif // CONFIG_IEEE802154_RECORD
 
 #if CONFIG_IEEE802154_TXRX_STATISTIC
 static ieee802154_txrx_statistic_t s_ieee802154_txrx_statistic;
@@ -369,5 +369,48 @@ void ieee802154_txrx_statistic_print(void)
 }
 
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+#define IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL 10
+#define IEEE802154_RX_BUFFER_GET_USED_LEVEL(a) (((a) * IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL) / (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1))
+static uint16_t s_rx_buffer_used_nums = 0;
+static uint64_t s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1];
+void ieee802154_rx_buffer_statistic_is_free(bool is_free)
+{
+    if (is_free) {
+        s_rx_buffer_used_nums--;
+    } else {
+        s_rx_buffer_used_nums++;
+        // (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1) means buffer full.
+        if (s_rx_buffer_used_nums > (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1)) {
+            s_rx_buffer_used_nums = CONFIG_IEEE802154_RX_BUFFER_SIZE + 1;
+        }
+        s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_GET_USED_LEVEL(s_rx_buffer_used_nums)]++;
+    }
+}
+
+void ieee802154_rx_buffer_statistic_clear(void)
+{
+    memset((void*)s_rx_buffer_used_water_level, 0, sizeof(uint64_t)*(IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1));
+}
+
+void ieee802154_rx_buffer_statistic_printf(void)
+{
+    uint64_t total_times = 0;
+    for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1); i++) {
+        total_times += s_rx_buffer_used_water_level[i];
+    }
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-25u|", "rx buff total size:", "", CONFIG_IEEE802154_RX_BUFFER_SIZE);
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-25llu|", "buffer alloc times:", "", total_times);
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
+    for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL); i++) {
+        ESP_LOGW(IEEE802154_TAG, "|%-20s|%4d%%%5s%4d%%%-10s|%-15llu%9.2f%%|", "", ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~", ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:", s_rx_buffer_used_water_level[i], ((float)s_rx_buffer_used_water_level[i] / (float)total_times)*100);
+    }
+    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-15llu%9.2f%%|", "", "full used:", s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times)*100);
+    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
+}
+
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
 
 #endif // CONFIG_IEEE802154_DEBUG
