@@ -53,10 +53,9 @@ if(CONFIG_ESP_PHY_ENABLED)
     endif()
 endif()
 
-# [refactor-todo]: requires "driver" component for periph_ctrl header file
 idf_component_register(SRCS "${srcs}"
                     INCLUDE_DIRS "include" "${idf_target}/include"
-                    PRIV_REQUIRES nvs_flash driver efuse esp_timer esp_wifi
+                    PRIV_REQUIRES nvs_flash esp_driver_gpio efuse esp_timer esp_wifi
                     LDFRAGMENTS "${ldfragments}"
                     EMBED_FILES  ${embed_files}
                     )
