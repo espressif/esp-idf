@@ -103,8 +103,20 @@ GDB 具有 FreeRTOS 支持的 Python 扩展模块。在系统要求满足的情�
 3.  在某些特殊情况下，如果你看到 DSR/DIR 错误（并且它并不是由 OpenOCD 试图从一个没有物理存储器映射的地址空间读取数据而导致的），请降低 JTAG 的工作频率。
 4.  ESP-WROVER-KIT 能够稳定运行在 20 MHz 或 26 MHz 频率下。
 
+.. only:: SOC_DEBUG_HAVE_OCD_STUB_BINS
 
-.. _jtag-debugging-tip-debugger-startup-commands:
+    .. _jtag-debugging-tip-improve-debugging-speed:
+
+    提高调试速度
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+    启用 :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` 将预先分配 8 KB 的 RAM, 且预编译的存根二进制文件将嵌入到 RAM 中，因此运行时将无需加载存根二进制文件，从而提高整体调试速度。在使用 flash 断点时，上述优化可以有效降低添加和删除断点的延迟。但要注意，RAM 使用量的增加可能会占用其他任务所需的内存。
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
+
+.. only:: not SOC_DEBUG_HAVE_OCD_STUB_BINS
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
 
 调试器的启动命令的含义
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
