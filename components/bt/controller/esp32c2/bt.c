@@ -156,6 +156,10 @@ extern int ble_get_npl_element_info(esp_bt_controller_config_t *cfg, ble_npl_cou
 extern void bt_track_pll_cap(void);
 extern char *ble_controller_get_compile_version(void);
 extern const char *r_ble_controller_get_rom_compile_version(void);
+#if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+extern void ble_ll_supported_features_init(void);
+#endif //CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+
 #if CONFIG_BT_RELEASE_IRAM
 extern uint32_t _iram_bt_text_start;
 extern uint32_t _bss_bt_end;
@@ -534,7 +538,12 @@ static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer
 
 static int esp_intr_alloc_wrapper(int source, int flags, intr_handler_t handler, void *arg, void **ret_handle_in)
 {
+#if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+    int rc = esp_intr_alloc(source, flags, handler, arg, (intr_handle_t *)ret_handle_in);
+#else
     int rc = esp_intr_alloc(source, flags | ESP_INTR_FLAG_IRAM, handler, arg, (intr_handle_t *)ret_handle_in);
+#endif
+
     return rc;
 }
 
@@ -743,6 +752,8 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         return ret;
     }
 
+    /* If we place the ble code into flash, don't need to initialize ROM. */
+#if !CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 #if DEFAULT_BT_LE_50_FEATURE_SUPPORT || DEFAULT_BT_LE_ROLE_CENTROL || DEFAULT_BT_LE_ROLE_OBSERVER
     extern int esp_ble_rom_func_ptr_init_all(void);
     esp_ble_rom_func_ptr_init_all();
@@ -751,6 +762,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     extern int esp_ble_rom_func_ptr_init_legacy_adv_and_slave(void);
     esp_ble_rom_func_ptr_init_legacy_adv_and_slave();
 #endif
+#endif //!CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 
     /* Initialize the function pointers for OS porting */
     npl_freertos_funcs_init();
@@ -800,6 +812,11 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_init();
 #endif
+
+#if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+    ble_ll_supported_features_init();
+#endif //CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+
     ret = ble_controller_init(cfg);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
