@@ -45,6 +45,14 @@ extern "C" {
     #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
     #endif
 
+    #define DEGAULT_BT_LE_2M_PHY                         (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_2M_PHY)
+    #define DEGAULT_BT_LE_CODED_PHY                      (CONFIG_BT_NIMBLE_LL_CFG_FEAT_LE_CODED_PHY)
+    #define DEFAULT_BT_LE_EXT_ADV                        (CONFIG_BT_NIMBLE_EXT_ADV)
+    #define DEFAULT_BT_LE_PERIODIC_ADV                   (CONFIG_BT_NIMBLE_ENABLE_PERIODIC_ADV)
+    #define DEFAULT_BT_LE_EXT_SCAN                       (CONFIG_BT_NIMBLE_EXT_SCAN)
+    #define DEFAULT_BT_LE_PERIODIC_SYNC                  (CONFIG_BT_NIMBLE_ENABLE_PERIODIC_SYNC)
+    #define DEFAULT_BT_LE_PAST                           (CONFIG_BT_NIMBLE_PERIODIC_ADV_SYNC_TRANSFER)
+
     #define DEFAULT_BT_LE_ROLE_OBSERVER                  MYNEWT_VAL(BLE_ROLE_OBSERVER)
     #define DEFAULT_BT_LE_ROLE_CENTROL                   MYNEWT_VAL(BLE_ROLE_CENTRAL)
     #define DEFAULT_BT_LE_ROLE_PERIPHERAL                MYNEWT_VAL(BLE_ROLE_PERIPHERAL)
@@ -122,10 +130,53 @@ extern "C" {
     #else
         #define DEFAULT_BT_LE_HCI_EVT_LO_BUF_COUNT (8)
     #endif
+
     #if defined(CONFIG_BT_LE_50_FEATURE_SUPPORT)
         #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (1)
     #else
         #define DEFAULT_BT_LE_50_FEATURE_SUPPORT (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_LL_CFG_FEAT_LE_2M_PHY)
+        #define DEGAULT_BT_LE_2M_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_2M_PHY)
+    #else
+        #define DEGAULT_BT_LE_2M_PHY (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY)
+        #define DEGAULT_BT_LE_CODED_PHY (CONFIG_BT_LE_LL_CFG_FEAT_LE_CODED_PHY)
+    #else
+        #define DEGAULT_BT_LE_CODED_PHY (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_EXT_ADV)
+        #define DEFAULT_BT_LE_EXT_ADV       (CONFIG_BT_LE_EXT_ADV)
+    #else
+        #define DEFAULT_BT_LE_EXT_ADV       (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_ENABLE_PERIODIC_ADV)
+        #define DEFAULT_BT_LE_PERIODIC_ADV  (CONFIG_BT_LE_ENABLE_PERIODIC_ADV)
+    #else
+        #define DEFAULT_BT_LE_PERIODIC_ADV  (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_EXT_SCAN)
+        #define DEFAULT_BT_LE_EXT_SCAN      (CONFIG_BT_LE_EXT_SCAN)
+    #else
+        #define DEFAULT_BT_LE_EXT_SCAN      (0)
+    #endif
+
+    #if defined(CONFIG_BT_LE_ENABLE_PERIODIC_SYNC)
+        #define DEFAULT_BT_LE_PERIODIC_SYNC  (CONFIG_BT_LE_ENABLE_PERIODIC_SYNC)
+    #else
+        #define DEFAULT_BT_LE_PERIODIC_SYNC  (0)
+    #endif
+
+    #if defined(BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
+        #define DEFAULT_BT_LE_PAST          (BT_LE_PERIODIC_ADV_SYNC_TRANSFER)
+    #else
+        #define DEFAULT_BT_LE_PAST          (0)
     #endif
 
     #if defined(CONFIG_BT_LE_ROLE_CENTROL_ENABLE)
