@@ -22,6 +22,7 @@
 #include "common/wnm_sta.h"
 #include "esp_scan_i.h"
 #include "esp_common_i.h"
+#include "eloop.h"
 
 extern struct wpa_supplicant g_wpa_supp;
 
@@ -35,13 +36,7 @@ static void scan_done_event_handler(void *arg, ETS_STATUS status)
         wpa_s->type &= ~(1 << WLAN_FC_STYPE_BEACON) & ~(1 << WLAN_FC_STYPE_PROBE_RESP);
         esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
     }
-#ifdef CONFIG_SUPPLICANT_TASK
-    if (esp_supplicant_post_evt(SIG_SUPPLICANT_SCAN_DONE, 0) != 0) {
-        wpa_printf(MSG_ERROR, "Posting of scan done failed!");
-    }
-#else
     esp_supplicant_handle_scan_done_evt();
-#endif /*CONFIG_SUPPLICANT_TASK*/
 }
 
 #if defined(CONFIG_WNM)
