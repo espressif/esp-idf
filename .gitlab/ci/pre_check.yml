@@ -169,3 +169,35 @@ pipeline_variables:
       - pipeline.env
     expire_in: 1 week
     when: always
+
+baseline_manifest_sha:
+  extends:
+    - .pre_check_template
+    - .rules:dev-push
+  tags: [fast_run, shiny]
+  script:
+    - |
+      # merged results pipelines, by default
+      # diff between target-branch-head and merged-result-head
+      if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_SHA" ]; then
+        git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_SHA --depth=1
+        git checkout FETCH_HEAD
+        idf-build-apps dump-manifest-sha \
+          --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
+          --output .manifest_sha
+      # merge request pipelines, when the mr got conflicts
+      # diff between diff-base-sha and merge-request-head
+      elif [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+        git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1
+        git checkout FETCH_HEAD
+        idf-build-apps dump-manifest-sha \
+          --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
+          --output .manifest_sha
+      # other pipelines, like the protected branches pipelines
+      # not triggered in this job
+      fi
+  artifacts:
+    paths:
+      - .manifest_sha
+    expire_in: 1 week
+    when: always
