@@ -353,6 +353,17 @@ void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
 }
 
+void modem_clock_deselect_all_module_lp_clock_source(void)
+{
+#if SOC_WIFI_SUPPORTED
+    modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+#if SOC_BT_SUPPORTED
+    modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+    modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
+}
+
 void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
 {
     assert(IS_MODEM_MODULE(module));
