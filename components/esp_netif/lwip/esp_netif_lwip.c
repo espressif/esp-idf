@@ -72,7 +72,7 @@
  * @brief macros to check netif related data to evaluate interface type
  */
 #if CONFIG_PPP_SUPPORT
-#define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) (netif->related_data && netif->related_data->is_point2point)
+#define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) (netif && netif->related_data && netif->related_data->is_point2point)
 #else
 #define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) false
 #endif
