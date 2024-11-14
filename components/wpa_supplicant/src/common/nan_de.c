@@ -24,6 +24,9 @@ enum nan_de_service_type {
 	NAN_DE_SUBSCRIBE,
 };
 
+static const u8 p2p_network_id[ETH_ALEN] =
+{ 0x51, 0x6f, 0x9a, 0x02, 0x00, 0x00 };
+
 struct nan_de_service {
 	int id;
 	enum nan_de_service_type type;
@@ -82,6 +85,12 @@ struct nan_de {
 bool nan_de_is_nan_network_id(const u8 *addr)
 {
 	return ether_addr_equal(addr, nan_network_id);
+}
+
+
+bool nan_de_is_p2p_network_id(const u8 *addr)
+{
+	return ether_addr_equal(addr, p2p_network_id);
 }
 
 
@@ -343,6 +352,7 @@ static void nan_de_tx_multicast(struct nan_de *de, struct nan_de_service *srv,
 {
 	enum nan_service_control_type type;
 	unsigned int wait_time = 100;
+	const u8 *network_id;
 
 	if (srv->type == NAN_DE_PUBLISH) {
 		int ms;
@@ -360,7 +370,12 @@ static void nan_de_tx_multicast(struct nan_de *de, struct nan_de_service *srv,
 		return;
 	}
 
-	nan_de_tx_sdf(de, srv, wait_time, type, nan_network_id, nan_network_id,
+	if (srv->is_p2p)
+		network_id = p2p_network_id;
+	else
+		network_id = nan_network_id;
+
+	nan_de_tx_sdf(de, srv, wait_time, type, network_id, network_id,
 		      req_instance_id, srv->ssi);
 	os_get_reltime(&srv->last_multicast);
 }
@@ -893,6 +908,7 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 	size_t len = 0, sda_len, sdea_len;
 	u8 ctrl = 0;
 	u16 sdea_ctrl = 0;
+	const u8 *network_id;
 
 	/* Publish function processing of a receive Subscribe message */
 
@@ -969,14 +985,19 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 		wpabuf_put_buf(buf, srv->elems);
 	}
 
+	if (srv->is_p2p)
+		network_id = p2p_network_id;
+	else
+		network_id = nan_network_id;
+
 	/* Wi-Fi Aware specification v4.0 uses NAN Cluster ID as A3 for USD,
 	 * but there is no synchronization in USD as as such, no NAN Cluster
 	 * either. Use Wildcard BSSID instead. */
 	if (srv->publish.solicited_multicast || !a3)
-		a3 = nan_network_id;
+		a3 = network_id;
 
 	nan_de_tx(de, srv->freq, 100,
-		  srv->publish.solicited_multicast ? nan_network_id : peer_addr,
+		  srv->publish.solicited_multicast ? network_id : peer_addr,
 		  de->nmi, a3, buf);
 	wpabuf_free(buf);
 
@@ -1451,6 +1472,7 @@ int nan_de_transmit(struct nan_de *de, int handle,
 {
 	struct nan_de_service *srv;
 	const u8 *a3;
+	const u8 *network_id;
 
 	if (handle < 1 || handle > NAN_DE_MAX_SERVICE)
 		return -1;
@@ -1459,10 +1481,15 @@ int nan_de_transmit(struct nan_de *de, int handle,
 	if (!srv)
 		return -1;
 
+	if (srv->is_p2p)
+		network_id = p2p_network_id;
+	else
+		network_id = nan_network_id;
+
 	if (srv->a3_set)
 		a3 = srv->a3;
 	else
-		a3 = nan_network_id;
+		a3 = network_id;
 	nan_de_tx_sdf(de, srv, 100, NAN_SRV_CTRL_FOLLOW_UP,
 		      peer_addr, a3, req_instance_id, ssi);
 

@@ -56,6 +56,7 @@ struct nan_callbacks {
 };
 
 bool nan_de_is_nan_network_id(const u8 *addr);
+bool nan_de_is_p2p_network_id(const u8 *addr);
 struct nan_de * nan_de_init(const u8 *nmi, bool offload, bool ap,
 			    unsigned int max_listen,
 			    const struct nan_callbacks *cb);
