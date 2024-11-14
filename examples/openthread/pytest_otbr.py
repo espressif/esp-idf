@@ -74,8 +74,8 @@ def fixture_Init_avahi() -> bool:
 @pytest.fixture(name='Init_interface')
 def fixture_Init_interface() -> bool:
     print('Init interface')
-    ocf.init_interface_ipv6_address()
-    ocf.reset_host_interface()
+    ocf.flush_ipv6_addr_by_interface()
+    # The sleep time is set based on experience; reducing it might cause the host to be unready.
     time.sleep(30)
     ocf.set_interface_sysctl_options()
     return True

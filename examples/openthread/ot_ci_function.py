@@ -441,6 +441,26 @@ def get_domain() -> str:
     return str(role)
 
 
+def flush_ipv6_addr_by_interface() -> None:
+    interface_name = get_host_interface_name()
+    print(f'flush ipv6 addr : {interface_name}')
+    command_show_addr = f'ip -6 addr show dev {interface_name}'
+    command_show_route = f'ip -6 route show dev {interface_name}'
+    addr_before = subprocess.getoutput(command_show_addr)
+    route_before = subprocess.getoutput(command_show_route)
+    print(f'Before flush, IPv6 addresses: \n{addr_before}')
+    print(f'Before flush, IPv6 routes: \n{route_before}')
+    subprocess.run(['ip', 'link', 'set', interface_name, 'down'])
+    subprocess.run(['ip', '-6', 'addr', 'flush', 'dev', interface_name])
+    subprocess.run(['ip', '-6', 'route', 'flush', 'dev', interface_name])
+    subprocess.run(['ip', 'link', 'set', interface_name, 'up'])
+    time.sleep(5)
+    addr_after = subprocess.getoutput(command_show_addr)
+    route_after = subprocess.getoutput(command_show_route)
+    print(f'After flush, IPv6 addresses: \n{addr_after}')
+    print(f'After flush, IPv6 routes: \n{route_after}')
+
+
 class tcp_parameter:
 
     def __init__(self, tcp_type:str='', addr:str='::', port:int=12345, listen_flag:bool=False, recv_flag:bool=False, timeout:float=15.0, tcp_bytes:bytes=b''):
