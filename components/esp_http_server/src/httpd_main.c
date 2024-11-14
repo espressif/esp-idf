@@ -55,7 +55,7 @@ static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
         if (!httpd_is_sess_available(hd)) {
             /* Queue asynchronous closure of the least recently used session */
             return httpd_sess_close_lru(hd);
-            /* Returning from this allowes the main server thread to process
+            /* Returning from this allows the main server thread to process
              * the queued asynchronous control message for closing LRU session.
              * Since connection request hasn't been addressed yet using accept()
              * therefore httpd_accept_conn() will be called again, but this time
@@ -251,6 +251,11 @@ static int httpd_process_session(struct sock_db *session, void *context)
     }
 
     if (session->fd < 0) {
+        return 1;
+    }
+
+    // session is busy in an async task, do not process here.
+    if (session->for_async_req) {
         return 1;
     }
 
