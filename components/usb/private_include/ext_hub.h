@@ -46,7 +46,7 @@ typedef struct {
     esp_err_t (*active)(void *port_hdl);
     esp_err_t (*disable)(void *port_hdl);
     esp_err_t (*gone)(void *port_hdl);
-    esp_err_t (*free)(void *port_hdl);
+    esp_err_t (*del)(void *port_hdl);
     esp_err_t (*get_speed)(void *por_hdl, usb_speed_t *speed);
     esp_err_t (*get_status)(void *port_hdl);
     esp_err_t (*set_status)(void *port_hdl, const usb_port_status_t *status);
@@ -278,7 +278,7 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
  *
  * @return
  *    - ESP_OK: Port's feature set successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed;
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  */
@@ -293,7 +293,7 @@ esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_nu
  *
  * @return
  *    - ESP_OK: Port's feature cleared successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed;
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  */
@@ -310,7 +310,7 @@ esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_
  *
  * @return
  *    - ESP_OK: Port's status obtained successfully
- *    - ESP_ERR_INVALID_STATE: External Hub driver is not installed;
+ *    - ESP_ERR_NOT_ALLOWED: External Hub driver is not installed
  *    - ESP_ERR_INVALID_ARG: Invalid argument
  *    - ESP_ERR_INVALID_SIZE: External Hub port number out of the hub's range
  */
