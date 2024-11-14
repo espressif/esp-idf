@@ -691,6 +691,11 @@ static bool init_common_tcp_transport(esp_http_client_handle_t client, const esp
         }
         esp_transport_tcp_set_interface_name(transport, client->if_name);
     }
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+    if (config->alpn_protos) {
+        esp_transport_ssl_set_alpn_protocol(transport, config->alpn_protos);
+    }
+#endif
     return true;
 }
 
