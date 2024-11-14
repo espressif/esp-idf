@@ -18,6 +18,7 @@
 
 #include <string.h>
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -26,6 +27,7 @@
 #include "sdmmc_cmd.h"
 #include "sys/param.h"
 #include "soc/soc_memory_layout.h"
+#include "soc/soc_caps.h"
 #include "esp_dma_utils.h"
 
 #define SDMMC_GO_IDLE_DELAY_MS              20
@@ -57,6 +59,8 @@
 #define SDMMC_MMC_TRIM_ARG      1
 #define SDMMC_MMC_DISCARD_ARG   3
 
+#define SDMMC_FREQ_SDR104       208000      /*!< MMC 208MHz speed */
+
 /* Functions to send individual commands */
 esp_err_t sdmmc_send_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
 esp_err_t sdmmc_send_app_cmd(sdmmc_card_t* card, sdmmc_command_t* cmd);
@@ -77,15 +81,19 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr);
 esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width);
 esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status);
 esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
+esp_err_t sdmmc_send_cmd_voltage_switch(sdmmc_card_t* card);
 
 /* Higher level functions */
-esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card);
+esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card);
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count, size_t buffer_len);
 esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         size_t start_block, size_t block_count, size_t buffer_len);
 uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t erase_size_kb);
+esp_err_t sdmmc_select_driver_strength(sdmmc_card_t *card, sdmmc_driver_strength_t driver_strength);
+esp_err_t sdmmc_select_current_limit(sdmmc_card_t *card, sdmmc_current_limit_t current_limit);
+esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card);
 
 /* SD specific */
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card);
@@ -139,6 +147,10 @@ esp_err_t sdmmc_init_mmc_bus_width(sdmmc_card_t* card);
 esp_err_t sdmmc_init_card_hs_mode(sdmmc_card_t* card);
 esp_err_t sdmmc_init_host_frequency(sdmmc_card_t* card);
 esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card);
+esp_err_t sdmmc_init_sd_uhs1(sdmmc_card_t* card);
+esp_err_t sdmmc_init_sd_driver_strength(sdmmc_card_t *card);
+esp_err_t sdmmc_init_sd_current_limit(sdmmc_card_t *card);
+esp_err_t sdmmc_init_sd_timing_tuning(sdmmc_card_t *card);
 
 /* Various helper functions */
 static inline bool host_is_spi(const sdmmc_card_t* card)

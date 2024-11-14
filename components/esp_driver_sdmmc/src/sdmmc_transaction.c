@@ -5,6 +5,7 @@
  */
 
 #include <string.h>
+#include <unistd.h>
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -19,8 +20,9 @@
 #include "driver/sdmmc_host.h"
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
-#include "sdmmc_private.h"
+#include "sdmmc_internal.h"
 #include "soc/soc_caps.h"
+#include "hal/sdmmc_ll.h"
 
 /* Number of DMA descriptors used for transfer.
  * Increasing this value above 4 doesn't improve performance for the usual case
@@ -37,6 +39,8 @@ typedef enum {
     SDMMC_SENDING_CMD,
     SDMMC_SENDING_DATA,
     SDMMC_BUSY,
+    SDMMC_SENDING_VOLTAGE_SWITCH,
+    SDMMC_WAITING_VOLTAGE_SWITCH,
 } sdmmc_req_state_t;
 
 typedef struct {
@@ -70,14 +74,17 @@ static esp_pm_lock_handle_t s_pm_lock;
 
 static esp_err_t handle_idle_state_events(void);
 static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd);
-static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
+static esp_err_t handle_event(int slot, sdmmc_command_t* cmd, sdmmc_req_state_t* state,
                               sdmmc_event_t* unhandled_events);
-static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
+static esp_err_t process_events(int slot, sdmmc_event_t evt, sdmmc_command_t* cmd,
                                 sdmmc_req_state_t* pstate, sdmmc_event_t* unhandled_events);
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
 static void fill_dma_descriptors(size_t num_desc);
 static size_t get_free_descriptors_count(void);
 static bool wait_for_busy_cleared(uint32_t timeout_ms);
+static void handle_voltage_switch_stage1(int slot, sdmmc_command_t* cmd);
+static void handle_voltage_switch_stage2(int slot, sdmmc_command_t* cmd);
+static void handle_voltage_switch_stage3(int slot, sdmmc_command_t* cmd);
 
 esp_err_t sdmmc_host_transaction_handler_init(void)
 {
@@ -124,6 +131,12 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
 
     // dispose of any events which happened asynchronously
     handle_idle_state_events();
+
+    // special handling for voltage switch command
+    if (cmdinfo->opcode == SD_SWITCH_VOLTAGE) {
+        handle_voltage_switch_stage1(slot, cmdinfo);
+    }
+
     // convert cmdinfo to hardware register value
     sdmmc_hw_cmd_t hw_cmd = make_hw_cmd(cmdinfo);
     if (cmdinfo->data) {
@@ -174,9 +187,12 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
     // process events until transfer is complete
     cmdinfo->error = ESP_OK;
     sdmmc_req_state_t state = SDMMC_SENDING_CMD;
+    if (cmdinfo->opcode == SD_SWITCH_VOLTAGE) {
+        state = SDMMC_SENDING_VOLTAGE_SWITCH;
+    }
     sdmmc_event_t unhandled_events = { 0 };
     while (state != SDMMC_IDLE) {
-        ret = handle_event(cmdinfo, &state, &unhandled_events);
+        ret = handle_event(slot, cmdinfo, &state, &unhandled_events);
         if (ret != ESP_OK) {
             break;
         }
@@ -286,7 +302,7 @@ static esp_err_t handle_idle_state_events(void)
     return ESP_OK;
 }
 
-static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
+static esp_err_t handle_event(int slot, sdmmc_command_t* cmd, sdmmc_req_state_t* state,
                               sdmmc_event_t* unhandled_events)
 {
     sdmmc_event_t event;
@@ -298,13 +314,13 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
         }
         return err;
     }
-    ESP_LOGV(TAG, "sdmmc_handle_event: event %08"PRIx32" %08"PRIx32", unhandled %08"PRIx32" %08"PRIx32,
-             event.sdmmc_status, event.dma_status,
+    ESP_LOGV(TAG, "sdmmc_handle_event: slot %d event %08"PRIx32" %08"PRIx32", unhandled %08"PRIx32" %08"PRIx32,
+             slot, event.sdmmc_status, event.dma_status,
              unhandled_events->sdmmc_status, unhandled_events->dma_status);
     event.sdmmc_status |= unhandled_events->sdmmc_status;
     event.dma_status |= unhandled_events->dma_status;
-    process_events(event, cmd, state, unhandled_events);
-    ESP_LOGV(TAG, "sdmmc_handle_event: events unhandled: %08"PRIx32" %08"PRIx32, unhandled_events->sdmmc_status, unhandled_events->dma_status);
+    process_events(slot, event, cmd, state, unhandled_events);
+    ESP_LOGV(TAG, "sdmmc_handle_event: slot %d events unhandled: %08"PRIx32" %08"PRIx32, slot, unhandled_events->sdmmc_status, unhandled_events->dma_status);
     return ESP_OK;
 }
 
@@ -327,12 +343,15 @@ static sdmmc_hw_cmd_t make_hw_cmd(sdmmc_command_t* cmd)
         res.stop_abort_cmd = 1;
     } else if (cmd->opcode == MMC_GO_IDLE_STATE) {
         res.send_init = 1;
+    } else if (cmd->opcode == SD_SWITCH_VOLTAGE) {
+        res.volt_switch = 1;
     } else {
         res.wait_complete = 1;
     }
     if (cmd->opcode == MMC_GO_IDLE_STATE) {
         res.send_init = 1;
     }
+
     if (cmd->flags & SCF_RSP_PRESENT) {
         res.response_expect = 1;
         if (cmd->flags & SCF_RSP_136) {
@@ -419,18 +438,20 @@ static inline bool mask_check_and_clear(uint32_t* state, uint32_t mask)
     return ret;
 }
 
-static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
+static esp_err_t process_events(int slot, sdmmc_event_t evt, sdmmc_command_t* cmd,
                                 sdmmc_req_state_t* pstate, sdmmc_event_t* unhandled_events)
 {
     const char* const s_state_names[] __attribute__((unused)) = {
         "IDLE",
         "SENDING_CMD",
         "SENDIND_DATA",
-        "BUSY"
+        "BUSY",
+        "SENDING_VOLTAGE_SWITCH",
+        "WAITING_VOLTAGE_SWITCH",
     };
     sdmmc_event_t orig_evt = evt;
-    ESP_LOGV(TAG, "%s: state=%s evt=%"PRIx32" dma=%"PRIx32, __func__, s_state_names[*pstate],
-             evt.sdmmc_status, evt.dma_status);
+    ESP_LOGV(TAG, "%s: slot=%d state=%s evt=%"PRIx32" dma=%"PRIx32, __func__, slot,
+             s_state_names[*pstate], evt.sdmmc_status, evt.dma_status);
     sdmmc_req_state_t next_state = *pstate;
     sdmmc_req_state_t state = (sdmmc_req_state_t) -1;
     while (next_state != state) {
@@ -458,6 +479,32 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
                 } else {
                     next_state = SDMMC_SENDING_DATA;
                 }
+            }
+            break;
+
+        case SDMMC_SENDING_VOLTAGE_SWITCH:
+            if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
+                process_command_response(orig_evt.sdmmc_status, cmd);
+                next_state = SDMMC_IDLE;
+            }
+            if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_VOLT_SW)) {
+                handle_voltage_switch_stage2(slot, cmd);
+                if (cmd->error != ESP_OK) {
+                    next_state = SDMMC_IDLE;
+                } else {
+                    next_state = SDMMC_WAITING_VOLTAGE_SWITCH;
+                }
+            }
+            break;
+
+        case SDMMC_WAITING_VOLTAGE_SWITCH:
+            if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_CMD_ERR_MASK)) {
+                process_command_response(orig_evt.sdmmc_status, cmd);
+                next_state = SDMMC_IDLE;
+            }
+            if (mask_check_and_clear(&evt.sdmmc_status, SDMMC_INTMASK_VOLT_SW)) {
+                handle_voltage_switch_stage3(slot, cmd);
+                next_state = SDMMC_IDLE;
             }
             break;
 
@@ -517,4 +564,33 @@ static bool wait_for_busy_cleared(uint32_t timeout_ms)
         vTaskDelay(1);
     }
     return false;
+}
+
+static void handle_voltage_switch_stage1(int slot, sdmmc_command_t* cmd)
+{
+    ESP_LOGV(TAG, "%s: enabling clock", __func__);
+    sdmmc_host_set_cclk_always_on(slot, true);
+}
+
+static void handle_voltage_switch_stage2(int slot, sdmmc_command_t* cmd)
+{
+    ESP_LOGV(TAG, "%s: disabling clock", __func__);
+    sdmmc_host_enable_clk_cmd11(slot, false);
+    usleep(100);
+    ESP_LOGV(TAG, "%s: switching voltage", __func__);
+    esp_err_t err = cmd->volt_switch_cb(cmd->volt_switch_cb_arg, 1800);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "failed to switch voltage (0x%x)", err);
+        cmd->error = err;
+    }
+    ESP_LOGV(TAG, "%s: waiting 10ms", __func__);
+    usleep(10000);
+    ESP_LOGV(TAG, "%s: enabling clock", __func__);
+    sdmmc_host_enable_clk_cmd11(slot, true);
+}
+
+static void handle_voltage_switch_stage3(int slot, sdmmc_command_t* cmd)
+{
+    ESP_LOGV(TAG, "%s: voltage switch complete, clock back to low-power mode", __func__);
+    sdmmc_host_set_cclk_always_on(slot, false);
 }

@@ -69,7 +69,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
     /* For MMC cards, use speed value from EXT_CSD */
     card->csd.tr_speed = card->max_freq_khz * 1000;
-    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%d, is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
+    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%"PRId32", is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
     card->max_freq_khz = MIN(card->max_freq_khz, card->host.max_freq_khz);
 
     if (card->host.flags & SDMMC_HOST_FLAG_8BIT) {
