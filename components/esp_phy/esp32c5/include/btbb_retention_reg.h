@@ -12,6 +12,7 @@ extern "C" {
 
 // btbb sleep retention reg
 
+#define BB_PART_CNT    3
 #define BB_PART_0_SIZE 128
 #define BB_PART_1_SIZE 68
 #define BB_PART_2_SIZE 19
