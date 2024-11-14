@@ -156,6 +156,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
+            :SOC_MCPWM_SUPPORT_SLEEP_RETENTION: - MCPWM
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
@@ -177,7 +178,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
             - PCNT
             - USB-Serial-JTAG
-            - MCPWM
             - SARADC
 
         .. note::

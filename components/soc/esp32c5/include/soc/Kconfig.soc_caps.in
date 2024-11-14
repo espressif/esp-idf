@@ -887,6 +887,10 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_PARLIO_GROUPS
     int
     default 1

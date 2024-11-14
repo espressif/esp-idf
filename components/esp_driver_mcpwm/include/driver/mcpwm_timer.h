@@ -40,6 +40,9 @@ typedef struct {
     struct {
         uint32_t update_period_on_empty: 1; /*!< Whether to update period when timer counts to zero */
         uint32_t update_period_on_sync: 1;  /*!< Whether to update period on sync event */
+        uint32_t allow_pd: 1;               /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off MCPWM's power domain.
+                                              This can save power, but at the expense of more RAM being consumed. */
     } flags;                                /*!< Extra configuration flags for timer */
 } mcpwm_timer_config_t;
 
