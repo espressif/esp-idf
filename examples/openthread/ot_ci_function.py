@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
-
 import re
 import socket
 import struct
@@ -411,12 +410,15 @@ def host_publish_service() -> None:
 
 
 def host_close_service() -> None:
-    command = "ps | grep avahi-publish-s | awk '{print $1}'"
+    command = 'ps aux | grep avahi-publish-s'
     out_bytes = subprocess.check_output(command, shell=True, timeout=5)
     out_str = out_bytes.decode('utf-8')
-    the_pid = re.findall(r'(\d+)\n', str(out_str))
-    for pid in the_pid:
+    service_info = [line for line in out_str.splitlines() if 'testxxx _testxxx._udp' in line]
+    for line in service_info:
+        print('Process:', line)
+        pid = line.split()[1]
         command = 'kill -9 ' + pid
+        print('kill ', pid)
         subprocess.call(command, shell=True, timeout=5)
         time.sleep(1)
 
