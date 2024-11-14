@@ -148,6 +148,7 @@ def run_phy_tsens_test_with_light_sleep(dut: Tuple[Dut, Dut]) -> None:
 @pytest.mark.esp32c5
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
+@pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize('count', [2], indirect=True)
 def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:

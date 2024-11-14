@@ -39,6 +39,10 @@ config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
+config SOC_TEMP_SENSOR_SUPPORTED
+    bool
+    default y
+
 config SOC_PHY_SUPPORTED
     bool
     default y
@@ -1116,6 +1120,26 @@ config SOC_RCC_IS_INDEPENDENT
     default y
 
 config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
     bool
     default y
 
