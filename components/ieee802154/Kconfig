@@ -97,17 +97,31 @@ menu "IEEE 802.15.4"
             Enabling this option allows different kinds of IEEE802154 debug output.
             All IEEE802154 debug features increase the size of the final binary.
 
-    config IEEE802154_ASSERT
-        bool "Enrich the assert information with IEEE802154 state and event"
+    config IEEE802154_RX_BUFFER_STATISTIC
+        bool "Rx buffer statistic"
         depends on IEEE802154_DEBUG
         default n
         help
-            Enabling this option to add some probe codes in the driver, and these informations
-            will be printed when assert.
+            Enabling this option to count IEEE802154 rx buffer when allocating or freeing.
+
+    config IEEE802154_ASSERT
+        bool "Enrich the assert information"
+        depends on IEEE802154_DEBUG
+        select IEEE802154_RECORD
+        default n
+        help
+            Enabling this option to print more information when assert.
+
+    config IEEE802154_RECORD
+        bool "Record the information with IEEE802154 state and event"
+        depends on IEEE802154_DEBUG
+        default n
+        help
+            Enabling this option to add some probe codes in the driver, and record these information.
 
     config IEEE802154_RECORD_EVENT
         bool "Enable record event information for debugging"
-        depends on IEEE802154_DEBUG
+        depends on IEEE802154_RECORD
         default n
         help
             Enabling this option to record event, when assert, the recorded event will be printed.
@@ -122,7 +136,7 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_RECORD_STATE
         bool "Enable record state information for debugging"
-        depends on IEEE802154_DEBUG
+        depends on IEEE802154_RECORD
         default n
         help
             Enabling this option to record state, when assert, the recorded state will be printed.
@@ -137,7 +151,7 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_RECORD_CMD
         bool "Enable record command information for debugging"
-        depends on IEEE802154_DEBUG
+        depends on IEEE802154_RECORD
         default n
         help
             Enabling this option to record the command, when assert, the recorded
@@ -153,7 +167,7 @@ menu "IEEE 802.15.4"
 
     config IEEE802154_RECORD_ABORT
         bool "Enable record abort information for debugging"
-        depends on IEEE802154_DEBUG
+        depends on IEEE802154_RECORD
         default n
         help
             Enabling this option to record the abort, when assert, the recorded
