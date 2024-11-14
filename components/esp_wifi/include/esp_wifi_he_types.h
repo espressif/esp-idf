@@ -406,6 +406,7 @@ typedef enum {
 /** Argument structure for twt configuration */
 typedef struct {
     bool post_wakeup_event;              /**< post twt wakeup event */
+    bool twt_enable_keep_alive;          /**< twt enable send qos null to keep alive */
 } wifi_twt_config_t;
 
 /** Argument structure for WIFI_EVENT_TWT_WAKEUP event */

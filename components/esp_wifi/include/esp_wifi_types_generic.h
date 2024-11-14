@@ -258,9 +258,9 @@ typedef struct {
     uint32_t reserved: 22;                /**< bit: 10..31 reserved */
     wifi_country_t country;               /**< country information of AP */
     wifi_he_ap_info_t he_ap;              /**< HE AP info */
-    uint8_t bandwidth;                    /**< For either 20 MHz or 40 MHz operation, the Channel Width field is set to 0.
-                                               For AP 80 MHz this value is set to 1. For AP 160MHz sets this value is set to 2.
-                                               For AP 80+80MHz this value is set to 3*/
+    uint8_t bandwidth;                    /**< For AP 20 MHz this value is set to 1. For AP 40 MHz this value is set to 2.
+                                               For AP 80 MHz this value is set to 3. For AP 160MHz this value is set to 4.
+                                               For AP 80+80MHz this value is set to 5*/
     uint8_t vht_ch_freq1;                 /**< this fields are used only AP bandwidth is 80 and 160 MHz, to transmit the center channel
                                                frequency of the BSS. For AP bandwidth is 80+80MHz, it is the center channel frequency
                                                of the lower frequency segment.*/
