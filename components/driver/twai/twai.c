@@ -321,8 +321,8 @@ static void twai_configure_gpio(twai_obj_t *p_obj)
     uint64_t busy_mask = esp_gpio_reserve(gpio_mask);
     uint64_t conflict_mask = busy_mask & gpio_mask;
     for (; conflict_mask > 0;) {
-        uint8_t pos = __builtin_ctz(conflict_mask);
-        conflict_mask &= ~(1 << pos);
+        uint8_t pos = __builtin_ctzll(conflict_mask);
+        conflict_mask &= ~(1ULL << pos);
         ESP_LOGW(TWAI_TAG, "GPIO %d is not usable, maybe used by others", pos);
     }
 }
