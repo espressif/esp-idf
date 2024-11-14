@@ -12,4 +12,5 @@ Tools
    idf-clang-tidy
    idf-tools
    idf-size
+   idf-sbom
    :TARGET_SUPPORT_QEMU: qemu
