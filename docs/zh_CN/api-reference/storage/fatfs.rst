@@ -94,7 +94,7 @@ FatFs 分区生成器
 
 该生成器可以在主机上创建文件系统镜像，并用指定的主机文件夹内容对其进行填充。
 
-该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化磨损均衡。
+该脚本是建立在分区生成器的基础上 (:component_file:`fatfsgen.py<fatfs/fatfsgen.py>`)，目前除了可以生成分区外，也可以初始化损耗均衡。
 
 目前的最新版本支持短文件名、长文件名、FAT12 和 FAT16。长文件名的上限是 255 个字符，文件名中可以包含多个 ``.`` 字符以及其他字符，如 ``+``、``,``、``;``、``=``、``[`` and ``]`` 等。
 
@@ -107,13 +107,13 @@ FatFs 分区生成器
 
     fatfs_create_spiflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
-如果不希望在生成分区时使用磨损均衡，可以使用 ``fatfs_create_rawflash_image``::
+如果不希望在生成分区时使用损耗均衡，可以使用 ``fatfs_create_rawflash_image``::
 
     fatfs_create_rawflash_image(<partition> <base_dir> [FLASH_IN_PROJECT])
 
 ``fatfs_create_spiflash_image`` 以及 ``fatfs_create_rawflash_image`` 必须从项目的 CMakeLists.txt 中调用。
 
-如果决定使用 ``fatfs_create_rawflash_image`` （不支持磨损均衡），请注意它仅支持在设备中以只读模式安装。
+如果决定使用 ``fatfs_create_rawflash_image`` （不支持损耗均衡），请注意它仅支持在设备中以只读模式安装。
 
 
 该函数的参数如下：
@@ -149,6 +149,31 @@ FatFs 分区分析器
     ./fatfsparse.py [-h] [--wl-layer {detect,enabled,disabled}] [--verbose] fatfs_image.img
 
 生成文件夹结构之前，参数 --verbose 将根据 FatFs 镜像的引导扇区在终端打印详细信息。
+
+
+FATFS 最小分区大小及限制
+------------------------
+
+FATFS 组件支持 FAT12、FAT16 和 FAT32 文件系统类型。文件系统类型取决于卷上簇的数量（簇数通过数据扇区数量除以每簇包含的扇区数计算得出）。最小分区大小由分配给 FAT 表、根目录和数据簇的扇区数量决定。
+
+* 对于 4096 字节的扇区，启用损耗均衡的 FAT 分区大小最小支持 32 KB。对于 512 字节的扇区，最小分区大小取决于损耗均衡的配置：性能模式下，最小支持 20 KB，安全模式下最小支持 28 KB（需要额外的 2 个扇区）。
+* 启用了损耗均衡的分区会预留 4 个扇区用于损耗均衡操作。此外，FATFS 本身也会使用 4 个扇区，分别为 1 个保留扇区、1 个 FAT 扇区、1 个根目录扇区和 1 个数据扇区。
+* 增加分区大小将分配更多的数据扇区，提供更大的存储空间。
+* 对小于 528 KB 的分区，将分配 1 个根目录扇区；对于更大的分区，将分配 4 个根目录扇区。
+* 默认会创建两个 FAT 扇区，因此分区大小会增加一个扇区来容纳这个额外的 FAT 扇区。如要启用单个 FAT 扇区，可以在 `struct esp_vfs_fat_mount_config_t` 中（参见 :component_file:`fatfs/vfs/esp_vfs_fat.h`）设置 `use_one_fat` 选项。启用此选项后，最小分区大小可减少至 32 KB。
+* 计算损耗均衡分区大小的一般公式为::
+
+    partition_size = 损耗均衡扇区数 * FLASH_SEC_SIZE + FATFS 分区扇区数量 * FAT_SEC_SIZE
+
+  其中：
+
+  - 损耗均衡扇区数固定为 4 个
+  - FLASH_SEC_SIZE 为 4096 字节
+  - FATFS 分区扇区包括：1 个保留扇区 + FAT 扇区 + 根目录扇区 + 数据扇区
+  - FAT_SEC_SIZE 根据不同的配置，可以是 512 字节或 4096 字节
+
+* 对于未启用损耗均衡、扇区大小为 512 字节的只读分区，最小分区大小可减少至 2 KB。
+
 
 高级 API 参考
 ------------------------

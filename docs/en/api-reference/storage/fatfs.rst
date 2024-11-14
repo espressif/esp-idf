@@ -150,6 +150,31 @@ Usage::
 
 Parameter --verbose prints detailed information from boot sector of the FatFs image to the terminal before folder structure is generated.
 
+
+FATFS Minimum Partition Size and Limits
+---------------------------------------
+
+The FATFS component supports FAT12, FAT16, and FAT32 file system types. The file system type is determined by the number of clusters (calculated as data sectors divided by sectors per cluster) on the volume. The minimum partition size is defined by the number of sectors allocated to FAT tables, root directories and data clusters.
+
+* The minimum supported size for a FAT partition with wear leveling enabled is 32 KB for a sector size of 4096 bytes. For a sector size of 512 bytes, the minimum partition size varies based on the WL configuration: 20 KB for Performance mode and 28 KB for Safety mode (requiring 2 extra sectors).
+* For a partition with wear leveling enabled, 4 sectors will be reserved for wear-leveling operations, and 4 sectors will be used by the FATFS (1 reserved sector, 1 FAT sector, 1 root directory sector and 1 data sector).
+* Increasing the partition size will allocate additional data sectors, allowing for more storage space.
+* For partition sizes less than 528 KB, 1 root directory sector will be allocated; for larger partitions, 4 root directory sectors will be used.
+* By default, two FAT sectors are created, increasing the partition size by one sector to accommodate the extra FAT sector. To enable a single FAT sector, configure the `use_one_fat` option in `struct esp_vfs_fat_mount_config_t` (see :component_file:`fatfs/vfs/esp_vfs_fat.h`). Enabling this option allows the minimum partition size to be reduced to 32 KB.
+* The general formula for calculating the partition size for a wear-leveled partition is::
+
+    partition_size = Wear-levelling sectors * FLASH_SEC_SIZE + FATFS partition sectors * FAT_SEC_SIZE
+
+  Where:
+
+  - Wear-leveling sectors are fixed at 4
+  - FLASH_SEC_SIZE is 4096 bytes
+  - FATFS partition sectors include: 1 reserved sector + FAT sectors + root directory sectors + data sectors
+  - FAT_SEC_SIZE can be either 512 bytes or 4096 bytes, depending on the configuration
+
+* For read-only partitions without wear leveling enabled and a sector size of 512 bytes, the minimum partition size can be reduced to as low as 2 KB.
+
+
 High-level API Reference
 ------------------------
 
