@@ -267,9 +267,14 @@ esp_err_t esp_psram_impl_enable(void)
         s_psram_size = PSRAM_SIZE_8MB;
     } else {
         uint8_t density = PSRAM_SIZE_ID(psram_id);
+        const int eid = PSRAM_EID_BIT_47_40(psram_id);
         s_psram_size = density == 0x0 ? PSRAM_SIZE_2MB :
                        density == 0x1 ? PSRAM_SIZE_4MB :
-                       density == 0x2 ? PSRAM_SIZE_8MB : 0;
+                       density == 0x2 ? PSRAM_SIZE_8MB :
+                       /* Do not use `density` for QEMU PSRAM since we don't want any future QSPI PSRAM
+                        * that are 16MB or 32MB to be interpreted as QEMU PSRAM devices */
+                       eid == PSRAM_QEMU_16MB_ID ? PSRAM_SIZE_16MB :
+                       eid == PSRAM_QEMU_32MB_ID ? PSRAM_SIZE_32MB : 0;
     }
 
     if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_aps3204_2tmode()) {
