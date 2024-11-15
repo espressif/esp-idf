@@ -57,6 +57,7 @@ typedef union {
         esp_ble_addr_type_t remote_addr_type;
         bool is_direct;
         bool is_aux;
+        esp_ble_addr_type_t own_addr_type;
     } open;
     //BTC_GATTC_ACT_CLOSE,
     struct close_arg {

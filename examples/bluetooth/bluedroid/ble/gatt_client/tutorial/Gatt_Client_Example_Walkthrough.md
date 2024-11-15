@@ -372,7 +372,14 @@ We are interested in the `ESP_GAP_SEARCH_INQ_RES_EVT` event, which is called eve
                         connect = true;
                         ESP_LOGI(GATTC_TAG, "connect to the remote device.");
                         esp_ble_gap_stop_scanning();
-                        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, scan_result->scan_rst.ble_addr_type, true);
+                        esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+                        memcpy(&esp_ble_gatt_create_conn.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        esp_ble_gatt_create_conn.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        esp_ble_gatt_create_conn.is_direct = true;
+                        esp_ble_gatt_create_conn.is_aux = false;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            esp_ble_gatt_create_conn);
                     }
                 }
             }
@@ -405,7 +412,7 @@ ESP_LOGI(GATTC_TAG, "searched Device Name Len %d", adv_name_len);
 ESP_LOG_BUFFER_CHAR(GATTC_TAG, adv_name, adv_name_len);
 ```
 
-Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it’s done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
+Finally if the remote device name is the same as we have defined above, the local device stops scanning and tries to open a connection to the remote device using the `esp_ble_gattc_enh_open()` function. This function takes as parameters the Application Profile GATT interface, the remote server address and a boolean value. The boolean value is used to indicate if the connection is done directly or if it’s done in the background (auto-connection), at the moment this boolean value must be set to true in order to establish the connection. Notice that the client opens a virtual connection to the server. The virtual connection returns a connection ID. The virtual connection is the connection between the Application Profile and the remote server. Since many Application Profiles can run on one ESP32, there could be many virtual connection opened to the same remote server. There is also the physical connection which is the actual BLE link between the client and the server. Therefore, if the physical connection is disconnected with the `esp_ble_gap_disconnect()` function, all other virtual connections are closed as well. In this example, each Application Profile creates a virtual connection to the same server with the `esp_ble_gattc_enh_open()` function, so when the close function is called, only that connection from the Application Profile is closed, while if the gap disconnect function is called, both connections will be closed. In addition, connect events are propagated to all profiles because it relates to the physical connection, while open events are propagated only to the profile that creates the virtual connection.
 
 ## Configuring the MTU Size
 
