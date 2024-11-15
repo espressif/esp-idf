@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -401,7 +401,14 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
 #endif
 
                         esp_ble_gap_stop_scanning();
-                        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, BLE_ADDR_TYPE_PUBLIC, true);
+                        esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+                        memcpy(&esp_ble_gatt_create_conn.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        esp_ble_gatt_create_conn.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        esp_ble_gatt_create_conn.is_direct = true;
+                        esp_ble_gatt_create_conn.is_aux = false;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            esp_ble_gatt_create_conn);
                     }
                 }
             }

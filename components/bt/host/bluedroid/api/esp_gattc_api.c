@@ -67,8 +67,8 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
-esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
+
+esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn_params_t esp_gatt_create_conn)
 {
     btc_msg_t msg = {0};
     btc_ble_gattc_args_t arg;
@@ -79,34 +79,38 @@ esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, e
     msg.pid = BTC_PID_GATTC;
     msg.act = BTC_GATTC_ACT_OPEN;
     arg.open.gattc_if = gattc_if;
-    memcpy(arg.open.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
-    arg.open.remote_addr_type = remote_addr_type;
-    arg.open.is_direct = is_direct;
-    arg.open.is_aux = false;
+    memcpy(arg.open.remote_bda, esp_gatt_create_conn.remote_bda, ESP_BD_ADDR_LEN);
+    arg.open.remote_addr_type = esp_gatt_create_conn.remote_addr_type;
+    arg.open.is_direct = esp_gatt_create_conn.is_direct;
+    arg.open.is_aux= esp_gatt_create_conn.is_aux;
+    arg.open.own_addr_type = esp_gatt_create_conn.own_addr_type;
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
+esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
+{
+    esp_ble_gatt_creat_conn_params_t esp_gatt_create_conn;
+    memcpy(esp_gatt_create_conn.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
+    esp_gatt_create_conn.remote_addr_type = remote_addr_type;
+    esp_gatt_create_conn.is_direct = is_direct;
+    esp_gatt_create_conn.is_aux = false;
+    esp_gatt_create_conn.own_addr_type = 0xff; //undefined, will use local value
+    return esp_ble_gattc_enh_open(gattc_if, esp_gatt_create_conn);
 }
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_aux_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct)
 {
-    btc_msg_t msg;
-    btc_ble_gattc_args_t arg;
-
-    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
-
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_GATTC;
-    msg.act = BTC_GATTC_ACT_AUX_OPEN;
-    arg.open.gattc_if = gattc_if;
-    memcpy(arg.open.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
-    arg.open.remote_addr_type = remote_addr_type;
-    arg.open.is_direct = is_direct;
-    arg.open.is_aux = true;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gattc_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
-
+    esp_ble_gatt_creat_conn_params_t esp_gatt_create_conn;
+    memcpy(esp_gatt_create_conn.remote_bda, remote_bda, ESP_BD_ADDR_LEN);
+    esp_gatt_create_conn.remote_addr_type = remote_addr_type;
+    esp_gatt_create_conn.is_direct = is_direct;
+    esp_gatt_create_conn.is_aux = true;
+    esp_gatt_create_conn.own_addr_type = 0xff; //undefined, will use local value
+    return esp_ble_gattc_enh_open(gattc_if, esp_gatt_create_conn);
 }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
