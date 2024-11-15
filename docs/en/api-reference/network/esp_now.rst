@@ -13,7 +13,12 @@ CTR with CBC-MAC Protocol (CCMP) is used to protect the action frame for securit
 Frame Format
 ------------
 
-ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The default ESP-NOW bit rate is 1 Mbps. The format of the vendor-specific action frame is as follows:
+ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The default ESP-NOW bit rate is 1 Mbps.
+
+Currently, ESP-NOW supports one version: v1.0. The maximum packet length supported by v1.0 devices is ESP_NOW_MAX_DATA_LEN bytes.
+The v1.0 devices can receive packets if the packet length is less than or equal to ESP_NOW_MAX_IE_DATA_LEN. For packets exceeding this length, the v1.0 devices will discard the packet entirely.
+
+The format of the vendor-specific action frame is as follows:
 
 .. highlight:: none
 
@@ -22,28 +27,32 @@ ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The defaul
     ------------------------------------------------------------------------------------------------------------
     | MAC Header | Category Code | Organization Identifier | Random Values | Vendor Specific Content |   FCS   |
     ------------------------------------------------------------------------------------------------------------
-      24 bytes         1 byte              3 bytes               4 bytes             7-257 bytes        4 bytes
+      24 bytes         1 byte              3 bytes               4 bytes             7-x bytes        4 bytes
 
 - Category Code: The Category Code field is set to the value (127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
 - Random Value: The Random Value filed is used to prevents relay attacks.
-- Vendor Specific Content: The Vendor Specific Content contains vendor-specific fields as follows:
+- Vendor Specific Content: The Vendor Specific Content contains one vendor-specific element field, x = 257(250 + 7).
+
+The format of the vendor-specific element frame is as follows:
 
 .. highlight:: none
 
 ::
 
-    -------------------------------------------------------------------------------
-    | Element ID | Length | Organization Identifier | Type | Version |    Body    |
-    -------------------------------------------------------------------------------
-        1 byte     1 byte            3 bytes         1 byte   1 byte   0-250 bytes
+    ------------------------------------------------------------------------------------------
+    | Element ID | Length | Organization Identifier | Type | Reserved | Version |    Body    |
+    ------------------------------------------------------------------------------------------
+                                                             7~4 bits | 3~0 bits
+        1 byte     1 byte            3 bytes         1 byte        1 byte         0-250 bytes
+
 
 - Element ID: The Element ID field is set to the value (221), indicating the vendor-specific element.
-- Length: The length is the total length of Organization Identifier, Type, Version and Body.
+- Length: The length is the total length of Organization Identifier, Type, Version and Body, the maximum value is 255.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
 - Type: The Type field is set to the value (4) indicating ESP-NOW.
 - Version: The Version field is set to the version of ESP-NOW.
-- Body: The Body contains the ESP-NOW data.
+- Body: The Body contains the actual ESP-NOW data to be transmitted.
 
 As ESP-NOW is connectionless, the MAC header is a little different from that of standard frames. The FromDS and ToDS bits of FrameControl field are both 0. The first address field is set to the destination address. The second address field is set to the source address. The third address field is set to broadcast address (0xff:0xff:0xff:0xff:0xff:0xff).
 

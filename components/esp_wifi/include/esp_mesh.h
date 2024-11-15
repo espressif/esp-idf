@@ -637,7 +637,8 @@ esp_err_t esp_mesh_stop(void);
  * @param[in]  to  the address of the final destination of the packet
  *             - If the packet is to the root, set this parameter to NULL.
  *             - If the packet is to an external IP network, set this parameter to the IPv4:PORT combination.
- *               This packet will be delivered to the root firstly, then the root will forward this packet to the final IP server address.
+ *               This packet will be delivered to the root firstly, then users need to call esp_mesh_recv_toDS() on the root node to forward this
+ *               packet to the final IP server address.
  * @param[in]  data  pointer to a sending mesh packet
  *             - Field size should not exceed MESH_MPS. Note that the size of one mesh packet should not exceed MESH_MTU.
  *             - Field proto should be set to data protocol in use (default is MESH_PROTO_BIN for binary).
