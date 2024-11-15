@@ -1,0 +1,144 @@
+menu "ESP-TEE (Trusted Execution Environment)"
+    depends on IDF_TARGET_ESP32C6
+
+    config SECURE_ENABLE_TEE
+        bool "Enable the ESP-TEE framework"
+        depends on IDF_TARGET_ESP32C6
+        select ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE
+        help
+            This configuration enables the Trusted Execution Environment (TEE) feature.
+
+    menu "Memory Configuration"
+        depends on SECURE_ENABLE_TEE
+
+        config SECURE_TEE_IRAM_SIZE
+            hex "IRAM region size"
+            default 0x8000
+            range 0x8000 0x10000
+            help
+                This configuration sets the IRAM size for the TEE module.
+                This should be a multiple of 0x1000.
+
+        config SECURE_TEE_DRAM_SIZE
+            hex "DRAM region size"
+            default 0x8000
+            range 0x8000 0x10000
+            help
+                This configuration sets the DRAM size for the TEE module.
+                This should be a multiple of 0x1000.
+
+        config SECURE_TEE_STACK_SIZE
+            hex "Stack size"
+            default 0xc00
+            range 0x800 0x1000
+            help
+                This configuration sets the stack size for the TEE module.
+                The TEE stack will be allocated from the TEE DRAM region.
+                This should be a multiple of 0x100.
+
+        config SECURE_TEE_INTR_STACK_SIZE
+            hex "Interrupt Stack size"
+            default 0x400
+            range 0x400 0x800
+            help
+                This configuration sets the interrupt stack size for the TEE module.
+                The TEE interrupt stack will be allocated from the TEE DRAM region.
+                This should be a multiple of 0x100.
+
+        config SECURE_TEE_IROM_SIZE
+            hex
+            default 0x10000
+            help
+                This should be a multiple of MMU_PAGE_SIZE.
+
+        config SECURE_TEE_DROM_SIZE
+            hex
+            default 0x10000
+            help
+                This should be a multiple of MMU_PAGE_SIZE.
+
+    endmenu
+
+    choice SECURE_TEE_SEC_STG_MODE
+        prompt "Secure Storage: Mode"
+        depends on SECURE_ENABLE_TEE
+        default SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+        help
+            Select the TEE secure storage mode
+
+        config SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+            bool "Development"
+            help
+                Secure storage will be encrypted by the data stored in eFuse BLK2
+
+        config SECURE_TEE_SEC_STG_MODE_RELEASE
+            depends on IDF_TARGET_ESP32C6
+            bool "Release"
+            help
+                Secure storage will be encrypted by the data stored in eFuse block
+                configured through the SECURE_TEE_SEC_STG_KEY_EFUSE_BLK option
+
+    endchoice
+
+    config SECURE_TEE_SEC_STG_KEY_EFUSE_BLK
+        int "Secure Storage: Encryption key eFuse block"
+        depends on SECURE_TEE_SEC_STG_MODE_RELEASE
+        range 4 10
+        default 10
+        help
+            eFuse block ID storing the TEE secure storage encryption key
+
+    config SECURE_TEE_ATT_KEY_SLOT_ID
+        depends on SECURE_ENABLE_TEE
+        int "Attestation: Secure Storage slot ID for EAT signing"
+        default 0
+        range 0 14
+        help
+            This configuration sets the slot ID from the TEE secure storage
+            storing the ECDSA keypair for executing sign/verify operations
+            from the TEE side (E.g. Attestation)
+
+    config SECURE_TEE_DEBUG_MODE
+        bool "Enable Debug Mode"
+        default y
+        depends on SECURE_ENABLE_TEE
+        help
+            This configuration enables the logging from the TEE module.
+
+    choice SECURE_TEE_LOG_LEVEL
+        bool "Log verbosity"
+        default SECURE_TEE_LOG_LEVEL_WARN
+        depends on SECURE_TEE_DEBUG_MODE
+        help
+            Specify how much output to see in TEE logs.
+
+        config SECURE_TEE_LOG_LEVEL_NONE
+            bool "No output"
+        config SECURE_TEE_LOG_LEVEL_ERROR
+            bool "Error"
+        config SECURE_TEE_LOG_LEVEL_WARN
+            bool "Warning"
+        config SECURE_TEE_LOG_LEVEL_INFO
+            bool "Info"
+        config SECURE_TEE_LOG_LEVEL_DEBUG
+            bool "Debug"
+        config SECURE_TEE_LOG_LEVEL_VERBOSE
+            bool "Verbose"
+    endchoice
+
+    config SECURE_TEE_LOG_LEVEL
+        int
+        default 0 if SECURE_TEE_LOG_LEVEL_NONE || !SECURE_TEE_DEBUG_MODE
+        default 1 if SECURE_TEE_LOG_LEVEL_ERROR
+        default 2 if SECURE_TEE_LOG_LEVEL_WARN
+        default 3 if SECURE_TEE_LOG_LEVEL_INFO
+        default 4 if SECURE_TEE_LOG_LEVEL_DEBUG
+        default 5 if SECURE_TEE_LOG_LEVEL_VERBOSE
+
+    config SECURE_TEE_TEST_MODE
+        bool "Enable Test Mode"
+        depends on SECURE_ENABLE_TEE
+        help
+            This configuration sets up the TEE framework as required for executing the test suite.
+
+endmenu

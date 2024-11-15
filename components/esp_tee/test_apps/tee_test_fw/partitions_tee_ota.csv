@@ -1,0 +1,10 @@
+# ESP-IDF Partition Table
+# Name,         Type,  SubType,     Offset, Size, Flags
+tee_0,          app,   tee_0,       , 192K,
+tee_1,          app,   tee_1,       , 192K,
+tee_otadata,    data,  tee_ota,     , 8K,
+secure_storage, data,  tee_sec_stg, , 56K,
+ota_0,          app,   ota_0,       , 512K,
+ota_1,          app,   ota_1,       , 512K,
+otadata,        data,  ota,         , 8K,
+nvs,            data,  nvs,         , 24K,
