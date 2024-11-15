@@ -162,7 +162,7 @@ TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]
         .length = 8 * 7,
         .tx_buffer = master_tx,
     };
-    spi_device_transmit(spidev0, &master_tans);
+    spi_device_polling_transmit(spidev0, &master_tans);
 
     TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
 
@@ -181,7 +181,7 @@ TEST_CASE("Test slave rx no_dma overwrite when length below/over config", "[spi]
     TEST_ESP_OK(spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_tans, portMAX_DELAY));
 
     master_tans.length = 8 * 11,
-    spi_device_transmit(spidev0, &master_tans);
+    spi_device_polling_transmit(spidev0, &master_tans);
 
     TEST_ESP_OK(spi_slave_get_trans_result(TEST_SLAVE_HOST, &slave_out, portMAX_DELAY));
 
