@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,3 +104,18 @@ esp_err_t get_wifi_scan_handlers(wifi_prov_scan_handlers_t *ptr);
  *  - ESP_ERR_INVALID_ARG : null argument
  */
 esp_err_t get_wifi_ctrl_handlers(wifi_ctrl_handlers_t *ptr);
+
+/**
+ * @brief Retrieve the remaining number of Wi-Fi connection attempts
+ *
+ * This function provides the number of connection attempts left for
+ * the Wi-Fi provisioning manager before reaching the maximum retry limit.
+ *
+ * @param[out] attempts_remaining Pointer to store the remaining connection attempts
+ *
+ * @return
+ *      - ESP_OK: Success
+ *      - ESP_ERR_INVALID_ARG: Null pointer provided for attempts_remaining
+ *      - ESP_FAIL: Failed to retrieve the remaining attempts
+ */
+esp_err_t wifi_prov_mgr_get_remaining_conn_attempts(uint32_t *attempts_remaining);

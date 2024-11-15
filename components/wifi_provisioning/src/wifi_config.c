@@ -1,16 +1,8 @@
-// Copyright 2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #include <stdio.h>
 #include <string.h>
@@ -124,6 +116,19 @@ static esp_err_t cmd_get_status_handler(WiFiConfigPayload *req,
             } else if (resp_data.fail_reason == WIFI_PROV_STA_AP_NOT_FOUND) {
                 resp_payload->fail_reason = WIFI_CONNECT_FAILED_REASON__NetworkNotFound;
             }
+        } else if (resp_data.wifi_state == WIFI_PROV_STA_CONN_ATTEMPT_FAILED) {
+            resp_payload->sta_state = WIFI_STATION_STATE__Connecting;
+            resp_payload->state_case = RESP_GET_STATUS__STATE_ATTEMPT_FAILED;
+            WifiAttemptFailed *attempt_failed = (WifiAttemptFailed *)(
+                                            calloc(1, sizeof(WifiAttemptFailed)));
+            if (!attempt_failed) {
+                free(resp_payload);
+                ESP_LOGE(TAG, "Error allocating memory");
+                return ESP_ERR_NO_MEM;
+            }
+            wifi_attempt_failed__init(attempt_failed);
+            attempt_failed->attempts_remaining = resp_data.connecting_info.attempts_remaining;
+            resp_payload->attempt_failed = attempt_failed;
         }
         resp_payload->status = STATUS__Success;
     }
@@ -169,7 +174,7 @@ static esp_err_t cmd_set_config_handler(WiFiConfigPayload *req,
     } else {
         /* The received SSID and Passphrase are not NULL terminated so
          * we memcpy over zeroed out arrays. Above length checks ensure
-         * that there is atleast 1 extra byte for null termination */
+         * that there is at least 1 extra byte for null termination */
         memcpy(req_data.ssid, req->cmd_set_config->ssid.data,
                req->cmd_set_config->ssid.len);
         memcpy(req_data.password, req->cmd_set_config->passphrase.data,
