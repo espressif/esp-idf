@@ -13,6 +13,7 @@ message RespGetStatus {
     oneof state {
         WifiConnectFailedReason fail_reason = 10;
         WifiConnectedState connected = 11;
+        WifiAttemptFailed attempt_failed = 12;
     }
 }
 

@@ -144,6 +144,9 @@ struct wifi_prov_mgr_ctx {
     wifi_ap_record_t *ap_list[14];
     wifi_ap_record_t *ap_list_sorted[MAX_SCAN_RESULTS];
     wifi_scan_config_t scan_cfg;
+
+    /* Total number of attempts done for connecting to Wi-Fi */
+    uint32_t connection_attempts_completed;
 };
 
 /* Mutex to lock/unlock access to provisioning singleton
@@ -952,31 +955,22 @@ static void wifi_prov_mgr_event_handler_internal(
         /* Execute user registered callback handler */
         execute_event_cb(WIFI_PROV_CRED_SUCCESS, NULL, 0);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        ESP_LOGE(TAG, "STA Disconnected");
-        /* Station couldn't connect to configured host SSID */
-        prov_ctx->wifi_state = WIFI_PROV_STA_DISCONNECTED;
-
-        wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
-        ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
-
-        /* Set code corresponding to the reason for disconnection */
-        switch (disconnected->reason) {
-        case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
-        case WIFI_REASON_AUTH_FAIL:
-        case WIFI_REASON_HANDSHAKE_TIMEOUT:
-        case WIFI_REASON_MIC_FAILURE:
-            ESP_LOGE(TAG, "STA Auth Error");
-            prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AUTH_ERROR;
-            break;
-        case WIFI_REASON_NO_AP_FOUND:
-            ESP_LOGE(TAG, "STA AP Not found");
-            prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AP_NOT_FOUND;
-            break;
-        default:
-            /* If none of the expected reasons,
-             * retry connecting to host SSID */
-            prov_ctx->wifi_state = WIFI_PROV_STA_CONNECTING;
-            esp_wifi_connect();
+        if (prov_ctx->mgr_config.wifi_prov_conn_cfg.wifi_conn_attempts > 0) {
+            prov_ctx->connection_attempts_completed += 1; /* Increasing attempt after every failure */
+            if (prov_ctx->connection_attempts_completed < prov_ctx->mgr_config.wifi_prov_conn_cfg.wifi_conn_attempts) {
+                /* Set WiFi state to WIFI_PROV_STA_CONN_ATTEMPT_FAILED only if the user configure wifi_conn_attempts and connection_attempts_completed
+                 * are less than wifi_conn_attempts.
+                 */
+                prov_ctx->wifi_state = WIFI_PROV_STA_CONN_ATTEMPT_FAILED;
+                esp_wifi_connect();
+            } else {
+                /* Station couldn't connect to configured host SSID */
+                ESP_LOGE(TAG, "STA Disconnected");
+                prov_ctx->wifi_state = WIFI_PROV_STA_DISCONNECTED;
+            }
+        } else {
+            ESP_LOGE(TAG, "STA Disconnected");
+            prov_ctx->wifi_state = WIFI_PROV_STA_DISCONNECTED;
         }
 
         /* In case of disconnection, update state of service and
@@ -984,8 +978,34 @@ static void wifi_prov_mgr_event_handler_internal(
         if (prov_ctx->wifi_state == WIFI_PROV_STA_DISCONNECTED) {
             prov_ctx->prov_state = WIFI_PROV_STATE_FAIL;
             wifi_prov_sta_fail_reason_t reason = prov_ctx->wifi_disconnect_reason;
-            /* Execute user registered callback handler */
-            execute_event_cb(WIFI_PROV_CRED_FAIL, (void *)&reason, sizeof(reason));
+            wifi_event_sta_disconnected_t* disconnected = (wifi_event_sta_disconnected_t*) event_data;
+            ESP_LOGE(TAG, "Disconnect reason : %d", disconnected->reason);
+
+            /* Set code corresponding to the reason for disconnection */
+            switch (disconnected->reason) {
+            case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
+            case WIFI_REASON_AUTH_FAIL:
+            case WIFI_REASON_HANDSHAKE_TIMEOUT:
+            case WIFI_REASON_MIC_FAILURE:
+                ESP_LOGE(TAG, "STA Auth Error");
+                prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AUTH_ERROR;
+                break;
+            case WIFI_REASON_NO_AP_FOUND:
+                ESP_LOGE(TAG, "STA AP Not found");
+                prov_ctx->wifi_disconnect_reason = WIFI_PROV_STA_AP_NOT_FOUND;
+                break;
+            default:
+                if (prov_ctx->mgr_config.wifi_prov_conn_cfg.wifi_conn_attempts == 0) {
+                    /* If none of the expected reasons,
+                    * retry connecting to host SSID */
+                    prov_ctx->wifi_state = WIFI_PROV_STA_CONNECTING;
+                    esp_wifi_connect();
+                }
+            }
+            if (prov_ctx->wifi_state == WIFI_PROV_STA_DISCONNECTED) {
+                /* Execute user registered callback handler */
+                execute_event_cb(WIFI_PROV_CRED_FAIL, (void *)&reason, sizeof(reason));
+            }
         }
     } else if (event_base == WIFI_PROV_MGR_PVT_EVENT && event_id == WIFI_PROV_MGR_STOP) {
         prov_stop_and_notify(true);
@@ -1154,6 +1174,25 @@ esp_err_t wifi_prov_mgr_get_wifi_state(wifi_prov_sta_state_t *state)
     }
 
     *state = prov_ctx->wifi_state;
+
+    RELEASE_LOCK(prov_ctx_lock);
+    return ESP_OK;
+}
+
+esp_err_t wifi_prov_mgr_get_remaining_conn_attempts(uint32_t *attempts_remaining)
+{
+    if (!prov_ctx_lock) {
+        ESP_LOGE(TAG, "Provisioning manager not initialized");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    ACQUIRE_LOCK(prov_ctx_lock);
+    if (prov_ctx == NULL || attempts_remaining == NULL) {
+        RELEASE_LOCK(prov_ctx_lock);
+        return ESP_FAIL;
+    }
+
+    *attempts_remaining = prov_ctx->mgr_config.wifi_prov_conn_cfg.wifi_conn_attempts - prov_ctx->connection_attempts_completed;
     RELEASE_LOCK(prov_ctx_lock);
     return ESP_OK;
 }
