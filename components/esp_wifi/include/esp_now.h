@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,8 @@ extern "C" {
 #define ESP_NOW_MAX_TOTAL_PEER_NUM   20        /*!< Maximum number of ESPNOW total peers */
 #define ESP_NOW_MAX_ENCRYPT_PEER_NUM 6         /*!< Maximum number of ESPNOW encrypted peers */
 
-#define ESP_NOW_MAX_DATA_LEN         250       /*!< Maximum length of ESPNOW data which is sent very time */
+#define ESP_NOW_MAX_IE_DATA_LEN      250       /**< Maximum data length in a vendor-specific element */
+#define ESP_NOW_MAX_DATA_LEN  ESP_NOW_MAX_IE_DATA_LEN   /**< Maximum length of data sent in each ESPNOW transmission for v1.0 */
 
 /**
  * @brief Status of sending ESPNOW data .
@@ -134,7 +135,10 @@ esp_err_t esp_now_init(void);
 esp_err_t esp_now_deinit(void);
 
 /**
-  * @brief     Get the version of ESPNOW
+  * @brief     Get the version of ESPNOW. Currently, ESPNOW supports one version: v1.0.
+  *
+  *            The v1.0 devices can receive packets if the packet length is less than or equal to ESP_NOW_MAX_IE_DATA_LEN.
+  *            For packets exceeding this length, the v1.0 devices will discard the packet entirely.
   *
   * @param     version  ESPNOW version
   *
