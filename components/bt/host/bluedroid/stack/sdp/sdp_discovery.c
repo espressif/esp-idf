@@ -453,7 +453,7 @@ static void process_service_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
         }
     }
 
-    /* Now, ask for the next handle. Re-use the buffer we just got. */
+    /* Now, ask for the next handle. Reuse the buffer we just got. */
     if (p_ccb->cur_handle < p_ccb->num_handles) {
         BT_HDR  *p_msg = (BT_HDR *) osi_malloc(SDP_DATA_BUF_SIZE);
         UINT8   *p;
@@ -669,6 +669,7 @@ static void process_service_search_attr_rsp (tCONN_CB *p_ccb, UINT8 *p_reply)
 
     if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE) {
         SDP_TRACE_WARNING ("SDP - Wrong type: 0x%02x in attr_rsp\n", type);
+        sdp_disconnect (p_ccb, SDP_ILLEGAL_PARAMETER);
         return;
     }
     p = sdpu_get_len_from_type (p, type, &seq_len);
