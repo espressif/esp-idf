@@ -307,10 +307,14 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
 
                         // Initiate GATT connection with the remote device,
                         // If ble physical connection is set up, ESP_GATTS_CONNECT_EVT and ESP_GATTC_CONNECT_EVT event will come
-                        esp_ble_gattc_open(gattc_profile_tab[GATTC_PROFILE_C_APP_ID].gattc_if,
-                                           scan_result->scan_rst.bda,
-                                           scan_result->scan_rst.ble_addr_type,
-                                           true);
+                        esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+                        memcpy(&esp_ble_gatt_create_conn.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        esp_ble_gatt_create_conn.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        esp_ble_gatt_create_conn.is_direct = true;
+                        esp_ble_gatt_create_conn.is_aux = false;
+                        esp_ble_gattc_enh_open(gattc_profile_tab[GATTC_PROFILE_C_APP_ID].gattc_if,
+                                            esp_ble_gatt_create_conn);
 
                         // Update peer gatt server address
                         memcpy(peer_gatts_addr, scan_result->scan_rst.bda, sizeof(esp_bd_addr_t));
