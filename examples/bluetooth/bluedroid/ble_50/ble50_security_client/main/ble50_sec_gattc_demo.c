@@ -503,6 +503,13 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             esp_ble_gap_prefer_ext_connect_params_set(param->ext_adv_report.params.addr,
                                                      ESP_BLE_GAP_PHY_1M_PREF_MASK | ESP_BLE_GAP_PHY_2M_PREF_MASK | ESP_BLE_GAP_PHY_CODED_PREF_MASK ,
                                                      &phy_1m_conn_params, &phy_2m_conn_params, &phy_coded_conn_params);
+            // create gattc virtual connection
+            esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+            memcpy(&esp_ble_gatt_create_conn.remote_bda, param->ext_adv_report.params.addr, ESP_BD_ADDR_LEN);
+            esp_ble_gatt_create_conn.remote_addr_type = param->ext_adv_report.params.addr_type;
+            esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+            esp_ble_gatt_create_conn.is_direct = true;
+            esp_ble_gatt_create_conn.is_aux = true;
             esp_ble_gattc_aux_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
                                     param->ext_adv_report.params.addr,
                                     param->ext_adv_report.params.addr_type, true);

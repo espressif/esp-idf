@@ -672,10 +672,17 @@ esp_hidh_dev_t *esp_ble_hidh_dev_open(esp_bd_addr_t bda, esp_ble_addr_type_t add
     dev->ble.address_type = address_type;
     dev->ble.appearance = ESP_HID_APPEARANCE_GENERIC;
 
-    ret = esp_ble_gattc_open(hid_gattc_if, dev->addr.bda, dev->ble.address_type, true);
+    esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+    memcpy(&esp_ble_gatt_create_conn.remote_bda, dev->addr.bda, ESP_BD_ADDR_LEN);
+    esp_ble_gatt_create_conn.remote_addr_type = dev->ble.address_type;
+    esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+    esp_ble_gatt_create_conn.is_direct = true;
+    esp_ble_gatt_create_conn.is_aux = false;
+    ret = esp_ble_gattc_enh_open(hid_gattc_if,
+                                 esp_ble_gatt_create_conn);
     if (ret) {
         esp_hidh_dev_free_inner(dev);
-        ESP_LOGE(TAG, "esp_ble_gattc_open failed: %d", ret);
+        ESP_LOGE(TAG, "esp_ble_gattc_enh_open failed: %d", ret);
         return NULL;
     }
     WAIT_CB();

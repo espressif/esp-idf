@@ -563,7 +563,14 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         //ESP_LOGI(BLE_ANCS_TAG, "ESP_GATTC_CONNECT_EVT");
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, param->connect.remote_bda, 6);
         // create gattc virtual connection
-        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, BLE_ADDR_TYPE_RANDOM, true);
+        esp_ble_gatt_creat_conn_params_t esp_ble_gatt_create_conn;
+        memcpy(&esp_ble_gatt_create_conn.remote_bda, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, ESP_BD_ADDR_LEN);
+        esp_ble_gatt_create_conn.remote_addr_type = BLE_ADDR_TYPE_RANDOM;
+        esp_ble_gatt_create_conn.own_addr_type = BLE_ADDR_TYPE_RPA_PUBLIC;
+        esp_ble_gatt_create_conn.is_direct = true;
+        esp_ble_gatt_create_conn.is_aux = false;
+        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                            esp_ble_gatt_create_conn);
         break;
     case ESP_GATTC_DIS_SRVC_CMPL_EVT:
         ESP_LOGI(BLE_ANCS_TAG, "ESP_GATTC_DIS_SRVC_CMPL_EVT");

@@ -1253,8 +1253,8 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
      */
     BTA_DmSetBlePrefConnParams(bt_mesh_gattc_info[i].addr.val, 0x18, 0x18, 0x00, 0x64);
 
-    BTA_GATTC_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE);
+    BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
+                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE);
 
     return 0;
 }

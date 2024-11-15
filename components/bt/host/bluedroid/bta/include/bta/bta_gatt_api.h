@@ -180,7 +180,7 @@ typedef UINT8 tBTA_GATT_STATUS;
 #define BTA_GATTC_ADV_VSC_EVT           34 /* ADV VSC event */
 #define BTA_GATTC_CONNECT_EVT           35 /* GATTC CONNECT  event */
 #define BTA_GATTC_DISCONNECT_EVT        36 /* GATTC DISCONNECT  event */
-#define BTA_GATTC_READ_MULTIPLE_EVT     37 /* GATTC Read mutiple event */
+#define BTA_GATTC_READ_MULTIPLE_EVT     37 /* GATTC Read multiple event */
 #define BTA_GATTC_QUEUE_FULL_EVT        38 /* GATTC queue full event */
 #define BTA_GATTC_ASSOC_EVT             39 /* GATTC association address event */
 #define BTA_GATTC_GET_ADDR_LIST_EVT     40 /* GATTC get address list in the cache event */
@@ -783,9 +783,10 @@ extern void BTA_GATTC_AppRegister(tBT_UUID *p_app_uuid, tBTA_GATTC_CBACK *p_clie
 *******************************************************************************/
 extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 
+
 /*******************************************************************************
 **
-** Function         BTA_GATTC_Open
+** Function         BTA_GATTC_Enh_Open
 **
 ** Description      Open a direct connection or add a background auto connection
 **                  bd address
@@ -793,13 +794,14 @@ extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 ** Parameters       client_if: server interface.
 **                  remote_bda: remote device BD address.
 **                  remote_addr_type: remote device BD address type.
-**                  is_direct: direct connection or background auto connection
+**                  is_direct: direct connection or background auto connection.
+**                  own_addr_type: own address type.
 **
 ** Returns          void
 **
 *******************************************************************************/
-extern void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux);
+extern void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type);
 
 /*******************************************************************************
 **
@@ -937,8 +939,8 @@ extern void BTA_GATTC_GetGattDb(UINT16 conn_id, UINT16 start_handle, UINT16 end_
 **
 ** Description      This function is called to read a characteristics value
 **
-** Parameters       conn_id - connectino ID.
-**                  handle - characteritic handle to read.
+** Parameters       conn_id - connection ID.
+**                  handle - characteristic handle to read.
 **
 ** Returns          None
 **
@@ -953,7 +955,7 @@ void BTA_GATTC_ReadCharacteristic(UINT16 conn_id, UINT16 handle, tBTA_GATT_AUTH_
 **
 ** Parameters       conn_id - connection ID.
 **                  s_handle - start handle.
-**                  e_handle - end hanle
+**                  e_handle - end handle
 **                  uuid - The attribute UUID.
 **
 ** Returns          None
@@ -1072,7 +1074,7 @@ extern tBTA_GATT_STATUS BTA_GATTC_DeregisterForNotifications (tBTA_GATTC_IF     
 ** Description      This function is called to prepare write a characteristic value.
 **
 ** Parameters       conn_id - connection ID.
-**                  handle - GATT characteritic handle.
+**                  handle - GATT characteristic handle.
 **                  offset - offset of the write value.
 **                  len - length of the data to be written.
 **                  p_value - the value to be written.
@@ -1094,7 +1096,7 @@ extern void BTA_GATTC_PrepareWrite  (UINT16 conn_id,
 ** Description      This function is called to prepare write a characteristic descriptor value.
 **
 ** Parameters       conn_id - connection ID.
-**                  p_char_descr_id - GATT characteritic descriptor ID of the service.
+**                  p_char_descr_id - GATT characteristic descriptor ID of the service.
 **                  offset - offset of the write value.
 **                  len: length of the data to be written.
 **                  p_value - the value to be written.
@@ -1238,7 +1240,7 @@ extern void BTA_GATTC_ConfigureMTU (UINT16 conn_id);
 **
 ** Function         BTA_GATTS_Init
 **
-** Description      This function is called to initalize GATTS module
+** Description      This function is called to initialize GATTS module
 **
 ** Parameters       None
 **

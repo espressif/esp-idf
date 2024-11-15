@@ -682,6 +682,15 @@ typedef struct {
     esp_bt_uuid_t uuid;                       /*!< Included service UUID. */
 } esp_gattc_incl_svc_elem_t;
 
+/** @brief Represents a creat connection element. */
+typedef struct {
+    esp_bd_addr_t remote_bda;               /*!< The Bluetooth address of the remote device */
+    esp_ble_addr_type_t remote_addr_type;   /*!< Address type of the remote device */
+    bool is_direct;                         /*!< Direct connection or background auto connection(by now, background auto connection is not supported */
+    bool is_aux;                            /*!< Set to true for BLE 5.0 or higher to enable auxiliary connections; set to false for BLE 4.2 or lower. */
+    esp_ble_addr_type_t own_addr_type;      /*!< Specifies the address type used in the connection request. Set to 0xFF if the address type is unknown. */
+} esp_ble_gatt_creat_conn_params_t;
+
 #ifdef __cplusplus
 }
 #endif
