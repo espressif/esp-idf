@@ -377,18 +377,18 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_key_manager_sys_clk_en:1;
-        /** reg_bitsrambler_sys_clk_en : R/W; bitpos: [28]; default: 1;
+        /** reg_bitscrambler_sys_clk_en : R/W; bitpos: [28]; default: 1;
          *  Reserved
          */
-        uint32_t reg_bitsrambler_sys_clk_en:1;
-        /** reg_bitsrambler_rx_sys_clk_en : R/W; bitpos: [29]; default: 1;
+        uint32_t reg_bitscrambler_sys_clk_en:1;
+        /** reg_bitscrambler_rx_sys_clk_en : R/W; bitpos: [29]; default: 1;
          *  Reserved
          */
-        uint32_t reg_bitsrambler_rx_sys_clk_en:1;
-        /** reg_bitsrambler_tx_sys_clk_en : R/W; bitpos: [30]; default: 1;
+        uint32_t reg_bitscrambler_rx_sys_clk_en:1;
+        /** reg_bitscrambler_tx_sys_clk_en : R/W; bitpos: [30]; default: 1;
          *  Reserved
          */
-        uint32_t reg_bitsrambler_tx_sys_clk_en:1;
+        uint32_t reg_bitscrambler_tx_sys_clk_en:1;
         /** reg_h264_sys_clk_en : R/W; bitpos: [31]; default: 0;
          *  Reserved
          */
@@ -2427,18 +2427,18 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_rst_en_adc:1;
-        /** reg_rst_en_bitsrambler : R/W; bitpos: [11]; default: 0;
+        /** reg_rst_en_bitscrambler : R/W; bitpos: [11]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_bitsrambler:1;
-        /** reg_rst_en_bitsrambler_rx : R/W; bitpos: [12]; default: 0;
+        uint32_t reg_rst_en_bitscrambler:1;
+        /** reg_rst_en_bitscrambler_rx : R/W; bitpos: [12]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_bitsrambler_rx:1;
-        /** reg_rst_en_bitsrambler_tx : R/W; bitpos: [13]; default: 0;
+        uint32_t reg_rst_en_bitscrambler_rx:1;
+        /** reg_rst_en_bitscrambler_tx : R/W; bitpos: [13]; default: 0;
          *  Reserved
          */
-        uint32_t reg_rst_en_bitsrambler_tx:1;
+        uint32_t reg_rst_en_bitscrambler_tx:1;
         /** reg_rst_en_crypto : R/W; bitpos: [14]; default: 0;
          *  Reserved
          */
@@ -2724,18 +2724,18 @@ typedef union {
          *  Reserved
          */
         uint32_t reg_force_norst_adc:1;
-        /** reg_force_norst_bitsrambler : R/W; bitpos: [23]; default: 0;
+        /** reg_force_norst_bitscrambler : R/W; bitpos: [23]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_bitsrambler:1;
-        /** reg_force_norst_bitsrambler_rx : R/W; bitpos: [24]; default: 0;
+        uint32_t reg_force_norst_bitscrambler:1;
+        /** reg_force_norst_bitscrambler_rx : R/W; bitpos: [24]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_bitsrambler_rx:1;
-        /** reg_force_norst_bitsrambler_tx : R/W; bitpos: [25]; default: 0;
+        uint32_t reg_force_norst_bitscrambler_rx:1;
+        /** reg_force_norst_bitscrambler_tx : R/W; bitpos: [25]; default: 0;
          *  Reserved
          */
-        uint32_t reg_force_norst_bitsrambler_tx:1;
+        uint32_t reg_force_norst_bitscrambler_tx:1;
         /** reg_force_norst_h264 : R/W; bitpos: [26]; default: 0;
          *  Reserved
          */
