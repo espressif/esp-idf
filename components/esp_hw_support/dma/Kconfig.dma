@@ -29,6 +29,7 @@ menu "DW_GDMA Configurations"
     config DW_GDMA_CTRL_FUNC_IN_IRAM
         bool
         default n
+        select DW_GDMA_OBJ_DRAM_SAFE
         help
             Place DW_GDMA control functions (e.g. dw_gdma_channel_continue) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
@@ -36,6 +37,7 @@ menu "DW_GDMA Configurations"
     config DW_GDMA_SETTER_FUNC_IN_IRAM
         bool
         default n
+        select DW_GDMA_OBJ_DRAM_SAFE
         help
             Place DW_GDMA setter functions (e.g. dw_gdma_channel_set_block_markers) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
@@ -43,6 +45,7 @@ menu "DW_GDMA Configurations"
     config DW_GDMA_GETTER_FUNC_IN_IRAM
         bool
         default n
+        select DW_GDMA_OBJ_DRAM_SAFE
         help
             Place DW_GDMA getter functions (e.g. dw_gdma_link_list_get_item) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
@@ -50,10 +53,18 @@ menu "DW_GDMA Configurations"
     config DW_GDMA_ISR_IRAM_SAFE
         bool
         default n
+        select DW_GDMA_OBJ_DRAM_SAFE
         help
             This will ensure the DW_GDMA interrupt handler is IRAM-Safe, allow to avoid flash
             cache misses, and also be able to run whilst the cache is disabled.
             (e.g. SPI Flash write).
+
+    config DW_GDMA_OBJ_DRAM_SAFE
+        bool
+        default n
+        help
+            This will ensure the DW_GDMA object is DRAM-Safe, allow to avoid external memory
+            cache misses, and also be accessible whilst the cache is disabled.
 
     config DW_GDMA_ENABLE_DEBUG_LOG
         bool "Enable debug log"

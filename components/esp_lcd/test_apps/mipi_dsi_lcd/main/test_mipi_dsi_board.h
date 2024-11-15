@@ -9,16 +9,16 @@
 extern "C" {
 #endif
 
-// FPS = 80000000/(40+140+40+800)/(4+16+16+1280) = 60Hz
-#define MIPI_DSI_DPI_CLK_MHZ  80
-#define MIPI_DSI_LCD_H_RES    800
-#define MIPI_DSI_LCD_V_RES    1280
-#define MIPI_DSI_LCD_HSYNC    40
-#define MIPI_DSI_LCD_HBP      140
-#define MIPI_DSI_LCD_HFP      40
-#define MIPI_DSI_LCD_VSYNC    4
-#define MIPI_DSI_LCD_VBP      16
-#define MIPI_DSI_LCD_VFP      16
+// Refresh Rate = 48000000/(10+120+120+1024)/(1+20+10+600) = 60Hz
+#define MIPI_DSI_DPI_CLK_MHZ  48
+#define MIPI_DSI_LCD_H_RES    1024
+#define MIPI_DSI_LCD_V_RES    600
+#define MIPI_DSI_LCD_HSYNC    10
+#define MIPI_DSI_LCD_HBP      120
+#define MIPI_DSI_LCD_HFP      120
+#define MIPI_DSI_LCD_VSYNC    1
+#define MIPI_DSI_LCD_VBP      20
+#define MIPI_DSI_LCD_VFP      20
 
 #define TEST_MIPI_DSI_PHY_PWR_LDO_CHAN 3
 #define TEST_MIPI_DSI_PHY_PWR_LDO_VOLTAGE_MV 2500
