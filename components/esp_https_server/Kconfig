@@ -13,4 +13,13 @@ menu "ESP HTTPS server"
             This config option helps in setting the time in millisecond to wait for event to be posted to the
             system default event loop. Set it to -1 if you need to set timeout to portMAX_DELAY.
 
+    config ESP_HTTPS_SERVER_CERT_SELECT_HOOK
+        select ESP_TLS_SERVER_CERT_SELECT_HOOK
+        bool "Enable certificate selection hook"
+        default n
+        help
+            Enable certificate selection hook for ESP HTTPS Server. When enabled, this allows the server to
+            dynamically select the appropriate certificate based on the client's Server Name Indication (SNI).
+            This is useful for hosting multiple domains on a single server with different SSL certificates.
+
 endmenu
