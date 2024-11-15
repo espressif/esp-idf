@@ -21,13 +21,61 @@ extern "C" {
 #endif
 
 /* BLE Mesh Max Connection Count */
+/**
+ * The maximum number of connection count is limited by
+ * the resources allocated by both the host and the controller
+ * components, so the actual number of available connections
+ * is the minimum of the resources from both.
+ *
+ * On the C3/S3 platform, the controller uses the macro `CONFIG_BT_CTRL_BLE_MAX_ACT`,
+ * but adv and scan also occupy this resource, so the actual number of available
+ * connections is (CONFIG_BT_CTRL_BLE_MAX_ACT - adv instance count - scan).
+ * However, the macro allocation on the host is entirely for connections,
+ * so on the C3/S3 platform, the maximum number of connectable devices should
+ * be determined by the configuration at the host minus the number of
+ * advertising instances and scan from the controller's configuration.
+*/
 #ifdef CONFIG_BT_BLUEDROID_ENABLED
+#if CONFIG_IDF_TARGET_ESP32
+#define BLE_MESH_MAX_CONN   1
+#elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
+/* @todo: must ensure CONFIG_BT_CTRL_BLE_MAX_ACT is greater than 2 */
+#if CONFIG_BT_ACL_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
+/* decrease the adv,scan */
+#define BLE_MESH_MAX_CONN   (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
+#else
 #define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
+#endif /* CONFIG_BT_ACL_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2) */
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
+#if CONFIG_BT_ACL_CONNECTIONS > CONFIG_BT_LE_MAX_CONNECTIONS
+#define BLE_MESH_MAX_CONN   CONFIG_BT_LE_MAX_CONNECTIONS
+#else
+#define BLE_MESH_MAX_CONN   CONFIG_BT_ACL_CONNECTIONS
+#endif /* CONFIG_BT_ACL_CONNECTIONS > CONFIG_BT_LE_MAX_CONNECTIONS */
+#else
+/* default setting */
+#define BLE_MESH_MAX_CONN   1
 #endif
+#endif /* CONFIG_BT_BLUEDROID_ENABLED */
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
+#if CONFIG_IDF_TARGET_ESP32
+#define BLE_MESH_MAX_CONN   1
+#elif (CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32S3)
+/* @todo: must ensure CONFIG_BT_CTRL_BLE_MAX_ACT is greater than 2 */
+#if CONFIG_BT_NIMBLE_MAX_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
+/* decrease the adv,scan */
+#define BLE_MESH_MAX_CONN   (CONFIG_BT_CTRL_BLE_MAX_ACT - 2)
+#else
 #define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
+#endif /* CONFIG_BT_NIMBLE_MAX_CONNECTIONS > (CONFIG_BT_CTRL_BLE_MAX_ACT - 2) */
+#elif CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5
+#define BLE_MESH_MAX_CONN   CONFIG_BT_NIMBLE_MAX_CONNECTIONS
+#else
+/* default setting */
+#define BLE_MESH_MAX_CONN   1
 #endif
+#endif /* CONFIG_BT_NIMBLE_ENABLED */
 
 #define BLE_MESH_GAP_ADV_MAX_LEN    31
 

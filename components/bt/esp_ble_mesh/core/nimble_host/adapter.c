@@ -410,7 +410,13 @@ static int svc_disced(uint16_t conn_handle, const struct ble_gatt_error *error,
         }
 
         for (i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
-            if (bt_mesh_gattc_info[i].service_uuid == (uint16_t)BLE_UUID16(uuid)->value) {
+            /**
+             * In scenarios with multiple connections, to prevent
+             * subsequent connections from affecting the first one,
+             * a check for the connection handle is needed here.
+            */
+            if (bt_mesh_gattc_info[i].conn.handle == conn_handle &&
+                bt_mesh_gattc_info[i].service_uuid == (uint16_t)BLE_UUID16(uuid)->value) {
                 bt_mesh_gattc_info[i].start_handle = service->start_handle;
                 bt_mesh_gattc_info[i].end_handle   = service->end_handle;
                 break;
@@ -834,6 +840,20 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
         /* When connection is created, advertising will be stopped automatically. */
         bt_mesh_atomic_test_and_clear_bit(bt_mesh_dev.flags, BLE_MESH_DEV_ADVERTISING);
 #endif
+
+#if (CONFIG_BLE_MESH_PROVISIONER && CONFIG_BLE_MESH_PB_GATT) || \
+     CONFIG_BLE_MESH_GATT_PROXY_CLIENT || \
+    (CONFIG_BLE_MESH_RPR_SRV && CONFIG_BLE_MESH_PB_GATT)
+        /* Check if this connection is created by Proxy client */
+        for (size_t i = 0; i < ARRAY_SIZE(bt_mesh_gattc_info); i++) {
+            if (!memcmp(bt_mesh_gattc_info[i].addr.val, desc.peer_id_addr.val, BLE_MESH_ADDR_LEN)) {
+                BT_WARN("Already create connection with %s by proxy client",
+                        bt_hex(desc.peer_id_addr.val, BLE_MESH_ADDR_LEN));
+                return 0;
+            }
+        }
+#endif
+
         if (bt_mesh_gatts_conn_cb != NULL && bt_mesh_gatts_conn_cb->connected != NULL) {
             int index = 0;
 #if CONFIG_BLE_MESH_USE_BLE_50

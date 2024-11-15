@@ -427,6 +427,13 @@ if BLE_MESH
             will store the solicitation src and solicitation sequence number of
             the received Solicitation PDU message.
 
+    config BLE_MESH_PROXY_CLI_SRV_COEXIST
+        bool "Support Proxy Client and Proxy Server coexistence"
+        depends on BLE_MESH_EXPERIMENTAL
+        default n
+        help
+            Enable this option to support the coexistence of proxy client and proxy server.
+
     config BLE_MESH_GATT_PROXY_CLIENT
         bool "BLE Mesh GATT Proxy Client"
         select BLE_MESH_PROXY
@@ -1659,5 +1666,6 @@ if BLE_MESH
             Experimental features list:
             - CONFIG_BLE_MESH_NOT_RELAY_REPLAY_MSG
             - CONFIG_BLE_MESH_USE_BLE_50
+            - CONFIG_BLE_MESH_PROXY_CLI_SRV_COEXIST
 
 endif # BLE_MESH
