@@ -314,7 +314,20 @@ esp_err_t esp_ble_gattc_app_register(uint16_t app_id);
  */
 esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
 
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
+/**
+ * @brief           Open a direct connection or add a background auto connection.
+ *                  Note: Do not enable both BLE_42_FEATURE_SUPPORT and BLE_50_FEATURE_SUPPORT configuration options simultaneously.
+ *
+ * @param[in]       gattc_if: GATT client access interface.
+ * @param[in]       esp_gatt_create_conn: Structure containing connection parameters.
+ *
+ * @return
+ *                  - ESP_OK: Operation successful
+ *                  - others: Operation failed
+ *
+ */
+esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn_params_t esp_gatt_create_conn);
+
 /**
  * @brief           Open a direct connection or add a background auto connection
  *
@@ -328,12 +341,14 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *                  - other: failed
  *
  */
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gattc_aux_open(esp_gatt_if_t gattc_if, esp_bd_addr_t remote_bda, esp_ble_addr_type_t remote_addr_type, bool is_direct);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 /**
  * @brief           Close the virtual connection to the GATT server. gattc may have multiple virtual GATT server connections when multiple app_id registered,
  *                  this API only close one virtual GATT server connection. if there exist other virtual GATT server connections,

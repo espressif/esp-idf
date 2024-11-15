@@ -110,7 +110,7 @@ typedef enum {
 #define BTA_GATTC_WRITE_PREPARE          GATT_WRITE_PREPARE
 #define BTA_GATTC_INVALID_HANDLE         0
 
-/* internal strucutre for GATTC register API  */
+/* internal structure for GATTC register API  */
 typedef struct {
     BT_HDR                  hdr;
     tBT_UUID                app_uuid;
@@ -133,6 +133,7 @@ typedef struct {
     BOOLEAN                 is_direct;
     BOOLEAN                 is_aux;
     tBTA_TRANSPORT          transport;
+    tBTA_ADDR_TYPE          own_addr_type;
 } tBTA_GATTC_API_OPEN;
 
 typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
@@ -313,7 +314,7 @@ typedef struct {
     UINT16               total_char;
     UINT16              total_attr;
     UINT8               srvc_hdl_chg;   /* service handle change indication pending */
-    UINT16              attr_index;     /* cahce NV saving/loading attribute index */
+    UINT16              attr_index;     /* cache NV saving/loading attribute index */
 
     UINT16              mtu;
     bool                update_incl_srvc;
