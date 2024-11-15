@@ -13,7 +13,6 @@
 
 #pragma once
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
@@ -154,7 +153,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;  // TODO: need check
+    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
 }
 
 /**
