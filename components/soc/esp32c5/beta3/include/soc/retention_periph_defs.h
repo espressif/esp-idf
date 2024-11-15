@@ -73,9 +73,7 @@ typedef enum periph_retention_module_bitmap {
     SLEEP_RETENTION_MODULE_BM_ALL          = (uint32_t)-1
 } periph_retention_module_bitmap_t;
 
-#define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM  \
-                                    | SLEEP_RETENTION_MODULE_BM_CLOCK_MODEM \
-                                    | SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
+#define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
                                     | SLEEP_RETENTION_MODULE_BM_TASK_WDT    \
                                     | SLEEP_RETENTION_MODULE_BM_INT_WDT     \
                                     | SLEEP_RETENTION_MODULE_BM_TG0_TIMER   \
