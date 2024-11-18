@@ -3,6 +3,7 @@ menu "GDMA Configurations"
     config GDMA_CTRL_FUNC_IN_IRAM
         bool "Place GDMA control functions in IRAM"
         default n
+        select GDMA_OBJ_DRAM_SAFE
         help
             Place GDMA control functions (like start/stop/append/reset) into IRAM,
             so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
@@ -10,10 +11,18 @@ menu "GDMA Configurations"
     config GDMA_ISR_IRAM_SAFE
         bool "GDMA ISR IRAM-Safe"
         default n
+        select GDMA_OBJ_DRAM_SAFE
         help
             This will ensure the GDMA interrupt handler is IRAM-Safe, allow to avoid flash
             cache misses, and also be able to run whilst the cache is disabled.
             (e.g. SPI Flash write).
+
+    config GDMA_OBJ_DRAM_SAFE
+        bool
+        default n
+        help
+            This will ensure the GDMA object is DRAM-Safe, allow to avoid external memory
+            cache misses, and also be accessible whilst the cache is disabled.
 
     config GDMA_ENABLE_DEBUG_LOG
         bool "Enable debug log"
