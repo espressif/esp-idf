@@ -70,6 +70,28 @@ ESP HTTPS 服务器在特定事件发生时，可以通过 :doc:`../system/esp_e
 
 - :example:`protocols/https_server/wss_server` 演示了如何创建一个支持多客户端的 SSL 服务器，具备简单的 WebSocket 请求处理器、PING-PONG 机制，并能够向所有客户端发送异步消息。
 
+HTTPS 服务器证书选择钩子
+------------------------
+
+ESP HTTPS 服务器组件提供了设置服务器证书选择钩子的选项。启用此功能后，在服务器握手过程中，可以配置并使用证书选择回调函数。该回调函数会根据客户端 hello 消息中提供的 TLS 扩展（如 ALPN 和 SNI），动态选择合适的证书发送给客户端。
+
+要启用此功能，请先在 ESP HTTPS 服务器的 menuconfig 中启用 :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK`。请注意，只有当 Mbedtls 被用作 ESP-TLS 的 TLS 协议栈（默认行为）时，ESP-TLS 选项才可使用。
+
+启用此功能后，请使用 :cpp:type:`httpd_ssl_config_t` 结构体中的 :cpp:member:`httpd_ssl_config::cert_select_cb` 成员，设置证书选择回调函数。
+
+.. code-block:: c
+
+  int cert_selection_callback(mbedtls_ssl_context *ssl)
+    {
+        /* 回调函数应执行的代码 */
+        return 0;
+    }
+
+    httpd_ssl_config_t cfg = {
+        cert_select_cb = cert_section_callback,
+    };
+
+
 API 参考
 ---------
 
