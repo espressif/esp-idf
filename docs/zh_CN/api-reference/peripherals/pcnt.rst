@@ -104,6 +104,10 @@ PCNT 单元和通道分别用 :cpp:type:`pcnt_unit_handle_t` 与 :cpp:type:`pcnt
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
+.. note::
+
+    PCNT 中涉及到的 GPIO 都可以在初始化完 PCNT 后, 通过 :cpp:func:`gpio_pullup_en` 和 :cpp:func:`gpio_pullup_dis` 等函数，重新进行上下拉等配置。
+
 .. _pcnt-setup-channel-actions:
 
 设置通道操作
