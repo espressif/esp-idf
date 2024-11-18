@@ -187,9 +187,11 @@ typedef struct esp_tls_cfg {
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
     const psk_hint_key_t* psk_hint_key;     /*!< Pointer to PSK hint and key. if not NULL (and certificates are NULL)
                                                  then PSK authentication is enabled with configured setup.
                                                  Important note: the pointer must be valid for connection */
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
 
     esp_err_t (*crt_bundle_attach)(void *conf);
                                             /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification

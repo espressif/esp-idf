@@ -782,8 +782,8 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return esp_ret;
         }
         mbedtls_ssl_conf_ca_chain(&tls->conf, tls->cacert_ptr, NULL);
-    } else if (cfg->psk_hint_key) {
 #if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+    } else if (cfg->psk_hint_key) {
         //
         // PSK encryption mode is configured only if no certificate supplied and psk pointer not null
         ESP_LOGD(TAG, "ssl psk authentication");
@@ -795,13 +795,10 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
             return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
         }
-#else
-        ESP_LOGE(TAG, "psk_hint_key configured but not enabled in menuconfig: Please enable ESP_TLS_PSK_VERIFICATION option");
-        return ESP_ERR_INVALID_STATE;
 #endif
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Resuming the saved client session");
+        ESP_LOGD(TAG, "Reusing the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
