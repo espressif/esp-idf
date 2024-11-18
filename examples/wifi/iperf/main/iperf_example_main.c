@@ -121,7 +121,7 @@ void app_main(void)
     register_system();
     app_register_all_wifi_commands();
     app_register_iperf_commands();
-    app_register_ping_commands();
+    ping_cmd_register_ping();
     app_register_iperf_hook_func(iperf_hook_show_wifi_stats);
 
 
