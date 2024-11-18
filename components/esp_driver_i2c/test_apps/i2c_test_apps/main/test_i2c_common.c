@@ -19,7 +19,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
-#include "esp_private/i2c_platform.h"
 #include "esp_rom_gpio.h"
 #include "esp_log.h"
 #include "test_utils.h"

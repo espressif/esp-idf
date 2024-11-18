@@ -65,7 +65,7 @@ SPIFFS 是一个用于 SPI NOR flash 设备的嵌入式文件系统，支持磨�
 
     spiffs_create_partition_image(my_spiffs_partition my_folder DEPENDS dep)
 
-请参考 :example:`storage/spiffsgen`，查看示例。
+请参考 :example:`storage/spiffsgen`，查看示例。该示例演示了如何使用 SPIFFS 镜像生成工具在构建过程中自动从主机文件夹创建 SPIFFS 镜像。
 
 ``mkspiffs``
 ^^^^^^^^^^^^

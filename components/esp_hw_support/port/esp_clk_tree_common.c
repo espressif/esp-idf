@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,23 +177,23 @@ uint32_t esp_clk_tree_rc_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
 uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t precision)
 {
     switch (clk_ll_rtc_fast_get_src()) {
-    case SOC_RTC_FAST_CLK_SRC_XTAL_DIV:
-#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 //SOC_RTC_FAST_CLK_SRC_XTAL_D4
-        return clk_hal_xtal_get_freq_mhz() * MHZ >> 2;
-#elif CONFIG_IDF_TARGET_ESP32P4 //SOC_RTC_FAST_CLK_SRC_XTAL
-        return clk_hal_xtal_get_freq_mhz() * MHZ;
-#else //SOC_RTC_FAST_CLK_SRC_XTAL_D2
-        return clk_hal_xtal_get_freq_mhz() * MHZ >> 1;
-#endif
     case SOC_RTC_FAST_CLK_SRC_RC_FAST:
         return esp_clk_tree_rc_fast_get_freq_hz(precision) / clk_ll_rc_fast_get_divider();
 #if SOC_CLK_LP_FAST_SUPPORT_LP_PLL
     case SOC_RTC_FAST_CLK_SRC_LP_PLL:
         return clk_ll_lp_pll_get_freq_mhz() * MHZ;
 #endif
-#if SOC_CLK_LP_FAST_SUPPORT_XTAL && !CONFIG_IDF_TARGET_ESP32P4 // On P4 SOC_RTC_FAST_CLK_SRC_XTAL is an alias for SOC_RTC_FAST_CLK_SRC_XTAL_DIV
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL
     case SOC_RTC_FAST_CLK_SRC_XTAL:
         return clk_hal_xtal_get_freq_mhz() * MHZ;
+#endif
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    case SOC_RTC_FAST_CLK_SRC_XTAL_D2:
+        return clk_hal_xtal_get_freq_mhz() * MHZ >> 1;
+#endif
+#if SOC_CLK_LP_FAST_SUPPORT_XTAL_D4
+    case SOC_RTC_FAST_CLK_SRC_XTAL_D4:
+        return clk_hal_xtal_get_freq_mhz() * MHZ >> 2;
 #endif
     default:
         // Invalid clock source

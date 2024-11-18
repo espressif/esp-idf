@@ -27,7 +27,7 @@
 #define INVARIANTS
 #endif
 #include "sys/queue.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #include "hal/touch_sensor_hal.h"
 
 typedef struct {

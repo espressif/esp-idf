@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,10 +52,11 @@ esp_err_t esp_partition_table_verify(const esp_partition_info_t *partition_table
                 }
                 return ESP_ERR_INVALID_STATE;
             }
-            //MD5 checksum matches and we continue with the next interation in
+            //MD5 checksum matches and we continue with the next iteration in
             //order to detect the end of the partition table
             md5_found = 1;
-        } else if (part->magic == 0xFFFF
+        } else if (num_parts != 0 // the first record cannot be empty, otherwise the whole table is empty
+                   && part->magic == 0xFFFF
                    && part->type == PART_TYPE_END
                    && part->subtype == PART_SUBTYPE_END) {
             ESP_LOGD(TAG, "partition table verified, %d entries", num_parts);

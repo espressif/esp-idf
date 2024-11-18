@@ -14,13 +14,8 @@
 #include "esp_random.h"
 #endif
 
-// Need to remove in IDF-8621
-#if CONFIG_IDF_TARGET_ESP32C5
-#include "soc/keymng_reg.h"
-#endif
-
 #ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
-#include "hal/key_mgr_hal.h"
+#include "hal/key_mgr_ll.h"
 #endif
 
 #define ECDSA_HAL_P192_COMPONENT_LEN        24
@@ -31,11 +26,6 @@ static void configure_ecdsa_periph(ecdsa_hal_config_t *conf)
 
     if (conf->use_km_key == 0) {
         efuse_hal_set_ecdsa_key(conf->efuse_key_blk);
-
-// Need to remove in IDF-8621
-#if CONFIG_IDF_TARGET_ESP32C5
-        REG_SET_FIELD(KEYMNG_STATIC_REG, KEYMNG_USE_EFUSE_KEY, 1);
-#endif
 
 #if SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
         // Force Key Manager to use eFuse key for XTS-AES operation

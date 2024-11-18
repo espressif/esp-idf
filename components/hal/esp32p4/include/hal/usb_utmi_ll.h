@@ -53,7 +53,7 @@ FORCE_INLINE_ATTR void _usb_utmi_ll_enable_bus_clock(bool clk_en)
 /**
  * @brief Reset the USB UTMI PHY and USB_DWC_HS controller
  */
-FORCE_INLINE_ATTR void usb_utmi_ll_reset_register(void)
+FORCE_INLINE_ATTR void _usb_utmi_ll_reset_register(void)
 {
     // Reset the USB_UTMI and USB_DWC_HS
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg20 = 1;
@@ -63,7 +63,7 @@ FORCE_INLINE_ATTR void usb_utmi_ll_reset_register(void)
 }
 
 // P_AON_CLKRST.hp_usb_clkrst_ctrlx is shared register, so this function must be used in an atomic way
-#define usb_utmi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_utmi_ll_reset_register(__VA_ARGS__)
+#define usb_utmi_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_utmi_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable precise detection of VBUS

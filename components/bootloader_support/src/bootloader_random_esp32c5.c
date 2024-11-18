@@ -46,6 +46,9 @@ void bootloader_random_enable(void)
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 
+    // enable analog i2c master clock for RNG runtime
+    ANALOG_CLOCK_ENABLE();
+
     // Config ADC circuit (Analog part) with I2C (HOST ID 0X69) and choose internal voltage as sampling source
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_PERIF_ADDR, 1);
@@ -93,6 +96,9 @@ void bootloader_random_disable(void)
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_PERIF_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_EN_TOUT_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_EN_TOUT_ADDR, 0);
+
+    // disable analog i2c master clock
+    ANALOG_CLOCK_DISABLE();
 
     // disable ADC_CTRL_CLK (SAR ADC function clock)
     REG_WRITE(PCR_SARADC_CLKM_CONF_REG, 0x00404000);

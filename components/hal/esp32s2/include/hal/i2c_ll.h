@@ -15,6 +15,7 @@
 #include "hal/i2c_types.h"
 #include "esp_attr.h"
 #include "hal/misc.h"
+#include "hal/assert.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +72,8 @@ typedef enum {
 #define I2C_LL_SLAVE_TX_EVENT_INTR  (I2C_TXFIFO_WM_INT_ENA_M)
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 #define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2000)  // 2000 is not default value on esp32s2, but 0 is not good to be default
+
+#define I2C_LL_STRETCH_PROTECT_TIME  (0x3ff)
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -309,7 +312,23 @@ static inline void i2c_ll_slave_broadcast_enable(i2c_dev_t *hw, bool broadcast_e
 __attribute__((always_inline))
 static inline void i2c_ll_slave_get_stretch_cause(i2c_dev_t *hw, i2c_slave_stretch_cause_t *stretch_cause)
 {
-    // Not supported on esp32s2
+    switch (hw->status_reg.stretch_cause) {
+    case 0:
+        *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_ADDRESS_MATCH;
+        break;
+    case 1:
+        *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_TX_EMPTY;
+        break;
+    case 2:
+        *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_RX_FULL;
+        break;
+    case 3:
+        *stretch_cause = I2C_SLAVE_STRETCH_CAUSE_SENDING_ACK;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
 }
 
 /**
@@ -859,6 +878,16 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 }
 
 /**
+ * @brief Set I2C clock stretch protect num
+ *
+ * @param dev Beginning address of the peripheral registers
+ */
+static inline void i2c_ll_slave_set_stretch_protect_num(i2c_dev_t *dev, uint32_t protect_num)
+{
+    dev->scl_stretch_conf.stretch_protect_num = protect_num;
+}
+
+/**
  * @brief Check if i2c command is done.
  *
  * @param  hw Beginning address of the peripheral registers
@@ -883,6 +912,18 @@ static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_h
 {
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
     return clk_cycle_num_per_us * timeout_us;
+}
+
+/**
+ * @brief Get status of i2c slave
+ *
+ * @param Beginning address of the peripheral registers
+ * @return i2c slave working status
+ */
+__attribute__((always_inline))
+static inline i2c_slave_read_write_status_t i2c_ll_slave_get_read_write_status(i2c_dev_t *hw)
+{
+    return (hw->status_reg.slave_rw == 0) ? I2C_SLAVE_WRITE_BY_MASTER : I2C_SLAVE_READ_BY_MASTER;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

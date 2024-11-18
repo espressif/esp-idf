@@ -463,6 +463,10 @@ config SOC_ETM_CHANNELS_PER_GROUP
     int
     default 50
 
+config SOC_ETM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_GPIO_PORT
     int
     default 1
@@ -615,6 +619,10 @@ config SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH
     bool
     default y
 
+config SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_LP_I2C_NUM
     int
     default 1
@@ -687,6 +695,10 @@ config SOC_LEDC_SUPPORT_XTAL_CLOCK
     bool
     default y
 
+config SOC_LEDC_TIMER_NUM
+    int
+    default 4
+
 config SOC_LEDC_CHANNEL_NUM
     int
     default 6
@@ -710,6 +722,10 @@ config SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX
 config SOC_LEDC_FADE_PARAMS_BIT_WIDTH
     int
     default 10
+
+config SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_MMU_PERIPH_NUM
     int
@@ -748,6 +764,10 @@ config SOC_PCNT_SUPPORT_CLEAR_SIGNAL
     default y
 
 config SOC_PCNT_SUPPORT_STEP_NOTIFY
+    bool
+    default y
+
+config SOC_PCNT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -867,6 +887,10 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_PARLIO_GROUPS
     int
     default 1
@@ -904,6 +928,10 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     default y
 
 config SOC_PARLIO_TX_SIZE_BY_DMA
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -1000,6 +1028,10 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     default y
 
 config SOC_SPI_SUPPORT_SLAVE_HD_VER2
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -1152,6 +1184,14 @@ config SOC_MWDT_SUPPORT_SLEEP_RETENTION
     default y
 
 config SOC_EFUSE_ECDSA_KEY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_KEY_MANAGER_FE_KEY_DEPLOY
     bool
     default y
 
@@ -1339,10 +1379,6 @@ config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
 
-config SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-    bool
-    default y
-
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
     bool
     default y
@@ -1383,7 +1419,15 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 
@@ -1396,6 +1440,14 @@ config SOC_TEMPERATURE_SENSOR_SUPPORT_XTAL
     default y
 
 config SOC_TEMPERATURE_SENSOR_INTR_SUPPORT
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
     bool
     default y
 

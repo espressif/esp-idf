@@ -44,7 +44,7 @@ I2C Clock Configuration
 
     - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_DEFAULT`: Default I2C source clock.
     :SOC_I2C_SUPPORT_XTAL: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_XTAL`: External crystal for I2C clock source.
-    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_RC_FAST`: Internal 20 MHz RC oscillator for I2C clock source.
+    :SOC_I2C_SUPPORT_RTC: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_RC_FAST`: Internal 20 MHz RC oscillator for I2C clock source.
     :SOC_I2C_SUPPORT_APB: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_APB`: APB clock as I2C clock source.
     :SOC_I2C_SUPPORT_REF_TICK: - :cpp:enumerator:`i2c_clock_source_t::I2C_CLK_SRC_REF_TICK`: 1 MHZ clock.
 
@@ -88,7 +88,7 @@ The I2C driver offers following services:
 Resource Allocation
 ^^^^^^^^^^^^^^^^^^^
 
-Both I2C master bus and I2C slave bus, when supported, are represented by :cpp:type:`i2c_bus_handle_t` in the driver. The available ports are managed in a resource pool that allocates a free port on request.
+The I2C master bus is represented by :cpp:type:`i2c_master_bus_handle_t` in the driver. The available ports are managed in a resource pool that allocates a free port on request.
 
 Install I2C master bus and device
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -111,7 +111,7 @@ I2C master bus requires the configuration that specified by :cpp:type:`i2c_maste
 - :cpp:member:`i2c_master_bus_config_t::intr_priority` sets the priority of the interrupt. If set to ``0`` , then the driver will use a interrupt with low or medium priority (priority level may be one of 1, 2 or 3), otherwise use the priority indicated by :cpp:member:`i2c_master_bus_config_t::intr_priority`. Please use the number form (1, 2, 3) , not the bitmask form ((1<<1), (1<<2), (1<<3)).
 - :cpp:member:`i2c_master_bus_config_t::trans_queue_depth` sets the depth of internal transfer queue. Only valid in asynchronous transaction.
 - :cpp:member:`i2c_master_bus_config_t::enable_internal_pullup` enables internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. A suitable external pullup is recommended.
-
+- :cpp:member:`i2c_master_bus_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the I2C register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
 
 If the configurations in :cpp:type:`i2c_master_bus_config_t` is specified, then :cpp:func:`i2c_new_master_bus` can be called to allocate and initialize an I2C master bus. This function will return an I2C bus handle if it runs correctly. Specifically, when there are no more I2C port available, this function will return :c:macro:`ESP_ERR_NOT_FOUND` error.
 
@@ -166,7 +166,6 @@ When the I2C master handle has been initialized in one module (e.g. the audio mo
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
 
     // Source File 2
-    #include "esp_private/i2c_platform.h"
     #include "driver/i2c_master.h"
     i2c_master_bus_handle_t handle;
     ESP_ERROR_CHECK(i2c_master_get_bus_handle(0, &handle));
@@ -394,7 +393,7 @@ Please note that no STOP condition bit is inserted between the write and read op
     };
 
     i2c_master_dev_handle_t dev_handle;
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(I2C_PORT_NUM_0, &dev_cfg, &dev_handle));
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
     uint8_t buf[20] = {0x20};
     uint8_t buffer[2];
     ESP_ERROR_CHECK(i2c_master_transmit_receive(dev_handle, buf, sizeof(buf), buffer, 2, -1));
@@ -452,20 +451,20 @@ Simple example for writing data to FIFO:
     i2c_slave_config_t i2c_slv_config = {
         .addr_bit_len = I2C_ADDR_BIT_LEN_7,   // 7-bit address
         .clk_source = I2C_CLK_SRC_DEFAULT,    // set the clock source
-        .i2c_port = 0,                        // set I2C port number
+        .i2c_port = TEST_I2C_PORT,            // set I2C port number
         .send_buf_depth = 256,                // set TX buffer length
-        .scl_io_num = 2,                      // SCL GPIO number
-        .sda_io_num = 1,                      // SDA GPIO number
+        .scl_io_num = I2C_SLAVE_SCL_IO,       // SCL GPIO number
+        .sda_io_num = I2C_SLAVE_SDA_IO,       // SDA GPIO number
         .slave_addr = 0x58,                   // slave address
     };
 
-    i2c_bus_handle_t i2c_bus_handle;
-    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &i2c_bus_handle));
+    i2c_slave_dev_handle_t slave_handle;
+    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
     for (int i = 0; i < DATA_LENGTH; i++) {
         data_wr[i] = i;
     }
 
-    ESP_ERROR_CHECK(i2c_slave_transmit(i2c_bus_handle, data_wr, DATA_LENGTH, 10000));
+    ESP_ERROR_CHECK(i2c_slave_transmit(slave_handle, data_wr, DATA_LENGTH, 10000));
 
 I2C Slave Read
 ~~~~~~~~~~~~~~

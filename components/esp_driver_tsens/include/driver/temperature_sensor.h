@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,12 @@ typedef struct {
     int range_min;   /**< the minimum value of the temperature you want to test */
     int range_max;   /**< the maximum value of the temperature you want to test */
     temperature_sensor_clk_src_t clk_src;  /**< the clock source of the temperature sensor. */
+    struct {
+        uint32_t allow_pd;  /**< If set, the driver will backup/restore the temperature sensor registers before/after entering/exist sleep mode.
+                                 By this approach, the system can power off temperature sensor's power domain.
+                                 This can save power, but at the expense of more RAM being consumed */
+    } flags;                /**< Temperature sensor config flags */
+
 } temperature_sensor_config_t;
 
 /**

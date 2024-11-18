@@ -299,14 +299,6 @@ extern "C" {
 #define DPORT_PRO_I2S0_INT_MAP_V  0x1F
 #define DPORT_PRO_I2S0_INT_MAP_S  0
 
-#define DPORT_PRO_I2S1_INT_MAP_REG          (DR_REG_INTERRUPT_BASE + 0x090)
-/* DPORT_PRO_I2S1_INT_MAP : R/W ;bitpos:[4:0] ;default: 5'd16 ; */
-/*description: */
-#define DPORT_PRO_I2S1_INT_MAP  0x0000001F
-#define DPORT_PRO_I2S1_INT_MAP_M  ((DPORT_PRO_I2S1_INT_MAP_V)<<(DPORT_PRO_I2S1_INT_MAP_S))
-#define DPORT_PRO_I2S1_INT_MAP_V  0x1F
-#define DPORT_PRO_I2S1_INT_MAP_S  0
-
 #define DPORT_PRO_UART_INTR_MAP_REG          (DR_REG_INTERRUPT_BASE + 0x094)
 /* DPORT_PRO_UART_INTR_MAP : R/W ;bitpos:[4:0] ;default: 5'd16 ; */
 /*description: */

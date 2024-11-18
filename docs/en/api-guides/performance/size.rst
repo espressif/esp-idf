@@ -194,6 +194,7 @@ These include:
 - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
 - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
 - :ref:`CONFIG_MBEDTLS_SHA512_C`
+- :ref:`CONFIG_MBEDTLS_SHA3_C`
 - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
@@ -254,6 +255,23 @@ VFS
     .. list::
         * Enabling :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH` can reduce the IRAM usage and binary size by placing the entirety of the heap functionalities in flash memory.
         :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * Enabling :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` can reduce the IRAM usage and binary size by linking in the TLSF library of ROM implementation.
+
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Console
+    @@@@@@@@
+
+    For targets that support USB-Serial-JTAG, both the USB-Serial-JTAG and UART console output are enabled by default. If you only need one console, you can reduce the binary size and RAM usage by doing the following:
+
+    1. Disable the secondary console by setting :ref:`CONFIG_ESP_CONSOLE_SECONDARY` to ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``.
+    2. Set :ref:`CONFIG_ESP_CONSOLE_UART` to use one of the following:
+
+      * ``UART`` reduces the binary size by around 2.5 KB.
+      * ``USB-Serial-JTAG`` reduces the binary size by around 10 KB and DRAM usage by around 1.5 KB.
+
+    Please note that these size reductions assume the UART/USB-Serial-JTAG driver code is not pulled into the app, if you already use these drivers for other purposes then the savings will be smaller.
+
 
 Bootloader Size
 ---------------

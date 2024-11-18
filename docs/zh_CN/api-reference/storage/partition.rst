@@ -13,7 +13,7 @@
 分区表 API
 -------------------
 
-ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序、各种应用程序二进制文件、数据及文件系统等。请参阅 :doc:`/api-guides/partition-tables`，查看详细信息。
+ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导加载程序、各种应用程序二进制文件、数据及文件系统等。请参阅 :doc:`/api-guides/partition-tables`，查看详细信息。
 
 该组件在 ``esp_partition.h`` 中声明了一些 API 函数，用以枚举在分区表中找到的分区，并对这些分区执行操作：
 
@@ -24,9 +24,19 @@ ESP-IDF 工程使用分区表保存 SPI flash 各区信息，包括引导程序�
 - :cpp:func:`esp_partition_find_first`：返回描述 :cpp:func:`esp_partition_find` 中找到的第一个分区的结构；
 - :cpp:func:`esp_partition_read`、:cpp:func:`esp_partition_write` 和 :cpp:func:`esp_partition_erase_range` 等同于 :cpp:func:`esp_flash_read`、:cpp:func:`esp_flash_write` 和 :cpp:func:`esp_flash_erase_region`，但在分区边界内执行。
 
+应用示例
+-------------
 
-另请参考
-------------
+- :example:`storage/partition_api/partition_ops` 演示了如何对分区表执行读、写和擦除操作。
+
+- :example:`storage/parttool` 演示了如何使用分区工具执行读、写、擦除分区、检索分区信息和转储整个分区表等操作。
+
+- :example:`storage/partition_api/partition_find` 演示了如何搜索分区表，并根据分区类型、子类型和标签/名称等约束条件返回匹配的分区。
+
+- :example:`storage/partition_api/partition_mmap` 演示了如何配置 MMU，将分区映射到内存地址空间以进行读操作，并验证写入和读取的数据。
+
+其他资源
+-------------
 
 - :doc:`../../api-guides/partition-tables`
 - :doc:`../system/ota` 提供了高层 API 用于更新存储在 flash 中的 app 固件。

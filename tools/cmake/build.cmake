@@ -524,6 +524,7 @@ macro(idf_build_process target)
     cmake_parse_arguments(_ "${options}" "${single_value}" "${multi_value}" ${ARGN})
 
     idf_build_set_property(BOOTLOADER_BUILD "${BOOTLOADER_BUILD}")
+    idf_build_set_property(NON_OS_BUILD "${NON_OS_BUILD}")
 
     idf_build_set_property(IDF_TOOLCHAIN "${IDF_TOOLCHAIN}")
 

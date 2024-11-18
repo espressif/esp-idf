@@ -32,7 +32,8 @@ bool is_provisioned(void)
 
 static esp_err_t http_get_handler(httpd_req_t *req)
 {
-    const char page[] = "<form action=\"/\" method=\"get\"><br><br>\n"
+    const char page[] = "<h3>WARNING: Configuring Wi-Fi credentials on this page is not secure</h3>\n"
+                        "<form action=\"/\" method=\"get\"><br><br>\n"
                         "SSID:  <input type=\"text\" id=\"ssid\" name=\"ssid\"><br><br>\n"
                         "Password:  <input type=\"text\" id=\"password\" name=\"password\"><br><br>\n"
                         "  <input type=\"submit\" value=\"Connect\">"

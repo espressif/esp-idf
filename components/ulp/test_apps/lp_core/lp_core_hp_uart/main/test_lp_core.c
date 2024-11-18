@@ -19,6 +19,10 @@
 #include "ulp_lp_core_memory_shared.h"
 #include "test_shared.h"
 
+#if ESP_ROM_HAS_LP_ROM
+#include "lp_core_test_app_lp_rom.h"
+#endif
+
 extern const uint8_t lp_core_main_bin_start[] asm("_binary_lp_core_test_app_bin_start");
 extern const uint8_t lp_core_main_bin_end[]   asm("_binary_lp_core_test_app_bin_end");
 
@@ -27,6 +31,11 @@ extern const uint8_t lp_core_panic_bin_end[]   asm("_binary_lp_core_test_app_pan
 
 extern const uint8_t lp_core_shared_mem_bin_start[] asm("_binary_lp_core_test_app_shared_mem_bin_start");
 extern const uint8_t lp_core_shared_mem_bin_end[]   asm("_binary_lp_core_test_app_shared_mem_bin_end");
+
+#if ESP_ROM_HAS_LP_ROM
+extern const uint8_t lp_core_lp_rom_bin_start[] asm("_binary_lp_core_test_app_lp_rom_bin_start");
+extern const uint8_t lp_core_lp_rom_bin_end[]   asm("_binary_lp_core_test_app_lp_rom_bin_end");
+#endif
 
 static void load_and_start_lp_core_firmware(ulp_lp_core_cfg_t* cfg, const uint8_t* firmware_start, const uint8_t* firmware_end)
 {
@@ -93,3 +102,24 @@ TEST_CASE("LP-Core Shared-mem", "[lp_core]")
 
     printf("HP shared memory test passed\n");
 }
+
+#if ESP_ROM_HAS_LP_ROM
+TEST_CASE("LP-Core LP-ROM", "[lp_core]")
+{
+    /* Load ULP firmware and start the coprocessor */
+    ulp_lp_core_cfg_t cfg = {
+        .wakeup_source = ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU,
+    };
+
+    TEST_ASSERT(ulp_lp_core_load_binary(lp_core_lp_rom_bin_start, (lp_core_lp_rom_bin_end - lp_core_lp_rom_bin_start)) == ESP_OK);
+
+    TEST_ASSERT(ulp_lp_core_run(&cfg) == ESP_OK);
+    // Actual test output on UART is checked by pytest, not unity test-case
+    // We simply wait to allow the lp-core to run once
+    while (!ulp_lp_rom_test_finished) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+    }
+
+    printf("LP ROM test passed\n");
+}
+#endif

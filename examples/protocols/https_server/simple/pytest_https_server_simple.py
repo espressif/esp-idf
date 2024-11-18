@@ -1,8 +1,7 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import http.client
 import logging
 import os
@@ -149,22 +148,22 @@ def test_examples_protocol_https_server_simple(dut: Dut) -> None:
         logging.info('Response obtained does not match with correct response')
         raise RuntimeError('Failed to test SSL connection')
 
-    current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
-    logging.info('Current Ciphersuite {}'.format(current_cipher))
+    if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
+        current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
+        logging.info('Current Ciphersuite {}'.format(current_cipher))
+
+        logging.info('Checking user callback: Obtaining client certificate...')
+
+        serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
+        issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
+        expiry = dut.expect(r'expires on ((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)', timeout=5)[1].decode()
+
+        logging.info('Serial No. {}'.format(serial_number))
+        logging.info('Issuer Name {}'.format(issuer_name))
+        logging.info('Expires on {}'.format(expiry))
 
     # Close the connection
     conn.close()
-
-    logging.info('Checking user callback: Obtaining client certificate...')
-
-    serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
-    issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
-    expiry = dut.expect(r'expires on ((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)', timeout=5)[1].decode()
-
-    logging.info('Serial No. {}'.format(serial_number))
-    logging.info('Issuer Name {}'.format(issuer_name))
-    logging.info('Expires on {}'.format(expiry))
-
     logging.info('Correct response obtained')
     logging.info('SSL connection test successful\nClosing the connection')
 
@@ -220,21 +219,21 @@ def test_examples_protocol_https_server_simple_dynamic_buffers(dut: Dut) -> None
         logging.info('Response obtained does not match with correct response')
         raise RuntimeError('Failed to test SSL connection')
 
-    current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
-    logging.info('Current Ciphersuite {}'.format(current_cipher))
+    if dut.app.sdkconfig.get('CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK') is True:
+        current_cipher = dut.expect(r'Current Ciphersuite(.*)', timeout=5)[0]
+        logging.info('Current Ciphersuite {}'.format(current_cipher))
+
+        logging.info('Checking user callback: Obtaining client certificate...')
+
+        serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
+        issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
+        expiry = dut.expect(r'expires on\s*:((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)', timeout=5)[1].decode()
+
+        logging.info('Serial No. : {}'.format(serial_number))
+        logging.info('Issuer Name : {}'.format(issuer_name))
+        logging.info('Expires on : {}'.format(expiry))
 
     # Close the connection
     conn.close()
-
-    logging.info('Checking user callback: Obtaining client certificate...')
-
-    serial_number = dut.expect(r'serial number\s*:([^\n]*)', timeout=5)[0]
-    issuer_name = dut.expect(r'issuer name\s*:([^\n]*)', timeout=5)[0]
-    expiry = dut.expect(r'expires on\s*:((.*)\d{4}\-(0?[1-9]|1[012])\-(0?[1-9]|[12][0-9]|3[01])*)', timeout=5)[1].decode()
-
-    logging.info('Serial No. : {}'.format(serial_number))
-    logging.info('Issuer Name : {}'.format(issuer_name))
-    logging.info('Expires on : {}'.format(expiry))
-
     logging.info('Correct response obtained')
     logging.info('SSL connection test successful\nClosing the connection')

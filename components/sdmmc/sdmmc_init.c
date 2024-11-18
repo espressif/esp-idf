@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,7 +15,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 #include "sd_pwr_ctrl.h"
 
@@ -95,6 +95,11 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     ESP_LOGD(TAG, "%s: card type is %s", __func__,
             is_sdio ? "SDIO" : is_mmc ? "MMC" : "SD");
 
+    /* switch to 1.8V if supported (UHS-I) */
+    bool is_uhs1 = is_sdmem && (card->ocr & SD_OCR_S18_RA) && (card->ocr & SD_OCR_SDHC_CAP);
+    ESP_LOGV(TAG, "is_uhs1: %d", is_uhs1);
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_uhs1);
+
     /* Read the contents of CID register*/
     SDMMC_INIT_STEP(is_mem, sdmmc_init_cid);
 
@@ -142,11 +147,20 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
         SDMMC_INIT_STEP(always, sdmmc_init_host_bus_width);
     }
 
+    /* Driver Strength */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_driver_strength);
+
+    /* Current Limit */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_current_limit);
+
     /* SD card: read SD Status register */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_init_sd_ssr);
 
     /* Switch to the host to use card->max_freq_khz frequency. */
     SDMMC_INIT_STEP(always, sdmmc_init_host_frequency);
+
+    /* Timing tuning */
+    SDMMC_INIT_STEP(is_uhs1, sdmmc_init_sd_timing_tuning);
 
     /* Sanity check after switching the bus mode and frequency */
     SDMMC_INIT_STEP(is_sdmem, sdmmc_check_scr);

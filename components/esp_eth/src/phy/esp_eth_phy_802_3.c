@@ -16,10 +16,13 @@
 #include "esp_rom_sys.h"
 #include "esp_eth_phy_802_3.h"
 
-// Default reset assertion time is selected to be 100us as it is most commonly used value among PHY chips.
+// Default reset assertion time is selected to be 100us as it is most commonly used value among ESP-IDF supported PHY chips.
 #define PHY_RESET_ASSERTION_TIME_US 100
 
 static const char *TAG = "eth_phy_802_3";
+
+// TODO: IDF-11362 (should be renamed to esp_eth_phy_802_3_reset_hw with the next major release)
+static esp_err_t esp_eth_phy_802_3_reset_hw_internal(phy_802_3_t *phy_802_3);
 
 static esp_err_t set_mediator(esp_eth_phy_t *phy, esp_eth_mediator_t *eth)
 {
@@ -33,10 +36,10 @@ static esp_err_t reset(esp_eth_phy_t *phy)
     return esp_eth_phy_802_3_reset(phy_802_3);
 }
 
-static esp_err_t reset_hw_default(esp_eth_phy_t *phy)
+static esp_err_t reset_hw(esp_eth_phy_t *phy)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
-    return esp_eth_phy_802_3_reset_hw(phy_802_3, PHY_RESET_ASSERTION_TIME_US);
+    return esp_eth_phy_802_3_reset_hw_internal(phy_802_3);
 }
 
 static esp_err_t autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
@@ -93,6 +96,14 @@ static esp_err_t set_link(esp_eth_phy_t *phy, eth_link_t link)
     return esp_eth_phy_802_3_set_link(phy_802_3, link);
 }
 
+static esp_err_t get_link(esp_eth_phy_t *phy)
+{
+    phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
+
+    /* Update information about link, speed, duplex */
+    return esp_eth_phy_802_3_updt_link_dup_spd(phy_802_3);
+}
+
 static esp_err_t init(esp_eth_phy_t *phy)
 {
     phy_802_3_t *phy_802_3 = esp_eth_phy_into_phy_802_3(phy);
@@ -141,21 +152,6 @@ esp_err_t esp_eth_phy_802_3_reset(phy_802_3_t *phy_802_3)
     return ESP_OK;
 err:
     return ret;
-}
-
-/**
- * @brief PHY hardware reset with default assert time
- *
- * @note Default reset assertion time is selected to be 100us as it is most commonly used value among PHY chips.
- *       If your PHY chip requires different value, redefine the `reset_hw` function in derived PHY specific driver structure.
- *
- * @param phy Ethernet PHY instance
- * @return
- *         - ESP_OK on success
- */
-esp_err_t esp_eth_phy_802_3_reset_hw_default(phy_802_3_t *phy_802_3)
-{
-    return esp_eth_phy_802_3_reset_hw(phy_802_3, PHY_RESET_ASSERTION_TIME_US);
 }
 
 esp_err_t esp_eth_phy_802_3_autonego_ctrl(phy_802_3_t *phy_802_3, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
@@ -215,6 +211,67 @@ esp_err_t esp_eth_phy_802_3_autonego_ctrl(phy_802_3_t *phy_802_3, eth_phy_autone
     }
 
     *autonego_en_stat = bmcr.en_auto_nego;
+    return ESP_OK;
+err:
+    return ret;
+}
+
+esp_err_t esp_eth_phy_802_3_updt_link_dup_spd(phy_802_3_t *phy_802_3)
+{
+    esp_err_t ret = ESP_OK;
+    esp_eth_mediator_t *eth = phy_802_3->eth;
+    uint32_t addr = phy_802_3->addr;
+    eth_speed_t speed = ETH_SPEED_10M;
+    eth_duplex_t duplex = ETH_DUPLEX_HALF;
+    uint32_t peer_pause_ability = false;
+    bmcr_reg_t bmcr;
+    bmsr_reg_t bmsr;
+    anar_reg_t anar;
+    anlpar_reg_t anlpar;
+
+    ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMSR_REG_ADDR, &(bmsr.val)), err, TAG, "read BMSR failed");
+    eth_link_t link = bmsr.link_status ? ETH_LINK_UP : ETH_LINK_DOWN;
+    /* check if link status changed */
+    if (phy_802_3->link_status != link) {
+        /* when link up, read negotiation result */
+        if (link == ETH_LINK_UP) {
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_BMCR_REG_ADDR, &(bmcr.val)), err, TAG, "read BMCR failed");
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_ANAR_REG_ADDR, &(anar.val)), err, TAG, "read ANAR failed");
+            ESP_GOTO_ON_ERROR(eth->phy_reg_read(eth, addr, ETH_PHY_ANLPAR_REG_ADDR, &(anlpar.val)), err, TAG, "read ANLPAR failed");
+            if (bmcr.en_auto_nego) {
+                if (anar.base100_tx_fd && anlpar.base100_tx_fd) {
+                    speed = ETH_SPEED_100M;
+                    duplex = ETH_DUPLEX_FULL;
+                } else if (anar.base100_tx && anlpar.base100_tx) {
+                    speed = ETH_SPEED_100M;
+                    duplex = ETH_DUPLEX_HALF;
+                } else if (anar.base10_t_fd && anlpar.base10_t_fd) {
+                    speed = ETH_SPEED_10M;
+                    duplex = ETH_DUPLEX_FULL;
+                } else if (anar.base10_t && anlpar.base10_t) {
+                    speed = ETH_SPEED_10M;
+                    duplex = ETH_DUPLEX_HALF;
+                } else {
+                    ESP_GOTO_ON_FALSE(false, ESP_FAIL, err, TAG, "invalid auto-nego speed/duplex advertising");
+                }
+            } else {
+                speed = bmcr.speed_select ? ETH_SPEED_100M : ETH_SPEED_10M;
+                duplex = bmcr.duplex_mode ? ETH_DUPLEX_FULL : ETH_DUPLEX_HALF;
+            }
+
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_SPEED, (void *)speed), err, TAG, "change speed failed");
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_DUPLEX, (void *)duplex), err, TAG, "change duplex failed");
+            /* if we're in duplex mode, and peer has the flow control ability */
+            if (duplex == ETH_DUPLEX_FULL && anlpar.symmetric_pause) {
+                peer_pause_ability = 1;
+            } else {
+                peer_pause_ability = 0;
+            }
+            ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_PAUSE, (void *)peer_pause_ability), err, TAG, "change pause ability failed");
+        }
+        ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LINK, (void *)link), err, TAG, "change link failed");
+        phy_802_3->link_status = link;
+    }
     return ESP_OK;
 err:
     return ret;
@@ -392,8 +449,28 @@ esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_asse
             vTaskDelay(pdMS_TO_TICKS(reset_assert_us/1000));
         }
         gpio_set_level(phy_802_3->reset_gpio_num, 1);
+        return ESP_OK;
     }
-    return ESP_OK;
+    return ESP_ERR_NOT_ALLOWED;
+}
+
+/**
+ * @brief Hardware reset with internal timing configuration defined during initialization
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @return
+ *      - ESP_OK: reset Ethernet PHY successfully
+ *      - ESP_ERR_NOT_ALLOWED: reset GPIO not defined
+ */
+static esp_err_t esp_eth_phy_802_3_reset_hw_internal(phy_802_3_t *phy_802_3)
+{
+    esp_err_t ret = ESP_OK;
+    if ((ret = esp_eth_phy_802_3_reset_hw(phy_802_3, phy_802_3->hw_reset_assert_time_us)) == ESP_OK) {
+        if (phy_802_3->post_hw_reset_delay_ms > 0) {
+            vTaskDelay(pdMS_TO_TICKS(phy_802_3->post_hw_reset_delay_ms));
+        }
+    }
+    return ret;
 }
 
 esp_err_t esp_eth_phy_802_3_detect_phy_addr(esp_eth_mediator_t *eth, int *detected_addr)
@@ -601,9 +678,19 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->reset_timeout_ms = config->reset_timeout_ms;
     phy_802_3->reset_gpio_num = config->reset_gpio_num;
     phy_802_3->autonego_timeout_ms = config->autonego_timeout_ms;
+    if (config->hw_reset_assert_time_us > 0) {
+        phy_802_3->hw_reset_assert_time_us = config->hw_reset_assert_time_us;
+    } else {
+        phy_802_3->hw_reset_assert_time_us = PHY_RESET_ASSERTION_TIME_US;
+    }
+    if (config->post_hw_reset_delay_ms > 0) {
+        phy_802_3->post_hw_reset_delay_ms = config->post_hw_reset_delay_ms;
+    } else {
+        phy_802_3->post_hw_reset_delay_ms = ESP_ETH_NO_POST_HW_RESET_DELAY;
+    }
 
     phy_802_3->parent.reset = reset;
-    phy_802_3->parent.reset_hw = reset_hw_default;
+    phy_802_3->parent.reset_hw = reset_hw;
     phy_802_3->parent.init = init;
     phy_802_3->parent.deinit = deinit;
     phy_802_3->parent.set_mediator = set_mediator;
@@ -617,7 +704,7 @@ esp_err_t esp_eth_phy_802_3_obj_config_init(phy_802_3_t *phy_802_3, const eth_ph
     phy_802_3->parent.set_duplex = set_duplex;
     phy_802_3->parent.del = del;
     phy_802_3->parent.set_link = set_link;
-    phy_802_3->parent.get_link = NULL;
+    phy_802_3->parent.get_link = get_link;
     phy_802_3->parent.custom_ioctl = NULL;
 
 err:

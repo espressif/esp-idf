@@ -345,8 +345,7 @@ static esp_err_t spi_master_deinit_driver(void* arg)
     int host_id = host->id;
     SPI_CHECK(is_valid_host(host_id), "invalid host_id", ESP_ERR_INVALID_ARG);
 
-    int x;
-    for (x = 0; x < DEV_NUM_MAX; x++) {
+    for (int x = 0; x < DEV_NUM_MAX; x++) {
         SPI_CHECK(host->device[x] == NULL, "not all CSses freed", ESP_ERR_INVALID_STATE);
     }
 
@@ -1416,7 +1415,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_polling_end(spi_device_handle_t handle,
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE   //invalidate here to let user access rx data in post_cb if possible
     const spi_bus_attr_t *bus_attr = host->bus_attr;
-    if (host->cur_trans_buf.buffer_to_rcv) {
+    if (bus_attr->dma_enabled && host->cur_trans_buf.buffer_to_rcv) {
         uint16_t alignment = bus_attr->internal_mem_align_size;
         uint32_t buffer_byte_len = (host->cur_trans_buf.trans->rxlength + 7) / 8;
         buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));

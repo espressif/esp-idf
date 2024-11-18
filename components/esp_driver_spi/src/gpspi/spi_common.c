@@ -21,6 +21,7 @@
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_share_hw_ctrl.h"
 #include "esp_private/esp_cache_private.h"
+#include "esp_private/sleep_retention.h"
 #include "esp_dma_utils.h"
 #include "hal/spi_hal.h"
 #include "hal/gpio_hal.h"
@@ -49,6 +50,7 @@ static const char *SPI_TAG = "spi";
 
 typedef struct {
     int host_id;
+    _lock_t mutex;      // mutex for controller
     spi_destroy_func_t destroy_func;
     void* destroy_arg;
     spi_bus_attr_t bus_attr;
@@ -587,7 +589,8 @@ esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_conf
     }
 
     uint32_t missing_flag = flags & ~temp_flag;
-    missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;//don't check this flag
+    missing_flag &= ~SPICOMMON_BUSFLAG_MASTER;  //don't check this flag
+    missing_flag &= ~SPICOMMON_BUSFLAG_SLP_ALLOW_PD;
 
     if (missing_flag != 0) {
         //check pins existence
@@ -778,6 +781,16 @@ spi_bus_lock_handle_t spi_bus_lock_get_by_id(spi_host_device_t host_id)
     return bus_ctx[host_id]->bus_attr.lock;
 }
 
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t s_bus_create_sleep_retention_cb(void *arg)
+{
+    spicommon_bus_context_t *ctx = arg;
+    return sleep_retention_entries_create(spi_reg_retention_info[ctx->host_id - 1].entry_array,
+                                          spi_reg_retention_info[ctx->host_id - 1].array_size,
+                                          REGDMA_LINK_PRI_GPSPI,
+                                          spi_reg_retention_info[ctx->host_id - 1].module_id);
+}
+#endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
 //----------------------------------------------------------master bus init-------------------------------------------------------//
 esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *bus_config, spi_dma_chan_t dma_chan)
 {
@@ -845,6 +858,34 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     if (err != ESP_OK) {
         goto cleanup;
     }
+
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = s_bus_create_sleep_retention_cb,
+                .arg = ctx,
+            },
+        },
+        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
+    };
+
+    _lock_acquire(&ctx->mutex);
+    if (sleep_retention_module_init(spi_reg_retention_info[host_id - 1].module_id, &init_param) == ESP_OK) {
+        if ((bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host_id - 1].module_id) != ESP_OK)) {
+            // even though the sleep retention create failed, SPI driver should still work, so just warning here
+            ESP_LOGW(SPI_TAG, "alloc sleep recover failed, peripherals may hold power on");
+        }
+    } else {
+        // even the sleep retention init failed, SPI driver should still work, so just warning here
+        ESP_LOGW(SPI_TAG, "init sleep recover failed, spi may offline after sleep");
+    }
+    _lock_release(&ctx->mutex);
+#else
+    if (bus_attr->bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
+        ESP_LOGE(SPI_TAG, "power down peripheral in sleep is not enabled or not supported on your target");
+    }
+#endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
 
 #ifdef CONFIG_PM_ENABLE
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
@@ -927,9 +968,24 @@ esp_err_t spi_bus_free(spi_host_device_t host_id)
     }
     spicommon_bus_free_io_cfg(&bus_attr->bus_cfg);
 
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    const periph_retention_module_t retention_id = spi_reg_retention_info[host_id - 1].module_id;
+    _lock_acquire(&ctx->mutex);
+    if (sleep_retention_get_created_modules() & BIT(retention_id)) {
+        assert(sleep_retention_get_inited_modules() & BIT(retention_id));
+        sleep_retention_module_free(retention_id);
+    }
+    if (sleep_retention_get_inited_modules() & BIT(retention_id)) {
+        sleep_retention_module_deinit(retention_id);
+    }
+    _lock_release(&ctx->mutex);
+    _lock_close(&ctx->mutex);
+#endif
+
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_delete(bus_attr->pm_lock);
 #endif
+
     spi_bus_deinit_lock(bus_attr->lock);
     if (ctx->dma_ctx) {
         free(ctx->dma_ctx->dmadesc_tx);

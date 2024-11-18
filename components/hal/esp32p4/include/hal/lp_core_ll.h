@@ -28,7 +28,7 @@ extern "C" {
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_BOD     BIT(14)
 #define LP_CORE_LL_WAKEUP_SOURCE_ETM        BIT(17)
 #define LP_CORE_LL_WAKEUP_SOURCE_LP_TIMER_1 BIT(18)
-#define LP_CORE_LL_WAKEUP_SOURCE_LP_I2S     BIT(19)
+#define LP_CORE_LL_WAKEUP_SOURCE_LP_VAD     BIT(19)
 #define LP_CORE_LL_WAKEUP_SOURCE_HP_CPU     BIT(22)
 
 /* Use lp timer 1 as the normal wakeup timer, timer 0 is used by deep sleep */

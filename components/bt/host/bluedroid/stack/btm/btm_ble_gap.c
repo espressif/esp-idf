@@ -4617,6 +4617,12 @@ void btm_ble_free (void)
 #endif
 }
 
+static bool enable_topology_check_flag = true;
+void esp_qa_enable_topology_check(bool enable)
+{
+    // This is a workaround: If the topology check is disabled, the 'Supported States' will not be checked.
+    enable_topology_check_flag = enable;
+}
 /*******************************************************************************
 **
 ** Function         btm_ble_topology_check
@@ -4629,6 +4635,7 @@ void btm_ble_free (void)
 *******************************************************************************/
 BOOLEAN btm_ble_topology_check(tBTM_BLE_STATE_MASK request_state_mask)
 {
+    if(!enable_topology_check_flag) return TRUE;
     BOOLEAN rt = FALSE;
 
     UINT8   state_offset = 0;
@@ -4758,6 +4765,17 @@ BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type, BD_ADDR bd_addr, UINT8 privacy_mo
     }
 
     btm_cb.devcb.p_set_privacy_mode_cmpl_cb = p_callback;
+    return TRUE;
+}
+
+BOOLEAN BTM_BleSetCsaSupport(UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback)
+{
+    if (btsnd_hcic_ble_set_csa_support(csa_select) != TRUE) {
+        BTM_TRACE_ERROR("LE SetCsaSupport csa_select=%d: error", csa_select);
+        return FALSE;
+    }
+
+    btm_cb.ble_ctr_cb.set_csa_support_cmpl_cb = p_callback;
     return TRUE;
 }
 

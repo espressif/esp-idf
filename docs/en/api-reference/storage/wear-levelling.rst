@@ -6,10 +6,10 @@ See Also
 - :doc:`./fatfs`
 - :doc:`../../api-guides/partition-tables`
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-An example that combines the wear levelling driver with the FATFS library is provided in the :example:`storage/wear_levelling` directory. This example initializes the wear levelling driver, mounts FatFs partition, as well as writes and reads data from it using POSIX and C library APIs. See :example_file:`storage/wear_levelling/README.md` for more information.
+- :example:`storage/wear_levelling` demonstrates how to use the wear levelling library and FatFS library to store files in a partition, as well as write and read data from these files using POSIX and C library APIs.
 
 High-level API Reference
 ------------------------

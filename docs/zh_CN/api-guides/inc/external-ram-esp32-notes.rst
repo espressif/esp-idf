@@ -1,4 +1,4 @@
-* PSRAM 中的栈：对于不以任何直接或间接方式调用 ROM 中代码的任务，选项 :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` 会取消 :cpp:func:`xTaskCreateStatic` 中的检查，允许任务栈存放在外部 RAM 中。但 **不建议** 使用此选项。
+* PSRAM 中的栈：对于不以任何直接或间接方式调用 ROM 中代码的任务，选项 :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM` 会取消 :cpp:func:`xTaskCreateStatic` 中的检查，允许任务栈存放在外部 RAM 中。但 **不建议** 使用此选项。
 * 在以 80 MHz 时钟速度运行时，外部 RAM 还必须占用 HSPI 或 VSPI 总线。设置 :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST` 选项可以选择使用的 SPI 主机。
 
 

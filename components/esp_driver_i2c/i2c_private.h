@@ -19,6 +19,7 @@
 #include "driver/i2c_slave.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,6 +54,9 @@ extern "C" {
 #else
 #define I2C_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #endif
+
+// Use retention link only when the target supports sleep retention and PM is enabled
+#define I2C_USE_RETENTION_LINK  (SOC_I2C_SUPPORT_SLEEP_RETENTION && CONFIG_PM_ENABLE && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
 
 #define I2C_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
@@ -119,6 +123,9 @@ struct i2c_bus_t {
     char pm_lock_name[I2C_PM_LOCK_NAME_LEN_MAX]; // pm lock name
 #endif
     i2c_bus_mode_t bus_mode; // I2C bus mode
+#if SOC_I2C_SUPPORT_SLEEP_RETENTION
+    bool retention_link_created;     // mark if the retention link is created.
+#endif
 };
 
 typedef struct i2c_master_device_list {
@@ -190,6 +197,8 @@ typedef struct {
     uint32_t rcv_fifo_cnt;      // receive fifo count.
 } i2c_slave_receive_t;
 
+#if !CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
+
 struct i2c_slave_dev_t {
     i2c_bus_t *base;                            // bus base class
     SemaphoreHandle_t slv_rx_mux;               // Mutex for slave rx direction
@@ -206,6 +215,22 @@ struct i2c_slave_dev_t {
     i2c_slave_receive_t receive_desc;           // Slave receive descriptor
     uint32_t already_receive_len;               // Data length already received in ISR.
 };
+
+#else // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
+
+struct i2c_slave_dev_t {
+    i2c_bus_t *base;                                  // bus base class
+    SemaphoreHandle_t operation_mux;                  // Mux for i2c slave operation
+    i2c_slave_request_callback_t request_callback;    // i2c slave request callback
+    i2c_slave_received_callback_t receive_callback;   // i2c_slave receive callback
+    void *user_ctx;                                   // Callback user context
+    RingbufHandle_t rx_ring_buf;                      // receive ringbuffer
+    RingbufHandle_t tx_ring_buf;                      // transmit ringbuffer
+    uint32_t rx_data_count;                           // receive data count
+    i2c_slave_receive_t receive_desc;                 // slave receive descriptor
+};
+
+#endif // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
 
 /**
  * @brief Acquire I2C bus handle
@@ -253,12 +278,30 @@ esp_err_t i2c_select_periph_clock(i2c_bus_handle_t handle, soc_module_clk_t clk_
 esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle);
 
 /**
+ * @brief Deinit I2C SCL/SDA pins
+ *
+ * @param handle I2C bus handle
+ * @return
+ *      - ESP_OK: I2C set SCL/SDA pins successfully.
+ *      - ESP_ERR_INVALID_ARG: Argument error.
+ *      - Otherwise: Set SCL/SDA IOs error.
+ */
+esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle);
+
+/**
  * @brief Check whether bus is acquired
  *
  * @param port_num number of port
  * @return true if the bus is occupied, false if the bus is not occupied.
 */
 bool i2c_bus_occupied(i2c_port_num_t port_num);
+
+/**
+ * @brief Create sleep retention link
+ *
+ * @param handle I2C bus handle
+ */
+void i2c_create_retention_module(i2c_bus_handle_t handle);
 
 #ifdef __cplusplus
 }

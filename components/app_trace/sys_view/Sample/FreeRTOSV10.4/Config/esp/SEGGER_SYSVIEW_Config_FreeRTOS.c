@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: BSD-1-Clause
  *
- * SPDX-FileContributor: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2017-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*********************************************************************
 *                    SEGGER Microcontroller GmbH                     *
@@ -58,6 +58,7 @@ File    : SEGGER_SYSVIEW_Config_FreeRTOS.c
 Purpose : Sample setup configuration of SystemView with FreeRTOS.
 Revision: $Rev: 7745 $
 */
+#include <string.h>
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "SEGGER_SYSVIEW.h"
@@ -156,15 +157,16 @@ static esp_apptrace_lock_t s_sys_view_lock = {.mux = portMUX_INITIALIZER_UNLOCKE
 *    Sends SystemView description strings.
 */
 static void _cbSendSystemDesc(void) {
-    char irq_str[32];
+    char irq_str[32] = "I#";
     SEGGER_SYSVIEW_SendSysDesc("N="SYSVIEW_APP_NAME",D="SYSVIEW_DEVICE_NAME",C="SYSVIEW_CORE_NAME",O=FreeRTOS");
-    snprintf(irq_str, sizeof(irq_str), "I#%d=SysTick", SYSTICK_INTR_ID);
+    strcat(itoa(SYSTICK_INTR_ID, irq_str + 2, 10), "=SysTick");
     SEGGER_SYSVIEW_SendSysDesc(irq_str);
     size_t isr_count = sizeof(esp_isr_names)/sizeof(esp_isr_names[0]);
     for (size_t i = 0; i < isr_count; ++i) {
         if (esp_isr_names[i] == NULL || (ETS_INTERNAL_INTR_SOURCE_OFF + i) == SYSTICK_INTR_ID)
             continue;
-        snprintf(irq_str, sizeof(irq_str), "I#%d=%s", ETS_INTERNAL_INTR_SOURCE_OFF + i, esp_isr_names[i]);
+        strcat(itoa(ETS_INTERNAL_INTR_SOURCE_OFF + i, irq_str + 2, 10), "=");
+        strncat(irq_str, esp_isr_names[i], sizeof(irq_str) - strlen(irq_str) - 1);
         SEGGER_SYSVIEW_SendSysDesc(irq_str);
     }
 }

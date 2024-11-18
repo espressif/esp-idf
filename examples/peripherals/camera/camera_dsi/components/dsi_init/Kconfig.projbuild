@@ -13,7 +13,7 @@ menu "Example DSI Configuration"
     endchoice
 
     choice EXAMPLE_MIPI_DSI_DISP_HRES
-        bool "Set MIPI CSI horizontal resolution"
+        bool "Set MIPI DSI horizontal resolution"
         default EXAMPLE_MIPI_DSI_DISP_HRES_800 if EXAMPLE_LCD_PATTERN_ILI9881C
         default EXAMPLE_MIPI_DSI_DISP_HRES_1024 if EXAMPLE_LCD_PATTERN_EK79007
         default EXAMPLE_MIPI_DSI_DISP_HRES_800
@@ -30,7 +30,7 @@ menu "Example DSI Configuration"
         default 1024 if EXAMPLE_MIPI_DSI_DISP_HRES_1024
 
     choice EXAMPLE_MIPI_DSI_DISP_VRES
-        bool "Set MIPI CSI vertical resolution"
+        bool "Set MIPI DSI vertical resolution"
         default EXAMPLE_MIPI_DSI_DISP_VRES_1280 if EXAMPLE_LCD_PATTERN_ILI9881C
         default EXAMPLE_MIPI_DSI_DISP_VRES_600 if EXAMPLE_LCD_PATTERN_EK79007
         default EXAMPLE_MIPI_DSI_DISP_VRES_1280

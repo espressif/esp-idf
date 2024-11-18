@@ -149,12 +149,18 @@ typedef struct {
     /** @endcond */
     esp_err_t error;            /*!< error returned from transfer */
     uint32_t timeout_ms;        /*!< response timeout, in milliseconds */
+    esp_err_t (*volt_switch_cb)(void*, int); /*!< callback to be called during CMD11 to switch voltage */
+    void* volt_switch_cb_arg;   /*!< argument to be passed to the CMD11 callback */
 } sdmmc_command_t;
 
 /**
  * SD/MMC Host clock timing delay phases
  *
- * This will only take effect when the host works in SDMMC_FREQ_HIGHSPEED or SDMMC_FREQ_52M.
+ * This will only take effect when the host works in
+ * - SDMMC_FREQ_HIGHSPEED
+ * - SDMMC_FREQ_52M
+ * - SDR50
+ * - DDR50
  * Driver will print out how long the delay is, in picosecond (ps).
  */
 typedef enum {
@@ -162,7 +168,28 @@ typedef enum {
     SDMMC_DELAY_PHASE_1,            /*!< Delay phase 1 */
     SDMMC_DELAY_PHASE_2,            /*!< Delay phase 2 */
     SDMMC_DELAY_PHASE_3,            /*!< Delay phase 3 */
+    SDMMC_DELAY_PHASE_AUTO,         /*!< Auto detect phase, only valid for UHS-I mode */
 } sdmmc_delay_phase_t;
+
+/**
+ * @brief SD/MMC Driver Strength
+ */
+typedef enum {
+    SDMMC_DRIVER_STRENGTH_B,         /*!< Type B */
+    SDMMC_DRIVER_STRENGTH_A,         /*!< Type A */
+    SDMMC_DRIVER_STRENGTH_C,         /*!< Type C */
+    SDMMC_DRIVER_STRENGTH_D,         /*!< Type D */
+} sdmmc_driver_strength_t;
+
+/**
+ * @brief SD/MMC Current Limit
+ */
+typedef enum {
+    SDMMC_CURRENT_LIMIT_200MA,       /*!< 200 mA */
+    SDMMC_CURRENT_LIMIT_400MA,       /*!< 400 mA */
+    SDMMC_CURRENT_LIMIT_600MA,       /*!< 600 mA */
+    SDMMC_CURRENT_LIMIT_800MA,       /*!< 800 mA */
+} sdmmc_current_limit_t;
 
 /**
  * SD/MMC Host description
@@ -190,7 +217,11 @@ typedef struct {
 #define SDMMC_FREQ_PROBING      400         /*!< SD/MMC probing speed */
 #define SDMMC_FREQ_52M          52000       /*!< MMC 52MHz speed */
 #define SDMMC_FREQ_26M          26000       /*!< MMC 26MHz speed */
+#define SDMMC_FREQ_DDR50        50000       /*!< MMC 50MHz speed */
+#define SDMMC_FREQ_SDR50        100000      /*!< MMC 100MHz speed */
     float io_voltage;           /*!< I/O voltage used by the controller (voltage switching is not supported) */
+    sdmmc_driver_strength_t driver_strength; /*!< Driver Strength */
+    sdmmc_current_limit_t current_limit;     /*!< Current Limit */
     esp_err_t (*init)(void);    /*!< Host function to initialize the driver */
     esp_err_t (*set_bus_width)(int slot, size_t width);    /*!< host function to set bus width */
     size_t (*get_bus_width)(int slot); /*!< host function to get bus width */
@@ -211,6 +242,7 @@ typedef struct {
     void* dma_aligned_buffer; /*!< Leave it NULL. Reserved for cache aligned buffers for SDIO mode */
     sd_pwr_ctrl_handle_t pwr_ctrl_handle;  /*!< Power control handle */
     esp_err_t (*get_dma_info)(int slot, esp_dma_mem_info_t *dma_mem_info); /*!< host function to dma memory information*/
+    esp_err_t (*is_slot_set_to_uhs1)(int slot, bool *is_uhs1); /*!< host slot is set to uhs1 or not*/
 } sdmmc_host_t;
 
 /**
@@ -229,7 +261,7 @@ typedef struct {
     sdmmc_ssr_t ssr;            /*!< decoded SSR (SD Status Register) value */
     sdmmc_ext_csd_t ext_csd;    /*!< decoded EXT_CSD (Extended Card Specific Data) register value */
     uint16_t rca;               /*!< RCA (Relative Card Address) */
-    uint16_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
+    uint32_t max_freq_khz;      /*!< Maximum frequency, in kHz, supported by the card */
     int real_freq_khz;          /*!< Real working frequency, in kHz, configured on the host controller */
     uint32_t is_mem : 1;        /*!< Bit indicates if the card is a memory card */
     uint32_t is_sdio : 1;       /*!< Bit indicates if the card is an IO card */
@@ -237,7 +269,8 @@ typedef struct {
     uint32_t num_io_functions : 3;  /*!< If is_sdio is 1, contains the number of IO functions on the card */
     uint32_t log_bus_width : 2; /*!< log2(bus width supported by card) */
     uint32_t is_ddr : 1;        /*!< Card supports DDR mode */
-    uint32_t reserved : 23;     /*!< Reserved for future expansion */
+    uint32_t is_uhs1 : 1;       /*!< Card supports UHS-1 mode */
+    uint32_t reserved : 22;     /*!< Reserved for future expansion */
 } sdmmc_card_t;
 
 /**

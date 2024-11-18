@@ -24,6 +24,7 @@
 static const char *TAG = "example";
 
 #define MOUNT_POINT "/sdcard"
+#define EXAMPLE_IS_UHS1    (CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50 || CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50)
 
 #ifdef CONFIG_EXAMPLE_DEBUG_PIN_CONNECTIONS
 const char* names[] = {"CLK", "CMD", "D0", "D1", "D2", "D3"};
@@ -128,6 +129,16 @@ void app_main(void)
     // For setting a specific frequency, use host.max_freq_khz (range 400kHz - 40MHz for SDMMC)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
+#if CONFIG_EXAMPLE_SDMMC_SPEED_HS
+    host.max_freq_khz = SDMMC_FREQ_HIGHSPEED;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_SDR50
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_SDR50;
+    host.flags &= ~SDMMC_HOST_FLAG_DDR;
+#elif CONFIG_EXAMPLE_SDMMC_SPEED_UHS_I_DDR50
+    host.slot = SDMMC_HOST_SLOT_0;
+    host.max_freq_khz = SDMMC_FREQ_DDR50;
+#endif
 
     // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
     // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
@@ -149,6 +160,9 @@ void app_main(void)
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
+#if EXAMPLE_IS_UHS1
+    slot_config.flags |= SDMMC_SLOT_FLAG_UHS1;
+#endif
 
     // Set bus width to use:
 #ifdef CONFIG_EXAMPLE_SDMMC_BUS_WIDTH_4

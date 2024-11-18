@@ -22,11 +22,13 @@ Optionally, the captured video can be visualized on a PC with help of the `playe
 
 ### Hardware Required
 
-* ESP with USB peripheral and external PSRAM
+* Development board with USB-OTG support and external PSRAM
 * Exposed USB host connector
 * USB camera
 
 Running this example on an **ESP module without external PSRAM will fail on initialization**. Please select your PSRAM configuration in menuconfig `Component config->ESP PSRAM`. If you manually disable PSRAM, the required framebuffers might not fit into DRAM (especially on ESP32-S2).
+
+Follow instructions in [examples/usb/README.md](../../README.md) for specific hardware setup.
 
 ### Configure the project
 

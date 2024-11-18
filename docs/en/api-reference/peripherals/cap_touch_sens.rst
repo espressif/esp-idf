@@ -3,7 +3,7 @@ Capacitive Touch Sensor
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32p4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
 
 Introduction
 ---------------
@@ -35,59 +35,9 @@ Overview of Capacitive Touch Sensor Versions
 Overview of Touch Sensor Channels
 ------------------------------------
 
-.. only:: esp32p4
-
-    .. list-table::
-      :header-rows: 1
-      :widths: 20  20
-
-      * - Channel
-        - GPIO
-
-      * - CH0
-        - IO2
-
-      * - CH1
-        - IO3
-
-      * - CH2
-        - IO4
-
-      * - CH3
-        - IO5
-
-      * - CH4
-        - IO6
-
-      * - CH5
-        - IO7
-
-      * - CH6
-        - IO8
-
-      * - CH7
-        - IO9
-
-      * - CH8
-        - IO10
-
-      * - CH9
-        - IO11
-
-      * - CH10
-        - IO12
-
-      * - CH11
-        - IO13
-
-      * - CH12
-        - IO14
-
-      * - CH13
-        - IO15
-
-      * - CH14
-        - Internal
+.. include:: cap_touch_sens/{IDF_TARGET_PATH_NAME}.inc
+    :start-after: touch-chan-mapping
+    :end-before: ---
 
 Terminology in the Driver
 ----------------------------
@@ -148,6 +98,7 @@ Categorized by functionality, the APIs of Capacitive Touch Sensor mainly include
   :SOC_TOUCH_SUPPORT_WATERPROOF: - `Waterproof Configuration <#touch-waterproof>`__
   :SOC_TOUCH_SUPPORT_PROX_SENSING: - `Proximity Sensing Configuration <#touch-prox-sensing>`__
   :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - `Sleep Wake-up Configuration <#touch-sleep-wakeup>`__
+  :SOC_TOUCH_SUPPORT_DENOISE_CHAN: - `Denoise Channel Configuration <#touch-denoise-chan>`__
 
 .. _touch-ctrl:
 
@@ -385,7 +336,13 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
 
     The {IDF_TARGET_NAME} supports proximity sensing. Proximity sensing can be registered by calling :cpp:func:`touch_sensor_config_proximity_sensing` and specify the configurations :cpp:type:`touch_proximity_config_t`.
 
-    Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times` and the charging times of the proximity channel in one scan can be determined by :cpp:member:`touch_proximity_config_t::charge_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
+    .. only:: esp32p4
+
+        Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times` and the charging times of the proximity channel in one scan can be determined by :cpp:member:`touch_proximity_config_t::charge_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
+
+    .. only:: not esp32p4
+
+        Since the capacitance change caused by proximity sensing is far less than that caused by physical touch, large area of copper foil is often used on PCB to increase the sensing area. In addition, multiple rounds of scans are needed and the result of each scan will be accumulated in the driver to improve the measurement sensitivity. The scan times (rounds) can be determined by :cpp:member:`touch_proximity_config_t::scan_times`. Generally, the larger the scan times and charging times is, the higher the sensitivity will be, however, the read data will be unstable if the sensitivity is too high. Proper parameters should be determined regarding the application.
 
     The accumulated proximity data can be read by :cpp:func:`touch_channel_read_data` with the data type :cpp:enumerator:`TOUCH_CHAN_DATA_TYPE_PROXIMITY`
 
@@ -421,7 +378,7 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         If you want to read or configure the touch sensor during the sleep, you can turn to the driver ``components/ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h`` which based on the :doc:`Ultra Low Power (ULP) Coprocessor <../system/ulp>`.
 
     - Light sleep wake-up: you need to set :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` to enable the light sleep wake-up by touch sensor. Note that any registered touch channel can wake-up the chip from light sleep.
-    - Deep sleep wake-up: beside setting :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`, you need to specify :cpp:member:`deep_slp_chan` additionally. Only the specified channel can wake-up the chip from the deep sleep, in order to reduce the power consumption. And also, the driver supports to store another set of configurations for the deep sleep via :cpp:member:`deep_slp_sens_cfg`, this set of configurations only takes effect during the deep sleep, you can customize the configurations to save more power. The configurations will be reset to the previous set after waking-up from the deep sleep. Please be aware that, not only deep sleep wake-up, but also light sleep wake-up will be enabled when the :cpp:member:`slp_wakeup_lvl` is :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`.
+    - Deep sleep wake-up: beside setting :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`, you need to specify :cpp:member:`deep_slp_chan` additionally. In order to reduce the power consumption, only the specified channel can wake-up the chip from the deep sleep when RTC_PREI power domain off. And also, the driver supports to store another set of configurations for the deep sleep via :cpp:member:`deep_slp_sens_cfg`, this set of configurations only takes effect during the deep sleep, you can customize the configurations to save more power. The configurations will be reset to the previous set after waking-up from the deep sleep. Please be aware that, not only deep sleep wake-up, but also light sleep wake-up will be enabled when the :cpp:member:`slp_wakeup_lvl` is :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`.
 
     To deregister the sleep wake-up function, you can call :cpp:func:`touch_sensor_config_sleep_wakeup` again, and set the second parameter (i.e. :cpp:type:`touch_sleep_config_t` pointer) to ``NULL``.
 
@@ -444,15 +401,44 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
         // Register the deep sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
+.. _touch-denoise-chan:
+
+.. only:: SOC_TOUCH_SUPPORT_DENOISE_CHAN
+
+    Denoise Channel Configuration
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The {IDF_TARGET_NAME} supports the internal background noise suppression by the denoise channel. Denoise channel can be registered by calling :cpp:func:`touch_sensor_config_denoise_channel` and specify the configurations :cpp:type:`touch_denoise_chan_config_t`.
+
+    Denoise channel is an internal channel that not fanned out. After the denoise channel is enabled, the sampled data of the other touch channels will minus the data of the denoise channel automatically, so the final measurement result of the touch channels will be attenuated compare to the original data.
+
+    Aside of the common touch channel configuration, the reference capacitance that attached to the denoise channel can be set by :cpp:member:`touch_denoise_chan_config_t::ref_cap`. And the noise suppression resolution can be set by :cpp:member:`touch_denoise_chan_config_t::resolution`. The higher the resolution, the greater and more accuracy the denoise channel sample data will be, and the better  suppression effect it takes. But at the same time, the attenuation of other touch channel sampling values also increases.
+
+    For example, the denoise channel resolution is :cpp:enumerator:`touch_denoise_chan_resolution_t::TOUCH_DENOISE_CHAN_RESOLUTION_BIT8`, i.e., maximum sample data is ``255``. Assuming the actual sample data of a normal touch channel is ``10000``, and the denoise channel sample data is ``100``, then the final measurement result of the touch channel will be ``10000 - 100 = 9900``; If we increase the resolution to :cpp:enumerator:`touch_denoise_chan_resolution_t::TOUCH_DENOISE_CHAN_RESOLUTION_BIT12`, i.e., maximum sample data is ``4095``, the resolution is ``16`` times greater. So the denoise channel sample data will be about ``100 * 16 = 1600``, then the final measurement result of this touch channel will be ``10000 - 1600 = 8400.``
+
+    To deregister the denoise channel, you can call :cpp:func:`touch_sensor_config_denoise_channel` again, and set the second parameter (i.e. :cpp:type:`touch_denoise_chan_config_t` pointer) to ``NULL``.
+
+    .. code-block:: c
+
+        touch_denoise_chan_config_t denoise_cfg = {
+            // Denoise channel configurations
+            // ...
+        }
+        // Register the denoise channel
+        ESP_ERROR_CHECK(touch_sensor_config_denoise_channel(sens_handle, &denoise_cfg));
+        // ...
+        // Deregister the denoise channel
+        ESP_ERROR_CHECK(touch_sensor_config_denoise_channel(sens_handle, NULL));
+
 Application Examples
 ------------------------
 
-    - :example:`peripherals/touch_sensor/touch_sensor_v3` demonstrates how to register touch channels and read the data, including hardware requirements and project configuration instructions.
+    - :example:`peripherals/touch_sensor/touch_sens_basic` demonstrates how to register touch channels and read the data, including hardware requirements and project configuration instructions.
 
 API Reference
 -------------
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32s2 or esp32s3
 
     .. include-build-file:: inc/touch_sens.inc
     .. include-build-file:: inc/touch_sens_types.inc

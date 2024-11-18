@@ -153,8 +153,8 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
         .dbias_init      = 1,   \
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
+        .slp_mem_dbias   = 1, /* slp_mem_dbias bit[3] controls ext_ldo_1 xpd for rev1.0*/ \
+        .slp_logic_dbias = 0,   \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x0 \
@@ -173,8 +173,8 @@ const pmu_hp_system_digital_param_t * pmu_hp_system_digital_param_default(pmu_hp
     .regulator0 = {             \
         .slp_mem_xpd     = 0,   \
         .slp_logic_xpd   = 0,   \
-        .slp_mem_dbias   = 0, \
-        .slp_logic_dbias = 0, \
+        .slp_mem_dbias   = 1, /* slp_mem_dbias bit[3] controls ext_ldo_1 xpd for rev1.0*/ \
+        .slp_logic_dbias = 0,   \
     }, \
     .regulator1 = {             \
         .drv_b           = 0x0 \
@@ -208,18 +208,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_sleep2active_backup_en      = 0, \
         .hp_modem2active_backup_en      = 0, \
     }, \
-    .backup_clk = ( \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_MEM)     | \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_SYS)     | \
-        BIT(PMU_ICG_FUNC_ENA_REGDMA)        | \
-        BIT(PMU_ICG_FUNC_ENA_HP_CLKRST)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSREG_APB)    | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_CPU)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_APB)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_SYS)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_MEM)       | \
-        BIT(PMU_ICG_FUNC_ENA_INTRMTX_APB) \
-    ) \
+    .backup_clk = 0xffffffff,   \
 }
 
 #define PMU_HP_SLEEP_RETENTION_CONFIG_DEFAULT() {   \
@@ -236,18 +225,7 @@ const pmu_hp_system_analog_param_t * pmu_hp_system_analog_param_default(pmu_hp_m
         .hp_modem2sleep_backup_en       = 0, \
         .hp_active2sleep_backup_en      = 0, \
     }, \
-    .backup_clk = ( \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_MEM)     | \
-        BIT(PMU_ICG_FUNC_ENA_L2MEM_SYS)     | \
-        BIT(PMU_ICG_FUNC_ENA_REGDMA)        | \
-        BIT(PMU_ICG_FUNC_ENA_HP_CLKRST)     | \
-        BIT(PMU_ICG_FUNC_ENA_SYSREG_APB)    | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_CPU)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_APB)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_SYS)       | \
-        BIT(PMU_ICG_FUNC_ENA_ICM_MEM)       | \
-        BIT(PMU_ICG_FUNC_ENA_INTRMTX_APB) \
-    ) \
+    .backup_clk = 0xffffffff,   \
 }
 
 const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pmu_hp_mode_t mode)
@@ -263,13 +241,6 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
 
 
 /** LP system default parameter */
-
-#if CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
-# define PMU_SLOW_CLK_USE_EXT_XTAL  (1)
-#else
-# define PMU_SLOW_CLK_USE_EXT_XTAL  (0)
-#endif
-
 #define PMU_LP_ACTIVE_POWER_CONFIG_DEFAULT() { \
     .dig_power = {              \
         .lp_pad_slp_sel = 0,    \
@@ -280,8 +251,8 @@ const pmu_hp_system_retention_param_t * pmu_hp_system_retention_param_default(pm
     }, \
     .clk_power = {              \
         .xpd_lppll      = 0,    \
-        .xpd_xtal32k    = PMU_SLOW_CLK_USE_EXT_XTAL,    \
-        .xpd_rc32k      = 0,    \
+        .xpd_xtal32k    = 1,    \
+        .xpd_rc32k      = 1,    \
         .xpd_fosc       = 1,    \
         .pd_osc         = 0     \
     } \

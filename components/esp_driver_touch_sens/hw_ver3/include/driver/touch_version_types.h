@@ -25,6 +25,9 @@ extern "C" {
 /**
  * @brief Helper macro to the default configurations of the touch sensor controller
  *
+ * @param[in] sample_cfg_number The number of sample configurations, which should be less than or equal to `SOC_TOUCH_SAMPLE_CFG_NUM`
+ *                          Given multiple sample configurations to enable the frequency hopping
+ * @param[in] sample_cfg_array  The pointer to the sample configurations array
  */
 #define TOUCH_SENSOR_DEFAULT_BASIC_CONFIG(sample_cfg_number, sample_cfg_array) { \
     .power_on_wait_us = 256, \
@@ -39,6 +42,9 @@ extern "C" {
  * @brief Helper macro to the default sample configurations
  * @note  This default configuration uses `sample frequency = clock frequency / 1`
  *
+ * @param[in] _div_num              The division of the final data, used to scaling the final data
+ * @param[in] coarse_freq_tune      The coarse frequency tuning value
+ * @param[in] fine_freq_tune        The fine frequency tuning value
  */
 #define TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG(_div_num, coarse_freq_tune, fine_freq_tune) { \
     .div_num = _div_num, \
@@ -51,6 +57,10 @@ extern "C" {
     .bypass_shield_output = false, \
 }
 
+/**
+ * @brief Helper macro to the default filter configurations
+ *
+ */
 #define TOUCH_SENSOR_DEFAULT_FILTER_CONFIG() { \
     .benchmark = { \
         .filter_mode = TOUCH_BM_IIR_FILTER_4, \
@@ -60,6 +70,7 @@ extern "C" {
     .data = { \
         .smooth_filter = TOUCH_SMOOTH_IIR_FILTER_2, \
         .active_hysteresis = 2, \
+        .debounce_cnt = 2, \
     }, \
 }
 
@@ -74,73 +85,13 @@ typedef enum {
 } touch_chan_data_type_t;
 
 /**
- * @brief The chip sleep level that allows the touch sensor to wake-up
- *
- */
-typedef enum {
-    TOUCH_LIGHT_SLEEP_WAKEUP,                /*!< Only enable the touch sensor to wake up the chip from light sleep */
-    TOUCH_DEEP_SLEEP_WAKEUP,                 /*!< Enable the touch sensor to wake up the chip from deep sleep or light sleep */
-} touch_sleep_wakeup_level_t;
-
-/**
- * @brief Touch sensor shield channel drive capability level
- *
- */
-typedef enum {
-    TOUCH_SHIELD_CAP_40PF,                  /*!< The max equivalent capacitance in shield channel is 40pf */
-    TOUCH_SHIELD_CAP_80PF,                  /*!< The max equivalent capacitance in shield channel is 80pf */
-    TOUCH_SHIELD_CAP_120PF,                 /*!< The max equivalent capacitance in shield channel is 120pf */
-    TOUCH_SHIELD_CAP_160PF,                 /*!< The max equivalent capacitance in shield channel is 160pf */
-    TOUCH_SHIELD_CAP_200PF,                 /*!< The max equivalent capacitance in shield channel is 200pf */
-    TOUCH_SHIELD_CAP_240PF,                 /*!< The max equivalent capacitance in shield channel is 240pf */
-    TOUCH_SHIELD_CAP_280PF,                 /*!< The max equivalent capacitance in shield channel is 280pf */
-    TOUCH_SHIELD_CAP_320PF,                 /*!< The max equivalent capacitance in shield channel is 320pf */
-} touch_chan_shield_cap_t;
-
-/**
- * @brief Touch channel Infinite Impulse Response (IIR) filter or Jitter filter for benchmark
- * @note Recommended filter coefficient selection is `IIR_16`.
- */
-typedef enum {
-    TOUCH_BM_IIR_FILTER_4,                  /*!< IIR Filter for benchmark, 1/4 raw_value + 3/4 benchmark */
-    TOUCH_BM_IIR_FILTER_8,                  /*!< IIR Filter for benchmark, 1/8 raw_value + 7/8 benchmark */
-    TOUCH_BM_IIR_FILTER_16,                 /*!< IIR Filter for benchmark, 1/16 raw_value + 15/16 benchmark (typical) */
-    TOUCH_BM_IIR_FILTER_32,                 /*!< IIR Filter for benchmark, 1/32 raw_value + 31/32 benchmark */
-    TOUCH_BM_IIR_FILTER_64,                 /*!< IIR Filter for benchmark, 1/64 raw_value + 63/64 benchmark */
-    TOUCH_BM_IIR_FILTER_128,                /*!< IIR Filter for benchmark, 1/128 raw_value + 127/128 benchmark */
-    TOUCH_BM_JITTER_FILTER,                 /*!< Jitter Filter for benchmark, raw value +/- jitter_step */
-} touch_benchmark_filter_mode_t;
-
-/**
- * @brief Touch channel Infinite Impulse Response (IIR) filter for smooth data
- *
- */
-typedef enum {
-    TOUCH_SMOOTH_NO_FILTER,                 /*!< No filter adopted for smooth data, smooth data equals raw data */
-    TOUCH_SMOOTH_IIR_FILTER_2,              /*!< IIR filter adopted for smooth data, smooth data equals 1/2 raw data + 1/2 last smooth data (typical) */
-    TOUCH_SMOOTH_IIR_FILTER_4,              /*!< IIR filter adopted for smooth data, smooth data equals 1/4 raw data + 3/4 last smooth data */
-    TOUCH_SMOOTH_IIR_FILTER_8,              /*!< IIR filter adopted for smooth data, smooth data equals 1/8 raw data + 7/8 last smooth data */
-} touch_smooth_filter_mode_t;
-
-/**
- * @brief Interrupt events
- *
- */
-typedef enum {
-    TOUCH_INTR_EVENT_ACTIVE,                /*!< Touch channel active event */
-    TOUCH_INTR_EVENT_INACTIVE,              /*!< Touch channel inactive event */
-    TOUCH_INTR_EVENT_MEASURE_DONE,          /*!< Touch channel measure done event */
-    TOUCH_INTR_EVENT_SCAN_DONE,             /*!< All touch channels scan done event */
-    TOUCH_INTR_EVENT_TIMEOUT,               /*!< Touch channel measurement timeout event */
-    TOUCH_INTR_EVENT_PROXIMITY_DONE,        /*!< Proximity channel measurement done event */
-} touch_intr_event_t;
-
-/**
  * @brief Sample configurations of the touch sensor
  *
  */
 typedef struct {
-    uint32_t                        div_num;            /*!< Division of the touch output pulse, `touch_out_pulse / div_num = charge_times` */
+    uint32_t                        div_num;            /*!< Division of the touch output pulse.
+                                                         *   It is proportional to the gain of the read data, the greater the div_num, the higher gain of the read data.
+                                                         *   If the read data is exceeded the maximum range, please reduce the div_num. */
     uint32_t                        charge_times;       /*!< The charge and discharge times of this sample configuration, the read data are positive correlation to the charge_times */
     uint8_t                         rc_filter_res;      /*!< The resistance of the RC filter of this sample configuration, range [0, 3], while 0 = 0K, 1 = 1.5K, 2 = 3K, 3 = 4.5K */
     uint8_t                         rc_filter_cap;      /*!< The capacitance of the RC filter of this sample configuration, range [0, 127], while 0 = 0pF, 1 = 20fF, ..., 127 = 2.54pF */
@@ -162,7 +113,7 @@ typedef struct {
                                                          *   of this sample configurations below.
                                                          */
     touch_out_mode_t                output_mode;        /*!< Touch channel counting mode of the binarized touch output */
-    uint32_t                        sample_cfg_num;     /*!< The sample configuration number that used for sampling */
+    uint32_t                        sample_cfg_num;     /*!< The sample configuration number that used for sampling, CANNOT exceed TOUCH_SAMPLE_CFG_NUM */
     touch_sensor_sample_config_t    *sample_cfg;        /*!< The array of this sample configuration configurations, the length should be specified in `touch_sensor_config_t::sample_cfg_num` */
 } touch_sensor_config_t;
 
@@ -224,7 +175,7 @@ typedef struct {
 typedef touch_sensor_config_t touch_sensor_config_dslp_t;
 
 /**
- * @brief Configure the touch sensor sleep function
+ * @brief Configuration of the touch sensor sleep function
  *
  */
 typedef struct {
@@ -248,7 +199,7 @@ typedef struct {
 } touch_sleep_config_t;
 
 /**
- * @brief Configure the touch sensor waterproof function
+ * @brief Configuration of the touch sensor waterproof function
  *
  */
 typedef struct {
@@ -274,7 +225,7 @@ typedef struct {
 } touch_waterproof_config_t;
 
 /**
- * @brief Configure the touch sensor proximity function
+ * @brief Configuration of the touch sensor proximity function
  *
  */
 typedef struct {
@@ -292,13 +243,13 @@ typedef struct {
  * @brief Base event structure used in touch event queue
  */
 typedef struct {
-    touch_channel_handle_t  chan;           /*!< the current triggered touch channel handle */
-    int                     chan_id;        /*!< the current triggered touch channel number */
-    uint32_t                status_mask;    /*!< the current channel triggered status.
-                                             *   For the bits in the status mask,
-                                             *   if the bit is set, the corresponding channel is active
-                                             *   if the bit is cleared, the corresponding channel is inactive
-                                             */
+    touch_channel_handle_t          chan;           /*!< the current triggered touch channel handle */
+    int                             chan_id;        /*!< the current triggered touch channel number */
+    uint32_t                        status_mask;    /*!< the current channel triggered status.
+                                                     *   For the bits in the status mask,
+                                                     *   if the bit is set, the corresponding channel is active
+                                                     *   if the bit is cleared, the corresponding channel is inactive
+                                                     */
 } touch_base_event_data_t;
 
 /**

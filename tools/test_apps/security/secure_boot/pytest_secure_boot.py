@@ -80,10 +80,8 @@ def dut_start_secure_app(dut: Dut) -> None:
 # Test secure boot flow.
 # Correctly signed bootloader + correctly signed app should work
 @pytest.mark.esp32c3
-# TODO: [ESP32C5] IDF-10043
-# @pytest.mark.esp32c5
-# TODO: [ESP32C5] IDF-10102
-# @pytest.mark.esp32c61
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot(dut: Dut) -> None:
@@ -96,10 +94,8 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
 # Test efuse key index and key block combination.
 # Any key index can be written to any key block and should work
 @pytest.mark.esp32c3
-# TODO: [ESP32C5] IDF-10043
-# @pytest.mark.esp32c5
-# TODO: [ESP32C5] IDF-10102
-# @pytest.mark.esp32c61
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 # Increasing the test timeout to 1200s as the test runs for 18 iterations
@@ -122,10 +118,8 @@ def test_examples_security_secure_boot_key_combo(dut: Dut) -> None:
 # Test secure boot key revoke.
 # If a key is revoked, bootloader signed with that key should fail verification
 @pytest.mark.esp32c3
-# TODO: [ESP32C5] IDF-10043
-# @pytest.mark.esp32c5
-# TODO: [ESP32C5] IDF-10102
-# @pytest.mark.esp32c61
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
@@ -145,10 +139,8 @@ def test_examples_security_secure_boot_key_revoke(dut: Dut) -> None:
 # Test bootloader signature corruption.
 # Corrupt one byte at a time of bootloader signature and test that the verification fails
 @pytest.mark.esp32c3
-# TODO: [ESP32C5] IDF-10043
-# @pytest.mark.esp32c5
-# TODO: [ESP32C5] IDF-10102
-# @pytest.mark.esp32c61
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)
@@ -186,10 +178,8 @@ def test_examples_security_secure_boot_corrupt_bl_sig(dut: Dut) -> None:
 # Test app signature corruption.
 # Corrupt app signature, one byte at a time, and test that the verification fails
 @pytest.mark.esp32c3
-# TODO: [ESP32C5] IDF-10043
-# @pytest.mark.esp32c5
-# TODO: [ESP32C5] IDF-10102
-# @pytest.mark.esp32c61
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.esp32s3
 @pytest.mark.esp32p4
 @pytest.mark.timeout(18000)

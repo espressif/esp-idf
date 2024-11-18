@@ -21,25 +21,33 @@ extern "C" {
 /**
  * @brief Enable analog I2C master clock
  */
-static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_enable_clock(bool en)
+static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_enable_clock(bool en)
 {
     LPPERI.clk_en.ck_en_lp_i2cmst = en;
 }
 
 // LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define regi2c_ctrl_ll_master_enable_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_enable_clock(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_enable_clock(__VA_ARGS__)
+
+/**
+ * @brief Check whether analog I2C master clock is enabled
+ */
+static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_master_is_clock_enabled(void)
+{
+    return LPPERI.clk_en.ck_en_lp_i2cmst;
+}
 
 /**
  * @brief Reset analog I2C master
  */
-static inline __attribute__((always_inline)) void regi2c_ctrl_ll_master_reset(void)
+static inline __attribute__((always_inline)) void _regi2c_ctrl_ll_master_reset(void)
 {
     LPPERI.reset_en.rst_en_lp_i2cmst = 1;
     LPPERI.reset_en.rst_en_lp_i2cmst = 0;
 }
 
 // LPPERI.reset_en is a shared register, so this function must be used in an atomic way
-#define regi2c_ctrl_ll_master_reset(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; regi2c_ctrl_ll_master_reset(__VA_ARGS__)
+#define regi2c_ctrl_ll_master_reset(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _regi2c_ctrl_ll_master_reset(__VA_ARGS__)
 
 /**
  * @brief Configure analog I2C master clock

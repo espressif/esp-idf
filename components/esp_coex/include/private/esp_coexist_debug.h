@@ -108,7 +108,7 @@ typedef enum {
 #endif
 
 /* wifi callback -> debug */
-void wifi_set_gpio_debug_cb(void (* cb)(int, int));
+void wifi_set_gpio_debug_cb(void (* cb)(int, coex_gpio_debug_sig_t));
 int wifi_gpio_debug_max_event_get(void);
 
 /* functions to check if in ROM */
@@ -128,9 +128,10 @@ void pm_check_state(void);
 void pm_tx_null_data_done_process(void);
 void pm_start(void);
 void pm_stop(void);
+void pm_disconnected_wake(void);
 
 /* coex callback -> debug */
-void coex_set_gpio_debug_cb(void (*cb)(int, int));
+void coex_set_gpio_debug_cb(void (*cb)(int, coex_gpio_debug_sig_t));
 int coex_gpio_debug_max_event_get(void);
 esp_err_t coex_gpio_debug_matrix_init(void);
 
@@ -141,5 +142,11 @@ esp_err_t esp_coexist_debug_matrix_init(int evt, int sig, bool rev);
 void wifi_bind_io_to_evt(uint8_t io_idx, uint8_t evt);
 void coex_bind_io_to_evt(uint8_t io_idx, uint8_t evt);
 void diagram_bind_io_to_evt(void);
+
+/* coex -> debug
+ * configure single gpio debug event */
+esp_err_t coex_gpio_debug_matrix_config(int event);
+/* debug -> internal use */
+esp_err_t esp_coexist_gpio_debug_matrix_config(int event);
 
 #endif

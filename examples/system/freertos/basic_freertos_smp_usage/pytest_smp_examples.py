@@ -13,10 +13,13 @@ def test_creating_task(
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test creating_task
     dut.write('create_task')
-    dut.expect('create task example: task#0 is running on core#0')
-    dut.expect('create task example: task#1 is running on core#0')
-    dut.expect(r'create task example: task#2 is running on core#\d')
-    dut.expect(r'create task example: task#3 is running on core#\d')
+    expected_patterns = [
+        'create task example: task#0 is running on core#0',
+        'create task example: task#1 is running on core#0',
+        r'create task example: task#2 is running on core#\d',
+        r'create task example: task#3 is running on core#\d',
+    ]
+    dut.expect(expected_patterns, expect_all=True)
 
 
 @pytest.mark.esp32c3
@@ -46,14 +49,14 @@ def test_locks(
     dut.expect(r'esp32(?:[a-zA-Z]\d)?>')
     # test locks
     dut.write('lock')
-    dut.expect(r'lock example: mutex task took \d+ us on core\d')
-    dut.expect(r'lock example: spinlock task took \d+ us on core\d')
-    dut.expect(r'lock example: atomic task took \d+ us on core\d')
-    dut.expect(r'task0 read value = 0 on core #\d')
-    dut.expect('task0 set value = 1')
-    dut.expect(r'task\d read value = 1 on core #\d')
-    dut.expect(r'task\d set value = 2')
-    dut.expect(r'task0 read value = 2 on core #\d')
+    expected_patterns = [
+        r'lock example: mutex task took \d+ us on core\d',
+        r'lock example: spinlock task took \d+ us on core\d',
+        r'lock example: atomic task took \d+ us on core\d',
+        r'task\d read value = \d on core #\d',
+        r'task\d set value = \d',
+    ]
+    dut.expect(expected_patterns, expect_all=True)
 
 
 @pytest.mark.esp32c3

@@ -18,6 +18,11 @@
 
 这份指南介绍了一系列工作流程，从而在外部主机的协助下启用设备的安全功能。这些工作流程分为多个阶段，每个阶段都会在主机上生成签名/加密密钥，从而在发生电力或其他故障时，提高恢复几率。此外，在主机的协助下，这些流程将加快整体配置过程（例如，在主机上加密固件要比在设备上加密更快）。
 
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      可以在 :doc:`../api-guides/tools/qemu` 中虚拟测试 {IDF_TARGET_NAME} 目标芯片的安全功能。安全工作流程建立后，便可在真实硬件上继续操作。
 
 目标
 ----
@@ -25,7 +30,7 @@
 #. 用逐步指令简化启用安全功能的传统工作流程。
 #. 设计比基于固件的传统工作流更加灵活的工作流。
 #. 将工作流划分为多个小操作，从而提高可靠性。
-#. 消除对 :ref:`second-stage-bootloader` （固件引导加载程序）的依赖。
+#. 消除对 :ref:`second-stage-bootloader` 的依赖。
 
 准备工作
 --------
@@ -297,7 +302,7 @@
         :esp32: - :ref:`选择 UART ROM 下载模式（永久禁用（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意，此选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 设为 3 (ESP32 V3) 时可用）。UART ROM 下载模式在默认设置中自动启用，但建议永久禁用此模式以减少攻击者可用的选项。
         :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意，若选择发布模式，则将烧录 ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位，ROM 下载模式下 flash 加密硬件将被禁用）。
         :not esp32: - :ref:`选择 UART ROM 下载模式（永久切换到安全模式（推荐））<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是推荐的默认选项，如果不需要，也可将其更改为永久禁用 UART ROM 下载模式。
-        - :ref:`选择适当的引导程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
+        - :ref:`选择适当的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
         - 保存配置并退出。
 
 7. 构建、加密并烧录二进制文件
@@ -324,7 +329,7 @@
 
         .. only:: esp32
 
-            如果 ESP32 在 eFuse 中使用非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，需要将 ``--flash_crypt_conf`` 参数传递给 ``espsecure.py`` 以设置匹配值。如果设备自行配置 flash 加密，则不会发生这种情况，但是如果手动烧录了 eFuses 启用 flash 加密，就有可能发生。
+            如果 ESP32 在 eFuse 中使用非默认的 :ref:`FLASH_CRYPT_CONFIG 值 <setting-flash-crypt-config>`，需要将 ``--flash_crypt_conf`` 参数传递给 ``espsecure.py`` 以设置匹配值。如果通过二级引导加载程序配置 flash 加密，则不会发生这种情况，但是如果手动烧录了 eFuses 启用 flash 加密，就有可能发生。
 
     使用 ``espsecure.py decrypt_flash_data`` 命令时，可以用相同的选项（和不同的输入或输出文件）来解密密文 flash 或之前加密的文件。
 
@@ -518,7 +523,7 @@ flash 加密指南
 
 6. 构建二进制文件
 
-    默认情况下，ROM 引导加载程序只会验证 :ref:`second-stage-bootloader` （固件引导加载程序）。只有在启用 :ref:`CONFIG_SECURE_BOOT` 选项（并将 :ref:`CONFIG_SECURE_BOOT_VERSION` 设置为 ``SECURE_BOOT_V2_ENABLED``）时，固件引导加载程序才会在构建引导加载程序时验证应用程序分区。
+    默认情况下，一级 (ROM) 引导加载程序只会验证 :ref:`second-stage-bootloader`。只有在启用 :ref:`CONFIG_SECURE_BOOT` 选项（并将 :ref:`CONFIG_SECURE_BOOT_VERSION` 设置为 ``SECURE_BOOT_V2_ENABLED``）时，二级引导加载程序才会在构建引导加载程序时验证应用程序分区。
 
     A) 打开 :ref:`project-configuration-menu`，在 ``Security features`` 中设置 ``Enable hardware Secure Boot in bootloader`` 启用 Secure Boot。
 

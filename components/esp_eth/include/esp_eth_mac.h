@@ -105,7 +105,30 @@ struct esp_eth_mac_s {
     esp_err_t (*transmit)(esp_eth_mac_t *mac, uint8_t *buf, uint32_t length);
 
     /**
+    * @brief Transmit packet with extended control from Ethernet MAC and constructed with special parameters at Layer2.
+    *
+    * @param[in] mac: Ethernet MAC instance
+    * @param[in] ctrl: optional transmit control structure (chip specific), set to NULL when not required
+    * @param[in] argc: number variable arguments
+    * @param[in] args: variable arguments
+    *
+    * @note Typical intended use case is to make possible to construct a frame from multiple higher layer
+    *       buffers without a need of buffer reallocations. However, other use cases are not limited.
+    *
+    * @return
+    *      - ESP_OK: transmit packet successfully
+    *      - ESP_ERR_INVALID_SIZE: number of actually sent bytes differs to expected
+    *      - ESP_FAIL: transmit packet failed because some other error occurred
+    *
+    * @note Returned error codes may differ for each specific MAC chip.
+    *
+    */
+    esp_err_t (*transmit_ctrl_vargs)(esp_eth_mac_t *mac, void *ctrl, uint32_t argc, va_list args);
+
+    /**
     * @brief Transmit packet from Ethernet MAC constructed with special parameters at Layer2.
+    *
+    * @warning Deprecated, use `transmit_ctrl_vargs()` function instead.
     *
     * @param[in] mac: Ethernet MAC instance
     * @param[in] argc: number variable arguments
@@ -122,7 +145,7 @@ struct esp_eth_mac_s {
     * @note Returned error codes may differ for each specific MAC chip.
     *
     */
-    esp_err_t (*transmit_vargs)(esp_eth_mac_t *mac, uint32_t argc, va_list args);
+    esp_err_t (*transmit_vargs)(esp_eth_mac_t *mac, uint32_t argc, va_list args) __attribute__((deprecated("Use transmit_ctrl_vargs instead")));
 
     /**
     * @brief Receive packet from Ethernet MAC
@@ -317,6 +340,15 @@ struct esp_eth_mac_s {
     */
     esp_err_t (*del)(esp_eth_mac_t *mac);
 };
+
+/**
+ * @brief Ethernet MAC Time Stamp
+ *
+ */
+typedef struct {
+    uint32_t seconds;       /*!< Seconds */
+    uint32_t nanoseconds;   /*!< Nanoseconds */
+} eth_mac_time_t;
 
 /**
 * @brief Configuration of Ethernet MAC object

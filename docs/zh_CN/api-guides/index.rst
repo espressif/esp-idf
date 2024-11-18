@@ -29,6 +29,7 @@ API 指南
    hardware-abstraction
    :CONFIG_IDF_TARGET_ARCH_XTENSA: hlinterrupts
    jtag-debugging/index
+   kconfig/index
    linker-script-generation
    low-power-mode/index
    lwip

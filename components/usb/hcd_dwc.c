@@ -10,13 +10,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "esp_private/critical_section.h"
 #include "esp_heap_caps.h"
 #include "esp_intr_alloc.h"
-#include "soc/interrupts.h" // For interrupt index
 #include "esp_err.h"
 #include "esp_log.h"
+
+#include "soc/usb_dwc_periph.h"
 #include "hal/usb_dwc_hal.h"
-#include "hal/usb_dwc_types.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
@@ -27,15 +28,6 @@
 #endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
-
-// ------------------ Target specific ----------------------
-// TODO: Remove target specific section after support for multiple USB peripherals is implemented
-#include "sdkconfig.h"
-#if (CONFIG_IDF_TARGET_ESP32P4)
-#define USB_INTR ETS_USB_OTG_INTR_SOURCE
-#else
-#define USB_INTR ETS_USB_INTR_SOURCE
-#endif
 
 // --------------------- Constants -------------------------
 
@@ -64,30 +56,28 @@
 #define XFER_LIST_LEN_ISOC                      64  // Implement longer ISOC transfer list to give us enough space for additional timing margin
 #define XFER_LIST_ISOC_MARGIN                   3   // The 1st ISOC transfer is scheduled 3 (micro)frames later so we have enough timing margin
 
-// ------------------------ Flags --------------------------
+// ------------------------ Internal --------------------------
 
 /**
- * @brief Bit masks for the HCD to use in the URBs reserved_flags field
+ * @brief Values for the HCD to use in the URBs hcd_var field
  *
- * The URB object has a reserved_flags member for host stack's internal use. The following flags will be set in
- * reserved_flags in order to keep track of state of an URB within the HCD.
+ * The URB object has a hcd_var member for host stack's internal use. The following values will be set in
+ * hcd_var in order to keep track of state of an URB within the HCD.
  */
 #define URB_HCD_STATE_IDLE                      0   // The URB is not enqueued in an HCD pipe
 #define URB_HCD_STATE_PENDING                   1   // The URB is enqueued and pending execution
 #define URB_HCD_STATE_INFLIGHT                  2   // The URB is currently in flight
 #define URB_HCD_STATE_DONE                      3   // The URB has completed execution or is retired, and is waiting to be dequeued
 
-#define URB_HCD_STATE_SET(reserved_flags, state)    (reserved_flags = (reserved_flags & ~URB_HCD_STATE_MASK) | state)
-#define URB_HCD_STATE_GET(reserved_flags)           (reserved_flags & URB_HCD_STATE_MASK)
-
 // -------------------- Convenience ------------------------
 
 const char *HCD_DWC_TAG = "HCD DWC";
 
-#define HCD_ENTER_CRITICAL_ISR()                portENTER_CRITICAL_ISR(&hcd_lock)
-#define HCD_EXIT_CRITICAL_ISR()                 portEXIT_CRITICAL_ISR(&hcd_lock)
-#define HCD_ENTER_CRITICAL()                    portENTER_CRITICAL(&hcd_lock)
-#define HCD_EXIT_CRITICAL()                     portEXIT_CRITICAL(&hcd_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(hcd_lock);
+#define HCD_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&hcd_lock)
+#define HCD_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&hcd_lock)
+#define HCD_ENTER_CRITICAL()           esp_os_enter_critical(&hcd_lock)
+#define HCD_EXIT_CRITICAL()            esp_os_exit_critical(&hcd_lock)
 
 #define HCD_CHECK(cond, ret_val) ({                                         \
             if (!(cond)) {                                                  \
@@ -270,7 +260,6 @@ typedef struct {
     intr_handle_t isr_hdl;
 } hcd_obj_t;
 
-static portMUX_TYPE hcd_lock = portMUX_INITIALIZER_UNLOCKED;
 static hcd_obj_t *s_hcd_obj = NULL;     // Note: "s_" is for the static pointer
 
 // ------------------------------------------------- Forward Declare ---------------------------------------------------
@@ -1005,7 +994,7 @@ esp_err_t hcd_install(const hcd_config_t *config)
         goto port_alloc_err;
     }
     // Allocate interrupt
-    err_ret = esp_intr_alloc(USB_INTR,
+    err_ret = esp_intr_alloc(usb_dwc_info.controllers[0].irq,
                              config->intr_flags | ESP_INTR_FLAG_INTRDISABLED,  // The interrupt must be disabled until the port is initialized
                              intr_hdlr_main,
                              (void *)p_hcd_obj_dmy->port_obj,
@@ -1287,7 +1276,9 @@ esp_err_t hcd_port_init(int port_number, const hcd_port_config_t *port_config, h
     port_obj->callback = port_config->callback;
     port_obj->callback_arg = port_config->callback_arg;
     port_obj->context = port_config->context;
-    usb_dwc_hal_init(port_obj->hal);
+    usb_dwc_hal_init(port_obj->hal, 0);
+    port_obj->hal->channels.hdls = calloc(port_obj->hal->constant_config.chan_num_total, sizeof(usb_dwc_hal_chan_t*));
+    HCD_CHECK_FROM_CRIT(port_obj->hal->channels.hdls != NULL, ESP_ERR_NO_MEM);
     port_obj->initialized = true;
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port_obj->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
@@ -1311,6 +1302,7 @@ esp_err_t hcd_port_deinit(hcd_port_handle_t port_hdl)
                         ESP_ERR_INVALID_STATE);
     port->initialized = false;
     esp_intr_disable(s_hcd_obj->isr_hdl);
+    free(port->hal->channels.hdls);
     usb_dwc_hal_deinit(port->hal);
     HCD_EXIT_CRITICAL();
 
@@ -1423,14 +1415,14 @@ esp_err_t hcd_port_recover(hcd_port_handle_t port_hdl)
                         && port->num_pipes_idle == 0 && port->num_pipes_queued == 0
                         && port->flags.val == 0 && port->task_waiting_port_notif == NULL,
                         ESP_ERR_INVALID_STATE);
+
     // We are about to do a soft reset on the peripheral. Disable the peripheral throughout
     esp_intr_disable(s_hcd_obj->isr_hdl);
     usb_dwc_hal_core_soft_reset(port->hal);
     port->state = HCD_PORT_STATE_NOT_POWERED;
     port->last_event = HCD_PORT_EVENT_NONE;
     port->flags.val = 0;
-    // Soft reset wipes all registers so we need to reinitialize the HAL
-    usb_dwc_hal_init(port->hal);
+
     // Clear the frame list. We set the frame list register and enable periodic scheduling after a successful reset
     memset(port->frame_list, 0, FRAME_LIST_LEN * sizeof(uint32_t));
     esp_intr_enable(s_hcd_obj->isr_hdl);
@@ -1825,6 +1817,8 @@ esp_err_t hcd_pipe_alloc(hcd_port_handle_t port_hdl, const hcd_pipe_config_t *pi
     bool chan_allocated = usb_dwc_hal_chan_alloc(port->hal, pipe->chan_obj, (void *) pipe);
     if (!chan_allocated) {
         HCD_EXIT_CRITICAL();
+        // The only reason why alloc channel could return false is no more free channels
+        ESP_LOGE(HCD_DWC_TAG, "No more HCD channels available");
         ret = ESP_ERR_NOT_SUPPORTED;
         goto err;
     }

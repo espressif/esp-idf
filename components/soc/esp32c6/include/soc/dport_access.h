@@ -9,7 +9,6 @@
 
 #include <stdint.h>
 #include "soc.h"
-#include "uart_reg.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -15,3 +15,4 @@ pyyaml
 SimpleWebSocketServer
 pylint-gitlab
 minio
+prettytable

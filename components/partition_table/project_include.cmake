@@ -1,11 +1,25 @@
 set(PARTITION_TABLE_OFFSET ${CONFIG_PARTITION_TABLE_OFFSET})
+if(NOT DEFINED BOOTLOADER_OFFSET)  # For Linux target
+    if(DEFINED CONFIG_BOOTLOADER_OFFSET_IN_FLASH)
+        set(BOOTLOADER_OFFSET ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH})
+    else()
+        set(BOOTLOADER_OFFSET 0)
+    endif()
+endif()
+
+if(CONFIG_BOOTLOADER_RECOVERY_OFFSET)
+    set(RECOVERY_BOOTLOADER_OPTION --recovery-bootloader-offset ${CONFIG_BOOTLOADER_RECOVERY_OFFSET})
+else()
+    set(RECOVERY_BOOTLOADER_OPTION "")
+endif()
 
 set(PARTITION_TABLE_CHECK_SIZES_TOOL_PATH "${CMAKE_CURRENT_LIST_DIR}/check_sizes.py")
 
 idf_build_get_property(build_dir BUILD_DIR)
 idf_build_set_property(PARTITION_TABLE_BIN_PATH "${build_dir}/partition_table/partition-table.bin")
+idf_build_get_property(non_os_build NON_OS_BUILD)
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     # Set PARTITION_CSV_PATH to the configured partition CSV file
     # absolute path
     if(CONFIG_PARTITION_TABLE_CUSTOM)
@@ -57,6 +71,8 @@ function(partition_table_get_partition_info result get_part_info_args part_info)
     execute_process(COMMAND ${python}
         ${idf_path}/components/partition_table/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
+        --primary-bootloader-offset ${BOOTLOADER_OFFSET}
+        ${RECOVERY_BOOTLOADER_OPTION}
         --partition-table-file ${PARTITION_CSV_PATH}
         get_partition_info ${get_part_info_args} --info ${part_info}
         ${extra_partition_subtypes}

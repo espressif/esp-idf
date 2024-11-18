@@ -219,3 +219,8 @@ Date and Time in FAT File System
 The FAT file system protocol used by ESP-IDF does not preserve the date or time on the chips' media, so all the images extracted from the device have the same default timestamp for all the FAT-specified date-time fields (creation and the last modification timestamp as well as creation, last modification and last access dates).
 
 There are a couple of fields in the SFN entry describing time, such as **DIR_CrtTime** and **DIR_WrtTime**. Some fields are ignored by the FAT implementation used by ESP-IDF (see the file ``entry.py``). However, changes in the fields **DIR_WrtTime** and **DIR_WrtDate** are preserved in the chip. Both time and data entry are 16-bit, where the granularity of the time is 2 seconds.
+
+Application Examples
+--------------------
+
+- :example:`storage/fatfs/fatfsgen` demonstrates how to use the FatFS partition generation tool to automatically create a FatFS image from a host folder during the building process.

@@ -250,7 +250,7 @@ uf2 二进制文件也可以通过 :ref:`idf.py uf2 <generate-uf2-binary>` 生�
 
 在 ESP 芯片上运行 `ESP USB Bridge <https://github.com/espressif/esp-usb-bridge>`_ 项目将创建一个 USB 大容量存储设备，用户可以将生成的 UF2 文件复制到该 USB 设备中，桥接 MCU 将使用该文件来烧录目标 MCU。这一操作十分简单，只需将文件复制（或“拖放”）到文件资源管理器访问的公开磁盘中即可。
 
-如需仅为应用程序生成 UF2 二进制文件，即不包含加载引导程序和分区表，请使用 ``uf2-app`` 命令。
+如需仅为应用程序生成 UF2 二进制文件，即不包含引导加载程序和分区表，请使用 ``uf2-app`` 命令。
 
 ``idf.py uf2`` 命令在功能上与 :ref:`上述 <merging-binaries>` ``idf.py merge-bin -f uf2`` 命令等效。而将二进制文件合并为除 uf2 以外的各种格式时，``idf.py merge-bin`` 命令更具灵活性和可选性。
 

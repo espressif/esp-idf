@@ -24,6 +24,7 @@
 #include "freertos/timers.h"
 #include "freertos/ringbuf.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/adc_private.h"
 #include "esp_private/adc_share_hw_ctrl.h"
@@ -242,11 +243,6 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
 
     adc_apb_periph_claim();
 
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_UNIT_1);
-    adc_hal_calibration_init(ADC_UNIT_2);
-#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-
     return ret;
 
 cleanup:
@@ -258,6 +254,12 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_STATE, ADC_TAG, "The driver isn't initialised");
     ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_INIT, ESP_ERR_INVALID_STATE, ADC_TAG, "ADC continuous mode isn't in the init state, it's started already");
+
+    ANALOG_CLOCK_ENABLE();
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
+    adc_hal_calibration_init(ADC_UNIT_1);
+    adc_hal_calibration_init(ADC_UNIT_2);
+#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
     //reset ADC digital part to reset ADC sampling EOF counter
     ADC_BUS_CLK_ATOMIC() {
@@ -293,6 +295,22 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
         adc_hal_arbiter_config(&config);
     }
 #endif  //#if SOC_ADC_ARBITER_SUPPORTED
+
+#if SOC_ADC_MONITOR_SUPPORTED
+    adc_ll_digi_monitor_clear_intr();
+    for (int i = 0; i < SOC_ADC_DIGI_MONITOR_NUM; i++) {
+        adc_monitor_t *monitor_ctx = handle->adc_monitor[i];
+        if (monitor_ctx) {
+            // config monitor hardware
+            adc_hal_digi_monitor_set_thres(monitor_ctx->monitor_id, monitor_ctx->config.adc_unit, monitor_ctx->config.channel, monitor_ctx->config.h_threshold, monitor_ctx->config.l_threshold);
+            // if monitor not enabled now, just using monitor api later
+            if (monitor_ctx->fsm == ADC_MONITOR_FSM_ENABLED) {
+                // restore the started FSM
+                adc_ll_digi_monitor_user_start(monitor_ctx->monitor_id, ((monitor_ctx->config.h_threshold >= 0) || (monitor_ctx->config.l_threshold >= 0)));
+            }
+        }
+    }
+#endif  //#if SOC_ADC_MONITOR_SUPPORTED
 
     if (handle->use_adc1) {
         adc_hal_set_controller(ADC_UNIT_1, ADC_HAL_CONTINUOUS_READ_MODE);
@@ -355,6 +373,8 @@ esp_err_t adc_continuous_stop(adc_continuous_handle_t handle)
     if (handle->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_release(handle->pm_lock), ADC_TAG, "release pm_lock failed");
     }
+
+    ANALOG_CLOCK_DISABLE();
 
     return ESP_OK;
 }

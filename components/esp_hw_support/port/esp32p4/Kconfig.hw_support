@@ -13,12 +13,15 @@ choice ESP32P4_REV_MIN
         bool "Rev v0.0"
     config ESP32P4_REV_MIN_1
         bool "Rev v0.1"
+    config ESP32P4_REV_MIN_100
+        bool "Rev v1.0"
 endchoice
 
 config ESP32P4_REV_MIN_FULL
     int
     default 0 if ESP32P4_REV_MIN_0
     default 1 if ESP32P4_REV_MIN_1
+    default 100 if ESP32P4_REV_MIN_100
 
 config ESP_REV_MIN_FULL
     int
@@ -28,7 +31,7 @@ config ESP_REV_MIN_FULL
     # MAX Revision
     #
 
-    comment "Maximum Supported ESP32-P4 Revision (Rev v0.99)"
+    comment "Maximum Supported ESP32-P4 Revision (Rev v1.99)"
     # Maximum revision that IDF supports.
     # It can not be changed by user.
     # Only Espressif can change it when a new version will be supported in IDF.
@@ -36,7 +39,7 @@ config ESP_REV_MIN_FULL
 
 config ESP32P4_REV_MAX_FULL
     int
-    default 99
+    default 199
     # keep in sync the "Maximum Supported Revision" description with this value
 
 config ESP_REV_MAX_FULL

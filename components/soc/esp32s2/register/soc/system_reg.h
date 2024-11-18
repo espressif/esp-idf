@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,12 +236,6 @@ extern "C" {
 #define DPORT_SPI2_DMA_CLK_EN_M  (BIT(22))
 #define DPORT_SPI2_DMA_CLK_EN_V  0x1
 #define DPORT_SPI2_DMA_CLK_EN_S  22
-/* DPORT_I2S1_CLK_EN : R/W ;bitpos:[21] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_I2S1_CLK_EN  (BIT(21))
-#define DPORT_I2S1_CLK_EN_M  (BIT(21))
-#define DPORT_I2S1_CLK_EN_V  0x1
-#define DPORT_I2S1_CLK_EN_S  21
 /* DPORT_PWM1_CLK_EN : R/W ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_PWM1_CLK_EN  (BIT(20))
@@ -464,12 +458,6 @@ extern "C" {
 #define DPORT_SPI2_DMA_RST_M  (BIT(22))
 #define DPORT_SPI2_DMA_RST_V  0x1
 #define DPORT_SPI2_DMA_RST_S  22
-/* DPORT_I2S1_RST : R/W ;bitpos:[21] ;default: 1'b0 ; */
-/*description: */
-#define DPORT_I2S1_RST  (BIT(21))
-#define DPORT_I2S1_RST_M  (BIT(21))
-#define DPORT_I2S1_RST_V  0x1
-#define DPORT_I2S1_RST_S  21
 /* DPORT_PWM1_RST : R/W ;bitpos:[20] ;default: 1'b0 ; */
 /*description: */
 #define DPORT_PWM1_RST  (BIT(20))

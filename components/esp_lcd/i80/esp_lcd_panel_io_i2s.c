@@ -39,13 +39,11 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/gpio.h"
 #include "soc/lcd_periph.h"
 #include "hal/i2s_hal.h"
 #include "hal/i2s_ll.h"
 #include "hal/i2s_types.h"
-
-// the DMA descriptor used by esp32 and esp32s2, each descriptor can carry 4095 bytes at most
-#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 static const char *TAG = "lcd_panel.io.i80";
 
@@ -61,7 +59,7 @@ static esp_err_t i2s_lcd_init_dma_link(esp_lcd_i80_bus_handle_t bus);
 static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_lcd_i80_bus_config_t *bus_config);
 static void i2s_lcd_trigger_quick_trans_done_event(esp_lcd_i80_bus_handle_t bus);
 static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_i80_t *next_device);
-static void lcd_default_isr_handler(void *args);
+static void i2s_lcd_default_isr_handler(void *args);
 static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t io, const esp_lcd_panel_io_callbacks_t *cbs, void *user_ctx);
 
 struct esp_lcd_i80_bus_t {
@@ -188,7 +186,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     int isr_flags = LCD_I80_INTR_ALLOC_FLAGS | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
     ret = esp_intr_alloc_intrstatus(lcd_periph_i2s_signals.buses[bus->bus_id].irq_id, isr_flags,
                                     (uint32_t)i2s_ll_get_intr_status_reg(bus->hal.dev),
-                                    I2S_LL_EVENT_TX_EOF, lcd_default_isr_handler, bus, &bus->intr);
+                                    I2S_LL_EVENT_TX_EOF, i2s_lcd_default_isr_handler, bus, &bus->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
     i2s_ll_enable_intr(bus->hal.dev, I2S_LL_EVENT_TX_EOF, false); // disable interrupt temporarily
     i2s_ll_clear_intr_status(bus->hal.dev, I2S_LL_EVENT_TX_EOF);  // clear pending interrupt
@@ -317,8 +315,8 @@ esp_err_t esp_lcd_new_panel_io_i80(esp_lcd_i80_bus_handle_t bus, const esp_lcd_p
     if (io_config->cs_gpio_num >= 0) {
         // CS signal is controlled by software
         gpio_set_level(io_config->cs_gpio_num, !io_config->flags.cs_active_high); // de-assert by default
-        gpio_set_direction(io_config->cs_gpio_num, GPIO_MODE_OUTPUT);
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[io_config->cs_gpio_num], PIN_FUNC_GPIO);
+        gpio_func_sel(io_config->cs_gpio_num, PIN_FUNC_GPIO);
+        gpio_output_enable(io_config->cs_gpio_num);
     }
     *ret_io = &(i80_device->base);
     ESP_LOGD(TAG, "new i80 lcd panel io @%p on bus(%d), pclk=%"PRIu32"Hz", i80_device, bus->bus_id, i80_device->pclk_hz);
@@ -362,9 +360,8 @@ static esp_err_t panel_io_i80_del(esp_lcd_panel_io_t *io)
     LIST_REMOVE(i80_device, device_list_entry);
     portEXIT_CRITICAL(&bus->spinlock);
 
-    // reset CS GPIO
     if (i80_device->cs_gpio_num >= 0) {
-        gpio_reset_pin(i80_device->cs_gpio_num);
+        gpio_output_disable(i80_device->cs_gpio_num);
     }
 
     ESP_LOGD(TAG, "del i80 lcd panel io @%p", i80_device);
@@ -648,7 +645,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     xQueueSend(next_device->trans_queue, &trans_desc, portMAX_DELAY);
     next_device->num_trans_inflight++;
     // enable interrupt and go into isr handler, where we fetch the transactions from trans_queue and start it
-    // we will go into `lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
+    // we will go into `i2s_lcd_default_isr_handler` almost at once, because the "trans done" event is active at the moment
     esp_intr_enable(bus->intr);
     return ESP_OK;
 }
@@ -669,7 +666,7 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     // create pm lock based on different clock source
     // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
 #endif
     return ESP_OK;
 }
@@ -698,21 +695,20 @@ static esp_err_t i2s_lcd_configure_gpio(esp_lcd_i80_bus_handle_t bus, const esp_
     // connect peripheral signals via GPIO matrix
     // data line
     for (size_t i = 0; i < bus_config->bus_width; i++) {
-        gpio_set_direction(bus_config->data_gpio_nums[i], GPIO_MODE_OUTPUT);
+        gpio_func_sel(bus_config->data_gpio_nums[i], PIN_FUNC_GPIO);
+        // the esp_rom_gpio_connect_out_signal function will also help enable the output path properly
 #if SOC_I2S_TRANS_SIZE_ALIGN_WORD
         esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i2s_signals.buses[bus_id].data_sigs[i + 8], false, false);
 #else
         esp_rom_gpio_connect_out_signal(bus_config->data_gpio_nums[i], lcd_periph_i2s_signals.buses[bus_id].data_sigs[i + SOC_I2S_MAX_DATA_WIDTH - bus_config->bus_width], false, false);
 #endif
-        gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->data_gpio_nums[i]], PIN_FUNC_GPIO);
     }
     // WR signal (pclk)
-    gpio_set_direction(bus_config->wr_gpio_num, GPIO_MODE_OUTPUT);
+    gpio_func_sel(bus_config->wr_gpio_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(bus_config->wr_gpio_num, lcd_periph_i2s_signals.buses[bus_id].wr_sig, true, false);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->wr_gpio_num], PIN_FUNC_GPIO);
     // DC signal is controlled by software, set as general purpose IO
-    gpio_set_direction(bus_config->dc_gpio_num, GPIO_MODE_OUTPUT);
-    gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[bus_config->dc_gpio_num], PIN_FUNC_GPIO);
+    gpio_func_sel(bus_config->dc_gpio_num, PIN_FUNC_GPIO);
+    gpio_output_enable(bus_config->dc_gpio_num);
     return ESP_OK;
 }
 
@@ -756,7 +752,7 @@ static void lcd_i80_switch_devices(lcd_panel_io_i80_t *cur_device, lcd_panel_io_
     bus->cur_device = next_device;
 }
 
-static IRAM_ATTR void lcd_default_isr_handler(void *args)
+static IRAM_ATTR void i2s_lcd_default_isr_handler(void *args)
 {
     esp_lcd_i80_bus_t *bus = (esp_lcd_i80_bus_t *)args;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;

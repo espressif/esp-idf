@@ -47,6 +47,10 @@ if(CONFIG_SOC_EMAC_SUPPORTED)
     list(APPEND srcs "${target_folder}/emac_periph.c")
 endif()
 
+if(CONFIG_SOC_ETM_SUPPORTED)
+    list(APPEND srcs "${target_folder}/etm_periph.c")
+endif()
+
 if(CONFIG_SOC_GDMA_SUPPORTED)
     list(APPEND srcs "${target_folder}/gdma_periph.c")
 endif()
@@ -142,10 +146,7 @@ if(CONFIG_SOC_IEEE802154_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_USB_OTG_SUPPORTED)
-    if(NOT ${target} STREQUAL "esp32p4")
-        list(APPEND srcs "${target_folder}/usb_periph.c"
-                         "${target_folder}/usb_dwc_periph.c")
-    endif()
+    list(APPEND srcs "${target_folder}/usb_dwc_periph.c")
 endif()
 
 if(CONFIG_SOC_DAC_SUPPORTED)

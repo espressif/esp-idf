@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: ISC
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
@@ -46,6 +46,7 @@ extern "C" {
 #define MMC_SET_BLOCKLEN                16      /* R1 */
 #define MMC_READ_BLOCK_SINGLE           17      /* R1 */
 #define MMC_READ_BLOCK_MULTIPLE         18      /* R1 */
+#define MMC_SEND_TUNING_BLOCK           19      /* R1 */
 #define MMC_WRITE_DAT_UNTIL_STOP        20      /* R1 */
 #define MMC_SET_BLOCK_COUNT             23      /* R1 */
 #define MMC_WRITE_BLOCK_SINGLE          24      /* R1 */
@@ -59,6 +60,7 @@ extern "C" {
 #define SD_SEND_RELATIVE_ADDR           3       /* R6 */
 #define SD_SEND_SWITCH_FUNC             6       /* R1 */
 #define SD_SEND_IF_COND                 8       /* R7 */
+#define SD_SWITCH_VOLTAGE               11      /* R1 */
 #define SD_ERASE_GROUP_START            32      /* R1 */
 #define SD_ERASE_GROUP_END              33      /* R1 */
 #define SD_READ_OCR                     58      /* R3 */
@@ -67,6 +69,7 @@ extern "C" {
 /* SD application commands */                   /* response type */
 #define SD_APP_SET_BUS_WIDTH            6       /* R1 */
 #define SD_APP_SD_STATUS                13      /* R2 */
+#define SD_APP_SEND_NUM_WR_BLOCKS       22      /* R1 */
 #define SD_APP_OP_COND                  41      /* R3 */
 #define SD_APP_SEND_SCR                 51      /* R1 */
 
@@ -98,8 +101,20 @@ extern "C" {
 #define MMC_OCR_2_0V_2_1V               (1<<8)
 #define MMC_OCR_1_65V_1_95V             (1<<7)
 
-#define SD_OCR_SDHC_CAP                 (1<<30)
-#define SD_OCR_VOL_MASK                 0xFF8000 /* bits 23:15 */
+#define SD_OCR_CARD_READY               MMC_OCR_MEM_READY   /* bit-31: power-up status */
+#define SD_OCR_SDHC_CAP                 (1<<30)             /* HCS bit */
+#define SD_OCR_XPC                      (1<<28)             /* SDXC Power Control (bit 28) */
+#define SD_OCR_S18_RA                   (1<<24)             /* S18R/A bit: 1.8V voltage support, UHS-I only */
+#define SD_OCR_VOL_MASK                 0xFF8000            /* SD OCR voltage bits 23:15 */
+#define SD_OCR_3_5V_3_6V                MMC_OCR_3_5V_3_6V   /* bit-23 */
+#define SD_OCR_3_4V_3_5V                MMC_OCR_3_4V_3_5V   /* bit-22 */
+#define SD_OCR_3_3V_3_4V                MMC_OCR_3_3V_3_4V   /* ...    */
+#define SD_OCR_3_2V_3_3V                MMC_OCR_3_2V_3_3V
+#define SD_OCR_3_1V_3_2V                MMC_OCR_3_1V_3_2V
+#define SD_OCR_3_0V_3_1V                MMC_OCR_3_0V_3_1V
+#define SD_OCR_2_9V_3_0V                MMC_OCR_2_9V_3_0V
+#define SD_OCR_2_8V_2_9V                MMC_OCR_2_8V_2_9V   /* ...    */
+#define SD_OCR_2_7V_2_8V                MMC_OCR_2_7V_2_8V   /* bit-15 */
 
 /* SD mode R1 response type bits */
 #define MMC_R1_READY_FOR_DATA           (1<<8)  /* ready for next transfer */
@@ -108,6 +123,7 @@ extern "C" {
 #define MMC_R1_CURRENT_STATE_POS        (9)
 #define MMC_R1_CURRENT_STATE_MASK       (0x1E00)/* card current state */
 #define MMC_R1_CURRENT_STATE_TRAN       (4)
+#define MMC_R1_CURRENT_STATE_STATUS(status)     (((status) & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS)
 
 /* SPI mode R1 response type bits */
 #define SD_SPI_R1_IDLE_STATE            (1<<0)
@@ -246,6 +262,7 @@ extern "C" {
 #define MMC_CSD_CAPACITY(resp)          ((MMC_CSD_C_SIZE((resp))+1) << \
                                          (MMC_CSD_C_SIZE_MULT((resp))+2))
 #define MMC_CSD_C_SIZE_MULT(resp)       MMC_RSP_BITS((resp), 47, 3)
+#define MMC_CSD_WRITE_BL_PARTIAL(resp)  MMC_RSP_BITS((resp), 21, 1)
 
 /* MMC v1 R2 response (CID) */
 #define MMC_CID_MID_V1(resp)            MMC_RSP_BITS((resp), 104, 24)
@@ -289,6 +306,8 @@ extern "C" {
 #define SD_CSD_SPEED(resp)              MMC_RSP_BITS((resp), 96, 8)
 #define  SD_CSD_SPEED_25_MHZ            0x32
 #define  SD_CSD_SPEED_50_MHZ            0x5a
+#define  SD_CSD_SPEED_100_MHZ           0xb
+#define  SD_CSD_SPEED_200_MHZ           0x2b
 #define SD_CSD_CCC(resp)                MMC_RSP_BITS((resp), 84, 12)
 #define  SD_CSD_CCC_BASIC               (1 << 0)        /* basic */
 #define  SD_CSD_CCC_BR                  (1 << 2)        /* block read */
@@ -402,6 +421,14 @@ extern "C" {
 #define SD_SFUNC_FUNC_MAX       15
 
 #define SD_ACCESS_MODE          1       /* Function group 1, Access Mode */
+#define SD_COMMAND_SYSTEM       2       /* Function group 1, Command System */
+#define SD_DRIVER_STRENGTH      3       /* Function group 1, Driver Strength */
+#define SD_CURRENT_LIMIT        4       /* Function group 1, Current Limit */
+
+#define SD_DRIVER_STRENGTH_B    0       /* Type B */
+#define SD_DRIVER_STRENGTH_A    1       /* Type A */
+#define SD_DRIVER_STRENGTH_C    2       /* Type C */
+#define SD_DRIVER_STRENGTH_D    3       /* Type D */
 
 #define SD_ACCESS_MODE_SDR12    0       /* 25 MHz clock */
 #define SD_ACCESS_MODE_SDR25    1       /* 50 MHz clock */
@@ -424,7 +451,7 @@ extern "C" {
  *
  * 67 45 23 01 ef cd ab 89
  *
- * MMC_RSP_BITS will extact bits as follows:
+ * MMC_RSP_BITS will extract bits as follows:
  *
  * start=0  len=4   -> result=0x00000007
  * start=0  len=12  -> result=0x00000567

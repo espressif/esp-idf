@@ -59,3 +59,11 @@ examples/openthread/ot_sleepy_device/light_sleep:
       temporary: true
       reason: Not supported yet, TZ-958
   <<: [*openthread_dependencies, *openthread_sleep_dependencies]
+
+examples/openthread/ot_trel:
+  enable:
+    - if: SOC_WIFI_SUPPORTED == 1
+  disable_test:
+    - if: IDF_TARGET not in ["esp32c6", "esp32s3"]
+      reason: only test on esp32c6 and esp32s3
+  <<: *openthread_dependencies

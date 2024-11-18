@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,11 @@ typedef struct {
     int group_id;                         /*!< Specify from which group to allocate the capture timer */
     mcpwm_capture_clock_source_t clk_src; /*!< MCPWM capture timer clock source */
     uint32_t resolution_hz;               /*!< Resolution of capture timer */
+    struct {
+        uint32_t allow_pd: 1;       /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
+                                      By this approach, the system can power off MCPWM's power domain.
+                                      This can save power, but at the expense of more RAM being consumed.*/
+    } flags;                        /*!< Extra configuration flags for timer */
 } mcpwm_capture_timer_config_t;
 
 /**
@@ -145,8 +150,7 @@ typedef struct {
         uint32_t pull_down: 1;         /*!< Whether to pull down internally */
         uint32_t invert_cap_signal: 1; /*!< Invert the input capture signal */
         uint32_t io_loop_back: 1;      /*!< For debug/test, the signal output from the GPIO will be fed to the input path as well */
-        uint32_t keep_io_conf_at_exit: 1; /*!< For debug/test, whether to keep the GPIO configuration when capture channel is deleted.
-                                            By default, driver will reset the GPIO pin at exit. */
+        uint32_t keep_io_conf_at_exit: 1 __attribute__((deprecated)); /*!< Deprecated. Driver won't change the GPIO configuration in deinilization. */
     } flags;                           /*!< Extra configuration flags for capture channel */
 } mcpwm_capture_channel_config_t;
 

@@ -18,6 +18,11 @@ When enabling security features on ESP32 SoCs, it is recommended that power supp
 
 This guide describes a set of workflows to enable security features on the device with the assistance of an external host machine. These workflows are broken down into various stages, with each stage generating signing/encryption keys on the host machine. This allows for greater chances of recovery in case of power or other failures. Furthermore, these workflows expedites the overall provisioning process via the use of the host machine (e.g., encrypting firmware on the host is quicker than on the device).
 
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      It is possible to try out the security features for {IDF_TARGET_NAME} target SoC under :doc:`../api-guides/tools/qemu` virtually. Once the security workflow is established, you can then proceed to the real hardware.
 
 Goals
 -----
@@ -25,7 +30,7 @@ Goals
 #. Simplify the traditional workflow for enabling security features with stepwise instructions.
 #. Design a more flexible workflow when compared to the traditional firmware-based workflow.
 #. Improve reliability by dividing the workflow into small operations.
-#. Eliminate dependency on :ref:`second-stage-bootloader` (firmware bootloader).
+#. Eliminate dependency on :ref:`second-stage-bootloader`.
 
 Prerequisites
 -------------
@@ -324,7 +329,7 @@ In this case all the eFuses related to Flash Encryption are written with help of
 
         .. only:: esp32
 
-            If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen when the Flash Encryption is enabled by the firmware bootloader but may happen when burning eFuses manually to enable Flash Encryption.
+            If your ESP32 uses non-default :ref:`FLASH_CRYPT_CONFIG value in eFuse <setting-flash-crypt-config>` then you will need to pass the ``--flash_crypt_conf`` argument to ``espsecure.py`` to set the matching value. This will not happen when the Flash Encryption is enabled by the second stage bootloader but may happen when burning eFuses manually to enable Flash Encryption.
 
     The command ``espsecure.py decrypt_flash_data`` can be used with the same options (and different input or output files), to decrypt ciphertext flash contents or a previously encrypted file.
 
@@ -518,7 +523,7 @@ In this workflow we shall use ``espsecure`` tool to generate signing keys and us
 
 6. Configure the project
 
-    By default, the ROM bootloader would only verify the :ref:`second-stage-bootloader` (firmware bootloader). The firmware bootloader would verify the app partition only when the :ref:`CONFIG_SECURE_BOOT` option is enabled (and :ref:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
+    By default, the first stage (ROM) bootloader would only verify the :ref:`second-stage-bootloader`. The second stage bootloader would verify the app partition only when the :ref:`CONFIG_SECURE_BOOT` option is enabled (and :ref:`CONFIG_SECURE_BOOT_VERSION` is set to ``SECURE_BOOT_V2_ENABLED``) while building the bootloader.
 
     A) Open the :ref:`project-configuration-menu`, in ``Security features`` set ``Enable hardware Secure Boot in bootloader`` to enable Secure Boot.
 

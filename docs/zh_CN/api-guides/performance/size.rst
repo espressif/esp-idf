@@ -194,6 +194,7 @@ MbedTLS 功能
 - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
 - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
 - :ref:`CONFIG_MBEDTLS_SHA512_C`
+- :ref:`CONFIG_MBEDTLS_SHA3_C`
 - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
 - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
@@ -260,7 +261,7 @@ MbedTLS 功能
 
 本文档仅涉及 ESP-IDF 应用程序的二进制文件大小，而不涉及 ESP-IDF :ref:`second-stage-bootloader`。
 
-关于 ESP-IDF 引导加载程序二进制文件大小的讨论，参阅 :ref:`bootloader-size`。
+关于 ESP-IDF 引导加载程序二进制文件大小的讨论，请参阅 :ref:`bootloader-size`。
 
 IRAM 二进制文件大小
 ------------------------------------

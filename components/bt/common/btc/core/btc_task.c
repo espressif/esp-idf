@@ -69,6 +69,12 @@
 #include "btc_ble_mesh_prov.h"
 #include "btc_ble_mesh_health_model.h"
 #include "btc_ble_mesh_config_model.h"
+#include "btc_ble_mesh_generic_model.h"
+#include "btc_ble_mesh_lighting_model.h"
+#include "btc_ble_mesh_sensor_model.h"
+#include "btc_ble_mesh_time_scene_model.h"
+#if CONFIG_BLE_MESH_V11_SUPPORT
+#include "btc_ble_mesh_mbt_model.h"
 #include "btc_ble_mesh_agg_model.h"
 #include "btc_ble_mesh_brc_model.h"
 #include "btc_ble_mesh_df_model.h"
@@ -78,11 +84,7 @@
 #include "btc_ble_mesh_rpr_model.h"
 #include "btc_ble_mesh_sar_model.h"
 #include "btc_ble_mesh_srpl_model.h"
-#include "btc_ble_mesh_generic_model.h"
-#include "btc_ble_mesh_lighting_model.h"
-#include "btc_ble_mesh_sensor_model.h"
-#include "btc_ble_mesh_time_scene_model.h"
-#include "btc_ble_mesh_mbt_model.h"
+#endif /* CONFIG_BLE_MESH_V11_SUPPORT */
 #endif /* #if CONFIG_BLE_MESH */
 
 #define BTC_TASK_PINNED_TO_CORE         (TASK_PINNED_TO_CORE)
@@ -252,9 +254,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
 #if CONFIG_BLE_MESH_MBT_SRV
     [BTC_PID_MBT_SERVER]        = {btc_ble_mesh_mbt_server_call_handler,        btc_ble_mesh_mbt_server_cb_handler       },
 #endif /* CONFIG_BLE_MESH_MBT_SRV */
-#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT
+#if CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50
     [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
-#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT */
+#endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50 */
 #endif /* #if CONFIG_BLE_MESH */
 };
 
@@ -380,7 +382,7 @@ static void btc_deinit_mem(void) {
         btc_profile_cb_tab = NULL;
     }
 
-#if (BLE_INCLUDED == TRUE)
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     if (gl_bta_adv_data_ptr) {
         osi_free(gl_bta_adv_data_ptr);
         gl_bta_adv_data_ptr = NULL;
@@ -390,7 +392,7 @@ static void btc_deinit_mem(void) {
         osi_free(gl_bta_scan_rsp_data_ptr);
         gl_bta_scan_rsp_data_ptr = NULL;
     }
-#endif  ///BLE_INCLUDED == TRUE
+#endif // BLE_42_FEATURE_SUPPORT
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
     if (btc_creat_tab_env_ptr) {
@@ -442,7 +444,8 @@ static bt_status_t btc_init_mem(void) {
     }
     memset((void *)btc_profile_cb_tab, 0, sizeof(void *) * BTC_PID_NUM);
 
-#if (BLE_INCLUDED == TRUE)
+#if BTC_DYNAMIC_MEMORY == TRUE
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
         goto error_exit;
     }
@@ -452,7 +455,8 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)gl_bta_scan_rsp_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
-#endif  ///BLE_INCLUDED == TRUE
+#endif // (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif // BTC_DYNAMIC_MEMORY == TRUE
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
     if ((btc_creat_tab_env_ptr = (esp_btc_creat_tab_t *)osi_malloc(sizeof(esp_btc_creat_tab_t))) == NULL) {

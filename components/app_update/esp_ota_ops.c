@@ -31,13 +31,19 @@
 #include "esp_attr.h"
 #include "esp_bootloader_desc.h"
 #include "esp_flash.h"
+#include "esp_flash_internal.h"
 
 #define SUB_TYPE_ID(i) (i & 0x0F)
+#define ALIGN_UP(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 /* Partial_data is word aligned so no reallocation is necessary for encrypted flash write */
 typedef struct ota_ops_entry_ {
     uint32_t handle;
-    const esp_partition_t *part;
+    struct {
+        const esp_partition_t *staging;      /*!< New image will be downloaded in this staging partition. */
+        const esp_partition_t *final;        /*!< Final destination partition which is intended to be updated. Its type/subtype shall be used for verification. */
+        bool finalize_with_copy;             /*!< Flag to copy the image from staging partition to the final partition at the end of OTA update */
+    } partition;
     bool need_erase;
     uint32_t wrote_size;
     uint8_t partial_bytes;
@@ -51,6 +57,8 @@ static LIST_HEAD(ota_ops_entries_head, ota_ops_entry_) s_ota_ops_entries_head =
 static uint32_t s_ota_ops_last_handle = 0;
 
 const static char *TAG = "esp_ota_ops";
+
+static ota_ops_entry_t *get_ota_ops_entry(esp_ota_handle_t handle);
 
 /* Return true if this is an OTA app partition */
 static bool is_ota_partition(const esp_partition_t *p)
@@ -114,8 +122,6 @@ static esp_ota_img_states_t set_new_state_otadata(void)
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
     ota_ops_entry_t *new_entry;
-    esp_err_t ret = ESP_OK;
-
     if ((partition == NULL) || (out_handle == NULL)) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -125,36 +131,26 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         return ESP_ERR_NOT_FOUND;
     }
 
-    if (!is_ota_partition(partition)) {
-        return ESP_ERR_INVALID_ARG;
-    }
+    if (partition->type == ESP_PARTITION_TYPE_APP) {
+        // The staging partition cannot be of type Factory, but the final partition can be.
+        if (!is_ota_partition(partition)) {
+           return ESP_ERR_INVALID_ARG;
+        }
 
-    const esp_partition_t* running_partition = esp_ota_get_running_partition();
-    if (partition == running_partition) {
-        return ESP_ERR_OTA_PARTITION_CONFLICT;
-    }
+        const esp_partition_t* running_partition = esp_ota_get_running_partition();
+        if (partition == running_partition) {
+            return ESP_ERR_OTA_PARTITION_CONFLICT;
+        }
 
 #ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
-    esp_ota_img_states_t ota_state_running_part;
-    if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
-        if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
-            ESP_LOGE(TAG, "Running app has not confirmed state (ESP_OTA_IMG_PENDING_VERIFY)");
-            return ESP_ERR_OTA_ROLLBACK_INVALID_STATE;
+        esp_ota_img_states_t ota_state_running_part;
+        if (esp_ota_get_state_partition(running_partition, &ota_state_running_part) == ESP_OK) {
+            if (ota_state_running_part == ESP_OTA_IMG_PENDING_VERIFY) {
+                ESP_LOGE(TAG, "Running app has not confirmed state (ESP_OTA_IMG_PENDING_VERIFY)");
+                return ESP_ERR_OTA_ROLLBACK_INVALID_STATE;
+            }
         }
-    }
 #endif
-
-    if (image_size != OTA_WITH_SEQUENTIAL_WRITES) {
-        // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
-        if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
-            ret = esp_partition_erase_range(partition, 0, partition->size);
-        } else {
-            const int aligned_erase_size = (image_size + partition->erase_size - 1) & ~(partition->erase_size - 1);
-            ret = esp_partition_erase_range(partition, 0, aligned_erase_size);
-        }
-        if (ret != ESP_OK) {
-            return ret;
-        }
     }
 
     new_entry = (ota_ops_entry_t *) calloc(1, sizeof(ota_ops_entry_t));
@@ -164,10 +160,60 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
 
     LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
 
-    new_entry->part = partition;
+    new_entry->partition.staging = partition;
+    new_entry->partition.final = partition;
+    new_entry->partition.finalize_with_copy = false;
     new_entry->handle = ++s_ota_ops_last_handle;
     new_entry->need_erase = (image_size == OTA_WITH_SEQUENTIAL_WRITES);
     *out_handle = new_entry->handle;
+
+    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        esp_image_bootloader_offset_set(partition->address);
+    }
+    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER || partition->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
+        esp_flash_set_dangerous_write_protection(esp_flash_default_chip, false);
+    }
+
+    if (image_size != OTA_WITH_SEQUENTIAL_WRITES) {
+        // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
+        size_t erase_size;
+        if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
+            erase_size = partition->size;
+        } else {
+            erase_size = ALIGN_UP(image_size, partition->erase_size);
+        }
+        return esp_partition_erase_range(partition, 0, erase_size);
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_ota_set_final_partition(esp_ota_handle_t handle, const esp_partition_t *final, bool finalize_with_copy)
+{
+    ota_ops_entry_t *it = get_ota_ops_entry(handle);
+    if (final == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (it == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+    if (it->wrote_size != 0) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (it->partition.staging != final) {
+        const esp_partition_t* final_partition = esp_partition_verify(final);
+        if (final_partition == NULL) {
+            return ESP_ERR_NOT_FOUND;
+        }
+        ESP_LOGI(TAG,"Staging partition - <%s>. Final partition - <%s>.", it->partition.staging->label, final_partition->label);
+        it->partition.final = final_partition;
+        it->partition.finalize_with_copy = finalize_with_copy;
+        if (final_partition->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+            esp_image_bootloader_offset_set(it->partition.staging->address);
+        }
+        if (final_partition->type == ESP_PARTITION_TYPE_BOOTLOADER || final_partition->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
+            esp_flash_set_dangerous_write_protection(esp_flash_default_chip, false);
+        }
+    }
     return ESP_OK;
 }
 
@@ -192,23 +238,33 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
         if (it->handle == handle) {
             if (it->need_erase) {
                 // must erase the partition before writing to it
-                uint32_t first_sector = it->wrote_size / it->part->erase_size; // first affected sector
-                uint32_t last_sector = (it->wrote_size + size - 1) / it->part->erase_size; // last affected sector
+                uint32_t first_sector = it->wrote_size / it->partition.staging->erase_size; // first affected sector
+                uint32_t last_sector = (it->wrote_size + size - 1) / it->partition.staging->erase_size; // last affected sector
 
                 ret = ESP_OK;
-                if ((it->wrote_size % it->part->erase_size) == 0) {
-                    ret = esp_partition_erase_range(it->part, it->wrote_size, ((last_sector - first_sector) + 1) * it->part->erase_size);
+                if ((it->wrote_size % it->partition.staging->erase_size) == 0) {
+                    ret = esp_partition_erase_range(it->partition.staging, it->wrote_size, ((last_sector - first_sector) + 1) * it->partition.staging->erase_size);
                 } else if (first_sector != last_sector) {
-                    ret = esp_partition_erase_range(it->part, (first_sector + 1) * it->part->erase_size, (last_sector - first_sector) * it->part->erase_size);
+                    ret = esp_partition_erase_range(it->partition.staging, (first_sector + 1) * it->partition.staging->erase_size, (last_sector - first_sector) * it->partition.staging->erase_size);
                 }
                 if (ret != ESP_OK) {
                     return ret;
                 }
             }
 
-            if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0 && data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
-                ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", data_bytes[0]);
-                return ESP_ERR_OTA_VALIDATE_FAILED;
+            if (it->wrote_size == 0 && it->partial_bytes == 0 && size > 0) {
+                if (it->partition.final->type == ESP_PARTITION_TYPE_APP || it->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+                    if (data_bytes[0] != ESP_IMAGE_HEADER_MAGIC) {
+                        ESP_LOGE(TAG, "OTA image has invalid magic byte (expected 0xE9, saw 0x%02x)", data_bytes[0]);
+                        return ESP_ERR_OTA_VALIDATE_FAILED;
+                    }
+
+                } else if (it->partition.final->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
+                    if (*(uint16_t*)data_bytes != (uint16_t)ESP_PARTITION_MAGIC) {
+                        ESP_LOGE(TAG, "Partition table image has invalid magic word (expected 0x50AA, saw 0x%04x)", *(uint16_t*)data_bytes);
+                        return ESP_ERR_OTA_VALIDATE_FAILED;
+                    }
+                }
             }
 
             if (esp_flash_encryption_enabled()) {
@@ -224,7 +280,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                         return ESP_OK; /* nothing to write yet, just filling buffer */
                     }
                     /* write 16 byte to partition */
-                    ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
+                    ret = esp_partition_write(it->partition.staging, it->wrote_size, it->partial_data, 16);
                     if (ret != ESP_OK) {
                         return ret;
                     }
@@ -243,7 +299,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void *data, size_t size)
                 }
             }
 
-            ret = esp_partition_write(it->part, it->wrote_size, data_bytes, size);
+            ret = esp_partition_write(it->partition.staging, it->wrote_size, data_bytes, size);
             if(ret == ESP_OK){
                 it->wrote_size += size;
             }
@@ -280,7 +336,7 @@ esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, s
                 ESP_LOGE(TAG, "Size should be 16byte aligned for flash encryption case");
                 return ESP_ERR_INVALID_ARG;
             }
-            ret = esp_partition_write(it->part, offset, data_bytes, size);
+            ret = esp_partition_write(it->partition.staging, offset, data_bytes, size);
             if (ret == ESP_OK) {
                 it->wrote_size += size;
             }
@@ -316,6 +372,34 @@ esp_err_t esp_ota_abort(esp_ota_handle_t handle)
     return ESP_OK;
 }
 
+static esp_err_t ota_verify_partition(ota_ops_entry_t *ota_ops)
+{
+    esp_err_t ret = ESP_OK;
+    if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_APP || ota_ops->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        esp_image_metadata_t data;
+        const esp_partition_pos_t part_pos = {
+            .offset = ota_ops->partition.staging->address,
+            .size = ota_ops->partition.staging->size,
+        };
+        if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
+            return ESP_ERR_OTA_VALIDATE_FAILED;
+        }
+    } else if (ota_ops->partition.final->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
+        const esp_partition_info_t *partition_table = NULL;
+        esp_partition_mmap_handle_t partition_table_map;
+        ret = esp_partition_mmap(ota_ops->partition.staging, 0, ESP_PARTITION_TABLE_MAX_LEN, ESP_PARTITION_MMAP_DATA, (const void**)&partition_table, &partition_table_map);
+        if (ret == ESP_OK) {
+            int num_partitions;
+            if (esp_partition_table_verify(partition_table, true, &num_partitions) != ESP_OK) {
+                esp_partition_munmap(partition_table_map);
+                return ESP_ERR_OTA_VALIDATE_FAILED;
+            }
+            esp_partition_munmap(partition_table_map);
+        }
+    }
+    return ret;
+}
+
 esp_err_t esp_ota_end(esp_ota_handle_t handle)
 {
     ota_ops_entry_t *it = get_ota_ops_entry(handle);
@@ -335,7 +419,7 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
 
     if (it->partial_bytes > 0) {
         /* Write out last 16 bytes, if necessary */
-        ret = esp_partition_write(it->part, it->wrote_size, it->partial_data, 16);
+        ret = esp_partition_write(it->partition.staging, it->wrote_size, it->partial_data, 16);
         if (ret != ESP_OK) {
             ret = ESP_ERR_INVALID_STATE;
             goto cleanup;
@@ -344,18 +428,21 @@ esp_err_t esp_ota_end(esp_ota_handle_t handle)
         it->partial_bytes = 0;
     }
 
-    esp_image_metadata_t data;
-    const esp_partition_pos_t part_pos = {
-      .offset = it->part->address,
-      .size = it->part->size,
-    };
-
-    if (esp_image_verify(ESP_IMAGE_VERIFY, &part_pos, &data) != ESP_OK) {
-        ret = ESP_ERR_OTA_VALIDATE_FAILED;
-        goto cleanup;
+    ret = ota_verify_partition(it);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "New image failed verification");
+    } else {
+        if (it->partition.finalize_with_copy) {
+            ESP_LOGI(TAG, "Copy from <%s> staging partition to <%s>...", it->partition.staging->label, it->partition.final->label);
+            ret = esp_partition_copy(it->partition.final, 0, it->partition.staging, 0, it->partition.final->size);
+        }
     }
 
  cleanup:
+    if (it->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        // In esp_ota_begin, bootloader offset was updated, here we return it to default.
+        esp_image_bootloader_offset_set(ESP_PRIMARY_BOOTLOADER_OFFSET);
+    }
     LIST_REMOVE(it, entries);
     free(it);
     return ret;

@@ -101,7 +101,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
             esp_rom_printf(LOG_FORMAT(log_tag_letter, format), esp_log_timestamp(), tag, ##__VA_ARGS__); \
         }} while(0)
 
-#ifndef BOOTLOADER_BUILD
+#ifndef NON_OS_BUILD
 #if defined(__cplusplus) && (__cplusplus >  201703L)
 #define ESP_LOGE( tag, format, ... ) ESP_LOG_LEVEL_LOCAL(ESP_LOG_ERROR,   tag, format __VA_OPT__(,) __VA_ARGS__)
 #define ESP_LOGW( tag, format, ... ) ESP_LOG_LEVEL_LOCAL(ESP_LOG_WARN,    tag, format __VA_OPT__(,) __VA_ARGS__)
@@ -147,7 +147,7 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 /// macro to output logs at ``ESP_LOG_VERBOSE`` level.  @see ``ESP_LOGE``
 #define ESP_LOGV( tag, format, ... )  ESP_EARLY_LOGV(tag, format, ##__VA_ARGS__)
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
-#endif  // BOOTLOADER_BUILD
+#endif  // !NON_OS_BUILD
 
 /** runtime macro to output logs at a specified level.
  *

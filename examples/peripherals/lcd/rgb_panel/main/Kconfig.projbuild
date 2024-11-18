@@ -1,23 +1,29 @@
 menu "Example Configuration"
-    config EXAMPLE_DOUBLE_FB
-        bool "Use double Frame Buffer"
-        default "n"
+    choice EXAMPLE_LCD_BUFFER_MODE
+        prompt "RGB LCD Buffer Mode"
+        default EXAMPLE_USE_SINGLE_FB
         help
-            Enable this option, driver will allocate two frame buffers.
+            Select the LCD buffer mode.
 
-    config EXAMPLE_USE_BOUNCE_BUFFER
-        depends on !EXAMPLE_DOUBLE_FB
-        bool "Use bounce buffer"
-        help
-            Enable bounce buffer mode can achieve higher PCLK frequency at the cost of higher CPU consumption.
+        config EXAMPLE_USE_SINGLE_FB
+            bool "Use single frame buffer"
+            help
+                Allocate one frame buffer in the driver.
+                Allocate one draw buffer in LVGL.
 
-    config EXAMPLE_AVOID_TEAR_EFFECT_WITH_SEM
-        depends on !EXAMPLE_DOUBLE_FB
-        bool "Avoid tearing effect"
-        default "y"
-        help
-            Enable this option, the example will use a pair of semaphores to avoid the tearing effect.
-            Note, if the Double Frame Buffer is used, then we can also avoid the tearing effect without the lock.
+        config EXAMPLE_USE_DOUBLE_FB
+            bool "Use double frame buffer"
+            help
+                Allocate two frame buffers in the driver.
+                The frame buffers also work as ping-pong draw buffers in LVGL.
+
+        config EXAMPLE_USE_BOUNCE_BUFFER
+            bool "Use bounce buffer"
+            help
+                Allocate one frame buffer in the driver.
+                Allocate two bounce buffers in the driver.
+                Allocate one draw buffer in LVGL.
+    endchoice
 
     choice EXAMPLE_LCD_DATA_LINES
         prompt "RGB LCD Data Lines"
@@ -27,11 +33,15 @@ menu "Example Configuration"
 
         config EXAMPLE_LCD_DATA_LINES_16
             bool "16 data lines"
+
+        config EXAMPLE_LCD_DATA_LINES_24
+            bool "24 data lines"
     endchoice
 
     config EXAMPLE_LCD_DATA_LINES
         int
         default 16 if EXAMPLE_LCD_DATA_LINES_16
+        default 24 if EXAMPLE_LCD_DATA_LINES_24
 
     menu "GPIO assignment"
         config EXAMPLE_LCD_VSYNC_GPIO
@@ -114,5 +124,45 @@ menu "Example Configuration"
             int "DATA15 GPIO"
             help
                 GPIO pin number for data bus[15].
+        config EXAMPLE_LCD_DATA16_GPIO
+            int "DATA16 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[16].
+        config EXAMPLE_LCD_DATA17_GPIO
+            int "DATA17 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[17].
+        config EXAMPLE_LCD_DATA18_GPIO
+            int "DATA18 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[18].
+        config EXAMPLE_LCD_DATA19_GPIO
+            int "DATA19 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[19].
+        config EXAMPLE_LCD_DATA20_GPIO
+            int "DATA20 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[20].
+        config EXAMPLE_LCD_DATA21_GPIO
+            int "DATA21 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[21].
+        config EXAMPLE_LCD_DATA22_GPIO
+            int "DATA22 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[22].
+        config EXAMPLE_LCD_DATA23_GPIO
+            int "DATA23 GPIO"
+            depends on EXAMPLE_LCD_DATA_LINES > 16
+            help
+                GPIO pin number for data bus[23].
     endmenu
 endmenu

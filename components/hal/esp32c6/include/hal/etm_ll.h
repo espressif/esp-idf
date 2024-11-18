@@ -11,7 +11,6 @@
 #include <stdbool.h>
 #include "hal/assert.h"
 #include "hal/misc.h"
-#include "hal/lp_aon_ll.h"
 #include "soc/soc_etm_struct.h"
 #include "soc/pcr_struct.h"
 

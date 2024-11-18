@@ -64,7 +64,7 @@ Steps For Creating Custom Chip Drivers and Overriding the ESP-IDF Default Driver
             .get_chip_caps = spi_flash_chip_eon_get_caps,
          };
 
-   - You also can see how to implement this in the example :example:`storage/custom_flash_driver`.
+   - You also can see how to implement this in the example :example:`storage/custom_flash_driver`. This example demonstrates how to override the default chip driver list.
 
 4. Write a new ``CMakeLists.txt`` file for the ``custom_chip_driver`` component, including an additional line to add a linker dependency from ``spi_flash`` to ``custom_chip_driver``::
 
@@ -80,8 +80,3 @@ Steps For Creating Custom Chip Drivers and Overriding the ESP-IDF Default Driver
 5. The ``linker.lf`` is used to put every chip driver that you are going to use whilst cache is disabled into internal RAM. See :doc:`/api-guides/linker-script-generation` for more details. Make sure this file covers all the source files that you add.
 
 6. Build your project, and you will see the new flash driver is used.
-
-Example
--------
-
-See also :example:`storage/custom_flash_driver`.

@@ -101,7 +101,7 @@ menu "OpenThread"
         default 5 if OPENTHREAD_LOG_LEVEL_DEBG
 
     choice OPENTHREAD_RADIO_TYPE
-        prompt "Config the Thread radio type"
+        prompt "Config the Thread radio type with 15.4 link"
         depends on OPENTHREAD_ENABLED
         default OPENTHREAD_RADIO_NATIVE if SOC_IEEE802154_SUPPORTED
         default OPENTHREAD_RADIO_SPINEL_UART
@@ -124,7 +124,25 @@ menu "OpenThread"
             help
                 Select this to connect to a Radio Co-Processor via SPI.
 
+        config OPENTHREAD_RADIO_154_NONE
+            bool "Disable the Thread radio based on 15.4 link"
+            help
+                Select this to disable the Thread radio based on 15.4 link.
     endchoice
+
+    config OPENTHREAD_RADIO_TREL
+        bool "Enable Thread Radio Encapsulation Link (TREL)"
+        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
+        default n
+        help
+            Select this option to enable Thread Radio Encapsulation Link.
+
+    config OPENTHREAD_TREL_PORT
+        int "The port of openthread trel service"
+        depends on OPENTHREAD_RADIO_TREL
+        default 12390
+        help
+            Configure the port number of TREL service.
 
     choice OPENTHREAD_DEVICE_TYPE
         prompt "Config the Thread device type"
@@ -260,12 +278,20 @@ menu "OpenThread"
         help
             Select this option to enable border router features in OpenThread.
 
-    config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
-        bool 'Allocate message pool buffer from PSRAM'
+    menu "Thread Memory Allocation Config"
         depends on OPENTHREAD_ENABLED && (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
-        default n
-        help
-            If enabled, the message pool is managed by platform defined logic.
+        config OPENTHREAD_MEM_ALLOC_EXTERNAL
+            bool 'Allocate memory from PSRAM'
+            default y
+            help
+                Select this option to allocate buffer from PSRAM for Thread
+
+        config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+            bool 'Allocate message pool buffer from PSRAM'
+            default n
+            help
+                If enabled, the message pool is managed by platform defined logic.
+    endmenu
 
     config OPENTHREAD_NUM_MESSAGE_BUFFERS
         int "The number of openthread message buffers"

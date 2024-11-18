@@ -9,7 +9,7 @@
 软件复位
 ------------
 
-函数 :cpp:func:`esp_restart` 用于执行芯片的软件复位。调用此函数时，程序停止执行，{IDF_TARGET_CPU_RESET_DES}，应用程序由 bootloader 加载并重启。
+函数 :cpp:func:`esp_restart` 用于执行芯片的软件复位。调用此函数时，程序停止执行，{IDF_TARGET_CPU_RESET_DES}，应用程序由引导加载程序加载并重启。
 
 函数 :cpp:func:`esp_register_shutdown_handler` 用于注册复位前会自动调用的例程（复位过程由 :cpp:func:`esp_restart` 函数触发），这与 ``atexit`` POSIX 函数的功能类似。
 

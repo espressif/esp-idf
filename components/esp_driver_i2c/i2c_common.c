@@ -33,7 +33,7 @@
 #include "soc/rtc_io_channel.h"
 #include "driver/lp_io.h"
 #endif
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if I2C_USE_RETENTION_LINK
 #include "esp_private/sleep_retention.h"
 #endif
 
@@ -47,14 +47,30 @@ typedef struct i2c_platform_t {
 
 static i2c_platform_t s_i2c_platform = {}; // singleton platform
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
 static esp_err_t s_i2c_sleep_retention_init(void *arg)
 {
     i2c_bus_t *bus = (i2c_bus_t *)arg;
     i2c_port_num_t port_num = bus->port_num;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_I2C, I2C_SLEEP_RETENTION_MODULE(port_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[port_num].link_list, i2c_regs_retention[port_num].link_num, REGDMA_LINK_PRI_I2C, i2c_regs_retention[port_num].module_id);
     ESP_RETURN_ON_ERROR(ret, TAG, "failed to allocate mem for sleep retention");
     return ret;
+}
+
+void i2c_create_retention_module(i2c_bus_handle_t handle)
+{
+    i2c_port_num_t port_num = handle->port_num;
+    _lock_acquire(&s_i2c_platform.mutex);
+    if (handle->retention_link_created == false) {
+        if (sleep_retention_module_allocate(i2c_regs_retention[port_num].module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, I2C driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        } else {
+            handle->retention_link_created = true;
+        }
+    }
+    _lock_release(&s_i2c_platform.mutex);
+
 }
 #endif
 
@@ -77,14 +93,14 @@ static esp_err_t s_i2c_bus_handle_acquire(i2c_port_num_t port_num, i2c_bus_handl
             bus->bus_mode = mode;
             bus->is_lp_i2c = (bus->port_num < SOC_HP_I2C_NUM) ? false : true;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
             if (bus->is_lp_i2c == false) {
                 sleep_retention_module_init_param_t init_param = {
                     .cbs = { .create = { .handle = s_i2c_sleep_retention_init, .arg = (void *)bus } }
                 };
-                ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(port_num), &init_param);
-                if (ret == ESP_OK) {
-                    sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(port_num));
+                esp_err_t err = sleep_retention_module_init(i2c_regs_retention[port_num].module_id, &init_param);
+                if (err != ESP_OK) {
+                    ESP_LOGW(TAG, "init sleep retention failed on bus %d, power domain may be turned off during sleep", port_num);
                 }
             } else {
                 ESP_LOGW(TAG, "Detected PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP is enabled while LP_I2C is used. Sleep retention is not supported on LP I2C. Please use it properly");
@@ -175,12 +191,12 @@ esp_err_t i2c_release_bus_handle(i2c_bus_handle_t i2c_bus)
         if (s_i2c_platform.count[port_num] == 0) {
             do_deinitialize = true;
             s_i2c_platform.buses[port_num] = NULL;
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
+#if I2C_USE_RETENTION_LINK
             if (i2c_bus->is_lp_i2c == false) {
-                esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(port_num));
-                if (err == ESP_OK) {
-                    err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(port_num));
+                if (i2c_bus->retention_link_created) {
+                    sleep_retention_module_free(i2c_regs_retention[port_num].module_id);
                 }
+                sleep_retention_module_deinit(i2c_regs_retention[port_num].module_id);
             }
 #endif
             if (i2c_bus->intr_handle) {
@@ -296,29 +312,27 @@ static esp_err_t s_hp_i2c_pins_config(i2c_bus_handle_t handle)
     int port_id = handle->port_num;
 
     // SDA pin configurations
-    gpio_config_t sda_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_down_en = false,
-        .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
-        .pin_bit_mask = 1ULL << handle->sda_num,
-    };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->sda_num, 1), TAG, "i2c sda pin set level failed");
-    ESP_RETURN_ON_ERROR(gpio_config(&sda_conf), TAG, "config GPIO failed");
+    gpio_input_enable(handle->sda_num);
+    gpio_od_enable(handle->sda_num);
+    if (handle->pull_up_enable) {
+        gpio_pullup_en(handle->sda_num);
+    } else {
+        gpio_pullup_dis(handle->sda_num);
+    }
     gpio_func_sel(handle->sda_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->sda_num, i2c_periph_signal[port_id].sda_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->sda_num, i2c_periph_signal[port_id].sda_in_sig, 0);
 
     // SCL pin configurations
-    gpio_config_t scl_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_down_en = false,
-        .pull_up_en = handle->pull_up_enable ? GPIO_PULLUP_ENABLE : GPIO_PULLUP_DISABLE,
-        .pin_bit_mask = 1ULL << handle->scl_num,
-    };
     ESP_RETURN_ON_ERROR(gpio_set_level(handle->scl_num, 1), TAG, "i2c scl pin set level failed");
-    ESP_RETURN_ON_ERROR(gpio_config(&scl_conf), TAG, "config GPIO failed");
+    gpio_input_enable(handle->scl_num);
+    gpio_od_enable(handle->scl_num);
+    if (handle->pull_up_enable) {
+        gpio_pullup_en(handle->scl_num);
+    } else {
+        gpio_pullup_dis(handle->scl_num);
+    }
     gpio_func_sel(handle->scl_num, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(handle->scl_num, i2c_periph_signal[port_id].scl_out_sig, 0, 0);
     esp_rom_gpio_connect_in_signal(handle->scl_num, i2c_periph_signal[port_id].scl_in_sig, 0);
@@ -389,4 +403,29 @@ esp_err_t i2c_common_set_pins(i2c_bus_handle_t handle)
 #endif
 
     return ret;
+}
+
+esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
+{
+    int port_id = handle->port_num;
+
+    if (handle->is_lp_i2c == false) {
+        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->sda_num), TAG, "disable i2c pins failed");
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+
+        ESP_RETURN_ON_ERROR(gpio_output_disable(handle->scl_num), TAG, "disable i2c pins failed");
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+    }
+#if SOC_LP_I2C_SUPPORTED
+    else {
+        ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
+        ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+#endif
+    }
+#endif
+
+    return ESP_OK;
 }

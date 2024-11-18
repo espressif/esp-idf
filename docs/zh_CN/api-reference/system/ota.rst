@@ -19,7 +19,7 @@ OTA 数据分区
 
 所有使用 OTA 功能项目，其 :doc:`../../api-guides/partition-tables` 必须包含一个 OTA 数据分区（类型为 ``data``，子类型为 ``ota``）。
 
-工厂启动设置下，OTA 数据分区中应没有数据（所有字节擦写成 0xFF）。如果分区表中有工厂应用程序，ESP-IDF 软件引导加载程序会启动工厂应用程序。如果分区表中没有工厂应用程序，则启动第一个可用的 OTA 分区（通常是 ``ota_0``）。
+工厂启动设置下，OTA 数据分区中应没有数据（所有字节擦写成 0xFF）。如果分区表中有工厂应用程序，ESP-IDF 二级引导加载程序会启动工厂应用程序。如果分区表中没有工厂应用程序，则启动第一个可用的 OTA 分区（通常是 ``ota_0``）。
 
 第一次 OTA 升级后，OTA 数据分区更新，指定下一次启动哪个 OTA 应用程序分区。
 
@@ -344,7 +344,9 @@ Python API
 应用示例
 ------------
 
-- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到出厂分区等操作。有关更多信息，请参考 :example_file:`system/ota/otatool/README.md`。
+- :example:`system/ota/native_ota_example` 演示了如何在 {IDF_TARGET_NAME} 上使用 `app_update` 组件的 API 进行原生空中升级 (OTA)。适用的 SoC 请参阅 :example_file:`system/ota/native_ota_example/README.md`。
+
+- :example:`system/ota/otatool` 演示了如何使用 OTA 工具执行读取、写入和擦除 OTA 分区、切换启动分区以及切换到工厂分区等操作。详情请参阅 :example_file:`system/ota/otatool/README.md`。
 
 API 参考
 --------

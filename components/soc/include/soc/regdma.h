@@ -54,6 +54,14 @@ extern "C" {
 #define REGDMA_TG0_TIMER_LINK(_pri)         ((0x1C << 8) | _pri)
 #define REGDMA_TG1_TIMER_LINK(_pri)         ((0x1D << 8) | _pri)
 #define REGDMA_I2S_LINK(_pri)               ((0x1E << 8) | _pri)
+#define REGDMA_ETM_LINK(_pri)               ((0x1F << 8) | _pri)
+#define REGDMA_TSENS_LINK(_pri)             ((0x20 << 8) | _pri)
+#define REGDMA_TWAI_LINK(_pri)              ((0x21 << 8) | _pri)
+#define REGDMA_PARLIO_LINK(_pri)            ((0x22 << 8) | _pri)
+#define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
+#define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
+#define REGDMA_PCNT_LINK(_pri)              ((0x25 << 8) | _pri)
+#define REGDMA_MCPWM_LINK(_pri)             ((0x26 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -68,10 +76,18 @@ extern "C" {
 #define REGDMA_LINK_PRI_IEEE802154              REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GDMA                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_RMT                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_ETM                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GPTIMER                 REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2C                     REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_I2S                     REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_PARLIO                  REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_PCNT                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_UART                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_TEMPERATURE_SENSOR      REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,

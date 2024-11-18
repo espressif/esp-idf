@@ -11,12 +11,11 @@ This example shows how to use the CDC-ACM Host Driver to allow an ESP chip to co
 
 ### Hardware Required
 
-Two ESP boards that have USB-OTG supported. One will act as USB host and the other as USB device.  
-Connect USB_D+, USB_D-, GND and +5V signals of USB host to USB device.
+Two development boards with USB-OTG support. One will act as USB host and the other as USB device.  
 
 #### Pin Assignment
 
-See common pin assignments for USB Device examples from [upper level](../../../README.md#common-pin-assignments).
+Follow instruction in [examples/usb/README.md](../../../README.md) for specific hardware setup.
 
 ### Build and Flash
 

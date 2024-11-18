@@ -113,8 +113,6 @@ static inline void brownout_ll_ana_reset_enable(bool enable)
     LP_ANA.fib_enable.val &= ~BROWNOUT_DETECTOR_LL_FIB_ENABLE;
     // then we can enable or disable if we want the BOD mode1 to reset the system
     LP_ANA.bod_mode1_cntl.bod_mode1_reset_ena = enable;
-    // Disable the power glitch detect.
-    LP_ANA.fib_enable.val &= ~(BIT2|BIT3|BIT4|BIT5);
 }
 
 /**

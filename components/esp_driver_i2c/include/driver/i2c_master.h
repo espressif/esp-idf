@@ -33,6 +33,9 @@ typedef struct {
     size_t trans_queue_depth;             /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background, only valid in asynchronous transaction. (Typically max_device_num * per_transaction)*/
     struct {
         uint32_t enable_internal_pullup: 1;  /*!< Enable internal pullups. Note: This is not strong enough to pullup buses under high-speed frequency. Recommend proper external pull-up if possible */
+        uint32_t allow_pd:               1;  /*!< If set, the driver will backup/restore the I2C registers before/after entering/exist sleep mode.
+                                              By this approach, the system can power off I2C's power domain.
+                                              This can save power, but at the expense of more RAM being consumed */
     } flags;                              /*!< I2C master config flags */
 } i2c_master_bus_config_t;
 
@@ -256,6 +259,22 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle);
  *      - ESP_FAIL: Flush transactions failed because of other error
  */
 esp_err_t i2c_master_bus_wait_all_done(i2c_master_bus_handle_t bus_handle, int timeout_ms);
+
+/**
+ * @brief Retrieves the I2C master bus handle for a specified I2C port number.
+ *
+ * This function retrieves the I2C master bus handle for the
+ * given I2C port number. Please make sure the handle has already been initialized, and this
+ * function would simply returns the existing handle. Note that the returned handle still can't be used concurrently
+ *
+ * @param port_num I2C port number for which the handle is to be retrieved.
+ * @param ret_handle Pointer to a variable where the retrieved handle will be stored.
+ * @return
+ *     - ESP_OK: Success. The handle is retrieved successfully.
+ *     - ESP_ERR_INVALID_ARG: Invalid argument, such as invalid port number
+ *     - ESP_ERR_INVALID_STATE: Invalid state, such as the I2C port is not initialized.
+ */
+esp_err_t i2c_master_get_bus_handle(i2c_port_num_t port_num, i2c_master_bus_handle_t *ret_handle);
 
 #ifdef __cplusplus
 }

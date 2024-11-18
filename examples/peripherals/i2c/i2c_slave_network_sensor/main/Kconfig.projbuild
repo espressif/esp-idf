@@ -1,0 +1,24 @@
+menu "Example Configuration"
+
+    menu "I2C Slave"
+        config I2C_SLAVE_SCL
+            int "SCL GPIO Num"
+            default 4
+            help
+                GPIO number for I2C Slave clock line.
+
+        config I2C_SLAVE_SDA
+            int "SDA GPIO Num"
+            default 5
+            help
+                GPIO number for I2C Slave data line.
+
+        config I2C_SLAVE_ADDRESS
+            hex "I2C SLAVE ADDRESS"
+            default 0x28
+            help
+                Address of I2C slave
+
+    endmenu
+
+endmenu

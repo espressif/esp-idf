@@ -50,6 +50,7 @@ typedef enum {
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
 #define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
+#define RTC_SLEEP_LP_PERIPH_USE_XTAL    BIT(20)
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 #define RTC_EXT0_TRIG_EN            PMU_EXT0_WAKEUP_EN      //!< EXT0 wakeup
@@ -109,6 +110,12 @@ typedef enum {
 #define RTC_LP_CORE_TRIG_EN         0
 #endif //SOC_LP_CORE_SUPPORTED
 
+#if SOC_LP_VAD_SUPPORTED
+#define RTC_LP_VAD_TRIG_EN          PMU_LP_I2S_WAKEUP_EN   //!< LP VAD wakeup
+#else
+#define RTC_LP_VAD_TRIG_EN          0
+#endif //SOC_LP_VAD_SUPPORTED
+
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
@@ -127,6 +134,7 @@ typedef enum {
                                RTC_TOUCH_TRIG_EN        | \
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
+                               RTC_LP_VAD_TRIG_EN       | \
                                RTC_BROWNOUT_DET_TRIG_EN)
 
 

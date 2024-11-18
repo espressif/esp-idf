@@ -14,6 +14,7 @@ This example demonstrates how to use the ISP (image signal processor) to work wi
 - ISP Demosaic feature
 - ISP GAMMA feature
 - ISP Color feature
+- ISP LSC feature
 
 ## Usage
 

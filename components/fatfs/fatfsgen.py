@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 # SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import os
 from datetime import datetime
-from typing import Any, List, Optional
+from typing import Any
+from typing import List
+from typing import Optional
 
 from fatfs_utils.boot_sector import BootSector
 from fatfs_utils.exceptions import NoFreeClusterException
@@ -12,10 +13,16 @@ from fatfs_utils.fat import FAT
 from fatfs_utils.fatfs_state import FATFSState
 from fatfs_utils.fs_object import Directory
 from fatfs_utils.long_filename_utils import get_required_lfn_entries_count
-from fatfs_utils.utils import (BYTES_PER_DIRECTORY_ENTRY, FATFS_INCEPTION, FATFS_MIN_ALLOC_UNIT,
-                               RESERVED_CLUSTERS_COUNT, FATDefaults, get_args_for_partition_generator,
-                               get_fat_sectors_count, get_non_data_sectors_cnt, read_filesystem,
-                               required_clusters_count)
+from fatfs_utils.utils import BYTES_PER_DIRECTORY_ENTRY
+from fatfs_utils.utils import FATDefaults
+from fatfs_utils.utils import FATFS_INCEPTION
+from fatfs_utils.utils import FATFS_MIN_ALLOC_UNIT
+from fatfs_utils.utils import get_args_for_partition_generator
+from fatfs_utils.utils import get_fat_sectors_count
+from fatfs_utils.utils import get_non_data_sectors_cnt
+from fatfs_utils.utils import read_filesystem
+from fatfs_utils.utils import required_clusters_count
+from fatfs_utils.utils import RESERVED_CLUSTERS_COUNT
 
 
 def duplicate_fat_decorator(func):  # type: ignore
@@ -48,14 +55,15 @@ class FATFS:
                  volume_label: str = FATDefaults.VOLUME_LABEL,
                  file_sys_type: str = FATDefaults.FILE_SYS_TYPE,
                  root_entry_count: int = FATDefaults.ROOT_ENTRIES_COUNT,
-                 explicit_fat_type: int = None,
+                 explicit_fat_type: Optional[int] = None,
                  media_type: int = FATDefaults.MEDIA_TYPE) -> None:
         # root directory bytes should be aligned by sector size
-        assert (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
+        assert (int(root_entry_count) * BYTES_PER_DIRECTORY_ENTRY) % sector_size == 0
         # number of bytes in the root dir must be even multiple of BPB_BytsPerSec
-        assert ((root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size) % 2 == 0
+        if (int(root_entry_count) > 128):
+            assert ((int(root_entry_count) * BYTES_PER_DIRECTORY_ENTRY) // sector_size) % 2 == 0
 
-        root_dir_sectors_cnt: int = (root_entry_count * BYTES_PER_DIRECTORY_ENTRY) // sector_size
+        root_dir_sectors_cnt: int = (int(root_entry_count) * BYTES_PER_DIRECTORY_ENTRY) // sector_size
 
         self.state: FATFSState = FATFSState(sector_size=sector_size,
                                             explicit_fat_type=explicit_fat_type,

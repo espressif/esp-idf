@@ -25,11 +25,11 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 概念
 ----
 
-- ``项目`` 特指一个目录，其中包含了构建可执行应用程序所需的全部文件和配置，以及其他支持型文件，例如分区表、数据/文件系统分区和引导程序。
+- ``项目`` 特指一个目录，其中包含了构建可执行应用程序所需的全部文件和配置，以及其他支持型文件，例如分区表、数据/文件系统分区和引导加载程序。
 
 - ``项目配置`` 保存在项目根目录下名为 ``sdkconfig`` 的文件中，可以通过 ``idf.py menuconfig`` 进行修改，且一个项目只能包含一个项目配置。
 
-- ``应用程序`` 是由 ESP-IDF 构建得到的可执行文件。一个项目通常会构建两个应用程序：项目应用程序（可执行的主文件，即用户自定义的固件）和引导程序（启动并初始化项目应用程序）。
+- ``应用程序`` 是由 ESP-IDF 构建得到的可执行文件。一个项目通常会构建两个应用程序：项目应用程序（可执行的主文件，即用户自定义的固件）和引导加载程序（启动并初始化项目应用程序）。
 
 - ``组件`` 是模块化且独立的代码，会被编译成静态库（.a 文件）并链接到应用程序。部分组件由 ESP-IDF 官方提供，其他组件则来源于其它开源项目。
 
@@ -97,7 +97,7 @@ idf.py
 
     make app-flash
 
-可用的目标还包括：``flash``、``app-flash`` （仅用于 app）、``bootloader-flash`` （仅用于 bootloader）。
+可用的目标还包括：``flash``、``app-flash`` （仅用于 app）、``bootloader-flash`` （仅用于引导加载程序）。
 
 以这种方式烧录时，可以通过设置 ``ESPPORT`` 和 ``ESPBAUD`` 环境变量来指定串口设备和波特率。可以在操作系统或 IDE 项目中设置该环境变量，或者直接在命令行中进行设置::
 
@@ -131,7 +131,7 @@ idf.py
 设置 Python 解释器
 ------------------
 
-ESP-IDF 适用于 Python 3.8 以上版本。
+ESP-IDF 适用于 Python 3.9 以上版本。
 
 ``idf.py`` 和其他的 Python 脚本会使用默认的 Python 解释器运行，如 ``python``。你可以通过 ``python3 $IDF_PATH/tools/idf.py ...`` 命令切换到别的 Python 解释器，或者通过设置 shell 别名或其他脚本来简化该命令。
 
@@ -181,7 +181,7 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - 顶层项目 CMakeLists.txt 文件，这是 CMake 用于学习如何构建项目的主要文件，可以在这个文件中设置项目全局的 CMake 变量。顶层项目 CMakeLists.txt 文件会导入 :idf_file:`/tools/cmake/project.cmake` 文件，由它负责实现构建系统的其余部分。该文件最后会设置项目的名称，并定义该项目。
 
-- "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。
+- "sdkconfig" 项目配置文件，执行 ``idf.py menuconfig`` 时会创建或更新此文件，文件中保存了项目中所有组件（包括 ESP-IDF 本身）的配置信息。 ``sdkconfig`` 文件可能会也可能不会被添加到项目的源码管理系统中。更多有关本配置文件的信息，请参阅配置指南中的 :ref:`sdkconfig file <sdkconfig-file>` 章节。
 
 - "dependencies.lock" 文件包含项目中当前使用的所有托管的组件及其版本。使用 IDF 组件管理器添加或更新项目组件时，会自动生成或更新 ``dependencies.lock`` 文件。因此，请勿手动编辑此文件！如果项目中没有组件包含 ``idf_component.yml`` 文件，则不会创建 ``dependencies.lock`` 文件。
 
@@ -245,7 +245,9 @@ ESP-IDF 适用于 Python 3.8 以上版本。
 
 - ``COMPONENTS``：要构建进项目中的组件名称列表，默认为 ``COMPONENT_DIRS`` 目录下检索到的所有组件。使用此变量可以“精简”项目以缩短构建时间。请注意，如果一个组件通过 ``COMPONENT_REQUIRES`` 指定了它依赖的另一个组件，则会自动将其添加到 ``COMPONENTS`` 中，所以 ``COMPONENTS`` 列表可能会非常短。
 
-- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：引导加载程序编译时应忽略的组件列表，位于 ``bootloader_components/`` 目录中。使用这一变量可以将一个组件有条件地包含在项目中。
+- ``BOOTLOADER_IGNORE_EXTRA_COMPONENT``：可选组件列表，位于 ``bootloader_components/`` 目录中，引导加载程序编译时会忽略该列表中的组件。使用这一变量可以将一个组件有条件地包含在项目中。
+
+- ``BOOTLOADER_EXTRA_COMPONENT_DIRS``：可选的附加路径列表，引导加载程序编译时将从这些路径中搜索要编译的组件。注意，这是一个构建属性。
 
 以上变量中的路径可以是绝对路径，或者是相对于项目目录的相对路径。
 
@@ -362,7 +364,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 以下变量在项目级别中被设置，但可在组件 CMakeLists 中使用：
 
-- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多详细信息请参阅 :doc:`Kconfig </api-reference/kconfig>`。
+- ``CONFIG_*``：项目配置中的每个值在 cmake 中都对应一个以 ``CONFIG_`` 开头的变量。更多有关项目配置的信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。
 - ``ESP_PLATFORM``：ESP-IDF 构建系统处理 CMake 文件时，其值设为 1。
 
 
@@ -428,7 +430,7 @@ ESP-IDF 在搜索所有待构建的组件时，会按照以下优先级搜索组
 
 创建一个组件的 Kconfig 文件，最简单的方法就是使用 ESP-IDF 中现有的 Kconfig 文件作为模板，在这基础上进行修改。
 
-有关示例请参阅 :ref:`add_conditional_config`。
+有关示例请参阅 :ref:`add_conditional_config`。详细信息请参阅 :ref:`组件配置指南 <component-configuration-guide>`。
 
 
 预处理器定义
@@ -461,7 +463,7 @@ ESP-IDF 构建系统会在命令行中添加以下 C 预处理器定义：
 
 - ``PRIV_REQUIRES`` 需要包含被当前组件的源文件 `#include` 的头文件所在的组件（除非已经被设置在了 ``REQUIRES`` 中）。以及是当前组件正常工作必须要链接的组件。
 
-- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx`` 宏）。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选择。
+- ``REQUIRES`` 和 ``PRIV_REQUIRES`` 的值不能依赖于任何配置选项（``CONFIG_xxx`` 宏）。这是因为在配置加载之前，依赖关系就已经被展开。其它组件变量（比如包含路径或源文件）可以依赖配置选项。
 
 - 如果当前组件除了 `通用组件依赖项`_ 中设置的通用组件（比如 RTOS、libc 等）外，并不依赖其它组件，那么对于上述两个 ``REQUIRES`` 变量，可以选择其中一个或是两个都不设置。
 
@@ -724,13 +726,14 @@ project_include.cmake
 在 ``project_include.cmake`` 文件中设置变量或目标时要格外小心，这些值被包含在项目的顶层 CMake 文件中，因此他们会影响或破坏所有组件的功能。
 
 
-KConfig.projbuild
+Kconfig.projbuild
 -----------------
 
-与 ``project_include.cmake`` 类似，也可以为组件定义一个 KConfig 文件以实现全局的 :ref:`component-configuration`。如果要在 menuconfig 的顶层添加配置选项，而不是在 “Component Configuration” 子菜单中，则可以在 ``CMakeLists.txt`` 文件所在目录的 KConfig.projbuild 文件中定义这些选项。
+与 ``project_include.cmake`` 类似，也可以为组件定义一个 Kconfig 文件以实现全局的 :ref:`component-configuration`。如果要在 menuconfig 的顶层添加配置选项，而不是在 “Component Configuration” 子菜单中，则可以在 ``CMakeLists.txt`` 文件所在目录的 Kconfig.projbuild 文件中定义这些选项。
 
-在此文件中添加配置时要小心，因为这些配置会包含在整个项目配置中。在可能的情况下，请为 :ref:`component-configuration` 创建 KConfig 文件。
+在此文件中添加配置时要小心，因为这些配置会包含在整个项目配置中。在可能的情况下，请为 :ref:`component-configuration` 创建 Kconfig 文件。
 
+详情请参阅配置指南中的 :ref:`Kconfig 文件 <kconfig-files>` 章节。
 
 通过封装对现有函数进行重新定义或扩展
 -------------------------------------
@@ -781,13 +784,22 @@ KConfig.projbuild
 
 请参考 :example:`custom_bootloader/bootloader_override` 查看覆盖默认引导加载程序的示例。
 
+与常规应用程序类似，通过构建属性 ``BOOTLOADER_EXTRA_COMPONENT_DIRS`` 可以将不在 `bootloader_component` 中的外部组件作为引导加载程序的一部分进行构建。可以只引用一个组件，也可以引用包含多个组件的路径。例如：
+
+    include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+    idf_build_set_property(BOOTLOADER_EXTRA_COMPONENT_DIRS "/path/to/extra/component/" APPEND)
+
+    project(main)
+
+请参考示例 :example:`custom_bootloader/bootloader_extra_dir`，查看如何向引导加载程序构建过程添加额外的组件。
 
 .. _config_only_component:
 
 仅配置组件
 ===========
 
-仅配置组件是一类不包含源文件的特殊组件，仅包含 ``Kconfig.projbuild``、``KConfig`` 和 ``CMakeLists.txt`` 文件，该 ``CMakeLists.txt`` 文件仅有一行代码，调用了 ``idf_component_register()`` 函数。此函数会将组件导入到项目构建中，但不会构建任何库，也不会将头文件添加到任何 include 搜索路径中。
+仅配置组件是一类不包含源文件的特殊组件，仅包含 ``Kconfig.projbuild``、``Kconfig`` 和 ``CMakeLists.txt`` 文件，该 ``CMakeLists.txt`` 文件仅有一行代码，调用了 ``idf_component_register()`` 函数。此函数会将组件导入到项目构建中，但不会构建任何库，也不会将头文件添加到任何 include 搜索路径中。
 
 
 CMake 调试
@@ -1065,6 +1077,10 @@ ExternalProject 的依赖与构建清理
 自定义 sdkconfig 的默认值
 =========================
 
+.. note::
+
+  有关 ``sdkconfig.defaults`` 文件的详细信息，请参阅项目配置章节的 :ref:`sdkconfig.defaults 文件 <sdkconfig-defaults-file>`。
+
 对于示例工程或者其他你不想指定完整 sdkconfig 配置的项目，但是你确实希望覆盖 ESP-IDF 默认值中的某些键值，则可以在项目中创建 ``sdkconfig.defaults`` 文件。重新创建新配置时将会用到此文件，另外在 ``sdkconfig`` 没有设置新配置值时，上述文件也会被用到。
 
 如若需要覆盖此文件的名称或指定多个文件，请设置 ``SDKCONFIG_DEFAULTS`` 环境变量或在顶层 CMakeLists.txt 文件中设置 ``SDKCONFIG_DEFAULTS``。非绝对路径的文件名将以当前项目的相对路径来解析。
@@ -1083,6 +1099,7 @@ ExternalProject 的依赖与构建清理
 
 例如，如果 ``SDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig_devkit1"``，并且在同一文件夹中有一个 ``sdkconfig.defaults.esp32`` 文件，那么这些文件将按以下顺序应用：（1) sdkconfig.defaults (2) sdkconfig.defaults.esp32 (3) sdkconfig_devkit1。
 
+关于项目配置的详细信息，请参阅 :ref:`项目配置指南 <project-configuration-guide>`。关于配置文件的详细信息，请参阅 :ref:`配置文件的结构和关系 <configuration-structure>`。
 
 .. _flash_parameters:
 
@@ -1093,9 +1110,9 @@ flash 参数
 
 运行项目构建之后，构建目录将包含项目二进制输出文件（``.bin`` 文件），同时也包含以下烧录数据文件：
 
-- ``flash_project_args`` 包含烧录整个项目的参数，包括应用程序 (app)、引导程序 (bootloader)、分区表，如果设置了 PHY 数据，也会包含此数据。
+- ``flash_project_args`` 包含烧录整个项目的参数，包括应用程序 (app)、引导加载程序 (bootloader)、分区表，如果设置了 PHY 数据，也会包含此数据。
 - ``flash_app_args`` 只包含烧录应用程序的参数。
-- ``flash_bootloader_args`` 只包含烧录引导程序的参数。
+- ``flash_bootloader_args`` 只包含烧录引导加载程序的参数。
 
 .. highlight:: bash
 
@@ -1108,12 +1125,12 @@ flash 参数
 构建目录中还包含生成的 ``flasher_args.json`` 文件，此文件包含 JSON 格式的项目烧录信息，可用于 ``idf.py`` 和其它需要项目构建信息的工具。
 
 
-构建 Bootloader
-===============
+构建引导加载程序
+================
 
-引导程序是 :idf:`/components/bootloader/subproject` 内部独特的“子项目”，它有自己的项目 CMakeLists.txt 文件，能够构建独立于主项目的 ``.ELF`` 和 ``.BIN`` 文件，同时它又与主项目共享配置和构建目录。
+引导加载程序是 :idf:`/components/bootloader/subproject` 内部独特的“子项目”，它有自己的项目 CMakeLists.txt 文件，能够构建独立于主项目的 ``.ELF`` 和 ``.BIN`` 文件，同时它又与主项目共享配置和构建目录。
 
-子项目通过 :idf_file:`/components/bootloader/project_include.cmake` 文件作为外部项目插入到项目的顶层，主构建进程会运行子项目的 CMake，包括查找组件（主项目使用的组件的子集），生成引导程序专用的配置文件（从主 ``sdkconfig`` 文件中派生）。
+子项目通过 :idf_file:`/components/bootloader/project_include.cmake` 文件作为外部项目插入到项目的顶层，主构建进程会运行子项目的 CMake，包括查找组件（主项目使用的组件的子集），生成引导加载程序专用的配置文件（从主 ``sdkconfig`` 文件中派生）。
 
 
 .. _write-pure-component:
@@ -1668,9 +1685,9 @@ CMake 中不可用的功能
 应用示例
 --------------------
 
-- :example:`build_system/wrappers` 演示了如何使用链接器功能在 ESP-IDF 和引导程序中重新定义或覆盖任何公共函数，以修改或扩展函数的默认行为。
+- :example:`build_system/wrappers` 演示了如何使用链接器功能在 ESP-IDF 和引导加载程序中重新定义或覆盖任何公共函数，以修改或扩展函数的默认行为。
 
-- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导程序，提供一个自定义引导程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 KConfig 选项）有条件地覆盖引导程序。
+- :example:`custom_bootloader/bootloader_override` 演示了如何从常规项目中覆盖二级引导加载程序，提供一个自定义引导加载程序，在启动时打印额外的消息，并能够基于某些条件（如目标依赖性或 Kconfig 选项）有条件地覆盖引导加载程序。
 
 - :example:`build_system/cmake/import_lib` 演示了如何使用 ExternalProject CMake 模块导入和使用第三方库。
 

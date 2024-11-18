@@ -116,8 +116,13 @@ idf_build_get_property(sdkconfig SDKCONFIG)
 idf_build_get_property(python PYTHON)
 idf_build_get_property(extra_cmake_args EXTRA_CMAKE_ARGS)
 
-# We cannot pass lists are a parameter to the external project without modifying the ';' separator
+# BOOTLOADER_EXTRA_COMPONENT_DIRS may have been set by the `main` component, do not overwrite it
+idf_build_get_property(bootloader_extra_component_dirs BOOTLOADER_EXTRA_COMPONENT_DIRS)
+list(APPEND bootloader_extra_component_dirs "${CMAKE_CURRENT_LIST_DIR}")
+
+# We cannot pass lists as a parameter to the external project without modifying the ';' separator
 string(REPLACE ";" "|" BOOTLOADER_IGNORE_EXTRA_COMPONENT "${BOOTLOADER_IGNORE_EXTRA_COMPONENT}")
+string(REPLACE ";" "|" bootloader_extra_component_dirs "${bootloader_extra_component_dirs}")
 
 externalproject_add(bootloader
     SOURCE_DIR "${CMAKE_CURRENT_LIST_DIR}/subproject"
@@ -127,7 +132,7 @@ externalproject_add(bootloader
     LIST_SEPARATOR |
     CMAKE_ARGS  -DSDKCONFIG=${sdkconfig} -DIDF_PATH=${idf_path} -DIDF_TARGET=${idf_target}
                 -DPYTHON_DEPS_CHECKED=1 -DPYTHON=${python}
-                -DEXTRA_COMPONENT_DIRS=${CMAKE_CURRENT_LIST_DIR}
+                -DEXTRA_COMPONENT_DIRS=${bootloader_extra_component_dirs}
                 -DPROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
                 -DIGNORE_EXTRA_COMPONENT=${BOOTLOADER_IGNORE_EXTRA_COMPONENT}
                 ${sign_key_arg} ${ver_key_arg}

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -414,6 +414,29 @@ typedef uint8_t esp_ble_mesh_addr_type_t;
 typedef struct {
     bool erase_flash;   /*!< Indicate if erasing flash when deinit mesh stack */
 } esp_ble_mesh_deinit_param_t;
+
+/** Scan parameters */
+typedef struct {
+    /**
+     * Scan interval.
+     *
+     * Range: 0x0004 to 0x4000.
+     *
+     * Time = N * 0.625 ms. Time Range: 2.5 ms to 10.24 s
+     */
+    uint16_t scan_interval;
+
+    /**
+     * Uncoded Scan window.
+     *
+     * Time scanned on uncoded PHY within a scan interval.
+     *
+     * Range: 0x0004 to 0x4000.
+     *
+     * Time = N * 0.625 ms. Time Range: 2.5 ms to 10.24 s
+     */
+    uint16_t uncoded_scan_window;
+} esp_ble_mesh_scan_param_t;
 
 /** Format of Unicast Address Range */
 typedef struct {

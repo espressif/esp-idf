@@ -599,10 +599,36 @@ spi_flash_caps_t spi_flash_chip_generic_get_caps(esp_flash_t *chip)
     // 32M-bits address support
 
     // flash suspend support
-    // XMC support suspend
-    if (chip->chip_id >> 16 == 0x20 || chip->chip_id >> 16 == 0x46) {
+    // XMC-D support suspend
+    if (chip->chip_id >> 16 == 0x46) {
         caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
     }
+
+    // XMC-D support suspend (some D series flash chip begin with 0x20, difference checked by SFDP)
+    if (chip->chip_id >> 16 == 0x20) {
+        uint8_t data = 0;
+        spi_flash_trans_t t = {
+            .command = CMD_RDSFDP,
+            .address_bitlen = 24,
+            .address = 0x32,
+            .mosi_len = 0,
+            .mosi_data = 0,
+            .miso_len = 1,
+            .miso_data = &data,
+            .dummy_bitlen = 8,
+        };
+        chip->host->driver->common_command(chip->host, &t);
+        if((data & 0x8) == 0x8) {
+            caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+        }
+    }
+
+#if CONFIG_SPI_FLASH_FORCE_ENABLE_XMC_C_SUSPEND
+    // XMC-C suspend has big risk. But can enable this anyway.
+    if (chip->chip_id >> 16 == 0x20) {
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+    }
+#endif
 
     // FM support suspend
     if (chip->chip_id >> 16 == 0xa1) {

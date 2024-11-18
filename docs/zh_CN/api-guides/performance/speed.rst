@@ -301,9 +301,9 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
 
 使用标准 C 库函数，如 ``fread`` 和 ``fwrite``，相较于使用平台特定的不带缓冲系统调用，如 ``read`` 和 ``write``，可能会导致 I/O 性能下降。
 
-``fread`` 与 ``fwrite`` 函数是为可移植性而设计的，而非速度，其缓冲性质会引入一些额外的开销。关于如何使用这两个函数，请参考示例 :example:`storage/fatfsgen`。
+``fread`` 与 ``fwrite`` 函数是为可移植性而设计的，而非速度，其缓冲性质会引入一些额外的开销。关于如何使用这两个函数，请参考示例 :example:`storage/fatfs/getting_started`。
 
-与之相比，``read`` 与 ``write`` 函数是标准的 POSIX API，可直接通过 VFS 处理 FatFs，由 ESP-IDF 负责底层实现。关于如何使用这两个函数，请参考示例 :example:`storage/perf_benchmark`。
+与之相比，``read`` 与 ``write`` 函数是标准的 POSIX API，可直接通过 VFS 处理 FatFs，由 ESP-IDF 负责底层实现。关于如何使用这两个函数，请参考示例 :example:`storage/fatfs/fs_operations`。
 
 下面提供了一些提示，更多信息请见 :doc:`/api-reference/storage/fatfs`。
 
@@ -314,4 +314,5 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
     - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小。Newlib 的默认值为 128 字节，但可将其增加到 4096、8192 或 16384 字节。为此，可以使用 ``setvbuf`` 函数对特定文件指针进行局部设置，或者通过修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 设置来进行全局修改。
 
         .. note::
+
             增加缓冲区的大小会增加堆内存的使用量。

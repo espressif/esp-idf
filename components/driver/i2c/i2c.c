@@ -280,7 +280,7 @@ static void i2c_hw_enable(i2c_port_t i2c_num)
 static esp_err_t i2c_sleep_retention_init(void *arg)
 {
     i2c_port_t i2c_num = *(i2c_port_t *)arg;
-    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_I2C, I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    esp_err_t ret = sleep_retention_entries_create(i2c_regs_retention[i2c_num].link_list, i2c_regs_retention[i2c_num].link_num, REGDMA_LINK_PRI_I2C, i2c_regs_retention[i2c_num].module_id);
     ESP_RETURN_ON_ERROR(ret, I2C_TAG, "failed to allocate mem for sleep retention");
     return ret;
 }
@@ -428,9 +428,9 @@ esp_err_t i2c_driver_install(i2c_port_t i2c_num, i2c_mode_t mode, size_t slv_rx_
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = i2c_sleep_retention_init, .arg = &i2c_num } }
     };
-    ret = sleep_retention_module_init(I2C_SLEEP_RETENTION_MODULE(i2c_num), &init_param);
+    ret = sleep_retention_module_init(i2c_regs_retention[i2c_num].module_id, &init_param);
     if (ret == ESP_OK) {
-        sleep_retention_module_allocate(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+        sleep_retention_module_allocate(i2c_regs_retention[i2c_num].module_id);
     }
 #endif
     return ESP_OK;
@@ -486,9 +486,9 @@ esp_err_t i2c_driver_delete(i2c_port_t i2c_num)
     p_i2c->intr_handle = NULL;
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_I2C_SUPPORT_SLEEP_RETENTION
-    esp_err_t err = sleep_retention_module_free(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+    esp_err_t err = sleep_retention_module_free(i2c_regs_retention[i2c_num].module_id);
     if (err == ESP_OK) {
-        err = sleep_retention_module_deinit(I2C_SLEEP_RETENTION_MODULE(i2c_num));
+        err = sleep_retention_module_deinit(i2c_regs_retention[i2c_num].module_id);
     }
 #endif
 

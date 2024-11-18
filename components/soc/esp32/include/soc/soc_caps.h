@@ -241,6 +241,7 @@
 #define SOC_LEDC_SUPPORT_APB_CLOCK       (1)
 #define SOC_LEDC_SUPPORT_REF_TICK        (1)
 #define SOC_LEDC_SUPPORT_HS_MODE         (1)
+#define SOC_LEDC_TIMER_NUM               (4)
 #define SOC_LEDC_CHANNEL_NUM             (8)
 #define SOC_LEDC_TIMER_BIT_WIDTH         (20)
 
@@ -424,6 +425,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D4           (1)     /*!< Support XTAL_D4 clock as the LP_FAST clock source */
 
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 

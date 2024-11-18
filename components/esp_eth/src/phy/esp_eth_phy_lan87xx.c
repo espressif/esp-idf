@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,9 @@
 #include "esp_eth_phy_802_3.h"
 
 static const char *TAG = "lan87xx";
+
+/* It was observed that assert nRST signal on LAN87xx needs to be a little longer than the minimum specified in datasheet */
+#define LAN87XX_PHY_RESET_ASSERTION_TIME_US 150
 
 /***************List of Supported Models***************/
 
@@ -287,12 +290,6 @@ err:
     return ret;
 }
 
-static esp_err_t lan87xx_reset_hw(esp_eth_phy_t *phy)
-{
-    /* It was observed that assert nRST signal on LAN87xx needs to be a little longer than the minimum specified in datasheet */
-    return esp_eth_phy_802_3_reset_hw(esp_eth_phy_into_phy_802_3(phy), 150);
-}
-
 static esp_err_t lan87xx_autonego_ctrl(esp_eth_phy_t *phy, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat)
 {
     esp_err_t ret = ESP_OK;
@@ -366,11 +363,18 @@ esp_eth_phy_t *esp_eth_phy_new_lan87xx(const eth_phy_config_t *config)
     esp_eth_phy_t *ret = NULL;
     phy_lan87xx_t *lan87xx = calloc(1, sizeof(phy_lan87xx_t));
     ESP_GOTO_ON_FALSE(lan87xx, NULL, err, TAG, "calloc lan87xx failed");
-    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&lan87xx->phy_802_3, config) == ESP_OK,
+    eth_phy_config_t lan87xx_config = *config;
+    // default chip specific configuration
+    if (config->hw_reset_assert_time_us == 0) {
+        lan87xx_config.hw_reset_assert_time_us = LAN87XX_PHY_RESET_ASSERTION_TIME_US;
+    }
+    if (config->post_hw_reset_delay_ms == 0) {
+        lan87xx_config.post_hw_reset_delay_ms = ESP_ETH_NO_POST_HW_RESET_DELAY;
+    }
+    ESP_GOTO_ON_FALSE(esp_eth_phy_802_3_obj_config_init(&lan87xx->phy_802_3, &lan87xx_config) == ESP_OK,
                         NULL, err, TAG, "configuration initialization of PHY 802.3 failed");
 
     // redefine functions which need to be customized for sake of LAN87xx
-    lan87xx->phy_802_3.parent.reset_hw = lan87xx_reset_hw;
     lan87xx->phy_802_3.parent.init = lan87xx_init;
     lan87xx->phy_802_3.parent.get_link = lan87xx_get_link;
     lan87xx->phy_802_3.parent.autonego_ctrl = lan87xx_autonego_ctrl;

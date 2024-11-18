@@ -59,6 +59,7 @@ const __attribute__((weak)) __attribute__((section(".rodata_desc")))  esp_app_de
 #endif
     .min_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MIN_FULL,
     .max_efuse_blk_rev_full = CONFIG_ESP_EFUSE_BLOCK_REV_MAX_FULL,
+    .mmu_page_size = 31 - __builtin_clz(CONFIG_MMU_PAGE_SIZE),
 };
 
 #ifndef CONFIG_APP_EXCLUDE_PROJECT_VER_VAR

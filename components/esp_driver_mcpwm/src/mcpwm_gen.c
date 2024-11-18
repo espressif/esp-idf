@@ -21,10 +21,12 @@
 #include "soc/soc_caps.h"
 #include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_ll.h"
+#include "hal/gpio_hal.h"
 #include "driver/gpio.h"
 #include "driver/mcpwm_gen.h"
 #include "mcpwm_private.h"
 #include "esp_private/esp_gpio_reserve.h"
+#include "esp_private/gpio.h"
 
 static const char *TAG = "mcpwm";
 
@@ -84,26 +86,28 @@ esp_err_t mcpwm_new_generator(mcpwm_oper_handle_t oper, const mcpwm_generator_co
     // reset generator
     mcpwm_hal_generator_reset(hal, oper_id, gen_id);
 
-    // GPIO configuration
     gen->gen_gpio_num = -1; // gpio not initialized yet
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        // also enable the input path if `io_loop_back` is enabled
-        .mode = (config->flags.io_od_mode ? GPIO_MODE_OUTPUT_OD : GPIO_MODE_OUTPUT) | (config->flags.io_loop_back ? GPIO_MODE_INPUT : 0),
-        .pin_bit_mask = (1ULL << config->gen_gpio_num),
-        .pull_down_en = config->flags.pull_down,
-        .pull_up_en = config->flags.pull_up,
-    };
-    ESP_GOTO_ON_ERROR(gpio_config(&gpio_conf), err, TAG, "config gen GPIO failed");
     // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(BIT64(config->gen_gpio_num));
     // check if the GPIO is already used by others
     if (old_gpio_rsv_mask & BIT64(config->gen_gpio_num)) {
         ESP_LOGW(TAG, "GPIO %d is not usable, maybe conflict with others", config->gen_gpio_num);
     }
+
+    // GPIO Matrix/MUX configuration
+    gpio_func_sel(config->gen_gpio_num, PIN_FUNC_GPIO);
+    // connect the signal to the GPIO by matrix, it will also enable the output path properly
     esp_rom_gpio_connect_out_signal(config->gen_gpio_num,
                                     mcpwm_periph_signals.groups[group->group_id].operators[oper_id].generators[gen_id].pwm_sig,
                                     config->flags.invert_pwm, 0);
+
+    // deprecated, to be removed in in esp-idf v6.0
+    if (config->flags.io_loop_back) {
+        gpio_ll_input_enable(&GPIO, config->gen_gpio_num);
+    }
+    if (config->flags.io_od_mode) {
+        gpio_ll_od_enable(&GPIO, config->gen_gpio_num);
+    }
 
     // fill in other generator members
     gen->gen_gpio_num = config->gen_gpio_num;
@@ -126,9 +130,9 @@ esp_err_t mcpwm_del_generator(mcpwm_gen_handle_t gen)
     mcpwm_group_t *group = oper->group;
 
     ESP_LOGD(TAG, "del generator (%d,%d,%d)", group->group_id, oper->oper_id, gen->gen_id);
-    // reset GPIO
+    // disable GPIO output
     if (gen->gen_gpio_num >= 0) {
-        gpio_reset_pin(gen->gen_gpio_num);
+        gpio_output_disable(gen->gen_gpio_num);
         esp_gpio_revoke(BIT64(gen->gen_gpio_num));
     }
     // recycle memory resource
@@ -399,6 +403,10 @@ esp_err_t mcpwm_generator_set_dead_time(mcpwm_gen_handle_t in_generator, mcpwm_g
     }
     if (config->negedge_delay_ticks) {
         mcpwm_ll_deadtime_set_falling_delay(hal->dev, oper_id, config->negedge_delay_ticks);
+    }
+
+    if (delay_on_both_edge && in_generator->gen_id == 0 && oper->generators[1]) {
+        ESP_LOGW(TAG, "generator B will not function correctly. To set deadtime on both edges for one generator while bypassing the deadtime for the other, please set the deadtime for generator B only.");
     }
 
     ESP_LOGD(TAG, "operator (%d,%d) dead time (R:%"PRIu32",F:%"PRIu32"), topology code:%"PRIx32, group->group_id, oper_id,

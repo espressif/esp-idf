@@ -50,7 +50,7 @@ static void print_results(const char *name, double time, size_t size, int repeat
 void spiflash_speed_test_raw_run(size_t repeat_count)
 {
     const size_t buf_size = CONFIG_EXAMPLE_TARGET_RW_SIZE;
-    uint32_t* buf = (uint32_t*) calloc(1, buf_size);
+    uint32_t* buf = (uint32_t*) heap_caps_calloc(1, buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_DMA);
     assert(buf != NULL);
     esp_fill_random(buf, buf_size);
 
@@ -159,7 +159,7 @@ static void run_fs_tests(const char *base_path, const char *type, bool new_file,
     assert(tiny_size < less_than_target_size);
 
     const size_t buf_size = more_than_target_size;
-    uint32_t* buf = (uint32_t*) calloc(1, buf_size);
+    uint32_t* buf = (uint32_t*) heap_caps_calloc(1, buf_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_DMA);
     assert(buf != NULL);
     esp_fill_random(buf, buf_size);
 
@@ -219,7 +219,8 @@ void sdcard_speed_test_raw_run(sdmmc_card_t *card, size_t repeat_count)
     size_t sector_count = CONFIG_EXAMPLE_TARGET_RW_SIZE / sector_size;
     size_t subsection_sector_count = sector_count / 4;
 
-    char *buf = (char *) calloc(1, sector_count * sector_size);
+    // Best performance is achieved when the buffer is internal (not PSRAM) and aligned to RAM line size
+    char *buf = (char *) heap_caps_calloc(1, sector_count * sector_size, MALLOC_CAP_INTERNAL | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_DMA);
     assert(buf != NULL);
 
     struct timeval tv_start;

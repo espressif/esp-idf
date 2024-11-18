@@ -13,13 +13,13 @@
 
     {IDF_TARGET_NAME} 支持蓝牙 5.0 (LE)，并且已经获得蓝牙 LE 5.4 认证。
 
-.. only:: esp32c2 or esp32c6 or esp32h2
+.. only:: esp32c2 or esp32c6 or esp32h2 or esp32c5 or esp32c61
 
     {IDF_TARGET_NAME} 支持蓝牙 5.0 (LE)，并且已经获得蓝牙 LE 5.3 认证。
 
 ESP-IDF 中的低功耗蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现低功耗蓝牙功能，详见下。
 
-.. only:: esp32 or esp32s3 or esp32c3 or esp32c6
+.. only:: esp32 or esp32s3 or esp32c3 or esp32c6 or esp32c5 or esp32c61
 
     .. figure:: ../../../_static/bluetooth-architecture.png
         :align: center

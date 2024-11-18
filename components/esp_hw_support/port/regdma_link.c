@@ -15,6 +15,7 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "esp_regdma.h"
+#include "esp_compiler.h"
 
 
 
@@ -419,6 +420,7 @@ static void * regdma_link_get_instance(void *link)
 
     return container_memaddr[it];
 }
+ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-null-dereference") // TODO IDF-11384
 static regdma_link_stats_t * regdma_link_get_stats(void *link)
 {
     const static size_t stats_offset[] = {
@@ -437,6 +439,7 @@ static regdma_link_stats_t * regdma_link_get_stats(void *link)
 
     return (regdma_link_stats_t *)(regdma_link_get_instance(link) + stats_offset[it]);
 }
+ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-null-dereference")
 
 static void regdma_link_update_stats_wrapper(void *link, int entry, int depth)
 {

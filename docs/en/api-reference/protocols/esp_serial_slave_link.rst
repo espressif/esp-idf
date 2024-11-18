@@ -91,7 +91,7 @@ ESP SDIO Slave
 
 The ESP SDIO slave link (ESSL SDIO) devices relies on the SDMMC component. It includes the usage of communicating with ESP SDIO Slave device via the SDMMC Host or SDSPI Host feature. The ESSL device should be initialized as below:
 
-1. Initialize a SDMMC card (see :doc:` Document of SDMMC driver </api-reference/storage/sdmmc>`) structure.
+1. Initialize a SDMMC card (see :doc:`Document of SDMMC driver </api-reference/storage/sdmmc>`) structure.
 
 2. Call :cpp:func:`sdmmc_card_init` to initialize the card.
 

@@ -44,6 +44,9 @@ check_blobs:
     - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32_host $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     # Check if Coexistence library header files match between IDF and the version used when compiling the libraries
     - IDF_TARGET=esp32 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
@@ -52,6 +55,8 @@ check_blobs:
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32c6 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     - IDF_TARGET=esp32h2 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c5 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c61 $IDF_PATH/components/esp_coex/test_md5/test_md5.sh
     # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
     - bash $IDF_PATH/tools/ci/check_blobs.sh
 
@@ -112,8 +117,10 @@ check_test_scripts_build_test_rules:
   extends:
     - .pre_check_template
     - .before_script:build
+  variables:
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    # required pytest related packages
+    # requires basic pytest dependencies
     - run_cmd bash install.sh --enable-pytest
     - python tools/ci/check_build_test_rules.py check-test-scripts examples/ tools/test_apps components
 
@@ -176,12 +183,24 @@ baseline_manifest_sha:
   tags: [fast_run, shiny]
   script:
     - |
-      if [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
+      # merged results pipelines, by default
+      # diff between target-branch-head and merged-result-head
+      if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_SHA" ]; then
+        git fetch origin $CI_MERGE_REQUEST_TARGET_BRANCH_SHA --depth=1
+        git checkout FETCH_HEAD
+        idf-build-apps dump-manifest-sha \
+          --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
+          --output .manifest_sha
+      # merge request pipelines, when the mr got conflicts
+      # diff between diff-base-sha and merge-request-head
+      elif [ -n "$CI_MERGE_REQUEST_DIFF_BASE_SHA" ]; then
         git fetch origin $CI_MERGE_REQUEST_DIFF_BASE_SHA --depth=1
         git checkout FETCH_HEAD
         idf-build-apps dump-manifest-sha \
           --manifest-files $(find . -name ".build-test-rules.yml" | xargs) \
           --output .manifest_sha
+      # other pipelines, like the protected branches pipelines
+      # not triggered in this job
       fi
   artifacts:
     paths:

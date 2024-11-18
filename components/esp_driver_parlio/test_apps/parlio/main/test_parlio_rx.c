@@ -52,7 +52,6 @@
     },  \
     .flags = {  \
         .clk_gate_en = false,  \
-        .io_loop_back = true,  \
     } \
 }
 
@@ -369,7 +368,7 @@ TEST_CASE("parallel_rx_unit_pulse_delimiter_test_via_i2s", "[parlio_rx]")
 {
     parlio_rx_pulse_delimiter_config_t pls_deli_cfg = {
         .valid_sig_line_id = TEST_VALID_SIG,
-        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .sample_edge = PARLIO_SAMPLE_EDGE_NEG,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
         .eof_data_len = TEST_EOF_DATA_LEN,
         .timeout_ticks = 0,
@@ -528,6 +527,13 @@ TEST_CASE("parallel_rx_unit_receive_transaction_test", "[parlio_rx]")
 
 TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
 {
+    printf("init a gpio to simulate valid signal\r\n");
+    gpio_config_t test_gpio_conf = {
+        .mode = GPIO_MODE_OUTPUT,
+        .pin_bit_mask = BIT64(TEST_VALID_GPIO),
+    };
+    TEST_ESP_OK(gpio_config(&test_gpio_conf));
+
     parlio_rx_unit_handle_t rx_unit = NULL;
     parlio_rx_delimiter_handle_t timeout_deli = NULL;
 
@@ -583,5 +589,6 @@ TEST_CASE("parallel_rx_unit_receive_timeout_test", "[parlio_rx]")
     TEST_ESP_OK(parlio_rx_unit_disable(rx_unit));
     TEST_ESP_OK(parlio_del_rx_delimiter(timeout_deli));
     TEST_ESP_OK(parlio_del_rx_unit(rx_unit));
+    TEST_ESP_OK(gpio_reset_pin(TEST_VALID_GPIO));
     free(payload);
 }

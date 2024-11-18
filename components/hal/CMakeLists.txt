@@ -271,6 +271,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "usb_serial_jtag_hal.c")
     endif()
 
+    if(CONFIG_SOC_USB_UTMI_PHY_NUM GREATER 0)
+        list(APPEND srcs "usb_utmi_hal.c")
+    endif()
+
     if(CONFIG_SOC_USB_OTG_SUPPORTED)
         list(APPEND srcs
                     "usb_dwc_hal.c"
@@ -278,9 +282,14 @@ if(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-        list(APPEND srcs "${target}/touch_sensor_hal.c")
+        # Source files for legacy touch driver
         if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
+            list(APPEND srcs "${target}/touch_sensor_hal.c")
             list(APPEND srcs "touch_sensor_hal.c")
+        endif()
+        # Source files for touch driver-ng (currently only support ver2 & ver3)
+        if(CONFIG_SOC_TOUCH_SENSOR_VERSION GREATER 1)
+            list(APPEND srcs "touch_sens_hal.c")
         endif()
     endif()
 
@@ -329,9 +338,4 @@ if(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 1)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u abort")
 elseif(CONFIG_HAL_DEFAULT_ASSERTION_LEVEL EQUAL 2)
     target_link_libraries(${COMPONENT_LIB} INTERFACE "-u __assert_func")
-endif()
-
-if((CONFIG_IDF_TARGET_ESP32H2 OR CONFIG_IDF_TARGET_ESP32S2 OR CONFIG_IDF_TARGET_ESP32S3) AND
-   CONFIG_COMPILER_STATIC_ANALYZER AND CMAKE_C_COMPILER_ID STREQUAL "GNU") # TODO IDF-10234
-    target_compile_options(${COMPONENT_LIB} PRIVATE "-fno-analyzer")
 endif()

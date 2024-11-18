@@ -1,6 +1,8 @@
 components/hal/test_apps/crypto:
   depends_components:
     - efuse
+    - mbedtls
+    - esp_security
 
 components/hal/test_apps/hal_i2c:
   disable:

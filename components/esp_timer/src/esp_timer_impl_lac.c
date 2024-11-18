@@ -222,11 +222,11 @@ static void IRAM_ATTR timer_alarm_isr(void *arg)
 
 void IRAM_ATTR esp_timer_impl_update_apb_freq(uint32_t apb_ticks_per_us)
 {
-    portENTER_CRITICAL(&s_time_update_lock);
+    portENTER_CRITICAL_SAFE(&s_time_update_lock);
     assert(apb_ticks_per_us >= 3 && "divider value too low");
     assert(apb_ticks_per_us % TICKS_PER_US == 0 && "APB frequency (in MHz) should be divisible by TICK_PER_US");
     REG_SET_FIELD(CONFIG_REG, TIMG_LACT_DIVIDER, apb_ticks_per_us / TICKS_PER_US);
-    portEXIT_CRITICAL(&s_time_update_lock);
+    portEXIT_CRITICAL_SAFE(&s_time_update_lock);
 }
 
 void esp_timer_impl_set(uint64_t new_us)

@@ -377,9 +377,9 @@ __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, gpio_num_t gpio_num, uint32_t level)
 {
     if (level) {
-        hw->out_w1ts.out_w1ts = (1 << gpio_num);
+        hw->out_w1ts.val = 1 << gpio_num;
     } else {
-        hw->out_w1tc.out_w1tc = (1 << gpio_num);
+        hw->out_w1tc.val = 1 << gpio_num;
     }
 }
 

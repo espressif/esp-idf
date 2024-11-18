@@ -2,3 +2,4 @@
 factory,  app,  factory, 0x10000, 768k,
 storage,  data, fat,     ,        528k,
 storage2, data, fat,     ,        528k,
+storage1, data, fat,     ,        32k,

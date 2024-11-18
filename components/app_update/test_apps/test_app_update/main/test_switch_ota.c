@@ -43,7 +43,12 @@ static const char *TAG = "ota_test";
 static void set_boot_count_in_nvs(uint8_t boot_count)
 {
     nvs_handle_t boot_count_handle;
-    TEST_ESP_OK(nvs_open(BOOT_COUNT_NAMESPACE, NVS_READWRITE, &boot_count_handle));
+    esp_err_t err = nvs_open(BOOT_COUNT_NAMESPACE, NVS_READWRITE, &boot_count_handle);
+    if (err != ESP_OK) {
+        TEST_ESP_OK(nvs_flash_erase());
+        TEST_ESP_OK(nvs_flash_init());
+        TEST_ESP_OK(nvs_open(BOOT_COUNT_NAMESPACE, NVS_READWRITE, &boot_count_handle));
+    }
     TEST_ESP_OK(nvs_set_u8(boot_count_handle, "boot_count", boot_count));
     TEST_ESP_OK(nvs_commit(boot_count_handle));
     nvs_close(boot_count_handle);

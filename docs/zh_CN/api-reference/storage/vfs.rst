@@ -39,34 +39,34 @@ VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 
 
     ssize_t myfs_write(int fd, const void * data, size_t size);
 
-    // In definition of esp_vfs_t:
+    // 在 esp_vfs_t 的定义中：
         .flags = ESP_VFS_FLAG_DEFAULT,
         .write = &myfs_write,
-    // ... other members initialized
+    // ... 其他成员已初始化
 
-    // When registering FS, context pointer (third argument) is NULL:
+    // 注册文件系统时，上下文指针（第三个参数）为 NULL：
     ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
 
 示例 2：声明 API 函数时需要一个额外的上下文指针作为参数，即可支持多个 FS 驱动程序实例，此时使用 ``write_p`` ::
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
-    // In definition of esp_vfs_t:
+    // 在 esp_vfs_t 的定义中：
         .flags = ESP_VFS_FLAG_CONTEXT_PTR,
         .write_p = &myfs_write,
-    // ... other members initialized
+    // ... 其他成员已初始化
 
-    // When registering FS, pass the FS context pointer into the third argument
-    // (hypothetical myfs_mount function is used for illustrative purposes)
+    // 注册文件系统时，将文件系统上下文指针传递给第三个参数
+    // （使用假设的 myfs_mount 函数进行示例说明）
     myfs_t* myfs_inst1 = myfs_mount(partition1->offset, partition1->size);
     ESP_ERROR_CHECK(esp_vfs_register("/data1", &myfs, myfs_inst1));
 
-    // Can register another instance:
+    // 可以注册另一个实例：
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
     ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
 
 同步输入/输出多路复用
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用，其实现方式如下：
 
@@ -91,16 +91,17 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 ::
 
-    // In definition of esp_vfs_t:
+    // 在 esp_vfs_t 的定义中：
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
-    // ... other members initialized
+    // ... 其他成员已初始化
 
 调用 :cpp:func:`start_select` 函数可以设置环境，检测指定 VFS 驱动的文件描述符读取/写入/错误条件。
 
 调用 :cpp:func:`end_select` 函数可以终止/取消初始化/释放由 :cpp:func:`start_select` 设置的环境。
 
 .. note::
+
     在少数情况下，在调用 :cpp:func:`end_select` 之前可能并没有调用过 :cpp:func:`start_select`。因此 :cpp:func:`end_select` 的实现必须在该情况下返回错误而不能崩溃。
 
 如需获取更多信息，请参考 :component_file:`esp_driver_uart/src/uart_vfs.c` 中 UART 外设的 VFS 驱动，尤其是函数 :cpp:func:`uart_vfs_dev_register`、:cpp:func:`uart_start_select` 和 :cpp:func:`uart_end_select`。
@@ -122,12 +123,12 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 ::
 
-    // In definition of esp_vfs_t:
+    // 在 esp_vfs_t 的定义中：
         .socket_select = &lwip_select,
         .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
         .stop_socket_select_isr = &lwip_stop_socket_select_isr,
-    // ... other members initialized
+    // ... 其他成员已初始化
 
 函数 :cpp:func:`socket_select` 是套接字驱动对 :cpp:func:`select` 的内部实现。该函数只对套接字 VFS 驱动的文件描述符起作用。
 
@@ -142,6 +143,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 .. note::
 
     如果 :cpp:func:`select` 用于套接字文件描述符，可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
+
     不要在 :cpp:func:`select` 调用过程中更改套接字驱动，否则会出现一些未定义行为。
 
 路径
@@ -192,6 +194,17 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 
 注意，用 ``EFD_SUPPORT_ISR`` 创建 eventfd 将导致在读取、写入文件时，以及在设置这个文件的 ``select()`` 开始和结束时，暂时禁用中断。
 
+
+精简版 VFS
+------------
+
+为尽量减少 RAM 使用，提供了另一版本的 :cpp:func:`esp_vfs_register` 函数，即 :cpp:func:`esp_vfs_register_fs`。这个版本的函数接受 :cpp:class:`esp_vfs_fs_ops_t` 而不是 :cpp:class:`esp_vfs_t`，并且还接受按位或 (OR-ed) 的标志参数。与 :cpp:func:`esp_vfs_register` 函数不同，只要在调用时提供 ``ESP_VFS_FLAG_STATIC`` 标志，该函数就可以处理静态分配的结构体。
+
+:cpp:class:`esp_vfs_fs_ops_t` 根据功能（如，目录操作、选择支持、termios 支持等）被拆分为不同的结构体。主结构体包含基本功能，如 ``read``、``write`` 等，并包含指向特定功能结构体的指针。这些指针可以设置为 ``NULL``，表示不支持该结构体中提供的所有功能，从而减少所需内存。
+
+在内部，VFS 组件使用的是该版本的 API，并在注册时通过额外步骤将 :cpp:class:`esp_vfs_t` 转换为 :cpp:class:`esp_vfs_fs_ops_t`。
+
+
 常用 VFS 设备
 -------------
 
@@ -208,10 +221,14 @@ IDF 定义了多个可供应用程序使用的 VFS 设备。这些设备包括�
 
 - :example:`system/select` 演示了如何使用 ``select()`` 函数进行同步 I/O 多路复用，使用 UART 和套接字文件描述符，并将二者配置为回环模式，以接收来自其他任务发送的消息。
 
+- :example:`storage/semihost_vfs` 演示了如何使用半托管 VFS 驱动程序，包括注册主机目录、将 UART 的 stdout 重定向到主机上的文件，并读取和打印文本文件的内容。
+
 API 参考
 -------------
 
 .. include-build-file:: inc/esp_vfs.inc
+
+.. include-build-file:: inc/esp_vfs_ops.inc
 
 .. include-build-file:: inc/esp_vfs_dev.inc
 

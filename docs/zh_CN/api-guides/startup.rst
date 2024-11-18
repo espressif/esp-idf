@@ -9,7 +9,7 @@
 
 .. list::
 
-   1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导程序至 RAM (IRAM & DRAM) 中。
+   1. :ref:`first-stage-bootloader` 被固化在了 {IDF_TARGET_NAME} 内部的 ROM 中，它会从 flash 的  {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载二级引导加载程序至 RAM (IRAM & DRAM) 中。
 
    2. :ref:`second-stage-bootloader` 从 flash 中加载分区表和主程序镜像至内存中，主程序中包含了 RAM 段和通过 flash 高速缓存映射的只读段。
 
@@ -21,8 +21,8 @@
 
 .. _first-stage-bootloader:
 
-一级引导程序
-~~~~~~~~~~~~
+一级 (ROM) 引导加载程序
+~~~~~~~~~~~~~~~~~~~~~~~
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -48,45 +48,45 @@
 
 .. only:: esp32
 
-    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。如果正在使用 :doc:`/security/secure-boot-v1`，则 flash 的第一个 4 kB 扇区用于存储安全启动 IV 以及引导程序镜像的摘要，否则不使用该扇区。
+    二级引导加载程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。如果正在使用 :doc:`/security/secure-boot-v1`，则 flash 的第一个 4 kB 扇区用于存储安全启动 IV 以及引导加载程序镜像的摘要，否则不使用该扇区。
 
 .. only:: esp32s2
 
-    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 4 kB 扇区未使用。
+    二级引导加载程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 4 kB 扇区未使用。
 
 .. only:: SOC_KEY_MANAGER_SUPPORTED
 
-    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 8 kB 扇区将为密钥管理器保留，用于与 flash 加密 (AES-XTS) 相关的操作。
+    二级引导加载程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。该地址前面的 flash 8 kB 扇区将为密钥管理器保留，用于与 flash 加密 (AES-XTS) 相关的操作。
 
  .. only:: not (esp32 or esp32s2 or SOC_KEY_MANAGER_SUPPORTED)
 
-    二级引导程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。
+    二级引导加载程序二进制镜像会从 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处加载。
 
 .. TODO: describe application binary image format, describe optional flash configuration commands.
 
 .. _second-stage-bootloader:
 
-二级引导程序
-~~~~~~~~~~~~
+二级引导加载程序
+~~~~~~~~~~~~~~~~
 
-在 ESP-IDF 中，存放在 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处的二进制镜像就是二级引导程序。二级引导程序的源码可以在 ESP-IDF 的 :idf:`components/bootloader` 目录下找到。ESP-IDF 使用二级引导程序可以增加 flash 分区的灵活性（使用分区表），并且方便实现 flash 加密，安全引导和空中升级 (OTA) 等功能。
+在 ESP-IDF 中，存放在 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 偏移地址处的二进制镜像就是二级引导加载程序。二级引导加载程序的源码可以在 ESP-IDF 的 :idf:`components/bootloader` 目录下找到。ESP-IDF 使用二级引导加载程序可以增加 flash 分区的灵活性（使用分区表），并且方便实现 flash 加密，安全引导和空中升级 (OTA) 等功能。
 
-当一级引导程序校验并加载完二级引导程序后，它会从二进制镜像的头部找到二级引导程序的入口点，并跳转过去运行。
+当一级 (ROM) 引导加载程序校验并加载完二级引导加载程序后，它会从二进制镜像的头部找到二级引导加载程序的入口点，并跳转过去运行。
 
-二级引导程序默认从 flash 的 {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} 偏移地址处（:ref:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
+二级引导加载程序默认从 flash 的 {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} 偏移地址处（:ref:`可配置的值 <CONFIG_PARTITION_TABLE_OFFSET>`）读取分区表。请参考 :doc:`分区表 <partition-tables>` 获取详细信息。引导加载程序会寻找工厂分区和 OTA 应用程序分区。如果在分区表中找到了 OTA 应用程序分区，引导加载程序将查询 ``otadata`` 分区以确定应引导哪个分区。更多信息请参考 :doc:`/api-reference/system/ota`。
 
-关于 ESP-IDF 引导程序可用的配置选项，请参考 :doc:`bootloader`。
+关于 ESP-IDF 引导加载程序可用的配置选项，请参考 :doc:`bootloader`。
 
-对于选定的分区，二级引导程序将从 flash 逐段读取二进制镜像：
+对于选定的分区，二级引导加载程序将从 flash 逐段读取二进制镜像：
 
 - 对于在内部 :ref:`iram` 或 :ref:`dram` 中具有加载地址的段，将把数据从 flash 复制到它们的加载地址处。
 - 对于一些加载地址位于 :ref:`drom` 或 :ref:`irom` 区域的段，通过配置 flash MMU，可为从 flash 到加载地址提供正确的映射。
 
 .. only:: esp32
 
-    请注意，二级引导程序同时为 PRO CPU 和 APP CPU 配置 flash MMU，但仅使能 PRO CPU 的 flash MMU。原因是二级引导程序代码已加载到 APP CPU 的高速缓存使用的内存区域中。因此使能 APP CPU 高速缓存的任务就交给了应用程序。
+    请注意，二级引导加载程序同时为 PRO CPU 和 APP CPU 配置 flash MMU，但仅使能 PRO CPU 的 flash MMU。原因是二级引导加载程序代码已加载到 APP CPU 的高速缓存使用的内存区域中。因此使能 APP CPU 高速缓存的任务就交给了应用程序。
 
-一旦处理完所有段（即加载了代码并设置了 flash MMU），二级引导程序将验证应用程序的完整性，并从二进制镜像文件的头部寻找入口地址，然后跳转到该地址处运行。
+一旦处理完所有段（即加载了代码并设置了 flash MMU），二级引导加载程序将验证应用程序的完整性，并从二进制镜像文件的头部寻找入口地址，然后跳转到该地址处运行。
 
 .. _application-startup:
 
@@ -108,7 +108,7 @@
 
 ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start.c` 文件中的 ``call_start_cpu0`` 函数。这个函数由二级引导加载程序执行，并且从不返回。
 
-该端口层的初始化功能会初始化基本的 C 运行环境 ("CRT"），并对 SoC 的内部硬件进行了初始配置。
+该端口层的初始化功能会初始化基本的 C 运行环境 ("CRT")，并对 SoC 的内部硬件进行了初始配置。
 
 .. list::
 
@@ -119,7 +119,7 @@ ESP-IDF 应用程序的入口是 :idf_file:`components/esp_system/port/cpu_start
    :SOC_SPIRAM_SUPPORTED: - 如果配置了 PSRAM，则使能 PSRAM。
    - 将 CPU 时钟设置为项目配置的频率。
    :SOC_MEMPROT_SUPPORTED: - 如果配置了内存保护，则初始化内存保护。
-   :esp32: - 根据应用程序头部设置重新配置主 SPI flash，这是为了与 ESP-IDF V4.0 之前的引导程序版本兼容，请参考 :ref:`bootloader-compatibility`。
+   :esp32: - 根据应用程序头部设置重新配置主 SPI flash，这是为了与 ESP-IDF V4.0 之前的引导加载程序版本兼容，请参考 :ref:`bootloader-compatibility`。
    :SOC_HP_CPU_HAS_MULTIPLE_CORES: - 如果应用程序被配置为在多个内核上运行，则启动另一个内核并等待其初始化（在类似的“端口层”初始化函数 ``call_start_cpu1`` 内）。
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES

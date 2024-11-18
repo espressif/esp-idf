@@ -70,16 +70,8 @@ static void test_dedic_gpio_on_specific_core(void *args)
     uint32_t value = 0;
     dedic_gpio_cpu_ll_write_all(0x0); // clear all out channels
 
-    // configure a group of GPIOs, output only
-    const int bundleA_gpios[] = {ctx->gpios[0], ctx->gpios[1]};
-    gpio_config_t io_conf = {
-        .mode = GPIO_MODE_OUTPUT,
-    };
-    for (int i = 0; i < sizeof(bundleA_gpios) / sizeof(bundleA_gpios[0]); i++) {
-        io_conf.pin_bit_mask = 1ULL << bundleA_gpios[i];
-        gpio_config(&io_conf);
-    }
     // Create bundleA, output only
+    const int bundleA_gpios[] = {ctx->gpios[0], ctx->gpios[1]};
     dedic_gpio_bundle_handle_t bundleA = NULL;
     dedic_gpio_bundle_config_t bundleA_config = {
         .gpio_array = bundleA_gpios,
@@ -90,15 +82,8 @@ static void test_dedic_gpio_on_specific_core(void *args)
     };
     TEST_ESP_OK(dedic_gpio_new_bundle(&bundleA_config, &bundleA));
 
-    // configure another group of GPIOs, input and output
-    const int bundleB_gpios[] = {ctx->gpios[2], ctx->gpios[3]};
-    io_conf.mode = GPIO_MODE_INPUT_OUTPUT;
-    for (int i = 0; i < sizeof(bundleB_gpios) / sizeof(bundleB_gpios[0]); i++) {
-        io_conf.pin_bit_mask = 1ULL << bundleB_gpios[i];
-        gpio_config(&io_conf);
-    }
-
     // GPIO bundleB, input and output
+    const int bundleB_gpios[] = {ctx->gpios[2], ctx->gpios[3]};
     dedic_gpio_bundle_handle_t bundleB = NULL;
     dedic_gpio_bundle_config_t bundleB_config = {
         .gpio_array = bundleB_gpios,
@@ -192,13 +177,6 @@ TEST_CASE("Dedicated_GPIO_interrupt_and_callback", "[dedic_gpio]")
 #else
     const int bundle_gpios[] = {0, 1};
 #endif
-    gpio_config_t io_conf = {
-        .mode = GPIO_MODE_INPUT_OUTPUT,
-    };
-    for (int i = 0; i < sizeof(bundle_gpios) / sizeof(bundle_gpios[0]); i++) {
-        io_conf.pin_bit_mask = 1ULL << bundle_gpios[i];
-        gpio_config(&io_conf);
-    }
     dedic_gpio_bundle_handle_t bundle = NULL;
     dedic_gpio_bundle_config_t bundle_config = {
         .gpio_array = bundle_gpios,

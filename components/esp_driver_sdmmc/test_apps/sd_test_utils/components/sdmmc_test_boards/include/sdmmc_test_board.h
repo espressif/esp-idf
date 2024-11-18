@@ -33,6 +33,7 @@ typedef struct {
     bool is_emmc;       /*< True if this slot is connected to eMMC */
     int  bus_width;     /*< SD interface width (1, 4 or 8) */
     int  max_freq_khz;  /*< Max frequency (kHz) of SD interface, supported by the board */
+    bool uhs1_supported; /*< Whether UHS-I mode is supported */
     gpio_num_t clk;     /*< CLK pin number */
     gpio_num_t cmd_mosi;    /*< CMD pin number (SD mode) or MOSI (SPI mode) */
     gpio_num_t d0_miso; /*< D0 pin number (SD mode) or MISO (SPI mode) */

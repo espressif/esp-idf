@@ -32,7 +32,7 @@ QueueHandle_t app_event_queue = NULL;
 /**
  * @brief APP event group
  *
- * Application logic can be different. There is a one among other ways to distingiush the
+ * Application logic can be different. There is a one among other ways to distinguish the
  * event by application event group.
  * In this example we have two event groups:
  * APP_EVENT            - General event, which is APP_QUIT_PIN press event (Generally, it is IO0).

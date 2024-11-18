@@ -20,6 +20,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/color_hal.h"
 
 static const char *TAG = "lcd.dsi.dpi";
 
@@ -40,7 +41,8 @@ struct esp_lcd_dpi_panel_t {
     uint32_t v_pixels;            // Vertical pixels
     size_t fb_size;               // Frame buffer size, in bytes
     size_t bits_per_pixel;        // Bits per pixel
-    lcd_color_rgb_pixel_format_t pixel_format; // RGB Pixel format
+    lcd_color_format_t in_color_format;  // Input color format
+    lcd_color_format_t out_color_format; // Output color format
     dw_gdma_channel_handle_t dma_chan;    // DMA channel
     dw_gdma_link_list_handle_t link_lists[DPI_PANEL_MAX_FB_NUM]; // DMA link list
     esp_async_fbcpy_handle_t fbcpy_handle; // Use DMA2D to do frame buffer copy
@@ -175,6 +177,19 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
         bits_per_pixel = 24;
         break;
     }
+    lcd_color_format_t in_color_format = COLOR_TYPE_ID(COLOR_SPACE_RGB, panel_config->pixel_format);
+    // if user sets the in_color_format, it can override the pixel format setting
+    if (panel_config->in_color_format) {
+        color_space_pixel_format_t in_color_id = {
+            .color_type_id = panel_config->in_color_format,
+        };
+        bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_id);
+        in_color_format = panel_config->in_color_format;
+    }
+    lcd_color_format_t out_color_format = in_color_format;
+    if (panel_config->out_color_format) {
+        out_color_format = panel_config->out_color_format;
+    }
     ESP_RETURN_ON_FALSE(panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel % 8 == 0,
                         ESP_ERR_INVALID_ARG, TAG, "frame buffer size not aligned to byte boundary");
 
@@ -184,7 +199,8 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     dpi_panel = heap_caps_calloc(1, sizeof(esp_lcd_dpi_panel_t), DSI_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(dpi_panel, ESP_ERR_NO_MEM, err, TAG, "no memory for DPI panel");
     dpi_panel->virtual_channel = panel_config->virtual_channel;
-    dpi_panel->pixel_format = panel_config->pixel_format;
+    dpi_panel->in_color_format = in_color_format;
+    dpi_panel->out_color_format = out_color_format;
     dpi_panel->bus = bus;
     dpi_panel->num_fbs = num_fbs;
 
@@ -253,16 +269,25 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
     ESP_GOTO_ON_ERROR(dpi_panel_create_dma_link(dpi_panel), err, TAG, "initialize DMA link failed");
 
     mipi_dsi_host_ll_dpi_set_vcid(hal->host, panel_config->virtual_channel);
-    mipi_dsi_hal_host_dpi_set_color_coding(hal, panel_config->pixel_format, 0);
+    mipi_dsi_hal_host_dpi_set_color_coding(hal, out_color_format, 0);
     // these signals define how the DPI interface interacts with the controller
     mipi_dsi_host_ll_dpi_set_timing_polarity(hal->host, false, false, false, false, false);
-    // configure the low-power transitions: defines the video periods which are permitted to goto low-power if the time available to do so
-    mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
-    mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+
+    if (panel_config->flags.disable_lp) {
+        // configure the low-power transitions: defines the video periods which are NOT permitted to goto low-power
+        mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, false, false);
+        mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, false, false, false, false);
+        // commands are NOT transmitted in low-power mode
+        mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, false);
+    } else {
+        // configure the low-power transitions: defines the video periods which are permitted to goto low-power if the time available to do so
+        mipi_dsi_host_ll_dpi_enable_lp_horizontal_timing(hal->host, true, true);
+        mipi_dsi_host_ll_dpi_enable_lp_vertical_timing(hal->host, true, true, true, true);
+        // commands are transmitted in low-power mode
+        mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, true);
+    }
     // after sending a frame, the DSI device should return an ack
     mipi_dsi_host_ll_dpi_enable_frame_ack(hal->host, true);
-    // commands are transmitted in low-power mode
-    mipi_dsi_host_ll_dpi_enable_lp_command(hal->host, true);
     // using the burst mode because it's energy-efficient
     mipi_dsi_host_ll_dpi_set_video_burst_type(hal->host, MIPI_DSI_LL_VIDEO_BURST_WITH_SYNC_PULSES);
     // configure the size of the active lin period, measured in pixels
@@ -282,6 +307,8 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
                                               panel_config->video_timing.vsync_front_porch);
     mipi_dsi_brg_ll_set_num_pixel_bits(hal->bridge, panel_config->video_timing.h_size * panel_config->video_timing.v_size * bits_per_pixel);
     mipi_dsi_brg_ll_set_underrun_discard_count(hal->bridge, panel_config->video_timing.h_size);
+    // set input color space
+    mipi_dsi_brg_ll_set_input_color_space(hal->bridge, COLOR_SPACE_TYPE(in_color_format));
     // use the DW_GDMA as the flow controller
     mipi_dsi_brg_ll_set_flow_controller(hal->bridge, MIPI_DSI_LL_FLOW_CONTROLLER_DMA);
     mipi_dsi_brg_ll_set_multi_block_number(hal->bridge, DPI_PANEL_MIN_DMA_NODES_PER_LINK);
@@ -334,7 +361,7 @@ static esp_err_t dpi_panel_del(esp_lcd_panel_t *panel)
         esp_async_fbcpy_uninstall(dpi_panel->fbcpy_handle);
     }
     if (dpi_panel->draw_sem) {
-        vSemaphoreDelete(dpi_panel->draw_sem);
+        vSemaphoreDeleteWithCaps(dpi_panel->draw_sem);
     }
     if (dpi_panel->pm_lock) {
         esp_pm_lock_release(dpi_panel->pm_lock);
@@ -506,13 +533,30 @@ static esp_err_t dpi_panel_draw_bitmap(esp_lcd_panel_t *panel, int x_start, int 
             .copy_size_x = x_end - x_start,
             .copy_size_y = y_end - y_start,
             .pixel_format_unique_id = {
-                .color_space = COLOR_SPACE_RGB,
-                .pixel_format = dpi_panel->pixel_format,
-            },
+                .color_type_id = dpi_panel->in_color_format,
+            }
         };
         ESP_RETURN_ON_ERROR(esp_async_fbcpy(dpi_panel->fbcpy_handle, &fbcpy_trans_config, async_fbcpy_done_cb, dpi_panel), TAG, "async memcpy failed");
     }
 
+    return ESP_OK;
+}
+
+esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t panel, const esp_lcd_color_conv_config_t *config)
+{
+    ESP_RETURN_ON_FALSE(panel, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    esp_lcd_dpi_panel_t *dpi_panel = __containerof(panel, esp_lcd_dpi_panel_t, base);
+    esp_lcd_dsi_bus_handle_t bus = dpi_panel->bus;
+    mipi_dsi_hal_context_t *hal = &bus->hal;
+
+    if (dpi_panel->in_color_format == COLOR_TYPE_ID(COLOR_SPACE_YUV, COLOR_PIXEL_YUV422)
+            && COLOR_SPACE_TYPE(dpi_panel->out_color_format) == LCD_COLOR_SPACE_RGB) {
+        // YUV422->RGB
+        mipi_dsi_brg_ll_set_yuv_convert_std(hal->bridge, config->spec.yuv.conv_std);
+        mipi_dsi_brg_ll_set_yuv422_pack_order(hal->bridge, config->spec.yuv.yuv422.in_pack_order);
+    } else {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "unsupported conversion mode");
+    }
     return ESP_OK;
 }
 

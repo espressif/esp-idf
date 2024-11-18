@@ -206,10 +206,10 @@ void mipi_dsi_hal_host_gen_read_short_packet(mipi_dsi_hal_context_t *hal, uint8_
     while (!mipi_dsi_host_ll_gen_is_read_fifo_empty(hal->host)) {
         temp = mipi_dsi_host_ll_gen_read_payload_fifo(hal->host);
         for (int i = 0; i < 4; i++) {
-            if ((counter + i) < buffer_size) {
-                receive_buffer[counter + i] = (temp >> (8 * i)) & 0xFF;
+            if (counter < buffer_size) {
+                receive_buffer[counter] = (temp >> (8 * i)) & 0xFF;
+                counter++;
             }
-            counter++;
         }
     }
 }
@@ -220,7 +220,7 @@ void mipi_dsi_hal_host_gen_read_dcs_command(mipi_dsi_hal_context_t *hal, uint8_t
     mipi_dsi_hal_host_gen_read_short_packet(hal, vc, MIPI_DSI_DT_DCS_READ_0, header_data, ret_param, param_buf_size);
 }
 
-void mipi_dsi_hal_host_dpi_set_color_coding(mipi_dsi_hal_context_t *hal, lcd_color_rgb_pixel_format_t color_coding, uint32_t sub_config)
+void mipi_dsi_hal_host_dpi_set_color_coding(mipi_dsi_hal_context_t *hal, lcd_color_format_t color_coding, uint32_t sub_config)
 {
     mipi_dsi_host_ll_dpi_set_color_coding(hal->host, color_coding, sub_config);
     mipi_dsi_brg_ll_set_pixel_format(hal->bridge, color_coding, sub_config);

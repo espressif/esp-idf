@@ -50,7 +50,7 @@ The most significant properties and features of above-mentioned file systems are
       - Integrated
       - Integrated
     * - Minimum partition size
-      - * 128 sectors With wear levelling on (WL sector=4096B):
+      - * 8 sectors with wear levelling on (4 FATFS sectors + 4 WL sectors with WL sector size = 4096B)
         * plus 4 sectors at least
         * real number given by WL configuration (Safe, Perf)
       - * 6 logical blocks
@@ -105,7 +105,7 @@ The most supported file system, recommended for common applications - file/direc
 **Examples:**
 
 * :example:`storage/sd_card`: access the SD card which uses the FAT file system
-* :example:`storage/ext_flash_fatfs`: access the external flash chip which uses the FAT file system
+* :example:`storage/fatfs/ext_flash`: access the external flash chip which uses the FAT file system
 
 
 .. _spiffs-fs-section:
@@ -113,7 +113,7 @@ The most supported file system, recommended for common applications - file/direc
 SPIFFS
 ----------------------
 
-SPIFFS is a file system providing certain level of power-off safety (see repair-after-restart function :cpp:func:`esp_spiffs_check`) and built-in wear levelling. It tend to become slow down when exceeding around 70% of dedicated partition size due to its garbage collector implementation, and it also doesn't support directories. It is useful for applications depending only on few files (possibly large) and requiring high level of consistency. Generally, the SPIFFS needs less RAM resources than FatFS and supports flash chips up to 128MB in size. Please keep in mind the SPIFFS is not being developed and maintained anymore, so consider precisely whether its advantages for your project really prevail over the other file systems.
+SPIFFS is a file system providing certain level of power-off safety (see repair-after-restart function :cpp:func:`esp_spiffs_check`) and built-in wear levelling. It tends to slow down when exceeding around 70% of the dedicated partition size due to its garbage collector implementation, and also doesn't support directories. It is useful for applications depending only on few files (possibly large) and requiring high level of consistency. Generally, the SPIFFS needs less RAM resources than FatFS and supports flash chips up to 128 MB in size. Please keep in mind the SPIFFS is not being developed and maintained anymore, so consider precisely whether its advantages for your project really prevail over the other file systems.
 
 **Related documents:**
 
@@ -122,7 +122,7 @@ SPIFFS is a file system providing certain level of power-off safety (see repair-
 
 **Examples:**
 
-* :example:`storage/spiffs`: SPIFFS examples
+* :example:`storage/spiffs` demonstrates how to use SPIFFS.
 
 
 .. _littlefs-fs-section:
@@ -143,7 +143,7 @@ LittleFS is available as external component in the ESP Registry, see `LittleFS c
 
 **Examples:**
 
-* :example:`storage/littlefs`: ESP-IDF LittleFS example
+* :example:`storage/littlefs` demonstrates how to use LittleFS.
 
 .. _nvs-fs-section:
 
@@ -177,10 +177,10 @@ Points to keep in mind when developing NVS related code:
 
 **Examples:**
 
-- Write a single integer value: :example:`storage/nvs_rw_value`
-- Write a blob: :example:`storage/nvs_rw_blob`
-- Encryption keys generation: :example:`security/nvs_encryption_hmac`
-- Flash encryption workflow including NVS partition: :example:`security/flash_encryption`
+- :example:`storage/nvs_rw_value` demonstrates how to use NVS to write and read a single integer value.
+- :example:`storage/nvs_rw_blob` demonstrates how to use NVS to write and read a blob.
+- :example:`security/nvs_encryption_hmac` demonstrates NVS encryption using the HMAC peripheral, where the encryption keys are derived from the HMAC key burnt in eFuse.
+- :example:`security/flash_encryption` demonstrates the flash encryption workflow including NVS partition creation and usage.
 
 
 File handling design considerations
@@ -205,5 +205,5 @@ Encrypting partitions
 Given storage security scheme and the {IDF_TARGET_NAME} chips design result into a few implications which may not be fully obvious in the main documents:
 
 * The Flash encryption applies only to the main SPI Flash memory, due to its cache module design (all the "transparent" encryption APIs run over this cache). This implies that external flash partitions cannot be encrypted using the native Flash Encryption means.
-* External partition encryption can be deployed by implementing custom encrypt/decrypt code in appropriate driver APIs - either by implementing own SPI flash driver (see :example:`storage/custom_flash_driver`) or by customising higher levels in the driver stack, for instance by providing own :ref:`FatFS disk IO layer <fatfs-diskio-layer>`.
+* External partition encryption can be deployed by implementing custom encrypt/decrypt code in appropriate driver APIs - either by implementing own SPI flash driver (see :example:`storage/custom_flash_driver`) or by customizing higher levels in the driver stack, for instance by providing own :ref:`FatFS disk IO layer <fatfs-diskio-layer>`.
 

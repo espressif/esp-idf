@@ -44,5 +44,6 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
     $(PROJECT_PATH)/components/esp_driver_ppa/include/driver/ppa.h \
     $(PROJECT_PATH)/components/esp_lcd/dsi/include/esp_lcd_mipi_dsi.h \
+    $(PROJECT_PATH)/components/esp_lcd/rgb/include/esp_lcd_panel_rgb.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl.h \
     $(PROJECT_PATH)/components/sdmmc/include/sd_pwr_ctrl_by_on_chip_ldo.h \

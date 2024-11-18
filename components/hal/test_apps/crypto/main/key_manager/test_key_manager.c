@@ -263,7 +263,7 @@ static void key_mgr_test_ecdsa_random_mode(void)
     TEST_ASSERT_EQUAL(ESP_OK, esp_key_mgr_deactivate_key(key_recovery_info.key_type));
 }
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 
 static void test_xts_aes_key_random_mode(void)
 {
@@ -351,7 +351,7 @@ TEST(key_manager, ecdsa_key_random_deployment)
     key_mgr_test_ecdsa_random_mode();
 }
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 TEST(key_manager, xts_key_random_deployment)
 {
     key_mgr_test_xts_aes_128_random_mode();
@@ -367,7 +367,7 @@ TEST_GROUP_RUNNER(key_manager)
     RUN_TEST_CASE(key_manager, xts_key_ecdh0_deployment);
     RUN_TEST_CASE(key_manager, ecdsa_key_ecdh0_deployment);
     RUN_TEST_CASE(key_manager, ecdsa_key_random_deployment);
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
     RUN_TEST_CASE(key_manager, xts_key_random_deployment);
 #endif
 

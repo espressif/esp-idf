@@ -235,7 +235,7 @@ esp_err_t emit_com_marker(jpeg_enc_header_info_t *header_info)
         compensate_size += cache_align;
     }
     emit_marker(header_info, JPEG_M_COM & 0xff);
-    emit_word(header_info, compensate_size);
+    emit_word(header_info, compensate_size + 2);
     for (int i = 0; i < compensate_size; i++) {
         emit_byte(header_info, 0);
     }

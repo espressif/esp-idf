@@ -19,7 +19,8 @@ extern "C" {
 #endif
 
 typedef struct vfs_entry_ {
-    esp_vfs_t vfs;          // contains pointers to VFS functions
+    int flags;      /*!< ESP_VFS_FLAG_CONTEXT_PTR and/or ESP_VFS_FLAG_READONLY_FS or ESP_VFS_FLAG_DEFAULT */
+    const esp_vfs_fs_ops_t *vfs;          // contains pointers to VFS functions
     char path_prefix[ESP_VFS_PATH_MAX]; // path prefix mapped to this VFS
     size_t path_prefix_len; // micro-optimization to avoid doing extra strlen
     void* ctx;              // optional pointer which can be passed to VFS

@@ -47,7 +47,7 @@ ESP-IDF FreeRTOS
 
 **然而，对于 ESP-IDF 中的所有 FreeRTOS 移植，FreeRTOSConfig.h 头文件被视为私有文件，用户不得修改。** 由于该选项在 ESP-IDF 中是必选项或不被支持，``FreeRTOSConfig.h`` 中的大量内核配置选项均为硬编码。所有用户可配置的内核配置选项都在 ``Component Config/FreeRTOS/Kernel`` 下的 menuconfig 中。
 
-关于用户可配置内核选项的完整列表，参见 :doc:`/api-reference/kconfig`。下列为常用的内核配置选项：
+关于用户可配置内核选项的完整列表，请参见 :ref:`Kconfig 选项参考 <configuration-options-reference>`。下列为常用的内核配置选项：
 
 - :ref:`CONFIG_FREERTOS_UNICORE`：仅在核 0 上运行 FreeRTOS。注意，这 **不等同于运行原生 FreeRTOS。** 另外，此选项还可能影响除 :component:`freertos` 外其他组件的行为。关于在单核上运行 FreeRTOS 的更多内容，请参考 :ref:`freertos-idf-single-core` （使用 ESP-IDF FreeRTOS 时）或参考 Amazon SMP FreeRTOS 的官方文档，还可以在 ESP-IDF 组件中搜索 ``CONFIG_FREERTOS_UNICORE``。
 

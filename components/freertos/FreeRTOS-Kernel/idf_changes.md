@@ -123,6 +123,10 @@ The following functions were modified to accommodate SMP behavior:
   - In SMP, the function now disables interrupts to ensure that the calling task does not switch cores while checking its own copy of `uxSchedulerSuspended`.
 - `prvAddCurrentTaskToDelayedList()`
   - Added extra check to see if current blocking task has already been deleted by the other core.
+- `xStreamBufferReceive()`
+  - Added a critical section for setting `xTaskWaitingToReceive` to `NULL` so that the write is SMP safe.
+- `xStreamBufferSend()`
+  - Added a critical section for setting `xTaskWaitingToSend` to `NULL` so that the write is SMP safe.
 
 ### Critical Section Changes
 

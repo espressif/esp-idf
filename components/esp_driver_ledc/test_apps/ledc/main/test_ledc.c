@@ -22,54 +22,7 @@
 #include "driver/ledc.h"
 #include "soc/ledc_struct.h"
 #include "esp_clk_tree.h"
-
-#define PULSE_IO      5
-
-#define TEST_PWM_FREQ 2000
-
-#if SOC_LEDC_SUPPORT_HS_MODE
-#define TEST_SPEED_MODE LEDC_HIGH_SPEED_MODE
-#define SPEED_MODE_LIST {LEDC_HIGH_SPEED_MODE, LEDC_LOW_SPEED_MODE}
-#else
-#define TEST_SPEED_MODE LEDC_LOW_SPEED_MODE
-#define SPEED_MODE_LIST {LEDC_LOW_SPEED_MODE}
-#endif
-
-#if SOC_LEDC_SUPPORT_APB_CLOCK
-#define TEST_DEFAULT_CLK_CFG LEDC_USE_APB_CLK
-#elif SOC_LEDC_SUPPORT_PLL_DIV_CLOCK
-#if SOC_CLK_TREE_SUPPORTED
-#define TEST_DEFAULT_CLK_CFG LEDC_USE_PLL_DIV_CLK
-#else
-#define TEST_DEFAULT_CLK_CFG LEDC_USE_XTAL_CLK
-#endif
-#endif
-
-static ledc_channel_config_t initialize_channel_config(void)
-{
-    ledc_channel_config_t config;
-    memset(&config, 0, sizeof(ledc_channel_config_t));
-    config.gpio_num = PULSE_IO;
-    config.speed_mode = TEST_SPEED_MODE;
-    config.channel  = LEDC_CHANNEL_0;
-    config.intr_type = LEDC_INTR_DISABLE;
-    config.timer_sel = LEDC_TIMER_0;
-    config.duty = 4000;
-    config.hpoint = 0;
-    return config;
-}
-
-static ledc_timer_config_t create_default_timer_config(void)
-{
-    ledc_timer_config_t ledc_time_config;
-    memset(&ledc_time_config, 0, sizeof(ledc_timer_config_t));
-    ledc_time_config.speed_mode = TEST_SPEED_MODE;
-    ledc_time_config.duty_resolution = LEDC_TIMER_13_BIT;
-    ledc_time_config.timer_num = LEDC_TIMER_0;
-    ledc_time_config.freq_hz = TEST_PWM_FREQ;
-    ledc_time_config.clk_cfg = TEST_DEFAULT_CLK_CFG;
-    return ledc_time_config;
-}
+#include "test_ledc_utils.h"
 
 static void fade_setup(void)
 {
@@ -474,52 +427,6 @@ TEST_CASE("LEDC multi fade test", "[ledc]")
 
 #if SOC_PCNT_SUPPORTED // Note. C61, C3, C2 do not have PCNT peripheral, the following test cases cannot be tested
 
-#include "driver/pulse_cnt.h"
-
-#define HIGHEST_LIMIT 10000
-#define LOWEST_LIMIT -10000
-
-static pcnt_unit_handle_t pcnt_unit;
-static pcnt_channel_handle_t pcnt_chan;
-
-static void setup_testbench(void)
-{
-    pcnt_unit_config_t unit_config = {
-        .high_limit = HIGHEST_LIMIT,
-        .low_limit = LOWEST_LIMIT,
-    };
-    TEST_ESP_OK(pcnt_new_unit(&unit_config, &pcnt_unit));
-    pcnt_chan_config_t chan_config = {
-        .edge_gpio_num = PULSE_IO,
-        .level_gpio_num = -1,
-    };
-    TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
-    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
-    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
-    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
-}
-
-static void tear_testbench(void)
-{
-    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
-    TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
-    TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
-}
-
-// use PCNT to test the waveform of LEDC
-static int wave_count(int last_time)
-{
-    // The input ability of PULSE_IO is disabled after ledc driver install, so we need to re-enable it again
-    gpio_ll_input_enable(&GPIO, PULSE_IO);
-    int test_counter = 0;
-    TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
-    vTaskDelay(pdMS_TO_TICKS(last_time));
-    TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &test_counter));
-    return test_counter;
-}
-
 // the PCNT will count the frequency of it
 static void frequency_set_get(ledc_mode_t speed_mode, ledc_timer_t timer, uint32_t desired_freq, int16_t theoretical_freq, int16_t error)
 {
@@ -731,8 +638,6 @@ static void ledc_cpu_reset_test_second_stage(void)
     int count;
     TEST_ASSERT_EQUAL(ESP_RST_SW, esp_reset_reason());
     setup_testbench();
-    // reconfigure the GPIO again, as the GPIO output ability has been disabled during initialize pcnt peripheral
-    ledc_set_pin(PULSE_IO, TEST_SPEED_MODE, LEDC_CHANNEL_0);
     count = wave_count(1000);
     TEST_ASSERT_UINT32_WITHIN(5, TEST_PWM_FREQ, count);
     tear_testbench();

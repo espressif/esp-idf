@@ -125,7 +125,7 @@ The local ESP-IDF version can be checked by using idf.py::
 
   idf.py --version
 
-The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader will print the version on boot (the version information is not always updated if the code in the GitHub repo is updated, it only changes if there is a clean build or if that particular source file is recompiled).
+The ESP-IDF version is also compiled into the firmware and can be accessed (as a string) via the macro ``IDF_VER``. The default ESP-IDF bootloader prints the version on boot (The version information is not always updated if the code in the GitHub repo is updated, it only changes if there is a clean build or if that particular source file is recompiled).
 
 If writing code that needs to support multiple ESP-IDF versions, the version can be checked at compile time using :ref:`compile-time macros <idf-version-h>`.
 

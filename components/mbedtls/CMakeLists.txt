@@ -61,7 +61,7 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         list(APPEND crt_paths ${custom_bundle_path})
 
     endif()
-    list(APPEND args --input ${crt_paths} -q)
+    list(APPEND args --input ${crt_paths} -q --max-certs "${CONFIG_MBEDTLS_CERTIFICATE_BUNDLE_MAX_CERTS}")
 
     get_filename_component(crt_bundle
         ${bundle_name}
@@ -96,7 +96,13 @@ idf_build_get_property(python PYTHON)
 set(Python3_EXECUTABLE ${python})
 
 # Needed to for include_next includes to work from within mbedtls
-include_directories("${COMPONENT_DIR}/port/include")
+set(include_dirs "${COMPONENT_DIR}/port/include")
+
+if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
+    list(APPEND include_dirs "${COMPONENT_DIR}/esp_crt_bundle/include")
+endif()
+
+include_directories(${include_dirs})
 
 # Needed to for mbedtls_rom includes to work from within mbedtls
 if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL)

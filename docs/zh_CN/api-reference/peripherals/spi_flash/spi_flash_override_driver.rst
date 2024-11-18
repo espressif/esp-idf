@@ -64,7 +64,7 @@
             .get_chip_caps = spi_flash_chip_eon_get_caps,
          };
 
-   - 也可以在示例 :example:`storage/custom_flash_driver` 中查看如何实现此功能。
+   - 也可以在示例 :example:`storage/custom_flash_driver` 中查看如何实现此功能。该示例演示了如何覆盖默认芯片驱动列表。
 
 4. 为 ``custom_chip_driver`` 组件编写一个新的 ``CMakeLists.txt`` 文件，其中包含额外的一行，添加了从 ``spi_flash`` 到 ``custom_chip_driver`` 的链接依赖项::
 
@@ -80,8 +80,3 @@
 5. ``linker.lf`` 用于在禁用缓存时，把要使用的每个芯片驱动程序都放入内部 RAM 中。详情请参阅 :doc:`/api-guides/linker-script-generation`。请确保此文件包含所有添加的源文件。
 
 6. 构建你的项目，将会看到新的 flash 驱动程序已投入使用。
-
-示例
-----
-
-参考 :example:`storage/custom_flash_driver`。

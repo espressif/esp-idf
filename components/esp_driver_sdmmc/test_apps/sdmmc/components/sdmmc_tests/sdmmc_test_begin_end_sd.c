@@ -58,6 +58,7 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
     }
 
     config.max_freq_khz = freq_khz;
+    bool slot_is_uhs1 = slot_config.flags & SDMMC_SLOT_FLAG_UHS1;
 
     if (width == 1) {
         config.flags = SDMMC_HOST_FLAG_1BIT;
@@ -76,6 +77,10 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
      */
     if (ddr) {
         config.flags |= SDMMC_HOST_FLAG_DDR;
+    }
+
+    if (slot_is_uhs1) {
+        slot_config.flags |= SDMMC_SLOT_FLAG_UHS1;
     }
 
 #if SOC_SDMMC_IO_POWER_EXTERNAL

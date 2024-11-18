@@ -40,6 +40,7 @@ extern "C" {
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
 #define CLK_LL_PLL_240M_FREQ_MHZ   (240)
+#define CLK_LL_PLL_SDIO_FREQ_MHZ   (200)
 
 #define CLK_LL_PLL_360M_FREQ_MHZ   (360)
 #define CLK_LL_PLL_400M_FREQ_MHZ   (400)
@@ -347,7 +348,7 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_cpll_get_freq_mhz(u
     unsigned chip_version = efuse_hal_chip_revision();
     if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
         return xtal_freq_mhz * (div + 4) / (ref_div + 1);
-    } else
+    }
     return xtal_freq_mhz * div / (ref_div + 1);
 }
 

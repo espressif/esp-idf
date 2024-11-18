@@ -13,7 +13,6 @@
 
 #pragma once
 #include <stdbool.h>
-#include "sdkconfig.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/i2s_periph.h"
@@ -154,7 +153,7 @@ static inline void i2s_ll_rx_disable_clock(i2s_dev_t *hw)
 static inline void i2s_ll_mclk_bind_to_tx_clk(i2s_dev_t *hw)
 {
     (void)hw;
-    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;  // TODO: need check
+    PCR.i2s_rx_clkm_conf.i2s_mclk_sel = 0;
 }
 
 /**
@@ -398,7 +397,7 @@ static inline void i2s_ll_rx_set_bck_div_num(i2s_dev_t *hw, uint32_t val)
 
 /**
  * @brief Configure I2S RX module clock divider
- * @note mclk on ESP32 is shared by both TX and RX channel
+ * @note mclk on ESP32C5 is shared by both TX and RX channel
  *
  * @param hw Peripheral I2S hardware instance address.
  * @param mclk_div The mclk division coefficients
@@ -945,7 +944,7 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm_enable)
 {
-    // Due to the lack of `PDM to PCM` module on ESP32-H2, PDM RX is not available
+    // Due to the lack of `PDM to PCM` module on ESP32-C5, PDM RX is not available
     HAL_ASSERT(!pdm_enable);
     hw->rx_conf.rx_pdm_en = 0;
     hw->rx_conf.rx_tdm_en = 1;

@@ -138,46 +138,59 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
 {
     int group_id = tx_unit->base.group->group_id;
     int unit_id = tx_unit->base.unit_id;
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_OUTPUT,
-        .pull_down_en = false,
-        .pull_up_en = true,
-    };
 
     // connect peripheral signals via GPIO matrix
     for (size_t i = 0; i < config->data_width; i++) {
         if (config->data_gpio_nums[i] >= 0) {
-            gpio_conf.pin_bit_mask = BIT64(config->data_gpio_nums[i]);
-            ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config data GPIO failed");
+            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
+
+            // deprecated, to be removed in in esp-idf v6.0
+            if (config->flags.io_loop_back) {
+                gpio_input_enable(config->data_gpio_nums[i]);
+            }
+
+            // connect the signal to the GPIO by matrix, it will also enable the output path properly
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
-            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
         }
     }
     // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
     if (config->valid_gpio_num >= 0) {
-        gpio_conf.pin_bit_mask = BIT64(config->valid_gpio_num);
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config valid GPIO failed");
+        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_input_enable(config->valid_gpio_num);
+        }
+
+        // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
                                         false, false);
-        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
     }
     if (config->clk_out_gpio_num >= 0) {
-        gpio_conf.pin_bit_mask = BIT64(config->clk_out_gpio_num);
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk out GPIO failed");
+        gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_input_enable(config->clk_out_gpio_num);
+        }
+
+        // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
-        gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
     }
     if (config->clk_in_gpio_num >= 0) {
-        gpio_conf.mode = config->flags.io_loop_back ? GPIO_MODE_INPUT_OUTPUT : GPIO_MODE_INPUT;
-        gpio_conf.pin_bit_mask = BIT64(config->clk_in_gpio_num);
-        ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "config clk in GPIO failed");
+        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(config->clk_in_gpio_num);
+
+        // deprecated, to be removed in in esp-idf v6.0
+        if (config->flags.io_loop_back) {
+            gpio_output_enable(config->clk_in_gpio_num);
+        }
+
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_in_sig, false);
-        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
     }
     return ESP_OK;
 }
@@ -257,7 +270,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 #endif
     esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
     PARLIO_CLOCK_SRC_ATOMIC() {
-        // turn on the tx module clock to sync the register configuration to the module
+        // turn on the tx module clock to sync the clock divider configuration because of the CDC (Cross Domain Crossing)
         parlio_ll_tx_enable_clock(hal->regs, true);
         parlio_ll_tx_set_clock_source(hal->regs, clk_src);
         // set clock division
@@ -295,6 +308,10 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 #else
     ESP_RETURN_ON_FALSE(config->flags.clk_gate_en == 0, ESP_ERR_NOT_SUPPORTED, TAG, "clock gating is not supported");
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
+
+#if !SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
     // malloc unit memory
     uint32_t mem_caps = PARLIO_MEM_ALLOC_CAPS;
@@ -367,6 +384,12 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
 
     // GPIO Matrix/MUX configuration
     ESP_GOTO_ON_ERROR(parlio_tx_unit_configure_gpio(unit, config), err, TAG, "configure gpio failed");
+
+#if PARLIO_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        parlio_create_retention_module(group);
+    }
+#endif // PARLIO_USE_RETENTION_LINK
 
     portMUX_INITIALIZE(&unit->spinlock);
     atomic_init(&unit->fsm, PARLIO_TX_FSM_INIT);
@@ -455,13 +478,11 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
     while (parlio_ll_tx_is_ready(hal->regs) == false);
     // turn on the core clock after we start the TX unit
     parlio_ll_tx_start(hal->regs, true);
-    PARLIO_CLOCK_SRC_ATOMIC() {
-        parlio_ll_tx_enable_clock(hal->regs, true);
-    }
 }
 
 esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
 {
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
@@ -474,6 +495,11 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
+    }
+
+    // enable clock output
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, true);
     }
 
     // check if we need to start one pending transaction
@@ -518,6 +544,10 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
 
     // stop the TX engine
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
+    // disable clock output
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
+    }
     gdma_stop(tx_unit->dma_chan);
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
@@ -608,9 +638,6 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
 
     if (status & PARLIO_LL_EVENT_TX_EOF) {
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
-        PARLIO_CLOCK_SRC_ATOMIC() {
-            parlio_ll_tx_enable_clock(hal->regs, false);
-        }
         parlio_ll_tx_start(hal->regs, false);
 
         parlio_tx_trans_desc_t *trans_desc = NULL;

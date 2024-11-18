@@ -105,6 +105,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         timestamps: bool,
         timestamp_format: str,
         force_color: bool,
+        disable_auto_color: bool,
     ) -> None:
         """
         Run esp_idf_monitor to watch build output
@@ -186,6 +187,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         if force_color or os.name == 'nt':
             monitor_args += ['--force-color']
+
+        if disable_auto_color:
+            monitor_args += ['--disable-auto-color']
 
         idf_py = [PYTHON] + _get_commandline_options(ctx)  # commands to re-run idf.py
         monitor_args += ['-m', ' '.join("'%s'" % a for a in idf_py)]
@@ -1010,6 +1014,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--force-color'],
                         'is_flag': True,
                         'help': 'Always print ANSI for colors',
+                    },
+                    {
+                        'names': ['--disable-auto-color'],
+                        'is_flag': True,
+                        'help': 'Disable auto coloring logs',
                     },
                 ],
                 'order_dependencies': [

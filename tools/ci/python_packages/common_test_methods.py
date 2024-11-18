@@ -1,12 +1,19 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 import os
 import socket
-from typing import Any, List
+from typing import Any
+from typing import List
 
-import netifaces
+try:
+    import netifaces
+except ImportError:
+    from unittest.mock import MagicMock
+
+    netifaces = MagicMock()
+    logging.warning('netifaces is not installed. Please install it to get network interface information.')
+
 import yaml
 
 ENV_CONFIG_FILE_SEARCH = [

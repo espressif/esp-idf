@@ -201,12 +201,19 @@ def setup_bad_mixed_same_key_different_page(nvs_obj: NVS) -> None:
         data_type = prim_types[i % len(prim_types)]
         nvs_partition_gen.write_entry(nvs_obj, f'test_{i}', 'data', data_type, str(i))  # Conflicting keys under "abcd" namespace - 6 duplicates
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', 'abc')  # Conflicting key for string - 7th duplicate
-    nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')  # Conflicting namespace - 8th duplicate
+
+    # Create new duplicates of storage namespace with an unsafe version of write_namespace function
+    nvs_obj.write_namespace_unsafe('storage')  # Conflicting namespace - 8th duplicate (the function is only for testing)
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage2', 'namespace', '', '')  # New namespace, ignored
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string_key', 'data', 'string', 'abc')  # Should be ignored as is under different "storage2" namespace
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', 'abc')  # 3 conflicting keys under "storage2" namespace - 9th duplicate
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', 'def')
     nvs_partition_gen.write_entry(nvs_obj, 'lorem_string', 'data', 'string', '123')
+
+    # This no longer (nvs generator version >= 0.1.5) creates a duplicate namespace entry, only changes
+    # the current used namespace index
+    nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
 
 
 def setup_bad_same_key_primitive(nvs_obj: NVS) -> None:

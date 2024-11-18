@@ -2,7 +2,7 @@ menu "Format"
 
     config BOOTLOADER_LOG_COLORS
         bool "Color"
-        default y
+        default n
         help
             Use ANSI terminal colors in log output
             Enable ANSI terminal color codes.

@@ -86,7 +86,7 @@ const pmu_hp_system_analog_param_t* pmu_hp_system_analog_param_default(pmu_hp_mo
 
 typedef struct {
     pmu_hp_backup_reg_t     retention;
-    uint32_t                backup_clk;
+    uint32_t                backup_clk; // icg_func
 } pmu_hp_system_retention_param_t;
 
 const pmu_hp_system_retention_param_t* pmu_hp_system_retention_param_default(pmu_hp_mode_t mode);
@@ -173,7 +173,7 @@ typedef struct {
         uint32_t slp_mem_xpd    : 1;
         uint32_t slp_logic_xpd  : 1;
         uint32_t xpd            : 1;
-        uint32_t slp_mem_dbias  : 4;
+        uint32_t xpd_0p1a       : 1; // Should map to slp_mem_dbias bit[3] on hardware.
         uint32_t slp_logic_dbias: 4;
         uint32_t dbias          : 5;
     };

@@ -9,7 +9,7 @@ The high level view of startup process is as follows:
 
 .. list::
 
-    1. :ref:`first-stage-bootloader` in ROM loads second-stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
+    1. :ref:`first-stage-bootloader` loads the second stage bootloader image to RAM (IRAM & DRAM) from flash offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}.
 
     2. :ref:`second-stage-bootloader` loads partition table and main app image from flash. Main app incorporates both RAM segments and read-only segments mapped via flash cache.
 
@@ -21,8 +21,8 @@ This process is explained in detail in the following sections.
 
 .. _first-stage-bootloader:
 
-First Stage Bootloader
-^^^^^^^^^^^^^^^^^^^^^^
+First stage (ROM) bootloader
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES
 
@@ -71,7 +71,7 @@ Second Stage Bootloader
 
 In ESP-IDF, the binary image which resides at offset {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} in flash is the second stage bootloader. Second stage bootloader source code is available in :idf:`components/bootloader` directory of ESP-IDF. Second stage bootloader is used in ESP-IDF to add flexibility to flash layout (using partition tables), and allow for various flows associated with flash encryption, secure boot, and over-the-air updates (OTA) to take place.
 
-When the first stage bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
+When the first stage (ROM) bootloader is finished checking and loading the second stage bootloader, it jumps to the second stage bootloader entry point found in the binary image header.
 
 Second stage bootloader reads the partition table found by default at offset {IDF_TARGET_CONFIG_PARTITION_TABLE_OFFSET} (:ref:`configurable value <CONFIG_PARTITION_TABLE_OFFSET>`). See :doc:`partition tables <partition-tables>` documentation for more information. The bootloader finds factory and OTA app partitions. If OTA app partitions are found in the partition table, the bootloader consults the ``otadata`` partition to determine which one should be booted. See :doc:`/api-reference/system/ota` for more information.
 

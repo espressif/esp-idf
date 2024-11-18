@@ -86,24 +86,24 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    regi2c_ctrl_ll_master_enable_clock(true);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-9274 Remove this?
     regi2c_ctrl_ll_master_configure_clock();
 }
 
 static inline void bootloader_ana_reset_config(void)
 {
-    //Enable super WDT reset.
-    bootloader_ana_super_wdt_reset_config(true);
     //Enable BOD reset (mode1)
     brownout_ll_ana_reset_enable(true);
+    uint8_t power_glitch_dref = 0;
+    bootloader_power_glitch_reset_config(true, power_glitch_dref);
 }
 
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
     bootloader_hardware_init();
-    // bootloader_ana_reset_config();   //TODO: [ESP32C61] IDF-9260
+    bootloader_ana_reset_config();
     bootloader_super_wdt_auto_feed();
 
 // In RAM_APP, memory will be initialized in `call_start_cpu0`

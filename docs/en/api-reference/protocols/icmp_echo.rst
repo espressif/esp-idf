@@ -109,10 +109,10 @@ Get Runtime Statistics
 As the example code above, you can call ``esp_ping_get_profile`` to get different runtime statistics of ping session in the callback function.
 
 
-Application Example
--------------------
+Application Examples
+--------------------
 
-ICMP echo example: :example:`protocols/icmp_echo`
+- :example:`protocols/icmp_echo` demonstrates how to implement a simple ping command line utility to test if a remote host is reachable on the IP network, using ICMP echo request packets.
 
 API Reference
 -------------

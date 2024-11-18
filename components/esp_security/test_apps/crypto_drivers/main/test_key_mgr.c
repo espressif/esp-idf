@@ -7,7 +7,6 @@
 #include "unity.h"
 
 #include "soc/soc_caps.h"
-#if SOC_KEY_MANAGER_SUPPORTED
 #include "esp_partition.h"
 #include "esp_flash.h"
 #include "esp_log.h"
@@ -143,4 +142,3 @@ TEST_CASE("Key Manager random mode: ECDSA key deployment", "[hw_crypto] [key_mgr
     esp_ret = esp_key_mgr_deploy_key_in_random_mode(&key_config, &key_info);
     TEST_ASSERT_EQUAL(ESP_OK, esp_ret);
 }
-#endif

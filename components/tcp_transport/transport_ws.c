@@ -495,6 +495,34 @@ static int ws_read_payload(esp_transport_handle_t t, char *buffer, int len, int 
     return rlen;
 }
 
+static int esp_transport_read_exact_size(transport_ws_t *ws, char *buffer, int requested_len, int timeout_ms)
+{
+    int total_read = 0;
+    int len = requested_len;
+
+    while (len > 0) {
+        int bytes_read = esp_transport_read_internal(ws, buffer, len, timeout_ms);
+
+        if (bytes_read < 0) {
+            return bytes_read; // Return error from the underlying read
+        }
+
+        if (bytes_read == 0) {
+            // If we read 0 bytes, we return an error, since reading exact number of bytes resulted in a timeout operation
+            ESP_LOGW(TAG, "Requested to read %d, actually read %d bytes", requested_len, total_read);
+            return -1;
+        }
+
+        // Update buffer and remaining length
+        buffer += bytes_read;
+        len -= bytes_read;
+        total_read += bytes_read;
+
+        ESP_LOGV(TAG, "Read fragment of %d bytes", bytes_read);
+    }
+    return total_read;
+}
+
 
 /* Read and parse the WS header, determine length of payload */
 static int ws_read_header(esp_transport_handle_t t, char *buffer, int len, int timeout_ms)

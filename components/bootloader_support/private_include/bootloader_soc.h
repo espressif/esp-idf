@@ -24,6 +24,14 @@ void bootloader_ana_super_wdt_reset_config(bool enable);
  */
 void bootloader_ana_clock_glitch_reset_config(bool enable);
 
+/**
+ * @brief Configure analog power glitch reset & glitch reset dref
+ *
+ * @param enable Boolean to enable or disable power glitch reset
+ * @param dref voltage threshold
+ */
+void bootloader_power_glitch_reset_config(bool enable, uint8_t dref);
+
 #ifdef __cplusplus
 }
 #endif

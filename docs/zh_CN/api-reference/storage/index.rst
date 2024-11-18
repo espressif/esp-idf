@@ -37,44 +37,76 @@
    wear-levelling
    storage-security.rst
 
+示例
+----
+
 .. list-table:: 存储 API 相关例程
     :widths: 25 75
     :header-rows: 0
 
     * - **例程**
       - **描述**
-    * - :doc:`fatfs`
-      -
-    * - :example:`wear_leveling <storage/wear_levelling>`
-      - 演示了如何在内部 flash 上使用 FATFS 磨损均衡。
-    * - :example:`ext_flash_fatfs <storage/ext_flash_fatfs>`
-      - 演示了如何在外部 flash 上使用 FATFS 磨损均衡。
-    * - :example:`fatfsgen <storage/fatfsgen>`
-      - 演示了在主机计算机上使用 Python 工具生成 FATFS 镜像的功能。
-    * - :doc:`nvs_flash`
-      -
     * - :example:`nvs_rw_blob <storage/nvs_rw_blob>`
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写 blob 数据类型。
     * - :example:`nvs_rw_value <storage/nvs_rw_value>`
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写整数数据类型。
-    * - :example:`nvs_rw_value_cxx <storage/nvs_rw_value_cxx>`
+    * - :example:`nvs_rw_value <storage/nvs_rw_value>`
       - 演示了如何在 NVS flash 中使用 C++ 语言 API 读写整数数据类型。
     * - :example:`nvsgen <storage/nvsgen>`
       - 演示了如何使用基于 Python 的 NVS 镜像生成工具，根据 CSV 文件内容创建 NVS 分区镜像。
-    * - :doc:`spiffs`
-      -
+
+.. list-table:: 常用文件系统 API
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **代码示例**
+      - **描述**
+    * - :example:`fatfs/getting_started <storage/fatfs/getting_started>`
+      - 演示了如何使用 FATFS 库在内部 flash 上应用标准文件 API (stdio.h)。
+    * - :example:`fatfs/fs_operations <storage/fatfs/fs_operations>`
+      - 演示了如何使用 POSIX API 进行文件系统操作，如移动、删除和重命名文件等。
+
+.. list-table:: FATFS API 示例
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **代码示例**
+      - **描述**
+    * - :example:`fatfsgen <storage/fatfs/fatfsgen>`
+      - 演示了在主机上使用 Python 工具生成 FATFS 镜像的相关功能。
+    * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
+      - 演示了在外部 flash 上使用带有磨损均衡功能的 FATFS。
+    * - :example:`wear_leveling <storage/wear_levelling>`
+      - 演示了在内部 flash 上使用带有磨损均衡功能的 FATFS。
+
+.. list-table:: SPIFFS API 示例
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **代码示例**
+      - **描述**
     * - :example:`spiffs <storage/spiffs>`
       - 演示了如何使用 SPIFFS API 初始化文件系统，并使用 POSIX 函数处理文件。
     * - :example:`spiffsgen <storage/spiffsgen>`
       - 演示了在主机计算机上使用 Python 工具生成 SPIFFS 镜像的功能。
-    * - :doc:`partition`
-      -
+
+.. list-table:: 分区 API 示例
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **代码示例**
+      - **描述**
     * - :example:`partition_api <storage/partition_api>`
       - 介绍了用于查找特定分区、执行基本 I/O 操作以及通过 CPU 内存映射使用分区的 API 函数。
     * - :example:`parttool <storage/parttool>`
       - 演示了在主机计算机上使用 Python 工具生成分区镜像的功能。
-    * - :doc:`vfs`
-      -
+
+.. list-table:: VFS 相关示例
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **代码示例**
+      - **描述**
     * - :example:`littlefs <storage/littlefs>`
       - 演示了如何使用 LittleFS 组件初始化文件系统，并使用 POSIX 函数处理文件。
     * - :example:`semihost_vfs <storage/semihost_vfs>`

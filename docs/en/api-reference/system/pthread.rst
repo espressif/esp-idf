@@ -183,6 +183,7 @@ Message Queues
 ^^^^^^^^^^^^^^
 
 The message queue implementation is based on the `FreeRTOS-Plus-POSIX <https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_POSIX/index.html>`_ project. Message queues are not made available in any filesystem on ESP-IDF. Message priorities are not supported.
+
 The following API functions of the POSIX message queue specification are implemented:
 
 * `mq_open() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html>`_
@@ -191,7 +192,7 @@ The following API functions of the POSIX message queue specification are impleme
         - It has to begin with a leading slash.
         - It has to be no more than 255 + 2 characters long (including the leading slash, excluding the terminating null byte). However, memory for ``name`` is dynamically allocated internally, so the shorter it is, the fewer memory it will consume.
     - The ``mode`` argument is not implemented and is ignored.
-    - Supported ``oflags``: ``O_RDWR``, ``O_CREAT``, ``O_EXCL``, and ``O_NONBLOCK``
+    - Supported ``oflags``: ``O_RDWR``, ``O_CREAT``, ``O_EXCL``, and ``O_NONBLOCK``.
 
 * `mq_close() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_close.html>`_
 * `mq_unlink() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_unlink.html>`_
@@ -218,7 +219,7 @@ The following API functions of the POSIX message queue specification are impleme
 Building
 ........
 
-To use the POSIX message queue API, please add ``rt`` as a requirement in your component's ``CMakeLists.txt``
+To use the POSIX message queue API, please add ``rt`` as a requirement in your component's ``CMakeLists.txt``.
 
 .. note::
 

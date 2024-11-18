@@ -10,7 +10,7 @@
 #include "esp_sleep.h"
 #include "ulp_riscv.h"
 #include "ulp_main.h"
-#include "driver/touch_pad.h"
+#include "driver/touch_sensor.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 

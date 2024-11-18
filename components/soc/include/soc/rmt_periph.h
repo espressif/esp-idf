@@ -10,6 +10,10 @@
 #include "soc/periph_defs.h"
 #include "soc/regdma.h"
 
+#if SOC_RMT_SUPPORT_SLEEP_RETENTION
+#include "soc/retention_periph_defs.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,6 +36,7 @@ extern const rmt_signal_conn_t rmt_periph_signals;
 
 #if SOC_RMT_SUPPORT_SLEEP_RETENTION
 typedef struct {
+    periph_retention_module_t module;
     const regdma_entries_config_t *regdma_entry_array;
     uint32_t array_size;
 } rmt_reg_retention_info_t;

@@ -13,6 +13,12 @@ This guide provides an overview of the overall security features available in va
 
     In this guide, most used commands are in the form of ``idf.py secure-<command>``, which is a wrapper around corresponding ``espsecure.py <command>``. The ``idf.py`` based commands provides more user-friendly experience, although may lack some of the advanced functionality of their ``espsecure.py`` based counterparts.
 
+.. only:: TARGET_SUPPORT_QEMU
+
+   .. important::
+
+      It is possible to try out the security features for {IDF_TARGET_NAME} target SoC under :doc:`../api-guides/tools/qemu` virtually. Once the security workflow is established, you can then proceed to the real hardware.
+
 Goals
 -----
 

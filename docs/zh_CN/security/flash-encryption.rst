@@ -39,7 +39,7 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 
 启用 flash 加密后，会默认加密以下类型的数据：
 
-- :ref:`second-stage-bootloader` （固件引导加载程序）
+- :ref:`second-stage-bootloader`
 - 分区表
 - :ref:`nvs_encr_key_partition`
 - Otadata
@@ -48,7 +48,7 @@ flash 加密功能用于加密与 {IDF_TARGET_NAME} 搭载使用的片外 flash 
 其他类型的数据将视情况进行加密：
 
 - 分区表中标有 ``encrypted`` 标志的分区。如需了解详情，请参考 :ref:`encrypted-partition-flag`。
-- 如果启用了安全启动，则会对安全启动引导程序摘要进行加密（见下文）。
+- 如果启用了安全启动，则会对安全启动引导加载程序摘要进行加密（见下文）。
 
 .. _flash-encryption-efuse:
 
@@ -175,39 +175,39 @@ flash 加密操作由 {IDF_TARGET_NAME} 上的多个 eFuse 控制，具体 eFuse
 flash 的加密过程
 ------------------
 
-假设 eFuse 值处于默认状态，且固件的引导加载程序编译为支持 flash 加密，则 flash 加密的具体过程如下：
+假设 eFuse 值处于默认状态，且二级引导加载程序编译为支持 flash 加密，则 flash 加密的具体过程如下：
 
 .. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
 
-  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。ROM 引导加载程序加载固件引导加载程序。
+  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。一级 (ROM) 引导加载程序加载二级引导加载程序。
 
-  2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b0000000``)。因为该值为 0（偶数位），固件的引导加载程序将配置并启用 flash 加密块，同时将 ``FLASH_CRYPT_CONFIG`` eFuse 的值编程为 0xF。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *flash 加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
+  2. 二级引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b0000000``)。因为该值为 0（偶数位），二级引导加载程序将配置并启用 flash 加密块，同时将 ``FLASH_CRYPT_CONFIG`` eFuse 的值编程为 0xF。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *flash 加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，固件引导加载程序会使用 RNG（随机数发生器）模块生成一个 AES-256 位密钥，并将其写入 ``flash_encryption`` eFuse 中。由于已设置了 ``flash_encryption`` eFuse 的读保护位和写保护位，因此无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 二级引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，二级引导加载程序会使用 RNG（随机数发生器）模块生成一个 AES-256 位密钥，并将其写入 ``flash_encryption`` eFuse 中。由于已设置了 ``flash_encryption`` eFuse 的读保护位和写保护位，因此无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有 ``加密`` 标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（二级引导加载程序、应用程序、以及标有 ``加密`` 标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
-  5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数个比特位。
+  5. 二级引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b0000001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数个比特位。
 
-  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序仅设置 ``DISABLE_DL_DECRYPT`` 和 ``DISABLE_DL_CACHE`` 的 eFuse 位，以便 UART 引导加载程序重新烧录加密的二进制文件。此外， ``{IDF_TARGET_CRYPT_CNT}`` 的 eFuse 位不受写入保护。
+  6. 对于 :ref:`flash-enc-development-mode`，二级引导加载程序仅设置 ``DISABLE_DL_DECRYPT`` 和 ``DISABLE_DL_CACHE`` 的 eFuse 位，以便 UART 引导加载程序重新烧录加密的二进制文件。此外， ``{IDF_TARGET_CRYPT_CNT}`` 的 eFuse 位不受写入保护。
 
-  7. 对于 :ref:`flash-enc-release-mode`，固件引导加载程序设置 ``DISABLE_DL_ENCRYPT``、``DISABLE_DL_DECRYPT`` 和 ``DISABLE_DL_CACHE`` 的 eFuse 位为 1，以防止 UART 引导加载程序解密 flash 内容。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
+  7. 对于 :ref:`flash-enc-release-mode`，二级引导加载程序设置 ``DISABLE_DL_ENCRYPT``、``DISABLE_DL_DECRYPT`` 和 ``DISABLE_DL_CACHE`` 的 eFuse 位为 1，以防止 UART 引导加载程序解密 flash 内容。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
 
-  8. 重新启动设备以开始执行加密镜像。固件引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
+  8. 重新启动设备以开始执行加密镜像。二级引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_256
 
-  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。ROM 引导加载程序加载固件引导加载程序。
+  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。一级 (ROM) 引导加载程序加载二级引导加载程序。
 
-  2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *自动加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
+  2. 二级引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），二级引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 *{IDF_TARGET_NAME} 技术参考手册* > *eFuse 控制器 (eFuse)* > *自动加密块* [`PDF <{IDF_TARGET_TRM_CN_URL}#efuse>`__]。
 
-  3. 固件引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，固件引导加载程序使用 RNG（随机数发生器）模块生成一个 256 位或 512 位的密钥，具体位数取决于 :ref:`生成的 XTS-AES 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后将其分别写入一个或两个 `BLOCK_KEYN` eFuse 中。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于上述一个或两个 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
+  3. 二级引导加载程序首先检查 eFuse 中是否已经存在有效密钥（例如用 espefuse 工具烧写的密钥），如果存在，则会跳过密钥生成，并将该密钥用于 flash 加密过程。否则，二级引导加载程序使用 RNG（随机数发生器）模块生成一个 256 位或 512 位的密钥，具体位数取决于 :ref:`生成的 XTS-AES 密钥的大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`，然后将其分别写入一个或两个 `BLOCK_KEYN` eFuse 中。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于上述一个或两个 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。
 
-  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（二级引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
-  5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
+  5. 二级引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
-  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，固件引导加载程序默认置位以下 eFuse 位：
+  6. 对于 :ref:`flash-enc-development-mode`，二级引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，二级引导加载程序默认置位以下 eFuse 位：
 
     .. list::
 
@@ -217,45 +217,45 @@ flash 的加密过程
       - ``HARD_DIS_JTAG``
       - ``DIS_LEGACY_SPI_BOOT``
 
-  7. 对于 :ref:`flash-enc-release-mode`，固件引导加载程序设置所有在开发模式下设置的 eFuse 位。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
+  7. 对于 :ref:`flash-enc-release-mode`，二级引导加载程序设置所有在开发模式下设置的 eFuse 位。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
 
-  8. 重新启动设备以开始执行加密镜像。固件引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
+  8. 重新启动设备以开始执行加密镜像。二级引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and not SOC_FLASH_ENCRYPTION_XTS_AES_256 and not SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。ROM 引导加载程序加载固件引导加载程序。
+  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。一级 (ROM) 引导加载程序加载二级引导加载程序。
 
-  2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
+  2. 二级引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），二级引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数发生器）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则会跳过密钥生成，并将该密钥用于 flash 加密过程。
+  3. 二级引导加载程序使用 RNG（随机数发生器）模块生成 256 位密钥，然后将其写入 `BLOCK_KEYN` eFuse。软件也为存储密钥的块更新了 ``KEY_PURPOSE_N``。由于 ``BLOCK_KEYN`` eFuse 已设置了读保护和写保护位，因此无法通过软件访问密钥。``KEY_PURPOSE_N`` 字段也受写保护。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则会跳过密钥生成，并将该密钥用于 flash 加密过程。
 
-  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（二级引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
-  5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
+  5. 二级引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
-  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，默认情况下，固件引导加载程序设置 ``DIS_DOWNLOAD_ICACHE``、 ``DIS_PAD_JTAG``、 ``DIS_USB_JTAG`` 和 ``DIS_LEGACY_SPI_BOOT`` eFuse 位。
+  6. 对于 :ref:`flash-enc-development-mode`，二级引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，默认情况下，二级引导加载程序设置 ``DIS_DOWNLOAD_ICACHE``、 ``DIS_PAD_JTAG``、 ``DIS_USB_JTAG`` 和 ``DIS_LEGACY_SPI_BOOT`` eFuse 位。
 
-  7. 对于 :ref:`flash-enc-release-mode`，固件引导加载程序设置所有在开发模式下设置的 eFuse 位以及 ``DIS_DOWNLOAD_MANUAL_ENCRYPT``。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
+  7. 对于 :ref:`flash-enc-release-mode`，二级引导加载程序设置所有在开发模式下设置的 eFuse 位以及 ``DIS_DOWNLOAD_MANUAL_ENCRYPT``。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
 
-  8. 重新启动设备以开始执行加密镜像。固件引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
+  8. 重新启动设备以开始执行加密镜像。二级引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
 
 .. only:: SOC_FLASH_ENCRYPTION_XTS_AES_128 and SOC_EFUSE_CONSISTS_OF_ONE_KEY_BLOCK
 
-  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。ROM 引导加载程序加载固件引导加载程序。
+  1. 第一次开机复位时，flash 中的所有数据都是未加密的（明文）。ROM 引导加载程序加载二级引导加载程序。
 
-  2. 固件的引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），固件引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
+  2. 二级引导加载程序将读取 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 值 (``0b000``)。因为该值为 0（偶数位），二级引导加载程序将配置并启用 flash 加密块。关于 flash 加密块的更多信息，请参考 `{IDF_TARGET_NAME} 技术参考手册 <{IDF_TARGET_TRM_CN_URL}>`_。
 
-  3. 固件的引导加载程序使用 RNG（随机数发生器）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置写保护和读保护位，故无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，为 RELEASE 模式设置了一个写保护位。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则跳过密钥生成，并将该密钥用于 flash 加密过程。
+  3. 二级引导加载程序使用 RNG（随机数发生器）模块生成 256 位或 128 位密钥（具体位数取决于 :ref:`生成的 XTS-AES 密钥大小 <CONFIG_SECURE_FLASH_ENCRYPTION_KEYSIZE>`），然后将其写入 `BLOCK_KEY0` eFuse。同时，根据所选选项，软件对 ``XTS_KEY_LENGTH_256`` 进行更新。由于 ``BLOCK_KEY0`` eFuse 已设置写保护和读保护位，故无法通过软件访问密钥。flash 加密操作完全在硬件中完成，无法通过软件访问密钥。若使用 128 位 flash 加密密钥，则整个 eFuse 密钥块都受写保护，但只有低 128 位受读保护，高 128 位是可读的，以满足安全启动的需要。如果 flash 加密密钥是 256 位，那么 ``XTS_KEY_LENGTH_256`` 为 1，否则为 0。为防止意外将 eFuse 从 0 改为 1，为 RELEASE 模式设置了一个写保护位。如果 eFuse 中已经存在有效密钥（例如用 espefuse 工具烧写的密钥），则跳过密钥生成，并将该密钥用于 flash 加密过程。
 
-  4. flash 加密块将加密 flash 的内容（固件的引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
+  4. flash 加密块将加密 flash 的内容（二级引导加载程序、应用程序、以及标有“加密”标志的分区）。就地加密可能会耗些时间（对于大分区最多需要一分钟）。
 
-  5. 固件引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
+  5. 二级引导加载程序将在 ``{IDF_TARGET_CRYPT_CNT}`` (0b001) 中设置第一个可用位来对已加密的 flash 内容进行标记。设置奇数位。
 
-  6. 对于 :ref:`flash-enc-development-mode`，固件引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，默认情况下，固件引导加载程序设置 ``DIS_DOWNLOAD_ICACHE``、``DIS_PAD_JTAG`` 和 ``DIS_DIRECT_BOOT`` eFuse 位。
+  6. 对于 :ref:`flash-enc-development-mode`，二级引导加载程序允许 UART 引导加载程序重新烧录加密后的二进制文件。同时，``{IDF_TARGET_CRYPT_CNT}`` eFuse 位不受写入保护。此外，默认情况下，二级引导加载程序设置 ``DIS_DOWNLOAD_ICACHE``、``DIS_PAD_JTAG`` 和 ``DIS_DIRECT_BOOT`` eFuse 位。
 
-  7. 对于 :ref:`flash-enc-release-mode`，固件引导加载程序设置所有在开发模式下设置的 eFuse 位以及 ``DIS_DOWNLOAD_MANUAL_ENCRYPT``。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
+  7. 对于 :ref:`flash-enc-release-mode`，二级引导加载程序设置所有在开发模式下设置的 eFuse 位以及 ``DIS_DOWNLOAD_MANUAL_ENCRYPT``。它还写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse 位。要修改此行为，请参阅 :ref:`uart-bootloader-encryption`。
 
-  8. 重新启动设备以开始执行加密镜像。固件引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
+  8. 重新启动设备以开始执行加密镜像。二级引导加载程序调用 flash 解密块来解密 flash 内容，然后将解密的内容加载到 IRAM 中。
 
 在开发阶段常需编写不同的明文 flash 镜像并测试 flash 的加密过程。这要求固件下载模式能够根据需求不断加载新的明文镜像。但是，在制造和生产过程中，出于安全考虑，固件下载模式不应有权限访问 flash 内容。
 
@@ -316,7 +316,7 @@ flash 加密设置
 
        这个命令不包括任何应该写入 flash 分区的用户文件。请在运行此命令前手动写入这些文件，否则在写入前应单独对这些文件进行加密。
 
-该命令将向 flash 写入未加密的镜像：固件引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，固件引导加载程序会加密：固件引导加载程序、应用程序分区和标记为“加密”的分区，然后复位。就地加密可能需要时间，对于大分区最多需要一分钟。之后，应用程序在运行时解密并执行命令。
+该命令将向 flash 写入未加密的镜像：二级引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，二级引导加载程序会加密：二级引导加载程序、应用程序分区和标记为“加密”的分区，然后复位。就地加密可能需要时间，对于大分区最多需要一分钟。之后，应用程序在运行时解密并执行命令。
 
 下面是启用 flash 加密后 {IDF_TARGET_NAME} 首次启动时的样例输出：
 
@@ -486,7 +486,7 @@ flash 加密设置
 
       这个命令不包括任何应该被写入 flash 上的分区的用户文件。请在运行此命令前手动写入这些文件，否则在写入前应单独对这些文件进行加密。
 
-  该命令将向 flash 写入未加密的镜像：固件引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，固件引导加载程序会加密：固件引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
+  该命令将向 flash 写入未加密的镜像：二级引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，二级引导加载程序会加密：二级引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
 
 如果使用开发模式，那么更新和重新烧录二进制文件最简单的方法是 :ref:`encrypt-partitions`。
 
@@ -549,7 +549,7 @@ flash 加密设置
 
       这个命令不包括任何应该被写入 flash 分区的用户文件。请在运行此命令前手动写入这些文件，否则在写入前应单独对这些文件进行加密。
 
-  该命令将向 flash 写入未加密的镜像：固件引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，固件引导加载程序会加密：固件引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
+  该命令将向 flash 写入未加密的镜像：二级引导加载程序、分区表和应用程序。烧录完成后，{IDF_TARGET_NAME} 将复位。在下一次启动时，二级引导加载程序会加密：二级引导加载程序、应用程序分区和标记为 ``加密`` 的分区，然后复位。就地加密可能需要时间，对于大的分区来说可能耗时一分钟。之后，应用程序在运行时被解密并执行。
 
 一旦在发布模式下启用 flash 加密，引导加载程序将写保护 ``{IDF_TARGET_CRYPT_CNT}`` eFuse。
 
@@ -576,14 +576,14 @@ flash 加密设置
 外部启用 flash 加密
 ----------------------------------
 
-在上述过程中，对与 flash 加密相关的 eFuse 是通过固件引导加载程序烧写的，或者，也可以借助 ``espefuse`` 工具烧写 eFuse。如需了解详情，请参考 :ref:`enable-flash-encryption-externally`。
+在上述过程中，对与 flash 加密相关的 eFuse 是通过二级引导加载程序烧写的，或者，也可以借助 ``espefuse`` 工具烧写 eFuse。如需了解详情，请参考 :ref:`enable-flash-encryption-externally`。
 
 可能出现的错误
 -----------------
 
 一旦启用 flash 加密，``{IDF_TARGET_CRYPT_CNT}`` 的 eFuse 值将设置为奇数位。这意味着所有标有加密标志的分区都会包含加密的密本。如果 {IDF_TARGET_NAME} 错误地加载了明文数据，则会出现以下三种典型的错误情况：
 
-1. 如果通过 **明文固件引导加载程序镜像** 重新烧录了引导加载程序分区，则 ROM 加载器将无法加载固件引导加载程序，并会显示以下错误类型：
+1. 如果通过 **明文二级引导加载程序镜像** 重新烧录了引导加载程序分区，则 ROM 加载器将无法加载二级引导加载程序，并会显示以下错误类型：
 
 .. only:: esp32
 
@@ -635,7 +635,7 @@ flash 加密设置
 
     如果 flash 内容被擦除或损坏，也会出现这个错误。
 
-2. 如果固件的引导加载程序已加密，但通过 **明文分区表镜像** 重新烧录了分区表，引导加载程序将无法读取分区表，从而出现以下错误：
+2. 如果二级引导加载程序已加密，但通过 **明文分区表镜像** 重新烧录了分区表，引导加载程序将无法读取分区表，从而出现以下错误：
 
   .. code-block:: bash
 
@@ -727,7 +727,7 @@ flash 加密范围
 - flash 中可执行的应用程序代码 (IROM)。
 - 所有存储于 flash 中的只读数据 (DROM)。
 - 通过函数 :cpp:func:`spi_flash_mmap` 访问的任意数据。
-- ROM 引导加载程序读取的固件引导加载程序镜像。
+- ROM 引导加载程序读取的二级引导加载程序镜像。
 
 .. important::
 
@@ -976,7 +976,7 @@ flash 加密的高级功能
 
     ``FLASH_CRYPT_CONFIG`` eFuse 决定 flash 加密密钥中随块偏移“调整”的位数。详情可参考 :ref:`flash-encryption-algorithm`。
 
-    首次启动固件引导加载程序时，该值始终设置为最大值 `0xF`。
+    首次启动二级引导加载程序时，该值始终设置为最大值 `0xF`。
 
     可手动写入这些 eFuse，并在首次启动前对其写保护，以便选择不同的调整值。但不推荐该操作。
 

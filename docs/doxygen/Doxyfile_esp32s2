@@ -1,8 +1,9 @@
 INPUT += \
-         $(PROJECT_PATH)/components/driver/touch_sensor/$(IDF_TARGET)/include/driver/touch_sensor.h \
+         $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens.h \
+		 $(PROJECT_PATH)/components/esp_driver_touch_sens/include/driver/touch_sens_types.h \
+		 $(PROJECT_PATH)/components/esp_driver_touch_sens/hw_ver2/include/driver/touch_version_types.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/dac_channel.h \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/rtc_io_channel.h \
-         $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_button.h \
          $(PROJECT_PATH)/components/touch_element/include/touch_element/touch_element.h \

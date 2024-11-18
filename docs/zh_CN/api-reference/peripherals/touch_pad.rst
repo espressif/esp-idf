@@ -5,6 +5,12 @@
 
 {IDF_TARGET_TOUCH_SENSOR_VERSION:default="v2", esp32="v1"}
 
+.. only:: esp32s2 or esp32s3
+
+    .. warning::
+
+        该文档所演示的 Touch 驱动已弃用, 请移步新文档查看最新的 Touch 驱动: :doc:`Capacitive Touch Sensor </api-reference/peripherals/cap_touch_sens>`.
+
 概述
 ------------
 
@@ -146,8 +152,6 @@
 
     该函数也可以用于检查触碰和释放触摸传感器时传感器读数变化范围，然后根据这些信息设定触摸传感器的触摸阈值。
 
-请参考应用示例 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_read`，查看如何使用读取触摸传感器数据。
-
 测量方式
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -250,7 +254,7 @@
 
 也可以将硬件触摸监测连接至中断，详细介绍见下一章节。
 
-如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议在自己的应用程序中进行采样滤波，并执行触摸监测。请参考 :example:`peripherals/touch_sensor/touch_sensor_{IDF_TARGET_TOUCH_SENSOR_VERSION}/touch_pad_interrupt`，查看以上两种触摸监测的实现方式。
+如果测量中存在噪声，且电容变化幅度较小，硬件触摸监测结果可能就不太理想。如需解决这一问题，不建议使用硬件监测或中断信号，建议在自己的应用程序中进行采样滤波，并执行触摸监测。
 
 中断触发
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -300,9 +304,9 @@
 
 .. only:: esp32s2 or esp32s3
 
-    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_read` 演示了如何在 {IDF_TARGET_NAME} 上读取并显示电容触摸传感器的原始值，包括如何校准传感器以及监测触摸动作。
-    - :example:`peripherals/touch_sensor/touch_sensor_v2/touch_pad_interrupt` 演示了如何设置 {IDF_TARGET_NAME} 的电容触摸板外设，使其在被触摸时触发中断，以及在需要更高触摸监测灵敏度的传感器设计中，如何通过软件来监测触摸事件。
+    .. warning::
 
+        使用老驱动的例程已移除，新驱动用法请参考 :example:`peripherals/touch_sensor/touch_sens_basic`。
 
 .. _touch_pad-api-reference:
 
@@ -321,4 +325,4 @@ GPIO 宏查找表
 2. ``TOUCH_PAD_GPIO4_CHANNEL`` 定义了 GPIO 4 的通道（即通道 0）。
 
 .. include-build-file:: inc/touch_sensor_channel.inc
-.. include-build-file:: inc/touch_sensor_types.inc
+.. include-build-file:: inc/touch_sensor_legacy_types.inc

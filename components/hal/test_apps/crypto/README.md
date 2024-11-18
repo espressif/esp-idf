@@ -67,7 +67,8 @@ This contains tests for the following features of the crypto peripherals:
         - SHA-512/256
         - SHA-512/t
 
-> **_NOTE:_** The verification tests for the HMAC and Digital Signature peripherals would get exercised in only in an FPGA environment.
+> **_NOTE:_** The verification tests for the HMAC and Digital Signature peripherals would get exercised only by enabling the example config in an FPGA environment.
+
 # Burning the HMAC key
 
 The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.

@@ -14,6 +14,9 @@ examples/peripherals/adc/continuous_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
@@ -23,6 +26,9 @@ examples/peripherals/adc/oneshot_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runner, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:
@@ -67,6 +73,12 @@ examples/peripherals/i2c/i2c_eeprom:
   depends_components:
     - esp_driver_i2c
 
+examples/peripherals/i2c/i2c_slave_network_sensor:
+  disable:
+    - if: SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE != 1 or (SOC_WIFI_SUPPORTED != 1 and SOC_EMAC_SUPPORTED != 1)
+  depends_components:
+    - esp_driver_i2c
+
 examples/peripherals/i2c/i2c_tools:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
@@ -102,7 +114,7 @@ examples/peripherals/i2s/i2s_codec/i2s_es7210_tdm:
     - if: SOC_I2S_SUPPORTS_TDM != 1 or (SOC_I2C_SUPPORTED != 1 or SOC_GPSPI_SUPPORTED != 1)
       reason: rely on I2S TDM mode to receive audio, I2C to config es7210 and SPI to save audio to SD card
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
+    - if: IDF_TARGET in ["esp32p4", "esp32c61"]
       temporary: true
       reason: lack of runners
   depends_components:
@@ -420,23 +432,18 @@ examples/peripherals/touch_sensor/touch_element:
     - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       reason: only supports esp32s2 and esp32s3
 
+examples/peripherals/touch_sensor/touch_sens_basic:
+  disable:
+    - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
+    - if: SOC_TOUCH_SENSOR_VERSION == 1
+      temporary: true
+      reason: not supported yet
+  depends_components:
+    - esp_driver_touch_sens
+
 examples/peripherals/touch_sensor/touch_sensor_v1:
   disable:
     - if: SOC_TOUCH_SENSOR_VERSION != 1
-
-examples/peripherals/touch_sensor/touch_sensor_v2:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 2
-
-examples/peripherals/touch_sensor/touch_sensor_v3:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 3
-  disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: the runners do not support the pins for touch sensor
-  depends_components:
-    - esp_driver_touch_sens
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

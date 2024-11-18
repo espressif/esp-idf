@@ -1,6 +1,8 @@
 QEMU Emulator
 =============
 
+{IDF_TARGET_CRYPT_CNT:default="SPI_BOOT_CRYPT_CNT",esp32="FLASH_CRYPT_CNT"}
+
 :link_to_translation:`zh_CN:[中文]`
 
 Espressif maintains a `fork <https://github.com/espressif/qemu>`_ of the QEMU emulator with support for {IDF_TARGET_NAME}. This fork implements emulation of the CPU, memory, and several peripherals of {IDF_TARGET_NAME}. For more information about QEMU for {IDF_TARGET_NAME}, see the `QEMU README documentation <https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md>`_.
@@ -119,13 +121,52 @@ QEMU supports emulation of eFuses. This can be a convenient way to test security
 
 You can use :doc:`idf.py<idf-py>` eFuse-related commands to program eFuses. When you run any of these commands together with ``qemu`` command, the eFuses are programmed in QEMU, and the ``qemu_efuse.bin`` file is updated. For example,
 
+.. only:: not SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key flash_encryption my_flash_encryption_key.bin
+
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES
+
+    .. code-block:: console
+
+        idf.py qemu efuse-burn {IDF_TARGET_CRYPT_CNT} 1
+        idf.py qemu efuse-burn-key BLOCK my_flash_encryption_key.bin KEYPURPOSE
+
+    For details regarding the ``BLOCK`` and ``KEYPURPOSE``, please refer to the :doc:`../../security/flash-encryption` guide.
+
+To dump the eFuse summary, please use the following command:
+
 .. code-block:: console
 
-    idf.py qemu efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu efuse-summary
 
 By default, the values of eFuses are read from and written to the ``qemu_efuse.bin`` file in the build directory. You can specify a different file using the ``--efuse-file`` option. For example,
 
 .. code-block:: console
 
-    idf.py qemu --efuse-file my_efuse.bin efuse-burn FLASH_CRYPT_CNT 1
+    idf.py qemu --efuse-file my_efuse.bin efuse-burn {IDF_TARGET_CRYPT_CNT} 1
     idf.py qemu --efuse-file my_efuse.bin monitor
+
+Specifying Flash Image
+~~~~~~~~~~~~~~~~~~~~~~
+
+By default, QEMU uses the ``qemu_flash.bin`` file in the build directory as the flash image. This file is generated based on the information available about the project from the ``flash_args`` file present in the build directory. If you want to use a different flash image file, you can specify it using the ``--flash-file`` option. For example,
+
+.. code-block:: console
+
+    idf.py qemu --flash-file my_flash.bin monitor
+
+
+The provided flash image must meet the following requirements for proper emulation:
+
+- The flash file size matches the value specified by :ref:`CONFIG_ESPTOOLPY_FLASHSIZE` in the project configuration.
+- The flash file includes all required binaries, such as the bootloader, partition table, and application firmware, placed at their respective memory offsets.
+
+
+Emulating Secure Boot
+~~~~~~~~~~~~~~~~~~~~~
+
+QEMU supports emulation of secure boot v2 scheme. Please keep :ref:`CONFIG_SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT` enabled to include signed bootloader image into the QEMU image artifact.

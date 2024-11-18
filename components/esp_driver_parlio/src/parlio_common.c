@@ -18,6 +18,7 @@
 #include "soc/parlio_periph.h"
 #include "hal/parlio_ll.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/sleep_retention.h"
 #include "parlio_private.h"
 
 static const char *TAG = "parlio";
@@ -46,6 +47,23 @@ parlio_group_t *parlio_acquire_group_handle(int group_id)
                 parlio_ll_enable_bus_clock(group_id, true);
                 parlio_ll_reset_register(group_id);
             }
+#if PARLIO_USE_RETENTION_LINK
+            sleep_retention_module_t module_id = parlio_reg_retention_info[group_id].retention_module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = parlio_create_sleep_retention_link_cb,
+                        .arg = group,
+                    },
+                },
+                .depends = SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM
+            };
+            // we only do retention init here. Allocate retention module in the unit initialization
+            if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
+                // even though the sleep retention module init failed, PARLIO driver should still work, so just warning here
+                ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
+            }
+#endif // PARLIO_USE_RETENTION_LINK
             // hal layer initialize
             parlio_hal_init(&group->hal);
             group->dma_align = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
@@ -87,6 +105,16 @@ void parlio_release_group_handle(parlio_group_t *group)
     _lock_release(&s_platform.mutex);
 
     if (do_deinitialize) {
+#if PARLIO_USE_RETENTION_LINK
+        const periph_retention_module_t module_id = parlio_reg_retention_info[group_id].retention_module;
+        if (sleep_retention_get_created_modules() & BIT(module_id)) {
+            assert(sleep_retention_get_inited_modules() & BIT(module_id));
+            sleep_retention_module_free(module_id);
+        }
+        if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+            sleep_retention_module_deinit(module_id);
+        }
+#endif // PARLIO_USE_RETENTION_LINK
         free(group);
         ESP_LOGD(TAG, "del group(%d)", group_id);
     }
@@ -147,3 +175,32 @@ void parlio_unregister_unit_from_group(parlio_unit_base_handle_t unit)
     /* the parlio unit has a reference of the group, release it now */
     parlio_release_group_handle(group);
 }
+
+#if PARLIO_USE_RETENTION_LINK
+esp_err_t parlio_create_sleep_retention_link_cb(void *arg)
+{
+    parlio_group_t *group = (parlio_group_t *)arg;
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = parlio_reg_retention_info[group_id].retention_module;
+    esp_err_t err = sleep_retention_entries_create(parlio_reg_retention_info[group_id].regdma_entry_array,
+                                                   parlio_reg_retention_info[group_id].array_size,
+                                                   REGDMA_LINK_PRI_PARLIO, module_id);
+    ESP_RETURN_ON_ERROR(err, TAG, "create retention link failed");
+    return ESP_OK;
+}
+
+void parlio_create_retention_module(parlio_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = parlio_reg_retention_info[group_id].retention_module;
+
+    _lock_acquire(&s_platform.mutex);
+    if ((sleep_retention_get_inited_modules() & BIT(module_id)) && !(sleep_retention_get_created_modules() & BIT(module_id))) {
+        if (sleep_retention_module_allocate(module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, PARLIO driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // PARLIO_USE_RETENTION_LINK

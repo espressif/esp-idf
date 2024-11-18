@@ -34,7 +34,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(key_manager);
 #endif
 
-#if CONFIG_IDF_ENV_FPGA
+#if CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS
 
 #if CONFIG_SOC_HMAC_SUPPORTED && CONFIG_CRYPTO_TEST_APP_ENABLE_HMAC_TESTS
     RUN_TEST_GROUP(hmac);
@@ -48,7 +48,7 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(ecdsa)
 #endif
 
-#endif /* CONFIG_IDF_ENV_FPGA */
+#endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
 }
 
 static void test_task(void *pvParameters)

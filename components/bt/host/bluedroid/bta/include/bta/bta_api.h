@@ -439,6 +439,8 @@ typedef tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK tBTA_ADD_DEV_TO_RESOLVING_LIST
 
 typedef tBTM_SET_PRIVACY_MODE_CMPL_CBACK tBTA_SET_PRIVACY_MODE_CMPL_CBACK;
 
+typedef tBTM_SET_CSA_SUPPORT_CMPL_CBACK tBTA_SET_CSA_SUPPORT_CMPL_CBACK;
+
 typedef tBTM_CMPL_CB tBTA_CMPL_CB;
 
 typedef tBTM_VSC_CMPL tBTA_VSC_CMPL;
@@ -1351,8 +1353,20 @@ typedef UINT8 tBTA_DM_PM_ACTION;
 #define BTA_DM_PM_SNIFF_HD_IDLE_IDX     BTA_DM_PM_SNIFF4
 #endif
 
+#ifndef BTA_DM_PM_SNIFF_AG_OPEN_IDX
+#define BTA_DM_PM_SNIFF_AG_OPEN_IDX     BTA_DM_PM_SNIFF
+#endif
+
+#ifndef BTA_DM_PM_SNIFF_AG_IDLE_IDX
+#define BTA_DM_PM_SNIFF_AG_IDLE_IDX     BTA_DM_PM_SNIFF
+#endif
+
 #ifndef BTA_DM_PM_SNIFF_SCO_OPEN_IDX
 #define BTA_DM_PM_SNIFF_SCO_OPEN_IDX    BTA_DM_PM_SNIFF3
+#endif
+
+#ifndef BTA_DM_PM_SNIFF_SCO_CLOSE_IDX
+#define BTA_DM_PM_SNIFF_SCO_CLOSE_IDX   BTA_DM_PM_SNIFF
 #endif
 
 #ifndef BTA_DM_PM_SNIFF_HD_ACTIVE_IDX
@@ -1498,18 +1512,18 @@ typedef UINT8 tBTA_DM_LINK_TYPE;
 #define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR    (1 << 6)
 #define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_MASK              (0x7F)
 
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND        (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_LD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_HD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_SCAN       (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_NONCONN    (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND        (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_LD_DIR     (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_HD_DIR     (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_SCAN       (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_NONCONN    (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY)
 typedef UINT16 tBTA_DM_BLE_EXT_ADV_TYPE_MASK;
 
 
@@ -2908,6 +2922,8 @@ extern void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_d
 extern void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 
 extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback);
+
+extern void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
 
 /*******************************************************************************
 **

@@ -112,7 +112,7 @@ IRAM_ATTR void esp_sleep_mmu_retention(bool backup_or_restore)
     }
 }
 
-static esp_err_t esp_sleep_mmu_retention_deinit_impl(void)
+static esp_err_t esp_sleep_mmu_retention_deinit(void)
 {
     if (s_mmu_retention.retent.mmu_table_frame) {
         heap_caps_free((void *)s_mmu_retention.retent.mmu_table_frame);
@@ -121,7 +121,7 @@ static esp_err_t esp_sleep_mmu_retention_deinit_impl(void)
     return ESP_OK;
 }
 
-static esp_err_t esp_sleep_mmu_retention_init_impl(void)
+static esp_err_t esp_sleep_mmu_retention_init(void)
 {
     if (s_mmu_retention.retent.mmu_table_frame == NULL) {
         void *frame = mmu_domain_mmu_table_sleep_frame_alloc_and_init();
@@ -134,16 +134,6 @@ static esp_err_t esp_sleep_mmu_retention_init_impl(void)
 err:
     esp_sleep_mmu_retention_deinit();
     return ESP_ERR_NO_MEM;
-}
-
-esp_err_t esp_sleep_mmu_retention_init(void)
-{
-    return esp_sleep_mmu_retention_init_impl();
-}
-
-esp_err_t esp_sleep_mmu_retention_deinit(void)
-{
-    return esp_sleep_mmu_retention_deinit_impl();
 }
 
 bool mmu_domain_pd_allowed(void)

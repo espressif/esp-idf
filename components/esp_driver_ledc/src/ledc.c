@@ -25,6 +25,12 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_memory_utils.h"
+#include "esp_private/sleep_retention.h"
+#if SOC_PMU_SUPPORTED // TODO: replace when icg API available IDF-7595
+#include "soc/pmu_struct.h"
+#include "hal/pmu_types.h"
+#include "soc/pmu_icg_mapping.h"
+#endif
 
 static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
@@ -58,6 +64,8 @@ static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 #define LEDC_FUNC_CLOCK_ATOMIC()
 #endif
 
+#define LEDC_USE_RETENTION_LINK  (SOC_LEDC_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
 typedef enum {
     LEDC_FSM_IDLE,
     LEDC_FSM_HW_FADE,
@@ -87,6 +95,10 @@ typedef struct {
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
     ledc_clk_src_t timer_specific_clk[LEDC_TIMER_MAX];  /*!< Tracks the timer-specific clock selection for each timer */
 #endif
+    ledc_sleep_mode_t sleep_mode;                       /*!< Records the sleep strategy to be applied to the LEDC module */
+    bool channel_keep_alive[LEDC_CHANNEL_MAX];          /*!< Records whether each channel needs to keep output during sleep */
+    uint8_t timer_xpd_ref_cnt[LEDC_TIMER_MAX];          /*!< Records the timer (glb_clk) not power down during sleep requirement */
+    bool glb_clk_xpd;                                   /*!< Records the power strategy applied to the global clock */
 } ledc_obj_t;
 
 static ledc_obj_t *p_ledc_obj[LEDC_SPEED_MODE_MAX] = {
@@ -116,6 +128,37 @@ static uint32_t s_ledc_slow_clk_rc_fast_freq = 0;
 static const ledc_slow_clk_sel_t s_glb_clks[] = LEDC_LL_GLOBAL_CLOCKS;
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
 static const ledc_clk_src_t s_timer_specific_clks[] = LEDC_LL_TIMER_SPECIFIC_CLOCKS;
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t ledc_create_sleep_retention_link_cb(void *arg)
+{
+#if SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    sleep_retention_module_t module = ledc_reg_retention_info.module_id;
+
+    esp_err_t err = sleep_retention_entries_create(ledc_reg_retention_info.common.regdma_entry_array,
+                                                   ledc_reg_retention_info.common.array_size,
+                                                   REGDMA_LINK_PRI_LEDC, module);
+    bool slp_retention_create_failed = (err != ESP_OK);
+
+    for (int i = 0; i < SOC_LEDC_TIMER_NUM && !slp_retention_create_failed; i++) {
+        err = sleep_retention_entries_create(ledc_reg_retention_info.timer[i].regdma_entry_array,
+                                             ledc_reg_retention_info.timer[i].array_size,
+                                             REGDMA_LINK_PRI_LEDC, module);
+        slp_retention_create_failed |= (err != ESP_OK);
+    }
+
+    for (int j = 0; j < SOC_LEDC_CHANNEL_NUM && !slp_retention_create_failed; j++) {
+        err = sleep_retention_entries_create(ledc_reg_retention_info.channel[j].regdma_entry_array,
+                                             ledc_reg_retention_info.channel[j].array_size,
+                                             REGDMA_LINK_PRI_LEDC, module);
+        slp_retention_create_failed |= (err != ESP_OK);
+    }
+
+    ESP_RETURN_ON_FALSE(!slp_retention_create_failed, err, LEDC_TAG, "create retention link failed");
+#endif
+    return ESP_OK;
+}
 #endif
 
 static void ledc_ls_timer_update(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
@@ -240,15 +283,78 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
     return ESP_OK;
 }
 
+/**
+ * return 1 if the global clock cannot keep alive in sleep, as an error raised
+ */
+static bool ledc_glb_clk_set_sleep_mode(ledc_mode_t speed_mode, bool xpd)
+{
+    bool glb_clk_xpd_err = false;
+    if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_RC_FAST) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, xpd);
+        p_ledc_obj[speed_mode]->glb_clk_xpd = xpd;
+    }
+#if SOC_LEDC_SUPPORT_XTAL_CLOCK
+    else if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_XTAL) {
+        esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_XTAL_MODE, xpd);
+        p_ledc_obj[speed_mode]->glb_clk_xpd = xpd;
+    }
+#endif
+    else {
+        if (xpd) {
+            glb_clk_xpd_err = true;
+        }
+    }
+    return glb_clk_xpd_err;
+}
+
+/**
+ * spinlock should wrap outside
+ * return 1 if the timer cannot keep alive in sleep, as an error raised
+ */
+static bool ledc_timer_clk_src_set_xpd_in_sleep(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
+{
+    p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_sel]++;
+    bool timer_clock_xpd_err = false;
+    // if the timer has not been configured yet, leave the xpd configuration to ledc_timer_config
+    if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] && p_ledc_obj[speed_mode]->glb_clk != LEDC_SLOW_CLK_UNINIT && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+        timer_clock_xpd_err = ledc_glb_clk_set_sleep_mode(speed_mode, true);
+    }
+#if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
+    else if (p_ledc_obj[speed_mode]->timer_specific_clk[timer_sel] != LEDC_TIMER_SPECIFIC_CLK_UNINIT) {
+        timer_clock_xpd_err = true;
+    }
+#endif
+    if (timer_clock_xpd_err) {
+        p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_sel]--;
+    }
+    return timer_clock_xpd_err;
+}
+
 esp_err_t ledc_bind_channel_timer(ledc_mode_t speed_mode, ledc_channel_t channel, ledc_timer_t timer_sel)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
+
+    bool timer_xpd_err = false;
+    ledc_timer_t old_timer_sel;
+    ledc_hal_get_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &old_timer_sel);
+
     portENTER_CRITICAL(&ledc_spinlock);
     ledc_hal_bind_channel_timer(&(p_ledc_obj[speed_mode]->ledc_hal), channel, timer_sel);
     ledc_ls_channel_update(speed_mode, channel);
+
+    if (p_ledc_obj[speed_mode]->channel_keep_alive[channel] && old_timer_sel != timer_sel) {
+        if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[old_timer_sel] > 0) {
+            p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[old_timer_sel]--;
+        }
+        // timer clock source should not be powered down during sleep
+        timer_xpd_err = ledc_timer_clk_src_set_xpd_in_sleep(speed_mode, timer_sel);
+    }
     portEXIT_CRITICAL(&ledc_spinlock);
+    if (timer_xpd_err) {
+        ESP_LOGW(LEDC_TAG, "the binded timer can't keep alive in sleep");
+    }
     return ESP_OK;
 }
 
@@ -315,6 +421,24 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
             ledc_new_mode_obj->glb_clk = LEDC_SLOW_CLK_UNINIT;
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
             memset(ledc_new_mode_obj->timer_specific_clk, LEDC_TIMER_SPECIFIC_CLK_UNINIT, sizeof(ledc_clk_src_t) * LEDC_TIMER_MAX);
+#endif
+
+            ledc_new_mode_obj->sleep_mode = LEDC_SLEEP_MODE_INVALID;
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP // for targets that is !SOC_LEDC_SUPPORT_SLEEP_RETENTION, retention module should still be inited to avoid TOP PD
+            // Initialize sleep retention module for LEDC
+            sleep_retention_module_t module = ledc_reg_retention_info.module_id;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = ledc_create_sleep_retention_link_cb,
+                        .arg = NULL,
+                    },
+                },
+                .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
+            };
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                ESP_LOGW(LEDC_TAG, "init sleep retention failed for ledc, power domain may be turned off during sleep");
+            }
 #endif
             p_ledc_obj[speed_mode] = ledc_new_mode_obj;
         }
@@ -530,6 +654,8 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     ESP_LOGD(LEDC_TAG, "Using clock source %d (in %s mode), divisor: 0x%"PRIx32,
              timer_clk_src, (speed_mode == LEDC_LOW_SPEED_MODE ? "slow" : "fast"), div_param);
 
+    bool timer_clk_xpd_err = false;
+
     /* The following block configures the global clock.
      * Thus, in theory, this only makes sense when configuring the LOW_SPEED timer and the source clock is LEDC_SCLK (as
      * HIGH_SPEED timers won't be clocked by the global clock). However, there are some limitations due to HW design.
@@ -563,22 +689,19 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
         }
         p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_num] = true;
         if (p_ledc_obj[speed_mode]->glb_clk != glb_clk) {
-#if SOC_LIGHT_SLEEP_SUPPORTED
-            /* keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-            if (glb_clk == LEDC_SLOW_CLK_RC_FAST) {
-                /* Keep ESP_PD_DOMAIN_RC_FAST on during light sleep */
-                esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, true);
-            } else if (p_ledc_obj[speed_mode]->glb_clk == LEDC_SLOW_CLK_RC_FAST) {
-                /* No need to keep ESP_PD_DOMAIN_RC_FAST on during light sleep anymore */
-                esp_sleep_sub_mode_config(ESP_SLEEP_DIG_USE_RC_FAST_MODE, false);
-            }
-#endif
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
             esp_clk_tree_enable_src((soc_module_clk_t)glb_clk, true);
             LEDC_FUNC_CLOCK_ATOMIC() {
                 ledc_ll_enable_clock(p_ledc_obj[speed_mode]->ledc_hal.dev, true);
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
+            }
+        }
+        // acquire power domain for the timer clock source if desired and possible
+        if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+            timer_clk_xpd_err = ledc_glb_clk_set_sleep_mode(speed_mode, true);
+            if (timer_clk_xpd_err) {
+                p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] = 0;
             }
         }
         portEXIT_CRITICAL(&ledc_spinlock);
@@ -588,6 +711,19 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
 
     /* The divisor is correct, we can write in the hardware. */
     ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+
+    portENTER_CRITICAL(&ledc_spinlock);
+    if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
+        // if still get into here, it means the speed mode is high speed mode
+        assert(speed_mode != LEDC_LOW_SPEED_MODE);
+        timer_clk_xpd_err = true;
+        p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] = 0;
+    }
+    portEXIT_CRITICAL(&ledc_spinlock);
+    if (timer_clk_xpd_err) {
+        ESP_LOGW(LEDC_TAG, "the timer can't keep alive in sleep");
+    }
+
     return ESP_OK;
 
 error:
@@ -612,6 +748,20 @@ static esp_err_t ledc_timer_del(ledc_mode_t speed_mode, ledc_timer_t timer_sel)
         is_deleted = true;
         p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] = false;
         // TODO: release timer specific clk and global clk if possible [clk_tree]
+
+        // check if the acquired power domain for the timer clock source can be released
+        if (p_ledc_obj[speed_mode]->glb_clk_xpd) {
+            bool timer_clk_allow_pd = true;
+            for (int i = 0; i < LEDC_TIMER_MAX; i++) {
+                if (p_ledc_obj[speed_mode]->glb_clk_is_acquired[timer_sel] && p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[i] > 0) {
+                    timer_clk_allow_pd = false;
+                    break;
+                }
+            }
+            if (timer_clk_allow_pd) {
+                ledc_glb_clk_set_sleep_mode(speed_mode, false);
+            }
+        }
     }
     portEXIT_CRITICAL(&ledc_spinlock);
     ESP_RETURN_ON_FALSE(is_configured && is_deleted, ESP_ERR_INVALID_STATE, LEDC_TAG, "timer hasn't been configured, or it is still running, please stop it with ledc_timer_pause first");
@@ -687,6 +837,10 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
     LEDC_ARG_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "gpio_num");
     LEDC_ARG_CHECK(timer_select < LEDC_TIMER_MAX, "timer_select");
     LEDC_ARG_CHECK(intr_type < LEDC_INTR_MAX, "intr_type");
+    LEDC_ARG_CHECK(ledc_conf->sleep_mode < LEDC_SLEEP_MODE_INVALID, "sleep_mode");
+#if !SOC_LEDC_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(ledc_conf->sleep_mode != LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD, ESP_ERR_NOT_SUPPORTED, LEDC_TAG, "register back up is not supported");
+#endif
 
     esp_err_t ret = ESP_OK;
 
@@ -731,6 +885,86 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
              ledc_channel, gpio_num, duty, timer_select);
     /*set LEDC signal in gpio matrix*/
     _ledc_set_pin(gpio_num, output_invert, speed_mode, ledc_channel);
+
+    // apply desired sleep strategy
+    bool slp_mode_conflict = false;
+    bool slp_retention_alloc __attribute__((unused)) = false;
+    bool slp_retention_free __attribute__((unused)) = false;
+    portENTER_CRITICAL(&ledc_spinlock);
+    if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+#if LEDC_USE_RETENTION_LINK
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_NO_PD || p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+            // conflict sleep strategy with other LEDC channels, power domain cannot be turned off
+            slp_mode_conflict = true;
+        } else {
+            p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD;
+            slp_retention_alloc = true;
+        }
+#endif
+    } else if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_NO_PD) {
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_INVALID) {
+            p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_NO_ALIVE_NO_PD;
+        }
+#if LEDC_USE_RETENTION_LINK
+        else if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+            // conflict sleep strategy with other LEDC channels, power domain might still be turned off
+            slp_mode_conflict = true;
+        }
+#endif
+    } else if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+        p_ledc_obj[speed_mode]->channel_keep_alive[ledc_channel] = true;
+#if LEDC_USE_RETENTION_LINK
+        if (p_ledc_obj[speed_mode]->sleep_mode == LEDC_SLEEP_MODE_NO_ALIVE_ALLOW_PD) {
+            // conflict sleep strategy with other LEDC channels, power domain won't be turned off
+            slp_mode_conflict = true;
+            slp_retention_free = true;
+        }
+#endif
+        p_ledc_obj[speed_mode]->sleep_mode = LEDC_SLEEP_MODE_KEEP_ALIVE;
+    }
+    portEXIT_CRITICAL(&ledc_spinlock);
+    if (slp_mode_conflict) {
+        ESP_LOGW(LEDC_TAG, "conflict sleep strategy with other LEDC channels, power domain may not be on/off as desired in sleep");
+    }
+#if LEDC_USE_RETENTION_LINK
+    if (slp_retention_alloc) {
+        if (sleep_retention_module_allocate(ledc_reg_retention_info.module_id) != ESP_OK) {
+            ESP_LOGW(LEDC_TAG, "create retention module failed, power domain can't turn off");
+        }
+    }
+    if (slp_retention_free) {
+        sleep_retention_module_free(ledc_reg_retention_info.module_id);
+    }
+#endif
+
+    if (ledc_conf->sleep_mode == LEDC_SLEEP_MODE_KEEP_ALIVE) {
+        // 1. timer clock source should not be powered down during sleep
+        bool timer_xpd_err = false;
+        portENTER_CRITICAL(&ledc_spinlock);
+        timer_xpd_err = ledc_timer_clk_src_set_xpd_in_sleep(speed_mode, timer_select);
+        portEXIT_CRITICAL(&ledc_spinlock);
+        if (timer_xpd_err) {
+            ESP_LOGW(LEDC_TAG, "the binded timer can't keep alive in sleep");
+        }
+
+        // 2. keep IO output during sleep
+        gpio_sleep_sel_dis(gpio_num);
+#if CONFIG_IDF_TARGET_ESP32P4
+        // To workaround DIG-399, all LP IOs are held when LP_PERIPH is powered off to ensure EXT wakeup functionality
+        // But holding LP IOs will cause LEDC signal cannot output on the pad during sleep
+        // Therefore, we will force LP periph xpd in such case
+        if ((1ULL << gpio_num) & SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK) {
+            esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+        }
+#endif
+
+        // 3. keep related module integrated clock gating on during sleep
+// TODO: use proper icg API IDF-7595
+#if SOC_PMU_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // P4 does not have peripheral icg
+        uint32_t val = PMU.hp_sys[PMU_MODE_HP_SLEEP].icg_func;
+        PMU.hp_sys[PMU_MODE_HP_SLEEP].icg_func = (val | BIT(PMU_ICG_FUNC_ENA_LEDC) | BIT(PMU_ICG_FUNC_ENA_IOMUX));
+#endif
+    }
 
     return ret;
 }

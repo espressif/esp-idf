@@ -10,6 +10,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32
 @pytest.mark.parametrize('config', [
     pytest.param('default_ip101', marks=[pytest.mark.ethernet_router]),
+    pytest.param('default_generic', marks=[pytest.mark.ethernet_router]),
     pytest.param('default_dm9051', marks=[pytest.mark.eth_dm9051]),
 ], indirect=True)
 def test_esp_eth_basic(

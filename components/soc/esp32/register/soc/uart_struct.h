@@ -243,8 +243,8 @@ typedef volatile struct uart_dev_s {
         struct {
             uint32_t xon_threshold:  8;             /*when the data amount in receiver's fifo is more than this register value， it will send a xoff char with uart_sw_flow_con_en set to 1.*/
             uint32_t xoff_threshold: 8;             /*When the data amount in receiver's fifo is less than this register value， it will send a xon char with uart_sw_flow_con_en set to 1.*/
-            uint32_t xon_char:       8;             /*This register stores the xon flow control char.*/
-            uint32_t xoff_char:      8;             /*This register stores the xoff flow control char.*/
+            uint32_t xon_character:  8;             /*This register stores the xon flow control char.*/
+            uint32_t xoff_character: 8;             /*This register stores the xoff flow control char.*/
         };
         uint32_t val;
     } swfc_conf;
@@ -294,7 +294,7 @@ typedef volatile struct uart_dev_s {
     union {
         struct {
             uint32_t data:        8;                /*This register is used to configure the content of at_cmd char.*/
-            uint32_t char_num:    8;                /*This register is used to configure the number of continuous at_cmd chars received by receiver.*/
+            uint32_t at_char_num: 8;                /*This register is used to configure the number of continuous at_cmd chars received by receiver.*/
             uint32_t reserved16: 16;
         };
         uint32_t val;

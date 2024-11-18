@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -218,6 +218,13 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
         hw_data->message_buff_overflow = false;
         hw_data->circular_buff_overflow = false;
 
+        assert((hw_data->port_num <= SOC_UART_NUM) && "Not possible to configure UART. Please check selected UART port");
+
+        int source_clk = UART_SCLK_DEFAULT;
+#if SOC_UART_LP_NUM > 0
+        if (hw_data->port_num >= SOC_UART_HP_NUM)
+            source_clk = LP_UART_SCLK_DEFAULT;
+#endif
 
         const uart_config_t uart_config = {
             .baud_rate = CONFIG_APPTRACE_UART_BAUDRATE,
@@ -225,7 +232,7 @@ static esp_err_t esp_apptrace_uart_init(esp_apptrace_uart_data_t *hw_data)
             .parity = UART_PARITY_DISABLE,
             .stop_bits = UART_STOP_BITS_1,
             .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
-            .source_clk = UART_SCLK_DEFAULT,
+            .source_clk = source_clk,
         };
         ESP_LOGI(TAG, "UART baud rate: %i", CONFIG_APPTRACE_UART_BAUDRATE);
         // We won't use a buffer for sending data.

@@ -213,7 +213,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             project_desc = json.load(f)
         return project_desc
 
-    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool, efuse_file: str) -> None:
+    def qemu(action: str, ctx: Context, args: PropertyDict, qemu_extra_args: str, gdb: bool, graphics: bool, efuse_file: str, flash_file: str) -> None:
         project_desc = _get_project_desc(args, ctx)
 
         # Determine the target and check if we have the necessary QEMU binary
@@ -230,11 +230,21 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
 
         # Generate flash image and efuse image
         flash_size = get_sdkconfig_value(project_desc['config_file'], 'CONFIG_ESPTOOLPY_FLASHSIZE')
-        bin_path = os.path.join(args.build_dir, 'qemu_flash.bin')
-        yellow_print(f'Generating flash image: {bin_path}')
-        subprocess.check_call([
-            sys.executable, '-m', 'esptool', f'--chip={target}', 'merge_bin', f'--output={bin_path}',
-            f'--fill-flash-size={flash_size}', '@flash_args'], cwd=args.build_dir)
+
+        if flash_file:
+            bin_path = flash_file
+            try:
+                open(bin_path, 'rb').close()
+                yellow_print(f'Using provided flash image: {bin_path}')
+            except FileNotFoundError:
+                red_print(f'The provided flash image file \"{bin_path}\" could not be found')
+                raise SystemExit(1)
+        else:
+            bin_path = os.path.join(args.build_dir, 'qemu_flash.bin')
+            yellow_print(f'Generating flash image: {bin_path}')
+            subprocess.check_call([
+                sys.executable, '-m', 'esptool', f'--chip={target}', 'merge_bin', f'--output={bin_path}',
+                f'--fill-flash-size={flash_size}', '@flash_args'], cwd=args.build_dir)
 
         if efuse_file:
             efuse_bin_path = efuse_file
@@ -251,12 +261,18 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         # Prepare QEMU launch arguments
         qemu_args = [qemu_target_info.qemu_prog]
         qemu_args += qemu_target_info.qemu_args.split(' ')
+        # When boot mode is specified, the flash image is not required.
+        if not options.boot_mode:
+            qemu_args += [
+                '-drive', f'file={bin_path},if=mtd,format=raw',
+            ]
+
         qemu_args += [
-            '-drive', f'file={bin_path},if=mtd,format=raw',
             '-drive', f'file={efuse_bin_path},if=none,format=raw,id=efuse',
             '-global', f'driver={qemu_target_info.efuse_device},property=drive,value=efuse',
             '-global', f'driver=timer.{target}.timg,property=wdt_disable,value=true',
         ]
+
         if '-nic' not in qemu_extra_args:
             qemu_args += ['-nic', 'user,model=open_eth']
 
@@ -336,6 +352,13 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--efuse-file'],
                         'help': ('File used to store efuse values. If not specified, qemu_efuse.bin file '
+                                 'in build directory is used.'),
+                        'is_flag': False,
+                        'default': '',
+                    },
+                    {
+                        'names': ['--flash-file'],
+                        'help': ('File used as the qemu flash image. If not specified, qemu_flash.bin file '
                                  'in build directory is used.'),
                         'is_flag': False,
                         'default': '',

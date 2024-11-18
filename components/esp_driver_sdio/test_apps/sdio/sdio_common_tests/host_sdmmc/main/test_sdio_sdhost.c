@@ -418,6 +418,20 @@ TEST_CASE("SDIO_SDMMC: test to host", "[sdio]")
     test_to_host(true);
 }
 
+TEST_CASE("SDIO_SDMMC: test sleep retention", "[sdio_retention]")
+{
+    essl_handle_t handle = NULL;
+    test_sdio_param_t test_param = {
+        .host_flags = SDMMC_HOST_FLAG_4BIT | SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF,
+        .max_freq_khz = SDMMC_FREQ_HIGHSPEED,
+    };
+    //essl init and sdmmc init
+    s_master_init(&test_param, &handle, NULL);
+
+    s_send_finish_test(handle);
+    s_master_deinit();
+}
+
 TEST_CASE("SDIO_SDMMC: test to host (Performance)", "[sdio_speed]")
 {
     test_to_host(false);

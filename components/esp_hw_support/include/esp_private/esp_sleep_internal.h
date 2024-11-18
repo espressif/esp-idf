@@ -38,6 +38,7 @@ typedef enum {
     ESP_SLEEP_ULTRA_LOW_MODE,             //!< In ultra low mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
     ESP_SLEEP_RTC_FAST_USE_XTAL_MODE,     //!< The mode in which the crystal is used as the RTC_FAST clock source, need keep XTAL on in HP_SLEEP mode when ULP is working.
     ESP_SLEEP_DIG_USE_XTAL_MODE,          //!< The mode requested by digital peripherals to keep XTAL clock on during sleep (both HP_SLEEP and LP_SLEEP mode). (!!! Only valid for lightsleep, will override the XTAL domain config by esp_sleep_pd_config)
+    ESP_SLEEP_LP_USE_XTAL_MODE,           //!< The mode requested by lp peripherals to keep XTAL clock on during sleep. Only valid for lightsleep.
     ESP_SLEEP_MODE_MAX,
 } esp_sleep_sub_mode_t;
 
@@ -105,6 +106,22 @@ esp_err_t esp_deep_sleep_register_phy_hook(esp_deep_sleep_cb_t new_dslp_cb);
   * @param old_dslp_cb     Callback to be unregistered
   */
 void esp_deep_sleep_deregister_phy_hook(esp_deep_sleep_cb_t old_dslp_cb);
+#endif
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
+/**
+ * @brief Backup or restore the MMU when the top domain is powered down.
+ * @param backup_or_restore decide to backup mmu or restore mmu
+ */
+void esp_sleep_mmu_retention(bool backup_or_restore);
+
+/**
+ * @brief Whether to allow the top domain to be powered off due to mmu domain requiring retention.
+ *
+ * In light sleep mode, only when the system can provide enough memory
+ * for mmu retention, the top power domain can be powered off.
+ */
+bool mmu_domain_pd_allowed(void);
 #endif
 
 #ifdef __cplusplus

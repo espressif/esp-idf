@@ -1,4 +1,4 @@
-* Regarding stacks in PSRAM: For tasks that do not call ROM code in any way (directly or indirectly), the :ref:`CONFIG_SPIRAM_ALLOW_STACK_EXTERNAL_MEMORY` option will eliminate the check in :cpp:func:`xTaskCreateStatic`, allowing a task's stack to be in external RAM. However, using this is **not advised**.
+* Regarding stacks in PSRAM: For tasks that do not call ROM code in any way (directly or indirectly), the :ref:`CONFIG_FREERTOS_TASK_CREATE_ALLOW_EXT_MEM` option will eliminate the check in :cpp:func:`xTaskCreateStatic`, allowing a task's stack to be in external RAM. However, using this is **not advised**.
 * When used at 80 MHz clock speed, external RAM must also occupy either the HSPI or VSPI bus. Select which SPI host will be used by :ref:`CONFIG_SPIRAM_OCCUPY_SPI_HOST`.
 
 

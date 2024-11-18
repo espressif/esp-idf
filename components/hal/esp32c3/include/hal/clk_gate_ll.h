@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,8 +35,8 @@ static inline uint32_t periph_ll_get_clk_en_mask(periph_module_t periph)
         return SYSTEM_UART1_CLK_EN;
     case PERIPH_I2C0_MODULE:
         return SYSTEM_I2C_EXT0_CLK_EN;
-    case PERIPH_I2S1_MODULE:
-        return SYSTEM_I2S1_CLK_EN;
+    case PERIPH_I2S0_MODULE:
+        return SYSTEM_I2S0_CLK_EN;
     case PERIPH_TIMG0_MODULE:
         return SYSTEM_TIMERGROUP_CLK_EN;
     case PERIPH_TIMG1_MODULE:
@@ -106,8 +106,8 @@ static inline uint32_t periph_ll_get_rst_en_mask(periph_module_t periph, bool en
         return SYSTEM_UART1_RST;
     case PERIPH_I2C0_MODULE:
         return SYSTEM_I2C_EXT0_RST;
-    case PERIPH_I2S1_MODULE:
-        return SYSTEM_I2S1_RST;
+    case PERIPH_I2S0_MODULE:
+        return SYSTEM_I2S0_RST;
     case PERIPH_TIMG0_MODULE:
         return SYSTEM_TIMERGROUP_RST;
     case PERIPH_TIMG1_MODULE:

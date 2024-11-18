@@ -27,6 +27,7 @@ def test_mbedtls_esp32_compiler_perf_opt(dut: Dut) -> None:
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -43,6 +44,7 @@ def test_mbedtls_aes_no_hw(dut: Dut) -> None:
 @pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

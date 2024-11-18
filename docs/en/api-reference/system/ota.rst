@@ -8,9 +8,17 @@ OTA Process Overview
 
 The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi, Bluetooth or Ethernet).
 
-OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition.
+The following modes support OTA updates for certain partitions:
 
-The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
+- **Safe update mode**. The update process for certain partitions is designed to be resilient, ensuring that even if the power is cut off during the update, the chip will remain operational and capable of booting the current application. The following partitions support this mode:
+
+  - Application. OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition. The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
+
+- **Unsafe update mode**. The update process is vulnerable, meaning that a power interruption during the update can cause issues that prevent the current application from loading, potentially leading to an unrecoverable state. The temporary partition receives the new image, and once it is fully downloaded, the image is copied to the final destination partition. If an interruption occurs during this final copying process, it can lead to issues. The following partitions support this mode:
+
+  - Bootloader.
+  - Partition table.
+  - other data partitions like nvs, fat, etc.
 
 .. _ota_data_partition:
 
@@ -19,7 +27,7 @@ OTA Data Partition
 
 An OTA data partition (type ``data``, subtype ``ota``) must be included in the :doc:`../../api-guides/partition-tables` of any project which uses the OTA functions.
 
-For factory boot settings, the OTA data partition should contain no data (all bytes erased to 0xFF). In this case, the ESP-IDF software bootloader will boot the factory app if it is present in the partition table. If no factory app is included in the partition table, the first available OTA slot (usually ``ota_0``) is booted.
+For factory boot settings, the OTA data partition should contain no data (all bytes erased to 0xFF). In this case, the ESP-IDF second stage bootloader boots the factory app if it is present in the partition table. If no factory app is included in the partition table, the first available OTA slot (usually ``ota_0``) is booted.
 
 After the first OTA update, the OTA data partition is updated to specify which OTA app slot partition should be booted next.
 
@@ -344,7 +352,7 @@ See Also
 Application Examples
 --------------------
 
-- :example:`system/ota/native_ota_example` demonstrates how to use the `app_update` component's APIs for native Over-the-Air (OTA) updates on {IDF_TARGET_NAME}. For the applicable SoCs, please refer to :example_file:`system/ota/native_ota_example/README.md`.
+- :example:`system/ota/native_ota_example` demonstrates how to use the `app_update` component's APIs for native over-the-air (OTA) updates on {IDF_TARGET_NAME}. For applicable SoCs, please refer to :example_file:`system/ota/native_ota_example/README.md`.
 
 - :example:`system/ota/otatool` demonstrates how to use the OTA tool to perform operations such as reading, writing, and erasing OTA partitions, switching boot partitions, and switching to factory partition. For more information, please refer to :example_file:`system/ota/otatool/README.md`.
 

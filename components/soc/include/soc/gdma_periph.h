@@ -44,7 +44,7 @@ extern const gdma_signal_conn_t gdma_periph_signals;
 typedef struct {
     const regdma_entries_config_t *link_list;
     uint32_t link_num;
-    periph_retention_module_t module_id;
+    const periph_retention_module_t module_id;
 } gdma_chx_reg_ctx_link_t;
 
 extern const gdma_chx_reg_ctx_link_t gdma_chx_regs_retention[SOC_GDMA_NUM_GROUPS_MAX][SOC_GDMA_PAIRS_PER_GROUP_MAX];

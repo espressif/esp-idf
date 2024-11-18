@@ -11,11 +11,13 @@
 #include "esp_gap_ble_api.h"
 
 #if BTC_DYNAMIC_MEMORY == TRUE
+#if (BLE_42_FEATURE_SUPPORT == TRUE)
 #include "bta/bta_api.h"
 extern tBTA_BLE_ADV_DATA *gl_bta_adv_data_ptr;
 extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 #define gl_bta_adv_data     (*gl_bta_adv_data_ptr)
 #define gl_bta_scan_rsp_data    (*gl_bta_scan_rsp_data_ptr)
+#endif // BLE_42_FEATURE_SUPPORT
 #endif
 
 #define BLE_ISVALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)))
@@ -106,6 +108,7 @@ typedef enum {
     BTC_GAP_BLE_ACT_ADD_DEVICE_TO_RESOLVING_LIST,
     BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT,
     BTC_GAP_BLE_SET_PRIVACY_MODE,
+    BTC_GAP_BLE_SET_CSA_SUPPORT,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -274,6 +277,10 @@ typedef union {
         esp_bd_addr_t addr;
         uint8_t privacy_mode;
     } set_privacy_mode;
+    // BTC_GAP_BLE_SET_CSA_SUPPORT
+    struct set_csa_support_args {
+        uint8_t csa_select;
+    } set_csa_support;
 } btc_ble_gap_args_t;
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)

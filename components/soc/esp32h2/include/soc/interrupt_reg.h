@@ -5,8 +5,8 @@
  */
 #pragma once
 
-#include "interrupt_matrix_reg.h"
-#include "plic_reg.h"
+#include "soc/interrupt_matrix_reg.h"
+#include "soc/plic_reg.h"
 #include "soc/soc_caps.h"
 
 #define INTERRUPT_PRIO_REG(n)                   (PLIC_MXINT0_PRI_REG + (n)*4)

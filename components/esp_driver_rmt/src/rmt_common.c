@@ -75,7 +75,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
                 rmt_ll_reset_register(group_id);
             }
 #if RMT_USE_RETENTION_LINK
-            sleep_retention_module_t module = RMT_LL_SLEEP_RETENTION_MODULE_ID(group_id);
+            sleep_retention_module_t module = rmt_reg_retention_info[group_id].module;
             sleep_retention_module_init_param_t init_param = {
                 .cbs = {
                     .create = {
@@ -85,9 +85,7 @@ rmt_group_t *rmt_acquire_group_handle(int group_id)
                 },
                 .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
             };
-            if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
-                group->sleep_retention_module = module;
-            } else {
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
                 // even though the sleep retention module init failed, RMT driver should still work, so just warning here
                 ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
             }
@@ -147,11 +145,12 @@ void rmt_release_group_handle(rmt_group_t *group)
 
     if (do_deinitialize) {
 #if RMT_USE_RETENTION_LINK
-        if (group->sleep_retention_module) {
-            if (group->retention_link_created) {
-                sleep_retention_module_free(group->sleep_retention_module);
-            }
-            sleep_retention_module_deinit(group->sleep_retention_module);
+        sleep_retention_module_t module = rmt_reg_retention_info[group_id].module;
+        if (sleep_retention_get_created_modules() & BIT(module)) {
+            sleep_retention_module_free(module);
+        }
+        if (sleep_retention_get_inited_modules() & BIT(module)) {
+            sleep_retention_module_deinit(module);
         }
 #endif
         free(group);
@@ -303,24 +302,21 @@ static esp_err_t rmt_create_sleep_retention_link_cb(void *arg)
 {
     rmt_group_t *group = (rmt_group_t *)arg;
     int group_id = group->group_id;
-    sleep_retention_module_t module = group->sleep_retention_module;
     esp_err_t err = sleep_retention_entries_create(rmt_reg_retention_info[group_id].regdma_entry_array,
                                                    rmt_reg_retention_info[group_id].array_size,
-                                                   REGDMA_LINK_PRI_RMT, module);
+                                                   REGDMA_LINK_PRI_RMT, rmt_reg_retention_info[group_id].module);
     return err;
 }
 
 void rmt_create_retention_module(rmt_group_t *group)
 {
-    sleep_retention_module_t module = group->sleep_retention_module;
-
+    int group_id = group->group_id;
+    sleep_retention_module_t module = rmt_reg_retention_info[group_id].module;
     _lock_acquire(&s_platform.mutex);
-    if (group->retention_link_created == false) {
+    if ((sleep_retention_get_inited_modules() & BIT(module)) && !(sleep_retention_get_created_modules() & BIT(module))) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, RMT driver should still work, so just warning here
-            ESP_LOGW(TAG, "create retention link failed, power domain can't be turned off");
-        } else {
-            group->retention_link_created = true;
+            ESP_LOGW(TAG, "create retention link failed, power domain won't be turned off during sleep");
         }
     }
     _lock_release(&s_platform.mutex);

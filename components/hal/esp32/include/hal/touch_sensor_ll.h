@@ -21,7 +21,7 @@
 #include "soc/sens_struct.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_cntl_struct.h"
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 
 
 #ifdef __cplusplus

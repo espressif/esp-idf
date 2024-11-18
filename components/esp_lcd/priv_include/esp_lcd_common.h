@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,6 +33,8 @@ extern "C" {
 #define LCD_CLOCK_SRC_ATOMIC()
 #endif
 
+#define LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
+
 #if SOC_LCDCAM_SUPPORTED
 
 typedef enum {
@@ -57,15 +59,6 @@ int lcd_com_register_device(lcd_com_device_type_t device_type, void *device_obj)
  */
 void lcd_com_remove_device(lcd_com_device_type_t device_type, int member_id);
 #endif // SOC_LCDCAM_SUPPORTED
-
-/**
- * @brief Mount data to DMA descriptors
- *
- * @param desc_head Point to the head of DMA descriptor chain
- * @param buffer Data buffer
- * @param len Size of the data buffer, in bytes
- */
-void lcd_com_mount_dma_data(dma_descriptor_t *desc_head, const void *buffer, size_t len);
 
 /**
  * @brief Reverse the bytes in the buffer

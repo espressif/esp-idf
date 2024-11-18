@@ -269,6 +269,10 @@ PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包
 
     * :cpp:member:`eth_phy_config_t::reset_gpio_num`：如果开发板同时将 PHY 复位管脚连接至了任意 GPIO 管脚，请使用该字段进行配置。否则，配置为 ``-1``。
 
+    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`：PHY 复位引脚被置为有效状态的时间（以微秒为单位）。将该值配置为 ``0``，即可使用芯片默认的复位时长。
+
+    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`：PHY 硬件复位完成后的等待时间（以毫秒为单位）。将该值配置为 ``0``，即可使用芯片默认的等待时长，配置为 ``-1``，表示执行 PHY 硬件复位后不等待。
+
 ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_CONFIG` 中为 MAC 和 PHY 提供了默认配置。
 
 
@@ -288,18 +292,22 @@ ESP-IDF 在宏 :c:macro:`ETH_MAC_DEFAULT_CONFIG` 和 :c:macro:`ETH_PHY_DEFAULT_C
 
         eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // 应用默认的通用 MAC 配置
         eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // 应用默认的供应商特定 MAC 配置
-        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // 更改用于 MDC 信号的 GPIO
-        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // 更改用于 MDIO 信号的 GPIO
+        esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // 更改用于 MDC 信号的 GPIO
+        esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // 更改用于 MDIO 信号的 GPIO
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // 创建 MAC 实例
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // 应用默认的 PHY 配置
         phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // 根据开发板设计更改 PHY 地址
         phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // 更改用于 PHY 复位的 GPIO
-        esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);     // 创建 PHY 实例
-        // ESP-IDF 为数种以太网 PHY 芯片驱动提供官方支持
+        esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);     // 创建通用 PHY 实例
+        // ESP-IDF 为数种特定以太网 PHY 芯片驱动提供官方支持
+        // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+
+    .. note::
+        使用 :cpp:func:`esp_eth_phy_new_generic` 创建新的 PHY 实例时，可以使用任何符合 IEEE 802.3 标准的以太网 PHY 芯片。然而，尽管 PHY 芯片符合 IEEE 802.3 标准，能提供基本功能，但某些特定的功能可能无法完全实现。例如，某些以太网 PHY 芯片可能需要配置特定的速度模式才能启用环回功能。遇到这种情况，需要配置 PHY 驱动程序以满足特定芯片需求，请使用 ESP-IDF 官方支持的 PHY 芯片驱动程序，或参阅 :ref:`Custom PHY Driver <custom-phy-driver>` 小节以创建新的自定义驱动程序。
 
     可选的运行时 MAC 时钟配置
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -557,10 +565,12 @@ ESP-IDF 在宏 :c:macro:`ETH_DEFAULT_CONFIG` 中为安装驱动程序提供了�
 进阶操作
 ---------------
 
+.. _custom-phy-driver:
+
 自定义 PHY 驱动程序
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-市面上有多家 PHY 芯片制造商提供各种类型的芯片。ESP-IDF 现已支持数种 PHY 芯片，但是由于价格、功能、库存等原因，有时用户还是无法找到一款能满足其实际需求的芯片。
+市面上有多家 PHY 芯片制造商提供各种类型的芯片。ESP-IDF 现已支持 ``通用 PHY`` 和数种特定的 PHY 芯片，但是由于价格、功能、库存等原因，有时用户还是无法找到一款能满足其实际需求的芯片。
 
 好在 IEEE 802.3 在其 22.2.4 管理功能部分对 EMAC 和 PHY 之间的管理接口进行了标准化。该部分定义了所谓的 ”MII 管理接口”规范，用于控制 PHY 和收集 PHY 的状态，还定义了一组管理寄存器来控制芯片行为、链接属性、自动协商配置等。在 ESP-IDF 中，这项基本的管理功能是由 :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` 实现的，这也大大降低了创建新的自定义 PHY 芯片驱动的难度。
 

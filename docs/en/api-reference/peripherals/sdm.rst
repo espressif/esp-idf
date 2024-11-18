@@ -42,7 +42,6 @@ To install an SDM channel, you should call :cpp:func:`sdm_new_channel` to get a 
 - :cpp:member:`sdm_config_t::clk_src` selects the source clock for the SDM module. Note that, all channels should select the same clock source.
 - :cpp:member:`sdm_config_t::sample_rate_hz` sets the sample rate of the SDM module. A higher sample rate can help to output signals with higher SNR (Signal to Noise Ratio), and easier to restore the original signal after the filter.
 - :cpp:member:`sdm_config_t::invert_out` sets whether to invert the output signal.
-- :cpp:member:`sdm_config_t::io_loop_back` is for debugging purposes only. It enables both the GPIO's input and output ability through the GPIO matrix peripheral.
 
 The function :cpp:func:`sdm_new_channel` can fail due to various errors such as insufficient memory, invalid arguments, etc. Specifically, when there are no more free channels (i.e., all hardware SDM channels have been used up), :c:macro:`ESP_ERR_NOT_FOUND` will be returned.
 

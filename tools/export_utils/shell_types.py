@@ -1,10 +1,13 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import getpass
 import os
 import re
 import shutil
 import sys
 import textwrap
+from datetime import datetime
+from datetime import timedelta
 from pathlib import Path
 from subprocess import run
 from tempfile import gettempdir
@@ -18,6 +21,7 @@ from typing import Union
 import click
 from console_output import debug
 from console_output import status_message
+from console_output import warn
 from utils import conf
 from utils import run_cmd
 
@@ -27,10 +31,26 @@ class Shell():
         self.shell = shell
         self.deactivate_cmd = deactivate_cmd
         self.new_esp_idf_env = new_esp_idf_env
-        self.tmp_dir_path = Path(gettempdir()) / 'esp_idf_activate'
+
+        try:
+            self.tmp_dir_path = Path(gettempdir()) / ('esp_idf_activate_' + getpass.getuser())
+        except Exception as e:
+            self.tmp_dir_path = Path(gettempdir()) / 'esp_idf_activate'
+            warn(f'Failed to get username with error: {e}. Using default temporary directory {self.tmp_dir_path}.')
+
         if not conf.ARGS.debug and os.path.exists(self.tmp_dir_path):
             # Do not cleanup temporary directory when debugging
-            shutil.rmtree(self.tmp_dir_path)
+            for item in self.tmp_dir_path.iterdir():
+                try:
+                    if item.is_file():
+                        current_time = datetime.now()
+                        file_creation_time = datetime.fromtimestamp(os.path.getctime(item))
+                        # delete files older than 1 hour to avoid datarace when using activation in parallel
+                        if current_time - file_creation_time > timedelta(hours=1):
+                            item.unlink()
+                except Exception as e:
+                    warn(f'Failed to clean temp activation directory with file {item}: {e}')
+
         self.tmp_dir_path.mkdir(parents=True, exist_ok=True)
 
     def export(self) -> None:

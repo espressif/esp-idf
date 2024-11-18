@@ -1,5 +1,5 @@
-POSIX Thread
-============
+POSIX 支持（包括 POSIX 线程支持）
+=================================
 
 :link_to_translation:`en:[English]`
 
@@ -12,7 +12,11 @@ ESP-IDF 基于 FreeRTOS，但提供了一系列与 POSIX 兼容的 API，以便�
 
 添加标准 ``pthread.h`` 头文件后可以在 ESP-IDF 中使用 pthread，该头文件已包含在工具链 libc 中。还有另一个专用于 ESP-IDF 的头文件 ``esp_pthread.h``，其中提供了一些额外的非 POSIX API，以便通过 pthread 使用一些 ESP-IDF 功能。
 
-C++ 标准库中的 ``std::thread``、``std::mutex``、``std::condition_variable`` 等功能也是通过 pthread（利用 GCC libstdc++）实现的。因此，本文档提到的限制条件也同样适用于 C++ 标准库中等效功能。
+除了 POSIX 线程，ESP-IDF 还支持 :ref:`POSIX 消息队列 <posix_message_queues>`。
+
+C++ 标准库中的 ``std::thread``、``std::mutex``、``std::condition_variable`` 等功能也是通过 pthread 和其他 POSIX API（利用 GCC libstdc++）实现的。因此，本文档提到的限制条件也同样适用于 C++ 标准库中的等效功能。
+
+如果希望 ESP-IDF 支持某个尚未实现的 API，请 `在 GitHub 上发起功能请求 <https://github.com/espressif/esp-idf/issues>`_ 并提供详细信息。
 
 RTOS 集成
 ----------------
@@ -22,6 +26,10 @@ RTOS 集成
 .. note::
 
     如果调用 C 标准库或 C++ sleep 函数，例如在 ``unistd.h`` 中定义的 ``usleep``，那么只有当睡眠时间超过 :ref:`一个 FreeRTOS 滴答周期 <CONFIG_FREERTOS_HZ>` 时，任务才会阻塞并让出内核。如果时间较短，线程将处于忙等待状态，不会让步给另一个 RTOS 任务。
+
+.. note::
+
+    POSIX 的 ``errno`` 由 ESP-IDF 中的 newlib 提供。因此，配置项 ``configUSE_POSIX_ERRNO`` 并未被使用，应该保持禁用状态。
 
 默认情况下，所有 pthread 具有相同的 RTOS 优先级，但可以通过调用 :ref:`ESP-IDF 提供的扩展 API <esp-pthread>` 对此优先级进行更改。
 
@@ -169,15 +177,65 @@ ESP-IDF 中实现了 POSIX 读写锁规范的以下 API 函数：
 
     ESP-IDF 中还有其他的线程本地存储选项，包括性能更高的选项。参见 :doc:`/api-guides/thread-local-storage`。
 
+.. _posix_message_queues:
+
+消息队列
+^^^^^^^^
+
+消息队列的实现基于 `FreeRTOS-Plus-POSIX <https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_POSIX/index.html>`_ 项目，ESP-IDF 的文件系统不提供消息队列，不支持消息优先级。
+
+以下 POSIX 消息队列规范中的 API 函数已被实现：
+
+* `mq_open() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_open.html>`_
+
+    - 除了要符合 POSIX 规范，``name`` 参数还有以下额外限制：
+        - 必须以斜杠开头。
+        - 长度不得超过 255 + 2 个字符（包括开头的斜杠，除去终止的空字符）。但 ``name`` 的内存是在内部动态分配的，所以名称越短，消耗的内存越少。
+    - ``mode`` 参数未实现且被忽略。
+    - 支持的 ``oflags``：``O_RDWR``、``O_CREAT``、``O_EXCL`` 和 ``O_NONBLOCK``。
+
+* `mq_close() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_close.html>`_
+* `mq_unlink() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_unlink.html>`_
+* `mq_receive() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html>`_
+
+    - 不支持消息优先级，因此 ``msg_prio`` 未被使用。
+
+* `mq_timedreceive() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_receive.html>`_
+
+    - 不支持消息优先级，因此 ``msg_prio`` 未被使用。
+
+* `mq_send() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html>`_
+
+    - 不支持消息优先级，因此 ``msg_prio`` 无效。
+
+* `mq_timedsend() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_send.html>`_
+
+    - 不支持消息优先级，因此 ``msg_prio`` 无效。
+
+* `mq_getattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_getattr.html>`_
+
+尚未实现 `mq_notify() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_notify.html>`_ 和 `mq_setattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html>`_。
+
+构建
+....
+
+要使用 POSIX 消息队列 API，请在组件的 ``CMakeLists.txt`` 文件中添加 ``rt`` 作为依赖项。
+
+.. note::
+
+    请注意，如果曾在其他 FreeRTOS 项目中使用过 `FreeRTOS-Plus-POSIX <https://www.freertos.org/FreeRTOS-Plus/FreeRTOS_Plus_POSIX/index.html>`_，则 IDF 中的包含路径是 POSIX 风格的。因此，应用程序应直接包含 ``mqueue.h``，而不是使用子目录来包含 ``FreeRTOS_POSIX/mqueue.h``。
+
 未实现 API
 ---------------
 
 ``pthread.h`` 头文件是一个标准头文件，包含了在 ESP-IDF 中未实现的额外 API 和功能，包括：
 
-* 如果调用 ``pthread_cancel()``，返回 ``ENOSYS``。
-* ``pthread_condattr_init()`` 如果被调用，返回 ``ENOSYS``。
+* 若调用 ``pthread_cancel()``，则返回 ``ENOSYS``。
+* 若调用 ``pthread_condattr_init()``，则返回 ``ENOSYS``。
+* 若调用 `mq_notify() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_notify.html>`_，则返回 ``ENOSYS``。
+* 若调用 `mq_setattr() <https://pubs.opengroup.org/onlinepubs/9699919799/functions/mq_setattr.html>`_，则返回 ``ENOSYS``。
 
-其他未列出的 pthread 函数未在 ESP-IDF 中实现，如果从 ESP-IDF 应用程序中直接引用，将产生编译器错误或链接器错误。如果希望 ESP-IDF 支持某个尚未实现的 API，请 `在 GitHub 上发起功能请求 <https://github.com/espressif/esp-idf/issues>`_ 并提供详细信息。
+其他未列出的 pthread 函数未在 ESP-IDF 中实现，如果从 ESP-IDF 应用程序中直接引用，将产生编译器错误或链接器错误。
 
 .. _esp-pthread:
 

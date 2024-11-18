@@ -269,6 +269,10 @@ Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
     * :cpp:member:`eth_phy_config_t::reset_gpio_num`: if your board also connects the PHY reset pin to one of the GPIO, then set it here. Otherwise, set this field to ``-1``.
 
+    * :cpp:member:`eth_phy_config_t::hw_reset_assert_time_us`: Time the PHY reset pin is asserted in usec. Set this field to ``0`` to use chip specific default timing.
+
+    * :cpp:member:`eth_phy_config_t::post_hw_reset_delay_ms`: Time to wait after the PHY hardware reset is done in msec. Set this field to ``0`` to use chip specific default timing. Set this field to ``-1`` to not wait after the PHY hardware reset.
+
 ESP-IDF provides a default configuration for MAC and PHY in macro :c:macro:`ETH_MAC_DEFAULT_CONFIG` and :c:macro:`ETH_PHY_DEFAULT_CONFIG`.
 
 
@@ -288,18 +292,22 @@ The Ethernet driver is implemented in an Object-Oriented style. Any operation on
 
         eth_mac_config_t mac_config = ETH_MAC_DEFAULT_CONFIG();                      // apply default common MAC configuration
         eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG(); // apply default vendor-specific MAC configuration
-        esp32_emac_config.smi_mdc_gpio_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
-        esp32_emac_config.smi_mdio_gpio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
+        esp32_emac_config.smi_gpio.mdc_num = CONFIG_EXAMPLE_ETH_MDC_GPIO;            // alter the GPIO used for MDC signal
+        esp32_emac_config.smi_gpio.mdio_num = CONFIG_EXAMPLE_ETH_MDIO_GPIO;          // alter the GPIO used for MDIO signal
         esp_eth_mac_t *mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config); // create MAC instance
 
         eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();      // apply default PHY configuration
         phy_config.phy_addr = CONFIG_EXAMPLE_ETH_PHY_ADDR;           // alter the PHY address according to your board design
         phy_config.reset_gpio_num = CONFIG_EXAMPLE_ETH_PHY_RST_GPIO; // alter the GPIO used for PHY reset
-        esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);     // create PHY instance
-        // ESP-IDF officially supports several different Ethernet PHY chip driver
+        esp_eth_phy_t *phy = esp_eth_phy_new_generic(&phy_config);   // create generic PHY instance
+        // ESP-IDF officially supports several different specific Ethernet PHY chip driver
+        // esp_eth_phy_t *phy = esp_eth_phy_new_ip101(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_rtl8201(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_lan8720(&phy_config);
         // esp_eth_phy_t *phy = esp_eth_phy_new_dp83848(&phy_config);
+
+    .. note::
+        Any Ethernet PHY chip compliant with IEEE 802.3 can be used when creating new PHY instance with :cpp:func:`esp_eth_phy_new_generic`. However, while basic functionality should always work, some specific features might be limited, even if the PHY meets IEEE 802.3 standard. A typical example is loopback functionality, where certain PHYs may require setting a specific speed mode to operate correctly. If this is the concern and you need PHY driver specifically tailored to your chip needs, use drivers for PHY chips the ESP-IDF already officially supports or consult with :ref:`Custom PHY Driver <custom-phy-driver>` section to create a new custom driver.
 
     Optional Runtime MAC Clock Configuration
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -374,7 +382,7 @@ To install the Ethernet driver, we need to combine the instance of MAC and PHY a
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
 
-* :cpp:member:`esp_eth_config_t::stack_input`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`esp_eth_config_t::stack_input` or :cpp:member:`esp_eth_config_t::stack_input_info`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
 
 * :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` and :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low-level hardware has been initialized or de-initialized.
 
@@ -509,6 +517,57 @@ The following functions should only be invoked after the Ethernet driver has bee
     esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr);
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
 
+.. _time-stamping:
+
+.. only:: SOC_EMAC_IEEE1588V2_SUPPORTED
+
+    EMAC Hardware Time Stamping
+    ---------------------------
+
+    Time stamping in EMAC allows precise tracking of when Ethernet frames are transmitted or received. Hardware time stamping is crucial for applications like Precision Time Protocol (PTP) because it minimizes jitter and inaccuracies that can occur when relying on software-based time stamps. By embedding time stamps directly in hardware, delays introduced by software layers or processing overhead are avoided, ensuring nanosecond-level precision.
+
+    .. warning::
+        Time stamp associated API is currently in **"Experimental Feature"** state so be aware it may change with future releases.
+
+    The basic way how to enable time stamping, get and set time in the EMAC is demonstrated below.
+
+    .. highlight:: c
+
+    ::
+
+        // Enable hardware time stamping
+        bool ptp_enable = true;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_PTP_ENABLE, &ptp_enable);
+
+        // Get current EMAC time
+        eth_mac_time_t ptp_time;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_G_PTP_TIME, &ptp_time);
+
+        // Set EMAC time
+        ptp_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+
+    You have an option to schedule event at precise point in time by registering callback function and configuring a target time when the event is supposed to be fired. Note that the callback function is then called from ISR context so it should be as brief as possible.
+
+    .. highlight:: c
+
+    ::
+
+        // Register the callback function
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_CB, ts_callback);
+
+        // Set time when event is triggered
+        eth_mac_time_t mac_target_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(s_eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_TIME, &mac_target_time);
+
+    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
+
 .. _flow-control:
 
 Flow Control
@@ -538,6 +597,8 @@ Application Examples
 
   * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
 
+  * :example:`ethernet/ptp` demonstrates the use of Precision Time Protocol (PTP) for time synchronization over Ethernet.
+
   * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
 
   * :example:`network/sta2eth` demonstrates how to create a 1-to-1 bridge using a Wi-Fi station and a wired interface such as Ethernet or USB.
@@ -557,10 +618,12 @@ Application Examples
 Advanced Topics
 ---------------
 
+.. _custom-phy-driver:
+
 Custom PHY Driver
 ^^^^^^^^^^^^^^^^^
 
-There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF already supports several PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
+There are multiple PHY manufacturers with wide portfolios of chips available. The ESP-IDF supports ``Generic PHY`` and also several specific PHY chips however one can easily get to a point where none of them satisfies the user's actual needs due to price, features, stock availability, etc.
 
 Luckily, a management interface between EMAC and PHY is standardized by IEEE 802.3 in Section 22.2.4 Management Functions. It defines provisions of the so-called "MII Management Interface" to control the PHY and gather status from the PHY. A set of management registers is defined to control chip behavior, link properties, auto-negotiation configuration, etc. This basic management functionality is addressed by :component_file:`esp_eth/src/phy/esp_eth_phy_802_3.c` in ESP-IDF and so it makes the creation of a new custom PHY chip driver quite a simple task.
 

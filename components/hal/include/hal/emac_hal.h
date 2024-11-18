@@ -188,6 +188,7 @@ typedef struct {
 
 ASSERT_TYPE_SIZE(eth_dma_rx_descriptor_t, EMAC_HAL_DMA_DESC_SIZE);
 
+
 typedef struct emac_mac_dev_s *emac_mac_soc_regs_t;
 typedef struct emac_dma_dev_s *emac_dma_soc_regs_t;
 #if CONFIG_IDF_TARGET_ESP32
@@ -195,11 +196,17 @@ typedef struct emac_ext_dev_s *emac_ext_soc_regs_t;
 #else
 typedef void *emac_ext_soc_regs_t;
 #endif
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+typedef struct emac_ptp_dev_s *emac_ptp_soc_regs_t;
+#endif
 
 typedef struct {
     emac_mac_soc_regs_t mac_regs;
     emac_dma_soc_regs_t dma_regs;
     emac_ext_soc_regs_t ext_regs;
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+    emac_ptp_soc_regs_t ptp_regs;
+#endif
 } emac_hal_context_t;
 
 /**
@@ -208,6 +215,18 @@ typedef struct {
 typedef struct {
     eth_mac_dma_burst_len_t dma_burst_len;  /*!< eth-type enum of chosen dma burst-len */
 } emac_hal_dma_config_t;
+
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+/**
+ * @brief EMAC PTP configuration parameters
+ */
+typedef struct {
+    eth_mac_ptp_update_method_t upd_method;
+    eth_mac_ptp_roll_type_t roll;
+    uint32_t ptp_clk_src_period_ns;         /*!< 1/ptp_ref_clk */
+    uint32_t ptp_req_accuracy_ns;           /*!< required PTP accuracy in ns, must be greater than clk_src period */
+} emac_hal_ptp_config_t;
+#endif
 
 void emac_hal_init(emac_hal_context_t *hal);
 
@@ -288,6 +307,130 @@ void emac_hal_set_rx_tx_desc_addr(emac_hal_context_t *hal, eth_dma_rx_descriptor
 
 #define emac_hal_transmit_poll_demand(hal) emac_ll_transmit_poll_demand((hal)->dma_regs, 0)
 
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+#define emac_hal_get_ts_status(hal) emac_ll_get_ts_status((hal)->ptp_regs);
+
+#define emac_hal_clock_enable_ptp(hal, clk_src, enable) emac_ll_clock_enable_ptp((hal)->ext_regs, clk_src, enable);
+
+/**
+ * @brief Start Ethernet PTP timestamp for transmit and receive frames
+ *
+ * @param hal EMAC HAL context infostructure
+ * @return
+ *         - ESP_OK: on success
+ *         - ESP_ERR_TIMEOUT: on PTP block is busy
+ */
+esp_err_t emac_hal_ptp_start(emac_hal_context_t *hal, const emac_hal_ptp_config_t *config);
+
+/**
+ * @brief Stop Ethernet PTP timestamp
+ *
+ * @param hal EMAC HAL context infostructure
+ * @return
+ *          Always return ESP_OK
+ */
+esp_err_t emac_hal_ptp_stop(emac_hal_context_t *hal);
+
+/**
+ * @brief Updates time stamp addend register relatively to the base value
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param adj_ppb Correction value in ppb(parts per billion) (adj*10^9).
+ *            For example, if the crystal used is 5 Hz off, then this value should be 5000.
+ * @return
+ *         - ESP_OK: on success
+ *         - ESP_ERR_INVALID_STATE: on PTP block is busy
+ */
+esp_err_t emac_hal_ptp_adj_inc(emac_hal_context_t *hal, int32_t adj_ppb);
+
+/**
+ * @brief Updates time stamp addend register relatively to the previous value
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param scale_factor scale factor with which the addend register value is updated
+ * @return
+ *         - ESP_OK: on success
+ *         - ESP_ERR_INVALID_STATE: on PTP block is busy
+ */
+esp_err_t emac_hal_adj_freq_factor(emac_hal_context_t *hal, double ratio);
+
+/**
+ * @brief Adds or subtracts to the PTP system time.
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param off_sec the PTP Time update second value
+ * @param off_nsec the PTP Time update nano-second value
+ * @param sign specifies the PTP Time update value sign(true means positive, false means negative)
+ * @return
+ *        - ESP_OK: on success
+ *        - ESP_ERR_INVALID_STATE: on waiting for previous update to end
+ */
+esp_err_t emac_hal_ptp_time_add(emac_hal_context_t *hal, uint32_t off_sec, uint32_t off_nsec, bool sign);
+
+/**
+ * @brief Initialize the PTP time base
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param seconds specifies the PTP Time init second value
+ * @param nano_seconds specifies the PTP Time init nano-second value
+ * @return
+ *         - ESP_OK: on success,
+ *         - ESP_ERR_INVALID_STATE: on waiting for previous init to end
+ */
+esp_err_t emac_hal_ptp_set_sys_time(emac_hal_context_t *hal, uint32_t seconds, uint32_t nano_seconds);
+
+/**
+ * @brief Get the current value of the system time maintained by the MAC
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param seconds get the PTP system time second value
+ * @param nano_seconds get the PTP system time nano-second value
+ * @return
+ *          - ESP_OK: on success
+ *          - ESP_ERR_INVALID_ARG: on invalid argument
+ */
+esp_err_t emac_hal_ptp_get_sys_time(emac_hal_context_t *hal, uint32_t *seconds, uint32_t *nano_seconds);
+
+/**
+ * @brief Set target time to trigger event when the system time exceeds the target time
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param seconds specifies the PTP target time second value
+ * @param nano_seconds specifies the PTP target Time nano-second value
+ * @return
+ *          - ESP_OK on success, ESP_ERR_TIMEOUT on busy
+ */
+esp_err_t emac_hal_ptp_set_target_time(emac_hal_context_t *hal, uint32_t seconds, uint32_t nano_seconds);
+
+/**
+ * @brief Get timestamp from receive descriptor
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param rxdesc Pointer to receive descriptor
+ * @param seconds Pointer to store seconds part of timestamp
+ * @param nano_seconds Pointer to store nanoseconds part of timestamp
+ *
+ * @return
+ *     - ESP_OK: On success
+ *     - ESP_ERR_INVALID_STATE: Descriptor does not contain time stamp information (frame might be filtered)
+ */
+esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_descriptor_t *rxdesc, uint32_t *seconds, uint32_t *nano_seconds);
+
+/**
+ * @brief Get timestamp from transmit descriptor
+ *
+ * @param hal EMAC HAL context infostructure
+ * @param txdesc Pointer to transmit descriptor
+ * @param seconds Pointer to store seconds part of timestamp
+ * @param nano_seconds Pointer to store nanoseconds part of timestamp
+ *
+ * @return
+ *     - ESP_OK: On success
+ *     - ESP_ERR_INVALID_STATE: descriptor is still owned by DMA or time stamp is not ready yet
+ */
+esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_descriptor_t *txdesc, uint32_t *seconds, uint32_t *nano_seconds);
+
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 #endif  // SOC_EMAC_SUPPORTED
 
 #ifdef __cplusplus

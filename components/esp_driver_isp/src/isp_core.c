@@ -139,6 +139,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     isp_ll_enable_line_end_packet_exist(proc->hal.hw, proc_config->has_line_end_packet);
     isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, proc_config->h_res);
     isp_ll_set_intput_data_v_row_num(proc->hal.hw, proc_config->v_res);
+    isp_ll_set_bayer_mode(proc->hal.hw, proc_config->bayer_order);
     isp_ll_yuv_set_std(proc->hal.hw, proc_config->yuv_std);
     if (out_color_format.color_space == COLOR_SPACE_YUV) {
         isp_ll_yuv_set_range(proc->hal.hw, proc_config->yuv_range);
@@ -148,6 +149,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     proc->out_color_format = out_color_format;
     proc->h_res = proc_config->h_res;
     proc->v_res = proc_config->v_res;
+    proc->bayer_order = proc_config->bayer_order;
 
     *ret_proc = proc;
 

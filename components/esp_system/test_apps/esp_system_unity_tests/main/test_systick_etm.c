@@ -51,7 +51,7 @@ TEST_CASE("rtos_systick_etm_event", "[etm]")
 
     TEST_ESP_OK(esp_etm_channel_enable(etm_channel_a));
 
-    // should see a 500Hz square wave on the GPIO (if RTOS systick is set to 1000Hz)
+    // should see a 50Hz square wave on the GPIO (if RTOS systick is set to 100Hz)
     vTaskDelay(pdMS_TO_TICKS(1000));
 
     // delete etm primitives

@@ -6,11 +6,11 @@
 
 #include <esp_types.h>
 #include <string.h>
-#include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/usb_phy.h"
+#include "esp_private/critical_section.h"
 #include "soc/usb_dwc_periph.h"
 #include "hal/usb_wrap_hal.h"
 #include "hal/usb_serial_jtag_hal.h"
@@ -61,7 +61,10 @@ typedef struct {
 } usb_iopin_dsc_t;
 
 static phy_ctrl_obj_t *p_phy_ctrl_obj = NULL;
-static portMUX_TYPE phy_spinlock = portMUX_INITIALIZER_UNLOCKED;
+
+DEFINE_CRIT_SECTION_LOCK_STATIC(phy_spinlock);
+#define PHY_ENTER_CRITICAL()           esp_os_enter_critical(&phy_spinlock)
+#define PHY_EXIT_CRITICAL()            esp_os_exit_critical(&phy_spinlock)
 
 static esp_err_t phy_iopins_configure(const usb_iopin_dsc_t *usb_periph_iopins, int iopins_num)
 {
@@ -235,29 +238,29 @@ esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
 
 static esp_err_t usb_phy_install(void)
 {
-    portENTER_CRITICAL(&phy_spinlock);
+    PHY_ENTER_CRITICAL();
     if (p_phy_ctrl_obj) {
         // p_phy_ctrl_obj already installed, return immediately
-        portEXIT_CRITICAL(&phy_spinlock);
+        PHY_EXIT_CRITICAL();
         return ESP_OK;
     }
-    portEXIT_CRITICAL(&phy_spinlock);
+    PHY_EXIT_CRITICAL();
 
     esp_err_t ret = ESP_OK;
     phy_ctrl_obj_t *phy_ctrl_obj = (phy_ctrl_obj_t *) calloc(1, sizeof(phy_ctrl_obj_t));
     ESP_GOTO_ON_FALSE(phy_ctrl_obj, ESP_ERR_NO_MEM, cleanup, USBPHY_TAG, "no mem for USB_PHY driver");
 
-    portENTER_CRITICAL(&phy_spinlock);
+    PHY_ENTER_CRITICAL();
     if (!p_phy_ctrl_obj) {
         p_phy_ctrl_obj = phy_ctrl_obj;
         p_phy_ctrl_obj->ref_count = 0;
     } else {
         // p_phy_ctrl_obj already installed, need to free resource
-        portEXIT_CRITICAL(&phy_spinlock);
+        PHY_EXIT_CRITICAL();
         goto cleanup;
     }
     // Enable USB peripheral and reset the register
-    portEXIT_CRITICAL(&phy_spinlock);
+    PHY_EXIT_CRITICAL();
     USB_WRAP_RCC_ATOMIC() {
         usb_wrap_ll_enable_bus_clock(true);
         usb_wrap_ll_reset_register();
@@ -281,7 +284,7 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     phy_context_t *phy_context = (phy_context_t *) calloc(1, sizeof(phy_context_t));
     ESP_GOTO_ON_FALSE(phy_context, ESP_ERR_NO_MEM, cleanup, USBPHY_TAG, "no mem for phy context");
 
-    portENTER_CRITICAL(&phy_spinlock);
+    PHY_ENTER_CRITICAL();
     usb_phy_get_phy_status(config->target, &phy_context->status);
     if (phy_context->status == USB_PHY_STATUS_FREE) {
         new_phy = true;
@@ -292,7 +295,7 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
             p_phy_ctrl_obj->internal_phy = phy_context;
         }
     }
-    portEXIT_CRITICAL(&phy_spinlock);
+    PHY_EXIT_CRITICAL();
     ESP_GOTO_ON_FALSE(new_phy, ESP_ERR_INVALID_STATE, cleanup, USBPHY_TAG, "selected PHY is in use");
 
     phy_context->target = config->target;
@@ -354,7 +357,7 @@ cleanup:
 static void phy_uninstall(void)
 {
     phy_ctrl_obj_t *p_phy_ctrl_obj_free = NULL;
-    portENTER_CRITICAL(&phy_spinlock);
+    PHY_ENTER_CRITICAL();
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
@@ -363,7 +366,7 @@ static void phy_uninstall(void)
             usb_wrap_ll_enable_bus_clock(false);
         }
     }
-    portEXIT_CRITICAL(&phy_spinlock);
+    PHY_EXIT_CRITICAL();
     free(p_phy_ctrl_obj_free);
 }
 
@@ -371,7 +374,7 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
 
-    portENTER_CRITICAL(&phy_spinlock);
+    PHY_ENTER_CRITICAL();
     p_phy_ctrl_obj->ref_count--;
     if (handle->target == USB_PHY_TARGET_EXT) {
         p_phy_ctrl_obj->external_phy = NULL;
@@ -380,7 +383,7 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
         usb_wrap_hal_phy_disable_pull_override(&handle->wrap_hal);
         p_phy_ctrl_obj->internal_phy = NULL;
     }
-    portEXIT_CRITICAL(&phy_spinlock);
+    PHY_EXIT_CRITICAL();
     free(handle->iopins);
     free(handle);
     phy_uninstall();

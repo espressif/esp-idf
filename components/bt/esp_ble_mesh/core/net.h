@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -465,8 +465,16 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
                        struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 
-void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
-                      enum bt_mesh_net_if net_if);
+void bt_mesh_generic_net_recv(struct net_buf_simple *data,
+                              struct bt_mesh_net_rx *rx,
+                              enum bt_mesh_net_if net_if);
+
+static inline void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
+                                    enum bt_mesh_net_if net_if)
+{
+    struct bt_mesh_net_rx rx = { .ctx.recv_rssi = rssi };
+    bt_mesh_generic_net_recv(data, &rx, net_if);
+}
 
 bool bt_mesh_primary_subnet_exist(void);
 

@@ -9,7 +9,7 @@
 
 .. gpio-summary
 
-The {IDF_TARGET_NAME} chip features 22 physical GPIO pins (GPIO0 ~ GPIO21). Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
+The {IDF_TARGET_NAME} chip features 25 physical GPIO pins (GPIO0 ~ GPIO24). Each pin can be used as a general-purpose I/O, or to be connected to an internal peripheral signal. Through GPIO matrix and IO MUX, peripheral input signals can be from any IO pins, and peripheral output signals can be routed to any IO pins. Together these modules provide highly configurable I/O. For more details, see *{IDF_TARGET_NAME} Technical Reference Manual* > *IO MUX and GPIO Matrix (GPIO, IO_MUX)* [`PDF <{IDF_TARGET_TRM_EN_URL}#iomuxgpio>`__].
 
 The table below provides more information on pin usage, and please note the comments in the table for GPIOs with restrictions.
 
@@ -23,7 +23,7 @@ The table below provides more information on pin usage, and please note the comm
       - Comments
 
     * - GPIO0
-      - ADC2_CH0
+      -
       - LP_GPIO0
       -
 
@@ -53,7 +53,7 @@ The table below provides more information on pin usage, and please note the comm
       -
 
     * - GPIO6
-      - ADC1_CH5
+      -
       - LP_GPIO6
       -
 
@@ -131,6 +131,21 @@ The table below provides more information on pin usage, and please note the comm
       -
       -
       - SPI0/1
+
+    * - GPIO22
+      -
+      -
+      -
+
+    * - GPIO23
+      -
+      -
+      -
+
+    * - GPIO24
+      -
+      -
+      -
 
 .. note::
 

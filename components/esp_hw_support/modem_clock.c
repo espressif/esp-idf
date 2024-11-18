@@ -18,6 +18,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "esp_private/regi2c_ctrl.h"
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -108,7 +109,7 @@ static void IRAM_ATTR modem_clock_coex_configure(modem_clock_context_t *ctx, boo
 
 static void IRAM_ATTR modem_clock_modem_adc_common_fe_configure(modem_clock_context_t *ctx, bool enable)
 {
-    modem_clock_hal_enable_modem_adc_common_fe_clock(ctx->hal, enable);
+    modem_clock_hal_enable_modem_common_fe_clock(ctx->hal, enable);
 }
 
 static void IRAM_ATTR modem_clock_modem_private_fe_configure(modem_clock_context_t *ctx, bool enable)
@@ -118,7 +119,11 @@ static void IRAM_ATTR modem_clock_modem_private_fe_configure(modem_clock_context
 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
 {
-    regi2c_ctrl_ll_master_enable_clock(enable);
+    if (enable) {
+        ANALOG_CLOCK_ENABLE();
+    } else {
+        ANALOG_CLOCK_DISABLE();
+    }
 }
 
 static void IRAM_ATTR modem_clock_etm_configure(modem_clock_context_t *ctx, bool enable)

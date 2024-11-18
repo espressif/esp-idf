@@ -19,13 +19,15 @@ extern "C" {
  *
  */
 typedef struct {
-    esp_eth_phy_t parent;           /*!< Parent Ethernet PHY instance */
-    esp_eth_mediator_t *eth;        /*!< Mediator of Ethernet driver */
-    int addr;                       /*!< PHY address */
-    uint32_t reset_timeout_ms;      /*!< Reset timeout value (Unit: ms) */
-    uint32_t autonego_timeout_ms;   /*!< Auto-negotiation timeout value (Unit: ms) */
-    eth_link_t link_status;         /*!< Current Link status */
-    int reset_gpio_num;             /*!< Reset GPIO number, -1 means no hardware reset */
+    esp_eth_phy_t parent;              /*!< Parent Ethernet PHY instance */
+    esp_eth_mediator_t *eth;           /*!< Mediator of Ethernet driver */
+    int addr;                          /*!< PHY address */
+    uint32_t reset_timeout_ms;         /*!< Reset timeout value (Unit: ms) */
+    uint32_t autonego_timeout_ms;      /*!< Auto-negotiation timeout value (Unit: ms) */
+    eth_link_t link_status;            /*!< Current Link status */
+    int reset_gpio_num;                /*!< Reset GPIO number, -1 means no hardware reset */
+    int32_t hw_reset_assert_time_us;   /*!< Time the reset pin is asserted (Unit: us) */
+    int32_t post_hw_reset_delay_ms;    /*!< Time to wait after the HW reset (Unit: ms) */
 } phy_802_3_t;
 
 /**
@@ -72,6 +74,16 @@ esp_err_t esp_eth_phy_802_3_reset(phy_802_3_t *phy_802_3);
  *      - ESP_ERR_INVALID_ARG: invalid value of @c cmd
  */
 esp_err_t esp_eth_phy_802_3_autonego_ctrl(phy_802_3_t *phy_802_3, eth_phy_autoneg_cmd_t cmd, bool *autonego_en_stat);
+
+/**
+ * @brief Retrieve link status and propagate the status to higher layers if the status changed
+ *
+ * @param phy_802_3 IEEE 802.3 PHY object infostructure
+ * @return
+ *      - ESP_OK: Ethernet PHY link status retrieved successfully
+ *      - ESP_FAIL: Error occurred during reading registry
+ */
+esp_err_t esp_eth_phy_802_3_updt_link_dup_spd(phy_802_3_t *phy_802_3);
 
 /**
  * @brief Power control of Ethernet PHY
@@ -183,7 +195,7 @@ esp_err_t esp_eth_phy_802_3_deinit(phy_802_3_t *phy_802_3);
  *
  * @param phy_802_3 IEEE 802.3 PHY object infostructure
  * @return
- *      - ESP_OK: Ethrnet PHY infostructure deleted
+ *      - ESP_OK: Ethernet PHY infostructure deleted
  */
 esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3);
 
@@ -194,6 +206,7 @@ esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3);
  * @param reset_assert_us Hardware reset pin assertion time
  * @return
  *      - ESP_OK: reset Ethernet PHY successfully
+ *      - ESP_ERR_NOT_ALLOWED: reset GPIO not defined
  */
 esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_assert_us);
 

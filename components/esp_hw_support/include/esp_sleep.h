@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 
-#include "hal/touch_sensor_types.h"
+#include "hal/touch_sensor_legacy_types.h"
 #include "hal/gpio_types.h"
 
 #include "soc/soc_caps.h"
@@ -118,6 +118,7 @@ typedef enum {
     ESP_SLEEP_WAKEUP_COCPU,             //!< Wakeup caused by COCPU int
     ESP_SLEEP_WAKEUP_COCPU_TRAP_TRIG,   //!< Wakeup caused by COCPU crash
     ESP_SLEEP_WAKEUP_BT,           //!< Wakeup caused by BT (light sleep only)
+    ESP_SLEEP_WAKEUP_VAD,          //!< Wakeup caused by VAD
 } esp_sleep_source_t;
 
 /**
@@ -178,6 +179,16 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
  *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
+
+#if SOC_LP_VAD_SUPPORTED
+/**
+ * @brief Enable wakeup by VAD
+ *
+ * @return
+ *      - ESP_OK on success
+ */
+esp_err_t esp_sleep_enable_vad_wakeup(void);
+#endif
 
 #if SOC_TOUCH_SENSOR_SUPPORTED
 /**
@@ -758,41 +769,6 @@ esp_err_t esp_sleep_cpu_retention_init(void);
  */
 esp_err_t esp_sleep_cpu_retention_deinit(void);
 #endif // ESP_SLEEP_POWER_DOWN_CPU
-
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-/**
- * @brief Backup or restore the MMU when the top domain is powered down.
- * @param backup_or_restore decide to backup mmu or restore mmu
- */
-void esp_sleep_mmu_retention(bool backup_or_restore);
-
-/**
- * @brief Mmu backup initialize when power down TOP domain
- *
- * @return
- *      - ESP_OK on success
- *      - ESP_ERR_NO_MEM not enough retention memory
- */
-esp_err_t esp_sleep_mmu_retention_init(void);
-
-/**
- * @brief Mmu backup de-initialize when power down TOP domain
- *
- * @return
- *      - ESP_OK on success
- *
- * Release system retention memory.
- */
-esp_err_t esp_sleep_mmu_retention_deinit(void);
-
-/**
- * @brief Whether to allow the top domain to be powered off due to mmu domain requiring retention.
- *
- * In light sleep mode, only when the system can provide enough memory
- * for mmu retention, the top power domain can be powered off.
- */
-bool mmu_domain_pd_allowed(void);
-#endif
 
 /**
  * @brief Configure to isolate all GPIO pins in sleep state

@@ -445,6 +445,18 @@ static inline bool sdmmc_ll_is_card_write_protected(sdmmc_dev_t *hw, uint32_t sl
 }
 
 /**
+ * @brief Switch between 3.3V and 1.8V mode
+ *
+ * @param hw    hardware instance address
+ * @param slot  slot
+ * @param en    enable / disable 1.8V (3.3V on disable)
+ */
+static inline void sdmmc_ll_enable_1v8_mode(sdmmc_dev_t *hw, uint32_t slot, bool en)
+{
+    //for compatibility
+}
+
+/**
  * @brief Enable DDR mode
  *
  * @param hw    hardware instance address

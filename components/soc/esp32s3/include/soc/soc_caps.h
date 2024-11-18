@@ -219,6 +219,7 @@
 #define SOC_I2C_SUPPORT_10BIT_ADDR  (1)
 #define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
 #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/
 #define SOC_I2S_NUM                 (2U)
@@ -236,6 +237,7 @@
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 #define SOC_LEDC_SUPPORT_APB_CLOCK       (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK      (1)
+#define SOC_LEDC_TIMER_NUM               (4)
 #define SOC_LEDC_CHANNEL_NUM             (8)
 #define SOC_LEDC_TIMER_BIT_WIDTH         (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
@@ -384,6 +386,7 @@
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP               (1)  /*!< Touch sensor supports sleep awake */
 #define SOC_TOUCH_SUPPORT_WATERPROOF                (1)  /*!< Touch sensor supports waterproof */
 #define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)  /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_SUPPORT_DENOISE_CHAN              (1)  /*!< Touch sensor supports denoise channel */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)  /*!< Support touch proximity sensing channel number. */
 #define SOC_TOUCH_PROXIMITY_MEAS_DONE_SUPPORTED     (1)  /*!< Support touch proximity sensing measure done interrupt type. */
 
@@ -481,6 +484,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D2           (1)     /*!< Support XTAL_D2 clock as the LP_FAST clock source */
 
 /*-------------------------- eFuse CAPS----------------------------*/
 #define SOC_EFUSE_DIS_DOWNLOAD_ICACHE 1

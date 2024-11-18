@@ -129,7 +129,8 @@ USB_DOCS = ['api-reference/peripherals/usb_device.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_index.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_usbh.rst',
             'api-reference/peripherals/usb_host/usb_host_notes_enum.rst',
-            'api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst']
+            'api-reference/peripherals/usb_host/usb_host_notes_ext_hub.rst',
+            'api-reference/peripherals/usb_host/usb_host_notes_ext_port.rst']
 
 I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
 RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']
@@ -207,7 +208,7 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/touch_pad.rst',
+                'api-reference/peripherals/cap_touch_sens.rst',
                 'api-reference/peripherals/touch_element.rst',
                 'api-guides/RF_calibration.rst',
                 'api-guides/phy.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
@@ -215,10 +216,10 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
-                'api-reference/peripherals/touch_pad.rst',
+                'api-reference/peripherals/cap_touch_sens.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst',
-                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
+                'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS + QEMU_DOCS
 
 # No JTAG docs for this one as it gets gated on SOC_USB_SERIAL_JTAG_SUPPORTED down below.
 ESP32C3_DOCS = ['hw-reference/esp32c3/**',
@@ -379,6 +380,9 @@ html_static_path = ['../_static']
 
 idf_build_system = {'doxygen_component_info': True, 'component_info_ignore_file': Path(os.environ['IDF_PATH']) / 'docs' / 'component_info_ignore_file.txt'}
 
+# Please update following list to enable Qemu doc guide (and cross references) for a new target
+QEMU_TARGETS = ['esp32', 'esp32c3', 'esp32s3']
+
 
 # Callback function for user setup that needs be done after `config-init`-event
 # config.idf_target is not available at the initial config stage
@@ -386,6 +390,10 @@ def conf_setup(app, config):
     config.add_warnings_content = 'This document is not updated for {} yet, so some of the content may not be correct.'.format(config.idf_target.upper())
 
     add_warnings_file = '{}/../docs_not_updated/{}.txt'.format(app.confdir, config.idf_target)
+
+    if config.idf_target in QEMU_TARGETS:
+        app.tags.add('TARGET_SUPPORT_QEMU')
+
     try:
         with open(add_warnings_file) as warning_file:
             config.add_warnings_pages = warning_file.read().splitlines()

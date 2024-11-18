@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,9 +16,10 @@
  */
 
 #include <inttypes.h>
+#include "esp_check.h"
 #include "esp_timer.h"
 #include "esp_cache.h"
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_sd";
 
@@ -228,7 +229,7 @@ esp_err_t sdmmc_send_cmd_switch_func(sdmmc_card_t* card,
     return ESP_OK;
 }
 
-esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card)
+esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
 {
     /* This will determine if the card supports SWITCH_FUNC command,
      * and high speed mode. If the cards supports both, this will enable
@@ -255,19 +256,233 @@ esp_err_t sdmmc_enable_hs_mode(sdmmc_card_t* card)
         goto out;
     }
     uint32_t supported_mask = SD_SFUNC_SUPPORTED(response->data, 1);
-    if ((supported_mask & BIT(SD_ACCESS_MODE_SDR25)) == 0) {
-        err = ESP_ERR_NOT_SUPPORTED;
-        goto out;
-    }
-    err = sdmmc_send_cmd_switch_func(card, 1, SD_ACCESS_MODE, SD_ACCESS_MODE_SDR25, response);
-    if (err != ESP_OK) {
-        ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
-        goto out;
+    ESP_LOGV(TAG, "%s: access mode supported_mask: 0x%"PRIx32, __func__, supported_mask);
+
+    if (((card->host.flags & SDMMC_HOST_FLAG_DDR) != 0) && (card->is_uhs1 == 1)) {
+        //UHS-I DDR50
+        ESP_LOGV(TAG, "%s: to switch to DDR50", __func__);
+        if ((supported_mask & BIT(SD_ACCESS_MODE_DDR50)) == 0) {
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto out;
+        }
+        err = sdmmc_send_cmd_switch_func(card, 1, SD_ACCESS_MODE, SD_ACCESS_MODE_DDR50, response);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
+            goto out;
+        }
+
+        card->is_ddr = 1;
+        err = (*card->host.set_bus_ddr_mode)(card->host.slot, true);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: failed to switch bus to DDR mode (0x%x)", __func__, err);
+            return err;
+        }
+    } else if (card->host.max_freq_khz == SDMMC_FREQ_SDR104) {
+        //UHS-I SDR104
+        ESP_LOGV(TAG, "%s: to switch to SDR104", __func__);
+        if ((supported_mask & BIT(SD_ACCESS_MODE_SDR104)) == 0) {
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto out;
+        }
+        err = sdmmc_send_cmd_switch_func(card, 1, SD_ACCESS_MODE, SD_ACCESS_MODE_SDR104, response);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
+            goto out;
+        }
+    } else if (card->host.max_freq_khz == SDMMC_FREQ_SDR50) {
+        //UHS-I SDR50
+        ESP_LOGV(TAG, "%s: to switch to SDR50", __func__);
+        if ((supported_mask & BIT(SD_ACCESS_MODE_SDR50)) == 0) {
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto out;
+        }
+        err = sdmmc_send_cmd_switch_func(card, 1, SD_ACCESS_MODE, SD_ACCESS_MODE_SDR50, response);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
+            goto out;
+        }
+    } else {
+        ESP_LOGV(TAG, "%s: to switch to SDR25", __func__);
+        if ((supported_mask & BIT(SD_ACCESS_MODE_SDR25)) == 0) {
+            err = ESP_ERR_NOT_SUPPORTED;
+            goto out;
+        }
+        err = sdmmc_send_cmd_switch_func(card, 1, SD_ACCESS_MODE, SD_ACCESS_MODE_SDR25, response);
+        if (err != ESP_OK) {
+            ESP_LOGD(TAG, "%s: sdmmc_send_cmd_switch_func (2) returned 0x%x", __func__, err);
+            goto out;
+        }
     }
 
 out:
     free(response);
     return err;
+}
+
+static const uint8_t s_tuning_block_pattern[] = {
+	0xff, 0x0f, 0xff, 0x00, 0xff, 0xcc, 0xc3, 0xcc,
+	0xc3, 0x3c, 0xcc, 0xff, 0xfe, 0xff, 0xfe, 0xef,
+	0xff, 0xdf, 0xff, 0xdd, 0xff, 0xfb, 0xff, 0xfb,
+	0xbf, 0xff, 0x7f, 0xff, 0x77, 0xf7, 0xbd, 0xef,
+	0xff, 0xf0, 0xff, 0xf0, 0x0f, 0xfc, 0xcc, 0x3c,
+	0xcc, 0x33, 0xcc, 0xcf, 0xff, 0xef, 0xff, 0xee,
+	0xff, 0xfd, 0xff, 0xfd, 0xdf, 0xff, 0xbf, 0xff,
+	0xbb, 0xff, 0xf7, 0xff, 0xf7, 0x7f, 0x7b, 0xde,
+};
+
+/**
+ * Find consecutive successful sampling points.
+ * e.g. array: {1, 1, 0, 0, 1, 1, 1, 0}
+ * out_length: 3
+ * outout_end_index: 6
+ */
+static void find_max_consecutive_success_points(int *array, size_t size, size_t *out_length, uint32_t *out_end_index)
+{
+    uint32_t max = 0;
+    uint32_t match_num = 0;
+    uint32_t i = 0;
+    uint32_t end = 0;
+
+    while (i < size) {
+        if (array[i] == 1) {
+            match_num++;
+        } else {
+            if (match_num > max) {
+                max = match_num;
+                end = i - 1;
+            }
+            match_num = 0;
+        }
+        i++;
+    }
+
+    *out_length = match_num > max ? match_num : max;
+    *out_end_index = match_num == size ? size : end;
+}
+
+static esp_err_t read_tuning_block(sdmmc_card_t *card)
+{
+    esp_err_t ret = ESP_FAIL;
+    size_t tuning_block_size = sizeof(s_tuning_block_pattern);
+    ESP_LOGV(TAG, "tuning_block_size: %zu", tuning_block_size);
+    uint8_t *databuf = NULL;
+    databuf = heap_caps_calloc(1, tuning_block_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    ESP_RETURN_ON_FALSE(databuf, ESP_ERR_NO_MEM, TAG, "no mem for tuning block databuf");
+
+    sdmmc_command_t cmd = {
+        .opcode = MMC_SEND_TUNING_BLOCK,
+        .flags = SCF_CMD_ADTC | SCF_CMD_READ | SCF_RSP_R1,
+        .blklen = tuning_block_size,
+        .data = (void *) databuf,
+        .datalen = 1 * tuning_block_size,
+        .buflen = tuning_block_size,
+    };
+
+    ret = sdmmc_send_cmd(card, &cmd);
+    if (ret != ESP_OK) {
+        ESP_LOGW(TAG, "%s: sdmmc_send_cmd returned 0x%x", __func__, ret);
+        return ret;
+    }
+
+    uint32_t status = 0;
+    size_t count = 0;
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
+    while (!host_is_spi(card) && !(status & MMC_R1_READY_FOR_DATA)) {
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
+            ESP_LOGW(TAG, "read sectors dma - timeout");
+            return ESP_ERR_TIMEOUT;
+        }
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
+        ret = sdmmc_send_cmd_send_status(card, &status);
+        if (ret != ESP_OK) {
+            ESP_LOGW(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, ret);
+            return ret;
+        }
+        if (++count % 16 == 0) {
+            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+        }
+    }
+
+    bool success = false;
+    if (memcmp(s_tuning_block_pattern, databuf, tuning_block_size) == 0) {
+        success = true;
+    }
+
+    return success ? ESP_OK : ESP_FAIL;
+}
+
+esp_err_t sdmmc_do_timing_tuning(sdmmc_card_t *card)
+{
+    esp_err_t ret = ESP_FAIL;
+
+    ESP_RETURN_ON_FALSE(!host_is_spi(card), ESP_ERR_NOT_SUPPORTED, TAG, "sdspi not supported timing tuning");
+    ESP_RETURN_ON_FALSE(card->host.set_input_delay, ESP_ERR_NOT_SUPPORTED, TAG, "input phase delay feature isn't supported");
+
+    int results[SDMMC_DELAY_PHASE_AUTO] = {};
+    int slot = card->host.slot;
+    for (int i = SDMMC_DELAY_PHASE_0; i < SDMMC_DELAY_PHASE_AUTO; i++) {
+        ESP_RETURN_ON_ERROR((*card->host.set_input_delay)(slot, i), TAG, "failed to set input delay");
+
+        ret = read_tuning_block(card);
+        if (ret == ESP_OK) {
+            results[i] += 1;
+        }
+    }
+
+    for (int i = 0; i < 4; i++) {
+        ESP_LOGV(TAG, "results[%d]: %d", i, results[i]);
+    }
+
+    size_t consecutive_len = 0;
+    uint32_t end = 0;
+    find_max_consecutive_success_points(results, SDMMC_DELAY_PHASE_AUTO, &consecutive_len, &end);
+
+    sdmmc_delay_phase_t proper_delay_phase = SDMMC_DELAY_PHASE_AUTO;
+    if (consecutive_len == 1) {
+        proper_delay_phase = end;
+    } else if (consecutive_len <= SDMMC_DELAY_PHASE_AUTO) {
+        proper_delay_phase = end / 2;
+    } else {
+        assert(false && "exceeds max tuning point");
+    }
+    ESP_LOGV(TAG, "%s: proper_delay_phase: %d\n", __func__, proper_delay_phase);
+
+    if (proper_delay_phase != SDMMC_DELAY_PHASE_AUTO) {
+        ESP_RETURN_ON_ERROR((*card->host.set_input_delay)(slot, proper_delay_phase), TAG, "failed to set input delay");
+    }
+
+    return ESP_OK;
+}
+
+esp_err_t sdmmc_select_driver_strength(sdmmc_card_t *card, sdmmc_driver_strength_t driver_strength)
+{
+    if (card->scr.sd_spec < SCR_SD_SPEC_VER_1_10 ||
+        ((card->csd.card_command_class & SD_CSD_CCC_SWITCH) == 0)) {
+            return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    esp_err_t ret = ESP_FAIL;
+    sdmmc_switch_func_rsp_t *response = NULL;
+    response = heap_caps_calloc(1, sizeof(*response), MALLOC_CAP_DMA);
+    ESP_RETURN_ON_FALSE(response, ESP_ERR_NO_MEM, TAG, "no mem for response buf");
+
+    ret = sdmmc_send_cmd_switch_func(card, 1, SD_DRIVER_STRENGTH, driver_strength, response);
+    ESP_GOTO_ON_ERROR(ret, out, TAG, "%s: sdmmc_send_cmd_switch_func (1) returned 0x%x", __func__, ret);
+
+    uint32_t supported_mask = SD_SFUNC_SELECTED(response->data, SD_DRIVER_STRENGTH);
+    ESP_GOTO_ON_FALSE(supported_mask != 0xf, ESP_ERR_NOT_SUPPORTED, out, TAG, "switch group1 result fail");
+    ESP_LOGV(TAG, "driver strength: supported_mask: 0x%"PRIx32, supported_mask);
+    ESP_GOTO_ON_FALSE(supported_mask == driver_strength, ESP_ERR_INVALID_ARG, out, TAG, "fail to switch to type 0x%x", driver_strength);
+
+out:
+    free(response);
+    return ret;
 }
 
 esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
@@ -281,10 +496,11 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
     }
 
     /* Try to enabled HS mode */
-    esp_err_t err = sdmmc_enable_hs_mode(card);
+    esp_err_t err = sdmmc_enter_higher_speed_mode(card);
     if (err != ESP_OK) {
         return err;
     }
+
     /* HS mode has been enabled on the card.
      * Read CSD again, it should now indicate that the card supports
      * 50MHz clock.
@@ -313,13 +529,61 @@ esp_err_t sdmmc_enable_hs_mode_and_check(sdmmc_card_t* card)
         }
     }
 
-    if (card->csd.tr_speed != 50000000) {
-        ESP_LOGW(TAG, "unexpected: after enabling HS mode, tr_speed=%d", card->csd.tr_speed);
-        return ESP_ERR_NOT_SUPPORTED;
+    ESP_LOGD(TAG, "%s: after enabling HS mode, tr_speed=%d", __func__, card->csd.tr_speed);
+    card->max_freq_khz = MIN(card->host.max_freq_khz, SDMMC_FREQ_SDR104);
+
+    return ESP_OK;
+}
+
+static esp_err_t sdmmc_init_sd_uhs1_volt_sw_cb(void* arg, int voltage_mv)
+{
+    sdmmc_card_t* card = (sdmmc_card_t*)arg;
+    ESP_LOGV(TAG, "%s: Voltage switch callback (%umv)", __func__, voltage_mv);
+    return sd_pwr_ctrl_set_io_voltage(card->host.pwr_ctrl_handle, voltage_mv);
+}
+
+esp_err_t sdmmc_init_sd_uhs1(sdmmc_card_t* card)
+{
+    sdmmc_command_t cmd = {
+            .opcode = SD_SWITCH_VOLTAGE,
+            .arg = 0,
+            .flags = SCF_CMD_AC | SCF_RSP_R1,
+            .volt_switch_cb = &sdmmc_init_sd_uhs1_volt_sw_cb,
+            .volt_switch_cb_arg = card
+    };
+    esp_err_t err = sdmmc_send_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "%s: send_cmd returned 0x%x", __func__, err);
     }
 
-    card->max_freq_khz = MIN(card->host.max_freq_khz, SDMMC_FREQ_HIGHSPEED);
-    return ESP_OK;
+    card->is_uhs1 = 1;
+
+    return err;
+}
+
+esp_err_t sdmmc_select_current_limit(sdmmc_card_t *card, sdmmc_current_limit_t current_limit)
+{
+    if (card->scr.sd_spec < SCR_SD_SPEC_VER_1_10 ||
+        ((card->csd.card_command_class & SD_CSD_CCC_SWITCH) == 0)) {
+            return ESP_ERR_NOT_SUPPORTED;
+    }
+
+    esp_err_t ret = ESP_FAIL;
+    sdmmc_switch_func_rsp_t *response = NULL;
+    response = heap_caps_calloc(1, sizeof(*response), MALLOC_CAP_DMA);
+    ESP_RETURN_ON_FALSE(response, ESP_ERR_NO_MEM, TAG, "no mem for response buf");
+
+    ret = sdmmc_send_cmd_switch_func(card, 1, SD_CURRENT_LIMIT, current_limit, response);
+    ESP_GOTO_ON_ERROR(ret, out, TAG, "%s: sdmmc_send_cmd_switch_func (1) returned 0x%x", __func__, ret);
+
+    uint32_t supported_mask = SD_SFUNC_SELECTED(response->data, SD_CURRENT_LIMIT);
+    ESP_GOTO_ON_FALSE(supported_mask != 0xf, ESP_ERR_NOT_SUPPORTED, out, TAG, "switch group4 result fail");
+    ESP_LOGV(TAG, "current limit: supported_mask: 0x%"PRIx32, supported_mask);
+    ESP_GOTO_ON_FALSE(supported_mask == current_limit, ESP_ERR_INVALID_ARG, out, TAG, "fail to switch to type 0x%x", current_limit);
+
+out:
+    free(response);
+    return ret;
 }
 
 esp_err_t sdmmc_check_scr(sdmmc_card_t* card)
@@ -390,11 +654,22 @@ esp_err_t sdmmc_decode_csd(sdmmc_response_t response, sdmmc_csd_t* out_csd)
         out_csd->capacity *= read_bl_size / out_csd->sector_size;
     }
     int speed = SD_CSD_SPEED(response);
-    if (speed == SD_CSD_SPEED_50_MHZ) {
+    ESP_LOGV(TAG, "%s: speed: 0x%x", __func__, speed);
+    switch (speed) {
+    case SD_CSD_SPEED_50_MHZ:
         out_csd->tr_speed = 50000000;
-    } else {
+        break;
+    case SD_CSD_SPEED_100_MHZ:
+        out_csd->tr_speed = 100000000;
+        break;
+    case SD_CSD_SPEED_200_MHZ:
+        out_csd->tr_speed = 200000000;
+        break;
+    default:
         out_csd->tr_speed = 25000000;
+        break;
     }
+
     return ESP_OK;
 }
 

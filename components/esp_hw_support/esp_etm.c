@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,7 +16,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "soc/soc_caps.h"
-#include "soc/periph_defs.h"
+#include "soc/etm_periph.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_heap_caps.h"
@@ -25,10 +25,13 @@
 #include "hal/etm_ll.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/etm_interface.h"
+#include "esp_private/sleep_retention.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
 
-#if CONFIG_IDF_TARGET_ESP32P4
+#define ETM_USE_RETENTION_LINK  (SOC_ETM_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
+#if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
 #define ETM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
@@ -70,6 +73,32 @@ struct esp_etm_channel_t {
 // ETM driver platform, it's always a singleton
 static etm_platform_t s_platform;
 
+#if ETM_USE_RETENTION_LINK
+static esp_err_t etm_create_sleep_retention_link_cb(void *arg)
+{
+    etm_group_t *group = (etm_group_t *)arg;
+    int group_id = group->group_id;
+    esp_err_t err = sleep_retention_entries_create(etm_reg_retention_info[group_id].regdma_entry_array,
+                                                   etm_reg_retention_info[group_id].array_size,
+                                                   REGDMA_LINK_PRI_ETM, etm_reg_retention_info[group_id].module);
+    return err;
+}
+
+static void etm_create_retention_module(etm_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module = etm_reg_retention_info[group_id].module;
+    _lock_acquire(&s_platform.mutex);
+    if ((sleep_retention_get_inited_modules() & BIT(module)) && !(sleep_retention_get_created_modules() & BIT(module))) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            // even though the sleep retention module create failed, ETM driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention link failed %d, power domain won't be turned off during sleep", group_id);
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // ETM_USE_RETENTION_LINK
+
 static etm_group_t *etm_acquire_group_handle(int group_id)
 {
     bool new_group = false;
@@ -90,7 +119,22 @@ static etm_group_t *etm_acquire_group_handle(int group_id)
                 etm_ll_enable_bus_clock(group_id, true);
                 etm_ll_reset_register(group_id);
             }
-
+#if ETM_USE_RETENTION_LINK
+            sleep_retention_module_t module = etm_reg_retention_info[group_id].module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = etm_create_sleep_retention_link_cb,
+                        .arg = group,
+                    },
+                },
+                .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+            };
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                // even though the sleep retention module init failed, ETM driver may still work, so just warning here
+                ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
+            }
+#endif // ETM_USE_RETENTION_LINK
             // initialize HAL context
             etm_hal_init(&group->hal);
         }
@@ -129,6 +173,15 @@ static void etm_release_group_handle(etm_group_t *group)
     _lock_release(&s_platform.mutex);
 
     if (do_deinitialize) {
+#if ETM_USE_RETENTION_LINK
+        sleep_retention_module_t module = etm_reg_retention_info[group_id].module;
+        if (sleep_retention_get_created_modules() & BIT(module)) {
+            sleep_retention_module_free(module);
+        }
+        if (sleep_retention_get_inited_modules() & BIT(module)) {
+            sleep_retention_module_deinit(module);
+        }
+#endif
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
@@ -192,6 +245,9 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     esp_err_t ret = ESP_OK;
     esp_etm_channel_t *chan = NULL;
     ESP_GOTO_ON_FALSE(config && ret_chan, ESP_ERR_INVALID_ARG, err, TAG, "invalid args");
+#if !SOC_ETM_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
+#endif // SOC_ETM_SUPPORT_SLEEP_RETENTION
 
     chan = heap_caps_calloc(1, sizeof(esp_etm_channel_t), ETM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(chan, ESP_ERR_NO_MEM, err, TAG, "no mem for channel");
@@ -200,6 +256,12 @@ esp_err_t esp_etm_new_channel(const esp_etm_channel_config_t *config, esp_etm_ch
     etm_group_t *group = chan->group;
     int group_id = group->group_id;
     int chan_id = chan->chan_id;
+
+#if ETM_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        etm_create_retention_module(group);
+    }
+#endif // ETM_USE_RETENTION_LINK
 
     chan->fsm = ETM_CHAN_FSM_INIT;
     ESP_LOGD(TAG, "new etm channel (%d,%d) at %p", group_id, chan_id, chan);

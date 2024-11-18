@@ -200,6 +200,7 @@
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_CMD_REG_NUM    (16) /*!< Number of I2C command registers */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 //ESP32-S2 support hardware clear bus
@@ -233,6 +234,7 @@
 #define SOC_LEDC_SUPPORT_APB_CLOCK       (1)
 #define SOC_LEDC_SUPPORT_REF_TICK        (1)
 #define SOC_LEDC_SUPPORT_XTAL_CLOCK      (1)
+#define SOC_LEDC_TIMER_NUM               (4)
 #define SOC_LEDC_CHANNEL_NUM             (8)
 #define SOC_LEDC_TIMER_BIT_WIDTH         (14)
 #define SOC_LEDC_SUPPORT_FADE_STOP       (1)
@@ -344,6 +346,7 @@
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP       (1)     /*!< Touch sensor supports sleep awake */
 #define SOC_TOUCH_SUPPORT_WATERPROOF        (1)     /*!< Touch sensor supports waterproof */
 #define SOC_TOUCH_SUPPORT_PROX_SENSING      (1)     /*!< Touch sensor supports proximity sensing */
+#define SOC_TOUCH_SUPPORT_DENOISE_CHAN      (1)     /*!< Touch sensor supports denoise channel */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM     (3)     /*!< Support touch proximity channel number. */
 
 #define SOC_TOUCH_SAMPLE_CFG_NUM            (1U)    /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
@@ -479,6 +482,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D4           (1)     /*!< Support XTAL_D4 clock as the LP_FAST clock source */
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

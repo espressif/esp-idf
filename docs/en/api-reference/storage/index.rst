@@ -37,22 +37,15 @@ For information about storage security, please refer to :doc:`Storage Security <
     wear-levelling
     storage-security.rst
 
-.. list-table:: Code Examples for Storage API
+Examples
+--------
+
+.. list-table:: NVS API examples
     :widths: 25 75
     :header-rows: 0
 
     * - **Code Example**
       - **Description**
-    * - :doc:`fatfs`
-      -
-    * - :example:`wear_leveling <storage/wear_levelling>`
-      - Demonstrates using FATFS over wear leveling on internal flash.
-    * - :example:`ext_flash_fatfs <storage/ext_flash_fatfs>`
-      - Demonstrates using FATFS over wear leveling on external flash.
-    * - :example:`fatfsgen <storage/fatfsgen>`
-      - Demonstrates the capabilities of Python-based tooling for FATFS images available on host computers.
-    * - :doc:`nvs_flash`
-      -
     * - :example:`nvs_rw_blob <storage/nvs_rw_blob>`
       - Shows the use of the C-style API to read and write blob data types in NVS flash.
     * - :example:`nvs_rw_value <storage/nvs_rw_value>`
@@ -61,20 +54,59 @@ For information about storage security, please refer to :doc:`Storage Security <
       - Shows the use of the C++-style API to read and write integer data types in NVS flash.
     * - :example:`nvsgen <storage/nvsgen>`
       - Demonstrates how to use the Python-based NVS image generation tool to create an NVS partition image from the contents of a CSV file.
-    * - :doc:`spiffs`
-      -
+
+.. list-table:: Common Filesystem API
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **Code Example**
+      - **Description**
+    * - :example:`fatfs/getting_started <storage/fatfs/getting_started>`
+      - Demonstrates basic common file API (stdio.h) usage over internal flash using FATFS.
+    * - :example:`fatfs/fs_operations <storage/fatfs/fs_operations>`
+      - Demonstrates POSIX API for filesystem manipulation, such as moving, removing and renaming files.
+
+.. list-table:: FATFS API examples
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **Code Example**
+      - **Description**
+    * - :example:`fatfsgen <storage/fatfs/fatfsgen>`
+      - Demonstrates the capabilities of Python-based tooling for FATFS images available on host computers.
+    * - :example:`ext_flash_fatfs <storage/fatfs/ext_flash>`
+      - Demonstrates using FATFS over wear leveling on external flash.
+    * - :example:`wear_leveling <storage/wear_levelling>`
+      - Demonstrates using FATFS over wear leveling on internal flash.
+
+.. list-table:: SPIFFS API examples
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **Code Example**
+      - **Description**
     * - :example:`spiffs <storage/spiffs>`
       - Shows the use of the SPIFFS API to initialize the filesystem and work with files using POSIX functions.
     * - :example:`spiffsgen <storage/spiffsgen>`
       - Demonstrates the capabilities of Python-based tooling for SPIFFS images available on host computers.
-    * - :doc:`partition`
-      -
+
+.. list-table:: Partition API examples
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **Code Example**
+      - **Description**
     * - :example:`partition_api <storage/partition_api>`
       - Provides an overview of API functions to look up particular partitions, perform basic I/O operations, and use partitions via CPU memory mapping.
     * - :example:`parttool <storage/parttool>`
       - Demonstrates the capabilities of Python-based tooling for partition images available on host computers.
-    * - :doc:`vfs`
-      -
+
+.. list-table:: VFS related examples
+    :widths: 25 75
+    :header-rows: 0
+
+    * - **Code Example**
+      - **Description**
     * - :example:`littlefs <storage/littlefs>`
       - Shows the use of the LittleFS component to initialize the filesystem and work with a file using POSIX functions.
     * - :example:`semihost_vfs <storage/semihost_vfs>`

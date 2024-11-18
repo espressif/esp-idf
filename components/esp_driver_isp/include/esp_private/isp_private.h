@@ -64,6 +64,7 @@ typedef struct isp_processor_t {
     color_space_pixel_format_t  out_color_format;
     uint32_t                    h_res;
     uint32_t                    v_res;
+    color_raw_element_order_t   bayer_order;
     /* sub module contexts */
     isp_af_ctlr_t               af_ctlr[SOC_ISP_AF_CTLR_NUMS];
     isp_awb_ctlr_t              awb_ctlr;
@@ -73,6 +74,7 @@ typedef struct isp_processor_t {
     isp_fsm_t                   demosaic_fsm;
     isp_fsm_t                   sharpen_fsm;
     isp_fsm_t                   color_fsm;
+    isp_fsm_t                   lsc_fsm;
     esp_isp_evt_cbs_t           cbs;
     void                        *user_data;
 
@@ -85,7 +87,7 @@ typedef struct isp_processor_t {
         uint32_t                ae_isr_added:    1;
         uint32_t                awb_isr_added:   1;
         uint32_t                sharp_isr_added: 1;
-        uint32_t                hist_isr_added: 1;
+        uint32_t                hist_isr_added:  1;
     } isr_users;
 
 } isp_processor_t;

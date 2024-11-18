@@ -16,6 +16,7 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "esp_private/critical_section.h"
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
@@ -26,14 +27,13 @@ Warning: The USB Host Library API is still a beta version and may be subject to 
 #include "esp_private/usb_phy.h"
 #include "usb/usb_host.h"
 
-static portMUX_TYPE host_lock = portMUX_INITIALIZER_UNLOCKED;
-
-#define HOST_ENTER_CRITICAL_ISR()       portENTER_CRITICAL_ISR(&host_lock)
-#define HOST_EXIT_CRITICAL_ISR()        portEXIT_CRITICAL_ISR(&host_lock)
-#define HOST_ENTER_CRITICAL()           portENTER_CRITICAL(&host_lock)
-#define HOST_EXIT_CRITICAL()            portEXIT_CRITICAL(&host_lock)
-#define HOST_ENTER_CRITICAL_SAFE()      portENTER_CRITICAL_SAFE(&host_lock)
-#define HOST_EXIT_CRITICAL_SAFE()       portEXIT_CRITICAL_SAFE(&host_lock)
+DEFINE_CRIT_SECTION_LOCK_STATIC(host_lock);
+#define HOST_ENTER_CRITICAL_ISR()       esp_os_enter_critical_isr(&host_lock)
+#define HOST_EXIT_CRITICAL_ISR()        esp_os_exit_critical_isr(&host_lock)
+#define HOST_ENTER_CRITICAL()           esp_os_enter_critical(&host_lock)
+#define HOST_EXIT_CRITICAL()            esp_os_exit_critical(&host_lock)
+#define HOST_ENTER_CRITICAL_SAFE()      esp_os_enter_critical_safe(&host_lock)
+#define HOST_EXIT_CRITICAL_SAFE()       esp_os_exit_critical_safe(&host_lock)
 
 #define HOST_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
@@ -309,21 +309,21 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_NEW_DEV: {
+        // Internal client
+        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
+        // External clients
         // Prepare a NEW_DEV client event message, the send it to all clients
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
             .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
-#if ENABLE_USB_HUBS
-        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
-#endif // ENABLE_USB_HUBS
         break;
     }
     case USBH_EVENT_DEV_GONE: {
-#if ENABLE_USB_HUBS
+        // Internal client
         hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
-#endif // ENABLE_USB_HUBS
+        // External clients
         // Prepare event msg, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
@@ -818,7 +818,7 @@ alloc_err:
         vSemaphoreDelete(event_sem);
     }
     heap_caps_free(client_obj);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)

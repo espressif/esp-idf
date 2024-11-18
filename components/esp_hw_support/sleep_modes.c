@@ -12,6 +12,7 @@
 
 #include "esp_attr.h"
 #include "esp_rom_caps.h"
+#include "esp_macros.h"
 #include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -61,6 +62,7 @@
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
+#include "hal/touch_sens_hal.h"
 #endif
 
 #include "sdkconfig.h"
@@ -222,7 +224,7 @@ typedef struct {
     } domain[ESP_PD_DOMAIN_MAX];
     portMUX_TYPE lock;
     uint64_t sleep_duration;
-    uint32_t wakeup_triggers : 15;
+    uint32_t wakeup_triggers : 20;
 #if SOC_PM_SUPPORT_EXT1_WAKEUP
     uint32_t ext1_trigger_mode : 22;  // 22 is the maximum RTCIO number in all chips
     uint32_t ext1_rtc_gpio_mask : 22;
@@ -296,7 +298,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if SOC_TOUCH_SENSOR_SUPPORTED && SOC_TOUCH_SENSOR_VERSION != 1
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
@@ -680,14 +682,15 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 #if REGI2C_ANA_CALI_PD_WORKAROUND
         regi2c_analog_cali_reg_read();
 #endif
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+        regi2c_tsens_reg_read();
+#endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61
-    // TODO: IDF-7370
     if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
+        // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
-#endif
 }
 
 /**
@@ -709,9 +712,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-#if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9304
     sar_periph_ctrl_power_enable();
-#endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
@@ -723,6 +724,9 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #endif
 #if REGI2C_ANA_CALI_PD_WORKAROUND
     regi2c_analog_cali_reg_write();
+#endif
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+    regi2c_tsens_reg_write();
 #endif
 }
 
@@ -803,7 +807,16 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
+#if SOC_PMU_SUPPORTED
+    // For PMU supported chips, CPU's PLL power can be turned off by PMU, so no need to disable the PLL at here.
+    // Leaving PLL on at this stage also helps USJ keep connection and retention operation (if they rely on this PLL).
+    rtc_clk_cpu_set_to_default_config();
+#else
+    // For earlier chips, there is no PMU module that can turn off the CPU's PLL, so it has to be disabled at here to save the power consumption.
+    // Though ESP32C3/S3 has USB CDC device, it can not function properly during sleep due to the lack of APB clock (before C6, USJ relies on APB clock to work).
+    // Therefore, we will always disable CPU's PLL (i.e. BBPLL).
     rtc_clk_cpu_freq_set_xtal();
+#endif
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
@@ -861,11 +874,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-#if SOC_TOUCH_SENSOR_VERSION == 3
         bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
-#else
-        bool keep_rtc_power_on = touch_ll_get_fsm_state();
-#endif
         if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
             pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
         }
@@ -901,7 +910,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     uint32_t sleep_flags = pd_flags;
 
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_DIG_USE_RC_FAST_MODE] && !deep_sleep) {
-        pd_flags &= ~RTC_SLEEP_PD_INT_8M;
+        sleep_flags &= ~RTC_SLEEP_PD_INT_8M;
         sleep_flags |= RTC_SLEEP_DIG_USE_8M;
     }
 
@@ -916,6 +925,12 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]) {
         sleep_flags |= RTC_SLEEP_XTAL_AS_RTC_FAST;
     }
+
+#if SOC_LP_VAD_SUPPORTED
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_LP_USE_XTAL_MODE] && !deep_sleep) {
+        sleep_flags |= RTC_SLEEP_LP_PERIPH_USE_XTAL;
+    }
+#endif
 
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
@@ -1106,12 +1121,14 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CLK_READY, (void *)0);
 
     if (!deep_sleep) {
-        s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
+        if (result == ESP_OK) {
+            s_config.ccount_ticks_record = esp_cpu_get_cycle_count();
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
-        if (pd_flags & PMU_SLEEP_PD_TOP) {
-            sleep_retention_do_system_retention(false);
-        }
+            if (pd_flags & PMU_SLEEP_PD_TOP) {
+                sleep_retention_do_system_retention(false);
+            }
 #endif
+        }
         misc_modules_wake_prepare(pd_flags);
     }
 
@@ -1215,9 +1232,7 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     } else {
         // Because RTC is in a slower clock domain than the CPU, it
         // can take several CPU cycles for the sleep mode to start.
-        while (1) {
-            ;
-        }
+        ESP_INFINITE_LOOP();
     }
     // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_stall_resume();
@@ -1266,7 +1281,7 @@ static esp_err_t esp_light_sleep_inner(uint32_t pd_flags,
 #endif
 
     // If SPI flash was powered down, wait for it to become ready
-    if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+    if (!reject && (pd_flags & RTC_SLEEP_PD_VDDSDIO)) {
 #if SOC_PM_SUPPORT_TOP_PD
         if (pd_flags & PMU_SLEEP_PD_TOP) {
             uint32_t flash_ready_hw_waited_time_us = pmu_sleep_get_wakup_retention_cost();
@@ -1492,33 +1507,28 @@ esp_err_t esp_light_sleep_start(void)
         // Enter sleep, then wait for flash to be ready on wakeup
         err = esp_light_sleep_inner(pd_flags, flash_enable_time_us);
     }
-#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
-        if (err != ESP_OK) {
-            esp_sleep_cpu_skip_retention();
-        }
-#endif
 
     // light sleep wakeup flag only makes sense after a successful light sleep
     s_light_sleep_wakeup = (err == ESP_OK);
 
     // System timer has been stopped for the duration of the sleep, correct for that.
     uint64_t rtc_ticks_at_end = rtc_time_get();
-    uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
 
-#if CONFIG_ESP_SLEEP_DEBUG
-    if (s_sleep_ctx != NULL) {
-        s_sleep_ctx->sleep_out_rtc_time_stamp = rtc_ticks_at_end;
-    }
+    if (s_light_sleep_wakeup) {
+        uint64_t rtc_time_diff = rtc_time_slowclk_to_us(rtc_ticks_at_end - s_config.rtc_ticks_at_sleep_start, s_config.rtc_clk_cal_period);
+        /**
+         * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
+         * In this case, just ignore the time compensation and keep esp_timer monotonic.
+         */
+        if (rtc_time_diff > 0) {
+            esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
+        }
+        esp_set_time_from_rtc();
+    } else {
+#if !CONFIG_FREERTOS_UNICORE && ESP_SLEEP_POWER_DOWN_CPU && SOC_PM_CPU_RETENTION_BY_SW
+        esp_sleep_cpu_skip_retention();
 #endif
-
-    /**
-     * If sleep duration is too small(less than 1 rtc_slow_clk cycle), rtc_time_diff will be zero.
-     * In this case, just ignore the time compensation and keep esp_timer monotonic.
-     */
-    if (rtc_time_diff > 0) {
-        esp_timer_private_set(high_res_time_at_start + rtc_time_diff);
     }
-    esp_set_time_from_rtc();
 
     esp_clk_private_unlock();
     esp_timer_private_unlock();
@@ -1553,13 +1563,17 @@ esp_err_t esp_light_sleep_start(void)
 #endif // CONFIG_ESP_TASK_WDT_USE_ESP_TIMER
 
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_EXIT_SLEEP, (void *)0);
-    s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
 
 #if CONFIG_ESP_SLEEP_DEBUG
     if (s_sleep_ctx != NULL) {
+        s_sleep_ctx->sleep_out_rtc_time_stamp = rtc_ticks_at_end;
         s_sleep_ctx->sleep_request_result = err;
     }
 #endif
+
+    if (s_light_sleep_wakeup) {
+        s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+    }
 
     portEXIT_CRITICAL(&s_config.lock);
     return err;
@@ -1645,6 +1659,14 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
     return ESP_OK;
 }
 
+#if SOC_LP_VAD_SUPPORTED
+esp_err_t esp_sleep_enable_vad_wakeup(void)
+{
+    s_config.wakeup_triggers |= RTC_LP_VAD_TRIG_EN;
+    return esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, true);
+}
+#endif
+
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 {
     if (sleep_duration < 0) {
@@ -1671,26 +1693,7 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if SOC_TOUCH_SENSOR_VERSION == 2
-/* In deep sleep mode, only the sleep channel is supported, and other touch channels should be turned off. */
-static void touch_wakeup_prepare(void)
-{
-    uint16_t sleep_cycle = 0;
-    uint16_t meas_times = 0;
-    touch_pad_t touch_num = TOUCH_PAD_NUM0;
-    touch_ll_sleep_get_channel_num(&touch_num); // Check if the sleep pad is enabled.
-    if ((touch_num > TOUCH_PAD_NUM0) && (touch_num < TOUCH_PAD_MAX) && touch_ll_get_fsm_state()) {
-        touch_ll_stop_fsm();
-        touch_ll_clear_channel_mask(TOUCH_PAD_BIT_MASK_ALL);
-        touch_ll_intr_clear(TOUCH_PAD_INTR_MASK_ALL); // Clear state from previous wakeup
-        touch_hal_sleep_channel_get_work_time(&sleep_cycle, &meas_times);
-        touch_ll_set_meas_times(meas_times);
-        touch_ll_set_sleep_time(sleep_cycle);
-        touch_ll_set_channel_mask(BIT(touch_num));
-        touch_ll_start_fsm();
-    }
-}
-#elif SOC_TOUCH_SENSOR_VERSION == 3
+#if SOC_TOUCH_SENSOR_VERSION >= 2
 static void touch_wakeup_prepare(void)
 {
     touch_hal_prepare_deep_sleep();
@@ -2166,6 +2169,10 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
     } else if (wakeup_cause & RTC_LP_CORE_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_ULP;
 #endif
+#if SOC_LP_VAD_SUPPORTED
+    } else if (wakeup_cause & RTC_LP_VAD_TRIG_EN) {
+        return ESP_SLEEP_WAKEUP_VAD;
+#endif
     } else {
         return ESP_SLEEP_WAKEUP_UNDEFINED;
     }
@@ -2229,6 +2236,7 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream) {
                                 [ESP_SLEEP_ULTRA_LOW_MODE]              = "ESP_SLEEP_ULTRA_LOW_MODE",
                                 [ESP_SLEEP_RTC_FAST_USE_XTAL_MODE]      = "ESP_SLEEP_RTC_FAST_USE_XTAL_MODE",
                                 [ESP_SLEEP_DIG_USE_XTAL_MODE]           = "ESP_SLEEP_DIG_USE_XTAL_MODE",
+                                [ESP_SLEEP_LP_USE_XTAL_MODE]            = "ESP_SLEEP_LP_USE_XTAL_MODE",
                             }[mode],
                             s_sleep_sub_mode_ref_cnt[mode] ? "ENABLED" : "DISABLED",
                             s_sleep_sub_mode_ref_cnt[mode]);
@@ -2340,6 +2348,11 @@ static uint32_t get_power_down_flags(void)
 #ifndef CONFIG_ESP_SLEEP_POWER_DOWN_FLASH
         s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option = ESP_PD_OPTION_ON;
 #endif
+#if CONFIG_IDF_TARGET_ESP32P4
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+            s_config.domain[ESP_PD_DOMAIN_VDDSDIO].pd_option = ESP_PD_OPTION_ON;
+        }
+#endif
     }
 #endif
 
@@ -2427,6 +2440,13 @@ static uint32_t get_power_down_flags(void)
     }
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32P4
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 100)) {
+        if (pd_flags & RTC_SLEEP_PD_VDDSDIO) {
+            ESP_LOGE(TAG, "ESP32P4 chips lower than v1.0 are not allowed to power down the Flash");
+        }
+    }
+#endif
     return pd_flags;
 }
 

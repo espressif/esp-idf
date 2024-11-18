@@ -433,6 +433,20 @@ menu "LWIP"
                 Enabling this option allows DHCP server to support temporary static ARP entries
                 for DHCP Client. This will help the DHCP server to send the DHCP OFFER and DHCP ACK using IP unicast.
 
+        config LWIP_DHCPS_ADD_DNS
+            bool "Always add DNS option in DHCP responses"
+            default y
+            depends on LWIP_DHCPS
+            help
+                This allows the DNS option to be optional in the DHCP offers,
+                depending on the server's runtime configuration.
+                When enabled, the DHCP server will always add the DNS option to DHCP responses.
+                If a DNS server is not explicitly configured, the server's IP address will be used
+                as the fallback for the DNS option.
+                When disabled, the DHCP server will only include the DNS option in responses
+                if a DNS server has been explicitly configured.
+                This option will be removed in IDF v6.x
+
     endmenu # DHCPS
 
     menuconfig LWIP_AUTOIP
@@ -730,8 +744,8 @@ menu "LWIP"
             int "The maximum number of pbufs queued on OOSEQ per pcb"
             depends on LWIP_TCP_QUEUE_OOSEQ
             range 0 12
-            default 4 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-            default 0 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            default 4 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+            default 0 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             help
                 If LWIP_TCP_OOSEQ_MAX_PBUFS = 0, TCP will not control the number of OOSEQ pbufs.
 
@@ -787,7 +801,7 @@ menu "LWIP"
 
         config LWIP_WND_SCALE
             bool "Support TCP window scale"
-            depends on SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+            depends on (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
             default n
             help
                 Enable this feature to support TCP window scaling.

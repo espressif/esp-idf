@@ -16,7 +16,7 @@
 #include "esp_random.h"
 #include "esp_attr.h"
 #include "test_mipi_dsi_board.h"
-#include "esp_lcd_ili9881c.h"
+#include "esp_lcd_ek79007.h"
 
 IRAM_ATTR static bool test_rgb_panel_count_in_callback(esp_lcd_panel_handle_t panel, esp_lcd_dpi_panel_event_data_t *edata, void *user_ctx)
 {
@@ -32,12 +32,11 @@ static void IRAM_ATTR test_delay_post_cache_disable(void *args)
 
 #define TEST_IMG_SIZE (100 * 100 * sizeof(uint16_t))
 
-TEST_CASE("MIPI DSI draw bitmap (ILI9881C) IRAM Safe", "[mipi_dsi]")
+TEST_CASE("MIPI DSI draw bitmap (EK79007) IRAM Safe", "[mipi_dsi]")
 {
     esp_lcd_dsi_bus_handle_t mipi_dsi_bus;
     esp_lcd_panel_io_handle_t mipi_dbi_io;
     esp_lcd_panel_handle_t mipi_dpi_panel;
-    esp_lcd_panel_handle_t ili9881c_ctrl_panel;
 
     test_bsp_enable_dsi_phy_power();
 
@@ -59,22 +58,11 @@ TEST_CASE("MIPI DSI draw bitmap (ILI9881C) IRAM Safe", "[mipi_dsi]")
     };
     TEST_ESP_OK(esp_lcd_new_panel_io_dbi(mipi_dsi_bus, &dbi_config, &mipi_dbi_io));
 
-    esp_lcd_panel_dev_config_t lcd_dev_config = {
-        .bits_per_pixel = 16,
-        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
-        .reset_gpio_num = -1,
-    };
-    TEST_ESP_OK(esp_lcd_new_panel_ili9881c(mipi_dbi_io, &lcd_dev_config, &ili9881c_ctrl_panel));
-    TEST_ESP_OK(esp_lcd_panel_reset(ili9881c_ctrl_panel));
-    TEST_ESP_OK(esp_lcd_panel_init(ili9881c_ctrl_panel));
-    // turn on display
-    TEST_ESP_OK(esp_lcd_panel_disp_on_off(ili9881c_ctrl_panel, true));
-
     esp_lcd_dpi_panel_config_t dpi_config = {
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = MIPI_DSI_DPI_CLK_MHZ,
         .virtual_channel = 0,
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB565,
+        .in_color_format = LCD_COLOR_FMT_RGB565,
         .video_timing = {
             .h_size = MIPI_DSI_LCD_H_RES,
             .v_size = MIPI_DSI_LCD_V_RES,
@@ -86,8 +74,22 @@ TEST_CASE("MIPI DSI draw bitmap (ILI9881C) IRAM Safe", "[mipi_dsi]")
             .vsync_front_porch = MIPI_DSI_LCD_VFP,
         },
     };
-    TEST_ESP_OK(esp_lcd_new_panel_dpi(mipi_dsi_bus, &dpi_config, &mipi_dpi_panel));
+    ek79007_vendor_config_t vendor_config = {
+        .mipi_config = {
+            .dsi_bus = mipi_dsi_bus,
+            .dpi_config = &dpi_config,
+        },
+    };
+    esp_lcd_panel_dev_config_t lcd_dev_config = {
+        .reset_gpio_num = -1,
+        .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_RGB,
+        .bits_per_pixel = 16,
+        .vendor_config = &vendor_config,
+    };
+    TEST_ESP_OK(esp_lcd_new_panel_ek79007(mipi_dbi_io, &lcd_dev_config, &mipi_dpi_panel));
+    TEST_ESP_OK(esp_lcd_panel_reset(mipi_dpi_panel));
     TEST_ESP_OK(esp_lcd_panel_init(mipi_dpi_panel));
+
     uint32_t callback_calls = 0;
     esp_lcd_dpi_panel_event_callbacks_t cbs = {
         .on_refresh_done = test_rgb_panel_count_in_callback,
@@ -110,7 +112,6 @@ TEST_CASE("MIPI DSI draw bitmap (ILI9881C) IRAM Safe", "[mipi_dsi]")
     TEST_ASSERT(callback_calls > 2);
 
     TEST_ESP_OK(esp_lcd_panel_del(mipi_dpi_panel));
-    TEST_ESP_OK(esp_lcd_panel_del(ili9881c_ctrl_panel));
     TEST_ESP_OK(esp_lcd_panel_io_del(mipi_dbi_io));
     TEST_ESP_OK(esp_lcd_del_dsi_bus(mipi_dsi_bus));
     free(img);
