@@ -659,6 +659,18 @@ static esp_err_t set_server_config(esp_tls_cfg_server_t *cfg, esp_tls_t *tls)
             ESP_LOGE(TAG, "Failed to set server pki context");
             return esp_ret;
         }
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+    } else if (cfg->psk_hint_key) {
+        ESP_LOGD(TAG, "PSK authentication");
+        ret = mbedtls_ssl_conf_psk(&tls->conf, cfg->psk_hint_key->key, cfg->psk_hint_key->key_size,
+                                   (const unsigned char *)cfg->psk_hint_key->hint, strlen(cfg->psk_hint_key->hint));
+        if (ret != 0) {
+            ESP_LOGE(TAG, "mbedtls_ssl_conf_psk returned -0x%04X", -ret);
+            mbedtls_print_error_msg(ret);
+            ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
+            return ESP_ERR_MBEDTLS_SSL_CONF_PSK_FAILED;
+        }
+#endif
     } else {
 #if defined(CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK)
         if (cfg->cert_select_cb == NULL) {
@@ -789,7 +801,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #endif
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Resuing the saved client session");
+        ESP_LOGD(TAG, "Resuming the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
