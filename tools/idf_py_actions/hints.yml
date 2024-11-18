@@ -451,3 +451,7 @@
 -
     re: "implicit declaration of function '__VA_NARG__'"
     hint: "__VA_NARG_ has been renamed. Please use ESP_VA_NARG instead"
+
+-
+    re: "Configuration descriptor larger than control transfer max length"
+    hint: "Connected USB device has a large Configuration descriptor.\nTo increase the transfer size, go to 'idf.py menuconfig' -> 'Component config' -> 'USB-OTG' -> 'Largest size of transfers to/from default endpoints' and set appropriate size."
