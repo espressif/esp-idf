@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,23 +82,6 @@ void btc128_to_bta_uuid(tBT_UUID *p_dest, uint8_t *p_src)
 /*******************************************************************************
  * BTC -> BTA conversion functions
  *******************************************************************************/
-
-void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
-{
-    p_dest->len = p_src->len;
-    if (p_src->len == LEN_UUID_16) {
-        p_dest->uu.uuid16 = p_src->uuid.uuid16;
-    } else if (p_src->len == LEN_UUID_32) {
-        p_dest->uu.uuid32 = p_src->uuid.uuid32;
-    } else if (p_src->len == LEN_UUID_128) {
-        memcpy(&p_dest->uu.uuid128, p_src->uuid.uuid128, p_dest->len);
-    } else if (p_src->len == 0) {
-        /* do nothing for now, there's some scenario will input 0 */
-    } else {
-        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
-    }
-}
-
 void btc_to_bta_gatt_id(tBTA_GATT_ID *p_dest, esp_gatt_id_t *p_src)
 {
     p_dest->inst_id = p_src->inst_id;
@@ -115,23 +98,6 @@ void btc_to_bta_srvc_id(tBTA_GATT_SRVC_ID *p_dest, esp_gatt_srvc_id_t *p_src)
 /*******************************************************************************
  * BTA -> BTC conversion functions
  *******************************************************************************/
-void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
-{
-    p_dest->len = p_src->len;
-    if (p_src->len == LEN_UUID_16) {
-        p_dest->uuid.uuid16 = p_src->uu.uuid16;
-    } else if (p_src->len == LEN_UUID_32) {
-        p_dest->uuid.uuid32 = p_src->uu.uuid32;
-    } else if (p_src->len == LEN_UUID_128) {
-        memcpy(&p_dest->uuid.uuid128, p_src->uu.uuid128, p_dest->len);
-    } else if (p_src->len == 0) {
-        /* do nothing for now, there's some scenario will input 0
-           such as, receive notify, the descriptor may be 0 */
-    } else {
-        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
-    }
-}
-
 void bta_to_btc_gatt_id(esp_gatt_id_t *p_dest, tBTA_GATT_ID *p_src)
 {
     p_dest->inst_id = p_src->inst_id;
