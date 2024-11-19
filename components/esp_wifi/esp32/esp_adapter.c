@@ -447,7 +447,7 @@ static void coex_disable_wrapper(void)
 static IRAM_ATTR uint32_t coex_status_get_wrapper(void)
 {
 #if CONFIG_SW_COEXIST_ENABLE
-    return coex_status_get();
+    return coex_status_get(COEX_STATUS_GET_WIFI_BITMAP);
 #else
     return 0;
 #endif
