@@ -284,8 +284,11 @@ test_pytest_qemu:
     matrix:
       - IDF_TARGET: "esp32"
         INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+        # Skip Clang + Xtensa tests due to bootloader size issue
+        IDF_TOOLCHAIN: [gcc]
       - IDF_TARGET: "esp32c3"
         INSTALL_EXTRA_TOOLS: "qemu-riscv32"
+        IDF_TOOLCHAIN: [gcc, clang]
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
