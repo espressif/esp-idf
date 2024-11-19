@@ -1,11 +1,12 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/bluetooth/mesh.h>
-
+#include "mesh_v1.1/dfu/dfu.h"
+#if CONFIG_BLE_MESH_DFU_SLOTS
 /** @brief Slot iteration callback.
  *
  *  @param slot      A valid DFU image slot.
@@ -13,8 +14,8 @@
  *
  *  @return Iteration action determining next step.
  */
-typedef enum bt_mesh_dfu_iter (*bt_mesh_dfu_slot_cb_t)(
-	const struct bt_mesh_dfu_slot *slot, void *user_data);
+typedef enum bt_mesh_dfu_iter(*bt_mesh_dfu_slot_cb_t)
+(const struct bt_mesh_dfu_slot *slot, void *user_data);
 
 /** @brief Get the number of slots committed to the firmware list.
  *
@@ -41,24 +42,24 @@ struct bt_mesh_dfu_slot *bt_mesh_dfu_slot_reserve(void);
  *  @param size         The size of the image.
  *  @param metadata     Metadata or NULL.
  *  @param metadata_len Length of the metadata, at most @c
- *                      CONFIG_BT_MESH_DFU_METADATA_MAXLEN.
+ *                      CONFIG_BLE_MESH_DFU_METADATA_MAXLEN.
  *
  *  @return 0 on success, (negative) error code otherwise.
  */
 int bt_mesh_dfu_slot_info_set(struct bt_mesh_dfu_slot *dfu_slot, size_t size,
-			      const uint8_t *metadata, size_t metadata_len);
+                              const uint8_t *metadata, size_t metadata_len);
 
 /** @brief Set the new fwid for the incoming image for a reserved slot.
  *
  *  @param dfu_slot Pointer to the reserved slot for which to set the fwid.
  *  @param fwid     Fwid to set.
  *  @param fwid_len Length of the fwid, at most @c
- *                  CONFIG_BT_MESH_DFU_FWID_MAXLEN.
+ *                  CONFIG_BLE_MESH_DFU_FWID_MAXLEN.
  *
  *  @return 0 on success, (negative) error code otherwise.
  */
 int bt_mesh_dfu_slot_fwid_set(struct bt_mesh_dfu_slot *dfu_slot,
-			      const uint8_t *fwid, size_t fwid_len);
+                              const uint8_t *fwid, size_t fwid_len);
 
 /** @brief Commit the reserved slot to the list of slots, and store it
  *         persistently.
@@ -124,7 +125,7 @@ int bt_mesh_dfu_slot_img_idx_get(const struct bt_mesh_dfu_slot *slot);
 /** @brief Iterate through all DFU image slots.
  *
  *  Calls the callback for every DFU image slot or until the callback returns
- *  something other than @ref BT_MESH_DFU_ITER_CONTINUE.
+ *  something other than @ref BLE_MESH_DFU_ITER_CONTINUE.
  *
  *  @param cb        Callback to call for each slot, or NULL to just count the
  *                   number of slots.
@@ -133,3 +134,4 @@ int bt_mesh_dfu_slot_img_idx_get(const struct bt_mesh_dfu_slot *slot);
  *  @return The number of slots iterated over.
  */
 size_t bt_mesh_dfu_slot_foreach(bt_mesh_dfu_slot_cb_t cb, void *user_data);
+#endif /* CONFIG_BLE_MESH_DFU_SLOTS */

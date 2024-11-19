@@ -29,6 +29,7 @@ Mesh Core
     * Private Beacon
     * Subnet Bridge
     * Minor Enhancements
+    * Device Firmware Update (Preview)
 
 * Multiple Client Models Run Simultaneously
     * Support multiple client models send packets to different nodes simultaneously
@@ -131,6 +132,14 @@ Mesh Models
     * Light xyL Setup Server
     * Light LC Server
     * Light LC Setup Server
+
+* Device Firmware Update Client models
+    * Firmware Update Client model (Preview)
+    * Firmware Distribution Client model (coming soon)
+* Device Firmware Update Server models
+    * Firmware Update Server model (Preview)
+    * Firmware Distribution Server model (coming soon)
+
 
 Mesh Examples
 """""""""""""
