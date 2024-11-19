@@ -67,7 +67,7 @@
 
 * :component:`HTTP 解析器 <http_parser>` 基于 NGINX 中的 src/http/ngx_http_parse.c 文件，版权归 Igor Sysoev 所有。任何对源代码的额外修改经过与 NGINX、Joyent 公司及其他 Node 贡献者相同条款的许可。详情请参阅 :component_file:`LICENSE 文件 <http_parser/LICENSE.txt>`。
 
-* `SEGGER SystemView`_ 目标端库，版权归 1995-2021 赛格集团所有，并根据一条款 BSD 许可证进行许可。
+* `SEGGER SystemView`_ 目标端库，版权归 1995-2024 赛格集团所有，并根据一条款 BSD 许可证进行许可。
 
 * `protobuf-c`_ 是 C 语言的 Protocol Buffers 实现，版权归 2008-2022 Dave Benson 及 protobuf-c 作者所有。详情请参阅 :component_file:`LICENSE 文件 <protobuf-c/protobuf-c/LICENSE>`。
 

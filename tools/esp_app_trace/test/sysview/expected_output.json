@@ -3934,12 +3934,13 @@
             "xTimerPendFunctionCallFromISR": 163
         },
         "system": {
+            "SYS_DATA_SAMPLE": 23,
             "SYS_IDLE": 17,
             "SYS_INIT": 24,
             "SYS_ISR_ENTER": 2,
             "SYS_ISR_EXIT": 3,
             "SYS_ISR_TO_SCHEDULER": 18,
-            "SYS_MODULEDESC": 24,
+            "SYS_MODULEDESC": 22,
             "SYS_NAME_RESOURCE": 25,
             "SYS_NOP": 0,
             "SYS_NUMMODULES": 27,
