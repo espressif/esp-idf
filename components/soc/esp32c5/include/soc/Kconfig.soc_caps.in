@@ -1059,6 +1059,10 @@ config SOC_SPIRAM_XIP_SUPPORTED
     bool
     default y
 
+config SOC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
 config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
     default y

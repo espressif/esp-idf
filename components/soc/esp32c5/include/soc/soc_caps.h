@@ -439,6 +439,7 @@
 
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED        1
+#define SOC_PSRAM_DMA_CAPABLE           1
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)

@@ -20,7 +20,7 @@
 #include "soc/gdma_periph.h"
 #include "esp_private/gdma.h"
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE || CONFIG_GDMA_CTRL_FUNC_IN_IRAM
+#if CONFIG_GDMA_OBJ_DRAM_SAFE
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
