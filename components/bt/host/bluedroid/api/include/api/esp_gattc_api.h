@@ -319,14 +319,14 @@ esp_err_t esp_ble_gattc_app_unregister(esp_gatt_if_t gattc_if);
  *                  Note: Do not enable both BLE_42_FEATURE_SUPPORT and BLE_50_FEATURE_SUPPORT configuration options simultaneously.
  *
  * @param[in]       gattc_if: GATT client access interface.
- * @param[in]       esp_gatt_create_conn: Structure containing connection parameters.
+ * @param[in]       esp_gatt_create_conn: Pointer to the structure containing connection parameters.
  *
  * @return
  *                  - ESP_OK: Operation successful
  *                  - others: Operation failed
  *
  */
-esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn_params_t esp_gatt_create_conn);
+esp_err_t esp_ble_gattc_enh_open(esp_gatt_if_t gattc_if, esp_ble_gatt_creat_conn_params_t *esp_gatt_create_conn);
 
 /**
  * @brief           Open a direct connection or add a background auto connection
