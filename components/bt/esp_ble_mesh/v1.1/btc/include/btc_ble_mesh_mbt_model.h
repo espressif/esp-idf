@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,11 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if CONFIG_IDF_CI_BUILD
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
 typedef enum {
@@ -135,6 +140,10 @@ void btc_ble_mesh_mbt_server_cb_handler(btc_msg_t *msg);
 void bt_mesh_mbt_server_cb_evt_to_btc(uint8_t event,
                                       struct bt_mesh_model *model,
                                       struct bt_mesh_msg_ctx *ctx);
+
+#if CONFIG_IDF_CI_BUILD
+#pragma GCC diagnostic pop
+#endif
 
 #ifdef __cplusplus
 }

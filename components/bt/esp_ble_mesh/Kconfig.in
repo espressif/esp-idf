@@ -1644,11 +1644,13 @@ if BLE_MESH
                 Enable support for Lighting server models.
 
         config BLE_MESH_MBT_CLI
-            bool "BLOB Transfer Client model"
+            bool "BLOB Transfer Client model(Deprecated)"
             depends on BLE_MESH_V11_SUPPORT
             default n
             help
                 Enable support for BLOB Transfer Client model.
+                Warn: This version of the Mesh Binary Large Object Transfer Model will be deprecated,
+                and a new version will be released in the future.
 
         if BLE_MESH_MBT_CLI
 
@@ -1663,11 +1665,212 @@ if BLE_MESH
         endif # BLE_MESH_MBT_CLI
 
         config BLE_MESH_MBT_SRV
-            bool "BLOB Transfer Server model"
+            bool "BLOB Transfer Server model(Deprecated)"
             depends on BLE_MESH_V11_SUPPORT
             default n
             help
                 Enable support for BLOB Transfer Server model.
+                Warn: This version of the Mesh Binary Large Object Transfer Model will be deprecated,
+                and a new version will be released in the future.
+
+        menu "Binary Larger Object Transfer model"
+
+            config BLE_MESH_BLOB_SRV
+                bool "Support for BLOB Transfer Server model"
+                depends on BLE_MESH_V11_SUPPORT
+                help
+                    Enable the Binary Large Object (BLOB) Transfer Server model.
+
+            if BLE_MESH_BLOB_SRV
+
+                config BLE_MESH_BLOB_SRV_PULL_REQ_COUNT
+                    int "Number of chunks to request for each pull"
+                    default 4
+                    range 1 16
+                    help
+                        In Pull mode (Pull BLOB Transfer Mode), the BLOB Transfer Server
+                        requests a fixed number of chunks from the Client. Use this option to
+                        control the chunk count in the request. If the BLOB Transfer Server
+                        is instantiated on a Low Power node, the pull request count will be
+                        trimmed to not overflow the Friend queue.
+
+                config BLE_MESH_BLOB_SIZE_MAX
+                    int "Largest BLOB size in bytes"
+                    default 524288
+                    range 1 3257617792
+                    help
+                        The maximum object size a BLOB Transfer Server can receive.
+
+                config BLE_MESH_BLOB_BLOCK_SIZE_MIN
+                    int "Minimum block size"
+                    default 4096
+                    range 64 1048576 # 2^6 - 2^20
+                    help
+                        Minimum acceptable block size in a BLOB transfer. The transfer block
+                        size will be some number that is a power of two, and is between block
+                        size min and block size max. If no such number exists, a compile
+                        time warning will be issued.
+
+                config BLE_MESH_BLOB_BLOCK_SIZE_MAX
+                    int "Maximum block size"
+                    default 4096
+                    range BLE_MESH_BLOB_BLOCK_SIZE_MIN 1048576
+                    help
+                        Maximum acceptable block size in a BLOB transfer. The transfer block
+                        size will be some number that is a power of two, and is between block
+                        size min and block size max. If no such number exists, a compile
+                        time warning will be issued.
+
+                config BLE_MESH_BLOB_REPORT_TIMEOUT
+                    int "Partial Block Report interval in Pull mode"
+                    default 10
+                    range 1 31
+                    help
+                        The timer value that Pull BLOB Transfer Server uses to report missed chunks.
+
+                config BLE_MESH_RX_BLOB_CHUNK_SIZE
+                    depends on !BLE_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT
+                    int "BLOB Server chunk size"
+                    default 8
+                    range 8 377
+                    help
+                        Set the chunk size for the BLOB Server.
+                        The actual maximum chunk size depends on how many segments are
+                        possible and will be clamped to the max possible if set above.
+                        see also: BLE_MESH_RX_SEG_MAX,
+                        and the maximum SDU a node can receive.
+
+            endif # BLE_MESH_BLOB_SRV
+
+            config BLE_MESH_BLOB_CLI
+                bool "Support for BLOB Transfer Client model"
+                depends on BLE_MESH_V11_SUPPORT
+                help
+                    Enable the Binary Large Object (BLOB) Transfer Client model.
+
+            if BLE_MESH_BLOB_CLI
+
+                config BLE_MESH_BLOB_CLI_BLOCK_RETRIES
+                    int "Number of retries per block"
+                    default 5
+                    help
+                        Controls the number of times the client will attempt to resend missing
+                        chunks to the BLOB receivers for every block.
+
+                config BLE_MESH_TX_BLOB_CHUNK_SIZE
+                    depends on !BLE_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT
+                    int "BLOB Client chunk size"
+                    default 8
+                    range 1 377
+                    help
+                        Set the chunk size for the BLOB Client.
+                        The actual maximum chunk size depends on how many segments are
+                        possible and will be clamped to the max possible if set above.
+                        see also: BLE_MESH_TX_SEG_MAX,
+                        and the maximum SDU a node can receive.
+
+                config BLE_MESH_TX_BLOB_CHUNK_SEND_INTERVAL
+                    int "BLOB Client chunk send interval"
+                    default 0
+                    range 0 2147483647
+                    help
+                        Set the interval in milliseconds in which chunks are sent during the BLOB transfer.
+                        Note: Without a delay between each sent chunk, the network might become too busy with the
+                        BLOB transfer for other communications to succeed.
+                        Note: Timing restrictions, like the timeout base, should be considered or changed
+                        accordingly when setting this interval. Otherwise, the interval might be too big for the
+                        timeout settings and cause timeouts.
+
+            endif # BLE_MESH_BLOB_CLI
+
+            menu "BLOB models common configuration"
+                visible if BLE_MESH_BLOB_SRV || BLE_MESH_BLOB_CLI
+
+                config BLE_MESH_BLOB_CHUNK_COUNT_MAX
+                    int "Maximum chunk count per block"
+                    default 256
+                    range 1 2992
+                    help
+                        A BLOB transfer contains several blocks. Each block is made up of
+                        several chunks. This option controls the maximum chunk count per
+                        block.
+
+                config BLE_MESH_ALIGN_CHUNK_SIZE_TO_MAX_SEGMENT
+                    bool "Align chunk size to max segmented message size"
+                    default y
+
+            endmenu #BLOB models common configuration
+
+        endmenu # Binary Larger Object Transfer model
+
+        menu "Device Firmware Update model"
+
+            config BLE_MESH_DFU_SRV
+                bool "Support for Firmware Update Server model"
+                depends on BLE_MESH_BLOB_SRV
+                help
+                    Enable the Firmware Update Server model.
+
+            config BLE_MESH_DFU_CLI
+                bool "Support for Firmware Update Client model"
+                depends on BLE_MESH_BLOB_CLI
+                help
+                    Enable the Firmware Update Client model.
+
+            menu "Firmware Update model configuration"
+                visible if BLE_MESH_DFU_SRV || BLE_MESH_DFU_CLI
+
+                config BLE_MESH_DFU_FWID_MAXLEN
+                    int "DFU FWID max length"
+                    default 16
+                    range 0 106
+                    help
+                        This value defines the maximum length of an image's firmware ID.
+
+                config BLE_MESH_DFU_METADATA_MAXLEN
+                    int "DFU metadata max length"
+                    default 32
+                    range 18 255 if BLE_MESH_DFU_METADATA
+                    range 0 255
+                    help
+                        This value defines the maximum length of an image's metadata.
+
+                config BLE_MESH_DFU_METADATA
+                    bool "Support for the default metadata format"
+                    help
+                        This option adds a set of functions that can be used to encode and decode a firmware
+                        metadata using the format defined in the Bluetooth mesh DFU subsystem.
+
+                config BLE_MESH_DFU_URI_MAXLEN
+                    int "DFU URI max length"
+                    default 32
+                    range 0 255
+                    help
+                        This value defines the maximum length of an image's URI, not including
+                        a string terminator.
+
+            endmenu #Firmware Update model configuration
+
+            config BLE_MESH_DFU_SLOTS
+                bool "Firmware image slot manager"
+                default y if BLE_MESH_DFU_CLI
+                help
+                    Enable the DFU image slot manager, for managing firmware distribution slots
+                    for the Firmware Update Client model.
+
+            if BLE_MESH_DFU_SLOTS
+
+                config BLE_MESH_DFU_SLOT_CNT
+                    int "Number of firmware image slots"
+                    default 1
+                    range 1 32767
+                    help
+                        This value defines the number of firmware slots the DFU image slot manager
+                        can keep simultaneously.
+
+            endif #BLE_MESH_DFU_SLOTS
+
+        endmenu # Device Firmware Update model
 
     endmenu #Support for BLE Mesh Client/Server models
 

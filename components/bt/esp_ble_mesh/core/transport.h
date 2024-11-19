@@ -11,6 +11,7 @@
 #define _TRANSPORT_H_
 
 #include "net.h"
+#include "access.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -106,6 +106,10 @@ typedef enum {
     BTC_PID_TIME_SCENE_SERVER,
     BTC_PID_MBT_CLIENT,
     BTC_PID_MBT_SERVER,
+    BTC_PID_BLOB_CLIENT,
+    BTC_PID_BLOB_SERVER,
+    BTC_PID_DFU_CLIENT,
+    BTC_PID_DFU_SERVER,
     BTC_PID_BLE_MESH_BLE_COEX,
 #endif /* CONFIG_BLE_MESH */
 #if (BLE_FEAT_ISO_EN == TRUE)

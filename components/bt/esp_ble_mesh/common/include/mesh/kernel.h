@@ -37,7 +37,7 @@ extern "C" {
 #endif
 #endif
 
-#define BLE_MESH_ADV_TASK_STACK_SIZE    3072
+#define BLE_MESH_ADV_TASK_STACK_SIZE    (3072)
 #define BLE_MESH_ADV_TASK_NAME          "mesh_adv_task"
 #define BLE_MESH_ADV_TASK_PRIO          (configMAX_PRIORITIES - 5)
 

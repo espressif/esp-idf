@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2021 Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,14 +13,15 @@
  * @brief Common types and functions for the Bluetooth Mesh DFU metadata.
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__
-#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__
+#ifndef _BLE_MESH_v11_DFU_METADATA_H__
+#define _BLE_MESH_v11_DFU_METADATA_H__
 
 #include <stdint.h>
 
 #include <sys/types.h>
 
-#include <zephyr/kernel.h>
+#include "mesh/types.h"
+#include "mesh/utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -27,42 +29,40 @@ extern "C" {
 
 /** Firmware version. */
 struct bt_mesh_dfu_metadata_fw_ver {
-	/** Firmware major version. */
-	uint8_t major;
-	/** Firmware minor version. */
-	uint8_t minor;
-	/** Firmware revision. */
-	uint16_t revision;
-	/** Firmware build number. */
-	uint32_t build_num;
+    /** Firmware major version. */
+    uint8_t major;
+    /** Firmware minor version. */
+    uint8_t minor;
+    /** Firmware revision. */
+    uint16_t revision;
+    /** Firmware build number. */
+    uint32_t build_num;
 };
 
 /** Firmware core type. */
 enum bt_mesh_dfu_metadata_fw_core_type {
-	/** Application core. */
-	BT_MESH_DFU_FW_CORE_TYPE_APP = BIT(0),
-	/** Network core. */
-	BT_MESH_DFU_FW_CORE_TYPE_NETWORK = BIT(1),
-	/** Application-specific BLOB. */
-	BT_MESH_DFU_FW_CORE_TYPE_APP_SPECIFIC_BLOB = BIT(2),
+    /** Application core. */
+    BLE_MESH_DFU_FW_CORE_TYPE_APP = BIT(0),
+    /** Application-specific BLOB. */
+    BLE_MESH_DFU_FW_CORE_TYPE_APP_SPECIFIC_BLOB = BIT(2),
 };
 
 /** Firmware metadata. */
 struct bt_mesh_dfu_metadata {
-	/** New firmware version. */
-	struct bt_mesh_dfu_metadata_fw_ver fw_ver;
-	/** New firmware size. */
-	uint32_t fw_size;
-	/** New firmware core type. */
-	enum bt_mesh_dfu_metadata_fw_core_type fw_core_type;
-	/** Hash of incoming Composition Data. */
-	uint32_t comp_hash;
-	/** New number of node elements. */
-	uint16_t elems;
-	/** Application-specific data for new firmware. This field is optional. */
-	uint8_t *user_data;
-	/** Length of the application-specific field. */
-	uint32_t user_data_len;
+    /** New firmware version. */
+    struct bt_mesh_dfu_metadata_fw_ver fw_ver;
+    /** New firmware size. */
+    uint32_t fw_size;
+    /** New firmware core type. */
+    enum bt_mesh_dfu_metadata_fw_core_type fw_core_type;
+    /** Hash of incoming Composition Data. */
+    uint32_t comp_hash;
+    /** New number of node elements. */
+    uint16_t elems;
+    /** Application-specific data for new firmware. This field is optional. */
+    uint8_t *user_data;
+    /** Length of the application-specific field. */
+    uint32_t user_data_len;
 };
 
 /** @brief Decode a firmware metadata from a network buffer.
@@ -73,7 +73,7 @@ struct bt_mesh_dfu_metadata {
  *  @return 0 on success, or (negative) error code otherwise.
  */
 int bt_mesh_dfu_metadata_decode(struct net_buf_simple *buf,
-				struct bt_mesh_dfu_metadata *metadata);
+                                struct bt_mesh_dfu_metadata *metadata);
 
 /** @brief Encode a firmware metadata into a network buffer.
  *
@@ -83,7 +83,7 @@ int bt_mesh_dfu_metadata_decode(struct net_buf_simple *buf,
  *  @return 0 on success, or (negative) error code otherwise.
  */
 int bt_mesh_dfu_metadata_encode(const struct bt_mesh_dfu_metadata *metadata,
-				struct net_buf_simple *buf);
+                                struct net_buf_simple *buf);
 
 /** @brief Compute hash of the Composition Data state.
  *
@@ -110,6 +110,4 @@ int bt_mesh_dfu_metadata_comp_hash_local_get(uint8_t *key, uint32_t *hash);
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_METADATA_H__ */
-
-/** @} */
+#endif /* _BLE_MESH_v11_DFU_METADATA_H__ */
