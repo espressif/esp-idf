@@ -377,7 +377,7 @@ We are interested in the `ESP_GAP_SEARCH_INQ_RES_EVT` event, which is called eve
                         esp_ble_gatt_create_conn.is_direct = true;
                         esp_ble_gatt_create_conn.is_aux = false;
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                                            esp_ble_gatt_create_conn);
+                                            &esp_ble_gatt_create_conn);
                     }
                 }
             }

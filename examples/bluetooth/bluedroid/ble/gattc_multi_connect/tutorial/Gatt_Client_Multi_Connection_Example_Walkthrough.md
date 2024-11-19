@@ -167,7 +167,7 @@ The scan stop triggers an ``ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT`` event which is 
                         esp_ble_gatt_create_conn.is_direct = true;
                         esp_ble_gatt_create_conn.is_aux = false;
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                                            esp_ble_gatt_create_conn);
+                                            &esp_ble_gatt_create_conn);
                         Isconnecting = true;
                     }
                     break;
@@ -184,7 +184,7 @@ The scan stop triggers an ``ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT`` event which is 
                         esp_ble_gatt_create_conn.is_direct = true;
                         esp_ble_gatt_create_conn.is_aux = false;
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                                            esp_ble_gatt_create_conn);
+                                            &esp_ble_gatt_create_conn);
                         Isconnecting = true;
 
                     }
@@ -201,7 +201,7 @@ The scan stop triggers an ``ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT`` event which is 
                         esp_ble_gatt_create_conn.is_direct = true;
                         esp_ble_gatt_create_conn.is_aux = false;
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                                            esp_ble_gatt_create_conn);
+                                            &esp_ble_gatt_create_conn);
                         Isconnecting = true;
                     }
                     break;
