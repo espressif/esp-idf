@@ -20,7 +20,7 @@ components/esp_hw_support/test_apps/host_test_linux:
 
 components/esp_hw_support/test_apps/mspi:
   disable:
-    - if: IDF_TARGET != "esp32s3"
+    - if: IDF_TARGET not in ["esp32s3", "esp32p4"]
 
 components/esp_hw_support/test_apps/mspi_psram_with_dfs:
   disable:
