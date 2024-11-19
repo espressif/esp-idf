@@ -67,6 +67,16 @@ esp_netif_t *esp_openthread_get_backbone_netif(void);
 void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_handler handler);
 
 /**
+ * @brief   Registers the callback for spinel compatibility error.
+ *
+ * @note This function must be called before esp_openthread_init.
+ *
+ * @param[in]  callback   The callback.
+ *
+ */
+void esp_openthread_set_compatibility_error_callback(esp_openthread_compatibility_error_callback callback);
+
+/**
  * @brief   Deinitializes the connection to RCP.
  *
  * @return
