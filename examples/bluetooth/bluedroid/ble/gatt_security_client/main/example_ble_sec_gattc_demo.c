@@ -472,7 +472,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                         esp_ble_gatt_create_conn.is_direct = true;
                         esp_ble_gatt_create_conn.is_aux = false;
                         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                        esp_ble_gatt_create_conn);
+                        &esp_ble_gatt_create_conn);
                     }
                 }
             }
