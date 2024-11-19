@@ -14,6 +14,7 @@
 #include "mesh/config.h"
 #include "mesh/buf.h"
 #include "mesh/timer.h"
+#include "sys/types.h"
 
 /**
  * @brief Bluetooth Mesh Access Layer
@@ -151,8 +152,15 @@ struct bt_mesh_elem {
 #define BLE_MESH_MODEL_ID_LIGHT_LC_SRV              0x130f
 #define BLE_MESH_MODEL_ID_LIGHT_LC_SETUP_SRV        0x1310
 #define BLE_MESH_MODEL_ID_LIGHT_LC_CLI              0x1311
-#define BLE_MESH_MODEL_ID_MBT_SRV                   0x1400
-#define BLE_MESH_MODEL_ID_MBT_CLI                   0x1401
+#define BLE_MESH_MODEL_ID_BLOB_SRV                  0x1400
+#define BLE_MESH_MODEL_ID_BLOB_CLI                  0x1401
+#define BLE_MESH_MODEL_ID_DFU_SRV                   0x1402
+#define BLE_MESH_MODEL_ID_DFU_CLI                   0x1403
+#define BLE_MESH_MODEL_ID_DFD_SRV                   0x1404
+#define BLE_MESH_MODEL_ID_DFD_CLI                   0x1405
+
+#define BLE_MESH_MODEL_ID_MBT_SRV                   BLE_MESH_MODEL_ID_BLOB_SRV
+#define BLE_MESH_MODEL_ID_MBT_CLI                   BLE_MESH_MODEL_ID_BLOB_CLI
 
 typedef struct {
     uint32_t adv_itvl;
@@ -520,6 +528,8 @@ struct bt_mesh_model_pub {
         .update = _update, \
     }
 
+typedef ssize_t (*settings_read_cb)(void *cb_arg, void *data, size_t len);
+
 /** Model callback functions. */
 struct bt_mesh_model_cb {
     /** @brief Model init callback.
@@ -613,7 +623,7 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, uint32_t opcode);
  *
  * @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_send(struct bt_mesh_model *model,
+int bt_mesh_model_send(const struct bt_mesh_model *model,
                        struct bt_mesh_msg_ctx *ctx,
                        struct net_buf_simple *msg,
                        const struct bt_mesh_send_cb *cb,
@@ -642,7 +652,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model);
  *
  * @return Pointer to the element that the given model belongs to.
  */
-struct bt_mesh_elem *bt_mesh_model_elem(struct bt_mesh_model *mod);
+struct bt_mesh_elem *bt_mesh_model_elem(const struct bt_mesh_model *mod);
 
 /** @brief Find a SIG model.
  *

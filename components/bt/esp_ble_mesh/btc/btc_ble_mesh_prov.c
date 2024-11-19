@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1410,6 +1410,23 @@ typedef bt_mesh_client_user_data_t bt_mesh_mbt_client_t;
 extern const struct bt_mesh_model_op bt_mesh_mbt_cli_op[];
 extern const struct bt_mesh_model_cb bt_mesh_mbt_cli_cb;
 #endif /* CONFIG_BLE_MESH_MBT_CLI */
+#if CONFIG_BLE_MESH_BLOB_SRV
+extern const struct bt_mesh_model_op _bt_mesh_blob_srv_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_blob_srv_cb;
+#endif /* CONFIG_BLE_MESH_BLOB_SRV */
+#if CONFIG_BLE_MESH_BLOB_CLI
+typedef bt_mesh_client_user_data_t bt_mesh_blob_client_t;
+extern const struct bt_mesh_model_op _bt_mesh_blob_cli_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_blob_cli_cb;
+#endif /* CONFIG_BLE_MESH_BLOB_CLI */
+#if CONFIG_BLE_MESH_DFU_SRV
+extern const struct bt_mesh_model_op _bt_mesh_dfu_srv_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_dfu_srv_cb;
+#endif /* CONFIG_BLE_MESH_DFU_SRV */
+#if CONFIG_BLE_MESH_DFU_CLI
+extern const struct bt_mesh_model_op _bt_mesh_dfu_cli_op[];
+extern const struct bt_mesh_model_cb _bt_mesh_dfu_cli_cb;
+#endif /* CONFIG_BLE_MESH_DFU_CLI */
 
 static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
 {
@@ -2205,9 +2222,9 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
     case BLE_MESH_MODEL_ID_MBT_CLI:
         model->op = (esp_ble_mesh_model_op_t *)bt_mesh_mbt_cli_op;
         model->cb = (esp_ble_mesh_model_cbs_t *)&bt_mesh_mbt_cli_cb;
-        bt_mesh_mbt_client_t *cli = (bt_mesh_mbt_client_t *)model->user_data;
-        if (cli) {
-            cli->publish_status = btc_ble_mesh_mbt_client_publish_callback;
+        bt_mesh_mbt_client_t *mbt_cli = (bt_mesh_mbt_client_t *)model->user_data;
+        if (mbt_cli) {
+            mbt_cli->publish_status = btc_ble_mesh_mbt_client_publish_callback;
         }
         break;
 #endif /* CONFIG_BLE_MESH_MBT_CLI */
@@ -2220,6 +2237,43 @@ static void btc_ble_mesh_model_op_set(esp_ble_mesh_model_t *model)
         }
         break;
 #endif /* CONFIG_BLE_MESH_MBT_SRV */
+#if CONFIG_BLE_MESH_BLOB_CLI
+    case BLE_MESH_MODEL_ID_BLOB_CLI:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_blob_cli_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_blob_cli_cb;
+        bt_mesh_blob_client_t *blob_cli = (bt_mesh_blob_client_t *)model->user_data;
+        if (blob_cli) {
+            /* TBD: do we need publish callback for Blob Transfer Client model? */
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_BLOB_CLI */
+#if CONFIG_BLE_MESH_BLOB_SRV
+    case BLE_MESH_MODEL_ID_BLOB_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_blob_srv_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_blob_srv_cb;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_BLOB_SRV */
+#if CONFIG_BLE_MESH_DFU_CLI
+    case BLE_MESH_MODEL_ID_DFU_CLI:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_dfu_cli_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_dfu_cli_cb;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_DFU_CLI */
+#if CONFIG_BLE_MESH_DFU_SRV
+    case BLE_MESH_MODEL_ID_DFU_SRV:
+        model->op = (esp_ble_mesh_model_op_t *)_bt_mesh_dfu_srv_op;
+        model->cb = (esp_ble_mesh_model_cbs_t *)&_bt_mesh_dfu_srv_cb;
+        if (model->pub) {
+            model->pub->update = (esp_ble_mesh_cb_t)btc_ble_mesh_model_publish_update;
+        }
+        break;
+#endif /* CONFIG_BLE_MESH_DFU_SRV */
     default:
         goto set_vnd_op;
     }

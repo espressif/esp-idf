@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: 2018 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,10 +45,12 @@
  *      key: "mesh/s/xxxx/b"  -> write/read to set/get SIG MODEL Bind AppKey List
  *      key: "mesh/s/xxxx/s" -> write/read to set/get SIG MODEL Subscription List
  *      key: "mesh/s/xxxx/p" -> write/read to set/get SIG MODEL Publication
+ *      key: "mesh/s/xxxx/d" -> write/read to set/get SIG MODEL Data
  * key: "mesh/vnd" -> write/read to set/get all VENDOR MODEL model_keys.
  *      key: "mesh/v/xxxx/b"  -> write/read to set/get VENDOR MODEL Bind AppKey List
  *      key: "mesh/v/xxxx/s" -> write/read to set/get VENDOR MODEL Subscription List
  *      key: "mesh/v/xxxx/p" -> write/read to set/get VENDOR MODEL Publication
+ *      key: "mesh/v/xxxx/d" -> write/read to set/get VENDOR MODEL Data
  * key: "mesh/vaddr" -> write/read to set/get all virtual addresses
  *      key: "mesh/va/xxxx" -> write/read to set/get the "xxxx" virtual address
  * key: "mesh/dkca" -> write/read to set/get Device Key Candidate
@@ -2731,3 +2733,40 @@ void bt_mesh_settings_reset(bool erase)
 }
 
 #endif /* CONFIG_BLE_MESH_SETTINGS */
+
+#define SETTINGS_MAX_DIR_DEPTH 8
+
+int bt_mesh_model_data_store(struct bt_mesh_model *mod, bool vnd,
+                             const char *name, const void *data,
+                             size_t data_len)
+{
+    int err = 0;
+
+    char path[30] = {'\0'};
+    uint16_t model_key = 0U;
+
+    model_key = BLE_MESH_GET_MODEL_KEY(mod->elem_idx, mod->model_idx);
+    sprintf(path, "mesh/%s/%04x/d", vnd ? "v" : "s", model_key);
+    if (name) {
+        strcat(path, "/");
+        strncat(path, name, SETTINGS_MAX_DIR_DEPTH);
+    }
+
+    if (data_len) {
+        err = bt_mesh_save_core_settings(path, data, data_len);
+        if (err) {
+            BT_ERR("Failed to store %s", path);
+            return err;
+        }
+
+        err = bt_mesh_add_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+        if (err) {
+            BT_ERR("Failed to add model data to %s, model_key 0x%04x",
+                vnd ? "mesh/vnd" : "mesh/sig", model_key);
+        }
+    } else {
+        bt_mesh_erase_core_settings(path);
+        bt_mesh_remove_core_settings_item(vnd ? "mesh/vnd" : "mesh/sig", model_key);
+    }
+    return err;
+}
