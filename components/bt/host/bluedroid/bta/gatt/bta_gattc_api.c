@@ -128,7 +128,7 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 
 /*******************************************************************************
 **
-** Function         BTA_GATTC_Open
+** Function         BTA_GATTC_Enh_Open
 **
 ** Description      Open a direct connection or add a background auto connection
 **                  bd address
@@ -142,8 +142,8 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 ** Returns          void
 **
 *******************************************************************************/
-void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux)
+void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type)
 {
     tBTA_GATTC_API_OPEN  *p_buf;
 
@@ -155,6 +155,7 @@ void BTA_GATTC_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE 
         p_buf->transport = transport;
         p_buf->is_aux = is_aux;
         p_buf->remote_addr_type = remote_addr_type;
+        p_buf->own_addr_type = own_addr_type;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 
 
@@ -472,7 +473,7 @@ void  BTA_GATTC_GetGattDb(UINT16 conn_id, UINT16 start_handle, UINT16 end_handle
 ** Description      This function is called to read a characteristics value
 **
 ** Parameters       conn_id - connection ID.
-**                  handle - characteritic handle to read.
+**                  handle - characteristic handle to read.
 **
 ** Returns          None
 **
@@ -607,7 +608,7 @@ void BTA_GATTC_ReadMultipleVariable(UINT16 conn_id, tBTA_GATTC_MULTI *p_read_mul
 **
 ** Parameters       conn_id - connection ID.
 **                  s_handle - start handle.
-**                  e_handle - end hanle
+**                  e_handle - end handle
 **                  uuid - The attribute UUID.
 **
 ** Returns          None
@@ -687,7 +688,7 @@ void BTA_GATTC_WriteCharValue ( UINT16 conn_id,
 ** Description      This function is called to write descriptor value.
 **
 ** Parameters       conn_id - connection ID
-**                  handle - descriptor hadle to write.
+**                  handle - descriptor handle to write.
 **                  write_type - write type.
 **                  p_value - the value to be written.
 **
@@ -738,7 +739,7 @@ void BTA_GATTC_WriteCharDescr (UINT16 conn_id,
 ** Description      This function is called to prepare write a characteristic value.
 **
 ** Parameters       conn_id - connection ID.
-**                    p_char_id - GATT characteritic ID of the service.
+**                    p_char_id - GATT characteristic ID of the service.
 **                  offset - offset of the write value.
 **                  len: length of the data to be written.
 **                  p_value - the value to be written.
@@ -781,7 +782,7 @@ void BTA_GATTC_PrepareWrite  (UINT16 conn_id, UINT16 handle,
 ** Description      This function is called to prepare write a characteristic descriptor value.
 **
 ** Parameters       conn_id - connection ID.
-**                  p_char_descr_id - GATT characteritic descriptor ID of the service.
+**                  p_char_descr_id - GATT characteristic descriptor ID of the service.
 **                  offset - offset of the write value.
 **                  len: length of the data to be written.
 **                  p_value - the value to be written.
