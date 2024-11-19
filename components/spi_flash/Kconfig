@@ -36,7 +36,7 @@ menu "Main Flash configuration"
         choice SPI_FLASH_HPM
             prompt "High Performance Mode (READ DOCS FIRST, > 80MHz)"
             # Currently, only esp32s3 allows high performance mode.
-            depends on IDF_TARGET_ESP32S3 && !ESPTOOLPY_OCT_FLASH
+            depends on (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && !ESPTOOLPY_OCT_FLASH
             default SPI_FLASH_HPM_AUTO
             help
                 Whether the High Performance Mode of Flash is enabled. As an optional feature, user needs to manually
@@ -56,7 +56,7 @@ menu "Main Flash configuration"
         config SPI_FLASH_HPM_ON
             bool
             # For ESP32-S3, it's enabled by default. For later chips it should be disabled by default
-            default y if IDF_TARGET_ESP32S3 && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
+            default y if (IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32P4) && ((SPI_FLASH_HPM_ENA || SPI_FLASH_HPM_AUTO)) || \
                 (!IDF_TARGET_ESP32S3 && SPI_FLASH_HPM_ENA)
             help
                 This option is invisible, and will be selected automatically

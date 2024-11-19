@@ -360,7 +360,7 @@
 #define SOC_SPI_SCT_BUFFER_NUM_MAX                (1 + SOC_SPI_SCT_REG_NUM)  //1-word-bitmap + 14-word-regs
 #define SOC_SPI_SCT_CONF_BITLEN_MAX               0x3FFFA       //18 bits wide reg
 
-#define SOC_MEMSPI_SRC_FREQ_120M         1
+#define SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED          1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED          1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED          1

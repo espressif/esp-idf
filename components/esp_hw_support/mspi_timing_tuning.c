@@ -20,7 +20,8 @@
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
 #include "mspi_timing_by_dqs.h"
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS
+#include "mspi_timing_by_flash_delay.h"
+#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_timing_tuning_ll.h"
 #endif
@@ -343,7 +344,7 @@ void mspi_timing_flash_tuning(void)
      */
     mspi_timing_enter_low_speed_mode(true);
 
-#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+#if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
     mspi_tuning_cfg_drv_t drv = {
         .flash_tuning_type = MSPI_TIMING_TUNING_MSPI_DIN_DUMMY,
         .sweep_test_nums = 1,
@@ -365,7 +366,7 @@ void mspi_timing_flash_tuning(void)
     mspi_timing_config_t timing_configs = {0};
     mspi_timing_get_flash_tuning_configs(&timing_configs);
 
-#endif  //SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY
+#endif  //SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 
     s_do_tuning(reference_data, &timing_configs, true);
 

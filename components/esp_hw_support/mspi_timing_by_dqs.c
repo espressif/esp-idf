@@ -223,15 +223,3 @@ void mspi_timing_psram_config_set_tuning_regs(bool control_both_mspi)
         }
     }
 }
-
-void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
-{
-    //no need for now, may need set drvs
-    //keep for compatibility
-}
-
-void mspi_timing_flash_config_clear_tuning_regs(bool control_both_mspi)
-{
-    //no need for now, may need clear drvs
-    //keep for compatibility
-}

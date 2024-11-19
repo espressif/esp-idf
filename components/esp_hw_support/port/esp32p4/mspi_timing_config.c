@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,8 @@
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/psram_ctrlr_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
+#include "soc/hp_sys_clkrst_struct.h"
 
 const static char *TAG = "MSPI Timing";
 
@@ -35,5 +37,24 @@ void mspi_timing_config_set_psram_clock(uint32_t psram_freq_mhz, mspi_timing_spe
 
 void mspi_timing_config_set_flash_clock(uint32_t flash_freq_mhz, mspi_timing_speed_mode_t speed_mode, bool control_both_mspi)
 {
-    //For compatibility
+#if MSPI_TIMING_FLASH_NEEDS_TUNING
+    assert(HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel == 1);
+
+    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_FLASH_CORE_CLK_DIV;
+    assert(core_clock_mhz == 120);
+    uint32_t freqdiv = core_clock_mhz / flash_freq_mhz;
+
+    PERIPH_RCC_ATOMIC() {
+        //core clock shared among SPI0 / SPI1
+        mspi_timing_ll_set_flash_core_clock(MSPI_TIMING_LL_MSPI_ID_0, core_clock_mhz);
+    }
+
+    mspi_timing_ll_set_flash_clock(MSPI_TIMING_LL_MSPI_ID_0, freqdiv);
+    if (control_both_mspi) {
+        mspi_timing_ll_set_flash_clock(MSPI_TIMING_LL_MSPI_ID_1, freqdiv);
+    }
+
+    mspi_timing_ll_mask_invalid_dqs(MSPI_TIMING_LL_MSPI_ID_0, true);
+    mspi_timing_ll_mask_invalid_dqs(MSPI_TIMING_LL_MSPI_ID_1, true);
+#endif
 }
