@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2020 Nordic Semiconductor ASA
+ * SPDX-FileCopyrightText: 2020 Nordic Semiconductor ASA
+ * SPDX-FileContributor: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,12 +13,11 @@
  * @brief API for the Bluetooth Mesh Firmware Update Server model
  */
 
-#ifndef ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_SRV_H__
-#define ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_SRV_H__
+#ifndef _BLE_MESH_v11_DFU_SRV_H__
+#define _BLE_MESH_v11_DFU_SRV_H__
 
-#include <zephyr/bluetooth/mesh/dfu.h>
-#include <zephyr/bluetooth/mesh/blob_srv.h>
-#include <zephyr/bluetooth/mesh/access.h>
+#include "mesh/access.h"
+#include "mesh_v1.1/mbt/blob_srv.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,11 +33,11 @@ struct bt_mesh_dfu_srv;
  * @param _imgs       List of @ref bt_mesh_dfu_img managed by this Server.
  * @param _img_count  Number of DFU images managed by this Server.
  */
-#define BT_MESH_DFU_SRV_INIT(_handlers, _imgs, _img_count)                     \
-	{                                                                      \
-		.blob = { .cb = &_bt_mesh_dfu_srv_blob_cb }, .cb = _handlers,  \
-		.imgs = _imgs, .img_count = _img_count,                        \
-	}
+#define BLE_MESH_DFU_SRV_INIT(_handlers, _imgs, _img_count)            \
+    {                                                                  \
+        .blob = { .cb = &_bt_mesh_dfu_srv_blob_cb }, .cb = _handlers,  \
+        .imgs = _imgs, .img_count = _img_count,                        \
+    }
 
 /**
  *
@@ -45,156 +45,156 @@ struct bt_mesh_dfu_srv;
  *
  *  @param _srv Pointer to a @ref bt_mesh_dfu_srv instance.
  */
-#define BT_MESH_MODEL_DFU_SRV(_srv)                                            \
-	BT_MESH_MODEL_BLOB_SRV(&(_srv)->blob),                                  \
-	BT_MESH_MODEL_CB(BT_MESH_MODEL_ID_DFU_SRV, _bt_mesh_dfu_srv_op, NULL,  \
-			 _srv, &_bt_mesh_dfu_srv_cb)
+#define BT_MESH_MODEL_DFU_SRV(_srv)                                         \
+    BT_MESH_MODEL_BLOB_SRV(&(_srv)->blob),                                  \
+    BLE_MESH_MODEL_CB(BLE_MESH_MODEL_ID_DFU_SRV, _bt_mesh_dfu_srv_op, NULL, \
+             _srv, &_bt_mesh_dfu_srv_cb)
 
 /** @brief Firmware Update Server event callbacks. */
 struct bt_mesh_dfu_srv_cb {
-	/** @brief Transfer check callback.
-	 *
-	 *  The transfer check can be used to validate the incoming transfer
-	 *  before it starts. The contents of the metadata is implementation
-	 *  specific, and should contain all the information the application
-	 *  needs to determine whether this image should be accepted, and what
-	 *  the effect of the transfer would be.
-	 *
-	 *  If applying the image will have an effect on the provisioning state
-	 *  of the mesh stack, this can be communicated through the @c effect
-	 *  return parameter.
-	 *
-	 *  The metadata check can be performed both as part of starting a new
-	 *  transfer and as a separate procedure.
-	 *
-	 *  This handler is optional.
-	 *
-	 *  @param srv          Firmware Update Server instance.
-	 *  @param img          DFU image the metadata check is performed on.
-	 *  @param metadata     Image metadata.
-	 *  @param effect       Return parameter for the image effect on the
-	 *                      provisioning state of the mesh stack.
-	 *
-	 *  @return 0 on success, or (negative) error code otherwise.
-	 */
-	int (*check)(struct bt_mesh_dfu_srv *srv,
-		     const struct bt_mesh_dfu_img *img,
-		     struct net_buf_simple *metadata,
-		     enum bt_mesh_dfu_effect *effect);
+    /** @brief Transfer check callback.
+     *
+     *  The transfer check can be used to validate the incoming transfer
+     *  before it starts. The contents of the metadata is implementation
+     *  specific, and should contain all the information the application
+     *  needs to determine whether this image should be accepted, and what
+     *  the effect of the transfer would be.
+     *
+     *  If applying the image will have an effect on the provisioning state
+     *  of the mesh stack, this can be communicated through the @c effect
+     *  return parameter.
+     *
+     *  The metadata check can be performed both as part of starting a new
+     *  transfer and as a separate procedure.
+     *
+     *  This handler is optional.
+     *
+     *  @param srv          Firmware Update Server instance.
+     *  @param img          DFU image the metadata check is performed on.
+     *  @param metadata     Image metadata.
+     *  @param effect       Return parameter for the image effect on the
+     *                      provisioning state of the mesh stack.
+     *
+     *  @return 0 on success, or (negative) error code otherwise.
+     */
+    int (*check)(struct bt_mesh_dfu_srv *srv,
+                 const struct bt_mesh_dfu_img *img,
+                 struct net_buf_simple *metadata,
+                 enum bt_mesh_dfu_effect *effect);
 
-	/** @brief Transfer start callback.
-	 *
-	 *  Called when the Firmware Update Server is ready to start a new DFU transfer.
-	 *  The application must provide an initialized BLOB stream to be used
-	 *  during the DFU transfer.
-	 *
-	 *  The following error codes are treated specially, and should be used
-	 *  to communicate these issues:
-	 *  - @c -ENOMEM: The device cannot fit this image.
-	 *  - @c -EBUSY: The application is temporarily unable to accept the
-	 *    transfer.
-	 *  - @c -EALREADY: The device has already received and verified this
-	 *    image, and there's no need to transfer it again. The Firmware Update model
-	 *    will skip the transfer phase, and mark the image as verified.
-	 *
-	 *  This handler is mandatory.
-	 *
-	 *  @param srv          Firmware Update Server instance.
-	 *  @param img          DFU image being updated.
-	 *  @param metadata     Image metadata.
-	 *  @param io           BLOB stream return parameter. Must be set to a
-	 *                      valid BLOB stream by the callback.
-	 *
-	 *  @return 0 on success, or (negative) error code otherwise. Return
-	 *          codes @c -ENOMEM, @c -EBUSY @c -EALREADY will be passed to
-	 *          the updater, other error codes are reported as internal
-	 *          errors.
-	 */
-	int (*start)(struct bt_mesh_dfu_srv *srv,
-		     const struct bt_mesh_dfu_img *img,
-		     struct net_buf_simple *metadata,
-		     const struct bt_mesh_blob_io **io);
+    /** @brief Transfer start callback.
+     *
+     *  Called when the Firmware Update Server is ready to start a new DFU transfer.
+     *  The application must provide an initialized BLOB stream to be used
+     *  during the DFU transfer.
+     *
+     *  The following error codes are treated specially, and should be used
+     *  to communicate these issues:
+     *  - @c -ENOMEM: The device cannot fit this image.
+     *  - @c -EBUSY: The application is temporarily unable to accept the
+     *    transfer.
+     *  - @c -EALREADY: The device has already received and verified this
+     *    image, and there's no need to transfer it again. The Firmware Update model
+     *    will skip the transfer phase, and mark the image as verified.
+     *
+     *  This handler is mandatory.
+     *
+     *  @param srv          Firmware Update Server instance.
+     *  @param img          DFU image being updated.
+     *  @param metadata     Image metadata.
+     *  @param io           BLOB stream return parameter. Must be set to a
+     *                      valid BLOB stream by the callback.
+     *
+     *  @return 0 on success, or (negative) error code otherwise. Return
+     *          codes @c -ENOMEM, @c -EBUSY @c -EALREADY will be passed to
+     *          the updater, other error codes are reported as internal
+     *          errors.
+     */
+    int (*start)(struct bt_mesh_dfu_srv *srv,
+                 const struct bt_mesh_dfu_img *img,
+                 struct net_buf_simple *metadata,
+                 const struct bt_mesh_blob_io **io);
 
-	/** @brief Transfer end callback.
-	 *
-	 *  This handler is optional.
-	 *
-	 *  If the transfer is successful, the application should verify the
-	 *  firmware image, and call either @ref bt_mesh_dfu_srv_verified or
-	 *  @ref bt_mesh_dfu_srv_rejected depending on the outcome.
-	 *
-	 *  If the transfer fails, the Firmware Update Server will be available for new
-	 *  transfers immediately after this function returns.
-	 *
-	 *  @param srv     Firmware Update Server instance.
-	 *  @param img     DFU image that failed the update.
-	 *  @param success Whether the DFU transfer was successful.
-	 */
-	void (*end)(struct bt_mesh_dfu_srv *srv,
-		    const struct bt_mesh_dfu_img *img, bool success);
+    /** @brief Transfer end callback.
+     *
+     *  This handler is optional.
+     *
+     *  If the transfer is successful, the application should verify the
+     *  firmware image, and call either @ref bt_mesh_dfu_srv_verified or
+     *  @ref bt_mesh_dfu_srv_rejected depending on the outcome.
+     *
+     *  If the transfer fails, the Firmware Update Server will be available for new
+     *  transfers immediately after this function returns.
+     *
+     *  @param srv     Firmware Update Server instance.
+     *  @param img     DFU image that failed the update.
+     *  @param success Whether the DFU transfer was successful.
+     */
+    void (*end)(struct bt_mesh_dfu_srv *srv,
+                const struct bt_mesh_dfu_img *img, bool success);
 
-	/** @brief Transfer recovery callback.
-	 *
-	 *  If the device reboots in the middle of a transfer, the Firmware Update Server
-	 *  calls this function when the Bluetooth Mesh subsystem is started.
-	 *
-	 *  This callback is optional, but transfers will not be recovered after
-	 *  a reboot without it.
-	 *
-	 *  @param srv Firmware Update Server instance.
-	 *  @param img DFU image being updated.
-	 *  @param io  BLOB stream return parameter. Must be set to a valid BLOB
-	 *             stream by the callback.
-	 *
-	 *  @return 0 on success, or (negative) error code to abandon the
-	 *          transfer.
-	 */
-	int (*recover)(struct bt_mesh_dfu_srv *srv,
-		       const struct bt_mesh_dfu_img *img,
-		       const struct bt_mesh_blob_io **io);
+    /** @brief Transfer recovery callback.
+     *
+     *  If the device reboots in the middle of a transfer, the Firmware Update Server
+     *  calls this function when the Bluetooth Mesh subsystem is started.
+     *
+     *  This callback is optional, but transfers will not be recovered after
+     *  a reboot without it.
+     *
+     *  @param srv Firmware Update Server instance.
+     *  @param img DFU image being updated.
+     *  @param io  BLOB stream return parameter. Must be set to a valid BLOB
+     *             stream by the callback.
+     *
+     *  @return 0 on success, or (negative) error code to abandon the
+     *          transfer.
+     */
+    int (*recover)(struct bt_mesh_dfu_srv *srv,
+                   const struct bt_mesh_dfu_img *img,
+                   const struct bt_mesh_blob_io **io);
 
-	/** @brief Transfer apply callback.
-	 *
-	 *  Called after a transfer has been validated, and the updater sends an
-	 *  apply message to the Target nodes.
-	 *
-	 *  This handler is optional.
-	 *
-	 *  @param srv Firmware Update Server instance.
-	 *  @param img DFU image that should be applied.
-	 *
-	 *  @return 0 on success, or (negative) error code otherwise.
-	 */
-	int (*apply)(struct bt_mesh_dfu_srv *srv,
-		     const struct bt_mesh_dfu_img *img);
+    /** @brief Transfer apply callback.
+     *
+     *  Called after a transfer has been validated, and the updater sends an
+     *  apply message to the Target nodes.
+     *
+     *  This handler is optional.
+     *
+     *  @param srv Firmware Update Server instance.
+     *  @param img DFU image that should be applied.
+     *
+     *  @return 0 on success, or (negative) error code otherwise.
+     */
+    int (*apply)(struct bt_mesh_dfu_srv *srv,
+                 const struct bt_mesh_dfu_img *img);
 };
 
 /** @brief Firmware Update Server instance.
  *
- *  Should be initialized with @ref BT_MESH_DFU_SRV_INIT.
+ *  Should be initialized with @ref BLE_MESH_DFU_SRV_INIT.
  */
 struct bt_mesh_dfu_srv {
-	/** Underlying BLOB Transfer Server. */
-	struct bt_mesh_blob_srv blob;
-	/** Callback structure. */
-	const struct bt_mesh_dfu_srv_cb *cb;
-	/** List of updatable images. */
-	const struct bt_mesh_dfu_img *imgs;
-	/** Number of updatable images. */
-	size_t img_count;
+    /** Underlying BLOB Transfer Server. */
+    struct bt_mesh_blob_srv blob;
+    /** Callback structure. */
+    const struct bt_mesh_dfu_srv_cb *cb;
+    /** List of updatable images. */
+    const struct bt_mesh_dfu_img *imgs;
+    /** Number of updatable images. */
+    size_t img_count;
 
-	/* Runtime state */
-	const struct bt_mesh_model *mod;
-	struct {
-		/* Effect of transfer, @see bt_mesh_dfu_effect. */
-		uint8_t effect;
-		/* Current phase, @see bt_mesh_dfu_phase. */
-		uint8_t phase;
-		uint8_t ttl;
-		uint8_t idx;
-		uint16_t timeout_base;
-		uint16_t meta;
-	} update;
+    /* Runtime state */
+    const struct bt_mesh_model *mod;
+    struct {
+        /* Effect of transfer, @see bt_mesh_dfu_effect. */
+        uint8_t effect;
+        /* Current phase, @see bt_mesh_dfu_phase. */
+        uint8_t phase;
+        uint8_t ttl;
+        uint8_t idx;
+        uint16_t timeout_base;
+        uint16_t meta;
+    } update;
 };
 
 /** @brief Accept the received DFU transfer.
@@ -235,7 +235,7 @@ void bt_mesh_dfu_srv_cancel(struct bt_mesh_dfu_srv *srv);
  */
 void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv);
 
-/** @brief Check if the Firmware Update	Server is busy processing a transfer.
+/** @brief Check if the Firmware Update Server is busy processing a transfer.
  *
  *  @param srv Firmware Update Server instance.
  *
@@ -261,6 +261,4 @@ extern const struct bt_mesh_blob_srv_cb _bt_mesh_dfu_srv_blob_cb;
 }
 #endif
 
-#endif /* ZEPHYR_INCLUDE_BLUETOOTH_MESH_DFU_SRV_H__ */
-
-/** @} */
+#endif /* _BLE_MESH_v11_DFU_SRV_H__ */
