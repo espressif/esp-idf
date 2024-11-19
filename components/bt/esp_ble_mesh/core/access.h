@@ -29,6 +29,8 @@ uint8_t bt_mesh_elem_count(void);
 /* Find local element based on unicast or group address */
 struct bt_mesh_elem *bt_mesh_elem_find(uint16_t addr);
 
+bool bt_mesh_has_addr(uint16_t addr);
+
 uint16_t *bt_mesh_model_find_group(struct bt_mesh_model *mod, uint16_t addr);
 
 int bt_mesh_get_opcode(struct net_buf_simple *buf,
