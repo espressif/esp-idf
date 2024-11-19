@@ -145,6 +145,7 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     uint8_t thischar = 0;
     uint8_t lastchar = 0;
     uint8_t hivi = 0;
+    uint8_t nf = 0;
 
     while (header_info->buffer_left) {
         lastchar = thischar;
@@ -157,7 +158,8 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
             height = jpeg_get_bytes(header_info, 2);
             width = jpeg_get_bytes(header_info, 2);
 
-            jpeg_get_bytes(header_info, 1);
+            nf = jpeg_get_bytes(header_info, 1);
+
             jpeg_get_bytes(header_info, 1);
             hivi = jpeg_get_bytes(header_info, 1);
             break;
@@ -172,19 +174,24 @@ esp_err_t jpeg_decoder_get_info(const uint8_t *in_buf, uint32_t inbuf_len, jpeg_
     picture_info->height = height;
     picture_info->width = width;
 
-    switch (hivi) {
-    case 0x11:
-        picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV444;
-        break;
-    case 0x21:
-        picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV422;
-        break;
-    case 0x22:
-        picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV420;
-        break;
-    default:
-        ESP_LOGE(TAG, "Sampling factor cannot be recognized");
-        return ESP_ERR_INVALID_STATE;
+    if (nf == 3) {
+        switch (hivi) {
+        case 0x11:
+            picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV444;
+            break;
+        case 0x21:
+            picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV422;
+            break;
+        case 0x22:
+            picture_info->sample_method = JPEG_DOWN_SAMPLING_YUV420;
+            break;
+        default:
+            ESP_LOGE(TAG, "Sampling factor cannot be recognized");
+            return ESP_ERR_INVALID_STATE;
+        }
+    }
+    if (nf == 1) {
+        picture_info->sample_method = JPEG_DOWN_SAMPLING_GRAY;
     }
 
     free(header_info);
