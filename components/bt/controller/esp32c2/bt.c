@@ -199,6 +199,9 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 /* Local variable definition
  ***************************************************************************
  */
+#if CONFIG_ESP32C2_REV_MIN_FULL < 200
+void *g_ble_lll_rfmgmt_env_p;
+#endif
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
