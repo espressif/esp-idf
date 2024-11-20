@@ -44,6 +44,28 @@ typedef enum {
 } usb_hub_class_request_t ;
 
 /**
+ * @brief USB Hub Port state
+ *
+ * See USB 2.0 spec, 11.5.1 Downstream Facing Port State Descriptions
+ */
+typedef enum {
+    USB_PORT_STATE_NOT_CONFIGURED = 0x00,       /**< The hub is not configured. A port transitions to and remains in this state whenever the value of the hub configuration is zero. */
+    USB_PORT_STATE_POWERED_OFF,                 /**< Powered_off: Port requires explicit request to transition. */
+    USB_PORT_STATE_DISCONNECTED,                /**< In the Disconnected state, the port’s differential transmitter and receiver are disabled and only connection detection is possible.*/
+    USB_PORT_STATE_DISABLED,                    /**< A port in the Disabled state will not propagate signaling in either the upstream or the downstream direction */
+    USB_PORT_STATE_RESETTING,                   /**< The duration of the Resetting state is nominally 10 ms to 20 ms (10 ms is preferred). */
+    USB_PORT_STATE_ENABLED,                     /**< While in this state, the output of the port’s differential receiver is available to the Hub Repeater so that appropriate signaling transitions can establish upstream connectivity*/
+    USB_PORT_STATE_TRANSMIT,                    /**< This state is entered from the Enabled state on the transition of the Hub Repeater to the WFEOPFU state */
+    USB_PORT_STATE_TRANSMIT_R,                  /**< When in this state, the port repeats the resume ‘K’ at the upstream facing port to the downstream facing port. */
+    USB_PORT_STATE_SUSPENDED,                   /**< While a port is in the Suspended state, the port's differential transmitter is disabled. */
+    USB_PORT_STATE_RESUMING,                    /**< While in this state, the hub drives a 'K' on the port. */
+    USB_PORT_STATE_SEND_EOR,                    /**< This state is entered from the Resuming state if the 20 ms timer expires. */
+    USB_PORT_STATE_RESTART_S,                   /**< A port enters the Restart_S state from the Suspended state when an SE0 or ‘K’ is seen at the port and the Receiver is in the Suspended state */
+    USB_PORT_STATE_RESTART_E,                   /**< A port enters the Restart_E state from the Enabled state when an ‘SE0’ or ‘K’ is seen at the port and the Receiver is in the Suspended state. */
+    USB_PORT_STATE_TESTING,                     /**< A port transitions to this state from any state when the port sees SetTest. */
+} usb_hub_port_state_t;
+
+/**
  * @brief USB Hub Port feature selector codes
  *
  * See USB 2.0 spec Table 11-17
