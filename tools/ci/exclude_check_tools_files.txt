@@ -39,3 +39,5 @@ tools/templates/sample_component/CMakeLists.txt
 tools/templates/sample_component/include/main.h
 tools/ci/get_known_failure_cases_file.py
 tools/templates/sample_component/main.c
+tools/bt/bt_hci_to_btsnoop.py
+tools/bt/README.md
