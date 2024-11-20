@@ -21,7 +21,7 @@ const static char *TAG = "sysview_heap_trace";
 #endif
 
 static SEGGER_SYSVIEW_MODULE s_esp_sysview_heap_module = {
-    .sModule = "ESP32 SystemView Heap Tracing Module",
+    .sModule = "M=ESP32 SystemView Heap Tracing Module",
     .NumEvents = 2,
 };
 
