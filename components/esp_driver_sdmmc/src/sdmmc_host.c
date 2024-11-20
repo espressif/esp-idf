@@ -1003,11 +1003,7 @@ void sdmmc_host_enable_clk_cmd11(int slot, bool enable)
 {
     sdmmc_ll_enable_card_clock(s_host_ctx.hal.dev, slot, enable);
     sdmmc_host_clock_update_command(slot, true);
-    if (enable) {
-        sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, true);
-    } else {
-        sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, false);
-    }
+    sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, enable);
 }
 
 void sdmmc_host_dma_stop(void)

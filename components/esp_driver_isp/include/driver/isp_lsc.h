@@ -34,7 +34,7 @@ typedef struct {
 /**
  * @brief Helper function to allocate gain array for LSC
  *
- * @param[in] proc                         Processor handle
+ * @param[in] isp_proc                     Processor handle
  * @param[in] gain_array                   Gain array to be allocated
  * @param[out] out_array_size_per_channel  Array size
  *
@@ -51,8 +51,8 @@ esp_err_t esp_isp_lsc_allocate_gain_array(isp_proc_handle_t isp_proc, esp_isp_ls
  *
  * @note After calling this API, LSC doesn't take into effect until `esp_isp_lsc_enable` is called
  *
- * @param[in] proc    Processor handle
- * @param[in] config  LSC configurations
+ * @param[in] isp_proc    Processor handle
+ * @param[in] config      LSC configurations
  *
  * @return
  *        - ESP_OK                 On success
@@ -65,7 +65,7 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
 /**
  * @brief Enable ISP LSC function
  *
- * @param[in] proc  Processor handle
+ * @param[in] isp_proc  Processor handle
  *
  * @return
  *         - ESP_OK                On success
@@ -77,7 +77,7 @@ esp_err_t esp_isp_lsc_enable(isp_proc_handle_t isp_proc);
 /**
  * @brief Disable ISP LSC function
  *
- * @param[in] proc  Processor handle
+ * @param[in] isp_proc  Processor handle
  *
  * @return
  *         - ESP_OK                On success
