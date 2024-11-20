@@ -1,5 +1,5 @@
 {
-    "version":            "1.1",
+    "version":            "1.2",
     "project_name":       "${PROJECT_NAME}",
     "project_version":    "${PROJECT_VER}",
     "project_path":       "${PROJECT_PATH}",
@@ -29,5 +29,12 @@
     "build_component_paths" : ${build_component_paths_json},
     "build_component_info" : ${build_component_info_json},
     "all_component_info" : ${all_component_info_json},
-    "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}"
+    "debug_prefix_map_gdbinit": "${debug_prefix_map_gdbinit}",
+    "gdbinit_files": {
+        "01_symbols": "${gdbinit_files_symbols}",
+        "02_prefix_map": "${gdbinit_files_prefix_map}",
+        "03_py_extensions": "${gdbinit_files_py_extensions}",
+        "04_connect": "${gdbinit_files_connect}"
+    },
+    "debug_arguments_openocd": "${debug_arguments_openocd}"
 }

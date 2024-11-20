@@ -63,9 +63,9 @@ ESP-IDF 可通过以下方式实现可重复构建：
 
     set substitute-path /COMPONENT_FREERTOS_DIR /home/user/esp/esp-idf/components/freertos
 
-ESP-IDF 构建系统在构建过程中会自动生成一个包含 ``set substitute-path`` 命令列表的文件。该文件名为 ``prefix_map_gdbinit``，位于项目 ``build`` 目录中。
+ESP-IDF 构建系统在构建过程中会自动生成一个包含 ``set substitute-path`` 命令列表的文件。该文件名为 ``prefix_map``，位于项目 ``build/gdbinit`` 目录中。
 
-当使用 :ref:`idf.py gdb <jtag-debugging-with-idf-py>` 开始调试时，此额外的 ``gdbinit`` 文件会自动传递给 GDB。当手动启动 GDB 或从 IDE 启动 GDB 时，请使用 ``-x build/prefix_map_gdbinit`` 参数将此额外的 ``gdbinit`` 脚本传递给 GDB。
+当使用 :ref:`idf.py gdb <jtag-debugging-with-idf-py>` 开始调试时，此额外的 ``gdbinit`` 文件会自动传递给 GDB。当手动启动 GDB 或从 IDE 启动 GDB 时，请使用 ``-x build/gdbinit/prefix_map`` 参数将此额外的 ``gdbinit`` 脚本传递给 GDB。
 
 仍可能影响可重复构建的因素
 --------------------------
