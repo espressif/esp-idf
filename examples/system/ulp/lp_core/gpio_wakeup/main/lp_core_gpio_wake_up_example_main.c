@@ -34,7 +34,7 @@ static void wakeup_gpio_init(void)
     rtc_gpio_set_direction(WAKEUP_PIN, RTC_GPIO_MODE_INPUT_ONLY);
     rtc_gpio_pulldown_dis(WAKEUP_PIN);
     rtc_gpio_pullup_en(WAKEUP_PIN);
-    rtc_gpio_wakeup_enable(WAKEUP_PIN, GPIO_INTR_LOW_LEVEL);
+    rtc_gpio_wakeup_enable(WAKEUP_PIN, GPIO_INTR_NEGEDGE);
 }
 
 void app_main(void)
