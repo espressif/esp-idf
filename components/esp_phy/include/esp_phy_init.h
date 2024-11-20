@@ -304,6 +304,16 @@ esp_err_t phy_query_used_time(uint64_t *used_time, esp_phy_modem_t modem);
 esp_err_t phy_clear_used_time(esp_phy_modem_t modem);
 #endif
 
+/**
+ * @brief Power on Bluetooth Wi-Fi power domain
+ */
+void esp_wifi_bt_power_domain_on(void);
+
+/**
+ * @brief Power off Bluetooth Wi-Fi power domain
+ */
+void esp_wifi_bt_power_domain_off(void);
+
 #ifdef __cplusplus
 }
 #endif
