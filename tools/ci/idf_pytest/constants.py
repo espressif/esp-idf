@@ -94,6 +94,7 @@ ENV_MARKERS = {
     'MSPI_F8R8': 'runner with Octal Flash and Octal PSRAM',
     'MSPI_F4R8': 'runner with Quad Flash and Octal PSRAM',
     'MSPI_F4R4': 'runner with Quad Flash and Quad PSRAM',
+    'flash_120m': 'runner with 120M supported Flash',
     'jtag': 'runner where the chip is accessible through JTAG as well',
     'usb_serial_jtag': 'runner where the chip is accessible through builtin JTAG as well',
     'adc': 'ADC related tests should run on adc runners',

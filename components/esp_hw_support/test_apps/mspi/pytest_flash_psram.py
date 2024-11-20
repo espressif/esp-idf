@@ -39,7 +39,7 @@ def test_flash4_psram4(dut: IdfDut) -> None:
 
 
 @pytest.mark.esp32p4
-@pytest.mark.generic
+@pytest.mark.flash_120m
 @pytest.mark.parametrize(
     'config',
     [
