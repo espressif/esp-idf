@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -336,6 +336,17 @@ void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
     assert(IS_MODEM_MODULE(module));
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
+}
+
+void modem_clock_deselect_all_module_lp_clock_source(void)
+{
+#if SOC_WIFI_SUPPORTED
+    modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+#if SOC_BT_SUPPORTED
+    modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+    modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
 }
 
 void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)
