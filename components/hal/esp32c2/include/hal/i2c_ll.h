@@ -76,7 +76,7 @@ typedef enum {
  */
 static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_freq, i2c_hal_clk_config_t *clk_cal)
 {
-    uint32_t clkm_div = source_clk / (bus_freq * 1024) +1;
+    uint32_t clkm_div = source_clk / (bus_freq * 1024) + 1;
     uint32_t sclk_freq = source_clk / clkm_div;
     uint32_t half_cycle = sclk_freq / bus_freq / 2;
     //SCL
@@ -85,7 +85,7 @@ static inline void i2c_ll_master_cal_bus_clk(uint32_t source_clk, uint32_t bus_f
     // default, scl_wait_high < scl_high
     // Make 80KHz as a boundary here, because when working at lower frequency, too much scl_wait_high will faster the frequency
     // according to some hardware behaviors.
-    clk_cal->scl_wait_high = (bus_freq >= 80*1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
+    clk_cal->scl_wait_high = (bus_freq >= 80 * 1000) ? (half_cycle / 2 - 2) : (half_cycle / 4);
     clk_cal->scl_high = half_cycle - clk_cal->scl_wait_high;
     clk_cal->sda_hold = half_cycle / 4;
     clk_cal->sda_sample = half_cycle / 2;
@@ -326,7 +326,7 @@ static inline void i2c_ll_get_intr_mask(i2c_dev_t *hw, uint32_t *intr_status)
  *
  * @return None
  */
-static inline void i2c_ll_slave_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
+static inline void i2c_ll_enable_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
 {
     hw->fifo_conf.nonfifo_en = fifo_mode_en ? 0 : 1;
 }
@@ -414,6 +414,7 @@ static inline void i2c_ll_set_sda_timing(i2c_dev_t *hw, int sda_sample, int sda_
  */
 static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
 {
+    hw->fifo_conf.fifo_prt_en = 1;
     hw->fifo_conf.txfifo_wm_thrhd = empty_thr;
 }
 
@@ -427,6 +428,8 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
  */
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
+    hw->fifo_conf.fifo_prt_en = 1;
+    hw->ctr.rx_full_ack_level = 0;
     hw->fifo_conf.rxfifo_wm_thrhd = full_thr;
 }
 
@@ -543,7 +546,7 @@ static inline void i2c_ll_get_tout(i2c_dev_t *hw, int *timeout)
  * @return None
  */
 __attribute__((always_inline))
-static inline void i2c_ll_master_trans_start(i2c_dev_t *hw)
+static inline void i2c_ll_start_trans(i2c_dev_t *hw)
 {
     hw->ctr.trans_start = 1;
 }
@@ -590,8 +593,8 @@ static inline void i2c_ll_get_stop_timing(i2c_dev_t *hw, int *setup_time, int *h
 __attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_t len)
 {
-    for (int i = 0; i< len; i++) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->data, fifo_rdata, ptr[i]);
+    for (int i = 0; i < len; i++) {
+        hw->data.val = ptr[i];
     }
 }
 
@@ -607,7 +610,7 @@ static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_
 __attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
-    for(int i = 0; i < len; i++) {
+    for (int i = 0; i < len; i++) {
         ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->data, fifo_rdata);
     }
 }
