@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import copy
 import json
@@ -87,7 +87,7 @@ def parse_trace(reader, parser, os_evt_map_file=''):
     parser : SysViewTraceDataParser
         Top level parser object.
     os_evt_map_file : string
-        Path to file containg events format description.
+        Path to file containing events format description.
     """
     global _os_events_map
     # parse OS events formats file
@@ -106,12 +106,12 @@ def _read_events_map(os_evt_map_file):
     Parameters
     ----------
     os_evt_map_file : string
-        Path to file containg events format description.
+        Path to file containing events format description.
 
     Returns
     -------
     dict
-        a dict with event IDs as keys and values as tuples containg event name and a list of parameters.
+        a dict with event IDs as keys and values as tuples containing event name and a list of parameters.
     """
     os_evt_map = {}
     with open(os_evt_map_file) as f:
@@ -130,7 +130,7 @@ def _read_events_map(os_evt_map_file):
                     elif sp[1] == 's':
                         params.append(SysViewEventParamSimple(sp[0], _decode_str))
                     elif sp[1] == 't' or sp[1] == 'T' or sp[1] == 'I' or sp[1] == 'p':
-                        # TODO: handle shrinked task/queue ID and addresses
+                        # TODO: handle shrunk task/queue ID and addresses
                         params.append(SysViewEventParamSimple(sp[0], _decode_u32))
             os_evt_map[int(comps[0])] = (comps[1], params)
     return os_evt_map
@@ -177,7 +177,7 @@ def _read_init_seq(reader):
     sync_bytes = struct.unpack(SYNC_SEQ_FMT, reader.read(struct.calcsize(SYNC_SEQ_FMT)))
     for b in sync_bytes:
         if b != 0:
-            raise SysViewTraceParseError('Invalid sync sequense!')
+            raise SysViewTraceParseError('Invalid sync sequence!')
 
 
 def _decode_u32(reader):
@@ -192,7 +192,7 @@ def _decode_u32(reader):
     Returns
     -------
     tuple
-        a tuple containg number of read bytes and decoded value.
+        a tuple containing number of read bytes and decoded value.
     """
     sz = 0
     val = 0
@@ -219,7 +219,7 @@ def _decode_id(reader):
     Returns
     -------
     tuple
-        a tuple containg number of read bytes and decoded value.
+        a tuple containing number of read bytes and decoded value.
     """
     return _decode_u32(reader)
 
@@ -236,7 +236,7 @@ def _decode_u64(reader):
     Returns
     -------
     tuple
-        a tuple containg number of read bytes and decoded value.
+        a tuple containing number of read bytes and decoded value.
     """
     sz,val = _decode_u32(reader)
     sz2,high = _decode_u32(reader)
@@ -256,7 +256,7 @@ def _decode_str(reader):
     Returns
     -------
     tuple
-        a tuple containg number of read bytes and decoded value.
+        a tuple containing number of read bytes and decoded value.
     """
     sz = 0
     val = ''
@@ -411,7 +411,7 @@ class SysViewEventParam:
             Returns
             -------
             tuple
-                a tuple containg number of read bytes and decoded value.
+                a tuple containing number of read bytes and decoded value.
         """
         pass
 
@@ -963,13 +963,13 @@ class SysViewTraceDataProcessor(apptrace.TraceDataProcessor):
 
     def event_supported(self, e):
         """
-            Should be overriden in child class.
+            Should be overridden in child class.
         """
         return False
 
     def handle_event(self, e):
         """
-            Should be overriden in child class.
+            Should be overridden in child class.
         """
         pass
 
@@ -1263,7 +1263,7 @@ class SysViewHeapTraceDataParser(SysViewTraceDataExtEventParser):
         """
         if self.root_proc == self:
             SysViewTraceDataParser.on_new_event(self, event)
-        if event.id == SYSVIEW_EVTID_MODULEDESC and event.params['desc'].value == 'ESP32 SystemView Heap Tracing Module':
+        if event.id == SYSVIEW_EVTID_MODULEDESC and event.params['desc'].value == 'M=ESP32 SystemView Heap Tracing Module':
             self.events_off = event.params['evt_off'].value
 
 
