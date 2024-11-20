@@ -352,8 +352,9 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = init_wifi_mac_sleep_retention, .arg = NULL } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_WIFI_BB) | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
     };
+    init_param.depends.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);
+    init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_MAC, &init_param);
     if (err != ESP_OK) {
         ESP_LOGW(TAG, "WiFi MAC sleep retention init failed");

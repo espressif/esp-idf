@@ -1091,6 +1091,10 @@ config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y

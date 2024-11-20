@@ -73,7 +73,7 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
                         .arg = group,
                     },
                 },
-                .depends = SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // we only do retention init here. Allocate retention module in the unit initialization
             if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
@@ -140,10 +140,10 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         }
 #if MCPWM_USE_RETENTION_LINK
         const periph_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
-        if (sleep_retention_get_created_modules() & BIT(module_id)) {
+        if (sleep_retention_is_module_created(module_id)) {
             sleep_retention_module_free(module_id);
         }
-        if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+        if (sleep_retention_is_module_inited(module_id)) {
             sleep_retention_module_deinit(module_id);
         }
 #endif // MCPWM_USE_RETENTION_LINK
@@ -305,7 +305,7 @@ void mcpwm_create_retention_module(mcpwm_group_t *group)
     int group_id = group->group_id;
     sleep_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
     _lock_acquire(&s_platform.mutex);
-    if ((sleep_retention_get_inited_modules() & BIT(module_id)) && !(sleep_retention_get_created_modules() & BIT(module_id))) {
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
         if (sleep_retention_module_allocate(module_id) != ESP_OK) {
             // even though the sleep retention module create failed, MCPWM driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");

@@ -7,7 +7,7 @@
 #pragma once
 
 #include <stdint.h>
-#include "esp_bit_defs.h"
+#include "soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -53,76 +53,37 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_BT_BB        = 29,
     SLEEP_RETENTION_MODULE_802154_MAC   = 30,
     SLEEP_RETENTION_MODULE_MODEM_PHY    = 31,
-    SLEEP_RETENTION_MODULE_MAX          = 31
+
+    SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
 
-typedef enum periph_retention_module_bitmap {
-    SLEEP_RETENTION_MODULE_BM_NULL = BIT(SLEEP_RETENTION_MODULE_NULL),
+#define is_top_domain_module(m)                           \
+    ( ((m) == SLEEP_RETENTION_MODULE_NULL)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_CLOCK_SYSTEM) ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_SYS_PERIPH)   ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG0_WDT)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_WDT)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_WDT)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER)    ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER)    ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH0)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH1)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH2)     ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_ADC)          ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_I2C0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_RMT0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_UART0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_UART1)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_I2S0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_ETM0)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TEMP_SENSOR)  ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_PARLIO0)      ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
+    : false)
 
-    /* clock module, which includes system and modem */
-    SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
-    SLEEP_RETENTION_MODULE_BM_CLOCK_MODEM  = BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM),
-
-    /* modem module, which includes WiFi, BLE and 802.15.4 */
-    SLEEP_RETENTION_MODULE_BM_WIFI_MAC     = BIT(SLEEP_RETENTION_MODULE_WIFI_MAC),
-    SLEEP_RETENTION_MODULE_BM_WIFI_BB      = BIT(SLEEP_RETENTION_MODULE_WIFI_BB),
-    SLEEP_RETENTION_MODULE_BM_BLE_MAC      = BIT(SLEEP_RETENTION_MODULE_BLE_MAC),
-    SLEEP_RETENTION_MODULE_BM_BT_BB        = BIT(SLEEP_RETENTION_MODULE_BT_BB),
-    SLEEP_RETENTION_MODULE_BM_802154_MAC   = BIT(SLEEP_RETENTION_MODULE_802154_MAC),
-    SLEEP_RETENTION_MODULE_BM_MODEM_PHY    = BIT(SLEEP_RETENTION_MODULE_MODEM_PHY),
-
-    /* digital peripheral module, which includes Interrupt Matrix, HP_SYSTEM,
-     * TEE, APM, IOMUX, SPIMEM, SysTimer, etc.. */
-    SLEEP_RETENTION_MODULE_BM_SYS_PERIPH   = BIT(SLEEP_RETENTION_MODULE_SYS_PERIPH),
-    /* Timer Group by target*/
-    SLEEP_RETENTION_MODULE_BM_TASK_WDT     = BIT(SLEEP_RETENTION_MODULE_TG0_WDT),
-    SLEEP_RETENTION_MODULE_BM_INT_WDT      = BIT(SLEEP_RETENTION_MODULE_TG1_WDT),
-    SLEEP_RETENTION_MODULE_BM_TG0_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER),
-    SLEEP_RETENTION_MODULE_BM_TG1_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER),
-    /* MISC Peripherals */
-    SLEEP_RETENTION_MODULE_BM_ADC          = BIT(SLEEP_RETENTION_MODULE_ADC),
-    SLEEP_RETENTION_MODULE_BM_I2C0         = BIT(SLEEP_RETENTION_MODULE_I2C0),
-    SLEEP_RETENTION_MODULE_BM_RMT0         = BIT(SLEEP_RETENTION_MODULE_RMT0),
-    SLEEP_RETENTION_MODULE_BM_UART0        = BIT(SLEEP_RETENTION_MODULE_UART0),
-    SLEEP_RETENTION_MODULE_BM_UART1        = BIT(SLEEP_RETENTION_MODULE_UART1),
-    SLEEP_RETENTION_MODULE_BM_I2S0         = BIT(SLEEP_RETENTION_MODULE_I2S0),
-    SLEEP_RETENTION_MODULE_BM_ETM0         = BIT(SLEEP_RETENTION_MODULE_ETM0),
-    SLEEP_RETENTION_MODULE_BM_TEMP_SENSOR  = BIT(SLEEP_RETENTION_MODULE_TEMP_SENSOR),
-    SLEEP_RETENTION_MODULE_BM_PARLIO0      = BIT(SLEEP_RETENTION_MODULE_PARLIO0),
-    SLEEP_RETENTION_MODULE_BM_GPSPI2       = BIT(SLEEP_RETENTION_MODULE_GPSPI2),
-    SLEEP_RETENTION_MODULE_BM_LEDC         = BIT(SLEEP_RETENTION_MODULE_LEDC),
-    SLEEP_RETENTION_MODULE_BM_PCNT0        = BIT(SLEEP_RETENTION_MODULE_PCNT0),
-    SLEEP_RETENTION_MODULE_BM_MCPWM0       = BIT(SLEEP_RETENTION_MODULE_MCPWM0),
-
-    SLEEP_RETENTION_MODULE_BM_GDMA_CH0     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH0),
-    SLEEP_RETENTION_MODULE_BM_GDMA_CH1     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH1),
-    SLEEP_RETENTION_MODULE_BM_GDMA_CH2     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH2),
-    SLEEP_RETENTION_MODULE_BM_ALL          = (uint32_t)-1
-} periph_retention_module_bitmap_t;
-
-#define TOP_DOMAIN_PERIPHERALS_BM ( SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
-                                  | SLEEP_RETENTION_MODULE_BM_TASK_WDT    \
-                                  | SLEEP_RETENTION_MODULE_BM_INT_WDT     \
-                                  | SLEEP_RETENTION_MODULE_BM_TG0_TIMER   \
-                                  | SLEEP_RETENTION_MODULE_BM_TG1_TIMER   \
-                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH0    \
-                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH1    \
-                                  | SLEEP_RETENTION_MODULE_BM_GDMA_CH2    \
-                                  | SLEEP_RETENTION_MODULE_BM_ADC         \
-                                  | SLEEP_RETENTION_MODULE_BM_I2C0        \
-                                  | SLEEP_RETENTION_MODULE_BM_RMT0        \
-                                  | SLEEP_RETENTION_MODULE_BM_UART0       \
-                                  | SLEEP_RETENTION_MODULE_BM_UART1       \
-                                  | SLEEP_RETENTION_MODULE_BM_I2S0        \
-                                  | SLEEP_RETENTION_MODULE_BM_ETM0        \
-                                  | SLEEP_RETENTION_MODULE_BM_TEMP_SENSOR \
-                                  | SLEEP_RETENTION_MODULE_BM_PARLIO0     \
-                                  | SLEEP_RETENTION_MODULE_BM_GPSPI2      \
-                                  | SLEEP_RETENTION_MODULE_BM_LEDC        \
-                                  | SLEEP_RETENTION_MODULE_BM_PCNT0       \
-                                  | SLEEP_RETENTION_MODULE_BM_MCPWM0      \
-                                  | SLEEP_RETENTION_MODULE_BM_NULL       \
-                                  )
 #ifdef __cplusplus
 }
 #endif
