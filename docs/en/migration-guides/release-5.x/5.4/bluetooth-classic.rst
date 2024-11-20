@@ -12,3 +12,8 @@ Bluedroid
     - :component_file:`/bt/host/bluedroid/api/include/api/esp_sdp_api.h`
 
         - Field ``user2_ptr_len`` and ``user2_ptr`` is deprecated in structure ``esp_bluetooth_sdp_hdr_overlay_t``, since they are not used in SDP record creation or searching.
+
+Bluetooth Common APIs
+---------------------
+
+.. include:: ./bt_common.rst
