@@ -27,7 +27,7 @@ def test_app_mmu_page_size_32k_and_bootloader_mmu_page_size_64k(dut: Dut, app_do
     dut.serial.bootloader_flash(path_to_mmu_page_size_64k_build)
     dut.expect('MMU page size mismatch')
     dut.expect('App is running')
-    dut.expect('Partition test done\n')
+    dut.expect('Partition test done')
 
 
 @pytest.mark.esp32c6
@@ -49,4 +49,4 @@ def test_app_mmu_page_size_64k_and_bootloader_mmu_page_size_32k(dut: Dut, app_do
     dut.serial.bootloader_flash(path_to_mmu_page_size_32k_build)
     dut.expect('MMU page size mismatch')
     dut.expect('App is running')
-    dut.expect('Partition test done\n')
+    dut.expect('Partition test done')
