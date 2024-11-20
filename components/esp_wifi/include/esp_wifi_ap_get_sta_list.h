@@ -17,7 +17,7 @@ extern "C" {
 // Number of maximum wifi connection may be undefined if we have no native wifi support on this target
 //   and at the same time there's no native interface injected by the wifi_remote component.
 // In this case, we just let the header compilable, since no wifi API could be used (let's make a sanity check)
-#if !CONFIG_SOC_WIFI_SUPPORTED && !CONFIG_ESP_WIFI_REMOTE_ENABLED
+#if !CONFIG_SOC_WIFI_SUPPORTED && !CONFIG_ESP_WIFI_REMOTE_ENABLED && !CONFIG_ESP_HOST_WIFI_ENABLED
 #define ESP_WIFI_MAX_CONN_NUM  (15)
 typedef struct wifi_sta_list_t wifi_sta_list_t;
 #else
