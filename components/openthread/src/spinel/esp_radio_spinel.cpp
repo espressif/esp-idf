@@ -82,7 +82,7 @@ static void radio_spinel_compatibility_error_callback(void *context)
     }
 }
 
-void esp_openthread_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
+void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
 {
     s_radio_spinel_compatibility_error_callback = callback;
 }
