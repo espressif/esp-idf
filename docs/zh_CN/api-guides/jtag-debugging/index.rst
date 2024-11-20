@@ -117,13 +117,17 @@ JTAG 调试
 
 .. highlight:: bash
 
-如果已经按照 :doc:`快速入门 <../../get-started/index>` 完成了 ESP-IDF 及其 CMake 构建系统的安装，那么 OpenOCD 已经被默认安装到了你的开发系统中。在 :ref:`设置开发环境 <get-started-set-up-env>` 结束后，应该能够在终端中运行如下 OpenOCD 命令::
+如果已经按照 :doc:`快速入门 <../../get-started/index>` 完成了 ESP-IDF 及其 CMake 构建系统的安装，那么 OpenOCD 已经被默认安装到了你的开发系统中。在 :ref:`设置开发环境 <get-started-set-up-env>` 结束后，应该能够在终端中运行如下 OpenOCD 命令：
+
+.. code-block:: none
 
     openocd --version
 
 .. highlight:: none
 
-终端会输出以下信息（实际版本号可能会更新）::
+终端会输出以下信息（实际版本号可能会更新）：
+
+.. code-block:: none
 
     Open On-Chip Debugger v0.12.0-esp32-20240318 (2024-03-18-18:25)
     Licensed under GNU GPL v2
@@ -174,7 +178,7 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 .. highlight:: bash
 
-打开终端，按照快速入门指南中的 :ref:`设置好开发环境 <get-started-set-up-env>` 章节进行操作，然后运行如下命令，以启动 OpenOCD（该命令适用于 Windows、Linux 和 macOS）:
+打开终端，按照《快速入门指南》中的 :ref:`设置开发环境 <get-started-set-up-env>` 章节进行操作。运行 OpenOCD 时，需要提供与目标开发板相关的配置文件。构建项目后，ESP-IDF 会生成 ``build/project_description.json`` 文件，其中 ``debug_arguments_openocd`` 字段保存了默认的 OpenOCD 配置信息。请运行如下命令，以启动 OpenOCD（该命令适用于 Windows、Linux 和 macOS）：
 
 .. include:: {IDF_TARGET_PATH_NAME}.inc
     :start-after: run-openocd
@@ -318,7 +322,7 @@ Windows 用户的示例如下:
 .. _jtag-debugging-tips-and-quirks:
 
 注意事项和补充内容
---------------------
+------------------
 
 本节列出了上文中提到的所有注意事项和补充内容的链接。
 
@@ -329,7 +333,7 @@ Windows 用户的示例如下:
 
 
 相关文档
-------------
+--------
 
 .. toctree::
     :hidden:

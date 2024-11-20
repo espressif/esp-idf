@@ -117,13 +117,17 @@ Setup of OpenOCD
 
 .. highlight:: bash
 
-If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then OpenOCD is already installed. After :ref:`setting up the environment <get-started-set-up-env>` in your terminal, you should be able to run OpenOCD. Check this by executing the following command::
+If you have already set up ESP-IDF with CMake build system according to the :doc:`Getting Started Guide <../../get-started/index>`, then OpenOCD is already installed. After :ref:`setting up the environment <get-started-set-up-env>` in your terminal, you should be able to run OpenOCD. Check this by executing the following command:
+
+.. code-block:: none
 
     openocd --version
 
 .. highlight:: none
 
-The output should be as follows (although the version may be more recent than listed here)::
+The output should be as follows (although the version may be more recent than listed here):
+
+.. code-block:: none
 
     Open On-Chip Debugger v0.12.0-esp32-20240318 (2024-03-18-18:25)
     Licensed under GNU GPL v2
@@ -276,7 +280,7 @@ Before proceeding to examples, set up your {IDF_TARGET_NAME} target and load it 
 .. _jtag-debugging-building-openocd:
 
 Building OpenOCD from Sources
----------------------------------
+-----------------------------
 
 Please refer to separate documents listed below, that describe build process.
 
@@ -318,7 +322,7 @@ and Windows:
 .. _jtag-debugging-tips-and-quirks:
 
 Tips and Quirks
-------------------
+---------------
 
 This section provides collection of links to all tips and quirks referred to from various parts of this guide.
 
@@ -329,7 +333,7 @@ This section provides collection of links to all tips and quirks referred to fro
 
 
 Related Documents
----------------------
+-----------------
 
 .. toctree::
     :hidden:
