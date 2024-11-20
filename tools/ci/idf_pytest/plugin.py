@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import importlib
 import logging
@@ -34,6 +34,7 @@ from .constants import SUPPORTED_TARGETS
 from .utils import comma_sep_str_to_list
 from .utils import format_case_id
 from .utils import merge_junit_files
+from .utils import normalize_testcase_file_path
 
 IDF_PYTEST_EMBEDDED_KEY = pytest.StashKey['IdfPytestEmbedded']()
 ITEM_FAILED_CASES_KEY = pytest.StashKey[list]()
@@ -365,16 +366,19 @@ class IdfPytestEmbedded:
         is_qemu = item.get_closest_marker('qemu') is not None
         target = item.funcargs['target']
         config = item.funcargs['config']
+        app_path = item.funcargs.get('app_path')
         for junit in junits:
             xml = ET.parse(junit)
             testcases = xml.findall('.//testcase')
             for case in testcases:
                 # modify the junit files
+                # Use from case attrib if available, otherwise fallback to the previously defined
+                app_path = case.attrib.get('app_path') or app_path
                 new_case_name = format_case_id(target, config, case.attrib['name'], is_qemu=is_qemu)
                 case.attrib['name'] = new_case_name
                 if 'file' in case.attrib:
-                    case.attrib['file'] = case.attrib['file'].replace('/IDF/', '')  # our unity test framework
-
+                    # our unity test framework
+                    case.attrib['file'] = normalize_testcase_file_path(case.attrib['file'], app_path)
                 if ci_job_url := os.getenv('CI_JOB_URL'):
                     case.attrib['ci_job_url'] = ci_job_url
 

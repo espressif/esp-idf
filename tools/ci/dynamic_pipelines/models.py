@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import inspect
 import os
@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from xml.etree.ElementTree import Element
 
 import yaml
+from idf_ci_utils import IDF_PATH
 
 
 class Job:
@@ -130,6 +131,7 @@ class TestCase:
     name: str
     file: str
     time: float
+    app_path: t.Optional[str] = None
     failure: t.Optional[str] = None
     skipped: t.Optional[str] = None
     ci_job_url: t.Optional[str] = None
@@ -151,6 +153,13 @@ class TestCase:
         return not self.is_failure and not self.is_skipped
 
     @classmethod
+    def _get_idf_rel_path(cls, path: str) -> str:
+        if path.startswith(IDF_PATH):
+            return os.path.relpath(path, IDF_PATH)
+        else:
+            return path
+
+    @classmethod
     def from_test_case_node(cls, node: Element) -> t.Optional['TestCase']:
         if 'name' not in node.attrib:
             print('WARNING: Node Invalid: ', node)
@@ -163,6 +172,9 @@ class TestCase:
         kwargs = {
             'name': node.attrib['name'],
             'file': node.attrib.get('file'),
+            'app_path': '|'.join(
+                cls._get_idf_rel_path(path) for path in node.attrib.get('app_path', 'unknown').split('|')
+            ),
             'time': float(node.attrib.get('time') or 0),
             'ci_job_url': node.attrib.get('ci_job_url') or 'Not found',
             'ci_dashboard_url': f'{grafana_base_url}?{encoded_params}',

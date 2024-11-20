@@ -788,7 +788,7 @@ class TargetTestReportGenerator(ReportGenerator):
             items=failed_test_cases_cur_branch,
             headers=[
                 'Test Case',
-                'Test Script File Path',
+                'Test App Path',
                 'Failure Reason',
                 f'Failures on your branch (40 latest testcases)',
                 'Dut Log URL',
@@ -796,7 +796,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Job URL',
                 'Grafana URL',
             ],
-            row_attrs=['name', 'file', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
+            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
             value_functions=[
                 (
                     'Failures on your branch (40 latest testcases)',
@@ -813,7 +813,7 @@ class TargetTestReportGenerator(ReportGenerator):
             items=failed_test_cases_other_branch,
             headers=[
                 'Test Case',
-                'Test Script File Path',
+                'Test App Path',
                 'Failure Reason',
                 'Cases that failed in other branches as well (40 latest testcases)',
                 'Dut Log URL',
@@ -821,7 +821,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Job URL',
                 'Grafana URL',
             ],
-            row_attrs=['name', 'file', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
+            row_attrs=['name', 'app_path', 'failure', 'dut_log_url', 'ci_job_url', 'ci_dashboard_url'],
             value_functions=[
                 (
                     'Cases that failed in other branches as well (40 latest testcases)',
@@ -836,8 +836,8 @@ class TargetTestReportGenerator(ReportGenerator):
         known_failures_cases_table_section = self.create_table_section(
             title=self.report_titles_map['failed_known'],
             items=known_failures,
-            headers=['Test Case', 'Test Script File Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'file', 'failure', 'ci_job_url', 'ci_dashboard_url'],
+            headers=['Test Case', 'Test App Path', 'Failure Reason', 'Job URL', 'Grafana URL'],
+            row_attrs=['name', 'app_path', 'failure', 'ci_job_url', 'ci_dashboard_url'],
         )
         failed_cases_report_url = self.write_report_to_file(
             self.generate_html_report(
@@ -870,8 +870,8 @@ class TargetTestReportGenerator(ReportGenerator):
         skipped_cases_table_section = self.create_table_section(
             title=self.report_titles_map['skipped'],
             items=skipped_test_cases,
-            headers=['Test Case', 'Test Script File Path', 'Skipped Reason', 'Grafana URL'],
-            row_attrs=['name', 'file', 'skipped', 'ci_dashboard_url'],
+            headers=['Test Case', 'Test App Path', 'Skipped Reason', 'Grafana URL'],
+            row_attrs=['name', 'app_path', 'skipped', 'ci_dashboard_url'],
         )
         skipped_cases_report_url = self.write_report_to_file(
             self.generate_html_report(''.join(skipped_cases_table_section)),
@@ -892,8 +892,8 @@ class TargetTestReportGenerator(ReportGenerator):
         succeeded_cases_table_section = self.create_table_section(
             title=self.report_titles_map['succeeded'],
             items=succeeded_test_cases,
-            headers=['Test Case', 'Test Script File Path', 'Job URL', 'Grafana URL'],
-            row_attrs=['name', 'file', 'ci_job_url', 'ci_dashboard_url'],
+            headers=['Test Case', 'Test App Path', 'Job URL', 'Grafana URL'],
+            row_attrs=['name', 'app_path', 'ci_job_url', 'ci_dashboard_url'],
         )
         succeeded_cases_report_url = self.write_report_to_file(
             self.generate_html_report(''.join(succeeded_cases_table_section)),
