@@ -40,3 +40,5 @@ tools/ci/cleanup_ignore_lists.py
 tools/ci/artifacts_handler.py
 tools/ci/get_known_failure_cases_file.py
 tools/unit-test-app/**/*
+tools/bt/bt_hci_to_btsnoop.py
+tools/bt/README.md
