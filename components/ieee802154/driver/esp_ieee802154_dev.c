@@ -998,10 +998,9 @@ static esp_err_t ieee802154_sleep_init(void)
 {
     esp_err_t err = ESP_OK;
 #if CONFIG_PM_ENABLE
-    sleep_retention_module_init_param_t init_param = {
-        .cbs     = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB) | BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
-    };
+    sleep_retention_module_init_param_t init_param = { .cbs = { .create = { .handle = ieee802154_sleep_retention_init, .arg = NULL } } };
+    init_param.depends.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
+    init_param.depends.bitmap[SLEEP_RETENTION_MODULE_CLOCK_MODEM >> 5] |= BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM % 32);
     err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_802154_MAC, &init_param);
     if (err == ESP_OK) {
         err = sleep_retention_module_allocate(SLEEP_RETENTION_MODULE_802154_MAC);

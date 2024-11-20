@@ -881,7 +881,7 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
                         .arg = group,
                     },
                 },
-                .depends = SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // we only do retention init here. Allocate retention module in the unit initialization
             if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
@@ -928,7 +928,7 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
     if (do_deinitialize) {
 #if PCNT_USE_RETENTION_LINK
         const periph_retention_module_t module_id = pcnt_reg_retention_info[group_id].retention_module;
-        if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+        if (sleep_retention_is_module_inited(module_id)) {
             sleep_retention_module_deinit(module_id);
         }
 #endif // PCNT_USE_RETENTION_LINK

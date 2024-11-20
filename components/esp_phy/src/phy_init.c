@@ -516,7 +516,7 @@ void esp_mac_bb_pd_mem_init(void)
 #elif SOC_PM_MODEM_RETENTION_BY_REGDMA
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = sleep_retention_wifi_bb_init, .arg = NULL } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_MODEM)
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_MODEM)
     };
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_WIFI_BB, &init_param);
     if (err != ESP_OK) {

@@ -268,7 +268,7 @@ static i2s_controller_t *i2s_acquire_controller_obj(int id)
                     .arg = i2s_obj,
                 },
             },
-            .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+            .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
         };
         if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
             i2s_obj->slp_retention_mod = module;
