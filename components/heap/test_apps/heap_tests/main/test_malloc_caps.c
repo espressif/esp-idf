@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,7 +18,7 @@
 #include <stdlib.h>
 #include <sys/param.h>
 
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if  !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
 TEST_CASE("Capabilities allocator test", "[heap]")
 {
     char *m1, *m2[10];
@@ -108,7 +108,7 @@ TEST_CASE("Capabilities allocator test", "[heap]")
     free(m1);
     printf("Done.\n");
 }
-#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#endif // !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
 
 #ifdef CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY
 TEST_CASE("IRAM_8BIT capability test", "[heap]")
@@ -230,7 +230,7 @@ TEST_CASE("heap caps minimum free bytes fault cases", "[heap]")
 /* Small function runs from IRAM to check that malloc/free/realloc
    all work OK when cache is disabled...
 */
-#if !CONFIG_ESP_SYSTEM_MEMPROT_FEATURE && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
+#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT) && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
 static IRAM_ATTR __attribute__((noinline)) bool iram_malloc_test(void)
 {
     spi_flash_guard_get()->start(); // Disables flash cache
@@ -252,7 +252,7 @@ TEST_CASE("heap_caps_xxx functions work with flash cache disabled", "[heap]")
 {
     TEST_ASSERT( iram_malloc_test() );
 }
-#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#endif // !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT) && !CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH
 
 #ifdef CONFIG_HEAP_ABORT_WHEN_ALLOCATION_FAILS
 TEST_CASE("When enabled, allocation operation failure generates an abort", "[heap][reset=abort,SW_CPU_RESET]")
@@ -318,7 +318,7 @@ TEST_CASE("allocation with invalid capability should also trigger the alloc fail
  * In MR 16031, the priority of RTC memory has been adjusted to the lowest.
  * RTC memory will not be consumed a lot during the startup process.
  */
-TEST_CASE("RTC memory shoule be lowest priority and its free size should be big enough", "[heap]")
+TEST_CASE("RTC memory should be lowest priority and its free size should be big enough", "[heap]")
 {
     const size_t allocation_size = 1024 * 4;
     void *ptr = NULL;
@@ -341,7 +341,7 @@ TEST_CASE("test memory protection features", "[heap][mem_prot]")
     // no memory is being allocated
     uint32_t *iram_ptr = heap_caps_malloc(4, MALLOC_CAP_EXEC);
 
-#ifndef CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#if !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
     // System memory protection not active, check that iram_ptr is not null
     // Check that iram_ptr is in IRAM
     TEST_ASSERT_NOT_NULL(iram_ptr);
@@ -352,5 +352,5 @@ TEST_CASE("test memory protection features", "[heap][mem_prot]")
 #else
     // System memory protection is active, DIRAM seen as DRAM, iram_ptr should be null
     TEST_ASSERT_NULL(iram_ptr);
-#endif // CONFIG_ESP_SYSTEM_MEMPROT_FEATURE
+#endif // !(CONFIG_ESP_SYSTEM_MEMPROT_FEATURE || CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT)
 }

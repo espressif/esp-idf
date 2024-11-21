@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,9 +32,15 @@ enum {
     SOC_MEMORY_TYPE_NUM,
 };
 
+#ifdef CONFIG_ESP_SYSTEM_PMP_IDRAM_SPLIT
+#define ESP32C2_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT)
+#else
+#define ESP32C2_MEM_COMMON_CAPS (MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_EXEC)
+#endif
+
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
     // Type 0: DRAM which has an alias on the I-port
-    [SOC_MEMORY_TYPE_RAM] = { "RAM", { MALLOC_CAP_DEFAULT | MALLOC_CAP_DMA | MALLOC_CAP_8BIT | MALLOC_CAP_INTERNAL | MALLOC_CAP_32BIT | MALLOC_CAP_EXEC, 0, 0 }},
+    [SOC_MEMORY_TYPE_RAM] = { "RAM", { ESP32C2_MEM_COMMON_CAPS, 0, 0 }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);
