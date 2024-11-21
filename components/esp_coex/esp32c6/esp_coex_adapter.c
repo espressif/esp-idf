@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #include "esp_private/esp_clk.h"
 #include "private/esp_coexist_adapter.h"
 #include "esp32c6/rom/ets_sys.h"
+#include "private/esp_coexist_debug.h"
 
 #define TAG "esp_coex_adapter"
 
@@ -142,6 +143,20 @@ static int32_t IRAM_ATTR esp_coex_semphr_give_from_isr_wrapper(void *semphr, voi
     return (int32_t)xSemaphoreGiveFromISR(semphr, hptw);
 }
 
+static int esp_coexist_debug_matrix_init_wrapper(int evt, int sig, bool rev)
+{
+#if CONFIG_ESP_COEX_GPIO_DEBUG
+    return esp_coexist_debug_matrix_init(evt, sig, rev);
+#else
+    return ESP_ERR_NOT_SUPPORTED;
+#endif
+}
+
+static IRAM_ATTR int esp_coex_common_xtal_freq_get_wrapper(void)
+{
+    return rtc_clk_xtal_freq_get();
+}
+
 coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._version = COEX_ADAPTER_VERSION,
     ._task_yield_from_isr = esp_coex_common_task_yield_from_isr_wrapper,
@@ -160,5 +175,7 @@ coex_adapter_funcs_t g_coex_adapter_funcs = {
     ._timer_done = esp_coex_common_timer_done_wrapper,
     ._timer_setfn = esp_coex_common_timer_setfn_wrapper,
     ._timer_arm_us = esp_coex_common_timer_arm_us_wrapper,
+    ._debug_matrix_init = esp_coexist_debug_matrix_init_wrapper,
+    ._xtal_freq_get = esp_coex_common_xtal_freq_get_wrapper,
     ._magic = COEX_ADAPTER_MAGIC,
 };

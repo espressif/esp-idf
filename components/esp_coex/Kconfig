@@ -33,4 +33,201 @@ menu "Wireless Coexistence"
         help
             If enabled, coexist power management will be enabled.
 
+    config ESP_COEX_GPIO_DEBUG
+        bool "GPIO debugging for coexistence"
+        default n
+        depends on !PM_SLP_DISABLE_GPIO && !PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+        help
+            Support coexistence GPIO debugging
+
+    if (ESP_COEX_GPIO_DEBUG)
+
+        choice ESP_COEX_GPIO_DEBUG_DIAG
+            prompt "Debugging Diagram"
+            default ESP_COEX_GPIO_DEBUG_DIAG_GENERAL
+            help
+                Select type of debugging diagram
+
+            config ESP_COEX_GPIO_DEBUG_DIAG_GENERAL
+                bool "General"
+            config ESP_COEX_GPIO_DEBUG_DIAG_WIFI
+                bool "Wi-Fi"
+
+        endchoice
+
+        config ESP_COEX_GPIO_DEBUG_IO_COUNT
+            int "Max number of debugging GPIOs"
+            range 0 12
+            default 12
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX0
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 0)
+            int "Actual IO num for Debug IO ID0"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 15 if IDF_TARGET_ESP32
+            default 4 if IDF_TARGET_ESP32S2
+            default 19 if IDF_TARGET_ESP32C3
+            default 4 if IDF_TARGET_ESP32S3
+            default 18 if IDF_TARGET_ESP32C2
+            default 4 if IDF_TARGET_ESP32C6
+            default 2 if IDF_TARGET_ESP32C5
+            default 4 if IDF_TARGET_ESP32C61
+            default 1
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX1
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 1)
+            int "Actual IO num for Debug IO ID1"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 2 if IDF_TARGET_ESP32
+            default 5 if IDF_TARGET_ESP32S2
+            default 18 if IDF_TARGET_ESP32C3
+            default 5 if IDF_TARGET_ESP32S3
+            default 4 if IDF_TARGET_ESP32C2
+            default 5 if IDF_TARGET_ESP32C6
+            default 3 if IDF_TARGET_ESP32C5
+            default 5 if IDF_TARGET_ESP32C61
+            default 2
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX2
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 2)
+            int "Actual IO num for Debug IO ID2"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 0 if IDF_TARGET_ESP32
+            default 6 if IDF_TARGET_ESP32S2
+            default 4 if IDF_TARGET_ESP32C3
+            default 6 if IDF_TARGET_ESP32S3
+            default 5 if IDF_TARGET_ESP32C2
+            default 6 if IDF_TARGET_ESP32C6
+            default 4 if IDF_TARGET_ESP32C5
+            default 6 if IDF_TARGET_ESP32C61
+            default 3
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX3
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 3)
+            int "Actual IO num for Debug IO ID3"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 4 if IDF_TARGET_ESP32
+            default 7 if IDF_TARGET_ESP32S2
+            default 5 if IDF_TARGET_ESP32C3
+            default 7 if IDF_TARGET_ESP32S3
+            default 6 if IDF_TARGET_ESP32C2
+            default 7 if IDF_TARGET_ESP32C6
+            default 5 if IDF_TARGET_ESP32C5
+            default 7 if IDF_TARGET_ESP32C61
+            default 4
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX4
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 4)
+            int "Actual IO num for Debug IO ID4"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 5 if IDF_TARGET_ESP32
+            default 8 if IDF_TARGET_ESP32S2
+            default 6 if IDF_TARGET_ESP32C3
+            default 15 if IDF_TARGET_ESP32S3
+            default 7 if IDF_TARGET_ESP32C2
+            default 8 if IDF_TARGET_ESP32C6
+            default 27 if IDF_TARGET_ESP32C5
+            default 0 if IDF_TARGET_ESP32C61
+            default 5
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX5
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 5)
+            int "Actual IO num for Debug IO ID5"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 18 if IDF_TARGET_ESP32
+            default 9 if IDF_TARGET_ESP32S2
+            default 7 if IDF_TARGET_ESP32C3
+            default 16 if IDF_TARGET_ESP32S3
+            default 8 if IDF_TARGET_ESP32C2
+            default 10 if IDF_TARGET_ESP32C6
+            default 6 if IDF_TARGET_ESP32C5
+            default 1 if IDF_TARGET_ESP32C61
+            default 6
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX6
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 6)
+            int "Actual IO num for Debug IO ID6"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 19 if IDF_TARGET_ESP32
+            default 10 if IDF_TARGET_ESP32S2
+            default 8 if IDF_TARGET_ESP32C3
+            default 17 if IDF_TARGET_ESP32S3
+            default 9 if IDF_TARGET_ESP32C2
+            default 11 if IDF_TARGET_ESP32C6
+            default 7 if IDF_TARGET_ESP32C5
+            default 8 if IDF_TARGET_ESP32C61
+            default 7
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX7
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 7)
+            int "Actual IO num for Debug IO ID7"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 22 if IDF_TARGET_ESP32
+            default 11 if IDF_TARGET_ESP32S2
+            default 9 if IDF_TARGET_ESP32C3
+            default 18 if IDF_TARGET_ESP32S3
+            default 10 if IDF_TARGET_ESP32C2
+            default 2 if IDF_TARGET_ESP32C6
+            default 26 if IDF_TARGET_ESP32C5
+            default 2 if IDF_TARGET_ESP32C61
+            default 8
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX8
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 8)
+            int "Actual IO num for Debug IO ID8"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 13 if IDF_TARGET_ESP32
+            default 12 if IDF_TARGET_ESP32S2
+            default 10 if IDF_TARGET_ESP32C3
+            default 10 if IDF_TARGET_ESP32S3
+            default 1 if IDF_TARGET_ESP32C2
+            default 15 if IDF_TARGET_ESP32C6
+            default 24 if IDF_TARGET_ESP32C5
+            default 3 if IDF_TARGET_ESP32C61
+            default 9
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX9
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 9)
+            int "Actual IO num for Debug IO ID9"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 12 if IDF_TARGET_ESP32
+            default 13 if IDF_TARGET_ESP32S2
+            default 0 if IDF_TARGET_ESP32C3
+            default 11 if IDF_TARGET_ESP32S3
+            default 0 if IDF_TARGET_ESP32C2
+            default 23 if IDF_TARGET_ESP32C6
+            default 23 if IDF_TARGET_ESP32C5
+            default 9 if IDF_TARGET_ESP32C61
+            default 10
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX10
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 10)
+            int "Actual IO num for Debug IO ID10"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 14 if IDF_TARGET_ESP32
+            default 14 if IDF_TARGET_ESP32S2
+            default 3 if IDF_TARGET_ESP32C3
+            default 12 if IDF_TARGET_ESP32S3
+            default 3 if IDF_TARGET_ESP32C2
+            default 22 if IDF_TARGET_ESP32C6
+            default 10 if IDF_TARGET_ESP32C5
+            default 13 if IDF_TARGET_ESP32C61
+            default 11
+
+        config ESP_COEX_GPIO_DEBUG_IO_IDX11
+            depends on (ESP_COEX_GPIO_DEBUG_IO_COUNT > 11)
+            int "Actual IO num for Debug IO ID11"
+            range 0 SOC_GPIO_OUT_RANGE_MAX
+            default 27 if IDF_TARGET_ESP32
+            default 15 if IDF_TARGET_ESP32S2
+            default 2 if IDF_TARGET_ESP32C3
+            default 13 if IDF_TARGET_ESP32S3
+            default 2 if IDF_TARGET_ESP32C2
+            default 21 if IDF_TARGET_ESP32C6
+            default 9 if IDF_TARGET_ESP32C5
+            default 12 if IDF_TARGET_ESP32C61
+            default 12
+
+    endif
+
 endmenu  # Wireless Coexistence
