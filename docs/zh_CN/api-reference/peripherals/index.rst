@@ -40,6 +40,8 @@
     :SOC_GPSPI_SUPPORTED: spi_master
     :SOC_GPSPI_SUPPORTED: spi_slave
     :SOC_SPI_SUPPORT_SLAVE_HD_VER2: spi_slave_hd
+    :SOC_LP_I2S_SUPPORTED: lp_i2s
+    :SOC_LP_VAD_SUPPORTED: vad
     :SOC_JPEG_CODEC_SUPPORTED: jpeg
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :esp32: touch_pad
