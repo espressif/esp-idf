@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -187,9 +187,11 @@ typedef struct esp_tls_cfg {
 
     tls_keep_alive_cfg_t *keep_alive_cfg;   /*!< Enable TCP keep-alive timeout for SSL connection */
 
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
     const psk_hint_key_t* psk_hint_key;     /*!< Pointer to PSK hint and key. if not NULL (and certificates are NULL)
                                                  then PSK authentication is enabled with configured setup.
                                                  Important note: the pointer must be valid for connection */
+#endif /* CONFIG_ESP_TLS_PSK_VERIFICATION */
 
     esp_err_t (*crt_bundle_attach)(void *conf);
                                             /*!< Function pointer to esp_crt_bundle_attach. Enables the use of certification
@@ -320,6 +322,12 @@ typedef struct esp_tls_cfg_server {
     esp_tls_handshake_callback cert_select_cb;  /*!< Certificate selection callback that gets called after ClientHello is processed.
                                                      Can be used as an SNI callback, but also has access to other
                                                      TLS extensions, such as ALPN and server_certificate_type . */
+#endif
+
+#if defined(CONFIG_ESP_TLS_PSK_VERIFICATION)
+    const psk_hint_key_t* psk_hint_key;         /*!< Pointer to PSK hint and key. if not NULL (and the certificate/key is NULL)
+                                                  then PSK authentication is enabled with configured setup.
+                                                  Important note: the pointer must be valid for connection */
 #endif
 
 } esp_tls_cfg_server_t;
@@ -464,7 +472,7 @@ int esp_tls_conn_http_new_async(const char *url, const esp_tls_cfg_t *cfg, esp_t
  *             - >=0  if write operation was successful, the return value is the number
  *                   of bytes actually written to the TLS/SSL connection.
  *             - <0  if write operation was not successful, because either an
- *                   error occured or an action must be taken by the calling process.
+ *                   error occurred or an action must be taken by the calling process.
  *             - ESP_TLS_ERR_SSL_WANT_READ/
  *               ESP_TLS_ERR_SSL_WANT_WRITE.
  *                  if the handshake is incomplete and waiting for data to be available for reading.
@@ -485,7 +493,7 @@ ssize_t esp_tls_conn_write(esp_tls_t *tls, const void *data, size_t datalen);
  *             -  0  if read operation was not successful. The underlying
  *                   connection was closed.
  *             - <0  if read operation was not successful, because either an
- *                   error occured or an action must be taken by the calling process.
+ *                   error occurred or an action must be taken by the calling process.
  */
 ssize_t esp_tls_conn_read(esp_tls_t *tls, void  *data, size_t datalen);
 
@@ -537,7 +545,7 @@ esp_err_t esp_tls_get_conn_sockfd(esp_tls_t *tls, int *sockfd);
  *
  * @param[in]   sockfd       sockfd value to set.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG if (tls == NULL || sockfd < 0)
  */
 esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd);
@@ -549,7 +557,7 @@ esp_err_t esp_tls_set_conn_sockfd(esp_tls_t *tls, int sockfd);
  *
  * @param[out]   conn_state   pointer to the connection state value.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG (Invalid arguments)
  */
 esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_state);
@@ -561,7 +569,7 @@ esp_err_t esp_tls_get_conn_state(esp_tls_t *tls, esp_tls_conn_state_t *conn_stat
  *
  * @param[in]   conn_state   connection state value to set.
  *
- * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated withthe provided value
+ * @return     - ESP_OK on success and value of sockfd for the tls connection shall updated with the provided value
  *             - ESP_ERR_INVALID_ARG (Invalid arguments)
  */
 esp_err_t esp_tls_set_conn_state(esp_tls_t *tls, esp_tls_conn_state_t conn_state);
@@ -586,7 +594,7 @@ void *esp_tls_get_ssl_context(esp_tls_t *tls);
  *
  * @return
  *             - ESP_OK             if creating global CA store was successful.
- *             - ESP_ERR_NO_MEM     if an error occured when allocating the mbedTLS resources.
+ *             - ESP_ERR_NO_MEM     if an error occurred when allocating the mbedTLS resources.
  */
 esp_err_t esp_tls_init_global_ca_store(void);
 
@@ -605,7 +613,7 @@ esp_err_t esp_tls_init_global_ca_store(void);
  *
  * @return
  *             - ESP_OK  if adding certificates was successful.
- *             - Other   if an error occured or an action must be taken by the calling process.
+ *             - Other   if an error occurred or an action must be taken by the calling process.
  */
 esp_err_t esp_tls_set_global_ca_store(const unsigned char *cacert_pem_buf, const unsigned int cacert_pem_bytes);
 
