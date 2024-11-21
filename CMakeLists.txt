@@ -175,6 +175,14 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU" AND CMAKE_C_COMPILER_VERSION VERSION_GREATE
     list(APPEND c_compile_options "-fzero-init-padding-bits=all" "-fno-malloc-dce")
 endif()
 
+if(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr")
+elseif(CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD)
+    list(APPEND cxx_compile_options "-D_GLIBCXX20_CONSTEXPR=__attribute__((cold))")
+    list(APPEND cxx_compile_options "-D_GLIBCXX23_CONSTEXPR=__attribute__((cold))")
+endif()
+
 __generate_prefix_map(prefix_map_compile_options)
 list(APPEND compile_options ${prefix_map_compile_options})
 

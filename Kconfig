@@ -685,6 +685,34 @@ mainmenu "Espressif IoT Development Framework Configuration"
             help
                 Enable compiler static analyzer. This may produce false-positive results and increases compile time.
 
+        choice COMPILER_CXX_GLIBCXX_CONSTEXPR
+            prompt "Define _GLIBCXX_CONSTEXPR"
+            default COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+            depends on IDF_TOOLCHAIN_GCC && !IDF_TARGET_LINUX
+            help
+                Modify libstdc++ _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR definitions to provide size
+                optimizations. The total size optimization depends on the application's structure.
+                There is no robust way to determine which option would be better in a particular case.
+                Please try all available options to find the best size optimization.
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_NO_CHANGE
+                bool "No change"
+                help
+                    Use default _GLIBCXX20_CONSTEXPR and _GLIBCXX23_CONSTEXPR defined in libstdc++
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold)) constexpr"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)) constexpr
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)) constexpr
+
+            config COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD
+                bool "_GLIBCXX2X_CONSTEXPR=__attribute__((cold))"
+                help
+                    Define _GLIBCXX20_CONSTEXPR=__attribute__((cold)).
+                    Define _GLIBCXX23_CONSTEXPR=__attribute__((cold)).
+        endchoice
+
     endmenu # Compiler Options
 
     menu "Component config"
