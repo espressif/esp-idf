@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,34 +25,70 @@ extern "C" {
 
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
 /**
- * @brief PDM format in 2 slots(RX)
+ * @brief PDM mode in 2 slots(RX). Read data in PCM format
  * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
-#define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+#define I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
                  I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_PCM, \
     .hp_en = true, \
     .hp_cut_off_freq_hz = 35.5, \
     .amplify_num = 1, \
 }
-#else
 /**
- * @brief PDM format in 2 slots(RX)
+ * @brief PDM mode in 2 slots(RX). Read data in raw PDM format
  * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
-#define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+#define I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
                  I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+}
+#else
+/**
+ * @brief PDM format in 2 slots(RX). Read data in PCM format
+ * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
+                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_PCM, \
+}
+/**
+ * @brief PDM mode in 2 slots(RX). Read data in raw PDM format
+ * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = (mono_or_stereo  == I2S_SLOT_MODE_MONO) ? \
+                 I2S_PDM_SLOT_LEFT : I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_RAW, \
 }
 #endif  // SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+
+/** @cond */
+#if SOC_I2S_SUPPORTS_PDM2PCM
+#   define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#else
+#   define I2S_PDM_RX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#endif
+/** @endcond */
 
 /**
  * @brief I2S default PDM RX clock configuration
@@ -74,8 +110,15 @@ typedef struct {
     i2s_data_bit_width_t    data_bit_width;     /*!< I2S sample data bit width (valid data bits per sample), only support 16 bits for PDM mode */
     i2s_slot_bit_width_t    slot_bit_width;     /*!< I2S slot bit width (total bits per slot) , only support 16 bits for PDM mode */
     i2s_slot_mode_t         slot_mode;          /*!< Set mono or stereo mode with I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO */
+
     /* Particular fields */
     i2s_pdm_slot_mask_t     slot_mask;          /*!< Choose the slots to activate */
+    i2s_pdm_data_fmt_t      data_fmt;           /*!< The data format of PDM RX mode. It determines what kind of data format is read in software.
+                                                 *   Typically, set this field to I2S_PDM_DATA_FMT_PCM when PCM2PDM filter is supported in the hardware,
+                                                 *   so that the hardware PDM2PCM filter will help to convert the raw PDM data on the line into PCM format,
+                                                 *   And then you can read PCM format data in software. Otherwise if this field is set to I2S_PDM_DATA_FMT_RAW,
+                                                 *   The data read in software are still in raw PDM format, you may need to convert the raw PDM data into PCM format manually by a software filter.
+                                                 */
 #if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
     bool                    hp_en;              /*!< High pass filter enable */
     float                   hp_cut_off_freq_hz; /*!< High pass filter cut-off frequency, range 23.3Hz ~ 185Hz, see cut-off frequency sheet above */
@@ -92,7 +135,10 @@ typedef struct {
  */
 typedef struct {
     /* General fields */
-    uint32_t                sample_rate_hz;     /*!< I2S sample rate */
+    uint32_t                sample_rate_hz;     /*!< I2S sample rate.
+                                                 *   - For raw PDM mode, it typically ranges 1.024MHz ~ 6.144MHz.
+                                                 *   - For PCM mode (PDM2PCM filter enabled), it usually ranges 16KHz ~ 48KHz
+                                                 */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of MCLK to the sample rate */
     /* Particular fields */
@@ -102,7 +148,7 @@ typedef struct {
 } i2s_pdm_rx_clk_config_t;
 
 /**
- * @brief I2S PDM TX mode GPIO pins configuration
+ * @brief I2S PDM RX mode GPIO pins configuration
  */
 typedef struct {
     gpio_num_t clk;                                     /*!< PDM clk pin, output */
@@ -120,7 +166,7 @@ typedef struct {
  */
 typedef struct {
     i2s_pdm_rx_clk_config_t    clk_cfg;         /*!< PDM RX clock configurations, can be generated by macro I2S_PDM_RX_CLK_DEFAULT_CONFIG */
-    i2s_pdm_rx_slot_config_t   slot_cfg;        /*!< PDM RX slot configurations, can be generated by macro I2S_PDM_RX_SLOT_DEFAULT_CONFIG */
+    i2s_pdm_rx_slot_config_t   slot_cfg;        /*!< PDM RX slot configurations, can be generated by macro I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG or I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG */
     i2s_pdm_rx_gpio_config_t   gpio_cfg;        /*!< PDM RX slot configurations, specified by user */
 } i2s_pdm_rx_config_t;
 
@@ -132,7 +178,7 @@ typedef struct {
  * @param[in]   handle      I2S RX channel handler
  * @param[in]   pdm_rx_cfg  Configurations for PDM RX mode, including clock, slot and GPIO
  *                          The clock configuration can be generated by the helper macro `I2S_PDM_RX_CLK_DEFAULT_CONFIG`
- *                          The slot configuration can be generated by the helper macro `I2S_PDM_RX_SLOT_DEFAULT_CONFIG`
+ *                          The slot configuration can be generated by the helper macro `I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG` or `I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG`
  *
  * @return
  *      - ESP_OK    Initialize successfully
@@ -164,7 +210,7 @@ esp_err_t i2s_channel_reconfig_pdm_rx_clock(i2s_chan_handle_t handle, const i2s_
  * @note  The input channel handle has to be initialized to PDM RX mode, i.e., `i2s_channel_init_pdm_rx_mode` has been called before reconfiguring
  *
  * @param[in]   handle      I2S RX channel handler
- * @param[in]   slot_cfg    PDM RX mode slot configuration, can be generated by `I2S_PDM_RX_SLOT_DEFAULT_CONFIG`
+ * @param[in]   slot_cfg    PDM RX mode slot configuration, can be generated by `I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG` or `I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG`
  * @return
  *      - ESP_OK    Set clock successfully
  *      - ESP_ERR_NO_MEM        No memory for DMA buffer
@@ -193,14 +239,15 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
 #if SOC_I2S_SUPPORTS_PDM_TX
 #if SOC_I2S_HW_VERSION_2
 /**
- * @brief PDM style in 2 slots(TX) for codec line mode
+ * @brief PDM style in 2 slots(TX) for codec line mode. Write PCM data.
  * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
-#define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+#define I2S_PDM_TX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .data_fmt = I2S_PDM_DATA_FMT_PCM, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .hp_scale = I2S_PDM_SIG_SCALING_DIV_2, \
@@ -214,16 +261,30 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
 }
 
 /**
+ * @brief PDM style in 2 slots(TX) for codec line mode. Write raw PDM data.
+ * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_TX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .line_mode = I2S_PDM_TX_ONE_LINE_CODEC, \
+}
+
+/**
  * @brief PDM style in 1 slots(TX) for DAC line mode
  * @note The noise might be different with different configurations, this macro provides a set of configurations
  *       that have relatively high SNR (Signal Noise Ratio), you can also adjust them to fit your case.
  * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
-#define I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+#define I2S_PDM_TX_SLOT_PCM_FMT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
+    .data_fmt = I2S_PDM_DATA_FMT_PCM, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
@@ -236,24 +297,68 @@ esp_err_t i2s_channel_reconfig_pdm_rx_gpio(i2s_chan_handle_t handle, const i2s_p
     .sd_dither = 0, \
     .sd_dither2 = 1, \
 }
-#else // SOC_I2S_HW_VERSION_2
+
 /**
- * @brief PDM style in 2 slots(TX) for codec line mode
+ * @brief PDM style in 1 slots(TX) for DAC line mode. Write raw PDM data.
+ * @note The noise might be different with different configurations, this macro provides a set of configurations
+ *       that have relatively high SNR (Signal Noise Ratio), you can also adjust them to fit your case.
  * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
  * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
  */
-#define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+#define I2S_PDM_TX_SLOT_RAW_FMT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+    .line_mode = ((mono_or_stereo) == I2S_SLOT_MODE_MONO ? \
+                 I2S_PDM_TX_ONE_LINE_DAC : I2S_PDM_TX_TWO_LINE_DAC), \
+}
+#else // SOC_I2S_HW_VERSION_2
+/**
+ * @brief PDM style in 2 slots(TX) for codec line mode. Write PCM data.
+ * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_TX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
     .data_bit_width = bits_per_sample, \
     .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
     .slot_mode = mono_or_stereo, \
     .slot_mask = I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_PCM, \
     .sd_prescale = 0, \
     .sd_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .hp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .lp_scale = I2S_PDM_SIG_SCALING_MUL_1, \
     .sinc_scale = I2S_PDM_SIG_SCALING_MUL_1, \
 }
+
+/**
+ * @brief PDM style in 2 slots(TX) for codec line mode. Write PDM data.
+ * @param bits_per_sample I2S data bit width, only support 16 bits for PDM mode
+ * @param mono_or_stereo I2S_SLOT_MODE_MONO or I2S_SLOT_MODE_STEREO
+ */
+#define I2S_PDM_TX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) { \
+    .data_bit_width = bits_per_sample, \
+    .slot_bit_width = I2S_SLOT_BIT_WIDTH_AUTO, \
+    .slot_mode = mono_or_stereo, \
+    .slot_mask = I2S_PDM_SLOT_BOTH, \
+    .data_fmt = I2S_PDM_DATA_FMT_RAW, \
+}
 #endif // SOC_I2S_HW_VERSION_2
+
+/** @cond */
+#if SOC_I2S_SUPPORTS_PCM2PDM
+#   define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_TX_SLOT_PCM_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#   if SOC_I2S_HW_VERSION_2
+#       define I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_TX_SLOT_PCM_FMT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#   endif  // SOC_I2S_HW_VERSION_2
+#else
+#   define I2S_PDM_TX_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_TX_SLOT_RAW_FMT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#   if SOC_I2S_HW_VERSION_2
+#       define I2S_PDM_TX_SLOT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo) I2S_PDM_TX_SLOT_RAW_FMT_DAC_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)
+#   endif  // SOC_I2S_HW_VERSION_2
+#endif  // SOC_I2S_SUPPORTS_PCM2PDM
+/** @endcond */
 
 /**
  * @brief I2S default PDM TX clock configuration for codec line mode
@@ -323,6 +428,12 @@ typedef struct {
 #if SOC_I2S_HW_VERSION_1
     i2s_pdm_slot_mask_t     slot_mask;          /*!< Slot mask to choose left or right slot */
 #endif
+    i2s_pdm_data_fmt_t   data_fmt;              /*!< The data format of PDM TX mode. It determines what kind of data format is written in software.
+                                                 *   Typically, set this field to I2S_PDM_DATA_FMT_PCM when PCM2PDM filter is supported in the hardware,
+                                                 *   so that you can write PCM format data in software, and then the hardware PCM2PDM filter will help to
+                                                 *   convert it into PDM format on the line. Otherwise if this field is set to I2S_PDM_DATA_FMT_RAW,
+                                                 *   The data written in software are supposed to be the raw PDM format.
+                                                 */
     uint32_t                sd_prescale;        /*!< Sigma-delta filter prescale */
     i2s_pdm_sig_scale_t     sd_scale;           /*!< Sigma-delta filter scaling value */
     i2s_pdm_sig_scale_t     hp_scale;           /*!< High pass filter scaling value */
@@ -342,7 +453,10 @@ typedef struct {
  */
 typedef struct {
     /* General fields */
-    uint32_t                sample_rate_hz;     /*!< I2S sample rate, not suggest to exceed 48000 Hz, otherwise more glitches and noise may appear */
+    uint32_t                sample_rate_hz;     /*!< I2S sample rate.
+                                                 *   - For raw PDM mode, it typically ranges 1.024MHz ~ 6.144MHz.
+                                                 *   - For PCM mode (PCM2PDM filter enabled), it usually ranges 16KHz ~ 48KHz
+                                                 */
     i2s_clock_src_t         clk_src;            /*!< Choose clock source */
     i2s_mclk_multiple_t     mclk_multiple;      /*!< The multiple of MCLK to the sample rate */
     /* Particular fields */

@@ -835,7 +835,15 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM2PCM
     bool
     default y
 

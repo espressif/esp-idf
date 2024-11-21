@@ -22,6 +22,7 @@
 #include "soc/dport_access.h"
 #include "hal/i2s_types.h"
 #include "hal/hal_utils.h"
+#include "hal/assert.h"
 
 
 #ifdef __cplusplus
@@ -502,27 +503,31 @@ static inline void i2s_ll_rx_enable_std(i2s_dev_t *hw)
 }
 
 /**
- * @brief Enable TX PDM mode.
+ * @brief Enable I2S TX PDM mode
  * @note  ESP32-S2 doesn't support pdm
  *        This function is used to be compatible with those support pdm
- *
- * @param hw Peripheral I2S hardware instance address (ignored)
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pcm2pdm_en Set true to enable TX PCM to PDM filter
  */
-static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pcm2pdm_en)
 {
-    // Remain empty
+    // remain empty
+    (void)hw;
+    (void)pcm2pdm_en;
 }
 
 /**
- * @brief Enable RX PDM mode.
+ * @brief Enable I2S RX PDM mode
  * @note  ESP32-S2 doesn't support pdm
  *        This function is used to be compatible with those support pdm
- *
- * @param hw Peripheral I2S hardware instance address (ignored)
+ * @param hw Peripheral I2S hardware instance address.
+ * @param pdm2pcm_en Set true to enable RX PDM to PCM filter
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm_en)
 {
-    // Remain empty
+    // remain empty
+    (void)hw;
+    (void)pdm2pcm_en;
 }
 
 /**
