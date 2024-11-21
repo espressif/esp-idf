@@ -6,6 +6,7 @@
 
 #include "soc/soc.h"
 #include "soc/mcpwm_periph.h"
+#include "soc/mcpwm_reg.h"
 #include "soc/gpio_sig_map.h"
 
 const mcpwm_signal_conn_t mcpwm_periph_signals = {
