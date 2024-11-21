@@ -13,6 +13,7 @@
 # any external libraries here - put in external script, or import in
 # their specific function instead.
 import codecs
+import glob
 import json
 import locale
 import os.path
@@ -142,6 +143,7 @@ def _safe_relpath(path: str, start: Optional[str]=None) -> str:
 def init_cli(verbose_output: Optional[List]=None) -> Any:
     # Click is imported here to run it after check_environment()
     import click
+    from click.shell_completion import CompletionItem
 
     class Deprecation(object):
         """Construct deprecation notice for help messages"""
@@ -450,6 +452,14 @@ def init_cli(verbose_output: Optional[List]=None) -> Any:
                 if callback:
                     return Action(name=name, callback=callback.unwrapped_callback)
                 return None
+
+        def shell_complete(self, ctx: click.core.Context, incomplete: str) -> List[CompletionItem]:
+            if incomplete.startswith('@'):
+                path_prefix = incomplete[1:]
+                candidates = glob.glob(path_prefix + '*')
+                result = [CompletionItem(f'@{c}') for c in candidates]
+                return result
+            return super(CLI, self).shell_complete(ctx, incomplete)  # type: ignore
 
         def _print_closing_message(self, args: PropertyDict, actions: KeysView) -> None:
             # print a closing message of some kind,
