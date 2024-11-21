@@ -534,6 +534,7 @@ menu "Security features"
         config SECURE_SIGNED_APPS_RSA_SCHEME
             bool "RSA"
             depends on SECURE_BOOT_V2_RSA_SUPPORTED && (SECURE_SIGNED_APPS_NO_SECURE_BOOT || SECURE_BOOT_V2_ENABLED)
+            depends on !(IDF_TARGET_ESP32C5 && ESP32C5_REV_MIN_FULL < 1)
             help
                 Appends the RSA-3072 based Signature block to the application.
                 Refer to <Secure Boot Version 2 documentation link> before enabling.

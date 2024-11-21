@@ -51,6 +51,7 @@ void bootloader_print_banner(void);
 
  *  @return ESP_OK   - If the setting is successful.
  *          ESP_FAIL - If the setting is not successful.
+ *          ESP_ERR_NOT_SUPPORTED - If selected secure boot scheme is not supported.
  */
 esp_err_t bootloader_init(void);
 
