@@ -135,8 +135,8 @@ err1:
 esp_err_t lp_i2s_channel_enable(lp_i2s_chan_handle_t chan)
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(chan->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
-
+    i2s_state_t expected_state = I2S_CHAN_STATE_READY;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&(chan->state), &expected_state, I2S_CHAN_STATE_RUNNING), ESP_ERR_INVALID_STATE, TAG, "the channel isn't enabled");
     lp_i2s_evt_data_t evt_data = {};
     if (chan->cbs.on_request_new_trans) {
         chan->cbs.on_request_new_trans(chan, &evt_data, chan->user_data);
@@ -146,7 +146,6 @@ esp_err_t lp_i2s_channel_enable(lp_i2s_chan_handle_t chan)
         chan->trans = evt_data.trans;
     }
 
-    chan->state = I2S_CHAN_STATE_RUNNING;
     portENTER_CRITICAL(&g_i2s.spinlock);
     lp_i2s_ll_rx_enable_interrupt(chan->ctlr->hal.dev, LP_I2S_LL_EVENT_RX_MEM_THRESHOLD_INT, true);
     lp_i2s_ll_rx_start(chan->ctlr->hal.dev);
@@ -158,7 +157,7 @@ esp_err_t lp_i2s_channel_enable(lp_i2s_chan_handle_t chan)
 esp_err_t lp_i2s_channel_read(lp_i2s_chan_handle_t chan, lp_i2s_trans_t *trans, uint32_t timeout_ms)
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(chan->state == I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel isn't enabled");
+    ESP_RETURN_ON_FALSE(atomic_load(&(chan->state)) == I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel can't be deleted unless it is disabled");
     ESP_RETURN_ON_FALSE(!chan->cbs.on_request_new_trans, ESP_ERR_INVALID_STATE, TAG, "on_request_new_trans registered, no use of this read API");
 
     TickType_t ticks_to_wait = timeout_ms / portTICK_PERIOD_MS;
@@ -207,8 +206,8 @@ esp_err_t lp_i2s_channel_read_until_bytes(lp_i2s_chan_handle_t chan, lp_i2s_tran
 esp_err_t lp_i2s_channel_disable(lp_i2s_chan_handle_t chan)
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(chan->state  > I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "the channel is disabled already");
-    chan->state = I2S_CHAN_STATE_READY;
+    i2s_state_t expected_state = I2S_CHAN_STATE_RUNNING;
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&(chan->state), &expected_state, I2S_CHAN_STATE_READY), ESP_ERR_INVALID_STATE, TAG, "the channel isn't enabled");
 
     portENTER_CRITICAL(&g_i2s.spinlock);
     lp_i2s_ll_rx_enable_interrupt(chan->ctlr->hal.dev, LP_I2S_LL_EVENT_RX_MEM_THRESHOLD_INT, false);
@@ -221,7 +220,7 @@ esp_err_t lp_i2s_channel_disable(lp_i2s_chan_handle_t chan)
 esp_err_t lp_i2s_del_channel(lp_i2s_chan_handle_t chan)
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(chan->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel can't be deleted unless it is disabled");
+    ESP_RETURN_ON_FALSE(atomic_load(&(chan->state)) == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "the channel can't be deleted unless it is disabled");
 
     int id = chan->ctlr->id;
     portENTER_CRITICAL(&g_i2s.spinlock);
@@ -249,7 +248,7 @@ _Static_assert(sizeof(lp_i2s_evt_cbs_t) == sizeof(lp_i2s_evt_cbs_internal_t), "I
 esp_err_t lp_i2s_register_event_callbacks(lp_i2s_chan_handle_t chan, const lp_i2s_evt_cbs_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(chan && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(chan->state < I2S_CHAN_STATE_RUNNING, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
+    ESP_RETURN_ON_FALSE(atomic_load(&(chan->state)) == I2S_CHAN_STATE_READY, ESP_ERR_INVALID_STATE, TAG, "the channel is in enabled state already");
 
     if (cbs->on_thresh_met) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_thresh_met), ESP_ERR_INVALID_ARG, TAG, "on_thresh_met callback not in IRAM");
@@ -287,7 +286,7 @@ static esp_err_t s_i2s_register_channel(lp_i2s_controller_t *ctlr, i2s_dir_t dir
     new_chan->mode = I2S_COMM_MODE_NONE;
     new_chan->role = I2S_ROLE_MASTER;
     new_chan->dir = dir;
-    new_chan->state = I2S_CHAN_STATE_REGISTER;
+    atomic_init(&(new_chan->state), I2S_CHAN_STATE_READY);
     new_chan->ctlr = ctlr;
 
     if (dir == I2S_DIR_RX) {
