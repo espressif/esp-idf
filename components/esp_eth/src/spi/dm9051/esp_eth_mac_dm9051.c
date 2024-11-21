@@ -10,6 +10,8 @@
 #include <inttypes.h>
 #include "esp_eth_mac_spi.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
+#include "soc/io_mux_reg.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -23,7 +25,6 @@
 #include "freertos/semphr.h"
 #include "dm9051.h"
 #include "sdkconfig.h"
-#include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
@@ -784,9 +785,9 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
     emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     if (emac->int_gpio_num >= 0) {
-        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLDOWN_ONLY);
+        gpio_func_sel(emac->int_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(emac->int_gpio_num);
+        gpio_pulldown_en(emac->int_gpio_num);
         gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_POSEDGE);
         gpio_intr_enable(emac->int_gpio_num);
         gpio_isr_handler_add(emac->int_gpio_num, dm9051_isr_handler, emac);
@@ -806,7 +807,6 @@ static esp_err_t emac_dm9051_init(esp_eth_mac_t *mac)
 err:
     if (emac->int_gpio_num >= 0) {
         gpio_isr_handler_remove(emac->int_gpio_num);
-        gpio_reset_pin(emac->int_gpio_num);
     }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
@@ -819,7 +819,6 @@ static esp_err_t emac_dm9051_deinit(esp_eth_mac_t *mac)
     mac->stop(mac);
     if (emac->int_gpio_num >= 0) {
         gpio_isr_handler_remove(emac->int_gpio_num);
-        gpio_reset_pin(emac->int_gpio_num);
     }
     if (emac->poll_timer && esp_timer_is_active(emac->poll_timer)) {
         esp_timer_stop(emac->poll_timer);
