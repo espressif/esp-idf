@@ -555,7 +555,6 @@
 /* macro redefine for pass esp_wifi headers md5sum check */
 #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
-
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)
@@ -624,7 +623,6 @@
 
 /*------------------------------------- No Reset CAPS -------------------------------------*/
 #define SOC_CAPS_NO_RESET_BY_ANA_BOD           (1)
-
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR   (1) /*!< LP Core interrupts all map to a single entry in vector table */

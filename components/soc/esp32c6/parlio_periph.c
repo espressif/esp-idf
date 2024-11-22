@@ -76,12 +76,14 @@ static const uint32_t parlio_regs_map[4] = {0x2f, 0x0, 0x100, 0x0};
 static const regdma_entries_config_t parlio_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
-    [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PARLIO_LINK(0x00), \
-                                               PARLIO_RETENTION_REGS_BASE, PARLIO_RETENTION_REGS_BASE, \
-                                               PARLIO_RETENTION_REGS_CNT, 0, 0, \
-                                               parlio_regs_map[0], parlio_regs_map[1], \
-                                               parlio_regs_map[2], parlio_regs_map[3]), \
-                                               .owner = ENTRY(0) | ENTRY(2) }, \
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PARLIO_LINK(0x00), \
+                                            PARLIO_RETENTION_REGS_BASE, PARLIO_RETENTION_REGS_BASE, \
+                                            PARLIO_RETENTION_REGS_CNT, 0, 0, \
+                                            parlio_regs_map[0], parlio_regs_map[1], \
+                                            parlio_regs_map[2], parlio_regs_map[3]), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
 };
 const parlio_reg_retention_info_t parlio_reg_retention_info[SOC_PARLIO_GROUPS] = {
     [0] = {

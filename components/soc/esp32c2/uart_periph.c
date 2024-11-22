@@ -10,7 +10,7 @@
  Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
-   {
+    {
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U0TXD_GPIO_NUM,

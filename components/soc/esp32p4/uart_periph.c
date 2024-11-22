@@ -12,7 +12,8 @@
  Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
-   { // HP UART0
+    {
+        // HP UART0
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U0TXD_GPIO_NUM,
@@ -45,7 +46,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART0_INTR_SOURCE,
     },
 
-    { // HP UART1
+    {
+        // HP UART1
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U1TXD_GPIO_NUM,
@@ -78,7 +80,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART1_INTR_SOURCE,
     },
 
-    { // HP UART2
+    {
+        // HP UART2
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U2TXD_GPIO_NUM,
@@ -111,7 +114,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART2_INTR_SOURCE,
     },
 
-    { // HP UART3
+    {
+        // HP UART3
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U3TXD_GPIO_NUM,
@@ -144,7 +148,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART3_INTR_SOURCE,
     },
 
-    { // HP UART4
+    {
+        // HP UART4
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U4TXD_GPIO_NUM,
@@ -176,7 +181,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         },
         .irq = ETS_UART4_INTR_SOURCE,
     },
-    { // LP UART0
+    {
+        // LP UART0
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = LP_U0TXD_GPIO_NUM,

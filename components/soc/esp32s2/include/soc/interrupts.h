@@ -18,7 +18,7 @@ typedef enum {
     ETS_WIFI_MAC_INTR_SOURCE = 0,               /**< interrupt of WiFi MAC, level*/
     ETS_WIFI_MAC_NMI_SOURCE,                    /**< interrupt of WiFi MAC, NMI, use if MAC have bug to fix in NMI*/
     ETS_WIFI_PWR_INTR_SOURCE,                   /**< */
-    ETS_WIFI_BB_INTR_SOURCE,                    /**< interrupt of WiFi BB, level, we can do some calibartion*/
+    ETS_WIFI_BB_INTR_SOURCE,                    /**< interrupt of WiFi BB, level, we can do some calibration*/
     ETS_BT_MAC_INTR_SOURCE,                     /**< will be cancelled*/
     ETS_BT_BB_INTR_SOURCE,                      /**< interrupt of BT BB, level*/
     ETS_BT_BB_NMI_SOURCE,                       /**< interrupt of BT BB, NMI, use if BB have bug to fix in NMI*/
@@ -59,12 +59,12 @@ typedef enum {
     ETS_SDIO_HOST_INTR_SOURCE,                  /**< interrupt of SD/SDIO/MMC HOST, level*/
     ETS_LEDC_INTR_SOURCE = 45,                  /**< interrupt of LED PWM, level*/
     ETS_EFUSE_INTR_SOURCE,                      /**< interrupt of efuse, level, not likely to use*/
-    ETS_TWAI_INTR_SOURCE ,                      /**< interrupt of twai, level*/
+    ETS_TWAI_INTR_SOURCE,                       /**< interrupt of twai, level*/
 
     ETS_USB_INTR_SOURCE = 48,                   /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
-    ETS_PCNT_INTR_SOURCE,                       /**< interrupt of pluse count, level*/
+    ETS_PCNT_INTR_SOURCE,                       /**< interrupt of pulse count, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/
     ETS_I2C_EXT1_INTR_SOURCE,                   /**< interrupt of I2C controller0, level*/
     ETS_RSA_INTR_SOURCE,                        /**< interrupt of RSA accelerator, level*/
@@ -84,7 +84,7 @@ typedef enum {
     ETS_TG1_T1_EDGE_INTR_SOURCE,                /**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
     ETS_TG1_WDT_EDGE_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
     ETS_TG1_LACT_EDGE_INTR_SOURCE,              /**< interrupt of TIMER_GROUP0, LACT, EDGE*/
-    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
+    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalid Access, LEVEL*/
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
     ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */

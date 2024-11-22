@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 typedef struct emac_ptp_dev_s {
-    volatile union{
+    volatile union {
         struct {
             uint32_t en_timestamp : 1;                /* Timestamp Enable */
             uint32_t ts_fine_coarse_update : 1;       /* Timestamp Fine or Coarse Update */
@@ -41,66 +41,66 @@ typedef struct emac_ptp_dev_s {
         };
         uint32_t val;
     } timestamp_ctrl;
-    volatile union{
+    volatile union {
         struct {
             uint32_t sub_second_incre_value : 8; /* Sub-second Increment Value */
             uint32_t reserved : 24;              /* Reserved */
         };
         uint32_t val;
     } sub_sec_incre;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_second : 32; /* Timestamp Second */
         };
         uint32_t val;
     } sys_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_sub_seconds : 31; /* Timestamp Sub Seconds */
             uint32_t reserved: 1;         /* Reserved */
         };
         uint32_t val;
     } sys_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_second : 32; /* Timestamp Second */
         };
         uint32_t val;
     } sys_seconds_update;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_sub_seconds : 31; /* Timestamp Sub Seconds */
             uint32_t add_sub : 1;         /* Add or Subtract Time */
         };
         uint32_t val;
     } sys_nanosec_update;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_addend_val: 32; /* Timestamp Addend Register */
         };
         uint32_t val;
     } timestamp_addend;
-    volatile union{
+    volatile union {
         struct {
             uint32_t tgt_time_second_val : 32; /* Target Time Seconds Register */
         };
         uint32_t val;
     } tgt_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t tgt_ts_low_reg : 31;   /* Target Timestamp Low Register */
             uint32_t tgt_time_reg_busy : 1; /* Target Time Register Busy */
         };
         uint32_t val;
     } tgt_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_higher_word : 16; /* Timestamp Higher Word Register */
             uint32_t reserved : 16;       /* Reserved */
         };
         uint32_t val;
     } sys_seconds_high;
-    volatile union{
+    volatile union {
         struct {
             uint32_t ts_secons_ovf : 1;             /* Timestamp Seconds Overflow */
             uint32_t ts_tgt_time_reach : 1;         /* Timestamp Target Time Reached */
@@ -121,7 +121,7 @@ typedef struct emac_ptp_dev_s {
         };
         uint32_t val;
     } status;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps_cmd0 : 4;      /* Flexible PPS0 Output Control */
             uint32_t en_pps0 : 1;       /* Flexible PPS Output Mode Enable */
@@ -142,20 +142,20 @@ typedef struct emac_ptp_dev_s {
         };
         uint32_t val;
     } pps_ctrl;
-    volatile union{
+    volatile union {
         struct {
             uint32_t aux_ts_low : 31; /* Contains the lower 31 bits (nano-seconds field) of the auxiliary timestamp. */
             uint32_t reserved : 1;    /* Reserved */
         };
         uint32_t val;
     } aux_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t aux_tx_high : 32; /* Contains the lower 32 bits of the Seconds field of the auxiliary timestamp. */
         };
         uint32_t val;
     } aux_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t av_ethertype_val : 16;       /* AV EtherType Value */
             uint32_t ac_queue_pri : 3;            /* AV Priority for Queuing */
@@ -169,91 +169,91 @@ typedef struct emac_ptp_dev_s {
         uint32_t val;
     } av_mac_ctrl;
     uint32_t reserved1[9]; /* Reserved */
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps0_interval : 32; /* PPS0 Output Signal Interval */
         };
         uint32_t val;
     } pps0_interval;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps0_width : 32; /* PPS0 Output Signal Width */
         };
         uint32_t val;
     } pps0_width;
     uint32_t reserved2[6]; /* Reserved */
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps1_tgt_seconds : 32; /* PPS1 Target Time Seconds Register */
         };
         uint32_t val;
     } pps1_tgt_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps1_tgt_nanosec : 31;  /* Target Time Low for PPS1 Register */
             uint32_t pps1_tgt_time_busy : 1; /* PPS1 Target Time Register Busy */
         };
         uint32_t val;
     } pps1_tgt_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps1_interval : 32; /* PPS1 Output Signal Interval */
         };
         uint32_t val;
     } pps1_interval;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps1_width : 32; /* PPS1 Output Signal Width */
         };
         uint32_t val;
     } pps1_width;
     uint32_t reserved3[4]; /* Reserved */
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps2_tgt_seconds : 32; /* PPS2 Target Time Seconds Register */
         };
         uint32_t val;
     } pps2_tgt_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps2_tgt_nanosec : 31;  /* Target Time Low for PPS2 Register */
             uint32_t pps2_tgt_time_busy : 1; /* PPS2 Target Time Register Busy */
         };
         uint32_t val;
     } pps2_tgt_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps2_interval : 32; /* PPS2 Output Signal Interval */
         };
         uint32_t val;
     } pps2_interval;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps2_width : 32; /* PPS2 Output Signal Width */
         };
         uint32_t val;
     } pps2_width;
     uint32_t reserved4[4]; /* Reserved */
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps3_tgt_seconds : 32; /* PPS3 Target Time Seconds Register */
         };
         uint32_t val;
     } pps3_tgt_seconds;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps3_tgt_nanosec : 31;  /* Target Time Low for PPS3 Register */
             uint32_t pps3_tgt_time_busy : 1; /* PPS3 Target Time Register Busy */
         };
         uint32_t val;
     } pps3_tgt_nanosec;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps3_interval : 32; /* PPS3 Output Signal Interval */
         };
         uint32_t val;
     } pps3_interval;
-    volatile union{
+    volatile union {
         struct {
             uint32_t pps3_width : 32; /* PPS3 Output Signal Width */
         };

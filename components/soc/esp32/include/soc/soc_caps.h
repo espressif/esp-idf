@@ -318,7 +318,6 @@
 #define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
-
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
 
@@ -356,7 +355,6 @@
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
-
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED    1
 
@@ -382,7 +380,6 @@
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
-
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_AES_128 (1)

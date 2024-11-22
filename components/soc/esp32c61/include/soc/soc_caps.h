@@ -198,13 +198,13 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM           (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
- #define SOC_RTCIO_PIN_COUNT                 7
- #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+#define SOC_RTCIO_PIN_COUNT                 7
+#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
                                                  * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
                                                  * when the pins are switched to RTC function.
                                                  */
- #define SOC_RTCIO_HOLD_SUPPORTED            1
- #define SOC_RTCIO_WAKE_SUPPORTED            1
+#define SOC_RTCIO_HOLD_SUPPORTED            1
+#define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */

@@ -26,7 +26,6 @@ typedef enum clock_out_channel {
                                                  (channel == CLKOUT_CHANNEL_2) ? CLK_OUT_OUT2_IDX : \
                                                  (channel == CLKOUT_CHANNEL_3) ? CLK_OUT_OUT3_IDX : SIG_GPIO_OUT_IDX)
 
-
 #define CLKOUT_CHANNEL_MASK(channel)    ((channel == CLKOUT_CHANNEL_1) ? CLK_OUT1 : \
                                          (channel == CLKOUT_CHANNEL_2) ? CLK_OUT2 : \
                                          (channel == CLKOUT_CHANNEL_3) ? CLK_OUT3 : 0)

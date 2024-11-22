@@ -85,7 +85,7 @@ const i2s_signal_conn_t i2s_periph_signal[SOC_I2S_NUM] = {
 };
 
 const i2s_signal_conn_t lp_i2s_periph_signal[SOC_LP_I2S_NUM] = {
-   [0] = {
+    [0] = {
         .mck_out_sig  = -1,
         .mck_in_sig   = -1,
 

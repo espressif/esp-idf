@@ -3,26 +3,6 @@
 # using gen_soc_caps_kconfig.py, do not edit manually
 #####################################################
 
-config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
-    bool
-    default n
-
-config SOC_MPU_MIN_REGION_SIZE
-    hex
-    default 0x20000000
-
-config SOC_MPU_REGIONS_MAX_NUM
-    int
-    default 8
-
-config SOC_MPU_REGION_RO_SUPPORTED
-    bool
-    default n
-
-config SOC_MPU_REGION_WO_SUPPORTED
-    bool
-    default n
-
 config SOC_ADC_SUPPORTED
     bool
     default y
@@ -682,6 +662,26 @@ config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
 config SOC_MMU_PERIPH_NUM
     int
     default 1
+
+config SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED
+    bool
+    default n
+
+config SOC_MPU_MIN_REGION_SIZE
+    hex
+    default 0x20000000
+
+config SOC_MPU_REGIONS_MAX_NUM
+    int
+    default 8
+
+config SOC_MPU_REGION_RO_SUPPORTED
+    bool
+    default n
+
+config SOC_MPU_REGION_WO_SUPPORTED
+    bool
+    default n
 
 config SOC_PCNT_GROUPS
     int

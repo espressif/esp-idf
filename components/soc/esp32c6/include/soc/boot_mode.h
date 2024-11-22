@@ -39,8 +39,6 @@
 /*Diagnostic Mode+UART0 download Mode*/
 #define IS_0111(v)                              (((v)&0x0f)==0x07)
 
-
-
 #define BOOT_MODE_GET()                         (GPIO_REG_READ(GPIO_STRAP_REG))
 
 /*do not include download mode*/

@@ -67,7 +67,7 @@ typedef union {
 } usb_dwc_gotgint_reg_t;
 
 typedef union {
-        struct {
+    struct {
         uint32_t glbllntrmsk: 1;
         uint32_t hbstlen: 4;
         uint32_t dmaen: 1;
