@@ -58,6 +58,10 @@ typedef union {
         bool is_direct;
         bool is_aux;
         esp_ble_addr_type_t own_addr_type;
+        esp_ble_phy_mask_t phy_mask;
+        esp_ble_conn_params_t phy_1m_conn_params;
+        esp_ble_conn_params_t phy_2m_conn_params;
+        esp_ble_conn_params_t phy_coded_conn_params;
     } open;
     //BTC_GATTC_ACT_CLOSE,
     struct close_arg {

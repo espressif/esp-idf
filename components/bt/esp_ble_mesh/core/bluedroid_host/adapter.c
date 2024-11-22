@@ -1718,9 +1718,7 @@ uint16_t bt_mesh_gattc_get_service_uuid(struct bt_mesh_conn *conn)
 
 int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
 {
-#if CONFIG_BLE_MESH_USE_BLE_50
-    tBTA_DM_BLE_CONN_PARAMS  conn_1m_param = {0};
-#endif
+    tBTA_BLE_CONN_PARAMS  conn_1m_param = {0};
     uint8_t zero[6] = {0};
     int i;
 
@@ -1774,7 +1772,7 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     BT_DBG("Create conn with %s", bt_hex(addr->val, BLE_MESH_ADDR_LEN));
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    /* Min_interval: 15ms  0x18, 0x18, 0x00, 0x64
+    /* Min_interval: 15ms
      * Max_interval: 15ms
      * Slave_latency: 0x0
      * Supervision_timeout: 1s
@@ -1788,21 +1786,23 @@ int bt_mesh_gattc_conn_create(const bt_mesh_addr_t *addr, uint16_t service_uuid)
     conn_1m_param.min_ce_len = 0;
     conn_1m_param.max_ce_len = 0;
 
-    BTA_DmBleGapPreferExtConnectParamsSet(bt_mesh_gattc_info[i].addr.val, 0x01, &conn_1m_param ,NULL, NULL);
-
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE);
+                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, TRUE, BLE_ADDR_UNKNOWN_TYPE,
+                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
 #else
     /* Min_interval: 15ms
      * Max_interval: 15ms
      * Slave_latency: 0x0
      * Supervision_timeout: 1s
      */
-
-    BTA_DmSetBlePrefConnParams(bt_mesh_gattc_info[i].addr.val, 0x18, 0x18, 0x00, 0x64);
+    conn_1m_param.interval_min = 0x18;
+    conn_1m_param.interval_max = 0x18;
+    conn_1m_param.latency = 0;
+    conn_1m_param.supervision_timeout = 0x64;
 
     BTA_GATTC_Enh_Open(bt_mesh_gattc_if, bt_mesh_gattc_info[i].addr.val,
-                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE);
+                   bt_mesh_gattc_info[i].addr.type, true, BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE,
+                   BTA_BLE_PHY_1M_MASK, &conn_1m_param, NULL, NULL);
 #endif
 
     return 0;

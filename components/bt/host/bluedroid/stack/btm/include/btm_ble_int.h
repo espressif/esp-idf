@@ -212,11 +212,14 @@ typedef struct {
 #define BTM_BLE_MAX_BG_CONN_DEV_NUM    10
 
 typedef struct {
+    UINT16              scan_interval;
+    UINT16              scan_window;
     UINT16              min_conn_int;
     UINT16              max_conn_int;
     UINT16              slave_latency;
     UINT16              supervision_tout;
-
+    UINT16              min_ce_len;
+    UINT16              max_ce_len;
 } tBTM_LE_CONN_PRAMS;
 
 
