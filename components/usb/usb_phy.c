@@ -21,9 +21,9 @@
 #include "soc/usb_pins.h"
 
 #if !SOC_RCC_IS_INDEPENDENT
-#define USB_WRAP_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
+#define USB_PHY_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
-#define USB_WRAP_RCC_ATOMIC()
+#define USB_PHY_RCC_ATOMIC()
 #endif
 
 static const char *USBPHY_TAG = "usb_phy";
@@ -259,12 +259,7 @@ static esp_err_t usb_phy_install(void)
         PHY_EXIT_CRITICAL();
         goto cleanup;
     }
-    // Enable USB peripheral and reset the register
     PHY_EXIT_CRITICAL();
-    USB_WRAP_RCC_ATOMIC() {
-        usb_wrap_ll_enable_bus_clock(true);
-        usb_wrap_ll_reset_register();
-    }
     return ESP_OK;
 
 cleanup:
@@ -302,10 +297,9 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     phy_context->controller = config->controller;
     phy_context->status = USB_PHY_STATUS_IN_USE;
 
-    usb_wrap_hal_init(&phy_context->wrap_hal);
-#if SOC_USB_SERIAL_JTAG_SUPPORTED
-    usb_serial_jtag_hal_init(&phy_context->usj_hal);
-#endif
+    USB_PHY_RCC_ATOMIC() {
+        usb_wrap_hal_init(&phy_context->wrap_hal);
+    }
     if (config->controller == USB_PHY_CTRL_OTG) {
 #if USB_WRAP_LL_EXT_PHY_SUPPORTED
         usb_wrap_hal_phy_set_external(&phy_context->wrap_hal, (config->target == USB_PHY_TARGET_EXT));
@@ -361,9 +355,9 @@ static void phy_uninstall(void)
     if (p_phy_ctrl_obj->ref_count == 0) {
         p_phy_ctrl_obj_free = p_phy_ctrl_obj;
         p_phy_ctrl_obj = NULL;
-        USB_WRAP_RCC_ATOMIC() {
+        USB_PHY_RCC_ATOMIC() {
             // Disable USB peripheral without reset the module
-            usb_wrap_ll_enable_bus_clock(false);
+            usb_wrap_hal_disable();
         }
     }
     PHY_EXIT_CRITICAL();
