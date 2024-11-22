@@ -552,12 +552,13 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         //esp_log_buffer_hex("bda", param->connect.remote_bda, 6);
         memcpy(gl_profile_tab[PROFILE_A_APP_ID].remote_bda, param->connect.remote_bda, 6);
         // create gattc virtual connection
-        esp_ble_gatt_creat_conn_params_t creat_conn_params;
+        esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
         memcpy(&creat_conn_params.remote_bda, gl_profile_tab[PROFILE_A_APP_ID].remote_bda, ESP_BD_ADDR_LEN);
         creat_conn_params.remote_addr_type = BLE_ADDR_TYPE_RANDOM;
         creat_conn_params.own_addr_type = BLE_ADDR_TYPE_RPA_PUBLIC;
         creat_conn_params.is_direct = true;
         creat_conn_params.is_aux = false;
+        creat_conn_params.phy_mask = 0x0;
         esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
                             &creat_conn_params);
         break;

@@ -215,7 +215,9 @@ static void btc_gattc_open(btc_ble_gattc_args_t *arg)
 
     BTA_GATTC_Enh_Open(arg->open.gattc_if, arg->open.remote_bda,
                    arg->open.remote_addr_type, arg->open.is_direct,
-                   transport, arg->open.is_aux, arg->open.own_addr_type);
+                   transport, arg->open.is_aux, arg->open.own_addr_type,
+                   arg->open.phy_mask, (void *)&arg->open.phy_1m_conn_params,
+                   (void *)&arg->open.phy_2m_conn_params, (void *)&arg->open.phy_coded_conn_params);
 }
 
 static void btc_gattc_close(btc_ble_gattc_args_t *arg)
