@@ -283,10 +283,14 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
                     prefix_number = f'{prefix_num_start:0{prefix_num_digits}}'
                     csv_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'csv'
                     bin_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + prefix_number + '-' + file_identifier_value
                     prefix_num_start += 1
                 else:
                     csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
                     bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
 
                 output_csv_file = output_csv_target_dir + csv_filename
                 # Verify if output csv file does not exist
@@ -304,8 +308,6 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
 
                 args.input = output_csv_file
                 args.output = os.path.join('bin', bin_filename)
-                if args.keygen:
-                    args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
 
                 if is_encr:
                     nvs_partition_gen.encrypt(args)
