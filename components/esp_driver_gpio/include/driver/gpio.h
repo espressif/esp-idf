@@ -590,6 +590,28 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num);
  */
 esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask);
 
+/**
+ * @brief Get the configuration for an IO
+ *
+ * @param gpio_num GPIO number
+ * @param pu Pull-up enabled or not
+ * @param pd Pull-down enabled or not
+ * @param ie Input enabled or not
+ * @param oe Output enabled or not
+ * @param od Open-drain enabled or not
+ * @param drv Drive strength value
+ * @param fun_sel IOMUX function selection value
+ * @param sig_out Outputting peripheral signal index
+ * @param slp_sel Pin sleep mode enabled or not
+ *
+ * @return
+ *    - ESP_OK Success
+ *    - ESP_ERR_INVALID_ARG Parameter error
+ */
+esp_err_t gpio_get_io_config(uint32_t gpio_num,
+                             bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                             uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel);
+
 #ifdef __cplusplus
 }
 #endif
