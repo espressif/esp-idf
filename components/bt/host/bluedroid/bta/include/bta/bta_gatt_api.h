@@ -728,6 +728,21 @@ typedef struct
     tBTA_GATTC_SERVICE     *included_service;
 } __attribute__((packed)) tBTA_GATTC_INCLUDED_SVC;
 
+typedef struct {
+    UINT16 scan_interval;
+    UINT16 scan_window;
+    UINT16 interval_min;
+    UINT16 interval_max;
+    UINT16 latency;
+    UINT16 supervision_timeout;
+    UINT16 min_ce_len;
+    UINT16 max_ce_len;
+} tBTA_BLE_CONN_PARAMS;
+
+#define BTA_BLE_PHY_1M_MASK     (1 << 0)
+#define BTA_BLE_PHY_2M_MASK     (1 << 1)
+#define BTA_BLE_PHY_CODED_MASK  (1 << 2)
+
 /*****************************************************************************
 **  External Function Declarations
 *****************************************************************************/
@@ -801,7 +816,9 @@ extern void BTA_GATTC_AppDeregister (tBTA_GATTC_IF client_if);
 **
 *******************************************************************************/
 extern void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type);
+                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type,
+                    UINT8 phy_mask, tBTA_BLE_CONN_PARAMS *phy_1m_conn_params, tBTA_BLE_CONN_PARAMS *phy_2m_conn_params,
+                    tBTA_BLE_CONN_PARAMS *phy_coded_conn_params);
 
 /*******************************************************************************
 **
