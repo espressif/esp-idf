@@ -103,19 +103,25 @@ static const uint32_t mcpwm_regs_map[4] = {0xefffeeef, 0x7efffbff, 0x318, 0x0};
 static const regdma_entries_config_t mcpwm_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
-    [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_MCPWM_LINK(0x00),
-                                               MCPWM_RETENTION_REGS_BASE, MCPWM_RETENTION_REGS_BASE,
-                                               MCPWM_RETENTION_REGS_CNT, 0, 0,
-                                               mcpwm_regs_map[0], mcpwm_regs_map[1],
-                                               mcpwm_regs_map[2], mcpwm_regs_map[3]),
-                                               .owner = ENTRY(0) | ENTRY(2) },
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_MCPWM_LINK(0x00),
+                                            MCPWM_RETENTION_REGS_BASE, MCPWM_RETENTION_REGS_BASE,
+                                            MCPWM_RETENTION_REGS_CNT, 0, 0,
+                                            mcpwm_regs_map[0], mcpwm_regs_map[1],
+                                            mcpwm_regs_map[2], mcpwm_regs_map[3]),
+        .owner = ENTRY(0) | ENTRY(2)
+    },
     // restore stage: trigger a forced update of all active registers
-    [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MCPWM_LINK(0x01),
-                                                MCPWM_UPDATE_CFG_REG, MCPWM_GLOBAL_FORCE_UP, MCPWM_GLOBAL_FORCE_UP_M, 1, 0),
-                                                .owner = ENTRY(0) | ENTRY(2) },
-    [2] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_MCPWM_LINK(0x02),
-                                                MCPWM_UPDATE_CFG_REG, 0, MCPWM_GLOBAL_FORCE_UP_M, 1, 0),
-                                                .owner = ENTRY(0) | ENTRY(2) },
+    [1] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_MCPWM_LINK(0x01),
+                                         MCPWM_UPDATE_CFG_REG, MCPWM_GLOBAL_FORCE_UP, MCPWM_GLOBAL_FORCE_UP_M, 1, 0),
+        .owner = ENTRY(0) | ENTRY(2)
+    },
+    [2] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_MCPWM_LINK(0x02),
+                                         MCPWM_UPDATE_CFG_REG, 0, MCPWM_GLOBAL_FORCE_UP_M, 1, 0),
+        .owner = ENTRY(0) | ENTRY(2)
+    },
 };
 
 const mcpwm_reg_retention_info_t mcpwm_reg_retention_info[SOC_MCPWM_GROUPS] = {

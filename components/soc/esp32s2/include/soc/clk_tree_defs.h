@@ -397,7 +397,6 @@ typedef enum {
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,  /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
 
-
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**

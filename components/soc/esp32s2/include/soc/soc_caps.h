@@ -399,14 +399,12 @@
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
 #define SOC_SHA_SUPPORT_SHA512_T        (1)
 
-
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM (4)
 #define SOC_MPI_OPERATIONS_NUM (3)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
-
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)

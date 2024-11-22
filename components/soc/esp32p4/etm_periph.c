@@ -18,19 +18,19 @@ static const regdma_entries_config_t etm_regdma_entries[] = {
     // restore stage: store the enabled channels
     [0] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_ETM_LINK(0x00),
-        SOC_ETM_CH_ENA_AD0_REG, SOC_ETM_CH_ENA_AD0_SET_REG, 1, 0, 0),
+                                              SOC_ETM_CH_ENA_AD0_REG, SOC_ETM_CH_ENA_AD0_SET_REG, 1, 0, 0),
         .owner = ENTRY(0),
     },
     [1] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_ETM_LINK(0x01),
-        SOC_ETM_CH_ENA_AD1_REG, SOC_ETM_CH_ENA_AD1_SET_REG, 1, 0, 0),
+                                              SOC_ETM_CH_ENA_AD1_REG, SOC_ETM_CH_ENA_AD1_SET_REG, 1, 0, 0),
         .owner = ENTRY(0),
     },
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
     [2] = {
         .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_ETM_LINK(0x02),
-        SOC_ETM_CH0_EVT_ID_REG, SOC_ETM_CH0_EVT_ID_REG, ETM_RETENTION_REGS_CNT, 0, 0),
+                                              SOC_ETM_CH0_EVT_ID_REG, SOC_ETM_CH0_EVT_ID_REG, ETM_RETENTION_REGS_CNT, 0, 0),
         .owner = ENTRY(0),
     },
 };

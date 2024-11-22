@@ -262,7 +262,11 @@
 #define SOC_MMU_PERIPH_NUM                      (1U)
 
 /*-------------------------- MPU CAPS ----------------------------------------*/
-#include "mpu_caps.h"
+#define SOC_MPU_CONFIGURABLE_REGIONS_SUPPORTED    0
+#define SOC_MPU_MIN_REGION_SIZE                   0x20000000U
+#define SOC_MPU_REGIONS_MAX_NUM                   8
+#define SOC_MPU_REGION_RO_SUPPORTED               0
+#define SOC_MPU_REGION_WO_SUPPORTED               0
 
 /*-------------------------- PCNT CAPS ---------------------------------------*/
 #define SOC_PCNT_GROUPS               (1U)

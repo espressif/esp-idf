@@ -22,7 +22,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
@@ -48,7 +47,6 @@ typedef enum {
     RESET_REASON_CORE_USB_JTAG   = 0x16, // USB JTAG resets the digital core (hp system)
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
-
 
 #ifdef __cplusplus
 }

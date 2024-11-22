@@ -39,7 +39,6 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
     }
 };
 
-
 /**
  * Backup registers in Light sleep: (total cnt 12)
  *

@@ -411,7 +411,6 @@ typedef enum {
     ADC_RTC_CLK_SRC_DEFAULT = SOC_MOD_CLK_RC_FAST,      /*!< Select RC_FAST as the default clock choice */
 } soc_periph_adc_rtc_clk_src_t;
 
-
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**
@@ -446,7 +445,6 @@ typedef enum {
     LEDC_USE_RTC8M_CLK __attribute__((deprecated("please use 'LEDC_USE_RC_FAST_CLK' instead"))) = LEDC_USE_RC_FAST_CLK,   /*!< Alias of 'LEDC_USE_RC_FAST_CLK' */
 } soc_periph_ledc_clk_src_legacy_t;
 
-
 //////////////////////////////////////////////////SDMMC///////////////////////////////////////////////////////////////
 
 /**
@@ -475,7 +473,6 @@ typedef enum {
     CLKOUT_SIG_I2S1     = 15,   /*!< I2S1 clock, depends on the i2s driver configuration */
     CLKOUT_SIG_INVALID  = 0xFF,
 } soc_clkout_sig_id_t;
-
 
 #ifdef __cplusplus
 }

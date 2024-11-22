@@ -19,13 +19,11 @@
 #define PRO_CPU_NUM (0)
 #define APP_CPU_NUM (1)
 
-
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE 0x400000 ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
 //Registers Operation {{
 #define ETS_UNCACHED_ADDR(addr) (addr)
 #define ETS_CACHED_ADDR(addr) (addr)
-
 
 #ifndef __ASSEMBLER__
 

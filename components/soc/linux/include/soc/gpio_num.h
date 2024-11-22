@@ -61,7 +61,6 @@ typedef enum {
     GPIO_NUM_38 = 38,   /*!< GPIO38, input mode only */
     GPIO_NUM_39 = 39,   /*!< GPIO39, input mode only */
     GPIO_NUM_MAX,
-/** @endcond */
 } gpio_num_t;
 
 #ifdef __cplusplus

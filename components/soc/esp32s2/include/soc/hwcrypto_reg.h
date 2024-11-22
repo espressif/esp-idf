@@ -100,7 +100,6 @@
 #define AES_STATE_BUSY 1
 #define AES_STATE_DONE 2
 
-
 /* Crypto DMA */
 #define CRYPTO_DMA_CONF0_REG             ((DR_REG_CRYPTO_DMA_BASE) + 0x00)
 #define CRYPTO_DMA_INT_RAW_REG           ((DR_REG_CRYPTO_DMA_BASE) + 0x04)

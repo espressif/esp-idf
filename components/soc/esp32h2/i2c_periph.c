@@ -42,32 +42,52 @@ const i2c_signal_conn_t i2c_periph_signal[SOC_I2C_NUM] = {
 #define I2C0_RETENTION_MAP_BASE  I2C_SCL_LOW_PERIOD_REG(0)
 static const uint32_t i2c0_regs_map[4] = {0xc03f345b, 0x3, 0, 0};
 static const regdma_entries_config_t i2c0_regs_retention[] = {
-    [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_I2C_LINK(0x00), I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_REGS_CNT, 0, 0, i2c0_regs_map[0], i2c0_regs_map[1], i2c0_regs_map[2], i2c0_regs_map[3]), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [1] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x01), I2C_CTR_REG(0), I2C_FSM_RST, I2C_FSM_RST_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [2] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x02), I2C_CTR_REG(0), 0x0, I2C_FSM_RST_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [3] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x03), I2C_CTR_REG(0), I2C_CONF_UPGATE, I2C_CONF_UPGATE_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [4] = {.config = REGDMA_LINK_WAIT_INIT(REGDMA_I2C_LINK(0x04), I2C_CTR_REG(0), 0x0, I2C_CONF_UPGATE_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_I2C_LINK(0x00), I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_MAP_BASE, I2C0_RETENTION_REGS_CNT, 0, 0, i2c0_regs_map[0], i2c0_regs_map[1], i2c0_regs_map[2], i2c0_regs_map[3]), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [1] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x01), I2C_CTR_REG(0), I2C_FSM_RST, I2C_FSM_RST_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [2] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x02), I2C_CTR_REG(0), 0x0, I2C_FSM_RST_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [3] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x03), I2C_CTR_REG(0), I2C_CONF_UPGATE, I2C_CONF_UPGATE_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [4] = {
+        .config = REGDMA_LINK_WAIT_INIT(REGDMA_I2C_LINK(0x04), I2C_CTR_REG(0), 0x0, I2C_CONF_UPGATE_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
 };
 
 #define I2C1_RETENTION_REGS_CNT  18
 #define I2C1_RETENTION_MAP_BASE  I2C_SCL_LOW_PERIOD_REG(1)
 static const uint32_t i2c1_regs_map[4] = {0xc03f345b, 0x3, 0, 0};
 static const regdma_entries_config_t i2c1_regs_retention[] = {
-    [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_I2C_LINK(0x00), I2C1_RETENTION_MAP_BASE, I2C1_RETENTION_MAP_BASE, I2C1_RETENTION_REGS_CNT, 0, 0, i2c1_regs_map[0], i2c1_regs_map[1], i2c1_regs_map[2], i2c1_regs_map[3]), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [1] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x01), I2C_CTR_REG(1), I2C_FSM_RST, I2C_FSM_RST_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [2] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x02), I2C_CTR_REG(1), 0x0, I2C_FSM_RST_M, 1, 0), \
-    .owner = ENTRY(0) | ENTRY(2) }, \
-    [3] = {.config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x03), I2C_CTR_REG(1), I2C_CONF_UPGATE, I2C_CONF_UPGATE_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
-    [4] = {.config = REGDMA_LINK_WAIT_INIT(REGDMA_I2C_LINK(0x04), I2C_CTR_REG(1), 0x0, I2C_CONF_UPGATE_M, 1, 0), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_I2C_LINK(0x00), I2C1_RETENTION_MAP_BASE, I2C1_RETENTION_MAP_BASE, I2C1_RETENTION_REGS_CNT, 0, 0, i2c1_regs_map[0], i2c1_regs_map[1], i2c1_regs_map[2], i2c1_regs_map[3]), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [1] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x01), I2C_CTR_REG(1), I2C_FSM_RST, I2C_FSM_RST_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [2] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x02), I2C_CTR_REG(1), 0x0, I2C_FSM_RST_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [3] = {
+        .config = REGDMA_LINK_WRITE_INIT(REGDMA_I2C_LINK(0x03), I2C_CTR_REG(1), I2C_CONF_UPGATE, I2C_CONF_UPGATE_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
+    [4] = {
+        .config = REGDMA_LINK_WAIT_INIT(REGDMA_I2C_LINK(0x04), I2C_CTR_REG(1), 0x0, I2C_CONF_UPGATE_M, 1, 0), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
 };
 
 const i2c_reg_ctx_link_t i2c_regs_retention[SOC_HP_I2C_NUM] = {

@@ -1,3 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "soc/lldesc.h"
 
 void lldesc_setup_link_constrained(lldesc_t *dmadesc, const void *data, int len, int max_desc_size, bool isrx)
@@ -33,11 +39,13 @@ int lldesc_get_received_len(lldesc_t* head, lldesc_t** out_next)
 {
     lldesc_t* desc = head;
     int len = 0;
-    while(desc) {
+    while (desc) {
         len += desc->length;
         bool eof = desc->eof;
         desc = STAILQ_NEXT(desc, qe);
-        if (eof) break;
+        if (eof) {
+            break;
+        }
     }
     if (out_next) {
         *out_next = desc;

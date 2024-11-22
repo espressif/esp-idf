@@ -268,7 +268,6 @@ typedef enum {
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_APB, /*!< Select APB clock as the default clock choice */
 } soc_periph_glitch_filter_clk_src_t;
 
-
 //////////////////////////////////////////////////MWDT/////////////////////////////////////////////////////////////////
 
 /**

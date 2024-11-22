@@ -19,7 +19,6 @@ extern "C" {
 #define SOC_MMU_PAGE_SIZE 0x10000
 #endif
 
-
 #define SOC_IRAM0_CACHE_ADDRESS_LOW                  0x42000000
 #define SOC_IRAM0_CACHE_ADDRESS_HIGH                 (SOC_IRAM0_CACHE_ADDRESS_LOW + ((SOC_MMU_PAGE_SIZE) * SOC_MMU_ENTRY_NUM))
 
