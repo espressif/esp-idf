@@ -133,7 +133,8 @@ static int esp_ping_receive(esp_ping_t *ep)
             if (IP_IS_V6_VAL(recv_addr)) {      // Currently we process IPv6
                 struct ip6_hdr *iphdr = (struct ip6_hdr *)buf;
                 struct icmp6_echo_hdr *iecho6 = (struct icmp6_echo_hdr *)(buf + sizeof(struct ip6_hdr)); // IPv6 head length is 40
-                if ((iecho6->id == ep->packet_hdr->id) && (iecho6->seqno == ep->packet_hdr->seqno)) {
+                if ((iecho6->type == ICMP6_TYPE_EREP) // only check the ICMPv6 echo reply types
+                    && (iecho6->id == ep->packet_hdr->id) && (iecho6->seqno == ep->packet_hdr->seqno)) {
                     ip_addr_copy(ep->recv_addr, recv_addr);
                     ep->received++;
                     ep->recv_len = IP6H_PLEN(iphdr) - sizeof(struct icmp6_echo_hdr); //The data portion of ICMPv6
