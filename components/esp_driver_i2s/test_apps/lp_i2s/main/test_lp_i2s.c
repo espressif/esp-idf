@@ -222,7 +222,7 @@ TEST_CASE("test LP I2S read for STD", "[lp_i2s]")
     }
 }
 
-static bool s_lp_i2s_on_thresh_met(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_t *edata, void *user_data)
+static bool IRAM_ATTR s_lp_i2s_on_thresh_met(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_t *edata, void *user_data)
 {
     ESP_DRAM_LOGD(TAG, "edata->trans.received_size: %d", edata->trans.received_size);
     s_data_check(edata->trans.buffer, edata->trans.received_size);
@@ -230,7 +230,7 @@ static bool s_lp_i2s_on_thresh_met(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_
     return false;
 }
 
-static bool s_lp_i2s_on_request_new_trans(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_t *edata, void *user_data)
+static bool IRAM_ATTR s_lp_i2s_on_request_new_trans(lp_i2s_chan_handle_t handle, lp_i2s_evt_data_t *edata, void *user_data)
 {
     lp_i2s_trans_t trans = *(lp_i2s_trans_t *)user_data;
     edata->trans.buffer = trans.buffer;
