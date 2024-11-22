@@ -74,6 +74,7 @@ static void i2c_slave_read_test_v2(void)
         .slave_addr = ESP_SLAVE_ADDR,
         .send_buf_depth = DATA_LENGTH,
         .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
     };
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
@@ -200,6 +201,7 @@ static void slave_write_buffer_test_v2(void)
         .slave_addr = ESP_SLAVE_ADDR,
         .send_buf_depth = DATA_LENGTH,
         .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
     };
 
     TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config, &handle));
