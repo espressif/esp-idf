@@ -141,6 +141,11 @@ if(CONFIG_LWIP_ENABLE)
         list(APPEND srcs "lwip/src/core/ipv4/acd.c")
     endif()
 
+    if(CONFIG_LWIP_USE_ESP_GETADDRINFO)
+        list(APPEND srcs "apps/netdb/esp_netdb.c")
+    endif()
+
+
 if(NOT ${target} STREQUAL "linux")
         # Support for vfs and linker fragments only for target builds
         set(linker_fragments linker.lf)
