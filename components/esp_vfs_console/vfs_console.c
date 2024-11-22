@@ -16,6 +16,7 @@
 #include "sdkconfig.h"
 #include "esp_private/startup_internal.h"
 #include "esp_vfs_null.h"
+#include "esp_private/nullfs.h"
 
 #define STRINGIFY(s) STRINGIFY2(s)
 #define STRINGIFY2(s) #s
@@ -37,10 +38,10 @@ typedef struct {
 
 // Secondary register part.
 #if CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-const static esp_vfs_t *secondary_vfs = NULL;
+const static esp_vfs_fs_ops_t *secondary_vfs = NULL;
 #endif // Secondary part
 
-const static esp_vfs_t *primary_vfs = NULL;
+const static esp_vfs_fs_ops_t *primary_vfs = NULL;
 
 static vfs_console_context_t vfs_console = {0};
 
@@ -121,8 +122,8 @@ static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefd
                                       esp_vfs_select_sem_t select_sem, void **end_select_args)
 {
     // start_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
-    if (primary_vfs->start_select) {
-        return primary_vfs->start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
+    if (primary_vfs->select->start_select) {
+        return primary_vfs->select->start_select(nfds, readfds, writefds, exceptfds, select_sem, end_select_args);
     }
 
     return ESP_ERR_NOT_SUPPORTED;
@@ -131,8 +132,8 @@ static esp_err_t console_start_select(int nfds, fd_set *readfds, fd_set *writefd
 esp_err_t console_end_select(void *end_select_args)
 {
     // end_select is not guaranteed be implemented even though CONFIG_VFS_SUPPORT_SELECT is enabled in sdkconfig
-    if (primary_vfs->end_select) {
-        return primary_vfs->end_select(end_select_args);
+    if (primary_vfs->select->end_select) {
+        return primary_vfs->select->end_select(end_select_args);
     }
 
     return ESP_ERR_NOT_SUPPORTED;
@@ -163,8 +164,29 @@ int console_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-static const esp_vfs_t vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_console_dir = {
+    .access = &console_access,
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_console_select = {
+    .start_select = &console_start_select,
+    .end_select = &console_end_select,
+};
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+static const esp_vfs_termios_ops_t s_vfs_console_termios = {
+    .tcsetattr = &console_tcsetattr,
+    .tcgetattr = &console_tcgetattr,
+    .tcdrain = &console_tcdrain,
+    .tcflush = &console_tcflush,
+};
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
+
+static const esp_vfs_fs_ops_t s_vfs_console = {
     .write = &console_write,
     .open = &console_open,
     .fstat = &console_fstat,
@@ -172,24 +194,23 @@ static const esp_vfs_t vfs = {
     .read = &console_read,
     .fcntl = &console_fcntl,
     .fsync = &console_fsync,
+
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    .access = &console_access,
+    .dir = &s_vfs_console_dir,
 #endif // CONFIG_VFS_SUPPORT_DIR
+
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    .start_select = &console_start_select,
-    .end_select = &console_end_select,
+    .select = &s_vfs_console_select,
 #endif // CONFIG_VFS_SUPPORT_SELECT
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    .tcsetattr = &console_tcsetattr,
-    .tcgetattr = &console_tcgetattr,
-    .tcdrain = &console_tcdrain,
-    .tcflush = &console_tcflush,
+    .termios = &s_vfs_console_termios,
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
 static esp_err_t esp_vfs_dev_console_register(void)
 {
-    return esp_vfs_register(ESP_VFS_DEV_CONSOLE, &vfs, NULL);
+    return esp_vfs_register_fs(ESP_VFS_DEV_CONSOLE, &s_vfs_console, ESP_VFS_FLAG_STATIC, NULL);
 }
 
 esp_err_t esp_vfs_console_register(void)

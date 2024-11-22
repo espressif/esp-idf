@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -300,8 +300,7 @@ void esp_vfs_dev_cdcacm_set_rx_line_endings(esp_line_endings_t mode)
     s_rx_mode = mode;
 }
 
-static const esp_vfs_t vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+static const esp_vfs_fs_ops_t s_cdcacm_vfs = {
     .write = &cdcacm_write,
     .open = &cdcacm_open,
     .fstat = &cdcacm_fstat,
@@ -311,12 +310,12 @@ static const esp_vfs_t vfs = {
     .fsync = &cdcacm_fsync
 };
 
-const esp_vfs_t *esp_vfs_cdcacm_get_vfs(void)
+const esp_vfs_fs_ops_t *esp_vfs_cdcacm_get_vfs(void)
 {
-    return &vfs;
+    return &s_cdcacm_vfs;
 }
 
 esp_err_t esp_vfs_dev_cdcacm_register(void)
 {
-    return esp_vfs_register("/dev/cdcacm", &vfs, NULL);
+    return esp_vfs_register_fs("/dev/cdcacm", &s_cdcacm_vfs, ESP_VFS_FLAG_STATIC, NULL);
 }
