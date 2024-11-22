@@ -1055,8 +1055,15 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         fprintf(out_stream, "  SleepSelEn: %d\n", slp_sel);
         fprintf(out_stream, "\n");
     }
-    fprintf(out_stream, "=================IO DUMP End==================\n");
+    fprintf(out_stream, "=================IO DUMP End=================\n");
     return ESP_OK;
+}
+
+void gpio_get_io_config(uint32_t gpio_num,
+                        bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                        uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+{
+    gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel);
 }
 
 esp_err_t gpio_func_sel(gpio_num_t gpio_num, uint32_t func)
