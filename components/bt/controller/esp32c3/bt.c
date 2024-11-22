@@ -258,7 +258,6 @@ extern int API_vhci_host_register_callback(const vhci_host_callback_t *callback)
 extern int ble_txpwr_set(int power_type, uint16_t handle, int power_level);
 extern int ble_txpwr_get(int power_type, uint16_t handle);
 
-extern uint16_t l2c_ble_link_get_tx_buf_num(void);
 extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern void coex_pti_v2(void);
 extern int coex_schm_register_btdm_callback(void *callback);
@@ -1898,11 +1897,6 @@ void esp_bt_controller_wakeup_request(void)
 int IRAM_ATTR esp_bt_h4tl_eif_io_event_notify(int event)
 {
     return btdm_hci_tl_io_event_post(event);
-}
-
-uint16_t esp_bt_get_tx_buf_num(void)
-{
-    return l2c_ble_link_get_tx_buf_num();
 }
 
 static void coex_wifi_sleep_set_hook(bool sleep)

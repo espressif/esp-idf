@@ -143,7 +143,9 @@ void BTA_GATTC_AppDeregister(tBTA_GATTC_IF client_if)
 **
 *******************************************************************************/
 void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_TYPE remote_addr_type,
-                    BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type)
+                        BOOLEAN is_direct, tBTA_GATT_TRANSPORT transport, BOOLEAN is_aux, tBTA_ADDR_TYPE own_addr_type,
+                        UINT8 phy_mask, tBTA_BLE_CONN_PARAMS *phy_1m_conn_params, tBTA_BLE_CONN_PARAMS *phy_2m_conn_params,
+                        tBTA_BLE_CONN_PARAMS *phy_coded_conn_params)
 {
     tBTA_GATTC_API_OPEN  *p_buf;
 
@@ -156,8 +158,17 @@ void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_T
         p_buf->is_aux = is_aux;
         p_buf->remote_addr_type = remote_addr_type;
         p_buf->own_addr_type = own_addr_type;
+        p_buf->phy_mask = phy_mask;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
-
+        if ((phy_mask & BTA_BLE_PHY_1M_MASK) && phy_1m_conn_params) {
+            memcpy(&p_buf->phy_1m_conn_params, phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
+        if ((phy_mask & BTA_BLE_PHY_2M_MASK) && phy_2m_conn_params) {
+            memcpy(&p_buf->phy_2m_conn_params, phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
+        if ((phy_mask & BTA_BLE_PHY_CODED_MASK) && phy_coded_conn_params) {
+            memcpy(&p_buf->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
 
         bta_sys_sendmsg(p_buf);
     }
@@ -1011,9 +1022,9 @@ void BTA_GATTC_Refresh(BD_ADDR remote_bda, bool erase_flash)
     if(bta_sys_is_register(BTA_ID_GATTC) == FALSE) {
         return;
     }
-    tBTA_GATTC_API_OPEN  *p_buf;
+    tBTA_GATTC_API_CACHE_REFRESH  *p_buf;
 
-    if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
+    if ((p_buf = (tBTA_GATTC_API_CACHE_REFRESH *) osi_malloc(sizeof(tBTA_GATTC_API_CACHE_REFRESH))) != NULL) {
         p_buf->hdr.event = BTA_GATTC_API_REFRESH_EVT;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 
@@ -1069,9 +1080,9 @@ void BTA_GATTC_Clean(BD_ADDR remote_bda)
     bta_gattc_cache_reset(remote_bda);
 #endif
 
-    tBTA_GATTC_API_OPEN  *p_buf;
+    tBTA_GATTC_API_CACHE_CLEAN  *p_buf;
 
-    if ((p_buf = (tBTA_GATTC_API_OPEN *) osi_malloc(sizeof(tBTA_GATTC_API_OPEN))) != NULL) {
+    if ((p_buf = (tBTA_GATTC_API_CACHE_CLEAN *) osi_malloc(sizeof(tBTA_GATTC_API_CACHE_CLEAN))) != NULL) {
         p_buf->hdr.event = BTA_GATTC_API_CACHE_CLEAN_EVT;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
 
