@@ -14,6 +14,14 @@ menu "Event Loop Library"
         help
             Enable posting events from interrupt handlers.
 
+    config ESP_EVENT_POST_FROM_ISR_SIZE
+        int "Max size of data from events"
+        default 4
+        depends on ESP_EVENT_POST_FROM_ISR
+        help
+            Enable posting events from interrupt handlers.
+
+
     config ESP_EVENT_POST_FROM_IRAM_ISR
         bool "Support posting events from ISRs placed in IRAM"
         default y
