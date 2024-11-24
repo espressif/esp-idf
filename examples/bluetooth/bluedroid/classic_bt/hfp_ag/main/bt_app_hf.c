@@ -46,6 +46,7 @@ const char *c_hf_evt_str[] = {
     "WBS_EVT",                           /*!< CURRENT CODEC EVT */
     "BCS_EVT",                           /*!< CODEC NEGO EVT */
     "PKT_STAT_EVT",                      /*!< REQUEST PACKET STATUS EVT */
+    "PROF_STATE_EVT",                    /*!< Indicate HF init or deinit complete */
 };
 
 //esp_hf_connection_state_t
@@ -293,7 +294,7 @@ void bt_app_send_data_shut_down(void)
 
 void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
 {
-    if (event <= ESP_HF_PKT_STAT_NUMS_GET_EVT) {
+    if (event <= ESP_HF_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
         ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
@@ -497,6 +498,17 @@ void bt_app_hf_cb(esp_hf_cb_event_t event, esp_hf_cb_param_t *param)
         case ESP_HF_PKT_STAT_NUMS_GET_EVT:
         {
             ESP_LOGI(BT_HF_TAG, "ESP_HF_PKT_STAT_NUMS_GET_EVT: %d.", event);
+            break;
+        }
+        case ESP_HF_PROF_STATE_EVT:
+        {
+            if (ESP_HF_INIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "AG PROF STATE: Init Complete");
+            } else if (ESP_HF_DEINIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "AG PROF STATE: Deinit Complete");
+            } else {
+                ESP_LOGE(BT_HF_TAG, "AG PROF STATE error: %d", param->prof_stat.state);
+            }
             break;
         }
 
