@@ -15,9 +15,9 @@ DigiCert,DigiCert High Assurance EV Root CA
 DigiCert,DigiCert TLS ECC P384 Root G5
 DigiCert,DigiCert TLS RSA4096 Root G5
 DigiCert,DigiCert Trusted Root G4
-GlobalSign nv-sa,GlobalSign Root CA - R3
-GlobalSign nv-sa,GlobalSign ECC Root CA - R5
 GlobalSign nv-sa,GlobalSign Root CA - R6
+GlobalSign nv-sa,GlobalSign ECC Root CA - R5
+GlobalSign nv-sa,GlobalSign Root CA - R3
 GlobalSign nv-sa,GlobalSign Root CA
 GlobalSign nv-sa,GlobalSign Root E46
 GlobalSign nv-sa,GlobalSign Root R46
@@ -30,7 +30,6 @@ Google Trust Services LLC,GTS Root R1
 Google Trust Services LLC,GTS Root R2
 Google Trust Services LLC,GTS Root R3
 Google Trust Services LLC,GTS Root R4
-"IdenTrust Services, LLC",DST Root CA X3
 "IdenTrust Services, LLC",IdenTrust Commercial Root CA 1
 "IdenTrust Services, LLC",IdenTrust Public Sector Root CA 1
 Internet Security Research Group,ISRG Root X1
@@ -38,5 +37,7 @@ Internet Security Research Group,ISRG Root X2
 Sectigo,COMODO Certification Authority
 Sectigo,COMODO ECC Certification Authority
 Sectigo,COMODO RSA Certification Authority
+Sectigo,Sectigo Public Server Authentication Root E46
+Sectigo,Sectigo Public Server Authentication Root R46
 Sectigo,USERTrust ECC Certification Authority
 Sectigo,USERTrust RSA Certification Authority
