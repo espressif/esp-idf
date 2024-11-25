@@ -87,9 +87,16 @@ def get_idf_env() -> Dict[str,str]:
         'IDF_PYTHON_ENV_PATH': os.environ['IDF_PYTHON_ENV_PATH'],
     }
 
-    for line in stdout.splitlines():
-        var, val = line.split('=')
-        idf_env[var] = val
+    try:
+        for line in stdout.splitlines():
+            var, val = line.split('=')
+            idf_env[var] = val
+    except ValueError as e:
+        debug('\n'.join(['Output from `./tools/idf_tools.py export --format key-value`:',
+                         f'{stdout}']))
+        raise ValueError('\n'.join(['Please ensure your ESP-IDF installation is clean, especially file `./tools/idf_tools.py`.',
+                                    'The command `./tools/idf_tools.py export` appears to be returning unexpected values.',
+                                    f'Details: {e}']))
 
     if 'PATH' in idf_env:
         idf_env['PATH'] = os.pathsep.join([extra_paths, idf_env['PATH']])
