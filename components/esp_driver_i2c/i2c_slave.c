@@ -247,11 +247,11 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
 
 #if SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
     if (i2c_slave->fifo_mode == I2C_SLAVE_NONFIFO) {
-        i2c_ll_slave_set_fifo_mode(hal->dev, false);
-        i2c_ll_enable_mem_access_nonfifo(hal->dev, true);
+        i2c_ll_enable_fifo_mode(hal->dev, false);
+        i2c_ll_slave_enable_dual_addressing_mode(hal->dev, true);
     } else {
-        i2c_ll_slave_set_fifo_mode(hal->dev, true);
-        i2c_ll_enable_mem_access_nonfifo(hal->dev, false);
+        i2c_ll_enable_fifo_mode(hal->dev, true);
+        i2c_ll_slave_enable_dual_addressing_mode(hal->dev, false);
     }
 #endif
 
@@ -273,7 +273,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
 #if SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
     i2c_ll_slave_enable_scl_stretch(hal->dev, slave_config->flags.stretch_en);
 #endif
-    i2c_ll_slave_tx_auto_start_en(hal->dev, true);
+    i2c_ll_slave_enable_auto_start(hal->dev, true);
 
     i2c_ll_update(hal->dev);
     portEXIT_CRITICAL(&i2c_slave->base->spinlock);
@@ -386,7 +386,7 @@ esp_err_t i2c_slave_read_ram(i2c_slave_dev_handle_t i2c_slave, uint8_t ram_offse
         portEXIT_CRITICAL(&i2c_slave->base->spinlock);
         return ESP_ERR_INVALID_SIZE;
     }
-    i2c_ll_read_by_nonfifo(hal->dev, ram_offset, data, fifo_size);
+    i2c_ll_read_rx_by_nonfifo(hal->dev, ram_offset, data, fifo_size);
     portEXIT_CRITICAL(&i2c_slave->base->spinlock);
 
     return ESP_OK;
@@ -407,7 +407,7 @@ esp_err_t i2c_slave_write_ram(i2c_slave_dev_handle_t i2c_slave, uint8_t ram_offs
         ESP_EARLY_LOGE(TAG, "No extra fifo to fill your buffer, please split your buffer");
         return ESP_ERR_INVALID_SIZE;
     }
-    i2c_ll_write_by_nonfifo(hal->dev, ram_offset, data, size);
+    i2c_ll_write_tx_by_nonfifo(hal->dev, ram_offset, data, size);
     xSemaphoreGive(i2c_slave->slv_tx_mux);
     return ESP_OK;
 }

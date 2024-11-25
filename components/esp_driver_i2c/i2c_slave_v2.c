@@ -290,7 +290,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
 
     portENTER_CRITICAL(&i2c_slave->base->spinlock);
     i2c_hal_slave_init(hal);
-    i2c_ll_slave_set_fifo_mode(hal->dev, true);
+    i2c_ll_enable_fifo_mode(hal->dev, true);
     i2c_ll_set_slave_addr(hal->dev, slave_config->slave_addr, false);
     i2c_ll_set_tout(hal->dev, I2C_LL_MAX_TIMEOUT);
 
