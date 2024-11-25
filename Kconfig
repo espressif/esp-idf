@@ -668,6 +668,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
     endmenu # Compiler Options
 
     menu "Component config"
+        comment "!!! MINIMAL_BUILD is enabled !!!"
+        depends on "${IDF_MINIMAL_BUILD}"
+        comment "Only common components and those transitively required by the main component are listed"
+        depends on "${IDF_MINIMAL_BUILD}"
+        comment "If a component configuration is missing, please add it to the main component's requirements"
+        depends on "${IDF_MINIMAL_BUILD}"
+
         source "$COMPONENT_KCONFIGS_SOURCE_FILE"
     endmenu
 

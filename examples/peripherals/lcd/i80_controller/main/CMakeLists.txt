@@ -4,6 +4,7 @@ if(CONFIG_EXAMPLE_LCD_IMAGE_FROM_EMBEDDED_BINARY)
 endif()
 
 idf_component_register(SRCS "i80_controller_example_main.c" "lvgl_demo_ui.c" ${embedded_images}
+                       PRIV_REQUIRES esp_lcd spiffs esp_psram
                        INCLUDE_DIRS ".")
 
 if(CONFIG_EXAMPLE_LCD_IMAGE_FROM_FILE_SYSTEM)

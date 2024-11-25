@@ -16,6 +16,9 @@ Core dump data is saved to a core dump file according to a particular format, se
 Configurations
 --------------
 
+.. note::
+    The ``Core dump`` configuration options are available only if the ``espcoredump`` component is included in the build.
+
 Destination
 ^^^^^^^^^^^
 
