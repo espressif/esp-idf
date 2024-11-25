@@ -47,13 +47,20 @@ void mipi_dsi_hal_configure_phy_pll(mipi_dsi_hal_context_t *hal, uint32_t phy_cl
     // 5MHz <= f_ref/N <= 40MHz
     uint8_t min_N = MAX(1, ref_freq_mhz / 40);
     uint8_t max_N = ref_freq_mhz / 5;
+    uint16_t min_delta = UINT16_MAX;
     for (uint8_t n = min_N; n <= max_N; n++) {
         uint16_t m = vco_freq_mhz * n / ref_freq_mhz;
         // M must be even number
         if ((m & 0x01) == 0) {
-            pll_M = m;
-            pll_N = n;
-            break;
+            uint16_t delta = vco_freq_mhz - ref_freq_mhz * m / n;
+            if (delta < min_delta) {
+                min_delta = delta;
+                pll_M = m;
+                pll_N = n;
+                if (min_delta == 0) {
+                    break;
+                }
+            }
         }
     }
     HAL_ASSERT(pll_M && pll_N);
