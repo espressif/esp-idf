@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -53,5 +52,5 @@ def test_esp_flash_stress_rom_xip_psram(dut: Dut) -> None:
     ],
     indirect=True,
 )
-def test_flash_auto_suspend(dut: Dut) -> None:
+def test_flash_auto_suspend_stress(dut: Dut) -> None:
     dut.run_all_single_board_cases()
