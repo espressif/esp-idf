@@ -1,2 +1,2 @@
 ruleDirs:
-- ./tools/ci/sg_rules
+  - tools/ci/sg_rules
