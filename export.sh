@@ -32,17 +32,14 @@ then
     # shellcheck disable=SC2296  # ignore parameter starts with '{' because it's zsh
     idf_path=$(dirname "${(%):-%x}")
     shell_type="zsh"
-elif test -n "${IDF_PATH-}"
-then
-    idf_path=$IDF_PATH
 fi
 
 if [ ! -f "${idf_path}/tools/idf.py" ] ||
-    [ ! -f "${idf_path}/tools/idf_tools.py" ] ||
-    [ ! -f "${idf_path}/tools/activate.py" ]
+   [ ! -f "${idf_path}/tools/idf_tools.py" ] ||
+   [ ! -f "${idf_path}/tools/activate.py" ]
 then
-    echo "Could not detect IDF_PATH. Please set it before sourcing this script:"
-    echo "  export IDF_PATH=(add path here)"
+    echo "Could not detect IDF_PATH. Please navigate to your ESP-IDF directory and run:"
+    echo ". ./export.sh"
     unset idf_path
     return 1
 fi
