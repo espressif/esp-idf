@@ -2309,6 +2309,15 @@ int esp_netif_get_route_prio(esp_netif_t *esp_netif)
     return esp_netif->route_prio;
 }
 
+int esp_netif_set_route_prio(esp_netif_t *esp_netif, int route_prio)
+{
+    if (esp_netif == NULL) {
+        return -1;
+    }
+    esp_netif->route_prio = route_prio;
+    return esp_netif->route_prio;
+}
+
 int32_t esp_netif_get_event_id(esp_netif_t *esp_netif, esp_netif_ip_event_type_t event_type)
 {
     switch(event_type) {

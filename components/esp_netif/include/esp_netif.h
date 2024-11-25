@@ -1060,6 +1060,16 @@ const char *esp_netif_get_desc(esp_netif_t *esp_netif);
 int esp_netif_get_route_prio(esp_netif_t *esp_netif);
 
 /**
+ * @brief Configures routing priority
+ *
+ * @param[in]  esp_netif Handle to esp-netif instance
+ * @param[in]  route_prio Required route priority for esp-netif instance
+ *
+ * @return Integer representing the instance's route-prio, or -1 if invalid parameters
+ */
+int esp_netif_set_route_prio(esp_netif_t *esp_netif, int route_prio);
+
+/**
  * @brief Returns configured event for this esp-netif instance and supplied event type
  *
  * @param[in]  esp_netif Handle to esp-netif instance
