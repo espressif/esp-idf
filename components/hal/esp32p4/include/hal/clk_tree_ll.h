@@ -36,7 +36,6 @@ extern "C" {
 
 #define CLK_LL_PLL_8M_FREQ_MHZ     (8)
 
-#define CLK_LL_PLL_20M_FREQ_MHZ    (20)
 #define CLK_LL_PLL_80M_FREQ_MHZ    (80)
 #define CLK_LL_PLL_160M_FREQ_MHZ   (160)
 #define CLK_LL_PLL_240M_FREQ_MHZ   (240)
@@ -696,6 +695,27 @@ static inline __attribute__((always_inline)) void clk_ll_pll_f25m_set_divider(ui
 {
     HAL_ASSERT(divider >= 1);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.ref_clk_ctrl0, reg_ref_25m_clk_div_num, divider - 1);
+}
+
+/**
+ * @brief Set PLL_F20M_CLK divider. freq of PLL_F20M_CLK = freq of SPLL_CLK / divider
+ *
+ * @param divider Divider. CLK_DIV_NUM = divider - 1.
+ */
+static inline __attribute__((always_inline)) void clk_ll_pll_f20m_set_divider(uint32_t divider)
+{
+    HAL_ASSERT(divider >= 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.ref_clk_ctrl1, reg_ref_20m_clk_div_num, divider - 1);
+}
+
+/**
+ * @brief Get PLL_F20M_CLK divider
+ *
+ * @return Divider. Divider = (CLK_DIV_NUM + 1).
+ */
+static inline __attribute__((always_inline)) uint32_t clk_ll_pll_f20m_get_divider(void)
+{
+    return HAL_FORCE_READ_U32_REG_FIELD(HP_SYS_CLKRST.ref_clk_ctrl1, reg_ref_20m_clk_div_num) + 1;
 }
 
 /**
