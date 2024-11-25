@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,7 +281,7 @@ static void close_timeout_handler(void *arg)
     status = btc_transfer_context(&msg, slot->alarm_arg, sizeof(tBTA_JV), NULL, NULL);
 
     if (slot->alarm_arg) {
-        free(slot->alarm_arg);
+        osi_free(slot->alarm_arg);
         slot->alarm_arg = NULL;
     }
 
@@ -832,7 +832,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
             // if rx still has data, delay free slot
             if (slot->close_alarm == NULL && slot->rx.queue && fixed_queue_length(slot->rx.queue) > 0) {
                 tBTA_JV *p_arg = NULL;
-                if ((p_arg = malloc(sizeof(tBTA_JV))) == NULL) {
+                if ((p_arg = osi_malloc(sizeof(tBTA_JV))) == NULL) {
                     param.close.status = ESP_BT_L2CAP_NO_RESOURCE;
                     osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
                     BTC_TRACE_ERROR("%s unable to malloc slot close_alarm arg!", __func__);
@@ -842,7 +842,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                 slot->alarm_arg = (void *)p_arg;
                 if ((slot->close_alarm =
                             osi_alarm_new("slot", close_timeout_handler, (void *)slot, VFS_CLOSE_TIMEOUT)) == NULL) {
-                    free(p_arg);
+                    osi_free(p_arg);
                     slot->alarm_arg = NULL;
                     param.close.status = ESP_BT_L2CAP_NO_RESOURCE;
                     osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
@@ -850,7 +850,7 @@ void btc_l2cap_cb_handler(btc_msg_t *msg)
                     break;
                 }
                 if (osi_alarm_set(slot->close_alarm, VFS_CLOSE_TIMEOUT) != OSI_ALARM_ERR_PASS) {
-                    free(p_arg);
+                    osi_free(p_arg);
                     slot->alarm_arg = NULL;
                     osi_alarm_free(slot->close_alarm);
                     param.close.status = ESP_BT_L2CAP_BUSY;
