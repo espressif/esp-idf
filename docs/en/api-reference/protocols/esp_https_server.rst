@@ -73,7 +73,9 @@ Application Examples
 HTTPS Server Cert Selection Hook
 --------------------------------
 
-The ESP HTTPS Server component provides an option to set the server certification selection hook. This feature allows you to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI. To enable this feature, please enable :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK` in the ESP HTTPS Server menuconfig. Note that you also need to enable :ref:`CONFIG_ESP_TLS_SERVER_CERT_SELECT_HOOK` from the ESP-TLS component, as this option depends on it. Please note that the ESP-TLS option is only available when Mbedtls is used as the TLS stack for ESP-TLS (default behaviour).
+The ESP HTTPS Server component provides an option to set the server certification selection hook. This feature allows you to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI.
+
+To enable this feature, please enable :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK` in the ESP HTTPS Server menuconfig. Please note that the ESP-TLS option is only available when Mbedtls is used as the TLS stack for ESP-TLS (default behaviour).
 
 When enabled, you can set the certificate selection callback using the :cpp:member:`httpd_ssl_config::cert_select_cb` member of the :cpp:type:`httpd_ssl_config_t` structure.
 
