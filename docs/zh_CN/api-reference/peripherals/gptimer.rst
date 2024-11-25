@@ -86,7 +86,7 @@
 
 对于大多数通用定时器使用场景而言，应在启动定时器之前设置警报动作，但不包括简单的挂钟场景，该场景仅需自由运行的定时器。设置警报动作，需要根据如何使用警报事件来配置 :cpp:type:`gptimer_alarm_config_t` 的不同参数：
 
--  :cpp:member:`gptimer_alarm_config_t::alarm_count` 设置触发警报事件的目标计数值。设置警报值时还需考虑计数方向。尤其是当 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 为 true 时，:cpp:member:`gptimer_alarm_config_t::alarm_count` 和 :cpp:member:`gptimer_alarm_config_t::reload_count` 不能设置为相同的值，因为警报值和重载值相同时没有意义。
+-  :cpp:member:`gptimer_alarm_config_t::alarm_count` 设置触发警报事件的目标计数值。设置警报值时还需考虑计数方向。当 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 为 ``true`` 时，:cpp:member:`gptimer_alarm_config_t::alarm_count` 和 :cpp:member:`gptimer_alarm_config_t::reload_count` 不能设置为相同的值，因为警报值和重载值相同时没有意义。请注意，由于中断延迟，不建议将警报周期设置为小于 5 微秒。
 
 -  :cpp:member:`gptimer_alarm_config_t::reload_count` 代表警报事件发生时要重载的计数值。此配置仅在 :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` 设置为 true 时生效。
 
