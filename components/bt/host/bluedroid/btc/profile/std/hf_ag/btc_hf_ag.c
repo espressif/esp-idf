@@ -316,6 +316,14 @@ bt_status_t btc_hf_init(void)
 {
     int idx = 0;
 
+    if (hf_local_param[idx].btc_hf_cb.initialized) {
+        esp_hf_cb_param_t param = {
+            .prof_stat.state = ESP_HF_INIT_ALREADY,
+        };
+        btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+        return BT_STATUS_SUCCESS;
+    }
+
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
 
 #if HFP_DYNAMIC_MEMORY == TRUE
@@ -338,8 +346,6 @@ bt_status_t btc_hf_init(void)
 #endif
     clear_phone_state();
     memset(&hf_local_param[idx].btc_hf_cb, 0, sizeof(btc_hf_cb_t));
-    // custom initialization here
-    hf_local_param[idx].btc_hf_cb.initialized = true;
 // set audio path
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
@@ -349,14 +355,24 @@ bt_status_t btc_hf_init(void)
 #endif
     esp_bredr_sco_datapath_set(data_path);
 #endif
+
     return BT_STATUS_SUCCESS;
 }
 
 void btc_hf_deinit(void)
 {
     BTC_TRACE_EVENT("%s", __FUNCTION__);
+
+    int idx = 0;
+    if (!hf_local_param[idx].btc_hf_cb.initialized) {
+        esp_hf_cb_param_t param = {
+            .prof_stat.state = ESP_HF_DEINIT_ALREADY,
+        };
+        btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+        return;
+    }
+
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
-    hf_local_param[0].btc_hf_cb.initialized = false;
 }
 
 static void btc_hf_cb_release(void)
@@ -1268,7 +1284,13 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
         case BTA_AG_DISABLE_EVT:
         {
+            idx = 0;
             btc_hf_cb_release();
+            if (hf_local_param[idx].btc_hf_cb.initialized) {
+                param.prof_stat.state = ESP_HF_DEINIT_SUCCESS;
+                btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+            }
+            hf_local_param[idx].btc_hf_cb.initialized = false;
             break;
         }
         case BTA_AG_REGISTER_EVT:
@@ -1278,6 +1300,11 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             hf_local_param[idx].btc_hf_cb.handle = p_data->reg.hdr.handle;
             BTC_TRACE_DEBUG("%s: BTA_AG_REGISTER_EVT," "hf_local_param[%d].btc_hf_cb.handle = %d",
                             __FUNCTION__, idx, hf_local_param[idx].btc_hf_cb.handle);
+            if (!hf_local_param[idx].btc_hf_cb.initialized) {
+                param.prof_stat.state = ESP_HF_INIT_SUCCESS;
+                btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+            }
+            hf_local_param[idx].btc_hf_cb.initialized = true;
             break;
         }
 

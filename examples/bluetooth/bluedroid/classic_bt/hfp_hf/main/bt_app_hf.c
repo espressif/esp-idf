@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -49,6 +49,7 @@ const char *c_hf_evt_str[] = {
     "LAST_VOICE_TAG_NUMBER_EVT",         /*!< requested number from AG event */
     "RING_IND_EVT",                      /*!< ring indication event */
     "PKT_STAT_EVT",                      /*!< requested number of packet status event */
+    "PROF_STATE_EVT",                    /*!< Indicate HF CLIENT init or deinit complete */
 };
 
 // esp_hf_client_connection_state_t
@@ -229,7 +230,7 @@ static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
 /* callback for HF_CLIENT */
 void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
 {
-    if (event <= ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT) {
+    if (event <= ESP_HF_CLIENT_PROF_STATE_EVT) {
         ESP_LOGI(BT_HF_TAG, "APP HFP event: %s", c_hf_evt_str[event]);
     } else {
         ESP_LOGE(BT_HF_TAG, "APP HFP invalid event %d", event);
@@ -397,6 +398,17 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
         case ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT:
         {
             ESP_LOGE(BT_HF_TAG, "ESP_HF_CLIENT_PKT_STAT_NUMS_GET_EVT: %d", event);
+            break;
+        }
+        case ESP_HF_CLIENT_PROF_STATE_EVT:
+        {
+            if (ESP_HF_INIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "HF PROF STATE: Init Complete");
+            } else if (ESP_HF_DEINIT_SUCCESS == param->prof_stat.state) {
+                ESP_LOGI(BT_HF_TAG, "HF PROF STATE: Deinit Complete");
+            } else {
+                ESP_LOGE(BT_HF_TAG, "HF PROF STATE error: %d", param->prof_stat.state);
+            }
             break;
         }
         default:

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -169,11 +169,17 @@ bt_status_t btc_hf_client_init(void)
 {
     BTC_TRACE_EVENT("%s", __FUNCTION__);
 
+    if (hf_client_local_param.btc_hf_client_cb.initialized) {
+        esp_hf_client_cb_param_t param = {
+            .prof_stat.state = ESP_HF_INIT_ALREADY,
+        };
+        btc_hf_client_cb_to_app(ESP_HF_CLIENT_PROF_STATE_EVT, &param);
+        return BT_STATUS_SUCCESS;
+    }
+
     btc_dm_enable_service(BTA_HFP_HS_SERVICE_ID);
 
     clear_state();
-
-    hf_client_local_param.btc_hf_client_cb.initialized = true;
 
 #if (BT_CONTROLLER_INCLUDED == TRUE)
 #if BTM_SCO_HCI_INCLUDED
@@ -232,9 +238,15 @@ void  btc_hf_client_deinit( void )
 {
     BTC_TRACE_EVENT("%s", __FUNCTION__);
 
-    btc_dm_disable_service(BTA_HFP_HS_SERVICE_ID);
+    if (!hf_client_local_param.btc_hf_client_cb.initialized) {
+        esp_hf_client_cb_param_t param = {
+            .prof_stat.state = ESP_HF_DEINIT_ALREADY,
+        };
+        btc_hf_client_cb_to_app(ESP_HF_CLIENT_PROF_STATE_EVT, &param);
+        return;
+    }
 
-    hf_client_local_param.btc_hf_client_cb.initialized = false;
+    btc_dm_disable_service(BTA_HFP_HS_SERVICE_ID);
 }
 
 /*******************************************************************************
@@ -852,10 +864,21 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
     switch (event)
     {
         case BTA_HF_CLIENT_ENABLE_EVT:
+            break;
         case BTA_HF_CLIENT_DISABLE_EVT:
+            if (hf_client_local_param.btc_hf_client_cb.initialized) {
+                param.prof_stat.state = ESP_HF_DEINIT_SUCCESS,
+                btc_hf_client_cb_to_app(ESP_HF_CLIENT_PROF_STATE_EVT, &param);
+            }
+            hf_client_local_param.btc_hf_client_cb.initialized = false;
             break;
         case BTA_HF_CLIENT_REGISTER_EVT:
             hf_client_local_param.btc_hf_client_cb.handle = p_data->reg.handle;
+            if (!hf_client_local_param.btc_hf_client_cb.initialized) {
+                param.prof_stat.state = ESP_HF_INIT_SUCCESS,
+                btc_hf_client_cb_to_app(ESP_HF_CLIENT_PROF_STATE_EVT, &param);
+            }
+            hf_client_local_param.btc_hf_client_cb.initialized = true;
             break;
         case BTA_HF_CLIENT_OPEN_EVT:
             if (p_data->open.status == BTA_HF_CLIENT_SUCCESS)
