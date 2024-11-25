@@ -224,9 +224,8 @@ static void IRAM_ATTR test_write(int dst_off, int src_off, int len)
     }
     ESP_ERROR_CHECK(esp_flash_write(NULL, src_buf + src_off, start + dst_off, len));
 
-    fix_rom_func();
-
     spi_flash_disable_interrupts_caches_and_other_cpu();
+    fix_rom_func();
     esp_rom_spiflash_result_t rc = esp_rom_spiflash_read(start, dst_buf, sizeof(dst_buf));
     spi_flash_enable_interrupts_caches_and_other_cpu();
     TEST_ASSERT_EQUAL_HEX(rc, ESP_ROM_SPIFLASH_RESULT_OK);
