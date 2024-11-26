@@ -72,7 +72,7 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
 };
 
 /**
- * Backup registers in Light sleep: (total cnt 12)
+ * Backup registers in Light sleep: (total cnt 29)
  *
  * cmd
  * addr
@@ -85,10 +85,12 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
  * misc
  * dma_conf
  * dma_int_ena
+ * data_buf[0-15]   // slave driver only
  * slave
+ * slave1
  */
-#define SPI_RETENTION_REGS_CNT 12
-static const uint32_t spi_regs_map[4] = {0x31ff, 0x1000000, 0x0, 0x0};
+#define SPI_RETENTION_REGS_CNT 29
+static const uint32_t spi_regs_map[4] = {0x31ff, 0x33fffc0, 0x0, 0x0};
 #define SPI_REG_RETENTION_ENTRIES(num) { \
     [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_GPSPI_LINK(0), \
                                                REG_SPI_BASE(num), REG_SPI_BASE(num), \
@@ -99,7 +101,7 @@ static const uint32_t spi_regs_map[4] = {0x31ff, 0x1000000, 0x0, 0x0};
     /* Additional interrupt setting is required by idf SPI drivers after register recovered */ \
     [1] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_GPSPI_LINK(1), \
                                             SPI_DMA_INT_SET_REG(num), \
-                                            SPI_TRANS_DONE_INT_SET | SPI_DMA_SEG_TRANS_DONE_INT_SET , \
+                                            SPI_TRANS_DONE_INT_SET | SPI_DMA_SEG_TRANS_DONE_INT_SET | SPI_SLV_CMD7_INT_SET | SPI_SLV_CMD8_INT_SET , \
                                             UINT32_MAX, 1, 0), \
             .owner = ENTRY(0) }, \
 }

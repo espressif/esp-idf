@@ -114,17 +114,13 @@ typedef struct {
     spi_slave_hd_hal_desc_append_t  *tx_dma_head;           ///< Head of the linked TX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *tx_dma_tail;           ///< Tail of the linked TX DMA descriptors which are not used by hardware
     uint32_t                        tx_used_desc_cnt;       ///< Number of the TX descriptors that have been setup
-    uint32_t                        tx_recycled_desc_cnt;   ///< Number of the TX descriptors that could be recycled
     spi_slave_hd_hal_desc_append_t  *rx_cur_desc;           ///< Current RX DMA descriptor that could be linked (set up).
     spi_slave_hd_hal_desc_append_t  *rx_dma_head;           ///< Head of the linked RX DMA descriptors which are not used by hardware
     spi_slave_hd_hal_desc_append_t  *rx_dma_tail;           ///< Tail of the linked RX DMA descriptors which are not used by hardware
     uint32_t                        rx_used_desc_cnt;       ///< Number of the RX descriptors that have been setup
-    uint32_t                        rx_recycled_desc_cnt;   ///< Number of the RX descriptors that could be recycled
 
     /* Internal status used by the HAL implementation, initialized as 0. */
     uint32_t                        intr_not_triggered;
-    bool                            tx_dma_started;
-    bool                            rx_dma_started;
 } spi_slave_hd_hal_context_t;
 
 /**
