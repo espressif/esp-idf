@@ -46,6 +46,7 @@ class AppUploader(AppDownloader):
             'bootloader/*.elf',
             '*.map',
             '*.elf',
+            'gdbinit/*',
         ],
         ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES: [
             '*.bin',
