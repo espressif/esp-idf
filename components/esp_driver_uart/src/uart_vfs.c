@@ -215,7 +215,7 @@ static int uart_rx_char(int fd)
 static int uart_rx_char_via_driver(int fd)
 {
     uint8_t c;
-    int timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
+    TickType_t timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
     int n = uart_read_bytes(fd, &c, 1, timeout);
     if (n <= 0) {
         return NONE;
