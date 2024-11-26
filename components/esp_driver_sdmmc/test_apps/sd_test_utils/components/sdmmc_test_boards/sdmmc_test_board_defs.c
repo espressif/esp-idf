@@ -326,7 +326,7 @@ static const sdmmc_test_board_info_t s_board_info = {
         {
             .slot_exists = true,
             .bus_width = 4,
-            .uhs1_supported = true,
+            // .uhs1_supported = true,  //no runner for uhs1
             .clk = 43,
             .cmd_mosi = 44,
             .d0_miso = 39,
