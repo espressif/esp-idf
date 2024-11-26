@@ -238,7 +238,7 @@ def test_mqtt_publish(dut: Dut, test_case: Any) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.ethernet
+@pytest.mark.ethernet_stress
 @pytest.mark.nightly_run
 @pytest.mark.parametrize('test_case', stress_test_cases)
 @pytest.mark.parametrize('config', ['default'], indirect=True)

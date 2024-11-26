@@ -75,6 +75,7 @@ ENV_MARKERS = {
     'twai_transceiver': 'runners with a TWAI PHY transceiver',
     'flash_encryption_wifi_high_traffic': 'Flash Encryption runners with wifi high traffic support',
     'ethernet': 'ethernet runner',
+    'ethernet_stress': 'ethernet runner with stress test',
     'ethernet_flash_8m': 'ethernet runner with 8mb flash',
     'ethernet_router': 'both the runner and dut connect to the same router through ethernet NIC',
     'ethernet_vlan': 'ethernet runner GARM-32-SH-1-R16S5N3',
@@ -126,6 +127,11 @@ ENV_MARKERS = {
     'lp_i2s': 'lp_i2s runner tested with hp_i2s',
     'ram_app': 'ram_app runners',
 }
+
+# by default the timeout is 1h, for some special cases we need to extend it
+TIMEOUT_4H_MARKERS = [
+    'ethernet_stress',
+]
 
 DEFAULT_CONFIG_RULES_STR = ['sdkconfig.ci=default', 'sdkconfig.ci.*=', '=default']
 DEFAULT_IGNORE_WARNING_FILEPATH = os.path.join(IDF_PATH, 'tools', 'ci', 'ignore_build_warnings.txt')

@@ -94,3 +94,6 @@
     - section_start "upload_junit_reports"
     - run_cmd python tools/ci/artifacts_handler.py upload --type logs junit_reports
     - section_end "upload_junit_reports"
+
+.timeout_4h_template:
+  timeout: 4 hours
