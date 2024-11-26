@@ -680,7 +680,7 @@ static void nan_de_timer(void *eloop_ctx, void *timeout_ctx)
 
 	if (next == 0)
 		next = 1;
-	wpa_printf(MSG_DEBUG, "NAN: Next timer in %u ms", next);
+
 	eloop_register_timeout(next / 1000, (next % 1000) * 1000, nan_de_timer,
 			       de, NULL);
 }
