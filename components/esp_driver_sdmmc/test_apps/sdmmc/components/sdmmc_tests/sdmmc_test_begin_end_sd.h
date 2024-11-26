@@ -16,6 +16,8 @@ extern "C" {
 #define SLOT_1  1
 #define NO_DDR 0
 #define WITH_DDR 1
+#define NO_EMMC 0
+#define IS_EMMC 1
 
 /* Helper functions to initialize/deinintalize the host (SDMMC/SDSPI) inside the test */
 
@@ -28,8 +30,9 @@ extern "C" {
  * @param width  Slot width (1, 4 or 8)
  * @param freq_khz  Bus frequency in kHz
  * @param ddr  Whether to use DDR mode (NO_DDR or WITH_DDR)
+ * @param is_emmc Is emmc or not
  */
-void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr);
+void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr, int is_emmc);
 
 /**
  * @brief Helper function to initialize the SDMMC host and slot for the test using the given settings
