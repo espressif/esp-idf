@@ -544,7 +544,17 @@ esp_err_t sdmmc_host_init_slot(int slot, const sdmmc_slot_config_t *slot_config)
 
     if (slot == 0) {
 #if !SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(0)
-        ESP_RETURN_ON_FALSE(!use_gpio_matrix, ESP_ERR_INVALID_ARG, TAG, "doesn't support routing from GPIO matrix, driver uses dedicated IOs");
+        if (use_gpio_matrix &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_CLK == slot_config->clk &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_CMD == slot_config->cmd &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D0 == slot_config->d0 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D1 == slot_config->d1 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D2 == slot_config->d2 &&
+                SDMMC_SLOT0_IOMUX_PIN_NUM_D3 == slot_config->d3) {
+            use_gpio_matrix = false;
+        } else {
+            ESP_RETURN_ON_FALSE(!use_gpio_matrix, ESP_ERR_INVALID_ARG, TAG, "doesn't support routing from GPIO matrix, driver uses dedicated IOs");
+        }
 #endif
     } else {
 #if !SDMMC_LL_SLOT_SUPPORT_GPIO_MATRIX(1)
