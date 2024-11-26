@@ -17,6 +17,12 @@ Application Examples
 
 - :example:`openthread/ot_rcp` demonstrates how to work with a Host Processor to perform as a Thread border router and function as a Thread sniffer, using a board with an IEEE 802.15.4 module.
 
+- :example:`openthread/ot_trel` demonstrates Thread Radio Encapsulation Link (TREL) function. This requires a board equipped with a Wi-Fi module.
+
+- :example:`openthread/ot_sleepy_device/deep_sleep` demonstrates Thread Deep-sleep function.
+
+- :example:`openthread/ot_sleepy_device/light_sleep` demonstrates Thread Light-sleep function.
+
 API Reference
 -------------
 
