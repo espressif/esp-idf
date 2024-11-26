@@ -28,10 +28,11 @@
 extern "C" {
 #endif
 
-#define MSPI_TIMING_LL_MSPI_ID_0             0
-#define MSPI_TIMING_LL_MSPI_ID_1             1
+#define MSPI_TIMING_LL_MSPI_ID_0                      0
+#define MSPI_TIMING_LL_MSPI_ID_1                      1
 
-#define MSPI_TIMING_LL_FLASH_CORE_CLK_DIV    4
+#define MSPI_TIMING_LL_FLASH_CORE_CLK_DIV             4
+#define MSPI_TIMING_LL_FLASH_FDUMMY_RIN_SUPPORTED     1
 
 #define MSPI_TIMING_LL_FLASH_OCT_MASK                 (SPI_MEM_C_FCMD_OCT | SPI_MEM_C_FADDR_OCT | SPI_MEM_C_FDIN_OCT | SPI_MEM_C_FDOUT_OCT)
 #define MSPI_TIMING_LL_FLASH_QUAD_MASK                (SPI_MEM_C_FASTRD_MODE | SPI_MEM_C_FREAD_DUAL | SPI_MEM_C_FREAD_DIO | SPI_MEM_C_FREAD_QUAD | SPI_MEM_C_FREAD_QIO)
@@ -535,6 +536,24 @@ static inline void mspi_timing_ll_get_flash_dummy(uint8_t spi_num, int *usr_dumm
     } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
         *usr_dummy = REG_GET_FIELD(SPI1_MEM_C_USER1_REG, SPI1_MEM_C_USR_DUMMY_CYCLELEN);
         *extra_dummy = REG_GET_FIELD(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN);
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Mask invalid DQS
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_timing_ll_get_invalid_dqs_mask(uint8_t spi_num)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        return REG_GET_FIELD(SPI_MEM_C_CTRL_REG, SPI_MEM_C_FDUMMY_RIN);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        return REG_GET_FIELD(SPI1_MEM_C_CTRL_REG, SPI1_MEM_C_FDUMMY_RIN);
     } else {
         HAL_ASSERT(false);
     }

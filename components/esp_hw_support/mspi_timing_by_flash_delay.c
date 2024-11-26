@@ -224,3 +224,8 @@ uint8_t mspi_timing_config_get_flash_extra_dummy(void)
     //use hw extra dummy
     return 0;
 }
+
+uint32_t mspi_timing_config_get_flash_fdummy_rin(void)
+{
+    return mspi_timing_ll_get_invalid_dqs_mask(MSPI_TIMING_LL_MSPI_ID_1);
+}

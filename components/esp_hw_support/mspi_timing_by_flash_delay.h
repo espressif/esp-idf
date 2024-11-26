@@ -137,6 +137,14 @@ uint32_t mspi_timing_config_get_flash_clock_reg(void);
  * @return Flash extra dummy
  */
 uint8_t mspi_timing_config_get_flash_extra_dummy(void);
+
+/**
+ * @brief Get Flash dummy rin_reg
+ *
+ * @return Flash dummy rin_reg
+ */
+uint32_t mspi_timing_config_get_flash_fdummy_rin(void);
+
 #endif  //#if SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 
 

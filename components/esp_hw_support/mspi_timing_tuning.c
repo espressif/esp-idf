@@ -603,6 +603,10 @@ void spi_timing_get_flash_timing_param(spi_flash_hal_timing_config_t *out_timing
 
     out_timing_config->extra_dummy = mspi_timing_config_get_flash_extra_dummy();
 
+#if MSPI_TIMING_LL_FLASH_FDUMMY_RIN_SUPPORTED
+    out_timing_config->fdummy_rin = mspi_timing_config_get_flash_fdummy_rin();
+#endif
+
     // Get CS setup/hold value here.
     mspi_timing_config_get_cs_timing(&out_timing_config->cs_setup, &out_timing_config->cs_hold);
 }

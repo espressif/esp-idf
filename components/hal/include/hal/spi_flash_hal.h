@@ -42,9 +42,9 @@ typedef struct {
     int cs_num;                 ///< Which cs pin is used, 0-2.
     struct {
         uint8_t extra_dummy;            ///< Pre-calculated extra dummy used for compensation
+        uint8_t fdummy_rin;            ///< Mask invalid dqs or not
         uint8_t cs_setup;               ///< (cycles-1) of prepare phase by spi clock.
         uint8_t cs_hold;                ///< CS hold time config used by the host
-        uint8_t reserved2;              ///< Reserved, set to 0.
     };
     spi_flash_ll_clock_reg_t clock_conf;    ///< Pre-calculated clock configuration value
     esp_flash_io_mode_t base_io_mode;       ///< Default IO mode mask for common commands
@@ -63,6 +63,7 @@ ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 48, "size of spi_flash_hal_
 /// This struct provide MSPI Flash necessary timing related config, should be consistent with that in union in `spi_flash_hal_config_t`.
 typedef struct {
     uint32_t extra_dummy;
+    uint32_t fdummy_rin;
     uint32_t cs_hold;
     uint8_t cs_setup;
     spi_flash_ll_clock_reg_t clock_config;
@@ -73,6 +74,7 @@ typedef struct {
     union {
         struct {
             uint32_t extra_dummy;   ///< extra dummy for timing compensation.
+            uint32_t fdummy_rin;    ///< Mask invalid dqs or not
             uint32_t cs_hold;       ///< CS hold time config used by the host
             uint8_t cs_setup;       ///< (cycles-1) of prepare phase by spi clock
             spi_flash_ll_clock_reg_t clock_config;  ///< (optional) Clock configuration for Octal flash.
