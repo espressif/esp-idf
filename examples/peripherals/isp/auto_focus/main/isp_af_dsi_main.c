@@ -215,7 +215,14 @@ void app_main(void)
 
     //--------Camera Sensor and SCCB Init-----------//
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    example_sensor_init(I2C_NUM_0, &i2c_bus_handle);
+    example_sensor_config_t cam_sensor_config = {
+        .i2c_port_num = I2C_NUM_0,
+        .i2c_sda_io_num = EXAMPLE_MIPI_CSI_CAM_SCCB_SDA_IO,
+        .i2c_scl_io_num = EXAMPLE_MIPI_CSI_CAM_SCCB_SCL_IO,
+        .port = ESP_CAM_SENSOR_MIPI_CSI,
+        .format_name = EXAMPLE_CAM_FORMAT,
+    };
+    example_sensor_init(&cam_sensor_config, &i2c_bus_handle);
 
     //---------------VCM SCCB Init------------------//
     esp_sccb_io_handle_t dw9714_io_handle = NULL;
