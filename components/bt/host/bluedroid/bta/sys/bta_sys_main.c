@@ -564,10 +564,10 @@ BOOLEAN bta_sys_is_register(UINT8 id)
 **                  API functions and call-in functions.
 **
 **
-** Returns          void
+** Returns          true if message is posted to BTA, false otherwise
 **
 *******************************************************************************/
-void bta_sys_sendmsg(void *p_msg)
+BOOLEAN bta_sys_sendmsg(void *p_msg)
 {
     // There is a race condition that occurs if the stack is shut down while
     // there is a procedure in progress that can schedule a task via this
@@ -575,7 +575,9 @@ void bta_sys_sendmsg(void *p_msg)
     // it gets used here; hence we check for NULL before using it.
     if (btu_task_post(SIG_BTU_BTA_MSG, p_msg, OSI_THREAD_MAX_TIMEOUT) == false) {
         osi_free(p_msg);
+        return FALSE;
     }
+    return TRUE;
 }
 
 /*******************************************************************************
