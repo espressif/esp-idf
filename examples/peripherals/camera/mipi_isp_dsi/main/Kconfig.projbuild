@@ -12,6 +12,10 @@ menu "Example Configuration"
         help
             Example used LDO voltage, in mV
 
+    config EXAMPLE_CAM_PORT_ISP_MIPI
+        bool
+        default y
+
     choice EXAMPLE_MIPI_CSI_DISP_HRES
         bool "Set MIPI CSI horizontal resolution"
         default EXAMPLE_MIPI_CSI_HRES_1024
@@ -35,6 +39,8 @@ menu "Example Configuration"
             bool "600"
         config EXAMPLE_MIPI_CSI_VRES_640
             bool "640"
+        config EXAMPLE_MIPI_CSI_VRES_800
+            bool "800"
         config EXAMPLE_MIPI_CSI_VRES_1280
             bool "1280"
     endchoice
@@ -43,5 +49,6 @@ menu "Example Configuration"
         int
         default 600 if EXAMPLE_MIPI_CSI_VRES_600
         default 640 if EXAMPLE_MIPI_CSI_VRES_640
+        default 800 if EXAMPLE_MIPI_CSI_VRES_800
         default 1280 if EXAMPLE_MIPI_CSI_VRES_1280
 endmenu

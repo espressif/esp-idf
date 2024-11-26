@@ -2,11 +2,11 @@
 | ----------------- | -------- |
 
 
-# Camera display via DSI example
+# MIPI Camera display via DSI example
 
 ## Overview
 
-This example demonstrates how to use the esp_driver_cam component to capture camera sensor signals and display it via DSI interface. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface.
+This example demonstrates how to use the esp_driver_cam component to capture MIPI-CSI camera sensor signals and display it via DSI interface. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface.
 
 ## Usage
 
@@ -15,7 +15,7 @@ The subsections below give only absolutely necessary information. For full steps
 
 ### Hardware Required
 
-- OV5647 or SC2336 camera sensor, or other camera sensors
+- OV5647 or SC2336 camera sensor, or other camera sensors with MIPI-CSI port
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
 
@@ -107,6 +107,10 @@ Set CONFIG_CAMERA_OV5647 to y
 Set CONFIG_CAMERA_SC2336 to y
 ```
 
+Remember to select the LCD screen model and set corresponding correct horizontal/vertical resolution in ``menuconfig`` > ``Example DSI Configuration``.
+
+Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
+
 
 ### Build and Flash
 
@@ -133,10 +137,10 @@ I (1095) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
 I (1125) gpio: GPIO[31]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
 I (1125) gpio: GPIO[34]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
 I (1295) ov5647: Detected Camera sensor PID=0x5647 with index 0
-I (1305) cam_dsi: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
-I (1305) cam_dsi: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
-I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1305) sensor_init: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
+I (1305) sensor_init: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1315) sensor_init: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
+I (1355) sensor_init: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
 ```
 
 
