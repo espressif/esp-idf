@@ -174,7 +174,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             case EXTERN_COEX_WIRE_4:
             {
                 esp_coex_external_set_txline(true);
-                gpio_func_sel(gpio_pin.tx_line, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.tx_line], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.tx_line, GPIO_MODE_OUTPUT);
                 REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.tx_line));
                 esp_rom_gpio_connect_out_signal(gpio_pin.tx_line, EXTERNAL_COEX_SIGNAL_O1_TXLINE_IDX, false, false);
@@ -183,7 +183,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
 #endif
             case EXTERN_COEX_WIRE_3:
             {
-                gpio_func_sel(gpio_pin.priority, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.priority], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.priority, GPIO_MODE_INPUT);
                 esp_rom_gpio_connect_in_signal(gpio_pin.priority, EXTERNAL_COEX_SIGNAL_I1_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.priority), GPIO_PIN1_SYNC1_BYPASS, 2);
@@ -192,7 +192,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             __attribute__((fallthrough));
             case EXTERN_COEX_WIRE_2:
             {
-                gpio_func_sel(gpio_pin.grant, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.grant], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.grant, GPIO_MODE_OUTPUT);
                 REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.grant));
                 esp_rom_gpio_connect_out_signal(gpio_pin.grant, EXTERNAL_COEX_SIGNAL_O0_IDX, false, false);
@@ -200,7 +200,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             __attribute__((fallthrough));
             case EXTERN_COEX_WIRE_1:
             {
-                gpio_func_sel(gpio_pin.request, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.request], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.request, GPIO_MODE_INPUT);
                 esp_rom_gpio_connect_in_signal(gpio_pin.request, EXTERNAL_COEX_SIGNAL_I0_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.request), GPIO_PIN1_SYNC1_BYPASS, 2);
@@ -218,7 +218,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
         {
             case EXTERN_COEX_WIRE_4:
             {
-                gpio_func_sel(gpio_pin.tx_line, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.tx_line], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.tx_line, GPIO_MODE_INPUT);
                 esp_rom_gpio_connect_in_signal(gpio_pin.tx_line, EXTERNAL_COEX_SIGNAL_I1_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.tx_line), GPIO_PIN1_SYNC1_BYPASS, 2);
@@ -227,7 +227,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             __attribute__((fallthrough));
             case EXTERN_COEX_WIRE_3:
             {
-                gpio_func_sel(gpio_pin.priority, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.priority], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.priority, GPIO_MODE_OUTPUT);
                 REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.priority));
                 esp_rom_gpio_connect_out_signal(gpio_pin.priority, EXTERNAL_COEX_SIGNAL_O1_IDX, false, false);
@@ -235,7 +235,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             __attribute__((fallthrough));
             case EXTERN_COEX_WIRE_2:
             {
-                gpio_func_sel(gpio_pin.grant, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.grant], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.grant, GPIO_MODE_INPUT);
                 esp_rom_gpio_connect_in_signal(gpio_pin.grant, EXTERNAL_COEX_SIGNAL_I0_IDX, false);
                 REG_SET_FIELD(GPIO_PIN_REG(gpio_pin.grant), GPIO_PIN1_SYNC1_BYPASS, 2);
@@ -244,7 +244,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
             __attribute__((fallthrough));
             case EXTERN_COEX_WIRE_1:
             {
-                gpio_func_sel(gpio_pin.request, PIN_FUNC_GPIO);
+                gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_pin.request], PIN_FUNC_GPIO);
                 gpio_set_direction(gpio_pin.request, GPIO_MODE_OUTPUT);
                 REG_WRITE(GPIO_ENABLE_W1TC_REG, BIT(gpio_pin.request));
                 esp_rom_gpio_connect_out_signal(gpio_pin.request, EXTERNAL_COEX_SIGNAL_O0_IDX, false, false);
