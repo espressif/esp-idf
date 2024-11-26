@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -89,6 +89,22 @@
 #define ADC_SAR2_ENCAL_GND_ADDR                  0x8
 #define ADC_SAR2_ENCAL_GND_ADDR_MSB              0x3
 #define ADC_SAR2_ENCAL_GND_ADDR_LSB              0x3
+
+#define POWER_GLITCH_XPD_VDET_PERIF             10
+#define POWER_GLITCH_XPD_VDET_PERIF_MSB         0
+#define POWER_GLITCH_XPD_VDET_PERIF_LSB         0
+
+#define POWER_GLITCH_XPD_VDET_VDDPST            10
+#define POWER_GLITCH_XPD_VDET_VDDPST_MSB        1
+#define POWER_GLITCH_XPD_VDET_VDDPST_LSB        1
+
+#define POWER_GLITCH_XPD_VDET_XTAL              10
+#define POWER_GLITCH_XPD_VDET_XTAL_MSB         2
+#define POWER_GLITCH_XPD_VDET_XTAL_LSB         2
+
+#define POWER_GLITCH_XPD_VDET_PLL               10
+#define POWER_GLITCH_XPD_VDET_PLL_MSB           3
+#define POWER_GLITCH_XPD_VDET_PLL_LSB           3
 
 #define POWER_GLITCH_DREF_VDET_PERIF             11
 #define POWER_GLITCH_DREF_VDET_PERIF_MSB         2
