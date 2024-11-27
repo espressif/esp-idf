@@ -1,5 +1,6 @@
+
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -90,6 +91,15 @@ bool esp_usb_console_write_available(void);
  * @return ESP_OK if the callbacks were set, ESP_ERR_INVALID_STATE if the driver is not initialized
  */
 esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_t tx_cb, void* arg);
+
+/**
+ * @brief Checks whether the USB console is installed or not
+ *
+ * @return
+ *     - true  USB console is installed
+ *     - false USB console is not installed
+ */
+bool esp_usb_console_is_installed(void);
 
 #ifdef __cplusplus
 }
