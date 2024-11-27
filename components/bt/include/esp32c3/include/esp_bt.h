@@ -716,6 +716,15 @@ bool esp_bt_controller_is_sleeping(void);
 void esp_bt_controller_wakeup_request(void);
 
 /**
+ * @brief notify bluetooth controller task to process the event upon Tx or Rx done
+ *
+ * Note that this function shall not be invoked before esp_bt_controller_enable()
+ * This function can be called in both ISR and non-ISR context
+ *
+ */
+int esp_bt_h4tl_eif_io_event_notify(int event);
+
+/**
  * @brief Get the Bluetooth module sleep clock source.
  *
  * Note that this function shall not be invoked before esp_bt_controller_init()
