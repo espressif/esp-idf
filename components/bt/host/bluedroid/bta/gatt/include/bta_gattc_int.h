@@ -134,9 +134,19 @@ typedef struct {
     BOOLEAN                 is_aux;
     tBTA_TRANSPORT          transport;
     tBTA_ADDR_TYPE          own_addr_type;
+    UINT8                   phy_mask;
+    tBTA_BLE_CONN_PARAMS    phy_1m_conn_params;
+    tBTA_BLE_CONN_PARAMS    phy_2m_conn_params;
+    tBTA_BLE_CONN_PARAMS    phy_coded_conn_params;
 } tBTA_GATTC_API_OPEN;
 
-typedef tBTA_GATTC_API_OPEN tBTA_GATTC_API_CANCEL_OPEN;
+typedef struct {
+    BT_HDR                  hdr;
+    BD_ADDR                 remote_bda;
+    tBTA_ADDR_TYPE          remote_addr_type;
+    tBTA_GATTC_IF           client_if;
+    BOOLEAN                 is_direct;
+} tBTA_GATTC_API_CANCEL_OPEN;
 
 typedef struct {
     BT_HDR                  hdr;
@@ -205,6 +215,11 @@ typedef struct {
 
 typedef struct {
     BT_HDR             hdr;
+    BD_ADDR            remote_bda;
+} tBTA_GATTC_API_CACHE_REFRESH;
+
+typedef struct {
+    BT_HDR             hdr;
     tBTA_GATTC_IF      client_if;
     BD_ADDR            src_addr;
     BD_ADDR            assoc_addr;
@@ -215,6 +230,11 @@ typedef struct {
     BT_HDR             hdr;
     tBTA_GATTC_IF      client_if;
 } tBTA_GATTC_API_GET_ADDR;
+
+typedef struct {
+    BT_HDR             hdr;
+    BD_ADDR            remote_bda;
+} tBTA_GATTC_API_CACHE_CLEAN;
 
 typedef struct {
     BT_HDR                  hdr;
@@ -248,8 +268,10 @@ typedef union {
     tBTA_GATTC_API_EXEC         api_exec;
     tBTA_GATTC_API_READ_MULTI   api_read_multi;
     tBTA_GATTC_API_CFG_MTU      api_mtu;
+    tBTA_GATTC_API_CACHE_REFRESH    api_refresh;
     tBTA_GATTC_API_CACHE_ASSOC  api_assoc;
     tBTA_GATTC_API_GET_ADDR     api_get_addr;
+    tBTA_GATTC_API_CACHE_CLEAN  api_clean;
     tBTA_GATTC_OP_CMPL          op_cmpl;
     tBTA_GATTC_INT_CONN         int_conn;
     tBTA_GATTC_ENC_CMPL         enc_cmpl;

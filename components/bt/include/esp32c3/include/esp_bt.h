@@ -570,8 +570,6 @@ esp_err_t esp_bt_controller_disable(void);
  */
 esp_bt_controller_status_t esp_bt_controller_get_status(void);
 
-uint16_t esp_bt_get_tx_buf_num(void);
-
 /** @brief esp_vhci_host_callback
  *  used for vhci call host function to notify what host need to do
  */
@@ -716,15 +714,6 @@ bool esp_bt_controller_is_sleeping(void);
  * Generally it takes longer if 32kHz XTAL is used than the main XTAL, due to the lower frequency of the former as the bluetooth low power clock source.
  */
 void esp_bt_controller_wakeup_request(void);
-
-/**
- * @brief notify bluetooth controller task to process the event upon Tx or Rx done
- *
- * Note that this function shall not be invoked before esp_bt_controller_enable()
- * This function can be called in both ISR and non-ISR context
- *
- */
-int esp_bt_h4tl_eif_io_event_notify(int event);
 
 /**
  * @brief Get the Bluetooth module sleep clock source.
