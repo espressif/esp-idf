@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,69 +16,49 @@
 #include "esp_attr.h"
 #include "esp_err.h"
 #include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_memory_utils.h"
+#include "esp_cache.h"
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_priv.h"
-#include "esp_cache.h"
-#include "hal/dma_types.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/gdma_ll.h"
 
 static const char *TAG = "async_mcp.gdma";
 
-#ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
-#define MCP_GET_NON_CACHE_ADDR(addr) ((addr) ? CACHE_LL_L2MEM_NON_CACHE_ADDR(addr) : 0)
-#else
-#define MCP_GET_NON_CACHE_ADDR(addr) (addr)
-#endif
-
-#if SOC_AXI_GDMA_SUPPORTED
-#define MCP_DMA_DESC_ALIGN 8
-typedef dma_descriptor_align8_t mcp_dma_descriptor_t;
-#elif SOC_AHB_GDMA_SUPPORTED
-#define MCP_DMA_DESC_ALIGN 4
-typedef dma_descriptor_align4_t mcp_dma_descriptor_t;
-#else
-#error "Unsupported GDMA type"
-#endif
+#define MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE 4095
 
 /// @brief Transaction object for async memcpy
-/// @note - GDMA requires the DMA descriptors to be 4 or 8 bytes aligned
-/// @note - The DMA descriptor link list is allocated dynamically from DMA-able memory
-/// @note - Because of the eof_node, the transaction object should also be allocated from DMA-able memory
 typedef struct async_memcpy_transaction_t {
-    mcp_dma_descriptor_t eof_node;      // this is the DMA node which act as the EOF descriptor (RX path only)
-    mcp_dma_descriptor_t *tx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
-    mcp_dma_descriptor_t *tx_desc_nc;   // non-cacheable version of tx_desc_link
-    mcp_dma_descriptor_t *rx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
-    mcp_dma_descriptor_t *rx_desc_nc;   // non-cacheable version of rx_desc_link
-    intptr_t tx_start_desc_addr; // TX start descriptor address
-    intptr_t rx_start_desc_addr; // RX start descriptor address
-    void *memcpy_dst_addr;       // memcpy destination address
-    size_t memcpy_size;          // memcpy size
-    async_memcpy_isr_cb_t cb;    // user callback
-    void *cb_args;               // user callback args
+    gdma_link_list_handle_t tx_link_list;  // DMA link list for TX direction
+    gdma_link_list_handle_t rx_link_list;  // DMA link list for RX direction
+    dma_buffer_split_array_t rx_buf_array; // Split the destination buffer into cache aligned ones, save the splits in this array
+    uint8_t* stash_buffer;                 // Stash buffer for cache aligned buffer
+    async_memcpy_isr_cb_t cb; // user callback
+    void *cb_args;            // user callback args
     STAILQ_ENTRY(async_memcpy_transaction_t) idle_queue_entry;  // Entry for the idle queue
     STAILQ_ENTRY(async_memcpy_transaction_t) ready_queue_entry; // Entry for the ready queue
 } async_memcpy_transaction_t;
 
 /// @brief Context of async memcpy driver
 /// @note - It saves two queues, one for idle transaction objects, one for ready transaction objects
-/// @note - Transaction objects are allocated from DMA-able memory
 /// @note - Number of transaction objects are determined by the backlog parameter
 typedef struct {
     async_memcpy_context_t parent; // Parent IO interface
-    size_t rx_int_mem_alignment;   // DMA buffer alignment (both in size and address) for internal RX memory
-    size_t rx_ext_mem_alignment;   // DMA buffer alignment (both in size and address) for external RX memory
-    size_t tx_int_mem_alignment;   // DMA buffer alignment (both in size and address) for internal TX memory
-    size_t tx_ext_mem_alignment;   // DMA buffer alignment (both in size and address) for external TX memory
-    size_t max_single_dma_buffer;  // max DMA buffer size by a single descriptor
+    size_t rx_int_mem_alignment;   // Required DMA buffer alignment for internal RX memory
+    size_t rx_ext_mem_alignment;   // Required DMA buffer alignment for external RX memory
+    size_t tx_int_mem_alignment;   // Required DMA buffer alignment for internal TX memory
+    size_t tx_ext_mem_alignment;   // Required DMA buffer alignment for external TX memory
     int gdma_bus_id;               // GDMA bus id (AHB, AXI, etc.)
     gdma_channel_handle_t tx_channel; // GDMA TX channel handle
     gdma_channel_handle_t rx_channel; // GDMA RX channel handle
     portMUX_TYPE spin_lock;           // spin lock to avoid threads and isr from accessing the same resource simultaneously
     _Atomic async_memcpy_fsm_t fsm;   // driver state machine, changing state should be atomic
-    async_memcpy_transaction_t *transaction_pool; // transaction object pool
+    size_t num_trans_objs;            // number of transaction objects
+    async_memcpy_transaction_t *transaction_pool;    // transaction object pool
+    async_memcpy_transaction_t *current_transaction; // current transaction object
     STAILQ_HEAD(, async_memcpy_transaction_t) idle_queue_head;  // Head of the idle queue
     STAILQ_HEAD(, async_memcpy_transaction_t) ready_queue_head; // Head of the ready queue
 } async_memcpy_gdma_context_t;
@@ -92,9 +72,23 @@ static esp_err_t mcp_new_etm_event(async_memcpy_context_t *ctx, async_memcpy_etm
 
 static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
 {
+    // clean up transaction pool
     if (mcp_gdma->transaction_pool) {
+        for (size_t i = 0; i < mcp_gdma->num_trans_objs; i++) {
+            async_memcpy_transaction_t* trans = &mcp_gdma->transaction_pool[i];
+            if (trans->tx_link_list) {
+                gdma_del_link_list(trans->tx_link_list);
+            }
+            if (trans->rx_link_list) {
+                gdma_del_link_list(trans->rx_link_list);
+            }
+            if (trans->stash_buffer) {
+                free(trans->stash_buffer);
+            }
+        }
         free(mcp_gdma->transaction_pool);
     }
+    // clean up GDMA channels
     if (mcp_gdma->tx_channel) {
         gdma_disconnect(mcp_gdma->tx_channel);
         gdma_del_channel(mcp_gdma->tx_channel);
@@ -108,19 +102,19 @@ static esp_err_t mcp_gdma_destroy(async_memcpy_gdma_context_t *mcp_gdma)
 }
 
 static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_config_t *config, async_memcpy_handle_t *mcp,
-                                                        esp_err_t (*new_channel)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *),
+                                                        esp_err_t (*new_channel_func)(const gdma_channel_alloc_config_t *, gdma_channel_handle_t *),
                                                         int gdma_bus_id)
 {
     esp_err_t ret = ESP_OK;
     async_memcpy_gdma_context_t *mcp_gdma = NULL;
     ESP_RETURN_ON_FALSE(config && mcp, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    // allocate memory of driver context from internal memory
+
+    // allocate memory of driver context from internal memory (because it contains atomic variable)
     mcp_gdma = heap_caps_calloc(1, sizeof(async_memcpy_gdma_context_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(mcp_gdma, ESP_ERR_NO_MEM, err, TAG, "no mem for driver context");
     uint32_t trans_queue_len = config->backlog ? config->backlog : DEFAULT_TRANSACTION_QUEUE_LENGTH;
-    // allocate memory for transaction pool from internal memory because transaction structure contains DMA descriptor
-    mcp_gdma->transaction_pool = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, trans_queue_len, sizeof(async_memcpy_transaction_t),
-                                                          MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
+    // allocate memory for transaction pool from internal memory
+    mcp_gdma->transaction_pool = heap_caps_calloc(trans_queue_len, sizeof(async_memcpy_transaction_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(mcp_gdma->transaction_pool, ESP_ERR_NO_MEM, err, TAG, "no mem for transaction pool");
 
     // create TX channel and RX channel, they should reside in the same DMA pair
@@ -128,28 +122,39 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
         .flags.reserve_sibling = 1,
         .direction = GDMA_CHANNEL_DIRECTION_TX,
     };
-    ESP_GOTO_ON_ERROR(new_channel(&tx_alloc_config, &mcp_gdma->tx_channel), err, TAG, "failed to create GDMA TX channel");
+    ESP_GOTO_ON_ERROR(new_channel_func(&tx_alloc_config, &mcp_gdma->tx_channel), err, TAG, "failed to alloc GDMA TX channel");
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
         .sibling_chan = mcp_gdma->tx_channel,
     };
-    ESP_GOTO_ON_ERROR(new_channel(&rx_alloc_config, &mcp_gdma->rx_channel), err, TAG, "failed to create GDMA RX channel");
+    ESP_GOTO_ON_ERROR(new_channel_func(&rx_alloc_config, &mcp_gdma->rx_channel), err, TAG, "failed to alloc GDMA RX channel");
 
-    // initialize GDMA channels
-    gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
     // get a free DMA trigger ID for memory copy
+    gdma_trigger_t m2m_trigger = GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0);
     uint32_t free_m2m_id_mask = 0;
     gdma_get_free_m2m_trig_id_mask(mcp_gdma->tx_channel, &free_m2m_id_mask);
     m2m_trigger.instance_id = __builtin_ctz(free_m2m_id_mask);
     ESP_GOTO_ON_ERROR(gdma_connect(mcp_gdma->rx_channel, m2m_trigger), err, TAG, "GDMA rx connect failed");
     ESP_GOTO_ON_ERROR(gdma_connect(mcp_gdma->tx_channel, m2m_trigger), err, TAG, "GDMA tx connect failed");
 
+    gdma_strategy_config_t strategy_cfg = {
+        .owner_check = true,
+        .auto_update_desc = true,
+        .eof_till_data_popped = true,
+    };
+    gdma_apply_strategy(mcp_gdma->tx_channel, &strategy_cfg);
+    gdma_apply_strategy(mcp_gdma->rx_channel, &strategy_cfg);
+
     gdma_transfer_config_t transfer_cfg = {
-        .max_data_burst_size = config->dma_burst_size ? config->dma_burst_size : 16,
+        .max_data_burst_size = config->dma_burst_size,
         .access_ext_mem = true, // allow to do memory copy from/to external memory
     };
     ESP_GOTO_ON_ERROR(gdma_config_transfer(mcp_gdma->tx_channel, &transfer_cfg), err, TAG, "config transfer for tx channel failed");
     ESP_GOTO_ON_ERROR(gdma_config_transfer(mcp_gdma->rx_channel, &transfer_cfg), err, TAG, "config transfer for rx channel failed");
+
+    // get the buffer alignment required by the GDMA channel
+    gdma_get_alignment_constraints(mcp_gdma->rx_channel, &mcp_gdma->rx_int_mem_alignment, &mcp_gdma->rx_ext_mem_alignment);
+    gdma_get_alignment_constraints(mcp_gdma->tx_channel, &mcp_gdma->tx_int_mem_alignment, &mcp_gdma->tx_ext_mem_alignment);
 
     // register rx eof callback
     gdma_rx_event_callbacks_t cbs = {
@@ -169,20 +174,14 @@ static esp_err_t esp_async_memcpy_install_gdma_template(const async_memcpy_confi
     portMUX_INITIALIZE(&mcp_gdma->spin_lock);
     atomic_init(&mcp_gdma->fsm, MCP_FSM_IDLE);
     mcp_gdma->gdma_bus_id = gdma_bus_id;
+    mcp_gdma->num_trans_objs = trans_queue_len;
 
-    // get the buffer alignment required by the GDMA channel
-    gdma_get_alignment_constraints(mcp_gdma->rx_channel, &mcp_gdma->rx_int_mem_alignment, &mcp_gdma->rx_ext_mem_alignment);
-    gdma_get_alignment_constraints(mcp_gdma->tx_channel, &mcp_gdma->tx_int_mem_alignment, &mcp_gdma->tx_ext_mem_alignment);
-
-    size_t buf_align = MAX(MAX(mcp_gdma->rx_int_mem_alignment, mcp_gdma->rx_ext_mem_alignment),
-                           MAX(mcp_gdma->tx_int_mem_alignment, mcp_gdma->tx_ext_mem_alignment));
-    mcp_gdma->max_single_dma_buffer = ALIGN_DOWN(DMA_DESCRIPTOR_BUFFER_MAX_SIZE, buf_align);
     mcp_gdma->parent.del = mcp_gdma_del;
     mcp_gdma->parent.memcpy = mcp_gdma_memcpy;
 #if SOC_GDMA_SUPPORT_ETM
     mcp_gdma->parent.new_etm_event = mcp_new_etm_event;
 #endif
-    // return driver object
+    // return base object
     *mcp = &mcp_gdma->parent;
     return ESP_OK;
 
@@ -227,61 +226,6 @@ static esp_err_t mcp_gdma_del(async_memcpy_context_t *ctx)
     return mcp_gdma_destroy(mcp_gdma);
 }
 
-static void mount_tx_buffer_to_dma(async_memcpy_transaction_t *trans, int num_desc,
-                                   uint8_t *buf, size_t buf_sz, size_t max_single_dma_buffer)
-{
-    mcp_dma_descriptor_t *desc_array = trans->tx_desc_link;
-    mcp_dma_descriptor_t *desc_nc = trans->tx_desc_nc;
-    uint32_t prepared_length = 0;
-    size_t len = buf_sz;
-    for (int i = 0; i < num_desc - 1; i++) {
-        desc_nc[i].buffer = &buf[prepared_length];
-        desc_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc[i].dw0.suc_eof = 0;
-        desc_nc[i].dw0.size = max_single_dma_buffer;
-        desc_nc[i].dw0.length = max_single_dma_buffer;
-        desc_nc[i].next = &desc_array[i + 1];
-        prepared_length += max_single_dma_buffer;
-        len -= max_single_dma_buffer;
-    }
-    // take special care to the EOF descriptor
-    desc_nc[num_desc - 1].buffer = &buf[prepared_length];
-    desc_nc[num_desc - 1].next = NULL;
-    desc_nc[num_desc - 1].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    desc_nc[num_desc - 1].dw0.suc_eof = 1;
-    desc_nc[num_desc - 1].dw0.size = len;
-    desc_nc[num_desc - 1].dw0.length = len;
-}
-
-static void mount_rx_buffer_to_dma(async_memcpy_transaction_t *trans, int num_desc,
-                                   uint8_t *buf, size_t buf_sz, size_t max_single_dma_buffer)
-{
-    mcp_dma_descriptor_t *desc_array = trans->rx_desc_link;
-    mcp_dma_descriptor_t *desc_nc = trans->rx_desc_nc;
-    mcp_dma_descriptor_t *eof_desc = &trans->eof_node;
-    mcp_dma_descriptor_t *eof_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(eof_desc);
-    uint32_t prepared_length = 0;
-    size_t len = buf_sz;
-    if (desc_array) {
-        assert(num_desc > 0);
-        for (int i = 0; i < num_desc; i++) {
-            desc_nc[i].buffer = &buf[prepared_length];
-            desc_nc[i].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-            desc_nc[i].dw0.size = max_single_dma_buffer;
-            desc_nc[i].dw0.length = max_single_dma_buffer;
-            desc_nc[i].next = &desc_array[i + 1];
-            prepared_length += max_single_dma_buffer;
-            len -= max_single_dma_buffer;
-        }
-        desc_nc[num_desc - 1].next = eof_desc;
-    }
-    eof_nc->buffer = &buf[prepared_length];
-    eof_nc->next = NULL;
-    eof_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-    eof_nc->dw0.size = len;
-    eof_nc->dw0.length = len;
-}
-
 /// @brief help function to get one transaction from the ready queue
 /// @note this function is allowed to be called in ISR
 static async_memcpy_transaction_t *try_pop_trans_from_ready_queue(async_memcpy_gdma_context_t *mcp_gdma)
@@ -306,8 +250,9 @@ static void try_start_pending_transaction(async_memcpy_gdma_context_t *mcp_gdma)
         trans = try_pop_trans_from_ready_queue(mcp_gdma);
         if (trans) {
             atomic_store(&mcp_gdma->fsm, MCP_FSM_RUN);
-            gdma_start(mcp_gdma->rx_channel, trans->rx_start_desc_addr);
-            gdma_start(mcp_gdma->tx_channel, trans->tx_start_desc_addr);
+            mcp_gdma->current_transaction = trans;
+            gdma_start(mcp_gdma->rx_channel, gdma_link_get_head_addr(trans->rx_link_list));
+            gdma_start(mcp_gdma->tx_channel, gdma_link_get_head_addr(trans->tx_link_list));
         } else {
             atomic_store(&mcp_gdma->fsm, MCP_FSM_IDLE);
         }
@@ -328,6 +273,7 @@ static async_memcpy_transaction_t *try_pop_trans_from_idle_queue(async_memcpy_gd
     return trans;
 }
 
+/// @brief Check if the address and size can meet the requirement of the DMA engine
 static bool check_buffer_alignment(async_memcpy_gdma_context_t *mcp_gdma, void *src, void *dst, size_t n)
 {
     bool valid = true;
@@ -355,19 +301,26 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
 {
     esp_err_t ret = ESP_OK;
     async_memcpy_gdma_context_t *mcp_gdma = __containerof(ctx, async_memcpy_gdma_context_t, parent);
+    size_t dma_link_item_alignment = 4;
     // buffer location check
-#if SOC_AHB_GDMA_SUPPORTED && !SOC_AHB_GDMA_SUPPORT_PSRAM
+#if SOC_AHB_GDMA_SUPPORTED
     if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_AHB) {
+#if !SOC_AHB_GDMA_SUPPORT_PSRAM
         ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AHB GDMA can only access SRAM");
+#endif // !SOC_AHB_GDMA_SUPPORT_PSRAM
+        dma_link_item_alignment = GDMA_LL_AHB_DESC_ALIGNMENT;
     }
-#endif // SOC_AHB_GDMA_SUPPORTED && !SOC_AHB_GDMA_SUPPORT_PSRAM
-#if SOC_AXI_GDMA_SUPPORTED && !SOC_AXI_GDMA_SUPPORT_PSRAM
+#endif // SOC_AHB_GDMA_SUPPORTED
+#if SOC_AXI_GDMA_SUPPORTED
     if (mcp_gdma->gdma_bus_id == SOC_GDMA_BUS_AXI) {
-        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AXI DMA can only access SRAM");
+#if !SOC_AXI_GDMA_SUPPORT_PSRAM
+        ESP_RETURN_ON_FALSE(esp_ptr_internal(src) && esp_ptr_internal(dst), ESP_ERR_INVALID_ARG, TAG, "AXI GDMA can only access SRAM");
+#endif // !SOC_AXI_GDMA_SUPPORT_PSRAM
+        dma_link_item_alignment = GDMA_LL_AXI_DESC_ALIGNMENT;
     }
-#endif // SOC_AXI_GDMA_SUPPORTED && !SOC_AXI_GDMA_SUPPORT_PSRAM
+#endif // SOC_AXI_GDMA_SUPPORTED
     // alignment check
-    ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "buffer not aligned: %p -> %p, sz=%zu", src, dst, n);
+    ESP_RETURN_ON_FALSE(check_buffer_alignment(mcp_gdma, src, dst, n), ESP_ERR_INVALID_ARG, TAG, "address|size not aligned: %p -> %p, sz=%zu", src, dst, n);
 
     async_memcpy_transaction_t *trans = NULL;
     // pick one transaction node from idle queue
@@ -375,51 +328,84 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     // check if we get the transaction object successfully
     ESP_RETURN_ON_FALSE(trans, ESP_ERR_INVALID_STATE, TAG, "no free node in the idle queue");
 
-    // calculate how many descriptors we want
-    size_t max_single_dma_buffer = mcp_gdma->max_single_dma_buffer;
-    uint32_t num_desc_per_path = (n + max_single_dma_buffer - 1) / max_single_dma_buffer;
-    // allocate DMA descriptors from internal memory
-    trans->tx_desc_link = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, num_desc_per_path, sizeof(mcp_dma_descriptor_t),
-                                                   MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
-    ESP_GOTO_ON_FALSE(trans->tx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
-    trans->tx_desc_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(trans->tx_desc_link);
-    // don't have to allocate the EOF descriptor, we will use trans->eof_node as the RX EOF descriptor
-    if (num_desc_per_path > 1) {
-        trans->rx_desc_link = heap_caps_aligned_calloc(MCP_DMA_DESC_ALIGN, num_desc_per_path - 1, sizeof(mcp_dma_descriptor_t),
-                                                       MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
-        ESP_GOTO_ON_FALSE(trans->rx_desc_link, ESP_ERR_NO_MEM, err, TAG, "no mem for DMA descriptors");
-        trans->rx_desc_nc = (mcp_dma_descriptor_t *)MCP_GET_NON_CACHE_ADDR(trans->rx_desc_link);
-    } else {
-        // small copy buffer, use the trans->eof_node is sufficient
-        trans->rx_desc_link = NULL;
-        trans->rx_desc_nc = NULL;
+    // clean up the transaction configuration comes from the last one
+    if (trans->tx_link_list) {
+        gdma_del_link_list(trans->tx_link_list);
+        trans->tx_link_list = NULL;
+    }
+    if (trans->rx_link_list) {
+        gdma_del_link_list(trans->rx_link_list);
+        trans->rx_link_list = NULL;
+    }
+    if (trans->stash_buffer) {
+        free(trans->stash_buffer);
+        trans->stash_buffer = NULL;
     }
 
-    // (preload) mount src data to the TX descriptor
-    mount_tx_buffer_to_dma(trans, num_desc_per_path, src, n, max_single_dma_buffer);
-    // (preload) mount dst data to the RX descriptor
-    mount_rx_buffer_to_dma(trans, num_desc_per_path - 1, dst, n, max_single_dma_buffer);
+    // allocate gdma TX link
+    gdma_link_list_config_t tx_link_cfg = {
+        .buffer_alignment = esp_ptr_internal(src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment,
+        .item_alignment = dma_link_item_alignment,
+        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1,
+        .flags = {
+            .check_owner = true,
+            .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we may need to allocate the link list items from external memory
+        },
+    };
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&tx_link_cfg, &trans->tx_link_list), err, TAG, "failed to create TX link list");
+    // mount the source buffer to the TX link list
+    gdma_buffer_mount_config_t tx_buf_mount_config[1] = {
+        [0] = {
+            .buffer = src,
+            .length = n,
+            .flags = {
+                .mark_eof = true,   // mark the last item as EOF, so the RX channel can also received an EOF list item
+                .mark_final = true, // using singly list, so terminate the link here
+            }
+        }
+    };
+    gdma_link_mount_buffers(trans->tx_link_list, 0, tx_buf_mount_config, 1, NULL);
 
-    // if the data is in the cache, write back, then DMA can see the latest data
+    // read the cache line size of internal and external memory, we use this information to check if a given memory is behind the cache
+    // write back the source data if it's behind the cache
+    size_t int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    size_t ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
     bool need_write_back = false;
     if (esp_ptr_external_ram(src)) {
-        need_write_back = true;
+        need_write_back = ext_mem_cache_line_size > 0;
     } else if (esp_ptr_internal(src)) {
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        need_write_back = true;
-#endif
+        need_write_back = int_mem_cache_line_size > 0;
     }
     if (need_write_back) {
-        esp_cache_msync(src, n, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        esp_cache_msync(src, n, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     }
+
+    // allocate gdma RX link
+    gdma_link_list_config_t rx_link_cfg = {
+        .buffer_alignment = esp_ptr_internal(dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment,
+        .item_alignment = dma_link_item_alignment,
+        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 3,
+        .flags = {
+            .check_owner = true,
+            .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we may need to allocate the link list items from external memory
+        },
+    };
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&rx_link_cfg, &trans->rx_link_list), err, TAG, "failed to create RX link list");
+
+    // if the destination buffer address is not cache line aligned, we need to split the buffer into cache line aligned ones
+    ESP_GOTO_ON_ERROR(esp_dma_split_rx_buffer_to_cache_aligned(dst, n, &trans->rx_buf_array, &trans->stash_buffer),
+                      err, TAG, "failed to split RX buffer into aligned ones");
+    // mount the destination buffer to the RX link list
+    gdma_buffer_mount_config_t rx_buf_mount_config[3] = {0};
+    for (int i = 0; i < 3; i++) {
+        rx_buf_mount_config[i].buffer = trans->rx_buf_array.aligned_buffer[i].aligned_buffer;
+        rx_buf_mount_config[i].length = trans->rx_buf_array.aligned_buffer[i].length;
+    }
+    gdma_link_mount_buffers(trans->rx_link_list, 0, rx_buf_mount_config, 3, NULL);
 
     // save other transaction context
     trans->cb = cb_isr;
     trans->cb_args = cb_args;
-    trans->memcpy_size = n;
-    trans->memcpy_dst_addr = dst; // save the destination buffer address, because we may need to do data cache invalidate later
-    trans->tx_start_desc_addr = (intptr_t)trans->tx_desc_link;
-    trans->rx_start_desc_addr = trans->rx_desc_link ? (intptr_t)trans->rx_desc_link : (intptr_t)&trans->eof_node;
 
     portENTER_CRITICAL(&mcp_gdma->spin_lock);
     // insert the trans to ready queue
@@ -433,14 +419,6 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
 
 err:
     if (trans) {
-        if (trans->tx_desc_link) {
-            free(trans->tx_desc_link);
-            trans->tx_desc_link = NULL;
-        }
-        if (trans->rx_desc_link) {
-            free(trans->rx_desc_link);
-            trans->rx_desc_link = NULL;
-        }
         // return back the trans to idle queue
         portENTER_CRITICAL(&mcp_gdma->spin_lock);
         STAILQ_INSERT_TAIL(&mcp_gdma->idle_queue_head, trans, idle_queue_entry);
@@ -453,26 +431,14 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
 {
     bool need_yield = false;
     async_memcpy_gdma_context_t *mcp_gdma = (async_memcpy_gdma_context_t *)user_data;
-    mcp_dma_descriptor_t *eof_desc = (mcp_dma_descriptor_t *)event_data->rx_eof_desc_addr;
-    // get the transaction object address by the EOF descriptor address
-    async_memcpy_transaction_t *trans = __containerof(eof_desc, async_memcpy_transaction_t, eof_node);
+    async_memcpy_transaction_t *trans = mcp_gdma->current_transaction;
+    dma_buffer_split_array_t *rx_buf_array = &trans->rx_buf_array;
 
     // switch driver state from RUN to IDLE
     async_memcpy_fsm_t expected_fsm = MCP_FSM_RUN;
     if (atomic_compare_exchange_strong(&mcp_gdma->fsm, &expected_fsm, MCP_FSM_IDLE_WAIT)) {
-        void *dst = trans->memcpy_dst_addr;
-        // if the data is in the cache, invalidate, then CPU can see the latest data
-        bool need_invalidate = false;
-        if (esp_ptr_external_ram(dst)) {
-            need_invalidate = true;
-        } else if (esp_ptr_internal(dst)) {
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-            need_invalidate = true;
-#endif
-        }
-        if (need_invalidate) {
-            esp_cache_msync(dst, trans->memcpy_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        }
+        // merge the cache aligned buffers to the original buffer
+        esp_dma_merge_aligned_rx_buffers(rx_buf_array);
 
         // invoked callback registered by user
         async_memcpy_isr_cb_t cb = trans->cb;
@@ -481,15 +447,6 @@ static bool mcp_gdma_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_
                 // No event data for now
             };
             need_yield = cb(&mcp_gdma->parent, &e, trans->cb_args);
-        }
-        // recycle descriptor memory
-        if (trans->tx_desc_link) {
-            free(trans->tx_desc_link);
-            trans->tx_desc_link = NULL;
-        }
-        if (trans->rx_desc_link) {
-            free(trans->rx_desc_link);
-            trans->rx_desc_link = NULL;
         }
         trans->cb = NULL;
 
