@@ -98,7 +98,8 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(slot_cfg->slot_mask);
     uint32_t max_slot_num = 32 - __builtin_clz(slot_cfg->slot_mask);
     handle->total_slot = slot_cfg->total_slot < max_slot_num ? max_slot_num : slot_cfg->total_slot;
-    handle->total_slot = handle->total_slot < 2 ? 2 : handle->total_slot;  // At least two slots in a frame
+    // At least two slots in a frame if not using PCM short format
+    handle->total_slot = ((handle->total_slot < 2) && (slot_cfg->ws_width != 1)) ? 2 : handle->total_slot;
 
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
