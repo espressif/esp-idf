@@ -89,6 +89,8 @@ static inline void bootloader_hardware_init(void)
 {
     /* Enable analog i2c master clock */
     SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_0P8, 8);  // fix low temp issue, need to increase this internal voltage
+
 }
 
 static inline void bootloader_ana_reset_config(void)
