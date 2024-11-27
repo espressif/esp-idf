@@ -41,7 +41,7 @@ static inline void obex_server_to_tl_server(tOBEX_SVR_INFO *server, tOBEX_TL_SVR
 static inline void obex_updata_packet_length(BT_HDR *p_buf, UINT16 len)
 {
     UINT8 *p_pkt_len = (UINT8 *)(p_buf + 1) + p_buf->offset + 1;
-    STORE16BE(p_pkt_len, len);
+    UINT16_TO_BE_FIELD(p_pkt_len, len);
 }
 
 /*******************************************************************************
@@ -349,7 +349,7 @@ UINT16 OBEX_BuildRequest(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out_
         /* byte 4: flags */
         *p_data++ = info->flags;
         /* byte 5, 6: maximum OBEX packet length, recommend to set as our mtu*/
-        STORE16BE(p_data, info->max_packet_length);
+        UINT16_TO_BE_FIELD(p_data, info->max_packet_length);
         pkt_len += 4;
         break;
     case OBEX_OPCODE_SETPATH:
@@ -363,7 +363,7 @@ UINT16 OBEX_BuildRequest(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out_
         break;
     }
 
-    STORE16BE(p_pkt_len, pkt_len);
+    UINT16_TO_BE_FIELD(p_pkt_len, pkt_len);
     p_buf->len = pkt_len;
     *out_pkt = p_buf;
     return OBEX_SUCCESS;
@@ -411,14 +411,14 @@ UINT16 OBEX_BuildResponse(tOBEX_PARSE_INFO *info, UINT16 buff_size, BT_HDR **out
         /* byte 4: flags */
         *p_data++ = info->flags;
         /* byte 5, 6: maximum OBEX packet length, recommend to set as our mtu */
-        STORE16BE(p_data, info->max_packet_length);
+        UINT16_TO_BE_FIELD(p_data, info->max_packet_length);
         pkt_len += 4;
         break;
     default:
         break;
     }
 
-    STORE16BE(p_pkt_len, pkt_len);
+    UINT16_TO_BE_FIELD(p_pkt_len, pkt_len);
     p_buf->len = pkt_len;
     *out_pkt = p_buf;
     return OBEX_SUCCESS;
@@ -471,7 +471,7 @@ UINT16 OBEX_AppendHeader(BT_HDR *pkt, const UINT8 *header)
     pkt->len += header_len;
     /* point to packet len */
     p_data++;
-    STORE16BE(p_data, pkt->len);
+    UINT16_TO_BE_FIELD(p_data, pkt->len);
     return OBEX_SUCCESS;
 }
 
@@ -530,7 +530,7 @@ UINT16 OBEX_AppendHeaderRaw(BT_HDR *pkt, UINT8 header_id, const UINT8 *data, UIN
     *p_start++ = header_id;
     if (store_header_len) {
         /* store header length */
-        STORE16BE(p_start, header_len);
+        UINT16_TO_BE_FIELD(p_start, header_len);
         p_start+= 2;
     }
     /* store data */
@@ -538,7 +538,7 @@ UINT16 OBEX_AppendHeaderRaw(BT_HDR *pkt, UINT8 header_id, const UINT8 *data, UIN
     pkt->len += header_len;
     /* point to packet len */
     p_data++;
-    STORE16BE(p_data, pkt->len);
+    UINT16_TO_BE_FIELD(p_data, pkt->len);
     return OBEX_SUCCESS;
 }
 

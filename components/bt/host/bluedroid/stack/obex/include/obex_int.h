@@ -30,10 +30,6 @@
 #define OBEX_STATE_OPENING          1       /* Starting to open a connection */
 #define OBEX_STATE_OPENED           2       /* Connection opened */
 
-/* Store 16 bits data in big endian format, not modify the p_buf */
-#define STORE16BE(p_buf, data)          do { *p_buf = ((data)>>8)&0xff; \
-                                             *(p_buf+1) = (data)&0xff;} while(0)
-
 /* OBEX Connection Control block */
 typedef struct {
     tOBEX_MSG_CBACK     *callback;      /* Connection msg callback function */
