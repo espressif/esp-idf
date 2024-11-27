@@ -487,7 +487,11 @@ UINT16 OBEX_AppendHeader(BT_HDR *pkt, const UINT8 *header)
 *******************************************************************************/
 UINT16 OBEX_AppendHeaderRaw(BT_HDR *pkt, UINT8 header_id, const UINT8 *data, UINT16 data_len)
 {
-    if (pkt == NULL || data == NULL) {
+    if (pkt == NULL) {
+        return OBEX_INVALID_PARAM;
+    }
+
+    if ((data == NULL) ^ (data_len == 0)) {
         return OBEX_INVALID_PARAM;
     }
 
@@ -533,8 +537,10 @@ UINT16 OBEX_AppendHeaderRaw(BT_HDR *pkt, UINT8 header_id, const UINT8 *data, UIN
         UINT16_TO_BE_FIELD(p_start, header_len);
         p_start+= 2;
     }
-    /* store data */
-    memcpy(p_start, data, data_len);
+    if (data != NULL) {
+        /* store data */
+        memcpy(p_start, data, data_len);
+    }
     pkt->len += header_len;
     /* point to packet len */
     p_data++;
