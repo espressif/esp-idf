@@ -285,6 +285,7 @@ INPUT = \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
+    $(PROJECT_PATH)/components/nvs_flash/include/nvs_bootloader.h \
     $(PROJECT_PATH)/components/nvs_sec_provider/include/nvs_sec_provider.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_border_router.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_lock.h \

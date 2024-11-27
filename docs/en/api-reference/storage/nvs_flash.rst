@@ -37,6 +37,13 @@ Although not recommended, NVS can store tens of thousands of keys and NVS partit
     This option is available in the nvs_flash component of the menuconfig menu when SPIRAM is enabled and and :ref:`CONFIG_SPIRAM_USE` is set to ``CONFIG_SPIRAM_USE_CAPS_ALLOC``.
     .. note:: Using SPI-connected PSRAM slows down NVS API for integer operations by an approximate factor of 2.5.
 
+.. _nvs_bootloader:
+
+Use of NVS in Bootloader code
+-----------------------------
+
+The standard NVS API described in this guide is available to the running application. It is also possible to read data from NVS in the custom bootloader code. More information can be found in the :doc:`nvs_bootloader` guide.
+
 Keys and Values
 ^^^^^^^^^^^^^^^
 

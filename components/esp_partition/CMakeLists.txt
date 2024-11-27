@@ -1,3 +1,17 @@
+# bootloader build simplified version
+if(BOOTLOADER_BUILD)
+set(srcs "partition_bootloader.c")
+set(reqs "spi_flash")
+set(priv_reqs "bootloader_support")
+
+idf_component_register(SRCS "${srcs}"
+    INCLUDE_DIRS "include"
+    PRIV_INCLUDE_DIRS ${private_include_dirs}
+    REQUIRES ${reqs}
+    PRIV_REQUIRES ${priv_reqs})
+
+# regular, non bootloader build
+else()
 set(srcs "partition.c")
 set(priv_reqs esp_system spi_flash partition_table)
 set(reqs)
@@ -32,4 +46,6 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU")
     # These flags are GCC specific
     set_property(SOURCE ${cache_srcs} APPEND_STRING PROPERTY COMPILE_FLAGS
         " -fno-inline-small-functions -fno-inline-functions-called-once")
+endif()
+
 endif()
