@@ -92,6 +92,9 @@ static inline void bootloader_hardware_init(void)
 
     _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_configure_clock();
+
+    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_0P8, 8);  // fix low temp issue, need to increase this internal voltage
+
 }
 
 static inline void bootloader_ana_reset_config(void)
