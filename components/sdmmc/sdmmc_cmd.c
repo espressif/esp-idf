@@ -5,8 +5,7 @@
  */
 
 #include <inttypes.h>
-#include "esp_timer.h"
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_cmd";
 
@@ -409,6 +408,43 @@ esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status)
     return ESP_OK;
 }
 
+esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks)
+{
+    size_t datalen = sizeof(uint32_t);
+    esp_err_t err = ESP_OK;
+    void* buf = NULL;
+    esp_dma_mem_info_t dma_mem_info;
+    card->host.get_dma_info(card->host.slot, &dma_mem_info);
+    size_t actual_size = 0;
+    err = esp_dma_capable_malloc(datalen, &dma_mem_info, &buf, &actual_size);
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    sdmmc_command_t cmd = {
+        .data = buf,
+        .datalen = datalen,
+        .buflen = actual_size,
+        .blklen = datalen,
+        .flags = SCF_CMD_ADTC | SCF_RSP_R1 | SCF_CMD_READ,
+        .opcode = SD_APP_SEND_NUM_WR_BLOCKS
+    };
+
+    err = sdmmc_send_app_cmd(card, &cmd);
+    if (err != ESP_OK) {
+        free(buf);
+        ESP_LOGE(TAG, "%s: sdmmc_send_app_cmd returned 0x%x, failed to get number of written write blocks", __func__, err);
+        return err;
+    }
+
+    size_t result = __builtin_bswap32(*(uint32_t*)buf);
+    if (out_num_blocks) {
+        *out_num_blocks = result;
+    }
+    free(buf);
+    return err;
+}
+
 esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count)
 {
@@ -459,11 +495,6 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
     return err;
 }
 
-static bool sdmmc_ready_for_data(uint32_t status)
-{
-    return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
-}
-
 esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         size_t start_block, size_t block_count, size_t buffer_len)
 {
@@ -495,6 +526,19 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
     esp_err_t err_cmd13 = sdmmc_send_cmd_send_status(card, &status);
 
     if (err != ESP_OK) {
+        if (cmd.opcode == MMC_WRITE_BLOCK_MULTIPLE) {
+            if (!host_is_spi(card)) {
+                sdmmc_wait_for_idle(card, status); // wait for the card to be idle (in transfer state)
+            } else {
+                vTaskDelay(1); // when the host is in spi mode
+            }
+            size_t successfully_written_blocks = 0;
+            if (sdmmc_send_cmd_num_of_written_blocks(card, &successfully_written_blocks) == ESP_OK) {
+                ESP_LOGD(TAG, "%s: successfully wrote %zu blocks out of %zu", __func__, successfully_written_blocks, block_count);
+            } else {
+                ESP_LOGE(TAG, "%s: sdmmc_send_cmd_num_of_written_blocks returned 0x%x", __func__, err);
+            }
+        }
         if (err_cmd13 == ESP_OK) {
             ESP_LOGE(TAG, "%s: sdmmc_send_cmd returned 0x%x, status 0x%" PRIx32, __func__, err, status);
         } else {
@@ -503,30 +547,19 @@ esp_err_t sdmmc_write_sectors_dma(sdmmc_card_t* card, const void* src,
         return err;
     }
 
-    size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
-    int64_t t1 = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
-    while (!host_is_spi(card) && !sdmmc_ready_for_data(status)) {
-        t1 = esp_timer_get_time();
-        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
-            ESP_LOGE(TAG, "write sectors dma - timeout");
-            return ESP_ERR_TIMEOUT;
-        }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
-        err = sdmmc_send_cmd_send_status(card, &status);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
-            return err;
-        }
-        if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", (uint32_t) count);
+    if (!host_is_spi(card)) {
+        switch (sdmmc_wait_for_idle(card, status)) {
+            case ESP_OK:
+                break;
+            case ESP_ERR_TIMEOUT:
+                ESP_LOGE(TAG, "%s: sdmmc_wait_for_idle timeout", __func__);
+                return ESP_ERR_TIMEOUT;
+            default:
+                return err;
         }
     }
+
     /* SPI mode: although card busy indication is based on the busy token,
      * SD spec recommends that the host checks the results of programming by sending
      * SEND_STATUS command. Some of the conditions reported in SEND_STATUS are not
@@ -633,28 +666,16 @@ esp_err_t sdmmc_read_sectors_dma(sdmmc_card_t* card, void* dst,
         return err;
     }
 
-    size_t count = 0;
-    int64_t yield_delay_us = 100 * 1000; // initially 100ms
-    int64_t t0 = esp_timer_get_time();
-    int64_t t1 = 0;
     /* SD mode: wait for the card to become idle based on R1 status */
-    while (!host_is_spi(card) && !sdmmc_ready_for_data(status)) {
-        t1 = esp_timer_get_time();
-        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
-            ESP_LOGE(TAG, "read sectors dma - timeout");
-            return ESP_ERR_TIMEOUT;
-        }
-        if (t1 - t0 > yield_delay_us) {
-            yield_delay_us *= 2;
-            vTaskDelay(1);
-        }
-        err = sdmmc_send_cmd_send_status(card, &status);
-        if (err != ESP_OK) {
-            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
-            return err;
-        }
-        if (++count % 16 == 0) {
-            ESP_LOGV(TAG, "waiting for card to become ready (%d)", count);
+    if (!host_is_spi(card)) {
+        switch (sdmmc_wait_for_idle(card, status)) {
+            case ESP_OK:
+                break;
+            case ESP_ERR_TIMEOUT:
+                ESP_LOGE(TAG, "%s: sdmmc_wait_for_idle timeout", __func__);
+                return ESP_ERR_TIMEOUT;
+            default:
+                return err;
         }
     }
     return ESP_OK;

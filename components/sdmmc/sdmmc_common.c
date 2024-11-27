@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -16,7 +16,9 @@
  */
 
 #include <inttypes.h>
-#include "sdmmc_common.h"
+#include "esp_log.h"
+#include "esp_timer.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_common";
 
@@ -414,4 +416,34 @@ uint32_t sdmmc_get_erase_timeout_ms(const sdmmc_card_t* card, int arg, size_t er
     } else {
         return sdmmc_sd_get_erase_timeout_ms(card, arg, erase_size_kb);
     }
+}
+
+esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status)
+{
+    assert(!host_is_spi(card));
+    esp_err_t err = ESP_OK;
+    size_t count = 0;
+    int64_t yield_delay_us = 100 * 1000; // initially 100ms
+    int64_t t0 = esp_timer_get_time();
+    int64_t t1 = 0;
+    /* SD mode: wait for the card to become idle based on R1 status */
+    while (!sdmmc_ready_for_data(status)) {
+        t1 = esp_timer_get_time();
+        if (t1 - t0 > SDMMC_READY_FOR_DATA_TIMEOUT_US) {
+            return ESP_ERR_TIMEOUT;
+        }
+        if (t1 - t0 > yield_delay_us) {
+            yield_delay_us *= 2;
+            vTaskDelay(1);
+        }
+        err = sdmmc_send_cmd_send_status(card, &status);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "%s: sdmmc_send_cmd_send_status returned 0x%x", __func__, err);
+            return err;
+        }
+        if (++count % 16 == 0) {
+            ESP_LOGV(TAG, "waiting for card to become ready (%" PRIu32 ")", (uint32_t) count);
+        }
+    }
+    return err;
 }

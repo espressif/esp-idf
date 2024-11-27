@@ -9,7 +9,8 @@ if(CONFIG_SOC_SDMMC_HOST_SUPPORTED)
                      "sdmmc_test_erase_sd.c"
                      "sdmmc_test_trim_sd.c"
                      "sdmmc_test_discard_sd.c"
-                     "sdmmc_test_sanitize_sd.c")
+                     "sdmmc_test_sanitize_sd.c"
+                     "sdmmc_test_various_cmds.c")
 endif()
 
 set(priv_requires "sdmmc"

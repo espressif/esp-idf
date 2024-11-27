@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -29,6 +29,10 @@
 #include "soc/soc_memory_layout.h"
 #include "soc/soc_caps.h"
 #include "esp_dma_utils.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define SDMMC_GO_IDLE_DELAY_MS              20
 #define SDMMC_IO_SEND_OP_COND_DELAY_MS      10
@@ -82,6 +86,7 @@ esp_err_t sdmmc_send_cmd_set_bus_width(sdmmc_card_t* card, int width);
 esp_err_t sdmmc_send_cmd_send_status(sdmmc_card_t* card, uint32_t* out_status);
 esp_err_t sdmmc_send_cmd_crc_on_off(sdmmc_card_t* card, bool crc_enable);
 esp_err_t sdmmc_send_cmd_voltage_switch(sdmmc_card_t* card);
+esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_num_blocks);
 
 /* Higher level functions */
 esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card);
@@ -166,10 +171,22 @@ static inline uint32_t get_host_ocr(float voltage)
     return SD_OCR_VOL_MASK;
 }
 
+static inline bool sdmmc_ready_for_data(uint32_t status)
+{
+    return (status & MMC_R1_READY_FOR_DATA) && (MMC_R1_CURRENT_STATE_STATUS(status) == MMC_R1_CURRENT_STATE_TRAN);
+}
+
 void sdmmc_flip_byte_order(uint32_t* response, size_t size);
 
 esp_err_t sdmmc_fix_host_flags(sdmmc_card_t* card);
 
+// Use only with SDMMC mode (not SDSPI)
+esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status);
+
 //Currently only SDIO support using this buffer. And only 512 block size is supported.
 #define SDMMC_IO_BLOCK_SIZE     512
 esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);
+
+#ifdef __cplusplus
+}
+#endif
