@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -66,20 +66,6 @@ typedef union {
     };
     uint32_t val;
 } lp_ana_bod_mode1_cntl_reg_t;
-
-/** Type of ck_glitch_cntl register
- *  need_des
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:31;
-        /** ck_glitch_reset_ena : R/W; bitpos: [31]; default: 0;
-         *  need_des
-         */
-        uint32_t ck_glitch_reset_ena:1;
-    };
-    uint32_t val;
-} lp_ana_ck_glitch_cntl_reg_t;
 
 /** Type of fib_enable register
  *  need_des
@@ -227,7 +213,7 @@ typedef union {
 typedef struct lp_ana_dev_t {
     volatile lp_ana_bod_mode0_cntl_reg_t bod_mode0_cntl;
     volatile lp_ana_bod_mode1_cntl_reg_t bod_mode1_cntl;
-    volatile lp_ana_ck_glitch_cntl_reg_t ck_glitch_cntl;
+    uint32_t reserved_008;
     volatile lp_ana_fib_enable_reg_t fib_enable;
     volatile lp_ana_int_raw_reg_t int_raw;
     volatile lp_ana_int_st_reg_t int_st;
