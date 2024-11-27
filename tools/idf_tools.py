@@ -2835,7 +2835,12 @@ def action_add_version(args: Any) -> None:
     checksum_info: ChecksumFileParser = (ChecksumFileParser(filename_prefix, args.checksum_file)
                                          if args.checksum_file
                                          else ChecksumCalculator(args.artifact_file))  # type: ignore
+    updated_tools = []
     for file_size, file_sha256, file_name in checksum_info:
+        xz_file = file_name.replace('.tar.gz', '.tar.xz')
+        if xz_file in updated_tools:
+            # .tar.xz archives are preferable, but .tar.gz is needed, for example, when using PlatformIO
+            continue
         # Guess which platform this file is for
         try:
             found_platform = Platforms.get_by_filename(file_name)
@@ -2848,6 +2853,7 @@ def action_add_version(args: Any) -> None:
         info(f'    SHA256: {file_sha256}')
         info(f'    URL:    {url}')
         version_obj.add_download(found_platform, url, file_size, file_sha256)
+        updated_tools.append(file_name)
     json_str = dump_tools_json(tools_info)
     if not args.output:
         args.output = os.path.join(g.idf_path, TOOLS_FILE_NEW)  # type: ignore
