@@ -44,6 +44,7 @@ void esp_blufi_gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *a
 
 /* Initialise gatt server */
 int esp_blufi_gatt_svr_init(void);
+int esp_blufi_gatt_svr_deinit(void);
 void esp_blufi_btc_init(void);
 void esp_blufi_btc_deinit(void);
 #endif
