@@ -41,7 +41,7 @@ wDev_AppendRxBlocks = 0x40001cdc;
 //wDev_IndicateFrame = 0x40001cec;
 wDev_ProcessFiq = 0x40001d08;
 wDev_ProcessRxSucData = 0x40001d0c;
-ppProcTxDone = 0x40001d1c;
+//ppProcTxDone = 0x40001d1c;
 pm_tx_data_done_process = 0x40001d20;
 ppMapWaitTxq = 0x40001d28;
 lmacDiscardFrameExchangeSequence = 0x40001d70;
@@ -94,10 +94,10 @@ ieee80211_disassoc_construct = 0x40002044;
 //ieee80211_add_xrates = 0x40002058;
 //ieee80211_assoc_req_construct = 0x40002060;
 ieee80211_assoc_resp_construct = 0x40002064;
-ieee80211_timer_process = 0x4000208c;
+//ieee80211_timer_process = 0x4000208c;
 //cnx_coexist_timeout = 0x40002090;
 //sta_recv_mgmt = 0x40002094;
-ieee80211_send_probereq = 0x4000209c;
+//ieee80211_send_probereq = 0x4000209c;
 //sta_auth_open = 0x400020a0;
 //sta_auth_sae = 0x400020a8;
 //cnx_coexist_timeout_process = 0x400020ac;
@@ -130,8 +130,8 @@ s_trans_id = 0x3fcdfac4;
  ***************************************/
 
 /* Functions */
-coex_core_event_duration_get = 0x40002178;
-coex_core_timer_idx_get = 0x4000218c;
+//coex_core_event_duration_get = 0x40002178;
+//coex_core_timer_idx_get = 0x4000218c;
 coex_hw_timer_tick_get = 0x400021b8;
 
 
