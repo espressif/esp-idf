@@ -51,10 +51,6 @@ I2C 从机设备需要 :cpp:type:`i2c_slave_config_t` 指定的配置：
 
 如果不再需要之前安装的 I2C 总线，建议调用 :cpp:func:`i2c_del_slave_device` 来回收资源，以释放底层硬件。
 
-I2C 从机控制器
-^^^^^^^^^^^^^^
-
-通过调用 :cpp:func:`i2c_new_slave_device` 安装好 I2C 从机驱动程序后，{IDF_TARGET_NAME} 就可以作为从机与其他 I2C 主机进行通信了。
 
 I2C 从机写入
 ~~~~~~~~~~~~~
