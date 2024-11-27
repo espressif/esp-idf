@@ -410,7 +410,7 @@
 #define SOC_PCNT_THRES_POINT_PER_UNIT         2
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
 #define SOC_PCNT_SUPPORT_CLEAR_SIGNAL         1  /*!< Support clear signal input */
-// #define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  // TODO: IDF-9907 Waiting for expansion of module ID /*!< The sleep retention feature can help back up PCNT registers before sleep */
+#define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  /*!< The sleep retention feature can help back up PCNT registers before sleep */
 
 /*--------------------------- RMT CAPS ---------------------------------------*/
 #define SOC_RMT_GROUPS                        1U /*!< One RMT group */
@@ -456,7 +456,7 @@
 #define SOC_MCPWM_SUPPORT_ETM                (1)    ///< Support ETM (Event Task Matrix)
 #define SOC_MCPWM_SUPPORT_EVENT_COMPARATOR   (1)    ///< Support event comparator (based on ETM)
 #define SOC_MCPWM_CAPTURE_CLK_FROM_GROUP     (1)    ///< Capture timer shares clock with other PWM timers
-// #define SOC_MCPWM_SUPPORT_SLEEP_RETENTION    (1)   // TODO: IDF-9928 Waiting for expansion of module ID  ///< Support back up registers before sleep
+#define SOC_MCPWM_SUPPORT_SLEEP_RETENTION    (1)    ///< Support back up registers before sleep
 
 /*-------------------------- USB CAPS ----------------------------------------*/
 // USB Serial JTAG Caps

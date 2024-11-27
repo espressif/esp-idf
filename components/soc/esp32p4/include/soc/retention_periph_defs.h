@@ -54,6 +54,9 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_GPSPI2       = 29,
     SLEEP_RETENTION_MODULE_GPSPI3       = 30,
     SLEEP_RETENTION_MODULE_LEDC         = 31,
+    SLEEP_RETENTION_MODULE_MCPWM0       = 32,
+    SLEEP_RETENTION_MODULE_MCPWM1       = 33,
+    SLEEP_RETENTION_MODULE_PCNT0        = 34,
 
     SLEEP_RETENTION_MODULE_MAX          = SOC_PM_RETENTION_MODULE_NUM - 1
 } periph_retention_module_t;
@@ -91,6 +94,9 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI3)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_MCPWM0)       ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_MCPWM1)       ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_PCNT0)        ? true \
     : false)
 
 #ifdef __cplusplus
