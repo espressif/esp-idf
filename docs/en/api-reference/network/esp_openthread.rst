@@ -18,6 +18,12 @@ The :example:`openthread` directory of ESP-IDF examples contains the following a
 - The Thread Radio Co-Processor :example:`openthread/ot_rcp`
 
 
+- :example:`openthread/ot_trel` demonstrates Thread Radio Encapsulation Link (TREL) function. This requires a board equipped with a Wi-Fi module.
+
+- :example:`openthread/ot_sleepy_device/deep_sleep` demonstrates Thread Deep-sleep function.
+
+- :example:`openthread/ot_sleepy_device/light_sleep` demonstrates Thread Light-sleep function.
+
 API Reference
 -------------
 
