@@ -7,6 +7,8 @@ maintenance flush register-cache
 tb heap_trace_start
 commands
 mon esp sysview start file:///tmp/heap_log.svdat
+# For dual-core mode uncomment the line below and comment the line above
+# mon esp sysview start file:///tmp/heap_log0.svdat file:///tmp/heap_log1.svdat
 c
 end
 
