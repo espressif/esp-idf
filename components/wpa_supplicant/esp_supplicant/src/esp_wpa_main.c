@@ -251,8 +251,8 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 {
     switch (reason_code) {
         case WIFI_REASON_AUTH_EXPIRE:
-        case WIFI_REASON_NOT_AUTHED:
-        case WIFI_REASON_NOT_ASSOCED:
+        case WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA:
+        case WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA:
         case WIFI_REASON_4WAY_HANDSHAKE_TIMEOUT:
         case WIFI_REASON_INVALID_PMKID:
         case WIFI_REASON_AUTH_FAIL:
@@ -321,6 +321,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
+    uint8_t reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
 
     if (!hapd) {
         goto fail;
@@ -379,7 +380,7 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (wpa_ap_join(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher)) {
+    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason)) {
         goto done;
     } else {
         goto fail;
@@ -400,7 +401,7 @@ fail:
         os_semphr_give(sta_info->lock);
     }
 #endif /* CONFIG_SAE */
-    esp_wifi_ap_deauth_internal(bssid, WLAN_REASON_PREV_AUTH_NOT_VALID);
+    esp_wifi_ap_deauth_internal(bssid, reason);
     return false;
 }
 #endif
