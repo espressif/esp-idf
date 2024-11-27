@@ -415,7 +415,7 @@ static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_read_phase(spi_mem_dev_t *dev)
 {
-    typeof (dev->user) user = {
+    typeof(dev->user) user = {
         .usr_mosi = 0,
         .usr_miso = 1,
         .usr_addr = 1,
@@ -446,7 +446,7 @@ static inline void spimem_flash_ll_set_cs_pin(spi_mem_dev_t *dev, int pin)
  */
 static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_io_mode_t read_mode)
 {
-    typeof (dev->ctrl) ctrl;
+    typeof(dev->ctrl) ctrl;
     ctrl.val = dev->ctrl.val;
 
     ctrl.val &= ~(SPI_MEM_FREAD_QIO_M | SPI_MEM_FREAD_QUAD_M | SPI_MEM_FREAD_DIO_M | SPI_MEM_FREAD_DUAL_M);
@@ -599,7 +599,9 @@ static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    if (dummy_n > 0) {
+        dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    }
 }
 
 /**
@@ -630,13 +632,12 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
 {
     int source_clk_mhz = 0;
 
-    switch (PCR.mspi_clk_conf.mspi_func_clk_sel)
-    {
+    switch (PCR.mspi_clk_conf.mspi_func_clk_sel) {
     case 0:
         source_clk_mhz = clk_ll_xtal_get_freq_mhz();
         break;
     case 1:
-        source_clk_mhz = (SOC_CLK_RC_FAST_FREQ_APPROX/(1 * 1000 * 1000));
+        source_clk_mhz = (SOC_CLK_RC_FAST_FREQ_APPROX / (1 * 1000 * 1000));
         break;
     case 2:
         source_clk_mhz = clk_ll_bbpll_get_freq_mhz();
@@ -663,7 +664,7 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
     if (clkdiv == 1) {
         div_parameter = (1 << 31);
     } else {
-        div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8 ) | (((clkdiv - 1) & 0xff) << 16));
+        div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8) | (((clkdiv - 1) & 0xff) << 16));
     }
     return div_parameter;
 }

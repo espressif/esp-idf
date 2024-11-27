@@ -363,8 +363,12 @@ static inline void lcd_ll_set_phase_cycles(lcd_cam_dev_t *dev, uint32_t cmd_cycl
     dev->lcd_user.lcd_dummy = (dummy_cycles > 0);
     dev->lcd_user.lcd_dout = (data_cycles > 0);
     dev->lcd_user.lcd_cmd_2_cycle_en = cmd_cycles > 1;
-    dev->lcd_user.lcd_dummy_cyclelen = dummy_cycles - 1;
-    dev->lcd_user.lcd_dout_cyclelen = data_cycles - 1;
+    if (dummy_cycles > 0) {
+        dev->lcd_user.lcd_dummy_cyclelen = dummy_cycles - 1;
+    }
+    if (data_cycles > 0) {
+        dev->lcd_user.lcd_dout_cyclelen = data_cycles - 1;
+    }
 }
 
 /**
@@ -377,8 +381,12 @@ static inline void lcd_ll_set_phase_cycles(lcd_cam_dev_t *dev, uint32_t cmd_cycl
 static inline void lcd_ll_set_blank_cycles(lcd_cam_dev_t *dev, uint32_t fk_cycles, uint32_t bk_cycles)
 {
     dev->lcd_misc.lcd_bk_en = (fk_cycles || bk_cycles);
-    dev->lcd_misc.lcd_vfk_cyclelen = fk_cycles - 1;
-    dev->lcd_misc.lcd_vbk_cyclelen = bk_cycles - 1;
+    if (fk_cycles > 0) {
+        dev->lcd_misc.lcd_vfk_cyclelen = fk_cycles - 1;
+    }
+    if (bk_cycles > 0) {
+        dev->lcd_misc.lcd_vbk_cyclelen = bk_cycles - 1;
+    }
 }
 
 /**

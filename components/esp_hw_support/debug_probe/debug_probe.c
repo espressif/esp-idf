@@ -15,10 +15,12 @@
 #include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
 #include "soc/debug_probe_periph.h"
+#include "soc/io_mux_reg.h"
 #include "hal/debug_probe_ll.h"
 #include "esp_private/debug_probe.h"
+#include "esp_private/gpio.h"
+#include "esp_private/esp_gpio_reserve.h"
 #include "esp_rom_gpio.h"
-#include "driver/gpio.h"
 
 static const char *TAG = "dbg_probe";
 
@@ -28,6 +30,7 @@ typedef struct debug_probe_channel_t debug_probe_channel_t;
 struct debug_probe_unit_t {
     int unit_id; // unit id
     debug_probe_channel_t *channels[DEBUG_PROBE_LL_CHANNELS_PER_UNIT]; // channels installed in this unit
+    uint64_t pin_bit_mask; // bit-mask of the GPIOs used by this unit
 };
 
 struct debug_probe_channel_t {
@@ -53,6 +56,7 @@ static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
 
     // disable the probe output
     debug_probe_ll_enable_unit(unit_id, false);
+    esp_gpio_revoke(unit->pin_bit_mask);
     // free the memory
     free(unit);
     return ESP_OK;
@@ -60,7 +64,6 @@ static esp_err_t debug_probe_unit_destroy(debug_probe_unit_t *unit)
 
 esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_probe_unit_handle_t *out_handle)
 {
-    esp_err_t ret = ESP_OK;
     debug_probe_unit_t *unit = NULL;
     int unit_id = -1;
     ESP_RETURN_ON_FALSE(config && out_handle, ESP_ERR_INVALID_ARG, TAG, "invalid args");
@@ -80,43 +83,35 @@ esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_pr
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_NO_MEM, TAG, "no mem for unit");
     unit->unit_id = unit_id;
 
-    // configure the GPIOs
-    gpio_config_t monitor_io_conf = {
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = 0,
-    };
+    uint64_t pin_bit_mask = 0;
     for (int i = 0; i < SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH; i++) {
-        // skip unused IOs
-        if (config->probe_out_gpio_nums[i] < 0) {
-            continue;
+        if (config->probe_out_gpio_nums[i] >= 0) {
+            pin_bit_mask |= BIT64(config->probe_out_gpio_nums[i]);
         }
-        monitor_io_conf.pin_bit_mask |= (1ULL << config->probe_out_gpio_nums[i]);
     }
-    if (monitor_io_conf.pin_bit_mask) {
-        ESP_GOTO_ON_ERROR(gpio_config(&monitor_io_conf), err, TAG, "gpio_config failed");
+    // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
+    uint64_t old_gpio_rsv_mask = esp_gpio_reserve(pin_bit_mask);
+    // check if the GPIO is already used by others, RMT TX channel only uses the output path of the GPIO
+    if (old_gpio_rsv_mask & pin_bit_mask) {
+        ESP_LOGW(TAG, "GPIO conflict with others");
     }
 
     // connect the probe output signals to the GPIOs
     for (int i = 0; i < SOC_DEBUG_PROBE_MAX_OUTPUT_WIDTH; i++) {
-        if (config->probe_out_gpio_nums[i] < 0) {
-            continue;
+        if (config->probe_out_gpio_nums[i] >= 0) {
+            gpio_func_sel(config->probe_out_gpio_nums[i], PIN_FUNC_GPIO);
+            esp_rom_gpio_connect_out_signal(config->probe_out_gpio_nums[i],
+                                            debug_probe_periph_signals.units[unit_id].out_sig[i],
+                                            false, false);
         }
-        esp_rom_gpio_connect_out_signal(config->probe_out_gpio_nums[i],
-                                        debug_probe_periph_signals.units[unit_id].out_sig[i],
-                                        false, false);
     }
+    unit->pin_bit_mask = pin_bit_mask;
 
     // enable the probe unit
     debug_probe_ll_enable_unit(unit_id, true);
 
     *out_handle = unit;
     return ESP_OK;
-
-err:
-    if (unit) {
-        debug_probe_unit_destroy(unit);
-    }
-    return ret;
 }
 
 esp_err_t debug_probe_del_unit(debug_probe_unit_handle_t unit)

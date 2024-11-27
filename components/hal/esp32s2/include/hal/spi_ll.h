@@ -90,7 +90,7 @@ typedef enum {
 
 // SPI base command in esp32s2
 typedef enum {
-     /* Slave HD Only */
+    /* Slave HD Only */
     SPI_LL_BASE_CMD_HD_WRBUF    = 0x01,
     SPI_LL_BASE_CMD_HD_RDBUF    = 0x02,
     SPI_LL_BASE_CMD_HD_WRDMA    = 0x03,
@@ -112,10 +112,10 @@ typedef enum {
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+{
     if (enable) {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI1_HOST:
             DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
             break;
@@ -128,8 +128,7 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
         default: HAL_ASSERT(false);
         }
     } else {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI1_HOST:
             DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
             break;
@@ -153,9 +152,9 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
  *
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
-static inline void spi_ll_reset_register(spi_host_device_t host_id) {
-    switch (host_id)
-    {
+static inline void spi_ll_reset_register(spi_host_device_t host_id)
+{
+    switch (host_id) {
     case SPI1_HOST:
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
@@ -853,7 +852,9 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    if (dummy_n > 0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    }
 }
 
 /**
@@ -1207,10 +1208,10 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+{
     if (enable) {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI2_HOST:
             DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_DMA_CLK_EN);
             break;
@@ -1221,8 +1222,7 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
             HAL_ASSERT(false);
         }
     } else {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI2_HOST:
             DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI2_DMA_CLK_EN);
             break;
@@ -1244,9 +1244,9 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
  *
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
-static inline void spi_dma_ll_reset_register(spi_host_device_t host_id) {
-    switch (host_id)
-    {
+static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
+{
+    switch (host_id) {
     case SPI2_HOST:
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_DMA_RST);
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI2_DMA_RST);
@@ -1531,7 +1531,7 @@ static inline bool spi_ll_tx_get_empty_err(spi_dev_t *hw)
 static inline void spi_ll_set_conf_base_bitslen(spi_dev_t *hw, uint8_t conf_base)
 {
     // 7 bits wide
-    if(conf_base < 128) {
+    if (conf_base < 128) {
         hw->slv_wrbuf_dlen.conf_base_bitlen = conf_base;
     }
 }
@@ -1592,33 +1592,30 @@ static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mod
     conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_CTRL_MASK;
     conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET] &= ~SPI_LL_ONE_LINE_USER_MASK;
 
-    switch (line_mode.cmd_lines)
-    {
+    switch (line_mode.cmd_lines) {
     case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_DUAL_M); break;
     case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_QUAD_M); break;
-    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_OCT_M ); break;
+    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FCMD_OCT_M); break;
     default: break;
     }
 
-    switch (line_mode.addr_lines)
-    {
+    switch (line_mode.addr_lines) {
     case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_DUAL_M); break;
     case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_QUAD_M); break;
-    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_OCT_M ); break;
+    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FADDR_OCT_M); break;
     default: break;
     }
 
-    switch (line_mode.data_lines)
-    {
-    case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_DUAL_M );
-            SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_DUAL_M);
-            break;
-    case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_QUAD_M );
-            SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_QUAD_M);
-            break;
-    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_OCT_M );
-            SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_OCT_M);
-            break;
+    switch (line_mode.data_lines) {
+    case 2: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_DUAL_M);
+        SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_DUAL_M);
+        break;
+    case 4: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_QUAD_M);
+        SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_QUAD_M);
+        break;
+    case 8: SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_CTRL_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FREAD_OCT_M);
+        SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_FWRITE_OCT_M);
+        break;
     default: break;
     }
 }
@@ -1633,7 +1630,7 @@ static inline void spi_ll_format_line_mode_conf_buff(spi_dev_t *hw, spi_line_mod
 static inline void spi_ll_format_prep_phase_conf_buffer(spi_dev_t *hw, uint8_t setup, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
 {
     //user reg: cs_setup
-    if(setup) {
+    if (setup) {
         SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_CS_SETUP_M);
     } else {
         SPI_LL_CONF_BUF_CLR_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_CS_SETUP_M);
@@ -1771,7 +1768,7 @@ static inline void spi_ll_format_din_phase_conf_buffer(spi_dev_t *hw, int bitlen
 static inline void spi_ll_format_done_phase_conf_buffer(spi_dev_t *hw, int hold, uint32_t conf_buffer[SOC_SPI_SCT_BUFFER_NUM_MAX])
 {
     //user reg: cs_hold
-    if(hold) {
+    if (hold) {
         SPI_LL_CONF_BUF_SET_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_CS_HOLD_M);
     } else {
         SPI_LL_CONF_BUF_CLR_BIT(conf_buffer[SPI_LL_USER_REG_POS + SPI_LL_CONF_BUFFER_OFFSET], SPI_CS_HOLD_M);
@@ -1856,8 +1853,7 @@ static inline void spi_ll_set_magic_number(spi_dev_t *hw, uint8_t magic_value)
 static inline uint8_t spi_ll_get_slave_hd_base_command(spi_command_t cmd_t)
 {
     uint8_t cmd_base = 0x00;
-    switch (cmd_t)
-    {
+    switch (cmd_t) {
     case SPI_CMD_HD_WRBUF:
         cmd_base = SPI_LL_BASE_CMD_HD_WRBUF;
         break;

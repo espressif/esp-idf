@@ -44,7 +44,9 @@ static void IRAM_ATTR esp_cam_ctlr_dvp_config_dma_desc(esp_cam_ctlr_dvp_dma_desc
         n++;
     }
 
-    desc[n - 1].next = NULL;
+    if (n > 0) {
+        desc[n - 1].next = NULL;
+    }
 }
 
 /**
