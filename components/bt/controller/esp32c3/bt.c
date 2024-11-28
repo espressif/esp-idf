@@ -1871,6 +1871,11 @@ void esp_bt_controller_wakeup_request(void)
 
 }
 
+int IRAM_ATTR esp_bt_h4tl_eif_io_event_notify(int event)
+{
+    return btdm_hci_tl_io_event_post(event);
+}
+
 static void coex_wifi_sleep_set_hook(bool sleep)
 {
 
