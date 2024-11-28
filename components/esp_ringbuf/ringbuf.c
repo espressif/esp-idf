@@ -437,6 +437,7 @@ static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *puc
             xItemSize -= xRemLen;
             xAlignedItemSize -= xRemLen;
             pxFirstHeader->uxItemFlags |= rbITEM_SPLIT_FLAG;        //There must be more data
+            pxFirstHeader->uxItemFlags |= rbITEM_WRITTEN_FLAG;
         } else {
             //Remaining length was only large enough to fit header
             pxFirstHeader->uxItemFlags |= rbITEM_DUMMY_DATA_FLAG;   //Item will completely be stored in 2nd part
@@ -450,6 +451,7 @@ static void prvCopyItemAllowSplit(Ringbuffer_t *pxRingbuffer, const uint8_t *puc
     pxSecondHeader->uxItemFlags = 0;
     pxRingbuffer->pucAcquire += rbHEADER_SIZE;     //Advance acquire pointer past header
     memcpy(pxRingbuffer->pucAcquire, pucItem, xItemSize);
+    pxSecondHeader->uxItemFlags |= rbITEM_WRITTEN_FLAG;
     pxRingbuffer->xItemsWaiting++;
     pxRingbuffer->pucAcquire += xAlignedItemSize;  //Advance pucAcquire past item to next aligned address
 
@@ -506,13 +508,6 @@ static BaseType_t prvCheckItemAvail(Ringbuffer_t *pxRingbuffer)
         return pdFALSE;     //Byte buffers do not allow multiple retrievals before return
     }
     if ((pxRingbuffer->xItemsWaiting > 0) && ((pxRingbuffer->pucRead != pxRingbuffer->pucWrite) || (pxRingbuffer->uxRingbufferFlags & rbBUFFER_FULL_FLAG))) {
-        // If the ring buffer is a no-split buffer, the read pointer must point to an item that has been written to.
-        if ((pxRingbuffer->uxRingbufferFlags & (rbBYTE_BUFFER_FLAG | rbALLOW_SPLIT_FLAG)) == 0) {
-            ItemHeader_t *pxHeader = (ItemHeader_t *)pxRingbuffer->pucRead;
-            if ((pxHeader->uxItemFlags & rbITEM_WRITTEN_FLAG) == 0) {
-                return pdFALSE;
-            }
-        }
         return pdTRUE;      //Items/data available for retrieval
     } else {
         return pdFALSE;     //No items/data available for retrieval
@@ -540,22 +535,30 @@ static void *prvGetItemDefault(Ringbuffer_t *pxRingbuffer,
         pxHeader = (ItemHeader_t *)pxRingbuffer->pucRead;
         configASSERT(pxHeader->xItemLen <= pxRingbuffer->xMaxItemSize);
     }
-    pcReturn = pxRingbuffer->pucRead + rbHEADER_SIZE;    //Get pointer to part of item containing data (point past the header)
-    if (pxHeader->xItemLen == 0) {
-        //Inclusive of pucTail for special case where item of zero length just fits at the end of the buffer
-        configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn <= pxRingbuffer->pucTail);
-    } else {
-        //Exclusive of pucTail if length is larger than zero, pcReturn should never point to pucTail
-        configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn < pxRingbuffer->pucTail);
-    }
-    *pxItemSize = pxHeader->xItemLen;   //Get length of item
-    pxRingbuffer->xItemsWaiting --;     //Update item count
-    *pxIsSplit = (pxHeader->uxItemFlags & rbITEM_SPLIT_FLAG) ? pdTRUE : pdFALSE;
 
-    pxRingbuffer->pucRead += rbHEADER_SIZE + rbALIGN_SIZE(pxHeader->xItemLen);   //Update pucRead
-    //Check if pucRead requires wrap around
-    if ((pxRingbuffer->pucTail - pxRingbuffer->pucRead) < rbHEADER_SIZE) {
-        pxRingbuffer->pucRead = pxRingbuffer->pucHead;
+    //In case of wrap around data might not be ready
+    if ((pxHeader->uxItemFlags & rbITEM_WRITTEN_FLAG) == 0) {
+        *pxIsSplit = pdFALSE;
+        *pxItemSize = 0;
+        pcReturn = NULL;
+    } else {
+        pcReturn = pxRingbuffer->pucRead + rbHEADER_SIZE;    //Get pointer to part of item containing data (point past the header)
+        if (pxHeader->xItemLen == 0) {
+            //Inclusive of pucTail for special case where item of zero length just fits at the end of the buffer
+            configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn <= pxRingbuffer->pucTail);
+        } else {
+            //Exclusive of pucTail if length is larger than zero, pcReturn should never point to pucTail
+            configASSERT(pcReturn >= pxRingbuffer->pucHead && pcReturn < pxRingbuffer->pucTail);
+        }
+        *pxItemSize = pxHeader->xItemLen;   //Get length of item
+        pxRingbuffer->xItemsWaiting --;     //Update item count
+        *pxIsSplit = (pxHeader->uxItemFlags & rbITEM_SPLIT_FLAG) ? pdTRUE : pdFALSE;
+
+        pxRingbuffer->pucRead += rbHEADER_SIZE + rbALIGN_SIZE(pxHeader->xItemLen);   //Update pucRead
+        //Check if pucRead requires wrap around
+        if ((pxRingbuffer->pucTail - pxRingbuffer->pucRead) < rbHEADER_SIZE) {
+            pxRingbuffer->pucRead = pxRingbuffer->pucHead;
+        }
     }
     return (void *)pcReturn;
 }
@@ -827,13 +830,14 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     BaseType_t xReturn = pdFALSE;
     BaseType_t xExitLoop = pdFALSE;
     BaseType_t xEntryTimeSet = pdFALSE;
+    BaseType_t xSkipCheckAvail = pdFALSE;
     TimeOut_t xTimeOut;
 
     ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
 
     while (xExitLoop == pdFALSE) {
         portENTER_CRITICAL(&pxRingbuffer->mux);
-        if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
+        if ((!xSkipCheckAvail) && prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
             //Item/data is available for retrieval
             BaseType_t xIsSplit = pdFALSE;
             if (pxRingbuffer->uxRingbufferFlags & rbBYTE_BUFFER_FLAG) {
@@ -853,9 +857,15 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
                     *pvItem2 = NULL;
                 }
             }
-            xReturn = pdTRUE;
-            xExitLoop = pdTRUE;
-            goto loop_end;
+
+            if (*pvItem1 == NULL) {
+                xSkipCheckAvail = pdTRUE;
+                goto loop_end;
+            } else {
+                xReturn = pdTRUE;
+                xExitLoop = pdTRUE;
+                goto loop_end;
+            }
         } else if (xTicksToWait == (TickType_t) 0) {
             //No block time. Return immediately.
             xExitLoop = pdTRUE;
@@ -868,6 +878,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
 
         if (xTaskCheckForTimeOut(&xTimeOut, &xTicksToWait) == pdFALSE) {
             //Not timed out yet. Block the current task
+            xSkipCheckAvail = pdFALSE;
             vTaskPlaceOnEventList(&pxRingbuffer->xTasksWaitingToReceive, xTicksToWait);
             portYIELD_WITHIN_API();
         } else {

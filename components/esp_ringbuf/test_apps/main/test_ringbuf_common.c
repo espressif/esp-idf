@@ -1042,3 +1042,84 @@ TEST_CASE("Test no-split buffers always receive items in order", "[esp_ringbuf][
     // Cleanup
     vRingbufferDelete(buffer_handle);
 }
+
+/* ---------------------------- Test no-split ring buffer SendAquire and SendComplete with dummy ---------------------------
+ * The following test case tests the SendAquire and SendComplete functions of the no-split ring buffer.
+ *
+ * The test case will do the following...
+ * 1) Create a no-split ring buffer.
+ * 2) Acquire space on the buffer to send an item.
+ * 3) Send the item to the buffer.
+ * 4) Verify that the item is received correctly.
+ * 5) Acquire space on the buffer until the buffer can no longer receive a full item without wrap around.
+ * 6) Send the items out-of-order to the buffer.
+ * 7) Verify that the items are not received until the first item is sent.
+ * 8) Send the first item.
+ * 9) Verify that the items are received in the correct order.
+ */
+TEST_CASE("Test no-split buffers always receive items in order (with dummy)", "[esp_ringbuf][linux]")
+{
+    const uint8_t C_BUFFER_SIZE = 64;
+    const uint8_t C_ITEM_SIZE = 15;
+
+    // Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(C_BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    // Acquire space on the buffer to send an item and write to the item
+    void *item1;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &item1, C_ITEM_SIZE, TIMEOUT_TICKS));
+    *(uint32_t *)item1 = 0x123;
+
+    // Send the item to the buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, item1));
+
+    // Verify that the item is received correctly
+    size_t item_size;
+    uint32_t *received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+    TEST_ASSERT_NOT_NULL(received_item);
+    TEST_ASSERT_EQUAL(item_size, C_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(*(uint32_t *)received_item, 0x123);
+
+    // Return the space to the buffer after receiving the item
+    vRingbufferReturnItem(buffer_handle, received_item);
+
+    // At this point, the buffer should be empty
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    // Acquire space on the buffer until the buffer is full
+#define MAX_NUM_ITEMS_DUMMY ( C_BUFFER_SIZE / ( C_ITEM_SIZE + ITEM_HDR_SIZE ) )
+    void *items[MAX_NUM_ITEMS_DUMMY];
+    for (int i = 0; i < MAX_NUM_ITEMS_DUMMY; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &items[i], C_ITEM_SIZE, TIMEOUT_TICKS));
+        TEST_ASSERT_NOT_NULL(items[i]);
+        *(uint32_t *)items[i] = (0x100 + i);
+    }
+
+    // Verify that the buffer is full by attempting to acquire space for another item
+    void *another_item;
+    TEST_ASSERT_EQUAL(pdFALSE, xRingbufferSendAcquire(buffer_handle, &another_item, C_ITEM_SIZE, TIMEOUT_TICKS));
+
+    // Send the items out-of-order to the buffer. Verify that the items are not received until the first item is sent.
+    // In this case, we send the items in the reverse order until the first item is sent.
+    for (int i = MAX_NUM_ITEMS_DUMMY - 1; i > 0; i--) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[i]));
+        TEST_ASSERT_NULL(xRingbufferReceive(buffer_handle, &item_size, 0));
+    }
+
+    // Send the first item
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[0]));
+
+    // Verify that the items are received in the correct order
+    for (int i = 0; i < MAX_NUM_ITEMS_DUMMY; i++) {
+        received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+        TEST_ASSERT_NOT_NULL(received_item);
+        TEST_ASSERT_EQUAL(*(uint32_t *)received_item, (0x100 + i));
+        vRingbufferReturnItem(buffer_handle, received_item);
+    }
+
+    // Cleanup
+    vRingbufferDelete(buffer_handle);
+}
