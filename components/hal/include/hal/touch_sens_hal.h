@@ -101,8 +101,9 @@ void touch_hal_config_controller(const touch_hal_config_t *cfg);
  *
  * @param[in]  deep_slp_chan    The touch sensor channel that can wake-up the chip from deep sleep
  * @param[in]  deep_slp_cfg     The hardware configuration that takes effect during the deep sleep
+ * @param[in]  dslp_allow_pd    Whether allow RTC_PERIPH domain power down during the deep sleep
  */
-void touch_hal_save_sleep_config(int deep_slp_chan, const touch_hal_config_t *deep_slp_cfg);
+void touch_hal_save_sleep_config(int deep_slp_chan, const touch_hal_config_t *deep_slp_cfg, bool dslp_allow_pd);
 
 /**
  * @brief Prepare for the deep sleep

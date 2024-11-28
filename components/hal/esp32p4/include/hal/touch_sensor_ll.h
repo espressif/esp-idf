@@ -52,6 +52,7 @@ extern "C" {
 #define TOUCH_LL_ACTIVE_THRESH_MAX         (0xFFFF)    // Max channel active threshold
 #define TOUCH_LL_CLK_DIV_MAX               (0x08)      // Max clock divider value
 #define TOUCH_LL_TIMEOUT_MAX               (0xFFFF)    // Max timeout value
+#define TOUCH_LL_SLP_MEASURE_WAIT_MAX      (0x1FF)     // Max wait ticks to wait PMU entering HP SLEEP status during the sleep.
 
 /**
  * Enable/disable clock gate of touch sensor.
@@ -942,6 +943,21 @@ static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t 
             // invalid sample_cfg_id
             abort();
     }
+}
+
+/**
+ * Set the touch sensor wait ticks after PMU is woken up by touch timer during the sleep.
+ * @note The PMU will be woken up after the measure interval timer time-up,
+ *       PMU needs some time to prepare the clock and power for the touch sensor,
+ *       If the wait ticks is too short, the touch sensor can't work properly and fail to wakeup the chip from sleep.
+ *
+ * @param wait_ticks    The wait ticks after PMU is woken up by touch FSM during the sleep.
+ *                      Typically recommended to set it to the max value,
+ *                      the PMU will start the touch sensor FSM immediately after the PMU enters HP SLEEP state.
+ */
+static inline void touch_ll_sleep_set_measure_wait_ticks(uint32_t wait_ticks)
+{
+    PMU.touch_pwr_cntl.wait_cycles = wait_ticks;
 }
 
 /**

@@ -866,6 +866,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     misc_modules_sleep_prepare(pd_flags, deep_sleep);
 
 #if SOC_TOUCH_SENSOR_VERSION >= 2
+    bool keep_rtc_power_on = false;
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
@@ -873,22 +874,24 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
              * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely.
              */
-            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+            keep_rtc_power_on = true;
+#elif CONFIG_IDF_TARGET_ESP32P4
+            /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
+             * triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version.
+             */
+            if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+                keep_rtc_power_on = true;
+            }
 #endif
         }
     } else {
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-        bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
-        if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
-            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
-        }
+        keep_rtc_power_on |= touch_ll_is_fsm_repeated_timer_enabled();
     }
-#elif CONFIG_IDF_TARGET_ESP32P4
-    /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
-       triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
-    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+    /* Whether need to keep RTC_PERIPH power on eventually */
+    if (keep_rtc_power_on) {
         pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
     }
 #endif
