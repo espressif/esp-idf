@@ -8,4 +8,4 @@ include(IDFULPProject)
 
 ulp_apply_default_options(${ULP_APP_NAME})
 ulp_apply_default_sources(${ULP_APP_NAME})
-ulp_add_build_binary_targets(${ULP_APP_NAME})
+ulp_add_build_binary_targets(${ULP_APP_NAME} ${ULP_VAR_PREFIX})
