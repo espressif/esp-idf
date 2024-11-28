@@ -209,6 +209,8 @@ cleanup:
 void esp_mpi_exp_mpi_mod_hw_op(const mbedtls_mpi *X, const mbedtls_mpi *Y, const mbedtls_mpi *M, const mbedtls_mpi *Rinv, mbedtls_mpi_uint Mprime, size_t num_words)
 {
     size_t y_bits = mbedtls_mpi_bitlen(Y);
+    assert(y_bits != 0);
+
     mpi_hal_set_mode(num_words - 1);
 
     /* Load M, X, Rinv, Mprime (Mprime is mod 2^32) */
