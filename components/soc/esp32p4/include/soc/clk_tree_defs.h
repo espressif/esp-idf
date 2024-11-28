@@ -146,15 +146,15 @@ typedef enum {
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL, RC_FAST, or LP_PLL by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, or RC32K by configuring soc_rtc_slow_clk_src_t */
     // For digital domain: peripherals
-    SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from SPLL (clock gating + "fixed" divider of 24), it has a fixed frequency of 20MHz */
+    SOC_MOD_CLK_PLL_F20M,                      /*!< PLL_F20M_CLK is derived from SPLL (clock gating + default divider 24), its default frequency is 20MHz */
     SOC_MOD_CLK_PLL_F25M,                      /*!< PLL_F25M_CLK is derived from MPLL (clock gating + configurable divider), it will have a frequency of 25MHz */
-    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from SPLL (clock gating + "fixed" divider of 6), it has a fixed frequency of 80MHz */
-    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from SPLL (clock gating + "fixed" divider of 3), it has a fixed frequency of 160MHz */
-    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from SPLL (clock gating + "fixed" divider of 2), it has a fixed frequency of 240MHz */
+    SOC_MOD_CLK_PLL_F80M,                      /*!< PLL_F80M_CLK is derived from SPLL (clock gating + default divider 6), its default frequency is 80MHz */
+    SOC_MOD_CLK_PLL_F160M,                     /*!< PLL_F160M_CLK is derived from SPLL (clock gating + default divider 3), its default frequency is 160MHz */
+    SOC_MOD_CLK_PLL_F240M,                     /*!< PLL_F240M_CLK is derived from SPLL (clock gating + default divider 2), its default frequency is 240MHz */
     SOC_MOD_CLK_CPLL,                          /*!< CPLL is from 40MHz XTAL oscillator frequency multipliers */
-    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
+    SOC_MOD_CLK_SPLL,                          /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, its default frequency is 480MHz */
     SOC_MOD_CLK_MPLL,                          /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers */
-    SOC_MOD_CLK_SDIO_PLL,                      /*!< SDIO PLL is from 40MHz XTAL oscillator frequency multipliers, it has a "fixed" frequency of 200MHz */
+    SOC_MOD_CLK_SDIO_PLL,                      /*!< SDIO PLL is from 40MHz XTAL oscillator frequency multipliers, its default frequency is 200MHz */
     SOC_MOD_CLK_XTAL32K,                       /*!< XTAL32K_CLK comes from the external 32kHz crystal, passing a clock gating to the peripherals */
     SOC_MOD_CLK_RC_FAST,                       /*!< RC_FAST_CLK comes from the internal 20MHz rc oscillator, passing a clock gating to the peripherals */
     SOC_MOD_CLK_XTAL,                          /*!< XTAL_CLK comes from the external 40MHz crystal */
@@ -752,7 +752,7 @@ typedef enum {
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {
     CLKOUT_SIG_MPLL     = 0,    /*!< MPLL is from 40MHz XTAL oscillator frequency multipliers */
-    CLKOUT_SIG_SPLL     = 1,    /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, it has a "fixed" frequency of 480MHz */
+    CLKOUT_SIG_SPLL     = 1,    /*!< SPLL is from 40MHz XTAL oscillator frequency multipliers, its default frequency is 480MHz */
     CLKOUT_SIG_CPLL     = 2,    /*!< CPLL_CLK is the output of 40MHz crystal oscillator frequency multiplier, can be 320/360/400MHz */
     CLKOUT_SIG_XTAL     = 3,    /*!< External 40MHz crystal */
     CLKOUT_SIG_RC_FAST  = 4,    /*!< Internal 17.5MHz RC oscillator */
