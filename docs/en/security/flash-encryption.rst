@@ -517,13 +517,13 @@ To use this mode, take the following steps:
 
   .. list::
 
-    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-    :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
-    :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it's recommended to permanently disable this mode to reduce the options available to an attacker.
-    :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
+    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+    :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
+    :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
+    :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
     :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
     :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :ref:`Select enable XTS-AES's pseudo rounds function <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`. This option is selected by default and its strength is configured to level low considering the performance impact on the flash encryption/decryption operations. Please refer to :ref:`xts-aes-pseudo-round-func` for more information regarding the performance impact per security level.
-    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
+    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
 Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.

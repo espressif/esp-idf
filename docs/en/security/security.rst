@@ -115,7 +115,7 @@ Flash Encryption Best Practices
 
     .. only:: SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
 
-        AES peripheral's Pseudo-Round Function
+        AES Peripheral's Pseudo-Round Function
         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
         {IDF_TARGET_NAME} incorporates a pseudo-round function in the AES peripheral, thus enabling the peripheral to randomly insert pseudo-rounds before and after the original operation rounds and also generate a pseudo key to perform these dummy operations.
