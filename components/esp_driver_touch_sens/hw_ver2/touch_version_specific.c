@@ -63,7 +63,10 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_ll_interrupt_clear(status);
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
-    data.chan = g_touch->ch[touch_ll_get_current_meas_channel()];
+    uint32_t curr_chan = touch_ll_get_current_meas_channel();
+    /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
+    curr_chan = curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan;
+    data.chan = g_touch->ch[curr_chan];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
@@ -158,6 +161,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
         /* Touch sensor actually uses dynamic fast clock LP_DYN_FAST_CLK, but it will only switch to the slow clock during sleep,
         * This driver only designed for wakeup case (sleep case should use ULP driver), so we only need to consider RTC_FAST here */
         esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->src_freq_hz);
+        ESP_RETURN_ON_FALSE(sens_handle->src_freq_hz, ESP_FAIL, TAG, "Failed to get RTC_FAST clock frequency");
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
 
@@ -167,8 +171,9 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
                                    TOUCH_LL_PAD_MEASURE_WAIT_MAX : hal_cfg->power_on_wait_ticks;
     hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * src_freq_mhz);
     hal_cfg->timeout_ticks = (uint32_t)sens_cfg->max_meas_time_us * src_freq_mhz;
+    uint32_t max_meas_time_ms = TOUCH_LL_TIMEOUT_MAX * 1000 / sens_handle->src_freq_hz;
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
-                        "max_meas_time_ms should within %"PRIu32, TOUCH_LL_TIMEOUT_MAX / src_freq_mhz);
+                        "max_meas_time_ms should within %"PRIu32" ms", max_meas_time_ms);
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;  // Only one sample cfg
     hal_cfg->sample_cfg = (touch_hal_sample_config_t *)sens_cfg->sample_cfg;
     return ESP_OK;
