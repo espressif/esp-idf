@@ -528,13 +528,14 @@ flash 加密设置
 
   .. list::
 
-    - :ref:`启动时使能 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-    :esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意一旦选择了发布模式，``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
+    - :ref:`启动时使能 flash 加密 <CONFIG_SECURE_FLASH_ENC_ENABLED>`。
+    :esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了发布模式，``DISABLE_DL_ENCRYPT`` 和 ``DISABLE_DL_DECRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
     :esp32: - :ref:`选择 UART ROM 下载模式（推荐永久性禁用）<CONFIG_SECURE_UART_ROM_DL_MODE>` （注意该选项仅在 :ref:`CONFIG_ESP32_REV_MIN` 级别设置为 3 时 (ESP32 V3) 可用。）默认选项是保持启用 UART ROM 下载模式，然而建议永久禁用该模式，以减少攻击者可用的选项。
-    :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` （注意一旦选择了发布模式，``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件。）
+    :not esp32: - :ref:`选择发布模式 <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`。（注意一旦选择了发布模式，``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse 位将被编程为在 ROM 下载模式下禁用 flash 加密硬件）
     :not esp32: - :ref:`选择 UART ROM 下载（推荐永久性的切换到安全模式）<CONFIG_SECURE_UART_ROM_DL_MODE>`。这是默认且推荐使用的选项。如果不需要该模式，也可以改变此配置设置永久地禁用 UART ROM 下载模式。
-    - :ref:`选择适当详细程度的引导加载程序日志 <CONFIG_BOOTLOADER_LOG_LEVEL>`
-    - 保存配置并退出
+    :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :ref:`启用 XTS-AES 伪轮次功能 <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`。该选项已默认启用，且配置为最低强度等级，以降低对 flash 加密/解密操作的性能影响。如需了解每个安全等级对性能影响的更多信息，请参考 :ref:`xts-aes-pseudo-round-func`。
+    - :ref:`选择适当详细程度的引导加载程序日志级别 <CONFIG_BOOTLOADER_LOG_LEVEL>`。
+    - 保存配置并退出。
 
 启用 flash 加密将增大引导加载程序，因而可能需更新分区表偏移量。请参考 :ref:`引导加载程序大小 <bootloader-size>`。
 
@@ -1119,3 +1120,38 @@ JTAG 调试
   - flash 加密的密钥存储于一个 ``BLOCK_KEY0`` eFuse 中，默认受保护防止进一步写入或软件读取。
 
   - 有关在 Python 中实现的完整 flash 加密算法，可参见 ``espsecure.py`` 源代码中的函数 ``_flash_encryption_operation()``。
+
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+
+  防御侧信道攻击
+  -------------------
+
+  .. _xts-aes-pseudo-round-func:
+
+  伪轮次功能
+  ^^^^^^^^^^^^^^
+
+  {IDF_TARGET_NAME} 在 XTS-AES 外设中引入了伪轮次功能，使该外设可以在原始操作轮次之前和之后随机插入伪轮次，并生成伪密钥以执行这些虚拟操作。
+  这些操作不会改变原始结果，但通过随机化功率曲线，增加了实施侧信道分析攻击的复杂性。
+
+  可以通过 :ref:`CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH` 选择伪轮次功能的强度。提高强度会增强该功能所提供的安全性，但也会降低 XTS-AES 操作的速度。
+
+  .. list-table:: 不同强度的伪轮次对 XTS-AES 操作性能的影响
+      :widths: 10 10
+      :header-rows: 1
+      :align: center
+
+      * - **强度**
+        - **性能影响** [#]_
+      * - 低
+        - < 0.5 %
+      * - 中
+        - 6.2 %
+      * - 高
+        - 18 %
+
+  .. [#] 上述性能数据由 HAL 加密测试应用中的 XTS-AES 测试程序 :component_file:`test_xts_aes.c <hal/test_apps/crypto/main/xts_aes/test_xts_aes.c>` 计算得出。
+
+  可以根据实际用例需求配置伪轮次功能的强度。例如，提高强度以提供更高的安全性，同时减慢 flash 加解密操作的速度。
+
+  考虑到上述性能影响，ESP-IDF 默认为伪轮次功能启用了低强度配置，以尽量减少性能影响。
