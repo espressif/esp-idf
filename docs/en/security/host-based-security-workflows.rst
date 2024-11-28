@@ -244,7 +244,7 @@ In this case, all the eFuses related to Flash Encryption are written with help o
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``: Disable JTAG permanently
         :not esp32: - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``: Disable UART bootloader encryption access
         :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI``: Disable the MSPI access in download mode
-        :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - ``XTS_DPA_PSEUDO_LEVEL``: Enable the pseudo rounds function of the XTS-AES peripheral. The value to be burned in the efuse can be 1, 2 or 3, denoting the security level. These values correspond to low, medium, high level respectively. By default ESP-IDF's bootloader configures the value of this efuse to 1 (low) while enabling flash encryption release mode during boot-up.
+        :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - ``XTS_DPA_PSEUDO_LEVEL``: Enable the pseudo rounds function of the XTS-AES peripheral. The value to be burned in the eFuse can be 1, 2 or 3, denoting the security level. By default ESP-IDF's bootloader configures the value of this eFuse to 1 while enabling flash encryption release mode during boot-up.
 
     The respective eFuses can be burned by running:
 
