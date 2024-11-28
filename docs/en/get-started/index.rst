@@ -191,7 +191,7 @@ IDE
 .. note:: We highly recommend installing the ESP-IDF through your favorite IDE.
 
 * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
-* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/README.md>`_
 
 Manual Installation
 ~~~~~~~~~~~~~~~~~~~
