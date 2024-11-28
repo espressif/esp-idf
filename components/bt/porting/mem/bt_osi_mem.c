@@ -10,6 +10,7 @@
 #include "esp_log.h"
 #include <assert.h>
 
+static uint8_t log_count;
 IRAM_ATTR void *bt_osi_mem_malloc(size_t size)
 {
     void *mem = NULL;
@@ -22,8 +23,12 @@ IRAM_ATTR void *bt_osi_mem_malloc(size_t size)
 #else
     mem =  malloc(size);
 #endif
-    if(!mem){
-       ESP_LOGI("ESP_LOG_INFO","malloc failed (size %zu)",size);
+    if (!mem) {
+        log_count ++;
+        if ((log_count % 40) == 0) {
+            esp_rom_printf("malloc failed (size %zu)",size);
+            log_count = 0;
+        }
        assert(mem != NULL);
     }
     return mem;
