@@ -46,8 +46,8 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
     case MQTT_EVENT_CONNECTED:
         ESP_LOGI(TAG, "MQTT_EVENT_CONNECTED");
         xEventGroupSetBits(mqtt_event_group, CONNECTED_BIT);
-        msg_id = esp_mqtt_client_subscribe(client, CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, test_data->qos);
-        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", CONFIG_EXAMPLE_SUBSCRIBE_TOPIC, msg_id);
+        msg_id = esp_mqtt_client_subscribe(client, test_data->subscribe_to, test_data->qos);
+        ESP_LOGI(TAG, "sent subscribe successful %s , msg_id=%d", test_data->subscribe_to, msg_id);
 
         break;
     case MQTT_EVENT_DISCONNECTED:
@@ -203,9 +203,9 @@ void publish_test(command_context_t * ctx, int expect_to_publish, int qos, bool 
     for (int i = 0; i < data->nr_of_msg_expected; i++) {
         int msg_id;
         if (enqueue) {
-            msg_id = esp_mqtt_client_enqueue(ctx->mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, data->expected, data->expected_size, qos, 0, true);
+            msg_id = esp_mqtt_client_enqueue(ctx->mqtt_client, data->publish_to, data->expected, data->expected_size, qos, 0, true);
         } else {
-            msg_id = esp_mqtt_client_publish(ctx->mqtt_client, CONFIG_EXAMPLE_PUBLISH_TOPIC, data->expected, data->expected_size, qos, 0);
+            msg_id = esp_mqtt_client_publish(ctx->mqtt_client, data->publish_to, data->expected, data->expected_size, qos, 0);
             if(msg_id < 0) {
                 ESP_LOGE(TAG, "Failed to publish");
                 break;
