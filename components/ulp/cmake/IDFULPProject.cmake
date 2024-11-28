@@ -178,7 +178,7 @@ function(ulp_apply_default_sources ulp_app_name)
     endif()
 endfunction()
 
-function(ulp_add_build_binary_targets ulp_app_name)
+function(ulp_add_build_binary_targets ulp_app_name prefix)
 
     if(ADD_PICOLIBC_SPECS)
         target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
@@ -195,7 +195,7 @@ function(ulp_add_build_binary_targets ulp_app_name)
 
     # Dump the list of global symbols in a convenient format
     add_custom_command(OUTPUT ${ULP_APP_NAME}.sym
-                    COMMAND ${CMAKE_NM} -f posix -g $<TARGET_FILE:${ulp_app_name}> > ${ulp_app_name}.sym
+                    COMMAND ${CMAKE_READELF} -sW $<TARGET_FILE:${ulp_app_name}> > ${ulp_app_name}.sym
                     DEPENDS ${ulp_app_name}
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -206,7 +206,8 @@ function(ulp_add_build_binary_targets ulp_app_name)
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
     add_custom_command(OUTPUT ${ulp_app_name}.ld ${ulp_app_name}.h
-                    COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name} --base ${ULP_BASE_ADDR}
+                    COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name}
+                            --base ${ULP_BASE_ADDR} --prefix ${prefix}
                     DEPENDS ${ulp_app_name}.sym
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
