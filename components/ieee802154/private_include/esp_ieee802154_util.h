@@ -277,12 +277,12 @@ void ieee802154_rx_buffer_statistic_clear(void);
  * @brief  Print the current IEEE802.15.4 rx buffer statistic.
  *
  */
-void ieee802154_rx_buffer_statistic_printf(void);
+void ieee802154_rx_buffer_statistic_print(void);
 
 #define IEEE802154_RX_BUFFER_STAT_IS_FREE(a) ieee802154_rx_buffer_statistic_is_free(a)
 #else
 #define IEEE802154_RX_BUFFER_STAT_IS_FREE(a)
-#endif
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
 
 // TODO: replace etm code using common interface
 

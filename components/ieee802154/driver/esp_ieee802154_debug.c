@@ -375,6 +375,7 @@ void ieee802154_txrx_statistic_print(void)
 #define IEEE802154_RX_BUFFER_GET_USED_LEVEL(a) (((a) * IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL) / (CONFIG_IEEE802154_RX_BUFFER_SIZE + 1))
 static uint16_t s_rx_buffer_used_nums = 0;
 static uint64_t s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1];
+
 void ieee802154_rx_buffer_statistic_is_free(bool is_free)
 {
     if (is_free) {
@@ -394,7 +395,7 @@ void ieee802154_rx_buffer_statistic_clear(void)
     memset((void*)s_rx_buffer_used_water_level, 0, sizeof(uint64_t)*(IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1));
 }
 
-void ieee802154_rx_buffer_statistic_printf(void)
+void ieee802154_rx_buffer_statistic_print(void)
 {
     uint64_t total_times = 0;
     for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1); i++) {
