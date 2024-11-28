@@ -114,8 +114,6 @@ __attribute__((weak)) void esp_clk_init(void)
 
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
-#elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
-    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
