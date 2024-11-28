@@ -115,8 +115,7 @@ In the OpenThread protocol stack, defining macros to enable features and configu
 
 .. note::
 
-    The priority of the above configuration methods, from highest to lowest, is as follows:
-    Configuration Menu → User-defined Header File → openthread-core-esp32x-xxx-config.h → OpenThread Stack Default Configuration
+    The priority of the above configuration methods, from highest to lowest, is as follows: Configuration Menu → User-defined Header File → openthread-core-esp32x-xxx-config.h → OpenThread Stack Default Configuration
 
 The OpenThread Border Router
 ----------------------------

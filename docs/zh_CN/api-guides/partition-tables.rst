@@ -84,6 +84,7 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
     nvs,              data,            nvs,      ,        0x6000,
     phy_init,         data,            phy,      ,        0x1000,
     factory,          app,             factory,  ,        1M,
+    recoveryBloader,  bootloader,      recovery, N/A,     N/A,
 
 ``gen_esp32part.py`` 工具将根据所选的 Kconfig 选项将每个 ``N/A`` 替换为适当的值：引导加载程序的偏移地址为 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}，分区表的偏移地址见 :ref:`CONFIG_PARTITION_TABLE_OFFSET`。
 
@@ -136,8 +137,9 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
     - ``primary`` (0x00)，即二级引导加载程序，位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
     - ``ota`` (0x01)，是一个临时的引导加载程序分区，在 OTA 更新期间可用于下载新的引导加载程序镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你只能指定一个偏移量，或者将其留空，工具将根据先前使用的分区的偏移量进行计算。
+    - ``recovery`` (0x02)，这是用于安全执行引导加载程序 OTA 更新的恢复引导加载程序分区。``gen_esp32part.py`` 工具会自动确定该分区的地址和大小，因此可以将这些字段留空或使用 ``N/A`` 作为占位符。该分区地址必须与 Kconfig 选项定义的 eFuse 字段相匹配。如果正常的引导加载程序加载路径失败，则一级 (ROM) 引导加载程序会尝试加载 eFuse 字段指定地址的恢复分区。
 
-    引导加载程序的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` (分区表偏移量) 和 ``--primary-partition-offset`` 参数计算。具体而言，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算的大小适用于引导加载程序的所有子类型。
+    引导加载程序类型的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` （分区表偏移量）和 ``--primary-partition-offset`` 参数计算得出。具体来说，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算得出的大小适用于引导加载程序的所有子类型。
 
 * 当 Type 定义为 ``partition_table`` 时，可以将 SubType 字段指定为：
 
