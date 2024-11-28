@@ -635,7 +635,7 @@ void esp_ieee802154_rx_buffer_statistic_clear(void);
  * @brief  Clear the current IEEE802.15.4 rx buffer statistic.
  *
  */
-void esp_ieee802154_rx_buffer_statistic_printf(void);
+void esp_ieee802154_rx_buffer_statistic_print(void);
 #endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
 
 #if CONFIG_IEEE802154_RECORD
