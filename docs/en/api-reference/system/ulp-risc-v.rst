@@ -39,7 +39,21 @@ Using ``ulp_embed_binary``
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}")
 
 The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
+Variables in the ULP code will be prefixed with ``ulp_`` (default value) in this generated header file.
 
+If you need to embed multiple ULP programs, you may add a custom prefix in order to avoid conflicting variable names like this:
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+The additional argument can be a C style prefix (like ``ulp2_``) or a C++ style prefix (like ``ULP::``).
 
 Using a Custom CMake Project
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -143,11 +157,7 @@ The header file contains the declaration of the symbol:
 
     extern uint32_t ulp_measurement_count;
 
-Note that all symbols (variables, arrays, functions) are declared as ``uint32_t``. For functions and arrays, take the address of the symbol and cast it to the appropriate type.
-
-The generated linker script file defines the locations of symbols in RTC_SLOW_MEM::
-
-    PROVIDE ( ulp_measurement_count = 0x50000060 );
+Note that all symbols (variables, functions) are declared as ``uint32_t``. Arrays are declared as ``uint32_t [SIZE]``. For functions, take the address of the symbol and cast it to the appropriate type.
 
 To access the ULP RISC-V program variables from the main program, the generated header file should be included using an ``include`` statement. This will allow the ULP RISC-V program variables to be accessed as regular variables.
 
@@ -162,7 +172,7 @@ To access the ULP RISC-V program variables from the main program, the generated 
 .. note::
 
     Variables declared in the global scope of the ULP RISC-V program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the ULP RISC-V binary is loaded and executed. Accessing these variables from the main program on the main CPU before the first ULP RISC-V run may result in undefined behavior.
-
+    The ``ulp_`` prefix is the default value. You can specify the prefix to use with ``ulp_embed_binary`` to avoid name collisions for multiple ULP programs.
 
 Mutual Exclusion
 ^^^^^^^^^^^^^^^^
