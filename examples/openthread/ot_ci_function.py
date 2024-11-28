@@ -114,18 +114,15 @@ def wait_for_join(dut:IdfDut, role:str) -> bool:
 def joinWiFiNetwork(dut:IdfDut, wifi:wifi_parameter) -> Tuple[str, int]:
     clean_buffer(dut)
     ip_address = ''
-    information = ''
     for order in range(1, wifi.retry_times):
         command = 'wifi connect -s ' + str(wifi.ssid) + ' -p ' + str(wifi.psk)
         tmp = get_ouput_string(dut, command, 10)
         if 'sta ip' in str(tmp):
             ip_address = re.findall(r'sta ip: (\w+.\w+.\w+.\w+),', str(tmp))[0]
-        if 'wifi sta' in str(tmp):
-            information = re.findall(r'wifi sta (\w+ \w+ \w+)\W', str(tmp))[0]
-        if information == 'is connected successfully':
-            break
-    assert information == 'is connected successfully'
-    return ip_address, order
+        execute_command(dut, 'wifi state')
+        if dut.expect('\nconnected\r', timeout=5):
+            return ip_address, order
+    raise Exception(f'{dut} connect wifi {str(wifi.ssid)} with password {str(wifi.psk)} fail')
 
 
 def getDeviceRole(dut:IdfDut) -> str:
