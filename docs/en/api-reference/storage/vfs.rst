@@ -17,7 +17,9 @@ For example, one can mount a FAT filesystem driver at the ``/fat`` prefix and ca
 FS Registration
 ---------------
 
-.. note:: For previous version of the API (using :cpp:type:`esp_vfs_t`) see documentation for previous release.
+.. note::
+
+    For previous version of the API (using :cpp:type:`esp_vfs_t`), see documentation for previous release.
 
 To register an FS driver, an application needs to define an instance of the :cpp:type:`esp_vfs_fs_ops_t` structure and populate it with function pointers to FS APIs:
 
@@ -44,7 +46,7 @@ To register an FS driver, an application needs to define an instance of the :cpp
 Non-static :cpp:type:`esp_vfs_fs_ops_t`
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The recommended approach for registering filesystem is to use statically allocated :cpp:type:`esp_vfs_fs_ops_t` alongside ``ESP_VFS_FLAG_STATIC``, as it is more memory efficient. In cases where using static allocation is not possible, ``ESP_VFS_FLAG_STATIC`` can replaced with ``ESP_VFS_FLAG_DEFAULT``. This tells VFS to make a deep copy of the passed structure in RAM, this copy will be managed by VFS component.
+The recommended approach for registering filesystem is to use statically allocated :cpp:type:`esp_vfs_fs_ops_t` alongside ``ESP_VFS_FLAG_STATIC``, as it is more memory efficient. In cases where using static allocation is not possible, ``ESP_VFS_FLAG_STATIC`` can be replaced with ``ESP_VFS_FLAG_DEFAULT``. This tells VFS to make a deep copy of the passed structure in RAM, this copy will be managed by VFS component.
 
 .. highlight:: c
 
@@ -68,10 +70,10 @@ The recommended approach for registering filesystem is to use statically allocat
     }
 
 
-Context aware filesystem
+Context Aware Filesystem
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-In some cases it might be beneficial, or even necessary to pass some context to the filesystem functions, such as mountpoint specific file descriptor table, when multiple instances of FS mounted. For this reason the :cpp:type:`esp_vfs_fs_ops_t` contains second version of each member with ``_p`` suffix, for example for ``read`` there is ``read_p``, these functions have additional first argument. When registering the FS, ``ESP_VFS_FLAG_CONTEXT_PTR`` needs to be specified and the pointer passed as the last argument.
+In some cases, it might be beneficial or even necessary to pass some context to the filesystem functions, such as a mountpoint-specific file descriptor table, when multiple instances of FS are mounted. For this reason, :cpp:type:`esp_vfs_fs_ops_t` contains a second version of each member with ``_p`` suffix; for example, ``read`` function has a corresponding ``read_p`` function. These functions take an additional first argument. When registering the FS, ``ESP_VFS_FLAG_CONTEXT_PTR`` needs to be specified and the context pointer should be passed as the last argument.
 
 ::
 
@@ -81,7 +83,7 @@ In some cases it might be beneficial, or even necessary to pass some context to 
         .write_p = &myfs_write,
     // ... other members initialized
 
-    // When registering FS, pass the ESP_VFS_FLAG_CONTEXT_PTR flag, alongside FS context pointer into the third argument
+    // When registering FS, pass the ESP_VFS_FLAG_CONTEXT_PTR flag, alongside FS context pointer as the third and fourth arguments, respectively
     // (hypothetical myfs_mount function is used for illustrative purposes)
     myfs_t* myfs_inst1 = myfs_mount(partition1->offset, partition1->size);
     ESP_ERROR_CHECK(esp_vfs_register_fs("/data1", &myfs, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, myfs_inst1));
@@ -228,9 +230,9 @@ Well Known VFS Devices
 
 IDF defines several VFS devices that can be used by applications. These devices are, among others:
 
- * ``/dev/uart/<UART NUMBER>`` - file mapping to an UART opened with the VFS driver. The UART number is the number of the UART peripheral.
- * ``/dev/null`` - file that discards all data written to it and returns EOF when read. It is automatically created if :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` is enabled.
- * ``/dev/console`` - file that is connected to the primary and secondary outputs specified in the menuconfig by :ref:`CONFIG_ESP_CONSOLE_UART` and :ref:`CONFIG_ESP_CONSOLE_SECONDARY` respectively. More information can be found here :doc:`../../api-guides/stdio`.
+* ``/dev/uart/<UART NUMBER>`` - file mapping to an UART opened with the VFS driver. The UART number is the number of the UART peripheral.
+* ``/dev/null`` - file that discards all data written to it and returns EOF when read. It is automatically created if :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` is enabled.
+* ``/dev/console`` - file that is connected to the primary and secondary outputs specified in the menuconfig by :ref:`CONFIG_ESP_CONSOLE_UART` and :ref:`CONFIG_ESP_CONSOLE_SECONDARY` respectively. More information can be found here :doc:`../../api-guides/stdio`.
 
 
 Application Examples
