@@ -88,9 +88,7 @@ static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *
 {
     // If the RX done packet is written in the stub buffer, drop it silently.
     IEEE802154_RX_BUFFER_STAT_IS_FREE(false);
-    if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
-        esp_rom_printf("receive buffer full, drop the current frame.\n");
-    } else {
+    if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         // Otherwise, post it to the upper layer.
         // Ignore bit8 for the frame length, due to the max frame length is 127 based 802.15.4 spec.
         data[0] = data[0] & 0x7f;

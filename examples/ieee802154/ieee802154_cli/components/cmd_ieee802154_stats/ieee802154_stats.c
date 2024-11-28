@@ -56,7 +56,7 @@ static int process_rx_buffer_statistic(int argc, char **argv)
         return 1;
     }
     if (rx_buff_stat_args.print->count) {
-        esp_ieee802154_rx_buffer_statistic_printf();
+        esp_ieee802154_rx_buffer_statistic_print();
     }
     if (rx_buff_stat_args.clear->count) {
         esp_ieee802154_rx_buffer_statistic_clear();

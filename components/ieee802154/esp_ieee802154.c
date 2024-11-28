@@ -421,9 +421,9 @@ void esp_ieee802154_rx_buffer_statistic_clear(void)
     ieee802154_rx_buffer_statistic_clear();
 }
 
-void esp_ieee802154_rx_buffer_statistic_printf(void)
+void esp_ieee802154_rx_buffer_statistic_print(void)
 {
-    ieee802154_rx_buffer_statistic_printf();
+    ieee802154_rx_buffer_statistic_print();
 }
 #endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
 
