@@ -117,6 +117,7 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     if (cfg->using_timing_tuning) {
         data_out->extra_dummy = extra_dummy_under_timing_tuning(cfg);
+        data_out->fdummy_rin = cfg->fdummy_rin;
         data_out->clock_conf = cfg->clock_config;
     } else
 #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING

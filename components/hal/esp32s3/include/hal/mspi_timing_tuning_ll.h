@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,23 +101,23 @@ static inline void mspi_timing_ll_set_psram_clock_pin_drive(uint8_t spi_num, uin
 }
 
 /**
- * Enable Flash HCLK
+ * Enable Flash timing adjust clock
  *
  * @param spi_num  SPI0 / SPI1
  */
 __attribute__((always_inline))
-static inline void mspi_timinng_ll_enable_flash_hclk(uint8_t spi_num)
+static inline void mspi_timinng_ll_enable_flash_timing_adjust_clk(uint8_t spi_num)
 {
     REG_SET_BIT(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_TIMING_CLK_ENA);
 }
 
 /**
- * Enable PSRAM HCLK
+ * Enable PSRAM timing adjust clock
  *
  * @param spi_num  SPI0 / SPI1
  */
 __attribute__((always_inline))
-static inline void mspi_timinng_ll_enable_psram_hclk(uint8_t spi_num)
+static inline void mspi_timinng_ll_enable_psram_timing_adjust_clk(uint8_t spi_num)
 {
     REG_SET_BIT(SPI_MEM_SPI_SMEM_TIMING_CALI_REG(spi_num), SPI_MEM_SPI_SMEM_TIMING_CLK_ENA);
 }

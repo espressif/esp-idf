@@ -919,7 +919,7 @@ config SOC_SPI_SCT_CONF_BITLEN_MAX
     hex
     default 0x3FFFA
 
-config SOC_MEMSPI_SRC_FREQ_120M
+config SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     bool
     default y
 

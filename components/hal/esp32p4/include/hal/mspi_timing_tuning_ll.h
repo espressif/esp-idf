@@ -15,14 +15,33 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "hal/assert.h"
+#include "hal/misc.h"
 #include "soc/soc.h"
 #include "soc/iomux_mspi_pin_reg.h"
 #include "soc/iomux_mspi_pin_struct.h"
 #include "soc/hp_sys_clkrst_reg.h"
+#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/spi_mem_c_reg.h"
+#include "soc/spi1_mem_c_reg.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define MSPI_TIMING_LL_MSPI_ID_0                      0
+#define MSPI_TIMING_LL_MSPI_ID_1                      1
+
+#define MSPI_TIMING_LL_FLASH_CORE_CLK_DIV             4
+#define MSPI_TIMING_LL_FLASH_FDUMMY_RIN_SUPPORTED     1
+
+#define MSPI_TIMING_LL_FLASH_OCT_MASK                 (SPI_MEM_C_FCMD_OCT | SPI_MEM_C_FADDR_OCT | SPI_MEM_C_FDIN_OCT | SPI_MEM_C_FDOUT_OCT)
+#define MSPI_TIMING_LL_FLASH_QUAD_MASK                (SPI_MEM_C_FASTRD_MODE | SPI_MEM_C_FREAD_DUAL | SPI_MEM_C_FREAD_DIO | SPI_MEM_C_FREAD_QUAD | SPI_MEM_C_FREAD_QIO)
+#define MSPI_TIMING_LL_FLASH_QIO_MODE_MASK            (SPI_MEM_C_FREAD_QIO | SPI_MEM_C_FASTRD_MODE)
+#define MSPI_TIMING_LL_FLASH_QUAD_MODE_MASK           (SPI_MEM_C_FREAD_QUAD | SPI_MEM_C_FASTRD_MODE)
+#define MSPI_TIMING_LL_FLASH_DIO_MODE_MASK            (SPI_MEM_C_FREAD_DIO | SPI_MEM_C_FASTRD_MODE)
+#define MSPI_TIMING_LL_FLASH_DUAL_MODE_MASK           (SPI_MEM_C_FREAD_DUAL | SPI_MEM_C_FASTRD_MODE)
+#define MSPI_TIMING_LL_FLASH_FAST_MODE_MASK           (SPI_MEM_C_FASTRD_MODE)
+#define MSPI_TIMING_LL_FLASH_SLOW_MODE_MASK           0
 
 /**
  * MSPI DQS ID
@@ -73,6 +92,19 @@ typedef enum {
 } mspi_ll_pin_t;
 
 /**
+ * MSPI flash mode
+ */
+typedef enum {
+    MSPI_TIMING_LL_FLASH_OPI_MODE = BIT(0),
+    MSPI_TIMING_LL_FLASH_QIO_MODE = BIT(1),
+    MSPI_TIMING_LL_FLASH_QUAD_MODE = BIT(2),
+    MSPI_TIMING_LL_FLASH_DIO_MODE = BIT(3),
+    MSPI_TIMING_LL_FLASH_DUAL_MODE = BIT(4),
+    MSPI_TIMING_LL_FLASH_FAST_MODE = BIT(5),
+    MSPI_TIMING_LL_FLASH_SLOW_MODE = BIT(6),
+} mspi_timing_ll_flash_mode_t;
+
+/**
  * Reset the MSPI clock
  */
 __attribute__((always_inline))
@@ -86,6 +118,9 @@ static inline void _mspi_timing_ll_reset_mspi(void)
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
 #define mspi_timing_ll_reset_mspi(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _mspi_timing_ll_reset_mspi(__VA_ARGS__)
 
+/*---------------------------------------------------------------
+                    PSRAM tuning
+---------------------------------------------------------------*/
 /**
  * Set all MSPI DQS phase
  *
@@ -198,6 +233,330 @@ static inline void mspi_timing_ll_pin_drv_set(uint8_t drv)
     REG_SET_FIELD(IOMUX_MSPI_PIN_PSRAM_DQS_1_PIN0_REG, IOMUX_MSPI_PIN_REG_PSRAM_DQS_1_DRV, drv);
     REG_SET_FIELD(IOMUX_MSPI_PIN_PSRAM_CK_PIN0_REG, IOMUX_MSPI_PIN_REG_PSRAM_CK_DRV, drv);
     REG_SET_FIELD(IOMUX_MSPI_PIN_PSRAM_CS_PIN0_REG, IOMUX_MSPI_PIN_REG_PSRAM_CS_DRV, drv);
+}
+
+/*---------------------------------------------------------------
+                    Flash tuning
+---------------------------------------------------------------*/
+/**
+ * Set MSPI Flash core clock
+ *
+ * @param spi_num       SPI0 / SPI1
+ * @param core_clk_mhz  core clock mhz
+ */
+__attribute__((always_inline))
+static inline void _mspi_timing_ll_set_flash_core_clock(int spi_num, uint32_t core_clk_mhz)
+{
+    (void)spi_num;
+    if (core_clk_mhz == 120) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, (MSPI_TIMING_LL_FLASH_CORE_CLK_DIV - 1));
+        HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
+    } else {
+        //ESP32P4 flash timing tuning is based on SPLL==480MHz, flash_core_clock==120MHz. We add assertion here to ensure this
+        HAL_ASSERT(false);
+    }
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mspi_timing_ll_set_flash_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mspi_timing_ll_set_flash_core_clock(__VA_ARGS__)
+
+/**
+ * Set MSPI Flash clock
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param freqdiv  Divider value
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_clock(uint8_t spi_num, uint32_t freqdiv)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        if (freqdiv == 1) {
+            WRITE_PERI_REG(SPI_MEM_C_CLOCK_REG, SPI_MEM_C_CLK_EQU_SYSCLK);
+        } else {
+            uint32_t freqbits = (((freqdiv - 1) << SPI_MEM_C_CLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI_MEM_C_CLKCNT_H_S)) | ((freqdiv - 1) << SPI_MEM_C_CLKCNT_L_S);
+            WRITE_PERI_REG(SPI_MEM_C_CLOCK_REG, freqbits);
+        }
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        if (freqdiv == 1) {
+            WRITE_PERI_REG(SPI1_MEM_C_CLOCK_REG, SPI1_MEM_C_CLK_EQU_SYSCLK);
+        } else {
+            uint32_t freqbits = (((freqdiv - 1) << SPI1_MEM_C_CLKCNT_N_S)) | (((freqdiv / 2 - 1) << SPI1_MEM_C_CLKCNT_H_S)) | ((freqdiv - 1) << SPI1_MEM_C_CLKCNT_L_S);
+            WRITE_PERI_REG(SPI1_MEM_C_CLOCK_REG, freqbits);
+        }
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Enable Flash timing adjust clock
+ *
+ * @param spi_num  SPI0 / SPI1
+ */
+__attribute__((always_inline))
+static inline void mspi_timinng_ll_enable_flash_timing_adjust_clk(uint8_t spi_num)
+{
+    (void)spi_num;
+    REG_GET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CLK_ENA);
+}
+
+
+/**
+ * Set MSPI Flash din mode
+ *
+ * @param spi_num   SPI0 / SPI1
+ * @param din_mode  Din mode value
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_din_mode(uint8_t spi_num, uint8_t din_mode)
+{
+    (void)spi_num;
+    uint32_t reg_val = (REG_READ(SPI_MEM_C_DIN_MODE_REG) & (~(SPI_MEM_C_DIN0_MODE_M | SPI_MEM_C_DIN1_MODE_M | SPI_MEM_C_DIN2_MODE_M | SPI_MEM_C_DIN3_MODE_M | SPI_MEM_C_DIN4_MODE_M | SPI_MEM_C_DIN5_MODE_M | SPI_MEM_C_DIN6_MODE_M | SPI_MEM_C_DIN7_MODE_M | SPI_MEM_C_DINS_MODE_M)))
+        | (din_mode << SPI_MEM_C_DIN0_MODE_S) | (din_mode << SPI_MEM_C_DIN1_MODE_S) | (din_mode << SPI_MEM_C_DIN2_MODE_S) | (din_mode << SPI_MEM_C_DIN3_MODE_S)
+        | (din_mode << SPI_MEM_C_DIN4_MODE_S) | (din_mode << SPI_MEM_C_DIN5_MODE_S) | (din_mode << SPI_MEM_C_DIN6_MODE_S) | (din_mode << SPI_MEM_C_DIN7_MODE_S) | (din_mode << SPI_MEM_C_DINS_MODE_S);
+    REG_WRITE(SPI_MEM_C_DIN_MODE_REG, reg_val);
+    REG_SET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_UPDATE);
+}
+
+/**
+ * Set MSPI Flash din num
+ *
+ * @param spi_num   SPI0 / SPI1
+ * @param din_num   Din num value
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_din_num(uint8_t spi_num, uint8_t din_num)
+{
+    (void)spi_num;
+    uint32_t reg_val = (REG_READ(SPI_MEM_C_DIN_NUM_REG) & (~(SPI_MEM_C_DIN0_NUM_M | SPI_MEM_C_DIN1_NUM_M | SPI_MEM_C_DIN2_NUM_M | SPI_MEM_C_DIN3_NUM_M | SPI_MEM_C_DIN4_NUM_M | SPI_MEM_C_DIN5_NUM_M | SPI_MEM_C_DIN6_NUM_M | SPI_MEM_C_DIN7_NUM_M | SPI_MEM_C_DINS_NUM_M)))
+        | (din_num << SPI_MEM_C_DIN0_NUM_S) | (din_num << SPI_MEM_C_DIN1_NUM_S) | (din_num << SPI_MEM_C_DIN2_NUM_S) | (din_num << SPI_MEM_C_DIN3_NUM_S)
+        | (din_num << SPI_MEM_C_DIN4_NUM_S) | (din_num << SPI_MEM_C_DIN5_NUM_S) | (din_num << SPI_MEM_C_DIN6_NUM_S) | (din_num << SPI_MEM_C_DIN7_NUM_S) | (din_num << SPI_MEM_C_DINS_NUM_S);
+    REG_WRITE(SPI_MEM_C_DIN_NUM_REG, reg_val);
+    REG_SET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_UPDATE);
+}
+
+/**
+ * Set MSPI Flash extra dummy
+ *
+ * @param spi_num      SPI0 / SPI1
+ * @param extra_dummy  Extra dummy
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_extra_dummy(uint8_t spi_num, uint8_t extra_dummy)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        if (extra_dummy > 0) {
+            SET_PERI_REG_MASK(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_M);
+            SET_PERI_REG_BITS(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_EXTRA_DUMMY_CYCLELEN_V, extra_dummy, SPI_MEM_C_EXTRA_DUMMY_CYCLELEN_S);
+        } else {
+            CLEAR_PERI_REG_MASK(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_M);
+            SET_PERI_REG_BITS(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_EXTRA_DUMMY_CYCLELEN_V, 0, SPI_MEM_C_EXTRA_DUMMY_CYCLELEN_S);
+        }
+        REG_SET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_UPDATE);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        if (extra_dummy > 0) {
+            SET_PERI_REG_MASK(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_TIMING_CALI);
+            SET_PERI_REG_BITS(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN_V, extra_dummy, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN_S);
+        } else {
+            CLEAR_PERI_REG_MASK(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_TIMING_CALI);
+            SET_PERI_REG_BITS(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN_V, 0, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN_S);
+        }
+        REG_SET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CALI_UPDATE);
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Set MSPI Flash user dummy
+ *
+ * @param spi_num      SPI0 / SPI1
+ * @param user_dummy   user dummy
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_set_flash_user_dummy(uint8_t spi_num, uint8_t user_dummy)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        REG_SET_FIELD(SPI_MEM_C_USER1_REG, SPI_MEM_C_USR_DUMMY_CYCLELEN, user_dummy);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        REG_SET_FIELD(SPI1_MEM_C_USER1_REG, SPI1_MEM_C_USR_DUMMY_CYCLELEN, user_dummy);
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Enable/Disable Flash variable dummy
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_enable_flash_variable_dummy(uint8_t spi_num, bool enable)
+{
+    (void)spi_num;
+    REG_SET_FIELD(SPI1_MEM_C_DDR_REG, SPI1_MEM_C_FMEM_VAR_DUMMY, enable);
+}
+
+/**
+ * Mask invalid DQS
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_mask_invalid_dqs(uint8_t spi_num, bool enable)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        REG_SET_FIELD(SPI_MEM_C_CTRL_REG, SPI_MEM_C_FDUMMY_RIN, enable);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        REG_SET_FIELD(SPI1_MEM_C_CTRL_REG, SPI1_MEM_C_FDUMMY_RIN, enable);
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Get if cs setup is enabled or not
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        true: enabled; false: disabled
+ */
+__attribute__((always_inline))
+static inline bool mspi_timing_ll_is_cs_setup_enabled(uint8_t spi_num)
+{
+    (void)spi_num;
+    return REG_GET_BIT(SPI_MEM_C_USER_REG, SPI_MEM_C_CS_SETUP);
+}
+
+/**
+ * Get cs setup val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        cs setup reg val
+ */
+static inline uint32_t mspi_timing_ll_get_cs_setup_val(uint8_t spi_num)
+{
+    (void)spi_num;
+    return REG_GET_FIELD(SPI_MEM_C_CTRL2_REG, SPI_MEM_C_CS_SETUP_TIME);
+}
+
+/**
+ * Get if cs hold is enabled or not
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        true: enabled; false: disabled
+ */
+__attribute__((always_inline))
+static inline bool mspi_timing_ll_is_cs_hold_enabled(uint8_t spi_num)
+{
+    (void)spi_num;
+    return REG_GET_FIELD(SPI_MEM_C_USER_REG, SPI_MEM_C_CS_HOLD);
+}
+
+/**
+ * Get cs hold val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        cs hold reg val
+ */
+static inline uint32_t mspi_timing_ll_get_cs_hold_val(uint8_t spi_num)
+{
+    (void)spi_num;
+    return REG_GET_FIELD(SPI_MEM_C_CTRL2_REG, SPI_MEM_C_CS_HOLD_TIME);
+}
+
+/**
+ * Get clock reg val
+ *
+ * @param spi_num    SPI0 / SPI1
+ *
+ * @return
+ *        clock reg val
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_timing_ll_get_clock_reg(uint8_t spi_num)
+{
+    (void)spi_num;
+    return READ_PERI_REG(SPI1_MEM_C_CLOCK_REG);
+}
+
+/**
+ * Get MSPI Flash mode
+ *
+ * @param spi_num   SPI0 / SPI1
+ *
+ * @return Flash mode
+ */
+__attribute__((always_inline))
+static inline mspi_timing_ll_flash_mode_t mspi_timing_ll_get_flash_mode(uint8_t spi_num)
+{
+    uint32_t ctrl_reg = READ_PERI_REG(SPI_MEM_C_CTRL_REG);
+    if (ctrl_reg & MSPI_TIMING_LL_FLASH_OCT_MASK) {
+        return MSPI_TIMING_LL_FLASH_OPI_MODE;
+    }
+
+    switch (ctrl_reg & MSPI_TIMING_LL_FLASH_QUAD_MASK) {
+        case MSPI_TIMING_LL_FLASH_QIO_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_QIO_MODE;
+        case MSPI_TIMING_LL_FLASH_QUAD_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_QUAD_MODE;
+        case MSPI_TIMING_LL_FLASH_DIO_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_DIO_MODE;
+        case MSPI_TIMING_LL_FLASH_DUAL_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_DUAL_MODE;
+        case MSPI_TIMING_LL_FLASH_FAST_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_FAST_MODE;
+        case MSPI_TIMING_LL_FLASH_SLOW_MODE_MASK:
+            return MSPI_TIMING_LL_FLASH_SLOW_MODE;
+        default:
+            HAL_ASSERT(false);
+            return (mspi_timing_ll_flash_mode_t)0;
+    }
+}
+
+/**
+ * Get MSPI flash dummy info
+ */
+__attribute__((always_inline))
+static inline void mspi_timing_ll_get_flash_dummy(uint8_t spi_num, int *usr_dummy, int *extra_dummy)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        *usr_dummy = REG_GET_FIELD(SPI_MEM_C_USER1_REG, SPI_MEM_C_USR_DUMMY_CYCLELEN);
+        *extra_dummy = REG_GET_FIELD(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_EXTRA_DUMMY_CYCLELEN);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        *usr_dummy = REG_GET_FIELD(SPI1_MEM_C_USER1_REG, SPI1_MEM_C_USR_DUMMY_CYCLELEN);
+        *extra_dummy = REG_GET_FIELD(SPI1_MEM_C_TIMING_CALI_REG, SPI1_MEM_C_EXTRA_DUMMY_CYCLELEN);
+    } else {
+        HAL_ASSERT(false);
+    }
+}
+
+/**
+ * Mask invalid DQS
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline uint32_t mspi_timing_ll_get_invalid_dqs_mask(uint8_t spi_num)
+{
+    if (spi_num == MSPI_TIMING_LL_MSPI_ID_0) {
+        return REG_GET_FIELD(SPI_MEM_C_CTRL_REG, SPI_MEM_C_FDUMMY_RIN);
+    } else if (spi_num == MSPI_TIMING_LL_MSPI_ID_1) {
+        return REG_GET_FIELD(SPI1_MEM_C_CTRL_REG, SPI1_MEM_C_FDUMMY_RIN);
+    } else {
+        HAL_ASSERT(false);
+    }
 }
 
 #ifdef __cplusplus

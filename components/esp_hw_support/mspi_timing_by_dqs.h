@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,6 +14,7 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #if SOC_MEMSPI_TIMING_TUNING_BY_DQS
+#include "mspi_timing_types.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/mspi_timing_tuning_ll.h"
 #endif
@@ -27,26 +28,6 @@ extern "C" {
 #define IS_DDR    1
 #define IS_SDR    (!IS_DDR)
 
-
-/**
- * Delayline
- */
-typedef struct {
-    uint8_t data_delayline;
-    uint8_t dqs_delayline;
-} __attribute__((packed)) delayline_config_t;
-
-/**
- * MSPI timing tuning configurations
- */
-typedef struct {
-    mspi_ll_dqs_phase_t phase[MSPI_LL_DQS_PHASE_MAX];
-    delayline_config_t delayline_table[MSPI_TIMING_CONFIG_NUM_MAX];
-    union {
-        uint32_t available_config_num;
-        uint32_t available_phase_num;
-    };
-} mspi_timing_config_t;
 
 /*-------------------------------------------------------------------------------------------------
  * Timing Required APIs

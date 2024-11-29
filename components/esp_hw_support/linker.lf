@@ -42,6 +42,9 @@ entries:
             mspi_timing_config (noflash)
         if SOC_MEMSPI_TIMING_TUNING_BY_DQS = y:
             mspi_timing_by_dqs (noflash)
+        if SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY = y:
+            mspi_timing_by_flash_delay (noflash)
+        if SOC_MEMSPI_TIMING_TUNING_BY_DQS = y || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY = y:
             mspi_timing_config (noflash)
     if SOC_ADC_SHARED_POWER = y:
         if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:

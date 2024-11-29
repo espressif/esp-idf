@@ -97,7 +97,7 @@ void mspi_timing_flash_init(uint32_t flash_freq_mhz)
     mspi_timing_config_set_flash_clock(flash_freq_mhz, MSPI_TIMING_SPEED_MODE_NORMAL_PERF, true);
 
     //Power on HCLK
-    mspi_timinng_ll_enable_flash_hclk(0);
+    mspi_timinng_ll_enable_flash_timing_adjust_clk(0);
 }
 
 static void s_set_flash_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
@@ -227,7 +227,7 @@ void mspi_timing_psram_init(uint32_t psram_freq_mhz)
     mspi_timing_config_set_flash_clock(psram_freq_mhz, MSPI_TIMING_SPEED_MODE_NORMAL_PERF, true);
 
     //Power on HCLK
-    mspi_timinng_ll_enable_psram_hclk(0);
+    mspi_timinng_ll_enable_psram_timing_adjust_clk(0);
 }
 
 static void s_set_psram_din_mode_num(uint8_t spi_num, uint8_t din_mode, uint8_t din_num)
