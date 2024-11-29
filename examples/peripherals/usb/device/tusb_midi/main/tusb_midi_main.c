@@ -181,5 +181,5 @@ void app_main(void)
 
     // Read received MIDI packets
     ESP_LOGI(TAG, "MIDI read task init");
-    xTaskCreate(midi_task_read_example, "midi_task_read_example", 2 * 1024, NULL, 5, NULL);
+    xTaskCreate(midi_task_read_example, "midi_task_read_example", 4 * 1024, NULL, 5, NULL);
 }
