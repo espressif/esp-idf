@@ -81,13 +81,13 @@ menu "Example Configuration"
             Enable resetting provisioned credentials and state machine after session failure.
             This will restart the provisioning service after retries are exhausted.
 
-    config EXAMPLE_PROV_MGR_MAX_RETRY_CNT
+    config EXAMPLE_PROV_MGR_CONNECTION_CNT
         int
         default 5
-        prompt "Max retries before resetting provisioning state machine"
+        prompt "Max connection attempts before resetting provisioning state machine"
         depends on EXAMPLE_RESET_PROV_MGR_ON_FAILURE
         help
-            Set the Maximum retry to avoid reconnecting to an inexistent AP or if credentials
+            Set the total number of connection attempts to avoid reconnecting to an inexistent AP or if credentials
             are misconfigured. Provisioned credentials are erased and internal state machine
             is reset after this threshold is reached.
 

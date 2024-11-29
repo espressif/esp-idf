@@ -78,6 +78,10 @@ static esp_err_t get_status_handler(wifi_prov_config_get_data_t *resp_data, wifi
         /* If disconnected, convey reason */
         wifi_prov_mgr_get_wifi_disconnect_reason(&resp_data->fail_reason);
     } else {
+        if (wifi_prov_mgr_get_remaining_conn_attempts(&resp_data->connecting_info.attempts_remaining) != ESP_OK) {
+            ESP_LOGW(TAG, "Wi-Fi provisioning manager not running");
+            return ESP_ERR_INVALID_STATE;
+        }
         ESP_LOGD(TAG, "Got state : connecting");
     }
     return ESP_OK;

@@ -12,6 +12,10 @@ enum WifiConnectFailedReason {
     NetworkNotFound = 1;
 }
 
+message WifiAttemptFailed {
+    uint32 attempts_remaining = 1;
+}
+
 enum WifiAuthMode {
     Open = 0;
     WEP  = 1;

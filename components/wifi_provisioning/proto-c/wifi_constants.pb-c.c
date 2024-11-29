@@ -7,6 +7,51 @@
 #endif
 
 #include "wifi_constants.pb-c.h"
+void   wifi_attempt_failed__init
+                     (WifiAttemptFailed         *message)
+{
+  static const WifiAttemptFailed init_value = WIFI_ATTEMPT_FAILED__INIT;
+  *message = init_value;
+}
+size_t wifi_attempt_failed__get_packed_size
+                     (const WifiAttemptFailed *message)
+{
+  assert(message->base.descriptor == &wifi_attempt_failed__descriptor);
+  return protobuf_c_message_get_packed_size ((const ProtobufCMessage*)(message));
+}
+size_t wifi_attempt_failed__pack
+                     (const WifiAttemptFailed *message,
+                      uint8_t       *out)
+{
+  assert(message->base.descriptor == &wifi_attempt_failed__descriptor);
+  return protobuf_c_message_pack ((const ProtobufCMessage*)message, out);
+}
+size_t wifi_attempt_failed__pack_to_buffer
+                     (const WifiAttemptFailed *message,
+                      ProtobufCBuffer *buffer)
+{
+  assert(message->base.descriptor == &wifi_attempt_failed__descriptor);
+  return protobuf_c_message_pack_to_buffer ((const ProtobufCMessage*)message, buffer);
+}
+WifiAttemptFailed *
+       wifi_attempt_failed__unpack
+                     (ProtobufCAllocator  *allocator,
+                      size_t               len,
+                      const uint8_t       *data)
+{
+  return (WifiAttemptFailed *)
+     protobuf_c_message_unpack (&wifi_attempt_failed__descriptor,
+                                allocator, len, data);
+}
+void   wifi_attempt_failed__free_unpacked
+                     (WifiAttemptFailed *message,
+                      ProtobufCAllocator *allocator)
+{
+  if(!message)
+    return;
+  assert(message->base.descriptor == &wifi_attempt_failed__descriptor);
+  protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
+}
 void   wifi_connected_state__init
                      (WifiConnectedState         *message)
 {
@@ -52,6 +97,44 @@ void   wifi_connected_state__free_unpacked
   assert(message->base.descriptor == &wifi_connected_state__descriptor);
   protobuf_c_message_free_unpacked ((ProtobufCMessage*)message, allocator);
 }
+static const ProtobufCFieldDescriptor wifi_attempt_failed__field_descriptors[1] =
+{
+  {
+    "attempts_remaining",
+    1,
+    PROTOBUF_C_LABEL_NONE,
+    PROTOBUF_C_TYPE_UINT32,
+    0,   /* quantifier_offset */
+    offsetof(WifiAttemptFailed, attempts_remaining),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+};
+static const unsigned wifi_attempt_failed__field_indices_by_name[] = {
+  0,   /* field[0] = attempts_remaining */
+};
+static const ProtobufCIntRange wifi_attempt_failed__number_ranges[1 + 1] =
+{
+  { 1, 0 },
+  { 0, 1 }
+};
+const ProtobufCMessageDescriptor wifi_attempt_failed__descriptor =
+{
+  PROTOBUF_C__MESSAGE_DESCRIPTOR_MAGIC,
+  "WifiAttemptFailed",
+  "WifiAttemptFailed",
+  "WifiAttemptFailed",
+  "",
+  sizeof(WifiAttemptFailed),
+  1,
+  wifi_attempt_failed__field_descriptors,
+  wifi_attempt_failed__field_indices_by_name,
+  1,  wifi_attempt_failed__number_ranges,
+  (ProtobufCMessageInit) wifi_attempt_failed__init,
+  NULL,NULL,NULL    /* reserved[123] */
+};
 static const ProtobufCFieldDescriptor wifi_connected_state__field_descriptors[5] =
 {
   {

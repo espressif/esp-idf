@@ -102,6 +102,17 @@ typedef struct {
 }
 
 /**
+ * @brief   Structure holding the configuration related to Wi-Fi provisioning
+ */
+typedef struct {
+    /**
+     * Maximum number of allowed connection attempts for Wi-Fi. If value 0
+     * same as legacy behavior of infinite connection attempts.
+    */
+    uint32_t wifi_conn_attempts;
+} wifi_prov_conn_cfg_t;
+
+/**
  * @brief   Structure for specifying the provisioning scheme to be
  *          followed by the manager
  *
@@ -187,6 +198,11 @@ typedef struct {
      * specific behavior. Use WIFI_PROV_EVENT_HANDLER_NONE when not used.
      */
     wifi_prov_event_handler_t app_event_handler;
+
+    /**
+     * This config holds the Wi-Fi provisioning related configurations.
+     */
+    wifi_prov_conn_cfg_t wifi_prov_conn_cfg;
 } wifi_prov_mgr_config_t;
 
 /**
