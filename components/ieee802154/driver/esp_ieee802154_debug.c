@@ -401,15 +401,15 @@ void ieee802154_rx_buffer_statistic_print(void)
     for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL + 1); i++) {
         total_times += s_rx_buffer_used_water_level[i];
     }
-    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
-    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-25u|", "rx buff total size:", "", CONFIG_IEEE802154_RX_BUFFER_SIZE);
-    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-25llu|", "buffer alloc times:", "", total_times);
-    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-25u|", "rx buff total size:", CONFIG_IEEE802154_RX_BUFFER_SIZE);
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-25llu|", "buffer alloc times:", total_times);
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
     for (uint8_t i = 0; i < (IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL); i++) {
-        ESP_LOGW(IEEE802154_TAG, "|%-20s|%4d%%%5s%4d%%%-10s|%-15llu%9.2f%%|", "", ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~", ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:", s_rx_buffer_used_water_level[i], ((float)s_rx_buffer_used_water_level[i] / (float)total_times)*100);
+        ESP_LOGW(IEEE802154_TAG, "|%4d%%%5s%4d%%%10s|%-15llu%9.2f%%|", ((i) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), "~", ((i + 1) * 100 / IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL), " used:", s_rx_buffer_used_water_level[i], ((float)s_rx_buffer_used_water_level[i] / (float)total_times)*100);
     }
-    ESP_LOGW(IEEE802154_TAG, "|%-20s|%-25s|%-15llu%9.2f%%|", "", "full used:", s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times)*100);
-    ESP_LOGW(IEEE802154_TAG, "+--------------------+-------------------------+-------------------------+");
+    ESP_LOGW(IEEE802154_TAG, "|%25s|%-15llu%9.2f%%|", "full used:", s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL], ((float)s_rx_buffer_used_water_level[IEEE802154_RX_BUFFER_USED_TOTAL_LEVEL] / (float)total_times)*100);
+    ESP_LOGW(IEEE802154_TAG, "+-------------------------+-------------------------+");
 }
 
 #endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
