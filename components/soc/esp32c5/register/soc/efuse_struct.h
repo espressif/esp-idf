@@ -615,14 +615,30 @@ typedef union {
          *  PADC CAL P bias
          */
         uint32_t trim_p_bias:5;
-        /** reserved_1_106 : R; bitpos: [17:10]; default: 0;
-         *  reserved
+        /** active_hp_dbias : R; bitpos: [13:10]; default: 0;
+         *  Active HP DBIAS of fixed voltage
          */
-        uint32_t reserved_1_106:8;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        uint32_t active_hp_dbias:4;
+        /** active_lp_dbias : R; bitpos: [17:14]; default: 0;
+         *  Active LP DBIAS of fixed voltage
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t active_lp_dbias:4;
+        /** lslp_hp_dbg : R; bitpos: [19:18]; default: 0;
+         *  LSLP HP DBG of fixed voltage
+         */
+        uint32_t lslp_hp_dbg:2;
+        /** lslp_hp_dbias : R; bitpos: [23:20]; default: 0;
+         *  LSLP HP DBIAS of fixed voltage
+         */
+        uint32_t lslp_hp_dbias:4;
+        /** dslp_lp_dbg : R; bitpos: [27:24]; default: 0;
+         *  DSLP LP DBG of fixed voltage
+         */
+        uint32_t dslp_lp_dbg:4;
+        /** dslp_lp_dbias : R; bitpos: [31:28]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
+         */
+        uint32_t dslp_lp_dbias:4;
     };
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
@@ -632,10 +648,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_1 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        /** dslp_lp_dbias_1 : R; bitpos: [0]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
          */
-        uint32_t sys_data_part0_1:32;
+        uint32_t dslp_lp_dbias_1:1;
+        /** lp_hp_dbias_vol_gap : R; bitpos: [5:1]; default: 0;
+         *  DBIAS gap between LP and HP
+         */
+        uint32_t lp_hp_dbias_vol_gap:5;
+        /** reserved_1_134 : R; bitpos: [31:6]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_134:26;
     };
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
@@ -712,18 +736,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** reserved_2_128 : R; bitpos: [8:0]; default: 0;
-         *  reserved
+        /** temperature_sensor : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
          */
-        uint32_t reserved_2_128:9;
+        uint32_t temperature_sensor:9;
         /** ocode : R; bitpos: [16:9]; default: 0;
          *  ADC OCode
          */
         uint32_t ocode:8;
-        /** reserved_2_145 : R; bitpos: [31:17]; default: 0;
-         *  reserved
+        /** adc1_ave_initcode_atten0 : R; bitpos: [26:17]; default: 0;
+         *  Average initcode of ADC1 atten0
          */
-        uint32_t reserved_2_145:15;
+        uint32_t adc1_ave_initcode_atten0:10;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [31:27]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten1:5;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data4_reg_t;
@@ -733,10 +761,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_5 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_ave_initcode_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  Average initcode of ADC1 atten0
          */
-        uint32_t sys_data_part1_5:32;
+        uint32_t adc1_ave_initcode_atten1_1:5;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [14:5]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten2:10;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [24:15]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:25]; default: 0;
+         *  HI DOUT of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data5_reg_t;
@@ -746,10 +786,22 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_6 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  HI DOUT of ADC1 atten0
          */
-        uint32_t sys_data_part1_6:32;
+        uint32_t adc1_hi_dout_atten0_1:3;
+        /** adc1_hi_dout_atten1 : R; bitpos: [12:3]; default: 0;
+         *  HI DOUT of ADC1 atten1
+         */
+        uint32_t adc1_hi_dout_atten1:10;
+        /** adc1_hi_dout_atten2 : R; bitpos: [22:13]; default: 0;
+         *  HI DOUT of ADC1 atten2
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:23]; default: 0;
+         *  HI DOUT of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3:9;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data6_reg_t;
@@ -759,10 +811,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part1_7 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [0]; default: 0;
+         *  HI DOUT of ADC1 atten3
          */
-        uint32_t sys_data_part1_7:32;
+        uint32_t adc1_hi_dout_atten3_1:1;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:1]; default: 0;
+         *  Gap between ADC1 CH0 and average initcode
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [8:5]; default: 0;
+         *  Gap between ADC1 CH1 and average initcode
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [12:9]; default: 0;
+         *  Gap between ADC1 CH2 and average initcode
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [16:13]; default: 0;
+         *  Gap between ADC1 CH3 and average initcode
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [20:17]; default: 0;
+         *  Gap between ADC1 CH4 and average initcode
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:4;
+        /** adc1_ch5_atten0_initcode_diff : R; bitpos: [24:21]; default: 0;
+         *  Gap between ADC1 CH5 and average initcode
+         */
+        uint32_t adc1_ch5_atten0_initcode_diff:4;
+        /** reserved_2_249 : R; bitpos: [31:25]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_249:7;
     };
     uint32_t val;
 } efuse_rd_sys_part1_data7_reg_t;
@@ -2090,123 +2170,6 @@ typedef union {
     uint32_t val;
 } efuse_conf_reg_t;
 
-/** Group: EFUSE Configure Registers */
-/** Type of dac_conf register
- *  Controls the eFuse programming voltage.
- */
-typedef union {
-    struct {
-        /** dac_clk_div : R/W; bitpos: [7:0]; default: 23;
-         *  Controls the division factor of the rising clock of the programming voltage.
-         */
-        uint32_t dac_clk_div:8;
-        /** dac_clk_pad_sel : R/W; bitpos: [8]; default: 0;
-         *  Don't care.
-         */
-        uint32_t dac_clk_pad_sel:1;
-        /** dac_num : R/W; bitpos: [16:9]; default: 255;
-         *  Controls the rising period of the programming voltage.
-         */
-        uint32_t dac_num:8;
-        /** oe_clr : R/W; bitpos: [17]; default: 0;
-         *  Reduces the power supply of the programming voltage.
-         */
-        uint32_t oe_clr:1;
-        uint32_t reserved_18:14;
-    };
-    uint32_t val;
-} efuse_dac_conf_reg_t;
-
-/** Type of rd_tim_conf register
- *  Configures read timing parameters.
- */
-typedef union {
-    struct {
-        /** thr_a : R/W; bitpos: [7:0]; default: 1;
-         *  Configures the read hold time.
-         */
-        uint32_t thr_a:8;
-        /** trd : R/W; bitpos: [15:8]; default: 2;
-         *  Configures the read time.
-         */
-        uint32_t trd:8;
-        /** tsur_a : R/W; bitpos: [23:16]; default: 1;
-         *  Configures the read setup time.
-         */
-        uint32_t tsur_a:8;
-        /** read_init_num : R/W; bitpos: [31:24]; default: 22;
-         *  Configures the waiting time of reading eFuse memory.
-         */
-        uint32_t read_init_num:8;
-    };
-    uint32_t val;
-} efuse_rd_tim_conf_reg_t;
-
-/** Type of wr_tim_conf1 register
- *  Configurarion register 1 of eFuse programming timing parameters.
- */
-typedef union {
-    struct {
-        /** tsup_a : R/W; bitpos: [7:0]; default: 1;
-         *  Configures the programming setup time.
-         */
-        uint32_t tsup_a:8;
-        /** pwr_on_num : R/W; bitpos: [23:8]; default: 12288;
-         *  Configures the power up time for VDDQ.
-         */
-        uint32_t pwr_on_num:16;
-        /** thp_a : R/W; bitpos: [31:24]; default: 1;
-         *  Configures the programming hold time.
-         */
-        uint32_t thp_a:8;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf1_reg_t;
-
-/** Type of wr_tim_conf2 register
- *  Configurarion register 2 of eFuse programming timing parameters.
- */
-typedef union {
-    struct {
-        /** pwr_off_num : R/W; bitpos: [15:0]; default: 400;
-         *  Configures the power outage time for VDDQ.
-         */
-        uint32_t pwr_off_num:16;
-        /** tpgm : R/W; bitpos: [31:16]; default: 200;
-         *  Configures the active programming time.
-         */
-        uint32_t tpgm:16;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf2_reg_t;
-
-/** Type of wr_tim_conf0_rs_bypass register
- *  Configurarion register0 of eFuse programming time parameters and rs bypass
- *  operation.
- */
-typedef union {
-    struct {
-        /** bypass_rs_correction : R/W; bitpos: [0]; default: 0;
-         *  Set this bit to bypass reed solomon correction step.
-         */
-        uint32_t bypass_rs_correction:1;
-        /** bypass_rs_blk_num : R/W; bitpos: [11:1]; default: 0;
-         *  Configures block number of programming twice operation.
-         */
-        uint32_t bypass_rs_blk_num:11;
-        /** update : WT; bitpos: [12]; default: 0;
-         *  Set this bit to update multi-bit register signals.
-         */
-        uint32_t update:1;
-        /** tpgm_inactive : R/W; bitpos: [20:13]; default: 1;
-         *  Configures the inactive programming time.
-         */
-        uint32_t tpgm_inactive:8;
-        uint32_t reserved_21:11;
-    };
-    uint32_t val;
-} efuse_wr_tim_conf0_rs_bypass_reg_t;
-
 
 /** Group: EFUSE Status Registers */
 /** Type of status register
@@ -2353,6 +2316,124 @@ typedef union {
     };
     uint32_t val;
 } efuse_int_clr_reg_t;
+
+
+/** Group: EFUSE Configure Registers */
+/** Type of dac_conf register
+ *  Controls the eFuse programming voltage.
+ */
+typedef union {
+    struct {
+        /** dac_clk_div : R/W; bitpos: [7:0]; default: 23;
+         *  Controls the division factor of the rising clock of the programming voltage.
+         */
+        uint32_t dac_clk_div:8;
+        /** dac_clk_pad_sel : R/W; bitpos: [8]; default: 0;
+         *  Don't care.
+         */
+        uint32_t dac_clk_pad_sel:1;
+        /** dac_num : R/W; bitpos: [16:9]; default: 255;
+         *  Controls the rising period of the programming voltage.
+         */
+        uint32_t dac_num:8;
+        /** oe_clr : R/W; bitpos: [17]; default: 0;
+         *  Reduces the power supply of the programming voltage.
+         */
+        uint32_t oe_clr:1;
+        uint32_t reserved_18:14;
+    };
+    uint32_t val;
+} efuse_dac_conf_reg_t;
+
+/** Type of rd_tim_conf register
+ *  Configures read timing parameters.
+ */
+typedef union {
+    struct {
+        /** thr_a : R/W; bitpos: [7:0]; default: 1;
+         *  Configures the read hold time.
+         */
+        uint32_t thr_a:8;
+        /** trd : R/W; bitpos: [15:8]; default: 2;
+         *  Configures the read time.
+         */
+        uint32_t trd:8;
+        /** tsur_a : R/W; bitpos: [23:16]; default: 1;
+         *  Configures the read setup time.
+         */
+        uint32_t tsur_a:8;
+        /** read_init_num : R/W; bitpos: [31:24]; default: 22;
+         *  Configures the waiting time of reading eFuse memory.
+         */
+        uint32_t read_init_num:8;
+    };
+    uint32_t val;
+} efuse_rd_tim_conf_reg_t;
+
+/** Type of wr_tim_conf1 register
+ *  Configurarion register 1 of eFuse programming timing parameters.
+ */
+typedef union {
+    struct {
+        /** tsup_a : R/W; bitpos: [7:0]; default: 1;
+         *  Configures the programming setup time.
+         */
+        uint32_t tsup_a:8;
+        /** pwr_on_num : R/W; bitpos: [23:8]; default: 12288;
+         *  Configures the power up time for VDDQ.
+         */
+        uint32_t pwr_on_num:16;
+        /** thp_a : R/W; bitpos: [31:24]; default: 1;
+         *  Configures the programming hold time.
+         */
+        uint32_t thp_a:8;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf1_reg_t;
+
+/** Type of wr_tim_conf2 register
+ *  Configurarion register 2 of eFuse programming timing parameters.
+ */
+typedef union {
+    struct {
+        /** pwr_off_num : R/W; bitpos: [15:0]; default: 400;
+         *  Configures the power outage time for VDDQ.
+         */
+        uint32_t pwr_off_num:16;
+        /** tpgm : R/W; bitpos: [31:16]; default: 200;
+         *  Configures the active programming time.
+         */
+        uint32_t tpgm:16;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf2_reg_t;
+
+/** Type of wr_tim_conf0_rs_bypass register
+ *  Configurarion register0 of eFuse programming time parameters and rs bypass
+ *  operation.
+ */
+typedef union {
+    struct {
+        /** bypass_rs_correction : R/W; bitpos: [0]; default: 0;
+         *  Set this bit to bypass reed solomon correction step.
+         */
+        uint32_t bypass_rs_correction:1;
+        /** bypass_rs_blk_num : R/W; bitpos: [11:1]; default: 0;
+         *  Configures block number of programming twice operation.
+         */
+        uint32_t bypass_rs_blk_num:11;
+        /** update : WT; bitpos: [12]; default: 0;
+         *  Set this bit to update multi-bit register signals.
+         */
+        uint32_t update:1;
+        /** tpgm_inactive : R/W; bitpos: [20:13]; default: 1;
+         *  Configures the inactive programming time.
+         */
+        uint32_t tpgm_inactive:8;
+        uint32_t reserved_21:11;
+    };
+    uint32_t val;
+} efuse_wr_tim_conf0_rs_bypass_reg_t;
 
 
 /** Group: EFUSE_APB2OTP Block0 Write Disable Data */
