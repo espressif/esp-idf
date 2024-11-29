@@ -637,14 +637,14 @@ esp_err_t esp_bt_sleep_disable(void);
  * @brief Manually clear the scan duplicate list
  *
  * @note
- *      1. This function name is incorrectly spelled, it will be fixed in release 5.x version.
- *      2. The scan duplicate list will be automatically cleared when the maximum amount of devices in the filter is reached.
- *         The amount of devices in the filter can be configured in menuconfig.
+ *       The scan duplicate list will be automatically cleared when the maximum amount of devices in the filter is reached. The amount of devices in the filter can be configured in menuconfig.
  *
  * @return
  *       - ESP_OK: Success
  *       - ESP_ERR_INVALID_STATE: Invalid Bluetooth Controller state
  */
+esp_err_t esp_ble_scan_duplicate_list_flush(void);
+
 esp_err_t esp_ble_scan_dupilcate_list_flush(void);
 
 #ifdef __cplusplus
