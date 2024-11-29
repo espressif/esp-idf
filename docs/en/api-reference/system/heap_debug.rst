@@ -137,6 +137,7 @@ Temporarily increasing the heap corruption detection level can give more detaile
 
 In the project configuration menu, under ``Component config``, there is a menu ``Heap memory debugging``. The option :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of the following three levels:
 
+
 Basic (No Poisoning)
 ++++++++++++++++++++
 
@@ -145,6 +146,7 @@ This is the default level. By default, no special heap corruption features are e
 If assertions are enabled, an assertion will also trigger if a double-free occurs (the same memory is freed twice).
 
 Calling :cpp:func:`heap_caps_check_integrity` in Basic mode checks the integrity of all heap structures, and print errors if any appear to be corrupted.
+
 
 Light Impact
 ++++++++++++
@@ -165,6 +167,7 @@ In both cases, the functions involve checking that the first 4 bytes of an alloc
 
 Different values usually indicate buffer underrun or overrun. Overrun indicates that when writing to memory, the data written exceeds the size of the allocated memory, resulting in writing to an unallocated memory area; underrun indicates that when reading memory, the data read exceeds the allocated memory and reads data from an unallocated memory area.
 
+
 Comprehensive
 +++++++++++++
 
@@ -172,7 +175,7 @@ This level incorporates the "Light Impact" detection features. Additionally, it 
 
 Enabling Comprehensive mode has a substantial impact on runtime performance, as all memory needs to be set to the allocation patterns each time a :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_free` completes, and the memory also needs to be checked each time. However, this mode allows easier detection of memory corruptions which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
 
-The checks for allocated and free patterns (``0xCE`` and respectively ``0xFE``) are also done when calling :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all`.
+The checks for allocated and free patterns (``0xCE`` and ``0xFE``, respectively) are also done when calling :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all`.
 
 Crashes in Comprehensive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -404,7 +407,7 @@ For this reason, the option to use a hashmap mechanism to store records is avail
 
 Each hashmap entry is a singly linked list of records sharing the same hash ID.
 
-Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0 ; hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
+Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0, hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
 
 .. note::
 
