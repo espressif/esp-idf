@@ -341,14 +341,16 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         // the register used by the following LL functions are shared with other API,
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
-        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
+        // Note here, if the alarm target is set very close to the current counter value
+        // an alarm interrupt may be triggered very quickly after we start the timer
+        timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
+        atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not enabled yet");
+        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not ready for a new start");
     }
 
-    atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
     return ESP_OK;
 }
 
@@ -362,12 +364,12 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, false);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, false);
+        atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not running");
     }
 
-    atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
     return ESP_OK;
 }
 
