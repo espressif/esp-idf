@@ -664,6 +664,7 @@ PROVIDE ( ld_sco_modify = 0x40031778 );
 PROVIDE ( lm_cmd_cmp_send = 0x40051838 );
 PROVIDE ( ld_sco_frm_cbk = 0x400349dc );
 PROVIDE ( ld_sco_evt_stop_cbk = 0x40031d78 );
+PROVIDE ( ld_acl_rsw_evt_start_cbk = 0x40031154 );
 PROVIDE ( ld_acl_sco_rsvd_check = 0x4002fa94 );
 PROVIDE ( ld_acl_sniff_frm_cbk = 0x4003482c );
 PROVIDE ( ld_inq_end = 0x4003ab48 );
