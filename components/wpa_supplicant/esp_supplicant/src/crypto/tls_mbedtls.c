@@ -201,6 +201,7 @@ static int set_ca_cert(tls_context_t *tls, const unsigned char *cacert, size_t c
 
 #ifdef CONFIG_SUITEB192
 static uint16_t tls_sig_algs_for_suiteb[] = {
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
@@ -211,6 +212,7 @@ static uint16_t tls_sig_algs_for_suiteb[] = {
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384 ),
 #endif
 #endif /* MBEDTLS_SHA512_C */
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
 
@@ -235,6 +237,7 @@ static void tls_set_suiteb_config(tls_context_t *tls)
 #endif
 
 static uint16_t tls_sig_algs_for_eap[] = {
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512 ),
@@ -263,6 +266,7 @@ static uint16_t tls_sig_algs_for_eap[] = {
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG( MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA1 ),
 #endif
 #endif /* MBEDTLS_SHA1_C */
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
 
