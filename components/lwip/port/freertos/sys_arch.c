@@ -108,14 +108,14 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
   LWIP_ASSERT("initial_count invalid (neither 0 nor 1)",
              (count == 0) || (count == 1));
 
-  *sem = xSemaphoreCreateBinary();
-  if (*sem == NULL) {
-      LWIP_DEBUGF(SYS_DEBUG, ("sys_sem_new: out of mem\r\n"));
+  QueueHandle_t res = xSemaphoreCreateBinaryStatic(sem);
+  if ((sys_sem_t *)res != sem) {
+      LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sys_sem_new: out of mem\r\n"));
       return ERR_MEM;
   }
 
   if (count == 1) {
-      BaseType_t ret = xSemaphoreGive(*sem);
+      BaseType_t ret = xSemaphoreGive(sem);
       LWIP_ASSERT("sys_sem_new: initial give failed", ret == pdTRUE);
       (void)ret;
   }
@@ -131,7 +131,7 @@ sys_sem_new(sys_sem_t *sem, u8_t count)
 void
 sys_sem_signal(sys_sem_t *sem)
 {
-  BaseType_t ret = xSemaphoreGive(*sem);
+  BaseType_t ret = xSemaphoreGive(sem);
   /* queue full is OK, this is a signal only... */
   LWIP_ASSERT("sys_sem_signal: sane return value",
              (ret == pdTRUE) || (ret == errQUEUE_FULL));
@@ -144,7 +144,7 @@ int
 sys_sem_signal_isr(sys_sem_t *sem)
 {
     BaseType_t woken = pdFALSE;
-    xSemaphoreGiveFromISR(*sem, &woken);
+    xSemaphoreGiveFromISR(sem, &woken);
     return woken == pdTRUE;
 }
 
@@ -162,7 +162,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 
   if (!timeout) {
     /* wait infinite */
-    ret = xSemaphoreTake(*sem, portMAX_DELAY);
+    ret = xSemaphoreTake((QueueHandle_t)sem, portMAX_DELAY);
     LWIP_ASSERT("taking semaphore failed", ret == pdTRUE);
   } else {
     /* Round up the number of ticks.
@@ -172,7 +172,7 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
      * 1 tick before triggering a timeout. Thus, we need to pass 2 ticks as a timeout
      * to `xSemaphoreTake`. */
     TickType_t timeout_ticks = ((timeout + portTICK_PERIOD_MS - 1) / portTICK_PERIOD_MS) + 1;
-    ret = xSemaphoreTake(*sem, timeout_ticks);
+    ret = xSemaphoreTake((QueueHandle_t)sem, timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
       return SYS_ARCH_TIMEOUT;
@@ -191,8 +191,8 @@ sys_arch_sem_wait(sys_sem_t *sem, u32_t timeout)
 void
 sys_sem_free(sys_sem_t *sem)
 {
-  vSemaphoreDelete(*sem);
-  *sem = NULL;
+  vSemaphoreDelete((QueueHandle_t)sem);
+  memset(sem, 0, sizeof(*sem));
 }
 
 /**
@@ -490,13 +490,13 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
 {
   sys_sem_t *sem = (sys_sem_t*)(data);
 
-  if (sem && *sem){
-    LWIP_DEBUGF(SYS_DEBUG, ("sem del, sem=%p\n", *sem));
-    vSemaphoreDelete(*sem);
+  if (sem){
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem del, sem=%p\n", sem));
+    vSemaphoreDelete((QueueHandle_t)sem);
   }
 
   if (sem) {
-    LWIP_DEBUGF(SYS_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
+    LWIP_DEBUGF(ESP_THREAD_SAFE_DEBUG, ("sem pointer del, sem_p=%p\n", sem));
     mem_free(sem);
   }
 }
@@ -504,17 +504,19 @@ sys_thread_sem_free(void* data) // destructor for TLS semaphore
 sys_sem_t*
 sys_thread_sem_init(void)
 {
-  sys_sem_t *sem = (sys_sem_t*)mem_malloc(sizeof(sys_sem_t*));
+  sys_sem_t *sem = (sys_sem_t*)mem_malloc(sizeof(sys_sem_t));
 
   if (!sem){
     ESP_LOGE(TAG, "thread_sem_init: out of memory");
     return 0;
   }
 
-  *sem = xSemaphoreCreateBinary();
-  if (!(*sem)){
+  // If successful, create a binary semaphore the pointer to the semaphore is returned
+  QueueHandle_t res = xSemaphoreCreateBinaryStatic(sem);
+
+  if (res != (QueueHandle_t)sem){
     mem_free(sem);
-    ESP_LOGE(TAG, "thread_sem_init: out of memory");
+    ESP_LOGE(TAG, "thread_sem_init: unable to create semaphore %p != %p", res, sem);
     return 0;
   }
 
