@@ -394,6 +394,9 @@ extern "C" {
  */
 #define DHCP_REQUEST_BACKOFF_SEQUENCE(state, tries)   ((uint16_t)(((tries) < 5 ? 1 << (tries) : 16) * 250))
 
+/* Use custom DHCP timeout type to support longer lease times (with IDF coarse timer granularity)
+ */
+#define DHCP_TIMEOUT_SIZE_T             u32_t
 static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
 {
     uint32_t timeout = lease;
