@@ -1,0 +1,15 @@
+[mapping:mspi_timing_tuning_driver]
+archive: libesp_hw_support.a
+entries:
+
+if APP_BUILD_TYPE_PURE_RAM_APP = n:
+    mspi_timing_tuning (noflash)
+    if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY = y:
+        mspi_timing_by_mspi_delay (noflash)
+        mspi_timing_config (noflash)
+    if SOC_MEMSPI_TIMING_TUNING_BY_DQS = y:
+        mspi_timing_by_dqs (noflash)
+    if SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY = y:
+        mspi_timing_by_flash_delay (noflash)
+    if SOC_MEMSPI_TIMING_TUNING_BY_DQS = y || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY = y:
+        mspi_timing_config (noflash)

@@ -125,15 +125,15 @@ if(NOT non_os_build)
     endif()
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi_timing_tuning.c")
+        list(APPEND srcs "mspi_timing_tuning/mspi_timing_tuning.c")
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY)
-            list(APPEND srcs "mspi_timing_by_mspi_delay.c")
+            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_mspi_delay.c")
         endif()
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_DQS)
-            list(APPEND srcs "mspi_timing_by_dqs.c")
+            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_dqs.c")
         endif()
         if(CONFIG_SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY)
-            list(APPEND srcs "mspi_timing_by_flash_delay.c")
+            list(APPEND srcs "mspi_timing_tuning/mspi_timing_by_flash_delay.c")
         endif()
     endif()
 
@@ -153,17 +153,21 @@ else()
 endif()
 
 set(public_include_dirs "include" "include/soc" "include/soc/${target}"
-                        "dma/include" "ldo/include" "debug_probe/include")
+                        "dma/include" "ldo/include" "debug_probe/include"
+                        "mspi_timing_tuning/include")
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
                        REQUIRES ${requires}
                        PRIV_REQUIRES "${priv_requires}"
-                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf)
+                       LDFRAGMENTS linker.lf dma/linker.lf ldo/linker.lf mspi_timing_tuning/linker.lf)
 
 idf_build_get_property(target IDF_TARGET)
 add_subdirectory(port/${target})
+if(CONFIG_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
+    add_subdirectory(mspi_timing_tuning/port/${target})
+endif()
 add_subdirectory(lowpower)
 
 if(CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND OR CONFIG_PM_SLP_DISABLE_GPIO)
