@@ -31,6 +31,9 @@ def generate_gdbinit_rom_add_symbols(target: str) -> str:
     if not rom_elfs_dir:
         raise EnvironmentError(
             'ESP_ROM_ELF_DIR environment variable is not defined. Please try to run IDF "install" and "export" scripts.')
+    if os.name == 'nt':
+        # convert to posix-path for windows
+        rom_elfs_dir = rom_elfs_dir.replace('\\', '/')
     with open(ROMS_JSON, 'r') as f:
         roms = json.load(f)
     if target not in roms:
