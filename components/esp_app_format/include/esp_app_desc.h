@@ -35,7 +35,9 @@ typedef struct {
     uint8_t app_elf_sha256[32]; /*!< sha256 of elf file */
     uint16_t min_efuse_blk_rev_full; /*!< Minimal eFuse block revision supported by image, in format: major * 100 + minor */
     uint16_t max_efuse_blk_rev_full; /*!< Maximal eFuse block revision supported by image, in format: major * 100 + minor */
-    uint32_t reserv2[19];       /*!< reserv2 */
+    uint8_t mmu_page_size;      /*!< MMU page size in log base 2 format */
+    uint8_t reserv3[3];         /*!< reserv3 */
+    uint32_t reserv2[18];       /*!< reserv2 */
 } esp_app_desc_t;
 
 /** @cond */

@@ -34,6 +34,7 @@ typedef struct {
   uint32_t image_len; /* Length of image on flash, in bytes */
   uint8_t image_digest[32]; /* appended SHA-256 digest */
   uint32_t secure_version; /* secure version for anti-rollback, it is covered by sha256 (set if CONFIG_BOOTLOADER_APP_ANTI_ROLLBACK=y) */
+  uint32_t mmu_page_size; /* Flash MMU page size per binary header */
 } esp_image_metadata_t;
 
 typedef enum {
