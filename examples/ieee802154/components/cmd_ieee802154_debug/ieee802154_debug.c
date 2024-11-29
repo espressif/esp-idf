@@ -10,7 +10,7 @@
 #include "esp_ieee802154.h"
 #include "esp_console.h"
 #include "argtable3/argtable3.h"
-#include "ieee802154_stats.h"
+#include "ieee802154_debug.h"
 
 #if CONFIG_IEEE802154_DEBUG
 static const char* TAG = "i154cmd";
@@ -60,6 +60,7 @@ static int process_rx_buffer_statistic(int argc, char **argv)
     }
     if (rx_buff_stat_args.clear->count) {
         esp_ieee802154_rx_buffer_statistic_clear();
+        ESP_LOGI(TAG, "clear the rx buffer statistics");
     }
     if (!rx_buff_stat_args.print->count && !rx_buff_stat_args.clear->count) {
         ESP_LOGE(TAG, "no valid arguments");
@@ -71,14 +72,14 @@ static int process_rx_buffer_statistic(int argc, char **argv)
 static void register_rx_buffer_statistic(void)
 {
     rx_buff_stat_args.print =
-        arg_lit0("p", "print", "print the result of rx buffer statistic");
+        arg_lit0("p", "print", "print a summary table of rx buffer statistics");
     rx_buff_stat_args.clear =
-        arg_lit0("c", "clear", "clear the result of rx buffer statistic");
+        arg_lit0("c", "clear", "clear the rx buffer statistics");
     rx_buff_stat_args.end = arg_end(2);
 
     const esp_console_cmd_t cmd = {
         .command = "rxbufstat",
-        .help = "rx buffer statistic",
+        .help = "rx buffer statistics",
         .hint = NULL,
         .func = &process_rx_buffer_statistic,
         .argtable = &rx_buff_stat_args

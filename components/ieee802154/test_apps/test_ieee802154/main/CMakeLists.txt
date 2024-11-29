@@ -8,5 +8,6 @@ set(include "."
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS include
-                       PRIV_REQUIRES ieee802154 console fatfs nvs_flash esp_phy cmd_ieee802154 cmd_ieee802154_stats cmd_system
+                       PRIV_REQUIRES ieee802154 console fatfs nvs_flash esp_phy cmd_ieee802154
+                                     cmd_ieee802154_debug cmd_system
                        WHOLE_ARCHIVE)
