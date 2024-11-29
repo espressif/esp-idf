@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "esp_log.h"
 #include "esp_vfs.h"
 #include "esp_cpu.h"
+#include "include/esp_vfs.h"
 #include "openocd_semihosting.h"
 
 #ifndef CONFIG_VFS_SEMIHOSTFS_MAX_MOUNT_POINTS
@@ -419,37 +420,44 @@ static void vfs_semihost_seekdir(void* ctx, DIR* pdir, long offset)
     }
 }
 #endif
+
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_semihost_dir = {
+    .mkdir_p = &vfs_semihost_mkdir,
+    .rmdir_p = &vfs_semihost_rmdir,
+    .access_p = &vfs_semihost_access,
+    .truncate_p = &vfs_semihost_truncate,
+    .utime_p = &vfs_semihost_utime,
+    .stat_p = &vfs_semihost_stat,
+    .rename_p = &vfs_semihost_rename,
+    .link_p = &vfs_semihost_link,
+    .unlink_p = &vfs_semihost_unlink,
+    .opendir_p = &vfs_semihost_opendir,
+    .closedir_p = &vfs_semihost_closedir,
+    .telldir_p = &vfs_semihost_telldir,
+    .readdir_p = &vfs_semihost_readdir,
+    .readdir_r_p = &vfs_semihost_readdir_r,
+    .seekdir_p = &vfs_semihost_seekdir,
+};
+#endif
+
+static const esp_vfs_fs_ops_t s_vfs_semihost = {
+    .write_p = &vfs_semihost_write,
+    .open_p = &vfs_semihost_open,
+    .close_p = &vfs_semihost_close,
+    .read_p = &vfs_semihost_read,
+    .lseek_p = &vfs_semihost_lseek,
+    .fsync_p = &vfs_semihost_fsync,
+    .fstat_p = &vfs_semihost_fstat,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_semihost_dir,
+#endif
+};
+
 esp_err_t esp_vfs_semihost_register(const char* base_path)
 {
     assert(base_path);
 
-    const esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
-        .write_p = &vfs_semihost_write,
-        .open_p = &vfs_semihost_open,
-        .close_p = &vfs_semihost_close,
-        .read_p = &vfs_semihost_read,
-        .lseek_p = &vfs_semihost_lseek,
-        .fsync_p = &vfs_semihost_fsync,
-        .fstat_p = &vfs_semihost_fstat,
-#ifdef CONFIG_VFS_SUPPORT_DIR
-        .mkdir_p = &vfs_semihost_mkdir,
-        .rmdir_p = &vfs_semihost_rmdir,
-        .access_p = &vfs_semihost_access,
-        .truncate_p = &vfs_semihost_truncate,
-        .utime_p = &vfs_semihost_utime,
-        .stat_p = &vfs_semihost_stat,
-        .rename_p = &vfs_semihost_rename,
-        .link_p = &vfs_semihost_link,
-        .unlink_p = &vfs_semihost_unlink,
-        .opendir_p = &vfs_semihost_opendir,
-        .closedir_p = &vfs_semihost_closedir,
-        .telldir_p = &vfs_semihost_telldir,
-        .readdir_p = &vfs_semihost_readdir,
-        .readdir_r_p = &vfs_semihost_readdir_r,
-        .seekdir_p = &vfs_semihost_seekdir,
-#endif
-    };
     ESP_LOGD(TAG, "Register semihosting driver '%s'", base_path);
     if (!esp_cpu_dbgr_is_attached()) {
         ESP_LOGE(TAG, "OpenOCD is not connected!");
@@ -478,7 +486,7 @@ esp_err_t esp_vfs_semihost_register(const char* base_path)
         ESP_LOGE(TAG, "Incompatible OpenOCD version detected. Please follow the getting started guides to install the required version.");
     }
 
-    err = esp_vfs_register(base_path, &vfs, &s_semhost_ctx[i]);
+    err = esp_vfs_register_fs(base_path, &s_vfs_semihost, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, &s_semhost_ctx[i]);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Can't register the semihosting! Error: %s", esp_err_to_name(err));
         return err;
