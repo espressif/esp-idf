@@ -1076,11 +1076,11 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
         dut.expect_gme('LoadProhibited')
-        dut.expect_reg_dump(0)
+        dut.expect_reg_dump()
         dut.expect_backtrace()
     else:
         dut.expect_gme('Load access fault')
-        dut.expect_reg_dump(0)
+        dut.expect_reg_dump()
         dut.expect_stack_dump()
 
     dut.expect_elf_sha256()
