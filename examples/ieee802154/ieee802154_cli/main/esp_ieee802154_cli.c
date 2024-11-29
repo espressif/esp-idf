@@ -16,7 +16,7 @@
 #include "esp_ieee802154.h"
 #include "esp_phy_init.h"
 #include "cmd_system.h"
-#include "ieee802154_stats.h"
+#include "ieee802154_debug.h"
 
 #define PROMPT_STR "ieee802154"
 
