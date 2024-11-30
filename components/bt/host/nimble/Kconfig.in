@@ -100,6 +100,14 @@ config BT_NIMBLE_L2CAP_COC_MAX_NUM
     help
         Defines maximum number of BLE Connection Oriented Channels. When set to (0), BLE COC is not compiled in
 
+config BT_NIMBLE_L2CAP_ENHANCED_COC
+    bool "L2CAP Enhanced Connection Oriented Channel"
+    depends on BT_NIMBLE_ENABLED && (BT_NIMBLE_L2CAP_COC_MAX_NUM >= 1)
+    default 0
+    help
+        Enable Enhanced Credit Based Flow Control Mode
+
+
 choice BT_NIMBLE_PINNED_TO_CORE_CHOICE
     prompt "The CPU core on which NimBLE host will run"
     depends on BT_NIMBLE_ENABLED && !FREERTOS_UNICORE
@@ -221,6 +229,13 @@ config BT_NIMBLE_SM_LVL
         2. Unauthenticated pairing with encryption
         3. Authenticated pairing with encryption
         4. Authenticated LE Secure Connections pairing with encryption using a 128-bit strength encryption key.
+
+config BT_NIMBLE_SM_SC_ONLY
+    int "Enable Secure Connections Only Mode"
+    depends on BT_NIMBLE_SECURITY_ENABLE
+    default 0
+    help
+        Enable Secure Connections Only Mode
 
 config BT_NIMBLE_DEBUG
     bool "Enable extra runtime asserts and host debugging"
@@ -618,6 +633,13 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
             default y
             help
                     This enables controller transfer periodic sync events to host
+
+        config BT_NIMBLE_PERIODIC_ADV_WITH_RESPONSES
+            bool "Enable Periodic Advertisement with Response (EXPERIMENTAL)"
+            depends on BT_NIMBLE_ENABLE_PERIODIC_ADV
+            default n
+            help
+                    This enables controller PAwR (Periodic Advertisement with Response).
     endif
 
     config BT_NIMBLE_EXT_SCAN
@@ -701,6 +723,14 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
             Set this option to set the upper limit on number of descriptors per connection to be cached.
 endif
 
+
+config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
+    bool "Do not start discovery procedure automatically upon receiving Out of Sync"
+    depends on BT_NIMBLE_GATT_CACHING
+    default n
+    help
+        When client receives ATT out-of-sync error message, it will not automatically start the discovery procedure
+        to correct the invalid cache.
 
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
@@ -898,6 +928,12 @@ menu "GAP Service"
             Peripheral Preferred Connection Parameter: Supervision Timeout
             Timeout = Value * 10 ms
 
+    config BT_NIMBLE_SVC_GAP_GATT_SECURITY_LEVEL
+        bool "LE GATT Security Level Characteristic"
+        default n
+        help
+            Enable the LE GATT Security Level Characteristic
+
 endmenu
 
 menu "BLE Services"
@@ -921,6 +957,71 @@ menu "BLE Services"
         default 3
         help
             Defines maximum number of report characteristics per service instance
+
+    config BT_NIMBLE_SVC_BAS_BATTERY_LEVEL_NOTIFY
+        depends on BT_NIMBLE_ENABLED
+        bool "BAS Battery Level NOTIFY permission"
+        default n
+        help
+            Enable/Disable notifications on BAS Battery Level Characteristic
+
+    menu "Device Information Service"
+        config BT_NIMBLE_SVC_DIS_MANUFACTURER_NAME
+            depends on BT_NIMBLE_ENABLED
+            bool "Manufacturer Name"
+            default n
+            help
+                Enable the DIS characteristic Manufacturer Name String characteristic
+
+        config BT_NIMBLE_SVC_DIS_SERIAL_NUMBER
+            depends on BT_NIMBLE_ENABLED
+            bool "Serial Number"
+            default n
+            help
+                Enable the DIS Serial Number characteristic
+
+        config BT_NIMBLE_SVC_DIS_HARDWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Hardware Revision"
+            default n
+            help
+                Enable the DIS Hardware Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_FIRMWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Firmware Revision"
+            default n
+            help
+                Enable the DIS Firmware Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_SOFTWARE_REVISION
+            depends on BT_NIMBLE_ENABLED
+            bool "Software Revision"
+            default n
+            help
+                Enable the DIS Software Revision characteristic
+
+        config BT_NIMBLE_SVC_DIS_SYSTEM_ID
+            depends on BT_NIMBLE_ENABLED
+            bool "System ID"
+            default n
+            help
+                Enable the DIS System ID characteristic
+
+        config BT_NIMBLE_SVC_DIS_PNP_ID
+            depends on BT_NIMBLE_ENABLED
+            bool "PnP ID"
+            default n
+            help
+                Enable the DIS PnP ID characteristic
+
+        config BT_NIMBLE_SVC_DIS_INCLUDED
+            depends on BT_NIMBLE_ENABLED
+            bool "DIS as an Included Service"
+            default n
+            help
+                Use DIS as an included service
+    endmenu
 endmenu
 
 config BT_NIMBLE_VS_SUPPORT
@@ -941,7 +1042,6 @@ config BT_NIMBLE_OPTIMIZE_MULTI_CONN
 
 config BT_NIMBLE_ENC_ADV_DATA
     bool "Encrypted Advertising Data"
-    select BT_NIMBLE_EXT_ADV
     help
         This option is used to enable encrypted advertising data.
 
@@ -1089,3 +1189,17 @@ menu "Host-controller Transport"
         help
             UART HCI CTS pin
 endmenu
+
+config BT_NIMBLE_EATT_CHAN_NUM
+    int "Maximum number of EATT channels"
+    default 0
+    depends on BT_NIMBLE_ENABLED
+    help
+        Defines the number of channels EATT bearers can use
+
+config BT_NIMBLE_SUBRATE
+    bool "Enable Subrate Change"
+    default n
+    depends on BT_NIMBLE_ENABLED
+    help
+        Enable connection subrate change feature
