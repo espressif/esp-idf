@@ -205,21 +205,21 @@ sys_sem_free(sys_sem_t *sem)
 err_t
 sys_mbox_new(sys_mbox_t *mbox, int size)
 {
-  *mbox = mem_malloc(sizeof(struct sys_mbox_s));
+  *mbox = (sys_mbox_t)mem_malloc(sizeof(struct sys_mbox_s) + (size * sizeof(void *)));
   if (*mbox == NULL){
     LWIP_DEBUGF(SYS_DEBUG, ("fail to new *mbox\n"));
     return ERR_MEM;
   }
 
-  (*mbox)->os_mbox = xQueueCreate(size, sizeof(void *));
+  QueueHandle_t res = xQueueCreateStatic(size, sizeof(void *), (*mbox)->buffer, &(*mbox)->os_mbox);
 
-  if ((*mbox)->os_mbox == NULL) {
+  if ((QueueHandle_t)&(*mbox)->os_mbox != res) {
     LWIP_DEBUGF(SYS_DEBUG, ("fail to new (*mbox)->os_mbox\n"));
-    mem_free(*mbox);
+    free(*mbox);
     return ERR_MEM;
   }
 
-  LWIP_DEBUGF(SYS_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (*mbox)->os_mbox));
+  LWIP_DEBUGF(SYS_DEBUG, ("new *mbox ok mbox=%p os_mbox=%p\n", *mbox, (QueueHandle_t)&(*mbox)->os_mbox));
   return ERR_OK;
 }
 
@@ -232,7 +232,7 @@ sys_mbox_new(sys_mbox_t *mbox, int size)
 void
 sys_mbox_post(sys_mbox_t *mbox, void *msg)
 {
-  BaseType_t ret = xQueueSendToBack((*mbox)->os_mbox, &msg, portMAX_DELAY);
+  BaseType_t ret = xQueueSendToBack((QueueHandle_t)&(*mbox)->os_mbox, &msg, portMAX_DELAY);
   LWIP_ASSERT("mbox post failed", ret == pdTRUE);
   (void)ret;
 }
@@ -249,10 +249,10 @@ sys_mbox_trypost(sys_mbox_t *mbox, void *msg)
 {
   err_t xReturn;
 
-  if (xQueueSend((*mbox)->os_mbox, &msg, 0) == pdTRUE) {
+  if (xQueueSend((QueueHandle_t)&(*mbox)->os_mbox, &msg, 0) == pdTRUE) {
     xReturn = ERR_OK;
   } else {
-    LWIP_DEBUGF(SYS_DEBUG, ("trypost mbox=%p fail\n", (*mbox)->os_mbox));
+    LWIP_DEBUGF(SYS_DEBUG, ("trypost mbox=%p fail\n", (QueueHandle_t)&(*mbox)->os_mbox));
     xReturn = ERR_MEM;
   }
 
@@ -274,7 +274,7 @@ sys_mbox_trypost_fromisr(sys_mbox_t *mbox, void *msg)
   BaseType_t ret;
   BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-  ret = xQueueSendFromISR((*mbox)->os_mbox, &msg, &xHigherPriorityTaskWoken);
+  ret = xQueueSendFromISR((QueueHandle_t)&(*mbox)->os_mbox, &msg, &xHigherPriorityTaskWoken);
   if (ret == pdTRUE) {
     if (xHigherPriorityTaskWoken == pdTRUE) {
       return ERR_NEED_SCHED;
@@ -306,11 +306,11 @@ sys_arch_mbox_fetch(sys_mbox_t *mbox, void **msg, u32_t timeout)
 
   if (timeout == 0) {
     /* wait infinite */
-    ret = xQueueReceive((*mbox)->os_mbox, &(*msg), portMAX_DELAY);
+    ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), portMAX_DELAY);
     LWIP_ASSERT("mbox fetch failed", ret == pdTRUE);
   } else {
     TickType_t timeout_ticks = timeout / portTICK_PERIOD_MS;
-    ret = xQueueReceive((*mbox)->os_mbox, &(*msg), timeout_ticks);
+    ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), timeout_ticks);
     if (ret == errQUEUE_EMPTY) {
       /* timed out */
       *msg = NULL;
@@ -338,7 +338,7 @@ sys_arch_mbox_tryfetch(sys_mbox_t *mbox, void **msg)
   if (msg == NULL) {
     msg = &msg_dummy;
   }
-  ret = xQueueReceive((*mbox)->os_mbox, &(*msg), 0);
+  ret = xQueueReceive((QueueHandle_t)&(*mbox)->os_mbox, &(*msg), 0);
   if (ret == errQUEUE_EMPTY) {
     *msg = NULL;
     return SYS_MBOX_EMPTY;
@@ -359,10 +359,10 @@ sys_mbox_free(sys_mbox_t *mbox)
   if ((NULL == mbox) || (NULL == *mbox)) {
     return;
   }
-  UBaseType_t msgs_waiting = uxQueueMessagesWaiting((*mbox)->os_mbox);
+  UBaseType_t msgs_waiting = uxQueueMessagesWaiting((QueueHandle_t)&(*mbox)->os_mbox);
   LWIP_ASSERT("mbox quence not empty", msgs_waiting == 0);
 
-  vQueueDelete((*mbox)->os_mbox);
+  vQueueDelete((QueueHandle_t)&(*mbox)->os_mbox);
   mem_free(*mbox);
   *mbox = NULL;
 

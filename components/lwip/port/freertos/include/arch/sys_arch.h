@@ -23,7 +23,8 @@ typedef SemaphoreHandle_t sys_mutex_t;
 typedef TaskHandle_t sys_thread_t;
 
 typedef struct sys_mbox_s {
-  QueueHandle_t os_mbox;
+  StaticQueue_t os_mbox;
+  uint8_t buffer[0];
 }* sys_mbox_t;
 
 /** This is returned by _fromisr() sys functions to tell the outermost function
