@@ -7,7 +7,6 @@
 #include <stdint.h>
 #include <sys/param.h>
 #include <string.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
 #include "hal/log.h"

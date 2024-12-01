@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include "sdkconfig.h"
 #include "soc/pcr_struct.h"
 #include "hal/ahb_dma_ll.h"
 #define GDMA_LL_AHB_BURST_SIZE_ADJUSTABLE 1 // AHB GDMA supports adjustable burst size

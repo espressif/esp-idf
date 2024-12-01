@@ -10,7 +10,6 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "sdkconfig.h"
 #include "soc/spi_periph.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"

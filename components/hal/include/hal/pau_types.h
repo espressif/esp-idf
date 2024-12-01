@@ -5,7 +5,6 @@
  */
 #pragma once
 
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "soc/regdma.h"
 

@@ -15,7 +15,6 @@
 #pragma once
 
 #include <esp_err.h>
-#include "sdkconfig.h"
 
 #include "soc/soc_caps.h"
 #if SOC_RTCIO_PIN_COUNT > 0
