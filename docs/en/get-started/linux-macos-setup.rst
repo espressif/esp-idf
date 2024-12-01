@@ -166,7 +166,7 @@ or with Fish shell
 .. code-block:: fish
 
     cd ~/esp/esp-idf
-    ./install.fish esp32,esp32s2
+    ./install.sh esp32,esp32s2
 
 In order to install tools for all supported targets please run the following command:
 

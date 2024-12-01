@@ -180,7 +180,7 @@ ESP-IDF 将下载至 ``~/esp/esp-idf``。
 .. code-block:: fish
 
     cd ~/esp/esp-idf
-    ./install.fish all
+    ./install.sh all
 
 .. note::
     对于 macOS 用户，如在上述任何步骤中遇到以下错误::
