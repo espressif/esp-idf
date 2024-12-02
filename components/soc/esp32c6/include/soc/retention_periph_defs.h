@@ -25,8 +25,8 @@ typedef enum periph_retention_module {
     /* Timer Group by target*/
     SLEEP_RETENTION_MODULE_TG0_WDT      = 4,
     SLEEP_RETENTION_MODULE_TG1_WDT      = 5,
-    SLEEP_RETENTION_MODULE_TG0_TIMER    = 6,
-    SLEEP_RETENTION_MODULE_TG1_TIMER    = 7,
+    SLEEP_RETENTION_MODULE_TG0_TIMER0    = 6,
+    SLEEP_RETENTION_MODULE_TG1_TIMER0    = 7,
     /* GDMA by channel */
     SLEEP_RETENTION_MODULE_GDMA_CH0     = 8,
     SLEEP_RETENTION_MODULE_GDMA_CH1     = 9,
@@ -64,8 +64,8 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_SYS_PERIPH)   ? true \
     : ((m) == SLEEP_RETENTION_MODULE_TG0_WDT)      ? true \
     : ((m) == SLEEP_RETENTION_MODULE_TG1_WDT)      ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER)    ? true \
-    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER)    ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG0_TIMER0)   ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_TG1_TIMER0)   ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH0)     ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH1)     ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GDMA_CH2)     ? true \
