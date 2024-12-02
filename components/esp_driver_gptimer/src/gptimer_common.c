@@ -20,35 +20,6 @@ typedef struct gptimer_platform_t {
 // gptimer driver platform, it's always a singleton
 static gptimer_platform_t s_platform;
 
-#if GPTIMER_USE_RETENTION_LINK
-static esp_err_t gptimer_create_sleep_retention_link_cb(void *arg)
-{
-    gptimer_group_t *group = (gptimer_group_t *)arg;
-    int group_id = group->group_id;
-    sleep_retention_module_t module = group->sleep_retention_module;
-    esp_err_t err = sleep_retention_entries_create(tg_timer_reg_retention_info[group_id].regdma_entry_array,
-                                                   tg_timer_reg_retention_info[group_id].array_size,
-                                                   REGDMA_LINK_PRI_GPTIMER, module);
-    ESP_RETURN_ON_ERROR(err, TAG, "create retention link failed");
-    return ESP_OK;
-}
-
-void gptimer_create_retention_module(gptimer_group_t *group)
-{
-    sleep_retention_module_t module = group->sleep_retention_module;
-    _lock_acquire(&s_platform.mutex);
-    if (group->retention_link_created == false) {
-        if (sleep_retention_module_allocate(module) != ESP_OK) {
-            // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
-            ESP_LOGW(TAG, "create retention module for group %d retention, power domain can't turn off", group->group_id);
-        } else {
-            group->retention_link_created = true;
-        }
-    }
-    _lock_release(&s_platform.mutex);
-}
-#endif // GPTIMER_USE_RETENTION_LINK
-
 gptimer_group_t *gptimer_acquire_group_handle(int group_id)
 {
     bool new_group = false;
@@ -84,24 +55,6 @@ gptimer_group_t *gptimer_acquire_group_handle(int group_id)
                 timer_ll_reset_register(group_id);
             }
         }
-#if GPTIMER_USE_RETENTION_LINK
-        sleep_retention_module_t module = TIMER_LL_SLEEP_RETENTION_MODULE_ID(group_id);
-        sleep_retention_module_init_param_t init_param = {
-            .cbs = {
-                .create = {
-                    .handle = gptimer_create_sleep_retention_link_cb,
-                    .arg = group
-                },
-            },
-            .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
-        };
-        if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
-            group->sleep_retention_module = module;
-        } else {
-            // even though the sleep retention module init failed, RMT driver should still work, so just warning here
-            ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
-        }
-#endif // GPTIMER_USE_RETENTION_LINK
         ESP_LOGD(TAG, "new group (%d) @%p", group_id, group);
     }
 
@@ -129,14 +82,6 @@ void gptimer_release_group_handle(gptimer_group_t *group)
                 timer_ll_enable_bus_clock(group_id, false);
             }
         }
-#if GPTIMER_USE_RETENTION_LINK
-        if (group->sleep_retention_module) {
-            if (group->retention_link_created) {
-                sleep_retention_module_free(group->sleep_retention_module);
-            }
-            sleep_retention_module_deinit(group->sleep_retention_module);
-        }
-#endif
         free(group);
         ESP_LOGD(TAG, "del group (%d)", group_id);
     }
