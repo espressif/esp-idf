@@ -288,7 +288,7 @@ static void memcpy_performance_test(uint32_t buffer_size)
 
     async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     config.backlog = (buffer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1) * TEST_ASYNC_MEMCPY_BENCH_COUNTS;
-    config.dma_burst_size = 64;   // set a big burst size for performance
+    config.dma_burst_size = 32;   // set a big burst size for performance
     async_memcpy_handle_t driver = NULL;
     int64_t elapse_us = 0;
     float throughput = 0.0;
