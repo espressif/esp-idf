@@ -121,7 +121,7 @@ menu "ESP System Settings"
 
         config ESP_SYSTEM_PMP_IDRAM_SPLIT
             bool "Enable IRAM/DRAM split protection"
-            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP
+            depends on SOC_CPU_IDRAM_SPLIT_USING_PMP && !SECURE_ENABLE_TEE
             default "y"
             help
                 If enabled, the CPU watches all the memory access and raises an exception in case
@@ -140,6 +140,13 @@ menu "ESP System Settings"
 
                 Warning: on ESP32-P4 this will also mark the memory area used for BOOTLOADER_RESERVE_RTC_MEM
                 as executable. If you consider this a security risk then do not activate this option.
+
+        config ESP_SYSTEM_MEMPROT_FEATURE_VIA_TEE
+            bool "Enable memory protection (via TEE)"
+            depends on SECURE_ENABLE_TEE
+            default "y"
+            help
+                This option enables the default memory protection provided by TEE.
 
         config ESP_SYSTEM_MEMPROT_FEATURE
             bool "Enable memory protection"
@@ -592,7 +599,8 @@ menu "ESP System Settings"
 
     config ESP_SYSTEM_HW_STACK_GUARD
         bool "Hardware stack guard"
-        depends on SOC_ASSIST_DEBUG_SUPPORTED
+        # TODO: [ESP-TEE] IDF-10770
+        depends on SOC_ASSIST_DEBUG_SUPPORTED && !SECURE_ENABLE_TEE
         default y
         help
             This config allows to trigger a panic interrupt when Stack Pointer register goes out of allocated stack

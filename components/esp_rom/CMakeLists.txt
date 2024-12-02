@@ -126,6 +126,12 @@ if(CONFIG_ESP_ROM_HAS_VERSION)
     rom_linker_script("version")
 endif()
 
+if(ESP_TEE_BUILD)
+    if(target STREQUAL "esp32c6")
+        rom_linker_script("spiflash")
+    endif()
+endif()
+
 if(BOOTLOADER_BUILD)
     if(target STREQUAL "esp32")
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)

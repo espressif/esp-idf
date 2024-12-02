@@ -419,6 +419,15 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
 
+    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
+     * which redirects all the interrupt management for the REE (user app)
+     * to the TEE by raising the appropriate service calls.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    extern uint32_t esp_tee_service_call(int argc, ...);
+    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+#endif
+
     rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     rst_reas[1] = esp_rom_get_reset_reason(1);
@@ -606,8 +615,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
 #endif
-
+    /* NOTE: When ESP-TEE is enabled, it configures its own memory protection
+     * scheme using the CPU-inherent features PMP and PMA and the APM peripheral.
+     */
+#if !CONFIG_SECURE_ENABLE_TEE
     bootloader_init_mem();
+#endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;

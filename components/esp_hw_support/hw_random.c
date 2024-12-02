@@ -13,8 +13,11 @@
 #include "esp_cpu.h"
 #include "soc/wdev_reg.h"
 #include "esp_private/esp_clk.h"
-#include "esp_private/startup_internal.h"
 #include "soc/soc_caps.h"
+
+#if !ESP_TEE_BUILD
+#include "esp_private/startup_internal.h"
+#endif
 
 #if SOC_LP_TIMER_SUPPORTED
 #include "hal/lp_timer_hal.h"
@@ -100,7 +103,7 @@ void esp_fill_random(void *buf, size_t len)
     }
 }
 
-#if SOC_RNG_CLOCK_IS_INDEPENDENT
+#if SOC_RNG_CLOCK_IS_INDEPENDENT && !ESP_TEE_BUILD
 ESP_SYSTEM_INIT_FN(init_rng_clock, SECONDARY, BIT(0), 102)
 {
     _lp_clkrst_ll_enable_rng_clock(true);

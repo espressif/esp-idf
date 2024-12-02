@@ -1,0 +1,138 @@
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+idf_build_get_property(custom_secure_service_tbl CUSTOM_SECURE_SERVICE_TBL)
+idf_build_get_property(custom_secure_service_dir CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
+idf_build_get_property(custom_secure_service_component CUSTOM_SECURE_SERVICE_COMPONENT)
+idf_build_get_property(target IDF_TARGET)
+# headers & sources here are compiled into the app, not the esp_tee binary
+# (see subproject/ for the esp_tee binary build files)
+
+# ESP-TEE is currently supported only on the ESP32-C6 SoC
+if(NOT ${target} STREQUAL "esp32c6")
+    return()
+endif()
+
+if(BOOTLOADER_BUILD)
+    idf_component_register()
+    return()
+elseif(esp_tee_build)
+    # TEE build currently only uses the shared headers.
+    idf_component_register(INCLUDE_DIRS include)
+else()
+    if(CONFIG_SECURE_ENABLE_TEE)
+        if(NOT CMAKE_BUILD_EARLY_EXPANSION)
+            # Add custom flash target for TEE binary
+            partition_table_get_partition_info(partition "--partition-type app --partition-subtype tee_0" "name")
+            if(NOT partition)
+                message(FATAL_ERROR "Partition table missing TEE partition entry!")
+            endif()
+            add_dependencies(esp_tee partition_table_bin)
+            add_dependencies(flash esp_tee)
+            set(image_file ${TEE_BUILD_DIR}/esp_tee.bin)
+            partition_table_get_partition_info(offset "--partition-name ${partition}" "offset")
+            esptool_py_flash_target_image(flash "${partition}" "${offset}" "${image_file}")
+        endif()
+
+        partition_table_get_partition_info(tee_otadata_offset
+            "--partition-type data --partition-subtype tee_ota" "offset")
+        partition_table_get_partition_info(tee_otadata_size
+            "--partition-type data --partition-subtype tee_ota" "size")
+
+        # Add custom target for generating empty otadata partition for flashing
+        if(tee_otadata_offset AND tee_otadata_size)
+            idf_build_get_property(build_dir BUILD_DIR)
+            set(blank_tee_otadata_file ${build_dir}/tee_ota_data_initial.bin)
+
+            idf_build_get_property(python PYTHON)
+            idf_component_get_property(partition_table_dir partition_table COMPONENT_DIR)
+            add_custom_command(OUTPUT ${blank_tee_otadata_file}
+                COMMAND ${python} ${partition_table_dir}/gen_empty_partition.py
+                ${tee_otadata_size} ${blank_tee_otadata_file})
+            add_custom_target(blank_tee_ota_data ALL DEPENDS ${blank_tee_otadata_file})
+
+            add_dependencies(flash blank_tee_ota_data)
+            add_dependencies(encrypted-flash blank_tee_ota_data)
+
+            partition_table_get_partition_info(tee_otadata_part
+                "--partition-type data --partition-subtype tee_ota" "name")
+
+            idf_component_get_property(main_args esptool_py FLASH_ARGS)
+            idf_component_get_property(sub_args esptool_py FLASH_SUB_ARGS)
+            esptool_py_flash_target(tee_otadata-flash "${main_args}" "${sub_args}")
+
+            esptool_py_flash_target_image(tee_otadata-flash
+                "${tee_otadata_part}" "${tee_otadata_offset}" "${blank_tee_otadata_file}")
+            esptool_py_flash_target_image(flash
+                "${tee_otadata_part}" "${tee_otadata_offset}" "${blank_tee_otadata_file}")
+        endif()
+
+        set(srcs "src/esp_tee.c"
+                 "src/esp_tee_config.c"
+                 "src/esp_secure_service_wrapper.c"
+                 "src/esp_tee_u2m_switch.S")
+    endif()
+
+    idf_component_register(INCLUDE_DIRS include
+                           SRCS ${srcs}
+                           PRIV_REQUIRES efuse esp_system spi_flash)
+
+    if(CONFIG_SECURE_ENABLE_TEE)
+        set(EXTRA_LINK_FLAGS)
+        list(APPEND EXTRA_LINK_FLAGS "-u esp_tee_app_config")
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "${EXTRA_LINK_FLAGS}")
+    endif()
+endif()
+
+set(secure_service_hdr_py
+    ${COMPONENT_DIR}/scripts/secure_service_hdr.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
+    )
+
+set(secure_service_tbl_py
+    ${COMPONENT_DIR}/scripts/secure_service_tbl.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
+    )
+
+set(secure_service_wrap_py
+    ${COMPONENT_DIR}/scripts/secure_service_wrap.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
+    )
+
+set(secure_service_num_h
+    ${CONFIG_DIR}/secure_service_num.h
+    )
+set(secure_service_dec_h
+    ${CONFIG_DIR}/secure_service_dec.h)
+
+set(secure_service_h
+    ${CONFIG_DIR}/secure_service.h
+    )
+
+if(CONFIG_SECURE_ENABLE_TEE)
+    execute_process(COMMAND cat ${COMPONENT_DIR}/scripts/${target}/secure_service.tbl ${custom_secure_service_tbl}
+        OUTPUT_FILE secure_service.tbl
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+    execute_process(COMMAND python ${secure_service_hdr_py} ${secure_service_num_h} ${secure_service_dec_h}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+    execute_process(COMMAND python ${secure_service_tbl_py} ${secure_service_h}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        )
+
+    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES ${secure_service_num_h} ${secure_service_dec_h} ${secure_service_h})
+
+    # For TEE implementation, we don't wrap the APIs since the TEE would also internally use the same API and
+    # it shouldn't route to secure service API.
+    # Instead of wrapping, we append _ss_* to the API name and then it must be defined in esp_secure_services.c
+    if(NOT esp_tee_build)
+        execute_process(COMMAND python ${secure_service_wrap_py}
+            OUTPUT_VARIABLE wrap_list
+            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            )
+
+        string(STRIP ${wrap_list} wrap_list)
+
+        target_link_libraries(${COMPONENT_LIB} INTERFACE "${wrap_list}")
+    endif()
+endif()

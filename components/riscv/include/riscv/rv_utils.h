@@ -15,9 +15,30 @@
 #include "riscv/csr.h"
 #include "riscv/interrupt.h"
 #include "riscv/csr_pie.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/* Check whether the current privilege level is Machine (M) mode */
+#if CONFIG_SECURE_ENABLE_TEE
+#define IS_PRV_M_MODE()  (RV_READ_CSR(CSR_PRV_MODE) == PRV_M)
+#else
+#define IS_PRV_M_MODE()  (1UL)
+#endif
+
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+/* [ESP-TEE] Secure service call IDs for interrupt management */
+#define TEE_INTR_ENABLE_SRV_ID         (2)
+#define TEE_INTR_DISABLE_SRV_ID        (3)
+#define TEE_INTR_SET_PRIORITY_SRV_ID   (4)
+#define TEE_INTR_SET_TYPE_SRV_ID       (5)
+#define TEE_INTR_SET_THRESHOLD_SRV_ID  (6)
+#define TEE_INTR_EDGE_ACK_SRV_ID       (7)
+#define TEE_INTR_GLOBAL_EN_SRV_ID      (8)
+/* [ESP-TEE] Callback function for accessing interrupt management services through REE */
+extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
 #endif
 
 #if SOC_CPU_HAS_CSR_PC
@@ -25,6 +46,7 @@ extern "C" {
 #define CSR_PCER_MACHINE    0x7e0
 #define CSR_PCMR_MACHINE    0x7e1
 #define CSR_PCCR_MACHINE    0x7e2
+#define CSR_PCCR_USER       0x802
 #endif /* SOC_CPU_HAS_CSR_PC */
 
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
@@ -89,7 +111,11 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_cou
 #if !SOC_CPU_HAS_CSR_PC
     return RV_READ_CSR(mcycle);
 #else
-    return RV_READ_CSR(CSR_PCCR_MACHINE);
+    if (IS_PRV_M_MODE()) {
+        return RV_READ_CSR(CSR_PCCR_MACHINE);
+    } else {
+        return RV_READ_CSR(CSR_PCCR_USER);
+    }
 #endif
 }
 
@@ -98,7 +124,11 @@ FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(u
 #if !SOC_CPU_HAS_CSR_PC
     RV_WRITE_CSR(mcycle, ccount);
 #else
-    RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
+    } else {
+        RV_WRITE_CSR(CSR_PCCR_USER, ccount);
+    }
 #endif
 }
 
@@ -113,32 +143,89 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvec(uint32_t mtvec_val)
     RV_WRITE_CSR(mtvec, mtvec_val | MTVEC_MODE_CSR);
 }
 
+FORCE_INLINE_ATTR void rv_utils_set_xtvec(uint32_t xtvec_val)
+{
+    xtvec_val |= MTVEC_MODE_CSR; // Set MODE field to treat XTVEC as a vector base address
+    if (IS_PRV_M_MODE()) {
+        RV_WRITE_CSR(mtvec, xtvec_val);
+    } else {
+        RV_WRITE_CSR(utvec, xtvec_val);
+    }
+}
+
 // ------------------ Interrupt Control --------------------
 
 FORCE_INLINE_ATTR void rv_utils_intr_enable(uint32_t intr_mask)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(2, TEE_INTR_ENABLE_SRV_ID, intr_mask);
+#else
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_enable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_disable(uint32_t intr_mask)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(2, TEE_INTR_DISABLE_SRV_ID, intr_mask);
+#else
     // Disable all interrupts to make updating of the interrupt mask atomic.
     unsigned old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     esprv_int_disable(intr_mask);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_enable(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(1, TEE_INTR_GLOBAL_EN_SRV_ID);
+#else
     RV_SET_CSR(mstatus, MSTATUS_MIE);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_intr_global_disable(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE
+    if (IS_PRV_M_MODE()) {
+        RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    } else {
+        RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    }
+#else
     RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_set_type(int intr_num, enum intr_type type)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(3, TEE_INTR_SET_TYPE_SRV_ID, intr_num, type);
+#else
+    esprv_int_set_type(intr_num, type);
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_set_priority(int rv_int_num, int priority)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(3, TEE_INTR_SET_PRIORITY_SRV_ID, rv_int_num, priority);
+#else
+    esprv_int_set_priority(rv_int_num, priority);
+#endif
+}
+
+FORCE_INLINE_ATTR void rv_utils_intr_set_threshold(int priority_threshold)
+{
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    esp_tee_intr_sec_srv_cb(2, TEE_INTR_SET_THRESHOLD_SRV_ID, priority_threshold);
+#else
+    esprv_int_set_threshold(priority_threshold);
+#endif
 }
 
 /**
@@ -352,8 +439,12 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
     );
 #else
     // For a single core RV target has no atomic CAS instruction, we can achieve atomicity by disabling interrupts
-    unsigned old_mstatus;
-    old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    unsigned old_xstatus;
+    if (IS_PRV_M_MODE()) {
+        old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    } else {
+        old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    }
     // Compare and set
     uint32_t old_value;
     old_value = *addr;
@@ -361,7 +452,11 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
         *addr = new_value;
     }
     // Restore interrupts
-    RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
+    if (IS_PRV_M_MODE()) {
+        RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
+    } else {
+        RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+    }
 
 #endif //__riscv_atomic
     return (old_value == compare_value);

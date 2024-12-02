@@ -1,5 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 if(NOT "${arch}" STREQUAL "riscv")
     return()
@@ -8,6 +9,11 @@ endif()
 
 if(BOOTLOADER_BUILD)
     set(priv_requires soc)
+elseif(esp_tee_build)
+    set(priv_requires soc)
+    if(CONFIG_SOC_INT_PLIC_SUPPORTED)
+        set(srcs "interrupt_plic.c")
+    endif()
 else()
     set(priv_requires soc)
     set(srcs

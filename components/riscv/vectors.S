@@ -76,9 +76,37 @@
     sw   t6, RV_STK_T6(sp)
 .endm
 
-.macro save_mepc
+/* Macro for saving special registers depending on the active execution
+ * environment - REE - U-mode / TEE - M-mode */
+/* Save the XEPC register  */
+.macro save_xepc
+    #if CONFIG_SECURE_ENABLE_TEE
+    csrr t0, uepc
+    #else
     csrr t0, mepc
+    #endif
     sw   t0, RV_STK_MEPC(sp)
+.endm
+
+/* Save the required CSRs */
+.macro save_xcsr
+    #if CONFIG_SECURE_ENABLE_TEE
+    csrr  t0, ustatus
+    sw    t0, RV_STK_MSTATUS(sp)
+    csrr  t0, utvec
+    sw    t0, RV_STK_MTVEC(sp)
+    csrr  t0, utval
+    sw    t0, RV_STK_MTVAL(sp)
+    #else
+    csrr  t0, mstatus
+    sw    t0, RV_STK_MSTATUS(sp)
+    csrr  t0, mtvec
+    sw    t0, RV_STK_MTVEC(sp)
+    csrr  t0, mhartid
+    sw    t0, RV_STK_MHARTID(sp)
+    csrr  t0, mtval
+    sw    t0, RV_STK_MTVAL(sp)
+    #endif
 .endm
 
 /* Restore the general purpose registers (excluding gp) from the context on
@@ -117,11 +145,49 @@
     addi sp,sp, \cxt_size
 .endm
 
-.macro restore_mepc
+/* Macro for restoring special registers depending on the active execution
+ * environment - REE - U-mode / TEE - M-mode */
+
+/* Restore the XEPC register depending on the active execution
+ * environment - REE - U-mode / TEE - M-mode */
+.macro restore_xepc
     lw      t0, RV_STK_MEPC(sp)
+#if CONFIG_SECURE_ENABLE_TEE
+    csrw    uepc, t0
+#else
     csrw    mepc, t0
+#endif
 .endm
 
+/* Macros for enabling/disabling the global interrupts based on the
+ * active execution environment - REE - U-mode / TEE - M-mode */
+.macro enable_intr
+#if CONFIG_SECURE_ENABLE_TEE
+    li      t0, 0x1
+    csrs    ustatus, t0
+#else
+    li      t0, 0x8
+    csrs    mstatus, t0
+#endif
+.endm
+
+.macro disable_intr
+#if CONFIG_SECURE_ENABLE_TEE
+    li      t0, 0x1
+    csrc    ustatus, t0
+#else
+    li      t0, 0x8
+    csrc    mstatus, t0
+#endif
+.endm
+
+.macro xret
+#if CONFIG_SECURE_ENABLE_TEE
+    uret
+#else
+    mret
+#endif
+.endm
 
     .global rtos_int_enter
     .global rtos_int_exit
@@ -148,19 +214,15 @@ _panic_handler:
 
     /* Save CSRs */
     sw    t0, RV_STK_SP(sp)
-    csrr  t0, mepc
-    sw    t0, RV_STK_MEPC(sp)
-    csrr  t0, mstatus
-    sw    t0, RV_STK_MSTATUS(sp)
-    csrr  t0, mtvec
-    sw    t0, RV_STK_MTVEC(sp)
-    csrr  t0, mhartid
-    sw    t0, RV_STK_MHARTID(sp)
-    csrr  t0, mtval
-    sw    t0, RV_STK_MTVAL(sp)
+    save_xepc
+    save_xcsr
 
     /* Keep mcause in s0, only the exception code and interrupt bit are relevant */
+#if CONFIG_SECURE_ENABLE_TEE
+    csrr  s0, ucause
+#else
     csrr  s0, mcause
+#endif
     li    t1, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
     and   s0, s0, t1
 
@@ -274,7 +336,7 @@ _store_mcause:
      * Restore the registers and return from the exception.
      */
 _return_from_exception:
-    restore_mepc
+    restore_xepc
     /* MTVEC and SP are assumed to be unmodified.
      * MSTATUS, MHARTID, MTVAL are read-only and not restored.
      */
@@ -290,12 +352,14 @@ _return_from_exception:
      * from the stack.
      */
     .global _interrupt_handler
+    .global _tee_interrupt_handler
     .type _interrupt_handler, @function
 _interrupt_handler:
+_tee_interrupt_handler:
     /* Start by saving the general purpose registers and the PC value before
      * the interrupt happened. */
     save_general_regs
-    save_mepc
+    save_xepc
 
     /* Though it is not necessary we save GP and SP here.
      * SP is necessary to help GDB to properly unwind
@@ -317,8 +381,13 @@ _interrupt_handler:
     /* If this is a non-nested interrupt, SP now points to the interrupt stack */
 
     /* Before dispatch c handler, restore interrupt to enable nested intr */
+#if CONFIG_SECURE_ENABLE_TEE
+    csrr    s1, ucause
+    csrr    s2, ustatus
+#else
     csrr    s1, mcause
     csrr    s2, mstatus
+#endif
 
 #if !SOC_INT_HW_NESTED_SUPPORTED
     /* Save the interrupt threshold level */
@@ -337,7 +406,7 @@ _interrupt_handler:
     fence
 #endif // !SOC_INT_HW_NESTED_SUPPORTED
 
-    csrsi   mstatus, 0x8
+    enable_intr
     /* MIE set. Nested interrupts can now occur */
 
     #ifdef CONFIG_PM_TRACE
@@ -366,7 +435,7 @@ _interrupt_handler:
 
     /* After dispatch c handler, disable interrupt to make freertos make context switch */
 
-    csrci   mstatus, 0x8
+    disable_intr
     /* MIE cleared. Nested interrupts are disabled */
 
 #if !SOC_INT_HW_NESTED_SUPPORTED
@@ -386,10 +455,15 @@ _interrupt_handler:
      * In case the target uses the CLIC, it is mandatory to restore `mcause` register since it contains
      * the former CPU priority. When executing `mret`, the hardware will restore the former threshold,
      * from `mcause` to `mintstatus` CSR */
+#if CONFIG_SECURE_ENABLE_TEE
+    csrw    ucause, s1
+    csrw    ustatus, a0
+#else
     csrw    mcause, s1
     csrw    mstatus, a0
-    restore_mepc
+#endif
+    restore_xepc
     restore_general_regs
     /* exit, this will also re-enable the interrupts */
-    mret
+    xret
     .size  _interrupt_handler, .-_interrupt_handler

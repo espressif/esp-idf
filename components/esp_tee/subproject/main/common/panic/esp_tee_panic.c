@@ -1,0 +1,123 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <string.h>
+
+#include "esp_attr.h"
+#include "esp_macros.h"
+#include "esp_rom_sys.h"
+#include "esp_rom_uart.h"
+#include "hal/apm_hal.h"
+
+#include "riscv/rvruntime-frames.h"
+
+#include "esp_tee.h"
+#include "panic_helper.h"
+#include "esp_tee_apm_intr.h"
+
+#define RV_FUNC_STK_SZ    (32)
+
+#define tee_panic_print(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
+
+static void tee_panic_end(void)
+{
+    // make sure all the panic handler output is sent from UART FIFO
+    if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
+        esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
+    }
+
+    // generate core reset
+    esp_rom_software_reset_system();
+}
+
+void __assert_func(const char *file, int line, const char *func, const char *expr)
+{
+    tee_panic_print("Assert failed in %s, %s:%d (%s)\r\n", func, file, line, expr);
+    tee_panic_print("\n\n");
+
+    tee_panic_end();
+    ESP_INFINITE_LOOP();
+}
+
+void abort(void)
+{
+#if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+    tee_panic_print("abort() was called at PC 0x%08x\r\n\n", (intptr_t)__builtin_return_address(0) - 3);
+    tee_panic_print("\n\n");
+#endif
+
+    tee_panic_end();
+    ESP_INFINITE_LOOP();
+}
+
+static void panic_handler(void *frame, bool pseudo_exccause)
+{
+    int fault_core = esp_cpu_get_core_id();
+
+    tee_panic_print("\n=================================================\n");
+    tee_panic_print("Secure exception occurred on Core %d\n", fault_core);
+    if (pseudo_exccause) {
+        panic_print_isrcause((const void *)frame, fault_core);
+    } else {
+        panic_print_exccause((const void *)frame, fault_core);
+    }
+    tee_panic_print("=================================================\n");
+
+    panic_print_registers((const void *)frame, fault_core);
+    tee_panic_print("\n");
+    panic_print_backtrace((const void *)frame, 100);
+    tee_panic_print("\n");
+    tee_panic_print("Rebooting...\r\n\n");
+
+    tee_panic_end();
+    ESP_INFINITE_LOOP();
+}
+
+void tee_panic_from_exc(void *frame)
+{
+    panic_handler(frame, false);
+}
+
+void tee_panic_from_isr(void *frame)
+{
+    panic_handler(frame, true);
+}
+
+void tee_apm_violation_isr(void *arg)
+{
+    intptr_t exc_sp = RV_READ_CSR(mscratch);
+    RvExcFrame *frame = (RvExcFrame *)exc_sp;
+
+    apm_ctrl_path_t *apm_excp_type = NULL;
+    apm_ctrl_exception_info_t excp_info;
+
+    apm_excp_type = (apm_ctrl_path_t *)arg;
+
+    excp_info.apm_path.apm_ctrl = apm_excp_type->apm_ctrl;
+    excp_info.apm_path.apm_m_path = apm_excp_type->apm_m_path;
+    apm_hal_apm_ctrl_get_exception_info(&excp_info);
+
+    /* Clear APM M path interrupt. */
+    apm_hal_apm_ctrl_exception_clear(apm_excp_type);
+
+    int fault_core = esp_cpu_get_core_id();
+
+    tee_panic_print("\n=================================================\n");
+    tee_panic_print("APM permission violation occurred on Core %d\n", fault_core);
+    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). ", fault_core, esp_tee_apm_excp_type_to_str(excp_info.excp_type));
+    tee_panic_print("Exception was unhandled.\n");
+    tee_panic_print("Fault addr: 0x%x | Mode: %s\n", excp_info.excp_addr, esp_tee_apm_excp_mode_to_str(excp_info.excp_mode));
+    tee_panic_print("Module: %s | Path: 0x%02x\n", esp_tee_apm_excp_ctrl_to_str(excp_info.apm_path.apm_ctrl), excp_info.apm_path.apm_m_path);
+    tee_panic_print("Master: %s | Region: 0x%02x\n", esp_tee_apm_excp_mid_to_str(excp_info.excp_id), excp_info.excp_regn);
+    tee_panic_print("=================================================\n");
+    panic_print_registers((const void *)frame, fault_core);
+    tee_panic_print("\n");
+    panic_print_backtrace((const void *)frame, 100);
+    tee_panic_print("\n");
+    tee_panic_print("Rebooting...\r\n\n");
+
+    tee_panic_end();
+    ESP_INFINITE_LOOP();
+}
