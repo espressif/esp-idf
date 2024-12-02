@@ -1,0 +1,5 @@
+CONFIG_BOOTLOADER_LOG_LEVEL_DEBUG=y
+CONFIG_BOOTLOADER_LOG_LEVEL=4
+CONFIG_ESPTOOLPY_FLASHMODE_QIO=y
+# Bootloader overlapped with partition table after we enabled LOGD for bootloader. Move the partition table a bit to fix the issue on CI.
+CONFIG_PARTITION_TABLE_OFFSET=0x9000

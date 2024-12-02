@@ -1,3 +1,8 @@
+/*
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
+ */
 /* Custom flash driver example
 
    This example code is in the Public Domain (or CC0 licensed, at your option.)
@@ -14,8 +19,9 @@
 #include "spi_flash_chip_gd.h"
 #include "spi_flash_chip_winbond.h"
 #include "spi_flash_chip_boya.h"
-
-extern const spi_flash_chip_t esp_flash_chip_eon;
+// `spi_flash_chip_custom.h` is the header for the structure of customize flash driver,
+// in this example is `esp_flash_chip_eon`.
+#include "spi_flash_chip_custom.h"
 
 //Override the default chip driver provided by the IDF, CONFIG_SPI_FLASH_OVERRIDE_CHIP_DRIVER_LIST should be set
 const spi_flash_chip_t *default_registered_chips[] = {
