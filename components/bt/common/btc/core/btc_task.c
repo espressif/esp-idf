@@ -210,7 +210,7 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_RPR_CLIENT]        = {btc_ble_mesh_rpr_client_call_handler,        btc_ble_mesh_rpr_client_cb_handler       },
 #endif /* CONFIG_BLE_MESH_RPR_CLI */
 #if CONFIG_BLE_MESH_RPR_SRV
-    [BTC_PID_RPR_SERVER]        = {NULL,                                        btc_ble_mesh_rpr_server_cb_handler       },
+    [BTC_PID_RPR_SERVER]        = {btc_ble_mesh_rpr_server_call_handler,        btc_ble_mesh_rpr_server_cb_handler       },
 #endif /* CONFIG_BLE_MESH_RPR_SRV */
 #if CONFIG_BLE_MESH_SAR_CLI
     [BTC_PID_SAR_CLIENT]        = {btc_ble_mesh_sar_client_call_handler,        btc_ble_mesh_sar_client_cb_handler       },

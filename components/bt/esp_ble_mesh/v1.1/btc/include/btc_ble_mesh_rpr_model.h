@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +65,11 @@ void bt_mesh_rpr_client_cb_evt_to_btc(uint32_t opcode, uint8_t event,
                                       const void *val, size_t len);
 
 typedef enum {
+    BTC_BLE_MESH_ACT_RPR_SRV_SET_UUID_MATCH,
+    BTC_BLE_MESH_ACT_RPR_SRV_MAX,
+} btc_ble_mesh_rpr_server_act_t;
+
+typedef enum {
     BTC_BLE_MESH_EVT_RPR_SERVER_SCAN_START,
     BTC_BLE_MESH_EVT_RPR_SERVER_SCAN_STOP,
     BTC_BLE_MESH_EVT_RPR_SERVER_EXT_SCAN_START,
@@ -72,9 +77,22 @@ typedef enum {
     BTC_BLE_MESH_EVT_RPR_SERVER_LINK_OPEN,
     BTC_BLE_MESH_EVT_RPR_SERVER_LINK_CLOSE,
     BTC_BLE_MESH_EVT_RPR_SERVER_PROV_COMP,
+    BTC_BLE_MESH_EVT_RPR_SERVER_SET_UUID_MATCH_COMP,
     BTC_BLE_MESH_EVT_RPR_SERVER_MAX,
 } btc_ble_mesh_rpr_server_evt_t;
 
+typedef union {
+    struct {
+        uint8_t *match_val;
+        uint8_t match_len;
+        uint8_t offset;
+    } set_uuid_match;
+} btc_ble_mesh_rpr_server_args_t;
+
+void btc_ble_mesh_rpr_server_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
+void btc_ble_mesh_rpr_server_arg_deep_free(btc_msg_t *msg);
+
+void btc_ble_mesh_rpr_server_call_handler(btc_msg_t *msg);
 void btc_ble_mesh_rpr_server_cb_handler(btc_msg_t *msg);
 
 void bt_mesh_rpr_server_cb_evt_to_btc(uint8_t event, const void *val, size_t len);

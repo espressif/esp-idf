@@ -47,6 +47,10 @@ _Static_assert(BLE_MESH_MAX_CONN >= CONFIG_BLE_MESH_PBG_SAME_TIME,
  */
 static struct bt_mesh_prov_link prov_links[BLE_MESH_PROV_SAME_TIME];
 
+#if CONFIG_BLE_MESH_RPR_CLI
+extern struct bt_mesh_prov_link rpr_links[CONFIG_BLE_MESH_RPR_CLI_PROV_SAME_TIME];
+#endif
+
 struct bt_mesh_prov_ctx {
     /* Primary element address of Provisioner */
     uint16_t primary_addr;
@@ -244,7 +248,7 @@ void bt_mesh_provisioner_restore_prov_info(uint16_t primary_addr, uint16_t alloc
 }
 #endif /* CONFIG_BLE_MESH_SETTINGS */
 
-static bool is_unprov_dev_being_provision(const uint8_t uuid[16])
+bool bt_mesh_is_unprov_dev_being_prov(const uint8_t uuid[16])
 {
     int i;
 
@@ -260,6 +264,15 @@ static bool is_unprov_dev_being_provision(const uint8_t uuid[16])
         return true;
     }
 #endif /* CONFIG_BLE_MESH_FAST_PROV */
+
+#if CONFIG_BLE_MESH_RPR_CLI
+    for (i = 0; i < CONFIG_BLE_MESH_RPR_CLI_PROV_SAME_TIME;i++) {
+        if (!memcmp(rpr_links[i].pb_remote_uuid, uuid, 16)) {
+            BT_WARN("Device is being provisioning by Remote Provisioning");
+            return true;
+        }
+    }
+#endif
 
     for (i = 0; i < BLE_MESH_PROV_SAME_TIME; i++) {
         if (bt_mesh_atomic_test_bit(prov_links[i].flags, LINK_ACTIVE)
@@ -311,7 +324,7 @@ static int provisioner_check_unprov_dev_info(const uint8_t uuid[16], bt_mesh_pro
      * receive the connectable prov adv pkt from this device.
      * Here we check both PB-GATT and PB-ADV link status.
      */
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         return -EALREADY;
     }
 
@@ -366,7 +379,7 @@ static int provisioner_start_prov_pb_adv(const uint8_t uuid[16], const bt_mesh_a
         return -EIO;
     }
 
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         bt_mesh_pb_adv_unlock();
         return 0;
     }
@@ -428,7 +441,7 @@ static int provisioner_start_prov_pb_gatt(const uint8_t uuid[16], const bt_mesh_
         return -EIO;
     }
 
-    if (is_unprov_dev_being_provision(uuid)) {
+    if (bt_mesh_is_unprov_dev_being_prov(uuid)) {
         bt_mesh_pb_gatt_unlock();
         return 0;
     }
@@ -1959,6 +1972,7 @@ static void send_prov_data(struct bt_mesh_prov_link *link)
     uint8_t session_key[16] = {0};
     uint8_t nonce[13] = {0};
     uint8_t pdu[25] = {0};
+    uint8_t *dev_uuid = NULL;
     PROV_BUF(buf, 34);
     int err = 0;
 
@@ -2014,7 +2028,13 @@ static void send_prov_data(struct bt_mesh_prov_link *link)
      */
 
     /* Check if this device is a re-provisioned device */
-    node = bt_mesh_provisioner_get_node_with_uuid(link->uuid);
+    if (bt_mesh_atomic_test_bit(link->flags, PB_REMOTE)) {
+        dev_uuid = link->pb_remote_uuid;
+    } else {
+        dev_uuid = link->uuid;
+    }
+
+    node = bt_mesh_provisioner_get_node_with_uuid(dev_uuid);
     if (node) {
         if (link->element_num <= node->element_num &&
             link->pb_remote_nppi != NPPI_NODE_ADDR_REFRESH) {
@@ -2029,7 +2049,7 @@ static void send_prov_data(struct bt_mesh_prov_link *link)
          */
         if (!bt_mesh_atomic_test_bit(link->flags, PB_REMOTE) ||
             link->pb_remote_nppi == NPPI_UNKNOWN) {
-            bt_mesh_provisioner_remove_node(link->uuid);
+            bt_mesh_provisioner_remove_node(dev_uuid);
         }
     }
 
@@ -2213,6 +2233,7 @@ static void prov_complete(struct bt_mesh_prov_link *link,
     uint16_t net_idx = 0U;
     uint16_t index = 0U;
     bool nppi = false;
+    uint8_t *dev_uuid = NULL;
     int err = 0;
     int i;
 
@@ -2229,12 +2250,16 @@ static void prov_complete(struct bt_mesh_prov_link *link,
         net_idx = prov_ctx.net_idx;
     }
 
-    if (bt_mesh_atomic_test_bit(link->flags, PB_REMOTE) &&
-        link->pb_remote_nppi != NPPI_UNKNOWN) {
-        nppi = true;
+    if (bt_mesh_atomic_test_bit(link->flags, PB_REMOTE)) {
+        if (link->pb_remote_nppi != NPPI_UNKNOWN) {
+            nppi = true;
+        }
+        dev_uuid = link->pb_remote_uuid;
+    } else {
+        dev_uuid = link->uuid;
     }
 
-    err = bt_mesh_provisioner_provision(&link->addr, link->uuid, link->oob_info,
+    err = bt_mesh_provisioner_provision(&link->addr, dev_uuid, link->oob_info,
                                         link->unicast_addr, link->element_num,
                                         net_idx, link->kri_flags, bt_mesh.iv_index,
                                         device_key, &index, nppi);
@@ -2266,13 +2291,13 @@ static void prov_complete(struct bt_mesh_prov_link *link,
 #endif /* CONFIG_BLE_MESH_RPR_CLI */
 
     if (bt_mesh_prov_get()->prov_complete) {
-        bt_mesh_prov_get()->prov_complete(index, link->uuid, link->unicast_addr,
+        bt_mesh_prov_get()->prov_complete(index, dev_uuid, link->unicast_addr,
                                           link->element_num, net_idx);
     }
 
     /* Find if the device is in the device queue */
     for (i = 0; i < ARRAY_SIZE(unprov_dev); i++) {
-        if (!memcmp(unprov_dev[i].uuid, link->uuid, 16) &&
+        if (!memcmp(unprov_dev[i].uuid, dev_uuid, 16) &&
             (unprov_dev[i].flags & RM_AFTER_PROV)) {
             memset(&unprov_dev[i], 0, sizeof(struct unprov_dev_queue));
             break;
