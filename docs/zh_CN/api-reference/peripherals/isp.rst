@@ -23,6 +23,7 @@
     - AE：自动曝光
     - HIST：直方图
     - BF：拜耳域降噪
+    - LSC：镜头阴影校正
     - CCM：色彩校正矩阵
 
 ISP 流水线
@@ -45,9 +46,9 @@ ISP 流水线
         isp_chs [label = "对比度 &\n 色调 & 饱和度", width = 150, height = 70];
         isp_yuv [label = "YUV 限制\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BF -> LSC -> 去马赛克 -> CCM -> gamma 校正 -> RGB 转 YUV -> 锐化 -> isp_chs -> isp_yuv -> isp_tail;
 
-        BF -> HIST
+        LSC -> HIST
         去马赛克 -> AWB
         去马赛克 -> AE
         去马赛克 -> HIST
@@ -69,6 +70,7 @@ ISP 驱动程序提供以下服务：
 - :ref:`isp-ae-statistics` - 涵盖如何单次或连续获取 AE 统计信息。
 - :ref:`isp-hist-statistics` - 涵盖如何单次或连续获取直方图统计信息。
 - :ref:`isp-bf` - 涵盖如何启用和配置 BF 功能。
+- :ref:`isp-lsc` - 涵盖如何启用和配置 LSC 功能。
 - :ref:`isp-ccm-config` - 涵盖如何配置 CCM。
 - :ref:`isp-demosaic` - 涵盖如何配置去马赛克功能。
 - :ref:`isp-gamma-correction` - 涵盖如何启用和配置 gamma 校正。
@@ -509,6 +511,40 @@ ISP BF 控制器
 
 调用 :cpp:func:`esp_isp_bf_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
 
+
+.. _isp-lsc:
+
+ISP LSC 控制器
+~~~~~~~~~~~~~~
+
+镜头阴影校正 (LSC) 旨在解决因相机镜头中光线折射不均而引起的问题。
+
+可调用 :cpp:func:`esp_isp_lsc_configure` 函数配置 LSC 模块以进行校正。硬件进行校正相关计算时需要用到 :cpp:type:`esp_isp_lsc_gain_array_t` 类型的数据结构。:cpp:func:`esp_isp_lsc_allocate_gain_array` 是一个辅助函数，为增益值分配大小合适的系统存储。
+
+.. code-block:: c
+
+    esp_isp_lsc_gain_array_t gain_array = {};
+    size_t gain_size = 0;
+    ESP_ERROR_CHECK(esp_isp_lsc_allocate_gain_array(isp_proc, &gain_array, &gain_size));
+
+    esp_isp_lsc_config_t lsc_config = {
+        .gain_array = &gain_array,
+    };
+    isp_lsc_gain_t gain_val = {
+        .decimal = 204,
+        .integer = 0,
+    };
+    for (int i = 0; i < gain_size; i++) {
+        gain_array.gain_r[i].val = gain_val.val;
+        gain_array.gain_gr[i].val = gain_val.val;
+        gain_array.gain_gb[i].val = gain_val.val;
+        gain_array.gain_b[i].val = gain_val.val;
+    }
+    ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
+
+调用 :cpp:func:`esp_isp_lsc_configure` 后，需要通过调用 :cpp:func:`esp_isp_lsc_enable` 来启用 ISP LSC 控制器。可以通过调用 :cpp:func:`esp_isp_lsc_disable` 来禁用 LSC。此外，即使未启用 LSC 控制器，也可以调用 :cpp:func:`esp_isp_lsc_configure`，但 LSC 功能仅在启用后才会生效。
+
+
 .. _isp-color:
 
 ISP 色彩控制器
@@ -815,6 +851,7 @@ API 参考
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc
 .. include-build-file:: inc/isp_sharpen.inc

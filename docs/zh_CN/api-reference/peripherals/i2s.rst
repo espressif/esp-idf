@@ -10,6 +10,12 @@ I2S
 
 I2S（Inter-IC Sound，集成电路内置音频总线）是一种同步串行通信协议，通常用于在两个数字音频设备之间传输音频数据。
 
+.. only:: SOC_LP_I2S_SUPPORTED
+
+    .. note::
+
+        LP I2S 文档请参阅 :doc:`Low Power Inter-IC Sound <./lp_i2s>`.
+
 {IDF_TARGET_NAME} 包含 {IDF_TARGET_I2S_NUM} 个 I2S 外设。通过配置这些外设，可以借助 I2S 驱动来输入和输出采样数据。
 
 标准或 TDM 通信模式下的 I2S 总线包含以下几条线路：

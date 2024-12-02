@@ -23,6 +23,7 @@ Terminology
     - AE: Auto exposure
     - HIST: Histogram
     - BF: Bayer noise filter
+    - LSC: Lens Shading Correction
     - CCM: Color correction matrix
 
 ISP Pipeline
@@ -541,7 +542,7 @@ Calling :cpp:func:`esp_isp_lsc_configure` to configure the LSC module to do the 
     }
     ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
 
-After calling :cpp:func:`esp_isp_lsc_configure`, you need to enable the ISP LSC controller, by calling :cpp:func:`esp_isp_lsc_enable`. The LSC can be disabled by calling :cpp:func:`esp_isp_lsc_disable`. It's allowed to call :cpp:func:`esp_isp_lsc_configure` when the LSC isn't enabled, but the LSC function will only take effect when it's enabled.
+After calling :cpp:func:`esp_isp_lsc_configure`, you need to enable the ISP LSC controller by calling :cpp:func:`esp_isp_lsc_enable`. The LSC can be disabled by calling :cpp:func:`esp_isp_lsc_disable`. It is allowed to call :cpp:func:`esp_isp_lsc_configure` when the LSC is not enabled, but the LSC function will only take effect when it is enabled.
 
 
 .. _isp-color:
