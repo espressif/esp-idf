@@ -163,14 +163,14 @@ static void ble_hci_rx_acl(uint8_t *data, uint16_t len)
         m = ble_transport_alloc_acl_from_ll();
 
         if (!m) {
-            ESP_LOGD(TAG,"Failed to allocate buffer, retrying \n");
+            esp_rom_printf("Failed to allocate buffer, retrying ");
 	    /* Give some time to free buffer and try again */
 	    vTaskDelay(1);
 	}
     }while(!m);
 
     if ((rc = os_mbuf_append(m, data, len)) != 0) {
-        ESP_LOGE(TAG, "%s failed to os_mbuf_append; rc = %d", __func__, rc);
+        esp_rom_printf("%s failed to os_mbuf_append; rc = %d", __func__, rc);
         os_mbuf_free_chain(m);
         return;
     }
@@ -223,7 +223,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
 
     if(!ble_hs_enabled_state) {
         /* If host is not enabled, drop the packet */
-        ESP_LOGE(TAG, "Host not enabled. Dropping the packet!");
+        esp_rom_printf("Host not enabled. Dropping the packet!");
         return 0;
     }
 
@@ -236,7 +236,7 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
         assert(totlen <= UINT8_MAX + BLE_HCI_EVENT_HDR_LEN);
 
         if (totlen > MYNEWT_VAL(BLE_TRANSPORT_EVT_SIZE)) {
-            ESP_LOGE(TAG, "Received HCI data length at host (%d) exceeds maximum configured HCI event buffer size (%d).",
+            esp_rom_printf("Received HCI data length at host (%d) exceeds maximum configured HCI event buffer size (%d).",
                      totlen, MYNEWT_VAL(BLE_TRANSPORT_EVT_SIZE));
             ble_hs_sched_reset(BLE_HS_ECONTROLLER);
             return 0;
