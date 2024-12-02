@@ -53,13 +53,11 @@ select =
     E133,           # closing bracket is missing indentation
     E201,           # whitespace after '('
     E202,           # whitespace before ')'
-    E203,           # whitespace before ':'
     E211,           # whitespace before '('
     E221,           # multiple spaces before operator
     E222,           # multiple spaces after operator
     E223,           # tab before operator
     E224,           # tab after operator
-    E225,           # missing whitespace around operator
     E226,           # missing whitespace around arithmetic operator
     E227,           # missing whitespace around bitwise or shift operator
     E228,           # missing whitespace around modulo operator
@@ -125,6 +123,7 @@ select =
 
 ignore =
     E221,           # multiple spaces before operator
+    E225,           # missing whitespace around operator
     E231,           # missing whitespace after ',', ';', or ':'
     E241,           # multiple spaces after ','
     W503,           # line break before binary operator

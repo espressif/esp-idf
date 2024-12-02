@@ -265,12 +265,17 @@ class IdfPytestEmbedded:
 
         # 3.3. CollectMode.MULTI_ALL_WITH_PARAM, intended to be used by `get_pytest_cases`
         else:
-            items[:] = [
-                _item
-                for _item in items
-                if not item_to_case_dict[_item].is_single_dut_test_case
-                and self.get_param(_item, 'target', None) is not None
-            ]
+            filtered_items = []
+            for item in items:
+                case = item_to_case_dict[item]
+                target = self.get_param(item, 'target', None)
+                if (
+                    not case.is_single_dut_test_case and
+                    target is not None and
+                    target not in case.skip_targets
+                ):
+                    filtered_items.append(item)
+            items[:] = filtered_items
 
         # 4. filter according to the sdkconfig, if there's param 'config' defined
         if self.config_name:

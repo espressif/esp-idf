@@ -46,7 +46,7 @@ class Metrics:
         self.difference = difference or 0.0
         self.difference_percentage = difference_percentage or 0.0
 
-    def to_dict(self) -> dict[str, t.Any]:
+    def to_dict(self) -> t.Dict[str, t.Any]:
         """
         Converts the Metrics object to a dictionary.
         """
