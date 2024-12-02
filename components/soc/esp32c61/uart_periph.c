@@ -123,11 +123,11 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
  * UART_HWFC_CONF_SYNC_REG, UART_SLEEP_CONF0_REG, UART_SLEEP_CONF1_REG, UART_SLEEP_CONF2_REG,
  * UART_SWFC_CONF0_SYNC_REG, UART_SWFC_CONF1_REG, UART_TXBRK_CONF_SYNC_REG, UART_IDLE_CONF_SYNC_REG,
  * UART_RS485_CONF_SYNC_REG, UART_AT_CMD_PRECNT_SYNC_REG, UART_AT_CMD_POSTCNT_SYNC_REG, UART_AT_CMD_GAPTOUT_SYNC_REG,
- * UART_AT_CMD_CHAR_SYNC_REG, UART_MEM_CONF_REG, UART_TOUT_CONF_SYNC_REG, UART_ID_REG
+ * UART_AT_CMD_CHAR_SYNC_REG, UART_MEM_CONF_REG, UART_TOUT_CONF_SYNC_REG, UART_CLK_CONF_REG, UART_ID_REG
  */
-#define UART_RETENTION_ADDR_MAP_REGS_CNT 21
+#define UART_RETENTION_ADDR_MAP_REGS_CNT 22
 #define UART_RETENTION_REGS_BASE(i) UART_INT_ENA_REG(i)
-static const uint32_t uart_regs_map[4] = {0x7fff6d, 0x10, 0x0, 0x0};
+static const uint32_t uart_regs_map[4] = {0x807fff6d, 0x10, 0x0, 0x0};
 #define UART_SLEEP_RETENTION_ENTRIES(uart_num) { \
     [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_UART_LINK(0x00), \
                                                UART_RETENTION_REGS_BASE(uart_num), UART_RETENTION_REGS_BASE(uart_num), \
@@ -150,6 +150,7 @@ static const uint32_t uart_regs_map[4] = {0x7fff6d, 0x10, 0x0, 0x0};
 
 static const regdma_entries_config_t uart0_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(0);
 static const regdma_entries_config_t uart1_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(1);
+static const regdma_entries_config_t uart2_regdma_entries[] = UART_SLEEP_RETENTION_ENTRIES(2);
 
 const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
     [0] = {
@@ -161,5 +162,10 @@ const uart_reg_retention_info_t uart_reg_retention_info[SOC_UART_HP_NUM] = {
         .module = SLEEP_RETENTION_MODULE_UART1,
         .regdma_entry_array = uart1_regdma_entries,
         .array_size = ARRAY_SIZE(uart1_regdma_entries),
+    },
+    [2] = {
+        .module = SLEEP_RETENTION_MODULE_UART2,
+        .regdma_entry_array = uart2_regdma_entries,
+        .array_size = ARRAY_SIZE(uart2_regdma_entries),
     },
 };

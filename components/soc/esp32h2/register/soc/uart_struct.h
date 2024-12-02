@@ -875,6 +875,33 @@ typedef union {
     uint32_t val;
 } uart_rs485_conf_sync_reg_t;
 
+/** Type of clk_conf register
+ *  UART core clock configuration
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:24;
+        /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
+         *  Set this bit to enable UART Tx clock.
+         */
+        uint32_t tx_sclk_en:1;
+        /** rx_sclk_en : R/W; bitpos: [25]; default: 1;
+         *  Set this bit to enable UART Rx clock.
+         */
+        uint32_t rx_sclk_en:1;
+        /** tx_rst_core : R/W; bitpos: [26]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Tx.
+         */
+        uint32_t tx_rst_core:1;
+        /** rx_rst_core : R/W; bitpos: [27]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Rx.
+         */
+        uint32_t rx_rst_core:1;
+        uint32_t reserved_28:4;
+    };
+    uint32_t val;
+} uart_clk_conf_reg_t;
+
 
 /** Group: Status Register */
 /** Type of status register
@@ -1223,7 +1250,7 @@ typedef struct uart_dev_s {
     volatile uart_lowpulse_reg_t lowpulse;
     volatile uart_highpulse_reg_t highpulse;
     volatile uart_rxd_cnt_reg_t rxd_cnt;
-    uint32_t reserved_088;
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;

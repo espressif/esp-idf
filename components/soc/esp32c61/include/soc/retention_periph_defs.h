@@ -34,11 +34,12 @@ typedef enum periph_retention_module {
     SLEEP_RETENTION_MODULE_I2C0         = 12,
     SLEEP_RETENTION_MODULE_UART0        = 14,
     SLEEP_RETENTION_MODULE_UART1        = 15,
-    SLEEP_RETENTION_MODULE_ETM0         = 16,
-    SLEEP_RETENTION_MODULE_GPSPI2       = 17,
-    SLEEP_RETENTION_MODULE_LEDC         = 18,
-    SLEEP_RETENTION_MODULE_I2S0         = 19,
-    SLEEP_RETENTION_MODULE_TEMP_SENSOR  = 20,
+    SLEEP_RETENTION_MODULE_UART2        = 16,
+    SLEEP_RETENTION_MODULE_ETM0         = 17,
+    SLEEP_RETENTION_MODULE_GPSPI2       = 18,
+    SLEEP_RETENTION_MODULE_LEDC         = 19,
+    SLEEP_RETENTION_MODULE_I2S0         = 20,
+    SLEEP_RETENTION_MODULE_TEMP_SENSOR  = 21,
 
     /* Modem module, which includes WiFi, BLE and 802.15.4 */
     SLEEP_RETENTION_MODULE_WIFI_MAC     = 26,
@@ -63,6 +64,7 @@ typedef enum periph_retention_module {
     : ((m) == SLEEP_RETENTION_MODULE_I2C0)         ? true \
     : ((m) == SLEEP_RETENTION_MODULE_UART0)        ? true \
     : ((m) == SLEEP_RETENTION_MODULE_UART1)        ? true \
+    : ((m) == SLEEP_RETENTION_MODULE_UART2)        ? true \
     : ((m) == SLEEP_RETENTION_MODULE_ETM0)         ? true \
     : ((m) == SLEEP_RETENTION_MODULE_GPSPI2)       ? true \
     : ((m) == SLEEP_RETENTION_MODULE_LEDC)         ? true \
