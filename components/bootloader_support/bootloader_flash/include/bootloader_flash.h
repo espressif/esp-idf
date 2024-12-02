@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,7 @@ uint32_t bootloader_read_flash_id(void);
 /**
  * @brief Startup flow recommended by XMC. Call at startup before any erase/write operation.
  *
- * @return ESP_OK When startup successfully, otherwise ESP_FAIL (indiciating you should reboot before erase/write).
+ * @return ESP_OK When startup successfully, otherwise ESP_FAIL (indicating you should reboot before erase/write).
  */
 esp_err_t bootloader_flash_xmc_startup(void);
 
@@ -36,9 +36,16 @@ esp_err_t bootloader_flash_xmc_startup(void);
   * @brief Unlock Flash write protect.
   *        Please do not call this function in SDK.
   *
-  * @note This can be overridden because it's attribute weak.
+  * @note This can be overridden because it's attribute weak, when there is a same name symbol.
   */
-esp_err_t  __attribute__((weak)) bootloader_flash_unlock(void);
+esp_err_t bootloader_flash_unlock(void);
+
+/**
+  * @brief Unlock Flash write protect.
+  *        This is alias to `bootloader_flash_unlock`.
+  *        Please do not call this function in SDK.
+  */
+esp_err_t bootloader_flash_unlock_default(void);
 
 /**
  * @brief Reset the flash chip (66H + 99H).

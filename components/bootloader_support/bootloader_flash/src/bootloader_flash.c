@@ -499,7 +499,7 @@ FORCE_INLINE_ATTR bool is_mxic_chip(const esp_rom_spiflash_chip_t* chip)
     return BYTESHIFT(chip->device_id, 2) == MXIC_ID;
 }
 
-esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
+esp_err_t IRAM_ATTR bootloader_flash_unlock_default(void)
 {
     // At the beginning status == new_status == status_sr2 == new_status_sr2 == 0.
     // If the register doesn't need to be updated, keep them the same (0), so that no command will be actually sent.
@@ -567,6 +567,8 @@ esp_err_t IRAM_ATTR __attribute__((weak)) bootloader_flash_unlock(void)
 
     return err;
 }
+
+esp_err_t __attribute__((weak, alias("bootloader_flash_unlock_default"))) bootloader_flash_unlock(void);
 
 IRAM_ATTR uint32_t bootloader_flash_execute_command_common(
     uint8_t command,
