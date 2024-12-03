@@ -28,10 +28,10 @@ struct roam_config {
     wifi_scan_config_t scan_config;
 };
 
-void init_roaming_app(void);
-void deinit_roaming_app(void);
-void roaming_app_disable_reconnect(void);
-void roaming_app_enable_reconnect(void);
+void roam_init_app(void);
+void roam_deinit_app(void);
+void roam_disable_reconnect(void);
+void roam_enable_reconnect(void);
 esp_err_t roam_get_config_params(struct roam_config *config);
 esp_err_t roam_set_config_params(struct roam_config *config);
 

@@ -54,13 +54,13 @@ static inline long time_diff_sec(struct timeval *a, struct timeval *b)
     return (a->tv_sec - b->tv_sec);
 }
 
-void roaming_app_disable_reconnect(void)
+void roam_disable_reconnect(void)
 {
     ESP_LOGD(ROAMING_TAG, "Switching off reconnect due to application trigerred disconnect");
     g_roaming_app.allow_reconnect = false;
 }
 
-void roaming_app_enable_reconnect(void)
+void roam_enable_reconnect(void)
 {
     ESP_LOGD(ROAMING_TAG, "Switching on reconnect due to application trigerred reconnect");
     g_roaming_app.allow_reconnect = true;
@@ -853,7 +853,7 @@ static esp_err_t init_scan_config(void)
     return ESP_OK;
 }
 
-void init_roaming_app(void)
+void roam_init_app(void)
 {
 #if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be initialized");
@@ -880,7 +880,7 @@ void init_roaming_app(void)
     ESP_LOGI(ROAMING_TAG, "Roaming app initialization done");
 }
 
-void deinit_roaming_app(void)
+void roam_deinit_app(void)
 {
 #if !LOW_RSSI_ROAMING_ENABLED && !PERIODIC_SCAN_MONITORING
     ESP_LOGE(ROAMING_TAG, "No roaming trigger enabled. Roaming app cannot be de-initialized");
