@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1212,6 +1212,17 @@ typedef enum {
     WIFI_BAND_5G = 2,                   /* Band is 5G */
     WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
 } wifi_band_t;
+
+/**
+  * @brief Argument structure for wifi_tx_rate_config
+  */
+typedef struct {
+    wifi_phy_mode_t phymode;                 /**< Phymode of specified interface */
+    wifi_phy_rate_t rate;                    /**< Rate of specified interface */
+    bool ersu;                               /**< Using ERSU to send frame, ERSU is a transmission mode related to 802.11 ax.
+                                                  ERSU is always used in long distance transmission, and its frame has lower rate compared with SU mode */
+    bool dcm;                                /**< Using dcm rate to send frame */
+} wifi_tx_rate_config_t;
 
 #ifdef __cplusplus
 }
