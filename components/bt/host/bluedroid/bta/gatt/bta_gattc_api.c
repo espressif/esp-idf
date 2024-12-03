@@ -160,9 +160,15 @@ void BTA_GATTC_Enh_Open(tBTA_GATTC_IF client_if, BD_ADDR remote_bda, tBTA_ADDR_T
         p_buf->own_addr_type = own_addr_type;
         p_buf->phy_mask = phy_mask;
         memcpy(p_buf->remote_bda, remote_bda, BD_ADDR_LEN);
-        memcpy(&p_buf->phy_1m_conn_params, phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
-        memcpy(&p_buf->phy_2m_conn_params, phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
-        memcpy(&p_buf->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        if ((phy_mask & BTA_BLE_PHY_1M_MASK) && phy_1m_conn_params) {
+            memcpy(&p_buf->phy_1m_conn_params, phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
+        if ((phy_mask & BTA_BLE_PHY_2M_MASK) && phy_2m_conn_params) {
+            memcpy(&p_buf->phy_2m_conn_params, phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
+        if ((phy_mask & BTA_BLE_PHY_CODED_MASK) && phy_coded_conn_params) {
+            memcpy(&p_buf->phy_coded_conn_params, phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+        }
 
         bta_sys_sendmsg(p_buf);
     }
