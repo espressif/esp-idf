@@ -106,9 +106,9 @@ extern const usb_dwc_info_t usb_dwc_info;
 /* ------------------------------- Deprecated ------------------------------- */
 /* Todo: Remove in ESP-IDF v6.0 (IDF-9052) */
 #include <stdint.h>
-#include "soc/periph_defs.h"
 
 #if SOC_USB_OTG_SUPPORTED
+#include "soc/periph_defs.h"
 
 /*
  Stores a bunch of USB-peripheral data.
