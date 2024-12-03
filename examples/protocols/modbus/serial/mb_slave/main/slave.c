@@ -99,11 +99,11 @@ void app_main(void)
 
     ESP_ERROR_CHECK(mbc_slave_init(MB_PORT_SERIAL_SLAVE, &mbc_slave_handler)); // Initialization of Modbus controller
 
-    // Setup communication parameters and start stack
+    // Setup communication mode and start stack
 #if CONFIG_MB_COMM_MODE_ASCII
-    comm_info.mode = MB_MODE_ASCII,
+    comm_info.mode = MB_MODE_ASCII;
 #elif CONFIG_MB_COMM_MODE_RTU
-    comm_info.mode = MB_MODE_RTU,
+    comm_info.mode = MB_MODE_RTU;
 #endif
     comm_info.slave_addr = MB_SLAVE_ADDR;
     comm_info.port = MB_PORT_NUM;
