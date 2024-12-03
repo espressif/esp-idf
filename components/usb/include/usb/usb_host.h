@@ -121,6 +121,13 @@ typedef struct {
     } fifo_settings_custom;       /**< Optional custom FIFO configuration (advanced use).
                                        RX and NPTX must be > 0. If all fields are zero,
                                        a default configuration will be selected based on Kconfig bias. */
+    unsigned peripheral_map;      /**< Selects the USB peripheral(s) to use.
+                                       - On targets with multiple USB peripherals, this field can be used to specify which ones to enable.
+                                       - Set to 0 to use the default peripheral.
+                                       - On High-Speed capable targets, the default is the High-Speed peripheral.
+                                       - On Full-Speed only targets, the default is the Full-Speed peripheral.
+                                       - Example: peripheral_map = BIT1; installs USB host on peripheral 1.
+                                       - The mapping of bits to specific peripherals is defined in the USB_DWC_LL_GET_HW() macro. */
 } usb_host_config_t;
 
 /**
