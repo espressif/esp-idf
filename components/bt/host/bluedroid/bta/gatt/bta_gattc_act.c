@@ -526,12 +526,20 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
             if (p_data->api_conn.is_aux) {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
                 p_dev_rec->ext_conn_params.phy_mask = p_data->api_conn.phy_mask;
-                memcpy(&p_dev_rec->ext_conn_params.phy_1m_conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
-                memcpy(&p_dev_rec->ext_conn_params.phy_2m_conn_params, &p_data->api_conn.phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
-                memcpy(&p_dev_rec->ext_conn_params.phy_coded_conn_params, &p_data->api_conn.phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_1M_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_1m_conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_2M_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_2m_conn_params, &p_data->api_conn.phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_CODED_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_coded_conn_params, &p_data->api_conn.phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
 #endif
             } else {
-                memcpy(&p_dev_rec->conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_1M_MASK) {
+                    memcpy(&p_dev_rec->conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
             }
         } else {
             APPL_TRACE_ERROR("Unknown Device, setting rejected");
