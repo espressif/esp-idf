@@ -220,11 +220,11 @@ static const char TAG[] = "test_esp_flash";
 #if CONFIG_IDF_TARGET_ESP32
 flashtest_config_t config_list[] = {
     FLASHTEST_CONFIG_COMMON,
-    /* current runner doesn't have a flash on HSPI */
+    /* current runner doesn't have a flash on SPI2_HOST */
     // {
     //     .io_mode = TEST_SPI_READ_MODE,
     //     .freq_mhz = TEST_SPI_SPEED,
-    //     .host_id = HSPI_HOST,
+    //     .host_id = SPI2_HOST,
     //     .cs_id = 0,
     //     // uses GPIO matrix on esp32s2 regardless if FORCE_GPIO_MATRIX
     //     .cs_io_num = HSPI_PIN_NUM_CS,
@@ -233,7 +233,7 @@ flashtest_config_t config_list[] = {
     {
         .io_mode = TEST_SPI_READ_MODE,
         .freq_mhz = TEST_SPI_SPEED,
-        .host_id = VSPI_HOST,
+        .host_id = SPI3_HOST,
         .cs_id = 0,
         .cs_io_num = VSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
@@ -245,7 +245,7 @@ flashtest_config_t config_list[] = {
     {
         .io_mode = TEST_SPI_READ_MODE,
         .freq_mhz = TEST_SPI_SPEED,
-        .host_id = FSPI_HOST,
+        .host_id = SPI2_HOST,
         .cs_id = 0,
         .cs_io_num = FSPI_PIN_NUM_CS,
         .input_delay_ns = 0,
@@ -253,7 +253,7 @@ flashtest_config_t config_list[] = {
     {
         .io_mode = TEST_SPI_READ_MODE,
         .freq_mhz = TEST_SPI_SPEED,
-        .host_id = HSPI_HOST,
+        .host_id = SPI3_HOST,
         .cs_id = 0,
         // uses GPIO matrix on esp32s2 regardless of FORCE_GPIO_MATRIX
         .cs_io_num = HSPI_PIN_NUM_CS,

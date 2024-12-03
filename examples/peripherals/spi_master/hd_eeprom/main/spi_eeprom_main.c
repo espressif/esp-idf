@@ -33,7 +33,7 @@
 #   define PIN_NUM_MOSI     8
 #   define PIN_NUM_CLK      6
 #  else
-#   define EEPROM_HOST      HSPI_HOST
+#   define EEPROM_HOST      SPI2_HOST
 #   define PIN_NUM_MISO     18
 #   define PIN_NUM_MOSI     23
 #   define PIN_NUM_CLK      19

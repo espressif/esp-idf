@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,25 +7,22 @@
 #pragma once
 
 #include <stdint.h>
-#include "esp_attr.h"
 #include "esp_bit_defs.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/soc_caps.h"
-#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Enum with the three SPI peripherals that are software-accessible in it
+ * @brief General purpose SPI Host Controller ID.
  */
 typedef enum {
-//SPI1 can be used as GPSPI only on ESP32
-    SPI1_HOST=0,    ///< SPI1
-    SPI2_HOST=1,    ///< SPI2
+    SPI1_HOST = 0,  ///< SPI1
+    SPI2_HOST = 1,  ///< SPI2
 #if SOC_SPI_PERIPH_NUM > 2
-    SPI3_HOST=2,    ///< SPI3
+    SPI3_HOST = 2,  ///< SPI3
 #endif
     SPI_HOST_MAX,   ///< invalid host value
 } spi_host_device_t;
@@ -63,7 +60,7 @@ typedef struct {
  * @brief SPI command.
  */
 typedef enum {
-     /* Slave HD Only */
+    /* Slave HD Only */
     SPI_CMD_HD_WRBUF    = BIT(0),
     SPI_CMD_HD_RDBUF    = BIT(1),
     SPI_CMD_HD_WRDMA    = BIT(2),
@@ -75,22 +72,6 @@ typedef enum {
     SPI_CMD_HD_INT1     = BIT(8),
     SPI_CMD_HD_INT2     = BIT(9),
 } spi_command_t;
-
-/** @cond */    //Doxy command to hide preprocessor definitions from docs */
-
-//alias for different chips, deprecated for the chips after esp32s2
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define SPI_HOST    SPI1_HOST
-#define HSPI_HOST   SPI2_HOST
-#define VSPI_HOST   SPI3_HOST
-#elif CONFIG_IDF_TARGET_ESP32S2
-// SPI_HOST (SPI1_HOST) is not supported by the SPI Master and SPI Slave driver on ESP32-S2 and later
-#define SPI_HOST    SPI1_HOST
-#define FSPI_HOST   SPI2_HOST
-#define HSPI_HOST   SPI3_HOST
-#endif
-
-/** @endcond */
 
 #ifdef __cplusplus
 }

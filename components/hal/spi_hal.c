@@ -87,7 +87,7 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi
     //But these don't work for full-duplex connections.
     spi_hal_cal_timing(timing_param->clk_src_hz, eff_clk_n, timing_param->use_gpio, timing_param->input_delay_ns, &temp_conf.timing_dummy, &temp_conf.timing_miso_delay);
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SPI_LL_SUPPORT_TIME_TUNING
     const int freq_limit = spi_hal_get_freq_limit(timing_param->use_gpio, timing_param->input_delay_ns);
 
     SPI_HAL_CHECK(timing_param->half_duplex || temp_conf.timing_dummy == 0 || timing_param->no_compensate,
@@ -95,7 +95,7 @@ esp_err_t spi_hal_cal_clock_conf(const spi_hal_timing_param_t *timing_param, spi
 Try to use IOMUX pins to increase the frequency limit, or use the half duplex mode.\n\
 Please note the SPI master can only work at divisors of 80MHz, and the driver always tries to find the closest frequency to your configuration.\n\
 Specify ``SPI_DEVICE_NO_DUMMY`` to ignore this checking. Then you can output data at higher speed, or read data at your own risk.",
-                  ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000 );
+                  ESP_ERR_NOT_SUPPORTED, freq_limit / 1000. / 1000);
 #endif
 
     temp_conf.real_freq = eff_clk_n;
@@ -145,7 +145,7 @@ void spi_hal_cal_timing(int source_freq_hz, int eff_clk, bool gpio_is_used, int 
     HAL_LOGD(SPI_HAL_TAG, "eff: %d, limit: %dk(/%d), %d dummy, %d delay", eff_clk / 1000, apbclk_kHz / (delay_apb_n + 1), delay_apb_n, dummy_required, miso_delay);
 }
 
-#ifdef CONFIG_IDF_TARGET_ESP32
+#if SPI_LL_SUPPORT_TIME_TUNING
 //TODO: IDF-6578
 int spi_hal_get_freq_limit(bool gpio_is_used, int input_delay_ns)
 {

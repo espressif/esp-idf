@@ -77,12 +77,10 @@ uint32_t spi_slave_hal_get_rcv_bitlen(spi_slave_hal_context_t *hal)
     return hal->rcv_bitlen;
 }
 
-#if CONFIG_IDF_TARGET_ESP32
-//This workaround is only for esp32
 bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal)
 {
-    bool ret;
-    ret = false;
+    bool ret = false;
+#if SPI_LL_SLAVE_NEEDS_RESET_WORKAROUND
     if (hal->use_dma && hal->rx_buffer) {
         int i;
         //In case CS goes high too soon, the transfer is aborted while the DMA channel still thinks it's going. This
@@ -93,6 +91,6 @@ bool spi_slave_hal_dma_need_reset(const spi_slave_hal_context_t *hal)
             ret = true;
         }
     }
+#endif // SPI_LL_SLAVE_NEEDS_RESET_WORKAROUND
     return ret;
 }
-#endif //#if CONFIG_IDF_TARGET_ESP32
