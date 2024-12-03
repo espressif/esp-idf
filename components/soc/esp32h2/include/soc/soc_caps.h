@@ -431,7 +431,6 @@
 #define SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED         1
-#define SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT   1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units

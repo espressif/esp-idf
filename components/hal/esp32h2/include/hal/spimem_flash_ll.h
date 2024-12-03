@@ -474,27 +474,6 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
     dev->ctrl.val = ctrl.val;
 }
 
-__attribute__((always_inline))
-static inline void spimem_flash_ll_set_clock_source(soc_periph_mspi_clk_src_t clk_src)
-{
-    switch (clk_src) {
-    case MSPI_CLK_SRC_XTAL:
-        PCR.mspi_conf.mspi_clk_sel = 0;
-        break;
-    case MSPI_CLK_SRC_RC_FAST:
-        PCR.mspi_conf.mspi_clk_sel = 1;
-        break;
-    case MSPI_CLK_SRC_PLL_F64M:
-        PCR.mspi_conf.mspi_clk_sel = 2;
-        break;
-    case MSPI_CLK_SRC_PLL_F48M:
-        PCR.mspi_conf.mspi_clk_sel = 3;
-        break;
-    default:
-        HAL_ASSERT(false);
-    }
-}
-
 /**
  * Set clock frequency to work at.
  *

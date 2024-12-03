@@ -482,22 +482,22 @@ typedef enum {
     PARLIO_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F96M,   /*!< Select PLL_F96M as the default clock choice */
 } soc_periph_parlio_clk_src_t;
 
-//////////////////////////////////////////////////MSPI///////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////FLASH///////////////////////////////////////////////////////////////////
 /**
- * @brief Array initializer for all supported clock sources of MSPI digital controller
+ * @brief Array initializer for all supported clock sources of FLASH MSPI controller
  */
-#define SOC_MSPI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F64M, SOC_MOD_CLK_PLL_F48M}
+#define SOC_FLASH_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F64M, SOC_MOD_CLK_PLL_F48M}
 /**
- * @brief MSPI digital controller clock source
+ * @brief FLASH MSPI controller clock source
  */
 typedef enum {
-    MSPI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    MSPI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-    MSPI_CLK_SRC_PLL_F64M = SOC_MOD_CLK_PLL_F64M,   /*!< Select PLL_F64M as the source clock */
-    MSPI_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL_F48M as the source clock */
-    MSPI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F64M,    /*!< Select PLL_F64M as the default clock choice */
-    MSPI_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
-} soc_periph_mspi_clk_src_t;
+    FLASH_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    FLASH_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    FLASH_CLK_SRC_PLL_F64M = SOC_MOD_CLK_PLL_F64M,   /*!< Select PLL_F64M as the source clock */
+    FLASH_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL_F48M as the source clock */
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F64M,    /*!< Select PLL_F64M as the default clock choice */
+    FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
+} soc_periph_flash_clk_src_t;
 
 //////////////////////////////////////////////CLOCK OUTPUT///////////////////////////////////////////////////////////
 typedef enum {

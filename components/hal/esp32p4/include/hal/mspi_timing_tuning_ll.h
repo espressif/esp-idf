@@ -23,6 +23,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/spi_mem_c_reg.h"
 #include "soc/spi1_mem_c_reg.h"
+#include "soc/clk_tree_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +32,8 @@ extern "C" {
 #define MSPI_TIMING_LL_MSPI_ID_0                      0
 #define MSPI_TIMING_LL_MSPI_ID_1                      1
 
-#define MSPI_TIMING_LL_FLASH_CORE_CLK_DIV             4
+#define MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV          4
+#define MSPI_TIMING_LL_LP_FLASH_CORE_CLK_DIV          6
 #define MSPI_TIMING_LL_FLASH_FDUMMY_RIN_SUPPORTED     1
 
 #define MSPI_TIMING_LL_FLASH_OCT_MASK                 (SPI_MEM_C_FCMD_OCT | SPI_MEM_C_FADDR_OCT | SPI_MEM_C_FDIN_OCT | SPI_MEM_C_FDOUT_OCT)
@@ -238,6 +240,41 @@ static inline void mspi_timing_ll_pin_drv_set(uint8_t drv)
 /*---------------------------------------------------------------
                     Flash tuning
 ---------------------------------------------------------------*/
+/*
+ * @brief Select FLASH clock source
+ *
+ * @param mspi_id      mspi_id
+ * @param clk_src      clock source, see valid sources in type `soc_periph_flash_clk_src_t`
+ */
+__attribute__((always_inline))
+static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
+{
+    HAL_ASSERT(mspi_id == MSPI_TIMING_LL_MSPI_ID_0);
+    uint32_t clk_val = 0;
+    switch (clk_src) {
+    case FLASH_CLK_SRC_XTAL:
+        clk_val = 0;
+        break;
+    case FLASH_CLK_SRC_SPLL:
+        clk_val = 1;
+        break;
+    case FLASH_CLK_SRC_CPLL:
+        clk_val = 2;
+        break;
+    default:
+        HAL_ASSERT(false);
+        break;
+    }
+
+    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 1;
+    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel = clk_val;
+}
+
+/// use a macro to wrap the function, force the caller to use it in a critical section
+/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define mspi_timing_ll_set_flash_clk_src(...) (void)__DECLARE_RCC_ATOMIC_ENV; _mspi_timing_ll_set_flash_clk_src(__VA_ARGS__)
+
 /**
  * Set MSPI Flash core clock
  *
@@ -247,12 +284,15 @@ static inline void mspi_timing_ll_pin_drv_set(uint8_t drv)
 __attribute__((always_inline))
 static inline void _mspi_timing_ll_set_flash_core_clock(int spi_num, uint32_t core_clk_mhz)
 {
-    (void)spi_num;
+    HAL_ASSERT(spi_num == MSPI_TIMING_LL_MSPI_ID_0);
     if (core_clk_mhz == 120) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, (MSPI_TIMING_LL_FLASH_CORE_CLK_DIV - 1));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, (MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV - 1));
+        HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
+    } else if (core_clk_mhz == 80) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, (MSPI_TIMING_LL_LP_FLASH_CORE_CLK_DIV - 1));
         HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
     } else {
-        //ESP32P4 flash timing tuning is based on SPLL==480MHz, flash_core_clock==120MHz. We add assertion here to ensure this
+        //ESP32P4 flash timing tuning is based on SPLL==480MHz, flash_core_clock==120MHz / 80MHz. We add assertion here to ensure this
         HAL_ASSERT(false);
     }
 }
@@ -297,7 +337,7 @@ static inline void mspi_timing_ll_set_flash_clock(uint8_t spi_num, uint32_t freq
 __attribute__((always_inline))
 static inline void mspi_timinng_ll_enable_flash_timing_adjust_clk(uint8_t spi_num)
 {
-    (void)spi_num;
+    HAL_ASSERT(spi_num == MSPI_TIMING_LL_MSPI_ID_0);
     REG_GET_BIT(SPI_MEM_C_TIMING_CALI_REG, SPI_MEM_C_TIMING_CLK_ENA);
 }
 

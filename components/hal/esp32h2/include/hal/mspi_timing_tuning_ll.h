@@ -18,9 +18,10 @@
 extern "C" {
 #endif
 
+//Timing tuning not applied, and flash has its own clock source. Can change flash clock source
+#define MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE       1
 
 /************************** MSPI pll clock configurations **************************/
-
 /*
  * @brief Select FLASH clock source
  *
@@ -33,39 +34,21 @@ static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_perip
     HAL_ASSERT(mspi_id == 0);
     switch (clk_src) {
     case FLASH_CLK_SRC_XTAL:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
+        PCR.mspi_conf.mspi_clk_sel = 0;
         break;
     case FLASH_CLK_SRC_RC_FAST:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
+        PCR.mspi_conf.mspi_clk_sel = 1;
         break;
-    case FLASH_CLK_SRC_SPLL:
-        PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
+    case FLASH_CLK_SRC_PLL_F64M:
+        PCR.mspi_conf.mspi_clk_sel = 2;
+        break;
+    case FLASH_CLK_SRC_PLL_F48M:
+        PCR.mspi_conf.mspi_clk_sel = 3;
         break;
     default:
         HAL_ASSERT(false);
     }
 }
-
-/**
- * @brief Set MSPI_FAST_CLK's high-speed divider (valid when SOC_ROOT clock source is PLL)
- *
- * @param divider Divider.
- */
-static inline __attribute__((always_inline)) void mspi_ll_fast_set_hs_divider(uint32_t divider)
-{
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.mspi_clk_conf, mspi_fast_div_num, divider - 1);
-}
-
-/**
- * @brief Enable the mspi bus clock
- *
- * @param enable enable the bus clock
- */
-static inline __attribute__((always_inline)) void mspi_ll_enable_bus_clock(bool enable)
-{
-    PCR.mspi_conf.mspi_clk_en = enable;
-}
-
 
 #ifdef __cplusplus
 }

@@ -19,7 +19,7 @@
 #include "bootloader_init.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
-#include "hal/spimem_flash_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/bootloader_flash_internal.h"
@@ -44,8 +44,8 @@ void IRAM_ATTR bootloader_flash_cs_timing_config(void)
 
 void IRAM_ATTR bootloader_init_mspi_clock(void)
 {
-    _spimem_flash_ll_select_clk_source(0, FLASH_CLK_SRC_SPLL);
-    _spimem_ctrlr_ll_set_core_clock(0, 6);
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_SPLL);
+    _mspi_timing_ll_set_flash_core_clock(0, 80);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
