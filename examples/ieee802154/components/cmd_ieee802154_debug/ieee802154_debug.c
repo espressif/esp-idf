@@ -107,6 +107,7 @@ static int process_txrx_statistic(int argc, char **argv)
     }
     if (txrx_stat_args.clear->count) {
         esp_ieee802154_txrx_statistic_clear();
+        ESP_LOGI(TAG, "clear the txrx statistics");
     }
     if (!txrx_stat_args.print->count && !txrx_stat_args.clear->count) {
         ESP_LOGE(TAG, "no valid arguments");
