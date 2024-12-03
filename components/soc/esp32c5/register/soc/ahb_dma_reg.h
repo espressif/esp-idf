@@ -1326,7 +1326,7 @@ extern "C" {
 #define AHB_DMA_IN_ETM_EN_CH0_S  5
 /** AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0 : R/W; bitpos: [7:6]; default: 0;
  *  Configures max burst size for Rx channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0    0x00000003U
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_M  (AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_V << AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_S)
@@ -1645,7 +1645,7 @@ extern "C" {
 #define AHB_DMA_OUT_ETM_EN_CH0_S  6
 /** AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0 : R/W; bitpos: [9:8]; default: 0;
  *  Configures max burst size for TX channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0    0x00000003U
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_M  (AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_V << AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_S)
@@ -1938,7 +1938,7 @@ extern "C" {
 #define AHB_DMA_IN_ETM_EN_CH1_S  5
 /** AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1 : R/W; bitpos: [7:6]; default: 0;
  *  Configures max burst size for Rx channel1.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1    0x00000003U
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_M  (AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_V << AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_S)
@@ -2257,7 +2257,7 @@ extern "C" {
 #define AHB_DMA_OUT_ETM_EN_CH1_S  6
 /** AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1 : R/W; bitpos: [9:8]; default: 0;
  *  Configures max burst size for TX channel1.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1    0x00000003U
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_M  (AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_V << AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_S)
@@ -2550,7 +2550,7 @@ extern "C" {
 #define AHB_DMA_IN_ETM_EN_CH2_S  5
 /** AHB_DMA_IN_DATA_BURST_MODE_SEL_CH2 : R/W; bitpos: [7:6]; default: 0;
  *  Configures max burst size for Rx channel2.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH2    0x00000003U
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH2_M  (AHB_DMA_IN_DATA_BURST_MODE_SEL_CH2_V << AHB_DMA_IN_DATA_BURST_MODE_SEL_CH2_S)
@@ -2869,7 +2869,7 @@ extern "C" {
 #define AHB_DMA_OUT_ETM_EN_CH2_S  6
 /** AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH2 : R/W; bitpos: [9:8]; default: 0;
  *  Configures max burst size for TX channel2.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: incr16\\
+ *  incr8\\ 2'b11: reserved\\
  */
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH2    0x00000003U
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH2_M  (AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH2_V << AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH2_S)
