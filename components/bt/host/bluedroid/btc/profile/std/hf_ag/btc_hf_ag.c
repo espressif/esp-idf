@@ -314,12 +314,17 @@ bt_status_t btc_hf_init(void)
 {
     int idx = 0;
 
-    if (hf_local_param[idx].btc_hf_cb.initialized) {
-        esp_hf_cb_param_t param = {
-            .prof_stat.state = ESP_HF_INIT_ALREADY,
-        };
-        btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
-        return BT_STATUS_SUCCESS;
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param)
+#endif
+    {
+        if (hf_local_param[idx].btc_hf_cb.initialized) {
+            esp_hf_cb_param_t param = {
+                .prof_stat.state = ESP_HF_INIT_ALREADY,
+            };
+            btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+            return BT_STATUS_SUCCESS;
+        }
     }
 
     BTC_TRACE_DEBUG("%s - max_hf_clients=%d", __func__, btc_max_hf_clients);
@@ -360,12 +365,18 @@ void btc_hf_deinit(void)
     BTC_TRACE_EVENT("%s", __FUNCTION__);
 
     int idx = 0;
-    if (!hf_local_param[idx].btc_hf_cb.initialized) {
-        esp_hf_cb_param_t param = {
-            .prof_stat.state = ESP_HF_DEINIT_ALREADY,
-        };
-        btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
-        return;
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param)
+#endif
+    {
+        if (!hf_local_param[idx].btc_hf_cb.initialized) {
+            esp_hf_cb_param_t param = {
+                .prof_stat.state = ESP_HF_DEINIT_ALREADY,
+            };
+            btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+            return;
+        }
     }
 
     btc_dm_disable_service(BTA_HFP_SERVICE_ID);
@@ -1281,12 +1292,17 @@ void btc_hf_cb_handler(btc_msg_t *msg)
         case BTA_AG_DISABLE_EVT:
         {
             idx = 0;
-            btc_hf_cb_release();
-            if (hf_local_param[idx].btc_hf_cb.initialized) {
-                param.prof_stat.state = ESP_HF_DEINIT_SUCCESS;
-                btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+#if HFP_DYNAMIC_MEMORY == TRUE
+            if (hf_local_param)
+#endif
+            {
+                if (hf_local_param[idx].btc_hf_cb.initialized) {
+                    hf_local_param[idx].btc_hf_cb.initialized = false;
+                    btc_hf_cb_release();
+                    param.prof_stat.state = ESP_HF_DEINIT_SUCCESS;
+                    btc_hf_cb_to_app(ESP_HF_PROF_STATE_EVT, &param);
+                }
             }
-            hf_local_param[idx].btc_hf_cb.initialized = false;
             break;
         }
         case BTA_AG_REGISTER_EVT:
