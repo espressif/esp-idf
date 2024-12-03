@@ -48,7 +48,7 @@ API 指南
    host-apps
    :SOC_USB_OTG_SUPPORTED and not esp32p4 and not esp32h4: usb-otg-console
    :SOC_USB_SERIAL_JTAG_SUPPORTED: usb-serial-jtag-console
-   :SOC_WIFI_SUPPORTED: wifi
+   :SOC_WIFI_SUPPORTED: wifi-driver/index
    :SOC_WIFI_SUPPORTED: wifi-security
    wifi-expansion
    :SOC_WIFI_SUPPORTED or SOC_BT_SUPPORTED or SOC_IEEE802154_SUPPORTED: phy
