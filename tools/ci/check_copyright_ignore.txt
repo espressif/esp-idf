@@ -416,7 +416,6 @@ components/esp_rom/esp32/ld/esp32.rom.eco3.ld
 components/esp_rom/esp32/ld/esp32.rom.ld
 components/esp_rom/esp32/ld/esp32.rom.libgcc.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-data.ld
-components/esp_rom/esp32/ld/esp32.rom.newlib-funcs.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-locale.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-nano.ld
 components/esp_rom/esp32/ld/esp32.rom.newlib-time.ld
@@ -428,14 +427,12 @@ components/esp_rom/esp32c3/ld/esp32c3.rom.eco3.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.libgcc.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.newlib-nano.ld
-components/esp_rom/esp32c3/ld/esp32c3.rom.newlib.ld
 components/esp_rom/esp32c3/ld/esp32c3.rom.version.ld
 components/esp_rom/esp32s2/include/esp32s2/rom/opi_flash.h
 components/esp_rom/esp32s2/ld/esp32s2.rom.api.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.libgcc.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-data.ld
-components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-funcs.ld
 components/esp_rom/esp32s2/ld/esp32s2.rom.newlib-nano.ld
 components/esp_rom/esp32s3/include/esp32s3/rom/opi_flash.h
 components/esp_rom/esp32s3/include/esp32s3/rom/tjpgd.h
@@ -443,7 +440,6 @@ components/esp_rom/esp32s3/ld/esp32s3.rom.api.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.libgcc.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.newlib-nano.ld
-components/esp_rom/esp32s3/ld/esp32s3.rom.newlib.ld
 components/esp_rom/esp32s3/ld/esp32s3.rom.version.ld
 components/esp_rom/include/esp_rom_crc.h
 components/esp_rom/linux/esp_rom_crc.c
@@ -550,7 +546,6 @@ components/wpa_supplicant/esp_supplicant/src/esp_wpa_err.h
 components/wpa_supplicant/include/utils/wpa_debug.h
 components/wpa_supplicant/include/utils/wpabuf.h
 components/wpa_supplicant/port/include/byteswap.h
-components/wpa_supplicant/port/include/endian.h
 components/wpa_supplicant/port/include/os.h
 components/wpa_supplicant/port/os_xtensa.c
 components/wpa_supplicant/src/ap/ap_config.c

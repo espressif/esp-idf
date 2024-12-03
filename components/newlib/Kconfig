@@ -1,8 +1,19 @@
-menu "Newlib"
+menu "LibC"
 
-    choice NEWLIB_STDOUT_LINE_ENDING
+    choice LIBC
+        prompt "LibC to build application with"
+        default LIBC_NEWLIB
+
+        config LIBC_NEWLIB
+            bool "NewLib"
+        config LIBC_PICOLIBC
+            bool "Picolibc (EXPERIMENTAL)"
+            depends on !IDF_TOOLCHAIN_CLANG && IDF_EXPERIMENTAL_FEATURES
+    endchoice
+
+    choice LIBC_STDOUT_LINE_ENDING
         prompt "Line ending for console output"
-        default NEWLIB_STDOUT_LINE_ENDING_CRLF
+        default LIBC_STDOUT_LINE_ENDING_CRLF
         depends on VFS_SUPPORT_IO
         help
             This option allows configuring the desired line endings sent to console
@@ -17,17 +28,17 @@ menu "Newlib"
 
             This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
-        config NEWLIB_STDOUT_LINE_ENDING_CRLF
+        config LIBC_STDOUT_LINE_ENDING_CRLF
             bool "CRLF"
-        config NEWLIB_STDOUT_LINE_ENDING_LF
+        config LIBC_STDOUT_LINE_ENDING_LF
             bool "LF"
-        config NEWLIB_STDOUT_LINE_ENDING_CR
+        config LIBC_STDOUT_LINE_ENDING_CR
             bool "CR"
     endchoice
 
-    choice NEWLIB_STDIN_LINE_ENDING
+    choice LIBC_STDIN_LINE_ENDING
         prompt "Line ending for console input"
-        default NEWLIB_STDIN_LINE_ENDING_CR
+        default LIBC_STDIN_LINE_ENDING_CR
         depends on VFS_SUPPORT_IO
         help
             This option allows configuring which input sequence on console produces
@@ -42,17 +53,18 @@ menu "Newlib"
 
             This option doesn't affect behavior of the UART driver (drivers/uart.h).
 
-        config NEWLIB_STDIN_LINE_ENDING_CRLF
+        config LIBC_STDIN_LINE_ENDING_CRLF
             bool "CRLF"
-        config NEWLIB_STDIN_LINE_ENDING_LF
+        config LIBC_STDIN_LINE_ENDING_LF
             bool "LF"
-        config NEWLIB_STDIN_LINE_ENDING_CR
+        config LIBC_STDIN_LINE_ENDING_CR
             bool "CR"
     endchoice
 
-    config NEWLIB_NANO_FORMAT
+    config LIBC_NEWLIB_NANO_FORMAT
         bool "Enable 'nano' formatting options for printf/scanf family"
         default y if IDF_TARGET_ESP32C2
+        depends on LIBC_NEWLIB
         help
             In most chips the ROM contains parts of newlib C library, including printf/scanf family
             of functions. These functions have been compiled with so-called "nano"
@@ -76,9 +88,9 @@ menu "Newlib"
             If you need 64-bit integer formatting support or C99 features, keep this
             option disabled.
 
-    choice NEWLIB_TIME_SYSCALL
+    choice LIBC_TIME_SYSCALL
         prompt "Timers used for gettimeofday function"
-        default NEWLIB_TIME_SYSCALL_USE_RTC_HRT
+        default LIBC_TIME_SYSCALL_USE_RTC_HRT
         help
             This setting defines which hardware timers are used to
             implement 'gettimeofday' and 'time' functions in C library.
@@ -104,22 +116,22 @@ menu "Newlib"
             - When RTC is used for timekeeping, two RTC_STORE registers are
                 used to keep time in deep sleep mode.
 
-        config NEWLIB_TIME_SYSCALL_USE_RTC_HRT
+        config LIBC_TIME_SYSCALL_USE_RTC_HRT
             bool "RTC and high-resolution timer"
             select ESP_TIME_FUNCS_USE_RTC_TIMER
             select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config NEWLIB_TIME_SYSCALL_USE_RTC
+        config LIBC_TIME_SYSCALL_USE_RTC
             bool "RTC"
             select ESP_TIME_FUNCS_USE_RTC_TIMER
-        config NEWLIB_TIME_SYSCALL_USE_HRT
+        config LIBC_TIME_SYSCALL_USE_HRT
             bool "High-resolution timer"
             select ESP_TIME_FUNCS_USE_ESP_TIMER
-        config NEWLIB_TIME_SYSCALL_USE_NONE
+        config LIBC_TIME_SYSCALL_USE_NONE
             bool "None"
             select ESP_TIME_FUNCS_USE_NONE
     endchoice
 
-endmenu # Newlib
+endmenu # LibC
 
 config STDATOMIC_S32C1I_SPIRAM_WORKAROUND
     bool

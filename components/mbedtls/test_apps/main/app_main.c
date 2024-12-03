@@ -9,6 +9,7 @@
 #include "mbedtls/aes.h"
 #include "memory_checks.h"
 #include "soc/soc_caps.h"
+#include "esp_newlib.h"
 
 /* setUp runs before every test */
 void setUp(void)

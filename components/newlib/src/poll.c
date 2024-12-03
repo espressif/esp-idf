@@ -5,6 +5,7 @@
  */
 
 #include <stddef.h>
+#include <sys/reent.h>
 #include <sys/poll.h>
 #include <sys/select.h>
 #include <sys/errno.h>
@@ -21,11 +22,10 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout)
     fd_set readfds;
     fd_set writefds;
     fd_set errorfds;
-    struct _reent* r = __getreent();
     int ret = 0;
 
     if (fds == NULL) {
-        __errno_r(r) = ENOENT;
+        errno = ENOENT;
         return -1;
     }
 

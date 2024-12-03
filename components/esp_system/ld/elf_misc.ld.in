@@ -55,10 +55,10 @@
     */
    *(.rela.*)
    *(.got .got.plt) /* TODO: GCC-382 */
-#if !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+#if !EH_FRAME_LINKING_ENABLED
    *(.eh_frame_hdr)
    *(.eh_frame)
-#endif // !(CONFIG_COMPILER_CXX_EXCEPTIONS || CONFIG_ESP_SYSTEM_USE_EH_FRAME)
+#endif // !EH_FRAME_LINKING_ENABLED
   }
 #elif CONFIG_IDF_TARGET_ARCH_XTENSA
 /**
@@ -79,9 +79,9 @@
   {
    *(.fini)
    *(.eh_frame_hdr)
-#if !CONFIG_COMPILER_CXX_EXCEPTIONS
+#if !EH_FRAME_LINKING_ENABLED
    *(.eh_frame)
-#endif // !CONFIG_COMPILER_CXX_EXCEPTIONS
+#endif // !EH_FRAME_LINKING_ENABLED
   }
 #else
   #error "Target architecture is not supported!"

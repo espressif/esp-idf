@@ -96,6 +96,7 @@ Reducing Stack Sizes
 
 - Avoid stack heavy functions. String formatting functions (like ``printf()``) are particularly heavy users of the stack, so any task which does not ever call these can usually have its stack size reduced.
 
+  - Using experimental :ref:`picolibc-instead-of-newlib` reduces the stack usage of ``printf()`` calls significantly.
   - Enabling :ref:`newlib-nano-formatting` reduces the stack usage of any task that calls ``printf()`` or other C string formatting functions.
 
 - Avoid allocating large variables on the stack. In C, any large structures or arrays allocated as an automatic variable (i.e., default scope of a C declaration) uses space on the stack. To minimize the sizes of these, allocate them statically and/or see if you can save memory by dynamically allocating them from the heap only when they are needed.

@@ -24,11 +24,6 @@ void* malloc(size_t size)
     return heap_caps_malloc_default(size);
 }
 
-void* calloc(size_t n, size_t size)
-{
-    return _calloc_r(_REENT, n, size);
-}
-
 void* realloc(void* ptr, size_t size)
 {
     return heap_caps_realloc_default(ptr, size);
@@ -39,22 +34,8 @@ void free(void *ptr)
     heap_caps_free(ptr);
 }
 
-void* _malloc_r(struct _reent *r, size_t size)
-{
-    return heap_caps_malloc_default(size);
-}
-
-void _free_r(struct _reent *r, void* ptr)
-{
-    heap_caps_free(ptr);
-}
-
-void* _realloc_r(struct _reent *r, void* ptr, size_t size)
-{
-    return heap_caps_realloc_default(ptr, size);
-}
-
-void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
+ESP_COMPILER_DIAGNOSTIC_PUSH_IGNORE("-Wanalyzer-malloc-leak")
+void* calloc(size_t nmemb, size_t size)
 {
     void *result;
     size_t size_bytes;
@@ -68,6 +49,29 @@ void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
     }
     return result;
 }
+ESP_COMPILER_DIAGNOSTIC_POP("-Wanalyzer-malloc-leak")
+
+#if CONFIG_LIBC_NEWLIB
+void _free_r(struct _reent *r, void* ptr)
+{
+    heap_caps_free(ptr);
+}
+
+void* _realloc_r(struct _reent *r, void* ptr, size_t size)
+{
+    return heap_caps_realloc_default(ptr, size);
+}
+
+void* _malloc_r(struct _reent *r, size_t size)
+{
+    return heap_caps_malloc_default(size);
+}
+
+void* _calloc_r(struct _reent *r, size_t nmemb, size_t size)
+{
+    return calloc(nmemb, size);
+}
+#endif
 
 void* memalign(size_t alignment, size_t n)
 {
@@ -99,7 +103,7 @@ int posix_memalign(void **out_ptr, size_t alignment, size_t size)
 /* No-op function, used to force linking this file,
    instead of the heap implementation from newlib.
  */
-void newlib_include_heap_impl(void)
+void esp_libc_include_heap_impl(void)
 {
 }
 

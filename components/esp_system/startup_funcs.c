@@ -15,6 +15,9 @@
 #include "esp_log.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
+#if CONFIG_NEWLIB_ENABLED
+#include "esp_newlib.h"
+#endif
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
@@ -86,7 +89,7 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 
 ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
 {
-    esp_newlib_time_init();
+    esp_libc_time_init();
     return ESP_OK;
 }
 

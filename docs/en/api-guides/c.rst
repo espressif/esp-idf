@@ -3,7 +3,14 @@ C Support
 
 :link_to_translation:`zh_CN:[中文]`
 
-ESP-IDF is primarily written in C and provides C APIs. ESP-IDF uses `Newlib <https://sourceware.org/newlib/>`_ as its C Standard Library implementation (the Newlib version is specified in :component_file:`newlib/sbom.yml`). In general, all C features that are supported by the compiler (currently GCC) can be used in ESP-IDF, unless specified in :ref:`unsupported_c_features` below.
+ESP-IDF is primarily written in C and provides C APIs. ESP-IDF can use one of the following C Standard Library implementations:
+
+- `Newlib <https://sourceware.org/newlib/>`_ (default)
+- `Picolibc <https://keithp.com/picolibc/>`_ (enabled with :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` Kconfig option)
+
+The Newlib version is specified in :component_file:`newlib/sbom.yml`.
+
+In general, all C features supported by the compiler (currently GCC) can be used in ESP-IDF, unless otherwise noted in :ref:`unsupported_c_features` below.
 
 .. _c_version:
 

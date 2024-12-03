@@ -24,9 +24,9 @@
 
 // Newline conversion mode when transmitting
 static esp_line_endings_t s_tx_mode =
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
     ESP_LINE_ENDINGS_CRLF;
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
     ESP_LINE_ENDINGS_CR;
 #else
     ESP_LINE_ENDINGS_LF;
@@ -34,9 +34,9 @@ static esp_line_endings_t s_tx_mode =
 
 // Newline conversion mode when receiving
 static esp_line_endings_t s_rx_mode =
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
     ESP_LINE_ENDINGS_CRLF;
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
     ESP_LINE_ENDINGS_CR;
 #else
     ESP_LINE_ENDINGS_LF;

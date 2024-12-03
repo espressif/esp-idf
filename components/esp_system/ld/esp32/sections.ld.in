@@ -212,18 +212,9 @@ SECTIONS
     . = 0x3C0;
     KEEP(*(.DoubleExceptionVector.text));
     . = 0x400;
-    _invalid_pc_placeholder = ABSOLUTE(.);
+    KEEP(*(._invalid_pc_placeholder.text));
+
     *(.*Vector.literal)
-
-    *(.UserEnter.literal);
-    *(.UserEnter.text);
-    . = ALIGN (16);
-    *(.entry.literal)
-    *(.entry.text)
-    *(.init.literal)
-    *(.init)
-
-    _init_end = ABSOLUTE(.);
   } > iram0_0_seg
 
   .iram0.text :
@@ -353,7 +344,7 @@ SECTIONS
     __XT_EXCEPTION_DESCS_END__ = ABSOLUTE(.);
     *(.xt_except_desc_end)
 
-#if CONFIG_COMPILER_CXX_EXCEPTIONS
+#if EH_FRAME_LINKING_ENABLED
     ALIGNED_SYMBOL(4, __eh_frame)
     KEEP(*(.eh_frame))
     /**
@@ -361,7 +352,7 @@ SECTIONS
      * (see __FRAME_END__ in libgcc sources), it is manually provided here.
      */
     LONG(0);
-#endif // CONFIG_COMPILER_CXX_EXCEPTIONS
+#endif // EH_FRAME_LINKING_ENABLED
 
     /**
      * C++ constructor tables.

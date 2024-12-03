@@ -21,7 +21,6 @@
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "esp_rom_libc_stubs.h"
-#include "esp_private/startup_internal.h"
 
 extern int _printf_float(struct _reent *rptr,
                          void *pdata,
@@ -126,7 +125,9 @@ static struct syscall_stub_table s_stub_table = {
 #endif
 };
 
-void esp_newlib_init(void)
+/* TODO IDF-11226 */
+void esp_newlib_init(void) __attribute__((alias("esp_libc_init")));
+void esp_libc_init(void)
 {
 #if CONFIG_IDF_TARGET_ESP32
     syscall_table_ptr_pro = syscall_table_ptr_app = &s_stub_table;
@@ -150,16 +151,10 @@ void esp_newlib_init(void)
     }
     environ[0] = NULL;
 
-    esp_newlib_locks_init();
+    esp_libc_locks_init();
 }
 
-ESP_SYSTEM_INIT_FN(init_newlib, CORE, BIT(0), 102)
-{
-    esp_newlib_init();
-    return ESP_OK;
-}
-
-void esp_setup_newlib_syscalls(void) __attribute__((alias("esp_newlib_init")));
+void esp_setup_newlib_syscalls(void) __attribute__((alias("esp_libc_init")));
 
 /**
  * Postponed _GLOBAL_REENT stdio FPs initialization.
@@ -169,46 +164,39 @@ void esp_setup_newlib_syscalls(void) __attribute__((alias("esp_newlib_init")));
  * Called from startup code and FreeRTOS, not intended to be called from
  * application code.
  */
-void esp_newlib_init_global_stdio(const char *stdio_dev)
+#if CONFIG_VFS_SUPPORT_IO
+void esp_libc_init_global_stdio(const char *stdio_dev)
 {
-    if (stdio_dev == NULL) {
-        _GLOBAL_REENT->__cleanup = NULL;
-        _REENT_SDIDINIT(_GLOBAL_REENT) = 0;
-        __sinit(_GLOBAL_REENT);
-        _GLOBAL_REENT->__cleanup = esp_cleanup_r;
-        _REENT_SDIDINIT(_GLOBAL_REENT) = 1;
-    } else {
-        _REENT_STDIN(_GLOBAL_REENT) = fopen(stdio_dev, "r");
-        _REENT_STDOUT(_GLOBAL_REENT) = fopen(stdio_dev, "w");
-        _REENT_STDERR(_GLOBAL_REENT) = fopen(stdio_dev, "w");
+    _REENT_STDIN(_GLOBAL_REENT) = fopen(stdio_dev, "r");
+    _REENT_STDOUT(_GLOBAL_REENT) = fopen(stdio_dev, "w");
+    _REENT_STDERR(_GLOBAL_REENT) = fopen(stdio_dev, "w");
 #if ESP_ROM_NEEDS_SWSETUP_WORKAROUND
-        /*
-        - This workaround for printf functions using 32-bit time_t after the 64-bit time_t upgrade
-        - The 32-bit time_t usage is triggered through ROM Newlib functions printf related functions calling __swsetup_r() on
-          the first call to a particular file pointer (i.e., stdin, stdout, stderr)
-        - Thus, we call the toolchain version of __swsetup_r() now (before any printf calls are made) to setup all of the
-          file pointers. Thus, the ROM newlib code will never call the ROM version of __swsetup_r().
-        - See IDFGH-7728 for more details
-        */
-        extern int __swsetup_r(struct _reent *, FILE *);
-        __swsetup_r(_GLOBAL_REENT, _REENT_STDIN(_GLOBAL_REENT));
-        __swsetup_r(_GLOBAL_REENT, _REENT_STDOUT(_GLOBAL_REENT));
-        __swsetup_r(_GLOBAL_REENT, _REENT_STDERR(_GLOBAL_REENT));
+    /*
+    - This workaround for printf functions using 32-bit time_t after the 64-bit time_t upgrade
+    - The 32-bit time_t usage is triggered through ROM Newlib functions printf related functions calling __swsetup_r() on
+      the first call to a particular file pointer (i.e., stdin, stdout, stderr)
+    - Thus, we call the toolchain version of __swsetup_r() now (before any printf calls are made) to setup all of the
+      file pointers. Thus, the ROM newlib code will never call the ROM version of __swsetup_r().
+    - See IDFGH-7728 for more details
+    */
+    extern int __swsetup_r(struct _reent *, FILE *);
+    __swsetup_r(_GLOBAL_REENT, _REENT_STDIN(_GLOBAL_REENT));
+    __swsetup_r(_GLOBAL_REENT, _REENT_STDOUT(_GLOBAL_REENT));
+    __swsetup_r(_GLOBAL_REENT, _REENT_STDERR(_GLOBAL_REENT));
 #endif /* ESP_ROM_NEEDS_SWSETUP_WORKAROUND */
-    }
 }
-
-ESP_SYSTEM_INIT_FN(init_newlib_stdio, CORE, BIT(0), 115)
+#else /* CONFIG_VFS_SUPPORT_IO */
+void esp_libc_init_global_stdio(void)
 {
-#if defined(CONFIG_VFS_SUPPORT_IO)
-    esp_newlib_init_global_stdio("/dev/console");
-#else
-    esp_newlib_init_global_stdio(NULL);
-#endif
-    return ESP_OK;
+    _GLOBAL_REENT->__cleanup = NULL;
+    _REENT_SDIDINIT(_GLOBAL_REENT) = 0;
+    __sinit(_GLOBAL_REENT);
+    _GLOBAL_REENT->__cleanup = esp_cleanup_r;
+    _REENT_SDIDINIT(_GLOBAL_REENT) = 1;
 }
+#endif /* CONFIG_VFS_SUPPORT_IO */
 
 // Hook to force the linker to include this file
-void newlib_include_init_funcs(void)
+void esp_libc_include_init_funcs(void)
 {
 }

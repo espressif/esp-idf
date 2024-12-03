@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdint.h>
+#include <sys/lock.h>
 #include <sys/param.h>
 
 #include "sdkconfig.h"

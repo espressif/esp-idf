@@ -68,17 +68,16 @@ void test_task_wdt_cpu0(void)
 }
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
-
+#define HWSG_TASK_SIZE 1024
 __attribute__((optimize("-O0")))
 static void test_hw_stack_guard_cpu(void* arg)
 {
-    uint32_t buf[256];
-    test_hw_stack_guard_cpu(arg);
+    uint32_t buf[HWSG_TASK_SIZE + 1]; /* go out of the stack to avoid FREERTOS_WATCHPOINT_END_OF_STACK trap */
 }
 
 void test_hw_stack_guard_cpu0(void)
 {
-    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG0", 512, NULL, 1, NULL, 0);
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG0", HWSG_TASK_SIZE, NULL, 1, NULL, 0);
     while (true) {
         vTaskDelay(100);
     }
@@ -87,7 +86,7 @@ void test_hw_stack_guard_cpu0(void)
 #if !CONFIG_FREERTOS_UNICORE
 void test_hw_stack_guard_cpu1(void)
 {
-    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG1", 512, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(test_hw_stack_guard_cpu, "HWSG1", HWSG_TASK_SIZE, NULL, 1, NULL, 1);
     while (true) {
         vTaskDelay(100);
     }

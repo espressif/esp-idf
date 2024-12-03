@@ -1,0 +1,61 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+_cleanup = 0x40001df8;
+_cleanup_r = 0x40001d48;
+creat = 0x40000e8c;
+fclose = 0x400020ac;
+_fclose_r = 0x40001fec;
+fflush = 0x40059394;
+_fflush_r = 0x40059320;
+_findenv_r = 0x40001f44;
+__fp_lock_all = 0x40001f1c;
+__fp_unlock_all = 0x40001f30;
+__fputwc = 0x40058da0;
+fputwc = 0x40058ea8;
+_fputwc_r = 0x40058e4c;
+_fwalk = 0x4000c738;
+_fwalk_reent = 0x4000c770;
+__swbuf = 0x40058cb4;
+__swbuf_r = 0x40058bec;
+__swrite = 0x40001150;
+__sread = 0x40001118;
+__sseek = 0x40001184;
+ungetc = 0x400590f4;
+_ungetc_r = 0x40058fa0;
+srand = 0x40001004;
+rand_r = 0x400010d4;
+rand = 0x40001058;
+atoi = 0x400566c4;
+_atoi_r = 0x400566d4;
+atol = 0x400566ec;
+_atol_r = 0x400566fc;
+strdup = 0x4000143c;
+_strdup_r = 0x40001450;
+strndup = 0x400016b0;
+_strndup_r = 0x400016c4;
+__strtok_r = 0x4000c6a8;
+strtok_r = 0x4000c70c;
+strtol = 0x4005681c;
+_strtol_r = 0x40056714;
+strtoul = 0x4005692c;
+_strtoul_r = 0x40056834;
+__ascii_wctomb = 0x40058ef0;
+__sclose = 0x400011b8;
+__seofread = 0x40001148;
+wcrtomb = 0x40058920;
+_wcrtomb_r = 0x400588d8;
+_wctomb_r = 0x40058f14;
+__sflush_r = 0x400591e0;
+__sfmoreglue = 0x40001dc8;
+__sfp = 0x40001e90;
+__sfp_lock_acquire = 0x40001e08;
+__sfp_lock_release = 0x40001e14;
+__sinit = 0x40001e38;
+__sinit_lock_acquire = 0x40001e20;
+__sinit_lock_release = 0x40001e2c;
+__env_lock = 0x40001fd4;
+__env_unlock = 0x40001fe0;
+_getenv_r = 0x40001fbc;

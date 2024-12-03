@@ -60,6 +60,7 @@ function(__setup_ulp_project app_name project_path s_sources exp_dep_srcs)
                             -DCMAKE_TOOLCHAIN_FILE=${TOOLCHAIN_FLAG}
                             -DULP_S_SOURCES=$<TARGET_PROPERTY:${app_name},ULP_SOURCES>
                             -DULP_APP_NAME=${app_name}
+                            -DADD_PICOLIBC_SPECS=${CONFIG_LIBC_PICOLIBC}
                             -DCOMPONENT_DIR=${COMPONENT_DIR}
                             -DCOMPONENT_INCLUDES=$<TARGET_PROPERTY:${COMPONENT_TARGET},INTERFACE_INCLUDE_DIRECTORIES>
                             -DIDF_TARGET=${idf_target}

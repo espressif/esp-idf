@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2024 Espressif Systems (Shanghai) CO LTD
  */
 /*
  * Copyright (c) 2015-2019 Cadence Design Systems, Inc.
@@ -120,7 +120,7 @@
     frame just in case the exception dispatcher's SP does not point to the exception
     frame (which is the case when switching from task to interrupt stack).
 
-    Clearing the pseudo base-save area is uncessary as the interrupt dispatcher
+    Clearing the pseudo base-save area is unnecessary as the interrupt dispatcher
     will restore the current SP to that of the pre-exception SP.
 --------------------------------------------------------------------------------
 */
@@ -627,7 +627,7 @@ _UserExceptionVector:
 /*
 --------------------------------------------------------------------------------
   Insert some waypoints for jumping beyond the signed 8-bit range of
-  conditional branch instructions, so the conditional branchces to specific
+  conditional branch instructions, so the conditional branches to specific
   exception handlers are not taken in the mainline. Saves some cycles in the
   mainline.
 --------------------------------------------------------------------------------
@@ -741,7 +741,7 @@ _xt_handle_exc:
     rsr     a0, EXCVADDR
     s32i    a0, sp, XT_STK_EXCVADDR
 
-    /* Set up PS for C, reenable debug and NMI interrupts, and clear EXCM. */
+    /* Set up PS for C, re-enable debug and NMI interrupts, and clear EXCM. */
     #ifdef __XTENSA_CALL0_ABI__
     movi    a0, PS_INTLEVEL(XCHAL_DEBUGLEVEL - 2) | PS_UM
     #else
@@ -2223,8 +2223,16 @@ _WindowUnderflow12:
 
 #endif /* XCHAL_HAVE_WINDOWED */
 
-    .section    .UserEnter.text, "ax"
-    .global     call_user_start
-    .type       call_user_start,@function
+    .section    ._invalid_pc_placeholder.text, "ax"
+    .global     _invalid_pc_placeholder
+    .type       _invalid_pc_placeholder,@function
     .align      4
+_invalid_pc_placeholder:
+    /* This should be an entry instruction for correct stack unwinding.
+     * There could be just a line ".cfi_startproc", but unfortunately,
+     * CFI is not supported for the Xtensa architecture. */
+#define UNREACHABLE_INSTRUCTION_CHECK_PREVIOUS_FRAMES ENTRY0
+    UNREACHABLE_INSTRUCTION_CHECK_PREVIOUS_FRAMES
+    .size   _invalid_pc_placeholder, . - _invalid_pc_placeholder
+
     .literal_position

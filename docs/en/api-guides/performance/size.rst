@@ -151,6 +151,17 @@ lwIP IPv4
 
       Before disabling IPv4 support, please note that IPv6 only network environments are not ubiquitous and must be supported in the local network, e.g., by your internet service provider or using constrained local network settings.
 
+.. _picolibc-instead-of-newlib:
+
+Picolibc instead of Newlib
+@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+By default, ESP-IDF uses the Newlib C library, and it also has experimental support for the Picolibc C library.
+
+Picolibc C library provides smaller ``printf``-family functions and can reduce the binary size by up to 30 KB, depending on your application.
+
+To switch to linking against the Picolibc C library, please enable the configuration options :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` and :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`.
+
 .. _newlib-nano-formatting:
 
 Newlib Nano Formatting
@@ -160,13 +171,13 @@ By default, ESP-IDF uses Newlib "full" formatting for I/O functions (``printf()`
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    Enabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch Newlib to the "Nano" formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
+    Enabling the config option :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "Nano" formatting mode. This is smaller in code size, and a large part of the implementation is compiled into the {IDF_TARGET_NAME} ROM, so it does not need to be included in the binary at all.
 
     The exact difference in binary size depends on which features the firmware uses, but 25 KB ~ 50 KB is typical.
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    Disabling the config option :ref:`CONFIG_NEWLIB_NANO_FORMAT` will switch Newlib to the "full" formatting mode. This will reduce the binary size, as {IDF_TARGET_NAME} has the full formatting version of the functions in ROM, so it does not need to be included in the binary at all.
+    Disabling the config option :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` will switch Newlib to the "full" formatting mode. This will reduce the binary size, as {IDF_TARGET_NAME} has the full formatting version of the functions in ROM, so it does not need to be included in the binary at all.
 
 Enabling "Nano" formatting reduces the stack usage of each function that calls ``printf()`` or another string formatting function, see :ref:`optimize-stack-sizes`.
 
@@ -177,7 +188,7 @@ Enabling "Nano" formatting reduces the stack usage of each function that calls `
 
     .. note::
 
-        :ref:`CONFIG_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
+        :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` is enabled by default on {IDF_TARGET_NAME}.
 
 
 .. _Newlib README file: https://sourceware.org/newlib/README

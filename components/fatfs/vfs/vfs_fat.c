@@ -29,6 +29,10 @@ struct cached_data{
 #endif
 	FILINFO fileinfo;
 };
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#if !defined(FILENAME_MAX)
+#define FILENAME_MAX 255
 #endif
 
 typedef struct {

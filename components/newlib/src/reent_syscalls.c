@@ -61,7 +61,7 @@ ssize_t _read_r_console(struct _reent *r, int fd, void * data, size_t size)
             }
         }
         if (received == 0) {
-            errno = EWOULDBLOCK;
+            __errno_r(r) = EWOULDBLOCK;
             return -1;
         }
         return received;
@@ -97,9 +97,9 @@ static int _fsync_console(int fd)
  * another definition is provided. That definition may come from
  * VFS, LWIP, or the application.
  */
-ssize_t _read_r(struct _reent *r, int fd, void * dst, size_t size)
+ssize_t _read_r(struct _reent *r, int fd, void *dst, size_t size)
 __attribute__((weak, alias("_read_r_console")));
-ssize_t _write_r(struct _reent *r, int fd, const void * data, size_t size)
+ssize_t _write_r(struct _reent *r, int fd, const void *data, size_t size)
 __attribute__((weak, alias("_write_r_console")));
 int _fstat_r(struct _reent *r, int fd, struct stat *st)
 __attribute__((weak, alias("_fstat_r_console")));
@@ -137,8 +137,6 @@ __attribute__((weak, alias("syscall_not_implemented")));
 /* These functions are not expected to be overridden */
 int _system_r(struct _reent *r, const char *str)
 __attribute__((alias("syscall_not_implemented")));
-int raise(int sig)
-__attribute__((alias("syscall_not_implemented_aborts")));
 int _raise_r(struct _reent *r, int sig)
 __attribute__((alias("syscall_not_implemented_aborts")));
 void* _sbrk_r(struct _reent *r, ptrdiff_t sz)
@@ -147,34 +145,14 @@ int _getpid_r(struct _reent *r)
 __attribute__((alias("syscall_not_implemented")));
 int _kill_r(struct _reent *r, int pid, int sig)
 __attribute__((alias("syscall_not_implemented")));
-void _exit(int __status)
-__attribute__((alias("syscall_not_implemented_aborts")));
 
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
-/* Similar to syscall_not_implemented, but not taking struct _reent argument */
-int system(const char* str)
-{
-    errno = ENOSYS;
-    return -1;
-}
-
-/* Replaces newlib fcntl, which has been compiled without HAVE_FCNTL */
-int fcntl(int fd, int cmd, ...)
-{
-    va_list args;
-    va_start(args, cmd);
-    int arg = va_arg(args, int);
-    va_end(args);
-    struct _reent* r = __getreent();
-    return _fcntl_r(r, fd, cmd, arg);
-}
-
 /* No-op function, used to force linking this file,
    instead of the syscalls implementation from libgloss.
  */
-void newlib_include_syscalls_impl(void)
+void esp_libc_include_reent_syscalls_impl(void)
 {
 }

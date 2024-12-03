@@ -18,7 +18,7 @@ ssize_t getrandom(void *buf, size_t buflen, unsigned int flags)
 {
     // Flags are ignored because:
     // - esp_random is non-blocking so it works for both blocking and non-blocking calls,
-    // - don't have opportunity so set som other source of entropy.
+    // - don't have opportunity so set some other source of entropy.
 
     ESP_LOGD(TAG, "getrandom(buf=0x%x, buflen=%d, flags=%u)", (int) buf, buflen, flags);
 

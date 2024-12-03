@@ -9,6 +9,7 @@ from pytest_embedded import Dut
     'config',
     [
         pytest.param('default', marks=[pytest.mark.supported_targets]),
+        pytest.param('picolibc', marks=[pytest.mark.supported_targets]),
         pytest.param('options', marks=[pytest.mark.supported_targets]),
         pytest.param('single_core_esp32', marks=[pytest.mark.esp32]),
         pytest.param('psram_esp32', marks=[pytest.mark.esp32]),

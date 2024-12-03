@@ -147,22 +147,30 @@ if(BOOTLOADER_BUILD)
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB)
         if(target STREQUAL "esp32" OR target STREQUAL "esp32s2")
-            rom_linker_script("newlib-funcs")
+            rom_linker_script("libc-funcs")
         else()
-            rom_linker_script("newlib")
+            rom_linker_script("libc")
+            if(CONFIG_LIBC_NEWLIB)
+                rom_linker_script("newlib")
+            endif()
         endif()
     endif()
 
 
 else() # Regular app build
     if(target STREQUAL "esp32")
-        rom_linker_script("newlib-data")
-        rom_linker_script("syscalls")
+        if(CONFIG_LIBC_NEWLIB)
+            rom_linker_script("newlib-data")
+            rom_linker_script("syscalls")
+        endif()
 
         if(NOT CONFIG_SPIRAM_CACHE_WORKAROUND)
             # ESP32 only: these ROM functions may only be used if PSRAM cache workaround is disabled.
             # Otherwise we need to link to a multilib version of libc compiled with PSRAM workaround.
-            rom_linker_script("newlib-funcs")
+            rom_linker_script("libc-funcs")
+            if(CONFIG_LIBC_NEWLIB)
+                rom_linker_script("newlib-reent-funcs")
+            endif()
         endif()
 
         if(NOT CONFIG_SPI_FLASH_ROM_DRIVER_PATCH)
@@ -175,8 +183,11 @@ else() # Regular app build
         endif()
 
     elseif(target STREQUAL "esp32s2")
-        rom_linker_script("newlib-funcs")
-        rom_linker_script("newlib-data")
+        rom_linker_script("libc-funcs")
+        if(CONFIG_LIBC_NEWLIB)
+            rom_linker_script("newlib-reent-funcs")
+            rom_linker_script("newlib-data")
+        endif()
 
         # For ESP32S2, inclusion of ROM driver do not depend on CONFIG_SPI_FLASH_ROM_IMPL
         rom_linker_script("spiflash_legacy")
@@ -282,9 +293,12 @@ else() # Regular app build
 
     if(CONFIG_ESP_ROM_HAS_NEWLIB AND NOT target STREQUAL "esp32" AND NOT target STREQUAL "esp32s2")
         # ESP32 and S2 are a bit different, keep them as special cases in the target specific include section
-        rom_linker_script("newlib")
+        rom_linker_script("libc")
+        if(CONFIG_LIBC_NEWLIB)
+            rom_linker_script("newlib")
+        endif()
 
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_NEWLIB_NANO_FORMAT)
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT AND CONFIG_LIBC_NEWLIB AND CONFIG_NEWLIB_NANO_FORMAT)
             if(NOT CONFIG_ESP_ROM_HAS_NEWLIB_32BIT_TIME AND NOT CONFIG_ESP_ROM_HAS_NEWLIB_NANO_PRINTF_FLOAT_BUG)
                 # Newlib-nano functions contains time_t related functions
                 # and cannot be used if they were compiled with 32 bit time_t
@@ -292,7 +306,7 @@ else() # Regular app build
             endif()
         endif()
 
-        if(CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT AND NOT CONFIG_NEWLIB_NANO_FORMAT)
+        if(CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT AND CONFIG_LIBC_NEWLIB AND NOT CONFIG_NEWLIB_NANO_FORMAT)
             rom_linker_script("newlib-normal")
         endif()
     endif()

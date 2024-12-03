@@ -7,7 +7,8 @@
 #ifndef _ESP_PLATFORM_ERRNO_H_
 #define _ESP_PLATFORM_ERRNO_H_
 
-#include_next "errno.h"
+#include_next "sys/errno.h"
+#include "sdkconfig.h"
 
 //
 // Possibly define some missing errors
@@ -26,6 +27,11 @@
 
 #ifndef EAI_BADFLAGS
 #define EAI_BADFLAGS     3   /* invalid value for ai_flags */
+#endif
+
+#if CONFIG_LIBC_PICOLIBC
+#undef __errno_r
+#define __errno_r(r) errno
 #endif
 
 #endif // _ESP_PLATFORM_ERRNO_H_
