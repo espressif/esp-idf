@@ -15,6 +15,9 @@
 #ifdef CONFIG_ESP_WIFI_NAN_ENABLE
 #include "apps_private/wifi_apps_private.h"
 #endif
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+#include "esp_roaming.h"
+#endif
 
 //
 //  Purpose of this module is to provide basic wifi initialization setup for
@@ -80,6 +83,12 @@ static void wifi_default_action_sta_start(void *arg, esp_event_base_t base, int3
 
 static void wifi_default_action_sta_stop(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
+#ifdef CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_disable_reconnect();
+#ifdef CONFIG_ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+    roaming_ongoing = false;
+#endif
+#endif /* CONFIG_ESP_WIFI_ENABLE_ROAMING_APP */
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_netif_action_stop(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
     }
@@ -87,12 +96,15 @@ static void wifi_default_action_sta_stop(void *arg, esp_event_base_t base, int32
 
 static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_sta_connected();
 #ifdef CONFIG_ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
     if (roaming_ongoing) {
         /* IP stack is already in ready state */
         roaming_ongoing = false;
         return;
     }
+#endif
 #endif
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_err_t ret;
@@ -113,6 +125,8 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
 
 static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_sta_disconnected(data);
 #ifdef CONFIG_ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
     wifi_event_sta_disconnected_t *disconn = data;
     if (disconn->reason == WIFI_REASON_ROAMING) {
@@ -121,6 +135,7 @@ static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t bas
         return;
     }
     roaming_ongoing = false;
+#endif
 #endif
     if (s_wifi_netifs[WIFI_IF_STA] != NULL) {
         esp_netif_action_disconnected(s_wifi_netifs[WIFI_IF_STA], base, event_id, data);
