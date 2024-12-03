@@ -76,7 +76,7 @@ config BT_CTRL_ADV_DUP_FILT_MAX
     range 1 500
     default 30
     help
-        The maximum number of suplicate scan filter
+        The maximum number of 5.0 extend duplicate
 
 choice BT_BLE_CCA_MODE
     prompt "BLE CCA mode"
@@ -101,9 +101,11 @@ config BT_BLE_CCA_MODE
 config BT_CTRL_HW_CCA_VAL
     int "CCA threshold value"
     range 20 100
-    default 20
+    default 75
     help
         It is the threshold value of HW CCA, if the value is 30, it means CCA threshold is -30 dBm.
+        If the channel assessment result exceeds the CCA threshold (e.g. -75 dBm), indicating the channel is busy,
+        the hardware will not transmit packets on that channel.
 
 config BT_CTRL_HW_CCA_EFF
     int
@@ -491,27 +493,27 @@ config BT_CTRL_LE_PING_EN
         If this option is disabled, The Controller will not start the LE authenticated payload timer.
         This option is used for some compatibility problems related to LE ping procedure.
 
-menu "BLE disconnect when instant passed"
+menu "BLE disconnects when Instant Passed (0x28) occurs"
     config BT_CTRL_BLE_LLCP_CONN_UPDATE
         bool "BLE ACL connection update procedure"
         default n
         help
             If this option is enabled, Controller will terminate the connection
-            when instant passed during connection update procedure.
+            when Instant Passed (0x28) error occurs during connection update procedure.
 
     config BT_CTRL_BLE_LLCP_CHAN_MAP_UPDATE
         bool "BLE ACL channel map update procedure"
         default n
         help
             If this option is enabled, Controller will terminate the connection
-            when instant passed in channel map update procedure.
+            when Instant Passed (0x28) error occurs in channel map update procedure.
 
     config BT_CTRL_BLE_LLCP_PHY_UPDATE
         bool "BLE ACL PHY update procedure"
         default n
         help
             If this option is enabled, Controller will terminate the connection
-            when instant passed in PHY update procedure.
+            when Instant Passed (0x28) error occurs in PHY update procedure.
 endmenu
 config BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Put all BLE Controller code in flash"
