@@ -113,8 +113,8 @@ static void wifi_default_action_sta_connected(void *arg, esp_event_base_t base, 
 
 static void wifi_default_action_sta_disconnected(void *arg, esp_event_base_t base, int32_t event_id, void *data)
 {
-    wifi_event_sta_disconnected_t *disconn = data;
 #ifdef ESP_WIFI_NETWORK_ASSISTED_ROAMING_IP_RENEW_SKIP
+    wifi_event_sta_disconnected_t *disconn = data;
     if (disconn->reason == WIFI_REASON_ROAMING) {
         roaming_ongoing = true;
         /* do nothing else */

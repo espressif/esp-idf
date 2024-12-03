@@ -40,9 +40,6 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-#include "esp_roaming.h"
-#endif
 
 #ifdef CONFIG_DPP
 #include "common/dpp.h"
