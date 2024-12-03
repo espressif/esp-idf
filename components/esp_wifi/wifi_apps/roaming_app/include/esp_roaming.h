@@ -32,6 +32,8 @@ void roam_init_app(void);
 void roam_deinit_app(void);
 void roam_disable_reconnect(void);
 void roam_enable_reconnect(void);
+void roam_sta_connected(void);
+void roam_sta_disconnected(void *disconn);
 esp_err_t roam_get_config_params(struct roam_config *config);
 esp_err_t roam_set_config_params(struct roam_config *config);
 
