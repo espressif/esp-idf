@@ -91,7 +91,7 @@ esp_err_t debug_probe_new_unit(const debug_probe_unit_config_t *config, debug_pr
     }
     // reserve the GPIO output path, because we don't expect another peripheral to signal to the same GPIO
     uint64_t old_gpio_rsv_mask = esp_gpio_reserve(pin_bit_mask);
-    // check if the GPIO is already used by others, RMT TX channel only uses the output path of the GPIO
+    // check if the GPIO is already used by others
     if (old_gpio_rsv_mask & pin_bit_mask) {
         ESP_LOGW(TAG, "GPIO conflict with others");
     }
