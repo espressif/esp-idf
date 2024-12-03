@@ -8,7 +8,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <stdio.h>
-#include "esp_log.h"
+#include "esp_log_write.h"
 #include "esp_private/log_lock.h"
 #include "esp_private/log_level.h"
 #include "sdkconfig.h"

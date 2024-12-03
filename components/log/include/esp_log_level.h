@@ -7,6 +7,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "esp_assert.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -26,7 +27,11 @@ typedef enum {
     ESP_LOG_MAX     = 6,    /*!< Number of levels supported */
 } esp_log_level_t;
 
+#define ESP_LOG_LEVEL_LEN   (3) /*!< Number of bits used to represent the log level */
+#define ESP_LOG_LEVEL_MASK  ((1 << ESP_LOG_LEVEL_LEN) - 1) /*!< Mask for log level */
+
 /** @cond */
+ESP_STATIC_ASSERT(ESP_LOG_MAX <= ESP_LOG_LEVEL_MASK, "Log level items of esp_log_level_t must fit ESP_LOG_LEVEL_MASK");
 
 // LOG_LOCAL_LEVEL controls what log levels are included in the binary.
 #ifndef LOG_LOCAL_LEVEL
@@ -38,6 +43,19 @@ typedef enum {
 #define LOG_LOCAL_LEVEL  CONFIG_LOG_MAXIMUM_LEVEL
 #endif
 #endif // LOG_LOCAL_LEVEL
+
+/**
+ * @brief Check if a specific log level is enabled at compile-time.
+ *
+ * This macro checks whether logging for the specified log level is enabled based on the
+ * current local log level setting (`LOG_LOCAL_LEVEL`). It uses a compile-time check to
+ * determine if logging for the specified level should be included in the binary,
+ * helping to exclude logs that are not configured.
+ *
+ * @param level log level.
+ * @return true if the specified log level is enabled, false otherwise.
+ */
+#define ESP_LOG_ENABLED(level) (LOG_LOCAL_LEVEL >= (level))
 
 #if NON_OS_BUILD
 

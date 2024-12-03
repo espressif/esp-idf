@@ -15,54 +15,12 @@
 #include "esp_log_color.h"
 #include "esp_log_buffer.h"
 #include "esp_log_timestamp.h"
+#include "esp_log_write.h"
+#include "esp_log_format.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-typedef int (*vprintf_like_t)(const char *, va_list);
-
-/**
- * @brief Set function used to output log entries
- *
- * By default, log output goes to UART0. This function can be used to redirect log
- * output to some other destination, such as file or network. Returns the original
- * log handler, which may be necessary to return output to the previous destination.
- *
- * @note Please note that function callback here must be re-entrant as it can be
- * invoked in parallel from multiple thread context.
- *
- * @param func new Function used for output. Must have same signature as vprintf.
- *
- * @return func old Function used for output.
- */
-vprintf_like_t esp_log_set_vprintf(vprintf_like_t func);
-
-/**
- * @brief Write message into the log
- *
- * This function is not intended to be used directly. Instead, use one of
- * ESP_LOGE, ESP_LOGW, ESP_LOGI, ESP_LOGD, ESP_LOGV macros.
- *
- * This function or these macros should not be used from an interrupt.
- */
-void esp_log_write(esp_log_level_t level, const char* tag, const char* format, ...) __attribute__((format(printf, 3, 4)));
-
-/**
- * @brief Write message into the log, va_list variant
- * @see esp_log_write()
- *
- * This function is provided to ease integration toward other logging framework,
- * so that esp_log can be used as a log sink.
- */
-void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, va_list args);
-
-/** @cond */
-
-#define LOG_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%" PRIu32 ") %s: " format LOG_RESET_COLOR "\n"
-#define LOG_SYSTEM_TIME_FORMAT(letter, format)  LOG_COLOR_ ## letter #letter " (%s) %s: " format LOG_RESET_COLOR "\n"
-
-/** @endcond */
 
 /// macro to output logs in startup code, before heap allocator and syscalls have been initialized.
 /// Log at ``ESP_LOG_ERROR`` level. @see ``printf``,``ESP_LOGE``,``ESP_DRAM_LOGE``
@@ -244,7 +202,6 @@ void esp_log_writev(esp_log_level_t level, const char* tag, const char* format, 
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
 /** @cond */
-#define _ESP_LOG_DRAM_LOG_FORMAT(letter, format)  DRAM_STR(#letter " %s: " format "\n")
 
 #if defined(__cplusplus) && (__cplusplus >  201703L)
 #define ESP_DRAM_LOG_IMPL(tag, format, log_level, log_tag_letter, ...) do {                                  \
