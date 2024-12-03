@@ -9,7 +9,7 @@ Wi-Fi Expansion
 
 .. only:: SOC_WIFI_SUPPORTED
 
-  {IDF_TARGET_NAME} does support Wi-Fi functionality natively, please refer to :doc:`wifi` documentation. Even though Wi-Fi is supported on {IDF_TARGET_NAME}, it is possible to expand it and use another instance of Wi-Fi expansion interfaces using `esp_wifi_remote <https://components.espressif.com/components/espressif/esp_wifi_remote>`_ component.
+  {IDF_TARGET_NAME} does support Wi-Fi functionality natively, please refer to :doc:`wifi-driver/index` documentation. Even though Wi-Fi is supported on {IDF_TARGET_NAME}, it is possible to expand it and use another instance of Wi-Fi expansion interfaces using `esp_wifi_remote <https://components.espressif.com/components/espressif/esp_wifi_remote>`_ component.
 
 
 {IDF_TARGET_NAME} esp_wifi_remote

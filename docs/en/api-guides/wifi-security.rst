@@ -43,28 +43,73 @@ Wi-Fi Enterprise
 ---------------------------------
 
 Introduction
-++++++++++++
+++++++++++++++
 
-Enterprise security is the secure authentication mechanism for enterprise wireless networks. It uses the RADIUS server for authentication of network users before connecting to the Access Point (AP). The authentication process is based on 802.1X policy and comes with different Extended Authentication Protocol (EAP) methods such as TLS, TTLS, PEAP, and EAP-FAST. RADIUS server authenticates the users based on their credentials (username and password), digital certificates, or both.
+Wi-Fi Enterprise provides secure authentication mechanisms for enterprise wireless networks. It is based on the IEEE 802.1X standard and requires a RADIUS server to authenticate network users before they connect to an Access Point (AP). Depending on the Extended Authentication Protocol (EAP) method used, authentication can rely on user credentials (username and password), digital certificates, or both.
+
+When {IDF_TARGET_NAME}, operating in station mode, connects to an Enterprise AP, it initiates an authentication request. The AP forwards this request to the configured RADIUS server, which validates the station based on the selected EAP method and configured parameters.
 
 .. note::
 
   {IDF_TARGET_NAME} supports Wi-Fi Enterprise only in station mode.
 
-{IDF_TARGET_NAME} supports **WPA2-Enterprise** and **WPA3-Enterprise**. WPA3-Enterprise builds upon the foundation of WPA2-Enterprise with the additional requirement of using Protected Management Frames (PMF) and server certificate validation on all WPA3 connections. **WPA3-Enterprise also offers an additional secure mode using 192-bit minimum-strength security protocols and cryptographic tools to better protect sensitive data.** The 192-bit security mode offered by WPA3-Enterprise ensures the right combination of cryptographic tools is used and sets a consistent baseline of security within a WPA3 network. WPA3-Enterprise 192-bit mode is only supported by modules having :c:macro:`SOC_WIFI_GCMP_SUPPORT` support. Enable :ref:`CONFIG_ESP_WIFI_SUITE_B_192` flag to support WPA3-Enterprise with 192-bit mode.
+WPA2-Enterprise and WPA3-Enterprise
+++++++++++++++++++++++++++++++++++++++
 
-{IDF_TARGET_NAME} supports the following EAP methods:
-  - EAP-TLS: This is a certificate-based method and only requires SSID and EAP-IDF.
-  - PEAP: This is a Protected EAP method. Usernames and passwords are mandatory.
-  - EAP-TTLS: This is a credential-based method. Only server authentication is mandatory while user authentication is optional. Username and Password are mandatory. It supports different Phase2 methods, such as:
-     - PAP: Password Authentication Protocol.
-     - CHAP: Challenge Handshake Authentication Protocol.
-     - MSCHAP and MSCHAP-V2.
-  - EAP-FAST: This is an authentication method based on Protected Access Credentials (PAC) which also uses identity and password. Currently, :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` flag should be disabled to use this feature.
+{IDF_TARGET_NAME} supports both **WPA2-Enterprise** and **WPA3-Enterprise**.
 
-- :example:`wifi/wifi_eap_fast` demonstrates how to connect {IDF_TARGET_NAME} to an AP with Wi-Fi Enterprise authentication using EAP-FAST, including the installation of a CA certificate, setting user credentials, enabling Wi-Fi Enterprise mode, and handling connection to the AP.
+**WPA2-Enterprise** provides authentication using 802.1X/EAP and relies on secure credentials or certificates. For secure connectivity, the AP and station negotiate and agree on an appropriate cipher suite. {IDF_TARGET_NAME} supports the following:
 
-- :example:`wifi/wifi_enterprise` demonstrates how to connect {IDF_TARGET_NAME} to an AP with Wi-Fi Enterprise authentication using other EAP methods, such as EAP-TLS, EAP-PEAP, EAP-TTLS. For details on generating certificates with OpenSSL commands and running the example, refer to :example_file:`wifi/wifi_enterprise/README.md`.
+- 802.1X/EAP (WPA) AKM method
+- AES-CCM cipher suite
+- Additional cipher suites supported by mbedtls when the `USE_MBEDTLS_CRYPTO` flag is enabled
+
+**WPA3-Enterprise** enhances WPA2-Enterprise by requiring Protected Management Frames (PMF) and mandatory server certificate validation on all WPA3 connections.
+
+WPA3-Enterprise also introduces an additional secure mode using **192-bit minimum-strength security protocols** (“Suite B”). This mode ensures a consistent baseline of cryptographic strength.
+
+- WPA3-Enterprise 192-bit mode is supported only on modules that have :c:macro:`SOC_WIFI_GCMP_SUPPORT`.
+- To enable WPA3-Enterprise 192-bit mode, configure :ref:`CONFIG_ESP_WIFI_SUITE_B_192`.
+
+Supported EAP Methods
++++++++++++++++++++++++++
+
+{IDF_TARGET_NAME} supports multiple EAP methods for Enterprise authentication. These methods may require different combinations of SSID, identity, username/password, CA certificate, or client certificate.
+
+The following EAP methods are supported:
+
+- **EAP-TLS**
+
+  Certificate-based method requiring SSID and EAP identity. Client certificates are used for authentication.
+
+- **PEAP**
+
+  A Protected EAP method requiring a username and password.
+
+- **EAP-TTLS**
+
+  A credential-based method. Server authentication is mandatory; user authentication is optional depending on the Phase 2 method. Username and password are typically required. Supported Phase 2 methods include:
+
+  - PAP: Password Authentication Protocol
+  - CHAP: Challenge Handshake Authentication Protocol
+  - MSCHAP
+  - MSCHAP-V2
+
+- **EAP-FAST**
+
+  An authentication method based on Protected Access Credentials (PAC), requiring an identity and password. To use EAP-FAST, :ref:`CONFIG_ESP_WIFI_MBEDTLS_TLS_CLIENT` must be **disabled**.
+
+Examples
+++++++++++
+
+- :example:`wifi/wifi_eap_fast`
+
+  Demonstrates connecting {IDF_TARGET_NAME} to an AP using EAP-FAST, including CA certificate installation, credential configuration, enabling Enterprise mode, and connecting to the AP.
+
+- :example:`wifi/wifi_enterprise`
+
+  Demonstrates connecting {IDF_TARGET_NAME} using EAP-TLS, EAP-PEAP, and EAP-TTLS. For details on generating certificates with OpenSSL and running the example, refer to :example_file:`wifi/wifi_enterprise/README.md`.
+
 
 WPA3-Personal
 -------------
