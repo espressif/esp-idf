@@ -154,9 +154,10 @@ typedef struct {
  * @brief HCD configuration structure
  */
 typedef struct {
-    int intr_flags;                          /**< Interrupt flags for HCD interrupt */
-    const hcd_fifo_settings_t *fifo_config;/**< Optional pointer to custom FIFO config.
-                                                If NULL, default configuration is used. */
+    int intr_flags;                         /**< Interrupt flags for HCD interrupt */
+    const hcd_fifo_settings_t *fifo_config; /**< Optional pointer to custom FIFO config.
+                                                 If NULL, default configuration is used. */
+    unsigned peripheral_map;                /**< Bit map of USB-OTG peripherals that belong to HCD. Set to zero to use default */
 } hcd_config_t;
 
 /**
@@ -166,6 +167,7 @@ typedef struct {
     hcd_port_callback_t callback;           /**< HCD port event callback */
     void *callback_arg;                     /**< User argument for HCD port callback */
     void *context;                          /**< Context variable used to associate the port with upper layer object */
+    unsigned peripheral_idx;                /**< Index of USB peripheral this port belongs to. Index numbers are defined in USB_DWC_LL_GET_HW */
 } hcd_port_config_t;
 
 /**
@@ -224,8 +226,6 @@ esp_err_t hcd_uninstall(void);
  * @brief Initialize a particular port of the HCD
  *
  * After a port is initialized, it will be put into the HCD_PORT_STATE_NOT_POWERED state.
- *
- * @note The host controller only has one port, thus the only valid port_number is 1
  *
  * @param[in] port_number Port number
  * @param[in] port_config Port configuration
