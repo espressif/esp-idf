@@ -919,6 +919,7 @@ void deinit_roaming_app(void)
     }
 }
 
+/* No need for this to be done in pptask ctx */
 esp_err_t roam_get_config_params(struct roam_config *config)
 {
     memcpy(config, &g_roaming_app.config, sizeof(*config));
@@ -926,46 +927,41 @@ esp_err_t roam_get_config_params(struct roam_config *config)
     return ESP_OK;
 }
 
-esp_err_t roam_set_config_params(struct roam_config *config)
+static int update_config_params(void *data)
 {
-    g_roaming_app.config.backoff_time = config->backoff_time;
+    struct roam_config *config = data;
+    g_roaming_app.config = *config;
 
-    g_roaming_app.config.low_rssi_roam_trigger = config->low_rssi_roam_trigger;
-    g_roaming_app.config.low_rssi_threshold = config->low_rssi_threshold;
-    g_roaming_app.config.rssi_threshold_reduction_offset = config->rssi_threshold_reduction_offset;
+    ESP_LOGI(ROAMING_TAG, "Updated Roaming app config :");
 
-    g_roaming_app.config.scan_monitor = config->scan_monitor;
-    g_roaming_app.config.scan_interval = config->scan_interval;
-    g_roaming_app.config.scan_rssi_threshold = config->scan_rssi_threshold;
-    g_roaming_app.config.scan_rssi_diff = config->scan_rssi_diff;
-
-    g_roaming_app.config.legacy_roam_enabled = config->legacy_roam_enabled;
-    g_roaming_app.config.btm_retry_cnt = config->btm_retry_cnt;
-    g_roaming_app.config.btm_roaming_enabled = config->btm_roaming_enabled;
-
-    g_roaming_app.config.rrm_monitor = config->rrm_monitor;
-    g_roaming_app.config.rrm_monitor_time = config->rrm_monitor_time;
-    g_roaming_app.config.rrm_monitor_rssi_threshold = config->rrm_monitor_rssi_threshold;
-    g_roaming_app.config.scan_config = config->scan_config;
-
-    ESP_LOGD(ROAMING_TAG, "Updated Roaming app config :");
-
-    ESP_LOGD(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d",
+    ESP_LOGI(ROAMING_TAG, "backoff time=%d low_rssi_roam_trigger=%d low_rssi_threshold=%d rssi_threshold_reduction_offset=%d",
                             g_roaming_app.config.backoff_time, g_roaming_app.config.low_rssi_roam_trigger,
                             g_roaming_app.config.low_rssi_threshold, g_roaming_app.config.rssi_threshold_reduction_offset);
 
-    ESP_LOGD(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
+    ESP_LOGI(ROAMING_TAG, "scan_monitor=%d scan_interval=%d scan_rssi_threshold=%d scan_rssi_diff=%d",
                         g_roaming_app.config.scan_monitor, g_roaming_app.config.scan_interval,
                         g_roaming_app.config.scan_rssi_threshold, g_roaming_app.config.scan_rssi_diff);
 
-    ESP_LOGD(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
+    ESP_LOGI(ROAMING_TAG, "legacy_roam_enabled=%d, btm_retry_cnt=%d btm_roaming_enabled=%d",
                         g_roaming_app.config.legacy_roam_enabled,
                         g_roaming_app.config.btm_retry_cnt, g_roaming_app.config.btm_roaming_enabled);
 
-    ESP_LOGD(ROAMING_TAG, "rrm_monitor=%d, rrm_monitor_time=%d rrm_monitor_rssi_threshold=%d",
+    ESP_LOGI(ROAMING_TAG, "rrm_monitor=%d, rrm_monitor_time=%d rrm_monitor_rssi_threshold=%d",
                         g_roaming_app.config.rrm_monitor,
                         g_roaming_app.config.rrm_monitor_time,
                         g_roaming_app.config.rrm_monitor_rssi_threshold);
+
+    return ESP_OK;
+}
+
+esp_err_t roam_set_config_params(struct roam_config *config)
+{
+    wifi_ipc_config_t cfg;
+
+    cfg.fn = update_config_params;
+    cfg.arg = config;
+    cfg.arg_size = sizeof(*config);
+    esp_wifi_ipc_internal(&cfg, false);
 
     return ESP_OK;
 }

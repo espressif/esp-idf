@@ -23,9 +23,6 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-#include "esp_roaming.h"
-#endif
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
