@@ -94,15 +94,8 @@ typedef struct esp_now_recv_info {
 
 /**
  * @brief ESPNOW rate config
- *
  */
-typedef struct esp_now_rate_config {
-    wifi_phy_mode_t phymode;                 /**< ESPNOW phymode of specified interface */
-    wifi_phy_rate_t rate;                    /**< ESPNOW rate of specified interface */
-    bool ersu;                               /**< ESPNOW using ERSU to send frame, ERSU is a transmission mode related to 802.11 ax.
-                                                  ERSU is always used in long distance transmission, and its frame has lower rate compared with SU mode */
-    bool dcm;                                /**< ESPNOW using dcm rate to send frame */
-} esp_now_rate_config_t;
+typedef wifi_tx_rate_config_t esp_now_rate_config_t;
 
 /**
   * @brief     Callback function of receiving ESPNOW data
