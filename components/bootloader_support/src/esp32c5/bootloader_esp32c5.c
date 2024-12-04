@@ -103,6 +103,15 @@ static inline void bootloader_ana_reset_config(void)
 
 esp_err_t bootloader_init(void)
 {
+#if CONFIG_SECURE_BOOT
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    if (efuse_hal_chip_revision() == 0) {
+        ESP_LOGE(TAG, "Chip version 0.0 is not supported with RSA secure boot scheme. Please select the ECDSA scheme.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif /* CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME */
+#endif /* CONFIG_SECURE_BOOT */
+
     esp_err_t ret = ESP_OK;
 
     bootloader_hardware_init();
