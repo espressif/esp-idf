@@ -32,17 +32,42 @@ const regdma_entries_config_t intr_matrix_regs_retention[] = {
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
+/* L1 Cache Registers Context */
+/*  CACHE_L1_ICACHE_CTRL_REG & CACHE_L1_DCACHE_CTRL_REG & CACHE_L1_BYPASS_CACHE_CONF_REG &
+    CACHE_L1_CACHE_ACS_FAIL_CTRL_REG & CACHE_L1_CACHE_ACS_FAIL_INT_ENA_REG*/
+#define L1_CACHE_RETENTION_REGS_CNT     (5)
+#define L1_CACHE_RETENTION_REGS_BASE    (CACHE_L1_ICACHE_CTRL_REG)
+static const uint32_t l1_cache_regs_map[4] = {0x7, 0x0, 0xc000000, 0x0};
 /* L2 Cache Registers Context */
-#define N_REGS_L2_CACHE()      (((CACHE_L2_CACHE_DATA_MEM_POWER_CTRL_REG - CACHE_L2_CACHE_CTRL_REG) / 4) + 1)
-const regdma_entries_config_t l2_cache_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(0), CACHE_L2_CACHE_CTRL_REG, CACHE_L2_CACHE_CTRL_REG, N_REGS_L2_CACHE(), 0, 0), .owner = ENTRY(0) }  /* hp system */
+/*  CACHE_L2_CACHE_CTRL_REG & CACHE_L2_BYPASS_CACHE_CONF_REG &
+    CACHE_L2_CACHE_CACHESIZE_CONF_REG & CACHE_L2_CACHE_BLOCKSIZE_CONF_REG &
+    CACHE_L2_CACHE_ACS_FAIL_CTRL_REG & CACHE_L2_CACHE_ACS_FAIL_INT_ENA_REG */
+#define L2_CACHE_RETENTION_REGS_CNT     (6)
+#define L2_CACHE_RETENTION_REGS_BASE    (CACHE_L2_CACHE_CTRL_REG)
+static const uint32_t l2_cache_regs_map[4] = {0xc000000f, 0x0, 0x0, 0x0};
+const regdma_entries_config_t cache_regs_retention[] = {
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_CACHE_LINK(0x00), L1_CACHE_RETENTION_REGS_BASE, L1_CACHE_RETENTION_REGS_BASE, \
+                                            L1_CACHE_RETENTION_REGS_CNT, 0, 0,              \
+                                            l1_cache_regs_map[0], l1_cache_regs_map[1],     \
+                                            l1_cache_regs_map[2], l1_cache_regs_map[3]),    \
+        .owner = ENTRY(0)
+    },
+    [1] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_CACHE_LINK(0x01),                                    \
+                                            L2_CACHE_RETENTION_REGS_BASE, L2_CACHE_RETENTION_REGS_BASE, \
+                                            L2_CACHE_RETENTION_REGS_CNT, 0, 0,                          \
+                                            l2_cache_regs_map[0], l2_cache_regs_map[1],                 \
+                                            l2_cache_regs_map[2], l2_cache_regs_map[3]),                \
+        .owner = ENTRY(0)
+    },
 };
-_Static_assert(ARRAY_SIZE(l2_cache_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
+_Static_assert(ARRAY_SIZE(cache_regs_retention) == CACHE_RETENTION_LINK_LEN, "Inconsistent L2 CACHE retention link length definitions");
 
 /* HP System Registers Context */
 #define N_REGS_HP_SYSTEM()      (((HP_SYSTEM_AHB2AXI_BRESP_ERR_INT_ENA_REG - DR_REG_HP_SYS_BASE) / 4) + 1)
 const regdma_entries_config_t hp_system_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(0), DR_REG_HP_SYS_BASE, DR_REG_HP_SYS_BASE, N_REGS_HP_SYSTEM(), 0, 0), .owner = ENTRY(0) }  /* hp system */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_HPSYS_LINK(2), DR_REG_HP_SYS_BASE, DR_REG_HP_SYS_BASE, N_REGS_HP_SYSTEM(), 0, 0), .owner = ENTRY(0) }  /* hp system */
 };
 _Static_assert(ARRAY_SIZE(hp_system_regs_retention) == HP_SYSTEM_RETENTION_LINK_LEN, "Inconsistent HP_SYSTEM retention link length definitions");
 

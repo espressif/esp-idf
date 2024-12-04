@@ -1931,6 +1931,10 @@ config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
+config SOC_PM_CACHE_RETENTION_BY_PAU
+    bool
+    default y
+
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
