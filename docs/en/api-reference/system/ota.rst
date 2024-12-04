@@ -18,7 +18,7 @@ The following modes support OTA updates for certain partitions:
 
   - Bootloader.
   - Partition table.
-  - other data partitions like nvs, fat, etc.
+  - Other data partitions like NVS, FAT, etc.
 
 .. _ota_data_partition:
 

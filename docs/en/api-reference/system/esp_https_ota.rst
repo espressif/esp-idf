@@ -51,7 +51,7 @@ Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http
 Signature Verification
 ----------------------
 
-For additional security, signature of OTA firmware images can be verified. For more information， please refer to :ref:`secure-ota-updates`.
+For additional security, signature of OTA firmware images can be verified. For more information, please refer to :ref:`secure-ota-updates`.
 
 .. _ota_updates_pre-encrypted-firmware:
 
@@ -80,6 +80,7 @@ Design
 This whole workflow is managed by an external component `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ and it gets plugged into the OTA update framework through decryption callback (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) mechanism.
 
 .. note::
+
     The supported scheme is based on RSA-3072 and the private key on device side must be protected using platform security features.
 
 OTA System Events
@@ -87,7 +88,7 @@ OTA System Events
 
 ESP HTTPS OTA has various events for which a handler can be triggered by the :doc:`../system/esp_event` when the particular event occurs. The handler has to be registered using :cpp:func:`esp_event_handler_register`. This helps the event handling for ESP HTTPS OTA.
 
-:cpp:enum:`esp_https_ota_event_t` has all the events which can happen when performing OTA upgrade using ESP HTTPS OTA.
+:cpp:enum:`esp_https_ota_event_t` has all possible events that can occur when performing OTA upgrade using ESP HTTPS OTA.
 
 Event Handler Example
 ^^^^^^^^^^^^^^^^^^^^^
