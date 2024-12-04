@@ -428,3 +428,19 @@ void * ieee80211_alloc_proberesp(void *p, int arg)
 }
 
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32C2
+#if CONFIG_ESP32C2_REV_MIN_FULL < 200
+void esp32c2_eco4_rom_ptr_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
+#endif
+
+#ifndef CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+void pm_beacon_offset_funcs_init(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif
