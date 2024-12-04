@@ -1,8 +1,7 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
-
 import pytest
-from idf_unity_tester import CaseTester
+from pytest_embedded_idf.unity_tester import CaseTester
 
 
 @pytest.mark.esp32

@@ -35,14 +35,13 @@ from pytest_embedded.plugin import multi_dut_argument
 from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded.utils import find_by_suffix
 from pytest_embedded_idf.dut import IdfDut
+from pytest_embedded_idf.unity_tester import CaseTester
 
 try:
     from idf_ci_utils import to_list
-    from idf_unity_tester import CaseTester
 except ImportError:
     sys.path.append(os.path.join(os.path.dirname(__file__), 'tools', 'ci'))
     from idf_ci_utils import to_list
-    from idf_unity_tester import CaseTester
 
 try:
     import common_test_methods  # noqa: F401
@@ -233,8 +232,8 @@ def session_root_logdir(idf_path: str) -> str:
 
 
 @pytest.fixture
-def case_tester(dut: IdfDut, **kwargs):  # type: ignore
-    yield CaseTester(dut, **kwargs)
+def case_tester(unity_tester: CaseTester) -> CaseTester:
+    return unity_tester
 
 
 @pytest.fixture
