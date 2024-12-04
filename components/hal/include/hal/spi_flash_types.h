@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -48,7 +48,7 @@ typedef enum esp_flash_speed_s {
     ESP_FLASH_26MHZ = 26,    ///< The flash runs under 26MHz
     ESP_FLASH_40MHZ = 40,    ///< The flash runs under 40MHz
     ESP_FLASH_80MHZ = 80,    ///< The flash runs under 80MHz
-    ESP_FLASH_120MHZ = 120,   ///< The flash runs under 120MHz, 120MHZ can only be used by main flash after timing tuning in system. Do not use this directely in any API.
+    ESP_FLASH_120MHZ = 120,   ///< The flash runs under 120MHz, 120MHZ can only be used by main flash after timing tuning in system. Do not use this directly in any API.
     ESP_FLASH_SPEED_MAX, ///< The maximum frequency supported by the host is ``ESP_FLASH_SPEED_MAX-1``.
 } esp_flash_speed_t __attribute__((deprecated));
 

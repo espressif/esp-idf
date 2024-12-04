@@ -28,6 +28,13 @@ menu "Test App Configuration"
         help
             Enabling this option includes ECDSA Peripheral related test cases in the build for supported targets.
 
+    config CRYPTO_TEST_APP_ENABLE_XTS_AES_TESTS
+        depends on !CRYPTO_TEST_APP_ENABLE_DS_TESTS
+        bool "Enable XTS-AES Peripheral test cases"
+        default n
+        help
+            Enabling this option includes XTS-AES Peripheral related test cases in the build for supported targets.
+
     config CRYPTO_TESTAPP_USE_AES_INTERRUPT
         bool "Use interrupt for long AES operations"
         depends on  SOC_AES_SUPPORTED

@@ -528,12 +528,13 @@ To use this mode, take the following steps:
 
   .. list::
 
-    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`
-    :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
+    - :ref:`Enable flash encryption on boot <CONFIG_SECURE_FLASH_ENC_ENABLED>`.
+    :esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once Release mode is selected, the ``DISABLE_DL_ENCRYPT`` and ``DISABLE_DL_DECRYPT`` eFuse bits will be burned to disable flash encryption hardware in ROM Download Mode.)
     :esp32: - :ref:`Select UART ROM download mode (Permanently disabled (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>` (Note that this option is only available when :ref:`CONFIG_ESP32_REV_MIN` is set to 3 (ESP32 V3).) The default choice is to keep UART ROM download mode enabled, however it is recommended to permanently disable this mode to reduce the options available to an attacker.
-    :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>` (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
+    :not esp32: - :ref:`Select Release mode <CONFIG_SECURE_FLASH_ENCRYPTION_MODE>`. (Note that once Release mode is selected, the ``EFUSE_DIS_DOWNLOAD_MANUAL_ENCRYPT`` eFuse bit will be burned to disable flash encryption hardware in ROM Download Mode.)
     :not esp32: - :ref:`Select UART ROM download mode (Permanently switch to Secure mode (recommended)) <CONFIG_SECURE_UART_ROM_DL_MODE>`. This is the default option, and is recommended. It is also possible to change this configuration setting to permanently disable UART ROM download mode, if this mode is not needed.
-    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`
+    :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - :ref:`Select enable XTS-AES's pseudo rounds function <CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC>`. This option is selected by default and its strength is configured to level low considering the performance impact on the flash encryption/decryption operations. Please refer to :ref:`xts-aes-pseudo-round-func` for more information regarding the performance impact per security level.
+    - :ref:`Select the appropriate bootloader log verbosity <CONFIG_BOOTLOADER_LOG_LEVEL>`.
     - Save the configuration and exit.
 
 Enabling flash encryption will increase the size of bootloader, which might require updating partition table offset. See :ref:`bootloader-size`.
@@ -1119,3 +1120,38 @@ The following sections provide some reference information about the operation of
   - The flash encryption key is stored in ``BLOCK_KEY0`` eFuse and, by default, is protected from further writes or software readout.
 
   - To see the full flash encryption algorithm implemented in Python, refer to the `_flash_encryption_operation()` function in the ``espsecure.py`` source code.
+
+.. only:: SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+
+  Protection Against Side-Channel Attacks
+  ---------------------------------------
+
+  .. _xts-aes-pseudo-round-func:
+
+  Pseudo-Round Function
+  ^^^^^^^^^^^^^^^^^^^^^
+
+  {IDF_TARGET_NAME} incorporates a pseudo-round function in the XTS-AES peripheral, thus enabling the peripheral to randomly insert pseudo-rounds before and after the original operation rounds and also generate a pseudo key to perform these dummy operations.
+  These operations do not alter the original result, but they increase the complexity to perform side channel analysis attacks by randomizing the power profile.
+
+  :ref:`CONFIG_SECURE_FLASH_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the XTS-AES operations.
+
+  .. list-table:: Performance impact on XTS-AES operations per strength level
+      :widths: 10 10
+      :header-rows: 1
+      :align: center
+
+      * - **Strength**
+        - **Performance Impact** [#]_
+      * - Low
+        - < 0.5 %
+      * - Medium
+        - 6.2 %
+      * - High
+        - 18 %
+
+  .. [#] The above performance numbers have been calculated using the XTS-AES test of the HAL crypto test app :component_file:`test_xts_aes.c <hal/test_apps/crypto/main/xts_aes/test_xts_aes.c>`.
+
+  You can configure the strength of the pseudo rounds functions according to your use cases. For example, increasing the strength would provide higher security but would slow down the flash encryption/decryption operations.
+
+  Considering the above performance impact, ESP-IDF by-default enables low strength configuration for the pseudo-round function for minimal performance impact.
