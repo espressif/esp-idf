@@ -16,6 +16,12 @@
 
 #pragma once
 
+#if __has_include("soc/soc_caps_eval.h")
+#include "soc/soc_caps_eval.h"
+#endif
+
+#define _SOC_CAPS_TARGET_IS_ESP32P4     1 // [gen_soc_caps:ignore]
+
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
 #define SOC_ANA_CMPR_SUPPORTED          1
@@ -227,7 +233,6 @@
 #define SOC_DMA2D_GROUPS                            (1U) // Number of 2D-DMA groups
 #define SOC_DMA2D_TX_CHANNELS_PER_GROUP             (3)  // Number of 2D-DMA TX (OUT) channels in each group
 #define SOC_DMA2D_RX_CHANNELS_PER_GROUP             (2)  // Number of 2D-DMA RX (IN) channels in each group
-// #define SOC_DMA2D_SUPPORT_ETM              (1)  // Support ETM submodule
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -571,7 +576,6 @@
 #define SOC_SPI_SUPPORT_OCT                 1
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
 #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
-#define SOC_SPI_SUPPORT_CLK_SPLL            1
 
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 // host_id = 0 -> SPI0/SPI1, host_id = 1 -> SPI2,
@@ -582,8 +586,8 @@
 #define SOC_SPI_MAX_PRE_DIVIDER     16
 
 /*-------------------------- LP SPI CAPS ----------------------------------------*/
-#define SOC_LP_SPI_PERIPH_NUM              1
 #define SOC_LP_SPI_MAXIMUM_BUFFER_SIZE     64
+
 /*-------------------------- SPIRAM CAPS ----------------------------------------*/
 #define SOC_SPIRAM_XIP_SUPPORTED        1
 
@@ -607,8 +611,6 @@
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED        1
 
-#define SOC_MEMSPI_FLASH_PSRAM_INDEPENDENT        1
-
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
 #define SOC_SYSTIMER_COUNTER_NUM            2  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM              3  // Number of alarm units
@@ -625,12 +627,6 @@
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
-#define SOC_TIMER_GROUPS                  2
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  2
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH 54
-#define SOC_TIMER_GROUP_SUPPORT_XTAL      1
-#define SOC_TIMER_GROUP_SUPPORT_RC_FAST   1
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      4
 #define SOC_TIMER_SUPPORT_ETM             1
 #define SOC_TIMER_SUPPORT_SLEEP_RETENTION 1
 
@@ -764,9 +760,6 @@
 
 #define SOC_PM_RETENTION_MODULE_NUM         (64)
 
-/*-------------------------- PSRAM CAPS ----------------------------*/
-#define SOC_PSRAM_VDD_POWER_MPLL    (1)
-
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
@@ -782,7 +775,6 @@
 #define SOC_PERIPH_CLK_CTRL_SHARED                (1)     /*!< Peripheral clock control (e.g. set clock source) is shared between various peripherals */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
-#define SOC_TEMPERATURE_SENSOR_LP_PLL_SUPPORT                (1)
 #define SOC_TEMPERATURE_SENSOR_INTR_SUPPORT                  (1)
 #define SOC_TSENS_IS_INDEPENDENT_FROM_ADC                    (1)  /*!< Temperature sensor is a separate module, not share regs with ADC */
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_ETM                   (1)
@@ -809,11 +801,8 @@
 
 /*--------------------------- I3C ---------------------------------*/
 #define SOC_I3C_MASTER_PERIPH_NUM                   (1)
-#define SOC_I3C_MASTER_ADDRESS_TABLE_NUM            (12)
-#define SOC_I3C_MASTER_COMMAND_TABLE_NUM            (12)
 
 /*------------------------------------- ULP CAPS -------------------------------------*/
 #define SOC_LP_CORE_SUPPORT_ETM                     (1) /*!< LP Core supports ETM */
 #define SOC_LP_CORE_SUPPORT_LP_ADC                  (1) /*!< LP ADC can be accessed from the LP-Core */
-#define SOC_LP_CORE_SUPPORT_LP_VAD                  (1) /*!< LP VAD can be accessed from the LP-Core */
 #define SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS   (1) /*!< LP Core will raise exceptions if accessing invalid addresses */

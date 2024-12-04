@@ -36,6 +36,12 @@
 
 #pragma once
 
+#if __has_include("soc/soc_caps_eval.h")
+#include "soc/soc_caps_eval.h"
+#endif
+
+#define _SOC_CAPS_TARGET_IS_ESP32S2     1 // [gen_soc_caps:ignore]
+
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
 #define SOC_DAC_SUPPORTED               1
@@ -333,14 +339,6 @@
 #define SOC_SYSTIMER_ALARM_NUM    3  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO 32 // Bit width of systimer low part
 #define SOC_SYSTIMER_BIT_WIDTH_HI 32 // Bit width of systimer high part
-
-/*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUPS                  (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
-#define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
-#define SOC_TIMER_GROUP_SUPPORT_APB       (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part

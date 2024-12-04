@@ -16,7 +16,7 @@
 PROJECT_NAME = "IDF Programming Guide"
 
 ## The 'INPUT' statement below is used as input by script 'gen-df-input.py'
-## to automatically generate API reference list files heder_file.inc
+## to automatically generate API reference list files header_file.inc
 ## These files are placed in '_inc' directory
 ## and used to include in API reference documentation
 
@@ -311,7 +311,8 @@ INPUT = \
     $(PROJECT_PATH)/components/protocomm/include/crypto/srp6a/esp_srp.h \
     $(PROJECT_PATH)/components/pthread/include/esp_pthread.h \
     $(PROJECT_PATH)/components/sdmmc/include/sdmmc_cmd.h \
-	$(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
+    $(PROJECT_PATH)/components/soc/include/soc/soc_caps_eval.h \
+    $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/adc_channel.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/clk_tree_defs.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/gpio_num.h \
     $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/soc_caps.h \

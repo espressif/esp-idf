@@ -191,10 +191,6 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
-config SOC_XTAL_SUPPORT_AUTO_DETECT
-    bool
-    default y
-
 config SOC_ADC_RTC_CTRL_SUPPORTED
     bool
     default y
@@ -249,11 +245,11 @@ config SOC_ADC_DIGI_MONITOR_NUM
 
 config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
     int
-    default 2
+    default 2000000
 
 config SOC_ADC_SAMPLE_FREQ_THRES_LOW
     int
-    default 20
+    default 20000
 
 config SOC_ADC_RTC_MIN_BITWIDTH
     int
@@ -436,10 +432,6 @@ config SOC_I2S_SUPPORTS_ADC_DAC
     default y
 
 config SOC_I2S_SUPPORTS_ADC
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_DAC
     bool
     default y
 
@@ -688,26 +680,6 @@ config SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED
     default y
 
 config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-    bool
-    default y
-
-config SOC_TIMER_GROUPS
-    int
-    default 2
-
-config SOC_TIMER_GROUP_TIMERS_PER_GROUP
-    int
-    default 2
-
-config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
-    int
-    default 64
-
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 4
-
-config SOC_TIMER_GROUP_SUPPORT_APB
     bool
     default y
 

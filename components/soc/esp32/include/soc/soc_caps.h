@@ -37,6 +37,10 @@
 
 #pragma once
 
+#if __has_include("soc/soc_caps_eval.h")
+#include "soc/soc_caps_eval.h"
+#endif
+
 #ifdef __has_include
 #  if __has_include("sdkconfig.h")
 #    include "sdkconfig.h"
@@ -55,9 +59,10 @@
 // Define warning strings here for ECO-ed features to show error when they are used without being
 // defined correctly
 #define SOC_BROWNOUT_RESET_SUPPORTED    "Not determined" // [gen_soc_caps:ignore]
-#define SOC_TWAI_BRP_DIV_SUPPORTED      "Not determined" // [gen_soc_caps:ignore]
 #define SOC_DPORT_WORKAROUND            "Not determined" // [gen_soc_caps:ignore]
 #endif
+
+#define _SOC_CAPS_TARGET_IS_ESP32 1 // [gen_soc_caps:ignore]
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_CAPS_ECO_VER_MAX        301
@@ -114,7 +119,6 @@
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_26M            1
 #define SOC_XTAL_SUPPORT_40M            1
-#define SOC_XTAL_SUPPORT_AUTO_DETECT    1   // Measure XTAL freq with an internal RC clock
 
 /*-------------------------- ADC CAPS ----------------------------------------*/
 /*!< SAR ADC Module*/
@@ -135,8 +139,8 @@
 #define SOC_ADC_DIGI_RESULT_BYTES               (2)
 #define SOC_ADC_DIGI_DATA_BYTES_PER_CONV        (4)
 #define SOC_ADC_DIGI_MONITOR_NUM                (0U) // to reference `IDF_TARGET_SOC_ADC_DIGI_MONITOR_NUM` in document
-#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2*1000*1000)
-#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20*1000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_HIGH          (2000000)
+#define SOC_ADC_SAMPLE_FREQ_THRES_LOW           (20000)
 
 /*!< RTC */
 #define SOC_ADC_RTC_MIN_BITWIDTH                (9)
@@ -226,7 +230,6 @@
 #define SOC_I2S_PDM_MAX_RX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_ADC_DAC    (1)
 #define SOC_I2S_SUPPORTS_ADC        (1)
-#define SOC_I2S_SUPPORTS_DAC        (1)
 #define SOC_I2S_SUPPORTS_LCD_CAMERA (1)
 #define SOC_I2S_MAX_DATA_WIDTH      (24)
 
@@ -322,13 +325,6 @@
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
 
-/*-------------------------- TIMER GROUP CAPS --------------------------------*/
-#define SOC_TIMER_GROUPS                  (2)
-#define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (2)
-#define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (64)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
-#define SOC_TIMER_GROUP_SUPPORT_APB       (1)
-
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
@@ -347,7 +343,6 @@
 #define SOC_TWAI_BRP_MIN                2
 #if SOC_CAPS_ECO_VER >= 200
 #  define SOC_TWAI_BRP_MAX              256
-#  define SOC_TWAI_BRP_DIV_SUPPORTED    1
 #else
 #  define SOC_TWAI_BRP_MAX              128
 #endif
