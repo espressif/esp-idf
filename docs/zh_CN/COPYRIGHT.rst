@@ -19,9 +19,9 @@
 
 以下这些第三方库包含在 ESP-IDF 生成的应用程序（固件）中。
 
-* :component:`Newlib <newlib>` 经 BSD 许可证许可，版权归各方所有，如 :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>` 中所述。如果启用了 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`，另请参阅 :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`。
+* 如 :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>` 中所述， :component:`Newlib <newlib>` 经 BSD 许可证许可，版权归各方所有。如启用了 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`，请参阅 :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`。
 
-* :component:`Picolibc <newlib>` 经 BSD 许可证许可，版权归各方所有，如 :component_file:`COPYING.picolibc <newlib/COPYING.NEWLIB>` 中所述。
+* 如 :component_file:`COPYING.picolibc <newlib/COPYING.NEWLIB>` 中所述， :component:`Picolibc <newlib>` 经 BSD 许可证许可，版权归各方所有。
 
 * :component:`Xtensa 头文件 <xtensa/include/xtensa>` 版权归 2013 Tensilica 公司所有，并根据各头文件中复制的 MIT 许可证进行许可。
 

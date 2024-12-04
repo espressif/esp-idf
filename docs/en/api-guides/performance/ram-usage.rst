@@ -57,10 +57,10 @@ Configuration Options for Stack Overflow Detection
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-    Hardware Stack Guard
-    ~~~~~~~~~~~~~~~~~~~~
+   Hardware Stack Guard
+   ~~~~~~~~~~~~~~~~~~~~
 
-    The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
+   The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
 
 End of Stack Watchpoint
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,11 +74,11 @@ The Stack Canary Bytes feature adds a set of magic bytes at the end of each task
 
 .. note::
 
-    When using the End of Stack Watchpoint or Stack Canary Bytes, it is possible that a stack pointer skips over the watchpoint or canary bytes on a stack overflow and corrupts another region of RAM instead. Thus, these methods cannot detect all stack overflows.
+   When using the End of Stack Watchpoint or Stack Canary Bytes, it is possible that a stack pointer skips over the watchpoint or canary bytes on a stack overflow and corrupts another region of RAM instead. Thus, these methods cannot detect all stack overflows.
 
-    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+   .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-        Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
+      Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
 
 Run-time Methods to Determine Stack Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
