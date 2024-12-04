@@ -910,8 +910,6 @@ examples/protocols/sockets/udp_server/main/udp_server.c
 examples/protocols/static_ip/main/static_ip_example_main.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
 examples/security/flash_encryption/main/flash_encrypt_main.c
-examples/storage/custom_flash_driver/components/custom_chip_driver/chip_drivers.c
-examples/storage/custom_flash_driver/components/custom_chip_driver/spi_flash_chip_eon.c
 examples/storage/custom_flash_driver/main/main.c
 examples/storage/nvs_rw_blob/main/nvs_blob_example_main.c
 examples/storage/nvs_rw_value/main/nvs_value_example_main.c

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,15 +99,20 @@ void bootloader_write_status_8b_xmc25qu64a(unsigned new_status);
 
    Searching of this table stops when the first match is found.
  */
-extern const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_support_list[];
+extern const bootloader_qio_info_t* bootloader_flash_qe_support_list;
+
+/**
+ * @brief The bootloader flash qe list count number.
+*/
+extern uint8_t bootloader_flash_qe_list_count;
 
 /**
   * @brief Unlock Flash write protect.
   *        Please do not call this function in SDK.
   *
-  * @note This can be overridden because it's attribute weak.
+  * @note This can be overridden because it's attribute weak, when there is a same name symbol.
   */
-esp_err_t __attribute__((weak)) bootloader_flash_unlock(void);
+esp_err_t bootloader_flash_unlock(void);
 
 #if CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_QUAD_FLASH || CONFIG_BOOTLOADER_CACHE_32BIT_ADDR_OCTAL_FLASH
 /**
@@ -115,7 +120,7 @@ esp_err_t __attribute__((weak)) bootloader_flash_unlock(void);
  *
  * @param flash_mode SPI flash working mode.
  *
- * @note This can be overridden because it's attribute weak.
+ * @note This can be overridden because it's attribute weak, when there is a same name symbol.
  */
 void __attribute__((weak)) bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t flash_mode);
 #endif
