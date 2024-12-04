@@ -733,7 +733,7 @@ void bta_gatts_indicate_handle (tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
             }
         }
     } else {
-        APPL_TRACE_ERROR("Not an registered servce attribute ID: 0x%04x",
+        APPL_TRACE_ERROR("Not a registered service attribute ID: 0x%04x",
                          p_msg->api_indicate.attr_id);
     }
 }
@@ -923,7 +923,7 @@ void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
 **
 ** Function         bta_gatts_show_local_database
 **
-** Description      print loacl service database
+** Description      print local service database
 **
 ** Returns          none.
 **
