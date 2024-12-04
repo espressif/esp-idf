@@ -11,11 +11,6 @@ set(srcs "rtc_clk_init.c"
 
 if(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "sar_periph_ctrl.c")
-
-    if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
-        list(APPEND srcs "mspi_timing_config.c")
-    endif()
-
 endif()
 
 add_prefix(srcs "${CMAKE_CURRENT_LIST_DIR}/" "${srcs}")

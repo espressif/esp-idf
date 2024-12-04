@@ -21,7 +21,7 @@ extern "C" {
 typedef enum {
     MSPI_TIMING_SPEED_MODE_LOW_PERF,    /*!< Low performance speed mode, this mode is safe for all the scenarios,
                                              unless the MSPI attached devices (Flash, PSRAM) are powered down.
-                                             As a tradeoff, the performance of the MSPI (devices) are swithed to a very low speed */
+                                             As a tradeoff, the performance of the MSPI (devices) are switched to a very low speed */
     MSPI_TIMING_SPEED_MODE_NORMAL_PERF, /*!< Normal performance speed mode, MSPI speed is the same as you configured in menuconfig */
 } mspi_timing_speed_mode_t;
 
