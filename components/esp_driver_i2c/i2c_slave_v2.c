@@ -104,7 +104,7 @@ IRAM_ATTR static bool i2c_slave_handle_rx_fifo(i2c_slave_dev_t *i2c_slave, uint3
             i2c_slave->rx_data_count += len;
         }
     }
-    xSemaphoreTakeFromISR(i2c_slave->operation_mux, &xTaskWoken);
+    xSemaphoreGiveFromISR(i2c_slave->operation_mux, &xTaskWoken);
     return xTaskWoken;
 }
 
