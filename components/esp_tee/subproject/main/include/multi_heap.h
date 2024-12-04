@@ -5,7 +5,6 @@
  */
 #pragma once
 #include <string.h>
-#include "esp_tee.h"
 #include "tlsf.h"
 
 /* multi_heap is a heap implementation for handling multiple

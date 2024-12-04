@@ -3,12 +3,16 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_tee.h"
+#include "soc/soc.h"
 #include "esp_attr.h"
+#include "esp_rom_sys.h"
 #include "esp_private/panic_reason.h"
+
 #include "riscv/csr.h"
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
+
+#include "esp_tee.h"
 
 #define tee_panic_print(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
 
