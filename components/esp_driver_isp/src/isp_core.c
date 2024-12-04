@@ -390,3 +390,29 @@ esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodu
 
     return ESP_OK;
 }
+
+esp_err_t esp_isp_enable_yuv_submodules(isp_proc_handle_t proc, bool en)
+{
+    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+
+    bool rgb2yuv = false;
+    bool yuv2rgb = false;
+
+    if (proc->out_color_format.color_space == COLOR_SPACE_RGB) {
+        rgb2yuv = true;
+        yuv2rgb = true;
+    } else if (proc->out_color_format.color_space == COLOR_SPACE_YUV) {
+        rgb2yuv = true;
+    }
+
+    portENTER_CRITICAL(&proc->spinlock);
+    if (rgb2yuv) {
+        isp_ll_enable_rgb2yuv(proc->hal.hw, en);
+    }
+    if (yuv2rgb) {
+        isp_ll_enable_yuv2rgb(proc->hal.hw, en);
+    }
+    portEXIT_CRITICAL(&proc->spinlock);
+
+    return ESP_OK;
+}

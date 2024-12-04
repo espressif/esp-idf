@@ -457,6 +457,28 @@ static inline void isp_ll_enable_line_end_packet_exist(isp_dev_t *hw, bool en)
 }
 
 /**
+ * @brief Enable rgb2yuv
+ *
+ * @param[in] hw  Hardware instance address
+ * @param[in] en  Enable / Disable
+ */
+static inline void isp_ll_enable_rgb2yuv(isp_dev_t *hw, bool en)
+{
+    hw->cntl.rgb2yuv_en = en;
+}
+
+/**
+ * @brief Enable yuv2rgb
+ *
+ * @param[in] hw  Hardware instance address
+ * @param[in] en  Enable / Disable
+ */
+static inline void isp_ll_enable_yuv2rgb(isp_dev_t *hw, bool en)
+{
+    hw->cntl.yuv2rgb_en = en;
+}
+
+/**
  * @brief Get if demosaic is enabled
  *
  * @param[in] hw  Hardware instance address
