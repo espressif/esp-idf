@@ -21,11 +21,17 @@
 #include "test_hcd_common.h"
 #include "mock_msc.h"
 #include "unity.h"
+#include "sdkconfig.h"
 
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
 #define ENUM_ADDR               1   // Device address to use for tests that enumerate the device
 #define ENUM_CONFIG             1   // Device configuration number to use for tests that enumerate the device
+
+#ifdef CONFIG_USB_HCD_TEST_OTG_DRVVBUS_ENABLE
+#define OTG_DRVVBUS_ENABLE
+#define OTG_DRVVBUS_GPIO CONFIG_USB_HCD_TEST_OTG_DRVVBUS_GPIO
+#endif
 
 typedef struct {
     hcd_port_handle_t port_hdl;
@@ -159,6 +165,24 @@ hcd_port_handle_t test_hcd_setup(void)
         .ext_io_conf = NULL,
         .otg_io_conf = NULL,
     };
+
+#ifdef OTG_DRVVBUS_ENABLE
+    const usb_phy_otg_io_conf_t otg_io_conf = {
+        .iddig_io_num = -1,
+        .avalid_io_num = -1,
+        .vbusvalid_io_num = -1,
+        .idpullup_io_num = -1,
+        .dppulldown_io_num = -1,
+        .dmpulldown_io_num = -1,
+        .drvvbus_io_num = OTG_DRVVBUS_GPIO,
+        .bvalid_io_num = -1,
+        .sessend_io_num = -1,
+        .chrgvbus_io_num = -1,
+        .dischrgvbus_io_num = -1
+    };
+    phy_config.otg_io_conf = &otg_io_conf;
+#endif // OTG_DRVVBUS_ENABLE
+
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_new_phy(&phy_config, &phy_hdl), "Failed to init USB PHY");
     // Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));

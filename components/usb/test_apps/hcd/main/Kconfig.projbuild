@@ -1,29 +1,8 @@
-menu "USB Host Library Test"
+menu "USB HCD Test"
 
     orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
 
-    config USB_HOST_TEST_CHECK_MANU_STR
-        bool "Check manufacturer string descriptor"
-        default y
-        help
-            USB Host tests that check string descriptors will check the manufacturer string
-            descriptor of the connected device.
-
-    config USB_HOST_TEST_CHECK_PROD_STR
-        bool "Check product string descriptor"
-        default n
-        help
-            USB Host tests that check string descriptors will check the product string descriptor
-            of the connected device.
-
-    config USB_HOST_TEST_CHECK_SERIAL_STR
-        bool "Check serial string descriptor"
-        default n
-        help
-            USB Host tests that check string descriptors will check the serial string descriptor
-            of the connected device.
-
-    config USB_HOST_TEST_OTG_DRVVBUS_ENABLE
+    config USB_HCD_TEST_OTG_DRVVBUS_ENABLE
         depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
         bool "Enable driving VBUS by an internal DRVVBUS signal from USB-OTG peripheral"
         default n
@@ -34,8 +13,8 @@ menu "USB Host Library Test"
             Our PHY does not support the DRVVBUS signal, thus we must use an external logic to control the VBUS
             voltage. The DRVVBUS signal is controlled via HCD_PORT_CMD_POWER_OFF and HCD_PORT_CMD_POWER_ON
 
-    config USB_HOST_TEST_OTG_DRVVBUS_GPIO
-        depends on USB_HOST_TEST_OTG_DRVVBUS_ENABLE
+    config USB_HCD_TEST_OTG_DRVVBUS_GPIO
+        depends on USB_HCD_TEST_OTG_DRVVBUS_ENABLE
         int "Connect a GPIO to the internal DRVVBUS signal"
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
         default 1
