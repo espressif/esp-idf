@@ -8,7 +8,6 @@ function(__get_openocd_options openocd_option_var)
     elseif(CONFIG_SOC_USB_SERIAL_JTAG_SUPPORTED)
         set(${openocd_option_var} "-f board/${CONFIG_IDF_TARGET}-builtin.cfg" PARENT_SCOPE)
     else()
-        set(${openocd_option_var}
-            "-f interface/ftdi/esp32_devkitj_v1.cfg -f target/${CONFIG_IDF_TARGET}.cfg" PARENT_SCOPE)
+        set(${openocd_option_var} "-f board/${CONFIG_IDF_TARGET}-ftdi.cfg" PARENT_SCOPE)
     endif()
 endfunction()
