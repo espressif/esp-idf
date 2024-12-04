@@ -1287,7 +1287,7 @@ static struct label *va_find(const uint8_t *label_uuid,
     return match;
 }
 
-static uint8_t va_add(uint8_t *label_uuid, uint16_t *addr)
+uint8_t va_add(uint8_t *label_uuid, uint16_t *addr)
 {
     struct label *update = NULL, *free_slot = NULL;
 
@@ -1295,6 +1295,9 @@ static uint8_t va_add(uint8_t *label_uuid, uint16_t *addr)
     if (update) {
         update->ref++;
         va_store(update);
+        if (addr) {
+            *addr = update->addr;
+        }
         return STATUS_SUCCESS;
     }
 
@@ -1314,7 +1317,7 @@ static uint8_t va_add(uint8_t *label_uuid, uint16_t *addr)
     return STATUS_SUCCESS;
 }
 
-static uint8_t va_del(uint8_t *label_uuid, uint16_t *addr)
+uint8_t va_del(uint8_t *label_uuid, uint16_t *addr)
 {
     struct label *update = NULL;
 
