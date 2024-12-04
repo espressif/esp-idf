@@ -35,7 +35,11 @@
 #define UNPROV_BEACON_INTERVAL     K_SECONDS(5)
 #endif
 
+#if CONFIG_BLE_MESH_BQB_TEST
+#define SECURE_BEACON_INTERVAL     K_SECONDS(3)
+#else
 #define SECURE_BEACON_INTERVAL     K_SECONDS(10)
+#endif
 
 /* 3 transmissions, 20ms interval */
 #define UNPROV_XMIT                BLE_MESH_TRANSMIT(2, 20)
