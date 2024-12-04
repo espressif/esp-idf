@@ -1231,6 +1231,10 @@ config SOC_PM_CPU_RETENTION_BY_SW
     bool
     default y
 
+config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
+    bool
+    default y
+
 config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
