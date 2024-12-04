@@ -143,7 +143,7 @@ bool bt_mesh_prov_pdu_check(uint8_t type, uint16_t length, uint8_t *reason)
 
 static uint8_t bt_mesh_prov_buf_type_get(struct net_buf_simple *buf)
 {
-    return buf->data[PROV_BUF_HEADROOM];
+    return buf->__buf[PROV_BUF_HEADROOM];
 }
 
 uint8_t node_next_xact_id(struct bt_mesh_prov_link *link)
