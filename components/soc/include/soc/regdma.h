@@ -35,6 +35,7 @@ extern "C" {
 #define REGDMA_MODEMLPCON_LINK(_pri)        ((0x03 << 8) | _pri)
 #define REGDMA_PAU_LINK(_pri)               ((0x04 << 8) | _pri)
 
+#define REGDMA_CACHE_LINK(_pri)             ((0x0c << 8) | _pri)
 #define REGDMA_INTMTX_LINK(_pri)            ((0x0d << 8) | _pri)
 #define REGDMA_HPSYS_LINK(_pri)             ((0x0e << 8) | _pri)
 #define REGDMA_TEEAPM_LINK(_pri)            ((0x0f << 8) | _pri)
