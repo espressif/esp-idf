@@ -710,6 +710,12 @@ void * regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint
     return NULL;
 }
 
+regdma_link_mode_t regdma_link_get_config_mode(const regdma_link_config_t *config)
+{
+    assert(config != NULL);
+    return (regdma_link_mode_t)config->head.mode;
+}
+
 #if REGDMA_LINK_DBG
 static __attribute__((unused)) const char *TAG = "regdma_link";
 

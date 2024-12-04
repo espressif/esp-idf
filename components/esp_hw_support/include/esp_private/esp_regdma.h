@@ -537,6 +537,13 @@ void *regdma_link_new_branch_wait_default(void *backup, uint32_t value, uint32_t
 void *regdma_link_init(const regdma_link_config_t *config, bool branch, uint32_t module, int nentry, ...);
 
 /**
+ * @brief Get REGDMA linked list node mode through configuration parameters
+ * @param  config REGDMA linked node configuration parameters
+ * @return        REGDMA linked list node mode
+ */
+regdma_link_mode_t regdma_link_get_config_mode(const regdma_link_config_t *config);
+
+/**
  * @brief Recurse the REGDMA linked list and call the hook subroutine for each node
  * @param  link  The REGDMA linkded list head pointer
  * @param  entry For nodes that support branching, use the branch specified by entry argument recursively
