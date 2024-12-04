@@ -788,7 +788,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp (BT_HDR *p_msg, tGATT_TCB *p_
 **                  buffer.
 **
 ** Returns          TRUE: if data filled successfully.
-**                  FALSE: packet full, or format mismatch.
+**                  FALSE: packet full.
 **
 *******************************************************************************/
 static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg, UINT16 *p_len,
@@ -831,10 +831,9 @@ static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg,
                     gatt_convert_uuid32_to_uuid128(p, ((tGATT_ATTR32 *) p_attr)->uuid);
                     p += LEN_UUID_128;
                 } else {
-                    GATT_TRACE_ERROR("format mismatch");
-                    status = GATT_NO_RESOURCES;
+                    // UUID format mismatch in sequential attributes
+                    // A new request will be sent with the starting handle of the next attribute
                     break;
-                    /* format mismatch */
                 }
                 p_msg->len += info_pair_len[p_msg->offset - 1];
                 len -= info_pair_len[p_msg->offset - 1];
