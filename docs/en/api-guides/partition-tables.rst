@@ -123,7 +123,13 @@ The 8-bit SubType field is specific to a given partition type. ESP-IDF currently
 
 See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defined by ESP-IDF, including the following:
 
-* When type is ``app``, the SubType field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) ... ``ota_15`` (0x1F) or ``test`` (0x20).
+.. only:: not esp32c6
+
+  * When type is ``app``, the SubType field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) ... ``ota_15`` (0x1F) or ``test`` (0x20).
+
+.. only:: esp32c6
+
+  * When type is ``app``, the SubType field can be specified as ``factory`` (0x00), ``ota_0`` (0x10) through ``ota_15`` (0x1F), or ``test`` (0x20). Additionally, if :doc:`ESP-TEE <../security/tee/tee>` functionality is enabled, two TEE-specific subtypes become available: ``tee_0`` (0x30) and ``tee_1`` (0x31).
 
     - ``factory`` (0x00) is the default app partition. The bootloader will execute the factory app unless there it sees a partition of type data/ota, in which case it reads this partition to determine which OTA image to boot.
 
@@ -132,6 +138,10 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
     - ``ota_0`` (0x10) ... ``ota_15`` (0x1F) are the OTA app slots. When :doc:`OTA <../api-reference/system/ota>` is in use, the OTA data partition configures which app slot the bootloader should boot. When using OTA, an application should have at least two OTA application slots (``ota_0`` & ``ota_1``). Refer to the :doc:`OTA documentation <../api-reference/system/ota>` for more details.
     - ``test`` (0x20) is a reserved subtype for factory test procedures. It will be used as the fallback boot partition if no other valid app partition is found. It is also possible to configure the bootloader to read a GPIO input during each boot, and boot this partition if the GPIO is held low, see :ref:`bootloader_boot_from_test_firmware`.
+
+    .. only:: esp32c6
+
+      - ``tee_0`` (0x30) and ``tee_1`` (0x31) are the TEE app slots. When :doc:`TEE OTA <../security/tee/tee-ota>` is in use, the TEE OTA data partition configures which TEE app slot the bootloader should boot. When using TEE OTA, the partition table should have these two TEE app slots. Refer to the :doc:`TEE OTA documentation <../security/tee/tee-ota>` for more details.
 
 * When type is ``bootloader``, the SubType field can be specified as:
 
@@ -170,6 +180,11 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
         - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.
         - The size of this partition should be 4096 bytes (minimum partition size).
+
+    .. only:: esp32c6
+
+            - ``tee_ota`` (0x90) is the :ref:`TEE OTA data partition <tee-ota-data-partition>` which stores information about the currently selected TEE OTA app slot. This partition should be 0x2000 bytes in size. Refer to the :doc:`TEE OTA documentation <../security/tee/tee-ota>` for more details.
+            - ``tee_sec_stg`` (0x91) is the TEE secure storage partition which stores encrypted data that can only be accessed by the TEE application. This partition is used by the :doc:`TEE Secure Storage <../security/tee/tee-sec-storage>` to store sensitive data like cryptographic keys. The size of this partition depends on the application requirements.
 
     - There are other predefined data subtypes for data storage supported by ESP-IDF. These include:
 
