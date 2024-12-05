@@ -1,20 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include "esp_netif_types.h"
 #include "esp_openthread.h"
 #include "lwip/netdb.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-// The network data change callback sets the dns server address of index 0, while the CLI sets the dns server address of index 1.
-#define OPENTHREAD_DNS_SERVER_INDEX 0
-
 /**
  * @brief This function initiizes the dns64 client.
  *
@@ -26,16 +24,60 @@ extern "C" {
 esp_err_t esp_openthread_dns64_client_init(void);
 
 /**
- * @brief This function acquires the DNS server address.
+ * @brief This function acquires the main DNS server address for OpenThread netif.
  *
  * @param[out] dnsserver_addr      The dns server address.
  *
  * @return
  *      - ESP_OK on sussess
- *      - ESP_ERR_INVALID_ARG if dnsserver_addr is NULL
- *      - ESP_ERR_INVALID_STATE if dns sever address not available
+ *      - ESP_ERR_INVALID_ARG if dnsserver_addr is NULL or obtained DNS server address is invalid
+ *      - ESP_ERR_ESP_NETIF_IF_NOT_READY if openthread network interface is not initialized
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS if failed to call esp_netif APIs getting dns info
  */
 esp_err_t esp_openthread_get_dnsserver_addr(ip6_addr_t *dnsserver_addr);
+
+/**
+ * @brief This function acquires the DNS server address for OpenThread netif.
+ *
+ * @param[out] dnsserver_addr      The dns server address.
+ * @param[in] dns_type             The type of DNS server
+ *
+ * @return
+ *      - ESP_OK on sussess
+ *      - ESP_ERR_INVALID_ARG if dnsserver_addr is NULL or obtained DNS server address is invalid
+ *      - ESP_ERR_ESP_NETIF_IF_NOT_READY if openthread network interface is not initialized
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS if failed to call esp_netif APIs getting dns info
+ */
+esp_err_t esp_openthread_get_dnsserver_addr_with_type(ip6_addr_t *dnsserver_addr,
+                                                      esp_netif_dns_type_t dns_type);
+
+/**
+ * @brief This function configures the main DNS server address for OpenThread netif.
+ *
+ * @param[in] dnsserver_addr      The dns server address.
+ *
+ * @return
+ *      - ESP_OK on sussess
+ *      - ESP_ERR_INVALID_ARG if dnsserver_addr is invalid
+ *      - ESP_ERR_ESP_NETIF_IF_NOT_READY if openthread network interface is not initialized
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS if failed to call esp_netif APIs setting dns info
+ */
+esp_err_t esp_openthread_set_dnsserver_addr(const ip6_addr_t dnsserver_addr);
+
+/**
+ * @brief This function configures the DNS server address for OpenThread netif.
+ *
+ * @param[in] dnsserver_addr      The dns server address.
+ * @param[in] dns_type             The type of DNS server
+ *
+ * @return
+ *      - ESP_OK on sussess
+ *      - ESP_ERR_INVALID_ARG if dnsserver_addr is invalid
+ *      - ESP_ERR_ESP_NETIF_IF_NOT_READY if openthread network interface is not initialized
+ *      - ESP_ERR_ESP_NETIF_INVALID_PARAMS if failed to call esp_netif APIs setting dns info
+ */
+esp_err_t esp_openthread_set_dnsserver_addr_with_type(const ip6_addr_t dnsserver_addr,
+                                                      esp_netif_dns_type_t dns_type);
 
 /**
  * @brief This function acquires the NAT64 prefix in the Thread network.
