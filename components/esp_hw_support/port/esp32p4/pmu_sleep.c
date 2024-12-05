@@ -312,20 +312,19 @@ void pmu_sleep_increase_ldo_volt(void) {
 }
 
 void pmu_sleep_shutdown_dcdc(void) {
-    SET_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
+    REG_SET_BIT(PMU_POWER_DCDC_SWITCH_REG, PMU_FORCE_DCDC_SWITCH_PD);
     REG_SET_BIT(PMU_DCM_CTRL_REG, PMU_DCDC_OFF_REQ);
     // Decrease hp_ldo voltage.
     pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DBIAS_DEFAULT);
 }
 
 FORCE_INLINE_ATTR void pmu_sleep_enable_dcdc(void) {
-    CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
+    REG_CLR_BIT(PMU_POWER_DCDC_SWITCH_REG, PMU_FORCE_DCDC_SWITCH_PD);
     SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
     REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
 }
 
 FORCE_INLINE_ATTR void pmu_sleep_shutdown_ldo(void) {
-    CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
     CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
 }
 
@@ -415,10 +414,10 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 #endif
     {
         pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
+        pmu_sleep_enable_dcdc();
         if (pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
             // If sleep is rejected, the hardware wake-up process that turns on DCDC
-            // is skipped, and software is used to enable DCDC here.
-            pmu_sleep_enable_dcdc();
+            // is skipped, and wait DCDC volt rise up by software here.
             esp_rom_delay_us(950);
         }
         pmu_sleep_shutdown_ldo();
