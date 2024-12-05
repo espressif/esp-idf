@@ -10,6 +10,13 @@
     - mbedtls
     - protocol_examples_common
 
+.mqtt_dependencies: &mqtt_dependencies
+  <<: *default_dependencies
+  depends_filepatterns:
+    - components/mqtt/**/*
+  depends_components+:
+    - mqtt
+
 examples/protocols/esp_http_client:
   <<: *default_dependencies
   enable:
@@ -134,51 +141,55 @@ examples/protocols/modbus:
     - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/modbus/mb_example_common/**/*
 
-
-examples/protocols/mqtt:
-  <<: *default_dependencies
-  depends_filepatterns:
-    - components/mqtt/**/*
-
 examples/protocols/mqtt/custom_outbox:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
 
 examples/protocols/mqtt/ssl:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
 
 examples/protocols/mqtt/ssl_ds:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable:
     - if: SOC_DIG_SIGN_SUPPORTED != 1
       temporary: false
       reason: DS not present
+  depends_filepatterns+:
+    - examples/protocols/mqtt/ssl_ds/**/*
 
 examples/protocols/mqtt/tcp:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
+  depends_filepatterns+:
+    - examples/protocols/mqtt/tcp/**/*
 
 examples/protocols/mqtt/ws:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
+  depends_filepatterns+:
+    - examples/protocols/mqtt/ws/**/*
 
 examples/protocols/mqtt/wss:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
+  depends_filepatterns+:
+    - examples/protocols/mqtt/wss/**/*
 
 examples/protocols/mqtt5:
-  <<: *default_dependencies
+  <<: *mqtt_dependencies
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
+  depends_filepatterns+:
+    - examples/protocols/mqtt5/**/*
 
 examples/protocols/smtp_client:
   <<: *default_dependencies

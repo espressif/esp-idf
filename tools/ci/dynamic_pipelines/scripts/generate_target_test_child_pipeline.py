@@ -19,16 +19,19 @@ from dynamic_pipelines.constants import BUILD_ONLY_LABEL
 from dynamic_pipelines.constants import DEFAULT_CASES_TEST_PER_JOB
 from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH
 from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_CHILD_PIPELINE_NAME
+from dynamic_pipelines.constants import DEFAULT_TARGET_TEST_JOB_TEMPLATE_NAME
 from dynamic_pipelines.constants import DEFAULT_TEST_PATHS
 from dynamic_pipelines.constants import (
     KNOWN_GENERATE_TEST_CHILD_PIPELINE_WARNINGS_FILEPATH,
 )
+from dynamic_pipelines.constants import TIMEOUT_4H_TEMPLATE_NAME
 from dynamic_pipelines.models import EmptyJob
 from dynamic_pipelines.models import Job
 from dynamic_pipelines.models import TargetTestJob
 from dynamic_pipelines.utils import dump_jobs_to_yaml
 from idf_build_apps import App
 from idf_ci.app import import_apps_from_txt
+from idf_pytest.constants import TIMEOUT_4H_MARKERS
 from idf_pytest.script import get_pytest_cases
 
 
@@ -82,7 +85,13 @@ def get_target_test_jobs(
             print('WARNING: excluding test cases with runner tags:', runner_tags)
             continue
 
+        _extends = [DEFAULT_TARGET_TEST_JOB_TEMPLATE_NAME]
+        for timeout_4h_marker in TIMEOUT_4H_MARKERS:
+            if timeout_4h_marker in env_markers:
+                _extends.append(TIMEOUT_4H_TEMPLATE_NAME)
+
         target_test_job = TargetTestJob(
+            extends=_extends,
             name=f'{target_selector} - {",".join(env_markers)}',
             tags=runner_tags,
             parallel=len(cases) // DEFAULT_CASES_TEST_PER_JOB + 1,
