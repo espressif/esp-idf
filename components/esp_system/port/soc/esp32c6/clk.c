@@ -102,6 +102,7 @@ __attribute__((weak)) void esp_clk_init(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
+    modem_clock_deselect_all_module_lp_clock_source();
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
