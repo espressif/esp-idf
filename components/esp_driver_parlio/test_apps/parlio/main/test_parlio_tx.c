@@ -303,7 +303,7 @@ TEST_CASE("parlio can transmit PSRAM buffer", "[parlio_tx]")
         .data_gpio_nums = {
             TEST_DATA0_GPIO,
         },
-        .output_clk_freq_hz = 20 * 1000 * 1000,
+        .output_clk_freq_hz = 10 * 1000 * 1000,
         .trans_queue_depth = 4,
         .max_transfer_size = 65535,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,

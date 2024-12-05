@@ -376,7 +376,7 @@ static esp_err_t panel_io_i80_register_event_callbacks(esp_lcd_panel_io_handle_t
     lcd_panel_io_i80_t *i80_device = __containerof(io, lcd_panel_io_i80_t, base);
 
     if (i80_device->on_color_trans_done != NULL) {
-        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was owerwritten!");
+        ESP_LOGW(TAG, "Callback on_color_trans_done was already set and now it was overwritten!");
     }
 
     i80_device->on_color_trans_done = cbs->on_color_trans_done;
