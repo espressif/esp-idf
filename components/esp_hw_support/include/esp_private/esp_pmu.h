@@ -279,11 +279,6 @@ void pmu_sleep_increase_ldo_volt(void);
  *        power in the sleep and wake-up processes.
  */
 void pmu_sleep_shutdown_dcdc(void);
-
-/**
- * @brief DCDC has taken over power supply, shut down LDO to save power consumption
- */
-void pmu_sleep_shutdown_ldo(void);
 #endif // SOC_DCDC_SUPPORTED
 
 /**
