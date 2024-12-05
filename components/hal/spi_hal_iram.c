@@ -5,7 +5,7 @@
  */
 
 // The HAL layer for SPI (common part, in iram)
-// make these functions in a seperate file to make sure all LL functions are in the IRAM.
+// make these functions in a separate file to make sure all LL functions are in the IRAM.
 
 #include "hal/spi_hal.h"
 #include "hal/assert.h"
@@ -195,8 +195,7 @@ void spi_hal_sct_format_conf_buffer(spi_hal_context_t *hal, const spi_hal_seg_co
     spi_ll_format_din_phase_conf_buffer(hal->hw, config->rx_bitlen, conf_buffer);
     spi_ll_format_done_phase_conf_buffer(hal->hw, config->cs_hold, conf_buffer);
     spi_ll_format_conf_phase_conf_buffer(hal->hw, config->seg_end, conf_buffer);
-#if CONFIG_IDF_TARGET_ESP32S2
-    // only s2 support update seg_gap_len by conf_buffer
+#if SPI_LL_SUPPORT_SEG_GAP
     spi_ll_format_conf_bitslen_buffer(hal->hw, config->seg_gap_len, conf_buffer);
 #endif
 }

@@ -44,6 +44,9 @@ extern "C" {
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 
+#define SPI_LL_SLAVE_NEEDS_RESET_WORKAROUND 1
+#define SPI_LL_SUPPORT_TIME_TUNING          1
+
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and

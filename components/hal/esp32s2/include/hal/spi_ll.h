@@ -51,6 +51,8 @@ extern "C" {
 #define SPI_LL_MOSI_FREE_LEVEL    1            //Default level after bus initialized
 #define SPI_LL_DMA_SHARED         1            //spi_dma shared with adc and dac on S2
 
+#define SPI_LL_SUPPORT_SEG_GAP    1            // support update seg_gap_len by conf buffer
+
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and

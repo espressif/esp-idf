@@ -791,7 +791,7 @@ Please note that the ISR is disabled during flash operation by default. To keep 
 
         1. Use full-duplex transactions instead.
         2. Disable DMA by setting the bus initialization function's last parameter to 0 as follows:
-            ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``
+            ``ret=spi_bus_initialize(SPI3_HOST, &buscfg, 0);``
 
         This can prohibit you from transmitting and receiving data longer than 64 bytes.
         3. Try using the command and address fields to replace the Write phase.
