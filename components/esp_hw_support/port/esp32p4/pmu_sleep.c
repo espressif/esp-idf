@@ -318,15 +318,26 @@ void pmu_sleep_shutdown_dcdc(void) {
     pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DBIAS_DEFAULT);
 }
 
-void pmu_sleep_enable_dcdc(void) {
+FORCE_INLINE_ATTR void pmu_sleep_enable_dcdc(void) {
     CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
     SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
     REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
 }
 
-void pmu_sleep_shutdown_ldo(void) {
+FORCE_INLINE_ATTR void pmu_sleep_shutdown_ldo(void) {
     CLEAR_PERI_REG_MASK(LP_SYSTEM_REG_SYS_CTRL_REG, LP_SYSTEM_REG_LP_FIB_DCDC_SWITCH); //0: enable, 1: disable
     CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
+}
+
+FORCE_INLINE_ATTR void pmu_sleep_cache_sync_items(uint32_t gid, uint32_t type, uint32_t map, uint32_t addr, uint32_t bytes)
+{
+    REG_WRITE(CACHE_SYNC_ADDR_REG, addr);
+    REG_WRITE(CACHE_SYNC_SIZE_REG, bytes);
+    REG_WRITE(CACHE_SYNC_MAP_REG, map);
+    REG_SET_FIELD(CACHE_SYNC_CTRL_REG, CACHE_SYNC_RGID, gid);
+    REG_SET_BIT(CACHE_SYNC_CTRL_REG, type);
+    while (!REG_GET_BIT(CACHE_SYNC_CTRL_REG, CACHE_SYNC_DONE))
+        ;
 }
 
 static TCM_DRAM_ATTR uint32_t s_mpll_freq_mhz_before_sleep = 0;
@@ -343,11 +354,12 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     pmu_ll_hp_clear_reject_intr_status(PMU_instance()->hal->dev);
     pmu_ll_hp_clear_reject_cause(PMU_instance()->hal->dev);
 
-    // For the sleep where powered down the TOP domain, the L1 cache data memory will be lost and needs to be written back here.
-    // For the sleep without power down the TOP domain, regdma retention may still be enabled, and dirty data in the L1 cache needs
-    // to be written back so that regdma can get the correct link. So we always need to write back to L1 DCache here.
-    // !!! Need to manually check that data in L2 memory will not be modified from now on. !!!
-    Cache_WriteBack_All(CACHE_MAP_L1_DCACHE);
+    // 1. For the sleep where powered down the TOP domain, the L1 cache data memory will be lost and needs to be written back here.
+    // 2. For the sleep without power down the TOP domain, regdma retention may still be enabled, and dirty data in the L1 cache needs
+    //    to be written back so that regdma can get the correct link.
+    // 3. We cannot use the API provided by ROM to invalidate the cache, since it is a function calling that writes data to the stack during
+    //    the return process, which results in dirty cachelines in L1 Cache again.
+    pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0);
 
 #if CONFIG_SPIRAM
     psram_ctrlr_ll_wait_all_transaction_done();
