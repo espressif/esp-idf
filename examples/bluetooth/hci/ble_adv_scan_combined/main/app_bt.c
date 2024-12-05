@@ -1,7 +1,7 @@
 /*
  * BLE Combined Advertising and Scanning Example.
  *
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -56,27 +56,27 @@ static int host_rcv_pkt(uint8_t *data, uint16_t len)
     host_rcv_data_t send_data;
     uint8_t *data_pkt;
     /* Check second byte for HCI event. If event opcode is 0x0e, the event is
-     * HCI Command Complete event. Sice we have recieved "0x0e" event, we can
+     * HCI Command Complete event. Sice we have received "0x0e" event, we can
      * check for byte 4 for command opcode and byte 6 for it's return status. */
     if (data[1] == 0x0e) {
         if (data[6] == 0) {
-            ESP_LOGI(TAG, "Event opcode 0x%02x success.", data[4]);
+            esp_rom_printf("Event opcode 0x%02x success.", data[4]);
         } else {
-            ESP_LOGE(TAG, "Event opcode 0x%02x fail with reason: 0x%02x.", data[4], data[6]);
+            esp_rom_printf("Event opcode 0x%02x fail with reason: 0x%02x.", data[4], data[6]);
             return ESP_FAIL;
         }
     }
 
     data_pkt = (uint8_t *)malloc(sizeof(uint8_t) * len);
     if (data_pkt == NULL) {
-        ESP_LOGE(TAG, "Malloc data_pkt failed!");
+        esp_rom_printf("Malloc data_pkt failed!");
         return ESP_FAIL;
     }
     memcpy(data_pkt, data, len);
     send_data.q_data = data_pkt;
     send_data.q_data_len = len;
     if (xQueueSend(adv_queue, (void *)&send_data, ( TickType_t ) 0) != pdTRUE) {
-        ESP_LOGD(TAG, "Failed to enqueue advertising report. Queue full.");
+        esp_rom_printf("Failed to enqueue advertising report. Queue full.");
         /* If data sent successfully, then free the pointer in `xQueueReceive'
          * after processing it. Or else if enqueue in not successful, free it
          * here. */
@@ -114,7 +114,7 @@ static void hci_cmd_send_ble_scan_params(void)
     uint16_t scan_window = 0x30; /* 30 ms */
 
     uint8_t own_addr_type = 0x00; /* Public Device Address (default). */
-    uint8_t filter_policy = 0x00; /* Accept all packets excpet directed advertising packets (default). */
+    uint8_t filter_policy = 0x00; /* Accept all packets except directed advertising packets (default). */
     uint16_t sz = make_cmd_ble_set_scan_params(hci_cmd_buf, scan_type, scan_interval, scan_window, own_addr_type, filter_policy);
     esp_vhci_host_send_packet(hci_cmd_buf, sz);
 }
