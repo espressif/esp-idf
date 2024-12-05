@@ -74,12 +74,12 @@ This contains tests for the following features of the crypto peripherals:
 > **_NOTE:_** The verification tests for the HMAC, Digital Signature, ECDSA and XTS-AES peripherals would get exercised only by enabling the example config in an FPGA environment.
 # Burning the HMAC key
 
-The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+The HMAC tests need an HMAC key to be burned in the `BLOCK_KEY4` and `BLOCK_KEY5` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_DOWN_JTAG
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/hmac/hmac_key.bin HMAC_UP
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY5 main/hmac/hmac_key.bin HMAC_UP
 ```
 
 # Burning the HMAC keys for Digital Signature tests
@@ -108,12 +108,12 @@ espefuse.py -p $ESPPORT burn_key BLOCK_KEY2 main/ds/keys/4096/ds_key3.bin HMAC_D
 
 By default, ECDSA tests are disabled. You can enable it after disabling HMAC tests using `idf.py menuconfig -> Test App Configuration -> Enable ECDSA Peripheral test cases`
 
-The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY4` and `BLOCK_KEY5` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
+The ECDSA tests need some ECDSA keys to be burned in the `BLOCK_KEY3` and `BLOCK_KEY4` of the efuses. As this verification application is independent of the efuse component, the user needs to manually burn the keys and their key purposes using `espefuse.py`.
 
 ```bash
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY3 main/ecdsa/ecdsa192_priv_key.pem ECDSA_KEY
 
-espefuse.py -p $ESPPORT burn_key BLOCK_KEY5 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
+espefuse.py -p $ESPPORT burn_key BLOCK_KEY4 main/ecdsa/ecdsa256_priv_key.pem ECDSA_KEY
 ```
 
 # Burning the XTS-AES key
