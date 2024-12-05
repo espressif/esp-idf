@@ -248,8 +248,7 @@ static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel
     return max_duty;
 }
 
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
-                         ledc_clk_src_t clk_src)
+static esp_err_t ledc_set_timer_params(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
@@ -266,6 +265,13 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
+}
+
+// Deprecated public API
+esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
+                         ledc_clk_src_t clk_src)
+{
+    return ledc_set_timer_params(speed_mode, timer_sel, clock_divider, duty_resolution, clk_src);
 }
 
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val,
@@ -711,7 +717,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     }
 
     /* The divisor is correct, we can write in the hardware. */
-    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+    ledc_set_timer_params(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
 
     portENTER_CRITICAL(&ledc_spinlock);
     if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
