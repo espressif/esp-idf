@@ -97,12 +97,16 @@ static bool process_again(int status_code)
 static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, int status_code)
 {
     esp_err_t err;
+
     if (redirection_required(status_code)) {
         err = esp_http_client_set_redirection(https_ota_handle->http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "URL redirection Failed");
             return err;
         }
+    } else if (status_code == HttpStatus_NotModified) {
+        ESP_LOGI(TAG, "OTA image not modified since last request (status code: %d)", status_code);
+        return ESP_ERR_HTTP_NOT_MODIFIED;
     } else if (status_code == HttpStatus_Unauthorized) {
         if (https_ota_handle->max_authorization_retries == 0) {
             ESP_LOGE(TAG, "Reached max_authorization_retries (%d)", status_code);
@@ -357,7 +361,9 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     err = _http_connect(https_ota_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to establish HTTP connection");
+        if (err != ESP_ERR_HTTP_NOT_MODIFIED) {
+            ESP_LOGE(TAG, "Failed to establish HTTP connection");
+        }
         goto http_cleanup;
     } else {
         esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
@@ -820,6 +826,10 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
 
     esp_https_ota_handle_t https_ota_handle = NULL;
     esp_err_t err = esp_https_ota_begin(ota_config, &https_ota_handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     if (https_ota_handle == NULL) {
         return ESP_FAIL;
     }

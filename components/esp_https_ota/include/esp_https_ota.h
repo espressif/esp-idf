@@ -103,6 +103,7 @@ typedef struct {
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer OTA documentation in esp-idf's app_update component.
  */
 esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
@@ -129,6 +130,7 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
  *    - ESP_OK: HTTPS OTA Firmware upgrade context initialised and HTTPS connection established
  *    - ESP_FAIL: For generic failure.
  *    - ESP_ERR_INVALID_ARG: Invalid argument (missing/incorrect config, certificate, etc.)
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer documentation in app_update component and esp_http_client
  *      component in esp-idf.
  */
