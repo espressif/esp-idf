@@ -1172,3 +1172,85 @@ TEST_CASE("Test no-split buffers always receive items in order", "[esp_ringbuf]"
     // Cleanup
     vRingbufferDelete(buffer_handle);
 }
+
+/* ---------------------------- Test no-split ring buffer SendAquire and SendComplete ---------------------------
+ * The following test case tests the SendAquire and SendComplete functions of the no-split ring buffer.
+ *
+ * The test case will do the following...
+ * 1) Create a no-split ring buffer.
+ * 2) Acquire space on the buffer to send an item.
+ * 3) Send the item to the buffer.
+ * 4) Verify that the item is received correctly.
+ * 5) Acquire space on the buffer until the buffer is full and the acquire pointer wraps around.
+ * 6) Send the items out-of-order to the buffer.
+ * 7) Verify that the items are not received until the first item is sent.
+ * 8) Send the first item.
+ * 9) Verify that the items are received in the correct order.
+ */
+TEST_CASE("Test no-split buffers can receive items if the acquire pointer wraps around", "[esp_ringbuf][linux]")
+{
+    // Create buffer
+    RingbufHandle_t buffer_handle = xRingbufferCreate(BUFFER_SIZE, RINGBUF_TYPE_NOSPLIT);
+    TEST_ASSERT_MESSAGE(buffer_handle != NULL, "Failed to create ring buffer");
+
+    // Acquire space on the buffer to send an item and write to the item
+    void *item1;
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &item1, LARGE_ITEM_SIZE, TIMEOUT_TICKS));
+    *(uint32_t *)item1 = 0x123;
+
+    // Send the item to the buffer
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, item1));
+
+    // Verify that the item is received correctly
+    size_t item_size;
+    uint32_t *received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+    TEST_ASSERT_NOT_NULL(received_item);
+    TEST_ASSERT_EQUAL(item_size, LARGE_ITEM_SIZE);
+    TEST_ASSERT_EQUAL(*(uint32_t *)received_item, 0x123);
+
+    // Return the space to the buffer after receiving the item
+    vRingbufferReturnItem(buffer_handle, received_item);
+
+    // At this point, the buffer should be empty
+    UBaseType_t items_waiting;
+    vRingbufferGetInfo(buffer_handle, NULL, NULL, NULL, NULL, &items_waiting);
+    TEST_ASSERT_MESSAGE(items_waiting == 0, "Incorrect items waiting");
+
+    // Acquire space on the buffer until the buffer is full and the acquire pointer wraps around
+#define MAX_LARGE_ITEMS ( BUFFER_SIZE / ( LARGE_ITEM_SIZE + ITEM_HDR_SIZE ) )
+    void *items[MAX_LARGE_ITEMS];
+    for (int i = 0; i < MAX_LARGE_ITEMS; i++) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendAcquire(buffer_handle, &items[i], LARGE_ITEM_SIZE, TIMEOUT_TICKS));
+        TEST_ASSERT_NOT_NULL(items[i]);
+        *(uint32_t *)items[i] = (0x100 + i);
+    }
+
+    // At this point, the buffer should be full and the acquire pointer must have wrapped around
+    UBaseType_t *uxFree = NULL;
+    UBaseType_t *uxRead = NULL;
+    UBaseType_t *uxWrite = NULL;
+    UBaseType_t *uxAcquire = NULL;
+    vRingbufferGetInfo(buffer_handle, uxFree, uxRead, uxWrite, uxAcquire, &items_waiting);
+    TEST_ASSERT_EQUAL(uxAcquire, uxWrite);
+    TEST_ASSERT_EQUAL(0U, xRingbufferGetCurFreeSize(buffer_handle));
+
+    // Send the items out-of-order to the buffer. Verify that the items are not received until the first item is sent.
+    // In this case, we send the items in the reverse order until the first item is sent.
+    for (int i = MAX_LARGE_ITEMS - 1; i > 0; i--) {
+        TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[i]));
+        TEST_ASSERT_NULL(xRingbufferReceive(buffer_handle, &item_size, 0));
+    }
+
+    // Send the first item
+    TEST_ASSERT_EQUAL(pdTRUE, xRingbufferSendComplete(buffer_handle, items[0]));
+
+    // Verify that the items are received in the correct order
+    for (int i = 0; i < MAX_LARGE_ITEMS; i++) {
+        received_item = xRingbufferReceive(buffer_handle, &item_size, TIMEOUT_TICKS);
+        TEST_ASSERT_EQUAL(*(uint32_t *)received_item, (0x100 + i));
+        vRingbufferReturnItem(buffer_handle, received_item);
+    }
+
+    // Cleanup
+    vRingbufferDelete(buffer_handle);
+}
