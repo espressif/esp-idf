@@ -1335,6 +1335,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
     ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
     // When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
     if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
+        assert(duty_cur > 0);
         duty_cur -= 1;
     }
     s_ledc_fade_rec[speed_mode][channel]->speed_mode = speed_mode;
@@ -1776,7 +1777,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
         }
         surplus_cycles_last_phase = cycles_per_phase - step * cycle;
         // If next phase is the last one, then account for all remaining duty and cycles
-        if (i == linear_phase_num - 2) {
+        if (linear_phase_num >= 2 && i == linear_phase_num - 2) {
             phase_tail = end_duty;
             surplus_cycles_last_phase += total_cycles - avg_cycles_per_phase * linear_phase_num;
         }
