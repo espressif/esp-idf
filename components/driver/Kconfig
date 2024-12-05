@@ -22,6 +22,11 @@ menu "Driver Configurations"
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
+        config ADC_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
         menu "Legacy ADC Calibration Configuration"
 
             config ADC_CAL_EFUSE_TP_ENABLE
@@ -72,6 +77,12 @@ menu "Driver Configurations"
                 Whether to suppress the deprecation warnings when using legacy dac driver (driver/dac.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config DAC_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy DAC Driver Configurations
 
     menu "Legacy MCPWM Driver Configurations"
@@ -83,6 +94,12 @@ menu "Driver Configurations"
                 Whether to suppress the deprecation warnings when using legacy MCPWM driver (driver/mcpwm.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config MCPWM_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy MCPWM Driver Configurations
 
     menu "Legacy Timer Group Driver Configurations"
@@ -95,6 +112,11 @@ menu "Driver Configurations"
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
+        config GPTIMER_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy Timer Group Driver Configurations
 
     menu "Legacy RMT Driver Configurations"
@@ -106,6 +128,12 @@ menu "Driver Configurations"
                 Whether to suppress the deprecation warnings when using legacy rmt driver (driver/rmt.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config RMT_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy RMT Driver Configurations
 
     menu "Legacy I2S Driver Configurations"
@@ -117,6 +145,12 @@ menu "Driver Configurations"
                 Whether to suppress the deprecation warnings when using legacy i2s driver (driver/i2s.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config I2S_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy I2S Driver Configurationss
 
     menu "Legacy PCNT Driver Configurations"
@@ -128,6 +162,12 @@ menu "Driver Configurations"
                 whether to suppress the deprecation warnings when using legacy PCNT driver (driver/pcnt.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config PCNT_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy PCNT Driver Configurationss
 
     menu "Legacy SDM Driver Configurations"
@@ -139,6 +179,12 @@ menu "Driver Configurations"
                 whether to suppress the deprecation warnings when using legacy SDM driver (driver/sigmadelta.h).
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config SDM_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy SDM Driver Configurationss
 
     menu "Legacy Temperature Sensor Driver Configurations"
@@ -150,6 +196,12 @@ menu "Driver Configurations"
                 whether to suppress the deprecation warnings when using legacy temperature sensor driver
                 (driver/temp_sensor.h). If you want to continue using the legacy driver,
                 and don't want to see related deprecation warnings, you can enable this option.
+
+        config TEMP_SENSOR_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy Temperature Sensor Driver Configurationss
 
 endmenu  # Driver configurations
