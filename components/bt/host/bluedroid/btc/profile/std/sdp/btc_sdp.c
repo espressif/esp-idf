@@ -9,6 +9,7 @@
 #include "btc_sdp.h"
 #include "btc/btc_manage.h"
 #include "btc/btc_task.h"
+#include "btc/btc_util.h"
 #include "bta/bta_sdp_api.h"
 #include "bta/bta_sys.h"
 #include "bta/utl.h"
@@ -1307,7 +1308,7 @@ void btc_sdp_cb_handler(btc_msg_t *msg)
 
         param.search.status = p_data->sdp_search_comp.status;
         memcpy(param.search.remote_addr, p_data->sdp_search_comp.remote_addr, sizeof(BD_ADDR));
-        memcpy(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid, sizeof(tSDP_UUID));
+        bta_to_btc_uuid(&param.search.sdp_uuid, &p_data->sdp_search_comp.uuid);
         param.search.record_count = p_data->sdp_search_comp.record_count;
         param.search.records = (esp_bluetooth_sdp_record_t *)p_data->sdp_search_comp.records;
         btc_sdp_cb_to_app(ESP_SDP_SEARCH_COMP_EVT, &param);

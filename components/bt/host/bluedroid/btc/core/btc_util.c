@@ -349,7 +349,7 @@ esp_bt_status_t btc_hci_to_esp_status(uint8_t hci_status)
     return esp_status;
 }
 
-esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
+esp_bt_status_t btc_btm_status_to_esp_status(uint8_t btm_status)
 {
     esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
     switch(btm_status) {
@@ -392,7 +392,7 @@ esp_bt_status_t btc_btm_status_to_esp_status (uint8_t btm_status)
     return esp_status;
 }
 
-esp_bt_status_t btc_bta_status_to_esp_status (uint8_t bta_status)
+esp_bt_status_t btc_bta_status_to_esp_status(uint8_t bta_status)
 {
     esp_bt_status_t esp_status = ESP_BT_STATUS_FAIL;
     switch(bta_status){
@@ -423,4 +423,37 @@ esp_bt_status_t btc_bta_status_to_esp_status (uint8_t bta_status)
     }
 
     return esp_status;
+}
+
+void bta_to_btc_uuid(esp_bt_uuid_t *p_dest, tBT_UUID *p_src)
+{
+    p_dest->len = p_src->len;
+    if (p_src->len == LEN_UUID_16) {
+        p_dest->uuid.uuid16 = p_src->uu.uuid16;
+    } else if (p_src->len == LEN_UUID_32) {
+        p_dest->uuid.uuid32 = p_src->uu.uuid32;
+    } else if (p_src->len == LEN_UUID_128) {
+        memcpy(&p_dest->uuid.uuid128, p_src->uu.uuid128, p_dest->len);
+    } else if (p_src->len == 0) {
+        /* do nothing for now, there's some scenario will input 0
+           such as, receive notify, the descriptor may be 0 */
+    } else {
+        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
+    }
+}
+
+void btc_to_bta_uuid(tBT_UUID *p_dest, esp_bt_uuid_t *p_src)
+{
+    p_dest->len = p_src->len;
+    if (p_src->len == LEN_UUID_16) {
+        p_dest->uu.uuid16 = p_src->uuid.uuid16;
+    } else if (p_src->len == LEN_UUID_32) {
+        p_dest->uu.uuid32 = p_src->uuid.uuid32;
+    } else if (p_src->len == LEN_UUID_128) {
+        memcpy(&p_dest->uu.uuid128, p_src->uuid.uuid128, p_dest->len);
+    } else if (p_src->len == 0) {
+        /* do nothing for now, there's some scenario will input 0 */
+    } else {
+        BTC_TRACE_ERROR("%s UUID len is invalid %d\n", __func__, p_src->len);
+    }
 }
