@@ -381,8 +381,10 @@ static int nimble_hidd_dev_input_set(void *devp, size_t index, size_t id, uint8_
     assert(p_rpt != NULL);
     om = ble_hs_mbuf_from_flat((void*)data, length);
     assert(om != NULL);
+
     /* NOTE : om is freed by stack */
-    rc = ble_att_svr_write_local(p_rpt->handle, om);
+    rc = ble_gatts_notify_custom(s_dev->conn_id, p_rpt->handle, om);
+
     if (rc != 0) {
         ESP_LOGE(TAG, "Write Input Report Failed: %d", rc);
         return ESP_FAIL;
