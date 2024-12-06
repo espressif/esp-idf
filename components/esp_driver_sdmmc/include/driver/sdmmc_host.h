@@ -24,7 +24,6 @@ extern "C" {
  * Extra configuration for SDMMC peripheral slot
  */
 typedef struct {
-#ifdef SOC_SDMMC_USE_GPIO_MATRIX
     gpio_num_t clk;         ///< GPIO number of CLK signal.
     gpio_num_t cmd;         ///< GPIO number of CMD signal.
     gpio_num_t d0;          ///< GPIO number of D0 signal.
@@ -35,7 +34,6 @@ typedef struct {
     gpio_num_t d5;          ///< GPIO number of D5 signal. Ignored in 1- or 4- line mode.
     gpio_num_t d6;          ///< GPIO number of D6 signal. Ignored in 1- or 4- line mode.
     gpio_num_t d7;          ///< GPIO number of D7 signal. Ignored in 1- or 4- line mode.
-#endif // SOC_SDMMC_USE_GPIO_MATRIX
     union {
         gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
         gpio_num_t cd;          ///< GPIO number of card detect signal; shorter name.
