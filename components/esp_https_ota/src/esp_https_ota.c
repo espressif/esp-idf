@@ -562,7 +562,7 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 
     esp_err_t err;
     int data_read;
-    const int erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
+    const size_t erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
     switch (handle->state) {
         case ESP_HTTPS_OTA_BEGIN:
             err = esp_ota_begin(handle->partition.staging, erase_size, &handle->update_handle);
