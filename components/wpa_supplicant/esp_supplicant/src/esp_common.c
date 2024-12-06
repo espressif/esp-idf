@@ -249,6 +249,19 @@ static int handle_assoc_frame(u8 *frame, size_t len,
     }
     return 0;
 }
+
+static void wpa_sta_clear_ft_auth_ie(void)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    wpa_printf(MSG_DEBUG, "Clearing all FT IE parameters and keys");
+    /* Reset FT parameters */
+    wpa_sm_set_ft_params(sm, NULL, 0);
+    esp_wifi_unset_appie_internal(WIFI_APPIE_RAM_STA_AUTH);
+    sm->ft_reassoc_completed = 0;
+    sm->ft_protocol = 0;
+    /* Clear pmk and ptk */
+    wpa_sm_drop_sa(sm);
+}
 #endif /* CONFIG_IEEE80211R */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
@@ -451,6 +464,7 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 
 void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
+    struct wpa_sm *sm = &gWpaSm;
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -467,6 +481,12 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
     if (wpa_s->current_bss) {
         wpa_s->current_bss = NULL;
     }
+#if defined(CONFIG_IEEE80211R)
+    if (reason_code == WIFI_REASON_INVALID_PMKID || reason_code == WIFI_REASON_INVALID_MDE || reason_code == WIFI_REASON_INVALID_FTE || (sm->cur_pmksa == NULL)) {
+        /* clear all ft auth related IEs so that next will be open auth */
+        wpa_sta_clear_ft_auth_ie();
+    }
+#endif
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
@@ -805,7 +825,7 @@ static size_t add_mdie(uint8_t *bssid, uint8_t *ie, size_t len)
 int wpa_sm_update_ft_ies(struct wpa_sm *sm, const u8 *md,
                          const u8 *ies, size_t ies_len, bool auth_ie)
 {
-    wpa_printf(MSG_INFO, "Updating FT IEs (len=%d)", ies_len);
+    wpa_printf(MSG_INFO, "Updating FT IEs (len=%d), auth_ie %d ", ies_len, auth_ie);
     if (os_memcmp(sm->mobility_domain, md, MOBILITY_DOMAIN_ID_LEN) != 0) {
         return 0;
     }
