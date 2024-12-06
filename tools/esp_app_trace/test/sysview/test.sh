@@ -2,14 +2,14 @@
 
 { python -m coverage debug sys \
     && python -m coverage erase &> output \
-    && python -m coverage run -a $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -d -p -b test.elf cpu0.svdat cpu1.svdat &>> output \
+    && python -m coverage run -a $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -d -p -b sysview_tracing_heap_log.elf heap_log0.svdat heap_log1.svdat &>> output \
     && diff output expected_output \
     && python -m coverage report \
 ; } || { echo 'The test for sysviewtrace_proc has failed. Please examine the artifacts.' ; exit 1; }
 
 { python -m coverage debug sys \
     && python -m coverage erase &> output.json \
-    && python -m coverage run -a $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -j -b test.elf cpu0.svdat cpu1.svdat &>> output.json \
+    && python -m coverage run -a $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -j -b sysview_tracing_heap_log.elf heap_log0.svdat heap_log1.svdat &>> output.json \
     && diff output.json expected_output.json \
     && python -m coverage report \
 ; } || { echo 'The test for sysviewtrace_proc JSON functionality has failed. Please examine the artifacts.' ; exit 1; }
