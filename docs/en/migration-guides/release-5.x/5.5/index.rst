@@ -1,4 +1,4 @@
-Migration from 5.5 to 5.5
+Migration from 5.4 to 5.5
 -------------------------
 
 :link_to_translation:`zh_CN:[中文]`
