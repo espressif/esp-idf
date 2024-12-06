@@ -235,8 +235,8 @@ typedef struct {
     uint16_t addrBitLen;         /*!< Address byte length*/
     uint32_t *txData;            /*!< Point to send data buffer*/
     uint16_t txDataBitLen;       /*!< Send data byte length.*/
-    uint32_t *rxData;            /*!< Point to recevie data buffer*/
-    uint16_t rxDataBitLen;       /*!< Recevie Data byte length.*/
+    uint32_t *rxData;            /*!< Point to receive data buffer*/
+    uint16_t rxDataBitLen;       /*!< Receive Data byte length.*/
     uint32_t dummyBitLen;
 } psram_cmd_t;
 
@@ -607,7 +607,7 @@ static esp_err_t IRAM_ATTR psram_2t_mode_enable(psram_spi_num_t spi_num)
 
     // setp3: keep cs as high level
     //        send 128 cycles clock
-    //        send 1 bit high levle in ninth clock from the back to PSRAM SIO1
+    //        send 1 bit high level in ninth clock from the back to PSRAM SIO1
     static gpio_hal_context_t _gpio_hal = {
         .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
@@ -866,7 +866,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
-        abort();
+        return ESP_FAIL;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH)) {
         ESP_EARLY_LOGI(TAG, "This chip is %s",
                        (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) ? "ESP32-PICO" : "ESP32-U4WDH");
