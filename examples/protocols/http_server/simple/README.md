@@ -6,6 +6,15 @@
 The Example consists of HTTPD server demo with demonstration of URI handling :
     1. URI \hello for GET command returns "Hello World!" message
     2. URI \echo for POST command echoes back the POSTed message
+    3. URI \sse for GET command sends a message to client every second
+
+## User Callback
+
+The example includes a simple user callback that can be used to get the SSL context (connection information) when the server is being initialized. To enable the user callback, set `CONFIG_EXAMPLE_ENABLE_HTTPS_USER_CALLBACK` to `y` in the project configuration menu.
+
+## Server-Sent Events (SSE)
+
+The example also includes a simple SSE handler (having endpoint \sse), which sends a message to the client every second. To enable SSE, set `CONFIG_EXAMPLE_ENABLE_SSE_HANDLER` to `y` in the project configuration menu.
 
 ## How to use example
 
