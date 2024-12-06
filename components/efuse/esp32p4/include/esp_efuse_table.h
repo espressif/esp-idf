@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 0d4e1f49db99de4dd9d3eac8d8e6078b
+// md5_digest_table c56ed98dde7a08c8f70d57a01faba96a
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -92,7 +92,35 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PKG_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO1_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO2_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO1_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO2_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO3_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO3_VOS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO3_C[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO4_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO4_VOS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LDO_VO4_C[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LP_DCDC_DBIAS_VOL_GAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
@@ -112,6 +140,25 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_KEY5[];
 #define ESP_EFUSE_WR_DIS_KEY5 ESP_EFUSE_WR_DIS_BLOCK_KEY5
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2[];
 #define ESP_EFUSE_WR_DIS_SYS_DATA_PART2 ESP_EFUSE_WR_DIS_BLOCK_SYS_DATA2
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_HI_DOUT_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH6_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH7_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC2_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMPERATURE_SENSOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_DEVICE_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_OTG11_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_USB_PHY_SEL[];
@@ -131,6 +178,25 @@ extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_KEY5[];
 #define ESP_EFUSE_RD_DIS_KEY5 ESP_EFUSE_RD_DIS_BLOCK_KEY5
 extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2[];
 #define ESP_EFUSE_RD_DIS_SYS_DATA_PART2 ESP_EFUSE_RD_DIS_BLOCK_SYS_DATA2
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_HI_DOUT_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH6_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC1_CH7_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_ADC2_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_RD_DIS_TEMPERATURE_SENSOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_DEVICE_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USB_OTG11_EXCHG_PINS[];
 extern const esp_efuse_desc_t* ESP_EFUSE_DIS_USB_JTAG[];
@@ -209,7 +275,35 @@ extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_CAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_TEMP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PSRAM_VENDOR[];
 extern const esp_efuse_desc_t* ESP_EFUSE_PKG_VERSION[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO1_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO2_DREF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO1_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO2_MUL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO3_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO3_VOS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO3_C[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO4_K[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO4_VOS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LDO_VO4_C[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_DBG[];
+extern const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[];
+extern const esp_efuse_desc_t* ESP_EFUSE_LP_DCDC_DBIAS_VOL_GAP[];
 extern const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_AVE_INITCODE_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_AVE_INITCODE_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_AVE_INITCODE_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_AVE_INITCODE_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN3[];
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA[];
 #define ESP_EFUSE_BLOCK_USR_DATA ESP_EFUSE_USER_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_USER_DATA_MAC_CUSTOM[];
@@ -227,8 +321,25 @@ extern const esp_efuse_desc_t* ESP_EFUSE_KEY4[];
 #define ESP_EFUSE_BLOCK_KEY4 ESP_EFUSE_KEY4
 extern const esp_efuse_desc_t* ESP_EFUSE_KEY5[];
 #define ESP_EFUSE_BLOCK_KEY5 ESP_EFUSE_KEY5
-extern const esp_efuse_desc_t* ESP_EFUSE_SYS_DATA_PART2[];
-#define ESP_EFUSE_BLOCK_SYS_DATA2 ESP_EFUSE_SYS_DATA_PART2
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_HI_DOUT_ATTEN0[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_HI_DOUT_ATTEN1[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_HI_DOUT_ATTEN2[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_HI_DOUT_ATTEN3[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH6_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH7_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH0_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH1_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH2_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH3_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH4_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_ADC2_CH5_ATTEN0_INITCODE_DIFF[];
+extern const esp_efuse_desc_t* ESP_EFUSE_TEMPERATURE_SENSOR[];
 
 #ifdef __cplusplus
 }

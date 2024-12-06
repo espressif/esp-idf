@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 13b0a8106fd483a0fcfa8b2f7388a95f
+// md5_digest_table b26e7466c400977081a142076ef1a5bb
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -287,12 +287,100 @@ static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
 };
 
+static const esp_efuse_desc_t WR_DIS_ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of ACTIVE_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LSLP_HP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBG[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBG,
+};
+
+static const esp_efuse_desc_t WR_DIS_DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of DSLP_LP_DBIAS,
+};
+
+static const esp_efuse_desc_t WR_DIS_LP_HP_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of LP_HP_DBIAS_VOL_GAP,
+};
+
 static const esp_efuse_desc_t WR_DIS_OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OPTIONAL_UNIQUE_ID,
 };
 
+static const esp_efuse_desc_t WR_DIS_TEMPERATURE_SENSOR[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of TEMPERATURE_SENSOR,
+};
+
 static const esp_efuse_desc_t WR_DIS_OCODE[] = {
     {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of OCODE,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN0[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN0,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN1,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN2[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN2,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_AVE_INITCODE_ATTEN3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_AVE_INITCODE_ATTEN3,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN0[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN0,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN1,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN2[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN2,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_HI_DOUT_ATTEN3[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_HI_DOUT_ATTEN3,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH0_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH1_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH2_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH3_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH4_ATTEN0_INITCODE_DIFF,
+};
+
+static const esp_efuse_desc_t WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of ADC1_CH5_ATTEN0_INITCODE_DIFF,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -648,12 +736,100 @@ static const esp_efuse_desc_t TRIM_P_BIAS[] = {
     {EFUSE_BLK1, 101, 5}, 	 // [] PADC CAL P bias,
 };
 
+static const esp_efuse_desc_t ACTIVE_HP_DBIAS[] = {
+    {EFUSE_BLK1, 106, 4}, 	 // [] Active HP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t ACTIVE_LP_DBIAS[] = {
+    {EFUSE_BLK1, 110, 4}, 	 // [] Active LP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBG[] = {
+    {EFUSE_BLK1, 114, 2}, 	 // [] LSLP HP DBG of fixed voltage,
+};
+
+static const esp_efuse_desc_t LSLP_HP_DBIAS[] = {
+    {EFUSE_BLK1, 116, 4}, 	 // [] LSLP HP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBG[] = {
+    {EFUSE_BLK1, 120, 4}, 	 // [] DSLP LP DBG of fixed voltage,
+};
+
+static const esp_efuse_desc_t DSLP_LP_DBIAS[] = {
+    {EFUSE_BLK1, 124, 5}, 	 // [] DSLP LP DBIAS of fixed voltage,
+};
+
+static const esp_efuse_desc_t LP_HP_DBIAS_VOL_GAP[] = {
+    {EFUSE_BLK1, 129, 5}, 	 // [] DBIAS gap between LP and HP,
+};
+
 static const esp_efuse_desc_t OPTIONAL_UNIQUE_ID[] = {
     {EFUSE_BLK2, 0, 128}, 	 // [] Optional unique 128-bit ID,
 };
 
+static const esp_efuse_desc_t TEMPERATURE_SENSOR[] = {
+    {EFUSE_BLK2, 128, 9}, 	 // [] Temperature calibration data,
+};
+
 static const esp_efuse_desc_t OCODE[] = {
     {EFUSE_BLK2, 137, 8}, 	 // [] ADC OCode,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN0[] = {
+    {EFUSE_BLK2, 145, 10}, 	 // [] Average initcode of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN1[] = {
+    {EFUSE_BLK2, 155, 10}, 	 // [] Average initcode of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN2[] = {
+    {EFUSE_BLK2, 165, 10}, 	 // [] Average initcode of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_AVE_INITCODE_ATTEN3[] = {
+    {EFUSE_BLK2, 175, 10}, 	 // [] Average initcode of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN0[] = {
+    {EFUSE_BLK2, 185, 10}, 	 // [] HI DOUT of ADC1 atten0,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN1[] = {
+    {EFUSE_BLK2, 195, 10}, 	 // [] HI DOUT of ADC1 atten1,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN2[] = {
+    {EFUSE_BLK2, 205, 10}, 	 // [] HI DOUT of ADC1 atten2,
+};
+
+static const esp_efuse_desc_t ADC1_HI_DOUT_ATTEN3[] = {
+    {EFUSE_BLK2, 215, 10}, 	 // [] HI DOUT of ADC1 atten3,
+};
+
+static const esp_efuse_desc_t ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 225, 4}, 	 // [] Gap between ADC1 CH0 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 229, 4}, 	 // [] Gap between ADC1 CH1 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 233, 4}, 	 // [] Gap between ADC1 CH2 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 237, 4}, 	 // [] Gap between ADC1 CH3 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 241, 4}, 	 // [] Gap between ADC1 CH4 and average initcode,
+};
+
+static const esp_efuse_desc_t ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
+    {EFUSE_BLK2, 245, 4}, 	 // [] Gap between ADC1 CH5 and average initcode,
 };
 
 static const esp_efuse_desc_t USER_DATA[] = {
@@ -1036,13 +1212,123 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_HP_DBIAS[] = {
+    &WR_DIS_ACTIVE_HP_DBIAS[0],    		// [] wr_dis of ACTIVE_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ACTIVE_LP_DBIAS[] = {
+    &WR_DIS_ACTIVE_LP_DBIAS[0],    		// [] wr_dis of ACTIVE_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBG[] = {
+    &WR_DIS_LSLP_HP_DBG[0],    		// [] wr_dis of LSLP_HP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LSLP_HP_DBIAS[] = {
+    &WR_DIS_LSLP_HP_DBIAS[0],    		// [] wr_dis of LSLP_HP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBG[] = {
+    &WR_DIS_DSLP_LP_DBG[0],    		// [] wr_dis of DSLP_LP_DBG
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_DSLP_LP_DBIAS[] = {
+    &WR_DIS_DSLP_LP_DBIAS[0],    		// [] wr_dis of DSLP_LP_DBIAS
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_LP_HP_DBIAS_VOL_GAP[] = {
+    &WR_DIS_LP_HP_DBIAS_VOL_GAP[0],    		// [] wr_dis of LP_HP_DBIAS_VOL_GAP
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OPTIONAL_UNIQUE_ID[] = {
     &WR_DIS_OPTIONAL_UNIQUE_ID[0],    		// [] wr_dis of OPTIONAL_UNIQUE_ID
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_TEMPERATURE_SENSOR[] = {
+    &WR_DIS_TEMPERATURE_SENSOR[0],    		// [] wr_dis of TEMPERATURE_SENSOR
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_OCODE[] = {
     &WR_DIS_OCODE[0],    		// [] wr_dis of OCODE
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN0[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN0[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN1[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN1[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN2[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN2[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_AVE_INITCODE_ATTEN3[] = {
+    &WR_DIS_ADC1_AVE_INITCODE_ATTEN3[0],    		// [] wr_dis of ADC1_AVE_INITCODE_ATTEN3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN0[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN0[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN1[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN1[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN2[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN2[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_HI_DOUT_ATTEN3[] = {
+    &WR_DIS_ADC1_HI_DOUT_ATTEN3[0],    		// [] wr_dis of ADC1_HI_DOUT_ATTEN3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH0_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH0_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH1_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH1_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH2_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH2_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH3_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH3_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH4_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH4_ATTEN0_INITCODE_DIFF
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
+    &WR_DIS_ADC1_CH5_ATTEN0_INITCODE_DIFF[0],    		// [] wr_dis of ADC1_CH5_ATTEN0_INITCODE_DIFF
     NULL
 };
 
@@ -1486,13 +1772,123 @@ const esp_efuse_desc_t* ESP_EFUSE_TRIM_P_BIAS[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_HP_DBIAS[] = {
+    &ACTIVE_HP_DBIAS[0],    		// [] Active HP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ACTIVE_LP_DBIAS[] = {
+    &ACTIVE_LP_DBIAS[0],    		// [] Active LP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBG[] = {
+    &LSLP_HP_DBG[0],    		// [] LSLP HP DBG of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LSLP_HP_DBIAS[] = {
+    &LSLP_HP_DBIAS[0],    		// [] LSLP HP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBG[] = {
+    &DSLP_LP_DBG[0],    		// [] DSLP LP DBG of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_DSLP_LP_DBIAS[] = {
+    &DSLP_LP_DBIAS[0],    		// [] DSLP LP DBIAS of fixed voltage
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_LP_HP_DBIAS_VOL_GAP[] = {
+    &LP_HP_DBIAS_VOL_GAP[0],    		// [] DBIAS gap between LP and HP
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_OPTIONAL_UNIQUE_ID[] = {
     &OPTIONAL_UNIQUE_ID[0],    		// [] Optional unique 128-bit ID
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_TEMPERATURE_SENSOR[] = {
+    &TEMPERATURE_SENSOR[0],    		// [] Temperature calibration data
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_OCODE[] = {
     &OCODE[0],    		// [] ADC OCode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN0[] = {
+    &ADC1_AVE_INITCODE_ATTEN0[0],    		// [] Average initcode of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN1[] = {
+    &ADC1_AVE_INITCODE_ATTEN1[0],    		// [] Average initcode of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN2[] = {
+    &ADC1_AVE_INITCODE_ATTEN2[0],    		// [] Average initcode of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_AVE_INITCODE_ATTEN3[] = {
+    &ADC1_AVE_INITCODE_ATTEN3[0],    		// [] Average initcode of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN0[] = {
+    &ADC1_HI_DOUT_ATTEN0[0],    		// [] HI DOUT of ADC1 atten0
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN1[] = {
+    &ADC1_HI_DOUT_ATTEN1[0],    		// [] HI DOUT of ADC1 atten1
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN2[] = {
+    &ADC1_HI_DOUT_ATTEN2[0],    		// [] HI DOUT of ADC1 atten2
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_HI_DOUT_ATTEN3[] = {
+    &ADC1_HI_DOUT_ATTEN3[0],    		// [] HI DOUT of ADC1 atten3
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH0_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH0_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH0 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH1_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH1_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH1 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH2_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH2_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH2 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH3_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH3_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH3 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH4_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH4_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH4 and average initcode
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_ADC1_CH5_ATTEN0_INITCODE_DIFF[] = {
+    &ADC1_CH5_ATTEN0_INITCODE_DIFF[0],    		// [] Gap between ADC1 CH5 and average initcode
     NULL
 };
 
