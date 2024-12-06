@@ -152,6 +152,10 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
     list(APPEND compile_options "-fdump-rtl-expand")
 endif()
 
+idf_build_set_property(GDBINIT_FILES_PREFIX_MAP "${BUILD_DIR}/gdbinit/prefix_map")
+file(MAKE_DIRECTORY "${BUILD_DIR}/gdbinit")
+file(WRITE "${BUILD_DIR}/gdbinit/prefix_map" "")
+
 if(NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS 8.0.0)
     if(CONFIG_COMPILER_HIDE_PATHS_MACROS)
         list(APPEND compile_options "-fmacro-prefix-map=${CMAKE_SOURCE_DIR}=.")
