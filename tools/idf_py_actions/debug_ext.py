@@ -251,6 +251,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         print('OpenOCD started as a background task {}'.format(process.pid))
 
     def get_gdb_args(project_desc: Dict[str, Any], gdb_x: Tuple, gdb_ex: Tuple, gdb_commands: Optional[str]) -> List[str]:
+        # check if the application was built and ELF file is in place.
+        app_elf = os.path.join(project_desc.get('build_dir', ''), project_desc.get('app_elf', ''))
+        if not os.path.exists(app_elf):
+            raise FatalError('ELF file not found. You need to build & flash the project before running debug targets')
         # debugger application name (xtensa-esp32-elf-gdb, riscv32-esp-elf-gdb, ...)
         gdb_name = project_desc.get('monitor_toolprefix', '') + 'gdb'
         gdb_args = [gdb_name]
