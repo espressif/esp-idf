@@ -349,8 +349,8 @@ BOOLEAN btsnd_hcic_ble_create_ll_conn (UINT16 scan_int, UINT16 scan_win,
     UINT16_TO_STREAM (pp, conn_latency);
     UINT16_TO_STREAM (pp, conn_timeout);
 
-    UINT16_TO_STREAM (pp, min_ce_len);
-    UINT16_TO_STREAM (pp, max_ce_len);
+    UINT16_TO_STREAM (pp, min_ce_len ? min_ce_len : BLE_CE_LEN_MIN);
+    UINT16_TO_STREAM (pp, max_ce_len ? max_ce_len : BLE_CE_LEN_MIN);
 
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
@@ -1594,8 +1594,8 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
         UINT16_TO_STREAM(pp, params->conn_interval_max);
         UINT16_TO_STREAM(pp, params->conn_latency);
         UINT16_TO_STREAM(pp, params->sup_timeout);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
     }
 
     if (p_conn->init_phy_mask & 0x02) {
@@ -1606,8 +1606,8 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
         UINT16_TO_STREAM(pp, params->conn_interval_max);
         UINT16_TO_STREAM(pp, params->conn_latency);
         UINT16_TO_STREAM(pp, params->sup_timeout);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
     }
 
     if (p_conn->init_phy_mask & 0x04) {
@@ -1618,8 +1618,8 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
         UINT16_TO_STREAM(pp, params->conn_interval_max);
         UINT16_TO_STREAM(pp, params->conn_latency);
         UINT16_TO_STREAM(pp, params->sup_timeout);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
-        UINT16_TO_STREAM(pp, BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->min_ce_len ? params->min_ce_len : BLE_CE_LEN_MIN);
+        UINT16_TO_STREAM(pp, params->max_ce_len ? params->max_ce_len : BLE_CE_LEN_MIN);
     }
 
     btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
