@@ -529,7 +529,7 @@ Dead time specific configuration is listed in the :cpp:type:`mcpwm_dead_time_con
         // NOTE: This is invalid, you can not apply the posedge delay to another generator
         mcpwm_generator_set_dead_time(mcpwm_gen_b, mcpwm_gen_b, &dt_config);
 
-    However, you can apply ``posedge delay`` to generator A and ``negedge delay`` to generator B. You can also set both ``posedge delay`` and ``negedge delay`` for generator A, while letting generator B bypass the dead time module.
+    However, you can apply ``posedge delay`` to generator A and ``negedge delay`` to generator B. You can also set both ``posedge delay`` and ``negedge delay`` for generator B, while letting generator A bypass the dead time module. Note that if ``negedge delay`` and ``posedge delay`` are both set for generator A, generator B will not be available. Where generator A is the first generator requested through the operator handle and generator B is the second generator requested through an operator handle.
 
 .. note::
 
