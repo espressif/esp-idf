@@ -1,6 +1,8 @@
 堆内存分配
 ======================
 
+{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT: default="16", esp32s3="16", esp32p4="16"}
+
 :link_to_translation:`en:[English]`
 
 栈 (stack) 和堆 (heap) 的区别
@@ -133,6 +135,13 @@ DMA 存储器
     .. only:: esp32
 
         在 ESP32 上，只有不超过 4 MiB 的外部 SPI RAM 可以通过上述方式分配。要使用超过 4 MiB 限制的区域，可以使用 :doc:`himem API</api-reference/system/himem>`。
+
+.. only:: SOC_SIMD_INSTRUCTION_SUPPORTED
+
+    SIMD 指令可访问内存
+    ^^^^^^^^^^^^^^^^^^^
+
+    ``MALLOC_CAP_SIMD`` 标志用于分配可被 SIMD（单指令多数据）指令访问的内存。使用该标志时，分配的内存会自动对齐到 SIMD 最佳数据对齐大小（{IDF_TARGET_SIMD_PREFERRED_DATA_ALIGNMENT}-byte），从而提升性能。
 
 线程安全性
 -------------
