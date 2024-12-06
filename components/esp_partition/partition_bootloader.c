@@ -46,9 +46,9 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_p
 
         // if everything matches, populate the internal_partition
         if (partition->type == type
-                && partition->subtype == subtype
-                && strncmp((char*) partition->label, label, sizeof(partition->label) - 1) == 0) {
-
+            && partition->subtype == subtype
+            && (!label || (label && (strncmp((char*) partition->label, label, sizeof(partition->label) - 1) == 0)))
+        ) {
             ESP_LOGV(TAG, "Matched", partition->type, partition->subtype, partition->label);
             internal_partition.flash_chip = NULL; //esp_flash_default_chip;
             internal_partition.type = partition->type;
