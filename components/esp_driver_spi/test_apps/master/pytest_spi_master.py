@@ -4,7 +4,6 @@ import pytest
 
 
 # If `test_env` is define, should not run on generic runner
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 support TBD')  # TODO: IDF-8942
 @pytest.mark.supported_targets
 @pytest.mark.esp32h2
 @pytest.mark.generic
@@ -28,7 +27,6 @@ def test_master_esp_flash(case_tester) -> None:        # type: ignore
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default
-@pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='p4 support TBD')  # TODO: IDF-8942
 @pytest.mark.supported_targets
 @pytest.mark.esp32h2
 @pytest.mark.generic_multi_device

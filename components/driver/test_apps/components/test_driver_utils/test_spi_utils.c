@@ -91,6 +91,7 @@ void spitest_slave_task(void* arg)
         t.length = txdata.len;
         t.tx_buffer = txdata.start;
         t.rx_buffer = recvbuf + 8;
+        t.flags |= SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO;
         //loop until trans_len != 0 to skip glitches
         do {
             TEST_ESP_OK(spi_slave_transmit(context->spi, &t, portMAX_DELAY));
@@ -231,6 +232,7 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx)
     esp_rom_gpio_connect_in_signal(gpio_num, signal_idx, 0);
 }
 
+#if (TEST_SPI_PERIPH_NUM >= 2)
 //Note this cs_dev_id is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_dev_id of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_dev_id)
@@ -247,3 +249,4 @@ void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, 
     spitest_gpio_output_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SPI_HOST].spiclk_out);
     spitest_gpio_input_sel(bus.sclk_io_num, FUNC_GPIO, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in);
 }
+#endif  //(TEST_SPI_PERIPH_NUM >= 2)

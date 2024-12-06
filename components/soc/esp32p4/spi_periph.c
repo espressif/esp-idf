@@ -73,7 +73,6 @@ const spi_signal_conn_t spi_periph_signal[SOC_SPI_PERIPH_NUM] = {
         .spiclk_in = SPI3_CK_PAD_IN_IDX,
         .spid_out = SPI3_D_PAD_OUT_IDX,
         .spiq_out = SPI3_QO_PAD_OUT_IDX,
-        //SPI3 doesn't have wp and hd signals
         .spiwp_out = SPI3_WP_PAD_OUT_IDX,
         .spihd_out = SPI3_HOLD_PAD_OUT_IDX,
         .spid_in = SPI3_D_PAD_IN_IDX,

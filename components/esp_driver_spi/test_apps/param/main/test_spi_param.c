@@ -109,6 +109,10 @@ static void local_test_start(spi_device_handle_t *spi, int freq, const spitest_p
         devcfg.flags |= SPI_DEVICE_NO_DUMMY;
     }
 
+#if CONFIG_IDF_TARGET_ESP32P4      //TODO: IDF-8313, update P4 defaulte clock source
+    devcfg.clock_source = SPI_CLK_SRC_SPLL;
+#endif
+
     //slave config
     slvcfg.mode = pset->mode;
     slave_pull_up(&buscfg, slvcfg.spics_io_num);
@@ -192,6 +196,7 @@ static void local_test_loop(const void *arg1, void *arg2)
                 .tx_buffer = txdata->start,
                 .rx_buffer = recvbuf,
                 .length = txdata->len,
+                .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
             };
             esp_err_t err = spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY);
             TEST_ESP_OK(err);
@@ -247,8 +252,7 @@ static void local_test_loop(const void *arg1, void *arg2)
 /************ Timing Test ***********************************************/
 //TODO: esp32s2 has better timing performance
 static spitest_param_set_t timing_pgroup[] = {
-//signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if (SLAVE_IOMUX_PIN_MISO != -1)    //SPI3 slave has iomux pin
     {
         .pset_name = "FULL_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
@@ -277,8 +281,7 @@ static spitest_param_set_t timing_pgroup[] = {
         .slave_iomux = false,
         .slave_tv_ns = TV_INT_CONNECT_GPIO,
     },
-//signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if (SLAVE_IOMUX_PIN_MISO != -1)    //SPI3 slave has iomux pin
     {
         .pset_name = "MISO_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
@@ -307,8 +310,7 @@ static spitest_param_set_t timing_pgroup[] = {
         .slave_iomux = false,
         .slave_tv_ns = TV_INT_CONNECT_GPIO,
     },
-//signals are not fed to peripherals through iomux if the functions are not selected to iomux
-#if !DISABLED_FOR_TARGETS(ESP32S2, ESP32S3)
+#if (SLAVE_IOMUX_PIN_MISO != -1)    //SPI3 slave has iomux pin
     {
         .pset_name = "MOSI_DUP, MASTER IOMUX",
         .freq_limit = ESP_SPI_SLAVE_MAX_FREQ_SYNC,
@@ -616,7 +618,8 @@ TEST_CASE("Slave receive correct data", "[spi]")
                 spi_slave_transaction_t slave_trans = {
                     .length = slave_trans_len * 8,
                     .tx_buffer = slave_sendbuf,
-                    .rx_buffer = slave_recvbuf
+                    .rx_buffer = slave_recvbuf,
+                    .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                 };
                 esp_err_t ret = spi_slave_queue_trans(TEST_SLAVE_HOST, &slave_trans, portMAX_DELAY);
                 TEST_ESP_OK(ret);
@@ -1276,7 +1279,9 @@ static int s_spi_bus_freq[] = {
     IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 7,
     IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 4,
     IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 2,
+#if !CONFIG_IDF_TARGET_ESP32P4      //TODO: IDF-8313, update P4 defaulte clock source
     IDF_PERFORMANCE_MAX_SPI_CLK_FREQ,
+#endif
 };
 
 //------------------------------------------- Full Duplex with DMA Freq test --------------------------------------
@@ -1489,6 +1494,7 @@ static void test_slave_fd_no_dma(void)
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_receive,
                         .length = test_trans_len * 8,
+                        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
@@ -1593,6 +1599,7 @@ static void test_slave_hd_dma(void)
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
                     slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
+                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
@@ -1694,6 +1701,7 @@ static void test_slave_hd_no_dma(void)
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
                     slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
+                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
@@ -1957,6 +1965,7 @@ static void test_slave_sio_no_dma(void)
                         .length = SOC_SPI_MAXIMUM_BUFFER_SIZE * 8,
                         .tx_buffer = slave_send,
                         .rx_buffer = slave_receive,
+                        .flags = SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
                     unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_transmit(TEST_SPI_HOST, &trans, portMAX_DELAY));

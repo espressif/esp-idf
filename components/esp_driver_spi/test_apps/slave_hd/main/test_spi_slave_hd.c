@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -857,19 +857,23 @@ static void hd_slave_quad(void)
         {
             .data = slave_recv_buf,
             .len = (trans_len + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         {
             .data = slave_recv_buf + BUF_SIZE / 2,
             .len = (trans_len + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         //send
         {
             .data = slave_send_buf,
             .len = (trans_len + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
         {
             .data = slave_send_buf + BUF_SIZE / 2,
             .len = (trans_len + 3) & (~3),
+            .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
         },
     };
 
@@ -903,7 +907,7 @@ static void hd_slave_quad(void)
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
 }
 
-TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test ", "[spi_ms][test_env=generic_multi_device]", hd_master_quad, hd_slave_quad);
+TEST_CASE_MULTIPLE_DEVICES("SPI quad hd test", "[spi_ms][test_env=generic_multi_device]", hd_master_quad, hd_slave_quad);
 
 #endif  // #if !TEMPORARY_DISABLED_FOR_TARGETS(ESP32S2)
 
@@ -943,6 +947,7 @@ void slave_run_append(void)
         slave_rx_trans[append_idx].data = heap_caps_aligned_calloc(4, 1, TEST_TRANS_LEN, MALLOC_CAP_DMA);
         TEST_ASSERT_NOT_NULL(slave_rx_trans[append_idx].data);
         slave_rx_trans[append_idx].len = trans_len;
+        slave_rx_trans[append_idx].flags |= SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO;
         TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_rx_trans[append_idx], portMAX_DELAY));
     }
 
@@ -984,6 +989,7 @@ void slave_run_append(void)
         }
         slave_tx_trans[append_idx].data = slave_rx_trans[append_idx].data;
         slave_tx_trans[append_idx].len = trans_len;
+        slave_tx_trans[append_idx].flags |= SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO;
         prepare_data(slave_tx_trans[append_idx].data, trans_len, -3);
         TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_tx_trans[append_idx], portMAX_DELAY));
     }
