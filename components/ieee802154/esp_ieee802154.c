@@ -298,6 +298,7 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
     case IEEE802154_STATE_CCA:
     case IEEE802154_STATE_TX:
     case IEEE802154_STATE_RX_ACK:
+    case IEEE802154_STATE_TX_ENH_ACK:
         return ESP_IEEE802154_RADIO_TRANSMIT;
 
     default:
@@ -390,7 +391,8 @@ __attribute__((weak)) void esp_ieee802154_ed_failed(uint16_t error)
 
 __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame)
 {
-    return ESP_OK;
+    ESP_EARLY_LOGE(IEEE802154_TAG, "Not implement for the enh-ack generating handler");
+    return ESP_FAIL;
 }
 
 __attribute__((weak)) void esp_ieee802154_timer0_done(void)
