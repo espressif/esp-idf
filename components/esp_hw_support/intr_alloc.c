@@ -73,6 +73,15 @@ struct shared_vector_desc_t {
 #define VECDESC_FL_SHARED       (1<<2)
 #define VECDESC_FL_NONSHARED    (1<<3)
 
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+/* On targets that have configurable interrupts levels, store the assigned level in the flags */
+#define VECDESC_FL_LEVEL_SHIFT  (8)
+/* Allocate 4 bits in the flag */
+#define VECDESC_FL_LEVEL_MASK   (0xf)
+/* Help to extract the level from flags */
+#define VECDESC_FL_LEVEL(flags) (((flags) >> VECDESC_FL_LEVEL_SHIFT) & VECDESC_FL_LEVEL_MASK)
+#endif
+
 //Pack using bitfields for better memory use
 struct vector_desc_t {
     int flags: 16;                          //OR of VECDESC_FL_* defines
@@ -258,7 +267,17 @@ static bool is_vect_desc_usable(vector_desc_t *vd, int flags, int cpu, int force
         return false;
     }
 
-#ifndef SOC_CPU_HAS_FLEXIBLE_INTC
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+    /* On target that have configurable interrupts levels, check if the interrupt has already
+     * been allocated, and if yes, make sure the levels are compatible. */
+    const int vector_lvl = VECDESC_FL_LEVEL(vd->flags);
+    /* A non-zero value means the level has already been set prior to this allocation, make
+     * sure the current level matches what we need. */
+    if (vector_lvl != 0 && (flags & (1 << vector_lvl)) == 0) {
+        ALCHLOG("....Unusable: incompatible priority");
+        return false;
+    }
+#else
     //Check if the interrupt priority is acceptable
     if (!(flags & (1 << intr_desc.priority))) {
         ALCHLOG("....Unusable: incompatible priority");
@@ -640,6 +659,7 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 #if SOC_CPU_HAS_FLEXIBLE_INTC
     //Extract the level from the interrupt passed flags
     int level = esp_intr_flags_to_level(flags);
+    vd->flags |= level << VECDESC_FL_LEVEL_SHIFT;
     esp_cpu_intr_set_priority(intr, level);
 
     if (flags & ESP_INTR_FLAG_EDGE) {
@@ -790,6 +810,10 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
         //we save.(We can also not use the same exit path for empty shared ints anymore if we delete
         //the desc.) For now, just mark it as free.
         handle->vector_desc->flags &= ~(VECDESC_FL_NONSHARED|VECDESC_FL_RESERVED|VECDESC_FL_SHARED);
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+        //Clear the assigned level
+        handle->vector_desc->flags &= ~(VECDESC_FL_LEVEL_MASK << VECDESC_FL_LEVEL_SHIFT);
+#endif
         handle->vector_desc->source = ETS_INTERNAL_UNUSED_INTR_SOURCE;
 
         //Also kill non_iram mask bit.
@@ -802,11 +826,17 @@ static esp_err_t intr_free_for_current_cpu(intr_handle_t handle)
 
 int esp_intr_get_intno(intr_handle_t handle)
 {
+    if (handle == NULL || handle->vector_desc == NULL) {
+        return -1;
+    }
     return handle->vector_desc->intno;
 }
 
 int esp_intr_get_cpu(intr_handle_t handle)
 {
+    if (handle == NULL || handle->vector_desc == NULL) {
+        return -1;
+    }
     return handle->vector_desc->cpu;
 }
 

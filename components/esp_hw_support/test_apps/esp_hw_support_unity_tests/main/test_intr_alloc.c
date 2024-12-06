@@ -66,7 +66,7 @@ static void timer_test(int flags)
     }
 
     if ((flags & ESP_INTR_FLAG_SHARED)) {
-        /* Check that the allocated interrupts are acutally shared */
+        /* Check that the allocated interrupts are actually shared */
         int intr_num = esp_intr_get_intno(inth[0]);
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
             TEST_ASSERT_EQUAL(intr_num, esp_intr_get_intno(inth[i]));
@@ -122,6 +122,73 @@ void static test_isr(void*arg)
     /* ISR should never be called */
     abort();
 }
+
+
+TEST_CASE("Intr_alloc test, shared interrupts don't affect level", "[intr_alloc]")
+{
+    intr_handle_t handle_lvl_1;
+    intr_handle_t handle_lvl_2;
+
+    /* Allocate an interrupt of level 1 that will be shared with another source */
+    esp_err_t err = esp_intr_alloc(ETS_SHA_INTR_SOURCE,
+                                   ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+                                   test_isr, NULL, &handle_lvl_1);
+    TEST_ESP_OK(err);
+
+    /* Allocate a shared interrupt of a different level */
+    err = esp_intr_alloc(ETS_AES_INTR_SOURCE,
+                         ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
+                         test_isr, NULL, &handle_lvl_2);
+    TEST_ESP_OK(err);
+
+    /* Make sure the allocated CPU line is NOT the same for both sources */
+    const int intlvl1 = esp_intr_get_intno(handle_lvl_1);
+    const int intlvl2 = esp_intr_get_intno(handle_lvl_2);
+    printf("Level 1 interrupt allocated: %d\n", intlvl1);
+    printf("Level 2 interrupt allocated: %d\n", intlvl2);
+    TEST_ASSERT(intlvl1 != intlvl2);
+
+    TEST_ESP_OK(esp_intr_free(handle_lvl_1));
+    TEST_ESP_OK(esp_intr_free(handle_lvl_2));
+}
+
+
+#if SOC_CPU_HAS_FLEXIBLE_INTC
+
+/**
+ * On targets that have flexible interrupt levels, make sure that a shared interrupt sees its level
+ * being cleared (and reconfigurable) uupon remove and reallocation.
+ */
+TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_alloc]")
+{
+    intr_handle_t handle;
+
+    esp_err_t err = esp_intr_alloc(ETS_SHA_INTR_SOURCE,
+                                   ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+                                   test_isr, NULL, &handle);
+    TEST_ESP_OK(err);
+    const int first_intno = esp_intr_get_intno(handle);
+    /* Make sure the priority is correct */
+    TEST_ASSERT_EQUAL(1, esp_cpu_intr_get_priority(first_intno));
+
+    /* Free the shared interrupt and try to reallocate it with another level */
+    TEST_ESP_OK(esp_intr_free(handle));
+
+    err = esp_intr_alloc(ETS_AES_INTR_SOURCE,
+                         ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
+                         test_isr, NULL, &handle);
+    TEST_ESP_OK(err);
+
+    /* Make sure they are both the same and the level has been updated */
+    const int second_intno = esp_intr_get_intno(handle);
+    TEST_ASSERT_EQUAL(2, esp_cpu_intr_get_priority(second_intno));
+    TEST_ASSERT(first_intno == second_intno);
+
+    /* Delete the interrupt */
+    TEST_ESP_OK(esp_intr_free(handle));
+}
+
+#endif
 
 
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")
