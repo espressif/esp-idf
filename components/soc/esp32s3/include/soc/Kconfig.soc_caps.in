@@ -243,6 +243,10 @@ config SOC_PM_SUPPORTED
     bool
     default y
 
+config SOC_SIMD_INSTRUCTION_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y
@@ -394,6 +398,10 @@ config SOC_CPU_WATCHPOINTS_NUM
 config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
     int
     default 64
+
+config SOC_SIMD_PREFERRED_DATA_ALIGNMENT
+    int
+    default 16
 
 config SOC_DS_SIGNATURE_MAX_BIT_LEN
     int
