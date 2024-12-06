@@ -23,7 +23,7 @@ if(CONFIG_OPENTHREAD_ENABLED)
         "openthread/src/ncp"
         "private_include")
 
-        set(src_dirs
+    set(src_dirs
         "src"
         "src/port"
         "openthread/examples/platforms/utils"
@@ -242,6 +242,12 @@ elseif(CONFIG_OPENTHREAD_SPINEL_ONLY)
 
     list(APPEND exclude_srcs ${exclude_srcs_list})
 
+endif()
+
+if(CONFIG_OPENTHREAD_HEADER_CUSTOM)
+    idf_build_get_property(project_dir PROJECT_DIR)
+    list(APPEND private_include_dirs
+        "${project_dir}/${CONFIG_OPENTHREAD_CUSTOM_HEADER_PATH}")
 endif()
 
 execute_process(

@@ -82,7 +82,7 @@ static void radio_spinel_compatibility_error_callback(void *context)
     }
 }
 
-void esp_openthread_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
+void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
 {
     s_radio_spinel_compatibility_error_callback = callback;
 }
@@ -315,7 +315,7 @@ esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, e
     s_transmit_frame.mLength = frame[0];
     s_transmit_frame.mPsdu = frame + 1;
     s_transmit_frame.mInfo.mTxInfo.mCsmaCaEnabled = cca;
-    s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT;
+    s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_SPINEL_MAC_MAX_CSMA_BACKOFFS_DIRECT;
     s_transmit_frame.mChannel = channel;
     s_transmit_frame.mInfo.mTxInfo.mRxChannelAfterTxDone = channel;
     return (s_radio[idx].Transmit(s_transmit_frame) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
