@@ -130,13 +130,13 @@ TEST_CASE("Intr_alloc test, shared interrupts don't affect level", "[intr_alloc]
     intr_handle_t handle_lvl_2;
 
     /* Allocate an interrupt of level 1 that will be shared with another source */
-    esp_err_t err = esp_intr_alloc(ETS_SHA_INTR_SOURCE,
+    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
                                    ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
                                    test_isr, NULL, &handle_lvl_1);
     TEST_ESP_OK(err);
 
     /* Allocate a shared interrupt of a different level */
-    err = esp_intr_alloc(ETS_AES_INTR_SOURCE,
+    err = esp_intr_alloc(ETS_FROM_CPU_INTR3_SOURCE,
                          ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                          test_isr, NULL, &handle_lvl_2);
     TEST_ESP_OK(err);
@@ -163,7 +163,7 @@ TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_allo
 {
     intr_handle_t handle;
 
-    esp_err_t err = esp_intr_alloc(ETS_SHA_INTR_SOURCE,
+    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
                                    ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
                                    test_isr, NULL, &handle);
     TEST_ESP_OK(err);
@@ -174,7 +174,7 @@ TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_allo
     /* Free the shared interrupt and try to reallocate it with another level */
     TEST_ESP_OK(esp_intr_free(handle));
 
-    err = esp_intr_alloc(ETS_AES_INTR_SOURCE,
+    err = esp_intr_alloc(ETS_FROM_CPU_INTR3_SOURCE,
                          ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
                          test_isr, NULL, &handle);
     TEST_ESP_OK(err);
@@ -189,6 +189,39 @@ TEST_CASE("Intr_alloc test, shared interrupts custom level cleared", "[intr_allo
 }
 
 #endif
+
+
+/**
+ * Make sure we can map two given sources to the same interrupt line when their levels match.
+ */
+TEST_CASE("Intr_alloc test, shared interrupt line for two sources", "[intr_alloc]")
+{
+    intr_handle_t handle_1;
+    intr_handle_t handle_2;
+
+    esp_err_t err = esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE,
+                                   ESP_INTR_FLAG_LEVEL1 | ESP_INTR_FLAG_SHARED,
+                                   test_isr, NULL, &handle_1);
+    TEST_ESP_OK(err);
+
+    /* Map another source to the exact same interrupt line */
+    err = esp_intr_alloc_bind(ETS_FROM_CPU_INTR3_SOURCE,
+                              ESP_INTR_FLAG_LEVEL1  | ESP_INTR_FLAG_SHARED,
+                              test_isr, NULL, handle_1, &handle_2);
+    TEST_ESP_OK(err);
+    /* Make sure they are both using the same interrupt line */
+    TEST_ASSERT_EQUAL(esp_intr_get_intno(handle_1), esp_intr_get_intno(handle_2));
+
+    /* Reallocate the second interrupt source with a higher level, it must fail */
+    TEST_ESP_OK(esp_intr_free(handle_2));
+    err = esp_intr_alloc_bind(ETS_FROM_CPU_INTR3_SOURCE,
+                              ESP_INTR_FLAG_LEVEL2  | ESP_INTR_FLAG_SHARED,
+                              test_isr, NULL, handle_1, &handle_2);
+    TEST_ASSERT(err != ESP_OK);
+
+    /* Free the remaining handler */
+    TEST_ESP_OK(esp_intr_free(handle_1));
+}
 
 
 TEST_CASE("Allocate previously freed interrupt, with different flags", "[intr_alloc]")

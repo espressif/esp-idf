@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,7 @@ struct shared_vector_desc_t {
 #define VECDESC_FL_INIRAM       (1<<1)
 #define VECDESC_FL_SHARED       (1<<2)
 #define VECDESC_FL_NONSHARED    (1<<3)
+#define VECDESC_FL_TYPE_MASK    (0xf)
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /* On targets that have configurable interrupts levels, store the assigned level in the flags */
@@ -221,7 +222,7 @@ esp_err_t esp_intr_mark_shared(int intno, int cpu, bool is_int_ram)
         portEXIT_CRITICAL(&spinlock);
         return ESP_ERR_NO_MEM;
     }
-    vd->flags = VECDESC_FL_SHARED;
+    vd->flags = (vd->flags & ~VECDESC_FL_TYPE_MASK) | VECDESC_FL_SHARED;
     if (is_int_ram) {
         vd->flags |= VECDESC_FL_INIRAM;
     }
@@ -499,8 +500,8 @@ bool esp_intr_ptr_in_isr_region(void* ptr)
 
 
 //We use ESP_EARLY_LOG* here because this can be called before the scheduler is running.
-esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
-                                    void *arg, intr_handle_t *ret_handle)
+esp_err_t esp_intr_alloc_intrstatus_bind(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
+                                    void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle)
 {
     intr_handle_data_t *ret=NULL;
     int force = -1;
@@ -528,7 +529,10 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     if ((flags & ESP_INTR_FLAG_IRAM) && handler && !esp_intr_ptr_in_isr_region(handler)) {
         return ESP_ERR_INVALID_ARG;
     }
-
+    //Shared handler must be passed with share interrupt flag
+    if (shared_handle != NULL && (flags & ESP_INTR_FLAG_SHARED) == 0) {
+        return ESP_ERR_INVALID_ARG;
+    }
     //Default to prio 1 for shared interrupts. Default to prio 1, 2 or 3 for non-shared interrupts.
     if ((flags & ESP_INTR_FLAG_LEVELMASK) == 0) {
         if (flags & ESP_INTR_FLAG_SHARED) {
@@ -568,7 +572,17 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
 
     portENTER_CRITICAL(&spinlock);
     uint32_t cpu = esp_cpu_get_core_id();
-    //See if we can find an interrupt that matches the flags.
+    if (shared_handle != NULL) {
+        /* Sanity check, should not occur */
+        if (shared_handle->vector_desc == NULL) {
+            portEXIT_CRITICAL(&spinlock);
+            return ESP_ERR_INVALID_ARG;
+        }
+        /* If a shared vector was given, force the current interrupt source to same CPU interrupt line */
+        force = shared_handle->vector_desc->intno;
+        /* Allocate the interrupt on the same core as the given handle */
+        cpu = shared_handle->vector_desc->cpu;
+    }
     int intr = get_available_int(flags, cpu, force, source);
     if (intr == -1) {
         //None found. Bail out.
@@ -691,6 +705,13 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
     return ESP_OK;
 }
 
+esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusreg, uint32_t intrstatusmask, intr_handler_t handler,
+                                    void *arg, intr_handle_t *ret_handle)
+{
+    return esp_intr_alloc_intrstatus_bind(source, flags, intrstatusreg, intrstatusmask, handler, arg, NULL, ret_handle);
+}
+
+
 esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t *ret_handle)
 {
     /*
@@ -700,6 +721,13 @@ esp_err_t esp_intr_alloc(int source, int flags, intr_handler_t handler, void *ar
     */
     return esp_intr_alloc_intrstatus(source, flags, 0, 0, handler, arg, ret_handle);
 }
+
+
+esp_err_t esp_intr_alloc_bind(int source, int flags, intr_handler_t handler, void *arg, intr_handle_t shared_handle, intr_handle_t *ret_handle)
+{
+    return esp_intr_alloc_intrstatus_bind(source, flags, 0, 0, handler, arg, shared_handle, ret_handle);
+}
+
 
 esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 {
