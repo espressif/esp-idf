@@ -1028,7 +1028,7 @@ typedef struct {
 
 #define BTA_PHY_1M_MASK                   (1 << 0)
 #define BTA_PHY_2M_MASK                   (1 << 1)
-#define BTAS_PHY_CODED_MASK               (1 << 2)
+#define BTA_PHY_CODED_MASK                (1 << 2)
 typedef struct {
     BT_HDR                          hdr;
     BD_ADDR                         bd_addr;
