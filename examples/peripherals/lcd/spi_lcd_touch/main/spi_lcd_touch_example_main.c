@@ -156,8 +156,8 @@ static void example_increase_lvgl_tick(void *arg)
 static void example_lvgl_port_task(void *arg)
 {
     ESP_LOGI(TAG, "Starting LVGL task");
-    uint32_t time_till_next_ms = 0;
-    uint32_t time_threshold_ms = 1000 / CONFIG_FREERTOS_HZ;
+    int32_t time_till_next_ms = 0;
+    int32_t time_threshold_ms = 1000 / CONFIG_FREERTOS_HZ;
     while (1) {
         _lock_acquire(&lvgl_api_lock);
         time_till_next_ms = lv_timer_handler();
