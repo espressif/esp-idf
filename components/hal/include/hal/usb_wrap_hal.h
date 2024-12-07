@@ -8,17 +8,17 @@
 
 #include <stdbool.h>
 #include "soc/soc_caps.h"
-#if SOC_USB_OTG_SUPPORTED
+#if (SOC_USB_OTG_PERIPH_NUM > 0)
 #include "soc/usb_wrap_struct.h"
 #include "hal/usb_wrap_ll.h"
-#endif
+#endif // (SOC_USB_OTG_PERIPH_NUM > 0)
 #include "hal/usb_wrap_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#if SOC_USB_OTG_SUPPORTED
+#if (SOC_USB_OTG_PERIPH_NUM > 0)
 
 /**
  * @brief HAL context type of USB WRAP driver
@@ -89,7 +89,7 @@ static inline void usb_wrap_hal_phy_test_mode_set_signals(usb_wrap_hal_context_t
     usb_wrap_ll_phy_test_mode_set_signals(hal->dev, vals);
 }
 
-#endif // SOC_USB_OTG_SUPPORTED
+#endif // (SOC_USB_OTG_PERIPH_NUM > 0)
 
 #ifdef __cplusplus
 }
