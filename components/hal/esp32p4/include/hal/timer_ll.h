@@ -24,7 +24,6 @@ extern "C" {
 // Get timer group register base address with giving group number
 #define TIMER_LL_GET_HW(group_id) ((group_id == 0) ? (&TIMERG0) : (&TIMERG1))
 #define TIMER_LL_EVENT_ALARM(timer_id) (1 << (timer_id))
-#define TIMER_LL_SLEEP_RETENTION_MODULE_ID(group_id) ((group_id == 0) ? SLEEP_RETENTION_MODULE_TG0_TIMER: SLEEP_RETENTION_MODULE_TG1_TIMER)
 
 #define TIMER_LL_ETM_TASK_TABLE(group, timer, task)                         \
     (uint32_t[2][2][GPTIMER_ETM_TASK_MAX]){                                 \
@@ -177,7 +176,7 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
  * @param timer_num Timer index in the group
  * @param en true to enable, false to disable
  */
-static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+static inline void _timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
     if (hw == &TIMERG0) {
         if (timer_num == 0) {
@@ -196,7 +195,7 @@ static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, boo
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define timer_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; timer_ll_enable_clock(__VA_ARGS__)
+#define timer_ll_enable_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _timer_ll_enable_clock(__VA_ARGS__)
 
 /**
  * @brief Enable alarm event

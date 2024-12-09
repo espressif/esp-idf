@@ -80,13 +80,20 @@ const regdma_entries_config_t tg1_timer_regs_retention[] = {
     [5] = { .config = REGDMA_LINK_WRITE_INIT(REGDMA_TG1_TIMER_LINK(0x05),        TIMG_T0LOAD_REG(1),     0x1,                    TIMG_T0_LOAD_M,      1, 0), .owner = ENTRY(0) | ENTRY(2) },
 };
 
-const tg_reg_ctx_link_t tg_wdt_regs_retention[SOC_TIMER_GROUPS] = {
-    [0] = {tg0_wdt_regs_retention, ARRAY_SIZE(tg0_wdt_regs_retention)},
-    [1] = {tg1_wdt_regs_retention, ARRAY_SIZE(tg1_wdt_regs_retention)},
-};
-
-const tg_reg_ctx_link_t tg_timer_regs_retention[SOC_TIMER_GROUPS] = {
-    [0] = {tg0_timer_regs_retention, ARRAY_SIZE(tg0_timer_regs_retention)},
-    [1] = {tg1_timer_regs_retention, ARRAY_SIZE(tg1_timer_regs_retention)},
+const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS][SOC_TIMER_GROUP_TIMERS_PER_GROUP] = {
+    [0] = {
+        [0] = {
+            .module = SLEEP_RETENTION_MODULE_TG0_TIMER0,
+            .regdma_entry_array = tg0_timer_regdma_entries,
+            .array_size = ARRAY_SIZE(tg0_timer_regdma_entries)
+        }
+    },
+    [1] = {
+        [0] = {
+            .module = SLEEP_RETENTION_MODULE_TG1_TIMER0,
+            .regdma_entry_array = tg1_timer_regdma_entries,
+            .array_size = ARRAY_SIZE(tg1_timer_regdma_entries)
+        }
+    },
 };
 #endif

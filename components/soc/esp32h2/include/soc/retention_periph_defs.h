@@ -24,8 +24,8 @@ typedef enum periph_retention_module {
     /* Timer Group by target*/
     SLEEP_RETENTION_MODULE_TG0_WDT      = 4,
     SLEEP_RETENTION_MODULE_TG1_WDT      = 5,
-    SLEEP_RETENTION_MODULE_TG0_TIMER    = 6,
-    SLEEP_RETENTION_MODULE_TG1_TIMER    = 7,
+    SLEEP_RETENTION_MODULE_TG0_TIMER0   = 6,
+    SLEEP_RETENTION_MODULE_TG1_TIMER0   = 7,
     /* GDMA by channel */
     SLEEP_RETENTION_MODULE_GDMA_CH0     = 8,
     SLEEP_RETENTION_MODULE_GDMA_CH1     = 9,
@@ -55,8 +55,8 @@ typedef enum periph_retention_module_bitmap {
     /* Timer Group by target*/
     SLEEP_RETENTION_MODULE_BM_TASK_WDT     = BIT(SLEEP_RETENTION_MODULE_TG0_WDT),
     SLEEP_RETENTION_MODULE_BM_INT_WDT      = BIT(SLEEP_RETENTION_MODULE_TG1_WDT),
-    SLEEP_RETENTION_MODULE_BM_TG0_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER),
-    SLEEP_RETENTION_MODULE_BM_TG1_TIMER    = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER),
+    SLEEP_RETENTION_MODULE_BM_TG0_TIMER0   = BIT(SLEEP_RETENTION_MODULE_TG0_TIMER0),
+    SLEEP_RETENTION_MODULE_BM_TG1_TIMER0   = BIT(SLEEP_RETENTION_MODULE_TG1_TIMER0),
     /* GDMA by channel */
     SLEEP_RETENTION_MODULE_BM_GDMA_CH0     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH0),
     SLEEP_RETENTION_MODULE_BM_GDMA_CH1     = BIT(SLEEP_RETENTION_MODULE_GDMA_CH1),
@@ -78,8 +78,8 @@ typedef enum periph_retention_module_bitmap {
 #define TOP_DOMAIN_PERIPHERALS_BM  (SLEEP_RETENTION_MODULE_BM_SYS_PERIPH  \
                                     | SLEEP_RETENTION_MODULE_BM_TASK_WDT    \
                                     | SLEEP_RETENTION_MODULE_BM_INT_WDT     \
-                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER   \
-                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER   \
+                                    | SLEEP_RETENTION_MODULE_BM_TG0_TIMER0  \
+                                    | SLEEP_RETENTION_MODULE_BM_TG1_TIMER0  \
                                     | SLEEP_RETENTION_MODULE_BM_GDMA_CH0    \
                                     | SLEEP_RETENTION_MODULE_BM_GDMA_CH1    \
                                     | SLEEP_RETENTION_MODULE_BM_GDMA_CH2    \

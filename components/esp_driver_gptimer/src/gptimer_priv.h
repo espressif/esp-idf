@@ -59,10 +59,6 @@ typedef struct gptimer_group_t {
     int group_id;
     portMUX_TYPE spinlock; // to protect per-group register level concurrent access
     gptimer_t *timers[SOC_TIMER_GROUP_TIMERS_PER_GROUP];
-#if GPTIMER_USE_RETENTION_LINK
-    sleep_retention_module_t sleep_retention_module; // sleep retention module
-    bool retention_link_created;       // mark if the retention link is created
-#endif
 } gptimer_group_t;
 
 typedef enum {
@@ -102,7 +98,6 @@ struct gptimer_t {
 gptimer_group_t *gptimer_acquire_group_handle(int group_id);
 void gptimer_release_group_handle(gptimer_group_t *group);
 esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t src_clk, uint32_t resolution_hz);
-void gptimer_create_retention_module(gptimer_group_t *group);
 
 #ifdef __cplusplus
 }
