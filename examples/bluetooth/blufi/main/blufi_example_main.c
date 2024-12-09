@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -313,7 +313,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         ESP_ERROR_CHECK( esp_wifi_set_mode(param->wifi_mode.op_mode) );
         break;
     case ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP:
-        BLUFI_INFO("BLUFI requset wifi connect to AP\n");
+        BLUFI_INFO("BLUFI request wifi connect to AP\n");
         /* there is no wifi callback when the device has already connected to this wifi
         so disconnect wifi before connection.
         */
@@ -321,7 +321,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         example_wifi_connect();
         break;
     case ESP_BLUFI_EVENT_REQ_DISCONNECT_FROM_AP:
-        BLUFI_INFO("BLUFI requset wifi disconnect from AP\n");
+        BLUFI_INFO("BLUFI request wifi disconnect from AP\n");
         esp_wifi_disconnect();
         break;
     case ESP_BLUFI_EVENT_REPORT_ERROR:
