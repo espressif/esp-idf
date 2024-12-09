@@ -82,7 +82,7 @@ static inline void mipi_dsi_host_ll_power_on_off(dsi_host_dev_t *dev, bool on)
  */
 static inline void mipi_dsi_host_ll_set_timeout_clock_division(dsi_host_dev_t *dev, uint32_t div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, to_clk_division, div - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, to_clk_division, div);
 }
 
 /**
@@ -95,7 +95,8 @@ static inline void mipi_dsi_host_ll_set_timeout_clock_division(dsi_host_dev_t *d
  */
 static inline void mipi_dsi_host_ll_set_escape_clock_division(dsi_host_dev_t *dev, uint32_t div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, tx_esc_clk_division, div - 1);
+    HAL_ASSERT(div > 1 && div < 256);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, tx_esc_clk_division, div);
 }
 
 /**
