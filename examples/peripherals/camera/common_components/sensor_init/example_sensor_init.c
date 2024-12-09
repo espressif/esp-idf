@@ -13,36 +13,32 @@
 #include "driver/i2c_master.h"
 #include "esp_sccb_intf.h"
 #include "esp_sccb_i2c.h"
-#include "esp_cam_sensor.h"
 #include "esp_cam_sensor_detect.h"
 #include "example_sensor_init.h"
 #include "example_sensor_init_config.h"
 
 static const char *TAG = "sensor_init";
 
-void example_sensor_init(int i2c_port, i2c_master_bus_handle_t *out_i2c_bus_handle)
+void example_sensor_init(example_sensor_config_t *sensor_config, i2c_master_bus_handle_t *out_i2c_bus_handle)
 {
     esp_err_t ret = ESP_FAIL;
 
     //---------------I2C Init------------------//
     i2c_master_bus_config_t i2c_bus_conf = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .sda_io_num = EXAMPLE_CAM_SCCB_SDA_IO,
-        .scl_io_num = EXAMPLE_CAM_SCCB_SCL_IO,
-        .i2c_port = i2c_port,
+        .sda_io_num = sensor_config->i2c_sda_io_num,
+        .scl_io_num = sensor_config->i2c_scl_io_num,
+        .i2c_port = sensor_config->i2c_port_num,
         .flags.enable_internal_pullup = true,
     };
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_conf, &i2c_bus_handle));
 
     //---------------SCCB Init------------------//
-    esp_sccb_io_handle_t sccb_io_handle = NULL;
     esp_cam_sensor_config_t cam_config = {
-        .sccb_handle = sccb_io_handle,
         .reset_pin = -1,
         .pwdn_pin = -1,
         .xclk_pin = -1,
-        .sensor_port = ESP_CAM_SENSOR_MIPI_CSI,
     };
 
     esp_cam_sensor_device_t *cam = NULL;
@@ -54,9 +50,11 @@ void example_sensor_init(int i2c_port, i2c_master_bus_handle_t *out_i2c_bus_hand
         };
         ESP_ERROR_CHECK(sccb_new_i2c_io(i2c_bus_handle, &i2c_config, &cam_config.sccb_handle));
 
+        cam_config.sensor_port = p->port;
+
         cam = (*(p->detect))(&cam_config);
         if (cam) {
-            if (p->port != ESP_CAM_SENSOR_MIPI_CSI) {
+            if (p->port != sensor_config->port) {
                 ESP_LOGE(TAG, "detect a camera sensor with mismatched interface");
                 return;
             }
@@ -79,8 +77,8 @@ void example_sensor_init(int i2c_port, i2c_master_bus_handle_t *out_i2c_bus_hand
 
     esp_cam_sensor_format_t *cam_cur_fmt = NULL;
     for (int i = 0; i < cam_fmt_array.count; i++) {
-        if (!strcmp(parray[i].name, EXAMPLE_CAM_FORMAT)) {
-            cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i].name);
+        if (!strcmp(parray[i].name, sensor_config->format_name)) {
+            cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i]);
         }
     }
 

@@ -81,6 +81,7 @@ esp_err_t esp_isp_new_af_controller(isp_proc_handle_t isp_proc, const esp_isp_af
 {
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(isp_proc && af_config && ret_hdl, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_ERROR(esp_isp_enable_yuv_submodules(isp_proc, true), TAG, "failed to enable YUV submodules");
 
     bool rgb2yuv_en = isp_ll_is_rgb2yuv_enabled(isp_proc->hal.hw);
     bool demosaic_en = isp_ll_is_demosaic_enabled(isp_proc->hal.hw);
@@ -154,6 +155,7 @@ esp_err_t esp_isp_del_af_controller(isp_af_ctlr_t af_ctlr)
 
     // Deregister the AF ISR
     ESP_RETURN_ON_FALSE(esp_isp_deregister_isr(af_ctlr->isp_proc, ISP_SUBMODULE_AF) == ESP_OK, ESP_FAIL, TAG, "fail to deregister ISR");
+    ESP_RETURN_ON_ERROR(esp_isp_enable_yuv_submodules(af_ctlr->isp_proc, false), TAG, "failed to disable YUV submodules");
 
     s_isp_declaim_af_controller(af_ctlr);
     s_isp_af_free_controller(af_ctlr);

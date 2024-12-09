@@ -495,28 +495,28 @@ static esp_err_t s_isp_io_init(isp_dvp_controller_t *dvp_ctlr, const esp_cam_ctl
         .pull_up_en = true,
     };
 
-    if (ctlr_config->pclk_io) {
+    if (ctlr_config->pclk_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->pclk_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure pclk gpio");
         ESP_LOGD(TAG, "pclk_io: %d, dvp_pclk_sig: %"PRId32, ctlr_config->pclk_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_pclk_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->pclk_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_pclk_sig, false);
     }
 
-    if (ctlr_config->hsync_io) {
+    if (ctlr_config->hsync_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->hsync_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure hsync gpio");
         ESP_LOGD(TAG, "hsync_io: %d, dvp_hsync_sig: %"PRId32, ctlr_config->hsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_hsync_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->hsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_hsync_sig, false);
     }
 
-    if (ctlr_config->vsync_io) {
+    if (ctlr_config->vsync_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->vsync_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure vsync gpio");
         ESP_LOGD(TAG, "vsync_io: %d, dvp_vsync_sig: %"PRId32, ctlr_config->vsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_vsync_sig);
         esp_rom_gpio_connect_in_signal(ctlr_config->vsync_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_vsync_sig, false);
     }
 
-    if (ctlr_config->de_io) {
+    if (ctlr_config->de_io >= 0) {
         gpio_conf.pin_bit_mask = 1ULL << ctlr_config->de_io;
         ESP_RETURN_ON_ERROR(gpio_config(&gpio_conf), TAG, "failed to configure de gpio");
         ESP_LOGD(TAG, "de_io: %d, dvp_de_sig: %"PRId32, ctlr_config->de_io, isp_hw_info.dvp_ctlr[dvp_ctlr->id].dvp_de_sig);

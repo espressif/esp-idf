@@ -10,9 +10,7 @@
 extern "C" {
 #endif
 
-#define EXAMPLE_RGB565_BITS_PER_PIXEL           16
-#define EXAMPLE_MIPI_IDI_CLOCK_RATE             (50000000)
-#define EXAMPLE_MIPI_CSI_LANE_BITRATE_MBPS      200 //line_rate = pclk * 4
+#define EXAMPLE_CAM_SCCB_FREQ                   (100000)
 
 #ifdef __cplusplus
 }

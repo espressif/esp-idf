@@ -23,7 +23,7 @@
 #include "example_sensor_init.h"
 #include "example_config.h"
 
-static const char *TAG = "cam_dsi";
+static const char *TAG = "mipi_isp_dsi";
 
 static bool s_camera_get_new_vb(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
 static bool s_camera_get_finished_trans(esp_cam_ctlr_handle_t handle, esp_cam_ctlr_trans_t *trans, void *user_data);
@@ -56,7 +56,7 @@ void app_main(void)
     //---------------Necessary variable config------------------//
     frame_buffer_size = CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES * CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES * EXAMPLE_RGB565_BITS_PER_PIXEL / 8;
 
-    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, 8);
+    ESP_LOGD(TAG, "CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES: %d, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES: %d, bits per pixel: %d", CONFIG_EXAMPLE_MIPI_CSI_DISP_HRES, CONFIG_EXAMPLE_MIPI_DSI_DISP_VRES, EXAMPLE_RGB565_BITS_PER_PIXEL);
     ESP_LOGD(TAG, "frame_buffer_size: %zu", frame_buffer_size);
     ESP_LOGD(TAG, "frame_buffer: %p", frame_buffer);
 
@@ -67,7 +67,14 @@ void app_main(void)
 
     //--------Camera Sensor and SCCB Init-----------//
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    example_sensor_init(I2C_NUM_0, &i2c_bus_handle);
+    example_sensor_config_t cam_sensor_config = {
+        .i2c_port_num = I2C_NUM_0,
+        .i2c_sda_io_num = EXAMPLE_MIPI_CSI_CAM_SCCB_SDA_IO,
+        .i2c_scl_io_num = EXAMPLE_MIPI_CSI_CAM_SCCB_SCL_IO,
+        .port = ESP_CAM_SENSOR_MIPI_CSI,
+        .format_name = EXAMPLE_CAM_FORMAT,
+    };
+    example_sensor_init(&cam_sensor_config, &i2c_bus_handle);
 
     //---------------CSI Init------------------//
     esp_cam_ctlr_csi_config_t csi_config = {
