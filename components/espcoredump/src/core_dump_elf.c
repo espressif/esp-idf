@@ -209,7 +209,7 @@ static int elf_write_note_header(core_dump_elf_t *self,
     elf_note note_hdr = { 0 };
 
     memcpy(name_buffer, name, name_len);
-    note_hdr.n_namesz = ALIGN_UP(name_len, 4);
+    note_hdr.n_namesz = ALIGN_UP(name_len + 1, 4);
     note_hdr.n_descsz = data_sz;
     note_hdr.n_type = type;
     // write note header
@@ -242,7 +242,7 @@ static int elf_write_note(core_dump_elf_t *self,
     // write segment data during second pass
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
         ELF_CHECK_ERR(data, ELF_PROC_ERR_OTHER, "Invalid data pointer %x.", (uint32_t)data);
-        err = elf_write_note_header(self, name, name_len, data_sz, type);
+        err = elf_write_note_header(self, name, strlen(name), data_sz, type);
         if (err != ESP_OK) {
             return err;
         }
@@ -688,7 +688,7 @@ static void elf_write_core_dump_note_cb(void *opaque, const char *data)
 
 static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 {
-    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME);
+    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME) - 1;
     core_dump_elf_opaque_t param = {
         .self = self,
         .total_size = 0,

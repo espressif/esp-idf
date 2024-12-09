@@ -96,9 +96,13 @@ class PanicTestDut(IdfDut):
         """Expect method for Guru Meditation Errors"""
         self.expect_exact(f"Guru Meditation Error: Core  0 panic'ed ({reason})")
 
-    def expect_reg_dump(self, core: int = 0) -> None:
-        """Expect method for the register dump"""
-        self.expect(r'Core\s+%d register dump:' % core)
+    def expect_reg_dump(self, core: Optional[int] = None) -> None:
+        if core is None:
+            # Match any core num
+            self.expect(r'Core\s+\d+\s+register dump:')
+        else:
+            # Match the exact core num provided
+            self.expect(r'Core\s+%d\s+register dump:' % core)
 
     def expect_cpu_reset(self) -> None:
         # no digital system reset for panic handling restarts (see IDF-7255)
