@@ -46,9 +46,6 @@
 #define PTP_UDP_PORT_EVENT 319
 #define PTP_UDP_PORT_INFO  320
 
-// gPTP settings (may move to kconfig)
-#define CONFIG_NETUTILS_PTPD_GPTP_PROFILE 1
-
 /* Multicast address to send to: 224.0.1.129 */
 
 #define PTP_MULTICAST_ADDR ((in_addr_t)0xE0000181)
@@ -56,31 +53,25 @@
 /* Multicast MAC addresses for PTP */
 
 #define LLDP_MULTICAST_ADDR (uint8_t[6]){0x01, 0x80, 0xC2, 0x00, 0x00, 0x0e} // for all messages in case of gPTP
-#define PTP4L_MULTICAST_ADDR (uint8_t[6]){0x01, 0x1B, 0x19, 0x00, 0x00, 0x00} // for sync, announce, follow_up in case of PTP4L
+#define PTP4L_MULTICAST_ADDR (uint8_t[6]){0x01, 0x1B, 0x19, 0x00, 0x00, 0x00} // for sync, announce, follow_up (non-gPTP)
 
 /* Message types */
 
-#ifdef CONFIG_NETUTILS_PTPD_GPTP_PROFILE
-#define PTP_MSGTYPE_MASK                  0x1F
-#define PTP_MSGTYPE_SYNC                  0x10
-#define PTP_MSGTYPE_FOLLOW_UP             0x18
-#define PTP_MSGTYPE_ANNOUNCE              0x1b
-#define PTP_MSGTYPE_DELAY_REQ             0x12 // re-using delay req for pdelay req
-#define PTP_MSGTYPE_DELAY_RESP            0x13 // re-using delay resp for pdelay resp
-#define PTP_MSGTYPE_DELAY_RESP_FOLLOW_UP  0x1a // actually pdelay response follow-up
-#else
-#define PTP_MSGTYPE_MASK                  0x0F
-#define PTP_MSGTYPE_SYNC                  0x00
-#define PTP_MSGTYPE_FOLLOW_UP             0x08
-#define PTP_MSGTYPE_ANNOUNCE              0x0b
-#define PTP_MSGTYPE_DELAY_REQ             0x01
-#define PTP_MSGTYPE_DELAY_RESP            0x09
-#endif
+#define PTP_MSGTYPE_MASK                   0x0F
+#define PTP_MSGTYPE_SYNC                   0x00
+#define PTP_MSGTYPE_FOLLOW_UP              0x08
+#define PTP_MSGTYPE_ANNOUNCE               0x0b
+#define PTP_MSGTYPE_DELAY_REQ              0x01
+#define PTP_MSGTYPE_DELAY_RESP             0x09
+#define PTP_MSGTYPE_PDELAY_REQ             0x02 // only used in gPTP
+#define PTP_MSGTYPE_PDELAY_RESP            0x03 // only used in gPTP
+#define PTP_MSGTYPE_PDELAY_RESP_FOLLOW_UP  0x1a // only used in gPTP
 
 /* Message flags */
 
-#define PTP_FLAGS0_TWOSTEP        (1 << 1)
-#define PTP_FLAGS1_PTP_TIMESCALE  (1 << 3)
+#define PTP_FLAGS0_TWOSTEP        (1 << 1) // flag indicating there will be a follow-up message
+#define PTP_FLAGS1_PTP_TIMESCALE  (1 << 3) // flag indicating use of PTP timescale (gPTP required)
+#define PTP_MSGTYPE_SDOID_GPTP    (1 << 4) // flag indicating a gPTP message
 
 /****************************************************************************
  * Public Types
@@ -166,7 +157,7 @@ struct ptp_follow_up_s
   uint8_t informationtlv[32]; // gPTP required
 };
 
-/* DelayReq: request delay measurement */
+/* DelayReq: request delay measurement (path delay or peer delay) */
 
 struct ptp_delay_req_s
 {
@@ -174,7 +165,7 @@ struct ptp_delay_req_s
   uint8_t origintimestamp[10]; // in gPTP profile, this will be ignored
 };
 
-/* DelayResp: response to DelayReq */
+/* DelayResp: response to DelayReq (path delay or peer delay)*/
 
 struct ptp_delay_resp_s
 {
@@ -184,7 +175,7 @@ struct ptp_delay_resp_s
   uint8_t reqportindex[2];
 };
 
-/* DelayResp: follow up to DelayResp */
+/* DelayResp: follow up to DelayResp (gPTP only)*/
 
 struct ptp_delay_resp_follow_up_s
 {
