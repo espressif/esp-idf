@@ -18,6 +18,7 @@
 
 /*-------------------------- COMMON CAPS ---------------------------------------*/
 #define SOC_ADC_SUPPORTED               1
+#define SOC_ANA_CMPR_SUPPORTED          1
 #define SOC_DEDICATED_GPIO_SUPPORTED    1
 #define SOC_UART_SUPPORTED              1
 #define SOC_GDMA_SUPPORTED              1
@@ -210,6 +211,11 @@
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
 #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
 #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
+
+/*------------------------- Analog Comparator CAPS ---------------------------*/
+#define SOC_ANA_CMPR_NUM                       (1U)
+#define SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE      (1)  // Support positive/negative/any cross interrupt
+#define SOC_ANA_CMPR_SUPPORT_ETM               (1)
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-C61 has 1 I2C
