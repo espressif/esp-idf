@@ -79,12 +79,14 @@ function(__get_init_config_version config version_out)
     endforeach()
 endfunction()
 
-
 #
 # Generate the config files and create config related targets and configure
 # dependencies.
 #
 function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
+    set(options OPTIONAL CREATE_MENUCONFIG_TARGET)
+    cmake_parse_arguments(PARSE_ARGV 2 "ARG" "${options}" "" "")
+
     # List all Kconfig and Kconfig.projbuild in known components
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
     idf_build_get_property(build_component_targets __BUILD_COMPONENT_TARGETS)
@@ -242,6 +244,10 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
 
     set(MENUCONFIG_CMD ${python} -m menuconfig)
     set(TERM_CHECK_CMD ${python} ${idf_path}/tools/check_term.py)
+
+    if(NOT ${ARG_CREATE_MENUCONFIG_TARGET})
+        return()
+    endif()
 
     # Generate the menuconfig target
     add_custom_target(menuconfig
