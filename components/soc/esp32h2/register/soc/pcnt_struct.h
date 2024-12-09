@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -181,7 +181,23 @@ typedef union {
          *  Set this bit to freeze unit 3's counter.
          */
         uint32_t cnt_pause_u3:1;
-        uint32_t reserved_8:8;
+        /** dalta_change_en_u0 : R/W; bitpos: [8]; default: 0;
+         *  Configures this bit to enable unit 0's step comparator.
+         */
+        uint32_t dalta_change_en_u0:1;
+        /** dalta_change_en_u1 : R/W; bitpos: [9]; default: 0;
+         *  Configures this bit to enable unit 1's step comparator.
+         */
+        uint32_t dalta_change_en_u1:1;
+        /** dalta_change_en_u2 : R/W; bitpos: [10]; default: 0;
+         *  Configures this bit to enable unit 2's step comparator.
+         */
+        uint32_t dalta_change_en_u2:1;
+        /** dalta_change_en_u3 : R/W; bitpos: [11]; default: 0;
+         *  Configures this bit to enable unit 3's step comparator.
+         */
+        uint32_t dalta_change_en_u3:1;
+        uint32_t reserved_12:4;
         /** clk_en : R/W; bitpos: [16]; default: 0;
          *  The registers clock gate enable signal of PCNT module. 1: the registers can be read
          *  and written by application. 0: the registers can not be read or written by
@@ -193,6 +209,22 @@ typedef union {
     uint32_t val;
 } pcnt_ctrl_reg_t;
 
+/** Type of change_conf register
+ *  Configuration register for unit $n's step value.
+ */
+typedef union {
+    struct {
+        /** cnt_step : R/W; bitpos: [15:0]; default: 0;
+         *  Configures the step value for unit n.
+         */
+        uint32_t cnt_step:16;
+        /** cnt_step_lim : R/W; bitpos: [31:16]; default: 0;
+         *  Configures the step limit value for unit n.
+         */
+        uint32_t cnt_step_lim:16;
+    };
+    uint32_t val;
+} pcnt_un_change_conf_reg_t;
 
 /** Group: Status Register */
 /** Type of un_cnt register
@@ -250,7 +282,19 @@ typedef union {
          *  valid. 0: others
          */
         uint32_t cnt_thr_zero_lat:1;
-        uint32_t reserved_7:25;
+        /** cnt_thr_step_lim_lat_un : RO; bitpos: [7]; default: 0;
+         *  The latched value of step counter limit event of PCNT_Un when step counter event
+         *  interrupt is valid. 1: the current pulse counter equals to reg_cnt_step_lim and
+         *  step counter event is valid. 0: others
+         */
+        uint32_t cnt_thr_step_lim_lat_un:1;
+        /** cnt_thr_step_lat_un : RO; bitpos: [8]; default: 0;
+         *  The latched value of step counter event of PCNT_Un when step counter event
+         *  interrupt is valid. 1: the current pulse counter increment equals to reg_cnt_step
+         *  and step counter event is valid. 0: others
+         */
+        uint32_t cnt_thr_step_lat_un:1;
+        uint32_t reserved_7:23;
     };
     uint32_t val;
 } pcnt_un_status_reg_t;
@@ -389,7 +433,8 @@ typedef struct pcnt_dev_t {
     volatile pcnt_int_clr_reg_t int_clr;
     volatile pcnt_un_status_reg_t status_unit[4];
     volatile pcnt_ctrl_reg_t ctrl;
-    uint32_t reserved_064[38];
+    volatile pcnt_un_change_conf_reg_t change_conf_unit[4]; // Note the unit order is 3210
+    uint32_t reserved_064[34];
     volatile pcnt_date_reg_t date;
 } pcnt_dev_t;
 
