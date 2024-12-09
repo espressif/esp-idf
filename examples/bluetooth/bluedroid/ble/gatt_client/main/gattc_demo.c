@@ -517,4 +517,23 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "set local  MTU failed, error code = %x", local_mtu_ret);
     }
 
+
+    /*
+    * This code is intended for debugging and prints all HCI data.
+    * To enable it, turn on the "BT_HCI_LOG_DEBUG_EN" configuration option.
+    * The output HCI data can be parsed using the script:
+    * esp-idf/tools/bt/bt_hci_to_btsnoop.py.
+    * For detailed instructions, refer to esp-idf/tools/bt/README.md.
+    */
+
+    /*
+    while (1) {
+        extern void bt_hci_log_hci_data_show(void);
+        extern void bt_hci_log_hci_adv_show(void);
+        bt_hci_log_hci_data_show();
+        bt_hci_log_hci_adv_show();
+        vTaskDelay(1000 / portNUM_PROCESSORS);
+    }
+    */
+
 }
