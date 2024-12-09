@@ -172,7 +172,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             monitor_args += ['--print_filter', print_filter]
 
         elf_list = [str(elf) for elf in Path(args.build_dir).rglob('*.elf')]
-        if elf_file:
+        if elf_file and elf_file in elf_list:
             # prepend the main app elf file to the list; make sure it is the first one
             elf_list.insert(0, elf_list.pop(elf_list.index(elf_file)))
         monitor_args.extend(elf_list)
