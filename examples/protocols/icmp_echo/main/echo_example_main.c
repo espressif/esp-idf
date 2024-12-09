@@ -19,6 +19,9 @@
 #include "argtable3/argtable3.h"
 #include "protocol_examples_common.h"
 #include "ping/ping_sock.h"
+#include "esp_check.h"
+
+const static char *TAG = "echo_example";
 
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
@@ -148,9 +151,8 @@ static int do_ping_cmd(int argc, char **argv)
         .on_ping_end = cmd_ping_on_ping_end
     };
     esp_ping_handle_t ping;
-    esp_ping_new_session(&config, &cbs, &ping);
-    esp_ping_start(ping);
-
+    ESP_RETURN_ON_FALSE(esp_ping_new_session(&config, &cbs, &ping) == ESP_OK, -1, TAG, "esp_ping_new_session failed");
+    ESP_RETURN_ON_FALSE(esp_ping_start(ping) == ESP_OK, -1, TAG, "esp_ping_start() failed");
     return 0;
 }
 

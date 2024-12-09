@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include <net/if.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/opt.h"
@@ -24,6 +25,35 @@
 #include "esp_log.h"
 #include "ping/ping_sock.h"
 #include "esp_check.h"
+
+#ifndef CONFIG_LWIP_NETIF_API
+
+#include "lwip/priv/tcpip_priv.h"
+// If POSIX NETIF_API not enabled, we need to supply the implementation of if_indextoname()
+// using tcpip_callback()
+
+struct tcpip_netif_name {
+    struct tcpip_api_call_data call;
+    u8_t ifindex;
+    char *ifname;
+    err_t err;
+};
+
+static void do_netif_index_to_name(void *ctx)
+{
+    struct tcpip_netif_name *params = ctx;
+    params->err = netif_index_to_name(params->ifindex, params->ifname) ? ERR_OK : ERR_IF;
+}
+
+char *if_indextoname(unsigned int ifindex, char *ifname)
+{
+    struct tcpip_netif_name params = { .ifindex = ifindex, .ifname = ifname };
+    if (tcpip_callback(do_netif_index_to_name, &params) != ERR_OK || params.err != ERR_OK) {
+        return NULL;
+    }
+    return ifname;
+}
+#endif  // CONFIG_LWIP_NETIF_API == 0
 
 const static char *TAG = "ping_sock";
 
@@ -266,8 +296,8 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set if index */
     if(config->interface) {
         struct ifreq iface;
-        if(netif_index_to_name(config->interface, iface.ifr_name) == NULL) {
-            ESP_LOGE(TAG, "fail to find interface name with netif index %d", config->interface);
+        if (if_indextoname(config->interface, iface.ifr_name) == NULL) {
+            ESP_LOGE(TAG, "fail to find interface name with netif index %" PRIu32, config->interface);
             goto err;
         }
         if(setsockopt(ep->sock, SOL_SOCKET, SO_BINDTODEVICE, &iface, sizeof(iface)) != 0) {
