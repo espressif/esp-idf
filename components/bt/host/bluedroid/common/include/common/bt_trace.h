@@ -330,6 +330,13 @@ static inline void trc_dump_buffer(const char *prefix, uint8_t *data, uint16_t l
 #define OBEX_TL_L2CAP_TRACE_EVENT(fmt, args...)      {if (obex_tl_l2cap_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("OBEX_TL_L2CAP", fmt, ## args);}
 #define OBEX_TL_L2CAP_TRACE_DEBUG(fmt, args...)      {if (obex_tl_l2cap_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("OBEX_TL_L2CAP", fmt, ## args);}
 
+/* Define tracing for OBEX_TL_RFCOMM */
+#define OBEX_TL_RFCOMM_TRACE_ERROR(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVRC, ERROR)) BT_PRINT_E("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_WARNING(fmt, args...)    {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVRC, WARNING)) BT_PRINT_W("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_API(fmt, args...)        {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_API && BT_LOG_LEVEL_CHECK(AVRC,API)) BT_PRINT_I("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_EVENT(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_EVENT && BT_LOG_LEVEL_CHECK(AVRC,EVENT)) BT_PRINT_D("OBEX_TL_RFCOMM", fmt, ## args);}
+#define OBEX_TL_RFCOMM_TRACE_DEBUG(fmt, args...)      {if (obex_tl_rfcomm_cb.trace_level >= BT_TRACE_LEVEL_DEBUG && BT_LOG_LEVEL_CHECK(AVRC,DEBUG)) BT_PRINT_D("OBEX_TL_RFCOMM", fmt, ## args);}
+
 /* Define tracing for GOEPC */
 #define GOEPC_TRACE_ERROR(fmt, args...)      {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_ERROR && BT_LOG_LEVEL_CHECK(AVRC, ERROR)) BT_PRINT_E("BT_GOEPC", fmt, ## args);}
 #define GOEPC_TRACE_WARNING(fmt, args...)    {if (goepc_cb.trace_level >= BT_TRACE_LEVEL_WARNING && BT_LOG_LEVEL_CHECK(AVRC, WARNING)) BT_PRINT_W("BT_GOEPC", fmt, ## args);}
@@ -512,11 +519,19 @@ extern UINT8 btif_trace_level;
 #define OBEX_TRACE_EVENT(fmt, args...)
 #define OBEX_TRACE_DEBUG(fmt, args...)
 
+/* Define tracing for OBEX L2CAP transport layer */
 #define OBEX_TL_L2CAP_TRACE_ERROR(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_WARNING(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_API(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_EVENT(fmt, args...)
 #define OBEX_TL_L2CAP_TRACE_DEBUG(fmt, args...)
+
+/* Define tracing for OBEX RFCOMM transport layer */
+#define OBEX_TL_RFCOMM_TRACE_ERROR(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_WARNING(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_API(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_EVENT(fmt, args...)
+#define OBEX_TL_RFCOMM_TRACE_DEBUG(fmt, args...)
 
 /* Define tracing for GOEPC */
 #define GOEPC_TRACE_ERROR(fmt, args...)

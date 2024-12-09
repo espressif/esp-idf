@@ -191,6 +191,29 @@ config BT_HID_DEVICE_ENABLED
     help
         This enables the BT HID Device
 
+menuconfig BT_PBAC_ENABLED
+    bool "PBAP Client"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    select BT_GOEPC_ENABLED
+    help
+        This enables the Phone Book Access Profile Client
+
+config BT_PBAC_SUPPORTED_FEAT
+    hex "PBAP Client Supported Features"
+    depends on BT_PBAC_ENABLED
+    default 0x000003FF
+    help
+        Set the supported features of PBAP Client, the default value is supported all features
+
+config BT_PBAC_PREFERRED_MTU
+    int "PBAP Client Preferred MTU"
+    depends on BT_PBAC_ENABLED
+    default 0
+    help
+        MTU is limited by the max MTU of transport layer, and should not be smaller than 255,
+        but can be set to zero to use a default MTU of transport layer
+
 config BT_GOEPC_ENABLED
     bool
     depends on BT_CLASSIC_ENABLED

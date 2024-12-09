@@ -21,10 +21,12 @@
 #include "esp_bt_device.h"
 #include "esp_gap_bt_api.h"
 #include "esp_hf_client_api.h"
+#include "esp_pbac_api.h"
 #include "bt_app_hf.h"
 #include "gpio_pcm_config.h"
 #include "esp_console.h"
 #include "app_hf_msg_set.h"
+#include "bt_app_pbac.h"
 
 esp_bd_addr_t peer_addr = {0};
 static char peer_bdname[ESP_BT_GAP_MAX_BDNAME_LEN + 1];
@@ -251,6 +253,8 @@ static void bt_hf_client_hdl_stack_evt(uint16_t event, void *p_param)
         esp_bt_gap_register_callback(esp_bt_gap_cb);
         esp_hf_client_register_callback(bt_app_hf_client_cb);
         esp_hf_client_init();
+        esp_pbac_register_callback(bt_app_pbac_cb);
+        esp_pbac_init();
 
 #if (CONFIG_EXAMPLE_SSP_ENABLED == true)
     /* Set default parameters for Secure Simple Pairing */

@@ -146,6 +146,7 @@ if(CONFIG_BT_ENABLED)
             host/bluedroid/bta/hd/include
             host/bluedroid/bta/hh/include
             host/bluedroid/bta/jv/include
+            host/bluedroid/bta/pba/include
             host/bluedroid/bta/sdp/include
             host/bluedroid/bta/sys/include
             host/bluedroid/device/include
@@ -194,6 +195,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/api/esp_spp_api.c"
                    "host/bluedroid/api/esp_sdp_api.c"
                    "host/bluedroid/api/esp_l2cap_bt_api.c"
+                   "host/bluedroid/api/esp_pbac_api.c"
                    "host/bluedroid/bta/ar/bta_ar.c"
                    "host/bluedroid/bta/av/bta_av_aact.c"
                    "host/bluedroid/bta/av/bta_av_act.c"
@@ -257,6 +259,10 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/bta/hf_client/bta_hf_client_rfc.c"
                    "host/bluedroid/bta/hf_client/bta_hf_client_sco.c"
                    "host/bluedroid/bta/hf_client/bta_hf_client_sdp.c"
+                   "host/bluedroid/bta/pba/bta_pba_client_act.c"
+                   "host/bluedroid/bta/pba/bta_pba_client_api.c"
+                   "host/bluedroid/bta/pba/bta_pba_client_main.c"
+                   "host/bluedroid/bta/pba/bta_pba_client_sdp.c"
                    "host/bluedroid/bta/sdp/bta_sdp.c"
                    "host/bluedroid/bta/sdp/bta_sdp_act.c"
                    "host/bluedroid/bta/sdp/bta_sdp_api.c"
@@ -299,6 +305,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/btc/profile/std/spp/btc_spp.c"
                    "host/bluedroid/btc/profile/std/sdp/btc_sdp.c"
                    "host/bluedroid/btc/profile/std/l2cap/btc_l2cap.c"
+                   "host/bluedroid/btc/profile/std/pba/btc_pba_client.c"
                    "host/bluedroid/device/bdaddr.c"
                    "host/bluedroid/device/controller.c"
                    "host/bluedroid/device/interop.c"
@@ -411,6 +418,7 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/stack/obex/obex_api.c"
                    "host/bluedroid/stack/obex/obex_main.c"
                    "host/bluedroid/stack/obex/obex_tl_l2cap.c"
+                   "host/bluedroid/stack/obex/obex_tl_rfcomm.c"
                    "host/bluedroid/stack/rfcomm/port_api.c"
                    "host/bluedroid/stack/rfcomm/port_rfc.c"
                    "host/bluedroid/stack/rfcomm/port_utils.c"
