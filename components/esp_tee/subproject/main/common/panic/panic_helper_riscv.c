@@ -117,9 +117,7 @@ void panic_print_isrcause(const void *f, int core)
     static const char *pseudo_reason[] = {
         "Unknown reason",
         "Interrupt wdt timeout on CPU0",
-#if SOC_CPU_NUM > 1
         "Interrupt wdt timeout on CPU1",
-#endif
         "Cache error",
     };
 
