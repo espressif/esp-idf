@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -423,7 +423,7 @@ typedef union {
          */
         uint32_t dis_direct_boot:1;
         /** dis_usb_serial_jtag_rom_print : RO; bitpos: [2]; default: 0;
-         *  Selectes the default UART print channel. 0: UART0. 1: UART1.
+         *  Selects the default UART print channel. 0: UART0. 1: UART1.
          */
         uint32_t dis_usb_serial_jtag_rom_print:1;
         /** flash_ecc_mode : RO; bitpos: [3]; default: 0;
@@ -672,10 +672,18 @@ typedef union {
          *  BLOCK1 digital dbias when hvt
          */
         uint32_t dig_dbias_hvt:5;
-        /** reserved_1_176 : R; bitpos: [22:16]; default: 0;
+        /** reserved_1_176 : R; bitpos: [18:16]; default: 0;
          *  reserved
          */
-        uint32_t reserved_1_176:7;
+        uint32_t reserved_1_176:3;
+        /** psram_cap_3 : R; bitpos: [19]; default: 0;
+         *  PSRAM capacity bit 3
+         */
+        uint32_t psram_cap_3:1;
+        /** reserved_1_180 : R; bitpos: [22:20]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_180:3;
         /** wafer_version_minor_hi : R; bitpos: [23]; default: 0;
          *  WAFER_VERSION_MINOR most significant bit
          */
@@ -2163,7 +2171,7 @@ typedef union {
 } efuse_clk_reg_t;
 
 /** Type of conf register
- *  eFuse operation mode configuraiton register
+ *  eFuse operation mode configuration register
  */
 typedef union {
     struct {
