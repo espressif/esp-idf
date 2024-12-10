@@ -221,7 +221,7 @@ static inline void disable_all_wdts(void)
     wdt_hal_write_protect_enable(&wdt0_context);
 
 #if SOC_TIMER_GROUPS >= 2
-    //Interupt WDT is the Main Watchdog Timer of Timer Group 1
+    //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
@@ -299,7 +299,7 @@ void esp_panic_handler(panic_info_t *info)
         char *panic_reason_str = NULL;
         if (info->pseudo_excause) {
             panic_reason_str = (char *)info->reason;
-        } else if (g_panic_abort && strlen(g_panic_abort_details)) {
+        } else if (g_panic_abort) {
             panic_reason_str = g_panic_abort_details;
         }
         if (panic_reason_str) {
