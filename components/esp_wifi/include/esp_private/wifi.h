@@ -614,6 +614,11 @@ esp_err_t esp_wifi_internal_set_spp_amsdu(wifi_interface_t ifidx, bool spp_cap, 
 void esp_wifi_internal_update_light_sleep_default_params(int min_freq_mhz, int max_freq_mhz);
 
 /**
+ * @brief   Update WIFI modem sleep default parameters
+ */
+void esp_wifi_internal_update_modem_sleep_default_params(void);
+
+/**
  * @brief   Set the min active time for wifi to enter the sleep state when light sleep
  *
  * @param   min_active_time: minimum timeout time  for waiting to receive
