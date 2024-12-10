@@ -12,6 +12,7 @@
 #if CONFIG_HAL_ECDSA_GEN_SIG_CM
 #include "esp_fault.h"
 #include "esp_random.h"
+#include "soc/chip_revision.h"
 #endif
 
 #ifdef SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
@@ -136,7 +137,11 @@ void ecdsa_hal_gen_signature(ecdsa_hal_config_t *conf, const uint8_t *hash,
     configure_ecdsa_periph(conf);
 
 #if CONFIG_HAL_ECDSA_GEN_SIG_CM
-    ecdsa_hal_gen_signature_with_countermeasure(hash, r_out, s_out, len);
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        ecdsa_hal_gen_signature_with_countermeasure(hash, r_out, s_out, len);
+    } else {
+        ecdsa_hal_gen_signature_inner(hash, r_out, s_out, len);
+    }
 #else /* CONFIG_HAL_ECDSA_GEN_SIG_CM */
     ecdsa_hal_gen_signature_inner(hash, r_out, s_out, len);
 #endif /* !CONFIG_HAL_ECDSA_GEN_SIG_CM */
