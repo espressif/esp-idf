@@ -105,7 +105,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
 
     config HAL_ECDSA_GEN_SIG_CM
         bool "Enable countermeasure for ECDSA signature generation"
-        depends on IDF_TARGET_ESP32H2 && ESP32H2_REV_MIN_FULL < 102
+        depends on IDF_TARGET_ESP32H2
         default n
         help
             Enable this option to apply the countermeasure for ECDSA signature operation

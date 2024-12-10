@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -7,6 +7,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <string.h>
+#include "ccomp_timer.h"
+#include "sys/param.h"
 #include "sdkconfig.h"
 #include "esp_log.h"
 #include "test_params.h"
@@ -136,7 +138,7 @@ TEST_CASE("ECC point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
 
 #if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
 
-#define CONST_TIME_DEVIATION_PERCENT 0.002
+#define CONST_TIME_DEVIATION_THRESHOLD 2 // 0.2 %
 
 static void test_ecc_point_mul_inner_constant_time(void)
 {
@@ -152,10 +154,13 @@ static void test_ecc_point_mul_inner_constant_time(void)
     uint8_t x_res_le[32];
     uint8_t y_res_le[32];
 
-    double deviation = 0;
+    uint32_t deviation = 0;
     uint32_t elapsed_time, mean_elapsed_time, total_elapsed_time = 0;
     uint32_t max_time = 0, min_time = UINT32_MAX;
     int loop_count = 10;
+
+    // performing the operation once to warm up the cache
+    ecc_point_mul(scalar_le, x_le, y_le, 32, 0, x_res_le, y_res_le);
 
     for (int i = 0; i < loop_count; i++) {
         ccomp_timer_start();
@@ -167,9 +172,9 @@ static void test_ecc_point_mul_inner_constant_time(void)
         total_elapsed_time += elapsed_time;
     }
     mean_elapsed_time = total_elapsed_time / loop_count;
-    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+    deviation = (((max_time - mean_elapsed_time) * 1000) / mean_elapsed_time);
 
-    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+    TEST_ASSERT_LESS_THAN(CONST_TIME_DEVIATION_THRESHOLD, deviation);
 
     /* P192 */
     ecc_be_to_le(ecc_p192_scalar, scalar_le, 24);
@@ -190,12 +195,12 @@ static void test_ecc_point_mul_inner_constant_time(void)
         total_elapsed_time += elapsed_time;
     }
     mean_elapsed_time = total_elapsed_time / loop_count;
-    deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
+    deviation = (((max_time - mean_elapsed_time) * 1000) / mean_elapsed_time);
 
-    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+    TEST_ASSERT_LESS_THAN(CONST_TIME_DEVIATION_THRESHOLD, deviation);
 }
 
-TEST(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1)
+TEST_CASE("ECC point multiplication constant time check on SECP192R1 and SECP256R1", "[ecc][hal]")
 {
     test_ecc_point_mul_inner_constant_time();
 }

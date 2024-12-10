@@ -346,18 +346,4 @@ menu "Hardware Settings"
             time point multiplication operations by changing the default ESP-IDF configurations.
             Performing constant time operations protect the ECC multiplication operations from timing attacks.
 
-    orsource "./port/$IDF_TARGET/Kconfig.dcdc"
-
-    orsource "./port/$IDF_TARGET/Kconfig.ldo"
-
-    # Invisible bringup bypass options for esp_hw_support component
-    config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING
-        bool
-        default y if !SOC_CLK_TREE_SUPPORTED
-        default n
-        help
-            This option is only used for new chip bringup, when
-            clock support isn't done yet. So with this option,
-            we use xtal on FPGA as the clock source.
-
 endmenu
