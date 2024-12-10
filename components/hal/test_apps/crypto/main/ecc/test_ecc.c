@@ -6,7 +6,9 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <sys/param.h>
 #include <string.h>
+
 #include "sdkconfig.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
@@ -17,6 +19,7 @@
 
 #include "memory_checks.h"
 #include "unity_fixture.h"
+#include "ccomp_timer.h"
 
 #define _DEBUG_                             0
 #define SOC_ECC_SUPPORT_POINT_MULT          1

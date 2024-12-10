@@ -69,7 +69,7 @@ endif()
 
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES efuse mbedtls esp_mm bootloader_support
-                       REQUIRES test_utils unity
+                       REQUIRES test_utils unity ccomp_timer
                        WHOLE_ARCHIVE
                        PRIV_INCLUDE_DIRS "${priv_include_dirs}"
                        )
