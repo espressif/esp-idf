@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -223,7 +223,7 @@ static inline void disable_all_wdts(void)
     wdt_hal_write_protect_enable(&wdt0_context);
 
 #if SOC_TIMER_GROUPS >= 2
-    //Interupt WDT is the Main Watchdog Timer of Timer Group 1
+    //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
@@ -298,17 +298,17 @@ void esp_panic_handler(panic_info_t *info)
     // in debug mode.
 #if CONFIG_ESP_DEBUG_OCDAWARE
     if (esp_cpu_dbgr_is_attached()) {
-		char *panic_reason_str = NULL;
-		if (info->pseudo_excause) {
-			panic_reason_str = (char *)info->reason;
-		} else if (g_panic_abort && strlen(g_panic_abort_details)) {
-			panic_reason_str = g_panic_abort_details;
-		}
-		if (panic_reason_str) {
-			/* OpenOCD will print the halt cause when target is stopped at the below breakpoint (info->addr) */
-			long args[] = {(long)panic_reason_str, strlen(panic_reason_str)};
-			semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_PANIC_REASON, args);
-		}
+        char *panic_reason_str = NULL;
+        if (info->pseudo_excause) {
+            panic_reason_str = (char *)info->reason;
+        } else if (g_panic_abort) {
+            panic_reason_str = g_panic_abort_details;
+        }
+        if (panic_reason_str) {
+            /* OpenOCD will print the halt cause when target is stopped at the below breakpoint (info->addr) */
+            long args[] = {(long)panic_reason_str, strlen(panic_reason_str)};
+            semihosting_call_noerrno(ESP_SEMIHOSTING_SYS_PANIC_REASON, args);
+        }
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
