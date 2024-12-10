@@ -929,7 +929,7 @@ void esp_phy_load_cal_and_init(void)
     memcpy(cal_data->mac, sta_mac, 6);
     esp_err_t ret = register_chipv7_phy(init_data, cal_data, calibration_mode);
     if (ret == ESP_CAL_DATA_CHECK_FAIL) {
-        ESP_LOGW(TAG, "saving new calibration data because of checksum failure, mode(%d)", calibration_mode);
+        ESP_LOGI(TAG, "Saving new calibration data due to checksum failure or outdated calibration data, mode(%d)", calibration_mode);
     }
 
     if ((calibration_mode != PHY_RF_CAL_NONE) && ((err != ESP_OK) || (ret == ESP_CAL_DATA_CHECK_FAIL))) {
