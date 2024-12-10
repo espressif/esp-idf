@@ -3,8 +3,8 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="未更新", esp32h2="GPIO11", esp32p4="GPIO52", esp32c61="GPIO9"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="未更新", esp32h2="GPIO10", esp32p4="GPIO51", esp32c61="GPIO8"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="未更新", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="未更新", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8"}
 {IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="未更新", esp32p4="GPIO54"}
 {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="未更新", esp32p4="GPIO53"}
 
