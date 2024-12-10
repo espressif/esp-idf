@@ -44,6 +44,6 @@ if not os.path.exists(virtualenv_python):
 
 try:
     run([virtualenv_python, os.path.join(idf_path, 'tools', 'export_utils', 'activate_venv.py')] + sys.argv[1:], check=True, env=os.environ.copy())
-except (OSError, SubprocessError):
-    die('\n'.join(['Activation script failed',
+except (OSError, SubprocessError) as e:
+    die('\n'.join(['Activation script failed', str(e),
                    'To view detailed debug information, set ESP_IDF_EXPORT_DEBUG=1 and run the export script again.']))
