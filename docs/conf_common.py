@@ -134,7 +134,6 @@ I80_LCD_DOCS = ['api-reference/peripherals/lcd/i80_lcd.rst']
 RGB_LCD_DOCS = ['api-reference/peripherals/lcd/rgb_lcd.rst']
 DSI_LCD_DOCS = ['api-reference/peripherals/lcd/dsi_lcd.rst']
 
-# TODO: Merge this back with `USB_DOCS` IDF-9919 IDF-9920 IDF-9133
 USB_OTG_DFU_DOCS = ['api-guides/dfu.rst']
 
 USB_OTG_CONSOLE_DOCS = ['api-guides/usb-otg-console.rst']
@@ -238,7 +237,7 @@ ESP32H2_DOCS = ['api-guides/RF_calibration.rst',
 
 ESP32P4_DOCS = ['api-reference/system/ipc.rst',
                 'api-reference/peripherals/cap_touch_sens.rst',
-                'api-reference/peripherals/sd_pullup_requirements.rst']
+                'api-reference/peripherals/sd_pullup_requirements.rst'] + USB_OTG_DFU_DOCS
 
 # format: {tag needed to include: documents to included}, tags are parsed from sdkconfig and peripheral_caps.h headers
 conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
