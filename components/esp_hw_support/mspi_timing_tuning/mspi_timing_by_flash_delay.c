@@ -167,7 +167,7 @@ void mspi_timing_flash_config_set_tuning_regs(bool control_both_mspi)
         //Won't touch SPI1 registers
     }
 
-#if CONFIG_ESPTOOLPY_FLASHMODE_QIO
+#if MSPI_TIMING_FLASH_NEEDS_TUNING && CONFIG_ESPTOOLPY_FLASHMODE_QIO
     mspi_timing_ll_set_flash_user_dummy(MSPI_TIMING_LL_MSPI_ID_0, 7);
 #endif
 
