@@ -396,15 +396,15 @@ static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_spac
         case COLOR_PIXEL_RGB888:
             hw->cntl.isp_out_type = 2;
             hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 0;
-            hw->cntl.yuv2rgb_en = 0;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 1;
             valid = true;
             break;
         case COLOR_PIXEL_RGB565:
             hw->cntl.isp_out_type = 4;
             hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 0;
-            hw->cntl.yuv2rgb_en = 0;
+            hw->cntl.rgb2yuv_en = 1;
+            hw->cntl.yuv2rgb_en = 1;
             valid = true;
             break;
         default:
