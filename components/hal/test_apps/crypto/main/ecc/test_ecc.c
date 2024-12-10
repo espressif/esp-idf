@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -14,7 +14,8 @@
 #include "soc/soc_caps.h"
 #include "hal/ecc_hal.h"
 #include "hal/ecc_ll.h"
-
+#include "ccomp_timer.h"
+#include "sys/param.h"
 #include "memory_checks.h"
 #include "unity_fixture.h"
 
@@ -197,7 +198,8 @@ static void test_ecc_point_mul_inner_constant_time(void)
     mean_elapsed_time = total_elapsed_time / loop_count;
     deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
 
-    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+    int is_constant_time = (deviation < CONST_TIME_DEVIATION_PERCENT);
+    TEST_ASSERT_EQUAL(is_constant_time, 1);
 
     /* P192 */
     ecc_be_to_le(ecc_p192_scalar, scalar_le, 24);
@@ -220,7 +222,8 @@ static void test_ecc_point_mul_inner_constant_time(void)
     mean_elapsed_time = total_elapsed_time / loop_count;
     deviation = ((double)(max_time - mean_elapsed_time) / mean_elapsed_time);
 
-    TEST_ASSERT_LESS_THAN_DOUBLE(CONST_TIME_DEVIATION_PERCENT, deviation);
+    is_constant_time = (deviation < CONST_TIME_DEVIATION_PERCENT);
+    TEST_ASSERT_EQUAL(is_constant_time, 1);
 }
 
 TEST(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1)
