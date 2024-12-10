@@ -135,6 +135,10 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, proc_config->h_res);
     isp_ll_set_intput_data_v_row_num(proc->hal.hw, proc_config->v_res);
 
+    if (out_color_format.color_space == COLOR_SPACE_RGB && proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP) {
+        isp_ll_color_enable(proc->hal.hw, true); // workaround for DIG-474
+    }
+
     proc->in_color_format = in_color_format;
     proc->out_color_format = out_color_format;
     proc->h_res = proc_config->h_res;
