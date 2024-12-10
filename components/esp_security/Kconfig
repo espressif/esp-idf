@@ -40,7 +40,6 @@ menu "ESP Security Specific"
     config ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
         bool "Forcefully enable ECC constant time point multiplication operations"
         depends on SOC_ECC_CONSTANT_TIME_POINT_MUL
-        depends on !(IDF_TARGET_ESP32H2 && ESP32H2_REV_MIN_FULL < 102)
         default N
         help
             If enabled, the app startup code will burn the ECC_FORCE_CONST_TIME efuse bit to force the
