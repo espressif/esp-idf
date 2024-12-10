@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +76,12 @@ TEST_CASE("CRs are removed from the stdin correctly", "[vfs]")
     esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
 
     flush_stdin_stdout();
+
+    // A test case with no use of uart driver
+    // For non-uart-driver-involved uart vfs, all reads are non-blocking
+    // If no data at the moment, read() returns directly;
+    // If there is data available at the moment, read() also returns directly with the currently available size
+
     const char* send_str = "1234567890\n\r123\r\n4\n";
     /* with CONFIG_NEWLIB_STDOUT_ADDCR, the following will be sent on the wire.
      * (last character of each part is marked with a hat)
@@ -136,16 +142,32 @@ struct read_task_arg_t {
 
 struct write_task_arg_t {
     const char* str;
+    size_t str_len;
     SemaphoreHandle_t done;
 };
 
 #if !CONFIG_IDF_TARGET_ESP32H2 // IDF-6782
-static void read_task_fn(void* varg)
+static void read_blocking_task_fn(void* varg)
 {
     struct read_task_arg_t* parg = (struct read_task_arg_t*) varg;
-    parg->out_buffer[0] = 0;
+    memset(parg->out_buffer, 0, parg->out_buffer_len);
 
     fgets(parg->out_buffer, parg->out_buffer_len, stdin);
+    xSemaphoreGive(parg->done);
+    vTaskDelete(NULL);
+}
+
+static void read_non_blocking_task_fn(void* varg)
+{
+    struct read_task_arg_t* parg = (struct read_task_arg_t*) varg;
+    memset(parg->out_buffer, 0, parg->out_buffer_len);
+    char *ptr = parg->out_buffer;
+
+    while (fgets(ptr, parg->out_buffer_len, stdin) != NULL) {
+        while (*ptr != 0) {
+            ptr++;
+        }
+    }
     xSemaphoreGive(parg->done);
     vTaskDelete(NULL);
 }
@@ -153,14 +175,14 @@ static void read_task_fn(void* varg)
 static void write_task_fn(void* varg)
 {
     struct write_task_arg_t* parg = (struct write_task_arg_t*) varg;
-    fwrite_str_loopback(parg->str, strlen(parg->str));
+    fwrite_str_loopback(parg->str, parg->str_len);
     xSemaphoreGive(parg->done);
     vTaskDelete(NULL);
 }
 
-TEST_CASE("can write to UART while another task is reading", "[vfs]")
+TEST_CASE("read with uart driver (blocking)", "[vfs]")
 {
-    char out_buffer[32];
+    char out_buffer[32] = {};
     size_t out_buffer_len = sizeof(out_buffer);
 
     struct read_task_arg_t read_arg = {
@@ -169,9 +191,13 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
             .done = xSemaphoreCreateBinary()
     };
 
+    // Send a string with length less than the read requested length
+    const char in_buffer[] = "!(@*#&(!*@&#((SDasdkjhadsl\n";
+    size_t in_buffer_len = sizeof(in_buffer);
     struct write_task_arg_t write_arg = {
-            .str = "!(@*#&(!*@&#((SDasdkjhadsl\n",
-            .done = xSemaphoreCreateBinary()
+        .str = in_buffer,
+        .str_len = in_buffer_len,
+        .done = xSemaphoreCreateBinary()
     };
 
     flush_stdin_stdout();
@@ -181,15 +207,18 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
 
 
-    xTaskCreate(&read_task_fn, "vfs_read", 4096, &read_arg, 5, NULL);
-    vTaskDelay(10);
+    // Start the read task first, it will block until data incoming
+    xTaskCreate(&read_blocking_task_fn, "vfs_read", 4096, &read_arg, 5, NULL);
+
+    int res = xSemaphoreTake(read_arg.done, 100 / portTICK_PERIOD_MS);
+    TEST_ASSERT_FALSE(res);
+
     xTaskCreate(&write_task_fn, "vfs_write", 4096, &write_arg, 6, NULL);
 
-
-    int res = xSemaphoreTake(write_arg.done, 100 / portTICK_PERIOD_MS);
+    res = xSemaphoreTake(write_arg.done, 100 / portTICK_PERIOD_MS);
     TEST_ASSERT(res);
 
-    res = xSemaphoreTake(read_arg.done, 100 / portTICK_PERIOD_MS);
+    res = xSemaphoreTake(read_arg.done, 100 / portTICK_PERIOD_MS); // read() returns with currently available size
     TEST_ASSERT(res);
 
     TEST_ASSERT_EQUAL(0, strcmp(write_arg.str, read_arg.out_buffer));
@@ -198,6 +227,69 @@ TEST_CASE("can write to UART while another task is reading", "[vfs]")
     uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
     vSemaphoreDelete(read_arg.done);
     vSemaphoreDelete(write_arg.done);
+}
+
+TEST_CASE("read with uart driver (non-blocking)", "[vfs]")
+{
+    char out_buffer[32] = {};
+    size_t out_buffer_len = sizeof(out_buffer);
+
+    struct read_task_arg_t read_arg = {
+        .out_buffer = out_buffer,
+        .out_buffer_len = out_buffer_len,
+        .done = xSemaphoreCreateBinary()
+    };
+
+    // Send a string with length less than the read requested length
+    const char in_buffer[] = "!(@*#&(!*@&#((SDasdkjhad\nce"; // read should not early return on \n
+    size_t in_buffer_len = sizeof(in_buffer);
+    struct write_task_arg_t write_arg = {
+        .str = in_buffer,
+        .str_len = in_buffer_len,
+        .done = xSemaphoreCreateBinary()
+    };
+
+    flush_stdin_stdout();
+
+    ESP_ERROR_CHECK(uart_driver_install(CONFIG_ESP_CONSOLE_UART_NUM,
+                                        256, 0, 0, NULL, 0));
+    esp_vfs_dev_uart_use_driver(CONFIG_ESP_CONSOLE_UART_NUM);
+
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_LF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_LF);
+
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+
+    // If start the read task first, it will return immediately
+    xTaskCreate(&read_non_blocking_task_fn, "vfs_read", 4096, &read_arg, 5, NULL);
+
+    int res = xSemaphoreTake(read_arg.done, 100 / portTICK_PERIOD_MS);
+    TEST_ASSERT(res);
+
+    xTaskCreate(&write_task_fn, "vfs_write", 4096, &write_arg, 6, NULL);
+    vTaskDelay(10);
+    xTaskCreate(&read_non_blocking_task_fn, "vfs_read", 4096, &read_arg, 5, NULL);
+
+    res = xSemaphoreTake(write_arg.done, 100 / portTICK_PERIOD_MS);
+    TEST_ASSERT(res);
+
+    res = xSemaphoreTake(read_arg.done, 1000 / portTICK_PERIOD_MS); // read() returns with currently available size
+    TEST_ASSERT(res);
+
+    // string compare
+    for (int i = 0; i < in_buffer_len; i++) {
+        TEST_ASSERT_EQUAL(in_buffer[i], out_buffer[i]);
+    }
+
+    esp_vfs_dev_uart_use_nonblocking(CONFIG_ESP_CONSOLE_UART_NUM);
+    fcntl(STDIN_FILENO, F_SETFL, flags);
+    esp_vfs_dev_uart_port_set_rx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM, ESP_LINE_ENDINGS_CRLF);
+    uart_driver_delete(CONFIG_ESP_CONSOLE_UART_NUM);
+    vSemaphoreDelete(read_arg.done);
+    vSemaphoreDelete(write_arg.done);
+    vTaskDelay(2);  // wait for tasks to exit
 }
 #endif
 
