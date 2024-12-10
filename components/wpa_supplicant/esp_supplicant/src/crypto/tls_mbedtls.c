@@ -249,6 +249,7 @@ static uint16_t tls_sig_algs_for_suiteb[] = {
 #endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA384 */
 #endif /* CONFIG_TLSV13 */
 
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512),
@@ -259,6 +260,7 @@ static uint16_t tls_sig_algs_for_suiteb[] = {
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA384),
 #endif
 #endif /* MBEDTLS_SHA512_C */
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
 
@@ -336,6 +338,7 @@ static uint16_t tls_sig_algs_for_eap[] = {
 #endif /* MBEDTLS_RSA_C && MBEDTLS_MD_CAN_SHA256 */
 #endif /* CONFIG_TLSV13 */
 
+#if defined(MBEDTLS_SSL_PROTO_TLS1_2)
 #if defined(MBEDTLS_SHA512_C)
 #if defined(MBEDTLS_ECDSA_C)
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_ECDSA, MBEDTLS_SSL_HASH_SHA512),
@@ -364,6 +367,7 @@ static uint16_t tls_sig_algs_for_eap[] = {
     MBEDTLS_SSL_TLS12_SIG_AND_HASH_ALG(MBEDTLS_SSL_SIG_RSA, MBEDTLS_SSL_HASH_SHA1),
 #endif
 #endif /* MBEDTLS_SHA1_C */
+#endif /* MBEDTLS_SSL_PROTO_TLS1_2 */
     MBEDTLS_TLS_SIG_NONE
 };
 
