@@ -7,10 +7,15 @@
 #include <string.h>
 #include <assert.h>
 #include "esp_err.h"
+#include "esp_log.h"
 
 #include "nvs_bootloader_aes.h"
 #include "nvs_bootloader_xts_aes.h"
 
+#include "sdkconfig.h"
+#include "soc/soc_caps.h"
+
+#if SOC_AES_SUPPORTED
 /*
  * NOTE: The implementation of the below APIs have been copied
  * from the mbedtls (v3.6.2) implementation of the XTS-AES APIs.
@@ -198,3 +203,97 @@ int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
 
     return 0;
 }
+#else /* SOC_AES_SUPPORTED */
+#if BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER
+#if CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+#error "Enable `CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER` for non SOC_AES_SUPPORTED targets for supporting NVS encryption in bootloader build"
+#else /* !CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
+// TODO: IDF-11673
+// Due to unavailability of an software AES layer for bootloader build,
+// we cannot support the below NVS bootloader's AES operations
+// Thus we are adding stub APIs to indicate that the following operation fail.
+
+static const char *TAG = "nvs_bootloader_xts_aes";
+static const char *op_unsupported_error = "XTS-AES operation in bootloader unsupported for this target";
+
+void nvs_bootloader_xts_aes_init(nvs_bootloader_xts_aes_context *ctx)
+{
+    (void) ctx;
+    ESP_EARLY_LOGE(TAG, "%s", op_unsupported_error);
+    abort();
+}
+
+void nvs_bootloader_xts_aes_free(nvs_bootloader_xts_aes_context *ctx)
+{
+    (void) ctx;
+    ESP_EARLY_LOGE(TAG, "%s", op_unsupported_error);
+    abort();
+}
+
+int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
+                                const unsigned char *key,
+                                unsigned int key_bytes)
+{
+    (void) ctx;
+    ESP_EARLY_LOGE(TAG, "%s", op_unsupported_error);
+    abort();
+    return -1;
+}
+/*
+ * XTS-AES buffer encryption/decryption
+ */
+int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
+                                enum AES_TYPE mode,
+                                size_t length,
+                                const unsigned char data_unit[16],
+                                const unsigned char *input,
+                                unsigned char *output)
+{
+    (void) ctx;
+    ESP_EARLY_LOGE(TAG, "XTS-AES operation in bootloader unsupported");
+    abort();
+    return -1;
+}
+
+#endif /* CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB */
+#else /* BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER */
+#include "mbedtls/aes.h"
+
+static mbedtls_aes_xts_context ctx_xts;
+
+void nvs_bootloader_xts_aes_init(nvs_bootloader_xts_aes_context *ctx)
+{
+    (void) ctx;
+    mbedtls_aes_xts_init(&ctx_xts);
+}
+
+void nvs_bootloader_xts_aes_free(nvs_bootloader_xts_aes_context *ctx)
+{
+    (void) ctx;
+    mbedtls_aes_xts_free(&ctx_xts);
+}
+
+int nvs_bootloader_xts_aes_setkey(nvs_bootloader_xts_aes_context *ctx,
+                                const unsigned char *key,
+                                unsigned int key_bytes)
+{
+    (void) ctx;
+    return mbedtls_aes_xts_setkey_dec(&ctx_xts, key, key_bytes * 8);
+}
+/*
+ * XTS-AES buffer encryption/decryption
+ */
+int nvs_bootloader_aes_crypt_xts(nvs_bootloader_xts_aes_context *ctx,
+                                enum AES_TYPE mode,
+                                size_t length,
+                                const unsigned char data_unit[16],
+                                const unsigned char *input,
+                                unsigned char *output)
+{
+    (void) ctx;
+
+    int mbedtls_aes_mode = mode == AES_ENC ? MBEDTLS_AES_ENCRYPT : MBEDTLS_AES_DECRYPT;
+    return mbedtls_aes_crypt_xts(&ctx_xts, mbedtls_aes_mode, length, data_unit, input, output);
+}
+#endif /* !(BOOTLOADER_BUILD && !CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER) */
+#endif /* !SOC_AES_SUPPORTED */

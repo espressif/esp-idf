@@ -5,6 +5,18 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
     return()
+
+elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
+    if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
+        set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
+                         "port/mbedtls_rom")
+        set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
+    endif()
+
+    idf_component_register(SRCS "${srcs}"
+                           INCLUDE_DIRS "${include_dirs}"
+                           PRIV_REQUIRES hal)
+    return()
 endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
@@ -87,7 +99,6 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
 endif()
-
 
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)

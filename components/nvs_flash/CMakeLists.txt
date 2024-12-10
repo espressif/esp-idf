@@ -10,6 +10,7 @@ if(BOOTLOADER_BUILD)
 
     idf_component_register(SRCS "${srcs}"
                         REQUIRES "${requires}"
+                        PRIV_REQUIRES "mbedtls"
                         INCLUDE_DIRS "include"
                         PRIV_INCLUDE_DIRS "private_include"
     )
