@@ -3,7 +3,19 @@ Device Firmware Upgrade via USB
 
 :link_to_translation:`zh_CN:[中文]`
 
-Typically, the firmware of the {IDF_TARGET_NAME} is flashed via the chip's serial port. However, flashing via the serial port requires a USB to serial converter chip (e.g., CP210x or FTDI) to be connected to the {IDF_TARGET_NAME} (see :doc:`Establish Serial Connection with {IDF_TARGET_NAME} <../get-started/establish-serial-connection>` for more details). The {IDF_TARGET_NAME} contains a USB OTG peripheral making it possible to connect the {IDF_TARGET_NAME} to the host directly via USB (thus not requiring a USB to serial converter chip).
+.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Typically, the firmware of the {IDF_TARGET_NAME} is flashed via the chip's serial port. However, flashing via the serial port requires a USB to serial converter chip (e.g., CP210x or FTDI) to be connected to the {IDF_TARGET_NAME} (see :doc:`Establish Serial Connection with {IDF_TARGET_NAME} <../get-started/establish-serial-connection>` for more details). The {IDF_TARGET_NAME} contains a USB OTG peripheral making it possible to connect the {IDF_TARGET_NAME} to the host directly via USB (thus not requiring a USB to serial converter chip).
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    Typically, the firmware of the {IDF_TARGET_NAME} is flashed via the chip's serial port or USB_SERIAL_JTAG (see :doc:`Establish Serial Connection with {IDF_TARGET_NAME} <../get-started/establish-serial-connection>` for more details). The {IDF_TARGET_NAME} also contains a USB OTG peripheral making it possible to connect the {IDF_TARGET_NAME} to the host directly via USB Device Firmware Upgrade.
+
+.. only:: esp32s3
+
+    By default, the :doc:`USB_SERIAL_JTAG <usb-serial-jtag-console>` module is connected to the {IDF_TARGET_NAME}'s internal USB PHY, while the USB OTG peripheral can be used only if an external USB PHY is connected. Since DFU is provided via the USB OTG peripheral, it cannot be used through the internal PHY in this configuration.
+
+    However, users can permanently switch the internal USB PHY to work with USB OTG peripheral instead of USB_SERIAL_JTAG by burning the ``USB_PHY_SEL`` eFuse. See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] for more details about USB_SERIAL_JTAG and USB OTG.
 
 Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of the {IDF_TARGET_NAME} directly via the Universal Serial Bus (USB). However, enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or DFU on that port.
 
@@ -15,40 +27,40 @@ Device Firmware Upgrade (DFU) is a mechanism for upgrading the firmware of the {
 USB Connection
 --------------
 
-The necessary connections for the {IDF_TARGET_NAME}'s internal USB PHY (transceiver) are shown in the following table:
+.. only:: esp32p4
 
-.. list-table::
-   :header-rows: 1
-   :widths: 25 20
+    The {IDF_TARGET_NAME} routes the USB D+ and D- signals to their dedicated pins. For USB device functionality, these pins must be connected to the USB bus (e.g., via a Micro-B port, USB-C port, or directly to standard-A plug).
 
-   * - GPIO
-     - USB
+.. only:: esp32s2 or esp32s3
 
-   * - 20
-     - D+ (green)
+    The necessary connections for the {IDF_TARGET_NAME}'s internal USB PHY (transceiver) are shown in the following table:
 
-   * - 19
-     - D- (white)
+    .. list-table::
+       :header-rows: 1
+       :widths: 25 20
 
-   * - GND
-     - GND (black)
+       * - GPIO
+         - USB
 
-   * - +5V
-     - +5V (red)
+       * - 20
+         - D+ (green)
+
+       * - 19
+         - D- (white)
+
+       * - GND
+         - GND (black)
+
+       * - +5V
+         - +5V (red)
 
 .. warning::
 
     Some cables are wired up with non-standard colors and some drivers are able to work with swapped D+ and D- connections. Please try to swap the cables connecting to D+ and D- if your device is not detected.
 
-.. only:: esp32s3
-
-    By default, the :doc:`USB_SERIAL_JTAG <usb-serial-jtag-console>` module is connected to the {IDF_TARGET_NAME}'s internal USB PHY, while the USB OTG peripheral can be used only if an external USB PHY is connected. Since DFU is provided via the USB OTG peripheral, it cannot be used through the internal PHY in this configuration.
-
-    However, users can permanently switch the internal USB PHY to work with USB OTG peripheral instead of USB_SERIAL_JTAG by burning the ``USB_PHY_SEL`` eFuse. See *{IDF_TARGET_NAME} Technical Reference Manual* [`PDF <{IDF_TARGET_TRM_EN_URL}>`__] for more details about USB_SERIAL_JTAG and USB OTG.
-
 .. note::
 
-    The {IDF_TARGET_NAME} chip needs to be in bootloader mode before it can be detected as a DFU device and flash. This can be achieved by pulling GPIO0 down (e.g., pressing the BOOT button), pulling RESET down for a moment, and releasing GPIO0.
+    The {IDF_TARGET_NAME} chip needs to be in bootloader mode before it can be detected as a DFU device and flash. Please refer to `Boot Mode Selection <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/advanced-topics/boot-mode-selection.html#select-bootloader-mode>`_ for more information about how to enter bootloader mode.
 
 
 .. _api_guide_dfu_build:
