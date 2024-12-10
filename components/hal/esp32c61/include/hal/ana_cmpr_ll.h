@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include "hal/misc.h"
 #include "hal/assert.h"
+#include "hal/ana_cmpr_types.h"
 #include "soc/ana_cmpr_struct.h"
 #include "soc/soc_etm_source.h"
 
@@ -68,7 +69,7 @@ static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *h
  * @param hw Analog comparator register base address
  * @param ref_src reference source, 0 for internal, 1 for external GPIO pad (GPIO10)
  */
-static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t ref_src)
+static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, ana_cmpr_ref_voltage_t ref_src)
 {
     hw->pad_comp_config->mode_comp_0 = ref_src;
 }
@@ -85,7 +86,7 @@ static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, uint32_t
  * @return interrupt mask
  */
 __attribute__((always_inline))
-static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *hw, uint8_t type)
+static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *hw, ana_cmpr_cross_type_t type)
 {
     uint32_t unit = ANALOG_CMPR_LL_GET_UNIT(hw);
     uint32_t mask = 0;
