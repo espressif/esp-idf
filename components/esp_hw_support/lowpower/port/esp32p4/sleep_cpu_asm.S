@@ -149,31 +149,6 @@ _rv_core_critical_regs_restore: /* export a strong symbol to jump to here, used
     nop
 
 rv_core_critical_regs_restore:
-    /* Invalidate L1 Cache by Core 0*/
-    csrr    t0, mhartid
-    bnez    t0, start_restore
-/* Core 0 is wakeup core, Invalidate L1 Cache here */
-    /* Invalidate L1 cache is required here!!! */
-    la      t0, CACHE_SYNC_MAP_REG
-    li      t1, CACHE_MAP_L1_CACHE_MASK     /* map l1 i/dcache */
-    sw      t1, 0x0(t0)                     /* set EXTMEM_CACHE_SYNC_MAP_REG bit 4 */
-    la      t2, CACHE_SYNC_ADDR_REG
-    sw      zero, 0x0(t2)                   /* clear EXTMEM_CACHE_SYNC_ADDR_REG */
-    la      t0, CACHE_SYNC_SIZE_REG
-    sw      zero, 0x0(t0)                   /* clear EXTMEM_CACHE_SYNC_SIZE_REG */
-
-    la      t1, CACHE_SYNC_CTRL_REG
-    lw      t2, 0x0(t1)
-    ori     t2, t2, 0x1
-    sw      t2, 0x0(t1)
-
-    li      t0, 0x10                        /* SYNC_DONE bit */
-wait_cache_sync_done1:
-    lw      t2, 0x0(t1)
-    and     t2, t0, t2
-    beqz    t2, wait_cache_sync_done1
-
-start_restore:
     la      t0, rv_core_critical_regs_frame
     csrr    t1, mhartid
     slli    t1, t1, 2
