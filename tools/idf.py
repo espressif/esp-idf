@@ -454,7 +454,13 @@ def init_cli(verbose_output: Optional[List]=None) -> Any:
                 return None
 
         def shell_complete(self, ctx: click.core.Context, incomplete: str) -> List[CompletionItem]:
-            if incomplete.startswith('@'):
+            # Enable @-argument completion in bash only if @ is not present in
+            # COMP_WORDBREAKS. When @ is included, the @-argument is not considered
+            # part of the completion word, causing @-argument completion to function
+            # unreliably in bash.
+            complete_file = ('bash' not in os.environ.get('_IDF.PY_COMPLETE', '') or
+                             '@' not in os.environ.get('IDF_PY_COMP_WORDBREAKS', ''))
+            if incomplete.startswith('@') and complete_file:
                 path_prefix = incomplete[1:]
                 candidates = glob.glob(path_prefix + '*')
                 result = [CompletionItem(f'@{c}') for c in candidates]

@@ -126,6 +126,7 @@ class BashShell(UnixShell):
                 then
                     echo "$WARNING_MSG"
                 fi
+                export IDF_PY_COMP_WORDBREAKS="$COMP_WORDBREAKS"
             fi
             """)
 
