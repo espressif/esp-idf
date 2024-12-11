@@ -116,11 +116,9 @@ esp_err_t lp_i2s_new_channel(const lp_i2s_chan_config_t *chan_cfg, lp_i2s_chan_h
     return ESP_OK;
 
 err0:
-    if (ctlr->rx_chan) {
-        vSemaphoreDeleteWithCaps(ctlr->rx_chan->semphr);
-        free(ctlr->rx_chan);
-        ctlr->rx_chan = NULL;
-    }
+    vSemaphoreDeleteWithCaps(ctlr->rx_chan->semphr);
+    free(ctlr->rx_chan);
+    ctlr->rx_chan = NULL;
 
 err1:
     /* if the controller object has no channel, find the corresponding global object and destroy it */
