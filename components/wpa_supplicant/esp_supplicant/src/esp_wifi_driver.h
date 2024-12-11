@@ -288,6 +288,7 @@ esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
                                  uint32_t wait_time_ms, const wifi_action_tx_req_t *req);
 esp_err_t esp_wifi_remain_on_channel(uint8_t ifx, uint8_t type, uint8_t channel,
                                      uint32_t wait_time_ms, wifi_action_rx_cb_t rx_cb);
+uint8_t esp_wifi_ap_get_sae_ext_config_internal(void);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);

@@ -414,6 +414,7 @@ typedef struct {
     wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     uint8_t transition_disable;               /**< Whether to enable transition disable feature */
+    uint8_t sae_ext;                          /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
 } wifi_ap_config_t;
 
 #define SAE_H2E_IDENTIFIER_LEN 32    /**< Length of the password identifier for H2E */
