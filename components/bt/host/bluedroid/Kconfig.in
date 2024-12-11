@@ -144,6 +144,13 @@ config BT_HID_DEVICE_ENABLED
     help
         This enables the BT HID Device
 
+config BT_HID_DEVICE_TASK_SIZE
+    int "Bluetooth HID event (callback to application) task stack size"
+    depends on BT_HID_DEVICE_ENABLED
+    default 4096
+    help
+        This selects the esp_hid task size
+
 config BT_BLE_ENABLED
     bool "Bluetooth Low Energy"
     depends on BT_BLUEDROID_ENABLED
