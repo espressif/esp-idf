@@ -213,11 +213,12 @@ void wpa_deinit(struct wpa_authenticator *wpa_auth);
 int wpa_reconfig(struct wpa_authenticator *wpa_auth,
 		 struct wpa_auth_config *conf);
 
-enum {
+enum wpa_validate_result {
 	WPA_IE_OK, WPA_INVALID_IE, WPA_INVALID_GROUP, WPA_INVALID_PAIRWISE,
 	WPA_INVALID_AKMP, WPA_NOT_ENABLED, WPA_ALLOC_FAIL,
 	WPA_MGMT_FRAME_PROTECTION_VIOLATION, WPA_INVALID_MGMT_GROUP_CIPHER,
-	WPA_INVALID_MDIE, WPA_INVALID_PROTO
+	WPA_INVALID_MDIE, WPA_INVALID_PROTO, WPA_INVALID_PMKID,
+	WPA_DENIED_OTHER_REASON
 };
 
 int wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
