@@ -350,7 +350,13 @@ esp_err_t ledc_set_fade(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t
 esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags, ledc_isr_handle_t *handle);
 
 /**
- * @brief Configure LEDC settings
+ * @brief Configure LEDC timer settings
+ *
+ * This function does not take care of whether the chosen clock source is enabled or not, also does not handle the clock source
+ * to meet channel sleep mode choice.
+ *
+ * If the chosen clock source is a new clock source to the LEDC timer, please use `ledc_timer_config`;
+ * If the clock source is kept to be the same, but frequency needs to be updated, please use `ledc_set_freq`.
  *
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param timer_sel  Timer index (0-3), there are 4 timers in LEDC module
@@ -362,7 +368,7 @@ esp_err_t ledc_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
  *     - (-1) Parameter error
  *     - Other Current LEDC duty
  */
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src);
+esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src) __attribute__((deprecated("Please use ledc_timer_config() or ledc_set_freq()")));
 
 /**
  * @brief Reset LEDC timer
