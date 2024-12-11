@@ -100,10 +100,13 @@ typedef enum {
     WIFI_REASON_UNSPECIFIED                        = 1,     /**< Unspecified reason */
     WIFI_REASON_AUTH_EXPIRE                        = 2,     /**< Authentication expired */
     WIFI_REASON_AUTH_LEAVE                         = 3,     /**< Deauthentication due to leaving */
-    WIFI_REASON_ASSOC_EXPIRE                       = 4,     /**< Association expired */
+    WIFI_REASON_ASSOC_EXPIRE                       = 4,     /**< Association expired. Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY         = 4,
     WIFI_REASON_ASSOC_TOOMANY                      = 5,     /**< Too many associated stations */
-    WIFI_REASON_NOT_AUTHED                         = 6,     /**< Not authenticated */
-    WIFI_REASON_NOT_ASSOCED                        = 7,     /**< Not associated */
+    WIFI_REASON_NOT_AUTHED                         = 6,     /**< Not authenticated. Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_CLASS2_FRAME_FROM_NONAUTH_STA      = 6,
+    WIFI_REASON_NOT_ASSOCED                        = 7,     /**< Not associated. Deprecated, will be removed in next IDF major release */
+    WIFI_REASON_CLASS3_FRAME_FROM_NONASSOC_STA     = 7,
     WIFI_REASON_ASSOC_LEAVE                        = 8,     /**< Deassociated due to leaving */
     WIFI_REASON_ASSOC_NOT_AUTHED                   = 9,     /**< Association but not authenticated */
     WIFI_REASON_DISASSOC_PWRCAP_BAD                = 10,    /**< Disassociated due to poor power capability */
@@ -144,7 +147,6 @@ typedef enum {
     WIFI_REASON_INVALID_FTE                        = 51,    /**< Invalid FTE */
     WIFI_REASON_TRANSMISSION_LINK_ESTABLISH_FAILED = 67,    /**< Transmission link establishment failed */
     WIFI_REASON_ALTERATIVE_CHANNEL_OCCUPIED        = 68,    /**< Alternative channel occupied */
-
     WIFI_REASON_BEACON_TIMEOUT                     = 200,    /**< Beacon timeout */
     WIFI_REASON_NO_AP_FOUND                        = 201,    /**< No AP found */
     WIFI_REASON_AUTH_FAIL                          = 202,    /**< Authentication failed */

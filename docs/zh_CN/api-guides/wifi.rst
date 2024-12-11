@@ -807,7 +807,7 @@ Wi-Fi 驱动程序内部扫描阶段
 +++++++++++++++++++++
 
  - s3.1：发送关联请求并使能关联计时器。
- - s3.2：如果在关联计时器超时之前未接收到关联响应，将产生 `WIFI_EVENT_STA_DISCONNECTED`_ 事件，且原因代码为 ``WIFI_REASON_ASSOC_EXPIRE``。请参阅 `Wi-Fi 原因代码`_。
+ - s3.2：如果在关联计时器超时之前未接收到关联响应，将产生 `WIFI_EVENT_STA_DISCONNECTED`_ 事件，且原因代码为 ``WIFI_REASON_DISASSOC_DUE_TO_INACTIVITY``。请参阅 `Wi-Fi 原因代码`_。
  - s3.3：接收到关联响应，且关联计时器终止。
  - s3.4：AP 在响应中拒绝关联且产生 `WIFI_EVENT_STA_DISCONNECTED`_ 事件，原因代码将在关联响应中指定。请参阅 `Wi-Fi 原因代码`_。
 
@@ -864,7 +864,7 @@ Wi-Fi 原因代码
        对于 ESP station，出现以下情况时报告该代码：
 
        - 从 AP 接收到该代码。
-   * - ASSOC_EXPIRE
+   * - DISASSOC_DUE_TO_INACTIVITY
      - 4
      - 4
      - 因为 AP 不活跃，association 取消。
@@ -890,7 +890,7 @@ Wi-Fi 原因代码
        对于 ESP AP，出现以下情况时将报告该代码：
 
        - 与 AP 相关联的 station 数量已到达 AP 可支持的最大值。
-   * - NOT_AUTHED
+   * - CLASS2_FRAME_FROM_NONAUTH_STA
      - 6
      - 6
      - 从一个未认证 station 接收到 class-2 frame。
@@ -902,7 +902,7 @@ Wi-Fi 原因代码
        对于 ESP AP，出现以下情况时将报告该代码：
 
        - AP 从一个未认证 station 接收到数据包。
-   * - NOT_ASSOCED
+   * - CLASS3_FRAME_FROM_NONASSOC_STA
      - 7
      - 7
      - 从一个未关联 station 接收到的 class-3 frame。
@@ -1167,7 +1167,7 @@ Wi-Fi 原因代码
    * - ASSOC_FAIL
      - 203
      - 保留
-     - 乐鑫特有的 Wi-Fi 原因代码： association 失败，但并非由 ASSOC_EXPIRE 或 ASSOC_TOOMANY 引发。
+     - 乐鑫特有的 Wi-Fi 原因代码： association 失败，但并非由 DISASSOC_DUE_TO_INACTIVITY 或 ASSOC_TOOMANY 引发。
    * - HANDSHAKE_TIMEOUT
      - 204
      - 保留
