@@ -324,6 +324,8 @@ static int rsn_key_mgmt_to_bitfield(const u8 *s)
 #ifdef CONFIG_WPA3_SAE
         if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE)
                 return WPA_KEY_MGMT_SAE;
+        if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_SAE_EXT_KEY)
+                return WPA_KEY_MGMT_SAE_EXT_KEY;
 #endif /* CONFIG_WPA3_SAE */
 	if (RSN_SELECTOR_GET(s) == RSN_AUTH_KEY_MGMT_802_1X_SHA256)
 		return WPA_KEY_MGMT_IEEE8021X_SHA256;

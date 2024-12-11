@@ -246,9 +246,11 @@ void sae_accept_sta(struct hostapd_data *hapd, struct sta_info *sta)
 #endif /* ESP_SUPPLICANT */
 
     sta->auth_alg = WLAN_AUTH_SAE;
+    sta->sae->peer_commit_scalar_accepted = sta->sae->peer_commit_scalar;
+    sta->sae->peer_commit_scalar = NULL;
     sae_set_state(sta, SAE_ACCEPTED, "Accept Confirm");
     wpa_auth_pmksa_add_sae(hapd->wpa_auth, sta->addr,
-                           sta->sae->pmk, sta->sae->pmkid, false);
+                           sta->sae->pmk, sta->sae->pmk_len, sta->sae->pmkid, false, sta->sae->akmp);
 }
 
 
