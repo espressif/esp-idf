@@ -111,15 +111,19 @@ const regdma_entries_config_t tg1_timer_regdma_entries[] = {
     },
 };
 
-const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS] = {
+const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS][SOC_TIMER_GROUP_TIMERS_PER_GROUP] = {
     [0] = {
-        .module = SLEEP_RETENTION_MODULE_TG0_TIMER,
-        .regdma_entry_array = tg0_timer_regdma_entries,
-        .array_size = ARRAY_SIZE(tg0_timer_regdma_entries)
+        [0] = {
+            .module = SLEEP_RETENTION_MODULE_TG0_TIMER0,
+            .regdma_entry_array = tg0_timer_regdma_entries,
+            .array_size = ARRAY_SIZE(tg0_timer_regdma_entries)
+        }
     },
     [1] = {
-        .module = SLEEP_RETENTION_MODULE_TG1_TIMER,
-        .regdma_entry_array = tg1_timer_regdma_entries,
-        .array_size = ARRAY_SIZE(tg1_timer_regdma_entries)
+        [0] = {
+            .module = SLEEP_RETENTION_MODULE_TG1_TIMER0,
+            .regdma_entry_array = tg1_timer_regdma_entries,
+            .array_size = ARRAY_SIZE(tg1_timer_regdma_entries)
+        }
     },
 };
