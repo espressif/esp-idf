@@ -10,6 +10,17 @@ This page briefly lists all of the vulnerabilities that are discovered and fixed
 CVE-2024
 --------
 
+CVE-2024-53845
+~~~~~~~~~~~~~~
+
+AES/CBC Constant IV Vulnerability in ESPTouch v2
+
+* Espressif Advisory: NA (Published on GitHub)
+* Impact: Applicable for ESP-IDF
+* Resolution: Please see advisory for details
+* Advisory pointer: `GHSA-wm57-466g-mhrr`_
+
+
 CVE-2024-28183
 ~~~~~~~~~~~~~~
 
@@ -162,3 +173,4 @@ Security Advisory Concerning Wi-Fi Authentication Bypass
 .. _`AR2023-010`: https://www.espressif.com/sites/default/files/advisory_downloads/AR2023-010%20Security%20Advisory%20Concerning%20the%20Bluetooth%20BLUFFS%20Vulnerability%20EN.pdf
 .. _`GHSA-22x6-3756-pfp8` : https://github.com/espressif/esp-idf/security/advisories/GHSA-22x6-3756-pfp8
 .. _`GHSA-7f7f-jj2q-28wm` : https://github.com/espressif/esp-idf/security/advisories/GHSA-7f7f-jj2q-28wm
+.. _`GHSA-wm57-466g-mhrr` : https://github.com/espressif/esp-idf/security/advisories/GHSA-wm57-466g-mhrr
