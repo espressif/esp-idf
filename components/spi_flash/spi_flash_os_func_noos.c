@@ -9,6 +9,7 @@
 #include "esp_flash.h"
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
+#include "esp_cpu.h"
 #include "rom/cache.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
@@ -16,7 +17,11 @@
 
 static IRAM_ATTR esp_err_t start(void *arg)
 {
-    // TODO: [ESP32C5] IDF-8646
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    esp_cpu_branch_prediction_disable();
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32
     Cache_Read_Disable(0);
     Cache_Read_Disable(1);
@@ -35,6 +40,10 @@ static IRAM_ATTR esp_err_t end(void *arg)
     Cache_Read_Enable(1);
 #else
     cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#endif
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
 #endif
 
     return ESP_OK;
