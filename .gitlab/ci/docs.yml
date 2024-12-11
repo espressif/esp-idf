@@ -139,19 +139,6 @@ build_docs_html_partial:
       - DOCLANG: "zh_CN"
         DOCTGT: "esp32p4"
 
-build_docs_pdf:
-  extends:
-    - .build_docs_template
-    - .doc-rules:build:docs-full
-  artifacts:
-    when: always
-    paths:
-      - docs/_build/*/*/latex/*
-    expire_in: 4 days
-  allow_failure: true # TODO IDFCI-2216
-  variables:
-    DOC_BUILDERS: "latex"
-
 .deploy_docs_template:
   image: $ESP_IDF_DOC_ENV_IMAGE
   variables:
@@ -180,8 +167,6 @@ deploy_docs_preview:
       optional: true
     - job: build_docs_html_full
       optional: true
-    - job: build_docs_pdf
-      optional: true
   variables:
     TYPE: "preview"
     # older branches use DOCS_DEPLOY_KEY, DOCS_SERVER, DOCS_SERVER_USER, DOCS_PATH for preview server so we keep these names for 'preview'
@@ -202,7 +187,6 @@ deploy_docs_production:
   dependencies:  # set dependencies to null to avoid missing artifacts issue
   needs: # ensure runs after push_to_github succeeded
     - build_docs_html_full
-    - build_docs_pdf
     - job: push_to_github
       artifacts: false
   variables:
