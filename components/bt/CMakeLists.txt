@@ -549,6 +549,8 @@ if(CONFIG_BT_ENABLED)
                     host/nimble/nimble/nimble/host/services/ipss/include
                     host/nimble/nimble/nimble/host/services/lls/include
                     host/nimble/nimble/nimble/host/services/tps/include
+                    host/nimble/nimble/nimble/host/services/hid/include
+                    host/nimble/nimble/nimble/host/services/sps/include
                     host/nimble/nimble/nimble/host/util/include
                     host/nimble/nimble/nimble/host/store/ram/include
                     host/nimble/nimble/nimble/host/store/config/include
@@ -565,6 +567,8 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/services/bas/src/ble_svc_bas.c"
                     "host/nimble/nimble/nimble/host/services/dis/src/ble_svc_dis.c"
                     "host/nimble/nimble/nimble/host/services/lls/src/ble_svc_lls.c"
+                    "host/nimble/nimble/nimble/host/services/hid/src/ble_svc_hid.c"
+                    "host/nimble/nimble/nimble/host/services/sps/src/ble_svc_sps.c"
                     "host/nimble/nimble/nimble/host/src/ble_hs_conn.c"
                     "host/nimble/nimble/nimble/host/src/ble_store_util.c"
                     "host/nimble/nimble/nimble/host/src/ble_sm.c"
@@ -614,11 +618,15 @@ if(CONFIG_BT_ENABLED)
                     "host/nimble/nimble/nimble/host/store/ram/src/ble_store_ram.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_config.c"
                     "host/nimble/nimble/nimble/host/store/config/src/ble_store_nvs.c"
+                    "host/nimble/nimble/nimble/host/src/ble_gattc_cache.c"
+                    "host/nimble/nimble/nimble/host/src/ble_gattc_cache_conn.c"
+                    "host/nimble/nimble/nimble/host/src/ble_eatt.c"
                 )
 
             list(APPEND srcs
                 "host/nimble/nimble/porting/nimble/src/nimble_port.c"
                 "host/nimble/nimble/porting/npl/freertos/src/nimble_port_freertos.c"
+                "host/nimble/port/src/nvs_port.c"
             )
             list(APPEND include_dirs
                 host/nimble/nimble/porting/nimble/include
