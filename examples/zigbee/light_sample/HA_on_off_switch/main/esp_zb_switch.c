@@ -1,11 +1,7 @@
 /*
  * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
-<<<<<<< HEAD
- * SPDX-License-Identifier: LicenseRef-Included
-=======
  * SPDX-License-Identifier:  LicenseRef-Included
->>>>>>> a41c2d498eb... feat(zigbee): Upgrade the Zigbee lib to v1.6 for Zigbee examples
  *
  * Zigbee HA_on_off_switch Example
  *
