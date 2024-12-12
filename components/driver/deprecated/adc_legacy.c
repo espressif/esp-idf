@@ -916,6 +916,7 @@ static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, uint32_t clk_src
     return ESP_OK;
 }
 
+#if !CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that adc_oneshot driver is not running along with the legacy adc oneshot driver
  */
@@ -931,6 +932,7 @@ static void check_adc_oneshot_driver_conflict(void)
     }
     ESP_EARLY_LOGW(ADC_TAG, "legacy driver is deprecated, please migrate to `esp_adc/adc_oneshot.h`");
 }
+#endif //CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 /*---------------------------------------------------------------

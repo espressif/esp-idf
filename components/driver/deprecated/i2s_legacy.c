@@ -1957,6 +1957,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     return ESP_OK;
 }
 
+#if !CONFIG_I2S_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that the new i2s driver is not running along with the legacy i2s driver
  */
@@ -1970,3 +1971,4 @@ static __attribute__((constructor)) void check_i2s_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy i2s driver is deprecated, please migrate to use driver/i2s_std.h, driver/i2s_pdm.h or driver/i2s_tdm.h");
 }
+#endif //CONFIG_I2S_SKIP_LEGACY_CONFLICT_CHECK

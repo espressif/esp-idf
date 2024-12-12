@@ -1052,6 +1052,7 @@ esp_err_t mcpwm_set_timer_sync_output(mcpwm_unit_t mcpwm_num, mcpwm_timer_t time
     return ESP_OK;
 }
 
+#if !CONFIG_MCPWM_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy mcpwm driver is not running along with the new MCPWM driver
  */
@@ -1067,3 +1068,4 @@ static void check_mcpwm_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/mcpwm_prelude.h`");
 }
+#endif //CONFIG_MCPWM_SKIP_LEGACY_CONFLICT_CHECK
