@@ -192,6 +192,7 @@ static TCM_IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save
 
     frame->mscratch  = RV_READ_CSR(mscratch);
     frame->misa      = RV_READ_CSR(misa);
+    frame->mhcr      = RV_READ_CSR(MHCR);
     frame->tselect   = RV_READ_CSR(tselect);
     frame->tdata1    = RV_READ_CSR(tdata1);
     frame->tdata2    = RV_READ_CSR(tdata2);
@@ -260,6 +261,7 @@ static TCM_IRAM_ATTR void rv_core_noncritical_regs_restore(void)
 
     RV_WRITE_CSR(mscratch, frame->mscratch);
     RV_WRITE_CSR(misa,     frame->misa);
+    RV_WRITE_CSR(MHCR,     frame->mhcr);
     RV_WRITE_CSR(tselect,  frame->tselect);
     RV_WRITE_CSR(tdata1,   frame->tdata1);
     RV_WRITE_CSR(tdata2,   frame->tdata2);
