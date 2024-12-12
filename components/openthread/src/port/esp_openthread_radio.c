@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,10 @@
 #include "openthread/platform/time.h"
 #include "utils/link_metrics.h"
 #include "utils/mac_frame.h"
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
 
 #define ESP_RECEIVE_SENSITIVITY -120
 #define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
@@ -796,5 +800,17 @@ void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
 {
     OT_UNUSED_VARIABLE(aInstance);
     esp_ieee802154_set_rx_when_idle(aEnable);
+}
+#endif
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config)
+{
+    esp_ieee802154_set_coex_config(config);
+}
+
+esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void)
+{
+    return esp_ieee802154_get_coex_config();
 }
 #endif
