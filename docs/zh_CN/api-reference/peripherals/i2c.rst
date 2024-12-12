@@ -401,7 +401,7 @@ I2C 主机写入后读取
     };
 
     i2c_master_dev_handle_t dev_handle;
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(I2C_PORT_NUM_0, &dev_cfg, &dev_handle));
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
     uint8_t buf[20] = {0x20};
     uint8_t buffer[2];
     ESP_ERROR_CHECK(i2c_master_transmit_receive(dev_handle, buf, sizeof(buf), buffer, 2, -1));
