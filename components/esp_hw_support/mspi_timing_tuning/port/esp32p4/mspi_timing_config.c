@@ -40,7 +40,7 @@ void mspi_timing_config_set_flash_clock(uint32_t flash_freq_mhz, mspi_timing_spe
 #if MSPI_TIMING_FLASH_NEEDS_TUNING
     assert(HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel == 1);
 
-    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_FLASH_CORE_CLK_DIV;
+    uint32_t core_clock_mhz = MSPI_TIMING_SPLL_FREQ_MHZ / MSPI_TIMING_LL_HP_FLASH_CORE_CLK_DIV;
     assert(core_clock_mhz == 120);
     uint32_t freqdiv = core_clock_mhz / flash_freq_mhz;
 

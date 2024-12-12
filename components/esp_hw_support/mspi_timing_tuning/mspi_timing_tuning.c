@@ -16,6 +16,7 @@
 #include "hal/spi_flash_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
@@ -23,14 +24,9 @@
 #include "mspi_timing_by_flash_delay.h"
 #if SOC_MEMSPI_TIMING_TUNING_BY_MSPI_DELAY || SOC_MEMSPI_TIMING_TUNING_BY_DQS || SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
 #include "mspi_timing_tuning_configs.h"
-#include "hal/mspi_timing_tuning_ll.h"
 #endif
 #if SOC_MEMSPI_CLK_SRC_IS_INDEPENDENT
 #include "hal/spimem_flash_ll.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10464
-#include "hal/mspi_timing_tuning_ll.h"
 #endif
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
@@ -469,13 +465,9 @@ void mspi_timing_psram_tuning(void)
  *----------------------------------------------------------------------------*/
 void mspi_timing_enter_low_speed_mode(bool control_spi1)
 {
-#if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
-#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-10464
-    mspi_ll_clock_src_sel(MSPI_CLK_SRC_XTAL);
-#else
-    spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_ROM_DEFAULT);
+#if MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_ROM_DEFAULT);
 #endif
-#endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     /**
@@ -509,13 +501,9 @@ void mspi_timing_enter_low_speed_mode(bool control_spi1)
  */
 void mspi_timing_enter_high_speed_mode(bool control_spi1)
 {
-#if SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
-#if CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61// TODO: IDF-10464
-    mspi_ll_clock_src_sel(MSPI_CLK_SRC_SPLL);
-#else
-    spimem_flash_ll_set_clock_source(MSPI_CLK_SRC_DEFAULT);
+#if MSPI_TIMING_LL_FLASH_CLK_SRC_CHANGEABLE
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_DEFAULT);
 #endif
-#endif  //SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     /**
