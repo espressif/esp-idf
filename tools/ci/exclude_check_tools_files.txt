@@ -50,3 +50,5 @@ tools/ci/python_packages/idf_iperf_test_util/**/*
 tools/esp_prov/**/*
 tools/ci/sort_yaml.py
 tools/ci/sg_rules/*
+tools/bt/bt_hci_to_btsnoop.py
+tools/bt/README.md
