@@ -1207,8 +1207,7 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
      * not smaller than 10ms, then we will use a random adv interval between
      * [interval / 2, interval] for them.
      */
-    if (adv_params.conn_mode == BLE_GAP_CONN_MODE_NON &&
-        adv_params.disc_mode == BLE_GAP_DISC_MODE_NON && interval >= 16) {
+    if (adv_params.legacy_pdu && interval >= 16) {
         interval >>= 1;
         interval += (bt_mesh_get_rand() % (interval + 1));
 
