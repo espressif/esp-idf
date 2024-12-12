@@ -397,6 +397,7 @@ TEST_CASE("ADC continuous monitor init_deinit", "[adc]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
 
+#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 #define TEST_ADC_CHANNEL    ADC_CHANNEL_0
 static uint32_t m1h_cnt, m1l_cnt;
 
@@ -443,9 +444,9 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
 #if CONFIG_IDF_TARGET_ESP32S2
         .h_threshold = -1,      //S2 support only one threshold for one monitor
 #else
-        .h_threshold = 3000,
+        .h_threshold = ADC_TEST_HIGH_VAL_DMA - (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
 #endif
-        .l_threshold = 1000,
+        .l_threshold = ADC_TEST_LOW_VAL + (ADC_TEST_HIGH_VAL_DMA - ADC_TEST_LOW_VAL) / 4,
     };
     adc_monitor_evt_cbs_t monitor_cb = {
 #if !CONFIG_IDF_TARGET_ESP32S2
@@ -496,5 +497,5 @@ TEST_CASE("ADC continuous monitor functionary", "[adc]")
     TEST_ESP_OK(adc_del_continuous_monitor(monitor_handle));
     TEST_ESP_OK(adc_continuous_deinit(handle));
 }
-
+#endif  //SOC_ADC_CALIBRATION_V1_SUPPORTED
 #endif  //SOC_ADC_MONITOR_SUPPORTED && CONFIG_SOC_ADC_DMA_SUPPORTED
