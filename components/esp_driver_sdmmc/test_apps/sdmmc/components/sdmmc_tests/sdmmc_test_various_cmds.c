@@ -52,10 +52,10 @@ static void sdmmc_write_sectors_cmd25_error_test_acmd22(sdmmc_card_t* card, uint
     ESP_LOGI(TAG, "%s: ACMD22 successfully written %zu blocks out of %zu", __func__, sucessfully_written_blocks, block_count);
 }
 
-static void do_one_mmc_acmd22_test(int slot, int width, int freq_khz, int ddr)
+static void do_one_sdmmc_acmd22_test(int slot, int width, int freq_khz, int ddr)
 {
     sdmmc_card_t card;
-    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, IS_EMMC);
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, freq_khz, ddr, NO_EMMC);
     sdmmc_test_sd_begin(slot, width, freq_khz, ddr, &card);
     sdmmc_card_print_info(stdout, &card);
     sdmmc_write_sectors_cmd25_error_test_acmd22(&card, 4096 * 4);
@@ -64,10 +64,10 @@ static void do_one_mmc_acmd22_test(int slot, int width, int freq_khz, int ddr)
 
 TEST_CASE("send ACMD22 after writing multiple blocks to check real number of successfully written blocks, slot 0, 1-bit", "[sdmmc]")
 {
-    do_one_mmc_acmd22_test(SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR);
+    do_one_sdmmc_acmd22_test(SLOT_0, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR);
 }
 
 TEST_CASE("send ACMD22 after writing multiple blocks to check real number of successfully written blocks, slot 1, 1-bit", "[sdmmc]")
 {
-    do_one_mmc_acmd22_test(SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR);
+    do_one_sdmmc_acmd22_test(SLOT_1, 1, SDMMC_FREQ_HIGHSPEED, NO_DDR);
 }
