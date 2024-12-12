@@ -56,10 +56,15 @@
 
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/clk_tree_ll.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
+#endif
+
+#if __has_include("hal/mspi_timing_tuning_ll.h")
+#include "hal/mspi_timing_tuning_ll.h"
 #endif
 
 #include "sdkconfig.h"
@@ -72,7 +77,9 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
 #include "esp_private/mspi_timing_tuning.h"
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -788,8 +795,10 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     }
 #endif
 
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
     // Will switch to XTAL turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
+#endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
     if (!deep_sleep && (pd_flags & PMU_SLEEP_PD_TOP)) {
@@ -1071,8 +1080,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         misc_modules_wake_prepare(pd_flags);
     }
 
-#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-    if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
+    if (cpu_freq_config.source_freq_mhz > clk_ll_xtal_load_freq_mhz()) {
         // Turn up MSPI speed if switch to PLL
         mspi_timing_change_speed_mode_cache_safe(false);
     }
