@@ -497,6 +497,16 @@ static inline void pcnt_ll_reset_register(int group_id)
     PCR.pcnt_conf.pcnt_rst_en = 0;
 }
 
+/**
+ * @brief Check if the step notify is supported
+ */
+static inline bool pcnt_ll_is_step_notify_supported(int group_id)
+{
+    (void)group_id;
+    return true;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

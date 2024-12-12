@@ -305,6 +305,7 @@
 #define SOC_PCNT_CHANNELS_PER_UNIT            2
 #define SOC_PCNT_THRES_POINT_PER_UNIT         2
 #define SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE 1
+#define SOC_PCNT_SUPPORT_STEP_NOTIFY          1  /*!< Only avliable in chip version above 1.2*/
 #define SOC_PCNT_SUPPORT_SLEEP_RETENTION      1  /*!< The sleep retention feature can help back up PCNT registers before sleep */
 
 /*--------------------------- RMT CAPS ---------------------------------------*/

@@ -775,6 +775,10 @@ config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
     bool
     default y
 
+config SOC_PCNT_SUPPORT_STEP_NOTIFY
+    bool
+    default y
+
 config SOC_PCNT_SUPPORT_SLEEP_RETENTION
     bool
     default y
