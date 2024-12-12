@@ -616,7 +616,16 @@ static esp_err_t process_segment(int index, uint32_t flash_addr, esp_image_segme
 #endif
         uint32_t offset_page = ((data_addr & MMAP_ALIGNED_MASK) != 0) ? 1 : 0;
         /* Data we could map in case we are not aligned to PAGE boundary is one page size lesser. */
-        data_len = MIN(data_len_remain, ((free_page_count - offset_page) * SPI_FLASH_MMU_PAGE_SIZE));
+        uint32_t max_pages = (free_page_count > offset_page) ? (free_page_count - offset_page) : 0;
+        if (max_pages == 0) {
+            ESP_LOGE(TAG, "No free MMU pages are available");
+            return ESP_ERR_NO_MEM;
+        }
+        uint32_t max_image_len;
+        if (__builtin_mul_overflow(max_pages, SPI_FLASH_MMU_PAGE_SIZE, &max_image_len)) {
+            max_image_len = UINT32_MAX;
+        }
+        data_len = MIN(data_len_remain, max_image_len);
         CHECK_ERR(process_segment_data(index, load_addr, data_addr, data_len, do_load, sha_handle, checksum, metadata));
         data_addr += data_len;
         data_len_remain -= data_len;
