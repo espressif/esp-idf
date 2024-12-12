@@ -158,9 +158,9 @@ lwIP IPv4
 
 默认情况下，ESP-IDF 使用 Newlib C 库，同时也对 Picolibc C 库提供实验性支持。
 
-Picolibc C 库提供了更小的 ``printf`` 系列函数，并且根据您的应用程序，可以将二进制文件大小最多减少 30 KB。
+Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
 
-要切换为链接到 Picolibc C 库，请启用以下配置选项：:ref:CONFIG_IDF_EXPERIMENTAL_FEATURES 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
+如需切换链接到 Picolibc C 库，请启用配置选项 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
 
 .. _newlib-nano-formatting:
 
@@ -171,13 +171,13 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将使 Newlib 切换到 Nano 格式化模式。这种模式的代码量更小，并且大部分内容被编译到了 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
+    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到 Nano 格式化模式。从而减小了代码体积，同时大部分内容被编译到 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
 
     具体的二进制文件大小差异取决于固件使用的功能，但通常为 25 KB 到 50 KB。
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将切换 Newlib 到“完整”格式化模式。这将减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此不需要将其添加至二进制文件中。
+    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到完整格式化模式。从而减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此无需将其添加至二进制文件中。
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 

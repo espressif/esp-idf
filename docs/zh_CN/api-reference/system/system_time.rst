@@ -26,7 +26,7 @@
 - 高分辨率定时器
 - 无
 
-默认时钟源的时间精度最高，建议使用该配置。此外，用户也可以通过配置选项 :ref:`CONFIG_LIBC_TIME_SYSCALL` 来选择其他时钟源。
+默认时钟源的时间精度最高，建议使用该配置。此外，你可以通过配置选项 :ref:`CONFIG_LIBC_TIME_SYSCALL` 来选择其他时钟源。
 
 
 .. _rtc-clock-source-choice:

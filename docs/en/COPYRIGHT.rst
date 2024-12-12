@@ -19,7 +19,9 @@ Firmware Components
 
 These third party libraries can be included into the application (firmware) produced by ESP-IDF.
 
-* :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`.
+* :component:`Newlib <newlib>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`.
+
+:component:`Picolibc <newlib>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.picolibc <newlib/COPYING.NEWLIB>`.
 
 * :component:`Xtensa header files <xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
