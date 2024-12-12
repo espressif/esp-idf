@@ -32,6 +32,7 @@ class TestReportGeneration(unittest.TestCase):
             'CI_DASHBOARD_HOST': 'https://test_dashboard_host',
             'CI_PAGES_URL': 'https://artifacts_path',
             'CI_JOB_ID': '1',
+            'JIRA_SERVER': 'https://jira.com',
         })
 
         self.MockGitlab = self.gitlab_patcher.start()
