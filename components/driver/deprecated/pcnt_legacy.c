@@ -555,6 +555,7 @@ void pcnt_isr_service_uninstall(void)
     _pcnt_isr_service_uninstall(PCNT_PORT_0);
 }
 
+#if !CONFIG_PCNT_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that pulse_cnt driver is not running along with the legacy pcnt driver
  */
@@ -570,3 +571,4 @@ static void check_pcnt_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/pulse_cnt.h`");
 }
+#endif //CONFIG_PCNT_SKIP_LEGACY_CONFLICT_CHECK

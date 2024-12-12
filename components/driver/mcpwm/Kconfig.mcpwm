@@ -30,4 +30,10 @@ menu "MCPWM Configuration"
         help
             Wether to enable the debug log message for MCPWM driver.
             Note that, this option only controls the MCPWM driver log, won't affect other drivers.
+
+    config MCPWM_SKIP_LEGACY_CONFLICT_CHECK
+        bool "Skip legacy conflict check"
+        default n
+        help
+            This configuration option allows the user to bypass the conflict check mechanism with legacy code.
 endmenu # MCPWM Configuration

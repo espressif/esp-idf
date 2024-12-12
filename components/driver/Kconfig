@@ -20,6 +20,12 @@ menu "Driver Configurations"
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
 
+        config ADC_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+
         menu "Legacy ADC Calibration Configuration"
 
             config ADC_CAL_EFUSE_TP_ENABLE
@@ -137,6 +143,12 @@ menu "Driver Configurations"
                 (driver/temp_sensor.h). If you want to continue using the legacy driver,
                 and don't want to see related deprecation warnings, you can enable this option.
 
+        config TEMP_SENSOR_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+
         config TEMP_SENSOR_ENABLE_DEBUG_LOG
             bool "Enable debug log"
             default n
@@ -191,6 +203,12 @@ menu "Driver Configurations"
                 Wether to suppress the deprecation warnings when using legacy sigma delta driver.
                 If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
                 you can enable this option.
+
+        config SDM_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
 
         config SDM_ENABLE_DEBUG_LOG
             bool "Enable debug log"
@@ -248,6 +266,12 @@ menu "Driver Configurations"
             help
                 Enable this option will suppress the deprecation warnings of using APIs in legacy I2S driver.
 
+        config I2S_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+
         config I2S_ENABLE_DEBUG_LOG
             bool "Enable I2S debug log"
             default n
@@ -299,6 +323,12 @@ menu "Driver Configurations"
                 By enabling this option, the driver will left shift 8 bits for the input data automatically.
                 Only disable this option when you decide to do this step by yourself.
                 Note that the driver will allocate a new piece of memory to save the converted data.
+
+        config DAC_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
 
     endmenu # DAC Configuration
 

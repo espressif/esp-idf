@@ -23,6 +23,12 @@ menu "PCNT Configuration"
             If you want to continue using the legacy driver, and don't want to see related deprecation warnings,
             you can enable this option.
 
+    config PCNT_SKIP_LEGACY_CONFLICT_CHECK
+        bool "Skip legacy conflict check"
+        default n
+        help
+            This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+
     config PCNT_ENABLE_DEBUG_LOG
         bool "Enable debug log"
         default n
