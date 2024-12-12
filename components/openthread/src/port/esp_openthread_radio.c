@@ -32,6 +32,10 @@
 #include "utils/link_metrics.h"
 #include "utils/mac_frame.h"
 
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
+
 #define ESP_RECEIVE_SENSITIVITY -120
 #define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
@@ -810,3 +814,15 @@ uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
     return CONFIG_OPENTHREAD_SUPPORTED_CHANNEL_MASK;
 }
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config)
+{
+    esp_ieee802154_set_coex_config(config);
+}
+
+esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void)
+{
+    return esp_ieee802154_get_coex_config();
+}
+#endif
