@@ -465,6 +465,7 @@ bool IRAM_ATTR timer_group_get_auto_reload_in_isr(timer_group_t group_num, timer
     return p_timer_obj[group_num][timer_num]->auto_reload_en;
 }
 
+#if !CONFIG_GPTIMER_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy timer group driver is not running along with the gptimer driver
  */
@@ -480,3 +481,4 @@ static void check_legacy_timer_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TIMER_TAG, "legacy driver is deprecated, please migrate to `driver/gptimer.h`");
 }
+#endif //CONFIG_GPTIMER_SKIP_LEGACY_CONFLICT_CHECK
