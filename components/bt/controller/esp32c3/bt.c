@@ -275,6 +275,7 @@ extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, b
 #endif
 
 extern void btdm_cca_feature_enable(void);
+extern void btdm_aa_check_enhance_enable(void);
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
@@ -963,6 +964,9 @@ static void btdm_funcs_table_ready_wrapper(void)
 {
 #if BT_BLE_CCA_MODE == 2
     btdm_cca_feature_enable();
+#endif
+#if BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
+    btdm_aa_check_enhance_enable();
 #endif
 }
 

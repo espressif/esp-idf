@@ -317,6 +317,12 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BT_CTRL_BLE_SCAN     (1)
 #endif // (BT_CTRL_RUN_IN_FLASH_ONLY == 1)
 
+#ifdef CONFIG_BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#define BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED CONFIG_BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+#else
+#define BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
+#endif
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
     .version = ESP_BT_CTRL_CONFIG_VERSION,                                 \
@@ -362,6 +368,7 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .qa_test = BT_CTRL_BLE_TEST,                                           \
     .master_en = BT_CTRL_BLE_MASTER,                                       \
     .scan_en = BT_CTRL_BLE_SCAN,                                           \
+    .ble_aa_check = BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,     \
 }
 
 #else
@@ -486,6 +493,7 @@ typedef struct {
     bool qa_test;                           /*!< In the flash mode, True if the QA test feature is enabled; false otherwise (default). Configurable in menuconfig.*/
     bool master_en;                         /*!< In the flash mode, True if the master feature is enabled (default); false otherwise. Configurable in menuconfig.*/
     bool scan_en;                           /*!< In the flash mode, True if the scan feature is enabled (default); false otherwise. Configurable in menuconfig.*/
+    bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
 } esp_bt_controller_config_t;
 
 /**
