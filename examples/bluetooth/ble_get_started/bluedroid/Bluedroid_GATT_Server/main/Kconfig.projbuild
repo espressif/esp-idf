@@ -1,0 +1,54 @@
+menu "Example 'GATT SERVER' Config"
+
+    config EXAMPLE_SET_RAW_ADV_DATA
+        bool "Use raw data for advertising packets and scan response data"
+        help
+            If this config item is set, raw binary data will be used to generate advertising & scan response data.
+            This option uses the esp_ble_gap_config_adv_data_raw() and esp_ble_gap_config_scan_rsp_data_raw()
+            functions.
+
+            If this config item is unset, advertising & scan response data is provided via a higher-level
+            esp_ble_adv_data_t structure. The lower layer will generate the BLE packets. This option has higher
+            overhead at runtime.
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    choice EXAMPLE_BLINK_LED
+        prompt "Blink LED type"
+        default EXAMPLE_BLINK_LED_STRIP
+        help
+            Select the LED type. A normal level controlled LED or an addressable LED strip.
+            The default selection is based on the Espressif DevKit boards.
+            You can change the default selection according to your board.
+
+        config EXAMPLE_BLINK_LED_GPIO
+            bool "GPIO"
+        config EXAMPLE_BLINK_LED_STRIP
+            bool "LED strip"
+    endchoice
+
+    choice EXAMPLE_BLINK_LED_STRIP_BACKEND
+        depends on EXAMPLE_BLINK_LED_STRIP
+        prompt "LED strip backend peripheral"
+        default EXAMPLE_BLINK_LED_STRIP_BACKEND_RMT if SOC_RMT_SUPPORTED
+        default EXAMPLE_BLINK_LED_STRIP_BACKEND_SPI
+        help
+            Select the backend peripheral to drive the LED strip.
+
+        config EXAMPLE_BLINK_LED_STRIP_BACKEND_RMT
+            depends on SOC_RMT_SUPPORTED
+            bool "RMT"
+        config EXAMPLE_BLINK_LED_STRIP_BACKEND_SPI
+            bool "SPI"
+    endchoice
+
+    config EXAMPLE_BLINK_GPIO
+        int "Blink GPIO number"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 8
+        help
+            GPIO number (IOxx) to blink on and off the LED.
+            Some GPIOs are used for other purposes (flash connections, etc.) and cannot be used to blink.
+
+
+endmenu
