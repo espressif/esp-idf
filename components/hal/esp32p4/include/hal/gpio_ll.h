@@ -64,15 +64,33 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
 {
     uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
     uint32_t bit_mask = 1 << bit_shift;
-    *pu = IO_MUX.gpio[gpio_num].fun_wpu;
-    *pd = IO_MUX.gpio[gpio_num].fun_wpd;
-    *ie = IO_MUX.gpio[gpio_num].fun_ie;
-    *oe = (((gpio_num < 32) ? hw->enable.val : hw->enable1.val) & bit_mask) >> bit_shift;
-    *od = hw->pin[gpio_num].pad_driver;
-    *drv = IO_MUX.gpio[gpio_num].fun_drv;
-    *fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
-    *slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
+    if (pu) {
+        *pu = IO_MUX.gpio[gpio_num].fun_wpu;
+    }
+    if (pd) {
+        *pd = IO_MUX.gpio[gpio_num].fun_wpd;
+    }
+    if (ie) {
+        *ie = IO_MUX.gpio[gpio_num].fun_ie;
+    }
+    if (oe) {
+        *oe = (((gpio_num < 32) ? hw->enable.val : hw->enable1.val) & bit_mask) >> bit_shift;
+    }
+    if (od) {
+        *od = hw->pin[gpio_num].pad_driver;
+    }
+    if (drv) {
+        *drv = IO_MUX.gpio[gpio_num].fun_drv;
+    }
+    if (fun_sel) {
+        *fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
+    }
+    if (sig_out) {
+        *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    }
+    if (slp_sel) {
+        *slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
+    }
 }
 
 /**

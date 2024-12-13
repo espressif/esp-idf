@@ -59,15 +59,33 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
 {
     uint32_t bit_mask = 1 << gpio_num;
     uint32_t iomux_reg_val = REG_READ(IO_MUX_GPIO0_REG + (gpio_num * 4));
-    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    *oe = (hw->enable.val & bit_mask) >> gpio_num;
-    *od = hw->pin[gpio_num].pad_driver;
-    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
-    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
+    if (pu) {
+        *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    }
+    if (pd) {
+        *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    }
+    if (ie) {
+        *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    }
+    if (oe) {
+        *oe = (hw->enable.val & bit_mask) >> gpio_num;
+    }
+    if (od) {
+        *od = hw->pin[gpio_num].pad_driver;
+    }
+    if (drv) {
+        *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
+    }
+    if (fun_sel) {
+        *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    }
+    if (sig_out) {
+        *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    }
+    if (slp_sel) {
+        *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
+    }
 }
 
 /**

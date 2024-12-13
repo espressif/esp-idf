@@ -37,7 +37,6 @@ extern "C" {
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
 /**
  * @brief Get the configuration for an IO
@@ -58,15 +57,33 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
                                          bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
-    *pu = IO_MUX.gpio[gpio_num].fun_wpu;
-    *pd = IO_MUX.gpio[gpio_num].fun_wpd;
-    *ie = IO_MUX.gpio[gpio_num].fun_ie;
-    *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
-    *od = hw->pin[gpio_num].pad_driver;
-    *drv = IO_MUX.gpio[gpio_num].fun_drv;
-    *fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
-    *slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
+    if (pu) {
+        *pu = IO_MUX.gpio[gpio_num].fun_wpu;
+    }
+    if (pd) {
+        *pd = IO_MUX.gpio[gpio_num].fun_wpd;
+    }
+    if (ie) {
+        *ie = IO_MUX.gpio[gpio_num].fun_ie;
+    }
+    if (oe) {
+        *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    }
+    if (od) {
+        *od = hw->pin[gpio_num].pad_driver;
+    }
+    if (drv) {
+        *drv = IO_MUX.gpio[gpio_num].fun_drv;
+    }
+    if (fun_sel) {
+        *fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
+    }
+    if (sig_out) {
+        *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    }
+    if (slp_sel) {
+        *slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
+    }
 }
 
 /**

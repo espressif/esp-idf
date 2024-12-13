@@ -161,6 +161,14 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
 #define rtcio_hal_pullup_disable(rtcio_num) rtcio_ll_pullup_disable(rtcio_num)
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+#define rtcio_hal_is_pullup_enabled(rtcio_num)  rtcio_ll_is_pullup_enabled(rtcio_num)
+
+/**
  * RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
@@ -173,6 +181,14 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode);
  * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
  */
 #define rtcio_hal_pulldown_disable(rtcio_num) rtcio_ll_pulldown_disable(rtcio_num)
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ SOC_RTCIO_PIN_COUNT.
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+#define rtcio_hal_is_pulldown_enabled(rtcio_num)  rtcio_ll_is_pulldown_enabled(rtcio_num)
 
 /**
  * Select a RTC IOMUX function for the RTC IO

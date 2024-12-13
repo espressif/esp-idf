@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_io_reg.h"
@@ -25,7 +26,7 @@ extern "C" {
 #endif
 
 typedef enum {
-    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controled by RTC module. */
+    RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
 
@@ -198,6 +199,21 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
 }
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
+{
+    if (rtc_io_desc[rtcio_num].pullup) {
+        return GET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pullup);
+    } else {
+        return false;
+    }
+}
+
+/**
  * RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -218,6 +234,21 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pulldown) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
+    }
+}
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
+{
+    if (rtc_io_desc[rtcio_num].pulldown) {
+        return GET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
+    } else {
+        return false;
     }
 }
 
