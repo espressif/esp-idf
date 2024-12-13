@@ -2,7 +2,7 @@ idf_build_get_property(idf_path IDF_PATH)
 
 set(priv_requires bootloader_support driver esp_tee esp_timer mbedtls spi_flash)
 # Test FW related
-list(APPEND priv_requires cmock json test_utils unity)
+list(APPEND priv_requires cmock json nvs_flash test_utils unity)
 # TEE related
 list(APPEND priv_requires tee_sec_storage tee_attestation tee_ota_ops test_sec_srv)
 
@@ -13,7 +13,8 @@ list(APPEND srcs "test_esp_tee_ctx_switch.c"
                  "test_esp_tee_panic.c"
                  "test_esp_tee_sec_stg.c"
                  "test_esp_tee_ota.c"
-                 "test_esp_tee_att.c")
+                 "test_esp_tee_att.c"
+                 "test_esp_tee_flash_prot.c")
 
 set(mbedtls_test_srcs_dir "${idf_path}/components/mbedtls/test_apps/main")
 
