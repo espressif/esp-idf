@@ -154,7 +154,8 @@ static esp_netif_t *eth_start(void)
     // Install Ethernet driver
     esp_eth_config_t config = ETH_DEFAULT_CONFIG(s_mac, s_phy);
     ESP_ERROR_CHECK(esp_eth_driver_install(&config, &s_eth_handle));
-#if !CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET
+
+#if CONFIG_EXAMPLE_USE_SPI_ETHERNET
     /* The SPI Ethernet module might doesn't have a burned factory MAC address, we cat to set it manually.
        We set the ESP_MAC_ETH mac address as the default, if you want to use ESP_MAC_EFUSE_CUSTOM mac address, please enable the
        configuration: `ESP_MAC_USE_CUSTOM_MAC_AS_BASE_MAC`
@@ -162,7 +163,8 @@ static esp_netif_t *eth_start(void)
     uint8_t eth_mac[6] = {0};
     ESP_ERROR_CHECK(esp_read_mac(eth_mac, ESP_MAC_ETH));
     ESP_ERROR_CHECK(esp_eth_ioctl(s_eth_handle, ETH_CMD_S_MAC_ADDR, eth_mac));
-#endif
+#endif // CONFIG_EXAMPLE_USE_SPI_ETHERNET
+
     // combine driver with netif
     s_eth_glue = esp_eth_new_netif_glue(s_eth_handle);
     esp_netif_attach(netif, s_eth_glue);
