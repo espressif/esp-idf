@@ -244,9 +244,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     }
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    // HP related clock control
-    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)) {
+    // HP modules related clock control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)
+            || (rst_reason == RESET_REASON_SYS_BROWN_OUT) || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)
+            || (rst_reason == RESET_REASON_CORE_SW) || (rst_reason == RESET_REASON_CORE_MWDT) || (rst_reason == RESET_REASON_CORE_RWDT) || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC) || (rst_reason == RESET_REASON_CORE_USB_JTAG) || (rst_reason == RESET_REASON_CORE_USB_UART)
+       ) {
         // hp_sys_clkrst register gets reset only if chip reset or pmu powers down hp
+        // but at core reset and above, we will also disable HP modules' clock gating to save power consumption
         _gdma_ll_enable_bus_clock(0, false);
         _gdma_ll_enable_bus_clock(1, false);
         _pau_ll_enable_bus_clock(false);
@@ -303,14 +307,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
 #endif
 
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
-        // 240M CLK is for Key Management use, should not be gated
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
-
         _spi_ll_enable_bus_clock(SPI2_HOST, false);
         _spi_ll_enable_bus_clock(SPI3_HOST, false);
         _spi_ll_enable_clock(SPI2_HOST, false);
@@ -355,6 +351,18 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         REG_SET_BIT(USB_SERIAL_JTAG_MEM_CONF_REG, USB_SERIAL_JTAG_USB_MEM_PD);
         REG_CLR_BIT(USB_SERIAL_JTAG_MEM_CONF_REG, USB_SERIAL_JTAG_USB_MEM_CLK_EN);
 #endif
+    }
+
+    // HP modules' clock source gating control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)) {
+        // Only safe to disable these clock source gatings if all HP modules clock configurations has been reset
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
+        // 240M CLK is for Key Management use, should not be gated
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
     }
 
     // LP related clock control
