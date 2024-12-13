@@ -13,6 +13,7 @@ The following C++ features are supported:
 - :ref:`cplusplus_multithreading`
 - :ref:`cplusplus_rtti`
 - :doc:`thread-local-storage` (``thread_local`` keyword)
+- :ref:`cplusplus_filesystem`
 - All C++ features implemented by GCC, except for some :ref:`cplusplus_limitations`. See `GCC documentation <https://gcc.gnu.org/projects/cxx-status.html>`_ for details on features implemented by GCC.
 
 
@@ -93,6 +94,21 @@ Support for RTTI in ESP-IDF is disabled by default, but can be enabled using :re
 Enabling this option compiles all C++ files with RTTI support enabled, which allows using ``dynamic_cast`` conversion and ``typeid`` operator. Enabling this option typically increases the binary size by tens of kB.
 
 See :example:`cxx/rtti` for an example of using RTTI in ESP-IDF. Specifically, this example demonstrates how to use the RTTI feature in ESP-IDF, enabling compile time support for RTTI, and showing how to print demangled type names of objects and functions, and how dynamic_cast behaves with objects of two classes derived from a common base class.
+
+.. _cplusplus_filesystem:
+
+Filesystem Library
+------------------
+
+C++ Filesystem library (``#include <filesystem>``) features are supported in ESP-IDF, with the following exceptions:
+
+- Since symbolic and hard links are not supported in ESP-IDF, related functions are not implemented.
+- ``std::filesystem::space`` is not implemented.
+- ``std::filesystem::resize_file`` is not implemented.
+- ``std::filesystem::current_path`` always returns ``/``. Setting the current path is not supported.
+- ``std::filesystem::permissions`` doesn't support setting file permissions.
+
+Note that the choice of the filesystem also affects the behavior of the filesystem library. For example, SPIFFS filesystem has limited support for directories, therefore the related std::filesystem functions may not work as they do on a filesystem which does support directories.
 
 Developing in C++
 -----------------
@@ -186,7 +202,6 @@ Limitations
 - Linker script generator does not support function level placements for functions with C++ linkage.
 - Various section attributes (such as ``IRAM_ATTR``) are ignored when used with template functions.
 - Vtables are placed into Flash and are not accessible when the flash cache is disabled. Therefore, virtual function calls should be avoided in :ref:`iram-safe-interrupt-handlers`. Placement of Vtables cannot be adjusted using the linker script generator, yet.
-- C++ filesystem (``std::filesystem``) features are not supported.
 
 
 What to Avoid

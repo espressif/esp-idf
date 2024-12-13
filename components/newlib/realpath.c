@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <dirent.h>
 #include <sys/param.h>
 
 /* realpath logic:
@@ -119,6 +120,23 @@ char * getcwd(char *buf, size_t size)
 int chdir(const char *path)
 {
     (void) path;
+    errno = ENOSYS;
+    return -1;
+}
+
+/* std::filesystem functions call chmod and exit with an exception if it fails,
+ * so not failing with ENOSYS seems a better solution.
+ */
+int chmod(const char *path, mode_t mode)
+{
+    return 0;
+}
+
+/* As a workaround for libstdc++ being built with _GLIBCXX_HAVE_DIRFD,
+ * we have to provide at least a stub for dirfd function.
+ */
+int dirfd(DIR *dirp)
+{
     errno = ENOSYS;
     return -1;
 }

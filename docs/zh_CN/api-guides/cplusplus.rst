@@ -13,6 +13,7 @@ ESP-IDF 支持以下 C++ 功能：
 - :ref:`cplusplus_multithreading`
 - :ref:`cplusplus_rtti`
 - :doc:`thread-local-storage` （``thread_local`` 关键字）
+- :ref:`cplusplus_filesystem`
 - 除部分 :ref:`cplusplus_limitations`，所有由 GCC 实现的 C++ 功能均受支持。有关由 GCC 所实现功能的详细信息，请参阅 `GCC 文档 <https://gcc.gnu.org/projects/cxx-status.html>`_。
 
 
@@ -93,6 +94,21 @@ ESP-IDF 默认禁用对 RTTI 的支持，可以用 :ref:`CONFIG_COMPILER_CXX_RTT
 启用此选项，将以启用了 RTTI 支持的方式编译所有的 C++ 文件，并支持使用 ``dynamic_cast`` 转换和 ``typeid`` 运算符。启用此选项通常会增加几十 KB 的二进制文件大小。
 
 有关在 ESP-IDF 中使用 RTTI 的示例，请参阅 :example:`cxx/rtti`。该示例演示了如何在 ESP-IDF 中使用 RTTI 功能，启用编译时对 RTTI 的支持，并展示了如何打印对象和函数的去混淆类型名称，以及 dynamic_cast 在两个继承自同一基类的对象上如何表现。
+
+.. _cplusplus_filesystem:
+
+文件系统库
+----------
+
+ESP-IDF 支持 C++ 文件系统库 (``#include <filesystem>``)，但有部分功能尚未实现：
+
+- 由于 ESP-IDF 不支持符号链接和硬链接，因此相关函数未实现。
+- 未实现 ``std::filesystem::space``。
+- 未实现 ``std::filesystem::resize_file``。
+- ``std::filesystem::current_path`` 只返回 ``/``。不支持设置当前路径。
+- ``std::filesystem::permissions`` 不支持设置文件权限。
+
+请注意，文件系统的选择也会影响文件系统库的行为。例如，SPIFFS 文件系统对目录的支持有限，因此相关的 std::filesystem 函数可能无法像在支持目录的文件系统上那样正常工作。
 
 在 C++ 中进行开发
 -----------------
@@ -186,7 +202,6 @@ ESP-IDF 支持 ``iostream`` 功能，但应注意：
 - 链接脚本生成器不支持将具有 C++ 链接的函数单独放置在内存的特定位置。
 - 当与模板函数一起使用时，会忽略各种节属性（例如 ``IRAM_ATTR``）。
 - vtable 位于 flash 中，在禁用 flash 缓存时无法访问。因此，在 :ref:`iram-safe-interrupt-handlers` 中应避免调用虚拟函数。目前尚无法使用链接器脚本生成器调整 vtable 的放置位置。
-- 不支持 C++ 文件系统 (``std::filesystem``) 功能。
 
 
 注意事项
