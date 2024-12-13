@@ -144,7 +144,7 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
 #ifdef CONFIG_VFS_SUPPORT_DIR
     // If the dir functions are not implemented, we don't need to convert them
     if (proxy.dir != NULL) {
-        *(proxy.dir) = (esp_vfs_dir_ops_t) {
+        esp_vfs_dir_ops_t tmp = {
             .stat = vfs->stat,
             .link = vfs->link,
             .unlink = vfs->unlink,
@@ -162,13 +162,15 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .ftruncate = vfs->ftruncate,
             .utime = vfs->utime,
         };
+
+        memcpy(proxy.dir, &tmp, sizeof(esp_vfs_dir_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     // If the termios functions are not implemented, we don't need to convert them
     if (proxy.termios != NULL) {
-        *(proxy.termios) = (esp_vfs_termios_ops_t) {
+        esp_vfs_termios_ops_t tmp = {
             .tcsetattr = vfs->tcsetattr,
             .tcgetattr = vfs->tcgetattr,
             .tcdrain = vfs->tcdrain,
@@ -177,13 +179,15 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .tcgetsid = vfs->tcgetsid,
             .tcsendbreak = vfs->tcsendbreak,
         };
+
+        memcpy(proxy.termios, &tmp, sizeof(esp_vfs_termios_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     // If the select functions are not implemented, we don't need to convert them
     if (proxy.select != NULL) {
-        *(proxy.select) = (esp_vfs_select_ops_t) {
+        esp_vfs_select_ops_t tmp = {
             .start_select = vfs->start_select,
             .socket_select = vfs->socket_select,
             .stop_socket_select = vfs->stop_socket_select,
@@ -191,6 +195,8 @@ static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_compone
             .get_socket_select_semaphore = vfs->get_socket_select_semaphore,
             .end_select = vfs->end_select,
         };
+
+        memcpy(proxy.select, &tmp, sizeof(esp_vfs_select_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
