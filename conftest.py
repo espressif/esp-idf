@@ -362,11 +362,13 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None
         res = dut.expect(r'Minimum free heap size: (\d+) bytes')
         logging.info(
             '\n------ heap size info ------\n'
+            '[app_path] {}\n'
             '[app_name] {}\n'
             '[config_name] {}\n'
             '[target] {}\n'
             '[minimum_free_heap_size] {} Bytes\n'
             '------ heap size end ------'.format(
+                dut.app.app_path,
                 os.path.basename(dut.app.app_path),
                 config,
                 dut.target,
