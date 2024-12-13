@@ -402,6 +402,23 @@ typedef enum {
     GLITCH_FILTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,  /*!< Select PLL_F80M clock as the default clock choice */
 } soc_periph_glitch_filter_clk_src_t;
 
+///////////////////////////////////////////////////Analog Comparator////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of Analog Comparator
+ */
+#define SOC_ANA_CMPR_CLKS {SOC_MOD_CLK_PLL_F80M, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_XTAL}
+
+/**
+ * @brief Analog Comparator clock source
+ */
+typedef enum {
+    ANA_CMPR_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,                   /*!< Select XTAL clock as the source clock */
+    ANA_CMPR_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,             /*!< Select RC_FAST clock as the source clock */
+    ANA_CMPR_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,           /*!< Select PLL_F80M clock as the source clock */
+    ANA_CMPR_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,            /*!< Select PLL_F80M as the default clock choice */
+} soc_periph_ana_cmpr_clk_src_t;
+
 //////////////////////////////////////////////////TWAI//////////////////////////////////////////////////////////////////
 
 /**
