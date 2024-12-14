@@ -222,7 +222,7 @@ extern void bta_sys_register(UINT8 id, const tBTA_SYS_REG *p_reg);
 extern void bta_sys_deregister(UINT8 id);
 extern BOOLEAN bta_sys_is_register(UINT8 id);
 extern UINT16 bta_sys_get_sys_features(void);
-extern void bta_sys_sendmsg(void *p_msg);
+extern BOOLEAN bta_sys_sendmsg(void *p_msg);
 extern void bta_sys_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, INT32 timeout_ms);
 extern void bta_sys_stop_timer(TIMER_LIST_ENT *p_tle);
 extern void bta_sys_free_timer(TIMER_LIST_ENT *p_tle);
