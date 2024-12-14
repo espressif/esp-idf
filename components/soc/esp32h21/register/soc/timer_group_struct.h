@@ -519,17 +519,20 @@ typedef union {
     uint32_t val;
 } timg_regclk_reg_t;
 
+typedef struct {
+    volatile timg_txconfig_reg_t config;
+    volatile timg_txlo_reg_t lo;
+    volatile timg_txhi_reg_t hi;
+    volatile timg_txupdate_reg_t update;
+    volatile timg_txalarmlo_reg_t alarmlo;
+    volatile timg_txalarmhi_reg_t alarmhi;
+    volatile timg_txloadlo_reg_t loadlo;
+    volatile timg_txloadhi_reg_t loadhi;
+    volatile timg_txload_reg_t load;
+} timg_hwtimer_reg_t;
 
 typedef struct {
-    volatile timg_txconfig_reg_t t0config;
-    volatile timg_txlo_reg_t t0lo;
-    volatile timg_txhi_reg_t t0hi;
-    volatile timg_txupdate_reg_t t0update;
-    volatile timg_txalarmlo_reg_t t0alarmlo;
-    volatile timg_txalarmhi_reg_t t0alarmhi;
-    volatile timg_txloadlo_reg_t t0loadlo;
-    volatile timg_txloadhi_reg_t t0loadhi;
-    volatile timg_txload_reg_t t0load;
+    volatile timg_hwtimer_reg_t hw_timer[1];
     uint32_t reserved_024[9];
     volatile timg_wdtconfig0_reg_t wdtconfig0;
     volatile timg_wdtconfig1_reg_t wdtconfig1;

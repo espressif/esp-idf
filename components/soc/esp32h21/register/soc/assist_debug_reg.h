@@ -14,7 +14,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_INTR_ENA_REG register
  *  core0 monitor enable configuration register
  */
-#define ASSIST_DEBUG_CORE_0_INTR_ENA_REG (DR_REG_ASSIST_BASE + 0x0)
+#define ASSIST_DEBUG_CORE_0_INTR_ENA_REG (DR_REG_ASSIST_DEBUG_BASE + 0x0)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_RD_ENA : R/W; bitpos: [0]; default: 0;
  *  Core0 dram0 area0 read monitor enable
  */
@@ -89,7 +89,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_INTR_RAW_REG register
  *  core0 monitor interrupt status register
  */
-#define ASSIST_DEBUG_CORE_0_INTR_RAW_REG (DR_REG_ASSIST_BASE + 0x4)
+#define ASSIST_DEBUG_CORE_0_INTR_RAW_REG (DR_REG_ASSIST_DEBUG_BASE + 0x4)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_RD_RAW : RO; bitpos: [0]; default: 0;
  *  Core0 dram0 area0 read monitor interrupt status
  */
@@ -164,7 +164,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_INTR_RLS_REG register
  *  core0 monitor interrupt enable register
  */
-#define ASSIST_DEBUG_CORE_0_INTR_RLS_REG (DR_REG_ASSIST_BASE + 0x8)
+#define ASSIST_DEBUG_CORE_0_INTR_RLS_REG (DR_REG_ASSIST_DEBUG_BASE + 0x8)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_RD_RLS : R/W; bitpos: [0]; default: 0;
  *  Core0 dram0 area0 read monitor interrupt enable
  */
@@ -239,7 +239,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_INTR_CLR_REG register
  *  core0 monitor interrupt clr register
  */
-#define ASSIST_DEBUG_CORE_0_INTR_CLR_REG (DR_REG_ASSIST_BASE + 0xc)
+#define ASSIST_DEBUG_CORE_0_INTR_CLR_REG (DR_REG_ASSIST_DEBUG_BASE + 0xc)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_RD_CLR : WT; bitpos: [0]; default: 0;
  *  Core0 dram0 area0 read monitor interrupt clr
  */
@@ -314,7 +314,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MIN_REG register
  *  core0 dram0 region0 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MIN_REG (DR_REG_ASSIST_BASE + 0x10)
+#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x10)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Core0 dram0 region0 start addr
  */
@@ -326,7 +326,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MAX_REG register
  *  core0 dram0 region0 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MAX_REG (DR_REG_ASSIST_BASE + 0x14)
+#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MAX_REG (DR_REG_ASSIST_DEBUG_BASE + 0x14)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Core0 dram0 region0 end addr
  */
@@ -338,7 +338,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MIN_REG register
  *  core0 dram0 region1 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MIN_REG (DR_REG_ASSIST_BASE + 0x18)
+#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x18)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Core0 dram0 region1 start addr
  */
@@ -350,7 +350,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MAX_REG register
  *  core0 dram0 region1 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MAX_REG (DR_REG_ASSIST_BASE + 0x1c)
+#define ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MAX_REG (DR_REG_ASSIST_DEBUG_BASE + 0x1c)
 /** ASSIST_DEBUG_CORE_0_AREA_DRAM0_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Core0 dram0 region1 end addr
  */
@@ -362,7 +362,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_0_MIN_REG register
  *  core0 PIF region0 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_PIF_0_MIN_REG (DR_REG_ASSIST_BASE + 0x20)
+#define ASSIST_DEBUG_CORE_0_AREA_PIF_0_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x20)
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Core0 PIF region0 start addr
  */
@@ -374,7 +374,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_0_MAX_REG register
  *  core0 PIF region0 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_PIF_0_MAX_REG (DR_REG_ASSIST_BASE + 0x24)
+#define ASSIST_DEBUG_CORE_0_AREA_PIF_0_MAX_REG (DR_REG_ASSIST_DEBUG_BASE + 0x24)
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Core0 PIF region0 end addr
  */
@@ -386,7 +386,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_1_MIN_REG register
  *  core0 PIF region1 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_PIF_1_MIN_REG (DR_REG_ASSIST_BASE + 0x28)
+#define ASSIST_DEBUG_CORE_0_AREA_PIF_1_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x28)
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Core0 PIF region1 start addr
  */
@@ -398,7 +398,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_1_MAX_REG register
  *  core0 PIF region1 addr configuration register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_PIF_1_MAX_REG (DR_REG_ASSIST_BASE + 0x2c)
+#define ASSIST_DEBUG_CORE_0_AREA_PIF_1_MAX_REG (DR_REG_ASSIST_DEBUG_BASE + 0x2c)
 /** ASSIST_DEBUG_CORE_0_AREA_PIF_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Core0 PIF region1 end addr
  */
@@ -410,7 +410,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_PC_REG register
  *  core0 area pc status register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_PC_REG (DR_REG_ASSIST_BASE + 0x30)
+#define ASSIST_DEBUG_CORE_0_AREA_PC_REG (DR_REG_ASSIST_DEBUG_BASE + 0x30)
 /** ASSIST_DEBUG_CORE_0_AREA_PC : RO; bitpos: [31:0]; default: 0;
  *  the stackpointer when first touch region monitor interrupt
  */
@@ -422,7 +422,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_AREA_SP_REG register
  *  core0 area sp status register
  */
-#define ASSIST_DEBUG_CORE_0_AREA_SP_REG (DR_REG_ASSIST_BASE + 0x34)
+#define ASSIST_DEBUG_CORE_0_AREA_SP_REG (DR_REG_ASSIST_DEBUG_BASE + 0x34)
 /** ASSIST_DEBUG_CORE_0_AREA_SP : RO; bitpos: [31:0]; default: 0;
  *  the PC when first touch region monitor interrupt
  */
@@ -434,7 +434,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_SP_MIN_REG register
  *  stack min value
  */
-#define ASSIST_DEBUG_CORE_0_SP_MIN_REG (DR_REG_ASSIST_BASE + 0x38)
+#define ASSIST_DEBUG_CORE_0_SP_MIN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x38)
 /** ASSIST_DEBUG_CORE_0_SP_MIN : R/W; bitpos: [31:0]; default: 0;
  *  core0 sp region configuration register
  */
@@ -446,7 +446,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_SP_MAX_REG register
  *  stack max value
  */
-#define ASSIST_DEBUG_CORE_0_SP_MAX_REG (DR_REG_ASSIST_BASE + 0x3c)
+#define ASSIST_DEBUG_CORE_0_SP_MAX_REG (DR_REG_ASSIST_DEBUG_BASE + 0x3c)
 /** ASSIST_DEBUG_CORE_0_SP_MAX : R/W; bitpos: [31:0]; default: 4294967295;
  *  core0 sp pc status register
  */
@@ -458,7 +458,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_SP_PC_REG register
  *  stack monitor pc status register
  */
-#define ASSIST_DEBUG_CORE_0_SP_PC_REG (DR_REG_ASSIST_BASE + 0x40)
+#define ASSIST_DEBUG_CORE_0_SP_PC_REG (DR_REG_ASSIST_DEBUG_BASE + 0x40)
 /** ASSIST_DEBUG_CORE_0_SP_PC : RO; bitpos: [31:0]; default: 0;
  *  This register stores the PC when trigger stack monitor.
  */
@@ -470,7 +470,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_RCD_EN_REG register
  *  record enable configuration register
  */
-#define ASSIST_DEBUG_CORE_0_RCD_EN_REG (DR_REG_ASSIST_BASE + 0x44)
+#define ASSIST_DEBUG_CORE_0_RCD_EN_REG (DR_REG_ASSIST_DEBUG_BASE + 0x44)
 /** ASSIST_DEBUG_CORE_0_RCD_RECORDEN : R/W; bitpos: [0]; default: 0;
  *  Set 1 to enable record PC
  */
@@ -489,7 +489,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG register
  *  record status register
  */
-#define ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG (DR_REG_ASSIST_BASE + 0x48)
+#define ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC_REG (DR_REG_ASSIST_DEBUG_BASE + 0x48)
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGPC : RO; bitpos: [31:0]; default: 0;
  *  recorded PC
  */
@@ -501,7 +501,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP_REG register
  *  record status register
  */
-#define ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP_REG (DR_REG_ASSIST_BASE + 0x4c)
+#define ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP_REG (DR_REG_ASSIST_DEBUG_BASE + 0x4c)
 /** ASSIST_DEBUG_CORE_0_RCD_PDEBUGSP : RO; bitpos: [31:0]; default: 0;
  *  recorded sp
  */
@@ -513,7 +513,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_0_REG register
  *  exception monitor status register0
  */
-#define ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_BASE + 0x50)
+#define ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_DEBUG_BASE + 0x50)
 /** ASSIST_DEBUG_CORE_0_IRAM0_RECORDING_ADDR_0 : RO; bitpos: [23:0]; default: 0;
  *  reg_core_0_iram0_recording_addr_0
  */
@@ -539,7 +539,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_1_REG register
  *  exception monitor status register1
  */
-#define ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_BASE + 0x54)
+#define ASSIST_DEBUG_CORE_0_IRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_DEBUG_BASE + 0x54)
 /** ASSIST_DEBUG_CORE_0_IRAM0_RECORDING_ADDR_1 : RO; bitpos: [23:0]; default: 0;
  *  reg_core_0_iram0_recording_addr_1
  */
@@ -565,7 +565,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_0_REG register
  *  exception monitor status register2
  */
-#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_BASE + 0x58)
+#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_DEBUG_BASE + 0x58)
 /** ASSIST_DEBUG_CORE_0_DRAM0_RECORDING_ADDR_0 : RO; bitpos: [23:0]; default: 0;
  *  reg_core_0_dram0_recording_addr_0
  */
@@ -591,7 +591,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_1_REG register
  *  exception monitor status register3
  */
-#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_BASE + 0x5c)
+#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_DEBUG_BASE + 0x5c)
 /** ASSIST_DEBUG_CORE_0_DRAM0_RECORDING_PC_0 : RO; bitpos: [31:0]; default: 0;
  *  reg_core_0_dram0_recording_pc_0
  */
@@ -603,7 +603,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_2_REG register
  *  exception monitor status register4
  */
-#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_2_REG (DR_REG_ASSIST_BASE + 0x60)
+#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_2_REG (DR_REG_ASSIST_DEBUG_BASE + 0x60)
 /** ASSIST_DEBUG_CORE_0_DRAM0_RECORDING_ADDR_1 : RO; bitpos: [23:0]; default: 0;
  *  reg_core_0_dram0_recording_addr_1
  */
@@ -629,7 +629,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_3_REG register
  *  exception monitor status register5
  */
-#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_3_REG (DR_REG_ASSIST_BASE + 0x64)
+#define ASSIST_DEBUG_CORE_0_DRAM0_EXCEPTION_MONITOR_3_REG (DR_REG_ASSIST_DEBUG_BASE + 0x64)
 /** ASSIST_DEBUG_CORE_0_DRAM0_RECORDING_PC_1 : RO; bitpos: [31:0]; default: 0;
  *  reg_core_0_dram0_recording_pc_1
  */
@@ -641,7 +641,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG register
  *  exception monitor status register6
  */
-#define ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_BASE + 0x68)
+#define ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_ASSIST_DEBUG_BASE + 0x68)
 /** ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_LIMIT_CYCLE_0 : R/W; bitpos: [19:0]; default: 0;
  *  reg_core_x_iram0_dram0_limit_cycle_0
  */
@@ -653,7 +653,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_1_REG register
  *  exception monitor status register7
  */
-#define ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_BASE + 0x6c)
+#define ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_1_REG (DR_REG_ASSIST_DEBUG_BASE + 0x6c)
 /** ASSIST_DEBUG_CORE_X_IRAM0_DRAM0_LIMIT_CYCLE_1 : R/W; bitpos: [19:0]; default: 0;
  *  reg_core_x_iram0_dram0_limit_cycle_1
  */
@@ -665,7 +665,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_LASTPC_BEFORE_EXCEPTION_REG register
  *  cpu status register
  */
-#define ASSIST_DEBUG_CORE_0_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_ASSIST_BASE + 0x70)
+#define ASSIST_DEBUG_CORE_0_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_ASSIST_DEBUG_BASE + 0x70)
 /** ASSIST_DEBUG_CORE_0_LASTPC_BEFORE_EXC : RO; bitpos: [31:0]; default: 0;
  *  cpu's lastpc before exception
  */
@@ -677,7 +677,7 @@ extern "C" {
 /** ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG register
  *  cpu status register
  */
-#define ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG (DR_REG_ASSIST_BASE + 0x74)
+#define ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG (DR_REG_ASSIST_DEBUG_BASE + 0x74)
 /** ASSIST_DEBUG_CORE_0_DEBUG_MODE : RO; bitpos: [0]; default: 0;
  *  cpu debug mode status, 1 means cpu enter debug mode.
  */
@@ -696,7 +696,7 @@ extern "C" {
 /** ASSIST_DEBUG_CLOCK_GATE_REG register
  *  clock register
  */
-#define ASSIST_DEBUG_CLOCK_GATE_REG (DR_REG_ASSIST_BASE + 0x78)
+#define ASSIST_DEBUG_CLOCK_GATE_REG (DR_REG_ASSIST_DEBUG_BASE + 0x78)
 /** ASSIST_DEBUG_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Set 1 force on the clock gate
  */
@@ -708,7 +708,7 @@ extern "C" {
 /** ASSIST_DEBUG_DATE_REG register
  *  version register
  */
-#define ASSIST_DEBUG_DATE_REG (DR_REG_ASSIST_BASE + 0x3fc)
+#define ASSIST_DEBUG_DATE_REG (DR_REG_ASSIST_DEBUG_BASE + 0x3fc)
 /** ASSIST_DEBUG_ASSIST_DEBUG_DATE : R/W; bitpos: [27:0]; default: 35660096;
  *  version register
  */

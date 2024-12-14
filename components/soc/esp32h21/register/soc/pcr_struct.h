@@ -1784,12 +1784,12 @@ typedef union {
          *  This field indicates which one 32KHz clock will be used by timergroup. 1: XTAL32K
          *  (default), 2/3: 32KHz from pad GPIO0.
          */
-        uint32_t 32k_sel:2;
+        uint32_t clk_32k_sel:2;
         /** 32k_modem_sel : R/W; bitpos: [3:2]; default: 1;
          *  This field indicates which one 32KHz clock will be used by MODEM_SYSTEM. 1:
          *  XTAL32K(default), 2/3: 32KHz from pad GPIO0.
          */
-        uint32_t 32k_modem_sel:2;
+        uint32_t clk_32k_modem_sel:2;
         uint32_t reserved_4:28;
     };
     uint32_t val;
