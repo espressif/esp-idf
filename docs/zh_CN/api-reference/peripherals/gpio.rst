@@ -81,7 +81,7 @@ GPIO 驱动提供了一个函数 :cpp:func:`gpio_dump_io_configuration` 用来�
 
 ::
 
-    gpio_dump_all_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
+    gpio_dump_io_configuration(stdout, SOC_GPIO_VALID_GPIO_MASK);
 
 如果 IO 管脚通过 GPIO 交换矩阵连接到内部外设信号，输出信息打印中的外设信号 ID 定义可以在 :component_file:`soc/{IDF_TARGET_PATH_NAME}/include/soc/gpio_sig_map.h` 头文件中查看。``**RESERVED**`` 字样则表示此 IO 用于连接 SPI flash 或 PSRAM，强烈建议不要重新配置这些管脚用于其他功能。
 
