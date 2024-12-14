@@ -1019,6 +1019,8 @@ typedef enum {
 
     WIFI_EVENT_STA_NEIGHBOR_REP,         /**< Received Neighbor Report response */
 
+    WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
+
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1312,6 +1314,11 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
+
+/** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
+} wifi_event_ap_wrong_password_t;
 
 /**
   * @brief Argument structure for wifi_tx_rate_config
