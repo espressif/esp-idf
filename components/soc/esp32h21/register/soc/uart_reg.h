@@ -14,7 +14,7 @@ extern "C" {
 /** UART_FIFO_REG register
  *  FIFO data register
  */
-#define UART_FIFO_REG(i) (REG_UART_BASE(i) + 0x0)
+#define UART_FIFO_REG(i) (DR_REG_UART_BASE(i) + 0x0)
 /** UART_RXFIFO_RD_BYTE : RO; bitpos: [7:0]; default: 0;
  *  UART $n accesses FIFO via this register.
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** UART_INT_RAW_REG register
  *  Raw interrupt status
  */
-#define UART_INT_RAW_REG(i) (REG_UART_BASE(i) + 0x4)
+#define UART_INT_RAW_REG(i) (DR_REG_UART_BASE(i) + 0x4)
 /** UART_RXFIFO_FULL_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  This interrupt raw bit turns to high level when receiver receives more data than
  *  what rxfifo_full_thrhd specifies.
@@ -191,7 +191,7 @@ extern "C" {
 /** UART_INT_ST_REG register
  *  Masked interrupt status
  */
-#define UART_INT_ST_REG(i) (REG_UART_BASE(i) + 0x8)
+#define UART_INT_ST_REG(i) (DR_REG_UART_BASE(i) + 0x8)
 /** UART_RXFIFO_FULL_INT_ST : RO; bitpos: [0]; default: 0;
  *  This is the status bit for rxfifo_full_int_raw when rxfifo_full_int_ena is set to 1.
  */
@@ -341,7 +341,7 @@ extern "C" {
 /** UART_INT_ENA_REG register
  *  Interrupt enable bits
  */
-#define UART_INT_ENA_REG(i) (REG_UART_BASE(i) + 0xc)
+#define UART_INT_ENA_REG(i) (DR_REG_UART_BASE(i) + 0xc)
 /** UART_RXFIFO_FULL_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  This is the enable bit for rxfifo_full_int_st register.
  */
@@ -486,7 +486,7 @@ extern "C" {
 /** UART_INT_CLR_REG register
  *  Interrupt clear bits
  */
-#define UART_INT_CLR_REG(i) (REG_UART_BASE(i) + 0x10)
+#define UART_INT_CLR_REG(i) (DR_REG_UART_BASE(i) + 0x10)
 /** UART_RXFIFO_FULL_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Set this bit to clear the rxfifo_full_int_raw interrupt.
  */
@@ -631,7 +631,7 @@ extern "C" {
 /** UART_CLKDIV_SYNC_REG register
  *  Clock divider configuration
  */
-#define UART_CLKDIV_SYNC_REG(i) (REG_UART_BASE(i) + 0x14)
+#define UART_CLKDIV_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x14)
 /** UART_CLKDIV : R/W; bitpos: [11:0]; default: 694;
  *  The integral part of the frequency divider factor.
  */
@@ -650,7 +650,7 @@ extern "C" {
 /** UART_RX_FILT_REG register
  *  Rx Filter configuration
  */
-#define UART_RX_FILT_REG(i) (REG_UART_BASE(i) + 0x18)
+#define UART_RX_FILT_REG(i) (DR_REG_UART_BASE(i) + 0x18)
 /** UART_GLITCH_FILT : R/W; bitpos: [7:0]; default: 8;
  *  when input pulse width is lower than this value the pulse is ignored.
  */
@@ -669,7 +669,7 @@ extern "C" {
 /** UART_STATUS_REG register
  *  UART status register
  */
-#define UART_STATUS_REG(i) (REG_UART_BASE(i) + 0x1c)
+#define UART_STATUS_REG(i) (DR_REG_UART_BASE(i) + 0x1c)
 /** UART_RXFIFO_CNT : RO; bitpos: [7:0]; default: 0;
  *  Stores the byte number of valid data in Rx-FIFO.
  */
@@ -730,7 +730,7 @@ extern "C" {
 /** UART_CONF0_SYNC_REG register
  *  a
  */
-#define UART_CONF0_SYNC_REG(i) (REG_UART_BASE(i) + 0x20)
+#define UART_CONF0_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x20)
 /** UART_PARITY : R/W; bitpos: [0]; default: 0;
  *  This register is used to configure the parity check mode.
  */
@@ -893,7 +893,7 @@ extern "C" {
 /** UART_CONF1_REG register
  *  Configuration register 1
  */
-#define UART_CONF1_REG(i) (REG_UART_BASE(i) + 0x24)
+#define UART_CONF1_REG(i) (DR_REG_UART_BASE(i) + 0x24)
 /** UART_RXFIFO_FULL_THRHD : R/W; bitpos: [7:0]; default: 96;
  *  It will produce rxfifo_full_int interrupt when receiver receives more data than
  *  this register value.
@@ -958,7 +958,7 @@ extern "C" {
 /** UART_HWFC_CONF_SYNC_REG register
  *  Hardware flow-control configuration
  */
-#define UART_HWFC_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x2c)
+#define UART_HWFC_CONF_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x2c)
 /** UART_RX_FLOW_THRHD : R/W; bitpos: [7:0]; default: 0;
  *  This register is used to configure the maximum amount of data that can be received
  *  when hardware flow control works.
@@ -978,7 +978,7 @@ extern "C" {
 /** UART_SLEEP_CONF0_REG register
  *  UART sleep configure register 0
  */
-#define UART_SLEEP_CONF0_REG(i) (REG_UART_BASE(i) + 0x30)
+#define UART_SLEEP_CONF0_REG(i) (DR_REG_UART_BASE(i) + 0x30)
 /** UART_WK_CHAR1 : R/W; bitpos: [7:0]; default: 0;
  *  This register restores the specified wake up char1 to wake up
  */
@@ -1011,7 +1011,7 @@ extern "C" {
 /** UART_SLEEP_CONF1_REG register
  *  UART sleep configure register 1
  */
-#define UART_SLEEP_CONF1_REG(i) (REG_UART_BASE(i) + 0x34)
+#define UART_SLEEP_CONF1_REG(i) (DR_REG_UART_BASE(i) + 0x34)
 /** UART_WK_CHAR0 : R/W; bitpos: [7:0]; default: 0;
  *  This register restores the specified char0 to wake up
  */
@@ -1023,7 +1023,7 @@ extern "C" {
 /** UART_SLEEP_CONF2_REG register
  *  UART sleep configure register 2
  */
-#define UART_SLEEP_CONF2_REG(i) (REG_UART_BASE(i) + 0x38)
+#define UART_SLEEP_CONF2_REG(i) (DR_REG_UART_BASE(i) + 0x38)
 /** UART_ACTIVE_THRESHOLD : R/W; bitpos: [9:0]; default: 240;
  *  The uart is activated from light sleeping mode when the input rxd edge changes more
  *  times than this register value.
@@ -1066,7 +1066,7 @@ extern "C" {
 /** UART_SWFC_CONF0_SYNC_REG register
  *  Software flow-control character configuration
  */
-#define UART_SWFC_CONF0_SYNC_REG(i) (REG_UART_BASE(i) + 0x3c)
+#define UART_SWFC_CONF0_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x3c)
 /** UART_XON_CHAR : R/W; bitpos: [7:0]; default: 17;
  *  This register stores the Xon flow control char.
  */
@@ -1138,7 +1138,7 @@ extern "C" {
 /** UART_SWFC_CONF1_REG register
  *  Software flow-control character configuration
  */
-#define UART_SWFC_CONF1_REG(i) (REG_UART_BASE(i) + 0x40)
+#define UART_SWFC_CONF1_REG(i) (DR_REG_UART_BASE(i) + 0x40)
 /** UART_XON_THRESHOLD : R/W; bitpos: [7:0]; default: 0;
  *  When the data amount in Rx-FIFO is less than this register value with
  *  uart_sw_flow_con_en set to 1  it will send a Xon char.
@@ -1159,7 +1159,7 @@ extern "C" {
 /** UART_TXBRK_CONF_SYNC_REG register
  *  Tx Break character configuration
  */
-#define UART_TXBRK_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x44)
+#define UART_TXBRK_CONF_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x44)
 /** UART_TX_BRK_NUM : R/W; bitpos: [7:0]; default: 10;
  *  This register is used to configure the number of 0 to be sent after the process of
  *  sending data is done. It is active when txd_brk is set to 1.
@@ -1172,7 +1172,7 @@ extern "C" {
 /** UART_IDLE_CONF_SYNC_REG register
  *  Frame-end idle configuration
  */
-#define UART_IDLE_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x48)
+#define UART_IDLE_CONF_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x48)
 /** UART_RX_IDLE_THRHD : R/W; bitpos: [9:0]; default: 256;
  *  It will produce frame end signal when receiver takes more time to receive one byte
  *  data than this register value.
@@ -1192,7 +1192,7 @@ extern "C" {
 /** UART_RS485_CONF_SYNC_REG register
  *  RS485 mode configuration
  */
-#define UART_RS485_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x4c)
+#define UART_RS485_CONF_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x4c)
 /** UART_RS485_EN : R/W; bitpos: [0]; default: 0;
  *  Set this bit to choose the rs485 mode.
  */
@@ -1247,7 +1247,7 @@ extern "C" {
 /** UART_AT_CMD_PRECNT_SYNC_REG register
  *  Pre-sequence timing configuration
  */
-#define UART_AT_CMD_PRECNT_SYNC_REG(i) (REG_UART_BASE(i) + 0x50)
+#define UART_AT_CMD_PRECNT_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x50)
 /** UART_PRE_IDLE_NUM : R/W; bitpos: [15:0]; default: 2305;
  *  This register is used to configure the idle duration time before the first at_cmd
  *  is received by receiver.
@@ -1260,7 +1260,7 @@ extern "C" {
 /** UART_AT_CMD_POSTCNT_SYNC_REG register
  *  Post-sequence timing configuration
  */
-#define UART_AT_CMD_POSTCNT_SYNC_REG(i) (REG_UART_BASE(i) + 0x54)
+#define UART_AT_CMD_POSTCNT_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x54)
 /** UART_POST_IDLE_NUM : R/W; bitpos: [15:0]; default: 2305;
  *  This register is used to configure the duration time between the last at_cmd and
  *  the next data.
@@ -1273,7 +1273,7 @@ extern "C" {
 /** UART_AT_CMD_GAPTOUT_SYNC_REG register
  *  Timeout configuration
  */
-#define UART_AT_CMD_GAPTOUT_SYNC_REG(i) (REG_UART_BASE(i) + 0x58)
+#define UART_AT_CMD_GAPTOUT_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x58)
 /** UART_RX_GAP_TOUT : R/W; bitpos: [15:0]; default: 11;
  *  This register is used to configure the duration time between the at_cmd chars.
  */
@@ -1285,7 +1285,7 @@ extern "C" {
 /** UART_AT_CMD_CHAR_SYNC_REG register
  *  AT escape sequence detection configuration
  */
-#define UART_AT_CMD_CHAR_SYNC_REG(i) (REG_UART_BASE(i) + 0x5c)
+#define UART_AT_CMD_CHAR_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x5c)
 /** UART_AT_CMD_CHAR : R/W; bitpos: [7:0]; default: 43;
  *  This register is used to configure the content of at_cmd char.
  */
@@ -1305,7 +1305,7 @@ extern "C" {
 /** UART_MEM_CONF_REG register
  *  UART memory power configuration
  */
-#define UART_MEM_CONF_REG(i) (REG_UART_BASE(i) + 0x60)
+#define UART_MEM_CONF_REG(i) (DR_REG_UART_BASE(i) + 0x60)
 /** UART_MEM_FORCE_PD : R/W; bitpos: [25]; default: 0;
  *  Set this bit to force power down UART memory.
  */
@@ -1324,7 +1324,7 @@ extern "C" {
 /** UART_TOUT_CONF_SYNC_REG register
  *  UART threshold and allocation configuration
  */
-#define UART_TOUT_CONF_SYNC_REG(i) (REG_UART_BASE(i) + 0x64)
+#define UART_TOUT_CONF_SYNC_REG(i) (DR_REG_UART_BASE(i) + 0x64)
 /** UART_RX_TOUT_EN : R/W; bitpos: [0]; default: 0;
  *  This is the enable bit for uart receiver's timeout function.
  */
@@ -1352,7 +1352,7 @@ extern "C" {
 /** UART_MEM_TX_STATUS_REG register
  *  Tx-SRAM write and read offset address.
  */
-#define UART_MEM_TX_STATUS_REG(i) (REG_UART_BASE(i) + 0x68)
+#define UART_MEM_TX_STATUS_REG(i) (DR_REG_UART_BASE(i) + 0x68)
 /** UART_TX_SRAM_WADDR : RO; bitpos: [7:0]; default: 0;
  *  This register stores the offset write address in Tx-SRAM.
  */
@@ -1371,7 +1371,7 @@ extern "C" {
 /** UART_MEM_RX_STATUS_REG register
  *  Rx-SRAM write and read offset address.
  */
-#define UART_MEM_RX_STATUS_REG(i) (REG_UART_BASE(i) + 0x6c)
+#define UART_MEM_RX_STATUS_REG(i) (DR_REG_UART_BASE(i) + 0x6c)
 /** UART_RX_SRAM_RADDR : RO; bitpos: [7:0]; default: 128;
  *  This register stores the offset read address in RX-SRAM.
  */
@@ -1390,7 +1390,7 @@ extern "C" {
 /** UART_FSM_STATUS_REG register
  *  UART transmit and receive status.
  */
-#define UART_FSM_STATUS_REG(i) (REG_UART_BASE(i) + 0x70)
+#define UART_FSM_STATUS_REG(i) (DR_REG_UART_BASE(i) + 0x70)
 /** UART_ST_URX_OUT : RO; bitpos: [3:0]; default: 0;
  *  This is the status register of receiver.
  */
@@ -1409,7 +1409,7 @@ extern "C" {
 /** UART_POSPULSE_REG register
  *  Autobaud high pulse register
  */
-#define UART_POSPULSE_REG(i) (REG_UART_BASE(i) + 0x74)
+#define UART_POSPULSE_REG(i) (DR_REG_UART_BASE(i) + 0x74)
 /** UART_POSEDGE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  This register stores the minimal input clock count between two positive edges. It
  *  is used in boudrate-detect process.
@@ -1422,7 +1422,7 @@ extern "C" {
 /** UART_NEGPULSE_REG register
  *  Autobaud low pulse register
  */
-#define UART_NEGPULSE_REG(i) (REG_UART_BASE(i) + 0x78)
+#define UART_NEGPULSE_REG(i) (DR_REG_UART_BASE(i) + 0x78)
 /** UART_NEGEDGE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  This register stores the minimal input clock count between two negative edges. It
  *  is used in boudrate-detect process.
@@ -1435,7 +1435,7 @@ extern "C" {
 /** UART_LOWPULSE_REG register
  *  Autobaud minimum low pulse duration register
  */
-#define UART_LOWPULSE_REG(i) (REG_UART_BASE(i) + 0x7c)
+#define UART_LOWPULSE_REG(i) (DR_REG_UART_BASE(i) + 0x7c)
 /** UART_LOWPULSE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  This register stores the value of the minimum duration time of the low level pulse.
  *  It is used in baud rate-detect process.
@@ -1448,7 +1448,7 @@ extern "C" {
 /** UART_HIGHPULSE_REG register
  *  Autobaud minimum high pulse duration register
  */
-#define UART_HIGHPULSE_REG(i) (REG_UART_BASE(i) + 0x80)
+#define UART_HIGHPULSE_REG(i) (DR_REG_UART_BASE(i) + 0x80)
 /** UART_HIGHPULSE_MIN_CNT : RO; bitpos: [11:0]; default: 4095;
  *  This register stores  the value of the maximum duration time for the high level
  *  pulse. It is used in baud rate-detect process.
@@ -1461,7 +1461,7 @@ extern "C" {
 /** UART_RXD_CNT_REG register
  *  Autobaud edge change count register
  */
-#define UART_RXD_CNT_REG(i) (REG_UART_BASE(i) + 0x84)
+#define UART_RXD_CNT_REG(i) (DR_REG_UART_BASE(i) + 0x84)
 /** UART_RXD_EDGE_CNT : RO; bitpos: [9:0]; default: 0;
  *  This register stores the count of rxd edge change. It is used in baud rate-detect
  *  process.
@@ -1474,7 +1474,7 @@ extern "C" {
 /** UART_CLK_CONF_REG register
  *  UART core clock configuration
  */
-#define UART_CLK_CONF_REG(i) (REG_UART_BASE(i) + 0x88)
+#define UART_CLK_CONF_REG(i) (DR_REG_UART_BASE(i) + 0x88)
 /** UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
  *  Set this bit to enable UART Tx clock.
  */
@@ -1507,7 +1507,7 @@ extern "C" {
 /** UART_DATE_REG register
  *  UART Version register
  */
-#define UART_DATE_REG(i) (REG_UART_BASE(i) + 0x8c)
+#define UART_DATE_REG(i) (DR_REG_UART_BASE(i) + 0x8c)
 /** UART_DATE : R/W; bitpos: [31:0]; default: 35680848;
  *  This is the version register.
  */
@@ -1519,7 +1519,7 @@ extern "C" {
 /** UART_AFIFO_STATUS_REG register
  *  UART AFIFO Status
  */
-#define UART_AFIFO_STATUS_REG(i) (REG_UART_BASE(i) + 0x90)
+#define UART_AFIFO_STATUS_REG(i) (DR_REG_UART_BASE(i) + 0x90)
 /** UART_TX_AFIFO_FULL : RO; bitpos: [0]; default: 0;
  *  Full signal of APB TX AFIFO.
  */
@@ -1552,7 +1552,7 @@ extern "C" {
 /** UART_REG_UPDATE_REG register
  *  UART Registers Configuration Update register
  */
-#define UART_REG_UPDATE_REG(i) (REG_UART_BASE(i) + 0x98)
+#define UART_REG_UPDATE_REG(i) (DR_REG_UART_BASE(i) + 0x98)
 /** UART_REG_UPDATE : R/W/SC; bitpos: [0]; default: 0;
  *  Software write 1 would synchronize registers into UART Core clock domain and would
  *  be cleared by hardware after synchronization is done.
@@ -1565,7 +1565,7 @@ extern "C" {
 /** UART_ID_REG register
  *  UART ID register
  */
-#define UART_ID_REG(i) (REG_UART_BASE(i) + 0x9c)
+#define UART_ID_REG(i) (DR_REG_UART_BASE(i) + 0x9c)
 /** UART_ID : R/W; bitpos: [31:0]; default: 1280;
  *  This register is used to configure the uart_id.
  */

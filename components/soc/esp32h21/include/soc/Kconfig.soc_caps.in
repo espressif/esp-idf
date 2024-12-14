@@ -1,0 +1,692 @@
+#####################################################
+# This file is auto-generated from SoC caps
+# using gen_soc_caps_kconfig.py, do not edit manually
+#####################################################
+
+config SOC_UART_SUPPORTED
+    bool
+    default y
+
+config SOC_EFUSE_KEY_PURPOSE_FIELD
+    bool
+    default y
+
+config SOC_EFUSE_SUPPORTED
+    bool
+    default y
+
+config SOC_RTC_MEM_SUPPORTED
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_FLASH_ENC_SUPPORTED
+    bool
+    default y
+
+config SOC_PMU_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_FLASH_SUPPORTED
+    bool
+    default y
+
+config SOC_XTAL_SUPPORT_32M
+    bool
+    default y
+
+config SOC_AES_SUPPORT_DMA
+    bool
+    default y
+
+config SOC_AES_GDMA
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_128
+    bool
+    default y
+
+config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_ADC_PERIPH_NUM
+    int
+    default 1
+
+config SOC_ADC_MAX_CHANNEL_NUM
+    int
+    default 5
+
+config SOC_ADC_ATTEN_NUM
+    int
+    default 4
+
+config SOC_ADC_DIGI_CONTROLLER_NUM
+    int
+    default 1
+
+config SOC_ADC_PATT_LEN_MAX
+    int
+    default 8
+
+config SOC_ADC_DIGI_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_DIGI_IIR_FILTER_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_MONITOR_NUM
+    int
+    default 2
+
+config SOC_ADC_DIGI_RESULT_BYTES
+    int
+    default 4
+
+config SOC_ADC_DIGI_DATA_BYTES_PER_CONV
+    int
+    default 4
+
+config SOC_ADC_SAMPLE_FREQ_THRES_HIGH
+    int
+    default 83333
+
+config SOC_ADC_SAMPLE_FREQ_THRES_LOW
+    int
+    default 611
+
+config SOC_ADC_RTC_MIN_BITWIDTH
+    int
+    default 12
+
+config SOC_ADC_RTC_MAX_BITWIDTH
+    int
+    default 12
+
+config SOC_APB_BACKUP_DMA
+    bool
+    default n
+
+config SOC_BROWNOUT_RESET_SUPPORTED
+    bool
+    default y
+
+config SOC_SHARED_IDCACHE_SUPPORTED
+    bool
+    default y
+
+config SOC_CACHE_FREEZE_SUPPORTED
+    bool
+    default y
+
+config SOC_CPU_CORES_NUM
+    int
+    default 1
+
+config SOC_CPU_INTR_NUM
+    int
+    default 32
+
+config SOC_CPU_HAS_FLEXIBLE_INTC
+    bool
+    default y
+
+config SOC_INT_PLIC_SUPPORTED
+    bool
+    default y
+
+config SOC_CPU_HAS_CSR_PC
+    bool
+    default y
+
+config SOC_CPU_BREAKPOINTS_NUM
+    int
+    default 4
+
+config SOC_CPU_WATCHPOINTS_NUM
+    int
+    default 4
+
+config SOC_CPU_WATCHPOINT_MAX_REGION_SIZE
+    hex
+    default 0x80000000
+
+config SOC_CPU_HAS_PMA
+    bool
+    default y
+
+config SOC_CPU_IDRAM_SPLIT_USING_PMP
+    bool
+    default y
+
+config SOC_CPU_PMP_REGION_GRANULARITY
+    int
+    default 4
+
+config SOC_MMU_PERIPH_NUM
+    int
+    default 1
+
+config SOC_MMU_LINEAR_ADDRESS_REGION_NUM
+    int
+    default 1
+
+config SOC_MMU_DI_VADDR_SHARED
+    bool
+    default y
+
+config SOC_DS_SIGNATURE_MAX_BIT_LEN
+    int
+    default 3072
+
+config SOC_DS_KEY_PARAM_MD_IV_LENGTH
+    int
+    default 16
+
+config SOC_DS_KEY_CHECK_MAX_WAIT_US
+    int
+    default 1100
+
+config SOC_AHB_GDMA_VERSION
+    int
+    default 1
+
+config SOC_GDMA_NUM_GROUPS_MAX
+    int
+    default 1
+
+config SOC_GDMA_PAIRS_PER_GROUP_MAX
+    int
+    default 3
+
+config SOC_ETM_GROUPS
+    int
+    default 1
+
+config SOC_ETM_CHANNELS_PER_GROUP
+    int
+    default 50
+
+config SOC_GPIO_PORT
+    int
+    default 1
+
+config SOC_GPIO_PIN_COUNT
+    int
+    default 28
+
+config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
+    bool
+    default y
+
+config SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_GPIO_IN_RANGE_MAX
+    int
+    default 27
+
+config SOC_GPIO_OUT_RANGE_MAX
+    int
+    default 27
+
+config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
+    hex
+    default 0x000000000FFF807F
+
+config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
+    bool
+    default y
+
+config SOC_CLOCKOUT_HAS_SOURCE_GATE
+    bool
+    default y
+
+config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
+    int
+    default 3
+
+config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_GPIO_IN_CHANNELS_NUM
+    int
+    default 8
+
+config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
+    bool
+    default y
+
+config SOC_ANA_CMPR_NUM
+    int
+    default 1
+
+config SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
+    bool
+    default y
+
+config SOC_MPI_MEM_BLOCKS_NUM
+    int
+    default 4
+
+config SOC_MPI_OPERATIONS_NUM
+    int
+    default 3
+
+config SOC_RSA_MAX_BIT_LEN
+    int
+    default 3072
+
+config SOC_SHA_DMA_MAX_BUFFER_SIZE
+    int
+    default 3968
+
+config SOC_SHA_SUPPORT_DMA
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_RESUME
+    bool
+    default y
+
+config SOC_SHA_GDMA
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA1
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA224
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA256
+    bool
+    default y
+
+config SOC_SPI_PERIPH_NUM
+    int
+    default 2
+
+config SOC_SPI_MAX_CS_NUM
+    int
+    default 6
+
+config SOC_SPI_MAXIMUM_BUFFER_SIZE
+    int
+    default 64
+
+config SOC_SPI_SUPPORT_DDRCLK
+    bool
+    default y
+
+config SOC_SPI_SLAVE_SUPPORT_SEG_TRANS
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CD_SIG
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_SLAVE_HD_VER2
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_XTAL
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_PLL_F48M
+    bool
+    default y
+
+config SOC_SPI_SUPPORT_CLK_RC_FAST
+    bool
+    default y
+
+config SOC_SPI_SCT_SUPPORTED
+    bool
+    default y
+
+config SOC_SPI_SCT_REG_NUM
+    int
+    default 14
+
+config SOC_SPI_SCT_BUFFER_NUM_MAX
+    bool
+    default y
+
+config SOC_SPI_SCT_CONF_BITLEN_MAX
+    hex
+    default 0x3FFFA
+
+config SOC_MEMSPI_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_SPI_MAX_PRE_DIVIDER
+    int
+    default 16
+
+config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_AUTO_RESUME
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_IDLE_INTR
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_SW_SUSPEND
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_CHECK_SUS
+    bool
+    default y
+
+config SOC_SPI_MEM_SUPPORT_WRAP
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_64M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
+    bool
+    default y
+
+config SOC_SYSTIMER_COUNTER_NUM
+    int
+    default 2
+
+config SOC_SYSTIMER_ALARM_NUM
+    int
+    default 3
+
+config SOC_SYSTIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_SYSTIMER_BIT_WIDTH_HI
+    int
+    default 20
+
+config SOC_SYSTIMER_FIXED_DIVIDER
+    bool
+    default y
+
+config SOC_SYSTIMER_SUPPORT_RC_FAST
+    bool
+    default y
+
+config SOC_SYSTIMER_INT_LEVEL
+    bool
+    default y
+
+config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
+    bool
+    default y
+
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
+
+config SOC_TIMER_GROUPS
+    int
+    default 2
+
+config SOC_TIMER_GROUP_TIMERS_PER_GROUP
+    int
+    default 1
+
+config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
+    int
+    default 54
+
+config SOC_TIMER_GROUP_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_TIMER_GROUP_SUPPORT_RC_FAST
+    bool
+    default y
+
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 2
+
+config SOC_MWDT_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_EFUSE_DIS_PAD_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_USB_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_DIRECT_BOOT
+    bool
+    default y
+
+config SOC_EFUSE_SOFT_DIS_JTAG
+    bool
+    default y
+
+config SOC_EFUSE_DIS_ICACHE
+    bool
+    default y
+
+config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+    bool
+    default y
+
+config SOC_EFUSE_ECDSA_USE_HARDWARE_K
+    bool
+    default y
+
+config SOC_EFUSE_ECDSA_KEY
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V2_RSA
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V2_ECC
+    bool
+    default y
+
+config SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS
+    int
+    default 3
+
+config SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
+    bool
+    default y
+
+config SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX
+    int
+    default 64
+
+config SOC_FLASH_ENCRYPTION_XTS_AES
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_APM_CTRL_FILTER_SUPPORTED
+    bool
+    default y
+
+config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+    bool
+    default y
+
+config SOC_ECDSA_USES_MPI
+    bool
+    default y
+
+config SOC_UART_NUM
+    int
+    default 2
+
+config SOC_UART_HP_NUM
+    int
+    default 2
+
+config SOC_UART_FIFO_LEN
+    int
+    default 128
+
+config SOC_UART_BITRATE_MAX
+    int
+    default 5000000
+
+config SOC_UART_SUPPORT_RTC_CLK
+    bool
+    default y
+
+config SOC_UART_SUPPORT_XTAL_CLK
+    bool
+    default y
+
+config SOC_UART_SUPPORT_WAKEUP_INT
+    bool
+    default y
+
+config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+    bool
+    default y
+
+config SOC_COEX_HW_PTI
+    bool
+    default y
+
+config SOC_EXTERNAL_COEX_ADVANCE
+    bool
+    default y
+
+config SOC_EXTERNAL_COEX_LEADER_TX_LINE
+    bool
+    default n
+
+config SOC_PHY_DIG_REGS_MEM_SIZE
+    int
+    default 21
+
+config SOC_PM_SUPPORT_BT_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_EXT1_WAKEUP
+    bool
+    default y
+
+config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
+    bool
+    default y
+
+config SOC_PM_SUPPORT_CPU_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_MODEM_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_XTAL32K_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RC32K_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_RC_FAST_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_VDDSDIO_PD
+    bool
+    default y
+
+config SOC_PM_SUPPORT_TOP_PD
+    bool
+    default y
+
+config SOC_PM_PAU_LINK_NUM
+    int
+    default 4
+
+config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
+    bool
+    default y
+
+config SOC_CLK_XTAL32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_OSC_SLOW_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_RC32K_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
+    bool
+    default y
+
+config SOC_MODEM_CLOCK_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
