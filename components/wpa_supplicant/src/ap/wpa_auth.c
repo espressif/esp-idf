@@ -1668,6 +1668,10 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
 
     if (!ok) {
         wpa_printf(MSG_INFO, "invalid MIC in msg 2/4 of 4-Way Handshake");
+        wifi_event_ap_wrong_password_t evt = {0};
+        os_memcpy(evt.mac, sm->addr, ETH_ALEN);
+        esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WRONG_PASSWORD, &evt,
+                sizeof(evt), 0);
         return;
     }
 
