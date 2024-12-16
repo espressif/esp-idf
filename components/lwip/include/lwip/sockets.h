@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,28 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if LWIP_SOCKET_HAS_SOCKETPAIR
+/**
+ *  @brief If `LWIP_SOCKET_HAS_SOCKETPAIR=1` lwip can declare socketpair()
+ *  since it will be defined in en external dependency of lwip
+ */
+#define AF_UNIX             1
+#define PF_LOCAL            AF_UNIX
+/**
+ * @brief Creates a pair of connected sockets.
+ *
+ * @param[in]  domain   Communication domain (e.g., PF_LOCAL).
+ * @param[in]  type     Socket type (e.g., SOCK_STREAM).
+ * @param[in]  protocol Protocol to be used (usually 0).
+ * @param[out] sv       Array of two integers to store the file descriptors of the created sockets.
+ *
+ * @return
+ *     - 0 on success.
+ *     - -1 on failure, with `errno` set to indicate the error.
+ */
+int socketpair(int domain, int type, int protocol, int sv[2]);
 #endif
 
 static inline int accept(int s,struct sockaddr *addr,socklen_t *addrlen)
@@ -42,8 +64,8 @@ static inline ssize_t send(int s,const void *dataptr,size_t size,int flags)
 { return lwip_send(s,dataptr,size,flags); }
 static inline ssize_t sendmsg(int s,const struct msghdr *message,int flags)
 { return lwip_sendmsg(s,message,flags); }
-static inline ssize_t sendto(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t tolen)
-{ return lwip_sendto(s,dataptr,size,flags,to,tolen); }
+static inline ssize_t sendto(int s,const void *dataptr,size_t size,int flags,const struct sockaddr *to,socklen_t to_len)
+{ return lwip_sendto(s,dataptr,size,flags,to,to_len); }
 static inline int socket(int domain,int type,int protocol)
 { return lwip_socket(domain,type,protocol); }
 static inline const char *inet_ntop(int af, const void *src, char *dst, socklen_t size)
