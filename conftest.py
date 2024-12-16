@@ -357,7 +357,7 @@ def check_performance(idf_path: str) -> t.Callable[[str, float, str], None]:
 
 
 @pytest.fixture
-def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None]:
+def log_minimum_free_heap_size(dut: IdfDut, config: str, idf_path: str) -> t.Callable[..., None]:
     def real_func() -> None:
         res = dut.expect(r'Minimum free heap size: (\d+) bytes')
         logging.info(
@@ -368,7 +368,7 @@ def log_minimum_free_heap_size(dut: IdfDut, config: str) -> t.Callable[..., None
             '[target] {}\n'
             '[minimum_free_heap_size] {} Bytes\n'
             '------ heap size end ------'.format(
-                dut.app.app_path,
+                dut.app.app_path.replace(idf_path, '').lstrip('/\\'),
                 os.path.basename(dut.app.app_path),
                 config,
                 dut.target,
