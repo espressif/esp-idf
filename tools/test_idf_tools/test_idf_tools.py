@@ -322,8 +322,9 @@ class TestUsage(TestUsageBase):
 
             self.run_idf_tools_with_action(['install', OPENOCD])
             output = self.run_idf_tools_with_action(['export'])
-            self.assertIn('%s/tools/openocd-esp32/%s/openocd-esp32/bin' %
-                          (self.temp_tools_dir, OPENOCD_VERSION), output)
+            self.assertIn(os.path.join(
+                self.temp_tools_dir, 'tools', 'openocd-esp32', OPENOCD_VERSION, 'openocd-esp32', 'bin'
+            ), output)
 
 
 # TestUsageUnix tests installed tools on UNIX platforms
