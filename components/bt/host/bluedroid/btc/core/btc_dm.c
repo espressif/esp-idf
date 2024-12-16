@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -182,11 +182,12 @@ static void btc_dm_remove_ble_bonding_keys(void)
     btc_storage_remove_ble_bonding_keys(&bd_addr);
 }
 
+#if BLE_SMP_BOND_NVS_FLASH
 static void btc_dm_save_ble_bonding_keys(void)
 {
     if (!(btc_dm_cb.pairing_cb.ble.is_penc_key_rcvd || btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd || btc_dm_cb.pairing_cb.ble.is_pcsrk_key_rcvd ||
-         btc_dm_cb.pairing_cb.ble.is_lenc_key_rcvd || btc_dm_cb.pairing_cb.ble.is_lcsrk_key_rcvd || btc_dm_cb.pairing_cb.ble.is_lidk_key_rcvd)) {
-        return ;
+        btc_dm_cb.pairing_cb.ble.is_lenc_key_rcvd || btc_dm_cb.pairing_cb.ble.is_lcsrk_key_rcvd || btc_dm_cb.pairing_cb.ble.is_lidk_key_rcvd)) {
+        return;
     }
     bt_bdaddr_t bd_addr;
 
@@ -244,13 +245,13 @@ static void btc_dm_save_ble_bonding_keys(void)
         btc_dm_cb.pairing_cb.ble.is_lidk_key_rcvd = false;
     }
 }
+#endif
 
 static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
     BTC_TRACE_DEBUG("%s, status = %d", __func__, p_auth_cmpl->success);
     bt_status_t status = BT_STATUS_FAIL;
-    int addr_type;
     bt_bdaddr_t bdaddr;
     bdcpy(bdaddr.address, p_auth_cmpl->bd_addr);
     bdcpy(btc_dm_cb.pairing_cb.bd_addr, p_auth_cmpl->bd_addr);
@@ -266,6 +267,9 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             return;
         }
 
+#if BLE_SMP_BOND_NVS_FLASH
+        int addr_type;
+
         if (btc_dm_cb.pairing_cb.ble.is_pid_key_rcvd) {
             // delete unused section in NVS
             btc_storage_remove_unused_sections(p_auth_cmpl->bd_addr, &btc_dm_cb.pairing_cb.ble.pid_key);
@@ -276,6 +280,7 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
         }
         btc_storage_set_ble_dev_auth_mode(&bdaddr, p_auth_cmpl->auth_mode, true);
         btc_dm_save_ble_bonding_keys();
+#endif
     } else {
         /*Map the HCI fail reason  to  bt status  */
         switch (p_auth_cmpl->fail_reason) {

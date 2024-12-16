@@ -305,6 +305,13 @@ config BT_BLE_SMP_ID_RESET_ENABLE
         of a previously paired peer to be used to determine whether a device
         with which it previously shared an IRK is within range.
 
+config BT_BLE_SMP_BOND_NVS_FLASH
+    bool "Save SMP bonding keys to nvs flash"
+    depends on BT_BLE_SMP_ENABLE
+    default y
+    help
+        This select can save SMP bonding keys to nvs flash
+
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
     depends on BT_BLUEDROID_ENABLED
