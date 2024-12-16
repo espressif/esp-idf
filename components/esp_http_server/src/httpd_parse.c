@@ -85,8 +85,8 @@ static esp_err_t verify_url (http_parser *parser)
     strlcpy((char *)r->uri, at, (length + 1));
     ESP_LOGD(TAG, LOG_FMT("received URI = %s"), r->uri);
 
-    /* Make sure version is HTTP/1.1 */
-    if (!((parser->http_major == 1) && (parser->http_minor == 1))) {
+    /* Make sure version is HTTP/1.1 or HTTP/1.0 (legacy compliance purpose) */
+    if (!((parser->http_major == 1) && ((parser->http_minor == 0) || (parser->http_minor == 1)))) {
         ESP_LOGW(TAG, LOG_FMT("unsupported HTTP version = %d.%d"),
                  parser->http_major, parser->http_minor);
         parser_data->error = HTTPD_505_VERSION_NOT_SUPPORTED;
