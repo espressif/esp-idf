@@ -24,7 +24,7 @@
 #define GPIO_CS            10
 
 #define HOST_ID            SPI2_HOST
-#define TRANSACTION_LEN    16
+#define TRANSACTION_LEN    64
 //The SPI transaction cycles in this example. You may change the cycle. e.g., use the ``sender`` and change it to a infinite loop
 #define EXAMPLE_CYCLES     10
 
