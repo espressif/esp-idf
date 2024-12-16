@@ -80,6 +80,7 @@ function(ulp_apply_default_sources ulp_app_name)
 
     # To avoid warning "Manually-specified variables were not used by the project"
     set(bypassWarning "${IDF_TARGET}")
+    set(bypassWarning "${ULP_VAR_PREFIX}")
 
     if(CONFIG_ULP_COPROC_TYPE_RISCV)
         #risc-v ulp uses extra files for building:
@@ -178,7 +179,11 @@ function(ulp_apply_default_sources ulp_app_name)
     endif()
 endfunction()
 
-function(ulp_add_build_binary_targets ulp_app_name prefix)
+function(ulp_add_build_binary_targets ulp_app_name)
+    cmake_parse_arguments(ULP "" "PREFIX" "" ${ARGN})
+    if(NOT ULP_PREFIX)
+        set(ULP_PREFIX "ulp_")
+    endif()
 
     if(ADD_PICOLIBC_SPECS)
         target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
@@ -207,7 +212,7 @@ function(ulp_add_build_binary_targets ulp_app_name prefix)
 
     add_custom_command(OUTPUT ${ulp_app_name}.ld ${ulp_app_name}.h
                     COMMAND ${ULP_MAP_GEN} -s ${ulp_app_name}.sym -o ${ulp_app_name}
-                            --base ${ULP_BASE_ADDR} --prefix ${prefix}
+                            --base ${ULP_BASE_ADDR} --prefix ${ULP_PREFIX}
                     DEPENDS ${ulp_app_name}.sym
                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 

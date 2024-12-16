@@ -64,7 +64,7 @@ If you need to embed multiple ULP programs, you may add a custom prefix in order
 
     ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
 
-The additional argument can be a C style prefix (like ``ulp2_``).
+The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++ style prefix (like ``ULP::``).
 
 3. Build the application as usual (e.g., ``idf.py app``).
 

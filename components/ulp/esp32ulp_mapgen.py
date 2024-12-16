@@ -43,7 +43,7 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
         tmp = prefix.split('::')
         namespace = tmp[0]
         var_prefix = '_'.join(tmp[1:])  # Limit to a single namespace here to avoid complex mangling rules
-        f_h.write('namespace {0} {{\n'.format(namespace))
+        f_h.write(f'namespace {namespace} {{\n')
         cpp_mode = True
     else:
         f_h.write(textwrap.dedent(
@@ -54,25 +54,38 @@ def gen_ld_h_from_sym(f_sym: typing.TextIO, f_ld: typing.TextIO, f_h: typing.Tex
             #pragma once
             #ifdef __cplusplus
             extern "C" {{
-            #endif
+            #endif\n
             """  # noqa: E222
         ))
 
-    expr = re.compile('^\\s*\\d+: ([a-f0-9]{8})\\s+(\\d+) OBJECT\\s+GLOBAL\\s+DEFAULT\\s+[^ ]+ (.*)$')
-    already_defined = 'this_symbol_is_already_defined_please_use_prefix_in_ulp_embed_binary'
+    # Format the regular expression to match the readelf output
+    expr = re.compile(r'^.*(?P<address>[a-f0-9]{8})\s+(?P<size>\d+) (OBJECT|NOTYPE)\s+GLOBAL\s+DEFAULT\s+[^ ]+ (?P<name>.*)$')
     for line in f_sym:
         # readelf format output has the following structure:
-        #   index: addr_hex     size TYPE  SCOPE DEFAULT    junk symbol_name
+        #   Num:    Value  Size Type    Bind   Vis      Ndx Name
         # So match the line with a regular expression to parse it first
         groups = expr.match(line)
-        if groups is None:  # Ignore non global or non object
+
+        # Ignore lines that do not match the expected format such as non global symbols
+        if groups is None:
             continue
-        addr = int(groups.group(1), 16) + base_addr
-        size = int(groups.group(2))
-        name = var_prefix + groups.group(3)
-        f_h.write('extern uint32_t {0}{1};\n'.format(name, '[{0}]'.format(int(size / 4)) if size > 4 else ''))
-        f_ld.write('{0} = DEFINED({0}) ? {2} : 0x{1:08x};\n'.format(
-            name_mangling(namespace + '::' + name) if cpp_mode else name, addr, already_defined))
+
+        # Extract the symbol information
+        addr = int(groups.group('address'), 16) + base_addr
+        size = int(groups.group('size'))
+        sym_name = groups.group('name')
+
+        # Add the variable prefix if provided
+        var_name = var_prefix + sym_name
+
+        # Get the dimension of the variable if it is an array
+        var_dimension = f'[{size // 4}]' if size > 4 else ''  # Use // to automatically perform an integer division
+
+        # Write the variable definition to the header file and the address to the linker script
+        f_h.write(f'extern uint32_t {var_name}{var_dimension};\n')
+
+        name_in_ld = name_mangling(namespace + '::' + var_name) if cpp_mode else var_name
+        f_ld.write(f'{name_in_ld} = 0x{addr:08x};\n')
 
     if cpp_mode:
         f_h.write('}\n')

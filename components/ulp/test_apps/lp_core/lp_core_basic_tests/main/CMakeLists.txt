@@ -24,6 +24,8 @@ if(CONFIG_SOC_LP_VAD_SUPPORTED)
     list(APPEND app_sources "test_lp_core_vad.c")
 endif()
 
+list(APPEND app_sources "test_lp_core_prefix.c")
+
 set(lp_core_sources         "lp_core/test_main.c")
 set(lp_core_sources_counter "lp_core/test_main_counter.c")
 
@@ -92,3 +94,6 @@ endif()
 if(CONFIG_SOC_LP_VAD_SUPPORTED)
     ulp_embed_binary(lp_core_test_app_vad "${lp_core_sources_vad}" "${lp_core_exp_dep_srcs}")
 endif()
+
+ulp_embed_binary(lp_core_test_app_prefix1 "lp_core/test_main_prefix1.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp1_")
+ulp_embed_binary(lp_core_test_app_prefix2 "lp_core/test_main_prefix2.c"  "${lp_core_exp_dep_srcs}" PREFIX "ulp2_")
