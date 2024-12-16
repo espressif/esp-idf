@@ -197,7 +197,7 @@ static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
 /* Local variable definition
  ***************************************************************************
  */
-#if CONFIG_ESP32C2_REV_MIN_FULL < 200
+#if (CONFIG_ESP32C2_REV_MIN_FULL < 200) && (!CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
 void *g_ble_lll_rfmgmt_env_p;
 #endif
 /* Static variable declare */

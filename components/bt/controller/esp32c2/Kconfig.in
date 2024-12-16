@@ -658,3 +658,11 @@ config BT_LE_PLACE_CONN_RELATED_INTO_IRAM
     bool "Place the connection-related code into IRAM"
     depends on BT_CTRL_RUN_IN_FLASH_ONLY
     default n
+
+config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
