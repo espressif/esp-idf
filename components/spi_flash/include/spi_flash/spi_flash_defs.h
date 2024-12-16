@@ -1,8 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#include "soc/soc_caps.h"
 
 #pragma once
 
@@ -55,10 +57,15 @@
 
 #define CMD_RDSFDP     0x5A /* Read the SFDP of the flash */
 
-#define SPI_FLASH_DIO_ADDR_BITLEN       24
+#if !SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
 #define SPI_FLASH_DIO_DUMMY_BITLEN      4
-#define SPI_FLASH_QIO_ADDR_BITLEN       24
 #define SPI_FLASH_QIO_DUMMY_BITLEN      6
+#else
+#define SPI_FLASH_DIO_DUMMY_BITLEN      0
+#define SPI_FLASH_QIO_DUMMY_BITLEN      4
+#endif
+#define SPI_FLASH_DIO_ADDR_BITLEN       24
+#define SPI_FLASH_QIO_ADDR_BITLEN       24
 #define SPI_FLASH_QOUT_ADDR_BITLEN      24
 #define SPI_FLASH_QOUT_DUMMY_BITLEN     8
 #define SPI_FLASH_DOUT_ADDR_BITLEN      24

@@ -555,6 +555,7 @@ static inline int spimem_flash_ll_get_addr_bitlen(spi_mem_dev_t *dev)
 __attribute__((always_inline))
 static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t bitlen)
 {
+    dev->cache_fctrl.cache_usr_addr_4byte = (bitlen == 32) ? 1 : 0;
     dev->user1.usr_addr_bitlen = (bitlen - 1);
     dev->user.usr_addr = bitlen ? 1 : 0;
 }
@@ -567,8 +568,20 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
  */
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
-    dev->cache_fctrl.cache_usr_addr_4byte = 0;
+    // Fixed wb mode to 0x00, the bit length fixed to 8
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
+    dev->rd_status.wb_mode_bitlen = 7;  // 8 - 1
+}
+
+/**
+ * Enable extra address for bits M0-M7 in DIO/QIO mode.
+ *
+ * @param dev Beginning address of the peripheral registers.
+ * @param wb_mode_enable true for enabling wb_mode
+ */
+static inline void spimem_flash_ll_wb_mode_enable(spi_mem_dev_t *dev, bool wb_mode_enable)
+{
+    dev->rd_status.wb_mode_en = wb_mode_enable;
 }
 
 /**
