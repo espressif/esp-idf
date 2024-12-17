@@ -51,6 +51,16 @@ FORCE_INLINE_ATTR void _usb_utmi_ll_enable_bus_clock(bool clk_en)
 #define usb_utmi_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_utmi_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
+ * Get the enable status of the USB UTMI PHY bus clock
+ *
+ * @return Return true if USB UTMI PHY bus clock is enabled
+ */
+FORCE_INLINE_ATTR bool _usb_utmi_ll_bus_clock_is_enabled(void)
+{
+    return (HP_SYS_CLKRST.soc_clk_ctrl1.reg_usb_otg20_sys_clk_en && LP_AON_CLKRST.hp_usb_clkrst_ctrl1.usb_otg20_phyref_clk_en);
+}
+
+/**
  * @brief Reset the USB UTMI PHY and USB_DWC_HS controller
  */
 FORCE_INLINE_ATTR void _usb_utmi_ll_reset_register(void)
