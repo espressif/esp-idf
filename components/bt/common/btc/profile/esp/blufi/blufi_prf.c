@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,7 +95,29 @@ void btc_blufi_report_error(esp_blufi_error_state_t state)
 
 void btc_blufi_recv_handler(uint8_t *data, int len)
 {
+    if (len < sizeof(struct blufi_hdr)) {
+        BTC_TRACE_ERROR("%s invalid data length: %d", __func__, len);
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
     struct blufi_hdr *hdr = (struct blufi_hdr *)data;
+
+    // Verify if the received data length matches the expected length based on the BLUFI protocol
+    int target_data_len;
+
+    if (BLUFI_FC_IS_CHECK(hdr->fc)) {
+        target_data_len = hdr->data_len + 4 + 2; // Data + (Type + Frame Control + Sequence Number + Data Length) + Checksum
+    } else {
+        target_data_len = hdr->data_len + 4; // Data + (Type + Frame Control + Sequence Number + Data Length)
+    }
+
+    if (len != target_data_len) {
+        BTC_TRACE_ERROR("%s: Invalid data length: %d, expected: %d", __func__, len, target_data_len);
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
     uint16_t checksum, checksum_pkt;
     int ret;
 
