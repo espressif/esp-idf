@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import print_function, unicode_literals
-
 import argparse
 import os
 import re
 import subprocess
 import sys
 
-from idf_ci_utils import IDF_PATH, get_submodule_dirs
+from idf_ci_utils import get_submodule_dirs
+from idf_ci_utils import IDF_PATH
 
 # regular expression for matching Kconfig files
 RE_KCONFIG = r'^Kconfig(\.projbuild)?(\.in)?$'
@@ -85,4 +83,4 @@ if args.includes:
 
 
 if __name__ == '__main__':
-    sys.exit(subprocess.run([sys.executable, '-m', 'kconfcheck'] + files_to_check + unknown_args).returncode)
+    sys.exit(subprocess.run([sys.executable, '-m', 'kconfcheck', '--replace'] + files_to_check + unknown_args).returncode)
