@@ -137,12 +137,6 @@ esp_err_t esp_core_dump_write_data(core_dump_write_data_t *wr_data, void *data, 
 esp_err_t esp_core_dump_write_end(core_dump_write_data_t *wr_data);
 
 /**
- * @brief Retrieve the stack information which will be used from the coredump module itself.
- * It will show the whole stack boundaries in case the stack is shared with the crashed task.
- */
-void esp_core_dump_get_own_stack_info(uint32_t *addr, uint32_t *size);
-
-/**
  * @brief Stores the core dump in either binary or ELF format.
  */
 esp_err_t esp_core_dump_store(void);
