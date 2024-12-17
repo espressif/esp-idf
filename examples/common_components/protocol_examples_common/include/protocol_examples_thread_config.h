@@ -66,6 +66,11 @@
               .intr_pin = CONFIG_EXAMPLE_THREAD_SPI_INTR_PIN,                  \
           },                                                                   \
   }
+#else
+#define ESP_OPENTHREAD_DEFAULT_RADIO_CONFIG()                                  \
+  {                                                                            \
+      .radio_mode = RADIO_MODE_TREL,                                           \
+  }
 #endif
 
 #if CONFIG_OPENTHREAD_CONSOLE_TYPE_UART
@@ -94,6 +99,11 @@
   {                                                                            \
       .host_connection_mode = HOST_CONNECTION_MODE_CLI_USB,                    \
       .host_usb_config = USB_SERIAL_JTAG_DRIVER_CONFIG_DEFAULT(),              \
+  }
+#else
+#define ESP_OPENTHREAD_DEFAULT_HOST_CONFIG()                                   \
+  {                                                                            \
+      .host_connection_mode = HOST_CONNECTION_MODE_NONE,                       \
   }
 #endif
 

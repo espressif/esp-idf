@@ -41,3 +41,6 @@ CONFIG_LWIP_IPV6_AUTOCONFIG=y
 # Configurations for optimizing the size of firmware
 #
 CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+# Example connect
+CONFIG_EXAMPLE_CONNECT_THREAD=n
