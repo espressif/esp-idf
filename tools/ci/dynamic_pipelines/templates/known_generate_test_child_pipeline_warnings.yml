@@ -2,14 +2,7 @@
 # no_env_marker_test_cases: List of test cases that do not have environment markers.
 #   each item shall be the test node id, you may check the error message to get the node id.
 no_env_marker_test_cases:
-  - components/nvs_flash/test_apps/pytest_nvs_flash.py::test_nvs_flash[default]
-  - components/vfs/test_apps/pytest_vfs.py::test_vfs_ccomp[ccomp]
-  - components/vfs/test_apps/pytest_vfs.py::test_vfs_default[default]
-  - components/vfs/test_apps/pytest_vfs.py::test_vfs_default[iram]
-  - examples/storage/nvs_rw_blob/pytest_nvs_rw_blob.py::test_examples_nvs_rw_blob
-  - examples/storage/nvs_rw_value/pytest_nvs_rw_value.py::test_examples_nvs_rw_value
-  - examples/storage/nvs_rw_value_cxx/pytest_nvs_rw_value_cxx.py::test_examples_nvs_rw_value_cxx
-  - examples/storage/wear_levelling/pytest_wear_levelling_example.py::test_wear_levelling_example
+  - dummy_test_case
 
 # no_runner_tags: List of runner tags that has no test runner set.
 #   each item shall be a comma separated list of runner tags.
