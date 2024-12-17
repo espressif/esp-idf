@@ -351,6 +351,10 @@ config SOC_I2C_SUPPORT_APB
     bool
     default y
 
+config SOC_I2C_SUPPORT_10BIT_ADDR
+    bool
+    default y
+
 config SOC_I2C_STOP_INDEPENDENT
     bool
     default y
