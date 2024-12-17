@@ -206,6 +206,7 @@
 #define SOC_I2C_SUPPORT_SLAVE   (1)
 
 #define SOC_I2C_SUPPORT_APB     (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR (1)
 
 // On ESP32, the stop bit should be independent, we can't put trans data and stop command together
 #define SOC_I2C_STOP_INDEPENDENT (1)
