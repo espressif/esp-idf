@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -99,7 +99,7 @@ TEST_CASE("Username is unmodified when we change to new path", "[ESP HTTP CLIENT
  * Explicit APIs esp_http_client_set_username and esp_http_client_set_password are used to change
  * the auth credentials
  **/
-TEST_CASE("Username and password will not reset if new absolute URL doesnot specify auth credentials.", "[ESP HTTP CLIENT]")
+TEST_CASE("Username and password will not reset if new absolute URL does not specify auth credentials.", "[ESP HTTP CLIENT]")
 {
     esp_http_client_config_t config_with_auth = {
         .host = HOST,
@@ -144,6 +144,26 @@ TEST_CASE("esp_http_client_init() should return NULL if configured with wrong ur
     esp_http_client_handle_t client = esp_http_client_init(&config);
     TEST_ASSERT_NULL(client);
     esp_http_client_cleanup(client);
+}
+
+/**
+ * Test case to verify that esp_http_client_get_url() returns the URL in the correct format.
+ **/
+TEST_CASE("esp_http_client_get_url() should return URL in the correct format", "[ESP HTTP CLIENT]")
+{
+    const char *url = "http://httpbin.org:8080/post";
+    esp_http_client_config_t config = {
+        .url = url,
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    char client_url[32];
+    esp_http_client_get_url(client, client_url, sizeof(client_url));
+    esp_http_client_cleanup(client);
+
+    TEST_ASSERT_EQUAL_STRING(url, client_url);
 }
 
 void app_main(void)
