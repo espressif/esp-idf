@@ -790,23 +790,33 @@ static inline void usb_dwc_ll_hctsiz_set_qtd_list_len(volatile usb_dwc_host_chan
     chan->hctsiz_reg.val = hctsiz.val;
 }
 
-static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+/**
+ * @brief Perform PING protocol
+ *
+ * PING protocol is automatically enabled if High-Speed device responds with NYET in Scatter-Gather DMA mode.
+ * The application must disable PING for next transfer.
+ * Relevant only for OUT transfers.
+ *
+ * @param[in] chan   Channel registers
+ * @param[in] enable true: Enable PING, false: Disable PING
+ */
+static inline void usb_dwc_ll_hctsiz_set_dopng(volatile usb_dwc_host_chan_regs_t *chan, bool enable)
 {
-    usb_dwc_hctsiz_reg_t hctsiz;
-    hctsiz.val = chan->hctsiz_reg.val;
-    hctsiz.dopng = 0;         //Don't do ping
-    /*
-    Set SCHED_INFO which occupies xfersize[7:0]
-    It is always set to 0xFF for full speed and not used in Bulk/Ctrl channels
-    */
-    hctsiz.xfersize |= 0xFF;
-    chan->hctsiz_reg.val = hctsiz.val;
+    chan->hctsiz_reg.dopng = (uint32_t)(enable && !chan->hcchar_reg.epdir);
 }
 
+/**
+ * @brief Set scheduling info for Periodic channel
+ *
+ * @attention This function must be called for each periodic channel!
+ * @see USB-OTG databook: Table 5-47
+ *
+ * @param[in] chan             Channel registers
+ * @param[in] tokens_per_frame HS: Number of tokens per frame FS: Must be set 8
+ * @param[in] offset           Offset of the channel
+ */
 static inline void usb_dwc_ll_hctsiz_set_sched_info(volatile usb_dwc_host_chan_regs_t *chan, int tokens_per_frame, int offset)
 {
-    // @see USB-OTG databook: Table 5-47
-    // This function is relevant only for HS
     usb_dwc_hctsiz_reg_t hctsiz;
     hctsiz.val = chan->hctsiz_reg.val;
     uint8_t sched_info_val;
