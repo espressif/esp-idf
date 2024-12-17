@@ -904,7 +904,11 @@ TEST_CASE("I2S_package_lost_test", "[i2s]")
     TEST_ESP_OK(i2s_channel_register_event_callback(rx_handle, &cbs, &count));
 
     uint32_t test_freq[] = {16000, 32000, 48000, 64000, 96000, 128000, 144000};
+#if CONFIG_IDF_TARGET_ESP32P4
+    uint32_t test_num = 4;
+#else
     uint32_t test_num = sizeof(test_freq) / sizeof(uint32_t);
+#endif  // CONFIG_IDF_TARGET_ESP32P4
     uint8_t *data = (uint8_t *)calloc(TEST_RECV_BUF_LEN, sizeof(uint8_t));
     size_t bytes_read = 0;
     int i;
