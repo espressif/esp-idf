@@ -700,6 +700,18 @@ static void handle_rc_set_absolute_volume_rsp(tAVRC_SET_VOLUME_RSP *rsp)
     btc_avrc_ct_cb_to_app(ESP_AVRC_CT_SET_ABSOLUTE_VOLUME_RSP_EVT, &param);
 }
 
+static void handle_rc_get_play_status_rsp(tAVRC_GET_PLAY_STATUS_RSP *rsp)
+{
+    esp_avrc_ct_cb_param_t param;
+    memset(&param, 0, sizeof(esp_avrc_ct_cb_param_t));
+
+    param.play_status_rsp.song_length = rsp->song_len;
+    param.play_status_rsp.song_position = rsp->song_pos;
+    param.play_status_rsp.play_status = rsp->play_status;
+
+    btc_avrc_ct_cb_to_app(ESP_AVRC_CT_PLAY_STATUS_RSP_EVT, &param);
+}
+
 /***************************************************************************
  *  Function       handle_rc_metamsg_cmd
  *
@@ -897,6 +909,9 @@ static void handle_rc_metamsg_rsp (tBTA_AV_META_MSG *p_meta_msg)
         if (vendor_msg->hdr.ctype == AVRC_RSP_ACCEPT) {
             handle_rc_set_absolute_volume_rsp(&avrc_response.volume);
         }
+        break;
+    case AVRC_PDU_GET_PLAY_STATUS:
+        handle_rc_get_play_status_rsp(&avrc_response.get_play_status);
         break;
     default:
         BTC_TRACE_WARNING("%s: unhandled meta rsp: pdu 0x%x", __FUNCTION__, avrc_response.rsp.pdu);
@@ -1333,6 +1348,38 @@ static bt_status_t btc_avrc_ct_send_metadata_cmd (uint8_t tl, uint8_t attr_mask)
     return status;
 }
 
+static bt_status_t btc_avrc_ct_send_get_play_status_cmd(uint8_t tl)
+{
+    tAVRC_STS status = BT_STATUS_UNSUPPORTED;
+
+#if (AVRC_METADATA_INCLUDED == TRUE)
+    CHECK_ESP_RC_CONNECTED;
+
+    tAVRC_COMMAND avrc_cmd = {0};
+    BT_HDR *p_msg = NULL;
+
+    avrc_cmd.get_play_status.opcode = AVRC_OP_VENDOR;
+    avrc_cmd.get_play_status.status = AVRC_STS_NO_ERROR;
+    avrc_cmd.get_play_status.pdu = AVRC_PDU_GET_PLAY_STATUS;
+
+    if (btc_rc_cb.rc_features & BTA_AV_FEAT_METADATA) {
+        status = AVRC_BldCommand(&avrc_cmd, &p_msg);
+        if (status == AVRC_STS_NO_ERROR) {
+            BTA_AvMetaCmd(btc_rc_cb.rc_handle, tl, AVRC_CMD_STATUS, p_msg);
+            status = BT_STATUS_SUCCESS;
+        }
+    } else {
+        status = BT_STATUS_FAIL;
+        BTC_TRACE_DEBUG("%s: feature not supported", __FUNCTION__);
+    }
+
+#else
+    BTC_TRACE_DEBUG("%s: feature not enabled", __FUNCTION__);
+#endif
+
+    return status;
+}
+
 static bt_status_t btc_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state)
 {
     tAVRC_STS status = BT_STATUS_UNSUPPORTED;
@@ -1548,6 +1595,10 @@ void btc_avrc_ct_call_handler(btc_msg_t *msg)
     }
     case BTC_AVRC_STATUS_API_SND_META_EVT: {
         btc_avrc_ct_send_metadata_cmd(arg->md_cmd.tl, arg->md_cmd.attr_mask);
+        break;
+    }
+    case BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT: {
+        btc_avrc_ct_send_get_play_status_cmd(arg->get_play_status_cmd.tl);
         break;
     }
     case BTC_AVRC_STATUS_API_SND_GET_RN_CAPS_EVT: {
