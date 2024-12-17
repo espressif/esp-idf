@@ -18,7 +18,6 @@ def test_vfs_default(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'ccomp',

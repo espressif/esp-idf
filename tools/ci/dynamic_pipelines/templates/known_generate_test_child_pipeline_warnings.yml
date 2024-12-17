@@ -1,0 +1,21 @@
+# This is the file that contains the known warnings for the generate_test_child_pipeline.py script.
+# no_env_marker_test_cases: List of test cases that do not have environment markers.
+#   each item shall be the test node id, you may check the error message to get the node id.
+no_env_marker_test_cases:
+  - dummy_test_case
+
+# no_runner_tags: List of runner tags that has no test runner set.
+#   each item shall be a comma separated list of runner tags.
+# NOTE:
+#   1. for multi dut tests, the runner tag shall be <target>_<count>, e.g. esp32_2 instead of esp32,esp32
+#   2. don't have spaces in the comma separated list.
+no_runner_tags:
+  - esp32,ip101
+  - esp32c2,jtag,xtal_40mhz
+  - esp32c3,flash_multi
+  - esp32c3,sdcard_sdmode
+  - esp32c6,jtag
+  - esp32h2,jtag
+  - esp32p4,jtag
+  - esp32s2,usb_host_flash_disk
+
