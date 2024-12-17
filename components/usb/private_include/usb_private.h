@@ -10,6 +10,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <sys/queue.h>
+#include "esp_assert.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_types_stack.h"
 
@@ -34,7 +35,7 @@ typedef struct {
     int num_isoc_packets;
     usb_isoc_packet_desc_t isoc_packet_desc[0];
 } usb_transfer_dummy_t;
-_Static_assert(sizeof(usb_transfer_dummy_t) == sizeof(usb_transfer_t), "usb_transfer_dummy_t does not match usb_transfer_t");
+ESP_STATIC_ASSERT(sizeof(usb_transfer_dummy_t) == sizeof(usb_transfer_t), "usb_transfer_dummy_t does not match usb_transfer_t");
 
 struct urb_s {
     TAILQ_ENTRY(urb_s) tailq_entry;
