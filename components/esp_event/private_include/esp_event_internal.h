@@ -76,7 +76,7 @@ typedef struct esp_event_loop_instance {
     esp_event_loop_nodes_t loop_nodes;                              /**< set of linked lists containing the
                                                                             registered handlers for the loop */
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    atomic_uint_least32_t events_recieved;                          /**< number of events successfully posted to the loop */
+    atomic_uint_least32_t events_received;                          /**< number of events successfully posted to the loop */
     atomic_uint_least32_t events_dropped;                           /**< number of events dropped due to queue being full */
     SemaphoreHandle_t profiling_mutex;                              /**< mutex used for profiliing */
     SLIST_ENTRY(esp_event_loop_instance) next;                      /**< next event loop in the list */
