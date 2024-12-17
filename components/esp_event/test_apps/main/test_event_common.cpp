@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -1571,3 +1571,49 @@ TEST_CASE("default event loop: registering event handler instance without instan
 
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
+
+#if CONFIG_ESP_EVENT_LOOP_PROFILING
+static void handler_all(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
+{
+    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+}
+
+static void handler_base(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
+{
+    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+}
+
+static void handler_id(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
+{
+    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+}
+
+TEST_CASE("profiling reports valid values", "[event][default]")
+{
+    TEST_ESP_OK(esp_event_loop_create_default());
+
+    /* register handler for event base 1 and event id 1 */
+    TEST_ESP_OK(esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id, NULL));
+
+    /* register handler for event base 1 and all event ids */
+    TEST_ESP_OK(esp_event_handler_register(s_test_base1, ESP_EVENT_ANY_ID, handler_base, NULL));
+
+    /* register handler for all event bases and all event ids */
+    TEST_ESP_OK(esp_event_handler_register(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, handler_all, NULL));
+
+    /* post an event on event base 1, event id 1 */
+    TEST_ESP_OK(esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(1000)));
+
+    /* post an event 1 from base 1 and check the dump.
+     * - 3 handlers invoked, exec time is not 0 */
+    esp_event_dump(stdout);
+
+    /* unregister handlers */
+    TEST_ESP_OK(esp_event_handler_unregister(ESP_EVENT_ANY_BASE, ESP_EVENT_ANY_ID, handler_all));
+    TEST_ESP_OK(esp_event_handler_unregister(s_test_base1, ESP_EVENT_ANY_ID, handler_base));
+    TEST_ESP_OK(esp_event_handler_unregister(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id));
+
+    /* delete loop */
+    TEST_ESP_OK(esp_event_loop_delete_default());
+}
+#endif // CONFIG_ESP_EVENT_LOOP_PROFILING

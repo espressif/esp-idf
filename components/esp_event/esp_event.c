@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,7 @@
 /* ---------------------------- Definitions --------------------------------- */
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-// LOOP @<address, name> rx:<recieved events no.> dr:<dropped events no.>
+// LOOP @<address, name> rx:<received events no.> dr:<dropped events no.>
 #define LOOP_DUMP_FORMAT              "LOOP @%p,%s rx:%" PRIu32 " dr:%" PRIu32 "\n"
  // handler @<address> ev:<base, id> inv:<times invoked> time:<runtime>
 #define HANDLER_DUMP_FORMAT           "  HANDLER @%p ev:%s,%s inv:%" PRIu32 " time:%lld us\n"
@@ -148,12 +148,40 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_n
     // This happens in "handler instance can unregister itself" test case.
     // To prevent memory corruption error it's necessary to check if pointer is still valid.
     esp_event_loop_node_t* loop_node;
-    esp_event_handler_node_t* handler_node;
     SLIST_FOREACH(loop_node, &(loop->loop_nodes), next) {
+        // try to find the handler amongst the list of handlers that are registered on the
+        // loop level (i.e., registered to be triggered for all events)
+        esp_event_handler_node_t* handler_node;
         SLIST_FOREACH(handler_node, &(loop_node->handlers), next) {
             if(handler_node == handler) {
                 handler->invoked++;
                 handler->time += diff;
+            }
+        }
+
+        // try to find the handler amongst the list of handlers that are registered on the
+        // base level (i.e., registered to be triggered for all events of a specific event base)
+        esp_event_base_node_t* base_node;
+        SLIST_FOREACH(base_node, &(loop_node->base_nodes), next) {
+            esp_event_handler_node_t* base_handler_node;
+            SLIST_FOREACH(base_handler_node, &(base_node->handlers), next) {
+                if (base_handler_node == handler) {
+                    handler->invoked++;
+                    handler->time += diff;
+                }
+            }
+
+            // try to find the handler amongst the list of handlers that are registered on the
+            // ID level (i.e., registered to be triggered for a specific event ID of a specific event base)
+            esp_event_id_node_t* id_node;
+            SLIST_FOREACH(id_node, &(base_node->id_nodes), next) {
+                esp_event_handler_node_t* id_handler_node;
+                SLIST_FOREACH(id_handler_node, &(id_node->handlers), next) {
+                    if (id_handler_node == handler) {
+                        handler->invoked++;
+                        handler->time += diff;
+                    }
+                }
             }
         }
     }
@@ -894,7 +922,7 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
     }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    atomic_fetch_add(&loop->events_recieved, 1);
+    atomic_fetch_add(&loop->events_received, 1);
 #endif
 
     return ESP_OK;
@@ -942,7 +970,7 @@ esp_err_t esp_event_isr_post_to(esp_event_loop_handle_t event_loop, esp_event_ba
     }
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
-    atomic_fetch_add(&loop->events_recieved, 1);
+    atomic_fetch_add(&loop->events_received, 1);
 #endif
 
     return ESP_OK;
@@ -971,13 +999,13 @@ esp_err_t esp_event_dump(FILE* file)
     portENTER_CRITICAL(&s_event_loops_spinlock);
 
     SLIST_FOREACH(loop_it, &s_event_loops, next) {
-        uint32_t events_recieved, events_dropped;
+        uint32_t events_received, events_dropped;
 
-        events_recieved = atomic_load(&loop_it->events_recieved);
+        events_received = atomic_load(&loop_it->events_received);
         events_dropped = atomic_load(&loop_it->events_dropped);
 
-        PRINT_DUMP_INFO(dst, sz, LOOP_DUMP_FORMAT, loop_it, loop_it->task != NULL ? loop_it->name : "none" ,
-                        events_recieved, events_dropped);
+        PRINT_DUMP_INFO(dst, sz, LOOP_DUMP_FORMAT, loop_it, loop_it->task != NULL ? loop_it->name : "none",
+                        events_received, events_dropped);
 
         int sz_bak = sz;
 
