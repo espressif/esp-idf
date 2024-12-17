@@ -6,8 +6,10 @@
 
 #pragma once
 
+#include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_attr.h"
 #include "soc/usb_dwc_struct.h"
 #include "hal/usb_dwc_types.h"
 #include "hal/misc.h"
@@ -975,6 +977,17 @@ static inline void usb_dwc_ll_qtd_get_status(usb_dwc_ll_dma_qtd_t *qtd, int *rem
     *rem_len = qtd->in_non_iso.xfer_size;
     //Clear the QTD just for safety
     qtd->buffer_status_val = 0;
+}
+
+// ---------------------------- Power and Clock Gating Register --------------------------------
+FORCE_INLINE_ATTR void usb_dwc_ll_set_stoppclk(usb_dwc_dev_t *hw, bool stop)
+{
+    hw->pcgcctl_reg.stoppclk = stop;
+}
+
+FORCE_INLINE_ATTR bool usb_dwc_ll_get_stoppclk_st(usb_dwc_dev_t *hw)
+{
+    return hw->pcgcctl_reg.stoppclk;
 }
 
 #ifdef __cplusplus
