@@ -55,8 +55,8 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > 1.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
     ESP_RETURN_ON_FALSE(clk_info->mclk_div < 256, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
 #if SOC_I2S_SUPPORTS_PCM2PDM
     if (!handle->is_raw_pdm) {
@@ -367,8 +367,8 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk >= 0.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
 #if SOC_I2S_SUPPORTS_PDM2PCM
     if (!handle->is_raw_pdm) {
         /* Set down-sampling configuration */
