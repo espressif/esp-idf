@@ -3,7 +3,19 @@
 
 :link_to_translation:`en:[English]`
 
-一般情况下，{IDF_TARGET_NAME} 的固件是通过芯片的串口烧录。但是，通过串口烧录 {IDF_TARGET_NAME} 需要连接 USB 转串口转换器（如 CP210x 或 FTDI），详细信息可参阅 :doc:`与 {IDF_TARGET_NAME} 创建串口连接<../get-started/establish-serial-connection>`。{IDF_TARGET_NAME} 包含一个 USB OTG 外设，使其可以通过 USB 将 {IDF_TARGET_NAME} 直接连接到主机，即不需要 USB 转串口转换器也可完成烧录。
+.. only:: not SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    一般情况下，{IDF_TARGET_NAME} 的固件是通过芯片的串口烧录。但是，通过串口烧录 {IDF_TARGET_NAME} 需要连接 USB 转串口转换器（如 CP210x 或 FTDI），详细信息可参阅 :doc:`与 {IDF_TARGET_NAME} 创建串口连接 <../get-started/establish-serial-connection>`。{IDF_TARGET_NAME} 包含一个 USB OTG 外设，使其能够通过 USB 将 {IDF_TARGET_NAME} 直接连接到主机，即不需要 USB 转串口转换器也可完成烧录。
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    一般情况下，{IDF_TARGET_NAME} 的固件是通过芯片的串口或 USB_SERIAL_JTAG 烧录，详细信息可参阅 :doc:`与 {IDF_TARGET_NAME} 创建串口连接 <../get-started/establish-serial-connection>`。{IDF_TARGET_NAME} 还包含一个 USB OTG 外设，使其能够通过 USB 设备固件升级直接连接到主机。
+
+.. only:: esp32s3
+
+    默认情况下，:doc:`USB_SERIAL_JTAG<usb-serial-jtag-console>` 模块连接到 {IDF_TARGET_NAME} 的内部 USB PHY，而 USB OTG 外设只有在连接外部 USB PHY 时才能使用。由于 DFU 是通过 USB OTG 外设提供的，因此在默认的设置下，无法通过内部 USB PHY 使用 DFU。
+
+    然而，你可以通过烧录 ``USB_PHY_SEL`` eFuse，将内部 USB PHY 永久切换为支持 USB OTG 外设的模式，不再用于 USB_SERIAL_JTAG。有关 USB_SERIAL_JTAG 和 USB OTG 的更多信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
 
 设备固件升级 (DFU) 是一种通过通用串行总线 (USB) 升级设备固件的机制。但是，启用安全启动 (Secure Boot) 或 flash 加密会禁用 ROM 中的 USB-OTG USB 堆栈，则无法通过该端口上的模拟串口或 DFU 进行更新。
 
@@ -15,40 +27,40 @@
 USB 连接
 --------------
 
-{IDF_TARGET_NAME} 的内部 USB PHY（收发器）与 GPIO 的连接如下表所示：
+.. only:: esp32p4
 
-.. list-table::
-   :header-rows: 1
-   :widths: 25 20
+    {IDF_TARGET_NAME} 将 USB D+ 和 D- 信号连接到其专用引脚。为了实现 USB 设备功能，这些引脚必须连接到 USB 总线，如，通过 Micro-B 接口、USB-C 接口进行连接，或直接连接到标准 A 型插头。
 
-   * - GPIO
-     - USB
+.. only:: esp32s2 or esp32s3
 
-   * - 20
-     - D+（绿色）
+    {IDF_TARGET_NAME} 的内部 USB PHY（收发器）与 GPIO 的连接如下表所示：
 
-   * - 19
-     - D-（白色）
+    .. list-table::
+       :header-rows: 1
+       :widths: 25 20
 
-   * - GND
-     - GND（黑色）
+       * - GPIO
+         - USB
 
-   * - +5V
-     - +5V（红色）
+       * - 20
+         - D+（绿色）
+
+       * - 19
+         - D-（白色）
+
+       * - GND
+         - GND（黑色）
+
+       * - +5V
+         - +5V（红色）
 
 .. warning::
 
-    一些连接线采用非标准颜色连接，有时调换下 D+ 和 D- 的连接，驱动程序就能正常工作。如果无法检测到你的设备，请尝试下调换 D+ 和 D- 的连接线。
-
-.. only:: esp32s3
-
-    默认情况下，{IDF_TARGET_NAME} 内部 USB PHY 与 :doc:`USB_SERIAL_JTAG<usb-serial-jtag-console>` 模块连接，此时 USB OTG 外设只有在连接外部 USB PHY 时才能使用。DFU 是通过 USB OTG 外设提供，因此在默认的设置下，无法通过内部 USB PHY 使用 DFU。
-
-    然而，用户可以烧录 ``USB_PHY_SEL`` eFuse 使得内部 USB PHY 与 USB OTG 连接，而不是连接 USB_SERIAL_JTAG。有关 USB_SERIAL_JTAG 和 USB OTG 的更多详细信息，请参阅 *{IDF_TARGET_NAME} 技术参考手册* [`PDF <{IDF_TARGET_TRM_CN_URL}>`__]。
+    一些连接线采用非标准颜色连接，且一些驱动程序能够在对调了 D+ 和 D- 连接的情况下正常工作。因此如果无法检测到设备，请尝试下调换 D+ 和 D- 的连接线。
 
 .. note::
 
-    {IDF_TARGET_NAME} 芯片需要处于引导加载程序模式才能被检测为 DFU 设备并烧录。可以通过下拉 GPIO0（例如按下 BOOT 按钮）、拉低 RESET 片刻并释放 GPIO0 来实现。
+    {IDF_TARGET_NAME} 芯片需要处于引导加载程序模式才能被检测为 DFU 设备并烧录。有关如何进入引导加载程序模式的更多信息，请参阅 `Boot Mode Selection <https://docs.espressif.com/projects/esptool/en/latest/{IDF_TARGET_PATH_NAME}/advanced-topics/boot-mode-selection.html#select-bootloader-mode>`_。
 
 
 .. _api_guide_dfu_build:
@@ -98,7 +110,7 @@ USB 连接
 Udev 规则（仅限 Linux）
 --------------------------------
 
-Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情况下运行 ``dfu-util`` （和 ``idf.py dfu-flash``）从而访问芯片。
+Udev 是 Linux 内核的设备管理器，允许在没有 ``sudo`` 的情况下运行 ``dfu-util`` （和 ``idf.py dfu-flash``）从而访问芯片。
 
 创建文件 ``/etc/udev/rules.d/40-dfuse.rules``，并在文件中添加如下内容::
 
@@ -106,7 +118,7 @@ Udev 是 Linux 内核的设备管理器，允许用户在没有 ``sudo`` 的情�
 
 .. note::
 
-    请检查 ``groups`` 命令的输出。用户必须是上面指定的 `GROUP` 的成员。你可以为此使用其他现有的组（例如，在某些系统上使用 `uucp` 而不是 `plugdev`）或为此创建一个新的组。
+    请检查 ``groups`` 命令的输出。加入上面指定的 `GROUP` 组获取访问权限。你可以为此使用其他现有的组（例如，在某些系统上使用 `uucp` 而不是 `plugdev`）或为此创建一个新的组。
 
 你可以选择重启计算机使之前的设置生效，或者手动运行 ``sudo udevadm trigger``，强制 Udev 触发新规则。
 
