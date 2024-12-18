@@ -13,7 +13,7 @@
 #include "btc/btc_manage.h"
 #include "btc_gap_ble.h"
 #include "btc/btc_ble_storage.h"
-
+#include "esp_random.h"
 
 esp_err_t esp_ble_gap_register_callback(esp_gap_ble_cb_t callback)
 {
@@ -188,6 +188,25 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr)
+{
+    // Static device address: First two bits are '11', rest is random
+    rand_addr[0] = 0xC0 | (esp_random() & 0x3F);
+    for (int i = 1; i < 6; i++) {
+        rand_addr[i] = esp_random() & 0xFF; // Randomize remaining bits
+    }
+    return ESP_OK;
+}
+
+esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr)
+{
+    // Non-resolvable private address: First two bits are '00', rest is random
+    rand_addr[0] = (esp_random() & 0x3F);
+    for (int i = 1; i < 6; i++) {
+        rand_addr[i] = esp_random() & 0xFF; // Randomize remaining bits
+    }
+    return ESP_OK;
+}
 
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr)
 {

@@ -1716,13 +1716,13 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  * @param[in]       rand_addr: The address to be configured. Refer to the table below for possible address subtypes:
  *
- *               | address [47:46] | Address Type             |
- *               |-----------------|--------------------------|
- *               |      0b00       | Non-Resolvable Private   |
- *               |                 | Address                  |
- *               |-----------------|--------------------------|
- *               |      0b11       | Static Random Address    |
- *               |-----------------|--------------------------|
+ *               | address [47:46] | Address Type                | Corresponding API                      |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b00       | Non-Resolvable Private      | esp_ble_gap_addr_create_nrpa           |
+ *               |                 | Address (NRPA)              |                                        |
+ *               |-----------------|-----------------------------|----------------------------------------|
+ *               |      0b11       | Static Random Address       | esp_ble_gap_addr_create_static         |
+ *               |-----------------|-----------------------------|----------------------------------------|
  *
  * @return
  *                  - ESP_OK : success
@@ -1730,6 +1730,22 @@ esp_err_t esp_ble_gap_set_pkt_data_len(esp_bd_addr_t remote_device, uint16_t tx_
  *
  */
 esp_err_t esp_ble_gap_set_rand_addr(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           Create a static device address
+ * @param[out]      rand_addr: Pointer to the buffer where the static device address will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_static(esp_bd_addr_t rand_addr);
+
+/**
+ * @brief           Create a non-resolvable private address (NRPA)
+ * @param[out]      rand_addr: Pointer to the buffer where the NRPA will be stored.
+ * @return          - ESP_OK : Success
+ *                  - Other  : Failed
+ */
+esp_err_t esp_ble_gap_addr_create_nrpa(esp_bd_addr_t rand_addr);
 
 /**
  * @brief           This function sets the length of time the Controller uses a Resolvable Private Address
@@ -1778,7 +1794,6 @@ esp_err_t esp_ble_gap_add_device_to_resolving_list(esp_bd_addr_t peer_addr, uint
  *
  */
 esp_err_t esp_ble_gap_clear_rand_addr(void);
-
 
 /**
  * @brief           Enable/disable privacy (including address resolution) on the local device
@@ -2117,7 +2132,6 @@ esp_err_t esp_ble_remove_bond_device(esp_bd_addr_t bd_addr);
 *
 */
 int esp_ble_get_bond_device_num(void);
-
 
 /**
 * @brief           Get the device from the security database list of peer device.
