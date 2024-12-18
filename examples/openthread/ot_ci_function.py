@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
+import os
 import re
 import socket
 import struct
@@ -11,6 +12,7 @@ from typing import Tuple
 
 import netifaces
 import pexpect
+import yaml
 from pytest_embedded_idf.dut import IdfDut
 
 
@@ -256,9 +258,30 @@ def init_interface_ipv6_address() -> None:
 
 
 def get_host_interface_name() -> str:
-    interfaces = netifaces.interfaces()
-    interface_name = [s for s in interfaces if 'wl' in s][0]
-    return str(interface_name)
+    home_dir = os.path.expanduser('~')
+    config_path = os.path.join(home_dir, 'config', 'env_config.yml')
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                config = yaml.safe_load(file)
+            interface_name = config.get('interface_name')
+            if interface_name:
+                if interface_name == 'eth0':
+                    print(
+                        f"Warning: 'eth0' is not recommended as a valid network interface. "
+                        f"Please check and update the 'interface_name' in the configuration file: "
+                        f'{config_path}'
+                    )
+                else:
+                    return str(interface_name)
+            else:
+                print("Warning: Configuration file found but 'interface_name' is not defined.")
+    except Exception as e:
+        print(f'Error: Failed to read or parse {config_path}. Details: {e}')
+    if 'eth1' in netifaces.interfaces():
+        return 'eth1'
+
+    raise Exception('Warning: No valid network interface detected. Please check your configuration.')
 
 
 def clean_buffer(dut:IdfDut) -> None:
