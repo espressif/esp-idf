@@ -492,6 +492,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                                             ESP_BLE_AD_TYPE_NAME_CMPL,
                                             &adv_name_len);
         if (!connect && strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
+            // Note: If there are multiple devices with the same device name, the device may connect to an unintended one.
+            // It is recommended to change the default device name to ensure it is unique.
             connect = true;
             esp_ble_gap_stop_ext_scan();
             ESP_LOGI(GATTC_TAG, "Device found "ESP_BD_ADDR_STR"", ESP_BD_ADDR_HEX(param->ext_adv_report.params.addr));

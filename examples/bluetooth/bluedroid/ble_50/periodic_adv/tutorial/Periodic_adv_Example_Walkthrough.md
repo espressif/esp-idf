@@ -216,10 +216,9 @@ Ext adv raw data:
 
 ```c
 static uint8_t raw_ext_adv_data_2m[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x13, 0x09, 'E', 'S', 'P', '_', 'M', 'U', 'L', 'T', 'I', '_', 'A',
-        'D', 'V', '_', '8', '0', 'M', 'S'
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'E', 'X', 'T', 'E', 'N', 'D', 'E', 'D', '_', 'A', 'D', 'V'
 };
 ```
 
@@ -236,11 +235,10 @@ static esp_ble_gap_periodic_adv_params_t periodic_adv_params = {
 
 ```c
 static uint8_t periodic_adv_raw_data[] = {
-        0x02, 0x01, 0x06,
-        0x02, 0x0a, 0xeb,
-        0x03, 0x03, 0xab, 0xcd,
-        0x11, 0x09, 'E', 'S', 'P', '_', 'P', 'E', 'R', 'I', 'O', 'D', 'I',
-        'C', '_', 'A', 'D', 'V'
+        0x02, ESP_BLE_AD_TYPE_FLAG, 0x06,
+        0x02, ESP_BLE_AD_TYPE_TX_PWR, 0xeb,
+        0x03, ESP_BLE_AD_TYPE_16SRV_CMPL, 0xab, 0xcd,
+        0x11, ESP_BLE_AD_TYPE_NAME_CMPL, 'E', 'S', 'P', '_', 'P', 'E', 'R', 'I', 'O', 'D', 'I', 'C', '_', 'A', 'D', 'V'
 };
 ```
 
