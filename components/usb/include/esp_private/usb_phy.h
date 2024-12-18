@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,12 +54,16 @@ typedef enum {
  * @brief USB external PHY IO pins configuration structure
  */
 typedef struct {
+    // Inputs
     int vp_io_num;             /**< GPIO pin to USB_EXTPHY_VP_IDX */
     int vm_io_num;             /**< GPIO pin to USB_EXTPHY_VM_IDX */
     int rcv_io_num;            /**< GPIO pin to USB_EXTPHY_RCV_IDX */
+    // Outputs
+    int suspend_n_io_num;      /**< GPIO pin to USB_EXTPHY_SUSPND_IDX */
     int oen_io_num;            /**< GPIO pin to USB_EXTPHY_OEN_IDX */
     int vpo_io_num;            /**< GPIO pin to USB_EXTPHY_VPO_IDX */
     int vmo_io_num;            /**< GPIO pin to USB_EXTPHY_VMO_IDX */
+    int fs_edge_sel_io_num;    /**< GPIO pin to USB_EXTPHY_SPEED_IDX */
 } usb_phy_ext_io_conf_t;
 
 /**
@@ -101,7 +105,7 @@ typedef struct phy_context_t *usb_phy_handle_t;    /**< USB PHY context handle *
  *
  * This function will enable the OTG Controller
  *
- * @param[in] config USB PHY configurtion struct
+ * @param[in]  config     USB PHY configuration struct
  * @param[out] handle_ret USB PHY context handle
  *
  * @return
