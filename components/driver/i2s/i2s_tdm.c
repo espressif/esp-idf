@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -58,10 +58,11 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
     }
     clk_info->sclk = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ?
                      clk_cfg->ext_clk_freq_hz : i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+    float min_mclk_div = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ? 0.99 : 1.99;
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large for the current clock source");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate or mclk_multiple is too large for the current clock source");
 
     return ESP_OK;
 }
