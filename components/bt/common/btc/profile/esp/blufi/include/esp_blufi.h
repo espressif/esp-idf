@@ -85,6 +85,9 @@ void esp_blufi_adv_stop(void);
 /* Start advertisement */
 void esp_blufi_adv_start(void);
 
+/* Start advertisement with specified name. if the name is NULL just start advertisement */
+void esp_blufi_adv_start_with_name(const char *name);
+
 void esp_blufi_send_encap(void *arg);
 
 #ifdef CONFIG_BT_NIMBLE_ENABLED
