@@ -69,6 +69,9 @@
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rtc.h"
 #include "soc/hp_sys_clkrst_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rtc.h"
+#include "esp_memprot.h"
 #endif
 
 #include "esp_private/rtc_clk.h"
