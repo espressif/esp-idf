@@ -129,6 +129,11 @@ If you have a logic analyzer, you can use a logic analyzer to grab GPIO signal d
 | SDOUT |serial data out| GPIO_NUM_18/2 |
 | SDIN  |serial data in | GPIO_NUM_19/3 |
 
+Other pins like I2C please refer to `example_config.h`.
+
+Please note that the power amplifier on some development boards (like P4 EV board) are disabled by default, you might need to set the PA_CTRL pin to high to play the music via a speaker.
+The PA_CTRL pin can be configured by `idf.py menuconfig`, please check if the PA_CTRL pin is correct on your board if the audio can only be played from the earphones but not the speaker.
+
 ### Customize your own music
 
 The example have contained a piece of music in canon.pcm, if you want to play your own music, you can follow these steps:
@@ -149,5 +154,10 @@ The example have contained a piece of music in canon.pcm, if you want to play yo
 
     * Hardware connection is not correct: run `idf.py -p PORT monitor`, and reboot your board to see if there are any output logs.
     * The baud rate for downloading is too high: lower your baud rate in the `menuconfig` menu, and try again.
+
+* Failed to get audio from specker
+
+    * The PA (Power Amplifier) on some dev-kits might be disabled by default, please check the schematic to see if PA_CTRL is connected to any GPIO or something.
+    * Pull-up the PA_CTRL pin either by setting that GPIO to high or by connecting it to 3.3V with a jump wire should help.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

@@ -417,7 +417,11 @@ err:
 uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uint32_t dma_frame_num)
 {
     uint32_t active_chan = handle->active_slot;
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t bytes_per_sample = ((data_bit_width + 15) / 16) * 2;
+#else
+    uint32_t bytes_per_sample = (data_bit_width + 7) / 8;
+#endif  // CONFIG_IDF_TARGET_ESP32
     uint32_t bytes_per_frame = bytes_per_sample * active_chan;
     uint32_t bufsize = dma_frame_num * bytes_per_frame;
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
@@ -745,8 +749,9 @@ static void IRAM_ATTR i2s_dma_tx_callback(void *arg)
 
 #pragma GCC diagnostic pop
 
+#if SOC_GDMA_SUPPORTED
 /**
- * @brief   I2S DMA interrupt initialization
+ * @brief   I2S DMA interrupt initialization (implemented by I2S dedicated DMA)
  * @note    I2S will use GDMA if chip supports, and the interrupt is triggered by GDMA.
  *
  * @param   handle      I2S channel handle
@@ -762,7 +767,6 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
     esp_err_t ret = ESP_OK;
     i2s_port_t port_id = handle->controller->id;
     ESP_RETURN_ON_FALSE((port_id >= 0) && (port_id < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid handle");
-#if SOC_GDMA_SUPPORTED
     /* Set GDMA trigger module */
     gdma_trigger_t trig = {.periph = GDMA_TRIG_PERIPH_I2S};
 
@@ -804,31 +808,48 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
         /* Set callback function for GDMA, the interrupt is triggered by GDMA, then the GDMA ISR will call the  callback function */
         ESP_GOTO_ON_ERROR(gdma_register_rx_event_callbacks(handle->dma.dma_chan, &cb, handle), err2, TAG, "Register rx callback failed");
     }
-#else
-    intr_flag |= handle->intr_prio_flags;
-    /* Initialize I2S module interrupt */
-    if (handle->dir == I2S_DIR_TX) {
-        esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
-                                  (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_TX_EVENT_MASK,
-                                  i2s_dma_tx_callback, handle, &handle->dma.dma_chan);
-    } else {
-        esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
-                                  (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_RX_EVENT_MASK,
-                                  i2s_dma_rx_callback, handle, &handle->dma.dma_chan);
-    }
-    /* Start DMA */
-    i2s_ll_enable_dma(handle->controller->hal.dev, true);
-#endif // SOC_GDMA_SUPPORTED
     return ret;
-#if SOC_GDMA_SUPPORTED
 err2:
     gdma_disconnect(handle->dma.dma_chan);
 err1:
     gdma_del_channel(handle->dma.dma_chan);
     handle->dma.dma_chan = NULL;
     return ret;
-#endif
 }
+#else
+/**
+ * @brief   I2S DMA interrupt initialization (implemented by I2S dedicated DMA)
+ * @note    I2S will use GDMA if chip supports, and the interrupt is triggered by GDMA.
+ *
+ * @param   handle      I2S channel handle
+ * @param   intr_flag   Interrupt allocation flag
+ * @return
+ *      - ESP_OK                    I2S DMA interrupt initialize success
+ *      - ESP_ERR_NOT_FOUND         GDMA channel not found
+ *      - ESP_ERR_INVALID_ARG       Invalid arguments
+ *      - ESP_ERR_INVALID_STATE     GDMA state error
+ */
+esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
+{
+    esp_err_t ret = ESP_OK;
+    i2s_port_t port_id = handle->controller->id;
+    ESP_RETURN_ON_FALSE((port_id >= 0) && (port_id < SOC_I2S_NUM), ESP_ERR_INVALID_ARG, TAG, "invalid handle");
+    intr_flag |= handle->intr_prio_flags;
+    /* Initialize I2S module interrupt */
+    if (handle->dir == I2S_DIR_TX) {
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
+                                                      (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_TX_EVENT_MASK,
+                                                      i2s_dma_tx_callback, handle, &handle->dma.dma_chan), TAG, "Allocate tx dma channel failed");
+    } else {
+        ESP_RETURN_ON_ERROR(esp_intr_alloc_intrstatus(i2s_periph_signal[port_id].irq, intr_flag,
+                                                      (uint32_t)i2s_ll_get_interrupt_status_reg(handle->controller->hal.dev), I2S_LL_RX_EVENT_MASK,
+                                                      i2s_dma_rx_callback, handle, &handle->dma.dma_chan), TAG, "Allocate rx dma channel failed");
+    }
+    /* Start DMA */
+    i2s_ll_enable_dma(handle->controller->hal.dev, true);
+    return ret;
+}
+#endif  // SOC_GDMA_SUPPORTED
 
 static uint64_t s_i2s_get_pair_chan_gpio_mask(i2s_chan_handle_t handle)
 {
