@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include "soc/gpio_reg.h"
+
+//TODO: [ESP32H21] IDF-11611
 
 #ifdef __cplusplus
 extern "C" {
@@ -28,8 +30,9 @@ extern "C" {
 #define GPIO_ID_PIN(n)                  (GPIO_ID_PIN0+(n))
 #define GPIO_PIN_ADDR(i)                (GPIO_PIN0_REG + i*4)
 
-#define GPIO_FUNC_IN_HIGH               0x38
-#define GPIO_FUNC_IN_LOW                0x3C
+//TODO: [ESP32H21] IDF-11611, need check
+#define GPIO_FUNC_IN_HIGH               0x20
+#define GPIO_FUNC_IN_LOW                0x30
 
 #define GPIO_ID_IS_PIN_REGISTER(reg_id) \
     ((reg_id >= GPIO_ID_PIN0) && (reg_id <= GPIO_ID_PIN(GPIO_PIN_COUNT-1)))
@@ -84,7 +87,7 @@ uint32_t gpio_input_get(void);
   */
 void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
-/**c
+/**
   * @brief disable GPIOs to wakeup the ESP32.
   *        Please do not call this function in SDK.
   *
