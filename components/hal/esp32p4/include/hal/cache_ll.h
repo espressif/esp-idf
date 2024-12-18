@@ -556,6 +556,80 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
     }
 }
 
+/**
+ * @brief Invalidate L1 ICache all
+ *
+ * @param cache_id     id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_invalidate_icache_all(uint32_t cache_id)
+{
+    if (cache_id == 0) {
+        Cache_Invalidate_All(CACHE_MAP_L1_ICACHE_0);
+    } else if (cache_id == 1) {
+        Cache_Invalidate_All(CACHE_MAP_L1_ICACHE_1);
+    } else if (cache_id == CACHE_LL_ID_ALL) {
+        Cache_Invalidate_All(CACHE_MAP_L1_ICACHE_MASK);
+    }
+}
+
+/**
+ * @brief Invalidate L1 DCache all
+ *
+ * @param cache_id     id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l1_invalidate_dcache_all(uint32_t cache_id)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        Cache_Invalidate_All(CACHE_MAP_L1_DCACHE);
+    }
+}
+
+/**
+ * @brief Invalidate L2 Cache all
+ *
+ * @param cache_id     id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_l2_invalidate_cache_all(uint32_t cache_id)
+{
+    if (cache_id == 0 || cache_id == CACHE_LL_ID_ALL) {
+        Cache_Invalidate_All(CACHE_MAP_L2_CACHE);
+    }
+}
+
+/**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    if (cache_level == 1 || cache_level == 2 || cache_level == CACHE_LL_LEVEL_ALL) {
+        switch (type) {
+        case CACHE_TYPE_INSTRUCTION:
+            cache_ll_l1_invalidate_icache_all(cache_id);
+            break;
+        case CACHE_TYPE_DATA:
+            cache_ll_l1_invalidate_dcache_all(cache_id);
+            break;
+        case CACHE_TYPE_ALL:
+        default:
+            cache_ll_l1_invalidate_icache_all(cache_id);
+            cache_ll_l1_invalidate_dcache_all(cache_id);
+            break;
+        }
+    }
+
+    if (cache_level == 2 || cache_level == CACHE_LL_LEVEL_ALL) {
+        cache_ll_l2_invalidate_cache_all(cache_id);
+    }
+}
+
 /*------------------------------------------------------------------------------
  * Writeback
  *----------------------------------------------------------------------------*/
