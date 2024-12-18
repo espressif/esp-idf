@@ -365,6 +365,8 @@ We are interested in the `ESP_GAP_SEARCH_INQ_RES_EVT` event, which is called eve
 		        ESP_LOGI(GATTC_TAG, " ");
 		        if (adv_name != NULL) {
 			        if (strlen(remote_device_name) == adv_name_len && strncmp((char *)adv_name, remote_device_name, adv_name_len) == 0) {
+                    // Note: If there are multiple devices with the same device name, the device may connect to an unintended one.
+                    // It is recommended to change the default device name to ensure it is unique.
                     ESP_LOGI(GATTC_TAG, "searched device %s", remote_device_name);
                     if (connect == false) {
                         connect = true;
