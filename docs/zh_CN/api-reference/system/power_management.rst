@@ -168,6 +168,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
         .. list::
 
             :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+            :SOC_PCNT_SUPPORTED: - PCNT
 
         以下外设（以及一些未在本章节任意一组中列出的外设）尚未支持外设下电功能。如果您的应用使用了这些外设，它们可能无法在从睡眠中醒来后仍然正常工作：
 
@@ -176,7 +177,6 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - PCNT
             - USB-Serial-JTAG
             - SARADC
 
