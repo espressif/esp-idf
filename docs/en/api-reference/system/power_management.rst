@@ -168,6 +168,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
         .. list::
 
             :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+            :SOC_PCNT_SUPPORTED: - PCNT
 
         The following peripherals (and those not listed in any group of this section) are not yet supported. If your application uses these peripherals, they may not work well after waking up from sleep.
 
@@ -176,7 +177,6 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - ASSIST_DEBUG
             - Trace
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
-            - PCNT
             - USB-Serial-JTAG
             - SARADC
 
