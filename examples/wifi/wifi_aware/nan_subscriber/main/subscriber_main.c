@@ -32,7 +32,7 @@
 #define EXAMPLE_NAN_SVC_MSG             "Hello"
 #endif
 
-static const char *TAG = "nan_sub";
+static const char *TAG = "subscriber";
 
 static EventGroupHandle_t nan_event_group;
 
@@ -42,8 +42,21 @@ const int NDP_FAILED = BIT2;
 
 static wifi_event_nan_svc_match_t g_svc_match_evt;
 
+static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
+                                      int32_t event_id, void *event_data)
+{
+    wifi_event_nan_receive_t *evt = (wifi_event_nan_receive_t *)event_data;
+    if (evt->ssi_len) {
+        ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
+    } else {
+        ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
+                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+    }
+}
+
 #ifdef CONFIG_EXAMPLE_NAN_SEND_PING
-static uint8_t g_peer_ndi[6];
+static uint8_t g_peer_ndi[ETH_ALEN];
 
 static void cmd_ping_on_ping_success(esp_ping_handle_t hdl, void *args)
 {
@@ -149,6 +162,11 @@ void wifi_nan_subscribe(void)
                                                         &nan_svc_match_event_handler,
                                                         NULL,
                                                         &instance_any_id));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
+                                                        WIFI_EVENT_NAN_RECEIVE,
+                                                        &nan_receive_event_handler,
+                                                        NULL,
+                                                        &instance_any_id));
 
 #ifdef CONFIG_EXAMPLE_NAN_SEND_PING
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
@@ -189,13 +207,20 @@ void wifi_nan_subscribe(void)
         wifi_nan_followup_params_t fup = {
             .inst_id = sub_id,
             .peer_inst_id = g_svc_match_evt.publish_id,
-            .svc_info = EXAMPLE_NAN_SVC_MSG,
         };
         memcpy(fup.peer_mac, g_svc_match_evt.pub_if_mac, sizeof(fup.peer_mac));
+        fup.ssi_len = (strlen(EXAMPLE_NAN_SVC_MSG) < ESP_WIFI_MAX_FUP_SSI_LEN) ? strlen(EXAMPLE_NAN_SVC_MSG) : ESP_WIFI_MAX_FUP_SSI_LEN;
+        fup.ssi = calloc(1, fup.ssi_len);
+        if (!fup.ssi) {
+            ESP_LOGE(TAG, "Failed to allocate for Follow-up");
+            return;
+        }
+        memcpy((char *)fup.ssi, EXAMPLE_NAN_SVC_MSG, fup.ssi_len);
 
         if (esp_wifi_nan_send_message(&fup) == ESP_OK)
             ESP_LOGI(TAG, "Sending message '%s' to Publisher "MACSTR" ...",
                           EXAMPLE_NAN_SVC_MSG, MAC2STR(g_svc_match_evt.pub_if_mac));
+        free(fup.ssi);
 #endif
 #ifdef CONFIG_EXAMPLE_NAN_SEND_PING
         wifi_nan_datapath_req_t ndp_req = {0};

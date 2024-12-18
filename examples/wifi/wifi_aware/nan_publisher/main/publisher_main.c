@@ -30,17 +30,30 @@
 #else
 #define EXAMPLE_NAN_SVC_MSG            "Welcome"
 #endif
+#ifndef ETH_ALEN
+#define ETH_ALEN 6
+#endif
 
 static EventGroupHandle_t nan_event_group;
+static const char *TAG = "publisher";
 
 static int NAN_RECEIVE = BIT0;
 uint8_t g_peer_inst_id;
+static uint8_t g_peer_mac[ETH_ALEN];
 
 static void nan_receive_event_handler(void *arg, esp_event_base_t event_base,
                                       int32_t event_id, void *event_data)
 {
     wifi_event_nan_receive_t *evt = (wifi_event_nan_receive_t *)event_data;
     g_peer_inst_id = evt->peer_inst_id;
+    memcpy(g_peer_mac, evt->peer_if_mac, ETH_ALEN);
+    if (evt->ssi_len) {
+        ESP_LOGI(TAG, "Received payload from Peer "MACSTR" [Peer Service id - %d] - ", MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+        ESP_LOG_BUFFER_HEXDUMP(TAG, evt->ssi, evt->ssi_len, ESP_LOG_INFO);
+    } else {
+        ESP_LOGI(TAG, "Received message '%s' from Peer "MACSTR" [Peer Service id - %d]",
+                 evt->peer_svc_info, MAC2STR(evt->peer_if_mac), evt->peer_inst_id);
+    }
     xEventGroupSetBits(nan_event_group, NAN_RECEIVE);
 }
 
@@ -55,7 +68,7 @@ static void nan_ndp_indication_event_handler(void *arg, esp_event_base_t event_b
     wifi_nan_datapath_resp_t ndp_resp = {0};
     ndp_resp.accept = true; /* Accept incoming datapath request */
     ndp_resp.ndp_id = evt->ndp_id;
-    memcpy(ndp_resp.peer_mac, evt->peer_nmi, 6);
+    memcpy(ndp_resp.peer_mac, evt->peer_nmi, ETH_ALEN);
 
     esp_wifi_nan_datapath_resp(&ndp_resp);
 
@@ -106,20 +119,27 @@ void wifi_nan_publish(void)
         return;
     }
 
+    wifi_nan_followup_params_t fup = {0};
+    fup.ssi_len = (strlen(EXAMPLE_NAN_SVC_MSG) < ESP_WIFI_MAX_FUP_SSI_LEN) ? strlen(EXAMPLE_NAN_SVC_MSG) : ESP_WIFI_MAX_FUP_SSI_LEN;
+    fup.ssi = calloc(1, fup.ssi_len);
+    if (!fup.ssi) {
+        ESP_LOGE(TAG, "Failed to allocate for Follow-up");
+        return;
+    }
+    memcpy((char *)fup.ssi, EXAMPLE_NAN_SVC_MSG, fup.ssi_len);
+    fup.inst_id = pub_id;
+
     while (1) {
         EventBits_t bits = xEventGroupWaitBits(nan_event_group, NAN_RECEIVE, pdFALSE, pdFALSE, portMAX_DELAY);
         if (bits & NAN_RECEIVE) {
             xEventGroupClearBits(nan_event_group, NAN_RECEIVE);
-            wifi_nan_followup_params_t fup = {0};
-            fup.inst_id = pub_id,
-            fup.peer_inst_id = g_peer_inst_id,
-            strlcpy(fup.svc_info, EXAMPLE_NAN_SVC_MSG, ESP_WIFI_MAX_SVC_INFO_LEN);
-
+            fup.peer_inst_id = g_peer_inst_id;
+            memcpy(fup.peer_mac, g_peer_mac, sizeof(fup.peer_mac));
             /* Reply to the message from a subscriber */
             esp_wifi_nan_send_message(&fup);
         }
-        vTaskDelay(10);
     }
+    free(fup.ssi);
 }
 
 void initialise_wifi(void)
