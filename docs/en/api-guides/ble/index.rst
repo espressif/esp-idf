@@ -1,6 +1,6 @@
-#######################
-Bluetooth® Low Energy
-#######################
+#################################
+Bluetooth\ :sup:`®` Low Energy
+#################################
 
 :link_to_translation:`zh_CN:[中文]`
 
@@ -12,6 +12,7 @@ Overview
 
    overview
    ble-feature-support-status
+   ble-qualification
 
 ***************
 Get Started
