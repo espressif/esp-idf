@@ -16,6 +16,22 @@
 extern "C" {
 #endif
 
+#if LWIP_NETDB_HAS_GAI_STRERROR
+/**
+ *  @brief If `LWIP_NETDB_HAS_GAI_STRERROR=1` lwip can declare gai_strerror()
+ *  since it will be defined in en external dependency of lwip
+ */
+
+/**
+* @brief Returns a string representing the `getaddrinfo()` error code.
+*
+* @param[in] ecode Error code returned by `getaddrinfo()`.
+*
+* @return A pointer to a string describing the error.
+*/
+const char * gai_strerror(int ecode);
+#endif
+
 static inline int gethostbyname_r(const char *name, struct hostent *ret, char *buf, size_t buflen, struct hostent **result, int *h_errnop)
 { return lwip_gethostbyname_r(name, ret, buf, buflen, result, h_errnop); }
 static inline struct hostent *gethostbyname(const char *name)
