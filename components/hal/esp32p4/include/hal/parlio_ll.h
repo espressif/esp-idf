@@ -537,8 +537,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)

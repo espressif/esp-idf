@@ -143,7 +143,7 @@ TEST_CASE("parallel_tx_unit_enable_disable", "[parlio_tx]")
             TEST_DATA7_GPIO,
         },
         .output_clk_freq_hz = 1 * 1000 * 1000,
-        .trans_queue_depth = 64,
+        .trans_queue_depth = 4,
         .max_transfer_size = 256,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
@@ -155,19 +155,19 @@ TEST_CASE("parallel_tx_unit_enable_disable", "[parlio_tx]")
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0x00,
     };
-    __attribute__((aligned(64))) uint8_t payload[128] = {0};
-    for (int i = 0; i < 128; i++) {
+    __attribute__((aligned(64))) uint8_t payload[256] = {0};
+    for (int i = 0; i < 256; i++) {
         payload[i] = i;
     }
-    for (int j = 0; j < 64; j++) {
-        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, 128 * sizeof(uint8_t) * 8, &transmit_config));
+    for (int j = 0; j < 3; j++) {
+        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, 256 * sizeof(uint8_t) * 8, &transmit_config));
     }
 
     printf("disable the transaction in the middle\r\n");
     while (parlio_tx_unit_disable(tx_unit) != ESP_OK) {
         esp_rom_delay_us(1000);
     }
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     printf("resume the transaction and pending packets should continue\r\n");
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
