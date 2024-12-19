@@ -289,6 +289,8 @@ typedef void (* esp_gatts_cb_t)(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
  * @brief           This function is called to register application callbacks
  *                  with BTA GATTS module.
  *
+ * @note            Avoid performing time-consuming operations within the callback functions.
+ *
  * @return
  *                  - ESP_OK : success
  *                  - other  : failed
