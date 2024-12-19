@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 
 #include "soc/assist_debug_reg.h"
 #define ASSIST_DEBUG_SP_SPILL_BITS      (ASSIST_DEBUG_CORE_0_SP_SPILL_MIN_ENA | ASSIST_DEBUG_CORE_0_SP_SPILL_MAX_ENA)
-#define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_INTR_ENA_REG
+#define ASSIST_DEBUG_CORE_0_MONITOR_REG  ASSIST_DEBUG_CORE_0_MONTR_ENA_REG
 
 #ifndef __ASSEMBLER__
 
@@ -18,7 +18,7 @@
 #include <stdint.h>
 #include "esp_attr.h"
 #include "hal/assert.h"
-#include "soc/system_struct.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -29,16 +29,16 @@ extern "C" {
  * meaning of which is well-understood.
  *
  * Assist_debug peripheral uses a different structure of interrupt registers:
- *     INT_ENA_REG, INT_RLS_REG, INT_CLR_REG, INT_RAW_REG.
+ *     MONTR_ENA_REG, INT_ENA_REG, INT_CLR_REG, INT_RAW_REG.
  *
  * Their behavior can be explained using the following (verilog-like) pseudo-code:
  *      reg sp_spill_max_st
  *      assign sp_spill_max = (sp > SP_MAX_REG)
- *      assign SP_SPILL_MAX_RAW = sp_spill_max & SPILL_MAX_ENA
+ *      assign SP_SPILL_MAX_RAW = sp_spill_max & SPILL_MAX_MONTR_ENA
  *      always (@posedge clk) begin
  *          if (reset) then sp_spill_max_st <= 0
  *          elif SP_SPILL_MAX_CLR then sp_spill_max_st <= 0
- *          else sp_spill_max_st <= SP_SPILL_MAX_RAW & SP_SPILL_MAX_RLS
+ *          else sp_spill_max_st <= SP_SPILL_MAX_RAW & SP_SPILL_MAX_ENA
  *      end
  *      // ...same for sp_spill_min and other things debug_assist can check.
  *
@@ -46,14 +46,13 @@ extern "C" {
  *      assign DEBUG_ASSIST_INT = sp_spill_max_st | sp_spill_min_st | ...
  *
  * Basically, there is no "ST" register showing the final (latched) interrupt state, and there is an additional
- * "RLS" register which just like "ENA" can be used to mask the interrupt.
+ * "MONTR_ENA" register which just like "ENA" can be used to mask monitor on/off state.
  * Note that writing to CLR clears the (internal) latched interrupt state 'sp_spill_max_st',
  * but doesn't affect the software-readable RAW register.
  *
- * In this code, we use "ENA" to enable monitoring of a particular condition, and "RLS" to enable the interrupt.
+ * In this code, we use "MONTR_ENA" to enable monitoring of a particular condition, and "ENA" to enable the interrupt.
  * This allows checking whether the condition (e.g. sp > SP_MAX) has occurred by reading the RAW register, without
- * actually triggering the interrupt. Hence you will see the somewhat counter-intuitive use of "RLS" to enable the
- * interrupt, instead of "ENA".
+ * actually triggering the interrupt.
  */
 
  /* These functions are optimized and designed for internal usage.
@@ -61,22 +60,22 @@ extern "C" {
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_enable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_SET_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_SET_BIT(ASSIST_DEBUG_CORE_0_MONTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_monitor_disable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_MONTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_enable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_SET_BIT(ASSIST_DEBUG_CORE_0_INTR_RLS_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_SET_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_sp_spill_interrupt_disable(__attribute__((unused)) uint32_t core_id)
 {
-    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_INTR_RLS_REG, ASSIST_DEBUG_SP_SPILL_BITS);
+    REG_CLR_BIT(ASSIST_DEBUG_CORE_0_INTR_ENA_REG, ASSIST_DEBUG_SP_SPILL_BITS);
 }
 
 FORCE_INLINE_ATTR bool assist_debug_ll_sp_spill_is_fired(__attribute__((unused)) uint32_t core_id)
@@ -116,13 +115,13 @@ FORCE_INLINE_ATTR uint32_t assist_debug_ll_sp_spill_get_pc(__attribute__((unused
 
 FORCE_INLINE_ATTR void assist_debug_ll_enable_bus_clock(bool enable)
 {
-    SYSTEM.cpu_peri_clk_en.reg_clk_en_assist_debug = enable;
+    PCR.assist_conf.assist_clk_en = enable;
 }
 
 FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
 {
-    SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = true;
-    SYSTEM.cpu_peri_rst_en.reg_rst_en_assist_debug = false;
+    PCR.assist_conf.assist_rst_en = true;
+    PCR.assist_conf.assist_rst_en = false;
 }
 
 #ifdef __cplusplus

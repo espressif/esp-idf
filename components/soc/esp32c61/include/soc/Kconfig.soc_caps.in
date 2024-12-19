@@ -131,6 +131,10 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_ASSIST_DEBUG_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y

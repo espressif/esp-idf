@@ -51,7 +51,7 @@
 #define SOC_LP_TIMER_SUPPORTED          1
 #define SOC_LP_AON_SUPPORTED            1
 #define SOC_CLK_TREE_SUPPORTED          1
-//  \#define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32C61] IDF-9269
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32C61] IDF-9314
 //  \#define SOC_RNG_SUPPORTED               1    //TODO: [ESP32C61] IDF-9236
