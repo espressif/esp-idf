@@ -16,6 +16,7 @@
 #include "esp_ieee802154.h"
 #include "esp_phy_init.h"
 #include "cmd_system.h"
+#include "ieee802154_debug.h"
 
 #define PROMPT_STR "ieee802154"
 
@@ -46,6 +47,9 @@ void app_main(void)
     esp_console_register_help_command();
     register_ieee802154_cmd();
     register_system_common();
+#if CONFIG_IEEE802154_DEBUG
+    register_ieee802154_debug_cmd();
+#endif
 
     esp_console_dev_uart_config_t hw_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&hw_config, &repl_config, &repl));
