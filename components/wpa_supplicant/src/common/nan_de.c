@@ -27,6 +27,9 @@ enum nan_de_service_type {
 static const u8 p2p_network_id[ETH_ALEN] =
 { 0x51, 0x6f, 0x9a, 0x02, 0x00, 0x00 };
 
+static const u8 wildcard_bssid[ETH_ALEN] =
+{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+
 struct nan_de_service {
 	int id;
 	enum nan_de_service_type type;
@@ -353,6 +356,7 @@ static void nan_de_tx_multicast(struct nan_de *de, struct nan_de_service *srv,
 	enum nan_service_control_type type;
 	unsigned int wait_time = 100;
 	const u8 *network_id;
+	const u8 *bssid;
 
 	if (srv->type == NAN_DE_PUBLISH) {
 		int ms;
@@ -370,12 +374,15 @@ static void nan_de_tx_multicast(struct nan_de *de, struct nan_de_service *srv,
 		return;
 	}
 
-	if (srv->is_p2p)
+	if (srv->is_p2p) {
 		network_id = p2p_network_id;
-	else
+		bssid = wildcard_bssid;
+	} else {
 		network_id = nan_network_id;
+		bssid = nan_network_id;
+	}
 
-	nan_de_tx_sdf(de, srv, wait_time, type, network_id, network_id,
+	nan_de_tx_sdf(de, srv, wait_time, type, network_id, bssid,
 		      req_instance_id, srv->ssi);
 	os_get_reltime(&srv->last_multicast);
 }
