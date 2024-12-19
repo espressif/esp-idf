@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +123,15 @@ typedef enum {
     HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Digest authentication */
 } esp_http_client_auth_type_t;
 
+/*
+* @brief HTTP Address type
+*/
+typedef enum {
+    HTTP_ADDR_TYPE_UNSPEC = AF_UNSPEC,      /**< Unspecified address family. */
+    HTTP_ADDR_TYPE_INET = AF_INET,          /**< IPv4 address family. */
+    HTTP_ADDR_TYPE_INET6 = AF_INET6,        /**< IPv6 address family. */
+} esp_http_client_addr_type_t;
+
 /**
  * @brief HTTP configuration
  */
@@ -178,6 +187,7 @@ typedef struct {
 #if CONFIG_ESP_TLS_USE_DS_PERIPHERAL
     void *ds_data;                          /*!< Pointer for digital signature peripheral context, see ESP-TLS Documentation for more details */
 #endif
+    esp_http_client_addr_type_t addr_type;  /*!< Address type used in http client configurations */
 } esp_http_client_config_t;
 
 /**
