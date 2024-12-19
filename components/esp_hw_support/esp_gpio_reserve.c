@@ -10,7 +10,7 @@
 #include "esp_bit_defs.h"
 #include "esp_private/esp_gpio_reserve.h"
 
-static _Atomic uint64_t s_reserved_pin_mask = ATOMIC_VAR_INIT(~(SOC_GPIO_VALID_OUTPUT_GPIO_MASK));
+static _Atomic uint64_t s_reserved_pin_mask = ATOMIC_VAR_INIT(~(SOC_GPIO_VALID_GPIO_MASK));
 
 uint64_t esp_gpio_reserve(uint64_t gpio_mask)
 {

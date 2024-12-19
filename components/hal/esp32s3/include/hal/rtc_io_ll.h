@@ -12,6 +12,7 @@
 
 #pragma once
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_io_reg.h"
@@ -225,6 +226,21 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
 }
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
+{
+    if (rtc_io_desc[rtcio_num].pullup) {
+        return GET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pullup);
+    } else {
+        return false;
+    }
+}
+
+/**
  * RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -245,6 +261,21 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     if (rtc_io_desc[rtcio_num].pulldown) {
         CLEAR_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
+    }
+}
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
+{
+    if (rtc_io_desc[rtcio_num].pulldown) {
+        return GET_PERI_REG_MASK(rtc_io_desc[rtcio_num].reg, rtc_io_desc[rtcio_num].pulldown);
+    } else {
+        return false;
     }
 }
 
