@@ -432,10 +432,12 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
         }
     };
     gdma_link_mount_buffers(tx_unit->dma_link, 0, &mount_config, 1, NULL);
-
     parlio_ll_tx_reset_fifo(hal->regs);
     PARLIO_RCC_ATOMIC() {
         parlio_ll_tx_reset_clock(hal->regs);
+    }
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
     }
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
@@ -506,9 +508,18 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     }
     ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "unit can't be disabled in state %d", expected_fsm);
 
-    // stop the TX engine
+    // stop the DMA engine, reset the peripheral state
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
+    // to stop the undergoing transaction, disable and reset clock
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
+    }
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_tx_reset_clock(hal->regs);
+    }
     gdma_stop(tx_unit->dma_chan);
+    gdma_reset(tx_unit->dma_chan);
+    parlio_ll_tx_reset_fifo(hal->regs);
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
 
