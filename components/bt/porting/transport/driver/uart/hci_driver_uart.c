@@ -140,7 +140,7 @@ hci_driver_uart_task_create(void)
 }
 
 static void
-hci_driver_uart_deinit(void)
+hci_driver_uart_task_delete(void)
 {
     if (s_hci_driver_uart_env.tx_task_handler) {
         vTaskDelete(s_hci_driver_uart_env.tx_task_handler);
@@ -151,6 +151,12 @@ hci_driver_uart_deinit(void)
         vTaskDelete(s_hci_driver_uart_env.rx_task_handler);
         s_hci_driver_uart_env.rx_task_handler = NULL;
     }
+}
+
+static void
+hci_driver_uart_deinit(void)
+{
+    hci_driver_uart_task_delete();
 
     ESP_ERROR_CHECK(uart_driver_delete(s_hci_driver_uart_env.hci_uart_params->hci_uart_port));
 
@@ -207,12 +213,28 @@ error:
 int
 hci_driver_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
+    int rc;
     hci_driver_uart_params_config_t *uart_param = s_hci_driver_uart_env.hci_uart_params;
+
+    hci_driver_uart_task_delete();
     uart_param->hci_uart_tx_pin = tx_pin;
     uart_param->hci_uart_rx_pin = rx_pin;
     uart_param->hci_uart_rts_pin = rts_pin;
     uart_param->hci_uart_cts_pin = cts_pin;
-    return hci_driver_uart_config(uart_param);
+    hci_driver_uart_config(uart_param);
+    /* Currently, the queue size is set to 1. It will be considered as semaphore. */
+    ESP_ERROR_CHECK(uart_driver_install(s_hci_driver_uart_env.hci_uart_params->hci_uart_port,
+                                        CONFIG_BT_LE_HCI_UART_RX_BUFFER_SIZE,
+                                        CONFIG_BT_LE_HCI_UART_TX_BUFFER_SIZE,
+                                        1, &s_hci_driver_uart_env.rx_event_queue,
+                                        0));
+    rc = hci_driver_uart_task_create();
+    if (rc) {
+        hci_driver_uart_task_delete();
+        return -2;
+    }
+
+    return 0;
 }
 
 hci_driver_ops_t hci_driver_uart_ops = {
