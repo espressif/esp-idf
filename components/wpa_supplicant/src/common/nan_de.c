@@ -1002,6 +1002,8 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 	 * either. Use Wildcard BSSID instead. */
 	if (srv->publish.solicited_multicast || !a3)
 		a3 = network_id;
+	else if (srv->is_p2p)
+		a3 = de->nmi;
 
 	nan_de_tx(de, srv->freq, 100,
 		  srv->publish.solicited_multicast ? network_id : peer_addr,
