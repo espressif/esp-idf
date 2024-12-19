@@ -424,14 +424,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of TWAI
  */
-#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL}
+#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
 
 /**
  * @brief TWAI clock source
  */
-typedef enum {  // TODO: [ESP32C5] IDF-8691, IDF-8692 (inherit from C6)
-    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as the source clock */
-    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL, /*!< Select XTAL as the default clock choice */
+typedef enum {
+    TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    TWAI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////

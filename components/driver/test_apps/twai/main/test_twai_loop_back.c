@@ -172,7 +172,7 @@ static void s_test_sleep_retention(bool allow_pd)
 
     // check if the sleep happened as expected
     TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_TWAI_SUPPORT_SLEEP_RETENTION
+#if SOC_TWAI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     // check if the power domain also is powered down
     TEST_ASSERT_EQUAL(allow_pd ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif

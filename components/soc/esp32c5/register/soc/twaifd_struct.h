@@ -1299,107 +1299,39 @@ typedef union {
 
 
 /** Group: filter register */
-/** Type of filter_a_mask register
- *  TWAI FD filter A mask value register
+/** Type of filter_mask register
+ *  TWAI FD filter mask value register
  */
 typedef union {
     struct {
-        /** bit_mask_a_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter A mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
+        /** bit_mask_val : R/W; bitpos: [28:0]; default: 0;
+         *  Filter mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
          *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
+         *  buffer. If filter is not present, writes to this register have no effect and read
          *  will return all zeroes.
          */
-        uint32_t bit_mask_a_val:29;
+        uint32_t bit_mask_val:29;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} twaifd_filter_a_mask_reg_t;
+} twaifd_filter_mask_reg_t;
 
-/** Type of filter_a_val register
- *  TWAI FD filter A bit value register
+/** Type of filter_val register
+ *  TWAI FD filter bit value register
  */
 typedef union {
     struct {
-        /** bit_val_a_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter A value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
+        /** bit_val : R/W; bitpos: [28:0]; default: 0;
+         *  Filter value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
          *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
+         *  If filter is not present, writes to this register have no effect and read will
          *  return all zeroes.
          */
-        uint32_t bit_val_a_val:29;
+        uint32_t bit_val:29;
         uint32_t reserved_29:3;
     };
     uint32_t val;
-} twaifd_filter_a_val_reg_t;
-
-/** Type of filter_b_mask register
- *  TWAI FD filter B mask value register
- */
-typedef union {
-    struct {
-        /** bit_mask_b_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter B mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
-         *  will return all zeroes.
-         */
-        uint32_t bit_mask_b_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_b_mask_reg_t;
-
-/** Type of filter_b_val register
- *  TWAI FD filter B bit value register
- */
-typedef union {
-    struct {
-        /** bit_val_b_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter B value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
-         *  return all zeroes.
-         */
-        uint32_t bit_val_b_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_b_val_reg_t;
-
-/** Type of filter_c_mask register
- *  TWAI FD filter C mask value register
- */
-typedef union {
-    struct {
-        /** bit_mask_c_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter C mask. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX
-         *  buffer. If filter A is not present, writes to this register have no effect and read
-         *  will return all zeroes.
-         */
-        uint32_t bit_mask_c_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_c_mask_reg_t;
-
-/** Type of filter_c_val register
- *  TWAI FD filter C bit value register
- */
-typedef union {
-    struct {
-        /** bit_val_c_val : R/W; bitpos: [28:0]; default: 0;
-         *  Filter C value. The identifier format is the same as in IDENTIFIER_W of TXT buffer
-         *  or RX buffer.
-         *  If filter A is not present, writes to this register have no effect and read will
-         *  return all zeroes.
-         */
-        uint32_t bit_val_c_val:29;
-        uint32_t reserved_29:3;
-    };
-    uint32_t val;
-} twaifd_filter_c_val_reg_t;
+} twaifd_filter_val_reg_t;
 
 /** Type of filter_ran_low register
  *  TWAI FD filter range low value register
@@ -1806,6 +1738,63 @@ typedef union {
     uint32_t val;
 } twaifd_date_ver_reg_t;
 
+/** TWAI bits filter register
+ */
+typedef struct {
+    volatile twaifd_filter_mask_reg_t filter_mask;
+    volatile twaifd_filter_val_reg_t  filter_val;
+} twaifd_mask_filter_reg_t;
+
+/** TWAI range filter register
+ */
+typedef struct {
+    volatile twaifd_filter_ran_low_reg_t ran_low;
+    volatile twaifd_filter_ran_high_reg_t ran_high;
+} twaifd_range_filter_reg_t;
+
+/**
+ * @brief TWAI frame buffer register types
+ */
+typedef union {
+    struct {
+        union {
+            struct {
+                uint32_t dlc: 4;            // Data length code (0-15)
+                uint32_t reserved4: 1;      // Reserved bit
+                uint32_t rtr: 1;            // Remote transmission request
+                uint32_t ide: 1;            // Identifier extension bit
+                uint32_t fdf: 1;            // Flexible data-rate format bit
+                uint32_t reserved8: 1;      // Reserved bit
+                uint32_t brs: 1;            // Bit rate switch flag
+                uint32_t esi: 1;            // Error state indicator
+                uint32_t rwcnt: 5;          // Re-transmission counter
+                uint32_t reserved16: 16;    // Reserved bits
+            };
+            uint32_t val;                   // Complete 32-bit register value for format
+        } format;
+
+        union {
+            struct {
+                uint32_t identifier_ext: 18;  // Extended identifier (18 bits)
+                uint32_t identifier_base: 11; // Base identifier (11 bits)
+                uint32_t reserved29: 3;       // Reserved bits
+            };
+            uint32_t val;                     // Complete 32-bit register value for identifier
+        } identifier;
+
+        uint32_t timestamp_low;               // Lower 32 bits of timestamp
+        uint32_t timestamp_high;              // Upper 32 bits of timestamp
+        uint32_t data[16];                    // Data payload (16 words)
+    };
+    uint32_t words[20];                       // Raw 32-bit words for direct access
+} twaifd_frame_buffer_t;
+
+/** TWAI frame txt buffer registers
+ */
+typedef struct {
+    volatile twaifd_frame_buffer_t txt_buffer;
+    uint32_t reserved_50[44];
+} twaifd_frame_mem_t;
 
 typedef struct {
     volatile twaifd_device_id_version_reg_t device_id_version;
@@ -1823,14 +1812,8 @@ typedef struct {
     volatile twaifd_rec_tec_reg_t rec_tec;
     volatile twaifd_err_norm_err_fd_reg_t err_norm_err_fd;
     volatile twaifd_ctr_pres_reg_t ctr_pres;
-    volatile twaifd_filter_a_mask_reg_t filter_a_mask;
-    volatile twaifd_filter_a_val_reg_t filter_a_val;
-    volatile twaifd_filter_b_mask_reg_t filter_b_mask;
-    volatile twaifd_filter_b_val_reg_t filter_b_val;
-    volatile twaifd_filter_c_mask_reg_t filter_c_mask;
-    volatile twaifd_filter_c_val_reg_t filter_c_val;
-    volatile twaifd_filter_ran_low_reg_t filter_ran_low;
-    volatile twaifd_filter_ran_high_reg_t filter_ran_high;
+    volatile twaifd_mask_filter_reg_t mask_filters[3];
+    volatile twaifd_range_filter_reg_t range_filters[1];
     volatile twaifd_filter_control_filter_status_reg_t filter_control_filter_status;
     volatile twaifd_rx_mem_info_reg_t rx_mem_info;
     volatile twaifd_rx_pointers_reg_t rx_pointers;
@@ -1847,7 +1830,9 @@ typedef struct {
     volatile twaifd_yolo_reg_t yolo;
     volatile twaifd_timestamp_low_reg_t timestamp_low;
     volatile twaifd_timestamp_high_reg_t timestamp_high;
-    uint32_t reserved_09c[974];
+    uint32_t reserved_09c[25];
+    volatile twaifd_frame_mem_t txt_mem_cell[8];
+    uint32_t reserved_900[437];
     volatile twaifd_timer_clk_en_reg_t timer_clk_en;
     volatile twaifd_timer_int_raw_reg_t timer_int_raw;
     volatile twaifd_timer_int_st_reg_t timer_int_st;

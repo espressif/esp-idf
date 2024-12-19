@@ -613,5 +613,5 @@ TWAI 驱动程序通过 :cpp:type:`twai_message_t` 结构体的不同位字段�
 API 参考
 -------------
 
-.. include-build-file:: inc/twai_types.inc
+.. include-build-file:: inc/twai_types_deprecated.inc
 .. include-build-file:: inc/twai.inc

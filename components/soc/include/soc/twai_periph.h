@@ -24,6 +24,9 @@ typedef struct {
     struct {
         const periph_module_t module;  // peripheral module
         const int irq_id;              // interrupt source ID
+#if SOC_TWAI_SUPPORT_TIMESTAMP
+        const int timer_irq_id;
+#endif
         const int tx_sig;              // TX signal ID in GPIO matrix
         const int rx_sig;              // RX signal ID in GPIO matrix
         const int clk_out_sig;         // CLK_OUT signal ID in GPIO matrix

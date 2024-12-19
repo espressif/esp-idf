@@ -267,93 +267,49 @@ typedef union {
     uint32_t val;
 } pcr_i2c_sclk_conf_reg_t;
 
-/** Type of twai0_conf register
- *  TWAI0 configuration register
+/** Type of twai_conf register
+ *  TWAI configuration register
  */
 typedef union {
     struct {
-        /** twai0_clk_en : R/W; bitpos: [0]; default: 0;
-         *  Set 1 to enable twai0 apb clock
+        /** twai_clk_en : R/W; bitpos: [0]; default: 0;
+         *  Set 1 to enable twai apb clock
          */
-        uint32_t twai0_clk_en:1;
-        /** twai0_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset twai0 module
+        uint32_t twai_clk_en:1;
+        /** twai_rst_en : R/W; bitpos: [1]; default: 0;
+         *  Set 0 to reset twai module
          */
-        uint32_t twai0_rst_en:1;
-        /** twai0_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset twai0 module
+        uint32_t twai_rst_en:1;
+        /** twai_ready : RO; bitpos: [2]; default: 1;
+         *  Query this field after reset twai module
          */
-        uint32_t twai0_ready:1;
+        uint32_t twai_ready:1;
         uint32_t reserved_3:29;
     };
     uint32_t val;
-} pcr_twai0_conf_reg_t;
+} pcr_twai_conf_reg_t;
 
-/** Type of twai0_func_clk_conf register
- *  TWAI0_FUNC_CLK configuration register
+/** Type of twai_func_clk_conf register
+ *  TWAI_FUNC_CLK configuration register
  */
 typedef union {
     struct {
         uint32_t reserved_0:20;
-        /** twai0_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  Configures the clock source of TWAI0.\\
+        /** twai_func_clk_sel : R/W; bitpos: [20]; default: 0;
+         *  Configures the clock source of TWAI.\\
          *  0 (default): XTAL_CLK\\
          *  1: RC_FAST_CLK\\
          */
-        uint32_t twai0_func_clk_sel:1;
+        uint32_t twai_func_clk_sel:1;
         uint32_t reserved_21:1;
-        /** twai0_func_clk_en : R/W; bitpos: [22]; default: 0;
-         *  Set 1 to enable twai0 function clock
+        /** twai_func_clk_en : R/W; bitpos: [22]; default: 0;
+         *  Set 1 to enable twai function clock
          */
-        uint32_t twai0_func_clk_en:1;
+        uint32_t twai_func_clk_en:1;
         uint32_t reserved_23:9;
     };
     uint32_t val;
-} pcr_twai0_func_clk_conf_reg_t;
-
-/** Type of twai1_conf register
- *  TWAI1 configuration register
- */
-typedef union {
-    struct {
-        /** twai1_clk_en : R/W; bitpos: [0]; default: 0;
-         *  Set 1 to enable twai1 apb clock
-         */
-        uint32_t twai1_clk_en:1;
-        /** twai1_rst_en : R/W; bitpos: [1]; default: 0;
-         *  Set 0 to reset twai1 module
-         */
-        uint32_t twai1_rst_en:1;
-        /** twai1_ready : RO; bitpos: [2]; default: 1;
-         *  Query this field after reset twai1 module
-         */
-        uint32_t twai1_ready:1;
-        uint32_t reserved_3:29;
-    };
-    uint32_t val;
-} pcr_twai1_conf_reg_t;
-
-/** Type of twai1_func_clk_conf register
- *  TWAI1_FUNC_CLK configuration register
- */
-typedef union {
-    struct {
-        uint32_t reserved_0:20;
-        /** twai1_func_clk_sel : R/W; bitpos: [20]; default: 0;
-         *  Configures the clock source of TWAI1.\\
-         *  0 (default): XTAL_CLK\\
-         *  1: RC_FAST_CLK\\
-         */
-        uint32_t twai1_func_clk_sel:1;
-        uint32_t reserved_21:1;
-        /** twai1_func_clk_en : R/W; bitpos: [22]; default: 0;
-         *  Set 1 to enable twai1 function clock
-         */
-        uint32_t twai1_func_clk_en:1;
-        uint32_t reserved_23:9;
-    };
-    uint32_t val;
-} pcr_twai1_func_clk_conf_reg_t;
+} pcr_twai_func_clk_conf_reg_t;
 
 /** Type of uhci_conf register
  *  UHCI configuration register
@@ -2329,6 +2285,14 @@ typedef struct {
     pcr_i2c_sclk_conf_reg_t i2c_sclk_conf;
 } pcr_i2c_reg_t;
 
+/**
+ * @brief The struct of TWAI configuration registers
+ */
+typedef struct {
+    pcr_twai_conf_reg_t twai_conf;
+    pcr_twai_func_clk_conf_reg_t twai_func_clk_conf;
+} pcr_twai_reg_t;
+
 typedef struct {
     volatile pcr_uart0_conf_reg_t uart0_conf;
     volatile pcr_uart0_sclk_conf_reg_t uart0_sclk_conf;
@@ -2339,10 +2303,7 @@ typedef struct {
     volatile pcr_mspi_conf_reg_t mspi_conf;
     volatile pcr_mspi_clk_conf_reg_t mspi_clk_conf;
     volatile pcr_i2c_reg_t i2c[1];
-    volatile pcr_twai0_conf_reg_t twai0_conf;
-    volatile pcr_twai0_func_clk_conf_reg_t twai0_func_clk_conf;
-    volatile pcr_twai1_conf_reg_t twai1_conf;
-    volatile pcr_twai1_func_clk_conf_reg_t twai1_func_clk_conf;
+    volatile pcr_twai_reg_t twai[2];
     volatile pcr_uhci_conf_reg_t uhci_conf;
     volatile pcr_rmt_conf_reg_t rmt_conf;
     volatile pcr_rmt_sclk_conf_reg_t rmt_sclk_conf;
