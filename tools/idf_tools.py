@@ -2084,8 +2084,14 @@ def action_install_python_env(args):  # type: ignore
 
     constraint_file = get_constraints(idf_version) if use_constraints else None
 
-    info('Upgrading pip and setuptools...')
-    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools']
+    info('Upgrading pip...')
+    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip']
+    if constraint_file:
+        run_args += ['--constraint', constraint_file]
+    subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
+
+    info('Upgrading setuptools...')
+    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'setuptools']
     if constraint_file:
         run_args += ['--constraint', constraint_file]
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
