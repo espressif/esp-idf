@@ -1263,7 +1263,7 @@ class SysViewHeapTraceDataParser(SysViewTraceDataExtEventParser):
         """
         if self.root_proc == self:
             SysViewTraceDataParser.on_new_event(self, event)
-        if event.id == SYSVIEW_EVTID_MODULEDESC and event.params['desc'].value == 'ESP32 SystemView Heap Tracing Module':
+        if event.id == SYSVIEW_EVTID_MODULEDESC and event.params['desc'].value == 'M=ESP32 SystemView Heap Tracing Module':
             self.events_off = event.params['evt_off'].value
 
 

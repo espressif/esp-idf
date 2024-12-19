@@ -1,9 +1,6 @@
-from __future__ import unicode_literals
-
 import os
 import re
 import tempfile
-from io import open
 
 import esp_debug_backend as debug_backend
 import ttfw_idf
@@ -48,7 +45,6 @@ def test_examples_sysview_tracing_heap_log(env, extra_data):
 
         with ttfw_idf.CustomProcess(' '.join([os.path.join(dut.app.idf_path, 'tools/esp_app_trace/sysviewtrace_proc.py'),
                                               '-p',
-                                              '-b', elf_path,
                                               tempfiles[1]]),
                                     logfile='sysviewtrace_proc.log') as sysviewtrace:
             sysviewtrace.pexpect_proc.expect(re.compile(r'Found \d+ leaked bytes in \d+ blocks.'), timeout=120)
