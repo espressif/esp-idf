@@ -328,7 +328,7 @@ menu "OpenThread"
 
         menu "Thread Memory Allocation"
             depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
-            config OPENTHREAD_MEM_ALLOC_EXTERNAL
+            config OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
                 bool 'Allocate memory from PSRAM'
                 default y
                 help
