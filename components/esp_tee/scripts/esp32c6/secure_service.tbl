@@ -43,4 +43,3 @@
 41          custom      esp_tee_sec_storage_decrypt                   8
 42          custom      esp_tee_sec_storage_is_slot_empty             1
 43          custom      esp_tee_sec_storage_clear_slot                1
-44          custom      esp_tee_att_generate_token                    6

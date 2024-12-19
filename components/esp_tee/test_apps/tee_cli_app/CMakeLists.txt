@@ -13,4 +13,8 @@ list(APPEND EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/components/esp_tee/subproject/co
                                  $ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_sec_storage)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+# Including the attestation service calls
+include($ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake)
+
 project(tee_cli)

@@ -14,5 +14,6 @@ list(APPEND EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/tools/unit-test-app/components
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 include(${CMAKE_CURRENT_LIST_DIR}/components/test_sec_srv/test_tee_project.cmake)
+include($ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake)
 
 project(esp_tee_test)

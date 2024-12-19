@@ -434,26 +434,8 @@ esp_err_t _ss_esp_tee_sec_storage_clear_slot(uint16_t slot_id)
     return esp_tee_sec_storage_clear_slot(slot_id);
 }
 
-/* ---------------------------------------------- Attestation ------------------------------------------------- */
-
-esp_err_t _ss_esp_tee_att_generate_token(const uint32_t nonce, const uint32_t client_id, const char *psa_cert_ref,
-                                         uint8_t *token_buf, const size_t token_buf_size, uint32_t *token_len)
-{
-    bool valid_addr = (is_valid_ree_address((void *)psa_cert_ref) && is_valid_ree_address((void *)token_buf) &&
-                       is_valid_ree_address((void *)token_len));
-
-    valid_addr &= (is_valid_ree_address((void *)((char *)psa_cert_ref + 32)) && is_valid_ree_address((void *)((char *)token_buf + token_buf_size)));
-
-    if (!valid_addr) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    ESP_FAULT_ASSERT(valid_addr);
-
-    return esp_att_generate_token(nonce, client_id, psa_cert_ref, token_buf, token_buf_size, token_len);
-}
-
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
+
 void _ss_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr,
                             uint32_t paddr, uint32_t len, uint32_t *out_len)
 {

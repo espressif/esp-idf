@@ -59,44 +59,56 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
     endmenu
 
-    choice SECURE_TEE_SEC_STG_MODE
-        prompt "Secure Storage: Mode"
+    menu "Secure Services"
         depends on SECURE_ENABLE_TEE
-        default SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
-        help
-            Select the TEE secure storage mode
 
-        config SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
-            bool "Development"
+        choice SECURE_TEE_SEC_STG_MODE
+            prompt "Secure Storage: Mode"
+            depends on SECURE_ENABLE_TEE
+            default SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
             help
-                Secure storage will be encrypted by the data stored in eFuse BLK2
+                Select the TEE secure storage mode
 
-        config SECURE_TEE_SEC_STG_MODE_RELEASE
-            depends on IDF_TARGET_ESP32C6
-            bool "Release"
+            config SECURE_TEE_SEC_STG_MODE_DEVELOPMENT
+                bool "Development"
+                help
+                    Secure storage will be encrypted by the data stored in eFuse BLK2
+
+            config SECURE_TEE_SEC_STG_MODE_RELEASE
+                depends on IDF_TARGET_ESP32C6
+                bool "Release"
+                help
+                    Secure storage will be encrypted by the data stored in eFuse block
+                    configured through the SECURE_TEE_SEC_STG_KEY_EFUSE_BLK option
+
+        endchoice
+
+        config SECURE_TEE_SEC_STG_KEY_EFUSE_BLK
+            int "Secure Storage: Encryption key eFuse block"
+            depends on SECURE_TEE_SEC_STG_MODE_RELEASE
+            range 4 10
+            default 10
             help
-                Secure storage will be encrypted by the data stored in eFuse block
-                configured through the SECURE_TEE_SEC_STG_KEY_EFUSE_BLK option
+                eFuse block ID storing the TEE secure storage encryption key
 
-    endchoice
+        config SECURE_TEE_ATTESTATION
+            bool "Enable Attestation"
+            default y
+            help
+                This configuration enables the support for the Attestation service.
 
-    config SECURE_TEE_SEC_STG_KEY_EFUSE_BLK
-        int "Secure Storage: Encryption key eFuse block"
-        depends on SECURE_TEE_SEC_STG_MODE_RELEASE
-        range 4 10
-        default 10
-        help
-            eFuse block ID storing the TEE secure storage encryption key
 
-    config SECURE_TEE_ATT_KEY_SLOT_ID
-        depends on SECURE_ENABLE_TEE
-        int "Attestation: Secure Storage slot ID for EAT signing"
-        default 0
-        range 0 14
-        help
-            This configuration sets the slot ID from the TEE secure storage
-            storing the ECDSA keypair for executing sign/verify operations
-            from the TEE side (E.g. Attestation)
+        config SECURE_TEE_ATT_KEY_SLOT_ID
+            depends on SECURE_TEE_ATTESTATION
+            int "Attestation: Secure Storage slot ID for EAT signing"
+            default 0
+            range 0 14
+            help
+                This configuration sets the slot ID from the TEE secure storage
+                storing the ECDSA keypair for executing sign/verify operations
+                from the TEE side for attestation.
+
+    endmenu
 
     config SECURE_TEE_DEBUG_MODE
         bool "Enable Debug Mode"

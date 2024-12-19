@@ -25,7 +25,7 @@ set(ESP_TEE_BUILD 1)
 set(NON_OS_BUILD 1)
 
 # TEE-specific components
-list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage attestation)
+list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
 
 # Include sdkconfig.h derived from the parent build.
 include_directories(${CONFIG_DIR})
