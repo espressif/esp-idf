@@ -458,6 +458,17 @@ esp_err_t esp_http_client_set_user_data(esp_http_client_handle_t client, void *d
 int esp_http_client_get_errno(esp_http_client_handle_t client);
 
 /**
+ * @brief      Get HTTPS client TLS errno
+ *
+ * @param[in]  client  The esp_http_client handle
+ *
+ * @return
+ *         - (-1) if invalid argument
+ *         - errno
+ */
+esp_err_t esp_http_client_get_tls_error(esp_http_client_handle_t client, int *esp_tls_error_code, int *esp_tls_flags);
+
+/**
  * @brief      Set http request method
  *
  * @param[in]  client  The esp_http_client handle
