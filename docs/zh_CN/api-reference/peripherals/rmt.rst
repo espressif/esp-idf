@@ -63,7 +63,7 @@ RMT 接收器可以对输入信号采样，将其转换为 RMT 数据格式，�
 - :ref:`rmt-multiple-channels-simultaneous-transmission` - 介绍如何将多个通道收集到一个同步组中，以便同时启动发送。
 - :ref:`rmt-rmt-encoder` - 介绍如何通过组合驱动程序提供的多个基本编码器来编写自定义编码器。
 - :ref:`rmt-power-management` - 介绍不同时钟源对功耗的影响。
-- :ref:`rmt-iram-safe` - 介绍禁用 cache 对 RMT 驱动程序的影响，并提供应对方案。
+- :ref:`rmt-cache-safe` - 介绍禁用 cache 对 RMT 驱动程序的影响，并提供应对方案。
 - :ref:`rmt-thread-safety` - 介绍由驱动程序认证为线程安全的 API。
 - :ref:`rmt-kconfig-options` - 介绍 RMT 驱动程序支持的各种 Kconfig 选项。
 
@@ -560,14 +560,14 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 
     除了时钟源的潜在变化外，当启用电源管理时，系统还可以在睡眠前关闭 RMT 电源。将 :cpp:member:`rmt_tx_channel_config_t::allow_pd` 和 :cpp:member:`rmt_rx_channel_config_t::allow_pd` 设置为 ``true`` 以启用电源关闭功能。RMT 寄存器将在睡眠前备份，并在唤醒后恢复。请注意，启用此选项会增加内存消耗。
 
-.. _rmt-iram-safe:
+.. _rmt-cache-safe:
 
-IRAM 安全
-^^^^^^^^^
+Cache 安全
+^^^^^^^^^^
 
 默认情况下，禁用 cache 时，写入/擦除主 flash 等原因将导致 RMT 中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。此外，当 RMT 事务依赖 **交替** 中断连续编码或复制 RMT 符号时，上述中断延迟将导致不可预测的结果。
 
-因此，可以启用 Kconfig 选项 :ref:`CONFIG_RMT_ISR_IRAM_SAFE`，该选项：
+因此，可以启用 Kconfig 选项 :ref:`CONFIG_RMT_ISR_CACHE_SAFE`，该选项：
 
 1. 支持在禁用 cache 时启用所需中断
 2. 支持将 ISR 使用的所有函数存放在 IRAM 中 [2]_
@@ -594,9 +594,9 @@ RMT 驱动程序会确保工厂函数 :cpp:func:`rmt_new_tx_channel`、:cpp:func
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-iram-safe`。
+- :ref:`CONFIG_RMT_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。详情请参阅 :ref:`rmt-cache-safe`。
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` 用于启用调试日志输出，启用此选项将增加固件的二进制文件大小。
-- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-iram-safe`。
+- :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 用于控制 RMT 接收函数被链接到系统存储的哪个位置（IRAM 还是 Flash）。详情请参阅 :ref:`rmt-cache-safe`。
 
 应用示例
 --------------------
