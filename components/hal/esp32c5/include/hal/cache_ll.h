@@ -130,6 +130,19 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
 }
 
 /**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    Cache_Invalidate_All();
+}
+
+/**
  * @brief Writeback cache supported addr
  *
  * Writeback a cache item
