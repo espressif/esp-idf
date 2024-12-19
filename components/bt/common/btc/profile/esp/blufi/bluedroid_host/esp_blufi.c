@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -160,20 +160,31 @@ static void blufi_profile_cb(tBTA_GATTS_EVT event, tBTA_GATTS *p_data)
         if (p_data->req_data.p_data->write_req.is_prep) {
             tBTA_GATT_STATUS status = GATT_SUCCESS;
 
-            if (blufi_env.prepare_buf == NULL) {
-                blufi_env.prepare_buf = osi_malloc(BLUFI_PREPAIR_BUF_MAX_SIZE);
-                blufi_env.prepare_len = 0;
+            do {
+                if (p_data->req_data.p_data->write_req.offset > BLUFI_PREPARE_BUF_MAX_SIZE) {
+                   status = ESP_GATT_INVALID_OFFSET;
+                   break;
+                }
+
+                if ((p_data->req_data.p_data->write_req.offset + p_data->req_data.p_data->write_req.len) > BLUFI_PREPARE_BUF_MAX_SIZE) {
+                   status = ESP_GATT_INVALID_ATTR_LEN;
+                   break;
+                }
+
                 if (blufi_env.prepare_buf == NULL) {
-                    BLUFI_TRACE_ERROR("Blufi prep no mem\n");
-                    status = GATT_NO_RESOURCES;
+                    if (p_data->req_data.p_data->write_req.offset != 0) {
+                        status = GATT_INVALID_OFFSET;
+                        break;
+                    }
+                    blufi_env.prepare_buf = osi_malloc(BLUFI_PREPARE_BUF_MAX_SIZE);
+                    blufi_env.prepare_len = 0;
+                    if (blufi_env.prepare_buf == NULL) {
+                        BLUFI_TRACE_ERROR("Blufi prep no mem\n");
+                        status = GATT_NO_RESOURCES;
+                        break;
+                    }
                 }
-            } else {
-                if (p_data->req_data.p_data->write_req.offset > BLUFI_PREPAIR_BUF_MAX_SIZE) {
-                    status = GATT_INVALID_OFFSET;
-                } else if ((p_data->req_data.p_data->write_req.offset + p_data->req_data.p_data->write_req.len) > BLUFI_PREPAIR_BUF_MAX_SIZE) {
-                    status = GATT_INVALID_ATTR_LEN;
-                }
-            }
+            } while (0);
 
             memset(&rsp, 0, sizeof(tGATTS_RSP));
             rsp.attr_value.handle = p_data->req_data.p_data->write_req.handle;
