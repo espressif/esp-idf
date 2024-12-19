@@ -1258,7 +1258,7 @@ config BT_BLE_50_FEATURES_SUPPORTED
 
 config BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
-    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default n
     help
         This enables BLE 4.2 features.
