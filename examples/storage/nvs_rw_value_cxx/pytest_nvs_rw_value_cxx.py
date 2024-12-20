@@ -11,6 +11,8 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.generic
 def test_examples_nvs_rw_value_cxx(dut: Dut) -> None:
+    dut.serial.erase_flash()
+    dut.serial.flash()
     for i, counter_state in zip_longest(range(4), ('The value is not initialized yet!',), fillvalue='Done'):
         dut.expect('Opening Non-Volatile Storage \\(NVS\\) handle... Done', timeout=20)
         dut.expect('Reading restart counter from NVS ... {}'.format(counter_state), timeout=20)
