@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -900,7 +900,8 @@ class IDFTool(object):
             if v_repl != v:
                 v_repl = to_shell_specific_paths([v_repl])[0]
             old_v = os.environ.get(k)
-            if old_v is None or old_v != v_repl:
+            # Remove condition in IDF-10292
+            if sys.platform != 'win32' or old_v is None or old_v != v_repl:
                 result[k] = v_repl
         return result
 
@@ -1583,8 +1584,7 @@ class ENVState:
 
     def save(self) -> str:
         try:
-            if self.deactivate_file_path and os.path.basename(self.deactivate_file_path).endswith(f'idf_{str(os.getppid())}'):
-                # If exported file path/name exists and belongs to actual opened shell
+            if self.deactivate_file_path:
                 with open(self.deactivate_file_path, 'w', encoding='utf-8') as w:
                     json.dump(self.idf_variables, w, ensure_ascii=False, indent=4)  # type: ignore
             else:
@@ -1851,14 +1851,13 @@ def add_variables_to_deactivate_file(args: List[str], new_idf_vars:Dict[str, Any
     return deactivate_file_path
 
 
-def deactivate_statement(args: List[str]) -> None:
+def print_deactivate_statement(args: List[str]) -> None:
     """
     Deactivate statement is sequence of commands, that remove IDF global variables from environment,
     so the environment gets to the state it was before calling export.{sh/fish} script.
     """
     env_state_obj = ENVState.get_env_state()
     if not env_state_obj.idf_variables:
-        warn('No IDF variables to remove from environment found. Deactivation of previous esp-idf version was not successful.')
         return
     unset_vars = env_state_obj.idf_variables
     env_path: Optional[str] = os.getenv('PATH')
@@ -1893,27 +1892,6 @@ def get_unset_format_and_separator(args: List[str]) -> Tuple[str, str]:
     Returns pattern to unset a variable (formatted string) either for shell or for key-value pair.
     """
     return {EXPORT_SHELL: ('unset {}', ';'), EXPORT_KEY_VALUE: ('{}', '\n')}[args.format]  # type: ignore
-
-
-def different_idf_detected() -> bool:
-    """
-    Checks if new IDF detected.
-    """
-    # If IDF global variable found, test if belong to different ESP-IDF version
-    if 'IDF_TOOLS_EXPORT_CMD' in os.environ:
-        if g.idf_path != os.path.dirname(os.environ['IDF_TOOLS_EXPORT_CMD']):
-            return True
-
-    # No previous ESP-IDF export detected, nothing to be unset
-    if all(s not in os.environ for s in ['IDF_PYTHON_ENV_PATH', 'OPENOCD_SCRIPTS', 'ESP_IDF_VERSION']):
-        return False
-
-    # User is exporting the same version as is in env
-    if os.getenv('ESP_IDF_VERSION') == get_idf_version():
-        return False
-
-    # Different version detected
-    return True
 
 
 def active_repo_id() -> str:
@@ -2147,8 +2125,8 @@ def action_export(args: Any) -> None:
     """
     Exports all necessary environment variables and paths needed for tools used.
     """
-    if args.deactivate and different_idf_detected():
-        deactivate_statement(args)
+    if args.deactivate:
+        print_deactivate_statement(args)
         return
 
     tools_info = load_tools_info()
@@ -2180,8 +2158,10 @@ def action_export(args: Any) -> None:
         idf_python_env_path = to_shell_specific_paths([idf_python_env_path])[0]
         if os.getenv('IDF_PYTHON_ENV_PATH') != idf_python_env_path:
             export_vars['IDF_PYTHON_ENV_PATH'] = to_shell_specific_paths([idf_python_env_path])[0]
-        if current_path and idf_python_export_path not in current_path:  # getenv can return None
-            paths_to_export.append(idf_python_export_path)
+        if current_path:  # getenv can return None
+            # Remove condition in IDF-10292
+            if sys.platform != 'win32' or idf_python_export_path not in current_path:
+                paths_to_export.append(idf_python_export_path)
 
     idf_version = get_idf_version()
     if os.getenv('ESP_IDF_VERSION') != idf_version:
@@ -2191,8 +2171,10 @@ def action_export(args: Any) -> None:
 
     idf_tools_dir = os.path.join(g.idf_path, 'tools')  # type: ignore
     idf_tools_dir = to_shell_specific_paths([idf_tools_dir])[0]
-    if current_path and idf_tools_dir not in current_path:
-        paths_to_export.append(idf_tools_dir)
+    if current_path:
+        # Remove condition in IDF-10292
+        if sys.platform != 'win32' or idf_tools_dir not in current_path:
+            paths_to_export.append(idf_tools_dir)
 
     if sys.platform == 'win32':
         old_path = '%PATH%'
