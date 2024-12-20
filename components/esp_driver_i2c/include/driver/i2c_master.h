@@ -248,6 +248,29 @@ esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, c
 esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle);
 
 /**
+ * @brief Change the I2C device address at runtime.
+ *
+ * This function updates the device address of an existing I2C device handle.
+ * It is useful for devices that support dynamic address assignment or when
+ * switching communication to a device with a different address on the same bus.
+ *
+ * @param[in] i2c_dev           I2C device handle.
+ * @param[in] new_device_address The new device address.
+ * @param[in] timeout_ms        Timeout for the address change operation, in milliseconds.
+ *
+ * @return
+ *      - ESP_OK: Address successfully changed.
+ *      - ESP_ERR_INVALID_ARG: Invalid arguments (e.g., NULL handle or invalid address).
+ *      - ESP_ERR_TIMEOUT: Operation timed out.
+ *
+ * @note
+ *      - This function does not send commands to the I2C device. It only updates
+ *        the address used in subsequent transactions through the I2C handle.
+ *      - Ensure that the new address is valid and does not conflict with other devices on the bus.
+ */
+esp_err_t i2c_master_device_change_address(i2c_master_dev_handle_t i2c_dev, uint16_t new_device_address, int timeout_ms);
+
+/**
  * @brief Wait for all pending I2C transactions done
  *
  * @param[in] bus_handle I2C bus handle

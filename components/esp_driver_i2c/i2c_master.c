@@ -1290,6 +1290,34 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     return ret;
 }
 
+esp_err_t i2c_master_device_change_address(i2c_master_dev_handle_t i2c_dev, uint16_t new_device_address, int timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+
+    TickType_t ticks_to_wait = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+    if (xSemaphoreTake(i2c_dev->master_bus->bus_lock_mux, ticks_to_wait) != pdTRUE) {
+        ESP_LOGE(TAG, "change address take semaphore timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    if (i2c_dev->addr_10bits == I2C_ADDR_BIT_LEN_7) {
+        if (new_device_address > 0x7f) {
+            ESP_LOGE(TAG, "The address is now 7 bit address mode, new address is larger than 7 bits");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
+        if (new_device_address <= 0x7f) {
+            ESP_LOGE(TAG, "The address is now 10 bit address mode, new address is smaller than 10 bits");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    i2c_dev->device_address = new_device_address;
+
+    xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
+    return ESP_OK;
+}
+
 esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, const i2c_master_event_callbacks_t *cbs, void *user_data)
 {
     ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
