@@ -54,7 +54,7 @@
 // #define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32H21] IDF-11500
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
-#define SOC_PMU_SUPPORTED               1       //TODO: [ESP32H21] IDf-11522
+// #define SOC_PMU_SUPPORTED               1    //TODO: [ESP32H21] IDf-11522
 // #define SOC_LP_TIMER_SUPPORTED          1    //TODO: [ESP32H21] IDF-11512
 // #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1

@@ -307,26 +307,19 @@ if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
 
     if(${target} STREQUAL "esp32s3")
         list(APPEND srcs
-            "xt_wdt_hal.c"
-            "esp32s3/rtc_cntl_hal.c")
+            "xt_wdt_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32c3")
         list(APPEND srcs
-              "xt_wdt_hal.c"
-              "esp32c3/rtc_cntl_hal.c")
+            "xt_wdt_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp32c2")
-        list(APPEND srcs
-              "esp32c2/rtc_cntl_hal.c")
+
+    if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/${target}/rtc_cntl_hal.c")
+        list(APPEND srcs "${target}/rtc_cntl_hal.c")
     endif()
 
-    if(${target} STREQUAL "esp32h2")
-        list(REMOVE_ITEM srcs
-                "esp32h2/rtc_cntl_hal.c"
-                )
-    endif()
 endif()
 
 idf_component_register(SRCS ${srcs}
