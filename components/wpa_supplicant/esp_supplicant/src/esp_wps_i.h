@@ -50,7 +50,7 @@ enum wps_sm_state{
 };
 #endif /* ESP_SUPPLICANT */
 
-#define WPS_IGNORE_SEL_REG_MAX_CNT	4
+#define WPS_IGNORE_SEL_REG_MAX_CNT  10
 
 #define WPS_MAX_DIS_AP_NUM	10
 
