@@ -11,8 +11,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/io_mux.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/timers.h"
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
 #include "hal/rtc_io_hal.h"

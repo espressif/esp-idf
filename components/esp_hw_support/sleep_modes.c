@@ -31,6 +31,7 @@
 #include "soc/spi_pins.h"
 #include "soc/chip_revision.h"
 #include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "hal/efuse_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
@@ -1938,7 +1939,7 @@ static void ext1_wakeup_prepare(void)
 {
     // Configure all RTC IOs selected as ext1 wakeup inputs
     uint32_t rtc_gpio_mask = s_config.ext1_rtc_gpio_mask;
-    for (int gpio = 0; gpio < GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
+    for (int gpio = 0; gpio < SOC_GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
         int rtc_pin = rtc_io_number_get(gpio);
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
@@ -1987,7 +1988,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     uint32_t status = rtc_hal_ext1_get_wakeup_status();
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
     uint64_t gpio_mask = 0;
-    for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
+    for (int gpio = 0; gpio < SOC_GPIO_PIN_COUNT; ++gpio) {
         if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
             continue;
         }
