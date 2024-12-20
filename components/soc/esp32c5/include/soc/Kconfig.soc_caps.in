@@ -351,6 +351,14 @@ config SOC_ADC_RTC_MAX_BITWIDTH
     int
     default 12
 
+config SOC_ADC_CALIBRATION_V1_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+    bool
+    default y
+
 config SOC_ADC_TEMPERATURE_SHARE_INTR
     bool
     default y
