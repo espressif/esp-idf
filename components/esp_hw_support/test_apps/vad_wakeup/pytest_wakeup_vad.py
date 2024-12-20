@@ -7,5 +7,5 @@ from pytest_embedded import Dut
 @pytest.mark.esp32p4
 @pytest.mark.temp_skip_ci(targets=['esp32p4'], reason='lack of runners for now')
 @pytest.mark.lp_i2s
-def test_efuse(dut: Dut) -> None:
+def test_efuse_component_ut(dut: Dut) -> None:
     dut.run_all_single_board_cases()
