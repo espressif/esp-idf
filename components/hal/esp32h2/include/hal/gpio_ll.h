@@ -66,7 +66,7 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
     *od = hw->pin[gpio_num].pad_driver;
     *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
     *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+    *sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
     *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
@@ -360,10 +360,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    gpio_func_out_sel_cfg_reg_t reg = {
-      .out_sel = SIG_GPIO_OUT_IDX,
-    };
-    hw->func_out_sel_cfg[gpio_num].val = reg.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel, SIG_GPIO_OUT_IDX);
 }
 
 /**

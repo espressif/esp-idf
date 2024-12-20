@@ -27,7 +27,6 @@
 #include "soc/usb_serial_jtag_struct.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
-#include "soc/lp_gpio_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
