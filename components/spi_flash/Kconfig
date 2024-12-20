@@ -143,6 +143,17 @@ menu "Main Flash configuration"
                 task can suspend the erase/program operation. When this option is enabled, task
                 scheduler is disabled, only interrupt can suspend erase/program operation.
 
+        config SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
+            bool "Check flash status automatically after flash suspend"
+            default n
+            depends on SPI_FLASH_AUTO_SUSPEND
+            help
+                Majority flash supports to use flash register to judge if flash suspend status is
+                done or not. So enable this config, the behavior would use flash register WIP bit to judge
+                whether suspend is valid instead of waiting for a specific long time, which can save a
+                lot of time and benefit for performance improvement.
+
+
     endmenu
 endmenu
 

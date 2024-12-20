@@ -57,6 +57,7 @@ typedef struct {
 #define SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR           BIT(0)  ///< Slice data according to DTR mode, the address and length must be even (A0=0).
     int freq_mhz;               /// Flash clock frequency.
     uint8_t tsus_val;     ///< Tsus value of suspend (us)
+    bool auto_waiti_pes;  ///< True for auto-wait idle after suspend command. False for using time delay.
 } spi_flash_hal_context_t;
 ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 48, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
@@ -92,7 +93,8 @@ typedef struct {
     esp_flash_io_mode_t default_io_mode;        ///< Default flash io mode.
     int freq_mhz;         ///< SPI flash clock speed (MHZ).
     int clock_src_freq;    ///< SPI flash clock source (MHZ).
-    uint8_t tsus_val;     ///< Tsus value of suspend (us)
+    uint8_t tsus_val;     ///< Tsus value of suspend (us).
+    bool auto_waiti_pes;  ///< True for auto-wait idle after suspend command. False for using time delay.
 } spi_flash_hal_config_t;
 
 /**
