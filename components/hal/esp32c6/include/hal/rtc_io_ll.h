@@ -111,9 +111,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_data_w1ts, BIT(rtcio_num));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_w1ts, BIT(rtcio_num));
     } else {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_data_w1tc, BIT(rtcio_num));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_w1tc, BIT(rtcio_num));
     }
 }
 
@@ -406,7 +406,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_w1tc, 0xff);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_intr_w1tc, 0xff);
 }
 
 #ifdef __cplusplus
