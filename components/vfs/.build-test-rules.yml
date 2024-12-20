@@ -1,0 +1,5 @@
+components/vfs/test_apps:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32s3", "esp32c2", "esp32c3", "esp32c6", "esp32h2"]
+      temporary: true
+      reason: Only run VFS tests on a subset of targets
