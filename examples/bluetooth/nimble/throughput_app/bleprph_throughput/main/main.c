@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -241,26 +241,26 @@ gatts_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed */
         ESP_LOGI(tag, "connection %s; status = %d ",
-                 event->connect.status == 0 ? "established" : "failed",
-                 event->connect.status);
+                 event->link_estab.status == 0 ? "established" : "failed",
+                 event->link_estab.status);
         rc = ble_att_set_preferred_mtu(PREFERRED_MTU_VALUE);
         if (rc != 0) {
             ESP_LOGE(tag, "Failed to set preferred MTU; rc = %d", rc);
         }
 
-        if (event->connect.status != 0) {
+        if (event->link_estab.status != 0) {
             /* Connection failed; resume advertising */
             gatts_advertise();
         }
 
-        rc = ble_hs_hci_util_set_data_len(event->connect.conn_handle,
+        rc = ble_hs_hci_util_set_data_len(event->link_estab.conn_handle,
                                           LL_PACKET_LENGTH,
                                           LL_PACKET_TIME);
         if (rc != 0) {
             ESP_LOGE(tag, "Set packet length failed");
         }
 
-        conn_handle = event->connect.conn_handle;
+        conn_handle = event->link_estab.conn_handle;
         break;
 
     case BLE_GAP_EVENT_DISCONNECT:
