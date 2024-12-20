@@ -22,7 +22,7 @@ case $IDF_TARGET in
     esp32s3)
         PREFIX=xtensa-esp32s3-elf-
         ;;
-    esp32c3)
+    esp32c3|esp32c2)
         PREFIX=riscv32-esp-elf-
         ;;
     *)
