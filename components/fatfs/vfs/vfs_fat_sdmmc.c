@@ -500,8 +500,7 @@ esp_err_t esp_vfs_fat_sdcard_format_cfg(const char *base_path, sdmmc_card_t *car
 
     //format
     uint32_t id = FF_VOLUMES;
-    bool found = s_get_context_id_by_card(card, &id);
-    assert(found);
+    assert(s_get_context_id_by_card(card, &id));
 
     if (cfg) {
         s_ctx[id]->mount_config = *cfg;

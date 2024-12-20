@@ -547,8 +547,7 @@ esp_err_t twai_driver_install_v2(const twai_general_config_t *g_config, const tw
         .clock_source_hz = clock_source_hz,
         .controller_id = controller_id,
     };
-    bool res = twai_hal_init(&p_twai_obj->hal, &hal_config);
-    assert(res);
+    assert(twai_hal_init(&p_twai_obj->hal, &hal_config));
     twai_hal_configure(&p_twai_obj->hal, t_config, f_config, DRIVER_DEFAULT_INTERRUPTS, g_config->clkout_divider);
 
     //Assign GPIO and Interrupts
