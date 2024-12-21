@@ -22,7 +22,6 @@
 #include "common/wnm_sta.h"
 #include "esp_scan_i.h"
 #include "esp_common_i.h"
-#include "eloop.h"
 
 extern struct wpa_supplicant g_wpa_supp;
 

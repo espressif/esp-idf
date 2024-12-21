@@ -23,7 +23,6 @@
 #include "rsn_supp/wpa_i.h"
 #include "rsn_supp/wpa.h"
 #include "esp_private/wifi.h"
-#include "eloop.h"
 
 /* Utility Functions */
 esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
@@ -36,9 +35,8 @@ esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 }
 
 struct wpa_supplicant g_wpa_supp;
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel);
 
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 #if defined(CONFIG_RRM)
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
 			     u8 *payload, size_t len, int8_t rssi)
@@ -265,6 +263,7 @@ int esp_supplicant_common_init(struct wpa_funcs *wpa_cb)
 	int ret = 0;
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
+#if defined(CONFIG_RRM)
 	wpas_rrm_reset(wpa_s);
 	wpas_clear_beacon_rep_data(wpa_s);
 #endif /* defined(CONFIG_RRM) */
@@ -328,13 +327,16 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 	/* Register for mgmt frames */
 	register_mgmt_frames(wpa_s);
 	/* clear set bssid flag */
-	clear_bssid_flag(wpa_s);
+	clear_bssid_flag_and_channel(wpa_s);
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
-void supplicant_sta_disconn_handler(void)
+void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
+#if defined(CONFIG_IEEE80211R)
     struct wpa_sm *sm = &gWpaSm;
+#endif /* defined(CONFIG_IEEE80211R) */
+
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 	struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
@@ -352,8 +354,8 @@ void supplicant_sta_disconn_handler(void)
 		wpa_s->current_bss = NULL;
 	}
 #if defined(CONFIG_IEEE80211R)
-	if (reason_code == WIFI_REASON_INVALID_PMKID || reason_code == WIFI_REASON_INVALID_MDE || reason_code == WIFI_REASON_INVALID_FTE || (sm->cur_pmksa == NULL)) {
-		/* clear all ft auth related IEs so that next will be open auth */
+	if (!sm->cur_pmksa) {
+	/* clear all ft auth related IEs so that next will be open auth */
 		wpa_sta_clear_ft_auth_ie();
 	}
 #endif
@@ -644,11 +646,6 @@ static size_t add_mdie(uint8_t *bssid, uint8_t *ie, size_t len)
 	return mdie_len;
 }
 
-<<<<<<< HEAD
-
-#ifdef CONFIG_IEEE80211R
-=======
->>>>>>> 9cce89fea9e... fix(wpa_supplicant): Add two separate flags for RRM and WNM
 int wpa_sm_update_ft_ies(struct wpa_sm *sm, const u8 *md,
 			 const u8 *ies, size_t ies_len, bool auth_ie)
 {
