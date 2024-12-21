@@ -292,6 +292,8 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     case WIFI_REASON_ASSOC_FAIL:
     case WIFI_REASON_CONNECTION_FAIL:
     case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_MDE:
+    case WIFI_REASON_INVALID_FTE:
         wpa_sta_clear_curr_pmksa();
         wpa_sm_notify_disassoc(&gWpaSm);
         break;

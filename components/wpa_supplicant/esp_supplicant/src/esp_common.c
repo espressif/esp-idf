@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,9 +35,8 @@ esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 }
 
 struct wpa_supplicant g_wpa_supp;
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel);
 
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 #if defined(CONFIG_RRM)
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                              u8 *payload, size_t len, int8_t rssi)
@@ -336,8 +335,8 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 
 void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
-    struct wpa_sm *sm = &gWpaSm;
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
+    struct wpa_sm *sm = &gWpaSm;
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
 #if defined(CONFIG_RRM)
@@ -354,7 +353,7 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
         wpa_s->current_bss = NULL;
     }
 #if defined(CONFIG_IEEE80211R)
-    if (reason_code == WIFI_REASON_INVALID_PMKID || reason_code == WIFI_REASON_INVALID_MDE || reason_code == WIFI_REASON_INVALID_FTE || (sm->cur_pmksa == NULL)) {
+    if (!sm->cur_pmksa) {
         /* clear all ft auth related IEs so that next will be open auth */
         wpa_sta_clear_ft_auth_ie();
     }
@@ -410,24 +409,23 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 
 void neighbor_report_recvd_cb(void *ctx, const uint8_t *report, size_t report_len)
 {
-    if (report == NULL) {
+    if (!report) {
         wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report - NONE");
         esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, NULL, 0, 0);
         return;
     }
     wpa_printf(MSG_DEBUG, "RRM: Notifying neighbor report (token = %d)", report[0]);
-    
+
     wifi_event_neighbor_report_t *neighbor_report_event = os_zalloc(sizeof(wifi_event_neighbor_report_t) + report_len);
-    if (neighbor_report_event == NULL) {
+    if (!neighbor_report_event) {
         wpa_printf(MSG_DEBUG, "memory alloc failed");
+        return;
     }
 
-    if (report_len < ESP_WIFI_MAX_NEIGHBOR_REP_LEN) {
-        os_memcpy(neighbor_report_event->report, report, report_len);
-    }
+    os_memcpy(neighbor_report_event->report, report, ESP_WIFI_MAX_NEIGHBOR_REP_LEN);
     os_memcpy(neighbor_report_event->n_report, report, report_len);
     neighbor_report_event->report_len = report_len;
-    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, &neighbor_report_event, sizeof(wifi_event_neighbor_report_t), 0);
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_STA_NEIGHBOR_REP, neighbor_report_event, sizeof(wifi_event_neighbor_report_t) + report_len, 0);
     os_free(neighbor_report_event);
 }
 
