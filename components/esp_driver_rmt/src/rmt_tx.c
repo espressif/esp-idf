@@ -340,6 +340,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     tx_channel->base.resolution_hz = group->resolution_hz / real_div;
     if (tx_channel->base.resolution_hz != config->resolution_hz) {
         ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, tx_channel->base.resolution_hz);
+        config->resolution_hz = tx_channel->base.resolution_hz;
     }
 
     rmt_ll_tx_set_mem_blocks(hal->regs, channel_id, tx_channel->base.mem_block_num);
