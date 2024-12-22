@@ -285,6 +285,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     rx_channel->base.resolution_hz = group->resolution_hz / real_div;
     if (rx_channel->base.resolution_hz != config->resolution_hz) {
         ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
+        config->resolution_hz = rx_channel->base.resolution_hz;
     }
 
     rx_channel->filter_clock_resolution_hz = group->resolution_hz;
