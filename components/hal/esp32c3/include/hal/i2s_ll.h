@@ -31,6 +31,7 @@ extern "C" {
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
+#define I2S_LL_SLOT_FRAME_BIT_MAX      128 // Up-to 128 bits in one frame, determined by MAX(half_sample_bits) * 2
 
 /**
  * @brief I2S clock configuration structure
