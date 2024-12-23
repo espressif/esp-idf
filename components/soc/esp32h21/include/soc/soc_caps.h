@@ -76,7 +76,7 @@
 // #define SOC_SDIO_SLAVE_SUPPORTED        1
 // #define SOC_PAU_SUPPORTED               1
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
-// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11514
+// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11515
 // #define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1
 
@@ -429,6 +429,7 @@
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+#define SOC_LP_TIMER_BOD_SHARE_INTR_SOURCE 1   //LP timer and brownout detector share the interrupt source
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)

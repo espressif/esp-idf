@@ -86,7 +86,8 @@ void esp_brownout_init(void)
 
     brownout_hal_config(&cfg);
     brownout_ll_intr_clear();
-#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+
+#if SOC_LP_TIMER_BOD_SHARE_INTR_SOURCE
     // TODO IDF-6606: LP_RTC_TIMER interrupt source is shared by lp_timer and brownout detector, but lp_timer interrupt
     // is not used now. An interrupt allocator is needed when lp_timer intr gets supported.
     esp_intr_alloc_intrstatus(ETS_LP_RTC_TIMER_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, (uint32_t)brownout_ll_intr_get_status_reg(), BROWNOUT_DETECTOR_LL_INTERRUPT_MASK, &rtc_brownout_isr_handler, NULL, NULL);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,8 @@
 #include "esp32c5/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rtc.h"
 #endif
