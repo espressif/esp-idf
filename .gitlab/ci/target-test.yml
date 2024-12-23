@@ -890,12 +890,6 @@ UT_014:
     - UT_T2_RS485
     - psram
 
-UT_017:
-  extends: .unit_test_esp32_template
-  tags:
-    - ESP32_IDF
-    - EMMC
-
 UT_018:
   extends: .unit_test_esp32_template
   parallel: 2
