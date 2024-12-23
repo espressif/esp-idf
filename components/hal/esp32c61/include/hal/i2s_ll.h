@@ -987,6 +987,43 @@ static inline void i2s_ll_rx_set_pdm_amplify_num(i2s_dev_t *hw, uint32_t amp_num
 }
 
 /**
+ * @brief Set I2S RX PDM high pass filter param0 (only for compatibility)
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param no effect
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
+{
+    // Can't configure HP filter param on this target
+    (void) hw;
+    (void) param;
+}
+
+/**
+ * @brief Set I2S RX PDM high pass filter param5 (only for compatibility)
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param no effect
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
+{
+    // Can't configure HP filter param on this target
+    (void) hw;
+    (void) param;
+}
+
+/**
+ * @brief Enable I2S RX PDM high pass filter
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable I2S RX PDM high pass filter, set false to bypass it
+ */
+static inline void i2s_ll_rx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm_hp_bypass = !enable;
+}
+
+/**
  * @brief Configura TX a/u-law decompress or compress
  *
  * @param hw Peripheral I2S hardware instance address.
