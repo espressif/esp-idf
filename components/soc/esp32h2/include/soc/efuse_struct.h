@@ -252,18 +252,21 @@ typedef union {
          *  functioned.
          */
         uint32_t vdd_spi_as_gpio:1;
-        /** rpt4_reserved0_2 : RO; bitpos: [28:27]; default: 0;
-         *  Reserved.
+        /** ecdsa_curve_mode : R; bitpos: [28:27]; default: 0;
+         *  Configures the curve of ECDSA calculation: 0: only enable P256. 1: only enable
+         *  P192. 2: both enable P256 and P192. 3: only enable P256
          */
-        uint32_t rpt4_reserved0_2:2;
-        /** rpt4_reserved0_1 : RO; bitpos: [29]; default: 0;
-         *  Reserved.
+        uint32_t ecdsa_curve_mode:2;
+        /** ecc_force_const_time : R; bitpos: [29]; default: 0;
+         *  Set this bit to permanently turn on ECC const-time mode
          */
-        uint32_t rpt4_reserved0_1:1;
-        /** rpt4_reserved0_0 : RO; bitpos: [31:30]; default: 0;
-         *  Reserved.
+        uint32_t ecc_force_const_time:1;
+        /** xts_dpa_pseudo_level : R; bitpos: [31:30]; default: 0;
+         *  Set this bit to control the xts pseudo-round anti-dpa attack function: 0:
+         *  controlled by register. 1-3: the higher the value is, the more pseudo-rounds are
+         *  inserted to the xts-aes calculation
          */
-        uint32_t rpt4_reserved0_0:2;
+        uint32_t xts_dpa_pseudo_level:2;
     };
     uint32_t val;
 } efuse_rd_repeat_data0_reg_t;
@@ -339,11 +342,10 @@ typedef union {
          *  Represents the spa secure level by configuring the clock random divide mode.
          */
         uint32_t sec_dpa_level:2;
-        /** ecdsa_force_use_hardware_k : RO; bitpos: [18]; default: 1;
-         *  Represents whether hardware random number k is forced used in ESDCA. 1: force used.
-         *  0: not force used.
+        /** reserve_0_114 : RO; bitpos: [18]; default: 1;
+         *  Reserved
          */
-        uint32_t ecdsa_force_use_hardware_k:1;
+        uint32_t reserve_0_114:1;
         /** crypt_dpa_enable : RO; bitpos: [19]; default: 1;
          *  Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled.
          */
@@ -357,10 +359,14 @@ typedef union {
          *  enabled. 0: disabled.
          */
         uint32_t secure_boot_aggressive_revoke:1;
-        /** rpt4_reserved2_0 : RO; bitpos: [27:22]; default: 0;
-         *  Reserved.
+        /** powerglitch_en1 : R; bitpos: [26:22]; default: 0;
+         *  Set these bits to enable power glitch function when chip power on
          */
-        uint32_t rpt4_reserved2_0:6;
+        uint32_t powerglitch_en1:5;
+        /** reserved_0_123 : R; bitpos: [27]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_0_123:1;
         /** flash_tpuw : RO; bitpos: [31:28]; default: 0;
          *  Represents the flash waiting time after power-up, in unit of ms. When the value
          *  less than 15, the waiting time is the programmed value. Otherwise, the waiting time
