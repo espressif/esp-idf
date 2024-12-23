@@ -16,6 +16,7 @@
 #include "sdkconfig.h"
 
 #include "soc/soc_caps.h"
+#include "soc/chip_revision.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
@@ -382,8 +383,10 @@ static void do_core_init(void)
     if (esp_efuse_find_purpose(ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY, NULL)) {
         // ECDSA key purpose block is present and hence permanently enable
         // the hardware TRNG supplied k mode (most secure mode)
-        err = esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K);
-        assert(err == ESP_OK && "Failed to enable ECDSA hardware k mode");
+        if (!CONFIG_IDF_TARGET_ESP32H2 || (CONFIG_IDF_TARGET_ESP32H2 && !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102))) {
+            err = esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K);
+            assert(err == ESP_OK && "Failed to enable ECDSA hardware k mode");
+        }
     }
 #endif
 
