@@ -328,6 +328,7 @@ extensions += ['sphinx_copybutton',
                'esp_docs.idf_extensions.kconfig_reference',
                'esp_docs.idf_extensions.gen_idf_tools_links',
                'esp_docs.esp_extensions.run_doxygen',
+               'esp_docs.esp_extensions.add_html_zip',
                'linuxdoc.rstFlatTable',  # https://return42.github.io/linuxdoc/linuxdoc-howto/table-markup.html#flat-table
                ]
 
