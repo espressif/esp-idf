@@ -240,6 +240,32 @@ static void init_gatt_values(void)
 
 }
 
+static void deinit_gatt_values(void)
+{
+    int i = 0;
+    const struct ble_gatt_svc_def *svc;
+    const struct ble_gatt_chr_def *chr;
+    const struct ble_gatt_dsc_def *dsc;
+
+    for (svc = gatt_svr_svcs; svc && svc->uuid; svc++) {
+        for (chr = svc->characteristics; chr && chr->uuid; chr++) {
+            if (i < SERVER_MAX_VALUES && gatt_values[i].buf != NULL) {
+                os_mbuf_free(gatt_values[i].buf);  /* Free the buffer */
+                gatt_values[i].buf = NULL;         /* Nullify the pointer to avoid dangling references */
+            }
+            ++i;
+
+            for (dsc = chr->descriptors; dsc && dsc->uuid; dsc++) {
+                if (i < SERVER_MAX_VALUES && gatt_values[i].buf != NULL) {
+                    os_mbuf_free(gatt_values[i].buf);  /* Free the buffer */
+                    gatt_values[i].buf = NULL;         /* Nullify the pointer to avoid dangling references */
+                }
+                ++i;
+            }
+        }
+    }
+}
+
 int esp_blufi_gatt_svr_init(void)
 {
     int rc;
@@ -257,6 +283,18 @@ int esp_blufi_gatt_svr_init(void)
     }
 
     init_gatt_values();
+    return 0;
+}
+
+int esp_blufi_gatt_svr_deinit(void)
+{
+    deinit_gatt_values();
+
+    ble_gatts_free_svcs();
+    /* Deinitialize BLE GATT and GAP services */
+    ble_svc_gatt_deinit();
+    ble_svc_gap_deinit();
+
     return 0;
 }
 
