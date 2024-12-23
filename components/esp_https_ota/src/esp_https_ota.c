@@ -96,8 +96,7 @@ static bool process_again(int status_code)
 
 static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, int status_code)
 {
-    esp_err_t err;
-
+    esp_err_t err = ESP_FAIL;
     if (redirection_required(status_code)) {
         err = esp_http_client_set_redirection(https_ota_handle->http_client);
         if (err != ESP_OK) {
@@ -113,7 +112,11 @@ static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, i
             return ESP_FAIL;
         }
         https_ota_handle->max_authorization_retries--;
-        esp_http_client_add_auth(https_ota_handle->http_client);
+        err = esp_http_client_add_auth(https_ota_handle->http_client);
+        if (err!= ESP_OK) {
+            ESP_LOGE(TAG, "Authorization Failed");
+            return err;
+        }
     } else if(status_code == HttpStatus_NotFound || status_code == HttpStatus_Forbidden) {
         ESP_LOGE(TAG, "File not found(%d)", status_code);
         return ESP_FAIL;

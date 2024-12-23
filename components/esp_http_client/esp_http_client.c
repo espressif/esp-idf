@@ -255,7 +255,7 @@ static int http_on_header_field(http_parser *parser, const char *at, size_t leng
 {
     esp_http_client_t *client = parser->data;
     http_on_header_event(client);
-    http_utils_append_string(&client->current_header_key, at, length);
+    ESP_RETURN_ON_FALSE_DEBUG(http_utils_append_string(&client->current_header_key, at, length), -1, TAG, "Failed to append string");
 
     return 0;
 }
@@ -267,14 +267,14 @@ static int http_on_header_value(http_parser *parser, const char *at, size_t leng
         return 0;
     }
     if (strcasecmp(client->current_header_key, "Location") == 0) {
-        http_utils_append_string(&client->location, at, length);
+        ESP_RETURN_ON_FALSE_DEBUG(http_utils_append_string(&client->location, at, length), -1, TAG, "Failed to append string");
     } else if (strcasecmp(client->current_header_key, "Transfer-Encoding") == 0
                && memcmp(at, "chunked", length) == 0) {
         client->response->is_chunked = true;
     } else if (strcasecmp(client->current_header_key, "WWW-Authenticate") == 0) {
-        http_utils_append_string(&client->auth_header, at, length);
+        ESP_RETURN_ON_FALSE_DEBUG(http_utils_append_string(&client->auth_header, at, length), -1, TAG, "Failed to append string");
     }
-    http_utils_append_string(&client->current_header_value, at, length);
+    ESP_RETURN_ON_FALSE_DEBUG(http_utils_append_string(&client->current_header_value, at, length), -1, TAG, "Failed to append string");
     return 0;
 }
 
@@ -554,12 +554,12 @@ static esp_err_t _set_config(esp_http_client_handle_t client, const esp_http_cli
     }
 
     if (config->transport_type == HTTP_TRANSPORT_OVER_SSL) {
-        http_utils_assign_string(&client->connection_info.scheme, "https", -1);
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.scheme, "https", -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
         if (client->connection_info.port == 0) {
             client->connection_info.port = DEFAULT_HTTPS_PORT;
         }
     } else {
-        http_utils_assign_string(&client->connection_info.scheme, "http", -1);
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.scheme, "http", -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
         if (client->connection_info.port == 0) {
             client->connection_info.port = DEFAULT_HTTP_PORT;
         }
@@ -611,8 +611,60 @@ static esp_err_t _clear_auth_data(esp_http_client_handle_t client)
     return ESP_OK;
 }
 
+static esp_err_t esp_http_client_prepare_basic_auth(esp_http_client_handle_t client) {
+    char *auth_response = NULL;
+    esp_err_t ret = ESP_FAIL;
+
+    auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
+    ESP_GOTO_ON_FALSE(auth_response, ESP_FAIL, error, TAG, "Failed to generate basic auth response");
+
+    ESP_LOGD(TAG, "auth_response=%s", auth_response);
+    ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+
+    ret = ESP_OK;
+
+error:
+    if (auth_response) {
+        free(auth_response);  // Free the auth_response after use
+    }
+
+    return ret;
+}
+
+#ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
+static esp_err_t esp_http_client_prepare_digest_auth(esp_http_client_handle_t client) {
+    char *auth_response = NULL;
+    esp_err_t ret = ESP_FAIL;
+
+    client->auth_data->uri = NULL;
+    ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->auth_data->uri, client->connection_info.path, -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
+
+    if (client->connection_info.query) {
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_append_string(&client->auth_data->uri, "?", -1), ESP_ERR_NO_MEM, error, TAG, "Failed to append string");
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_append_string(&client->auth_data->uri, client->connection_info.query, -1), ESP_ERR_NO_MEM, error, TAG, "Failed to append string");
+    }
+
+    client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
+    auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
+    ESP_GOTO_ON_FALSE(auth_response, ESP_FAIL, error, TAG, "Failed to generate digest auth response");
+
+    ESP_LOGD(TAG, "auth_response=%s", auth_response);
+    ESP_GOTO_ON_FALSE(ESP_OK == esp_http_client_set_header(client, "Authorization", auth_response), ESP_FAIL, error, TAG, "Failed to set Authorization header");
+
+    ret = ESP_OK;
+
+error:
+    if (auth_response) {
+        free(auth_response);  // Free the auth_response after use
+    }
+
+    return ret;
+}
+#endif
+
 static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
 {
+    esp_err_t ret = ESP_OK;
     client->process_again = 0;
     client->response->data_process = 0;
     client->first_line_prepared = false;
@@ -632,30 +684,16 @@ static esp_err_t esp_http_client_prepare(esp_http_client_handle_t client)
     }
     http_parser_init(client->parser, HTTP_RESPONSE);
     if (client->connection_info.username) {
-        char *auth_response = NULL;
-
         if (client->connection_info.auth_type == HTTP_AUTH_TYPE_BASIC) {
-            auth_response = http_auth_basic(client->connection_info.username, client->connection_info.password);
+            ret = esp_http_client_prepare_basic_auth(client);
+        }
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_DIGEST_AUTH
-        } else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_DIGEST && client->auth_data) {
-            client->auth_data->uri = NULL;
-            http_utils_assign_string(&client->auth_data->uri,client->connection_info.path,-1);
-            if (client->connection_info.query){
-                http_utils_append_string(&client->auth_data->uri,"?",-1);
-                http_utils_append_string(&client->auth_data->uri,client->connection_info.query,-1);
-            }
-            client->auth_data->cnonce = ((uint64_t)esp_random() << 32) + esp_random();
-            auth_response = http_auth_digest(client->connection_info.username, client->connection_info.password, client->auth_data);
+        else if (client->connection_info.auth_type == HTTP_AUTH_TYPE_DIGEST && client->auth_data) {
+            ret = esp_http_client_prepare_digest_auth(client);
+        }
 #endif
-        }
-
-        if (auth_response) {
-            ESP_LOGD(TAG, "auth_response=%s", auth_response);
-            esp_http_client_set_header(client, "Authorization", auth_response);
-            free(auth_response);
-        }
     }
-    return ESP_OK;
+    return ret;
 }
 
 static char *_get_host_header(char *host, int port)
@@ -1030,7 +1068,7 @@ static esp_err_t esp_http_check_response(esp_http_client_handle_t client)
             http_dispatch_event_to_event_loop(HTTP_EVENT_REDIRECT, &evt_data, sizeof(esp_http_client_redirect_event_data_t));
             break;
         case HttpStatus_Unauthorized:
-            esp_http_client_add_auth(client);
+            return esp_http_client_add_auth(client);
     }
     return ESP_OK;
 }
@@ -1061,8 +1099,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     old_port = client->connection_info.port;
 
     if (purl.field_data[UF_HOST].len) {
-        http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len);
-        ESP_GOTO_ON_FALSE(client->connection_info.host, ESP_ERR_NO_MEM, error, TAG, "Memory exhausted");
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.host, url + purl.field_data[UF_HOST].off, purl.field_data[UF_HOST].len), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
     }
     // Close the connection if host was changed
     if (old_host && client->connection_info.host
@@ -1083,8 +1120,7 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
     }
 
     if (purl.field_data[UF_SCHEMA].len) {
-        http_utils_assign_string(&client->connection_info.scheme, url + purl.field_data[UF_SCHEMA].off, purl.field_data[UF_SCHEMA].len);
-        ESP_RETURN_ON_FALSE(client->connection_info.scheme, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.scheme, url + purl.field_data[UF_SCHEMA].off, purl.field_data[UF_SCHEMA].len), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
 
         if (strcasecmp(client->connection_info.scheme, "http") == 0) {
             client->connection_info.port = DEFAULT_HTTP_PORT;
@@ -1105,18 +1141,16 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
     if (purl.field_data[UF_USERINFO].len) {
         char *user_info = NULL;
-        http_utils_assign_string(&user_info, url + purl.field_data[UF_USERINFO].off, purl.field_data[UF_USERINFO].len);
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&user_info, url + purl.field_data[UF_USERINFO].off, purl.field_data[UF_USERINFO].len), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
         if (user_info) {
             char *username = user_info;
             char *password = strchr(user_info, ':');
             if (password) {
                 *password = 0;
                 password ++;
-                http_utils_assign_string(&client->connection_info.password, password, -1);
-                ESP_RETURN_ON_FALSE(client->connection_info.password, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+                ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.password, password, -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
             }
-            http_utils_assign_string(&client->connection_info.username, username, -1);
-            ESP_RETURN_ON_FALSE(client->connection_info.username, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+            ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.username, username, -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
             free(user_info);
         } else {
             return ESP_ERR_NO_MEM;
@@ -1125,15 +1159,13 @@ esp_err_t esp_http_client_set_url(esp_http_client_handle_t client, const char *u
 
     //Reset path and query if there are no information
     if (purl.field_data[UF_PATH].len) {
-        http_utils_assign_string(&client->connection_info.path, url + purl.field_data[UF_PATH].off, purl.field_data[UF_PATH].len);
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.path, url + purl.field_data[UF_PATH].off, purl.field_data[UF_PATH].len), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
     } else {
-        http_utils_assign_string(&client->connection_info.path, "/", -1);
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.path, "/", -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
     }
-    ESP_RETURN_ON_FALSE(client->connection_info.path, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
 
     if (purl.field_data[UF_QUERY].len) {
-        http_utils_assign_string(&client->connection_info.query, url + purl.field_data[UF_QUERY].off, purl.field_data[UF_QUERY].len);
-        ESP_RETURN_ON_FALSE(client->connection_info.query, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
+        ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->connection_info.query, url + purl.field_data[UF_QUERY].off, purl.field_data[UF_QUERY].len), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
     } else if (client->connection_info.query) {
         free(client->connection_info.query);
         client->connection_info.query = NULL;
@@ -1758,21 +1790,21 @@ esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const c
     if (client == NULL || auth_data == NULL || len <= 0) {
         return ESP_ERR_INVALID_ARG;
     }
-    http_utils_append_string(&client->auth_header, auth_data, len);
+    ESP_RETURN_ON_FALSE_DEBUG(http_utils_append_string(&client->auth_header, auth_data, len), ESP_ERR_NO_MEM, TAG, "Failed to append string");
     return ESP_OK;
 }
 
-void esp_http_client_add_auth(esp_http_client_handle_t client)
+esp_err_t esp_http_client_add_auth(esp_http_client_handle_t client)
 {
     if (client == NULL) {
-        return;
+        return ESP_ERR_INVALID_ARG;
     }
     if (client->state != HTTP_STATE_RES_ON_DATA_START) {
-        return;
+        return ESP_OK;  // No action needed, return OK
     }
     if (client->redirect_counter >= client->max_authorization_retries) {
         ESP_LOGE(TAG, "Error, reached max_authorization_retries count=%d", client->redirect_counter);
-        return;
+        return ESP_FAIL;
     }
 
     char *auth_header = client->auth_header;
@@ -1794,7 +1826,7 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
 #endif
             client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
             ESP_LOGE(TAG, "This authentication method is not supported: %s", auth_header);
-            return;
+            return ESP_ERR_NOT_SUPPORTED;
 #ifdef CONFIG_ESP_HTTP_CLIENT_ENABLE_BASIC_AUTH
         }
 #endif
@@ -1807,21 +1839,27 @@ void esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->method = strdup(HTTP_METHOD_MAPPING[client->connection_info.method]);
 
         client->auth_data->nc = 1;
-        client->auth_data->realm = http_utils_get_string_between(auth_header, "realm=\"", "\"");
-        client->auth_data->algorithm = http_utils_get_string_between(auth_header, "algorithm=", ",");
+        ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_between(auth_header, "realm=\"", "\"", &client->auth_data->realm), TAG, "Unable to extract substring between specified strings");
+        ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_between(auth_header, "algorithm=", ",", &client->auth_data->algorithm), TAG, "Unable to extract substring between specified strings");
+
         if (client->auth_data->algorithm == NULL) {
-            client->auth_data->algorithm = http_utils_get_string_after(auth_header, "algorithm=");
+            ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_after(auth_header, "algorithm=", &client->auth_data->algorithm), TAG, "Unable to extract substring after specified string");
         }
+
         if (client->auth_data->algorithm == NULL) {
             client->auth_data->algorithm = strdup("MD5");
         }
-        client->auth_data->qop = http_utils_get_string_between(auth_header, "qop=\"", "\"");
-        client->auth_data->nonce = http_utils_get_string_between(auth_header, "nonce=\"", "\"");
-        client->auth_data->opaque = http_utils_get_string_between(auth_header, "opaque=\"", "\"");
+
+        ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_between(auth_header, "qop=\"", "\"", &client->auth_data->qop), TAG, "Unable to extract substring between specified strings");
+        ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_between(auth_header, "nonce=\"", "\"", &client->auth_data->nonce), TAG, "Unable to extract substring between specified strings");
+        ESP_RETURN_ON_ERROR_DEBUG(http_utils_get_substring_between(auth_header, "opaque=\"", "\"", &client->auth_data->opaque), TAG, "Unable to extract substring between specified strings");
         client->process_again = 1;
+
+        return ESP_OK;
     } else {
         client->connection_info.auth_type = HTTP_AUTH_TYPE_NONE;
         ESP_LOGW(TAG, "This request requires authentication, but does not provide header information for that");
+        return ESP_ERR_NOT_SUPPORTED;
     }
 }
 
