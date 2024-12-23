@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -416,3 +416,22 @@ void esp_ieee802154_txrx_statistic_print(void)
     ieee802154_txrx_statistic_print();
 }
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
+
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+void esp_ieee802154_rx_buffer_statistic_clear(void)
+{
+    ieee802154_rx_buffer_statistic_clear();
+}
+
+void esp_ieee802154_rx_buffer_statistic_print(void)
+{
+    ieee802154_rx_buffer_statistic_print();
+}
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+#if CONFIG_IEEE802154_RECORD
+void esp_ieee802154_record_print(void)
+{
+    ieee802154_record_print();
+}
+#endif // CONFIG_IEEE802154_RECORD
