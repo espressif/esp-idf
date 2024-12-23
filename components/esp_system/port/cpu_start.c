@@ -45,7 +45,6 @@
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
-#include "hal/cache_hal.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
@@ -83,6 +82,7 @@
 #include "esp_private/sleep_gpio.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
+#include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
@@ -373,6 +373,11 @@ void IRAM_ATTR call_start_cpu0(void)
     do_multicore_settings();
 #endif
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    //cache hal ctx needs to be initialised
+    cache_hal_init();
+#endif
 
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
     // in the bootloader are still necessary

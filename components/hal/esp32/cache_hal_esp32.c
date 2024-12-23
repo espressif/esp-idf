@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,11 @@
 #include "hal/cache_hal.h"
 
 static uint32_t s_cache_status[2];
+
+void cache_hal_init(void)
+{
+    //for compatibility
+}
 
 void cache_hal_suspend(cache_type_t type)
 {
