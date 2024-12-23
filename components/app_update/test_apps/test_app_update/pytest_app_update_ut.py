@@ -50,3 +50,19 @@ def test_app_update_xip_psram(dut: Dut) -> None:
 )
 def test_app_update_xip_psram_rom_impl(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=90)
+
+
+@pytest.mark.esp32
+@pytest.mark.esp32c3
+@pytest.mark.esp32s3
+@pytest.mark.esp32p4
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rollback',
+    ],
+    indirect=True,
+)
+def test_app_update_with_rollback(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=90)
