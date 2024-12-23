@@ -296,15 +296,15 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  *                    - ESP32-C6: 0-7
  *                    - ESP32-H2: 7-14
  * @param level_mode Select logic function used to determine wakeup condition:
- *                   When target chip is ESP32:
+ *                   - When target chip is ESP32:
  *                      - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
- *                   When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
+ *                   - When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
  *                      - ESP_EXT1_WAKEUP_ANY_LOW: wake up when any of the selected GPIOs is low
  *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if io_mask is zero,,
+ *      - ESP_ERR_INVALID_ARG if io_mask is zero,
  *        or mode is invalid
  */
 esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_mode_t level_mode);
@@ -345,10 +345,10 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
  *                    - ESP32-C6: 0-7
  *                    - ESP32-H2: 7-14
  * @param level_mode Select logic function used to determine wakeup condition:
- *                   When target chip is ESP32:
+ *                   - When target chip is ESP32:
  *                      - ESP_EXT1_WAKEUP_ALL_LOW: wake up when all selected GPIOs are low
  *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
- *                   When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
+ *                   - When target chip is ESP32-S2, ESP32-S3, ESP32-C6 or ESP32-H2:
  *                      - ESP_EXT1_WAKEUP_ANY_LOW: wake up when any of the selected GPIOs is low
  *                      - ESP_EXT1_WAKEUP_ANY_HIGH: wake up when any of the selected GPIOs is high
  * @return
