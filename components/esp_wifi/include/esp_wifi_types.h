@@ -914,6 +914,8 @@ typedef enum {
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
 
+    WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -1145,6 +1147,11 @@ typedef struct {
                                                   ERSU is always used in long distance transmission, and its frame has lower rate compared with SU mode */
     bool dcm;                                /**< Using dcm rate to send frame */
 } wifi_tx_rate_config_t;
+
+/** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
+} wifi_event_ap_wrong_password_t;
 
 #ifdef __cplusplus
 }
