@@ -24,6 +24,7 @@
 #include "soc/pmu_reg.h"
 #include "soc/pmu_struct.h"
 #include "hal/clk_tree_hal.h"
+#include "hal/gpio_hal.h"
 #include "hal/lp_aon_hal.h"
 #include "soc/lp_system_reg.h"
 #include "hal/pmu_hal.h"
@@ -242,6 +243,26 @@ static void pmu_sleep_digital_init(pmu_context_t *ctx, const pmu_sleep_digital_c
 {
     pmu_ll_hp_set_dig_pad_slp_sel   (ctx->hal->dev, HP(SLEEP), dig->syscntl.dig_pad_slp_sel);
     pmu_ll_hp_set_hold_all_lp_pad   (ctx->hal->dev, HP(SLEEP), dig->syscntl.lp_pad_hold_all);
+
+    // Lowpower workaround for LP pad holding, JTAG IOs is located on lp_pad on esp32p4, if hold its
+    // default state on sleep, there's a high current leakage.
+    if (dig->syscntl.lp_pad_hold_all) {
+        gpio_hal_context_t gpio_hal = {
+            .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
+        };
+        if ((LP_IOMUX.pad[2].mux_sel == 0) && (IO_MUX.gpio[2].mcu_sel == 0)) {
+            gpio_hal_isolate_in_sleep(&gpio_hal, 2); // MTCK
+        }
+        if ((LP_IOMUX.pad[3].mux_sel == 0) && (IO_MUX.gpio[3].mcu_sel == 0)) {
+            gpio_hal_isolate_in_sleep(&gpio_hal, 3); // MTDI
+        }
+        if ((LP_IOMUX.pad[4].mux_sel == 0) && (IO_MUX.gpio[4].mcu_sel == 0)) {
+            gpio_hal_isolate_in_sleep(&gpio_hal, 4); // MTMS
+        }
+        if ((LP_IOMUX.pad[5].mux_sel == 0) && (IO_MUX.gpio[5].mcu_sel == 0)) {
+            gpio_hal_isolate_in_sleep(&gpio_hal, 5); // MTDO
+        }
+    }
 }
 
 static void pmu_sleep_analog_init(pmu_context_t *ctx, const pmu_sleep_analog_config_t *analog, bool dslp)
@@ -376,6 +397,11 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     }
 #endif
 
+    // The PMU state machine will switch PAD to sleep setting and do IO holding at the same stage.
+    // IO may be held to an indeterminate state, so the software needs to trigger the PAD to switch
+    // to the sleep setting before starting the PMU state machine.
+    pmu_ll_imm_set_pad_slp_sel(PMU_instance()->hal->dev, true);
+
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);
 
@@ -411,6 +437,8 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
         }
         pmu_sleep_shutdown_ldo();
     }
+
+    pmu_ll_imm_set_pad_slp_sel(PMU_instance()->hal->dev, false);
 
     // Wait eFuse memory update done.
     while(efuse_ll_get_controller_state() != EFUSE_CONTROLLER_STATE_IDLE);
