@@ -623,6 +623,29 @@ void esp_ieee802154_txrx_statistic_clear(void);
 void esp_ieee802154_txrx_statistic_print(void);
 #endif // CONFIG_IEEE802154_TXRX_STATISTIC
 
+#if CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+/**
+ * @brief  Print the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void esp_ieee802154_rx_buffer_statistic_clear(void);
+
+/**
+ * @brief  Clear the current IEEE802.15.4 rx buffer statistic.
+ *
+ */
+void esp_ieee802154_rx_buffer_statistic_print(void);
+#endif // CONFIG_IEEE802154_RX_BUFFER_STATISTIC
+
+#if CONFIG_IEEE802154_RECORD
+
+/**
+ * @brief  Print the current IEEE802.15.4 event/command/state record.
+ *
+ */
+void esp_ieee802154_record_print(void);
+#endif // CONFIG_IEEE802154_RECORD
 #ifdef __cplusplus
 }
 #endif
