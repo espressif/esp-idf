@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,8 +43,8 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > 1.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
     /* Set up sampling configuration */
     i2s_ll_tx_set_pdm_fpfs(handle->controller->hal.dev, pdm_tx_clk->up_sample_fp, pdm_tx_clk->up_sample_fs);
     i2s_ll_tx_set_pdm_over_sample_ratio(handle->controller->hal.dev, over_sample_ratio);
@@ -329,8 +329,8 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > 1.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
     /* Set down-sampling configuration */
     i2s_ll_rx_set_pdm_dsr(handle->controller->hal.dev, pdm_rx_clk->dn_sample_mode);
     return ESP_OK;

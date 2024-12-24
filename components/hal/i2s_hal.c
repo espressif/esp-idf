@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -282,8 +282,8 @@ void i2s_hal_tdm_set_tx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t msk = slot_cfg->tdm.slot_mask;
     /* Get the maximum slot number */
     cnt = 32 - __builtin_clz(msk);
-    /* There should be at least 2 slots in total even for mono mode */
-    cnt = cnt < 2 ? 2 : cnt;
+    /* Except PCM short format (ws_width = 1), there should be at least 2 slots in total even for mono mode */
+    cnt = ((cnt < 2) && (slot_cfg->tdm.ws_width != 1)) ? 2 : cnt;
     uint32_t total_slot = slot_cfg->tdm.total_slot > cnt ? slot_cfg->tdm.total_slot : cnt;
     i2s_ll_tx_reset(hal->dev);
     i2s_ll_tx_set_slave_mod(hal->dev, is_slave); //TX Slave
@@ -316,8 +316,8 @@ void i2s_hal_tdm_set_rx_slot(i2s_hal_context_t *hal, bool is_slave, const i2s_ha
     uint32_t msk = slot_cfg->tdm.slot_mask;
     /* Get the maximum slot number */
     cnt = 32 - __builtin_clz(msk);
-    /* There should be at least 2 slots in total even for mono mode */
-    cnt = cnt < 2 ? 2 : cnt;
+    /* Except PCM short format (ws_width = 1), there should be at least 2 slots in total even for mono mode */
+    cnt = ((cnt < 2) && (slot_cfg->tdm.ws_width != 1)) ? 2 : cnt;
     uint32_t total_slot = slot_cfg->tdm.total_slot > cnt ? slot_cfg->tdm.total_slot : cnt;
     i2s_ll_rx_reset(hal->dev);
     i2s_ll_rx_set_slave_mod(hal->dev, is_slave); //RX Slave

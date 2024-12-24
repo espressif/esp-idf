@@ -9,4 +9,5 @@ if(CONFIG_SOC_I2S_SUPPORTS_PDM_RX)
 endif()
 
 idf_component_register(SRCS "${srcs}"
+                    PRIV_REQUIRES driver i2s_examples_common
                     INCLUDE_DIRS ".")

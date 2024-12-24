@@ -32,6 +32,7 @@ extern "C" {
 
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
+#define I2S_LL_SLOT_FRAME_BIT_MAX  512 // Up-to 512 bits in one frame, determined by MAX(half_sample_bits) * 2
 
 #define I2S_LL_PLL_F96M_CLK_FREQ      (96 * 1000000) // PLL_F96M_CLK: 96MHz
 #define I2S_LL_PLL_F64M_CLK_FREQ      (64 * 1000000) // PLL_F64M_CLK: 64MHz
