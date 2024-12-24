@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -345,11 +345,14 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:9;
-        /** rx_cnt : RO; bitpos: [12:9]; default: 0;
+        uint32_t reserved_0:8;
+        /** rx_cnt : RO; bitpos: [12:8]; default: 0;
          *  Indicates the cycle number of reading Rx FIFO.
+         *  For the H2 chip revision smaller than v1.2,
+         *  only the highest 4-bit are effective,
+         *  need to right shift 1 bit to get the actual count
          */
-        uint32_t rx_cnt:4;
+        uint32_t rx_cnt:5;
         /** rx_fifo_wr_bit_cnt : RO; bitpos: [31:13]; default: 0;
          *  Indicates the current written bit number into Rx FIFO.
          */

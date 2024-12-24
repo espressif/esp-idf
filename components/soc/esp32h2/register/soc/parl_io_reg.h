@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -359,13 +359,16 @@ extern "C" {
  *  Parallel IO RX status register0
  */
 #define PARL_IO_RX_ST0_REG (DR_REG_PARL_IO_BASE + 0x38)
-/** PARL_IO_RX_CNT : RO; bitpos: [12:9]; default: 0;
+/** PARL_IO_RX_CNT : RO; bitpos: [12:8]; default: 0;
  *  Indicates the cycle number of reading Rx FIFO.
+ *  For the H2 chip revision smaller than v1.2,
+ *  only the highest 4-bit are effective,
+ *  need to right shift 1 bit to get the actual count
  */
-#define PARL_IO_RX_CNT    0x0000000FU
+#define PARL_IO_RX_CNT    0x0000001FU
 #define PARL_IO_RX_CNT_M  (PARL_IO_RX_CNT_V << PARL_IO_RX_CNT_S)
-#define PARL_IO_RX_CNT_V  0x0000000FU
-#define PARL_IO_RX_CNT_S  9
+#define PARL_IO_RX_CNT_V  0x0000001FU
+#define PARL_IO_RX_CNT_S  8
 /** PARL_IO_RX_FIFO_WR_BIT_CNT : RO; bitpos: [31:13]; default: 0;
  *  Indicates the current written bit number into Rx FIFO.
  */
