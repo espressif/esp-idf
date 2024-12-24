@@ -330,6 +330,13 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
         std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_EXTERNAL;
         std_cfg.clk_cfg.ext_clk_freq_hz = 22579200;
     }
+#if CONFIG_IDF_TARGET_ESP32P4
+    else {
+        // Use APLL instead.
+        // Because the default clock source is not sufficient for 22.58M MCLK
+        std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    }
+#endif
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 
