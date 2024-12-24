@@ -30,16 +30,19 @@
 
 #if CONFIG_SPIRAM_SPEED_250M
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(18-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(9-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(9-1))
 #define AP_HEX_PSRAM_RD_LATENCY            6
 #define AP_HEX_PSRAM_WR_LATENCY            3
 #elif CONFIG_SPIRAM_SPEED_200M
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(14-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(7-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(7-1))
 #define AP_HEX_PSRAM_RD_LATENCY            4
 #define AP_HEX_PSRAM_WR_LATENCY            1
 #else
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define AP_HEX_PSRAM_RD_LATENCY            2
 #define AP_HEX_PSRAM_WR_LATENCY            2
@@ -137,7 +140,7 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
     int cmd_len = 16;
     uint32_t addr = 0x0;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     hex_psram_mode_reg_t mode_reg = {0};
     int data_bit_len = 16;
 
@@ -216,7 +219,7 @@ static void s_get_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *out_reg)
 {
     int cmd_len = 16;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     int data_bit_len = 16;
 
     //Read MR0~1 register
