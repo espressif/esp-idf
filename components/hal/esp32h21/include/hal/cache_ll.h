@@ -9,7 +9,7 @@
 #pragma once
 
 #include <stdbool.h>
-#include "soc/extmem_reg.h"
+#include "soc/cache_reg.h"
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"

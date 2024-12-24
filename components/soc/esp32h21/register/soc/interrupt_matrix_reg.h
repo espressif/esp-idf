@@ -13,7 +13,7 @@ extern "C" {
 /** INTMTX_CORE0_PMU_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PMU_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x0)
+#define INTMTX_CORE0_PMU_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x0)
 /** INTMTX_CORE0_PMU_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PMU_INTR mapping register
  */
@@ -25,7 +25,7 @@ extern "C" {
 /** INTMTX_CORE0_EFUSE_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_EFUSE_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x4)
+#define INTMTX_CORE0_EFUSE_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x4)
 /** INTMTX_CORE0_EFUSE_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_EFUSE_INTR mapping register
  */
@@ -37,7 +37,7 @@ extern "C" {
 /** INTMTX_CORE0_LP_RTC_TIMER_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LP_RTC_TIMER_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x8)
+#define INTMTX_CORE0_LP_RTC_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x8)
 /** INTMTX_CORE0_LP_RTC_TIMER_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LP_RTC_TIMER_INTR mapping register
  */
@@ -49,7 +49,7 @@ extern "C" {
 /** INTMTX_CORE0_LP_BLE_TIMER_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LP_BLE_TIMER_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xc)
+#define INTMTX_CORE0_LP_BLE_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xc)
 /** INTMTX_CORE0_LP_BLE_TIMER_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LP_BLE_TIMER_INTR mapping register
  */
@@ -61,7 +61,7 @@ extern "C" {
 /** INTMTX_CORE0_LP_WDT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LP_WDT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x10)
+#define INTMTX_CORE0_LP_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x10)
 /** INTMTX_CORE0_LP_WDT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LP_WDT_INTR mapping register
  */
@@ -73,7 +73,7 @@ extern "C" {
 /** INTMTX_CORE0_LP_PERI_TIMEOUT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LP_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x14)
+#define INTMTX_CORE0_LP_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x14)
 /** INTMTX_CORE0_LP_PERI_TIMEOUT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LP_PERI_TIMEOUT_INTR mapping register
  */
@@ -85,7 +85,7 @@ extern "C" {
 /** INTMTX_CORE0_LP_APM_M0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LP_APM_M0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x18)
+#define INTMTX_CORE0_LP_APM_M0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x18)
 /** INTMTX_CORE0_LP_APM_M0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LP_APM_M0_INTR mapping register
  */
@@ -97,7 +97,7 @@ extern "C" {
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG (DR_REG_INTMTX_BASE + 0x1c)
+#define INTMTX_CORE0_CPU_INTR_FROM_CPU_0_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x1c)
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_0_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CPU_INTR_FROM_CPU_0 mapping register
  */
@@ -109,7 +109,7 @@ extern "C" {
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG (DR_REG_INTMTX_BASE + 0x20)
+#define INTMTX_CORE0_CPU_INTR_FROM_CPU_1_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x20)
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_1_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CPU_INTR_FROM_CPU_1 mapping register
  */
@@ -121,7 +121,7 @@ extern "C" {
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG (DR_REG_INTMTX_BASE + 0x24)
+#define INTMTX_CORE0_CPU_INTR_FROM_CPU_2_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x24)
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_2_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CPU_INTR_FROM_CPU_2 mapping register
  */
@@ -133,7 +133,7 @@ extern "C" {
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG (DR_REG_INTMTX_BASE + 0x28)
+#define INTMTX_CORE0_CPU_INTR_FROM_CPU_3_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x28)
 /** INTMTX_CORE0_CPU_INTR_FROM_CPU_3_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CPU_INTR_FROM_CPU_3 mapping register
  */
@@ -145,7 +145,7 @@ extern "C" {
 /** INTMTX_CORE0_ASSIST_DEBUG_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_ASSIST_DEBUG_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x2c)
+#define INTMTX_CORE0_ASSIST_DEBUG_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x2c)
 /** INTMTX_CORE0_ASSIST_DEBUG_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_ASSIST_DEBUG_INTR mapping register
  */
@@ -157,7 +157,7 @@ extern "C" {
 /** INTMTX_CORE0_TRACE_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_TRACE_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x30)
+#define INTMTX_CORE0_TRACE_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x30)
 /** INTMTX_CORE0_TRACE_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_TRACE_INTR mapping register
  */
@@ -169,7 +169,7 @@ extern "C" {
 /** INTMTX_CORE0_CACHE_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CACHE_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x34)
+#define INTMTX_CORE0_CACHE_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x34)
 /** INTMTX_CORE0_CACHE_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CACHE_INTR mapping register
  */
@@ -181,7 +181,7 @@ extern "C" {
 /** INTMTX_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x38)
+#define INTMTX_CORE0_CPU_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x38)
 /** INTMTX_CORE0_CPU_PERI_TIMEOUT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CPU_PERI_TIMEOUT_INTR mapping register
  */
@@ -193,7 +193,7 @@ extern "C" {
 /** INTMTX_CORE0_BT_MAC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_BT_MAC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x3c)
+#define INTMTX_CORE0_BT_MAC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x3c)
 /** INTMTX_CORE0_BT_MAC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_BT_MAC_INTR mapping register
  */
@@ -205,7 +205,7 @@ extern "C" {
 /** INTMTX_CORE0_BT_BB_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_BT_BB_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x40)
+#define INTMTX_CORE0_BT_BB_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x40)
 /** INTMTX_CORE0_BT_BB_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_BT_BB_INTR mapping register
  */
@@ -217,7 +217,7 @@ extern "C" {
 /** INTMTX_CORE0_BT_BB_NMI_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_BT_BB_NMI_MAP_REG (DR_REG_INTMTX_BASE + 0x44)
+#define INTMTX_CORE0_BT_BB_NMI_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x44)
 /** INTMTX_CORE0_BT_BB_NMI_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_BT_BB_NMI mapping register
  */
@@ -229,7 +229,7 @@ extern "C" {
 /** INTMTX_CORE0_COEX_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_COEX_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x48)
+#define INTMTX_CORE0_COEX_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x48)
 /** INTMTX_CORE0_COEX_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_COEX_INTR mapping register
  */
@@ -241,7 +241,7 @@ extern "C" {
 /** INTMTX_CORE0_BLE_TIMER_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_BLE_TIMER_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x4c)
+#define INTMTX_CORE0_BLE_TIMER_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x4c)
 /** INTMTX_CORE0_BLE_TIMER_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_BLE_TIMER_INTR mapping register
  */
@@ -253,7 +253,7 @@ extern "C" {
 /** INTMTX_CORE0_BLE_SEC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_BLE_SEC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x50)
+#define INTMTX_CORE0_BLE_SEC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x50)
 /** INTMTX_CORE0_BLE_SEC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_BLE_SEC_INTR mapping register
  */
@@ -265,7 +265,7 @@ extern "C" {
 /** INTMTX_CORE0_ZB_MAC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_ZB_MAC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x54)
+#define INTMTX_CORE0_ZB_MAC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x54)
 /** INTMTX_CORE0_ZB_MAC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_ZB_MAC_INTR mapping register
  */
@@ -277,7 +277,7 @@ extern "C" {
 /** INTMTX_CORE0_GPIO_INTERRUPT_PRO_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_GPIO_INTERRUPT_PRO_MAP_REG (DR_REG_INTMTX_BASE + 0x58)
+#define INTMTX_CORE0_GPIO_INTERRUPT_PRO_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x58)
 /** INTMTX_CORE0_GPIO_INTERRUPT_PRO_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_GPIO_INTERRUPT_PRO mapping register
  */
@@ -289,7 +289,7 @@ extern "C" {
 /** INTMTX_CORE0_GPIO_INTERRUPT_PRO_NMI_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_GPIO_INTERRUPT_PRO_NMI_MAP_REG (DR_REG_INTMTX_BASE + 0x5c)
+#define INTMTX_CORE0_GPIO_INTERRUPT_PRO_NMI_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x5c)
 /** INTMTX_CORE0_GPIO_INTERRUPT_PRO_NMI_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_GPIO_INTERRUPT_PRO_NMI mapping register
  */
@@ -301,7 +301,7 @@ extern "C" {
 /** INTMTX_CORE0_PAU_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PAU_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x60)
+#define INTMTX_CORE0_PAU_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x60)
 /** INTMTX_CORE0_PAU_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PAU_INTR mapping register
  */
@@ -313,7 +313,7 @@ extern "C" {
 /** INTMTX_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x64)
+#define INTMTX_CORE0_HP_PERI_TIMEOUT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x64)
 /** INTMTX_CORE0_HP_PERI_TIMEOUT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_HP_PERI_TIMEOUT_INTR mapping register
  */
@@ -325,7 +325,7 @@ extern "C" {
 /** INTMTX_CORE0_HP_APM_M0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_HP_APM_M0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x68)
+#define INTMTX_CORE0_HP_APM_M0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x68)
 /** INTMTX_CORE0_HP_APM_M0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_HP_APM_M0_INTR mapping register
  */
@@ -337,7 +337,7 @@ extern "C" {
 /** INTMTX_CORE0_HP_APM_M1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_HP_APM_M1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x6c)
+#define INTMTX_CORE0_HP_APM_M1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x6c)
 /** INTMTX_CORE0_HP_APM_M1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_HP_APM_M1_INTR mapping register
  */
@@ -349,7 +349,7 @@ extern "C" {
 /** INTMTX_CORE0_HP_APM_M2_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_HP_APM_M2_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x70)
+#define INTMTX_CORE0_HP_APM_M2_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x70)
 /** INTMTX_CORE0_HP_APM_M2_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_HP_APM_M2_INTR mapping register
  */
@@ -361,7 +361,7 @@ extern "C" {
 /** INTMTX_CORE0_HP_APM_M3_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_HP_APM_M3_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x74)
+#define INTMTX_CORE0_HP_APM_M3_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x74)
 /** INTMTX_CORE0_HP_APM_M3_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_HP_APM_M3_INTR mapping register
  */
@@ -373,7 +373,7 @@ extern "C" {
 /** INTMTX_CORE0_MSPI_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_MSPI_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x78)
+#define INTMTX_CORE0_MSPI_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x78)
 /** INTMTX_CORE0_MSPI_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_MSPI_INTR mapping register
  */
@@ -385,7 +385,7 @@ extern "C" {
 /** INTMTX_CORE0_I2S1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_I2S1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x7c)
+#define INTMTX_CORE0_I2S1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x7c)
 /** INTMTX_CORE0_I2S1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_I2S1_INTR mapping register
  */
@@ -397,7 +397,7 @@ extern "C" {
 /** INTMTX_CORE0_UHCI0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_UHCI0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x80)
+#define INTMTX_CORE0_UHCI0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x80)
 /** INTMTX_CORE0_UHCI0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_UHCI0_INTR mapping register
  */
@@ -409,7 +409,7 @@ extern "C" {
 /** INTMTX_CORE0_UART0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_UART0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x84)
+#define INTMTX_CORE0_UART0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x84)
 /** INTMTX_CORE0_UART0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_UART0_INTR mapping register
  */
@@ -421,7 +421,7 @@ extern "C" {
 /** INTMTX_CORE0_UART1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_UART1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x88)
+#define INTMTX_CORE0_UART1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x88)
 /** INTMTX_CORE0_UART1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_UART1_INTR mapping register
  */
@@ -433,7 +433,7 @@ extern "C" {
 /** INTMTX_CORE0_LEDC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_LEDC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x8c)
+#define INTMTX_CORE0_LEDC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x8c)
 /** INTMTX_CORE0_LEDC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_LEDC_INTR mapping register
  */
@@ -445,7 +445,7 @@ extern "C" {
 /** INTMTX_CORE0_CAN0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_CAN0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x90)
+#define INTMTX_CORE0_CAN0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x90)
 /** INTMTX_CORE0_CAN0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_CAN0_INTR mapping register
  */
@@ -457,7 +457,7 @@ extern "C" {
 /** INTMTX_CORE0_USB_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_USB_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x94)
+#define INTMTX_CORE0_USB_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x94)
 /** INTMTX_CORE0_USB_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_USB_INTR mapping register
  */
@@ -469,7 +469,7 @@ extern "C" {
 /** INTMTX_CORE0_RMT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_RMT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x98)
+#define INTMTX_CORE0_RMT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x98)
 /** INTMTX_CORE0_RMT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_RMT_INTR mapping register
  */
@@ -481,7 +481,7 @@ extern "C" {
 /** INTMTX_CORE0_I2C_EXT0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_I2C_EXT0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x9c)
+#define INTMTX_CORE0_I2C_EXT0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x9c)
 /** INTMTX_CORE0_I2C_EXT0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_I2C_EXT0_INTR mapping register
  */
@@ -493,7 +493,7 @@ extern "C" {
 /** INTMTX_CORE0_I2C_EXT1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_I2C_EXT1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xa0)
+#define INTMTX_CORE0_I2C_EXT1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xa0)
 /** INTMTX_CORE0_I2C_EXT1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_I2C_EXT1_INTR mapping register
  */
@@ -505,7 +505,7 @@ extern "C" {
 /** INTMTX_CORE0_TG0_T0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_TG0_T0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xa4)
+#define INTMTX_CORE0_TG0_T0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xa4)
 /** INTMTX_CORE0_TG0_T0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_TG0_T0_INTR mapping register
  */
@@ -517,7 +517,7 @@ extern "C" {
 /** INTMTX_CORE0_TG0_WDT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_TG0_WDT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xa8)
+#define INTMTX_CORE0_TG0_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xa8)
 /** INTMTX_CORE0_TG0_WDT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_TG0_WDT_INTR mapping register
  */
@@ -529,7 +529,7 @@ extern "C" {
 /** INTMTX_CORE0_TG1_T0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_TG1_T0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xac)
+#define INTMTX_CORE0_TG1_T0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xac)
 /** INTMTX_CORE0_TG1_T0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_TG1_T0_INTR mapping register
  */
@@ -541,7 +541,7 @@ extern "C" {
 /** INTMTX_CORE0_TG1_WDT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_TG1_WDT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xb0)
+#define INTMTX_CORE0_TG1_WDT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xb0)
 /** INTMTX_CORE0_TG1_WDT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_TG1_WDT_INTR mapping register
  */
@@ -553,7 +553,7 @@ extern "C" {
 /** INTMTX_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xb4)
+#define INTMTX_CORE0_SYSTIMER_TARGET0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xb4)
 /** INTMTX_CORE0_SYSTIMER_TARGET0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_SYSTIMER_TARGET0_INTR mapping register
  */
@@ -565,7 +565,7 @@ extern "C" {
 /** INTMTX_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xb8)
+#define INTMTX_CORE0_SYSTIMER_TARGET1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xb8)
 /** INTMTX_CORE0_SYSTIMER_TARGET1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_SYSTIMER_TARGET1_INTR mapping register
  */
@@ -577,7 +577,7 @@ extern "C" {
 /** INTMTX_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xbc)
+#define INTMTX_CORE0_SYSTIMER_TARGET2_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xbc)
 /** INTMTX_CORE0_SYSTIMER_TARGET2_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_SYSTIMER_TARGET2_INTR mapping register
  */
@@ -589,7 +589,7 @@ extern "C" {
 /** INTMTX_CORE0_APB_ADC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_APB_ADC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xc0)
+#define INTMTX_CORE0_APB_ADC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xc0)
 /** INTMTX_CORE0_APB_ADC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_APB_ADC_INTR mapping register
  */
@@ -601,7 +601,7 @@ extern "C" {
 /** INTMTX_CORE0_PWM_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PWM_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xc4)
+#define INTMTX_CORE0_PWM_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xc4)
 /** INTMTX_CORE0_PWM_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PWM_INTR mapping register
  */
@@ -613,7 +613,7 @@ extern "C" {
 /** INTMTX_CORE0_PCNT_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PCNT_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xc8)
+#define INTMTX_CORE0_PCNT_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xc8)
 /** INTMTX_CORE0_PCNT_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PCNT_INTR mapping register
  */
@@ -625,7 +625,7 @@ extern "C" {
 /** INTMTX_CORE0_PARL_IO_TX_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PARL_IO_TX_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xcc)
+#define INTMTX_CORE0_PARL_IO_TX_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xcc)
 /** INTMTX_CORE0_PARL_IO_TX_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PARL_IO_TX_INTR mapping register
  */
@@ -637,7 +637,7 @@ extern "C" {
 /** INTMTX_CORE0_PARL_IO_RX_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_PARL_IO_RX_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xd0)
+#define INTMTX_CORE0_PARL_IO_RX_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xd0)
 /** INTMTX_CORE0_PARL_IO_RX_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_PARL_IO_RX_INTR mapping register
  */
@@ -649,7 +649,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_IN_CH0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_IN_CH0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xd4)
+#define INTMTX_CORE0_DMA_IN_CH0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xd4)
 /** INTMTX_CORE0_DMA_IN_CH0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_IN_CH0_INTR mapping register
  */
@@ -661,7 +661,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_IN_CH1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_IN_CH1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xd8)
+#define INTMTX_CORE0_DMA_IN_CH1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xd8)
 /** INTMTX_CORE0_DMA_IN_CH1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_IN_CH1_INTR mapping register
  */
@@ -673,7 +673,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_IN_CH2_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_IN_CH2_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xdc)
+#define INTMTX_CORE0_DMA_IN_CH2_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xdc)
 /** INTMTX_CORE0_DMA_IN_CH2_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_IN_CH2_INTR mapping register
  */
@@ -685,7 +685,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_OUT_CH0_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_OUT_CH0_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xe0)
+#define INTMTX_CORE0_DMA_OUT_CH0_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xe0)
 /** INTMTX_CORE0_DMA_OUT_CH0_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_OUT_CH0_INTR mapping register
  */
@@ -697,7 +697,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_OUT_CH1_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_OUT_CH1_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xe4)
+#define INTMTX_CORE0_DMA_OUT_CH1_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xe4)
 /** INTMTX_CORE0_DMA_OUT_CH1_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_OUT_CH1_INTR mapping register
  */
@@ -709,7 +709,7 @@ extern "C" {
 /** INTMTX_CORE0_DMA_OUT_CH2_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_DMA_OUT_CH2_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xe8)
+#define INTMTX_CORE0_DMA_OUT_CH2_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xe8)
 /** INTMTX_CORE0_DMA_OUT_CH2_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_DMA_OUT_CH2_INTR mapping register
  */
@@ -721,7 +721,7 @@ extern "C" {
 /** INTMTX_CORE0_GPSPI2_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_GPSPI2_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xec)
+#define INTMTX_CORE0_GPSPI2_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xec)
 /** INTMTX_CORE0_GPSPI2_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_GPSPI2_INTR mapping register
  */
@@ -733,7 +733,7 @@ extern "C" {
 /** INTMTX_CORE0_AES_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_AES_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xf0)
+#define INTMTX_CORE0_AES_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xf0)
 /** INTMTX_CORE0_AES_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_AES_INTR mapping register
  */
@@ -745,7 +745,7 @@ extern "C" {
 /** INTMTX_CORE0_SHA_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_SHA_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xf4)
+#define INTMTX_CORE0_SHA_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xf4)
 /** INTMTX_CORE0_SHA_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_SHA_INTR mapping register
  */
@@ -757,7 +757,7 @@ extern "C" {
 /** INTMTX_CORE0_RSA_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_RSA_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xf8)
+#define INTMTX_CORE0_RSA_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xf8)
 /** INTMTX_CORE0_RSA_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_RSA_INTR mapping register
  */
@@ -769,7 +769,7 @@ extern "C" {
 /** INTMTX_CORE0_ECC_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_ECC_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0xfc)
+#define INTMTX_CORE0_ECC_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0xfc)
 /** INTMTX_CORE0_ECC_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_ECC_INTR mapping register
  */
@@ -781,7 +781,7 @@ extern "C" {
 /** INTMTX_CORE0_ECDSA_INTR_MAP_REG register
  *  register description
  */
-#define INTMTX_CORE0_ECDSA_INTR_MAP_REG (DR_REG_INTMTX_BASE + 0x100)
+#define INTMTX_CORE0_ECDSA_INTR_MAP_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x100)
 /** INTMTX_CORE0_ECDSA_INTR_MAP : R/W; bitpos: [4:0]; default: 0;
  *  CORE0_ECDSA_INTR mapping register
  */
@@ -793,7 +793,7 @@ extern "C" {
 /** INTMTX_CORE0_INT_STATUS_REG_0_REG register
  *  register description
  */
-#define INTMTX_CORE0_INT_STATUS_REG_0_REG (DR_REG_INTMTX_BASE + 0x104)
+#define INTMTX_CORE0_INT_STATUS_REG_0_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x104)
 /** INTMTX_CORE0_INT_STATUS_0 : RO; bitpos: [31:0]; default: 0;
  *  Status register for interrupt sources 0~31 mapping register
  */
@@ -805,7 +805,7 @@ extern "C" {
 /** INTMTX_CORE0_INT_STATUS_REG_1_REG register
  *  register description
  */
-#define INTMTX_CORE0_INT_STATUS_REG_1_REG (DR_REG_INTMTX_BASE + 0x108)
+#define INTMTX_CORE0_INT_STATUS_REG_1_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x108)
 /** INTMTX_CORE0_INT_STATUS_1 : RO; bitpos: [31:0]; default: 0;
  *  Status register for interrupt sources 32~63 mapping register
  */
@@ -817,7 +817,7 @@ extern "C" {
 /** INTMTX_CORE0_INT_STATUS_REG_2_REG register
  *  register description
  */
-#define INTMTX_CORE0_INT_STATUS_REG_2_REG (DR_REG_INTMTX_BASE + 0x10c)
+#define INTMTX_CORE0_INT_STATUS_REG_2_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x10c)
 /** INTMTX_CORE0_INT_STATUS_2 : RO; bitpos: [31:0]; default: 0;
  *  Status register for interrupt sources 64~95 mapping register
  */
@@ -829,7 +829,7 @@ extern "C" {
 /** INTMTX_CORE0_CLOCK_GATE_REG register
  *  register description
  */
-#define INTMTX_CORE0_CLOCK_GATE_REG (DR_REG_INTMTX_BASE + 0x110)
+#define INTMTX_CORE0_CLOCK_GATE_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x110)
 /** INTMTX_CORE0_REG_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Clock register
  */
@@ -841,7 +841,7 @@ extern "C" {
 /** INTMTX_CORE0_INTERRUPT_REG_DATE_REG register
  *  register description
  */
-#define INTMTX_CORE0_INTERRUPT_REG_DATE_REG (DR_REG_INTMTX_BASE + 0x7fc)
+#define INTMTX_CORE0_INTERRUPT_REG_DATE_REG (DR_REG_INTERRUPT_MATRIX_BASE + 0x7fc)
 /** INTMTX_CORE0_INTERRUPT_REG_DATE : R/W; bitpos: [27:0]; default: 35688784;
  *  Version control register
  */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +18,7 @@
 #include "riscv/interrupt.h"
 #include "hal/cache_ll.h"
 
-// TODO: [ESP32H21] IDF-11900, IDF-11909
+// TODO: [ESP32H21] IDF-11524
 
 static const char *TAG = "CACHE_ERR";
 

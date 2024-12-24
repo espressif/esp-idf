@@ -22,7 +22,7 @@
 #define DR_REG_I2S0_BASE                          0x6000D000
 #define DR_REG_APB_SARADC_BASE                    0x6000E000
 #define DR_REG_USB_SERIAL_JTAG_BASE               0x6000F000
-#define DR_REG_INTMTX_BASE                        0x60010000
+#define DR_REG_INTERRUPT_MATRIX_BASE              0x60010000
 #define DR_REG_PCNT_BASE                          0x60012000
 #define DR_REG_SOC_ETM_BASE                       0x60013000
 #define DR_REG_MCPWM0_BASE                        0x60014000
@@ -54,6 +54,12 @@
 #define DR_REG_LP_WDT_BASE                        0x600B1C00
 #define DR_REG_LPPERI_BASE                        0x600B2800
 #define DR_REG_LP_ANA_PERI_BASE                   0x600B2C00
-#define DR_REG_LP_TIMER_BASE                      0x600B3000
 #define DR_REG_LP_APM_BASE                        0x600B3800
 #define DR_REG_EFUSE_BASE                         0x600B4000
+#define DR_REG_TRACE_BASE                         0x600C0000
+#define DR_REG_ASSIST_DEBUG_BASE                  0x600C2000
+#define DR_REG_INTPRI_BASE                        0x600C5000
+#define DR_REG_CACHE_BASE                         0x600C8000
+
+#define DR_REG_I2C_ANA_MST_BASE                   0x600AD800 //TODO: [ESP32H21] IDF-11550, need check
+#define PWDET_CONF_REG                            0x600A0810 //TODO: [ESP32H21] IDF-11589, IDF-11592, need check
