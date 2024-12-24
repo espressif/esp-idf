@@ -834,33 +834,88 @@ extern "C" {
  *  Represents rd_mac_sys
  */
 #define EFUSE_RD_MAC_SYS3_REG (DR_REG_EFUSE_BASE + 0x50)
-/** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:0]; default: 0;
- *  Reserved.
- *  This field is only for internal debugging purposes. Do not use it in applications.
+/** EFUSE_TRIM_N_BIAS : R; bitpos: [4:0]; default: 0;
+ *  PADC CAL N bias
  */
-#define EFUSE_MAC_RESERVED_2    0x0003FFFFU
-#define EFUSE_MAC_RESERVED_2_M  (EFUSE_MAC_RESERVED_2_V << EFUSE_MAC_RESERVED_2_S)
-#define EFUSE_MAC_RESERVED_2_V  0x0003FFFFU
-#define EFUSE_MAC_RESERVED_2_S  0
-/** EFUSE_SYS_DATA_PART0_0 : RO; bitpos: [31:18]; default: 0;
- *  Represents the first 14-bit of zeroth part of system data.
+#define EFUSE_TRIM_N_BIAS    0x0000001FU
+#define EFUSE_TRIM_N_BIAS_M  (EFUSE_TRIM_N_BIAS_V << EFUSE_TRIM_N_BIAS_S)
+#define EFUSE_TRIM_N_BIAS_V  0x0000001FU
+#define EFUSE_TRIM_N_BIAS_S  0
+/** EFUSE_TRIM_P_BIAS : R; bitpos: [9:5]; default: 0;
+ *  PADC CAL P bias
  */
-#define EFUSE_SYS_DATA_PART0_0    0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_M  (EFUSE_SYS_DATA_PART0_0_V << EFUSE_SYS_DATA_PART0_0_S)
-#define EFUSE_SYS_DATA_PART0_0_V  0x00003FFFU
-#define EFUSE_SYS_DATA_PART0_0_S  18
+#define EFUSE_TRIM_P_BIAS    0x0000001FU
+#define EFUSE_TRIM_P_BIAS_M  (EFUSE_TRIM_P_BIAS_V << EFUSE_TRIM_P_BIAS_S)
+#define EFUSE_TRIM_P_BIAS_V  0x0000001FU
+#define EFUSE_TRIM_P_BIAS_S  5
+/** EFUSE_ACTIVE_HP_DBIAS : R; bitpos: [13:10]; default: 0;
+ *  Active HP DBIAS of fixed voltage
+ */
+#define EFUSE_ACTIVE_HP_DBIAS    0x0000000FU
+#define EFUSE_ACTIVE_HP_DBIAS_M  (EFUSE_ACTIVE_HP_DBIAS_V << EFUSE_ACTIVE_HP_DBIAS_S)
+#define EFUSE_ACTIVE_HP_DBIAS_V  0x0000000FU
+#define EFUSE_ACTIVE_HP_DBIAS_S  10
+/** EFUSE_ACTIVE_LP_DBIAS : R; bitpos: [17:14]; default: 0;
+ *  Active LP DBIAS of fixed voltage
+ */
+#define EFUSE_ACTIVE_LP_DBIAS    0x0000000FU
+#define EFUSE_ACTIVE_LP_DBIAS_M  (EFUSE_ACTIVE_LP_DBIAS_V << EFUSE_ACTIVE_LP_DBIAS_S)
+#define EFUSE_ACTIVE_LP_DBIAS_V  0x0000000FU
+#define EFUSE_ACTIVE_LP_DBIAS_S  14
+/** EFUSE_LSLP_HP_DBG : R; bitpos: [19:18]; default: 0;
+ *  LSLP HP DBG of fixed voltage
+ */
+#define EFUSE_LSLP_HP_DBG    0x00000003U
+#define EFUSE_LSLP_HP_DBG_M  (EFUSE_LSLP_HP_DBG_V << EFUSE_LSLP_HP_DBG_S)
+#define EFUSE_LSLP_HP_DBG_V  0x00000003U
+#define EFUSE_LSLP_HP_DBG_S  18
+/** EFUSE_LSLP_HP_DBIAS : R; bitpos: [23:20]; default: 0;
+ *  LSLP HP DBIAS of fixed voltage
+ */
+#define EFUSE_LSLP_HP_DBIAS    0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_M  (EFUSE_LSLP_HP_DBIAS_V << EFUSE_LSLP_HP_DBIAS_S)
+#define EFUSE_LSLP_HP_DBIAS_V  0x0000000FU
+#define EFUSE_LSLP_HP_DBIAS_S  20
+/** EFUSE_DSLP_LP_DBG : R; bitpos: [27:24]; default: 0;
+ *  DSLP LP DBG of fixed voltage
+ */
+#define EFUSE_DSLP_LP_DBG    0x0000000FU
+#define EFUSE_DSLP_LP_DBG_M  (EFUSE_DSLP_LP_DBG_V << EFUSE_DSLP_LP_DBG_S)
+#define EFUSE_DSLP_LP_DBG_V  0x0000000FU
+#define EFUSE_DSLP_LP_DBG_S  24
+/** EFUSE_DSLP_LP_DBIAS : R; bitpos: [31:28]; default: 0;
+ *  DSLP LP DBIAS of fixed voltage
+ */
+#define EFUSE_DSLP_LP_DBIAS    0x0000000FU
+#define EFUSE_DSLP_LP_DBIAS_M  (EFUSE_DSLP_LP_DBIAS_V << EFUSE_DSLP_LP_DBIAS_S)
+#define EFUSE_DSLP_LP_DBIAS_V  0x0000000FU
+#define EFUSE_DSLP_LP_DBIAS_S  28
 
 /** EFUSE_RD_MAC_SYS4_REG register
  *  Represents rd_mac_sys
  */
 #define EFUSE_RD_MAC_SYS4_REG (DR_REG_EFUSE_BASE + 0x54)
-/** EFUSE_SYS_DATA_PART0_1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the second 32-bit of zeroth part of system data.
+/** EFUSE_DSLP_LP_DBIAS_1 : R; bitpos: [0]; default: 0;
+ *  DSLP LP DBIAS of fixed voltage
  */
-#define EFUSE_SYS_DATA_PART0_1    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_1_M  (EFUSE_SYS_DATA_PART0_1_V << EFUSE_SYS_DATA_PART0_1_S)
-#define EFUSE_SYS_DATA_PART0_1_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART0_1_S  0
+#define EFUSE_DSLP_LP_DBIAS_1    (BIT(0))
+#define EFUSE_DSLP_LP_DBIAS_1_M  (EFUSE_DSLP_LP_DBIAS_1_V << EFUSE_DSLP_LP_DBIAS_1_S)
+#define EFUSE_DSLP_LP_DBIAS_1_V  0x00000001U
+#define EFUSE_DSLP_LP_DBIAS_1_S  0
+/** EFUSE_LP_HP_DBIAS_VOL_GAP : R; bitpos: [5:1]; default: 0;
+ *  DBIAS gap between LP and HP
+ */
+#define EFUSE_LP_HP_DBIAS_VOL_GAP    0x0000001FU
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_M  (EFUSE_LP_HP_DBIAS_VOL_GAP_V << EFUSE_LP_HP_DBIAS_VOL_GAP_S)
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_V  0x0000001FU
+#define EFUSE_LP_HP_DBIAS_VOL_GAP_S  1
+/** EFUSE_RESERVED_1_134 : R; bitpos: [31:6]; default: 0;
+ *  reserved
+ */
+#define EFUSE_RESERVED_1_134    0x03FFFFFFU
+#define EFUSE_RESERVED_1_134_M  (EFUSE_RESERVED_1_134_V << EFUSE_RESERVED_1_134_S)
+#define EFUSE_RESERVED_1_134_V  0x03FFFFFFU
+#define EFUSE_RESERVED_1_134_S  6
 
 /** EFUSE_RD_MAC_SYS5_REG register
  *  Represents rd_mac_sys
@@ -926,13 +981,34 @@ extern "C" {
  *  Represents rd_sys_part1_data4
  */
 #define EFUSE_RD_SYS_PART1_DATA4_REG (DR_REG_EFUSE_BASE + 0x6c)
-/** EFUSE_SYS_DATA_PART1_4 : RO; bitpos: [31:0]; default: 0;
- *  Represents the zeroth 32-bit of first part of system data.
+/** EFUSE_TEMPERATURE_SENSOR : R; bitpos: [8:0]; default: 0;
+ *  Temperature calibration data
  */
-#define EFUSE_SYS_DATA_PART1_4    0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_4_M  (EFUSE_SYS_DATA_PART1_4_V << EFUSE_SYS_DATA_PART1_4_S)
-#define EFUSE_SYS_DATA_PART1_4_V  0xFFFFFFFFU
-#define EFUSE_SYS_DATA_PART1_4_S  0
+#define EFUSE_TEMPERATURE_SENSOR    0x000001FFU
+#define EFUSE_TEMPERATURE_SENSOR_M  (EFUSE_TEMPERATURE_SENSOR_V << EFUSE_TEMPERATURE_SENSOR_S)
+#define EFUSE_TEMPERATURE_SENSOR_V  0x000001FFU
+#define EFUSE_TEMPERATURE_SENSOR_S  0
+/** EFUSE_OCODE : R; bitpos: [16:9]; default: 0;
+ *  ADC OCode
+ */
+#define EFUSE_OCODE    0x000000FFU
+#define EFUSE_OCODE_M  (EFUSE_OCODE_V << EFUSE_OCODE_S)
+#define EFUSE_OCODE_V  0x000000FFU
+#define EFUSE_OCODE_S  9
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN0 : R; bitpos: [26:17]; default: 0;
+ *  Average initcode of ADC1 atten0
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0    0x000003FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN0_V << EFUSE_ADC1_AVE_INITCODE_ATTEN0_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_V  0x000003FFU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN0_S  17
+/** EFUSE_ADC1_AVE_INITCODE_ATTEN1 : R; bitpos: [31:27]; default: 0;
+ *  Average initcode of ADC1 atten0
+ */
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1    0x0000001FU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_M  (EFUSE_ADC1_AVE_INITCODE_ATTEN1_V << EFUSE_ADC1_AVE_INITCODE_ATTEN1_S)
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_V  0x0000001FU
+#define EFUSE_ADC1_AVE_INITCODE_ATTEN1_S  27
 
 /** EFUSE_RD_SYS_PART1_DATA5_REG register
  *  Represents rd_sys_part1_data5
