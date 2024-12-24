@@ -51,6 +51,22 @@ ULP FSM 协处理器代码由汇编语言编写，使用 `binutils-esp32ulp 工�
 
 ``ulp_embed_binary`` 的第一个参数为 ULP 二进制文件命名。指定的此名称也用于生成的其他文件，如：ELF 文件、.map 文件、头文件和链接器导出文件。第二个参数指定 ULP FSM 程序集源文件。最后，第三个参数指定组件源文件列表，其中包括被生成的头文件。此列表用以建立正确的依赖项，并确保在编译这些文件之前先创建生成的头文件。有关 ULP FSM 应用程序生成的头文件等相关概念，请参考下文。
 
+在这个生成的头文件中，ULP 代码中的变量默认以 ``ulp_`` 作为前缀。
+
+如果需要嵌入多个 ULP 程序，可以添加自定义前缀，以避免变量名冲突，如下所示：
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+最后的 PREFIX 参数可以是 C 语言风格命名的前缀（如 ``ulp2_``）或 C++ 风格命名的前缀（如 ``ULP::``）。
+
 3. 使用常规方法（例如 ``idf.py app``）编译应用程序。
 
     在内部，构建系统将按照以下步骤编译 ULP FSM 程序：
