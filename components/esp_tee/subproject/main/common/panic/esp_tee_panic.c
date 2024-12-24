@@ -5,17 +5,20 @@
  */
 #include <string.h>
 
+#include "esp_cpu.h"
 #include "esp_attr.h"
 #include "esp_macros.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
-#include "hal/apm_hal.h"
 
+#include "riscv/rv_utils.h"
 #include "riscv/rvruntime-frames.h"
 
+#include "hal/apm_hal.h"
+
 #include "esp_tee.h"
-#include "panic_helper.h"
 #include "esp_tee_apm_intr.h"
+#include "panic_helper.h"
 
 #define RV_FUNC_STK_SZ    (32)
 

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdarg.h>
 #include "esp_tee.h"
 
 /* U-mode interrupt handler */

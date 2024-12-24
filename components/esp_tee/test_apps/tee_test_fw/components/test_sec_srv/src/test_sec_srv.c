@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "esp_cpu.h"
 #include "esp_log.h"
 #include "esp_tee.h"
 #include "esp_tee_test.h"

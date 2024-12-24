@@ -10,16 +10,10 @@
 extern "C" {
 #endif
 
-#ifndef __ASSEMBLER__
+#if !defined(__ASSEMBLER__) && !(__DOXYGEN__)
 #include <stdint.h>
-#include <stdio.h>
 #include <stddef.h>
-#include "soc/soc.h"
-#include "sdkconfig.h"
-#include "esp_cpu.h"
-#include "esp_attr.h"
-
-#include "riscv/rv_utils.h"
+#include "esp_assert.h"
 
 #define ESP_TEE_APP_CFG_MAGIC 0x3348AAED
 
@@ -63,27 +57,46 @@ typedef struct {
 
 extern esp_tee_config_t esp_tee_app_config;
 
-#endif // ifndef __ASSEMBLER__
+#endif // !defined(__ASSEMBLER__) && !(__DOXYGEN__)
 
 #if !ESP_TEE_BUILD
-#include "private/esp_tee_app.h"
+/**
+ * @brief Interface function that allows untrusted applications to invoke secure services through TEE
+ *
+ * @param argc Number of arguments being passed to the secure service
+ *
+ * @return Value returned by the secure service function
+ */
+uint32_t esp_tee_service_call(int argc, ...);
+
+/**
+ * @brief Interface function that allows untrusted applications to invoke secure services through TEE,
+ *        with the scheduler and the non-IRAM interrupts disabled
+ *
+ * @param argc Number of arguments being passed to the secure service
+ *
+ * @return Value returned by the secure service function
+ */
+uint32_t esp_tee_service_call_with_noniram_intr_disabled(int argc, ...);
 #else
 #include "private/esp_tee_binary.h"
 #endif
 
+#if !(__DOXYGEN__)
 /* Offsets of some values in esp_tee_config_t that are used by assembly code */
 #define ESP_TEE_CFG_OFFS_S_ENTRY_ADDR      0x14
 #define ESP_TEE_CFG_OFFS_S_INTR_HANDLER    0x18
 #define ESP_TEE_CFG_OFFS_NS_ENTRY_ADDR     0x1C
 #define ESP_TEE_CFG_OFFS_NS_INTR_HANDLER   0x20
 
-#ifndef __ASSEMBLER__
+#if !defined(__ASSEMBLER__)
 /* Check the offsets are correct using the C compiler */
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, s_entry_addr) == ESP_TEE_CFG_OFFS_S_ENTRY_ADDR, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, s_int_handler) == ESP_TEE_CFG_OFFS_S_INTR_HANDLER, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, ns_entry_addr) == ESP_TEE_CFG_OFFS_NS_ENTRY_ADDR, "offset macro is wrong");
 ESP_STATIC_ASSERT(offsetof(esp_tee_config_t, ns_int_handler) == ESP_TEE_CFG_OFFS_NS_INTR_HANDLER, "offset macro is wrong");
-#endif // ifndef __ASSEMBLER__
+#endif // !defined(__ASSEMBLER__)
+#endif // !(__DOXYGEN__)
 
 #ifdef __cplusplus
 }
