@@ -36,6 +36,8 @@ extern "C" {
 
 #define I2S_LL_CLK_FRAC_DIV_N_MAX      256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
 #define I2S_LL_CLK_FRAC_DIV_AB_MAX     512 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the a/b register is 9 bit-width
+/* Add SOC_I2S_TDM_FULL_DATA_WIDTH in the soc_caps to indicate there is no limitation to support full data width (i.e., 16 slots * 32 bits) */
+#define I2S_LL_SLOT_FRAME_BIT_MAX      512 // Up-to 512 bits in one frame, determined by MAX(half_sample_bits) * 2
 
 #define I2S_LL_PLL_F160M_CLK_FREQ      (160 * 1000000) // PLL_F160M_CLK: 160MHz
 #define I2S_LL_DEFAULT_CLK_FREQ        I2S_LL_PLL_F160M_CLK_FREQ    // The default PLL clock frequency while using I2S_CLK_SRC_DEFAULT
@@ -984,6 +986,43 @@ static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
 static inline void i2s_ll_rx_set_pdm_amplify_num(i2s_dev_t *hw, uint32_t amp_num)
 {
     hw->rx_pdm2pcm_conf.rx_pdm2pcm_amplify_num = amp_num;
+}
+
+/**
+ * @brief Set I2S RX PDM high pass filter param0 (only for compatibility)
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param no effect
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
+{
+    // Can't configure HP filter param on this target
+    (void) hw;
+    (void) param;
+}
+
+/**
+ * @brief Set I2S RX PDM high pass filter param5 (only for compatibility)
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param param no effect
+ */
+static inline void i2s_ll_rx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
+{
+    // Can't configure HP filter param on this target
+    (void) hw;
+    (void) param;
+}
+
+/**
+ * @brief Enable I2S RX PDM high pass filter
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ * @param enable Set true to enable I2S RX PDM high pass filter, set false to bypass it
+ */
+static inline void i2s_ll_rx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
+{
+    hw->rx_pdm2pcm_conf.rx_pdm_hp_bypass = !enable;
 }
 
 /**
