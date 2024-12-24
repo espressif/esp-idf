@@ -79,7 +79,7 @@ static void test_rmt_tx_iram_safe(size_t mem_block_symbols, bool with_dma)
     TEST_ESP_OK(rmt_del_encoder(led_strip_encoder));
 }
 
-TEST_CASE("rmt tx iram safe", "[rmt]")
+TEST_CASE("rmt tx works with cache disabled", "[rmt]")
 {
     test_rmt_tx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false);
 #if SOC_RMT_SUPPORT_DMA
@@ -190,7 +190,7 @@ static void test_rmt_rx_iram_safe(size_t mem_block_symbols, bool with_dma, rmt_c
     free(remote_codes);
 }
 
-TEST_CASE("rmt rx iram safe", "[rmt]")
+TEST_CASE("rmt rx works with cache disabled", "[rmt]")
 {
     test_rmt_rx_iram_safe(SOC_RMT_MEM_WORDS_PER_CHANNEL, false, RMT_CLK_SRC_DEFAULT);
 #if SOC_RMT_SUPPORT_DMA
