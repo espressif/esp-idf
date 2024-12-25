@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,8 @@
 #define AP_HEX_PSRAM_WR_CMD_BITLEN         16
 #define AP_HEX_PSRAM_ADDR_BITLEN           32
 #define AP_HEX_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
+#define AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define AP_HEX_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define AP_HEX_PSRAM_VENDOR_ID             0xD
 
@@ -118,7 +120,7 @@ static void s_init_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *mode_reg_co
     int cmd_len = 16;
     uint32_t addr = 0x0;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     hex_psram_mode_reg_t mode_reg = {0};
     int data_bit_len = 16;
 
@@ -176,7 +178,7 @@ static void s_get_psram_mode_reg(int spi_num, hex_psram_mode_reg_t *out_reg)
 {
     int cmd_len = 16;
     int addr_bit_len = 32;
-    int dummy = AP_HEX_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = AP_HEX_PSRAM_RD_REG_DUMMY_BITLEN;
     int data_bit_len = 16;
 
     //Read MR0~1 register
