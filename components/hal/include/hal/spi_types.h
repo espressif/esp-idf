@@ -73,6 +73,14 @@ typedef enum {
     SPI_CMD_HD_INT2     = BIT(9),
 } spi_command_t;
 
+/**
+ * @brief SPI master RX sample point mode configuration
+ */
+typedef enum {
+    SPI_SAMPLING_POINT_PHASE_0,      ///< Data sampling point at 50% cycle delayed then standard timing, (default).
+    SPI_SAMPLING_POINT_PHASE_1,      ///< Data sampling point follows standard SPI timing in master mode
+} spi_sampling_point_t;
+
 #ifdef __cplusplus
 }
 #endif
