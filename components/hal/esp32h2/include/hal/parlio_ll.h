@@ -13,6 +13,8 @@
 #include "hal/assert.h"
 #include "hal/misc.h"
 #include "hal/hal_utils.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 #include "soc/pcr_struct.h"
 #include "soc/parl_io_struct.h"
 #include "hal/parlio_types.h"
@@ -372,6 +374,22 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
     while (dev->reg_update.rx_reg_update);
 }
 
+/**
+ * @brief Get the RX fifo cycle count
+ *
+ * @param dev Parallel IO register base address
+ * @return
+ *        - RX fifo cycle count
+ */
+static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
+{
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        return dev->rx_st0.rx_cnt;
+    }
+    /* For the H2 chip revision that smaller than v1.2, only the highest 4-bit are effective,
+     *  need to right shift 1 bit to get the actual count */
+    return dev->rx_st0.rx_cnt >> 1;
+}
 ///////////////////////////////////TX Unit///////////////////////////////////////
 
 /**

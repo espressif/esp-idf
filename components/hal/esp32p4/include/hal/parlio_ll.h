@@ -407,6 +407,18 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
     while (dev->reg_update.rx_reg_update);
 }
 
+/**
+ * @brief Get the RX fifo cycle count
+ *
+ * @param dev Parallel IO register base address
+ * @return
+ *        - RX fifo cycle count
+ */
+static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
+{
+    return dev->rx_st0.rx_cnt;
+}
+
 ///////////////////////////////////TX Unit///////////////////////////////////////
 
 /**
