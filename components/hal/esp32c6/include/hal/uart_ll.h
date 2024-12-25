@@ -569,7 +569,7 @@ FORCE_INLINE_ATTR void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return (hw->status.rxfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw);
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->status, rxfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw);
 }
 
 /**
@@ -582,7 +582,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 FORCE_INLINE_ATTR uint32_t uart_ll_get_txfifo_len(uart_dev_t *hw)
 {
     uint32_t total_fifo_len = ((hw) == &LP_UART) ? LP_UART_LL_FIFO_DEF_LEN : UART_LL_FIFO_DEF_LEN;
-    uint32_t txfifo_len = (hw->status.txfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw);
+    uint32_t txfifo_len = HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw);
     return (total_fifo_len - txfifo_len);
 }
 
@@ -658,7 +658,7 @@ FORCE_INLINE_ATTR void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_
  */
 FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thrhd)
 {
-    hw->conf1.rxfifo_full_thrhd = full_thrhd << UART_LL_REG_FIELD_BIT_SHIFT(hw);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, rxfifo_full_thrhd, full_thrhd << UART_LL_REG_FIELD_BIT_SHIFT(hw));
 }
 
 /**
@@ -672,7 +672,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full
  */
 FORCE_INLINE_ATTR void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_thrhd)
 {
-    hw->conf1.txfifo_empty_thrhd = empty_thrhd << UART_LL_REG_FIELD_BIT_SHIFT(hw);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, txfifo_empty_thrhd, empty_thrhd << UART_LL_REG_FIELD_BIT_SHIFT(hw));
 }
 
 /**
@@ -736,7 +736,7 @@ FORCE_INLINE_ATTR void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
 {
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
-        hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs << UART_LL_REG_FIELD_BIT_SHIFT(hw);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hwfc_conf_sync, rx_flow_thrhd, rx_thrs << UART_LL_REG_FIELD_BIT_SHIFT(hw));
         hw->hwfc_conf_sync.rx_flow_en = 1;
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
@@ -782,8 +782,8 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        hw->swfc_conf1.xon_threshold = (flow_ctrl->xon_thrd) << UART_LL_REG_FIELD_BIT_SHIFT(hw);
-        hw->swfc_conf1.xoff_threshold = (flow_ctrl->xoff_thrd) << UART_LL_REG_FIELD_BIT_SHIFT(hw);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_threshold, (flow_ctrl->xon_thrd) << UART_LL_REG_FIELD_BIT_SHIFT(hw));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xoff_threshold, (flow_ctrl->xoff_thrd) << UART_LL_REG_FIELD_BIT_SHIFT(hw));
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
         HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
     } else {
@@ -1072,7 +1072,7 @@ FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length
  */
 FORCE_INLINE_ATTR bool uart_ll_is_tx_idle(uart_dev_t *hw)
 {
-    return ((((hw->status.txfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw)) == 0) && (hw->fsm_status.st_utx_out == 0));
+    return (((HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt) >> UART_LL_REG_FIELD_BIT_SHIFT(hw)) == 0) && (hw->fsm_status.st_utx_out == 0));
 }
 
 /**
