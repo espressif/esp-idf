@@ -55,7 +55,11 @@ extern portMUX_TYPE rtc_spinlock; //TODO: Will be placed in the appropriate posi
 #define ADC_ENTER_CRITICAL()  portENTER_CRITICAL(&rtc_spinlock)
 #define ADC_EXIT_CRITICAL()  portEXIT_CRITICAL(&rtc_spinlock)
 
+#ifndef CONFIG_ADC_CONTINUOUS_NUM_DMA
 #define INTERNAL_BUF_NUM      5
+#else
+#define INTERNAL_BUF_NUM      CONFIG_ADC_CONTINUOUS_NUM_DMA
+#endif
 
 /*---------------------------------------------------------------
                    ADC Continuous Read Mode (via DMA)
