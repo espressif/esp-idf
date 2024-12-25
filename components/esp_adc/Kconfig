@@ -77,6 +77,21 @@ menu "ADC and ADC Calibration"
             If you stick to this, you can enable this option to force use ADC2 under above conditions.
             For more details, you can search for errata on espressif website.
 
+    config ADC_DIGI_CLK_DIV_DEFAULT
+        bool "Use default adc clk divisor"
+        depends on !IDF_TARGET_ESP32
+        default y
+        help
+            Force use of default digital controller clk divisors.
+
+    config ADC_SARADC_TARGET_CLK
+        int "Set SARADC target clock frequency"
+        depends on !ADC_DIGI_CLK_DIV_DEFAULT
+        default 5280000
+        help
+            The SARADC clock frequency will be set to the nearest integer multiple of sample freq.
+            The fractional divisor parameters will be calculated at runtime.
+
     config ADC_ENABLE_DEBUG_LOG
         bool "Enable ADC debug log"
         default n
