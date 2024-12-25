@@ -92,6 +92,12 @@ menu "ADC and ADC Calibration"
             The SARADC clock frequency will be set to the nearest integer multiple of sample freq.
             The fractional divisor parameters will be calculated at runtime.
 
+    config ADC_CONTINUOUS_NUM_DMA
+        int "Set the number of DMA buffers"
+        default 5
+        help
+            Configure the number of DMA buffers used by adc
+
     config ADC_ENABLE_DEBUG_LOG
         bool "Enable ADC debug log"
         default n
