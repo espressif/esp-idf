@@ -103,3 +103,5 @@ typedef esp_err_t (*set_server_config_func_ptr) (esp_tls_cfg_server_t *cfg, esp_
 typedef struct esp_tls_server_params {
     set_server_config_func_ptr set_server_cfg;
 } esp_tls_server_params_t;
+
+#define ESP_TLS_DEFAULT_SERVER_HANDSHAKE_TIMEOUT_MS  (10000) /*!< Default handshake timeout in milliseconds */

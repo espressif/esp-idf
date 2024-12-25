@@ -694,6 +694,9 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_ESP_TLS_TCP_CLOSED_FIN
     ERR_TBL_IT(ESP_ERR_ESP_TLS_TCP_CLOSED_FIN),                 /* 32776 0x8008 */
 #   endif
+#   ifdef      ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT
+    ERR_TBL_IT(ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT),       /* 32777 0x8009 TLS handshake timeout */
+#   endif
 #   ifdef      ESP_ERR_MBEDTLS_CERT_PARTLY_OK
     ERR_TBL_IT(ESP_ERR_MBEDTLS_CERT_PARTLY_OK),                 /* 32784 0x8010 mbedtls parse certificates was partly successful */
 #   endif

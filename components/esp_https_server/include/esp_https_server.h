@@ -132,6 +132,9 @@ struct httpd_ssl_config {
      *  Used for negotiating during the TLS handshake, first one the client supports is selected.
      *  The data structure must live as long as the https server itself */
     const char** alpn_protos;
+
+    /** TLS handshake timeout in milliseconds, default timeout is 10 seconds if not set */
+    uint32_t tls_handshake_timeout_ms;
 };
 
 typedef struct httpd_ssl_config httpd_ssl_config_t;
@@ -190,6 +193,7 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
     .ssl_userdata = NULL,                         \
     .cert_select_cb = NULL,                       \
     .alpn_protos = NULL,                          \
+    .tls_handshake_timeout_ms = 0                 \
 }
 
 /**
