@@ -475,6 +475,10 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(ret == ESP_OK, "assigned clock speed not supported", ret);
     temp_timing_conf.clock_source = clk_src;
     temp_timing_conf.source_pre_div = clock_source_div;
+    temp_timing_conf.rx_sample_point = dev_config->sample_point;
+    if (temp_timing_conf.rx_sample_point == SPI_SAMPLING_POINT_PHASE_1) {
+        SPI_CHECK(spi_ll_master_is_rx_std_sample_supported(), "SPI_SAMPLING_POINT_PHASE_1 is not supported on this chip", ESP_ERR_NOT_SUPPORTED);
+    }
 
     //Allocate memory for device
     dev = malloc(sizeof(spi_device_t));

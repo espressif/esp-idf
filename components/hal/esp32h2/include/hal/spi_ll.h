@@ -20,11 +20,13 @@
 #include "esp_types.h"
 #include "soc/spi_periph.h"
 #include "soc/spi_struct.h"
+#include "soc/chip_revision.h"
+#include "soc/pcr_struct.h"
 #include "soc/lldesc.h"
 #include "hal/assert.h"
 #include "hal/misc.h"
+#include "hal/efuse_hal.h"
 #include "hal/spi_types.h"
-#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -306,7 +308,7 @@ static inline void spi_ll_slave_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU TX FIFO
  *
- * On ESP32H2, this function is not seperated
+ * On ESP32H2, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -319,7 +321,7 @@ static inline void spi_ll_cpu_tx_fifo_reset(spi_dev_t *hw)
 /**
  * Reset SPI CPU RX FIFO
  *
- * On ESP32H2, this function is not seperated
+ * On ESP32H2, this function is not separated
  *
  * @param hw Beginning address of the peripheral registers.
  */
@@ -690,6 +692,26 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  * Configs: parameters
  *----------------------------------------------------------------------------*/
 /**
+ * Set the standard clock mode for master.
+ * This config take effect only when SPI_CLK (pre-div before periph) div >=2
+ *
+ * @param hw  Beginning address of the peripheral registers.
+ * @param enable_std True for std timing, False for half cycle delay sampling.
+ */
+static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_point_t sample_point)
+{
+    hw->clock.clk_edge_sel = (sample_point == SPI_SAMPLING_POINT_PHASE_1);
+}
+
+/**
+ * Get if standard clock mode is supported.
+ */
+static inline bool spi_ll_master_is_rx_std_sample_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
+
+/**
  * Set the clock for master by stored value.
  *
  * @param hw  Beginning address of the peripheral registers.
@@ -704,7 +726,7 @@ static inline void spi_ll_master_set_clock_by_reg(spi_dev_t *hw, const spi_ll_cl
  * Get the frequency of given dividers. Don't use in app.
  *
  * @param fapb APB clock of the system.
- * @param pre  Pre devider.
+ * @param pre  Pre divider.
  * @param n    Main divider.
  *
  * @return     Frequency of given dividers.
@@ -715,10 +737,10 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
 }
 
 /**
- * Calculate the nearest frequency avaliable for master.
+ * Calculate the nearest frequency available for master.
  *
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  * @param out_reg    Output address to store the calculated clock configurations for the return frequency.
  *
@@ -726,7 +748,7 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
  */
 static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_ll_clock_val_t *out_reg)
 {
-    typeof(GPSPI2.clock) reg;
+    typeof(GPSPI2.clock) reg = {.val = 0};
     int eff_clk;
 
     //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.
@@ -798,7 +820,7 @@ static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_
  *
  * @param hw         Beginning address of the peripheral registers.
  * @param fapb       APB clock of the system.
- * @param hz         Frequncy desired.
+ * @param hz         Frequency desired.
  * @param duty_cycle Duty cycle desired.
  *
  * @return           Actual frequency that is used.
