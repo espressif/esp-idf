@@ -47,6 +47,7 @@
 #define EVENT_TX_FAILED (1 << 1)
 #define EVENT_RX_DONE (1 << 2)
 #define EVENT_ENERGY_DETECT_DONE (1 << 3)
+#define EVENT_SLEEP (1 << 4)
 
 typedef struct {
     uint8_t length;
@@ -241,6 +242,11 @@ esp_err_t esp_openthread_radio_process(otInstance *aInstance, const esp_openthre
         }
     }
 
+    if (get_event(EVENT_SLEEP)) {
+        clr_event(EVENT_SLEEP);
+        esp_ieee802154_sleep();
+    }
+
     return ESP_OK;
 }
 
@@ -312,7 +318,11 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     aFrame->mPsdu[-1] = aFrame->mLength; // length locates one byte before the psdu (esp_openthread_radio_tx_psdu);
 
     if (otMacFrameIsSecurityEnabled(aFrame) && !aFrame->mInfo.mTxInfo.mIsSecurityProcessed) {
+#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+        if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx || s_csl_period > 0) {
+#else
         if (!s_transmit_frame.mInfo.mTxInfo.mIsARetx) {
+#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
             otMacFrameSetFrameCounter(aFrame, s_mac_frame_counter++);
         }
         if (otMacFrameIsKeyIdMode1(aFrame)) {
@@ -362,7 +372,8 @@ otRadioCaps otPlatRadioGetCaps(otInstance *aInstance)
 
 otError otPlatRadioReceiveAt(otInstance *aInstance, uint8_t aChannel, uint32_t aStart, uint32_t aDuration)
 {
-    esp_ieee802154_receive_at((aStart + aDuration));
+    esp_ieee802154_set_channel(aChannel);
+    esp_ieee802154_receive_at(aStart, aDuration);
     return OT_ERROR_NONE;
 }
 
@@ -825,4 +836,9 @@ uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
     return CONFIG_OPENTHREAD_SUPPORTED_CHANNEL_MASK;
+}
+
+void esp_ieee802154_receive_at_done(void)
+{
+    set_event(EVENT_SLEEP);
 }
