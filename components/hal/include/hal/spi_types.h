@@ -76,8 +76,15 @@ typedef enum {
     SPI_CMD_HD_INT2     = BIT(9),
 } spi_command_t;
 
-/** @cond */    //Doxy command to hide preprocessor definitions from docs */
+/**
+ * @brief SPI master RX sample point mode configuration
+ */
+typedef enum {
+    SPI_SAMPLING_POINT_PHASE_0,      ///< Data sampling point at 50% cycle delayed then standard timing, (default).
+    SPI_SAMPLING_POINT_PHASE_1,      ///< Data sampling point follows standard SPI timing in master mode
+} spi_sampling_point_t;
 
+/** @cond */    //Doxy command to hide preprocessor definitions from docs */
 //alias for different chips, deprecated for the chips after esp32s2
 #ifdef CONFIG_IDF_TARGET_ESP32
 #define SPI_HOST    SPI1_HOST
@@ -89,7 +96,6 @@ typedef enum {
 #define FSPI_HOST   SPI2_HOST
 #define HSPI_HOST   SPI3_HOST
 #endif
-
 /** @endcond */
 
 #ifdef __cplusplus
