@@ -58,6 +58,7 @@ typedef struct {
     spi_clock_source_t clock_source;    ///< Clock source of each device used by LL layer
     int timing_dummy;                   ///< Extra dummy needed to compensate the timing
     int timing_miso_delay;              ///< Extra miso delay clocks to compensate the timing
+    spi_sampling_point_t rx_sample_point;///< Sample data follow standard SPI timing in master mode
 } spi_hal_timing_conf_t;
 
 /**
