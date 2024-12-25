@@ -23,7 +23,7 @@ extern "C" {
 #include "esp_attr.h"
 #include "hal/misc.h"
 
-//TODO: [ESP32H21] IDF-11874, inherit from h2
+//TODO: [ESP32H21] IDF-11528, inherit from h2
 
 /* Pre-calculated prescaler to achieve 500 ticks/us (MWDT1_TICKS_PER_US) when using default clock (MWDT_CLK_SRC_DEFAULT ) */
 #define MWDT_LL_DEFAULT_CLK_PRESCALER 16000

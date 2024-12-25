@@ -52,7 +52,7 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
     {
         .regn_num = 1,
         .regn_start_addr = SOC_PERIPHERAL_LOW,
-        .regn_end_addr   = (DR_REG_INTERRUPT_MATRIX_BASE - 0x4),
+        .regn_end_addr   = (DR_REG_INTMTX_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },

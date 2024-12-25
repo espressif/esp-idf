@@ -8,8 +8,11 @@
 
 #include <stdint.h>
 #include "soc/clk_tree_defs.h"
-#include "soc/clkout_channel.h"
 #include "soc/soc_caps.h"
+
+#if SOC_GPIO_CLOCKOUT_CHANNEL_NUM > 0 //TODO: [ESP32H21] IDF-11582
+#include "soc/clkout_channel.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +64,7 @@ uint32_t clk_hal_xtal_get_freq_mhz(void);
 uint32_t clk_hal_apll_get_freq_hz(void);
 #endif //SOC_CLK_APLL_SUPPORTED
 
+#if SOC_GPIO_CLOCKOUT_CHANNEL_NUM > 0 //TODO: [ESP32H21] IDF-11582
 /**
  * @brief Set up clock output channel
  * @param clk_sig    The clock signal source to be mapped to GPIOs
@@ -82,6 +86,7 @@ void clk_hal_clock_output_set_divider(clock_out_channel_t channel_id, uint32_t d
  * @param channel_id The clock output channel to teardown
  */
 void clk_hal_clock_output_teardown(clock_out_channel_t channel_id);
+#endif
 
 #ifdef __cplusplus
 }

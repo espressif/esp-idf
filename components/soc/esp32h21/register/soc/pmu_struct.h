@@ -6,14 +6,11 @@
 #pragma once
 
 #include <stdint.h>
-#include <stddef.h>
+#include "soc/pmu_reg.h"
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
-#include "soc.h"
-#include "soc/pmu_reg.h"
 
 typedef union
 {

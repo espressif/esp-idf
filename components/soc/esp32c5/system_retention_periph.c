@@ -19,9 +19,9 @@
 #include "soc/interrupt_matrix_reg.h"
 
 /* Interrupt Matrix Registers Context */
-#define N_REGS_INTR_MATRIX()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTERRUPT_MATRIX_BASE) / 4) + 1)
+#define N_REGS_INTR_MATRIX()    (((INTERRUPT_CORE0_CLOCK_GATE_REG - DR_REG_INTMTX_BASE) / 4) + 1)
 const regdma_entries_config_t intr_matrix_regs_retention[] = {
-    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTERRUPT_MATRIX_BASE, DR_REG_INTERRUPT_MATRIX_BASE, N_REGS_INTR_MATRIX(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
+    [0] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_INTMTX_LINK(0), DR_REG_INTMTX_BASE, DR_REG_INTMTX_BASE, N_REGS_INTR_MATRIX(), 0, 0), .owner = ENTRY(0) | ENTRY(2) }  /* intr matrix */
 };
 _Static_assert(ARRAY_SIZE(intr_matrix_regs_retention) == INT_MTX_RETENTION_LINK_LEN, "Inconsistent INT_MTX retention link length definitions");
 
