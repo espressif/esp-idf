@@ -31,6 +31,12 @@ extern "C" {
 #define PMU_LP_TIMER1_WAKEUP_EN         BIT(18)
 #define PMU_LP_I2S_WAKEUP_EN            BIT(19)
 
+// BIT order in PLL control registers in PMU
+#define PMU_CPLL_CTRL                   BIT(0)
+#define PMU_SPLL_CTRL                   BIT(1)
+#define PMU_APLL_CTRL                   BIT(2)
+#define PMU_SDIOPLL_CTRL                BIT(3)
+
 #ifdef __cplusplus
 }
 #endif

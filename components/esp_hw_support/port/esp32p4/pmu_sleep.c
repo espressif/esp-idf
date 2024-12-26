@@ -97,7 +97,7 @@ uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk
         mc->hp.analog_wait_time_us = PMU_HP_ANA_WAIT_TIME_PU_TOP_US;
     }
 
-    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_digital_power_up_wait_time_us + hp_regdma_wait_time_us, hp_clock_wait_time_us);
+    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_digital_power_up_wait_time_us + mc->hp.pll_wait_stable_time_us + hp_regdma_wait_time_us, hp_clock_wait_time_us);
     return (uint32_t)hp_hw_wait_time_us;
 }
 
