@@ -22,6 +22,9 @@
 #include "ble_spp_server_demo.h"
 #include "esp_gatt_common_api.h"
 #include "esp_timer.h"
+#if (CONFIG_EXAMPLE_ENABLE_RF_TESTING_CONFIGURATION_COMMAND)
+#include "rf_tesing_configuration_cmd.h"
+#endif // CONFIG_EXAMPLE_ENABLE_RF_TESTING_CONFIGURATION_COMMAND
 #define GATTS_TABLE_TAG  "GATTS_SPP_DEMO"
 
 #define SPP_PROFILE_NUM             1
@@ -479,7 +482,11 @@ void spp_cmd_task(void * arg)
 
 static void spp_task_init(void)
 {
+#ifdef CONFIG_EXAMPLE_ENABLE_RF_TESTING_CONFIGURATION_COMMAND
+    rf_testing_configuration_command_enable();
+#else
     spp_uart_init();
+#endif // CONFIG_EXAMPLE_ENABLE_RF_TESTING_CONFIGURATION_COMMAND
 
 #ifdef SUPPORT_HEARTBEAT
     cmd_heartbeat_queue = xQueueCreate(10, sizeof(uint32_t));
