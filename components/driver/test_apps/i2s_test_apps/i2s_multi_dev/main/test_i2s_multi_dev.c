@@ -32,9 +32,11 @@ static const char *TAG = "i2s_multi_dev_test";
 #define TEST_I2S_BCK_IO         (GPIO_NUM_4)
 #define TEST_I2S_WS_IO          (GPIO_NUM_5)
 #if CONFIG_IDF_TARGET_ESP32H2
+#define TEST_I2S_SAMPLE_RATE    (16000)
 #define TEST_I2S_DO_IO          (GPIO_NUM_2)
 #define TEST_I2S_DI_IO          (GPIO_NUM_3) // DI and DO gpio will be reversed on slave runner
 #else
+#define TEST_I2S_SAMPLE_RATE    (48000)
 #define TEST_I2S_DO_IO          (GPIO_NUM_6)
 #define TEST_I2S_DI_IO          (GPIO_NUM_7) // DI and DO gpio will be reversed on slave runner
 #endif  // CONFIG_IDF_TARGET_ESP32H2
@@ -199,12 +201,12 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
 
 static void test_i2s_tdm_master_48k_32bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_32bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2S_TDM]",
@@ -213,12 +215,12 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2
 
 static void test_i2s_tdm_master_48k_16bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_16bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2S_TDM]",
@@ -227,12 +229,12 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2
 
 static void test_i2s_tdm_master_48k_8bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_8bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S_TDM]",
@@ -243,13 +245,13 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S
 #if !CONFIG_IDF_TARGET_ESP32H2
 static void test_i2s_tdm_master_48k_16bits_8slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
+    test_i2s_tdm_master(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
                         I2S_TDM_SLOT4 | I2S_TDM_SLOT5 | I2S_TDM_SLOT6 | I2S_TDM_SLOT7);
 }
 
 static void test_i2s_tdm_slave_48k_16bits_8slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
+    test_i2s_tdm_slave(TEST_I2S_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3 |
                         I2S_TDM_SLOT4 | I2S_TDM_SLOT5 | I2S_TDM_SLOT6 | I2S_TDM_SLOT7);
 }
 
