@@ -467,3 +467,17 @@ uint16_t otPlatTimeGetXtalAccuracy(void)
 {
     return CONFIG_OPENTHREAD_XTAL_ACCURACY;
 }
+
+uint32_t otPlatRadioGetPreferredChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    // Refer to `GetRadioChannelMask(bool aPreferred)`: TRUE to get preferred channel mask
+    return s_radio.GetRadioChannelMask(true);
+}
+
+uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    // Refer to `GetRadioChannelMask(bool aPreferred)`: FALSE to get supported channel mask
+    return s_radio.GetRadioChannelMask(false);
+}
