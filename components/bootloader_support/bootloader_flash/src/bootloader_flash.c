@@ -128,7 +128,10 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/opi_flash.h"
 #endif
+#include "spi_flash/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
 #include "esp_flash_partitions.h"
@@ -592,37 +595,37 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
     switch (flash_mode) {
     case ESP_ROM_SPIFLASH_DOUT_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_DOUT_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_DUAL_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_DIO_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 4;
+        cache_rd.dummy_bit_len = SPI_FLASH_DIO_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_DIO_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_QOUT_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_QOUT_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_QUAD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_QIO_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 6;
+        cache_rd.dummy_bit_len = SPI_FLASH_QIO_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_QIO_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_FASTRD_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_FASTRD_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
      case ESP_ROM_SPIFLASH_SLOWRD_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 0;
+        cache_rd.dummy_bit_len = SPI_FLASH_SLOWRD_DUMMY_BITLEN;
         cache_rd.cmd = CMD_SLOWRD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
