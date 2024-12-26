@@ -16,7 +16,7 @@ ESP-IDF provides a flexible logging system with two configurable versions, **Log
 Features of **Log V1**
 ^^^^^^^^^^^^^^^^^^^^^^
 
-- Formatting is included in the "format" argument and compiled into Flash.
+- Formatting is included in the ``format`` argument and compiled into Flash.
 - Fast early and DRAM logging compared to ESP_LOG.
 - Simple implementation but has limitations:
 
@@ -107,7 +107,7 @@ Example: Set the log level to ``ERROR`` for all components (global setting):
 
 Adjusting log output per module (tag) depends on :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`, which is enabled by default. If this feature is not required, you can disable it to reduce code size and improve performance:
 
-Example: Set the log level to ``WARNING`` only for the WiFi component (module-specific setting).
+Example: Set the log level to ``WARNING`` only for the Wi-Fi component (module-specific setting).
 
 .. code-block:: c
 
@@ -136,7 +136,7 @@ In each C file that uses the logging functionality, define the ``TAG`` variable.
 
 .. note::
 
-    The ``TAG`` variable points to a string literal stored in Flash memory. If the same ``TAG`` string is used multiple times within a single build unit (translation unit), the compiler and linker typically optimize it to a single copy in Flash through a process called **string pooling**. However, if the same ``TAG`` string is used across different components or translation units, each component or unit will have its own copy in Flash unless global linker optimizations are applied.
+    The ``TAG`` variable points to a string literal stored in flash memory. If the same ``TAG`` string is used multiple times within a single build unit (translation unit), the compiler and linker typically optimize it to a single copy in flash through a process called **string pooling**. However, if the same ``TAG`` string is used across different components or translation units, each component or unit will have its own copy in flash unless global linker optimizations are applied.
 
 The logging library provides a wide range of macros to accommodate various use cases, from general-purpose logging to early startup and constrained environments. Choosing the right macro and structuring your program accordingly can help optimize performance and ensure reliable operation. However, it is recommended to structure your program to avoid logging in constrained environments whenever possible.
 
@@ -152,7 +152,10 @@ There are three groups of macros available:
 
 - **ESP_EARLY_LOGx**: Designed for use in constrained environments during early startup, before the heap allocator or syscalls are initialized. These macros are commonly used in critical startup code or in critical sections where interrupts are disabled. A key characteristic of these macros is that they use the ROM `printf` function, always output timestamps in microseconds, and do not support per-module log verbosity settings.
 
-- **ESP_DRAM_LOGx**: Designed for use in constrained environments where logging occurs with interrupts disabled or when the flash cache is inaccessible. These macros should be used sparingly, as they can impact performance. They are suitable for critical sections or interrupt routines where other logging macros may not work reliably. A key characteristic of these macros is that they use the ROM `printf` function, do not output timestamps, allocate the format argument in DRAM to ensure accessibility when the cache is disabled, and do not support per-module log verbosity settings. Note: Use the **DRAM_STR("my_tag")** macro to allocate the tag in DRAM. This is necessary to ensure access to the tag when the flash cache is disabled.
+- **ESP_DRAM_LOGx**: Designed for use in constrained environments where logging occurs with interrupts disabled or when the flash cache is inaccessible. These macros should be used sparingly, as they can impact performance. They are suitable for critical sections or interrupt routines where other logging macros may not work reliably. A key characteristic of these macros is that they use the ROM `printf` function, do not output timestamps, allocate the format argument in DRAM to ensure accessibility when the cache is disabled, and do not support per-module log verbosity settings.
+
+.. Note::
+    Use the **DRAM_STR("my_tag")** macro to allocate the tag in DRAM. This is necessary to ensure access to the tag when the flash cache is disabled.
 
 The difference between **Log V1** and **Log V2** is that in **Log V2**, all logs from these macros are routed through a single handler. This handler can automatically detect constrained environments (e.g., early startup, disabled interrupts, or flash cache inaccessible) and dynamically selects the appropriate printing function, ensuring efficient logging across various runtime contexts.
 
@@ -210,7 +213,7 @@ The logging system supports the following formatting options, applicable for bot
 
 - **End Line**: Adds a newline character at the end of the log messages.
 
-The following options are applicable only for **Log V2** and are used alongside the provided log macros. These defines can be set in the same manner as ``LOG_LOCAL_LEVEL``. Their scope depends on where they are defined (e.g., file, component, or globally):
+The following options are applicable only for **Log V2** and are used alongside the provided log macros. These definitions can be set in the same manner as ``LOG_LOCAL_LEVEL``. Their scope depends on where they are defined (e.g., file, component, or globally):
 
 - **ESP_LOG_CONSTRAINED_ENV**:
 
@@ -234,7 +237,7 @@ The following options are applicable only for **Log V2** and are used alongside 
 Per-Log Formatting
 ^^^^^^^^^^^^^^^^^^
 
-The above defines work seamlessly with the provided log macros. However, if you require more flexibility or the ability to change settings at runtime, such as adjusting the log level based on a value (for example, temperature), this can be done using alternative macros. Note that in this case, the logs cannot be discarded from the binary, as they bypass compile-time log level checks.
+The above definition works seamlessly with the provided log macros. However, if you require more flexibility or the ability to change settings at runtime, such as adjusting the log level based on a value (for example, temperature), this can be done using alternative macros. Note that in this case, the logs cannot be discarded from the binary, as they bypass compile-time log level checks.
 
 The example below demonstrates how to adjust formatting for individual log messages:
 
@@ -305,11 +308,11 @@ There are three settings that control the ability to change the log level at run
 
     .. note::
 
-        Keep in mind that the linked list per-tag log level check implementation has the following flaw: the linked list entries are allocated on the task stack during the execution of ``ESP_LOGx`` macros when a new tag is encountered. Deleting the task that created these entries may lead to invalid list entries and potential crashes during traversal.
+        Keep in mind that the linked list per-tag log level check implementation has the following flaw: The linked list entries are allocated on the task stack during the execution of ``ESP_LOGx`` macros when a new tag is encountered. Deleting the task that created these entries may lead to invalid list entries and potential crashes during traversal.
 
   - **Cache + Linked List** (Default): It is a hybrid mode that combines caching with a **linked list** for log tag level checks. This hybrid approach offers a balance between speed and memory usage. The cache stores recently accessed log tags and their corresponding log levels, providing faster lookups for frequently used tags. The cache approach compares the tag pointers, which is faster than performing full string comparisons. For less frequently used tags, the **linked list** is utilized to search for the log level. This option may not work properly when dynamic tag definitions are used, as it relies on tag pointer comparisons in the cache, which are not suitable for dynamically defined tags. This hybrid approach improves the efficiency of log level retrieval by leveraging the speed of caching for common tags and the memory efficiency of a linked list for less frequently used tags. Selecting this option automatically enables **Dynamic Log Level Control**.
 
-    There are some cache configurations to balance memory usage and lookup performance. These settings determine how log tag levels are stored and accessed, :ref:`CONFIG_LOG_TAG_LEVEL_CACHE_IMPL`:
+    There are some cache configurations to balance memory usage and lookup performance. These settings determine how log tag levels are stored and accessed: :ref:`CONFIG_LOG_TAG_LEVEL_CACHE_IMPL`.
 
     - **Array**: A simple implementation without reordering, suitable for low-memory applications that prioritize simplicity.
 
@@ -372,7 +375,7 @@ The logging system provides macros for logging buffer data. These macros can be 
     I (954) MyModule: 54 68 65 20 77 61 79 20 74 6f 20 67 65 74 20 73
     I (964) MyModule: 74 61 72 74 65 64 20 69 73 20 61 6e 64 20 66
 
-- :c:macro:`ESP_LOG_BUFFER_CHAR` and :c:macro:`ESP_LOG_BUFFER_CHAR_LEVEL`: Logs a buffer of printable characters. Each line contains up to 16 characters :c:macro:`ESP_LOG_BUFFER_CHAR` is only for the ``Info`` log level.
+- :c:macro:`ESP_LOG_BUFFER_CHAR` and :c:macro:`ESP_LOG_BUFFER_CHAR_LEVEL`: Logs a buffer of printable characters. Each line contains up to 16 characters. :c:macro:`ESP_LOG_BUFFER_CHAR` is only for the ``Info`` log level.
 
   .. code-block:: c
 
@@ -497,7 +500,7 @@ Thread Safety
 
 Logging from constrained environments (or for **ESP_EARLY_LOGx** and **ESP_DRAM_LOGx**) does not use locking mechanisms, which can lead to rare cases of log corruption if other tasks are logging in parallel. To minimize such risks, it is recommended to use general-purpose macros whenever possible.
 
-General-purpose macros (**ESP_LOGx**) ensure thread safety by acquiring locks during log output. In **Log V2**, additional protection is provided by ``flockfile`` during multiple ``vprintf`` calls for formatings.
+General-purpose macros (**ESP_LOGx**) ensure thread safety by acquiring locks during log output. In **Log V2**, additional protection is provided by ``flockfile`` during multiple ``vprintf`` calls for formatting.
 
 Logs are first written to a memory buffer before being sent to the UART, ensuring thread-safe operations across different tasks. Avoid logging from constrained environments unless necessary to maintain reliable log output.
 
