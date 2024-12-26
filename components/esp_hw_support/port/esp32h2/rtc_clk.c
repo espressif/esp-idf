@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -399,10 +399,7 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
 void rtc_clk_cpu_freq_set_xtal(void)
 {
     rtc_clk_cpu_set_to_default_config();
-    // We don't turn off the bbpll if some consumers only depends on bbpll
-    if (!s_bbpll_digi_consumers_ref_count) {
-        rtc_clk_bbpll_disable();
-    }
+    rtc_clk_bbpll_disable();
 }
 
 void rtc_clk_cpu_set_to_default_config(void)
@@ -410,6 +407,7 @@ void rtc_clk_cpu_set_to_default_config(void)
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
+    s_cur_pll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
 
 rtc_xtal_freq_t rtc_clk_xtal_freq_get(void)
