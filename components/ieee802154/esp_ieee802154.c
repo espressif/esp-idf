@@ -59,6 +59,26 @@ esp_err_t esp_ieee802154_set_txpower(int8_t power)
     return ESP_OK;
 }
 
+esp_err_t esp_ieee802154_set_power_table(esp_ieee802154_txpower_table_t power_table)
+{
+    return ieee802154_pib_set_power_table(power_table);
+}
+
+esp_err_t esp_ieee802154_get_power_table(esp_ieee802154_txpower_table_t *out_power_table)
+{
+    return ieee802154_pib_get_power_table(out_power_table);
+}
+
+esp_err_t esp_ieee802154_set_power_with_channel(uint8_t channel, int8_t power)
+{
+    return ieee802154_pib_set_power_with_channel(channel, power);
+}
+
+esp_err_t esp_ieee802154_get_power_with_channel(uint8_t channel, int8_t *out_power)
+{
+    return ieee802154_pib_get_power_with_channel(channel, out_power);
+}
+
 bool esp_ieee802154_get_promiscuous(void)
 {
     return ieee802154_pib_get_promiscuous();

@@ -74,6 +74,52 @@ int8_t esp_ieee802154_get_txpower(void);
 esp_err_t esp_ieee802154_set_txpower(int8_t power);
 
 /**
+ * @brief  Set the transmission power table.
+ *
+ * @param[in]  power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK   Set the transmission power table to successfully.
+ */
+esp_err_t esp_ieee802154_set_power_table(esp_ieee802154_txpower_table_t power_table);
+
+/**
+ * @brief  Get the transmission power table.
+ *
+ * @param[out]  out_power_table  The power table.
+ *
+ * @return
+ *        - ESP_OK                  Get the transmission power table successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ *
+ */
+esp_err_t esp_ieee802154_get_power_table(esp_ieee802154_txpower_table_t *out_power_table);
+
+/**
+ * @brief  Set the transmission power for a specific channel.
+ *
+ * @param[in]  channel  The channel.
+ * @param[in]  power    The power.
+ *
+ * @return
+ *        - ESP_OK                  Set the transmission power for a specific channel successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ */
+esp_err_t esp_ieee802154_set_power_with_channel(uint8_t channel, int8_t power);
+
+/**
+ * @brief  Get the transmission power for a specific channel.
+ *
+ * @param[in]  channel    The channel.
+ * @param[out] out_power  The power.
+ *
+ * @return
+ *        - ESP_OK                  Get the transmission power for a specific channel successfully.
+ *        - ESP_ERR_INVALID_ARG     Invalid arguments.
+ */
+esp_err_t esp_ieee802154_get_power_with_channel(uint8_t channel, int8_t *out_power);
+
+/**
  * @brief  Get the promiscuous mode.
  *
  * @return
