@@ -45,9 +45,9 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/ocode_init.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
-#include "ocode_init.h"
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive

@@ -31,6 +31,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
+#include "esp_private/ocode_init.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 
@@ -50,6 +51,9 @@ void esp_rtc_init(void)
 {
 #if !CONFIG_IDF_ENV_FPGA
     pmu_init();
+    if (esp_rom_get_reset_reason(0) == RESET_REASON_CHIP_POWER_ON) {
+        esp_ocode_calib_init();
+    }
 #endif
 }
 
