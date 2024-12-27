@@ -434,6 +434,8 @@ class RunTool:
             # contains CRLF. Use "newline=''" to prevent python to convert CRLF into CRCRLF.
             # Please see "newline" description at https://docs.python.org/3/library/functions.html#open
             with open(output_filename, 'w', encoding='utf8', newline='') as output_file:
+                # Log the command arguments.
+                output_file.write('Command: {}\n'.format(' '.join(self.args)))
                 while True:
                     if self.interactive:
                         output = await read_interactive_stream()
