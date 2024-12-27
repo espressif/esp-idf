@@ -9,43 +9,18 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <freertos/FreeRTOS.h>
-#include <freertos/task.h>
-#include <freertos/semphr.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+#include "freertos/semphr.h"
+#include "rom/cache.h"
+
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#include <esp32/rom/cache.h>
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/cache.h"
+#elif CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2 || CONFIG_IDF_TARGET_ESP32C6
 #include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/cache.h"
-#include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/cache.h"
-#include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rom/cache.h"
-#include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/cache.h"
-#include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32C61    //TODO: IDF-9526, refactor this
-#include "esp32c61/rom/cache.h"
-#include "soc/cache_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/cache.h"
-#include "soc/extmem_reg.h"
-#include "soc/ext_mem_defs.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/cache.h"
 #endif
+
+#include "soc/ext_mem_defs.h"
 #include "esp_rom_spiflash.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
