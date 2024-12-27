@@ -17,19 +17,20 @@
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
-#include "driver/gpio.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "driver/twai.h"
 #include "soc/soc_caps.h"
 #include "soc/soc.h"
+#include "soc/io_mux_reg.h"
 #include "soc/twai_periph.h"
-#include "soc/gpio_sig_map.h"
 #include "hal/twai_hal.h"
+#include "hal/gpio_hal.h"
 #include "esp_rom_gpio.h"
 
 /* ---------------------------- Definitions --------------------------------- */
 //Internal Macros
+#define TWAI_TAG "TWAI"
 #define TWAI_CHECK(cond, ret_val) ({                                        \
             if (!(cond)) {                                                  \
                 return (ret_val);                                           \
@@ -47,7 +48,6 @@
 #define TWAI_ISR_ATTR       IRAM_ATTR
 #define TWAI_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
-#define TWAI_TAG "TWAI"
 #define TWAI_ISR_ATTR
 #define TWAI_MALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif  //CONFIG_TWAI_ISR_IN_IRAM
@@ -288,37 +288,29 @@ static void twai_configure_gpio(gpio_num_t tx, gpio_num_t rx, gpio_num_t clkout,
     // assert the GPIO number is not a negative number (shift operation on a negative number is undefined)
     assert(tx >= 0 && rx >= 0);
     int controller_id = p_twai_obj->controller_id;
-    // if TX and RX set to the same GPIO, which means we want to create a loop-back in the GPIO matrix
-    bool io_loop_back = (tx == rx);
-    gpio_config_t gpio_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .pull_down_en = false,
-        .pull_up_en = false,
+    gpio_hal_context_t gpio_hal = {
+        .dev = GPIO_HAL_GET_HW(GPIO_PORT_0)
     };
+
     //Set RX pin
-    gpio_conf.mode = GPIO_MODE_INPUT | (io_loop_back ? GPIO_MODE_OUTPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << rx;
-    gpio_config(&gpio_conf);
+    gpio_hal_func_sel(&gpio_hal, rx, PIN_FUNC_GPIO);
+    gpio_hal_input_enable(&gpio_hal, rx);
     esp_rom_gpio_connect_in_signal(rx, twai_controller_periph_signals.controllers[controller_id].rx_sig, false);
 
     //Set TX pin
-    gpio_conf.mode = GPIO_MODE_OUTPUT | (io_loop_back ? GPIO_MODE_INPUT : 0);
-    gpio_conf.pin_bit_mask = 1ULL << tx;
-    gpio_config(&gpio_conf);
+    gpio_hal_func_sel(&gpio_hal, tx, PIN_FUNC_GPIO);
     esp_rom_gpio_connect_out_signal(tx, twai_controller_periph_signals.controllers[controller_id].tx_sig, false, false);
 
     //Configure output clock pin (Optional)
     if (clkout >= 0 && clkout < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(clkout, GPIO_FLOATING);
+        gpio_hal_func_sel(&gpio_hal, clkout, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(clkout, twai_controller_periph_signals.controllers[controller_id].clk_out_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(clkout);
     }
 
     //Configure bus status pin (Optional)
     if (bus_status >= 0 && bus_status < GPIO_NUM_MAX) {
-        gpio_set_pull_mode(bus_status, GPIO_FLOATING);
+        gpio_hal_func_sel(&gpio_hal, bus_status, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(bus_status, twai_controller_periph_signals.controllers[controller_id].bus_off_sig, false, false);
-        esp_rom_gpio_pad_select_gpio(bus_status);
     }
 }
 
