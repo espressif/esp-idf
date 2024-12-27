@@ -74,6 +74,7 @@
 #include "esp_private/sleep_console.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_usb.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
@@ -667,6 +668,11 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
         // Only avoid USJ pad leakage here, USB OTG pad leakage is prevented through USB Host driver.
         sleep_console_usj_pad_backup_and_disable();
 #endif
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+        if (!(pd_flags & PMU_SLEEP_PD_CNNT)) {
+            sleep_usb_otg_phy_backup_and_disable();
+        }
+#endif
 #if CONFIG_MAC_BB_PD
         mac_bb_power_down_cb_execute();
 #endif
@@ -715,6 +721,11 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
+#endif
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+    if (!(pd_flags & PMU_SLEEP_PD_CNNT)) {
+        sleep_usb_otg_phy_restore();
+    }
 #endif
     sar_periph_ctrl_power_enable();
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
