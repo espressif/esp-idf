@@ -18,10 +18,10 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32s3
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
-         'write'),
+         'write', 'y'),
     ],
     indirect=True,
 )
@@ -53,10 +53,10 @@ def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> Non
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
-         'esp32c2_xtal26m_write'),
+         'esp32c2_xtal26m_write', 'y'),
     ],
     indirect=True,
 )
@@ -93,10 +93,10 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
 @pytest.mark.esp32s3
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
-         'notify'),
+         'notify', 'y'),
     ],
     indirect=True,
 )
@@ -130,10 +130,10 @@ def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> No
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
-         'esp32c2_xtal26m_notify'),
+         'esp32c2_xtal26m_notify', 'y'),
     ],
     indirect=True,
 )

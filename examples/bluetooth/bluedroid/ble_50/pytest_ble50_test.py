@@ -17,10 +17,10 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'name'),
+         'name', 'y'),
     ],
     indirect=True,
 )
@@ -52,10 +52,10 @@ def test_ble50_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'esp32c2_xtal26m'),
+         'esp32c2_xtal26m', 'y'),
     ],
     indirect=True,
 )
@@ -91,10 +91,10 @@ def test_c2_26mhz_xtal_ble50_security_func(app_path: str, dut: Tuple[IdfDut, Idf
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
-         'name'),
+         'name', 'y'),
     ],
     indirect=True,
 )
@@ -122,10 +122,10 @@ def test_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "periodic_adv")}|{os.path.join(os.path.dirname(__file__), "periodic_sync")}',
-         'esp32c2_xtal26m'),
+         'esp32c2_xtal26m', 'y'),
     ],
     indirect=True,
 )
@@ -157,10 +157,10 @@ def test_c2_26mhz_xtal_period_adv_sync_func(app_path: str, dut: Tuple[IdfDut, Id
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'cfg_test'),
+         'cfg_test', 'y'),
     ],
     indirect=True,
 )
@@ -194,10 +194,10 @@ def test_ble50_security_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "ble50_security_server")}|{os.path.join(os.path.dirname(__file__), "ble50_security_client")}',
-         'esp32c2_cfg_test'),
+         'esp32c2_cfg_test', 'y'),
     ],
     indirect=True,
 )

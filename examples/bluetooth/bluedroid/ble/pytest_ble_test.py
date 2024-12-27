@@ -20,10 +20,10 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
-         'name'),
+         'name', 'y'),
     ],
     indirect=True,
 )
@@ -60,10 +60,10 @@ def test_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
-         'esp32c2_xtal26m'),
+         'esp32c2_xtal26m', 'y'),
     ],
     indirect=True,
 )
@@ -105,10 +105,10 @@ def test_c2_26mhz_xtal_gatt_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> N
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "gatt_security_server")}|{os.path.join(os.path.dirname(__file__), "gatt_security_client")}',
-         'name'),
+         'name', 'y'),
     ],
     indirect=True,
 )
@@ -154,8 +154,6 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
     assert 'rst:' not in str(gatt_security_server_output) and 'boot:' not in str(gatt_security_server_output)
     assert 'Disconnected' not in str(gatt_security_client_output)
     assert 'Disconnected' not in str(gatt_security_server_output)
-    gatt_security_client.serial.erase_flash()
-    gatt_security_server.serial.erase_flash()
 
 
 # Case 4: gatt security server and gatt security client test for ESP32C2 26mhz xtal
@@ -164,10 +162,10 @@ def test_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfDut], target: T
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "gatt_security_server")}|{os.path.join(os.path.dirname(__file__), "gatt_security_client")}',
-         'esp32c2_xtal26m'),
+         'esp32c2_xtal26m', 'y'),
     ],
     indirect=True,
 )
@@ -207,8 +205,6 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
     assert 'rst:' not in str(gatt_security_server_output) and 'boot:' not in str(gatt_security_server_output)
     assert 'Disconnected' not in str(gatt_security_client_output)
     assert 'Disconnected' not in str(gatt_security_server_output)
-    gatt_security_client.serial.erase_flash()
-    gatt_security_server.serial.erase_flash()
 
 
 # Case 5: ble ibeacon test
@@ -221,10 +217,10 @@ def test_c2_26mhz_xtal_gatt_security_func(app_path: str, dut: Tuple[IdfDut, IdfD
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}|{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}',
-         'sender|receiver'),
+         'sender|receiver', 'y'),
     ],
     indirect=True,
 )
@@ -250,10 +246,10 @@ def test_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}|{os.path.join(os.path.dirname(__file__), "ble_ibeacon")}',
-         'esp32c2_xtal26m_sender|esp32c2_xtal26m_receiver'),
+         'esp32c2_xtal26m_sender|esp32c2_xtal26m_receiver', 'y'),
     ],
     indirect=True,
 )
@@ -285,10 +281,10 @@ def test_c2_26mhz_ble_ibeacon_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) ->
 @pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
-         'cfg_test'),
+         'cfg_test', 'y'),
     ],
     indirect=True,
 )
@@ -325,10 +321,10 @@ def test_gatt_config_func(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "gatt_server")}|{os.path.join(os.path.dirname(__file__), "gatt_client")}',
-         'esp32c2_cfg_test'),
+         'esp32c2_cfg_test', 'y'),
     ],
     indirect=True,
 )
