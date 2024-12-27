@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1033,7 +1033,16 @@ typedef volatile struct spi_mem_dev_s {
         };
         uint32_t val;
     } dpa_ctrl;
-    uint32_t reserved_38c;
+    union {
+        struct {
+            uint32_t reg_mode_pseudo                :    2;  /*Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo. 2'b11: crypto with pseudo.*/
+            uint32_t reg_pseudo_rng_cnt             :    3;  /*xts aes peseudo function base round that must be performed.*/
+            uint32_t reg_pseudo_base                :    4;  /*xts aes peseudo function base round that must be performed.*/
+            uint32_t reg_pseudo_inc                 :    2;  /*xts aes peseudo function increment round that will be performed randomly between 0 & 2**(inc+1).*/
+            uint32_t reserved11                     :    27;  /*reserved*/
+        };
+        uint32_t val;
+    } xts_pseudo_round_conf;
     uint32_t reserved_390;
     uint32_t reserved_394;
     uint32_t reserved_398;
