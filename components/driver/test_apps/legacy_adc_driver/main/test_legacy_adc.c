@@ -111,17 +111,17 @@ void test_adc_set_io_level(adc_unit_t unit, adc_channel_t channel, bool level)
 {
     TEST_ASSERT(channel < SOC_ADC_CHANNEL_NUM(unit) && "invalid channel");
 
-#if !ADC_LL_RTC_GPIO_SUPPORTED
     uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
     TEST_ESP_OK(gpio_set_pull_mode(io_num, (level ? GPIO_PULLUP_ONLY : GPIO_PULLDOWN_ONLY)));
-#else
-    gpio_num_t io_num = ADC_GET_IO_NUM(unit, channel);
-    if (level) {
-        TEST_ESP_OK(rtc_gpio_pullup_en(io_num));
-        TEST_ESP_OK(rtc_gpio_pulldown_dis(io_num));
-    } else {
-        TEST_ESP_OK(rtc_gpio_pullup_dis(io_num));
-        TEST_ESP_OK(rtc_gpio_pulldown_en(io_num));
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    if (rtc_gpio_is_valid_gpio(io_num)) {
+        if (level) {
+            TEST_ESP_OK(rtc_gpio_pullup_en(io_num));
+            TEST_ESP_OK(rtc_gpio_pulldown_dis(io_num));
+        } else {
+            TEST_ESP_OK(rtc_gpio_pullup_dis(io_num));
+            TEST_ESP_OK(rtc_gpio_pulldown_en(io_num));
+        }
     }
 #endif
 }

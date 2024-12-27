@@ -17,8 +17,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
-#include "driver/gpio.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_clk_tree.h"
 #include "esp_private/adc_private.h"
@@ -293,27 +292,7 @@ esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, ad
 static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
-
-#if !ADC_LL_RTC_GPIO_SUPPORTED
-
-    uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
-    gpio_config_t cfg = {
-        .pin_bit_mask = BIT64(io_num),
-        .mode = GPIO_MODE_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "IO config fail");
-#else
-    gpio_num_t io_num = ADC_GET_IO_NUM(unit, channel);
-    ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_DISABLED), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(io_num), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(io_num), TAG, "IO config fail");
-#endif
-
-    return ESP_OK;
+    return gpio_config_as_analog(ADC_GET_IO_NUM(unit, channel));
 }
 
 static bool s_adc_unit_claim(adc_unit_t unit)

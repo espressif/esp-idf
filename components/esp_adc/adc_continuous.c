@@ -30,7 +30,7 @@
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "esp_clk_tree.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_adc/adc_continuous.h"
 #include "hal/adc_types.h"
 #include "hal/adc_hal.h"
@@ -132,15 +132,15 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
 
 static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 {
-    assert(adc_unit < SOC_ADC_PERIPH_NUM);
-    uint8_t adc_n = (adc_unit == ADC_UNIT_1) ? 0 : 1;
-    return adc_channel_io_map[adc_n][adc_channel];
+    if (adc_unit >= 0 && adc_unit < SOC_ADC_PERIPH_NUM) {
+        return adc_channel_io_map[adc_unit][adc_channel];
+    }
+    return -1;
 }
 
 static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
 {
     esp_err_t ret = ESP_OK;
-    uint64_t gpio_mask = 0;
     uint32_t n = 0;
     int8_t io = 0;
 
@@ -150,18 +150,11 @@ static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
             if (io < 0) {
                 return ESP_ERR_INVALID_ARG;
             }
-            gpio_mask |= BIT64(io);
+            gpio_config_as_analog(io);
         }
         channel_mask = channel_mask >> 1;
         n++;
     }
-
-    gpio_config_t cfg = {
-        .pin_bit_mask = gpio_mask,
-        .mode = GPIO_MODE_DISABLE,
-    };
-    ret = gpio_config(&cfg);
-
     return ret;
 }
 
