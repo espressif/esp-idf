@@ -333,8 +333,8 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 #endif
     // select the clock source
     ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&tx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution
-    uint32_t real_div = group->resolution_hz / config->resolution_hz;
+    // set channel clock resolution, find the divider to get the closest resolution
+    uint32_t real_div = (group->resolution_hz + config->resolution_hz / 2) / config->resolution_hz;
     rmt_ll_tx_set_channel_clock_div(hal->regs, channel_id, real_div);
     // resolution lost due to division, calculate the real resolution
     tx_channel->base.resolution_hz = group->resolution_hz / real_div;
