@@ -981,7 +981,6 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     assert end_addr > start_addr
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61'], reason='TODO: IDF-8662 and IDF-9269')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
