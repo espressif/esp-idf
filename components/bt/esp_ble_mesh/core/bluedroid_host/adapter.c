@@ -109,7 +109,9 @@ static struct bt_mesh_prov_conn_cb *bt_mesh_gattc_conn_cb;
 static tBTA_GATTC_IF bt_mesh_gattc_if;
 #endif
 
-#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+#if CONFIG_BLE_MESH_USE_BLE_50      && \
+    CONFIG_BLE_MESH_SUPPORT_BLE_ADV && \
+    (!CONFIG_BLE_MESH_SUPPORT_MULTI_ADV)
 static inline void bt_mesh_set_ble_adv_running();
 
 static inline void bt_mesh_unset_ble_adv_running();
@@ -334,9 +336,12 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
         if (!bt_mesh_is_adv_inst_used(params->adv_term.adv_handle)) {
             goto transfer_to_user;
         }
+#if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(params->adv_term.adv_handle));
+#else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         if (params->adv_term.status == 0x43 ||  /* Limit reached */
             params->adv_term.status == 0x3C) {  /* Advertising timeout */
-            ble_mesh_adv_task_wakeup(params->adv_term.adv_handle);
+            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -359,9 +364,10 @@ void ble_mesh_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
                 * could lead to resource contention issues.
                 */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(params->adv_term.adv_handle);
+            ble_mesh_adv_task_wakeup(ADV_TASK_MESH_ADV_INST_EVT);
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+#endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         break;
     case BTA_DM_BLE_5_GAP_EXT_ADV_REPORT_EVT:
         if (!bt_mesh_scan_result_process(&params->ext_adv_report)) {
@@ -821,7 +827,7 @@ int bt_le_adv_start(const struct bt_mesh_adv_param *param,
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 #if CONFIG_BLE_MESH_USE_BLE_50
-
+#if !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
 static bool _ble_adv_running_flag;
 
 static inline void bt_mesh_set_ble_adv_running()
@@ -838,6 +844,7 @@ static inline bool bt_mesh_is_ble_adv_running()
 {
     return _ble_adv_running_flag == true;
 }
+#endif /* !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
 
 int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
                               const struct bt_mesh_ble_adv_param *param,
@@ -903,7 +910,9 @@ int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
 
     BTA_DmBleGapExtAdvEnable(true, 1, &ext_adv);
 
+#if !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
     bt_mesh_set_ble_adv_running();
+#endif
 
     return 0;
 }
