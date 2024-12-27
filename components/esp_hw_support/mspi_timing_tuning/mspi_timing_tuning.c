@@ -16,7 +16,7 @@
 #include "hal/spi_flash_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"

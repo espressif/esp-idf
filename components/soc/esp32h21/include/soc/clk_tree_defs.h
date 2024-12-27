@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -243,6 +243,23 @@ typedef enum {
     CLKOUT_SIG_RC_SLOW = 25,    /*!< RC slow clock, depends on the RTC_CLK_SRC configuration */
     CLKOUT_SIG_INVALID = 0xFF,
 } soc_clkout_sig_id_t;
+
+//////////////////////////////////////////////////FLASH///////////////////////////////////////////////////////////////////
+/**
+ * @brief Array initializer for all supported clock sources of FLASH MSPI controller
+ */
+#define SOC_FLASH_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST, SOC_MOD_CLK_PLL_F64M, SOC_MOD_CLK_PLL_F48M}
+/**
+ * @brief FLASH MSPI controller clock source
+ */
+typedef enum {
+    FLASH_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
+    FLASH_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
+    FLASH_CLK_SRC_PLL_F64M = SOC_MOD_CLK_PLL_F64M,   /*!< Select PLL_F64M as the source clock */
+    FLASH_CLK_SRC_PLL_F48M = SOC_MOD_CLK_PLL_F48M,   /*!< Select PLL_F48M as the source clock */
+    FLASH_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F64M,    /*!< Select PLL_F64M as the default clock choice */
+    FLASH_CLK_SRC_ROM_DEFAULT = SOC_MOD_CLK_XTAL,    /*!< Select XTAL as ROM default clock source */
+} soc_periph_flash_clk_src_t;
 
 #ifdef __cplusplus
 }

@@ -12,7 +12,7 @@
 #include "esp_private/mspi_timing_tuning.h"
 #include "../esp_psram_impl.h"
 #include "hal/psram_ctrlr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "clk_ctrl_os.h"
 
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
