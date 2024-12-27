@@ -790,6 +790,24 @@ esp_err_t esp_wifi_disconnect_internal(void);
   */
 uint32_t esp_wifi_internal_get_mac_clock_time(void);
 
+#if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+/**
+ * @brief   Configure wifi beacon offset default parameters
+ *
+ * @param   config: the configuration parameters for wifi beacon offset
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - others: failed
+  */
+esp_err_t esp_wifi_beacon_offset_configure(wifi_beacon_offset_config_t *config);
+#endif
+
+/**
+ * @brief empty init pm_beacon_offset.
+ */
+void pm_beacon_offset_funcs_empty_init(void);
+
 #ifdef __cplusplus
 }
 #endif

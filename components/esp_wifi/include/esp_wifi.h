@@ -1840,6 +1840,21 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
   *    - ESP_FAIL: failed to perform roc operation
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
+
+#if CONFIG_ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+/**
+  * @brief      Sample numbers of beacons to calculate beacon parameters
+  *
+  * @attention  This API should be called after station connected to AP.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
+  */
+esp_err_t esp_wifi_beacon_offset_sample_beacon(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
