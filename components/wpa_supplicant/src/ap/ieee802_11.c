@@ -180,13 +180,16 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
     if (sta->remove_pending) {
         reply_res = -1;
     } else {
-        reply_res = esp_send_sae_auth_reply(hapd, sta->addr, bssid, WLAN_AUTH_SAE, 2,
-                                       WLAN_STATUS_SUCCESS, wpabuf_head(data),
-                                       wpabuf_len(data));
+        if (sta->sae_data)
+            wpabuf_free(sta->sae_data);
+        sta->sae_data = data;
+        reply_res = 0;
+        /* confirm is sent in later stage when all the required processing for a sta is done*/
     }
+#else
+    wpabuf_free(data);
 #endif /* ESP_SUPPLICANT */
 
-    wpabuf_free(data);
     return reply_res;
 }
 
@@ -676,7 +679,7 @@ int auth_sae_queue(struct hostapd_data *hapd,
     unsigned int queue_len;
 
     queue_len = dl_list_len(&hapd->sae_commit_queue);
-    if (queue_len >= 5) {
+    if (queue_len >= hapd->conf->max_num_sta) {
         wpa_printf(MSG_DEBUG,
                    "SAE: No more room in message queue - drop the new frame from "
                    MACSTR, MAC2STR(bssid));
