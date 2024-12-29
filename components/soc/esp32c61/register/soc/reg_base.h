@@ -61,3 +61,4 @@
 #define DR_REG_INTPRI_BASE                      0x600C5000
 #define DR_REG_CACHE_BASE                       0x600C8000
 #define DR_REG_CLINT_M_BASE                     0x20000000
+#define PWDET_CONF_REG                          0x600A0808

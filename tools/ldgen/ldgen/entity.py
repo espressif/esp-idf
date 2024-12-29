@@ -1,16 +1,26 @@
 #
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import collections
 import fnmatch
 import os
 from enum import Enum
 from functools import total_ordering
 
-from pyparsing import (Group, Literal, OneOrMore, ParseException, Regex, SkipTo, Suppress, White, Word, ZeroOrMore,
-                       alphas, nums, rest_of_line)
+from pyparsing import alphas
+from pyparsing import Group
+from pyparsing import Literal
+from pyparsing import nums
+from pyparsing import OneOrMore
+from pyparsing import ParseException
+from pyparsing import Regex
+from pyparsing import rest_of_line
+from pyparsing import SkipTo
+from pyparsing import Suppress
+from pyparsing import White
+from pyparsing import Word
+from pyparsing import ZeroOrMore
 
 
 @total_ordering
@@ -140,7 +150,7 @@ class EntityDB:
         # 00 {section} 0000000 ...
         #              CONTENTS, ALLOC, ....
         section_entry = (Suppress(Word(nums)) + Regex(r'\.\S+') + Suppress(rest_of_line)
-                         + Suppress(ZeroOrMore(Word(alphas) + Literal(',')) + Word(alphas)))
+                         + Suppress(ZeroOrMore(Word(alphas + '_') + Literal(',')) + Word(alphas + '_')))
 
         content = Group(object_line
                         + section_start

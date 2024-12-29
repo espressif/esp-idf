@@ -47,7 +47,7 @@ typedef enum {
     ETS_CACHE_INTR_SOURCE,
     ETS_CPU_PERI_TIMEOUT_INTR_SOURCE,
     ETS_GPIO_INTR_SOURCE,                       /**< interrupt of GPIO, level*/
-    ETS_GPIO_NMI_SOURCE,                        /**< interrupt of GPIO, NMI*/
+    ETS_GPIO_EXT_SOURCE,                        /**< interrupt of GPIO, EXT (analog comparator)*/
     ETS_PAU_INTR_SOURCE,
     ETS_HP_PERI_TIMEOUT_INTR_SOURCE,
     ETS_MODEM_PERI_TIMEOUT_INTR_SOURCE,

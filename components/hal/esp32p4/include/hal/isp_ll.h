@@ -396,15 +396,15 @@ static inline bool isp_ll_set_output_data_color_format(isp_dev_t *hw, color_spac
         case COLOR_PIXEL_RGB888:
             hw->cntl.isp_out_type = 2;
             hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 1;
+            hw->cntl.rgb2yuv_en = 0;
+            hw->cntl.yuv2rgb_en = 0;
             valid = true;
             break;
         case COLOR_PIXEL_RGB565:
             hw->cntl.isp_out_type = 4;
             hw->cntl.demosaic_en = 1;
-            hw->cntl.rgb2yuv_en = 1;
-            hw->cntl.yuv2rgb_en = 1;
+            hw->cntl.rgb2yuv_en = 0;
+            hw->cntl.yuv2rgb_en = 0;
             valid = true;
             break;
         default:
@@ -454,6 +454,28 @@ static inline void isp_ll_enable_line_start_packet_exist(isp_dev_t *hw, bool en)
 static inline void isp_ll_enable_line_end_packet_exist(isp_dev_t *hw, bool en)
 {
     hw->frame_cfg.hsync_end_exist = en;
+}
+
+/**
+ * @brief Enable rgb2yuv
+ *
+ * @param[in] hw  Hardware instance address
+ * @param[in] en  Enable / Disable
+ */
+static inline void isp_ll_enable_rgb2yuv(isp_dev_t *hw, bool en)
+{
+    hw->cntl.rgb2yuv_en = en;
+}
+
+/**
+ * @brief Enable yuv2rgb
+ *
+ * @param[in] hw  Hardware instance address
+ * @param[in] en  Enable / Disable
+ */
+static inline void isp_ll_enable_yuv2rgb(isp_dev_t *hw, bool en)
+{
+    hw->cntl.yuv2rgb_en = en;
 }
 
 /**

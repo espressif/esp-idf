@@ -667,9 +667,21 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
 config SOC_I2S_PDM_MAX_TX_LINES
     int
     default 2
+
+config SOC_I2S_PDM_MAX_RX_LINES
+    int
+    default 1
 
 config SOC_I2S_SUPPORTS_TDM
     bool
@@ -760,6 +772,10 @@ config SOC_PCNT_THRES_POINT_PER_UNIT
     default 2
 
 config SOC_PCNT_SUPPORT_RUNTIME_THRES_UPDATE
+    bool
+    default y
+
+config SOC_PCNT_SUPPORT_STEP_NOTIFY
     bool
     default y
 
@@ -879,6 +895,10 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_PARLIO_GROUPS
     int
     default 1
@@ -916,6 +936,10 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     default y
 
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_SPI_LCD
     bool
     default y
 
@@ -1084,10 +1108,6 @@ config SOC_MEMSPI_SRC_FREQ_32M_SUPPORTED
     default y
 
 config SOC_MEMSPI_SRC_FREQ_16M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
     bool
     default y
 
@@ -1383,6 +1403,10 @@ config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
     bool
     default y
@@ -1423,11 +1447,19 @@ config SOC_CLK_LP_FAST_SUPPORT_LP_PLL
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 

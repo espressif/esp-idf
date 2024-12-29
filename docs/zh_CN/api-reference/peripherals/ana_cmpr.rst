@@ -3,8 +3,8 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="未更新", esp32h2="GPIO11", esp32p4="GPIO52"}
-{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="未更新", esp32h2="GPIO10", esp32p4="GPIO51"}
+{IDF_TARGET_ANA_CMPR_SRC_CHAN0: default="未更新", esp32h2="GPIO11", esp32p4="GPIO52", esp32c5="GPIO9", esp32c61="GPIO9"}
+{IDF_TARGET_ANA_CMPR_EXT_REF_CHAN0: default="未更新", esp32h2="GPIO10", esp32p4="GPIO51", esp32c5="GPIO8", esp32c61="GPIO8"}
 {IDF_TARGET_ANA_CMPR_SRC_CHAN1: default="未更新", esp32p4="GPIO54"}
 {IDF_TARGET_ANA_CMPR_EXT_REF_CHAN1: default="未更新", esp32p4="GPIO53"}
 
@@ -36,17 +36,16 @@
 
 本文中的以下章节涵盖了安装及操作模拟比较器单元的基本步骤：
 
-- :ref:`anacmpr-resource-allocation` - 涵盖了应设置哪些参数以获取单元句柄，以及完成工作后如何回收资源。
-- :ref:`anacmpr-further-configurations` - 涵盖了可能需要指定的其他配置及其用途。
-- :ref:`anacmpr-enable-and-disable-unit` - 涵盖了如何启用和禁用单元。
-- :ref:`anacmpr-power-management` - 描述了不同时钟源对功耗的影响。
-- :ref:`anacmpr-iram-safe` - 列出了在 cache 被禁用时也能起效的函数。
-- :ref:`anacmpr-thread-safety` - 列出了驱动程序中线程安全的 API。
-- :ref:`anacmpr-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可以对驱动程序产生不同影响。
+.. list::
 
-.. only:: SOC_ANA_CMPR_SUPPORT_ETM
-
-    - :ref:`anacmpr-etm-events` - 介绍了如何创建一个模拟比较器跨越事件。
+    - :ref:`anacmpr-resource-allocation` - 涵盖了应设置哪些参数以获取单元句柄，以及完成工作后如何回收资源。
+    - :ref:`anacmpr-further-configurations` - 涵盖了可能需要指定的其他配置及其用途。
+    - :ref:`anacmpr-enable-and-disable-unit` - 涵盖了如何启用和禁用单元。
+    - :ref:`anacmpr-power-management` - 描述了不同时钟源对功耗的影响。
+    - :ref:`anacmpr-iram-safe` - 列出了在 cache 被禁用时也能起效的函数。
+    - :ref:`anacmpr-thread-safety` - 列出了驱动程序中线程安全的 API。
+    - :ref:`anacmpr-kconfig-options` - 列出了支持的 Kconfig 选项，这些选项可以对驱动程序产生不同影响。
+    :SOC_ANA_CMPR_SUPPORT_ETM: - :ref:`anacmpr-etm-events` - 介绍了如何创建一个模拟比较器跨越事件。
 
 .. _anacmpr-resource-allocation:
 

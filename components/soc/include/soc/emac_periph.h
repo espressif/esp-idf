@@ -10,7 +10,6 @@
 #include "soc/gpio_sig_map.h"
 #include "soc/gpio_num.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

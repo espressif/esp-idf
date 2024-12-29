@@ -62,6 +62,10 @@ static void esp_cpu_configure_invalid_regions(void)
     // 7. End of address space
     PMA_ENTRY_SET_TOR(11, SOC_PERIPHERAL_HIGH, PMA_NONE);
     PMA_ENTRY_SET_TOR(12, UINT32_MAX, PMA_TOR | PMA_NONE);
+
+    PMA_ENTRY_CFG_RESET(13);
+    PMA_ENTRY_CFG_RESET(14);
+    PMA_ENTRY_CFG_RESET(15);
 }
 
 void esp_cpu_configure_region_protection(void)
@@ -111,6 +115,14 @@ void esp_cpu_configure_region_protection(void)
     // Configure all the invalid address regions using PMA
     //
     esp_cpu_configure_invalid_regions();
+
+    /* NOTE: When ESP-TEE is active, only configure invalid memory regions in bootloader
+     * to prevent errors before TEE initialization. TEE will handle all other
+     * memory protection.
+     */
+#if CONFIG_SECURE_ENABLE_TEE && BOOTLOADER_BUILD
+    return;
+#endif
 
     //
     // Configure all the valid address regions using PMP

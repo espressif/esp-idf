@@ -28,6 +28,7 @@
 #include "hal/adc_ll.h"
 #include "hal/adc_hal_common.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_private/periph_ctrl.h"
 #include "driver/adc_types_legacy.h"
 #include "esp_clk_tree.h"
@@ -292,10 +293,6 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
     SARADC1_EXIT();
 
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_UNIT_1);
-#endif
-
     return ESP_OK;
 }
 
@@ -385,10 +382,15 @@ int adc1_get_raw(adc1_channel_t channel)
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(ADC_UNIT_1), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
     adc1_rtc_mode_acquire();
 
+    ANALOG_CLOCK_ENABLE();
+
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
+    adc_hal_calibration_init(ADC_UNIT_1);
     adc_atten_t atten = adc_ll_get_atten(ADC_UNIT_1, channel);
     adc_set_hw_calibration_code(ADC_UNIT_1, atten);
 #endif  //SOC_ADC_CALIBRATION_V1_SUPPORTED
+
+    ANALOG_CLOCK_DISABLE();
 
     SARADC1_ENTER();
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -760,10 +762,6 @@ esp_err_t adc1_config_channel_atten(adc1_channel_t channel, adc_atten_t atten)
     s_atten1_single[channel] = atten;
     ret = adc_digi_gpio_init(ADC_UNIT_1, BIT(channel));
 
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_UNIT_1);
-#endif
-
     return ret;
 }
 
@@ -781,9 +779,15 @@ int adc1_get_raw(adc1_channel_t channel)
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
     adc_atten_t atten = s_atten1_single[channel];
+
+    ANALOG_CLOCK_ENABLE();
+
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
+    adc_hal_calibration_init(ADC_UNIT_1);
     adc_set_hw_calibration_code(ADC_UNIT_1, atten);
 #endif
+
+    ANALOG_CLOCK_DISABLE();
 
     ADC_REG_LOCK_ENTER();
     adc_oneshot_ll_set_atten(ADC_UNIT_1, channel, atten);
@@ -838,8 +842,10 @@ esp_err_t adc2_get_raw(adc2_channel_t channel, adc_bits_width_t width_bit, int *
     esp_clk_tree_enable_src((soc_module_clk_t)ADC_DIGI_CLK_SRC_DEFAULT, true);
     adc_ll_digi_clk_sel(ADC_DIGI_CLK_SRC_DEFAULT);
 
+#if SOC_ADC_ARBITER_SUPPORTED
     adc_arbiter_t config = ADC_ARBITER_CONFIG_DEFAULT();
     adc_hal_arbiter_config(&config);
+#endif
 
     adc_atten_t atten = s_atten2_single[channel];
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
@@ -916,6 +922,7 @@ static esp_err_t adc_hal_convert(adc_unit_t adc_n, int channel, uint32_t clk_src
     return ESP_OK;
 }
 
+#if !CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that adc_oneshot driver is not running along with the legacy adc oneshot driver
  */
@@ -931,6 +938,7 @@ static void check_adc_oneshot_driver_conflict(void)
     }
     ESP_EARLY_LOGW(ADC_TAG, "legacy driver is deprecated, please migrate to `esp_adc/adc_oneshot.h`");
 }
+#endif //CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 /*---------------------------------------------------------------
@@ -938,6 +946,7 @@ static void check_adc_oneshot_driver_conflict(void)
 ---------------------------------------------------------------*/
 static __attribute__((constructor)) void adc_hw_calibration(void)
 {
+    ANALOG_CLOCK_ENABLE();
     //Calculate all ICode
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
         adc_hal_calibration_init(i);
@@ -955,5 +964,6 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
 #endif
         }
     }
+    ANALOG_CLOCK_DISABLE();
 }
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED

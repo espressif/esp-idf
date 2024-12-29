@@ -30,19 +30,23 @@
 #include <sys/lock.h>
 
 #include "esp_private/esp_crypto_lock_internal.h"
-#include "esp_private/esp_cache_private.h"
+
 #include "esp_log.h"
 #include "esp_memory_utils.h"
 #include "esp_crypto_lock.h"
 #include "esp_attr.h"
 #include "esp_crypto_dma.h"
-#include "esp_cache.h"
+#include "esp_heap_caps.h"
 #include "hal/dma_types.h"
 #include "soc/ext_mem_defs.h"
 #include "soc/periph_defs.h"
 
+#if !ESP_TEE_BUILD
+#include "esp_cache.h"
+#include "esp_private/esp_cache_private.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#endif
 
 #include "esp_private/periph_ctrl.h"
 #include "sys/param.h"
@@ -59,8 +63,14 @@
 #endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
 
 #if SOC_SHA_GDMA
+#if !ESP_TEE_BUILD
 #define SHA_LOCK() esp_crypto_sha_aes_lock_acquire()
 #define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
+#else
+#define SHA_RCC_ATOMIC()
+#define SHA_LOCK()
+#define SHA_RELEASE()
+#endif
 #elif SOC_SHA_CRYPTO_DMA
 #define SHA_LOCK() esp_crypto_dma_lock_acquire()
 #define SHA_RELEASE() esp_crypto_dma_lock_release()

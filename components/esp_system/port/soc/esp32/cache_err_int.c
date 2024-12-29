@@ -26,6 +26,15 @@
 #include "esp_rom_sys.h"
 
 #include "sdkconfig.h"
+#include "esp_private/cache_err_int.h"
+
+void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
+{
+    if (err_info == NULL) {
+        return;
+    }
+    (void)err_info;
+}
 
 void esp_cache_err_int_init(void)
 {

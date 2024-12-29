@@ -112,7 +112,7 @@ idf_build_get_property(build_dir BUILD_DIR)
 idf_build_get_property(elf_name EXECUTABLE_NAME GENERATOR_EXPRESSION)
 idf_build_get_property(elf EXECUTABLE GENERATOR_EXPRESSION)
 
-if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT BOOTLOADER_BUILD)
+if(CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES AND NOT non_os_build)
     set(unsigned_project_binary "${elf_name}-unsigned.bin")
 else()
     set(unsigned_project_binary "${elf_name}.bin")

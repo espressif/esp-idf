@@ -25,6 +25,31 @@ static const char *TAG = "gptimer";
 
 static void gptimer_default_isr(void *args);
 
+#if GPTIMER_USE_RETENTION_LINK
+static esp_err_t gptimer_create_sleep_retention_link_cb(void *timer)
+{
+    int group_id = ((gptimer_t *)timer)->group->group_id;
+    int timer_id = ((gptimer_t *)timer)->timer_id;
+    esp_err_t err = sleep_retention_entries_create(tg_timer_reg_retention_info[group_id][timer_id].regdma_entry_array,
+                                                   tg_timer_reg_retention_info[group_id][timer_id].array_size,
+                                                   REGDMA_LINK_PRI_GPTIMER, tg_timer_reg_retention_info[group_id][timer_id].module);
+    return err;
+}
+
+static void gptimer_create_retention_module(gptimer_t *timer)
+{
+    int group_id = timer->group->group_id;
+    int timer_id = timer->timer_id;
+    sleep_retention_module_t module = tg_timer_reg_retention_info[group_id][timer_id].module;
+    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
+        if (sleep_retention_module_allocate(module) != ESP_OK) {
+            // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
+        }
+    }
+}
+#endif // GPTIMER_USE_RETENTION_LINK
+
 static esp_err_t gptimer_register_to_group(gptimer_t *timer)
 {
     gptimer_group_t *group = NULL;
@@ -51,6 +76,24 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
         }
     }
     ESP_RETURN_ON_FALSE(timer_id != -1, ESP_ERR_NOT_FOUND, TAG, "no free timer");
+
+#if GPTIMER_USE_RETENTION_LINK
+    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = gptimer_create_sleep_retention_link_cb,
+                .arg = (void *)timer
+            },
+        },
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+    };
+    if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+        // even though the sleep retention module init failed, RMT driver should still work, so just warning here
+        ESP_LOGW(TAG, "init sleep retention failed on TimerGroup%d Timer%d, power domain may be turned off during sleep", group->group_id, timer_id);
+    }
+#endif // GPTIMER_USE_RETENTION_LINK
+
     return ESP_OK;
 }
 
@@ -61,6 +104,17 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
     portENTER_CRITICAL(&group->spinlock);
     group->timers[timer_id] = NULL;
     portEXIT_CRITICAL(&group->spinlock);
+
+#if GPTIMER_USE_RETENTION_LINK
+    sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
+    if (sleep_retention_is_module_created(module)) {
+        sleep_retention_module_free(module);
+    }
+    if (sleep_retention_is_module_inited(module)) {
+        sleep_retention_module_deinit(module);
+    }
+#endif
+
     // timer has a reference on group, release it now
     gptimer_release_group_handle(group);
 }
@@ -109,7 +163,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
 
     if (allow_pd) {
 #if GPTIMER_USE_RETENTION_LINK
-        gptimer_create_retention_module(group);
+        gptimer_create_retention_module(timer);
 #endif // GPTIMER_USE_RETENTION_LINK
     }
 
@@ -336,13 +390,15 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, timer->flags.alarm_en);
+        // Note here, if the alarm target is set very close to the current counter value
+        // an alarm interrupt may be triggered very quickly after we start the timer
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, true);
+        atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not enabled yet");
+        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not ready for a new start");
     }
 
-    atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
     return ESP_OK;
 }
 
@@ -356,12 +412,12 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, false);
         timer_ll_enable_alarm(timer->hal.dev, timer->timer_id, false);
+        atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
         ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not running");
     }
 
-    atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
     return ESP_OK;
 }
 

@@ -68,9 +68,18 @@ typedef struct
     BD_ADDR addr;               /* peer bluetooth device address */
 } tOBEX_TL_L2CAP_SVR;
 
+typedef struct
+{
+    UINT8   scn;                /* service channel number */
+    UINT16  sec_mask;           /* security mask */
+    UINT16  pref_mtu;           /* preferred mtu, limited by rfcomm mtu */
+    BD_ADDR addr;               /* peer bluetooth device address */
+} tOBEX_TL_RFCOMM_SVR;
+
 typedef union
 {
     tOBEX_TL_L2CAP_SVR l2cap;
+    tOBEX_TL_RFCOMM_SVR rfcomm;
 } tOBEX_TL_SVR_INFO;
 
 typedef void (tOBEX_TL_CBACK)(tOBEX_TL_EVT evt, tOBEX_TL_MSG *msg);

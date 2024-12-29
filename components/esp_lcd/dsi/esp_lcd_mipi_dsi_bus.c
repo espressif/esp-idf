@@ -16,7 +16,7 @@ static const char *TAG = "lcd.dsi.bus";
 
 #define MIPI_DSI_DEFAULT_TIMEOUT_CLOCK_FREQ_MHZ 10
 // TxClkEsc frequency must be configured between 2 and 20 MHz
-#define MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ  10
+#define MIPI_DSI_DEFAULT_ESCAPE_CLOCK_FREQ_MHZ  18
 
 esp_err_t esp_lcd_new_dsi_bus(const esp_lcd_dsi_bus_config_t *bus_config, esp_lcd_dsi_bus_handle_t *ret_bus)
 {

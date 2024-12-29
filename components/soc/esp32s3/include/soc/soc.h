@@ -26,7 +26,6 @@
 #define DR_REG_DTAG_TABLE                       0x600C8000
 #define DR_REG_EXT_MEM_ENC                      0x600CC000
 
-
 #define REG_UHCI_BASE(i)        (DR_REG_UHCI0_BASE - (i) * 0x8000)
 #define REG_UART_BASE( i )      (DR_REG_UART_BASE + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
 #define REG_UART_AHB_BASE(i)    (0x60000000 + (i) * 0x10000 + ( (i) > 1 ? 0xe000 : 0 ) )
@@ -190,7 +189,6 @@
 #define SOC_EXTRAM_DATA_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW)
 #define SOC_MAX_CONTIGUOUS_RAM_SIZE (SOC_EXTRAM_DATA_HIGH - SOC_EXTRAM_DATA_LOW) ///< Largest span of contiguous memory (DRAM or IRAM) in the address space
 
-
 //First and last words of the D/IRAM region, for both the DRAM address as well as the IRAM alias.
 #define SOC_DIRAM_IRAM_LOW    0x40378000
 #define SOC_DIRAM_IRAM_HIGH   0x403E0000
@@ -208,7 +206,6 @@
 // Region of memory accessible via DMA in external memory. See esp_ptr_dma_ext_capable().
 #define SOC_DMA_EXT_LOW     SOC_EXTRAM_DATA_LOW
 #define SOC_DMA_EXT_HIGH    SOC_EXTRAM_DATA_HIGH
-
 
 // Region of memory that is byte-accessible. See esp_ptr_byte_accessible().
 #define SOC_BYTE_ACCESSIBLE_LOW     0x3FC88000

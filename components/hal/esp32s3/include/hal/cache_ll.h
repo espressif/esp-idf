@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -359,6 +359,32 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
 {
     Cache_Invalidate_Addr(vaddr, size);
 }
+
+/**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    switch (type)
+    {
+    case CACHE_TYPE_DATA:
+        Cache_Invalidate_DCache_All();
+        break;
+    case CACHE_TYPE_INSTRUCTION:
+        Cache_Invalidate_ICache_All();
+        break;
+    default: //CACHE_TYPE_ALL
+        Cache_Invalidate_ICache_All();
+        Cache_Invalidate_DCache_All();
+        break;
+    }
+}
+
 
 /**
  * @brief Writeback cache supported addr

@@ -21,6 +21,7 @@
 #include "hal/gpio_ll.h"
 #include "soc/io_mux_reg.h"
 #include "esp_private/sleep_event.h"
+#include "esp_private/regi2c_ctrl.h"
 
 static const char *TAG = "rtc_clk";
 
@@ -141,7 +142,9 @@ static void rtc_clk_cpll_configure(soc_xtal_freq_t xtal_freq, int cpll_freq)
 {
     /* Digital part */
     clk_ll_cpll_set_freq_mhz(cpll_freq);
+
     /* Analog part */
+    ANALOG_CLOCK_ENABLE();
     /* CPLL CALIBRATION START */
     regi2c_ctrl_ll_cpll_calibration_start();
     clk_ll_cpll_set_config(cpll_freq, xtal_freq);
@@ -150,6 +153,7 @@ static void rtc_clk_cpll_configure(soc_xtal_freq_t xtal_freq, int cpll_freq)
     esp_rom_delay_us(10); // wait for true stop
     /* CPLL CALIBRATION STOP */
     regi2c_ctrl_ll_cpll_calibration_stop();
+    ANALOG_CLOCK_DISABLE();
 
     s_cur_cpll_freq = cpll_freq;
 }
@@ -362,34 +366,42 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
     }
 }
 
+static uint32_t rtc_clk_hp_root_get_freq_mhz(soc_cpu_clk_src_t clk_src)
+{
+    uint32_t source_freq_mhz = 0;
+    switch (clk_src) {
+    case SOC_CPU_CLK_SRC_XTAL:
+        source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
+        break;
+    case SOC_CPU_CLK_SRC_CPLL:
+        source_freq_mhz = clk_ll_cpll_get_freq_mhz((uint32_t)rtc_clk_xtal_freq_get());
+        break;
+    case SOC_CPU_CLK_SRC_RC_FAST:
+        source_freq_mhz = 20;
+        break;
+    default:
+        // Unknown HP_ROOT clock source
+        ESP_HW_LOGE(TAG, "Invalid HP_ROOT_CLK");
+        break;
+    }
+    return source_freq_mhz;
+}
+
 void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t *out_config)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
-    uint32_t source_freq_mhz;
+    uint32_t source_freq_mhz = rtc_clk_hp_root_get_freq_mhz(source);
+    if (source_freq_mhz == 0) {
+        // unsupported frequency configuration
+        abort();
+    }
     hal_utils_clk_div_t div = {0}; // div = freq of SOC_ROOT_CLK / freq of CPU_CLK
-    uint32_t freq_mhz;
     clk_ll_cpu_get_divider(&div.integer, &div.numerator, &div.denominator);
     if (div.denominator == 0) {
         div.denominator = 1;
         div.numerator = 0;
     }
-    switch (source) {
-    case SOC_CPU_CLK_SRC_XTAL: {
-        source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
-        break;
-    }
-    case SOC_CPU_CLK_SRC_CPLL: {
-        source_freq_mhz = clk_ll_cpll_get_freq_mhz((uint32_t)rtc_clk_xtal_freq_get());
-        break;
-    }
-    case SOC_CPU_CLK_SRC_RC_FAST:
-        source_freq_mhz = 20;
-        break;
-    default:
-        ESP_HW_LOGE(TAG, "unsupported frequency configuration");
-        abort();
-    }
-    freq_mhz = source_freq_mhz * div.denominator / (div.integer * div.denominator + div.numerator);
+    uint32_t freq_mhz = source_freq_mhz * div.denominator / (div.integer * div.denominator + div.numerator);
     *out_config = (rtc_cpu_freq_config_t) {
         .source = source,
         .source_freq_mhz = source_freq_mhz,
@@ -447,23 +459,7 @@ void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq)
 uint32_t rtc_clk_apb_freq_get(void)
 {
     soc_cpu_clk_src_t source = clk_ll_cpu_get_src();
-    uint32_t source_freq_mhz;
-    switch (source) {
-    case SOC_CPU_CLK_SRC_XTAL:
-        source_freq_mhz = (uint32_t)rtc_clk_xtal_freq_get();
-        break;
-    case SOC_CPU_CLK_SRC_CPLL:
-        source_freq_mhz = clk_ll_cpll_get_freq_mhz((uint32_t)rtc_clk_xtal_freq_get());
-        break;
-    case SOC_CPU_CLK_SRC_RC_FAST:
-        source_freq_mhz = 20;
-        break;
-    default:
-        // Unknown HP_ROOT clock source
-        source_freq_mhz = 0;
-        ESP_HW_LOGE(TAG, "Invalid HP_ROOT_CLK");
-        break;
-    }
+    uint32_t source_freq_mhz = rtc_clk_hp_root_get_freq_mhz(source);
     uint32_t integer, numerator, denominator;
     clk_ll_cpu_get_divider(&integer, &numerator, &denominator);
     if (denominator == 0) {
@@ -549,6 +545,7 @@ void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32
     clk_ll_apll_set_config(o_div, sdm0, sdm1, sdm2);
 
     /* calibration */
+    ANALOG_CLOCK_ENABLE();
     clk_ll_apll_set_calibration();
 
     /* wait for calibration end */
@@ -556,6 +553,7 @@ void rtc_clk_apll_coeff_set(uint32_t o_div, uint32_t sdm0, uint32_t sdm1, uint32
         /* use esp_rom_delay_us so the RTC bus doesn't get flooded */
         esp_rom_delay_us(1);
     }
+    ANALOG_CLOCK_DISABLE();
 }
 
 void rtc_dig_clk8m_enable(void)
@@ -590,6 +588,7 @@ TCM_IRAM_ATTR void rtc_clk_mpll_enable(void)
 void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
 {
     /* Analog part */
+    ANALOG_CLOCK_ENABLE();
     /* MPLL calibration start */
     regi2c_ctrl_ll_mpll_calibration_start();
     clk_ll_mpll_set_config(mpll_freq, xtal_freq);
@@ -597,6 +596,8 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
     while(!regi2c_ctrl_ll_mpll_calibration_is_done());
     /* MPLL calibration stop */
     regi2c_ctrl_ll_mpll_calibration_stop();
+    ANALOG_CLOCK_DISABLE();
+
     s_cur_mpll_freq = mpll_freq;
 }
 

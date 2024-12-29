@@ -20,6 +20,7 @@
 #include "argtable3/argtable3.h"
 #include "esp_log.h"
 #include "publish_connect_test.h"
+#include "mosq_broker.h"
 
 static const char *TAG = "publish_connect_test";
 
@@ -47,7 +48,7 @@ static int do_init(int argc, char **argv) {
     (void)argc;
     (void)argv;
     const esp_mqtt_client_config_t mqtt_cfg = {
-        .broker.address.uri = "mqtts://127.0.0.1:1234",
+        .broker.address.uri = "mqtt://127.0.0.1:1234",
         .network.disable_auto_reconnect = true
     };
     command_context.mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
@@ -78,7 +79,7 @@ static int do_stop(int argc, char **argv) {
         ESP_LOGE(TAG, "Failed to stop mqtt client task");
         return 1;
     }
-    ESP_LOGI(TAG, "Mqtt client stoped");
+    ESP_LOGI(TAG, "Mqtt client stopped");
     return 0;
 }
 
@@ -151,6 +152,8 @@ static int do_publish_setup(int argc, char **argv) {
     command_context.data = calloc(1, sizeof(publish_context_t));
     ((publish_context_t*)command_context.data)->pattern = strdup(*publish_setup_args.pattern->sval);
     ((publish_context_t*)command_context.data)->pattern_repetitions = *publish_setup_args.pattern_repetitions->ival;
+    ((publish_context_t*)command_context.data)->subscribe_to = strdup(*publish_setup_args.subscribe_to->sval);
+    ((publish_context_t*)command_context.data)->publish_to = strdup(*publish_setup_args.publish_to->sval);
     publish_setup(&command_context, *publish_setup_args.transport->sval);
     return 0;
 }
@@ -209,6 +212,8 @@ void register_common_commands(void) {
 }
 void register_publish_commands(void) {
     publish_setup_args.transport  = arg_str1(NULL,NULL,"<transport>", "Selected transport to test");
+    publish_setup_args.publish_to  = arg_str1(NULL,NULL,"<transport>", "Selected publish_to to publish");
+    publish_setup_args.subscribe_to  = arg_str1(NULL,NULL,"<transport>", "Selected subscribe_to to publish");
     publish_setup_args.pattern  = arg_str1(NULL,NULL,"<pattern>", "Message pattern repeated to build big messages");
     publish_setup_args.pattern_repetitions  = arg_int1(NULL,NULL,"<pattern repetitions>", "How many times the pattern is repeated");
     publish_setup_args.end = arg_end(1);
@@ -219,7 +224,7 @@ void register_publish_commands(void) {
     publish_args.end = arg_end(1);
     const esp_console_cmd_t publish_setup = {
         .command = "publish_setup",
-        .help = "Run publish test\n",
+        .help = "Set publish test parameters\n",
         .hint = NULL,
         .func = &do_publish_setup,
         .argtable = &publish_setup_args
@@ -286,6 +291,15 @@ void register_connect_commands(void){
     ESP_ERROR_CHECK(esp_console_cmd_register(&connection_teardown));
 }
 
+#ifdef CONFIG_EXAMPLE_RUN_LOCAL_BROKER
+static void broker_task(void* ctx)
+{
+    // broker continues to run in this task
+    struct mosq_broker_config config = { .host = CONFIG_EXAMPLE_BROKER_HOST, .port = CONFIG_EXAMPLE_BROKER_PORT };
+    mosq_broker_run(&config);
+}
+#endif // CONFIG_EXAMPLE_RUN_LOCAL_BROKER
+
 void app_main(void)
 {
     static const size_t max_line = 256;
@@ -301,6 +315,9 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+#ifdef CONFIG_EXAMPLE_RUN_LOCAL_BROKER
+    xTaskCreate(broker_task, "broker", 4096, NULL, 4, NULL);
+#endif
     ESP_ERROR_CHECK(example_connect());
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();

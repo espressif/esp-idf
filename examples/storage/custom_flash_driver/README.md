@@ -35,20 +35,38 @@ Below is short explanation of remaining files in the project folder.
 ├── example_test.py            Python script used for automated example testing
 ├── main
 │   ├── CMakeLists.txt
-│   ├── component.mk           Component make file
 │   └── main.c
 ├── components/custom_chip_driver
 │   ├── CMakeLists.txt
-│   ├── component.mk           Component make file
 │   ├── linker.lf              Linker script to put the customized chip driver into internal RAM
-│   ├── project_include.cmake  Global cmake file to add dependency to spi_flash
 │   ├── chip_drivers.c
-│   └── spi_flash_chip_eon.c
-├── Makefile                   Makefile used by legacy GNU Make
+│   ├── idf_component.yml      Component manager for flash driver component
+├── bootloader_components/bootloader_flash
+│   ├── bootloader_flash_qio_custom.c
+|   ├── bootloader_flash_unlock_custom.c
+│   ├── CMakeLists.txt
+│   ├── idf_component.yml      Component manager for flash driver component
 └── README.md                  This is the file you are currently reading
 ```
 
 For more information on structure and contents of ESP-IDF projects, please refer to Section [Build System](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/build-system.html) of the ESP-IDF Programming Guide.
+
+## How to implement your driver
+
+Please read [instructions](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/spi_flash/spi_flash_override_driver.html)
+
+## Example output
+
+The example output will be valid when you switch on `CONFIG_BOOTLOADER_LOG_LEVEL_DEBUG`， and see output in bootloader stage
+
+```
+I (30) boot: ESP-IDF v5.4-dev-2463-g0d6cf47e5e-dirty 2nd stage bootloader
+...
+I (45) boot: chip revision: v0.3
+D (49) boot.esp32c3: Using overridden bootloader_flash_unlock
+...
+D (69) qio_mode: Using overridden bootloader_flash_qio
+```
 
 ## Troubleshooting
 

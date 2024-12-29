@@ -94,6 +94,10 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     ESP_GOTO_ON_FALSE(config->group_id < SOC_MCPWM_GROUPS && config->group_id >= 0, ESP_ERR_INVALID_ARG,
                       err, TAG, "invalid group ID:%d", config->group_id);
 
+#if !SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+
     cap_timer = heap_caps_calloc(1, sizeof(mcpwm_cap_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cap_timer, ESP_ERR_NO_MEM, err, TAG, "no mem for capture timer");
 
@@ -139,6 +143,13 @@ esp_err_t mcpwm_new_capture_timer(const mcpwm_capture_timer_config_t *config, mc
     cap_timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     cap_timer->fsm = MCPWM_CAP_TIMER_FSM_INIT;
     *ret_cap_timer = cap_timer;
+
+#if MCPWM_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        mcpwm_create_retention_module(group);
+    }
+#endif // MCPWM_USE_RETENTION_LINK
+
     ESP_LOGD(TAG, "new capture timer at %p, in group (%d), resolution %"PRIu32, cap_timer, group_id, cap_timer->resolution_hz);
     return ESP_OK;
 

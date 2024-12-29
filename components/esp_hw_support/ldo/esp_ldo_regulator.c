@@ -24,6 +24,7 @@ typedef struct ldo_regulator_channel_t {
     int ref_cnt;
     struct {
         uint32_t adjustable : 1;
+        uint32_t bypass : 1;
     } flags;
 } ldo_regulator_channel_t;
 
@@ -83,7 +84,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
             uint8_t mul = 0;
             // calculate the dref and mul
             ldo_ll_voltage_to_dref_mul(unit_id, config->voltage_mv, &dref, &mul);
-            ldo_ll_adjust_voltage(unit_id, dref, mul);
+            ldo_ll_adjust_voltage(unit_id, dref, mul, config->flags.bypass);
             // set the ldo unit owner ship
             ldo_ll_set_owner(unit_id, config->flags.owned_by_hw ? LDO_LL_UNIT_OWNER_HW : LDO_LL_UNIT_OWNER_SW);
             // suppress voltage ripple
@@ -94,6 +95,7 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
         channel->ref_cnt++;
         channel->voltage_mv = config->voltage_mv;
         channel->flags.adjustable = config->flags.adjustable;
+        channel->flags.bypass = config->flags.bypass;
         channel->chan_id = config->chan_id;
     }
     portEXIT_CRITICAL(&s_spinlock);
@@ -155,7 +157,7 @@ esp_err_t esp_ldo_channel_adjust_voltage(esp_ldo_channel_handle_t chan, int volt
     uint8_t mul = 0;
     // calculate the dref and mul
     ldo_ll_voltage_to_dref_mul(unit_id, voltage_mv, &dref, &mul);
-    ldo_ll_adjust_voltage(unit_id, dref, mul);
+    ldo_ll_adjust_voltage(unit_id, dref, mul, chan->flags.bypass);
 
     return ESP_OK;
 }

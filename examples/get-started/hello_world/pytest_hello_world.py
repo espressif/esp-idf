@@ -47,7 +47,8 @@ def verify_elf_sha256_embedding(app: QemuApp, sha256_reported: str) -> None:
         raise ValueError('ELF file SHA256 mismatch')
 
 
-@pytest.mark.esp32  # we only support qemu on esp32 for now
+@pytest.mark.esp32
+@pytest.mark.esp32c3
 @pytest.mark.host_test
 @pytest.mark.qemu
 def test_hello_world_host(app: QemuApp, dut: QemuDut) -> None:

@@ -829,7 +829,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
     BaseType_t xEntryTimeSet = pdFALSE;
     TimeOut_t xTimeOut;
 
-    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !xItemSize1, pdFALSE);
 
     while (xExitLoop == pdFALSE) {
         portENTER_CRITICAL(&pxRingbuffer->mux);
@@ -845,6 +845,7 @@ static BaseType_t prvReceiveGeneric(Ringbuffer_t *pxRingbuffer,
             }
             //If split buffer, check for split items
             if (pxRingbuffer->uxRingbufferFlags & rbALLOW_SPLIT_FLAG) {
+                ESP_STATIC_ANALYZER_CHECK(!pvItem2 || !xItemSize2, pdFALSE);
                 if (xIsSplit == pdTRUE) {
                     *pvItem2 = pxRingbuffer->pvGetItem(pxRingbuffer, &xIsSplit, 0, xItemSize2);
                     configASSERT(*pvItem2 < *pvItem1);  //Check wrap around has occurred
@@ -890,7 +891,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
 {
     BaseType_t xReturn = pdFALSE;
 
-    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !pvItem2 || !xItemSize1 || !xItemSize2, pdFALSE);
+    ESP_STATIC_ANALYZER_CHECK(!pvItem1 || !xItemSize1, pdFALSE);
 
     portENTER_CRITICAL_ISR(&pxRingbuffer->mux);
     if (prvCheckItemAvail(pxRingbuffer) == pdTRUE) {
@@ -904,6 +905,7 @@ static BaseType_t prvReceiveGenericFromISR(Ringbuffer_t *pxRingbuffer,
         }
         //If split buffer, check for split items
         if (pxRingbuffer->uxRingbufferFlags & rbALLOW_SPLIT_FLAG) {
+            ESP_STATIC_ANALYZER_CHECK(!pvItem2 || !xItemSize2, pdFALSE);
             if (xIsSplit == pdTRUE) {
                 *pvItem2 = pxRingbuffer->pvGetItem(pxRingbuffer, &xIsSplit, 0, xItemSize2);
                 configASSERT(*pvItem2 < *pvItem1);  //Check wrap around has occurred

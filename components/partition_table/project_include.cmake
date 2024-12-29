@@ -7,6 +7,12 @@ if(NOT DEFINED BOOTLOADER_OFFSET)  # For Linux target
     endif()
 endif()
 
+if(CONFIG_BOOTLOADER_RECOVERY_OFFSET)
+    set(RECOVERY_BOOTLOADER_OPTION --recovery-bootloader-offset ${CONFIG_BOOTLOADER_RECOVERY_OFFSET})
+else()
+    set(RECOVERY_BOOTLOADER_OPTION "")
+endif()
+
 set(PARTITION_TABLE_CHECK_SIZES_TOOL_PATH "${CMAKE_CURRENT_LIST_DIR}/check_sizes.py")
 
 idf_build_get_property(build_dir BUILD_DIR)
@@ -66,6 +72,7 @@ function(partition_table_get_partition_info result get_part_info_args part_info)
         ${idf_path}/components/partition_table/parttool.py -q
         --partition-table-offset ${PARTITION_TABLE_OFFSET}
         --primary-bootloader-offset ${BOOTLOADER_OFFSET}
+        ${RECOVERY_BOOTLOADER_OPTION}
         --partition-table-file ${PARTITION_CSV_PATH}
         get_partition_info ${get_part_info_args} --info ${part_info}
         ${extra_partition_subtypes}

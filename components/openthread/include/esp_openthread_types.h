@@ -200,6 +200,8 @@ typedef struct {
 
 typedef void (*esp_openthread_rcp_failure_handler)(void);
 
+typedef void (*esp_openthread_compatibility_error_callback)(void);
+
 #ifdef __cplusplus
 }
 #endif

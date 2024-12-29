@@ -73,6 +73,21 @@ CSV 文件的格式与上面摘要中打印的格式相同，但是在 CSV 文�
 *  CSV 文件中的每个非注释行均为一个分区定义。
 *  每个分区的 ``Offset`` 字段可以为空，``gen_esp32part.py`` 工具会从分区表位置的后面开始自动计算并填充该分区的偏移地址，同时确保每个分区的偏移地址正确对齐。
 
+下面是一个包含引导加载程序和分区表分区的 CSV 分区表示例：
+
+.. code-block:: none
+
+    # ESP-IDF Partition Table
+    # Name,           Type,            SubType,  Offset,  Size,     Flags
+    bootloader,       bootloader,      primary,  N/A,     N/A,
+    partition_table,  partition_table, primary,  N/A,     N/A,
+    nvs,              data,            nvs,      ,        0x6000,
+    phy_init,         data,            phy,      ,        0x1000,
+    factory,          app,             factory,  ,        1M,
+    recoveryBloader,  bootloader,      recovery, N/A,     N/A,
+
+``gen_esp32part.py`` 工具将根据所选的 Kconfig 选项将每个 ``N/A`` 替换为适当的值：引导加载程序的偏移地址为 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}，分区表的偏移地址见 :ref:`CONFIG_PARTITION_TABLE_OFFSET`。
+
 Name 字段
 ~~~~~~~~~
 
@@ -83,10 +98,10 @@ Type 字段
 
 Type 字段可以指定为名称或数字 0～254（或者十六进制 0x00-0xFE）。注意，不得使用预留给 ESP-IDF 核心功能的 0x00-0x3F。
 
-- ``app`` (0x00)。
-- ``data`` (0x01)。
-- ``bootloader`` (0x02)。该分区为可选项且不会影响系统功能，因此默认情况下，该分区不会出现在任何 CSV 分区表文件中，仅在引导加载程序 OTA 更新时有用。即使 CSV 文件中没有该分区，仍然可以执行 OTA。请注意，如果在 CSV 文件中指定了该分区，其地址和大小必须与 Kconfig 设置相匹配。
-- ``partition_table`` (0x03)。
+- ``app`` (0x00)，
+- ``data`` (0x01)，
+- ``bootloader`` (0x02)。该分区为可选项且不会影响系统功能，因此默认情况下，该分区不会出现在 ESP-IDF 的任何 CSV 分区表文件中，仅在引导加载程序 OTA 更新和 flash 分区时有用。即使 CSV 文件中没有该分区，仍然可以执行 OTA。
+- ``partition_table`` (0x03)。默认情况下，该分区也不会出现在 ESP-IDF 的任何 CSV 分区表文件中。
 - 0x40-0xFE 预留给 **自定义分区类型**。如果你的应用程序需要以 ESP-IDF 尚未支持的格式存储数据，请在 0x40-0xFE 内添加一个自定义分区类型。
 
 关于 ``app`` 和 ``data`` 分区的枚举定义，请参考 :cpp:type:`esp_partition_type_t`。
@@ -120,15 +135,20 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
 * 当 Type 定义为 ``bootloader`` 时，可以将 SubType 字段指定为：
 
-    - ``primary`` (0x00)，即二级引导加载程序，放置在 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 地址处。目前 ``gen_esp32part.py`` 不支持在 CSV 文件中包含该分区。
-    - ``ota`` (0x01)，是一个临时的引导加载程序分区，在 OTA 更新期间可用于下载新的引导加载程序镜像。
+    - ``primary`` (0x00)，即二级引导加载程序，位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
+    - ``ota`` (0x01)，是一个临时的引导加载程序分区，在 OTA 更新期间可用于下载新的引导加载程序镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你只能指定一个偏移量，或者将其留空，工具将根据先前使用的分区的偏移量进行计算。
+    - ``recovery`` (0x02)，这是用于安全执行引导加载程序 OTA 更新的恢复引导加载程序分区。``gen_esp32part.py`` 工具会自动确定该分区的地址和大小，因此可以将这些字段留空或使用 ``N/A`` 作为占位符。该分区地址必须与 Kconfig 选项定义的 eFuse 字段相匹配。如果正常的引导加载程序加载路径失败，则一级 (ROM) 引导加载程序会尝试加载 eFuse 字段指定地址的恢复分区。
+
+    引导加载程序类型的大小由 ``gen_esp32part.py`` 工具根据指定的 ``--offset`` （分区表偏移量）和 ``--primary-partition-offset`` 参数计算得出。具体来说，引导加载程序的大小定义为 (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH})。此计算得出的大小适用于引导加载程序的所有子类型。
 
 * 当 Type 定义为 ``partition_table`` 时，可以将 SubType 字段指定为：
 
-    - ``primary`` (0x00)。这是主分区表，放置在 flash 的 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 地址处。目前 ``gen_esp32part.py`` 不支持在 CSV 文件中包含该分区。
-    - ``ota`` (0x01)。这是一个临时的分区表分区，在 OTA 更新期间可用于下载新的分区表镜像。
+    - ``primary`` (0x00)，是主分区表，位于 flash 的 :ref:`CONFIG_PARTITION_TABLE_OFFSET` 地址处。工具会自动确定此子类型的适当大小和偏移量，因此为此子类型指定的任何大小或偏移量将被忽略。你可以将这些字段留空或使用 ``N/A`` 作为占位符。
+    - ``ota`` (0x01)，是一个临时的分区表分区，在 OTA 更新期间可用于下载新的分区表镜像。工具会忽略此子类型的大小，你可以将其留空或使用 ``N/A``。你可以指定一个偏移量，或者将其留空，工具将根据先前分配的分区的偏移量进行计算。
 
-* 当 Type 定义为 ``data`` 时，SubType 字段可以指定为 ``ota`` (0x00)、``phy`` (0x01)、``nvs`` (0x02)、``nvs_keys`` (0x04) 或者其他组件特定的子类型（请参考 :cpp:type:`子类型枚举 <esp_partition_subtype_t>`).
+    ``partition_table`` 的大小固定为 ``0x1000``，适用于 ``partition_table`` 的所有子类型。
+
+* 当 Type 定义为 ``data`` 时，SubType 字段可以指定为 ``ota`` (0x00)、``phy`` (0x01)、``nvs`` (0x02)、``nvs_keys`` (0x04) 或者其他组件特定的子类型（请参考 :cpp:type:`子类型枚举 <esp_partition_subtype_t>`）。
 
     -  ``ota`` (0) 即 :ref:`OTA 数据分区 <ota_data_partition>` ，用于存储当前所选的 OTA 应用程序的信息。这个分区的大小需要设定为 0x2000。更多详细信息，请参考 :doc:`OTA 文档 <../api-reference/system/ota>` 。
     -  ``phy`` (1) 分区用于存放 PHY 初始化数据，从而保证可以为每个设备单独配置 PHY，而非必须采用固件中的统一 PHY 初始化数据。
@@ -184,8 +204,10 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
     - 若 CSV 文件中的分区偏移地址为空，则该分区会接在前一个分区之后；若为首个分区，则将接在分区表之后。
     - ``app`` 分区的偏移地址必须与 0x10000 (64 KB) 对齐。如果偏移字段留空，则 ``gen_esp32part.py`` 工具会自动计算得到一个满足对齐要求的偏移地址。如果 ``app`` 分区的偏移地址没有与 0x10000 (64 KB) 对齐，则该工具会报错。
     - ``app`` 分区的大小必须与 flash 扇区大小对齐。为 ``app`` 分区指定未对齐的大小将返回错误。
-    :SOC_SECURE_BOOT_V1: - 若启用了安全启动 V1，则 ``app`` 分区的大小需与 0x10000 (64 KB) 对齐。
+    :SOC_SECURE_BOOT_V1: - 若启用了 Secure Boot V1，则 ``app`` 分区的大小需与 0x10000 (64 KB) 对齐。
+    :SOC_SECURE_BOOT_V1: - ``bootloader`` 的偏移量和大小不受 Secure Boot V1 选项的影响。无论是否启用 Secure Boot V1，引导加载程序的大小保持不变，并且不包括安全摘要，安全摘要位于 flash 的 0x0 偏移地址处，占用一个扇区（4096 字节）。
     - ``app`` 分区的大小和偏移地址可以采用十进制数或是以 0x 为前缀的十六进制数，且支持 K 或 M 的倍数单位（K 和 M 分别代表 1024 和 1024*1024 字节）。
+    - 对于 ``bootloader`` 和 ``partition_table``，在 CSV 文件中将大小和偏移量指定为 ``N/A`` 意味着这些值将由工具自动确定，无法手动定义。这需要设置 ``gen_esp32part.py`` 工具的 ``--offset`` 和 ``--primary-partition-offset`` 参数。
 
 如果你希望允许分区表中的分区采用任意起始偏移量 (:ref:`CONFIG_PARTITION_TABLE_OFFSET`)，请将分区表（CSV 文件）中所有分区的偏移字段都留空。注意，此时，如果你更改了分区表中任意分区的偏移地址，则其他分区的偏移地址也会跟着改变。这种情况下，如果你之前还曾设定某个分区采用固定偏移地址，则可能造成分区表冲突，从而导致报错。
 
@@ -198,13 +220,21 @@ Flags 字段
 
     .. note::
 
-        无论是否设置 Flags 字段，``app`` 分区都将保持加密。
+        无论是否设置 Flags 字段，当启用了 :doc:`/security/flash-encryption` 功能时，以下类型的分区将始终保持加密状态。
+
+        .. list::
+
+            - ``app``，
+            - ``bootloader``，
+            - ``partition_table``，
+            - type ``data`` 和 subtype ``ota``，
+            - type ``data`` 和 subtype ``nvs_keys``。
 
     - 如果 Flags 字段设置为 ``readonly``，则该分区为只读分区。``readonly`` 标记仅支持除 ``ota`` 和 ``coredump`` 子类型外的 ``data`` 分区。使用该标记，防止意外写入如出厂数据分区等包含关键设备特定配置数据的分区。
 
     .. note::
 
-        在任何写入模式下 (``w``、``w+``、``a``、``a+``、``r+``)，尝试通过 C 文件 I/O API 打开文件 (``fopen```) 的操作都将失败并返回 ``NULL``。除 ``O_RDONLY`` 外，``open`` 与任何标志一同使用都将失败并返回 ``-1``，全局变量 ``errno`` 也将设置为 ``EROFS``。上述情况同样适用于通过其他 POSIX 系统调用函数执行写入或擦除的操作。在只读分区上，以读写模式打开 NVS 的句柄将失败并返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码，使用 ``esp_partition`` 或 ``spi_flash`` 等较低级别的 API 进行写入操作也将返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码。
+        在任何写入模式下 (``w``、``w+``、``a``、``a+``、``r+``)，尝试通过 C 文件 I/O API 打开文件 (``fopen``) 的操作都将失败并返回 ``NULL``。除 ``O_RDONLY`` 外，``open`` 与任何标志一同使用都将失败并返回 ``-1``，全局变量 ``errno`` 也将设置为 ``EROFS``。上述情况同样适用于通过其他 POSIX 系统调用函数执行写入或擦除的操作。在只读分区上，以读写模式打开 NVS 的句柄将失败并返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码，使用 ``esp_partition`` 或 ``spi_flash`` 等较低级别的 API 进行写入操作也将返回 :c:macro:`ESP_ERR_NOT_ALLOWED` 错误代码。
 
 可以使用冒号连接不同的标记，来同时指定多个标记，如 ``encrypted:readonly``。
 

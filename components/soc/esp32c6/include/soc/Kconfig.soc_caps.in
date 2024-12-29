@@ -667,9 +667,21 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
 config SOC_I2S_PDM_MAX_TX_LINES
     int
     default 2
+
+config SOC_I2S_PDM_MAX_RX_LINES
+    int
+    default 1
 
 config SOC_I2S_SUPPORTS_TDM
     bool
@@ -892,6 +904,10 @@ config SOC_MCPWM_SUPPORT_ETM
     default y
 
 config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
+    bool
+    default y
+
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
@@ -1443,6 +1459,10 @@ config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
@@ -1463,7 +1483,15 @@ config SOC_CLK_RC32K_SUPPORTED
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 

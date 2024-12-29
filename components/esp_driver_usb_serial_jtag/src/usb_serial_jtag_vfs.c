@@ -35,17 +35,17 @@
 // Token signifying that no character is available
 #define NONE -1
 
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_LF
 #endif
 
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
@@ -571,8 +571,22 @@ void usb_serial_jtag_vfs_set_rx_line_endings(esp_line_endings_t mode)
     s_ctx.rx_mode = mode;
 }
 
-static const esp_vfs_t usj_vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_jtag_select = {
+    .start_select = &usb_serial_jtag_start_select,
+    .end_select = &usb_serial_jtag_end_select,
+};
+#endif // CONFIG_VFS_SUPPORT_SELECT
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+static const esp_vfs_termios_ops_t s_vfs_jtag_termios = {
+    .tcsetattr = &usb_serial_jtag_tcsetattr,
+    .tcgetattr = &usb_serial_jtag_tcgetattr,
+    .tcdrain = &usb_serial_jtag_tcdrain,
+    .tcflush = &usb_serial_jtag_tcflush,
+};
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
+
+static const esp_vfs_fs_ops_t s_vfs_jtag = {
     .write = &usb_serial_jtag_write,
     .open = &usb_serial_jtag_open,
     .fstat = &usb_serial_jtag_fstat,
@@ -580,27 +594,25 @@ static const esp_vfs_t usj_vfs = {
     .read = &usb_serial_jtag_read,
     .fcntl = &usb_serial_jtag_fcntl,
     .fsync = &usb_serial_jtag_fsync,
+
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    .start_select = &usb_serial_jtag_start_select,
-    .end_select = &usb_serial_jtag_end_select,
+    .select = &s_vfs_jtag_select,
 #endif // CONFIG_VFS_SUPPORT_SELECT
+
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    .tcsetattr = &usb_serial_jtag_tcsetattr,
-    .tcgetattr = &usb_serial_jtag_tcgetattr,
-    .tcdrain = &usb_serial_jtag_tcdrain,
-    .tcflush = &usb_serial_jtag_tcflush,
+    .termios = &s_vfs_jtag_termios,
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-const esp_vfs_t* esp_vfs_usb_serial_jtag_get_vfs(void)
+const esp_vfs_fs_ops_t* esp_vfs_usb_serial_jtag_get_vfs(void)
 {
-    return &usj_vfs;
+    return &s_vfs_jtag;
 }
 
 esp_err_t usb_serial_jtag_vfs_register(void)
 {
     // "/dev/usb_serial_jtag" unfortunately is too long for vfs
-    return esp_vfs_register("/dev/usbserjtag", &usj_vfs, NULL);
+    return esp_vfs_register_fs("/dev/usbserjtag", &s_vfs_jtag, ESP_VFS_FLAG_STATIC, NULL);
 }
 
 #if CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG
@@ -615,7 +627,7 @@ ESP_SYSTEM_INIT_FN(init_vfs_usj, CORE, BIT(0), 111)
 ESP_SYSTEM_INIT_FN(init_vfs_usj_sec, CORE, BIT(0), 112)
 {
     // "/dev/seccondary_usb_serial_jtag" unfortunately is too long for vfs
-    esp_vfs_register("/dev/secondary", &usj_vfs, NULL);
+    esp_vfs_register_fs("/dev/secondary", &s_vfs_jtag, ESP_VFS_FLAG_STATIC, NULL);
     return ESP_OK;
 }
 #endif

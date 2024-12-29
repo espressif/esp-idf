@@ -6,7 +6,9 @@ else()
     set(linker_fragments linker.lf)
 endif()
 
-if(NOT CONFIG_ESP_WIFI_ENABLED AND NOT CONFIG_ESP_HOST_WIFI_ENABLED AND NOT CMAKE_BUILD_EARLY_EXPANSION)
+if( NOT CONFIG_ESP_WIFI_ENABLED
+    AND NOT CONFIG_ESP_HOST_WIFI_ENABLED
+    AND NOT CMAKE_BUILD_EARLY_EXPANSION )
     # This component provides only "esp_supplicant" headers if WiFi not enabled
     # (implementation supported optionally in a managed component esp_wifi_remote)
     idf_component_register(INCLUDE_DIRS esp_supplicant/include)

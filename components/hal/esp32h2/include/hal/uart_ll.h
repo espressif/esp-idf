@@ -422,7 +422,7 @@ FORCE_INLINE_ATTR void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return hw->status.rxfifo_cnt;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->status, rxfifo_cnt);
 }
 
 /**
@@ -434,7 +434,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_txfifo_len(uart_dev_t *hw)
 {
-    return UART_LL_FIFO_DEF_LEN - hw->status.txfifo_cnt;
+    return UART_LL_FIFO_DEF_LEN - HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt);
 }
 
 /**
@@ -509,7 +509,7 @@ FORCE_INLINE_ATTR void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_
  */
 FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thrhd)
 {
-    hw->conf1.rxfifo_full_thrhd = full_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, rxfifo_full_thrhd, full_thrhd);
 }
 
 /**
@@ -523,7 +523,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full
  */
 FORCE_INLINE_ATTR void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_thrhd)
 {
-    hw->conf1.txfifo_empty_thrhd = empty_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, txfifo_empty_thrhd, empty_thrhd);
 }
 
 /**
@@ -587,7 +587,7 @@ FORCE_INLINE_ATTR void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
 {
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
-        hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hwfc_conf_sync, rx_flow_thrhd, rx_thrs);
         hw->hwfc_conf_sync.rx_flow_en = 1;
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
@@ -633,10 +633,10 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
-        hw->swfc_conf1.xoff_threshold = flow_ctrl->xoff_thrd;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_threshold, flow_ctrl->xon_thrd);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xoff_threshold, flow_ctrl->xoff_thrd);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_character, flow_ctrl->xon_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_character, flow_ctrl->xoff_char);
     } else {
         hw->swfc_conf0_sync.sw_flow_con_en = 0;
         hw->swfc_conf0_sync.xonoff_del = 0;
@@ -660,7 +660,7 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
 FORCE_INLINE_ATTR void uart_ll_set_at_cmd_char(uart_dev_t *hw, uart_at_cmd_t *cmd_char)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, data, cmd_char->cmd_char);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, char_num, cmd_char->char_num);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_char_sync, at_char_num, cmd_char->char_num);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_postcnt_sync, post_idle_num, cmd_char->post_idle);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_precnt_sync, pre_idle_num, cmd_char->pre_idle);
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->at_cmd_gaptout_sync, rx_gap_tout, cmd_char->gap_tout);
@@ -873,7 +873,7 @@ FORCE_INLINE_ATTR void uart_ll_set_mode(uart_dev_t *hw, uart_mode_t mode)
 FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char, uint8_t *char_num)
 {
     *cmd_char = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, data);
-    *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, char_num);
+    *char_num = HAL_FORCE_READ_U32_REG_FIELD(hw->at_cmd_char_sync, at_char_num);
 }
 
 /**
@@ -910,7 +910,7 @@ FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length
  */
 FORCE_INLINE_ATTR bool uart_ll_is_tx_idle(uart_dev_t *hw)
 {
-    return ((hw->status.txfifo_cnt == 0) && (hw->fsm_status.st_utx_out == 0));
+    return ((HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt) == 0) && (hw->fsm_status.st_utx_out == 0));
 }
 
 /**

@@ -685,6 +685,7 @@ esp_err_t touch_pad_sleep_channel_set_work_time(uint16_t sleep_cycle, uint16_t m
     return ESP_OK;
 }
 
+#if !CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that the new touch driver is not running along with the legacy touch driver
  */
@@ -698,3 +699,4 @@ static __attribute__((constructor)) void check_touch_driver_conflict(void)
     }
     ESP_EARLY_LOGW("legacy_touch_driver", "legacy touch driver is deprecated, please migrate to use driver/touch_sens.h");
 }
+#endif //CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK

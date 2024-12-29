@@ -1398,6 +1398,7 @@ esp_err_t rmt_enable_tx_loop_autostop(rmt_channel_t channel, bool en)
 }
 #endif
 
+#if !CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy RMT driver is not running along with the new driver
  */
@@ -1413,3 +1414,4 @@ static void check_rmt_legacy_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/rmt_tx.h` and/or `driver/rmt_rx.h`");
 }
+#endif //CONFIG_RMT_SKIP_LEGACY_CONFLICT_CHECK

@@ -40,7 +40,7 @@ CORE: 100: init_heap in components/heap/heap_caps_init.c on BIT(0)
 # esp_timer early initialization is required for esp_timer_get_time to work.
 CORE: 101: esp_timer_init_nonos in components/esp_timer/src/esp_timer_init.c on BIT(0)
 
-CORE: 102: init_newlib in components/newlib/newlib_init.c on BIT(0)
+CORE: 102: init_libc in components/newlib/src/init.c on BIT(0)
 
 # Add the psram to heap, psram vaddr region is reserved when initialising the heap, after
 # psram is initialised (and necessary reservation for psram usage), the rest of the psram
@@ -57,7 +57,7 @@ CORE: 111: init_vfs_usj in components/esp_driver_usb_serial_jtag/src/usb_serial_
 CORE: 112: init_vfs_usj_sec in components/esp_driver_usb_serial_jtag/src/usb_serial_jtag_vfs.c on BIT(0)
 CORE: 113: init_vfs_nullfs in components/vfs/nullfs.c on BIT(0)
 CORE: 114: init_vfs_console in components/esp_vfs_console/vfs_console.c on BIT(0)
-CORE: 115: init_newlib_stdio in components/newlib/newlib_init.c on BIT(0)
+CORE: 115: init_libc_stdio in components/newlib/src/init.c on BIT(0)
 
 CORE: 130: init_flash in components/esp_system/startup_funcs.c on BIT(0)
 CORE: 140: init_efuse in components/efuse/src/esp_efuse_startup.c on BIT(0)
@@ -119,7 +119,7 @@ SECONDARY: 230: usb_serial_jtag_conn_status_init in components/esp_driver_usb_se
 
 # psram adjust timing point need a separate task which should be created at startup.
 # Valid only `CONFIG_SPIRAM_TIMING_TUNING_POINT_VIA_TEMPERATURE_SENSOR` is enabled.
-SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_by_mspi_delay.c on BIT(0)
+SECONDARY: 240: psram_adjust_timing_point_via_temperature in components/esp_hw_support/mspi_timing_tuning/mspi_timing_by_mspi_delay.c on BIT(0)
 
 # Has to be the last step!
 # Now that the application is about to start, disable boot watchdog

@@ -962,25 +962,26 @@ static inline void i2s_ll_rx_enable_std(i2s_dev_t *hw)
  * @brief Enable I2S TX PDM mode
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm_ena Set true to enable TX PDM mode
+ * @param pcm2pdm_en Set true to enable TX PCM to PDM filter
  */
-static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_tx_enable_pdm(i2s_dev_t *hw, bool pcm2pdm_en)
 {
     hw->conf2.val = 0;
     hw->pdm_conf.tx_pdm_en = true;
-    hw->pdm_conf.pcm2pdm_conv_en = true;
+    hw->pdm_conf.pcm2pdm_conv_en = pcm2pdm_en;
 }
 
 /**
  * @brief Enable I2S RX PDM mode
  *
  * @param hw Peripheral I2S hardware instance address.
+ * @param pdm2pcm_en Set true to enable RX PDM to PCM filter
  */
-static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw)
+static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm_en)
 {
     hw->conf2.val = 0;
     hw->pdm_conf.rx_pdm_en = true;
-    hw->pdm_conf.pdm2pcm_conv_en = true;
+    hw->pdm_conf.pdm2pcm_conv_en = pdm2pcm_en;
 }
 
 /**

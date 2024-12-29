@@ -117,6 +117,9 @@ extern "C" {
 #define IO_MUX_GPIO19_REG                   PERIPHS_IO_MUX_U_PAD_SPIHD
 #define IO_MUX_GPIO20_REG                   PERIPHS_IO_MUX_U_PAD_SPICLK
 #define IO_MUX_GPIO21_REG                   PERIPHS_IO_MUX_U_PAD_SPID
+#define IO_MUX_GPIO22_REG                   PERIPHS_IO_MUX_U_PAD_GPIO22
+#define IO_MUX_GPIO23_REG                   PERIPHS_IO_MUX_U_PAD_GPIO23
+#define IO_MUX_GPIO24_REG                   PERIPHS_IO_MUX_U_PAD_GPIO24
 
 #define PIN_FUNC_GPIO								1
 
@@ -130,7 +133,7 @@ extern "C" {
 #define EXT_OSC_SLOW_GPIO_NUM        0
 
 #define MAX_RTC_GPIO_NUM              6
-#define MAX_PAD_GPIO_NUM             21
+#define MAX_PAD_GPIO_NUM             24
 #define MAX_GPIO_NUM                 28
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 
@@ -231,6 +234,18 @@ extern "C" {
 #define PERIPHS_IO_MUX_U_PAD_SPID                 (REG_IO_MUX_BASE + 0x54)
 #define FUNC_SPID_GPIO21                                                 1
 #define FUNC_SPID_SPID                                                   0
+
+#define PERIPHS_IO_MUX_U_PAD_GPIO22               (REG_IO_MUX_BASE + 0x58)
+#define FUNC_GPIO22_GPIO22                                               1
+#define FUNC_GPIO22_GPIO22_0                                             0
+
+#define PERIPHS_IO_MUX_U_PAD_GPIO23               (REG_IO_MUX_BASE + 0x5C)
+#define FUNC_GPIO23_GPIO23                                               1
+#define FUNC_GPIO23_GPIO23_0                                             0
+
+#define PERIPHS_IO_MUX_U_PAD_GPIO24               (REG_IO_MUX_BASE + 0x60)
+#define FUNC_GPIO24_GPIO24                                               1
+#define FUNC_GPIO24_GPIO24_0                                             0
 
 /** IO_MUX_DATE_REG register
  *  Version control register

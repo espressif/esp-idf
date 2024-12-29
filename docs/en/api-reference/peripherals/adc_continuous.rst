@@ -3,7 +3,7 @@ Analog to Digital Converter (ADC) Continuous Mode Driver
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one", esp32c5="one"}
+{IDF_TARGET_ADC_NUM:default="two", esp32c2="one", esp32c6="one", esp32h2="one", esp32c5="one", esp32c61="one"}
 
 Introduction
 ------------
@@ -289,7 +289,7 @@ After calling :cpp:func:`adc_continuous_start`, the ADC continuous conversion st
 Function :cpp:func:`adc_continuous_read` tries to read the expected length of conversion results each time.
 
 - When calling :cpp:func:`adc_continuous_read`, you can request to read a conversion result of the specified length. Sometimes, however, the actual available conversion results may be less than the requested length, in which case the function still moves the data from the internal pool into the buffer you provided. Therefore, to learn the number of conversion results actually moved into the buffer, please check the value of ``out_length``.
-- If there is no conversion result generated in the internal pool, the function will block for ``timeout_ms`` until the conversion results are generated. If there are still no generated results, the function will return :c:macro:`ESP_ERR_TIMEOUT`.
+- If there is no conversion result generated in the internal pool, the function will block for ``timeout_ms`` until at least one conversion result is generated. If there are still no generated results, the function will return :c:macro:`ESP_ERR_TIMEOUT`.
 - If the generated results fill up the internal pool, newly generated results will be lost. Next time when :cpp:func:`adc_continuous_read` is called, this function will return :c:macro:`ESP_ERR_INVALID_STATE` to indicate this situation.
 
 This API aims to give you a chance to read all the ADC continuous conversion results.

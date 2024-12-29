@@ -78,8 +78,9 @@ typedef struct vad_unit_ctx_t *vad_unit_handle_t;
 typedef struct {
     int init_frame_num;               /**< Number of init frames that are used for VAD to denoise, this helps the VAD to decrease the accidental trigger ratio.
                                            Note too big values may lead to voice activity miss */
-    int min_energy_thresh;            ///< Min energy threshold.
-    bool skip_band_energy_thresh;     ///< Skip band energy threshold or not
+    int min_energy_thresh;            ///< Minimum energy threshold, voice activities with energy higher than this value will be detected.
+    bool skip_band_energy_thresh;     /**< Skip band energy threshold or not, the passband energy check determines whether the proportion of passband energy within the total frequency domain meets the required threshold.
+                                           Note in different environments, enabling the passband energy check may reduce false trigger rates but could also increase the rate of missed detections. */
 
     int speak_activity_thresh;        /**< When in speak-activity-listening-state, if number of the detected speak activity is higher than this value, VAD runs into speak-activity-detected-state */
 
@@ -93,6 +94,9 @@ typedef struct {
     int max_speak_activity_thresh;    /**< When in speak-activity-detected-state, if the number of the detected speak activity is higher than this value, VAD runs into speak-activity-listening-state */
 } lp_vad_config_t;
 
+/**
+ * @brief LP VAD Init Configurations
+ */
 typedef struct {
     lp_i2s_chan_handle_t    lp_i2s_chan;  ///< LP I2S channel handle
     lp_vad_config_t         vad_config;   ///< LP VAD config
@@ -115,7 +119,6 @@ esp_err_t lp_i2s_vad_new_unit(lp_vad_t vad_id, const lp_vad_init_config_t *init_
  * @brief Enable LP VAD
  *
  * @param[in] unit          VAD handle
- * @param[in] init_config   Initial configurations
  *
  * @return
  *        - ESP_OK:                 On success
@@ -128,7 +131,6 @@ esp_err_t lp_i2s_vad_enable(vad_unit_handle_t unit);
  * @brief Disable LP VAD
  *
  * @param[in] unit          VAD handle
- * @param[in] init_config   Initial configurations
  *
  * @return
  *        - ESP_OK:                 On success

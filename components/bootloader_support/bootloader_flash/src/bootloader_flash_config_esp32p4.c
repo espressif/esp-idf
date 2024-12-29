@@ -19,7 +19,7 @@
 #include "bootloader_init.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
-#include "hal/spimem_flash_ll.h"
+#include "hal/mspi_timing_tuning_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/bootloader_flash_internal.h"
@@ -44,8 +44,8 @@ void IRAM_ATTR bootloader_flash_cs_timing_config(void)
 
 void IRAM_ATTR bootloader_init_mspi_clock(void)
 {
-    _spimem_flash_ll_select_clk_source(0, FLASH_CLK_SRC_SPLL);
-    _spimem_ctrlr_ll_set_core_clock(0, 6);
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_SPLL);
+    _mspi_timing_ll_set_flash_core_clock(0, 80);
 }
 
 void IRAM_ATTR bootloader_flash_clock_config(const esp_image_header_t *pfhdr)
@@ -225,7 +225,16 @@ static void bootloader_spi_flash_resume(void)
 esp_err_t bootloader_init_spi_flash(void)
 {
     bootloader_init_flash_configure();
+
+#if CONFIG_BOOTLOADER_FLASH_DC_AWARE
+    // Reset flash, clear volatile bits DC[0:1]. Make it work under default mode to boot.
+    bootloader_spi_flash_reset();
+#endif
+
     bootloader_spi_flash_resume();
+    if ((void*)bootloader_flash_unlock != (void*)bootloader_flash_unlock_default) {
+        ESP_EARLY_LOGD(TAG, "Using overridden bootloader_flash_unlock");
+    }
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT

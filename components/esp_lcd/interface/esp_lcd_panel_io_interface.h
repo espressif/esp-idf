@@ -7,7 +7,7 @@
 
 #include <stdbool.h>
 #include "esp_err.h"
-#include "esp_lcd_panel_io.h"
+#include "esp_lcd_types.h"
 
 #ifdef __cplusplus
 extern "C" {

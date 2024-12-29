@@ -14,6 +14,7 @@
 #include <errno.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include "sdkconfig.h"
 #include "esp_console.h"
 #include "esp_check.h"
 #include "esp_partition.h"
@@ -23,6 +24,9 @@
 #ifdef CONFIG_EXAMPLE_STORAGE_MEDIA_SDMMC
 #include "diskio_impl.h"
 #include "diskio_sdmmc.h"
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+#include "sd_pwr_ctrl_by_on_chip_ldo.h"
+#endif // CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
 #endif
 
 /*
@@ -307,6 +311,23 @@ static esp_err_t storage_init_sdmmc(sdmmc_card_t **card)
     // Example: for fixed frequency of 10MHz, use host.max_freq_khz = 10000;
     sdmmc_host_t host = SDMMC_HOST_DEFAULT();
 
+    // For SoCs where the SD power can be supplied both via an internal or external (e.g. on-board LDO) power supply.
+    // When using specific IO pins (which can be used for ultra high-speed SDMMC) to connect to the SD card
+    // and the internal LDO power supply, we need to initialize the power supply first.
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    sd_pwr_ctrl_ldo_config_t ldo_config = {
+        .ldo_chan_id = CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_IO_ID,
+    };
+    sd_pwr_ctrl_handle_t pwr_ctrl_handle = NULL;
+
+    ret = sd_pwr_ctrl_new_on_chip_ldo(&ldo_config, &pwr_ctrl_handle);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to create a new on-chip LDO power control driver");
+        return ret;
+    }
+    host.pwr_ctrl_handle = pwr_ctrl_handle;
+#endif
+
     // This initializes the slot without card detect (CD) and write protect (WP) signals.
     // Modify slot_config.gpio_cd and slot_config.gpio_wp if your board has these signals.
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -369,6 +390,10 @@ clean:
         free(sd_card);
         sd_card = NULL;
     }
+#if CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+    // We don't need to duplicate error here as all error messages are handled via sd_pwr_* call
+    sd_pwr_ctrl_del_on_chip_ldo(pwr_ctrl_handle);
+#endif // CONFIG_EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
     return ret;
 }
 #endif  // CONFIG_EXAMPLE_STORAGE_MEDIA_SPIFLASH

@@ -1,4 +1,6 @@
-if(BOOTLOADER_BUILD)
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
+if(non_os_build)
     return()
 endif()
 

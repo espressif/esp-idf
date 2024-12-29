@@ -74,8 +74,8 @@ def fixture_Init_avahi() -> bool:
 @pytest.fixture(name='Init_interface')
 def fixture_Init_interface() -> bool:
     print('Init interface')
-    ocf.init_interface_ipv6_address()
-    ocf.reset_host_interface()
+    ocf.flush_ipv6_addr_by_interface()
+    # The sleep time is set based on experience; reducing it might cause the host to be unready.
     time.sleep(30)
     ocf.set_interface_sysctl_options()
     return True
@@ -618,7 +618,6 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         assert not bool(fail_info.search(str(info)))
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=20)
         assert not bool(fail_info.search(str(output)))
-        ocf.clean_buffer(sleepy_device)
         ocf.execute_command(leader, 'factoryreset')
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
         assert not bool(fail_info.search(str(output)))
@@ -648,7 +647,6 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
     try:
         ocf.init_thread(br)
         time.sleep(3)
-        ocf.clean_buffer(br)
         ocf.execute_command(br, 'ifconfig up')
         br.expect('Done', timeout=5)
         ocf.execute_command(br, 'thread start')

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "sdkconfig.h"
 #include "arpa/inet.h" // for ntohs, etc.
 #include "lwip/prot/ethernet.h" // Ethernet headers
+#include "soc/soc_caps.h"
 
 #include "unity.h"
 #include "test_utils.h"
@@ -32,6 +33,7 @@
 
 #define ETH_FILTER_LE 0x7A05
 #define ETH_FILTER_BE 0x057A
+#define ETH_TYPE_PTP  0x88F7
 
 #define ETH_START_BIT BIT(0)
 #define ETH_STOP_BIT BIT(1)
@@ -67,6 +69,33 @@ typedef struct {
         char str[44];
     };
 } test_vfs_eth_tap_msg_t;
+
+// PTPv2 header
+typedef struct {
+    uint8_t message_type;           // 4 bits: Message Type
+    uint8_t version;                // 4 bits: PTP version
+    uint16_t message_length;        // 16 bits: Total length of the PTP message
+    uint8_t domain_number;          // 8 bits: Domain number
+    uint8_t reserved1;              // Reserved (8 bits)
+    uint16_t flags;                 // 16 bits: Flags field
+    int64_t correction_field;       // 64 bits: Correction field
+    uint32_t reserved2;             // Reserved (32 bits)
+    uint64_t clock_identity;    // 64 bits: Clock identity
+    uint16_t port_number;       // 16 bits: Port number
+    uint16_t sequence_id;           // 16 bits: Sequence ID
+    uint8_t control_field;          // 8 bits: Control field (deprecated)
+    int8_t log_message_interval;    // 8 bits: Log message interval
+} __attribute__((packed)) ptpv2_hdr_t;
+
+typedef struct {
+    ptpv2_hdr_t ptp_hdr;
+    uint64_t timestamp;
+} __attribute__((packed)) ptp_msg_t;
+
+typedef struct {
+    struct eth_hdr eth_hdr;
+    ptp_msg_t ptp_msg;
+} __attribute__((packed)) test_eth_ptp_msg_t;
 
 /* =============================================================================
  *                              Common Routines
@@ -163,6 +192,9 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
     eth_esp32_emac_config_t esp32_emac_config = ETH_ESP32_EMAC_DEFAULT_CONFIG();
     network_hndls->mac = esp_eth_mac_new_esp32(&esp32_emac_config, &mac_config);
     eth_phy_config_t phy_config = ETH_PHY_DEFAULT_CONFIG();
+#ifdef CONFIG_IDF_TARGET_ESP32P4
+    phy_config.reset_gpio_num = 51;
+#endif // CONFIG_IDF_TARGET_ESP32P4
     network_hndls->phy = esp_eth_phy_new_ip101(&phy_config);
     esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(network_hndls->mac, network_hndls->phy);
     network_hndls->eth_handle = NULL;
@@ -205,7 +237,7 @@ static void ethernet_deinit(test_vfs_eth_network_t *network_hndls)
     TEST_ESP_OK(esp_event_loop_delete_default());
 }
 
-// Global test message send by "send_task"
+// Global test message
 static test_vfs_eth_tap_msg_t s_test_msg = {
     .header = {
         .src.addr = {0},
@@ -297,6 +329,7 @@ typedef struct {
     int eth_tap_fd;
     SemaphoreHandle_t sem;
     bool on_select;
+    int queue_frames_num;
 } open_close_task_ctrl_t;
 
 static void open_read_task(void *task_param)
@@ -318,30 +351,35 @@ static void open_read_task(void *task_param)
     uint16_t eth_type_filter = ETH_FILTER_LE;
     TEST_ASSERT_NOT_EQUAL(-1, ioctl(task_control->eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
 
-    xSemaphoreGive(task_control->sem);
-
-    if (task_control->on_select == true) {
-        ESP_LOGI(TAG, "task1: going to block on select...");
-        struct timeval tv;
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
-
-        fd_set rfds;
-        FD_ZERO(&rfds);
-        FD_SET(task_control->eth_tap_fd, &rfds);
-
-        // it is expected that blocking select is not unblocked by close and it timeouts (the fd number may be reused later
-        // though and so select released but that's not tested here)
-        TEST_ASSERT_EQUAL(0, select(task_control->eth_tap_fd + 1, &rfds, NULL, NULL, &tv));
-        ESP_LOGI(TAG, "task1: select timeout");
-
-        // get an error when try to use closed fd
-        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
+    if (task_control->queue_frames_num > 0) {
+        for (int i = 0; i < task_control->queue_frames_num; i++) {
+            TEST_ASSERT_NOT_EQUAL(-1, write(task_control->eth_tap_fd, &s_test_msg, sizeof(s_test_msg)));
+        }
     } else {
-        ESP_LOGI(TAG, "task1: going to block on read...");
-        // it is expected that blocking read is unblocked by close
-        TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
-        ESP_LOGI(TAG, "task1: unblocked");
+        xSemaphoreGive(task_control->sem);
+        if (task_control->on_select == true) {
+            ESP_LOGI(TAG, "task1: going to block on select...");
+            struct timeval tv;
+            tv.tv_sec = 1;
+            tv.tv_usec = 0;
+
+            fd_set rfds;
+            FD_ZERO(&rfds);
+            FD_SET(task_control->eth_tap_fd, &rfds);
+
+            // it is expected that blocking select is not unblocked by close and it timeouts (the fd number may be reused later
+            // though and so select released but that's not tested here)
+            TEST_ASSERT_EQUAL(0, select(task_control->eth_tap_fd + 1, &rfds, NULL, NULL, &tv));
+            ESP_LOGI(TAG, "task1: select timeout");
+
+            // get an error when try to use closed fd
+            TEST_ASSERT_EQUAL(-1, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
+        } else {
+            ESP_LOGI(TAG, "task1: going to block on read...");
+            // it is expected that blocking read is unblocked by close and we read zero bytes
+            TEST_ASSERT_EQUAL(0, read(task_control->eth_tap_fd, in_buffer, in_buf_size));
+            ESP_LOGI(TAG, "task1: unblocked");
+        }
     }
     xSemaphoreGive(task_control->sem);
 
@@ -355,6 +393,10 @@ static void close_task(void *task_param)
     ESP_LOGI(TAG, "task2: closing...");
     TEST_ASSERT_EQUAL(0, close(task_control->eth_tap_fd));
 
+    if (task_control->queue_frames_num > 0) {
+        // since there is no blocking "read" task in this scenario, we need to signal that close finished
+        xSemaphoreGive(task_control->sem);
+    }
     vTaskDelete(NULL);
 }
 
@@ -368,6 +410,7 @@ TEST_CASE("esp32 l2tap - open/close", "[ethernet]")
     open_close_task_ctrl_t task_control;
     task_control.sem = xSemaphoreCreateBinary();
     task_control.on_select = false;
+    task_control.queue_frames_num = 0;
 
     // ==========================================================
     // Close when blocking on read
@@ -381,7 +424,6 @@ TEST_CASE("esp32 l2tap - open/close", "[ethernet]")
     ESP_LOGI(TAG, "Verify closing blocking read from lower priority task...");
     xTaskCreate(open_read_task, "open_read_task", 4096, &task_control, 10, NULL);
     TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(1000)));
-    // Close blocking read from lower priority task
     xTaskCreate(close_task, "close_task", 4096, &task_control, 5, NULL);
     TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(1000)));
 
@@ -398,7 +440,23 @@ TEST_CASE("esp32 l2tap - open/close", "[ethernet]")
     ESP_LOGI(TAG, "Verify closing blocking select from lower priority task...");
     xTaskCreate(open_read_task, "open_read_task", 4096, &task_control, 10, NULL);
     TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
-    // Close blocking read from lower priority task
+    xTaskCreate(close_task, "close_task", 4096, &task_control, 5, NULL);
+    TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
+
+    // ==========================================================
+    // Close when buffered frames pending in L2 TAP
+    // ==========================================================
+    // indicate to queue frames
+    task_control.queue_frames_num = 3;
+    ESP_LOGI(TAG, "Verify closing from higher priority task when when buffered frames pending...");
+    xTaskCreate(open_read_task, "open_read_task", 4096, &task_control, 5, NULL);
+    TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
+    xTaskCreate(close_task, "close_task", 4096, &task_control, 10, NULL);
+    TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
+
+    ESP_LOGI(TAG, "Verify closing from lower priority task when when buffered frames pending...");
+    xTaskCreate(open_read_task, "open_read_task", 4096, &task_control, 10, NULL);
+    TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
     xTaskCreate(close_task, "close_task", 4096, &task_control, 5, NULL);
     TEST_ASSERT_NOT_EQUAL(pdFALSE, xSemaphoreTake(task_control.sem, pdMS_TO_TICKS(2000)));
 
@@ -761,6 +819,227 @@ TEST_CASE("esp32 l2tap - read/write multiple fd's used by multiple tasks", "[eth
 
 /* ============================================================================= */
 /**
+ * @brief Verifies time stamping feature
+ *
+ */
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+TEST_CASE("esp32 l2tap - time stamping", "[ethernet]")
+{
+    test_vfs_eth_network_t eth_network_hndls;
+
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_register(NULL));
+    ethernet_init(&eth_network_hndls);
+
+    int eth_tap_fd = open("/dev/net/tap", 0);
+    TEST_ASSERT_NOT_EQUAL(-1, eth_tap_fd);
+
+    // Set Ethernet interface on which to get raw frames
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_INTF_DEVICE, "ETH_DEF"));
+    // Check the Ethernet interface was assigned
+    char *if_key_str;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_G_INTF_DEVICE, &if_key_str));
+    TEST_ASSERT_EQUAL_STRING("ETH_DEF", if_key_str);
+
+    // Set the Ethertype filter (frames with this type will be available through the eth_tap_fd)
+    uint16_t eth_type_filter = ETH_TYPE_PTP;
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_RCV_FILTER, &eth_type_filter));
+
+    // Enable time stamping in driver
+    bool ts_enable = true;
+    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_MAC_ESP_CMD_PTP_ENABLE, &ts_enable));
+
+    test_eth_ptp_msg_t test_ptp_msg = {
+        .eth_hdr = {
+            // Note that PTPv2 MAC 01:80:C2:00:00:0E is reserved for "Peer delay messages" which are currently not
+            // enabled to be snapped by internal EMAC, hence not tested
+            .dest.addr = {0x01, 0x1b, 0x19, 0x0, 0x0, 0x0},
+            .type = htons(ETH_TYPE_PTP)
+        },
+        .ptp_msg = {
+            .ptp_hdr = {
+                .message_type = 1,
+                .version = 2,
+                .message_length = htons(sizeof(ptp_msg_t)),
+                .sequence_id = 0
+            },
+            .timestamp = 0,
+        }
+    };
+    uint16_t exp_sequence_id = test_ptp_msg.ptp_msg.ptp_hdr.sequence_id;
+    TEST_ESP_OK(esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_CMD_G_MAC_ADDR, &test_ptp_msg.eth_hdr.src.addr));
+
+    // wrap "Info Records Buffer" into union to ensure proper alignment of data (this is typically needed when
+    // accessing double word variables or structs containing double word variables)
+    union {
+        uint8_t info_recs_buff[L2TAP_IREC_SPACE(sizeof(struct timespec))];
+        l2tap_irec_hdr_t align;
+    } u;
+
+    l2tap_extended_buff_t ptp_msg_ext_buff;
+    ptp_msg_ext_buff.info_recs_len = sizeof(u.info_recs_buff);
+    ptp_msg_ext_buff.info_recs_buff = u.info_recs_buff;
+
+    l2tap_irec_hdr_t *ts_info = L2TAP_IREC_FIRST(&ptp_msg_ext_buff);
+    ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+
+    ESP_LOGI(TAG, "Verify response to read TS when not enabled in TAP");
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    int n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    // when input len is 0 and no special function of tap => expected standard behavior, i.e. nothing was written
+    TEST_ASSERT_EQUAL(0, n);
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    // when input len is 0 and no special function of tap => expected standard behavior, i.e. nothing was read
+    TEST_ASSERT_EQUAL(0, n);
+
+    // Enable time stamping in L2TAP, since now we can read TS
+    TEST_ASSERT_NOT_EQUAL(-1, ioctl(eth_tap_fd, L2TAP_S_TIMESTAMP_EN));
+
+    ESP_LOGI(TAG, "Verify response when trying to write/read in standard way (input len > 0) but tap configured as TS enabled");
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    n = write(eth_tap_fd, &test_ptp_msg, sizeof(test_ptp_msg));
+    TEST_ASSERT_EQUAL(-1, n);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    n = read(eth_tap_fd, &in_buffer, sizeof(test_ptp_msg));
+    TEST_ASSERT_EQUAL(-1, n);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+
+    ESP_LOGI(TAG, "Verify response to invalid info record type for write");
+    ts_info->type = 0xFF;
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n); // invalid info record is ignored and write is successful
+    // since write was successful, empty L2 TAP queue
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    int exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg);
+    TEST_ASSERT_EQUAL(exp_n, n);
+    TEST_ASSERT_EQUAL(exp_sequence_id, ((test_eth_ptp_msg_t *)in_buffer)->ptp_msg.ptp_hdr.sequence_id);
+
+
+    ESP_LOGI(TAG, "Verify response to invalid record type for read (first need to write correctly)");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n);
+    ts_info->type = 0xFF;
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg); // minimum Ethernet frame has size of 60B
+    TEST_ASSERT_EQUAL(exp_n, n); // invalid info record is ignored and read is successful
+
+    ESP_LOGI(TAG, "Verify response to invalid record len for write");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(1);
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n); // write is successful
+    TEST_ASSERT_EQUAL(L2TAP_IREC_INVALID, ts_info->type); // but the TS record is marked invalid
+    // since write was successful, empty L2 TAP queue
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg);
+    TEST_ASSERT_EQUAL(exp_n, n);
+    TEST_ASSERT_EQUAL(exp_sequence_id, ((test_eth_ptp_msg_t *)in_buffer)->ptp_msg.ptp_hdr.sequence_id);
+
+
+    ESP_LOGI(TAG, "Verify response to invalid record len for read (first we need write correctly)");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+    test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+    exp_sequence_id++;
+    ptp_msg_ext_buff.buff = &test_ptp_msg;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n);
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(1);
+    ptp_msg_ext_buff.buff = in_buffer;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg);
+    TEST_ASSERT_EQUAL(exp_n, n); // read is successful
+    TEST_ASSERT_EQUAL(L2TAP_IREC_INVALID, ts_info->type); // but the TS record is marked invalid
+
+    ESP_LOGI(TAG, "Verify response to Info Record buffer is NULL for write");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+    ptp_msg_ext_buff.buff = NULL;
+    ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+    n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(-1, n);
+    TEST_ASSERT_EQUAL(EFAULT, errno);
+    ESP_LOGI(TAG, "Verify response to Info Record buffer is NULL for read");
+    ts_info->type = L2TAP_IREC_TIME_STAMP;
+    ts_info->len = L2TAP_IREC_LEN(1);
+    ptp_msg_ext_buff.buff = NULL;
+    ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+    n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+    TEST_ASSERT_EQUAL(-1, n);
+    TEST_ASSERT_EQUAL(EFAULT, errno);
+
+    eth_mac_time_t ptp_time = {
+        .seconds = 10,
+        .nanoseconds = 412000
+    };
+    esp_eth_ioctl(eth_network_hndls.eth_handle, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+
+    ESP_LOGI(TAG, "Verify retrieval of Tx and Rx time stamps");
+    for (int i = 0; i < 4; i++) {
+        ts_info->type = L2TAP_IREC_TIME_STAMP;
+        ts_info->len = L2TAP_IREC_LEN(sizeof(struct timespec));
+        test_ptp_msg.ptp_msg.ptp_hdr.sequence_id++;
+        exp_sequence_id++;
+        ptp_msg_ext_buff.buff = &test_ptp_msg;
+        ptp_msg_ext_buff.buff_len = sizeof(test_ptp_msg);
+        n = write(eth_tap_fd, &ptp_msg_ext_buff, 0);
+        TEST_ASSERT_EQUAL(sizeof(test_ptp_msg), n);
+        TEST_ASSERT_EQUAL(L2TAP_IREC_TIME_STAMP, ts_info->type);
+        struct timespec *ts = (struct timespec *)ts_info->data;
+        printf("tap tx TS: %lli.%09li\n", ts->tv_sec, ts->tv_nsec);
+        TEST_ASSERT_NOT_EQUAL(0, ts->tv_sec);
+        TEST_ASSERT_NOT_EQUAL(0, ts->tv_nsec);
+
+        ptp_msg_ext_buff.buff = in_buffer;
+        ptp_msg_ext_buff.buff_len = IN_BUFFER_SIZE;
+        n = read(eth_tap_fd, &ptp_msg_ext_buff, 0);
+        exp_n = sizeof(test_ptp_msg) < 60 ? 60 : sizeof(test_ptp_msg);
+        TEST_ASSERT_EQUAL(exp_n, n);
+        TEST_ASSERT_EQUAL(exp_sequence_id, ((test_eth_ptp_msg_t *)in_buffer)->ptp_msg.ptp_hdr.sequence_id);
+        TEST_ASSERT_EQUAL(exp_n, ptp_msg_ext_buff.buff_len);
+        TEST_ASSERT_EQUAL(L2TAP_IREC_TIME_STAMP, ts_info->type);
+        printf("tap rx TS: %lli.%09li\n", ts->tv_sec, ts->tv_nsec);
+        TEST_ASSERT_NOT_EQUAL(0, ts->tv_sec);
+        TEST_ASSERT_NOT_EQUAL(0, ts->tv_nsec);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
+    TEST_ASSERT_EQUAL(ESP_OK, esp_vfs_l2tap_intf_unregister(NULL));
+    ethernet_deinit(&eth_network_hndls);
+}
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+
+/* ============================================================================= */
+/**
  * @brief Verifies proper functionality of ioctl RCV_FILTER option
  *
  */
@@ -1063,9 +1342,17 @@ TEST_CASE("esp32 l2tap - fcntl", "[ethernet]")
     TEST_ASSERT_EQUAL(0, loop_cnt);
 
     // Try to use unsupported operation
-    int new_fd = fcntl(eth_tap_fd, F_DUPFD, 0);
-    TEST_ASSERT_EQUAL(-1, new_fd);
+    flags = fcntl(eth_tap_fd, F_DUPFD, 0);
+    TEST_ASSERT_EQUAL(-1, flags);
     TEST_ASSERT_EQUAL(ENOSYS, errno);
+
+    // Try to set unsupported flag
+    flags = fcntl(eth_tap_fd, F_SETFL, O_TRUNC);
+    TEST_ASSERT_EQUAL(-1, flags);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
+    flags = fcntl(eth_tap_fd, F_SETFL, O_TRUNC | O_NONBLOCK);
+    TEST_ASSERT_EQUAL(-1, flags);
+    TEST_ASSERT_EQUAL(EINVAL, errno);
 
     TEST_ASSERT_EQUAL(0, close(eth_tap_fd));
 

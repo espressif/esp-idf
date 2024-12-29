@@ -14,6 +14,9 @@ examples/peripherals/adc/continuous_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/adc/oneshot_read:
@@ -23,6 +26,9 @@ examples/peripherals/adc/oneshot_read:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runner, TODO IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: lack of runner
   <<: *adc_dependencies
 
 examples/peripherals/analog_comparator:
@@ -32,7 +38,14 @@ examples/peripherals/analog_comparator:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
 
-examples/peripherals/camera/camera_dsi:
+examples/peripherals/camera/dvp_isp_dsi:
+  disable:
+    - if: SOC_ISP_DVP_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_cam
+
+examples/peripherals/camera/mipi_isp_dsi:
   disable:
     - if: SOC_MIPI_CSI_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
   depends_components:
@@ -61,9 +74,21 @@ examples/peripherals/gpio/matrix_keyboard:
   enable:
     - if: IDF_TARGET == "esp32s2"
 
+examples/peripherals/i2c/i2c_basic:
+  disable:
+    - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2c
+
 examples/peripherals/i2c/i2c_eeprom:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2c
+
+examples/peripherals/i2c/i2c_slave_network_sensor:
+  disable:
+    - if: SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE != 1 or (SOC_WIFI_SUPPORTED != 1 and SOC_EMAC_SUPPORTED != 1)
   depends_components:
     - esp_driver_i2c
 
@@ -168,6 +193,13 @@ examples/peripherals/lcd/mipi_dsi:
     - if: SOC_LCD_MIPI_DSI_SUPPORTED != 1
   depends_components:
     - esp_lcd
+
+examples/peripherals/lcd/parlio_simulate:
+  disable:
+    - if: SOC_PARLIO_SUPPORT_SPI_LCD != 1
+  depends_components:
+    - esp_lcd
+    - esp_driver_parlio
 
 examples/peripherals/lcd/rgb_panel:
   disable:
@@ -445,9 +477,9 @@ examples/peripherals/twai/twai_network:
   disable:
     - if: SOC_TWAI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET not in ["esp32"]
+    - if: 1 == 1
       temporary: true
-      reason: lack of runners
+      reason: Test is flakey, TODO IDF-2939
 
 examples/peripherals/twai/twai_self_test:
   disable:

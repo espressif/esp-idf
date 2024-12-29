@@ -212,7 +212,8 @@ IRAM 安全
 应用示例
 --------
 
-* :example:`peripherals/camera/camera_dsi` 演示了如何使用 ``esp_driver_cam`` 组件从摄像头传感器捕获信号，并通过 DSI 接口将其显示在 ILI9881C LCD 屏幕上。
+* :example:`peripherals/camera/mipi_isp_dsi` 演示了如何使用 ``esp_driver_cam`` 组件从 MIPI CSI 摄像头传感器捕获信号，传入 ISP 模块，并通过 DSI 接口将其显示在 LCD 屏幕上。
+* :example:`peripherals/camera/dvp_isp_dsi` 演示了如何使用 ``esp_driver_cam`` 组件从 DVP 摄像头传感器捕获信号，传入 ISP 模块，并通过 DSI 接口将其显示在 LCD 屏幕上。
 
 API 参考
 --------

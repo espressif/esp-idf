@@ -70,6 +70,28 @@ Application Examples
 
 - :example:`protocols/https_server/wss_server` demonstrates how to create an SSL server with a simple WebSocket request handler that supports handling multiple clients, PING-PONG mechanism, and sending asynchronous messages to all clients.
 
+HTTPS Server Cert Selection Hook
+--------------------------------
+
+The ESP HTTPS Server component provides an option to set the server certification selection hook. This feature allows you to configure and use a certificate selection callback during server handshake. The callback helps to select a certificate to present to the client based on the TLS extensions supplied in the client hello message, such as ALPN and SNI.
+
+To enable this feature, please enable :ref:`CONFIG_ESP_HTTPS_SERVER_CERT_SELECT_HOOK` in the ESP HTTPS Server menuconfig. Please note that the ESP-TLS option is only available when Mbedtls is used as the TLS stack for ESP-TLS (default behaviour).
+
+When enabled, you can set the certificate selection callback using the :cpp:member:`httpd_ssl_config::cert_select_cb` member of the :cpp:type:`httpd_ssl_config_t` structure.
+
+.. code-block:: c
+
+  int cert_selection_callback(mbedtls_ssl_context *ssl)
+    {
+        /* Code that the callback should execute */
+        return 0;
+    }
+
+    httpd_ssl_config_t cfg = {
+        cert_select_cb = cert_section_callback,
+    };
+
+
 API Reference
 -------------
 

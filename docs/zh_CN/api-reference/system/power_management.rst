@@ -141,7 +141,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
 
         如果在 menuconfig 中启用了 :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`，在初始化外设时，驱动会将外设工作的寄存器上下文注册到休眠备份链表中，在进入休眠前，``REG_DMA`` 外设会读取休眠备份链表中的配置，根据链表中的配置将外设的寄存器上下文备份至内存，``REG_DMA`` 也会在唤醒时将上下文从内存恢复到外设寄存中。
 
-        目前 IDF 支持以下外设的 Light-sleep 上下文备份：
+        目前 IDF 支持以下外设的 Light-sleep 上下文备份，它们的上下文会自动恢复，或者提供了相关的选项允许用户进入外设下电模式：
 
         .. list::
 
@@ -156,13 +156,20 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
             :SOC_ETM_SUPPORT_SLEEP_RETENTION: - ETM
+            :SOC_MCPWM_SUPPORT_SLEEP_RETENTION: - MCPWM
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
-        以下外设尚未支持：
+        一些外设尚未支持睡眠上下文恢复，或者寄存器丢失后根本无法恢复。即使外设下电功能被启用，它们也会阻止外设下电的发生：
+
+        .. list::
+
+            :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+
+        以下外设（以及一些未在本章节任意一组中列出的外设）尚未支持外设下电功能。如果您的应用使用了这些外设，它们可能无法在从睡眠中醒来后仍然正常工作：
 
         .. list::
 
@@ -171,11 +178,7 @@ ESP-IDF 中集成的电源管理算法可以根据应用程序组件的需求，
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
             - PCNT
             - USB-Serial-JTAG
-            - MCPWM
             - SARADC
-            - SDIO
-
-        对于未支持 Light-sleep 上下文备份的外设，若启用了电源管理功能，应在外设工作时持有 ``ESP_PM_NO_LIGHT_SLEEP`` 锁以避免进入休眠导致外设工作上下文丢失。
 
         .. note::
 

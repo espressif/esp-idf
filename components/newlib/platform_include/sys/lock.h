@@ -8,6 +8,10 @@
 #include_next <sys/lock.h>
 #include "sdkconfig.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifdef _RETARGETABLE_LOCKING
 
 /* Actual platfrom-specific definition of struct __lock.
@@ -48,4 +52,12 @@ int _lock_try_acquire_recursive(_lock_t *plock);
 void _lock_release(_lock_t *plock);
 void _lock_release_recursive(_lock_t *plock);
 
+#if CONFIG_LIBC_PICOLIBC
+#define __lock_try_acquire(lock) _lock_try_acquire(&(lock))
+#define __lock_try_acquire_recursive(lock) _lock_try_acquire_recursive(&(lock))
+#endif // CONFIG_LIBC_PICOLIBC
 #endif // _RETARGETABLE_LOCKING
+
+#ifdef __cplusplus
+}
+#endif

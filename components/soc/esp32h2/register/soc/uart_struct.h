@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -737,14 +737,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xon_char : R/W; bitpos: [7:0]; default: 17;
+        /** xon_character : R/W; bitpos: [7:0]; default: 17;
          *  This register stores the Xon flow control char.
          */
-        uint32_t xon_char:8;
-        /** xoff_char : R/W; bitpos: [15:8]; default: 19;
+        uint32_t xon_character:8;
+        /** xoff_character : R/W; bitpos: [15:8]; default: 19;
          *  This register stores the Xoff flow control char.
          */
-        uint32_t xoff_char:8;
+        uint32_t xoff_character:8;
         /** xon_xoff_still_send : R/W; bitpos: [16]; default: 0;
          *  In software flow control mode, UART Tx is disabled once UART Rx receives XOFF. In
          *  this status, UART Tx can not transmit XOFF even the received data number is larger
@@ -874,6 +874,33 @@ typedef union {
     };
     uint32_t val;
 } uart_rs485_conf_sync_reg_t;
+
+/** Type of clk_conf register
+ *  UART core clock configuration
+ */
+typedef union {
+    struct {
+        uint32_t reserved_0:24;
+        /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
+         *  Set this bit to enable UART Tx clock.
+         */
+        uint32_t tx_sclk_en:1;
+        /** rx_sclk_en : R/W; bitpos: [25]; default: 1;
+         *  Set this bit to enable UART Rx clock.
+         */
+        uint32_t rx_sclk_en:1;
+        /** tx_rst_core : R/W; bitpos: [26]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Tx.
+         */
+        uint32_t tx_rst_core:1;
+        /** rx_rst_core : R/W; bitpos: [27]; default: 0;
+         *  Write 1 then write 0 to this bit to reset UART Rx.
+         */
+        uint32_t rx_rst_core:1;
+        uint32_t reserved_28:4;
+    };
+    uint32_t val;
+} uart_clk_conf_reg_t;
 
 
 /** Group: Status Register */
@@ -1057,11 +1084,11 @@ typedef union {
          *  This register is used to configure the content of at_cmd char.
          */
         uint32_t data:8;
-        /** char_num : R/W; bitpos: [15:8]; default: 3;
+        /** at_char_num : R/W; bitpos: [15:8]; default: 3;
          *  This register is used to configure the num of continuous at_cmd chars received by
          *  receiver.
          */
-        uint32_t char_num:8;
+        uint32_t at_char_num:8;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -1223,7 +1250,7 @@ typedef struct uart_dev_s {
     volatile uart_lowpulse_reg_t lowpulse;
     volatile uart_highpulse_reg_t highpulse;
     volatile uart_rxd_cnt_reg_t rxd_cnt;
-    uint32_t reserved_088;
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;

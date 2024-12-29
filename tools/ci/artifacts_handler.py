@@ -30,6 +30,8 @@ TYPE_PATTERNS_DICT = {
     ArtifactType.MAP_AND_ELF_FILES: [
         '**/build*/bootloader/*.map',
         '**/build*/bootloader/*.elf',
+        '**/build*/esp_tee/*.map',
+        '**/build*/esp_tee/*.elf',
         '**/build*/*.map',
         '**/build*/*.elf',
     ],
@@ -37,6 +39,7 @@ TYPE_PATTERNS_DICT = {
         f'**/build*/{DEFAULT_BUILD_LOG_FILENAME}',
         '**/build*/*.bin',
         '**/build*/bootloader/*.bin',
+        '**/build*/esp_tee/*.bin',
         '**/build*/partition_table/*.bin',
         '**/build*/flasher_args.json',
         '**/build*/flash_project_args',
@@ -152,11 +155,8 @@ def _upload_files(
     try:
         if has_file:
             obj_name = f'{pipeline_id}/{artifact_type.value}/{sanitize_job_name(job_name)}/{job_id}.zip'
-            print(f'Created archive file: {job_id}.zip, uploading as {obj_name}')
-
             client.fput_object(getenv('IDF_S3_BUCKET'), obj_name, f'{job_id}.zip')
-            url = client.get_presigned_url('GET', getenv('IDF_S3_BUCKET'), obj_name)
-            print(f'Please download the archive file which includes {artifact_type.value} from {url}')
+            print(f'Created archive file: {job_id}.zip, uploaded as {obj_name}')
     finally:
         os.remove(f'{job_id}.zip')
 

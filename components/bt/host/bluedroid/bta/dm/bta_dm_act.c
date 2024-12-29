@@ -4972,7 +4972,9 @@ static UINT8 bta_dm_ble_smp_cback (tBTM_LE_EVT event, BD_ADDR bda, tBTM_LE_EVT_D
         if (p_data->complt.reason != 0) {
             sec_event.auth_cmpl.fail_reason = BTA_DM_AUTH_CONVERT_SMP_CODE(((UINT8)p_data->complt.reason));
             /* delete this device entry from Sec Dev DB */
-            bta_dm_remove_sec_dev_entry (bda);
+            APPL_TRACE_WARNING("%s remove bond,rsn %d, BDA:0x%02X%02X%02X%02X%02X%02X", __func__, sec_event.auth_cmpl.fail_reason,
+                            bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+            bta_dm_remove_sec_dev_entry(bda);
         } else {
             sec_event.auth_cmpl.success = TRUE;
             if (!p_data->complt.smp_over_br) {
@@ -6049,7 +6051,7 @@ void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
                sizeof(tBTA_DM_BLE_CONN_PARAMS));
     }
 
-    if (conn_params.phy_mask & BTAS_PHY_CODED_MASK) {
+    if (conn_params.phy_mask & BTA_PHY_CODED_MASK) {
         memcpy(&conn_params.phy_coded_conn_params, &p_data->ble_set_per_ext_conn_params.phy_coded_conn_params,
                sizeof(tBTA_DM_BLE_CONN_PARAMS));
     }
@@ -6673,7 +6675,9 @@ void btm_dm_start_gatt_discovery (BD_ADDR bd_addr)
         btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
     } else {
         //TODO need to add addr_type in future
-        BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, BLE_ADDR_UNKNOWN_TYPE, TRUE, BTA_GATT_TRANSPORT_LE, FALSE);
+        BTA_GATTC_Enh_Open(bta_dm_search_cb.client_if, bd_addr, BLE_ADDR_UNKNOWN_TYPE, TRUE,
+            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, 0, NULL, NULL, NULL);
+
     }
 }
 #endif /* #if (GATTC_INCLUDED == TRUE) */

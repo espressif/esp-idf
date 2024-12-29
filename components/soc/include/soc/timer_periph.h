@@ -37,7 +37,7 @@ typedef struct {
     uint32_t array_size;
 } tg_timer_reg_retention_info_t;
 
-extern const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS];
+extern const tg_timer_reg_retention_info_t tg_timer_reg_retention_info[SOC_TIMER_GROUPS][SOC_TIMER_GROUP_TIMERS_PER_GROUP];
 #endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
 #ifdef __cplusplus

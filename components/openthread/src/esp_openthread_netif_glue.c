@@ -16,6 +16,7 @@
 #include "esp_log.h"
 #include "esp_netif.h"
 #include "esp_openthread.h"
+#include "esp_openthread_border_router.h"
 #include "esp_openthread_common_macro.h"
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue_priv.h"
@@ -33,6 +34,7 @@
 #include "openthread/ip6.h"
 #include "openthread/link.h"
 #include "openthread/message.h"
+#include "openthread/platform/infra_if.h"
 #include "openthread/thread.h"
 
 typedef struct {
@@ -380,4 +382,17 @@ esp_err_t esp_openthread_netif_glue_process(otInstance *instance, const esp_open
 esp_netif_t *esp_openthread_get_netif(void)
 {
     return s_openthread_netif;
+}
+
+otError otPlatGetInfraIfLinkLayerAddress(otInstance *aInstance, uint32_t aIfIndex, otPlatInfraIfLinkLayerAddress *aInfraIfLinkLayerAddress)
+{
+    esp_netif_t *backbone_netif = esp_openthread_get_backbone_netif();
+    if (esp_netif_get_netif_impl_index(backbone_netif) != aIfIndex) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to get LL address, error: Invalid If index");
+        return OT_ERROR_FAILED;
+    } else {
+        esp_netif_get_mac(backbone_netif, aInfraIfLinkLayerAddress->mAddress);
+        aInfraIfLinkLayerAddress->mLength = 6;
+        return OT_ERROR_NONE;
+    }
 }

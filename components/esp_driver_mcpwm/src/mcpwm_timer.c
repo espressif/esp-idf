@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,10 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     }
     ESP_GOTO_ON_FALSE(peak_ticks > 0 && peak_ticks < MCPWM_LL_MAX_COUNT_VALUE, ESP_ERR_INVALID_ARG, err, TAG, "invalid period ticks");
 
+#if !SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
+#endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+
     timer = heap_caps_calloc(1, sizeof(mcpwm_timer_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for timer");
 
@@ -143,6 +147,13 @@ esp_err_t mcpwm_new_timer(const mcpwm_timer_config_t *config, mcpwm_timer_handle
     timer->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
     timer->fsm = MCPWM_TIMER_FSM_INIT;
     *ret_timer = timer;
+
+#if MCPWM_USE_RETENTION_LINK
+    if (config->flags.allow_pd != 0) {
+        mcpwm_create_retention_module(group);
+    }
+#endif // MCPWM_USE_RETENTION_LINK
+
     ESP_LOGD(TAG, "new timer(%d,%d) at %p, resolution:%"PRIu32"Hz, peak:%"PRIu32", count_mod:%c",
              group_id, timer_id, timer, timer->resolution_hz, timer->peak_ticks, "SUDB"[timer->count_mode]);
     return ESP_OK;

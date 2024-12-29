@@ -61,6 +61,7 @@ extern "C" {
 #define REGDMA_GPSPI_LINK(_pri)             ((0x23 << 8) | _pri)
 #define REGDMA_LEDC_LINK(_pri)              ((0x24 << 8) | _pri)
 #define REGDMA_PCNT_LINK(_pri)              ((0x25 << 8) | _pri)
+#define REGDMA_MCPWM_LINK(_pri)             ((0x26 << 8) | _pri)
 #define REGDMA_MODEM_FE_LINK(_pri)          ((0xFF << 8) | _pri)
 
 #define REGDMA_LINK_PRI_SYS_CLK                 REGDMA_LINK_PRI_0
@@ -86,6 +87,7 @@ extern "C" {
 #define REGDMA_LINK_PRI_TWAI                    REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_GPSPI                   REGDMA_LINK_PRI_GENERAL_PERIPH
 #define REGDMA_LINK_PRI_LEDC                    REGDMA_LINK_PRI_GENERAL_PERIPH
+#define REGDMA_LINK_PRI_MCPWM                   REGDMA_LINK_PRI_GENERAL_PERIPH
 
 typedef enum {
     REGDMA_LINK_PRI_0 = 0,
@@ -98,7 +100,6 @@ typedef enum {
     REGDMA_LINK_PRI_7,
 } regdma_link_priority_t;
 
-
 typedef void * regdma_entry_buf_t[REGDMA_LINK_ENTRY_NUM];
 
 typedef enum regdma_link_mode {
@@ -107,7 +108,6 @@ typedef enum regdma_link_mode {
     REGDMA_LINK_MODE_WRITE,          /*!< Link used to direct write to registers*/
     REGDMA_LINK_MODE_WAIT            /*!< Link used to wait for register value to meet condition*/
 } regdma_link_mode_t;
-
 
 typedef struct regdma_link_head {
     volatile uint32_t length: 10, /* total count of registers that need to be backup or restore, unit: 1 word = 4 bytes */
@@ -174,10 +174,10 @@ ESP_STATIC_ASSERT(REGDMA_LINK_ENTRY_NUM <= 16, "regdma link entry number should 
 typedef struct regdma_link_stats {
     volatile uint32_t   ref: REGDMA_LINK_ENTRY_NUM, /* a bitmap, identifies which entry has referenced the current link */
 #if REGDMA_LINK_ENTRY_NUM < 16
-             reserve: 16-REGDMA_LINK_ENTRY_NUM,
+             reserve: 16 - REGDMA_LINK_ENTRY_NUM,
 #endif
              id: 16; /* REGDMA linked list node unique identifier */
-    volatile uint32_t   module; /* a bitmap used to identify the module to which the current node belongs */
+    volatile int    module; /* a number used to identify the module to which the current node belongs */
 } regdma_link_stats_t;
 
 typedef struct regdma_link_continuous {

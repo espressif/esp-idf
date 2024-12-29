@@ -70,6 +70,10 @@ extern "C" {
 #define PSRAM_CS_HOLD_VAL       1
 #define PSRAM_CS_SETUP_VAL      1
 
+// QEMU has a simulated 16MB and 32MB Quad SPI PSRAM. Use a fake ID for these.
+#define PSRAM_QEMU_16MB_ID      0x6a
+#define PSRAM_QEMU_32MB_ID      0x8e
+
 #ifdef __cplusplus
 }
 #endif

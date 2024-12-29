@@ -102,6 +102,7 @@ __attribute__((weak)) void esp_clk_init(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
+    modem_clock_deselect_all_module_lp_clock_source();
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
@@ -315,8 +316,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT) \
             || (rst_reason == RESET_REASON_SYS_RTC_WDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)) {
         _lp_i2c_ll_enable_bus_clock(0, false);
-        _lp_uart_ll_enable_bus_clock(0, false);
         lp_uart_ll_sclk_disable(0);
+        _lp_uart_ll_enable_bus_clock(0, false);
         lp_core_ll_enable_bus_clock(false);
         _lp_clkrst_ll_enable_rng_clock(false);
 

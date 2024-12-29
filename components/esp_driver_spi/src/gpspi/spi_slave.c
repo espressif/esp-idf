@@ -28,6 +28,7 @@
 #include "driver/spi_slave.h"
 #include "hal/gpio_hal.h"
 #include "hal/spi_slave_hal.h"
+#include "esp_private/sleep_retention.h"
 #include "esp_private/spi_slave_internal.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/esp_cache_private.h"
@@ -129,6 +130,17 @@ static void ipc_isr_reg_to_core(void *args)
 }
 #endif
 
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+static esp_err_t s_spi_create_sleep_retention_cb(void *arg)
+{
+    spi_slave_t *context = arg;
+    return sleep_retention_entries_create(spi_reg_retention_info[context->id - 1].entry_array,
+                                          spi_reg_retention_info[context->id - 1].array_size,
+                                          REGDMA_LINK_PRI_GPSPI,
+                                          spi_reg_retention_info[context->id - 1].module_id);
+}
+#endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
+
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan)
 {
     bool spi_chan_claimed;
@@ -222,6 +234,32 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     esp_pm_lock_acquire(spihost[host]->pm_lock);
 #endif //CONFIG_PM_ENABLE
 
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    sleep_retention_module_init_param_t init_param = {
+        .cbs = {
+            .create = {
+                .handle = s_spi_create_sleep_retention_cb,
+                .arg = spihost[host],
+            },
+        },
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM),
+    };
+
+    if (ESP_OK == sleep_retention_module_init(spi_reg_retention_info[host - 1].module_id, &init_param)) {
+        if ((bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) && (sleep_retention_module_allocate(spi_reg_retention_info[host - 1].module_id) != ESP_OK)) {
+            // even though the sleep retention create failed, SPI driver should still work, so just warning here
+            ESP_LOGW(SPI_TAG, "Alloc sleep recover failed, spi may hold power on");
+        }
+    } else {
+        // even the sleep retention init failed, SPI driver should still work, so just warning here
+        ESP_LOGW(SPI_TAG, "Init sleep recover failed, spi may offline after sleep");
+    }
+#else
+    if (bus_config->flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) {
+        ESP_LOGE(SPI_TAG, "power down peripheral in sleep is not enabled or not supported on your target");
+    }
+#endif  // SOC_SPI_SUPPORT_SLEEP_RETENTION
+
     //Create queues
     spihost[host]->trans_queue = xQueueCreate(slave_config->queue_size, sizeof(spi_slave_trans_priv_t));
     if (!spihost[host]->trans_queue) {
@@ -290,6 +328,17 @@ esp_err_t spi_slave_free(spi_host_device_t host)
     }
     spicommon_bus_free_io_cfg(&spihost[host]->bus_config);
     esp_intr_free(spihost[host]->intr);
+
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    const periph_retention_module_t retention_id = spi_reg_retention_info[spihost[host]->id - 1].module_id;
+    if (sleep_retention_is_module_created(retention_id)) {
+        assert(sleep_retention_is_module_inited(retention_id));
+        sleep_retention_module_free(retention_id);
+    }
+    if (sleep_retention_is_module_inited(retention_id)) {
+        sleep_retention_module_deinit(retention_id);
+    }
+#endif
 #ifdef CONFIG_PM_ENABLE
     if (spihost[host]->pm_lock) {
         esp_pm_lock_release(spihost[host]->pm_lock);
@@ -332,7 +381,7 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
 
     if (spihost[host]->dma_enabled && trans->tx_buffer) {
         if ((!esp_ptr_dma_capable(trans->tx_buffer) || ((((uint32_t)trans->tx_buffer) | buffer_byte_len) & (alignment - 1)))) {
-            ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "TX buffer addr&len not align to %d, or not dma_capable", alignment);
+            ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "TX buffer addr&len not align to %d byte, or not dma_capable", alignment);
             //if txbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
             ESP_EARLY_LOGD(SPI_TAG, "Allocate TX buffer for DMA");
             buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"
@@ -349,7 +398,7 @@ static esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_setup_priv_trans(spi_host_device_t
     }
     if (spihost[host]->dma_enabled && trans->rx_buffer) {
         if ((!esp_ptr_dma_capable(trans->rx_buffer) || ((((uint32_t)trans->rx_buffer) | (trans->length + 7) / 8) & (alignment - 1)))) {
-            ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "RX buffer addr&len not align to %d, or not dma_capable", alignment);
+            ESP_RETURN_ON_FALSE_ISR(trans->flags & SPI_SLAVE_TRANS_DMA_BUFFER_ALIGN_AUTO, ESP_ERR_INVALID_ARG, SPI_TAG, "RX buffer addr&len not align to %d byte, or not dma_capable", alignment);
             //if rxbuf in the desc not DMA-capable, or not align to "alignment", malloc a new one
             ESP_EARLY_LOGD(SPI_TAG, "Allocate RX buffer for DMA");
             buffer_byte_len = (buffer_byte_len + alignment - 1) & (~(alignment - 1));   // up align to "alignment"

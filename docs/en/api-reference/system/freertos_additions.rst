@@ -111,7 +111,7 @@ The following example demonstrates the usage of :cpp:func:`xRingbufferSendAcquir
             .buf = item->buf,
         };
         //Actually send to the ring buffer for consumer to use
-        res = xRingbufferSendComplete(buf_handle, &item);
+        res = xRingbufferSendComplete(buf_handle, (void *)item);
         if (res != pdTRUE) {
             printf("Failed to send item\n");
         }

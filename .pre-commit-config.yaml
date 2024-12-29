@@ -1,7 +1,7 @@
 # See https://pre-commit.com for more information
 # See https://pre-commit.com/hooks.html for more hooks
 
-default_stages: [commit]
+default_stages: [pre-commit]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -14,6 +14,7 @@ repos:
         # 2 - any file matching *test*/*expected* (for host tests, if possible use this naming pattern always)
         # 3 - any directory named 'testdata'
         # 4 - protobuf auto-generated files
+        # 5 - COPYING files
         exclude: &whitespace_excludes |
           (?x)^(
             .+\.(md|rst|map|bin)|
@@ -23,7 +24,8 @@ repos:
             .*.pb-c.h|
             .*.pb-c.c|
             .*.yuv|
-            .*.rgb
+            .*.rgb|
+            .*COPYING.*
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
@@ -154,7 +156,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.0
+          - idf-build-apps~=2.5
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
@@ -241,6 +243,6 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.3.0
+    rev: v2.4.1
     hooks:
       - id: check-kconfig-files

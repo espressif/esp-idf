@@ -1,7 +1,7 @@
 .build_template:
   stage: build
   extends:
-    - .after_script:build:ccache:upload-when-fail
+    - .after_script:build:ccache-show-stats:upload-failed-job-logs
   image: $ESP_ENV_IMAGE
   tags:
     - build
@@ -12,11 +12,11 @@
     IDF_CCACHE_ENABLE: "1"
   dependencies: []
 
-.build_cmake_template:
+.build_cmake_clang_template:
   extends:
     - .build_template
     - .before_script:build
-    - .after_script:build:ccache
+    - .after_script:build:ccache-show-stats
   dependencies: # set dependencies to null to avoid missing artifacts issue
   needs:
     - job: fast_template_app
@@ -34,29 +34,11 @@
       - "**/build*/size.json"
     expire_in: 1 week
     when: always
-  script:
-    # CI specific options start from "--parallel-count xxx". could ignore when running locally
-    - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
-      -t $IDF_TARGET
-      --copy-sdkconfig
-      --parallel-count ${CI_NODE_TOTAL:-1}
-      --parallel-index ${CI_NODE_INDEX:-1}
-      --extra-preserve-dirs
-        examples/bluetooth/esp_ble_mesh/ble_mesh_console
-        examples/bluetooth/hci/controller_hci_uart_esp32
-        examples/wifi/iperf
-      --modified-components ${MR_MODIFIED_COMPONENTS}
-      --modified-files ${MR_MODIFIED_FILES}
-    # for detailed documents, please refer to .gitlab/ci/README.md#uploaddownload-artifacts-to-internal-minio-server
-    - python tools/ci/artifacts_handler.py upload
-
-.build_cmake_clang_template:
-  extends:
-    - .build_cmake_template
   variables:
     IDF_TOOLCHAIN: clang
     TEST_BUILD_OPTS_EXTRA: ""
     TEST_DIR: tools/test_apps/system/clang_build_test
+    PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
     # CI specific options start from "--parallel-count xxx". could ignore when running locally
     - run_cmd python tools/ci/ci_build_apps.py $TEST_DIR -v
@@ -126,7 +108,7 @@ gcc_static_analyzer:
     ANALYZING_APP: "examples/get-started/hello_world"
   script:
     - echo "CONFIG_COMPILER_STATIC_ANALYZER=y" >> ${ANALYZING_APP}/sdkconfig.defaults
-    - python -m idf_build_apps build -vv -p ${ANALYZING_APP} -t all
+    - python -m idf_build_apps build -v -p ${ANALYZING_APP} -t all
 
 ########################################
 # Clang Build Apps Without Tests Cases #
@@ -246,15 +228,16 @@ pytest_build_system_macos:
   extends:
     - .test_build_system_template
     - .before_script:build:macos
-    - .after_script:build:macos:upload-when-fail
+    - .after_script:build:macos:upload-failed-job-logs:ccache-show-stats
     - .rules:build:macos
   tags:
     - macos_shell
   parallel: 3
   variables:
-    PYENV_VERSION: "3.8"
-    CI_CCACHE_DISABLE: "1"  # ccache: error: Read-only file system
-
+    PYENV_VERSION: "3.9"
+    # CCACHE_DIR: "/cache/idf_ccache". On macOS, you cannot write to this folder due to insufficient permissions.
+    CCACHE_DIR: "" # ccache will use "$HOME/Library/Caches/ccache".
+    CCACHE_MAXSIZE: "5G" # To preserve the limited Macbook storage. CCACHE automatically prunes old caches to fit the set limit.
 build_docker:
   extends:
     - .before_script:minimal

@@ -1,5 +1,6 @@
 idf_component_register(SRCS "nvsgen_example_main.c"
-                    INCLUDE_DIRS ".")
+                       PRIV_REQUIRES vfs fatfs nvs_flash
+                       INCLUDE_DIRS ".")
 
 # Create a NVS image from the contents of the `nvs_data` CSV file
 # that fits the partition named 'nvs'. FLASH_IN_PROJECT indicates that

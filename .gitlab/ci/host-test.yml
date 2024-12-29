@@ -195,7 +195,7 @@ test_tools:
       junit: ${IDF_PATH}/XUNIT_*.xml
   variables:
     LC_ALL: C.UTF-8
-    INSTALL_QEMU: 1  # for test_idf_qemu.py
+    INSTALL_EXTRA_TOOLS: "qemu-xtensa qemu-riscv32"  # for test_idf_qemu.py
   script:
     - stat=0
     - cd ${IDF_PATH}/tools/ci/test_autocomplete
@@ -282,9 +282,13 @@ test_pytest_qemu:
       junit: XUNIT_RESULT.xml
   parallel:
     matrix:
-      - IDF_TARGET: [esp32, esp32c3]
-  variables:
-    INSTALL_QEMU: 1
+      - IDF_TARGET: "esp32"
+        INSTALL_EXTRA_TOOLS: "qemu-xtensa"
+        # Skip Clang + Xtensa tests due to bootloader size issue
+        IDF_TOOLCHAIN: [gcc]
+      - IDF_TARGET: "esp32c3"
+        INSTALL_EXTRA_TOOLS: "qemu-riscv32"
+        IDF_TOOLCHAIN: [gcc, clang]
   script:
     - run_cmd python tools/ci/ci_build_apps.py . -v
       --target $IDF_TARGET
@@ -346,9 +350,10 @@ test_pytest_macos:
     reports:
       junit: XUNIT_RESULT.xml
   variables:
+    PYENV_VERSION: "3.9"
     PYTEST_IGNORE_COLLECT_IMPORT_ERROR: "1"
   script:
-    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -vv
+    - run_cmd python tools/ci/ci_build_apps.py components examples tools/test_apps -v
       --target linux
       --pytest-apps
       -m \"host_test and macos_shell\"
@@ -396,6 +401,17 @@ test_nvs_gen_check:
   script:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
     - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
+
+test_esp_rom:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd ${IDF_PATH}/components/esp_rom/
+    - pytest --noconftest test_esp_rom.py --junitxml=XUNIT_RESULT.xml
 
 make_sure_soc_caps_compatible_in_idf_build_apps:
     extends:

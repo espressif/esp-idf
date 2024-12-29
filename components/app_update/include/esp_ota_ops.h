@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,7 +82,11 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  * it will lead to the ESP_ERR_OTA_ROLLBACK_INVALID_STATE error. Confirm the running app before to run download a new app,
  * use esp_ota_mark_app_valid_cancel_rollback() function for it (this should be done as early as possible when you first download a new application).
  *
- * @param partition Pointer to info for partition which will receive the OTA update. Required.
+ * Note: Rollback is applicable only for app type partitions.
+ *
+ * @param partition  Pointer to info for partition which will receive the OTA update. Required.
+ *                   This is considered as the staging partition (where OTA is downloaded), be default this also considered as the final partition which supposed to be updated.
+ *                   The final partition can be overwritten using esp_ota_set_final_partition() after calling esp_ota_begin() to relocate contents to the final destination partition.
  * @param image_size Size of new OTA app image. Partition will be erased in order to receive this size of image. If 0 or OTA_SIZE_UNKNOWN, the entire partition is erased.
  * @param out_handle On success, returns a handle which should be used for subsequent esp_ota_write() and esp_ota_end() calls.
 
@@ -100,6 +104,31 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
 esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp_ota_handle_t* out_handle);
 
 /**
+ * @brief Set the final destination partition for OTA update
+ *
+ * This function configures the specified final partition as the destination for the OTA update.
+ * It also allows setting a flag to indicate if the image should be copied from the staging
+ * partition to the final partition after the OTA update completes. Otherwise, copying will need
+ * to be handled by custom code using esp_partition_copy().
+ *
+ * @note This can be called after esp_ota_begin() and before the OTA update has started (before esp_ota_write()).
+ *
+ * @param handle OTA update handle obtained from esp_ota_begin().
+ * @param final Pointer to the final destination partition where the new image will be verified and potentially finalized.
+ *              This partition must not be NULL.
+ * @param finalize_with_copy Boolean flag indicating if the downloaded image should be copied
+ *                           from the staging partition to the final partition upon completion.
+ *                           Set to False if you intend to perform the final copy process manually later.
+ *
+ * @return
+ *      - ESP_OK: final destination partition set successfully.
+ *      - ESP_ERR_INVALID_STATE: Once the OTA update has started, changing the final destination partition is prohibited.
+ *      - ESP_ERR_INVALID_ARG: Invalid arguments were passed (e.g., final partition is NULL).
+ *      - ESP_ERR_NOT_FOUND: OTA handle not found or final partition verification failed.
+ */
+esp_err_t esp_ota_set_final_partition(esp_ota_handle_t handle, const esp_partition_t *final, bool finalize_with_copy);
+
+/**
  * @brief   Write OTA update data to partition
  *
  * This function can be called multiple times as
@@ -113,9 +142,8 @@ esp_err_t esp_ota_begin(const esp_partition_t* partition, size_t image_size, esp
  * @return
  *    - ESP_OK: Data was written to flash successfully, or size = 0
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
- *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
+ *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
- *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
  *    - ESP_ERR_INVALID_SIZE: if write would go out of bounds of the partition
  *    - or one of error codes from lower-level flash driver.
  */
@@ -138,9 +166,7 @@ esp_err_t esp_ota_write(esp_ota_handle_t handle, const void* data, size_t size);
  * @return
  *    - ESP_OK: Data was written to flash successfully.
  *    - ESP_ERR_INVALID_ARG: handle is invalid.
- *    - ESP_ERR_OTA_VALIDATE_FAILED: First byte of image contains invalid app image magic byte.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
- *    - ESP_ERR_OTA_SELECT_INFO_INVALID: OTA data partition has invalid contents
  */
 esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, size_t size, uint32_t offset);
 
@@ -150,6 +176,11 @@ esp_err_t esp_ota_write_with_offset(esp_ota_handle_t handle, const void *data, s
  * @param handle  Handle obtained from esp_ota_begin().
  *
  * @note After calling esp_ota_end(), the handle is no longer valid and any memory associated with it is freed (regardless of result).
+ * @note If either the final or staging partitions were for the bootloader, then at the end of this function,
+ *       the bootloader is reset to its default offset: esp_image_bootloader_offset_set(ESP_PRIMARY_BOOTLOADER_OFFSET)
+ *
+ * If the finalize_with_copy option is set, the staging partition will be copied to the final partition at the end of this function.
+ * Otherwise, copying will need to be handled by custom code using esp_partition_copy().
  *
  * @return
  *    - ESP_OK: Newly written OTA app image is valid.
@@ -258,7 +289,7 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  * @brief Returns the description structure of the bootloader.
  *
  * @param[in] bootloader_partition Pointer to bootloader partition.
- *                                 If NULL, then the current bootloader is used (the default location).
+ *                                 If NULL, then the PRIMARY bootloader is used (the default location).
  *                                 offset = CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
  *                                 size = CONFIG_PARTITION_TABLE_OFFSET - CONFIG_BOOTLOADER_OFFSET_IN_FLASH,
  * @param[out] desc     Structure of info about bootloader.

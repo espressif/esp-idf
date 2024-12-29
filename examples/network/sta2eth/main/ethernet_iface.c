@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,13 +20,13 @@
  *  - this results in better throughput
  *  - might cause ARP conflicts if the PC is also connected to the same AP with another NIC
  */
-#define ETH_BRIDGE_PROMISCUOUS  0
+#define ETH_BRIDGE_PROMISCUOUS  CONFIG_EXAMPLE_ETHERNET_USE_PROMISCUOUS
 
 /**
  * Set this to 1 to runtime update HW addresses in DHCP messages
  * (this is needed if the client uses 61 option and the DHCP server applies strict rules on assigning addresses)
  */
-#define MODIFY_DHCP_MSGS        0
+#define MODIFY_DHCP_MSGS        CONFIG_EXAMPLE_MODIFY_DHCP_MESSAGES
 
 static const char *TAG = "example_wired_ethernet";
 static esp_eth_handle_t s_eth_handle = NULL;
@@ -49,7 +49,11 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
     switch (event_id) {
     case ETHERNET_EVENT_CONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Up");
-        esp_netif_dhcps_start(netif);
+        if (netif) {
+            // Start DHCP server only if we "have" the actual netif (provisioning mode)
+            // (if netif==NULL we are only forwarding frames, no lwip involved)
+            esp_netif_dhcps_start(netif);
+        }
         esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, mac_addr);
         ESP_LOGI(TAG, "Ethernet HW Addr %02x:%02x:%02x:%02x:%02x:%02x",
                  mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
@@ -57,7 +61,9 @@ void eth_event_handler(void *arg, esp_event_base_t event_base,
         break;
     case ETHERNET_EVENT_DISCONNECTED:
         ESP_LOGI(TAG, "Ethernet Link Down");
-        esp_netif_dhcps_stop(netif);
+        if (netif) {
+            esp_netif_dhcps_stop(netif);
+        }
         s_ethernet_is_connected = false;
         break;
     case ETHERNET_EVENT_START:

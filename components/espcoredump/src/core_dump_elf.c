@@ -81,11 +81,6 @@ typedef struct _core_dump_elf_t {
     uint16_t                        segs_count;
     core_dump_write_data_t          write_data;
     uint32_t                        note_data_size; /* can be used where static storage needed */
-#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-    /* To avoid checksum failure, coredump stack region will be excluded while storing the sections. */
-    uint32_t                        coredump_stack_start;
-    uint32_t                        coredump_stack_size;
-#endif
 } core_dump_elf_t;
 
 typedef struct {
@@ -209,7 +204,7 @@ static int elf_write_note_header(core_dump_elf_t *self,
     elf_note note_hdr = { 0 };
 
     memcpy(name_buffer, name, name_len);
-    note_hdr.n_namesz = ALIGN_UP(name_len, 4);
+    note_hdr.n_namesz = ALIGN_UP(name_len + 1, 4);
     note_hdr.n_descsz = data_sz;
     note_hdr.n_type = type;
     // write note header
@@ -242,7 +237,7 @@ static int elf_write_note(core_dump_elf_t *self,
     // write segment data during second pass
     if (self->elf_stage == ELF_STAGE_PLACE_DATA) {
         ELF_CHECK_ERR(data, ELF_PROC_ERR_OTHER, "Invalid data pointer %x.", (uint32_t)data);
-        err = elf_write_note_header(self, name, name_len, data_sz, type);
+        err = elf_write_note_header(self, name, strlen(name), data_sz, type);
         if (err != ESP_OK) {
             return err;
         }
@@ -524,61 +519,6 @@ static int elf_write_tasks_data(core_dump_elf_t *self)
 
 #if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
 
-/* Coredump stack will also be used by the checksum functions while saving sections.
- * There is a potential for inconsistency when writing coredump stack to the flash and calculating checksum simultaneously.
- * This is because, coredump stack will be modified during the process, leading to incorrect checksum calculations.
- * To mitigate this issue, it's important to ensure that the coredump stack excluded from checksum calculation by
- * filter out from the written regions.
- * Typically, the coredump stack can be located in two different sections.
- * 1. In the bss section;
- *    1.a if `CONFIG_ESP_COREDUMP_STACK_SIZE` set to a nonzero value
- *    1.b if the crashed task is created with a static task buffer using the xTaskCreateStatic() api
- * 2. In the heap section, if custom stack is not defined and the crashed task buffer is allocated in the heap
- * with the xTaskCreate() api
- *
- * esp_core_dump_store_section() will check if the coredump stack is located inside the section.
- * If it is, this part will be skipped.
- * |+++++++++| xxxxxxxxxxxxxx |++++++++|
- * |+++++++++| coredump stack |++++++++|
-*/
-static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, uint32_t data_len)
-{
-    uint32_t end = start + data_len;
-    int total_sz = 0;
-    int ret;
-
-    if (self->coredump_stack_start > start && self->coredump_stack_start < end) {
-        /* write until the coredump stack. */
-        data_len = self->coredump_stack_start - start;
-        ret = elf_add_segment(self, PT_LOAD,
-                              start,
-                              (void*)start,
-                              data_len);
-
-        if (ret <= 0) {
-            return ret;
-        }
-        total_sz += ret;
-
-        /* Skip coredump stack and set offset for the rest of the section */
-        start = self->coredump_stack_start + self->coredump_stack_size;
-        data_len = end - start;
-    }
-
-    if (data_len > 0) {
-        ret = elf_add_segment(self, PT_LOAD,
-                              (uint32_t)start,
-                              (void*)start,
-                              (uint32_t)data_len);
-        if (ret <= 0) {
-            return ret;
-        }
-        total_sz += ret;
-    }
-
-    return total_sz;
-}
-
 typedef struct {
     core_dump_elf_t *self;
     int *total_sz;
@@ -611,11 +551,6 @@ bool esp_core_dump_write_heap_blocks(walker_heap_into_t heap_info, walker_block_
             return false;
         }
 
-        if (self->coredump_stack_start == (uint32_t)block_info.ptr) {
-            /* skip writing coredump stack block */
-            return true;
-        }
-
         *ret = elf_add_segment(self, PT_LOAD,
                                (uint32_t)block_info.ptr,
                                (void*)block_info.ptr,
@@ -629,7 +564,7 @@ bool esp_core_dump_write_heap_blocks(walker_heap_into_t heap_info, walker_block_
     return true;
 }
 
-#else
+#endif
 
 static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, uint32_t data_len)
 {
@@ -638,8 +573,6 @@ static int esp_core_dump_store_section(core_dump_elf_t *self, uint32_t start, ui
                            (void*)start,
                            data_len);
 }
-
-#endif
 
 static int elf_write_core_dump_user_data(core_dump_elf_t *self)
 {
@@ -688,7 +621,7 @@ static void elf_write_core_dump_note_cb(void *opaque, const char *data)
 
 static int elf_add_wdt_panic_details(core_dump_elf_t *self)
 {
-    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME);
+    uint32_t name_len = sizeof(ELF_ESP_CORE_DUMP_PANIC_DETAILS_NOTE_NAME) - 1;
     core_dump_elf_opaque_t param = {
         .self = self,
         .total_size = 0,
@@ -824,12 +757,6 @@ static esp_err_t esp_core_dump_write_elf(void)
     core_dump_header_t dump_hdr = { 0 };
     int tot_len = sizeof(dump_hdr);
     int write_len = sizeof(dump_hdr);
-
-#if CONFIG_ESP_COREDUMP_CAPTURE_DRAM
-    esp_core_dump_get_own_stack_info(&self.coredump_stack_start, &self.coredump_stack_size);
-    ESP_COREDUMP_LOG_PROCESS("Core dump stack start=%p size = %d",
-                             (void *)self.coredump_stack_start, self.coredump_stack_size);
-#endif
 
     esp_err_t err = esp_core_dump_write_init();
     if (err != ESP_OK) {

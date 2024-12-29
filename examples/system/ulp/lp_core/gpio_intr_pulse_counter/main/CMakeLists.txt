@@ -1,4 +1,5 @@
 idf_component_register(SRCS "lp_core_pulse_counter_example_main.c"
+                    REQUIRES ulp
                     INCLUDE_DIRS ".")
 #
 # ULP support additions to component CMakeLists.txt.

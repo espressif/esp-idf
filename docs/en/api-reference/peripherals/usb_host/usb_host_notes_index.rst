@@ -24,6 +24,7 @@ This document is split into the following sections:
     usb_host_notes_usbh
     usb_host_notes_enum
     usb_host_notes_ext_hub
+    usb_host_notes_ext_port
 
 Todo:
 
@@ -40,21 +41,3 @@ Introduction
 The ESP-IDF USB Host Stack allows the {IDF_TARGET_NAME} to operate as a USB Host. Operating as a USB Host allows the {IDF_TARGET_NAME} to communicate with a wide range of USB devices. However, most USB Host Stack implementations do not run on embedded hardware (i.e., runs on PCs and smartphones), thus have comparatively more resources (i.e., memory and CPU speed).
 
 The implementation of the ESP-IDF USB Host Stack (henceforth referred to as the Host Stack) takes into account the embedded nature of the {IDF_TARGET_NAME} which is reflected in various aspects of the Host Stack's design.
-
-Features & Limitations
-^^^^^^^^^^^^^^^^^^^^^^
-
-**The Host Stack currently supports the following notable features:**
-
-.. only:: esp32p4
-
-    - Supports HS (High Speed)
-
-- Supports FS (Full Speed) and LS (Low Speed) devices
-- Supports all transfer types (Control, Bulk, Isochronous, and Interrupt)
-- Automatically enumerates connected devices
-- Allows multiple class drivers (i.e., Clients of the USB Host Library) to run simultaneously and share the same device (i.e., composite devices)
-
-**The Host Stack currently has the following notable limitations:**
-
-- No Hub support (currently only supports a single device)

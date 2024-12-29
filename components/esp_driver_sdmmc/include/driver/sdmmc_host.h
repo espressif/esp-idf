@@ -24,7 +24,6 @@ extern "C" {
  * Extra configuration for SDMMC peripheral slot
  */
 typedef struct {
-#ifdef SOC_SDMMC_USE_GPIO_MATRIX
     gpio_num_t clk;         ///< GPIO number of CLK signal.
     gpio_num_t cmd;         ///< GPIO number of CMD signal.
     gpio_num_t d0;          ///< GPIO number of D0 signal.
@@ -35,7 +34,6 @@ typedef struct {
     gpio_num_t d5;          ///< GPIO number of D5 signal. Ignored in 1- or 4- line mode.
     gpio_num_t d6;          ///< GPIO number of D6 signal. Ignored in 1- or 4- line mode.
     gpio_num_t d7;          ///< GPIO number of D7 signal. Ignored in 1- or 4- line mode.
-#endif // SOC_SDMMC_USE_GPIO_MATRIX
     union {
         gpio_num_t gpio_cd;     ///< GPIO number of card detect signal
         gpio_num_t cd;          ///< GPIO number of card detect signal; shorter name.
@@ -56,6 +54,8 @@ typedef struct {
      * 0 means "active low", i.e. card is protected when the GPIO is low;
      * 1 means "active high", i.e. card is protected when GPIO is high.
      */
+#define SDMMC_SLOT_FLAG_UHS1             BIT(2)
+    /**< Enable UHS-I mode for this slot */
 } sdmmc_slot_config_t;
 
 /**
@@ -283,6 +283,18 @@ esp_err_t sdmmc_host_set_input_delay(int slot, sdmmc_delay_phase_t delay_phase);
  *        - ESP_ERR_INVALID_ARG:   Invalid argument.
  */
 esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
+
+/**
+ * @brief Check if the slot is set to uhs1 or not
+ *
+ * @param[in]  slot     Slot id
+ * @param[out] is_uhs1  Is uhs1 or not
+ *
+ * @return
+ *        - ESP_OK:                on success
+ *        - ESP_ERR_INVALID_STATE: driver not in correct state
+ */
+esp_err_t sdmmc_host_is_slot_set_to_uhs1(int slot, bool *is_uhs1);
 
 /**
  * @brief Get the state of SDMMC host

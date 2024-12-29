@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,18 @@
 #include "esp_vfs_cdcacm.h"
 #include "esp_attr.h"
 #include "sdkconfig.h"
+#include "esp_heap_caps.h"
 
+#include "esp_private/esp_vfs_cdcacm_select.h"
 #include "esp_private/usb_console.h"
+
+#define USB_CDC_LOCAL_FD 0
 
 // Newline conversion mode when transmitting
 static esp_line_endings_t s_tx_mode =
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
     ESP_LINE_ENDINGS_CRLF;
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
     ESP_LINE_ENDINGS_CR;
 #else
     ESP_LINE_ENDINGS_LF;
@@ -30,12 +34,18 @@ static esp_line_endings_t s_tx_mode =
 
 // Newline conversion mode when receiving
 static esp_line_endings_t s_rx_mode =
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
     ESP_LINE_ENDINGS_CRLF;
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
     ESP_LINE_ENDINGS_CR;
 #else
     ESP_LINE_ENDINGS_LF;
+#endif
+
+#if CONFIG_VFS_SELECT_IN_RAM
+#define CDCACM_VFS_MALLOC_FLAGS (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define CDCACM_VFS_MALLOC_FLAGS MALLOC_CAP_DEFAULT
 #endif
 
 #define NONE -1
@@ -47,6 +57,26 @@ static _lock_t s_read_lock;
 static bool s_blocking;
 static SemaphoreHandle_t s_rx_semaphore;
 static SemaphoreHandle_t s_tx_semaphore;
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+typedef struct {
+    esp_vfs_select_sem_t select_sem;
+    fd_set *readfds;
+    fd_set *writefds;
+    fd_set *errorfds;
+    fd_set readfds_orig;
+    fd_set writefds_orig;
+    fd_set errorfds_orig;
+} cdcacm_select_args_t;
+
+static cdcacm_select_args_t **s_registered_selects = NULL;
+static int s_registered_select_num = 0;
+static portMUX_TYPE s_registered_select_lock = portMUX_INITIALIZER_UNLOCKED;
+
+static esp_err_t cdcacm_end_select(void *end_select_args);
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
 
 static ssize_t cdcacm_write(int fd, const void *data, size_t size)
 {
@@ -82,7 +112,7 @@ static int cdcacm_fsync(int fd)
 
 static int cdcacm_open(const char *path, int flags, int mode)
 {
-    return 0; // fd 0
+    return USB_CDC_LOCAL_FD; // fd 0
 }
 
 static int cdcacm_fstat(int fd, struct stat *st)
@@ -290,6 +320,167 @@ static int cdcacm_fcntl(int fd, int cmd, int arg)
     return result;
 }
 
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+
+static void select_notif_callback_isr(cdcacm_select_notif_t cdcacm_select_notif, BaseType_t *task_woken)
+{
+    portENTER_CRITICAL_ISR(&s_registered_select_lock);
+    for (int i = 0; i < s_registered_select_num; ++i) {
+        cdcacm_select_args_t *args = s_registered_selects[i];
+        if (args) {
+            switch (cdcacm_select_notif) {
+            case CDCACM_SELECT_READ_NOTIF:
+                if (FD_ISSET(USB_CDC_LOCAL_FD, &args->readfds_orig)) {
+                    FD_SET(USB_CDC_LOCAL_FD, args->readfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case CDCACM_SELECT_WRITE_NOTIF:
+                if (FD_ISSET(USB_CDC_LOCAL_FD, &args->writefds_orig)) {
+                    FD_SET(USB_CDC_LOCAL_FD, args->writefds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            case CDCACM_SELECT_ERROR_NOTIF:
+                if (FD_ISSET(USB_CDC_LOCAL_FD, &args->errorfds_orig)) {
+                    FD_SET(USB_CDC_LOCAL_FD, args->errorfds);
+                    esp_vfs_select_triggered_isr(args->select_sem, task_woken);
+                }
+                break;
+            }
+        }
+    }
+    portEXIT_CRITICAL_ISR(&s_registered_select_lock);
+}
+
+static esp_err_t register_select(cdcacm_select_args_t *args)
+{
+    esp_err_t ret = ESP_ERR_INVALID_ARG;
+
+    if (args) {
+        portENTER_CRITICAL(&s_registered_select_lock);
+        const int new_size = s_registered_select_num + 1;
+        cdcacm_select_args_t **new_selects;
+        if ((new_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(cdcacm_select_args_t *), CDCACM_VFS_MALLOC_FLAGS)) == NULL) {
+            ret = ESP_ERR_NO_MEM;
+        } else {
+            /* on first select registration register the callback  */
+            if (s_registered_select_num == 0) {
+                cdcacm_set_select_notif_callback(select_notif_callback_isr);
+            }
+
+            s_registered_selects = new_selects;
+            s_registered_selects[s_registered_select_num] = args;
+            s_registered_select_num = new_size;
+            ret = ESP_OK;
+        }
+        portEXIT_CRITICAL(&s_registered_select_lock);
+    }
+
+    return ret;
+}
+
+static esp_err_t unregister_select(cdcacm_select_args_t *args)
+{
+    esp_err_t ret = ESP_OK;
+    if (args) {
+        ret = ESP_ERR_INVALID_STATE;
+        portENTER_CRITICAL(&s_registered_select_lock);
+        for (int i = 0; i < s_registered_select_num; ++i) {
+            if (s_registered_selects[i] == args) {
+                const int new_size = s_registered_select_num - 1;
+                // The item is removed by overwriting it with the last item. The subsequent rellocation will drop the
+                // last item.
+                s_registered_selects[i] = s_registered_selects[new_size];
+                s_registered_selects = heap_caps_realloc(s_registered_selects, new_size * sizeof(cdcacm_select_args_t *), CDCACM_VFS_MALLOC_FLAGS);
+                // Shrinking a buffer with realloc is guaranteed to succeed.
+                s_registered_select_num = new_size;
+
+                /* when the last select is unregistered, also unregister the callback  */
+                if (s_registered_select_num == 0) {
+                    cdcacm_set_select_notif_callback(NULL);
+                }
+
+                ret = ESP_OK;
+                break;
+            }
+        }
+        portEXIT_CRITICAL(&s_registered_select_lock);
+    }
+    return ret;
+}
+
+static esp_err_t cdcacm_start_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+                                     esp_vfs_select_sem_t select_sem, void **end_select_args)
+{
+    (void)nfds; /* Since there is only 1 USB OTG, this parameter is useless */
+    *end_select_args = NULL;
+
+    if (!esp_usb_console_is_installed()) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    cdcacm_select_args_t *args = heap_caps_malloc(sizeof(cdcacm_select_args_t), CDCACM_VFS_MALLOC_FLAGS);
+
+    if (args == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    args->select_sem = select_sem;
+    args->readfds = readfds;
+    args->writefds = writefds;
+    args->errorfds = exceptfds;
+    args->readfds_orig = *readfds; // store the original values because they will be set to zero
+    args->writefds_orig = *writefds;
+    args->errorfds_orig = *exceptfds;
+    FD_ZERO(readfds);
+    FD_ZERO(writefds);
+    FD_ZERO(exceptfds);
+
+    esp_err_t ret = register_select(args);
+    if (ret != ESP_OK) {
+        free(args);
+        return ret;
+    }
+
+    bool trigger_select = false;
+    if (FD_ISSET(USB_CDC_LOCAL_FD, &args->readfds_orig) &&
+            esp_usb_console_available_for_read() > 0) {
+
+        // signalize immediately when read is ready
+        FD_SET(USB_CDC_LOCAL_FD, readfds);
+        trigger_select = true;
+    }
+
+    if (FD_ISSET(USB_CDC_LOCAL_FD, &args->writefds_orig) &&
+            esp_usb_console_write_available()) {
+
+        // signalize immediately when write is ready
+        FD_SET(USB_CDC_LOCAL_FD, writefds);
+        trigger_select = true;
+    }
+
+    if (trigger_select) {
+        esp_vfs_select_triggered(args->select_sem);
+    }
+
+    *end_select_args = args;
+    return ESP_OK;
+}
+
+static esp_err_t cdcacm_end_select(void *end_select_args)
+{
+    cdcacm_select_args_t *args = end_select_args;
+    esp_err_t ret = unregister_select(args);
+    if (args) {
+        free(args);
+    }
+
+    return ret;
+}
+
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
 void esp_vfs_dev_cdcacm_set_tx_line_endings(esp_line_endings_t mode)
 {
     s_tx_mode = mode;
@@ -300,23 +491,32 @@ void esp_vfs_dev_cdcacm_set_rx_line_endings(esp_line_endings_t mode)
     s_rx_mode = mode;
 }
 
-static const esp_vfs_t vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_cdcacm_vfs_select = {
+    .start_select = &cdcacm_start_select,
+    .end_select = &cdcacm_end_select,
+};
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
+static const esp_vfs_fs_ops_t s_cdcacm_vfs = {
     .write = &cdcacm_write,
     .open = &cdcacm_open,
     .fstat = &cdcacm_fstat,
     .close = &cdcacm_close,
     .read = &cdcacm_read,
     .fcntl = &cdcacm_fcntl,
-    .fsync = &cdcacm_fsync
+    .fsync = &cdcacm_fsync,
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    .select = &s_cdcacm_vfs_select,
+#endif // CONFIG_VFS_SUPPORT_SELECT
 };
 
-const esp_vfs_t *esp_vfs_cdcacm_get_vfs(void)
+const esp_vfs_fs_ops_t *esp_vfs_cdcacm_get_vfs(void)
 {
-    return &vfs;
+    return &s_cdcacm_vfs;
 }
 
 esp_err_t esp_vfs_dev_cdcacm_register(void)
 {
-    return esp_vfs_register("/dev/cdcacm", &vfs, NULL);
+    return esp_vfs_register_fs("/dev/cdcacm", &s_cdcacm_vfs, ESP_VFS_FLAG_STATIC, NULL);
 }

@@ -157,7 +157,7 @@ Running the utility
 
 **Usage**::
 
-    python mfg_gen.py generate [-h] [--fileid FILEID] [--version {1,2}] [--keygen]
+    python mfg_gen.py generate [-h] [--prefix_num start length] [--fileid FILEID] [--version {1,2}] [--keygen]
                                     [--inputkey INPUTKEY] [--outdir OUTDIR]
                                     [--key_protect_hmac] [--kp_hmac_keygen]
                                     [--kp_hmac_keyfile KP_HMAC_KEYFILE] [--kp_hmac_inputkey KP_HMAC_INPUTKEY]
@@ -183,6 +183,10 @@ Running the utility
     | Parameter                                   | Description                                                                   |
     +=============================================+===============================================================================+
     | ``-h`` / ``--help``                         | Show the help message and exit                                                |
+    +---------------------------------------------+-------------------------------------------------------------------------------+
+    | ``--prefix_num start length``               | Prefix number start and length (in digits) to be added for each output        |
+    |                                             | filename. The number is used as monotonic counter, thus different for each    |
+    |                                             | file.                                                                         |
     +---------------------------------------------+-------------------------------------------------------------------------------+
     | ``--fileid FILEID``                         | Unique file identifier (any key in values file)                               |
     |                                             | for each filename suffix (Default: numeric value(1,2,3...))                   |

@@ -20,6 +20,9 @@ DEFAULT_TARGET_TEST_CHILD_PIPELINE_FILEPATH = os.path.join(IDF_PATH, 'target_tes
 DEFAULT_BUILD_CHILD_PIPELINE_NAME = 'Build Child Pipeline'
 DEFAULT_TARGET_TEST_CHILD_PIPELINE_NAME = 'Target Test Child Pipeline'
 
+DEFAULT_TARGET_TEST_JOB_TEMPLATE_NAME = '.dynamic_target_test_template'
+TIMEOUT_4H_TEMPLATE_NAME = '.timeout_4h_template'
+
 TEST_RELATED_BUILD_JOB_NAME = 'build_test_related_apps'
 NON_TEST_RELATED_BUILD_JOB_NAME = 'build_non_test_related_apps'
 

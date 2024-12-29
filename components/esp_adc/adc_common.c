@@ -15,6 +15,7 @@
 #include "driver/gpio.h"
 #include "hal/adc_hal.h"
 #include "hal/adc_hal_common.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "soc/adc_periph.h"
 
 static const char *TAG = "adc_common";
@@ -57,6 +58,7 @@ esp_err_t adc_channel_to_io(adc_unit_t unit_id, adc_channel_t channel, int * con
 static __attribute__((constructor)) void adc_hw_calibration(void)
 {
     adc_apb_periph_claim();
+    ANALOG_CLOCK_ENABLE();
     //Calculate all ICode
     for (int i = 0; i < SOC_ADC_PERIPH_NUM; i++) {
         adc_hal_calibration_init(i);
@@ -74,5 +76,6 @@ static __attribute__((constructor)) void adc_hw_calibration(void)
 #endif
         }
     }
+    ANALOG_CLOCK_DISABLE();
 }
 #endif //#if SOC_ADC_CALIBRATION_V1_SUPPORTED

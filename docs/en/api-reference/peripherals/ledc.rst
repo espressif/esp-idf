@@ -319,14 +319,13 @@ The LEDC API provides several ways to change the PWM frequency "on the fly":
 More Control Over PWM
 """""""""""""""""""""
 
-There are several lower level timer-specific functions that can be used to change PWM settings:
+There are several individual timer-specific functions that can be used to change PWM output:
 
-* :cpp:func:`ledc_timer_set`
 * :cpp:func:`ledc_timer_rst`
 * :cpp:func:`ledc_timer_pause`
 * :cpp:func:`ledc_timer_resume`
 
-The first two functions are called "behind the scenes" by :cpp:func:`ledc_channel_config` to provide a startup of a timer after it is configured.
+The first function is called "behind the scenes" by :cpp:func:`ledc_timer_config` to provide a startup of a timer after it is configured.
 
 
 Use Interrupts
@@ -356,7 +355,7 @@ If signal output needs to be maintained in Light-sleep, then select :cpp:enumera
     LEDC High and Low Speed Mode
     ----------------------------
 
-    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` or :cpp:func:`ledc_timer_set` is called.
+    High speed mode enables a glitch-free changeover of timer settings. This means that if the timer settings are modified, the changes will be applied automatically on the next overflow interrupt of the timer. In contrast, when updating the low-speed timer, the change of settings should be explicitly triggered by software. The LEDC driver handles it in the background, e.g., when :cpp:func:`ledc_timer_config` is called.
 
     For additional details regarding speed modes, see **{IDF_TARGET_NAME} Technical Reference Manual** > **LED PWM Controller (LEDC)** [`PDF <{IDF_TARGET_TRM_EN_URL}#ledpwm>`__].
 

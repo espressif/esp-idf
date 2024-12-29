@@ -49,7 +49,7 @@ esp_err_t gdma_sleep_retention_init(int group_id, int pair_id)
     gdma_channel_retention_arg_t arg = { .group_id = group_id, .pair_id = pair_id };
     sleep_retention_module_init_param_t init_param = {
         .cbs = { .create = { .handle = sleep_gdma_channel_retention_init, .arg = &arg } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     sleep_retention_module_t module = gdma_chx_regs_retention[group_id][pair_id].module_id;
     esp_err_t err = sleep_retention_module_init(module, &init_param);

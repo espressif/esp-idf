@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +65,24 @@ typedef enum {
     ETH_DMA_BURST_LEN_2,
     ETH_DMA_BURST_LEN_1,
 } eth_mac_dma_burst_len_t;
+
+/**
+ * @brief EMAC System timestamp update update method
+ *
+ */
+typedef enum {
+    ETH_PTP_UPDATE_METHOD_COARSE,   /*!< EMAC System timestamp update using the Coarse method */
+    ETH_PTP_UPDATE_METHOD_FINE      /*!< EMAC System timestamp update using the Fine method */
+} eth_mac_ptp_update_method_t;
+
+/**
+ * @brief EMAC System Timestamp Rollover
+ *
+ */
+typedef enum {
+    ETH_PTP_DIGITAL_ROLLOVER,       /*!< Digital - subseconds register rolls over after 999999999 value (1 nanosecond accuracy) */
+    ETH_PTP_BINARY_ROLLOVER         /*!< Binary - subseconds register rolls over after 0x7FFFFFFF value  */
+} eth_mac_ptp_roll_type_t;
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,6 +68,18 @@ void *esp_mbedtls_get_ssl_context(esp_tls_t *tls);
  * /note :- The function can only be used with mbedtls ssl library
  */
 int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+
+/**
+ * Initialization part of internal callback for mbedtls_server_session_create
+ */
+esp_err_t esp_mbedtls_server_session_init(esp_tls_cfg_server_t *cfg, int sockfd, esp_tls_t *tls);
+
+/**
+ * Asynchronous continue of internal callback for mbedtls_server_session_create,
+ * to be called in a loop by the user until it returns 0,
+ * ESP_TLS_ERR_SSL_WANT_READ or ESP_TLS_ERR_SSL_WANT_WRITE.
+ */
+int esp_mbedtls_server_session_continue_async(esp_tls_t *tls);
 
 /**
  * Internal Callback for mbedtls_server_session_delete

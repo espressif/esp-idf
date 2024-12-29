@@ -54,7 +54,6 @@ extern "C" {
 #define SOC_ADDRESS_IN_DRAM_FLASH(vaddr)             SOC_ADDRESS_IN_BUS(SOC_DRAM_FLASH, vaddr)
 #define SOC_ADDRESS_IN_DRAM_PSRAM(vaddr)             SOC_ADDRESS_IN_BUS(SOC_DRAM_PSRAM, vaddr)
 
-
 #define SOC_MMU_FLASH_VALID                 BIT(12)
 #define SOC_MMU_FLASH_INVALID               0
 #define SOC_MMU_PSRAM_VALID                 BIT(11)
@@ -125,7 +124,6 @@ extern "C" {
 #else
 #define SOC_MMU_PSRAM_LINEAR_ADDRESS_HIGH     (SOC_MMU_LINEAR_ADDR_MASK + 1)
 #endif
-
 
 #ifdef __cplusplus
 }

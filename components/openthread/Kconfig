@@ -6,189 +6,7 @@ menu "OpenThread"
         help
             Select this option to enable OpenThread and show the submenu with OpenThread configuration choices.
 
-    config OPENTHREAD_LOG_LEVEL_DYNAMIC
-        bool "Enable dynamic log level control"
-        depends on OPENTHREAD_ENABLED
-        default y
-        help
-            Select this option to enable dynamic log level control for OpenThread
-
-    choice OPENTHREAD_CONSOLE_TYPE
-        prompt "OpenThread console type"
-        depends on OPENTHREAD_ENABLED
-        default OPENTHREAD_CONSOLE_TYPE_UART
-        help
-            Select OpenThread console type
-
-        config OPENTHREAD_CONSOLE_TYPE_UART
-            depends on ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
-            bool "OpenThread console type UART"
-        config OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
-            depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
-            bool "OpenThread console type USB Serial/JTAG Controller"
-    endchoice #OPENTHREAD_CONSOLE_TYPE
-
-    choice OPENTHREAD_LOG_LEVEL
-        prompt "OpenThread log verbosity"
-        depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
-        default OPENTHREAD_LOG_LEVEL_INFO
-        help
-            Select OpenThread log level.
-
-        config OPENTHREAD_LOG_LEVEL_NONE
-            bool "No logs"
-        config OPENTHREAD_LOG_LEVEL_CRIT
-            bool "Error logs"
-        config OPENTHREAD_LOG_LEVEL_WARN
-            bool "Warning logs"
-        config OPENTHREAD_LOG_LEVEL_NOTE
-            bool "Notice logs"
-        config OPENTHREAD_LOG_LEVEL_INFO
-            bool "Info logs"
-        config OPENTHREAD_LOG_LEVEL_DEBG
-            bool "Debug logs"
-    endchoice #OPENTHREAD_LOG_LEVEL
-
-    menu "Thread Operational Dataset"
-        config OPENTHREAD_NETWORK_NAME
-            string "OpenThread network name"
-            default "OpenThread-ESP"
-
-        config OPENTHREAD_MESH_LOCAL_PREFIX
-            string "OpenThread mesh local prefix, format <address>/<plen>"
-            default "fd00:db8:a0:0::/64"
-            help
-                A string in the format "<address>/<plen>", where `<address>` is an IPv6
-                address and `<plen>` is a prefix length. For example "fd00:db8:a0:0::/64"
-
-        config OPENTHREAD_NETWORK_CHANNEL
-            int "OpenThread network channel"
-            range 11 26
-            default 15
-
-        config OPENTHREAD_NETWORK_PANID
-            hex "OpenThread network pan id"
-            range 0 0xFFFE
-            default 0x1234
-
-        config OPENTHREAD_NETWORK_EXTPANID
-            string "OpenThread extended pan id"
-            default "dead00beef00cafe"
-            help
-                The OpenThread network extended pan id in hex string format
-
-        config OPENTHREAD_NETWORK_MASTERKEY
-            string "OpenThread network key"
-            default "00112233445566778899aabbccddeeff"
-            help
-                The OpenThread network network key in hex string format
-
-        config OPENTHREAD_NETWORK_PSKC
-            string "OpenThread pre-shared commissioner key"
-            default "104810e2315100afd6bc9215a6bfac53"
-            help
-                The OpenThread pre-shared commissioner key in hex string format
-    endmenu
-
-    config OPENTHREAD_LOG_LEVEL
-        int
-        depends on OPENTHREAD_ENABLED && !OPENTHREAD_LOG_LEVEL_DYNAMIC
-        default 0 if OPENTHREAD_LOG_LEVEL_NONE
-        default 1 if OPENTHREAD_LOG_LEVEL_CRIT
-        default 2 if OPENTHREAD_LOG_LEVEL_WARN
-        default 3 if OPENTHREAD_LOG_LEVEL_NOTE
-        default 4 if OPENTHREAD_LOG_LEVEL_INFO
-        default 5 if OPENTHREAD_LOG_LEVEL_DEBG
-
-    choice OPENTHREAD_RADIO_TYPE
-        prompt "Config the Thread radio type with 15.4 link"
-        depends on OPENTHREAD_ENABLED
-        default OPENTHREAD_RADIO_NATIVE if SOC_IEEE802154_SUPPORTED
-        default OPENTHREAD_RADIO_SPINEL_UART
-        help
-            Configure how OpenThread connects to the 15.4 radio
-
-        config OPENTHREAD_RADIO_NATIVE
-            bool "Native 15.4 radio"
-            help
-                Select this to use the native 15.4 radio.
-
-        config OPENTHREAD_RADIO_SPINEL_UART
-            select UART_ISR_IN_IRAM
-            bool "Connect via UART"
-            help
-                Select this to connect to a Radio Co-Processor via UART.
-
-        config OPENTHREAD_RADIO_SPINEL_SPI
-            bool "Connect via SPI"
-            help
-                Select this to connect to a Radio Co-Processor via SPI.
-
-        config OPENTHREAD_RADIO_154_NONE
-            bool "Disable the Thread radio based on 15.4 link"
-            help
-                Select this to disable the Thread radio based on 15.4 link.
-    endchoice
-
-    config OPENTHREAD_RADIO_TREL
-        bool "Enable Thread Radio Encapsulation Link (TREL)"
-        depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
-        default n
-        help
-            Select this option to enable Thread Radio Encapsulation Link.
-
-    config OPENTHREAD_TREL_PORT
-        int "The port of openthread trel service"
-        depends on OPENTHREAD_RADIO_TREL
-        default 12390
-        help
-            Configure the port number of TREL service.
-
-    choice OPENTHREAD_DEVICE_TYPE
-        prompt "Config the Thread device type"
-        depends on OPENTHREAD_ENABLED
-        default OPENTHREAD_FTD
-        help
-            OpenThread can be configured to different device types (FTD, MTD, Radio)
-
-        config OPENTHREAD_FTD
-            bool "Full Thread Device"
-            help
-                Select this to enable Full Thread Device which can act as router and leader in a Thread network.
-
-        config OPENTHREAD_MTD
-            bool "Minimal Thread Device"
-            help
-                Select this to enable Minimal Thread Device which can only act as end device in a Thread network.
-                This will reduce the code size of the OpenThread stack.
-
-        config OPENTHREAD_RADIO
-            bool "Radio Only Device"
-            help
-                Select this to enable Radio Only Device which can only forward 15.4 packets to the host.
-                The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
-                radio only device.
-    endchoice
-
-    choice OPENTHREAD_RCP_TRANSPORT
-        prompt "The RCP transport type"
-        depends on OPENTHREAD_RADIO
-        default OPENTHREAD_RCP_UART
-
-        config OPENTHREAD_RCP_UART
-            select UART_ISR_IN_IRAM
-            bool "UART RCP"
-            help
-                Select this to enable UART connection to host.
-
-        config OPENTHREAD_RCP_SPI
-            bool "SPI RCP"
-            select GPIO_CTRL_FUNC_IN_IRAM
-            help
-                Select this to enable SPI connection to host.
-    endchoice
-
-    menu "OpenThread version message"
+    menu "Thread Version Message"
         depends on OPENTHREAD_ENABLED
 
         config OPENTHREAD_PACKAGE_NAME
@@ -204,246 +22,472 @@ menu "OpenThread"
                 The OpenThread platform information.
     endmenu
 
-    config OPENTHREAD_NCP_VENDOR_HOOK
-        bool "Enable vendor command for RCP"
-        depends on OPENTHREAD_RADIO
-        default y
-        help
-            Select this to enable OpenThread NCP vendor commands.
-
-    config OPENTHREAD_CLI
-        bool "Enable Openthread Command-Line Interface"
+    menu "Thread Console"
         depends on OPENTHREAD_ENABLED
-        default y
-        help
-            Select this option to enable Command-Line Interface in OpenThread.
 
-    config OPENTHREAD_DIAG
-        bool "Enable diag"
-        depends on OPENTHREAD_ENABLED
-        default y
-        help
-            Select this option to enable Diag in OpenThread. This will enable diag mode and a series of diag commands
-            in the OpenThread command line. These commands allow users to manipulate low-level features of the storage
-            and 15.4 radio.
+        choice OPENTHREAD_CONSOLE_TYPE
+            prompt "OpenThread console type"
+            default OPENTHREAD_CONSOLE_TYPE_UART
+            help
+                Select OpenThread console type
 
-    config OPENTHREAD_COMMISSIONER
-        bool "Enable Commissioner"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable commissioner in OpenThread. This will enable the device to act as a
-            commissioner in the Thread network. A commissioner checks the pre-shared key from a joining device with
-            the Thread commissioning protocol and shares the network parameter with the joining device upon success.
+            config OPENTHREAD_CONSOLE_TYPE_UART
+                depends on ESP_CONSOLE_UART_DEFAULT || ESP_CONSOLE_UART_CUSTOM
+                bool "OpenThread console type UART"
+            config OPENTHREAD_CONSOLE_TYPE_USB_SERIAL_JTAG
+                depends on ESP_CONSOLE_USB_SERIAL_JTAG || ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG
+                bool "OpenThread console type USB Serial/JTAG Controller"
+        endchoice #OPENTHREAD_CONSOLE_TYPE
 
-    config OPENTHREAD_COMM_MAX_JOINER_ENTRIES
-        int "The size of max commissioning joiner entries"
-        depends on OPENTHREAD_COMMISSIONER
-        default 2
-
-    config OPENTHREAD_JOINER
-        bool "Enable Joiner"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable Joiner in OpenThread. This allows a device to join the Thread network with a
-            pre-shared key using the Thread commissioning protocol.
-
-    config OPENTHREAD_SRP_CLIENT
-        bool "Enable SRP Client"
-        depends on OPENTHREAD_ENABLED
-        default y
-        help
-            Select this option to enable SRP Client in OpenThread. This allows a device to register SRP services to SRP
-            Server.
-
-    config OPENTHREAD_SRP_CLIENT_MAX_SERVICES
-        int "Specifies number of service entries in the SRP client service pool"
-        depends on OPENTHREAD_SRP_CLIENT
-        default 5
-        help
-            Set the max buffer size of service entries in the SRP client service pool.
-
-    config OPENTHREAD_DNS_CLIENT
-        bool "Enable DNS Client"
-        depends on OPENTHREAD_ENABLED
-        default y
-        help
-            Select this option to enable DNS Client in OpenThread.
-
-    config OPENTHREAD_BORDER_ROUTER
-        bool "Enable Border Router"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable border router features in OpenThread.
-
-    menu "Thread Memory Allocation Config"
-        depends on OPENTHREAD_ENABLED && (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
-        config OPENTHREAD_MEM_ALLOC_EXTERNAL
-            bool 'Allocate memory from PSRAM'
+        config OPENTHREAD_CLI
+            bool "Enable Openthread Command-Line Interface"
             default y
             help
-                Select this option to allocate buffer from PSRAM for Thread
-
-        config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
-            bool 'Allocate message pool buffer from PSRAM'
-            default n
-            help
-                If enabled, the message pool is managed by platform defined logic.
+                Select this option to enable Command-Line Interface in OpenThread.
     endmenu
 
-    config OPENTHREAD_NUM_MESSAGE_BUFFERS
-        int "The number of openthread message buffers"
+    menu "Thread Core Features"
         depends on OPENTHREAD_ENABLED
-        default 65
 
-    config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
-        int "The size of openthread spinel rx frame buffer"
-        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
-        default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
-        default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
+        menu "Thread Operational Dataset"
+            config OPENTHREAD_NETWORK_NAME
+                string "OpenThread network name"
+                default "OpenThread-ESP"
 
-    config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
-        int "Maximum backoffs times before declaring a channel access failure."
-        depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
-        default 4
-        help
-            The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
-            failure.
+            config OPENTHREAD_MESH_LOCAL_PREFIX
+                string "OpenThread mesh local prefix, format <address>/<plen>"
+                default "fd00:db8:a0:0::/64"
+                help
+                    A string in the format "<address>/<plen>", where `<address>` is an IPv6
+                    address and `<plen>` is a prefix length. For example "fd00:db8:a0:0::/64"
 
-    config OPENTHREAD_MLE_MAX_CHILDREN
-        int "The size of max MLE children entries"
-        depends on OPENTHREAD_ENABLED
-        default 10
+            config OPENTHREAD_NETWORK_CHANNEL
+                int "OpenThread network channel"
+                range 11 26
+                default 15
 
-    config OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
-        int "The size of max TMF address cache entries"
-        depends on OPENTHREAD_ENABLED
-        default 20
+            config OPENTHREAD_NETWORK_PANID
+                hex "OpenThread network pan id"
+                range 0 0xFFFE
+                default 0x1234
 
-    config OPENTHREAD_DNS64_CLIENT
-        bool "Use dns64 client"
-        depends on OPENTHREAD_ENABLED && LWIP_IPV4
-        select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
-        default n
-        help
-            Select this option to acquire NAT64 address from dns servers.
+            config OPENTHREAD_NETWORK_EXTPANID
+                string "OpenThread extended pan id"
+                default "dead00beef00cafe"
+                help
+                    The OpenThread network extended pan id in hex string format
 
-    config OPENTHREAD_DNS_SERVER_ADDR
-        string "DNS server address (IPv4)"
-        depends on OPENTHREAD_DNS64_CLIENT
-        default "8.8.8.8"
-        help
-            Set the DNS server IPv4 address.
+            config OPENTHREAD_NETWORK_MASTERKEY
+                string "OpenThread network key"
+                default "00112233445566778899aabbccddeeff"
+                help
+                    The OpenThread network network key in hex string format
 
-    config OPENTHREAD_UART_BUFFER_SIZE
-        int "The uart received buffer size of openthread"
-        depends on OPENTHREAD_ENABLED
-        default 2048
-        help
-            Set the OpenThread UART buffer size.
+            config OPENTHREAD_NETWORK_PSKC
+                string "OpenThread pre-shared commissioner key"
+                default "104810e2315100afd6bc9215a6bfac53"
+                help
+                    The OpenThread pre-shared commissioner key in hex string format
+        endmenu
 
-    config OPENTHREAD_LINK_METRICS
-        bool "Enable link metrics feature"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable link metrics feature
+        choice OPENTHREAD_DEVICE_TYPE
+            prompt "Thread device type"
+            default OPENTHREAD_FTD
+            help
+                OpenThread can be configured to different device types (FTD, MTD, Radio)
 
-    config OPENTHREAD_MACFILTER_ENABLE
-        bool "Enable mac filter feature"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable mac filter feature
+            config OPENTHREAD_FTD
+                bool "Full Thread Device"
+                help
+                    Select this to enable Full Thread Device which can act as router and leader in a Thread network.
 
-    config OPENTHREAD_CSL_ENABLE
-        bool "Enable CSL feature"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable CSL feature
+            config OPENTHREAD_MTD
+                bool "Minimal Thread Device"
+                help
+                    Select this to enable Minimal Thread Device which can only act as end device in a Thread network.
+                    This will reduce the code size of the OpenThread stack.
 
-    config OPENTHREAD_XTAL_ACCURACY
-        int "The accuracy of the XTAL"
-        default 130
-        help
-            The device's XTAL accuracy, in ppm.
+            config OPENTHREAD_RADIO
+                bool "Radio Only Device"
+                help
+                    Select this to enable Radio Only Device which can only forward 15.4 packets to the host.
+                    The OpenThread stack will be run on the host and OpenThread will have minimal footprint on the
+                    radio only device.
+        endchoice
 
-    config OPENTHREAD_CSL_ACCURACY
-        int "The current CSL rx/tx scheduling drift, in units of ± ppm"
-        depends on OPENTHREAD_CSL_ENABLE
-        default 1
-        help
-            The current accuracy of the clock used for scheduling CSL operations
+        menu "Thread Trel Radio Link"
+            depends on EXAMPLE_CONNECT_WIFI || EXAMPLE_CONNECT_ETHERNET
 
-    config OPENTHREAD_CSL_UNCERTAIN
-        int "The CSL Uncertainty in units of 10 us."
-        depends on OPENTHREAD_CSL_ENABLE
-        default 1
-        help
-            The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
+            config OPENTHREAD_RADIO_TREL
+                bool "Enable Thread Radio Encapsulation Link (TREL)"
+                default n
+                help
+                    Select this option to enable Thread Radio Encapsulation Link.
 
-    config OPENTHREAD_CSL_DEBUG_ENABLE
-        bool "Enable CSL debug"
-        depends on OPENTHREAD_CSL_ENABLE
-        default n
-        help
-            Select this option to set rx on when sleep in CSL feature, only for debug
+            config OPENTHREAD_TREL_PORT
+                int "The port of openthread trel service"
+                depends on OPENTHREAD_RADIO_TREL
+                default 12390
+                help
+                    Configure the port number of TREL service.
+        endmenu
 
-    config OPENTHREAD_DUA_ENABLE
-        bool "Enable Domain Unicast Address feature"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Only used for Thread1.2 certification
+        menu "Thread 15.4 Radio Link"
+            choice OPENTHREAD_RADIO_TYPE
+                prompt "Config the Thread radio type with 15.4 link"
+                default OPENTHREAD_RADIO_NATIVE if SOC_IEEE802154_SUPPORTED
+                default OPENTHREAD_RADIO_SPINEL_UART
+                help
+                    Configure how OpenThread connects to the 15.4 radio
 
-    config OPENTHREAD_TIME_SYNC
-        bool "Enable the time synchronization service feature"
-        depends on OPENTHREAD_ENABLED
-        default n
-        help
-            Select this option to enable time synchronization feature, the devices in the same Thread network could
-            sync to the same network time.
+                config OPENTHREAD_RADIO_NATIVE
+                    bool "Native 15.4 radio"
+                    help
+                        Select this to use the native 15.4 radio.
 
-    config OPENTHREAD_RADIO_STATS_ENABLE
-        bool "Enable Radio Statistics feature"
-        depends on OPENTHREAD_FTD || OPENTHREAD_MTD
-        default n
-        help
-            Select this option to enable the radio statistics feature, you can use radio command to print some radio
-            Statistics information.
+                config OPENTHREAD_RADIO_SPINEL_UART
+                    select UART_ISR_IN_IRAM
+                    bool "Connect via UART"
+                    help
+                        Select this to connect to a Radio Co-Processor via UART.
 
-    config OPENTHREAD_SPINEL_ONLY
-        bool "Enable OpenThread External Radio Spinel feature"
-        default n
-        help
-            Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+                config OPENTHREAD_RADIO_SPINEL_SPI
+                    bool "Connect via SPI"
+                    help
+                        Select this to connect to a Radio Co-Processor via SPI.
 
-    config OPENTHREAD_RX_ON_WHEN_IDLE
-        bool "Enable OpenThread radio capability rx on when idle"
-        default y if !ESP_COEX_SW_COEXIST_ENABLE
-        default n if ESP_COEX_SW_COEXIST_ENABLE
-        help
-            Select this option to enable OpenThread radio capability rx on when idle. Do not support this feature when
-            SW coexistence is enabled.
+                config OPENTHREAD_RADIO_154_NONE
+                    bool "Disable the Thread radio based on 15.4 link"
+                    help
+                        Select this to disable the Thread radio based on 15.4 link.
+            endchoice
+        endmenu
 
-    menu "Thread Address Query Config"
-        config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
-            int "Timeout value (in seconds) for a address notification response after sending an address query."
+        menu "Thread Radio Co-Processor Feature"
+            depends on OPENTHREAD_RADIO
+
+            choice OPENTHREAD_RCP_TRANSPORT
+                prompt "The RCP transport type"
+                default OPENTHREAD_RCP_UART
+
+                config OPENTHREAD_RCP_UART
+                    select UART_ISR_IN_IRAM
+                    bool "UART RCP"
+                    help
+                        Select this to enable UART connection to host.
+
+                config OPENTHREAD_RCP_SPI
+                    bool "SPI RCP"
+                    select GPIO_CTRL_FUNC_IN_IRAM
+                    help
+                        Select this to enable SPI connection to host.
+            endchoice
+
+            config OPENTHREAD_NCP_VENDOR_HOOK
+                bool "Enable vendor command for RCP"
+                default y
+                help
+                    Select this to enable OpenThread NCP vendor commands.
+        endmenu
+
+        config OPENTHREAD_BORDER_ROUTER
+            bool "Enable Border Router"
+            depends on OPENTHREAD_FTD
+            default n
+            help
+                Select this option to enable border router features in OpenThread.
+
+        config OPENTHREAD_COMMISSIONER
+            bool "Enable Commissioner"
+            default n
+            help
+                Select this option to enable commissioner in OpenThread. This will enable the device to act as a
+                commissioner in the Thread network. A commissioner checks the pre-shared key from a joining device
+                with the Thread commissioning protocol and shares the network parameter with the joining device
+                upon success.
+        menu "Commissioner Configurations"
+            depends on OPENTHREAD_COMMISSIONER
+            config OPENTHREAD_COMM_MAX_JOINER_ENTRIES
+                int "The size of max commissioning joiner entries"
+                default 2
+        endmenu
+
+        config OPENTHREAD_JOINER
+            bool "Enable Joiner"
+            default n
+            help
+                Select this option to enable Joiner in OpenThread. This allows a device to join the
+                Thread network with a pre-shared key using the Thread commissioning protocol.
+
+        config OPENTHREAD_SRP_CLIENT
+            bool "Enable SRP Client"
+            default y
+            help
+                Select this option to enable SRP Client in OpenThread.
+                This allows a device to register SRP services to SRP Server.
+        menu "SRP Client Configurations"
+            depends on OPENTHREAD_SRP_CLIENT
+            config OPENTHREAD_SRP_CLIENT_MAX_SERVICES
+                int "Specifies number of service entries in the SRP client service pool"
+                default 5
+                help
+                    Set the max buffer size of service entries in the SRP client service pool.
+        endmenu
+
+        config OPENTHREAD_DNS_CLIENT
+            bool "Enable DNS Client"
+            default y
+            help
+                Select this option to enable DNS Client in OpenThread.
+
+        config OPENTHREAD_DNS64_CLIENT
+            bool "Enable DNS64 Client"
+            depends on LWIP_IPV4
+            select LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
+            default n
+            help
+                Select this option to acquire NAT64 address from dns servers.
+        menu "DNS64 Client Configurations"
+            depends on OPENTHREAD_DNS64_CLIENT
+            config OPENTHREAD_DNS_SERVER_ADDR
+                string "DNS server address (IPv4)"
+                default "8.8.8.8"
+                help
+                    Set the DNS server IPv4 address.
+        endmenu
+
+        config OPENTHREAD_LINK_METRICS
+            bool "Enable link metrics feature"
+            default n
+            help
+                Select this option to enable link metrics feature
+
+        config OPENTHREAD_MACFILTER_ENABLE
+            bool "Enable mac filter feature"
+            default n
+            help
+                Select this option to enable mac filter feature
+
+        config OPENTHREAD_CSL_ENABLE
+            bool "Enable CSL feature"
+            default n
+            help
+                Select this option to enable CSL feature
+        menu "CSL Configurations"
+            depends on OPENTHREAD_CSL_ENABLE
+            config OPENTHREAD_CSL_ACCURACY
+                int "The current CSL rx/tx scheduling drift, in units of ± ppm"
+
+                default 1
+                help
+                    The current accuracy of the clock used for scheduling CSL operations
+
+            config OPENTHREAD_CSL_UNCERTAIN
+                int "The CSL Uncertainty in units of 10 us."
+                default 1
+                help
+                    The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
+
+            config OPENTHREAD_CSL_DEBUG_ENABLE
+                bool "Enable CSL debug"
+                default n
+                help
+                    Select this option to set rx on when sleep in CSL feature, only for debug
+        endmenu
+
+        config OPENTHREAD_TIME_SYNC
+            bool "Enable the time synchronization service feature"
+            default n
+            help
+                Select this option to enable time synchronization feature, the devices in the same Thread network could
+                sync to the same network time.
+
+        config OPENTHREAD_RADIO_STATS_ENABLE
+            bool "Enable Radio Statistics feature"
             depends on OPENTHREAD_FTD || OPENTHREAD_MTD
-            default 3
+            default n
+            help
+                Select this option to enable the radio statistics feature, you can use radio
+                command to print some radio Statistics information.
 
-        config OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
-            int "Initial retry delay for address query (in seconds)."
-            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
-            default 15
+        config OPENTHREAD_RX_ON_WHEN_IDLE
+            bool "Enable OpenThread radio capability rx on when idle"
+            default y if !ESP_COEX_SW_COEXIST_ENABLE
+            default n if ESP_COEX_SW_COEXIST_ENABLE
+            help
+                Select this option to enable OpenThread radio capability rx on when idle.
+                Do not support this feature when SW coexistence is enabled.
 
-        config OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
-            int "Maximum retry delay for address query (in seconds)."
-            depends on OPENTHREAD_FTD || OPENTHREAD_MTD
-            default 120
+        config OPENTHREAD_DIAG
+            bool "Enable diag"
+            default y
+            help
+                Select this option to enable Diag in OpenThread. This will enable diag mode and a series of diag
+                commands in the OpenThread command line. These commands allow users to manipulate low-level
+                features of the storage and 15.4 radio.
+
+        menu "Thread Memory Allocation"
+            depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
+            config OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
+                bool 'Allocate memory from PSRAM'
+                default y
+                help
+                    Select this option to allocate buffer from PSRAM for Thread
+
+            config OPENTHREAD_PLATFORM_MSGPOOL_MANAGEMENT
+                bool 'Allocate message pool buffer from PSRAM'
+                default n
+                help
+                    If enabled, the message pool is managed by platform defined logic.
+        endmenu
+
+        menu "OpenThread Stack Parameters"
+
+            menu "Thread Address Query Config"
+                config OPENTHREAD_ADDRESS_QUERY_TIMEOUT
+                    int "Timeout (in seconds) for a address notification response after sending an address query."
+                    depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+                    default 3
+
+                config OPENTHREAD_ADDRESS_QUERY_RETRY_DELAY
+                    int "Initial retry delay for address query (in seconds)."
+                    depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+                    default 15
+
+                config OPENTHREAD_ADDRESS_QUERY_MAX_RETRY_DELAY
+                    int "Maximum retry delay for address query (in seconds)."
+                    depends on OPENTHREAD_FTD || OPENTHREAD_MTD
+                    default 120
+            endmenu
+
+            config OPENTHREAD_NUM_MESSAGE_BUFFERS
+                int "The number of openthread message buffers"
+                default 65
+
+            config OPENTHREAD_XTAL_ACCURACY
+                int "The accuracy of the XTAL"
+                default 130
+                help
+                    The device's XTAL accuracy, in ppm.
+
+            config OPENTHREAD_MLE_MAX_CHILDREN
+                int "The size of max MLE children entries"
+                default 10
+
+            config OPENTHREAD_TMF_ADDR_CACHE_ENTRIES
+                int "The size of max TMF address cache entries"
+                default 20
+
+            config OPENTHREAD_UART_BUFFER_SIZE
+                int "The uart received buffer size of openthread"
+                default 2048
+                help
+                    Set the OpenThread UART buffer size.
+
+            config OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT
+                int "Maximum backoffs times before declaring a channel access failure."
+                default 4
+                help
+                    The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
+                    failure.
+        endmenu
+
+    endmenu
+
+    menu "Thread Log"
+        depends on OPENTHREAD_ENABLED
+        config OPENTHREAD_LOG_LEVEL_DYNAMIC
+            bool "Enable dynamic log level control"
+            default y
+            help
+                Select this option to enable dynamic log level control for OpenThread
+
+        choice OPENTHREAD_LOG_LEVEL
+            prompt "OpenThread log verbosity"
+            depends on !OPENTHREAD_LOG_LEVEL_DYNAMIC
+            default OPENTHREAD_LOG_LEVEL_INFO
+            help
+                Select OpenThread log level.
+
+            config OPENTHREAD_LOG_LEVEL_NONE
+                bool "No logs"
+            config OPENTHREAD_LOG_LEVEL_CRIT
+                bool "Error logs"
+            config OPENTHREAD_LOG_LEVEL_WARN
+                bool "Warning logs"
+            config OPENTHREAD_LOG_LEVEL_NOTE
+                bool "Notice logs"
+            config OPENTHREAD_LOG_LEVEL_INFO
+                bool "Info logs"
+            config OPENTHREAD_LOG_LEVEL_DEBG
+                bool "Debug logs"
+        endchoice #OPENTHREAD_LOG_LEVEL
+
+        config OPENTHREAD_LOG_LEVEL
+            int
+            depends on !OPENTHREAD_LOG_LEVEL_DYNAMIC
+            default 0 if OPENTHREAD_LOG_LEVEL_NONE
+            default 1 if OPENTHREAD_LOG_LEVEL_CRIT
+            default 2 if OPENTHREAD_LOG_LEVEL_WARN
+            default 3 if OPENTHREAD_LOG_LEVEL_NOTE
+            default 4 if OPENTHREAD_LOG_LEVEL_INFO
+            default 5 if OPENTHREAD_LOG_LEVEL_DEBG
+    endmenu
+
+    menu "Thread Extensioned Features"
+        depends on OPENTHREAD_ENABLED
+        config OPENTHREAD_HEADER_CUSTOM
+            bool "Use a header file defined by customer"
+            default n
+            help
+                This option allows users to tailor the values of openthread macros according to their requirements.
+                The openthread submodule contains numerous macros, each with a default value set. In the Kconfig of
+                ESP openthread, users can set specific openthread parameters, which will be applied for certain
+                openthread macros in the openthread-core-esp32x-xxx-config.h file. During compilation, the values
+                specified in openthread-core-esp32x-xxx-config.h will replace the default settings in the openthread
+                submodule. However, Kconfig does not cover all openthread macros, particularly those typically
+                using default values. For such macros, users can enable the OPENTHREAD_HEADER_CUSTOM option in the
+                Kconfig and provide a custom header file. Macros defined in the custom header file will have the
+                highest priority.
+        menu "OpenThread Custom Header Config"
+            depends on OPENTHREAD_HEADER_CUSTOM
+
+            config OPENTHREAD_CUSTOM_HEADER_PATH
+                string "Path of custom header file"
+                depends on OPENTHREAD_HEADER_CUSTOM
+                default ""
+                help
+                    Please use relative paths with respect to the project folder.
+
+            config OPENTHREAD_CUSTOM_HEADER_FILE_NAME
+                string "Name of custom header file"
+                depends on OPENTHREAD_HEADER_CUSTOM
+                default "esp_ot_custom_config.h"
+                help
+                    Name of custom header file.
+        endmenu
+    endmenu
+
+    menu "OpenThread Spinel"
+        config OPENTHREAD_SPINEL_ONLY
+            bool "Enable OpenThread External Radio Spinel feature"
+            default n
+            help
+                Select this option to enable the OpenThread Radio Spinel for external protocol stack, such as Zigbee.
+
+        config OPENTHREAD_SPINEL_RX_FRAME_BUFFER_SIZE
+            int "The size of openthread spinel rx frame buffer"
+            depends on OPENTHREAD_ENABLED || OPENTHREAD_SPINEL_ONLY
+            default 1024 if OPENTHREAD_MTD || OPENTHREAD_RADIO
+            default 2048 if OPENTHREAD_FTD || OPENTHREAD_SPINEL_ONLY
+
+        config OPENTHREAD_SPINEL_MAC_MAX_CSMA_BACKOFFS_DIRECT
+            int "Maximum backoffs times before declaring a channel access failure."
+            depends on OPENTHREAD_SPINEL_ONLY
+            default 4
+            help
+                The maximum number of backoffs the CSMA-CA algorithm will attempt before declaring a channel access
+                failure.
     endmenu
 
 endmenu

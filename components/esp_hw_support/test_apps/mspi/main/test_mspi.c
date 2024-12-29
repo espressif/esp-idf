@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -22,9 +22,15 @@ static void sorted_array_insert(uint32_t *array, uint32_t *size, uint32_t item)
     (*size)++;
 }
 
+#if CONFIG_IDF_TARGET_ESP32S3
 #define TEST_TIME_CNT           10
 #define TEST_TIME_LIMIT_US      10
-TEST_CASE("MSPI: Test mspi timing turning time cost", "[mspi]")
+#elif CONFIG_IDF_TARGET_ESP32P4
+#define TEST_TIME_CNT           30
+#define TEST_TIME_LIMIT_US      30
+#endif
+
+TEST_CASE("MSPI: Test mspi timing tuning time cost", "[mspi]")
 {
     uint64_t start, end;
     uint32_t cost, index_1 = 0, index_2 = 0;

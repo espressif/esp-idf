@@ -4,9 +4,6 @@ examples/storage/custom_flash_driver:
   depends_components:
     - spi_flash
     - driver
-  disable_test:
-    - if: IDF_TARGET not in ["esp32", "esp32c3"]
-      reason: only one target per arch needed
 
 examples/storage/emmc:
   depends_components:

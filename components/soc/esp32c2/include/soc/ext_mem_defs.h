@@ -5,7 +5,6 @@
  */
 #pragma once
 
-
 #include <stdint.h>
 #include "esp_bit_defs.h"
 
@@ -20,7 +19,6 @@ extern "C" {
  */
 #define SOC_MMU_PAGE_SIZE 0x10000
 #endif
-
 
 /*IRAM0 is connected with Cache IBUS0*/
 #define SOC_IRAM0_ADDRESS_LOW                      0x4037C000
@@ -58,7 +56,7 @@ extern "C" {
  * valid bit + value bits
  * valid bit is BIT(6), so value bits are 0x3f
  */
-#define SOC_MMU_VALID_VAL_MASK 		        0x3f
+#define SOC_MMU_VALID_VAL_MASK              0x3f
 
 /**
  * Max MMU available paddr page num.
@@ -133,7 +131,6 @@ extern "C" {
 #ifndef __cplusplus
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
 #endif
-
 
 /**
  * ROM flash mmap driver needs below definitions

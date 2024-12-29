@@ -45,7 +45,7 @@ void ieee802154_pib_init(void)
     set_pending();
 }
 
-static uint8_t ieee802154_txpower_convert(int8_t txpower)
+IEEE802154_NOINLINE static uint8_t ieee802154_txpower_convert(int8_t txpower)
 {
     uint8_t ieee820154_txpower_index = 0;
     if (txpower >= IEEE802154_TXPOWER_VALUE_MAX) {

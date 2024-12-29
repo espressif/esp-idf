@@ -11,7 +11,7 @@
 #include "soc/regi2c_lp_bias.h"
 #include "hal/efuse_hal.h"
 #include "hal/efuse_ll.h"
-#include "regi2c_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "esp_hw_log.h"
 
 // TODO: IDF-9303
@@ -58,6 +58,7 @@ static void calibrate_ocode(void)
     rtc_clk_cpu_freq_get_config(&old_config);
     rtc_clk_cpu_freq_set_xtal();
 
+    ANALOG_CLOCK_ENABLE();
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 0);
     REGI2C_WRITE_MASK(I2C_ULP, I2C_ULP_IR_RESETB, 1);
     bool odone_flag = 0;
@@ -74,6 +75,8 @@ static void calibrate_ocode(void)
             break;
         }
     }
+    ANALOG_CLOCK_DISABLE();
+
     rtc_clk_cpu_freq_set_config(&old_config);
 }
 

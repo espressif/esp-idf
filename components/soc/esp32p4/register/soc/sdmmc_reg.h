@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1502,6 +1502,7 @@ extern "C" {
 #define SDMMC_INTMASK_HLE       BIT(12)
 #define SDMMC_INTMASK_FRUN      BIT(11)
 #define SDMMC_INTMASK_HTO       BIT(10)
+#define SDMMC_INTMASK_VOLT_SW   SDMMC_INTMASK_HTO
 #define SDMMC_INTMASK_DTO       BIT(9)
 #define SDMMC_INTMASK_RTO       BIT(8)
 #define SDMMC_INTMASK_DCRC      BIT(7)

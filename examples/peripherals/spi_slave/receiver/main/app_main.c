@@ -33,11 +33,7 @@ sending a transaction. As soon as the transaction is done, the line gets set low
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////// Please update the following configuration according to your HardWare spec /////////////////
 //////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifdef CONFIG_IDF_TARGET_ESP32
-#define RCV_HOST    HSPI_HOST
-#else
 #define RCV_HOST    SPI2_HOST
-#endif
 
 #define GPIO_HANDSHAKE      2
 #define GPIO_MOSI           12
@@ -100,11 +96,10 @@ void app_main(void)
     ret = spi_slave_initialize(RCV_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
     assert(ret == ESP_OK);
 
-    WORD_ALIGNED_ATTR char sendbuf[129] = "";
-    WORD_ALIGNED_ATTR char recvbuf[129] = "";
-    memset(recvbuf, 0, 33);
-    spi_slave_transaction_t t;
-    memset(&t, 0, sizeof(t));
+    char *sendbuf = spi_bus_dma_memory_alloc(RCV_HOST, 129, 0);
+    char *recvbuf = spi_bus_dma_memory_alloc(RCV_HOST, 129, 0);
+    assert(sendbuf && recvbuf);
+    spi_slave_transaction_t t = {0};
 
     while (1) {
         //Clear receive buffer, set send buffer to something sane

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -737,14 +737,14 @@ typedef union {
  */
 typedef union {
     struct {
-        /** xon_char : R/W; bitpos: [7:0]; default: 17;
+        /** xon_character : R/W; bitpos: [7:0]; default: 17;
          *  This register stores the Xon flow control char.
          */
-        uint32_t xon_char:8;
-        /** xoff_char : R/W; bitpos: [15:8]; default: 19;
+        uint32_t xon_character:8;
+        /** xoff_character : R/W; bitpos: [15:8]; default: 19;
          *  This register stores the Xoff flow control char.
          */
-        uint32_t xoff_char:8;
+        uint32_t xoff_character:8;
         /** xon_xoff_still_send : R/W; bitpos: [16]; default: 0;
          *  In software flow control mode, UART Tx is disabled once UART Rx receives XOFF. In
          *  this status, UART Tx can not transmit XOFF even the received data number is larger
@@ -1097,11 +1097,11 @@ typedef union {
          *  This register is used to configure the content of at_cmd char.
          */
         uint32_t at_cmd_char:8;
-        /** char_num : R/W; bitpos: [15:8]; default: 3;
+        /** at_char_num : R/W; bitpos: [15:8]; default: 3;
          *  This register is used to configure the num of continuous at_cmd chars received by
          *  receiver.
          */
-        uint32_t char_num:8;
+        uint32_t at_char_num:8;
         uint32_t reserved_16:16;
     };
     uint32_t val;
@@ -1263,7 +1263,7 @@ typedef struct uart_dev_t{
     volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
     volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
     volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
-    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1/2/3/4 instance have this register reserved, configure in corresponding PCR registers */
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;

@@ -49,6 +49,12 @@ static const char *TAG = "itwt";
 #define DEFAULT_PWD CONFIG_EXAMPLE_WIFI_PASSWORD
 #define ITWT_SETUP_SUCCESS 1
 
+#if CONFIG_EXAMPLE_TWT_ENABLE_KEEP_ALIVE_QOS_NULL
+bool keep_alive_enabled = true;
+#else
+bool keep_alive_enabled = false;
+#endif
+
 #if CONFIG_EXAMPLE_ITWT_TRIGGER_ENABLE
 uint8_t trigger_enabled = 1;
 #else
@@ -263,6 +269,12 @@ static void wifi_itwt(void)
     };
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+
+    wifi_twt_config_t wifi_twt_config = {
+        .post_wakeup_event = false,
+        .twt_enable_keep_alive = keep_alive_enabled,
+    };
+    ESP_ERROR_CHECK(esp_wifi_sta_twt_config(&wifi_twt_config));
 
     esp_wifi_set_bandwidth(WIFI_IF_STA, WIFI_BW_HT20);
     esp_wifi_set_protocol(WIFI_IF_STA, WIFI_PROTOCOL_11B | WIFI_PROTOCOL_11G | WIFI_PROTOCOL_11N | WIFI_PROTOCOL_11AX);

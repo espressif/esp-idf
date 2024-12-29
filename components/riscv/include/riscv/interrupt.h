@@ -146,6 +146,21 @@ bool esprv_int_is_vectored(int rv_int_num);
  */
 void esprv_int_set_vectored(int rv_int_num, bool vectored);
 
+/*************************** ESP-TEE specific ***************************/
+
+/** Function prototype executing interrupt configuration APIs as service calls */
+typedef void (*esprv_int_mgmt_t)(int argc, ...);
+
+/**
+ * @brief Setup the callback function which executes the interrupt
+ *        configuration APIs as TEE service calls
+ *
+ * @note This function should be called right after landing in the REE application,
+ *       before any system initialization
+ *
+ * @param fptr Pointer to the function
+ */
+void esprv_int_setup_mgmt_cb(void *fptr);
 
 /**
  * Include the deprecated functions last since they will alias the functions declared above

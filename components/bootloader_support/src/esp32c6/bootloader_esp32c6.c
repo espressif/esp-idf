@@ -96,7 +96,7 @@ static inline void bootloader_hardware_init(void)
     esp_rom_spiflash_fix_dummylen(1, 1);
 #endif
 
-    regi2c_ctrl_ll_master_enable_clock(true);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_configure_clock();
 }
 

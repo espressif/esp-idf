@@ -75,7 +75,7 @@ static gpio_context_t gpio_context = {
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -113,7 +113,7 @@ esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 
 esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -1017,6 +1017,29 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 
+esp_err_t gpio_get_io_config(gpio_num_t gpio_num,
+                             bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                             uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel);
+#if !SOC_GPIO_SUPPORT_RTC_INDEPENDENT && SOC_RTCIO_PIN_COUNT > 0
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+        int rtcio_num = rtc_io_number_get(gpio_num);
+        if (pu) {
+            *pu = rtcio_hal_is_pullup_enabled(rtcio_num);
+        }
+        if (pd) {
+            *pd = rtcio_hal_is_pulldown_enabled(rtcio_num);
+        }
+        if (drv) {
+            *drv = rtcio_hal_get_drive_capability(rtcio_num);
+        }
+    }
+#endif
+    return ESP_OK;
+}
+
 esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
 {
     ESP_RETURN_ON_FALSE(out_stream, ESP_ERR_INVALID_ARG, GPIO_TAG, "out_stream error");
@@ -1027,9 +1050,16 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         uint32_t gpio_num = __builtin_ffsll(io_bit_mask) - 1;
         io_bit_mask &= ~(1ULL << gpio_num);
 
-        bool pu, pd, ie, oe, od, slp_sel;
-        uint32_t drv, fun_sel, sig_out;
-        gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
+        bool pu = 0;
+        bool pd = 0;
+        bool ie = 0;
+        bool oe = 0;
+        bool od = 0;
+        bool slp_sel = 0;
+        uint32_t drv = 0;
+        uint32_t fun_sel = 0;
+        uint32_t sig_out = 0;
+        gpio_get_io_config(gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
 
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", pu, pd, drv);
@@ -1055,7 +1085,7 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         fprintf(out_stream, "  SleepSelEn: %d\n", slp_sel);
         fprintf(out_stream, "\n");
     }
-    fprintf(out_stream, "=================IO DUMP End==================\n");
+    fprintf(out_stream, "=================IO DUMP End=================\n");
     return ESP_OK;
 }
 

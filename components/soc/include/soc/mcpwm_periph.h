@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,10 @@
 #include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/periph_defs.h"
+#include "soc/regdma.h"
+#if SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+#include "soc/retention_periph_defs.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,6 +41,17 @@ typedef struct {
 } mcpwm_signal_conn_t;
 
 extern const mcpwm_signal_conn_t mcpwm_periph_signals;
+
+#if SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+typedef struct {
+    const regdma_entries_config_t *regdma_entry_array;
+    uint32_t array_size;
+    const periph_retention_module_t retention_module;
+} mcpwm_reg_retention_info_t;
+
+extern const mcpwm_reg_retention_info_t mcpwm_reg_retention_info[SOC_MCPWM_GROUPS];
+#endif // SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+
 #endif // SOC_MCPWM_SUPPORTED
 
 #ifdef __cplusplus

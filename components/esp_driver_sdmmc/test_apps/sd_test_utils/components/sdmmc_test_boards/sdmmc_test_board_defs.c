@@ -324,11 +324,9 @@ static const sdmmc_test_board_info_t s_board_info = {
     .name = "ESP32-P4 Function EV Board",
     .slot = {
         {
-            .slot_exists = false
-        },
-        {
             .slot_exists = true,
             .bus_width = 4,
+            // .uhs1_supported = true,  //no runner for uhs1
             .clk = 43,
             .cmd_mosi = 44,
             .d0_miso = 39,
@@ -342,6 +340,9 @@ static const sdmmc_test_board_info_t s_board_info = {
             .cd = GPIO_NUM_NC,
             .wp = GPIO_NUM_NC,
             .unused_pin = 54,
+        },
+        {
+            .slot_exists = false,
         }
     },
 };

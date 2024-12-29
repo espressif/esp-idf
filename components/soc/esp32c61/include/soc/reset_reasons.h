@@ -22,7 +22,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief Naming conventions: RESET_REASON_{reset level}_{reset reason}
  * @note refer to TRM: <Reset and Clock> chapter
@@ -49,7 +48,6 @@ typedef enum {
     RESET_REASON_RTC_BROWN_OUT   = 0x19, // RTC power glitch resets system
     RESET_REASON_CPU_LOCKUP      = 0x1A, // CPU lockup resets
 } soc_reset_reason_t;
-
 
 #ifdef __cplusplus
 }

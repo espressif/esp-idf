@@ -103,9 +103,9 @@ class CertificateBundle:
                 crt += strg
 
         if count == 0:
-            raise InputError('No certificate found')
-
-        status('Successfully added %d certificates' % count)
+            status('No certificate found')
+        else:
+            status('Successfully added %d certificates' % count)
 
     def add_from_der(self, crt_str):
         self.certificates.append(x509.load_der_x509_certificate(crt_str, default_backend()))

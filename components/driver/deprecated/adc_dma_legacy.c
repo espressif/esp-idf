@@ -27,6 +27,7 @@
 #include "hal/adc_hal.h"
 #include "hal/dma_types.h"
 #include "hal/adc_hal_common.h"
+#include "esp_private/regi2c_ctrl.h"
 
 #include "driver/gpio.h"
 #include "driver/adc_types_legacy.h"
@@ -212,6 +213,8 @@ esp_err_t adc_digi_deinitialize(void)
     }
 #endif  //CONFIG_PM_ENABLE
 
+    ANALOG_CLOCK_DISABLE();
+
     free(s_adc_digi_ctx->rx_dma_buf);
     free(s_adc_digi_ctx->hal.rx_desc);
     free(s_adc_digi_ctx->hal_digi_ctrlr_cfg.adc_pattern);
@@ -354,6 +357,8 @@ esp_err_t adc_digi_initialize(const adc_digi_init_config_t *init_config)
     adc_hal_dma_ctx_config(&s_adc_digi_ctx->hal, &config);
 
     adc_apb_periph_claim();
+
+    ANALOG_CLOCK_ENABLE();
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     adc_hal_calibration_init(ADC_UNIT_1);
@@ -626,6 +631,7 @@ esp_err_t adc_digi_controller_configure(const adc_digi_configuration_t *config)
     return ESP_OK;
 }
 
+#if !CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that adc_continuous driver is not running along with the legacy adc_continuous driver
  */
@@ -641,6 +647,7 @@ static void check_adc_continuous_driver_conflict(void)
     }
     ESP_EARLY_LOGW(ADC_TAG, "legacy driver is deprecated, please migrate to `esp_adc/adc_continuous.h`");
 }
+#endif //CONFIG_ADC_SKIP_LEGACY_CONFLICT_CHECK
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 /*---------------------------------------------------------------

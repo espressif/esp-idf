@@ -6,7 +6,7 @@ dependencies:
   esp-qa/wifi-cmd:
     version: "~0.1.8"
   esp-qa/ping-cmd:
-    version: "~0.0.1"
+    version: "~1.0.0"
   espressif/esp-extconn:
     version: "~0.1.0"
     rules:

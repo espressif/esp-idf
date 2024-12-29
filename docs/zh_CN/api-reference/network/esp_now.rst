@@ -13,10 +13,15 @@ CTR 与 CBC-MAC 协议 (CCMP) 可用来保护动作帧的安全。ESP-NOW 广泛
 帧格式
 ------------
 
-ESP-NOW 使用供应商的动作帧传输数据，默认比特率为 1 Mbps。目前 ESP-NOW 支持两个版本： v1.0 和 v2.0。
+ESP-NOW 使用供应商的动作帧传输数据，默认比特率为 1 Mbps。
 
-v2.0 的设备支持的最大数据包长度为 ESP_NOW_MAX_DATA_LEN_V2 bytes； v1.0 的设备支持的最大数据包长度为 ESP_NOW_MAX_DATA_LEN bytes。
-v2.0 设备可以接收来自 v2.0 和 v1.0 设备的数据包。v1.0 设备能接收来自 v1.0 的数据包。v1.0 设备可以接收长度不超过 ESP_NOW_MAX_IE_DATA_LEN 的 v2.0 数据包，而对于长度超过 ESP_NOW_MAX_IE_DATA_LEN 的数据包，它要么只接收前 ESP_NOW_MAX_IE_DATA_LEN 字节，要么丢弃数据包。具体行为请参考对应 IDF 版本中的文档。
+目前 ESP-NOW 支持两个版本：v1.0 和 v2.0。v2.0 的设备支持的最大数据包长度为 1490 (``ESP_NOW_MAX_DATA_LEN_V2``) 字节；v1.0 的设备支持的最大数据包长度为 250 (``ESP_NOW_MAX_DATA_LEN``) 字节。
+
+v2.0 设备可以接收来自 v2.0 和 v1.0 设备的数据包。v1.0 设备只能接收来自 v1.0 设备的数据包。
+
+当然，v1.0 设备也可以接收长度不超过 250 (``ESP_NOW_MAX_IE_DATA_LEN``) 的 v2.0 数据包，只是如果长度超过此值，就只接收前 250 (``ESP_NOW_MAX_IE_DATA_LEN``) 字节，或是直接丢弃数据包。
+
+具体行为请参考对应 IDF 版本中的文档。
 
 供应商的动作帧格式为：
 

@@ -34,7 +34,7 @@ def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) 
     if 'psram' in config:
         dut.expect(re.compile(r'Adding pool of \d+K of PSRAM memory to heap allocator'))
     dut.expect('App is running')
-    dut.expect('NVS test done\n')
+    dut.expect('NVS test done')
 
 
 @pytest.mark.esp32
@@ -62,4 +62,4 @@ def test_unicore_app_and_multicore_bootloader(dut: Dut, app_downloader, config) 
     if 'psram' in config:
         dut.expect(re.compile(r'Adding pool of \d+K of PSRAM memory to heap allocator'))
     dut.expect('App is running')
-    dut.expect('NVS test done\n')
+    dut.expect('NVS test done')

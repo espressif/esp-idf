@@ -11,6 +11,7 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_utils.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_interrupts.h \
     $(PROJECT_PATH)/components/ulp/lp_core/lp_core/include/ulp_lp_core_spi.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_vad_shared.h \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_helpers.h \
     $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
@@ -34,12 +35,17 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_awb.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_ccm.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_bf.h \
+    $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_lsc.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_demosaic.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_sharpen.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_core.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_gamma.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_hist.h \
     $(PROJECT_PATH)/components/esp_driver_isp/include/driver/isp_color.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/lp_i2s.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/lp_i2s_std.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/lp_i2s_pdm.h \
+    $(PROJECT_PATH)/components/esp_driver_i2s/include/driver/lp_i2s_vad.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_decode.h \
     $(PROJECT_PATH)/components/esp_driver_jpeg/include/driver/jpeg_encode.h \
     $(PROJECT_PATH)/components/esp_driver_ppa/include/driver/ppa.h \

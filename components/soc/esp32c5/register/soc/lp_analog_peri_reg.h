@@ -12,72 +12,75 @@ extern "C" {
 #endif
 
 /** LP_ANA_BOD_MODE0_CNTL_REG register
- *  Configure brownout mode0
+ *  Brownout detector mode 0 configuration register
  */
 #define LP_ANA_BOD_MODE0_CNTL_REG (DR_REG_LP_ANA_BASE + 0x0)
 /** LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA : R/W; bitpos: [6]; default: 0;
- *  enable suspend spi when brownout interrupt or not
- *  1:enable
- *  0:disable
+ *  Configures whether to enable the brown-out detector to trigger flash suspend.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA    (BIT(6))
 #define LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA_M  (LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA_V << LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA_S)
 #define LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA_V  0x00000001U
 #define LP_ANA_BOD_MODE0_CLOSE_FLASH_ENA_S  6
 /** LP_ANA_BOD_MODE0_PD_RF_ENA : R/W; bitpos: [7]; default: 0;
- *  enable power down RF when brownout interrupt or not
- *  1:enable
- *  0:disable
+ *  Configures whether to enable the brown-out detector to power down the RF module.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_BOD_MODE0_PD_RF_ENA    (BIT(7))
 #define LP_ANA_BOD_MODE0_PD_RF_ENA_M  (LP_ANA_BOD_MODE0_PD_RF_ENA_V << LP_ANA_BOD_MODE0_PD_RF_ENA_S)
 #define LP_ANA_BOD_MODE0_PD_RF_ENA_V  0x00000001U
 #define LP_ANA_BOD_MODE0_PD_RF_ENA_S  7
 /** LP_ANA_BOD_MODE0_INTR_WAIT : R/W; bitpos: [17:8]; default: 1;
- *  set the undervoltage hold time for triggering brownout interrupt
+ *  Configures the time to generate an interrupt after the brown-out signal is valid.
+ *  The unit is LP_FAST_CLK cycles.
  */
 #define LP_ANA_BOD_MODE0_INTR_WAIT    0x000003FFU
 #define LP_ANA_BOD_MODE0_INTR_WAIT_M  (LP_ANA_BOD_MODE0_INTR_WAIT_V << LP_ANA_BOD_MODE0_INTR_WAIT_S)
 #define LP_ANA_BOD_MODE0_INTR_WAIT_V  0x000003FFU
 #define LP_ANA_BOD_MODE0_INTR_WAIT_S  8
 /** LP_ANA_BOD_MODE0_RESET_WAIT : R/W; bitpos: [27:18]; default: 1023;
- *  set the undervoltage hold time for triggering brownout reset
+ *  Configures the time to generate a reset after the brown-out signal is valid. The
+ *  unit is LP_FAST_CLK cycles.
  */
 #define LP_ANA_BOD_MODE0_RESET_WAIT    0x000003FFU
 #define LP_ANA_BOD_MODE0_RESET_WAIT_M  (LP_ANA_BOD_MODE0_RESET_WAIT_V << LP_ANA_BOD_MODE0_RESET_WAIT_S)
 #define LP_ANA_BOD_MODE0_RESET_WAIT_V  0x000003FFU
 #define LP_ANA_BOD_MODE0_RESET_WAIT_S  18
 /** LP_ANA_BOD_MODE0_CNT_CLR : R/W; bitpos: [28]; default: 0;
- *  clear brownout count or not
- *  1: clear
- *  0: no operation
+ *  Configures whether to clear the count value of the brown-out detector.
+ *  0: Do not clear
+ *  1: Clear
  */
 #define LP_ANA_BOD_MODE0_CNT_CLR    (BIT(28))
 #define LP_ANA_BOD_MODE0_CNT_CLR_M  (LP_ANA_BOD_MODE0_CNT_CLR_V << LP_ANA_BOD_MODE0_CNT_CLR_S)
 #define LP_ANA_BOD_MODE0_CNT_CLR_V  0x00000001U
 #define LP_ANA_BOD_MODE0_CNT_CLR_S  28
 /** LP_ANA_BOD_MODE0_INTR_ENA : R/W; bitpos: [29]; default: 0;
- *  enable brownout interrupt or not
- *  1: enable
- *  0: disable
+ *  Enables the interrupts for the brown-out detector mode 0. LP_ANA_BOD_MODE0_INT_RAW
+ *  and LP_ANA_BOD_MODE0_LP_INT_RAW are valid only when this field is set to 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_BOD_MODE0_INTR_ENA    (BIT(29))
 #define LP_ANA_BOD_MODE0_INTR_ENA_M  (LP_ANA_BOD_MODE0_INTR_ENA_V << LP_ANA_BOD_MODE0_INTR_ENA_S)
 #define LP_ANA_BOD_MODE0_INTR_ENA_V  0x00000001U
 #define LP_ANA_BOD_MODE0_INTR_ENA_S  29
 /** LP_ANA_BOD_MODE0_RESET_SEL : R/W; bitpos: [30]; default: 0;
- *  select brownout reset level
- *  1: system reset
- *  0: chip reset
+ *  Configures the reset type when the brown-out detector is triggered.
+ *  0: Chip reset
+ *  1: System reset
  */
 #define LP_ANA_BOD_MODE0_RESET_SEL    (BIT(30))
 #define LP_ANA_BOD_MODE0_RESET_SEL_M  (LP_ANA_BOD_MODE0_RESET_SEL_V << LP_ANA_BOD_MODE0_RESET_SEL_S)
 #define LP_ANA_BOD_MODE0_RESET_SEL_V  0x00000001U
 #define LP_ANA_BOD_MODE0_RESET_SEL_S  30
 /** LP_ANA_BOD_MODE0_RESET_ENA : R/W; bitpos: [31]; default: 0;
- *  enable brownout reset or not
- *  1: enable
- *  0: disable
+ *  Configures whether to enable reset for the brown-out detector.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_BOD_MODE0_RESET_ENA    (BIT(31))
 #define LP_ANA_BOD_MODE0_RESET_ENA_M  (LP_ANA_BOD_MODE0_RESET_ENA_V << LP_ANA_BOD_MODE0_RESET_ENA_S)
@@ -85,44 +88,43 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_RESET_ENA_S  31
 
 /** LP_ANA_BOD_MODE1_CNTL_REG register
- *  Configure brownout mode1
+ *  Brownout detector mode 1 configuration register
  */
 #define LP_ANA_BOD_MODE1_CNTL_REG (DR_REG_LP_ANA_BASE + 0x4)
 /** LP_ANA_BOD_MODE1_RESET_ENA : R/W; bitpos: [31]; default: 0;
- *  enable brownout mode1 reset or not
- *  1: enable
- *  0: disable
+ *  Configures whether to enable brown-out detector mode 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_BOD_MODE1_RESET_ENA    (BIT(31))
 #define LP_ANA_BOD_MODE1_RESET_ENA_M  (LP_ANA_BOD_MODE1_RESET_ENA_V << LP_ANA_BOD_MODE1_RESET_ENA_S)
 #define LP_ANA_BOD_MODE1_RESET_ENA_V  0x00000001U
 #define LP_ANA_BOD_MODE1_RESET_ENA_S  31
 
-/** LP_ANA_CK_GLITCH_CNTL_REG register
- *  Configure power glitch
+/** LP_ANA_POWER_GLITCH_CNTL_REG register
+ *  Voltage glitch configuration register
  */
-#define LP_ANA_CK_GLITCH_CNTL_REG (DR_REG_LP_ANA_BASE + 0x8)
+#define LP_ANA_POWER_GLITCH_CNTL_REG (DR_REG_LP_ANA_BASE + 0x8)
 /** LP_ANA_PWR_GLITCH_RESET_ENA : R/W; bitpos: [30:27]; default: 0;
- *  enable powerglitch or not
+ *  Configures whether to enable the voltage glitch detectors. Bit0, bit1, bit2, bit3
+ *  correspond to VDDPST2/3, VDDPST1, VDDA3, and VDDA8, respectively.
+ *  0: Disable
+ *  1: Enable
  */
 #define LP_ANA_PWR_GLITCH_RESET_ENA    0x0000000FU
 #define LP_ANA_PWR_GLITCH_RESET_ENA_M  (LP_ANA_PWR_GLITCH_RESET_ENA_V << LP_ANA_PWR_GLITCH_RESET_ENA_S)
 #define LP_ANA_PWR_GLITCH_RESET_ENA_V  0x0000000FU
 #define LP_ANA_PWR_GLITCH_RESET_ENA_S  27
-/** LP_ANA_CK_GLITCH_RESET_ENA : R/W; bitpos: [31]; default: 0;
- *  reserved
- */
-#define LP_ANA_CK_GLITCH_RESET_ENA    (BIT(31))
-#define LP_ANA_CK_GLITCH_RESET_ENA_M  (LP_ANA_CK_GLITCH_RESET_ENA_V << LP_ANA_CK_GLITCH_RESET_ENA_S)
-#define LP_ANA_CK_GLITCH_RESET_ENA_V  0x00000001U
-#define LP_ANA_CK_GLITCH_RESET_ENA_S  31
 
 /** LP_ANA_FIB_ENABLE_REG register
- *  configure FIB REG
+ *  Voltage glitch detectors' enable control register
  */
 #define LP_ANA_FIB_ENABLE_REG (DR_REG_LP_ANA_BASE + 0xc)
 /** LP_ANA_ANA_FIB_ENA : R/W; bitpos: [31:0]; default: 4294967295;
- *  configure analog fib by software
+ *  Controls the enable of the voltage glitch detectors. Bit2, bit3, bit4, bit5
+ *  correspond to VDDPST2/3, VDDPST1, VDDA3, and VDDA8, respectively.
+ *  0: Controlled by LP_ANA_PWR_GLITCH_RESET_ENA
+ *  1: Forcibly enabled by hardware
  */
 #define LP_ANA_ANA_FIB_ENA    0xFFFFFFFFU
 #define LP_ANA_ANA_FIB_ENA_M  (LP_ANA_ANA_FIB_ENA_V << LP_ANA_ANA_FIB_ENA_S)
@@ -135,11 +137,11 @@ extern "C" {
 #define LP_ANA_ANA_FIB_PWR_GLITCH_ENA_S  2
 
 /** LP_ANA_INT_RAW_REG register
- *  interrpt raw register
+ *  LP_ANA_BOD_MODE0_INT raw interrupt
  */
 #define LP_ANA_INT_RAW_REG (DR_REG_LP_ANA_BASE + 0x10)
 /** LP_ANA_BOD_MODE0_INT_RAW : R/WTC/SS; bitpos: [31]; default: 0;
- *  brownout mode0 interrupt raw register
+ *  The raw interrupt status of LP_ANA_BOD_MODE0_INT.
  */
 #define LP_ANA_BOD_MODE0_INT_RAW    (BIT(31))
 #define LP_ANA_BOD_MODE0_INT_RAW_M  (LP_ANA_BOD_MODE0_INT_RAW_V << LP_ANA_BOD_MODE0_INT_RAW_S)
@@ -147,11 +149,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_INT_RAW_S  31
 
 /** LP_ANA_INT_ST_REG register
- *  interrpt status register
+ *  LP_ANA_BOD_MODE0_INT state interrupt
  */
 #define LP_ANA_INT_ST_REG (DR_REG_LP_ANA_BASE + 0x14)
 /** LP_ANA_BOD_MODE0_INT_ST : RO; bitpos: [31]; default: 0;
- *  brownout mode0 interrupt status register
+ *  The masked interrupt status of LP_ANA_BOD_MODE0_INT.
  */
 #define LP_ANA_BOD_MODE0_INT_ST    (BIT(31))
 #define LP_ANA_BOD_MODE0_INT_ST_M  (LP_ANA_BOD_MODE0_INT_ST_V << LP_ANA_BOD_MODE0_INT_ST_S)
@@ -159,11 +161,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_INT_ST_S  31
 
 /** LP_ANA_INT_ENA_REG register
- *  interrpt enable register
+ *  LP_ANA_BOD_MODE0_INT enable register
  */
 #define LP_ANA_INT_ENA_REG (DR_REG_LP_ANA_BASE + 0x18)
 /** LP_ANA_BOD_MODE0_INT_ENA : R/W; bitpos: [31]; default: 0;
- *  brownout mode0 interrupt enable register
+ *  Write 1 to enable LP_ANA_BOD_MODE0_INT.
  */
 #define LP_ANA_BOD_MODE0_INT_ENA    (BIT(31))
 #define LP_ANA_BOD_MODE0_INT_ENA_M  (LP_ANA_BOD_MODE0_INT_ENA_V << LP_ANA_BOD_MODE0_INT_ENA_S)
@@ -171,11 +173,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_INT_ENA_S  31
 
 /** LP_ANA_INT_CLR_REG register
- *  interrpt clear register
+ *  LP_ANA_BOD_MODE0_INT clear register
  */
 #define LP_ANA_INT_CLR_REG (DR_REG_LP_ANA_BASE + 0x1c)
 /** LP_ANA_BOD_MODE0_INT_CLR : WT; bitpos: [31]; default: 0;
- *  brownout mode0 interrupt clear register
+ *  Write 1 to clear LP_ANA_BOD_MODE0_INT.
  */
 #define LP_ANA_BOD_MODE0_INT_CLR    (BIT(31))
 #define LP_ANA_BOD_MODE0_INT_CLR_M  (LP_ANA_BOD_MODE0_INT_CLR_V << LP_ANA_BOD_MODE0_INT_CLR_S)
@@ -183,11 +185,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_INT_CLR_S  31
 
 /** LP_ANA_LP_INT_RAW_REG register
- *  lp interrupt raw register
+ *  LP_ANA_BOD_MODE0_LP_INT raw interrupt
  */
 #define LP_ANA_LP_INT_RAW_REG (DR_REG_LP_ANA_BASE + 0x20)
 /** LP_ANA_BOD_MODE0_LP_INT_RAW : R/WTC/SS; bitpos: [31]; default: 0;
- *  brownout mode0 lp interrupt raw register
+ *  The raw interrupt status of LP_ANA_BOD_MODE0_LP_INT.
  */
 #define LP_ANA_BOD_MODE0_LP_INT_RAW    (BIT(31))
 #define LP_ANA_BOD_MODE0_LP_INT_RAW_M  (LP_ANA_BOD_MODE0_LP_INT_RAW_V << LP_ANA_BOD_MODE0_LP_INT_RAW_S)
@@ -195,11 +197,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_LP_INT_RAW_S  31
 
 /** LP_ANA_LP_INT_ST_REG register
- *  lp interrupt status register
+ *  LP_ANA_BOD_MODE0_LP_INT state interrupt
  */
 #define LP_ANA_LP_INT_ST_REG (DR_REG_LP_ANA_BASE + 0x24)
 /** LP_ANA_BOD_MODE0_LP_INT_ST : RO; bitpos: [31]; default: 0;
- *  brownout mode0 lp interrupt status register
+ *  The masked interrupt status of LP_ANA_BOD_MODE0_LP_INT.
  */
 #define LP_ANA_BOD_MODE0_LP_INT_ST    (BIT(31))
 #define LP_ANA_BOD_MODE0_LP_INT_ST_M  (LP_ANA_BOD_MODE0_LP_INT_ST_V << LP_ANA_BOD_MODE0_LP_INT_ST_S)
@@ -207,11 +209,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_LP_INT_ST_S  31
 
 /** LP_ANA_LP_INT_ENA_REG register
- *  lp interrupt enable register
+ *  LP_ANA_BOD_MODE0_LP_INT enable register
  */
 #define LP_ANA_LP_INT_ENA_REG (DR_REG_LP_ANA_BASE + 0x28)
 /** LP_ANA_BOD_MODE0_LP_INT_ENA : R/W; bitpos: [31]; default: 0;
- *  brownout mode0 lp interrupt enable register
+ *  Write 1 to enable LP_ANA_BOD_MODE0_LP_INT.
  */
 #define LP_ANA_BOD_MODE0_LP_INT_ENA    (BIT(31))
 #define LP_ANA_BOD_MODE0_LP_INT_ENA_M  (LP_ANA_BOD_MODE0_LP_INT_ENA_V << LP_ANA_BOD_MODE0_LP_INT_ENA_S)
@@ -219,11 +221,11 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_LP_INT_ENA_S  31
 
 /** LP_ANA_LP_INT_CLR_REG register
- *  lp interrupt clear register
+ *  LP_ANA_BOD_MODE0_LP_INT  clear register
  */
 #define LP_ANA_LP_INT_CLR_REG (DR_REG_LP_ANA_BASE + 0x2c)
 /** LP_ANA_BOD_MODE0_LP_INT_CLR : WT; bitpos: [31]; default: 0;
- *  brownout mode0 lp interrupt clear register
+ *  Write 1 to clear LP_ANA_BOD_MODE0_LP_INT.
  */
 #define LP_ANA_BOD_MODE0_LP_INT_CLR    (BIT(31))
 #define LP_ANA_BOD_MODE0_LP_INT_CLR_M  (LP_ANA_BOD_MODE0_LP_INT_CLR_V << LP_ANA_BOD_MODE0_LP_INT_CLR_S)
@@ -231,18 +233,21 @@ extern "C" {
 #define LP_ANA_BOD_MODE0_LP_INT_CLR_S  31
 
 /** LP_ANA_DATE_REG register
- *  version register
+ *  Version control register
  */
 #define LP_ANA_DATE_REG (DR_REG_LP_ANA_BASE + 0x3fc)
 /** LP_ANA_LP_ANA_DATE : R/W; bitpos: [30:0]; default: 36774528;
- *  version register
+ *  Version control register.
  */
 #define LP_ANA_LP_ANA_DATE    0x7FFFFFFFU
 #define LP_ANA_LP_ANA_DATE_M  (LP_ANA_LP_ANA_DATE_V << LP_ANA_LP_ANA_DATE_S)
 #define LP_ANA_LP_ANA_DATE_V  0x7FFFFFFFU
 #define LP_ANA_LP_ANA_DATE_S  0
 /** LP_ANA_CLK_EN : R/W; bitpos: [31]; default: 0;
- *  reserved
+ *  Configures whether to force enable register clock.
+ *  0: Automatic clock gating
+ *  1: Force enable register clock
+ *  The configuration of this field does not effect the access of registers.
  */
 #define LP_ANA_CLK_EN    (BIT(31))
 #define LP_ANA_CLK_EN_M  (LP_ANA_CLK_EN_V << LP_ANA_CLK_EN_S)

@@ -17,6 +17,7 @@ class Config:
     """
     def __init__(self) -> None:
         self.IDF_PATH = os.environ['IDF_PATH']
+        self.IDF_PATH_OLD = os.environ['IDF_PATH_OLD']
         self.IDF_VERSION = os.environ['ESP_IDF_VERSION']
         self.IDF_PYTHON_ENV_PATH = os.environ['IDF_PYTHON_ENV_PATH']
         self.IDF_TOOLS_PY = os.path.join(self.IDF_PATH, 'tools', 'idf_tools.py')

@@ -22,10 +22,7 @@
 #include "esp_private/sleep_event.h"
 #include "hal/efuse_hal.h"
 #include "soc/chip_revision.h"
-
-#if SOC_MODEM_CLOCK_SUPPORTED
-#include "esp_private/esp_modem_clock.h"
-#endif
+#include "esp_private/regi2c_ctrl.h"
 
 static const char *TAG = "rtc_clk";
 
@@ -133,27 +130,13 @@ static void rtc_clk_bbpll_enable(void)
     clk_ll_bbpll_enable();
 }
 
-static void rtc_clk_enable_i2c_ana_master_clock(bool enable)
-{
-#if SOC_MODEM_CLOCK_SUPPORTED
-#ifdef BOOTLOADER_BUILD
-    regi2c_ctrl_ll_master_enable_clock(enable);
-#else
-    if (enable) {
-        modem_clock_module_enable(PERIPH_ANA_I2C_MASTER_MODULE);
-    } else {
-        modem_clock_module_disable(PERIPH_ANA_I2C_MASTER_MODULE);
-    }
-#endif
-#endif
-}
-
 static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
 {
     /* Digital part */
     clk_ll_bbpll_set_freq_mhz(pll_freq);
+
     /* Analog part */
-    rtc_clk_enable_i2c_ana_master_clock(true);
+    ANALOG_CLOCK_ENABLE();
     /* BBPLL CALIBRATION START */
     regi2c_ctrl_ll_bbpll_calibration_start();
     clk_ll_bbpll_set_config(pll_freq, xtal_freq);
@@ -162,7 +145,8 @@ static void rtc_clk_bbpll_configure(soc_xtal_freq_t xtal_freq, int pll_freq)
     esp_rom_delay_us(10); // wait for true stop
     /* BBPLL CALIBRATION STOP */
     regi2c_ctrl_ll_bbpll_calibration_stop();
-    rtc_clk_enable_i2c_ana_master_clock(false);
+    ANALOG_CLOCK_DISABLE();
+
     s_cur_pll_freq = pll_freq;
 }
 
@@ -268,7 +252,8 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
     } else if (freq_mhz == 80) {
         real_freq_mhz = freq_mhz;
         if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
-            // ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
+            /* ESP32C5 has a root clock ICG issue when switching SOC_CPU_CLK_SRC from PLL_F160M to PLL_F240M
+             * For detailed information, refer to IDF-11064 */
             source = SOC_CPU_CLK_SRC_PLL_F240M;
             source_freq_mhz = CLK_LL_PLL_240M_FREQ_MHZ;
             divider = 3;

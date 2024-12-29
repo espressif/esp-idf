@@ -1,10 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "rv_decode.h"
+#include "riscv/csr_hwlp.h"
+#include "soc/soc_caps.h"
 
 static inline uint32_t rv_inst_len(uint32_t inst)
 {
@@ -154,5 +156,26 @@ uintptr_t rv_compute_next_pc(esp_gdbstub_frame_t *frame, uintptr_t inst_addr)
         }
     }
 #endif /* __riscv_c  */
+#if SOC_CPU_HAS_HWLOOP
+    /* This block of code could be done with a loop, but the RV_READ_CSR macro
+     * is not designed to pass values as variables.
+     */
+    /* Check if LOOP0 is executing */
+    const uintptr_t loop0_end_addr = RV_READ_CSR(CSR_LOOP0_END_ADDR);
+    if (loop0_end_addr == inst_addr) {
+        const uint32_t loop0_count = RV_READ_CSR(CSR_LOOP0_COUNT);
+        if (loop0_count > 1) {
+            return RV_READ_CSR(CSR_LOOP0_START_ADDR);
+        }
+    }
+    /* Check if LOOP1 is executing */
+    const uintptr_t loop1_end_addr = RV_READ_CSR(CSR_LOOP1_END_ADDR);
+    if (loop1_end_addr == inst_addr) {
+        const uint32_t loop1_count = RV_READ_CSR(CSR_LOOP1_COUNT);
+        if (loop1_count > 1) {
+            return RV_READ_CSR(CSR_LOOP1_START_ADDR);
+        }
+    }
+#endif // SOC_CPU_HAS_HWLOOP
     return inst_addr + inst_len;
 }

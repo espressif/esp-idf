@@ -82,7 +82,7 @@ static inline void mipi_dsi_host_ll_power_on_off(dsi_host_dev_t *dev, bool on)
  */
 static inline void mipi_dsi_host_ll_set_timeout_clock_division(dsi_host_dev_t *dev, uint32_t div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, to_clk_division, div - 1);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, to_clk_division, div);
 }
 
 /**
@@ -95,7 +95,8 @@ static inline void mipi_dsi_host_ll_set_timeout_clock_division(dsi_host_dev_t *d
  */
 static inline void mipi_dsi_host_ll_set_escape_clock_division(dsi_host_dev_t *dev, uint32_t div)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, tx_esc_clk_division, div - 1);
+    HAL_ASSERT(div > 1 && div < 256);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->clkmgr_cfg, tx_esc_clk_division, div);
 }
 
 /**
@@ -181,19 +182,20 @@ static inline void mipi_dsi_host_ll_dpi_set_vcid(dsi_host_dev_t *dev, uint32_t v
  * @param color_coding Color coding value
  * @param sub_config Sub configuration value
  */
-static inline void mipi_dsi_host_ll_dpi_set_color_coding(dsi_host_dev_t *dev, lcd_color_rgb_pixel_format_t color_coding, uint32_t sub_config)
+static inline void mipi_dsi_host_ll_dpi_set_color_coding(dsi_host_dev_t *dev, lcd_color_format_t color_coding, uint32_t sub_config)
 {
     switch (color_coding) {
-    case LCD_COLOR_PIXEL_FORMAT_RGB565:
+    case LCD_COLOR_FMT_RGB565:
         dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_16BIT_CONFIG1 + sub_config;
         break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB666:
+    case LCD_COLOR_FMT_RGB666:
         dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_18BIT_CONFIG1 + sub_config;
         break;
-    case LCD_COLOR_PIXEL_FORMAT_RGB888:
+    case LCD_COLOR_FMT_RGB888:
         dev->dpi_color_coding.dpi_color_coding = MIPI_DSI_LL_COLOR_CODE_24BIT;
         break;
     default:
+        // MIPI DSI bridge can only write RGB data to the DSI host controller, no YUV data
         HAL_ASSERT(false);
         break;
     }

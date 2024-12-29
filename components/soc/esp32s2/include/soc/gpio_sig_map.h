@@ -1,16 +1,8 @@
-// Copyright 2017-2018 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef _SOC_GPIO_SIG_MAP_H_
 #define _SOC_GPIO_SIG_MAP_H_
 #define SPICLK_OUT_IDX                SPICLK_OUT_MUX_IDX
@@ -315,5 +307,5 @@
 #define PRO_ALONEGPIO_OUT7_IDX        242
 #define CLK_I2S_MUX_IDX               251
 #define SIG_GPIO_OUT_IDX              256
-#define GPIO_MAP_DATE_IDX			0x1904100
+#define GPIO_MAP_DATE_IDX           0x1904100
 #endif  /* _SOC_GPIO_SIG_MAP_H_ */

@@ -39,7 +39,11 @@ typedef enum {
 
 struct esp_https_ota_handle {
     esp_ota_handle_t update_handle;
-    const esp_partition_t *update_partition;
+    struct {                                  /*!< Details of staging and final partitions for OTA update */
+        const esp_partition_t *staging;       /*!< New image will be downloaded in this staging partition. If NULL then a free app partition (passive app partition) is selected as the staging partition. */
+        const esp_partition_t *final;         /*!< Final destination partition which is intended to be updated. Its type/subtype shall be used for verification. If NULL, staging partition is considered as the final partition. */
+        bool finalize_with_copy;              /*!< Flag to copy the staging image to the final at the end of OTA update */
+    } partition;
     esp_http_client_handle_t http_client;
     char *ota_upgrade_buf;
     size_t ota_upgrade_buf_size;
@@ -93,12 +97,16 @@ static bool process_again(int status_code)
 static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, int status_code)
 {
     esp_err_t err;
+
     if (redirection_required(status_code)) {
         err = esp_http_client_set_redirection(https_ota_handle->http_client);
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "URL redirection Failed");
             return err;
         }
+    } else if (status_code == HttpStatus_NotModified) {
+        ESP_LOGI(TAG, "OTA image not modified since last request (status code: %d)", status_code);
+        return ESP_ERR_HTTP_NOT_MODIFIED;
     } else if (status_code == HttpStatus_Unauthorized) {
         if (https_ota_handle->max_authorization_retries == 0) {
             ESP_LOGE(TAG, "Reached max_authorization_retries (%d)", status_code);
@@ -353,7 +361,9 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 
     err = _http_connect(https_ota_handle);
     if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to establish HTTP connection");
+        if (err != ESP_ERR_HTTP_NOT_MODIFIED) {
+            ESP_LOGE(TAG, "Failed to establish HTTP connection");
+        }
         goto http_cleanup;
     } else {
         esp_https_ota_dispatch_event(ESP_HTTPS_OTA_CONNECTED, NULL, 0);
@@ -368,16 +378,35 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
 #endif
     }
 
-    https_ota_handle->update_partition = NULL;
+    https_ota_handle->partition.staging = NULL;
     ESP_LOGI(TAG, "Starting OTA...");
-    https_ota_handle->update_partition = esp_ota_get_next_update_partition(NULL);
-    if (https_ota_handle->update_partition == NULL) {
-        ESP_LOGE(TAG, "Passive OTA partition not found");
+    if (ota_config->partition.staging != NULL) {
+        https_ota_handle->partition.staging = esp_partition_verify(ota_config->partition.staging);
+    } else {
+        https_ota_handle->partition.staging = esp_ota_get_next_update_partition(NULL);
+    }
+    if (https_ota_handle->partition.staging == NULL) {
+        ESP_LOGE(TAG, "Given staging partition or another suitable Passive OTA partition could not be found");
         err = ESP_FAIL;
         goto http_cleanup;
     }
     ESP_LOGI(TAG, "Writing to <%s> partition at offset 0x%" PRIx32,
-        https_ota_handle->update_partition->label, https_ota_handle->update_partition->address);
+        https_ota_handle->partition.staging->label, https_ota_handle->partition.staging->address);
+
+    if (ota_config->partition.final == NULL) {
+        https_ota_handle->partition.final = https_ota_handle->partition.staging;
+    } else {
+        if (ota_config->partition.staging != ota_config->partition.final) {
+            const esp_partition_t *final = esp_partition_verify(ota_config->partition.final);
+            if (final == NULL) {
+                ESP_LOGE(TAG, "Given final partition not found");
+                err = ESP_FAIL;
+                goto http_cleanup;
+            }
+            https_ota_handle->partition.final = final;
+            https_ota_handle->partition.finalize_with_copy = ota_config->partition.finalize_with_copy;
+        }
+    }
 
     const int alloc_size = MAX(ota_config->http_config->buffer_size, DEFAULT_OTA_BUF_SIZE);
     if (ota_config->buffer_caps != 0) {
@@ -449,7 +478,7 @@ static esp_err_t read_header(esp_https_ota_t *handle)
     return ESP_OK;
 }
 
-esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
+static esp_err_t get_description_from_image(esp_https_ota_handle_t https_ota_handle, void *new_img_info)
 {
     esp_https_ota_dispatch_event(ESP_HTTPS_OTA_GET_IMG_DESC, NULL, 0);
 
@@ -460,7 +489,7 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
 #endif
 
     esp_https_ota_t *handle = (esp_https_ota_t *)https_ota_handle;
-    if (handle == NULL || new_app_info == NULL)  {
+    if (handle == NULL || new_img_info == NULL)  {
         ESP_LOGE(TAG, "esp_https_ota_get_img_desc: Invalid argument");
         return ESP_ERR_INVALID_ARG;
     }
@@ -472,15 +501,39 @@ esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, es
         return ESP_FAIL;
     }
 
-    const int app_desc_offset = sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t);
-    esp_app_desc_t *app_info = (esp_app_desc_t *) &handle->ota_upgrade_buf[app_desc_offset];
-    if (app_info->magic_word != ESP_APP_DESC_MAGIC_WORD) {
-        ESP_LOGE(TAG, "Incorrect app descriptor magic");
+    void *img_info = (void *)&handle->ota_upgrade_buf[sizeof(esp_image_header_t) + sizeof(esp_image_segment_header_t)];
+    unsigned img_info_len;
+    if (handle->partition.final->type == ESP_PARTITION_TYPE_APP) {
+        img_info_len = sizeof(esp_app_desc_t);
+        esp_app_desc_t *app_info = (esp_app_desc_t *)img_info;
+        if (app_info->magic_word != ESP_APP_DESC_MAGIC_WORD) {
+            ESP_LOGE(TAG, "Incorrect app descriptor magic");
+            return ESP_FAIL;
+        }
+    } else if (handle->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        img_info_len = sizeof(esp_bootloader_desc_t);
+        esp_bootloader_desc_t *bootloader_info = (esp_bootloader_desc_t *)img_info;
+        if (bootloader_info->magic_byte != ESP_BOOTLOADER_DESC_MAGIC_BYTE) {
+            ESP_LOGE(TAG, "Incorrect bootloader descriptor magic");
+            return ESP_FAIL;
+        }
+    } else {
+        ESP_LOGE(TAG, "This partition type (%d) is not supported", handle->partition.final->type);
         return ESP_FAIL;
     }
 
-    memcpy(new_app_info, app_info, sizeof(esp_app_desc_t));
+    memcpy(new_img_info, img_info, img_info_len);
     return ESP_OK;
+}
+
+esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info)
+{
+    return get_description_from_image(https_ota_handle, new_app_info);
+}
+
+esp_err_t esp_https_ota_get_bootloader_img_desc(esp_https_ota_handle_t https_ota_handle, esp_bootloader_desc_t *new_img_info)
+{
+    return get_description_from_image(https_ota_handle, new_img_info);
 }
 
 static esp_err_t esp_ota_verify_chip_id(const void *arg)
@@ -509,14 +562,15 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
 
     esp_err_t err;
     int data_read;
-    const int erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
+    const size_t erase_size = handle->bulk_flash_erase ? (handle->image_length > 0 ? handle->image_length : OTA_SIZE_UNKNOWN) : OTA_WITH_SEQUENTIAL_WRITES;
     switch (handle->state) {
         case ESP_HTTPS_OTA_BEGIN:
-            err = esp_ota_begin(handle->update_partition, erase_size, &handle->update_handle);
+            err = esp_ota_begin(handle->partition.staging, erase_size, &handle->update_handle);
             if (err != ESP_OK) {
                 ESP_LOGE(TAG, "esp_ota_begin failed (%s)", esp_err_to_name(err));
                 return err;
             }
+            esp_ota_set_final_partition(handle->update_handle, handle->partition.final, handle->partition.finalize_with_copy);
             handle->state = ESP_HTTPS_OTA_IN_PROGRESS;
             /* In case `esp_https_ota_get_img_desc` was invoked first,
                then the image data read there should be written to OTA partition
@@ -550,9 +604,11 @@ esp_err_t esp_https_ota_perform(esp_https_ota_handle_t https_ota_handle)
                 return ESP_FAIL;
             }
 #endif // CONFIG_ESP_HTTPS_OTA_DECRYPT_CB
-            err = esp_ota_verify_chip_id(data_buf);
-            if (err != ESP_OK) {
-                return err;
+            if (handle->partition.final->type == ESP_PARTITION_TYPE_APP || handle->partition.final->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+                err = esp_ota_verify_chip_id(data_buf);
+                if (err != ESP_OK) {
+                    return err;
+                }
             }
             return _ota_write(handle, data_buf, binary_file_len);
         case ESP_HTTPS_OTA_IN_PROGRESS:
@@ -674,12 +730,16 @@ esp_err_t esp_https_ota_finish(esp_https_ota_handle_t https_ota_handle)
             break;
     }
 
-    if ((err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)) {
-        err = esp_ota_set_boot_partition(handle->update_partition);
+    if ((handle->partition.final->type == ESP_PARTITION_TYPE_APP) && (err == ESP_OK) && (handle->state == ESP_HTTPS_OTA_SUCCESS)) {
+        if (handle->partition.final->subtype >= ESP_PARTITION_SUBTYPE_APP_OTA_0 && handle->partition.final->subtype < ESP_PARTITION_SUBTYPE_APP_OTA_MAX) {
+            // Do not allow the boot partition to be set as the Factory partition, because ota_data will be erased in this case.
+            // The user can call it afterward if needed.
+            err = esp_ota_set_boot_partition(handle->partition.staging);
+        }
         if (err != ESP_OK) {
             ESP_LOGE(TAG, "esp_ota_set_boot_partition failed! err=0x%x", err);
         } else {
-            esp_https_ota_dispatch_event(ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION, (void *)(&handle->update_partition->subtype), sizeof(esp_partition_subtype_t));
+            esp_https_ota_dispatch_event(ESP_HTTPS_OTA_UPDATE_BOOT_PARTITION, (void *)(&handle->partition.final->subtype), sizeof(esp_partition_subtype_t));
         }
     }
     free(handle);
@@ -766,6 +826,10 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config)
 
     esp_https_ota_handle_t https_ota_handle = NULL;
     esp_err_t err = esp_https_ota_begin(ota_config, &https_ota_handle);
+    if (err != ESP_OK) {
+        return err;
+    }
+
     if (https_ota_handle == NULL) {
         return ESP_FAIL;
     }

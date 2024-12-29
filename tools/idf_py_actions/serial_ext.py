@@ -5,6 +5,7 @@ import os
 import shlex
 import signal
 import sys
+from pathlib import Path
 from typing import Any
 from typing import Dict
 from typing import List
@@ -170,8 +171,11 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if print_filter is not None:
             monitor_args += ['--print_filter', print_filter]
 
-        if elf_file:
-            monitor_args += [elf_file]
+        elf_list = [str(elf) for elf in Path(args.build_dir).rglob('*.elf')]
+        if elf_file and elf_file in elf_list:
+            # prepend the main app elf file to the list; make sure it is the first one
+            elf_list.insert(0, elf_list.pop(elf_list.index(elf_file)))
+        monitor_args.extend(elf_list)
 
         if encrypted:
             monitor_args += ['--encrypted']

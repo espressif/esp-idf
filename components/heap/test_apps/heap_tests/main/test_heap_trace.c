@@ -42,16 +42,12 @@ TEST_CASE("heap trace leak check", "[heap-trace]")
     void *b = malloc(96);
     memset(b, '4', 11);
 
-    printf("a.address %p vs %p b.address %p vs %p\n", a, recs[0].address, b, recs[1].address);
-
     heap_trace_dump();
     TEST_ASSERT_EQUAL(2, heap_trace_get_count());
 
     heap_trace_record_t trace_a, trace_b;
     heap_trace_get(0, &trace_a);
     heap_trace_get(1, &trace_b);
-
-    printf("trace_a.address %p trace_bb.address %p\n", trace_a.address, trace_b.address);
 
     TEST_ASSERT_EQUAL_PTR(a, trace_a.address);
     TEST_ASSERT_EQUAL_PTR(b, trace_b.address);

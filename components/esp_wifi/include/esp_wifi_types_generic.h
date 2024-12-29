@@ -270,6 +270,19 @@ typedef enum {
 } wifi_cipher_type_t;
 
 /**
+  * @brief Wi-Fi bandwidth type
+  */
+typedef enum {
+    WIFI_BW_HT20   = 1,       /**< Bandwidth is HT20      */
+    WIFI_BW20 = WIFI_BW_HT20, /**< Bandwidth is 20 MHz    */
+    WIFI_BW_HT40   = 2,       /**< Bandwidth is HT40      */
+    WIFI_BW40 = WIFI_BW_HT40, /**< Bandwidth is 40 MHz    */
+    WIFI_BW80      = 3,       /**< Bandwidth is 80 MHz    */
+    WIFI_BW160     = 4,       /**< Bandwidth is 160 MHz   */
+    WIFI_BW80_BW80 = 5,       /**< Bandwidth is 80 + 80 MHz */
+} wifi_bandwidth_t;
+
+/**
   * @brief Wi-Fi antenna
   */
 typedef enum {
@@ -314,9 +327,7 @@ typedef struct {
     uint32_t reserved: 22;                /**< Bit: 10..31 reserved */
     wifi_country_t country;               /**< Country information of AP */
     wifi_he_ap_info_t he_ap;              /**< HE AP info */
-    uint8_t bandwidth;                    /**< For either 20 MHz or 40 MHz operation, the channel width field is set to 0.
-                                               For AP 80 MHz, this value is set to 1. For AP 160 MHz, this value is set to 2.
-                                               For AP 80 + 80 MHz, this value is set to 3.*/
+    wifi_bandwidth_t bandwidth;           /**< Bandwidth of AP */
     uint8_t vht_ch_freq1;                 /**< This fields are used only AP bandwidth is 80 and 160 MHz, to transmit the center channel
                                                frequency of the BSS. For AP bandwidth is 80 + 80 MHz, it is the center channel frequency
                                                of the lower frequency segment.*/
@@ -459,19 +470,6 @@ typedef struct {
 } wifi_protocols_t;
 
 /**
-  * @brief Wi-Fi bandwidth type
-  */
-typedef enum {
-    WIFI_BW_HT20   = 1,       /**< Bandwidth is HT20      */
-    WIFI_BW20 = WIFI_BW_HT20, /**< Bandwidth is 20 MHz    */
-    WIFI_BW_HT40   = 2,       /**< Bandwidth is HT40      */
-    WIFI_BW40 = WIFI_BW_HT40, /**< Bandwidth is 40 MHz    */
-    WIFI_BW80      = 3,       /**< Bandwidth is 80 MHz    */
-    WIFI_BW160     = 4,       /**< Bandwidth is 160 MHz   */
-    WIFI_BW80_BW80 = 5,       /**< Bandwidth is 80 + 80 MHz */
-} wifi_bandwidth_t;
-
-/**
   * @brief Description of a Wi-Fi band bandwidths
   */
 typedef struct {
@@ -518,8 +516,8 @@ typedef struct {
     uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
     uint8_t max_connection;     /**< Max number of stations allowed to connect in */
     uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
-    uint8_t csa_count;          /**< Channel Switch Announcement Count. Notify the station that the channel will switch after the csa_count beacon intervals. Default value: 3 */
-    uint8_t dtim_period;        /**< Dtim period of soft-AP. Default value: 2 */
+    uint8_t csa_count;          /**< Channel Switch Announcement Count. Notify the station that the channel will switch after the csa_count beacon intervals. Range: 1 ~ 30. Default value: 3 */
+    uint8_t dtim_period;        /**< Dtim period of soft-AP. Range: 1 ~ 10. Default value: 1 */
     wifi_cipher_type_t pairwise_cipher;   /**< Pairwise cipher of SoftAP, group cipher will be derived using this. Cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
     bool ftm_responder;         /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;  /**< Configuration for Protected Management Frame */
@@ -1314,6 +1312,17 @@ typedef struct {
     uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
     uint16_t report_len;                            /**< Length of the report*/
 } wifi_event_neighbor_report_t;
+
+/**
+  * @brief Argument structure for wifi_tx_rate_config
+  */
+typedef struct {
+    wifi_phy_mode_t phymode;                 /**< Phymode of specified interface */
+    wifi_phy_rate_t rate;                    /**< Rate of specified interface */
+    bool ersu;                               /**< Using ERSU to send frame, ERSU is a transmission mode related to 802.11 ax.
+                                                  ERSU is always used in long distance transmission, and its frame has lower rate compared with SU mode */
+    bool dcm;                                /**< Using dcm rate to send frame */
+} wifi_tx_rate_config_t;
 
 #ifdef __cplusplus
 }

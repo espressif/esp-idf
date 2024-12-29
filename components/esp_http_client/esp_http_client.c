@@ -691,6 +691,11 @@ static bool init_common_tcp_transport(esp_http_client_handle_t client, const esp
         }
         esp_transport_tcp_set_interface_name(transport, client->if_name);
     }
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+    if (config->alpn_protos) {
+        esp_transport_ssl_set_alpn_protocol(transport, config->alpn_protos);
+    }
+#endif
     return true;
 }
 
@@ -1859,7 +1864,7 @@ esp_err_t esp_http_client_get_url(esp_http_client_handle_t client, char *url, co
         return ESP_ERR_INVALID_ARG;
     }
     if (client->connection_info.host && client->connection_info.scheme && client->connection_info.path) {
-        snprintf(url, len, "%s://%s%s", client->connection_info.scheme, client->connection_info.host, client->connection_info.path);
+        snprintf(url, len, "%s://%s:%d%s", client->connection_info.scheme, client->connection_info.host, client->connection_info.port, client->connection_info.path);
         return ESP_OK;
     } else {
         ESP_LOGE(TAG, "Failed to get URL");

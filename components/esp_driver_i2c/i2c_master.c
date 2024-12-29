@@ -130,6 +130,7 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     }
 
     i2c_hal_master_init(hal);
+    i2c_ll_enable_fifo_mode(hal->dev, true);
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_hal_set_timing_config(hal, &timing_config);
@@ -784,8 +785,12 @@ static esp_err_t i2c_master_bus_destroy(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE(bus_handle, ESP_ERR_INVALID_ARG, TAG, "no memory for i2c master bus");
     i2c_master_bus_handle_t i2c_master = bus_handle;
-    i2c_common_deinit_pins(i2c_master->base);
-    if (i2c_release_bus_handle(i2c_master->base) == ESP_OK) {
+    esp_err_t err = ESP_OK;
+    if (i2c_master->base) {
+        i2c_common_deinit_pins(i2c_master->base);
+        err = i2c_release_bus_handle(i2c_master->base);
+    }
+    if (err == ESP_OK) {
         if (i2c_master) {
             if (i2c_master->bus_lock_mux) {
                 vSemaphoreDeleteWithCaps(i2c_master->bus_lock_mux);
@@ -961,6 +966,19 @@ esp_err_t i2c_new_master_bus(const i2c_master_bus_config_t *bus_config, i2c_mast
     }
 #if SOC_LP_I2C_SUPPORTED
     else {
+
+        soc_periph_lp_i2c_clk_src_t clk_srcs[] = SOC_LP_I2C_CLKS;
+        bool lp_clock_match = false;
+        for (int i = 0; i < sizeof(clk_srcs) / sizeof(clk_srcs[0]); i++) {
+            if ((int)clk_srcs[i] == (int)i2c_master->base->clk_src) {
+                /* Clock source matches. Override the source clock type with the user configured value */
+                lp_clock_match = true;
+                break;
+            }
+        }
+
+        ESP_GOTO_ON_FALSE(lp_clock_match, ESP_ERR_NOT_SUPPORTED, err, TAG, "the clock source does not support lp i2c, please check");
+
         LP_I2C_SRC_CLK_ATOMIC() {
             lp_i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
         }

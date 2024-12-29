@@ -399,6 +399,43 @@ esp_err_t esp_spiffs_gc(const char* partition_label, size_t size_to_gc)
     return ESP_OK;
 }
 
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_spiffs_dir = {
+    .stat_p = &vfs_spiffs_stat,
+    .link_p = &vfs_spiffs_link,
+    .unlink_p = &vfs_spiffs_unlink,
+    .rename_p = &vfs_spiffs_rename,
+    .opendir_p = &vfs_spiffs_opendir,
+    .closedir_p = &vfs_spiffs_closedir,
+    .readdir_p = &vfs_spiffs_readdir,
+    .readdir_r_p = &vfs_spiffs_readdir_r,
+    .seekdir_p = &vfs_spiffs_seekdir,
+    .telldir_p = &vfs_spiffs_telldir,
+    .mkdir_p = &vfs_spiffs_mkdir,
+    .rmdir_p = &vfs_spiffs_rmdir,
+    .truncate_p = &vfs_spiffs_truncate,
+    .ftruncate_p = &vfs_spiffs_ftruncate,
+#ifdef CONFIG_SPIFFS_USE_MTIME
+    .utime_p = &vfs_spiffs_utime,
+#else
+    .utime_p = NULL,
+#endif // CONFIG_SPIFFS_USE_MTIME
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+static const esp_vfs_fs_ops_t s_vfs_spiffs = {
+    .write_p = &vfs_spiffs_write,
+    .lseek_p = &vfs_spiffs_lseek,
+    .read_p = &vfs_spiffs_read,
+    .open_p = &vfs_spiffs_open,
+    .close_p = &vfs_spiffs_close,
+    .fstat_p = &vfs_spiffs_fstat,
+    .fsync_p = &vfs_spiffs_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_spiffs_dir,
+#endif // CONFIG_VFS_SUPPORT_DIR
+};
+
 esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
 {
     assert(conf->base_path);
@@ -413,45 +450,13 @@ esp_err_t esp_vfs_spiffs_register(const esp_vfs_spiffs_conf_t * conf)
         return ESP_ERR_INVALID_STATE;
     }
 
-    int vfs_flags = ESP_VFS_FLAG_CONTEXT_PTR;
+    int vfs_flags = ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC;
     if (_efs[index]->partition->readonly) {
         vfs_flags |= ESP_VFS_FLAG_READONLY_FS;
     }
 
-    const esp_vfs_t vfs = {
-        .flags = vfs_flags,
-        .write_p = &vfs_spiffs_write,
-        .lseek_p = &vfs_spiffs_lseek,
-        .read_p = &vfs_spiffs_read,
-        .open_p = &vfs_spiffs_open,
-        .close_p = &vfs_spiffs_close,
-        .fstat_p = &vfs_spiffs_fstat,
-        .fsync_p = &vfs_spiffs_fsync,
-#ifdef CONFIG_VFS_SUPPORT_DIR
-        .stat_p = &vfs_spiffs_stat,
-        .link_p = &vfs_spiffs_link,
-        .unlink_p = &vfs_spiffs_unlink,
-        .rename_p = &vfs_spiffs_rename,
-        .opendir_p = &vfs_spiffs_opendir,
-        .closedir_p = &vfs_spiffs_closedir,
-        .readdir_p = &vfs_spiffs_readdir,
-        .readdir_r_p = &vfs_spiffs_readdir_r,
-        .seekdir_p = &vfs_spiffs_seekdir,
-        .telldir_p = &vfs_spiffs_telldir,
-        .mkdir_p = &vfs_spiffs_mkdir,
-        .rmdir_p = &vfs_spiffs_rmdir,
-        .truncate_p = &vfs_spiffs_truncate,
-        .ftruncate_p = &vfs_spiffs_ftruncate,
-#ifdef CONFIG_SPIFFS_USE_MTIME
-        .utime_p = &vfs_spiffs_utime,
-#else
-        .utime_p = NULL,
-#endif // CONFIG_SPIFFS_USE_MTIME
-#endif // CONFIG_VFS_SUPPORT_DIR
-    };
-
     strlcat(_efs[index]->base_path, conf->base_path, ESP_VFS_PATH_MAX + 1);
-    err = esp_vfs_register(conf->base_path, &vfs, _efs[index]);
+    err = esp_vfs_register_fs(conf->base_path, &s_vfs_spiffs, vfs_flags, _efs[index]);
     if (err != ESP_OK) {
         esp_spiffs_free(&_efs[index]);
         return err;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "nvs_item_hash_list.hpp"
 #include "nvs_memory_management.hpp"
 #include "partition.hpp"
+#include "nvs_constants.h"
 
 namespace nvs
 {
@@ -25,46 +26,46 @@ namespace nvs
 class Page : public intrusive_list_node<Page>, public ExceptionlessAllocatable
 {
 public:
-    static const uint32_t PSB_INIT = 0x1;
-    static const uint32_t PSB_FULL = 0x2;
-    static const uint32_t PSB_FREEING = 0x4;
-    static const uint32_t PSB_CORRUPT = 0x8;
+    static const uint32_t PSB_INIT = NVS_CONST_PSB_INIT;
+    static const uint32_t PSB_FULL = NVS_CONST_PSB_FULL;
+    static const uint32_t PSB_FREEING = NVS_CONST_PSB_FREEING;
+    static const uint32_t PSB_CORRUPT = NVS_CONST_PSB_CORRUPT;
 
-    static const uint32_t ESB_WRITTEN = 0x1;
-    static const uint32_t ESB_ERASED = 0x2;
+    static const uint32_t ESB_WRITTEN = NVS_CONST_ESB_WRITTEN;
+    static const uint32_t ESB_ERASED = NVS_CONST_ESB_ERASED;
 
     static const uint32_t SEC_SIZE;
 
-    static const size_t ENTRY_SIZE  = 32;
-    static const size_t ENTRY_COUNT = 126;
-    static const uint32_t INVALID_ENTRY = 0xffffffff;
+    static const size_t ENTRY_SIZE  = NVS_CONST_ENTRY_SIZE;
+    static const size_t ENTRY_COUNT = NVS_CONST_ENTRY_COUNT;
+    static const uint32_t INVALID_ENTRY = NVS_CONST_INVALID_ENTRY;
 
     static const size_t CHUNK_MAX_SIZE = ENTRY_SIZE * (ENTRY_COUNT - 1);
 
-    static const uint8_t NS_INDEX = 0;
-    static const uint8_t NS_ANY = 255;
+    static const uint8_t NS_INDEX = NVS_CONST_NS_INDEX;
+    static const uint8_t NS_ANY = NVS_CONST_NS_ANY;
 
     static const uint8_t CHUNK_ANY = Item::CHUNK_ANY;
 
-    static const uint8_t NVS_VERSION = 0xfe; // Decrement to upgrade
+    static const uint8_t NVS_VERSION = NVS_CONST_NVS_VERSION; // Decrement to upgrade
 
     enum class PageState : uint32_t {
         // All bits set, default state after flash erase. Page has not been initialized yet.
-        UNINITIALIZED = 0xffffffff,
+        UNINITIALIZED = NVS_CONST_PAGE_STATE_UNINITIALIZED,
 
         // Page is initialized, and will accept writes.
-        ACTIVE        = UNINITIALIZED & ~PSB_INIT,
+        ACTIVE        = NVS_CONST_PAGE_STATE_ACTIVE,
 
         // Page is marked as full and will not accept new writes.
-        FULL          = ACTIVE & ~PSB_FULL,
+        FULL          = NVS_CONST_PAGE_STATE_FULL,
 
         // Data is being moved from this page to a new one.
-        FREEING       = FULL & ~PSB_FREEING,
+        FREEING       = NVS_CONST_PAGE_STATE_FREEING,
 
         // Page was found to be in a corrupt and unrecoverable state.
         // Instead of being erased immediately, it will be kept for diagnostics and data recovery.
         // It will be erased once we run out out free pages.
-        CORRUPT       = FREEING & ~PSB_CORRUPT,
+        CORRUPT       = NVS_CONST_PAGE_STATE_CORRUPT,
 
         // Page object wasn't loaded from flash memory
         INVALID       = 0
@@ -166,11 +167,11 @@ protected:
     };
 
     enum class EntryState {
-        EMPTY   = 0x3, // 0b11, default state after flash erase
-        WRITTEN = EMPTY & ~ESB_WRITTEN, // entry was written
-        ERASED  = WRITTEN & ~ESB_ERASED, // entry was written and then erased
-        ILLEGAL = 0x1, // only possible if flash is inconsistent
-        INVALID = 0x4 // entry is in inconsistent state (write started but ESB_WRITTEN has not been set yet)
+        EMPTY   = NVS_CONST_ENTRY_STATE_EMPTY, // 0b11, default state after flash erase
+        WRITTEN = NVS_CONST_ENTRY_STATE_WRITTEN, // entry was written
+        ERASED  = NVS_CONST_ENTRY_STATE_ERASED, // entry was written and then erased
+        ILLEGAL = NVS_CONST_ENTRY_STATE_ILLEGAL, // only possible if flash is inconsistent
+        INVALID = NVS_CONST_ENTRY_STATE_INVALID // entry is in inconsistent state (write started but ESB_WRITTEN has not been set yet)
     };
 
     esp_err_t mLoadEntryTable();
@@ -225,9 +226,9 @@ protected:
 
     Partition *mPartition;
 
-    static const uint32_t HEADER_OFFSET = 0;
-    static const uint32_t ENTRY_TABLE_OFFSET = HEADER_OFFSET + 32;
-    static const uint32_t ENTRY_DATA_OFFSET = ENTRY_TABLE_OFFSET + 32;
+    static const uint32_t HEADER_OFFSET = NVS_CONST_PAGE_HEADER_OFFSET;
+    static const uint32_t ENTRY_TABLE_OFFSET = NVS_CONST_PAGE_ENTRY_TABLE_OFFSET;
+    static const uint32_t ENTRY_DATA_OFFSET = NVS_CONST_PAGE_ENTRY_DATA_OFFSET;
 
     static_assert(sizeof(Header) == 32, "header size must be 32 bytes");
     static_assert(ENTRY_TABLE_OFFSET % 32 == 0, "entry table offset should be aligned");

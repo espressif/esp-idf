@@ -5,7 +5,7 @@ severity: error # error, warning, info, hint
 note: Only APIs prefixed with "esp_rom_" are treated as public.
 language: C
 files:
-  - "./examples/**/*"
+  - "examples/**/*"
 rule:
   kind: preproc_include
   has:
@@ -22,7 +22,7 @@ severity: error # error, warning, info, hint
 note: Only APIs prefixed with "esp_rom_" are treated as public.
 language: Cpp
 files:
-  - "./examples/**/*"
+  - "examples/**/*"
 rule:
   kind: preproc_include
   has:

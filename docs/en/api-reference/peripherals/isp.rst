@@ -23,6 +23,7 @@ Terminology
     - AE: Auto exposure
     - HIST: Histogram
     - BF: Bayer noise filter
+    - LSC: Lens Shading Correction
     - CCM: Color correction matrix
 
 ISP Pipeline
@@ -45,9 +46,9 @@ ISP Pipeline
         isp_chs [label = "Contrast &\n Hue & Saturation", width = 150, height = 70];
         isp_yuv [label = "YUV Limit\n YUB2RGB", width = 120, height = 70];
 
-        isp_header -> BF -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> isp_tail;
+        isp_header -> BF -> LSC -> Demosaic -> CCM -> Gamma -> RGB2YUV -> SHARP -> isp_chs -> isp_yuv -> isp_tail;
 
-        BF -> HIST
+        LSC -> HIST
         Demosaic -> AWB
         Demosaic -> AE
         Demosaic -> HIST
@@ -69,6 +70,7 @@ The ISP driver offers following services:
 - :ref:`isp-ae-statistics` - covers how to get AE statistics one-shot or continuously.
 - :ref:`isp-hist-statistics` - covers how to get histogram statistics one-shot or continuously.
 - :ref:`isp-bf` - covers how to enable and configure BF function.
+- :ref:`isp-lsc` - covers how to enable and configure LSC function.
 - :ref:`isp-ccm-config` - covers how to configure the CCM.
 - :ref:`isp-demosaic` - covers how to configure the Demosaic function.
 - :ref:`isp-gamma-correction` - covers how to enable and configure gamma correction.
@@ -509,6 +511,40 @@ After calling :cpp:func:`esp_isp_bf_configure`, you need to enable the ISP BF co
 
 Calling :cpp:func:`esp_isp_bf_disable` does the opposite, that is, put the driver back to the **init** state.
 
+
+.. _isp-lsc:
+
+ISP LSC Controller
+~~~~~~~~~~~~~~~~~~
+
+Lens Shading Correction (LSC) aims for the issues caused by the uneven refraction of light through the camera lens.
+
+Calling :cpp:func:`esp_isp_lsc_configure` to configure the LSC module to do the correction. The :cpp:type:`esp_isp_lsc_gain_array_t` is necessary for the hardware to do the correction related calculation. :cpp:func:`esp_isp_lsc_allocate_gain_array` is a helper function to help allocate proper size of memory for the gains.
+
+.. code-block:: c
+
+    esp_isp_lsc_gain_array_t gain_array = {};
+    size_t gain_size = 0;
+    ESP_ERROR_CHECK(esp_isp_lsc_allocate_gain_array(isp_proc, &gain_array, &gain_size));
+
+    esp_isp_lsc_config_t lsc_config = {
+        .gain_array = &gain_array,
+    };
+    isp_lsc_gain_t gain_val = {
+        .decimal = 204,
+        .integer = 0,
+    };
+    for (int i = 0; i < gain_size; i++) {
+        gain_array.gain_r[i].val = gain_val.val;
+        gain_array.gain_gr[i].val = gain_val.val;
+        gain_array.gain_gb[i].val = gain_val.val;
+        gain_array.gain_b[i].val = gain_val.val;
+    }
+    ESP_ERROR_CHECK(esp_isp_lsc_configure(isp_proc, &lsc_config));
+
+After calling :cpp:func:`esp_isp_lsc_configure`, you need to enable the ISP LSC controller by calling :cpp:func:`esp_isp_lsc_enable`. The LSC can be disabled by calling :cpp:func:`esp_isp_lsc_disable`. It is allowed to call :cpp:func:`esp_isp_lsc_configure` when the LSC is not enabled, but the LSC function will only take effect when it is enabled.
+
+
 .. _isp-color:
 
 ISP Color Controller
@@ -815,6 +851,7 @@ API Reference
 .. include-build-file:: inc/isp_ae.inc
 .. include-build-file:: inc/isp_awb.inc
 .. include-build-file:: inc/isp_bf.inc
+.. include-build-file:: inc/isp_lsc.inc
 .. include-build-file:: inc/isp_ccm.inc
 .. include-build-file:: inc/isp_demosaic.inc
 .. include-build-file:: inc/isp_sharpen.inc

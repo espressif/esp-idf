@@ -76,6 +76,8 @@ typedef enum {
 #define I2C_LL_RESET_SLV_SCL_PULSE_NUM_DEFAULT   (9)
 #define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2500)  // Approximate value for SCL timeout regs (in us).
 
+#define I2C_LL_STRETCH_PROTECT_TIME  (0x3ff)
+
 /**
  * @brief  Calculate I2C bus frequency
  *         Note that the clock accuracy is affected by the external pull-up resistor,
@@ -287,7 +289,7 @@ static inline void i2c_ll_get_intr_mask(i2c_dev_t *hw, uint32_t *intr_status)
  *
  * @return None
  */
-static inline void i2c_ll_slave_set_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
+static inline void i2c_ll_enable_fifo_mode(i2c_dev_t *hw, bool fifo_mode_en)
 {
     hw->fifo_conf.nonfifo_en = fifo_mode_en ? 0 : 1;
 }
@@ -306,7 +308,7 @@ static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 }
 
 /**
- * @brief  Configure I2C slave broadcasting mode.
+ * @brief  Enable the I2C slave to respond to broadcast address
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  broadcast_en Set true to enable broadcast, else, set it false
@@ -440,6 +442,7 @@ static inline void i2c_ll_set_sda_timing(i2c_dev_t *hw, int sda_sample, int sda_
  */
 static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
 {
+    hw->fifo_conf.fifo_prt_en = 1;
     hw->fifo_conf.txfifo_wm_thrhd = empty_thr;
 }
 
@@ -454,6 +457,7 @@ static inline void i2c_ll_set_txfifo_empty_thr(i2c_dev_t *hw, uint8_t empty_thr)
 static inline void i2c_ll_set_rxfifo_full_thr(i2c_dev_t *hw, uint8_t full_thr)
 {
     hw->fifo_conf.fifo_prt_en = 1;
+    hw->ctr.rx_full_ack_level = 0;
     hw->fifo_conf.rxfifo_wm_thrhd = full_thr;
 }
 
@@ -570,7 +574,7 @@ static inline void i2c_ll_get_tout(i2c_dev_t *hw, int *timeout)
  * @return None
  */
 __attribute__((always_inline))
-static inline void i2c_ll_master_trans_start(i2c_dev_t *hw)
+static inline void i2c_ll_start_trans(i2c_dev_t *hw)
 {
     hw->ctr.trans_start = 1;
 }
@@ -618,7 +622,7 @@ __attribute__((always_inline))
 static inline void i2c_ll_write_txfifo(i2c_dev_t *hw, const uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->data, fifo_rdata, ptr[i]);
+        hw->data.val = ptr[i];
     }
 }
 
@@ -640,14 +644,14 @@ static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 }
 
 /**
- * @brief  Write the I2C hardware txFIFO
+ * @brief  Write to the TX RAM by direct address
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs to be written
  */
-static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
+static inline void i2c_ll_write_tx_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, const uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
         hw->txfifo_mem[i + ram_offset] = ptr[i];
@@ -655,14 +659,14 @@ static inline void i2c_ll_write_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, co
 }
 
 /**
- * @brief  Read the I2C hardware ram
+ * @brief  Read from the RX RAM by direct address
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  ram_offset Offset value of I2C RAM.
  * @param  ptr Pointer to data buffer
  * @param  len Amount of data needs read
  */
-static inline void i2c_ll_read_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uint8_t *ptr, uint8_t len)
+static inline void i2c_ll_read_rx_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uint8_t *ptr, uint8_t len)
 {
     for (int i = 0; i < len; i++) {
         ptr[i] = hw->rxfifo_mem[i + ram_offset];
@@ -670,14 +674,16 @@ static inline void i2c_ll_read_by_nonfifo(i2c_dev_t *hw, uint8_t ram_offset, uin
 }
 
 /**
- * @brief Get access to I2C RAM address directly
+ * @brief Enable I2C slave dual addressing mode
+ *
+ * @note When enable the dual addressing mode, I2C RAM must be accessed in non-FIFO mode
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  addr_wr_en Enable I2C ram address read and write
  *
  * @return None
 */
-static inline void i2c_ll_enable_mem_access_nonfifo(i2c_dev_t *hw, bool addr_wr_en)
+static inline void i2c_ll_slave_enable_dual_addressing_mode(i2c_dev_t *hw, bool addr_wr_en)
 {
     hw->fifo_conf.fifo_addr_cfg_en = addr_wr_en;
 }
@@ -819,16 +825,15 @@ static inline void i2c_ll_slave_init(i2c_dev_t *hw)
     ctrl_reg.sda_force_out = 0;
     ctrl_reg.scl_force_out = 0;
     hw->ctr.val = ctrl_reg.val;
-    hw->fifo_conf.fifo_addr_cfg_en = 0;
 }
 
 /**
- * @brief Set whether slave should auto start, or only start with start signal from master
+ * @brief Enable I2C slave to automatically send data when addressed by the master
  *
  * @param hw Beginning address of the peripheral registers
  * @param slv_ex_auto_en 1 if slave auto start data transaction, otherwise, 0.
  */
-static inline void i2c_ll_slave_tx_auto_start_en(i2c_dev_t *hw, bool slv_ex_auto_en)
+static inline void i2c_ll_slave_enable_auto_start(i2c_dev_t *hw, bool slv_ex_auto_en)
 {
     hw->ctr.slv_tx_auto_start_en = slv_ex_auto_en;
 }
@@ -864,6 +869,16 @@ static inline void i2c_ll_slave_clear_stretch(i2c_dev_t *dev)
 }
 
 /**
+ * @brief Set I2C clock stretch protect num
+ *
+ * @param dev Beginning address of the peripheral registers
+ */
+static inline void i2c_ll_slave_set_stretch_protect_num(i2c_dev_t *dev, uint32_t protect_num)
+{
+    dev->scl_stretch_conf.stretch_protect_num = protect_num;
+}
+
+/**
  * @brief Check if i2c command is done.
  *
  * @param  hw Beginning address of the peripheral registers
@@ -889,6 +904,18 @@ static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_h
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
     // round up to an integer
     return 32 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
+}
+
+/**
+ * @brief Get status of i2c slave
+ *
+ * @param Beginning address of the peripheral registers
+ * @return i2c slave working status
+ */
+__attribute__((always_inline))
+static inline i2c_slave_read_write_status_t i2c_ll_slave_get_read_write_status(i2c_dev_t *hw)
+{
+    return (hw->sr.slave_rw == 0) ? I2C_SLAVE_WRITE_BY_MASTER : I2C_SLAVE_READ_BY_MASTER;
 }
 
 //////////////////////////////////////////Deprecated Functions//////////////////////////////////////////////////////////

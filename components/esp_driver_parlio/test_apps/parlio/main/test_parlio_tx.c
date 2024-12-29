@@ -288,3 +288,53 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
     TEST_ESP_OK(gpio_reset_pin(TEST_CLK_GPIO));
 }
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
+
+#if SOC_PSRAM_DMA_CAPABLE
+TEST_CASE("parlio can transmit PSRAM buffer", "[parlio_tx]")
+{
+    printf("install parlio tx unit\r\n");
+    parlio_tx_unit_handle_t tx_unit = NULL;
+    parlio_tx_unit_config_t config = {
+        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .data_width = 1,
+        .clk_in_gpio_num = -1,  // use internal clock source
+        .valid_gpio_num = TEST_VALID_GPIO, // generate the valid signal
+        .clk_out_gpio_num = TEST_CLK_GPIO,
+        .data_gpio_nums = {
+            TEST_DATA0_GPIO,
+        },
+        .output_clk_freq_hz = 10 * 1000 * 1000,
+        .trans_queue_depth = 4,
+        .max_transfer_size = 65535,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .flags.clk_gate_en = true,
+    };
+
+    TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+    TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
+
+    const size_t buffer_size = 160 * 1000;
+    const size_t chunk_size = buffer_size / 4; // 40KB per trunk
+    uint8_t *buffer = heap_caps_malloc(buffer_size, MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA);
+    TEST_ASSERT_NOT_NULL(buffer);
+    for (int i = 0; i < buffer_size; i++) {
+        buffer[i] = i;
+    }
+
+    parlio_transmit_config_t transmit_config = {
+        .idle_value = 0x00,
+    };
+
+    const uint8_t cmd = 0x2C;
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, &cmd, 8, &transmit_config));
+    for (int i = 0; i < 20; i++) {
+        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, buffer + (i % 4) * chunk_size, chunk_size * 8, &transmit_config));
+    }
+    TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
+
+    TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
+    TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    free(buffer);
+}
+#endif // SOC_PSRAM_DMA_CAPABLE

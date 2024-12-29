@@ -1,12 +1,17 @@
 idf_build_get_property(idf_target IDF_TARGET)
 idf_build_get_property(python PYTHON)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
+if(esp_tee_build)
+    include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
+    return()
+endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
-set(priv_requires soc esp_hw_support)
-
-if(NOT BOOTLOADER_BUILD)
-    list(APPEND priv_requires esp_pm)
-endif()
+    set(priv_requires soc esp_hw_support)
+    if(NOT BOOTLOADER_BUILD)
+        list(APPEND priv_requires esp_pm)
+    endif()
 endif()
 
 set(mbedtls_srcs "")

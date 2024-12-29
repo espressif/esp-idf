@@ -292,6 +292,8 @@ static esp_err_t spi_flash_hpm_probe_chip_with_doing_nothing(uint32_t flash_id)
     // GD25LQ255E.
     case 0xC86019:
         break;
+    case 0xEF4017:
+        break;
     default:
         ret = ESP_ERR_NOT_FOUND;
         break;

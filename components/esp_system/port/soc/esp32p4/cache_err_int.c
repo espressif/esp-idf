@@ -17,19 +17,22 @@
 #include "soc/periph_defs.h"
 #include "riscv/interrupt.h"
 #include "hal/cache_ll.h"
+#include "esp_private/cache_err_int.h"
 
 static const char *TAG = "CACHE_ERR";
 
 const char cache_error_msg[] = "Cache access error";
 
-const char *esp_cache_err_panic_string(void)
+void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 {
+    if (err_info == NULL) {
+        return;
+    }
     uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK) | cache_ll_l2_get_access_error_intr_status(0, CACHE_LL_L2_ACCESS_EVENT_MASK);
 
     /* Return the error string if a cache error is active */
-    const char* err_str = access_err_status ? cache_error_msg : NULL;
+    err_info->err_str = access_err_status ? cache_error_msg : NULL;
 
-    return err_str;
 }
 
 bool esp_cache_err_has_active_err(void)

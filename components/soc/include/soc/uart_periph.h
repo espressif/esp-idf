@@ -53,7 +53,7 @@ typedef struct {
 
 extern const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM];
 
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && SOC_PAU_SUPPORTED
+#if SOC_PAU_SUPPORTED
 typedef struct {
     const periph_retention_module_t module;
     const regdma_entries_config_t *regdma_entry_array;

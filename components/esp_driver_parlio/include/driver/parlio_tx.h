@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,7 @@ typedef struct {
         uint32_t allow_pd: 1;      /*!< Set to allow power down. When this flag set, the driver will backup/restore the PARLIO registers before/after entering/exist sleep mode.
                                        By this approach, the system can power off PARLIO's power domain.
                                        This can save power, but at the expense of more RAM being consumed. */
+        uint32_t invert_valid_out: 1; /*!< Invert the output valid signal */
     } flags;                      /*!< Extra configuration flags */
 } parlio_tx_unit_config_t;
 

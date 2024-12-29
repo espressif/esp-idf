@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@
 #include "soc/efuse_periph.h"
 #include "soc/io_mux_reg.h"
 #include "esp_private/spi_flash_os.h"
+#include "bootloader_flash_override.h"
 
 
 static const char *TAG = "qio_mode";
@@ -34,7 +35,7 @@ static const char *TAG = "qio_mode";
 
    Searching of this table stops when the first match is found.
  */
-const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_support_list[] = {
+const DRAM_ATTR bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_support_list_default[] = {
     /*   Manufacturer,   mfg_id, flash_id, id mask, Read Status,                Write Status,               QIE Bit */
     { "MXIC",        0xC2,   0x2000, 0xFF00,    bootloader_read_status_8b_rdsr,        bootloader_write_status_8b_wrsr,       6 },
     { "ISSI",        0x9D,   0x4000, 0xCF00,    bootloader_read_status_8b_rdsr,        bootloader_write_status_8b_wrsr,       6 }, /* IDs 0x40xx, 0x70xx */
@@ -53,7 +54,9 @@ const bootloader_qio_info_t __attribute__((weak)) bootloader_flash_qe_support_li
     { NULL,          0xFF,    0xFFFF, 0xFFFF,   bootloader_read_status_8b_rdsr2,       bootloader_write_status_8b_wrsr2,      1 },
 };
 
-#define NUM_CHIPS (sizeof(bootloader_flash_qe_support_list) / sizeof(bootloader_qio_info_t))
+const DRAM_ATTR bootloader_qio_info_t* bootloader_flash_qe_support_list __attribute__((weak)) = bootloader_flash_qe_support_list_default;
+
+uint8_t DRAM_ATTR __attribute__((weak)) bootloader_flash_qe_list_count = (sizeof(bootloader_flash_qe_support_list_default) / sizeof(bootloader_qio_info_t));
 
 static esp_err_t enable_qio_mode(bootloader_flash_read_status_fn_t read_status_fn,
                                  bootloader_flash_write_status_fn_t write_status_fn,
@@ -82,7 +85,11 @@ void bootloader_enable_qio_mode(void)
     flash_id = raw_flash_id & 0xFFFF;
     ESP_LOGD(TAG, "Manufacturer ID 0x%02x chip ID 0x%04x", mfg_id, flash_id);
 
-    for (i = 0; i < NUM_CHIPS - 1; i++) {
+    if ((intptr_t)bootloader_flash_qe_support_list != (intptr_t)bootloader_flash_qe_support_list_default) {
+        ESP_EARLY_LOGD(TAG, "Using overridden bootloader_flash_qio, the list number is %d", bootloader_flash_qe_list_count);
+    }
+
+    for (i = 0; i < bootloader_flash_qe_list_count - 1; i++) {
         const bootloader_qio_info_t *chip = &bootloader_flash_qe_support_list[i];
         if (mfg_id == chip->mfg_id && (flash_id & chip->id_mask) == (chip->flash_id & chip->id_mask)) {
             ESP_LOGI(TAG, "Enabling QIO for flash chip %s", bootloader_flash_qe_support_list[i].manufacturer);
@@ -90,7 +97,7 @@ void bootloader_enable_qio_mode(void)
         }
     }
 
-    if (i == NUM_CHIPS - 1) {
+    if (i == bootloader_flash_qe_list_count - 1) {
         ESP_LOGI(TAG, "Enabling default flash chip QIO");
     }
     enable_qio_mode(bootloader_flash_qe_support_list[i].read_status_fn,

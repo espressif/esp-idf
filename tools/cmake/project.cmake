@@ -353,6 +353,13 @@ function(__project_info test_components)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
     idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
+    __generate_gdbinit()
+    idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
+    idf_build_get_property(gdbinit_files_symbols GDBINIT_FILES_SYMBOLS)
+    idf_build_get_property(gdbinit_files_py_extensions GDBINIT_FILES_PY_EXTENSIONS)
+    idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
+    __get_openocd_options(debug_arguments_openocd)
+
     if(CONFIG_APP_BUILD_TYPE_RAM)
         set(PROJECT_BUILD_TYPE ram_app)
     else()
@@ -487,6 +494,24 @@ function(__project_init components_var test_components_var)
             endif()
         endif()
     endforeach()
+
+    # If a minimal build is requested, set COMPONENTS to "main" only if the COMPONENTS
+    # variable is not already defined. The COMPONENTS variable takes precedence over
+    # the MINIMAL_BUILD property.
+    idf_build_get_property(minimal_build MINIMAL_BUILD)
+    if(minimal_build)
+        if(DEFINED COMPONENTS)
+            message(WARNING "The MINIMAL_BUILD property is disregarded because the COMPONENTS variable is defined.")
+            set(minimal_build OFF)
+        else()
+            set(COMPONENTS main)
+            set(minimal_build ON)
+        endif()
+    else()
+        set(minimal_build OFF)
+    endif()
+
+    message(STATUS "Minimal build - ${minimal_build}")
 
     spaces2list(COMPONENTS)
     spaces2list(EXCLUDE_COMPONENTS)
@@ -830,6 +855,13 @@ macro(project project_name)
             target_link_options(${project_elf} PRIVATE "-Wl,--orphan-handling=warn")
         endif()
         unset(idf_target)
+    endif()
+
+
+    if(CONFIG_LIBC_PICOLIBC)
+        idf_build_set_property(C_COMPILE_OPTIONS "-specs=picolibc.specs" APPEND)
+        idf_build_set_property(CXX_COMPILE_OPTIONS "-specs=picolibcpp.specs" APPEND)
+        idf_build_set_property(LINK_OPTIONS "-specs=picolibc.specs" APPEND)
     endif()
 
     set_property(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" APPEND PROPERTY

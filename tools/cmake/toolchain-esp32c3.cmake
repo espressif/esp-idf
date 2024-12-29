@@ -14,7 +14,6 @@ remove_duplicated_flags("-march=rv32imc_zicsr_zifencei ${CMAKE_CXX_FLAGS}"
                         UNIQ_CMAKE_CXX_FLAGS)
 set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
 
-remove_duplicated_flags("-nostartfiles -march=rv32imc_zicsr_zifencei --specs=nosys.specs \
-                        ${CMAKE_EXE_LINKER_FLAGS}"
+remove_duplicated_flags("-nostartfiles -march=rv32imc_zicsr_zifencei ${CMAKE_EXE_LINKER_FLAGS}"
                         UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS)
 set(CMAKE_EXE_LINKER_FLAGS "${UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS}" CACHE STRING "Linker Base Flags" FORCE)

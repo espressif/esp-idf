@@ -36,7 +36,6 @@ typedef enum clock_out_channel {
                                                  (channel == CLKOUT_CHANNEL_3) ? FUNC_CLK_OUT3 : -1)
 #define IS_VALID_CLKOUT_IO(gpio_num)    ((gpio_num == CLKOUT_CHANNEL1_GPIO) || (gpio_num == CLKOUT_CHANNEL2_GPIO) || (gpio_num == CLKOUT_CHANNEL3_GPIO))
 
-
 #define CLKOUT_CHANNEL_MASK(channel)    ((channel == CLKOUT_CHANNEL_1) ? CLK_OUT1 : \
                                          (channel == CLKOUT_CHANNEL_2) ? CLK_OUT2 : \
                                          (channel == CLKOUT_CHANNEL_3) ? CLK_OUT3 : 0)

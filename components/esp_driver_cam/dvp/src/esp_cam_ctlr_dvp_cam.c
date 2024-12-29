@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <sys/lock.h>
 #include <sys/param.h>
 #include "hal/gpio_ll.h"
 #include "hal/cam_ll.h"

@@ -14,7 +14,7 @@ extern "C" {
 /*IRAM0 is connected with Cache IBUS0*/
 #define SOC_IRAM0_ADDRESS_LOW               0x4037C000
 #define SOC_IRAM0_ADDRESS_HIGH              0x403E0000
-#define SOC_IRAM0_CACHE_ADDRESS_LOW	        0x42000000
+#define SOC_IRAM0_CACHE_ADDRESS_LOW         0x42000000
 #define SOC_IRAM0_CACHE_ADDRESS_HIGH        0x42800000
 
 /*DRAM0 is connected with Cache DBUS0*/
@@ -101,7 +101,6 @@ extern "C" {
 #ifndef __cplusplus
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
 #endif
-
 
 /**
  * ROM flash mmap driver needs below definitions

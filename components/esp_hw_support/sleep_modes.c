@@ -58,16 +58,14 @@
 
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/clk_tree_ll.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sens_hal.h"
 #endif
-
-#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
-#include "hal/ldo_ll.h"
-#endif
+#include "hal/mspi_timing_tuning_ll.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
@@ -79,7 +77,9 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
 #include "esp_private/mspi_timing_tuning.h"
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -163,7 +163,7 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (56)
 #elif CONFIG_IDF_TARGET_ESP32C61
-#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (1148) //TODO: PM-231
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (107)
 #elif CONFIG_IDF_TARGET_ESP32H2
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
@@ -691,12 +691,10 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
 #endif
     }
 
-#if !CONFIG_IDF_TARGET_ESP32P4 && !CONFIG_IDF_TARGET_ESP32C61
-    // TODO: IDF-7370
     if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
+        // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
-#endif
 }
 
 /**
@@ -718,9 +716,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-#if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9304
     sar_periph_ctrl_power_enable();
-#endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
@@ -803,8 +799,10 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
     }
 #endif
 
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
     // Will switch to XTAL turn down MSPI speed
     mspi_timing_change_speed_mode_cache_safe(true);
+#endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
     if (!deep_sleep && (pd_flags & PMU_SLEEP_PD_TOP)) {
@@ -1140,8 +1138,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
         misc_modules_wake_prepare(pd_flags);
     }
 
-#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-    if (cpu_freq_config.source == SOC_CPU_CLK_SRC_PLL) {
+#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
+    if (cpu_freq_config.source_freq_mhz > clk_ll_xtal_load_freq_mhz()) {
         // Turn up MSPI speed if switch to PLL
         mspi_timing_change_speed_mode_cache_safe(false);
     }
@@ -1179,10 +1177,6 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
     portENTER_CRITICAL(&spinlock_rtc_deep_sleep);
     esp_ipc_isr_stall_other_cpu();
     esp_ipc_isr_stall_pause();
-#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
-    // Disable PSRAM chip power supply
-    ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), false);
-#endif
 
     // record current RTC time
     s_config.rtc_ticks_at_sleep_start = rtc_time_get();
@@ -1246,10 +1240,6 @@ static esp_err_t IRAM_ATTR deep_sleep_start(bool allow_sleep_rejection)
         // can take several CPU cycles for the sleep mode to start.
         ESP_INFINITE_LOOP();
     }
-#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
-    // Enable PSRAM chip power supply
-    ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
-#endif
     // Never returns here, except that the sleep is rejected.
     esp_ipc_isr_stall_resume();
     esp_ipc_isr_release_other_cpu();
@@ -1678,8 +1668,27 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 #if SOC_LP_VAD_SUPPORTED
 esp_err_t esp_sleep_enable_vad_wakeup(void)
 {
+    esp_err_t ret = ESP_FAIL;
+
+    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to keep rtc periph power on");
+        return ret;
+    }
+
+    ret = esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to keep xtal power on");
+        return ret;
+    }
+    ret = esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, true);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "fail to set to ESP_SLEEP_LP_USE_XTAL_MODE mode");
+        return ret;
+    }
     s_config.wakeup_triggers |= RTC_LP_VAD_TRIG_EN;
-    return esp_sleep_sub_mode_config(ESP_SLEEP_LP_USE_XTAL_MODE, true);
+
+    return ESP_OK;
 }
 #endif
 

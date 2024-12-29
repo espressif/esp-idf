@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,11 @@
 #define REGION_32BIT(start, len)    ((start) + (len) > (1<<24))
 #define ADDR_32BIT(addr)            (addr >= (1<<24))
 
+#define SET_FLASH_ERASE_STATUS(CHIP, status) do { \
+    if (CHIP->os_func->set_flash_op_status) { \
+        CHIP->os_func->set_flash_op_status(status); \
+    } \
+} while(0)
 
 static const char TAG[] = "chip_wb";
 
@@ -76,14 +81,18 @@ esp_err_t spi_flash_chip_winbond_page_program(esp_flash_t *chip, const void *buf
 
     err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
 
-    if (err == ESP_OK) {
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
         // Perform the actual Page Program command
         err = spi_flash_command_winbond_program_4B(chip, buffer, address, length);
         if (err != ESP_OK) {
             return err;
         }
-
+        chip->busy = 1;
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->page_program_timeout);
+    }
+    // Ensure WEL is 0, even if the page program failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
     }
     return err;
 }
@@ -95,11 +104,13 @@ esp_err_t spi_flash_chip_winbond_erase_sector(esp_flash_t *chip, uint32_t start_
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
 
-    if (err == ESP_OK) {
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
+        SET_FLASH_ERASE_STATUS(chip, SPI_FLASH_OS_IS_ERASING_STATUS_FLAG);
         err = spi_flash_command_winbond_erase_sector_4B(chip, start_address);
         if (err != ESP_OK) {
             return err;
         }
+        chip->busy = 1;
         //to save time, flush cache here
         if (chip->host->driver->flush_cache) {
             err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->sector_size);
@@ -107,7 +118,16 @@ esp_err_t spi_flash_chip_winbond_erase_sector(esp_flash_t *chip, uint32_t start_
                 return err;
             }
         }
+#ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+#else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->sector_erase_timeout);
+#endif
+        SET_FLASH_ERASE_STATUS(chip, 0);
+    }
+    // Ensure WEL is 0, even if the erase failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
     }
     return err;
 }
@@ -119,11 +139,13 @@ esp_err_t spi_flash_chip_winbond_erase_block(esp_flash_t *chip, uint32_t start_a
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->idle_timeout);
     }
 
-    if (err == ESP_OK) {
+    if (err == ESP_OK || err == ESP_ERR_NOT_SUPPORTED) {
+        SET_FLASH_ERASE_STATUS(chip, SPI_FLASH_OS_IS_ERASING_STATUS_FLAG);
         err = spi_flash_command_erase_block_4B(chip, start_address);
         if (err != ESP_OK) {
             return err;
         }
+        chip->busy = 1;
         //to save time, flush cache here
         if (chip->host->driver->flush_cache) {
             err = chip->host->driver->flush_cache(chip->host, start_address, chip->chip_drv->block_erase_size);
@@ -131,7 +153,16 @@ esp_err_t spi_flash_chip_winbond_erase_block(esp_flash_t *chip, uint32_t start_a
                 return err;
             }
         }
+#ifdef CONFIG_SPI_FLASH_CHECK_ERASE_TIMEOUT_DISABLED
+        err = chip->chip_drv->wait_idle(chip, ESP_FLASH_CHIP_GENERIC_NO_TIMEOUT);
+#else
         err = chip->chip_drv->wait_idle(chip, chip->chip_drv->timeout->block_erase_timeout);
+#endif
+        SET_FLASH_ERASE_STATUS(chip, 0);
+    }
+    // Ensure WEL is 0, even if the erase failed.
+    if (err == ESP_ERR_NOT_SUPPORTED) {
+        err = chip->chip_drv->set_chip_write_protect(chip, true);
     }
     return err;
 }
@@ -143,10 +174,31 @@ spi_flash_caps_t spi_flash_chip_winbond_get_caps(esp_flash_t *chip)
     if ((chip->chip_id & 0xFF) >= 0x19) {
         caps_flags |= SPI_FLASH_CHIP_CAP_32MB_SUPPORT;
     }
-    // flash-suspend is not supported
+#if CONFIG_SPI_FLASH_AUTO_SUSPEND
+    switch (chip->chip_id) {
+    /* The flash listed here can support suspend */
+    case 0xEF4017:
+        caps_flags |= SPI_FLASH_CHIP_CAP_SUSPEND;
+        break;
+    default:
+        break;
+    }
+#endif
     // flash read unique id.
     caps_flags |= SPI_FLASH_CHIP_CAP_UNIQUE_ID;
     return caps_flags;
+}
+
+esp_err_t spi_flash_chip_winbond_suspend_cmd_conf(esp_flash_t *chip)
+{
+    spi_flash_sus_cmd_conf sus_conf = {
+        .sus_mask = 0x80,
+        .cmd_rdsr = CMD_RDSR2,
+        .sus_cmd = CMD_SUSPEND,
+        .res_cmd = CMD_RESUME,
+    };
+
+    return chip->host->driver->sus_setup(chip->host, &sus_conf);
 }
 
 static const char chip_name[] = "winbond";
@@ -185,7 +237,7 @@ const spi_flash_chip_t esp_flash_chip_winbond = {
 
     .read_reg = spi_flash_chip_generic_read_reg,
     .yield = spi_flash_chip_generic_yield,
-    .sus_setup = spi_flash_chip_generic_suspend_cmd_conf,
+    .sus_setup = spi_flash_chip_winbond_suspend_cmd_conf,
     .read_unique_id = spi_flash_chip_generic_read_unique_id,
     .get_chip_caps = spi_flash_chip_winbond_get_caps,
     .config_host_io_mode = spi_flash_chip_generic_config_host_io_mode,

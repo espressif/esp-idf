@@ -67,7 +67,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 .. note::
 
-   链接器映射文件由 GNU binutils 的链接器 ``ld`` 而非由 ESP-IDF 生成。本快速概览专从 ESP-IDF 构建系统的角度编写而成，建议自行搜索更多关于链接器映射文件格式的信息。
+    链接器映射文件由 GNU binutils 的链接器 ``ld`` 而非由 ESP-IDF 生成。本快速概览专从 ESP-IDF 构建系统的角度编写而成，建议自行搜索更多关于链接器映射文件格式的信息。
 
 .. _reducing-overall-size:
 
@@ -94,7 +94,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
 
 .. note::
 
-   除了上述众多配置项之外，还有一些配置选项在更改为非默认设置时会增加二进制文件的大小，这些选项未在此列出。配置项的帮助文本中通常会阐明显著增加二进制文件大小的设置。
+    除了上述众多配置项之外，还有一些配置选项在更改为非默认设置时会增加二进制文件的大小，这些选项未在此列出。配置项的帮助文本中通常会阐明显著增加二进制文件大小的设置。
 
 .. _size-targeted-optimizations:
 
@@ -147,9 +147,20 @@ lwIP IPv4
 
 - 如果不需要 IPv4 连接功能，将 :ref:`CONFIG_LWIP_IPV4` 设置为 ``false`` 可以减小 lwIP 的大小，使其成为仅支持 IPv6 的 TCP/IP 堆栈。
 
-  .. note::
+    .. note::
 
-      在禁用 IPv4 支持之前，请注意，仅支持 IPv6 的网络环境尚未普及，必须在本地网络中提供支持，例如，由互联网服务供应商提供支持，或使用受限制的本地网络设置。
+        在禁用 IPv4 支持之前，请注意，仅支持 IPv6 的网络环境尚未普及，必须在本地网络中提供支持，例如，由互联网服务供应商提供支持，或使用受限制的本地网络设置。
+
+.. _picolibc-instead-of-newlib:
+
+使用 Picolibc 替代 Newlib
+@@@@@@@@@@@@@@@@@@@@@@@@@
+
+默认情况下，ESP-IDF 使用 Newlib C 库，同时也对 Picolibc C 库提供实验性支持。
+
+Picolibc C 库提供了更精简的 ``printf`` 系列函数，并且根据应用程序，可以将二进制文件大小减少最多 30 KB。
+
+如需切换链接到 Picolibc C 库，请启用配置选项 :ref:`CONFIG_IDF_EXPERIMENTAL_FEATURES` 和 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>`。
 
 .. _newlib-nano-formatting:
 
@@ -160,13 +171,13 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT
 
-    启用配置选项 :ref:`CONFIG_NEWLIB_NANO_FORMAT` 将使 Newlib 切换到 Nano 格式化模式。这种模式的代码量更小，并且大部分内容被编译到了 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
+    启用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到 Nano 格式化模式。从而减小了代码体积，同时大部分内容被编译到 {IDF_TARGET_NAME} 的 ROM 中，因此不需要将其添加至二进制文件中。
 
     具体的二进制文件大小差异取决于固件使用的功能，但通常为 25 KB 到 50 KB。
 
 .. only:: CONFIG_ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT
 
-    禁用配置选项 :ref:`CONFIG_NEWLIB_NANO_FORMAT` 将切换 Newlib 到“完整”格式化模式。这将减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此不需要将其添加至二进制文件中。
+    禁用配置选项 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT` 将 Newlib 切换到完整格式化模式。从而减小二进制文件的大小，因为 {IDF_TARGET_NAME} 的 ROM 中已存有完整格式化版本的函数，因此无需将其添加至二进制文件中。
 
 启用 Nano 格式化会减少调用 ``printf()`` 或其他字符串格式化函数的堆栈使用量，参阅 :ref:`optimize-stack-sizes`。
 
@@ -177,7 +188,7 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
     .. note::
 
-        {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_NEWLIB_NANO_FORMAT`。
+        {IDF_TARGET_NAME} 会默认启用 :ref:`CONFIG_LIBC_NEWLIB_NANO_FORMAT`。
 
 
 .. _Newlib README 文件: https://sourceware.org/newlib/README
@@ -213,21 +224,22 @@ MbedTLS 功能
 
 .. important::
 
-   **强烈建议不要禁用所有 mbedTLS 选项。** 仅在理解功能用途，并确定在应用程序中不需要此功能时，方可禁用相应选项。请特别注意以下两点：
+    **强烈建议不要禁用所有 mbedTLS 选项。** 仅在理解功能用途，并确定在应用程序中不需要此功能时，方可禁用相应选项。请特别注意以下两点：
 
-   - 确保设备连接的任何 TLS 服务器仍然可用。如果服务器由第三方或云服务控制，建议确保固件至少支持两种 TLS 密码套件，以防未来某次更新禁用了其中一种。
-   - 确保连接设备的任何 TLS 客户端仍然可以使用支持/推荐的密码套件进行连接。请注意，未来版本的客户端操作系统可能会移除对某些功能的支持，因此建议启用多个支持的密码套件或算法以实现冗余。
+    - 确保设备连接的任何 TLS 服务器仍然可用。如果服务器由第三方或云服务控制，建议确保固件至少支持两种 TLS 密码套件，以防未来某次更新禁用了其中一种。
+    - 确保连接设备的任何 TLS 客户端仍然可以使用支持/推荐的密码套件进行连接。请注意，未来版本的客户端操作系统可能会移除对某些功能的支持，因此建议启用多个支持的密码套件或算法以实现冗余。
 
-   如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
+    如果依赖于第三方客户端或服务器，请密切关注其有关支持的 TLS 功能的公告和变更。否则，当所支持功能变更时，{IDF_TARGET_NAME} 设备可能无法访问。
 
 .. only:: CONFIG_ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
 
-   启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
-   禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
+    启用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时 mbedtls 使用由 ROM 提供的加密算法。
+
+    禁用配置选项 :ref:`CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL` 时mbedtls 完全使用由 ESP-IDF 中提供的加密算法。这会导致二进制文件大小增加。
 
 .. note::
 
-   ESP-IDF 并未测试所有 mbedTLS 编译配置组合。如果发现某个组合无法编译或无法按预期执行，请在 `GitHub <https://github.com/espressif/esp-idf>`_ 上报告详细信息。
+    ESP-IDF 并未测试所有 mbedTLS 编译配置组合。如果发现某个组合无法编译或无法按预期执行，请在 `GitHub <https://github.com/espressif/esp-idf>`_ 上报告详细信息。
 
 虚拟文件系统 (VFS)
 @@@@@@@@@@@@@@@@@@@@@
@@ -253,8 +265,26 @@ MbedTLS 功能
     @@@@@@
 
     .. list::
+
         * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以将整个堆功能放置在 flash 中，从而减少 IRAM 使用和二进制文件大小。
         :CONFIG_ESP_ROM_HAS_HEAP_TLSF: * 启用 :ref:`CONFIG_HEAP_TLSF_USE_ROM_IMPL` 可以通过链接 ROM 实现的 TLSF 库来减少 IRAM 使用和二进制文件大小。
+
+
+.. only:: SOC_USB_SERIAL_JTAG_SUPPORTED
+
+    控制台
+    @@@@@@
+
+    对于支持 USB-Serial-JTAG 的目标芯片，默认情况下会同时启用 USB-Serial-JTAG 和 UART 控制台输出。如果只需要使用单个控制台，可以通过以下操作减少二进制文件大小和 RAM 使用量：
+
+    1. 禁用次要控制台：将 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 设置为 ``CONFIG_ESP_CONSOLE_SECONDARY_NONE``。
+    2. 将 :ref:`CONFIG_ESP_CONSOLE_UART` 设置为以下选项之一：
+
+        * ``UART``：可减少约 2.5 KB 的二进制文件大小。
+        * ``USB-Serial-JTAG``：可减少约 10 KB 的二进制文件大小和约 1.5 KB 的 DRAM 使用量。
+
+    请注意，以上空间节省的前提条件是 UART/USB-Serial-JTAG 驱动代码未被应用程序引用。如果因为其他用途使用了这些驱动程序，则节省效果会有所降低。
+
 
 引导加载程序大小
 ------------------------------

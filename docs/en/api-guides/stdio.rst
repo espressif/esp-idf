@@ -101,8 +101,8 @@ VFS drivers provide an optional newline conversion feature for input and output.
 
 Applications can configure this behavior globally using the following Kconfig options:
 
-    - :ref:`CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF<CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF>`, :ref:`CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR<CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR>`, :ref:`CONFIG_NEWLIB_STDOUT_LINE_ENDING_LF<CONFIG_NEWLIB_STDOUT_LINE_ENDING_LF>` - for output
-    - :ref:`CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF<CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF>`, :ref:`CONFIG_NEWLIB_STDIN_LINE_ENDING_CR<CONFIG_NEWLIB_STDIN_LINE_ENDING_CR>`, :ref:`CONFIG_NEWLIB_STDIN_LINE_ENDING_LF<CONFIG_NEWLIB_STDIN_LINE_ENDING_LF>` - for input
+    - :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF<CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF>`, :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_CR<CONFIG_LIBC_STDOUT_LINE_ENDING_CR>`, :ref:`CONFIG_LIBC_STDOUT_LINE_ENDING_LF<CONFIG_LIBC_STDOUT_LINE_ENDING_LF>` - for output
+    - :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CRLF<CONFIG_LIBC_STDIN_LINE_ENDING_CRLF>`, :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_CR<CONFIG_LIBC_STDIN_LINE_ENDING_CR>`, :ref:`CONFIG_LIBC_STDIN_LINE_ENDING_LF<CONFIG_LIBC_STDIN_LINE_ENDING_LF>` - for input
 
 
 It is also possible to configure line ending conversion for the specific VFS driver:
@@ -137,7 +137,7 @@ To send application output to a custom channel (for example, a WebSocket connect
     - ``fstat()`` — recommended, to provide correct buffering behavior for the I/O streams
     - ``fcntl()`` — only if non-blocking I/O has to be supported
 
-Once you have created a custom VFS driver, use ``esp_vfs_register()`` to register it with VFS. Then, use ``fopen()`` to redirect ``stdout`` and ``stderr`` to the custom channel. For example:
+Once you have created a custom VFS driver, use :cpp:func:`esp_vfs_register_fs()` to register it with VFS. Then, use ``fopen()`` to redirect ``stdout`` and ``stderr`` to the custom channel. For example:
 
 .. code-block:: c
 

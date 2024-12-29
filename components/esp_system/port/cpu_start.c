@@ -13,6 +13,7 @@
 
 #include "esp_log.h"
 #include "esp_chip_info.h"
+#include "esp_app_format.h"
 
 #include "esp_private/cache_err_int.h"
 #include "esp_clk_internal.h"
@@ -40,7 +41,6 @@
 #include "soc/assist_debug_reg.h"
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
-#include "hal/cache_hal.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
@@ -94,6 +94,7 @@
 #include "esp_private/sleep_gpio.h"
 #include "hal/wdt_hal.h"
 #include "soc/rtc.h"
+#include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/efuse_ll.h"
 #include "soc/periph_defs.h"
@@ -418,6 +419,15 @@ void IRAM_ATTR call_start_cpu0(void)
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
 
+    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
+     * which redirects all the interrupt management for the REE (user app)
+     * to the TEE by raising the appropriate service calls.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    extern uint32_t esp_tee_service_call(int argc, ...);
+    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+#endif
+
     rst_reas[0] = esp_rom_get_reset_reason(0);
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     rst_reas[1] = esp_rom_get_reset_reason(1);
@@ -451,6 +461,11 @@ void IRAM_ATTR call_start_cpu0(void)
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
+#endif
+
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    //cache hal ctx needs to be initialised
+    cache_hal_init();
 #endif
 
     // When the APP is loaded into ram for execution, some hardware initialization behaviors
@@ -560,7 +575,7 @@ void IRAM_ATTR call_start_cpu0(void)
      * In this stage, we re-configure the Flash (and MSPI) to required configuration
      */
     spi_flash_init_chip_state();
-#if SOC_MEMSPI_SRC_FREQ_120M
+#if SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     // This function needs to be called when PLL is enabled. Needs to be called after spi_flash_init_chip_state in case
     // some state of flash is modified.
     mspi_timing_flash_tuning();
@@ -605,8 +620,12 @@ void IRAM_ATTR call_start_cpu0(void)
 #else
     ESP_EARLY_LOGI(TAG, "Multicore app");
 #endif
-
+    /* NOTE: When ESP-TEE is enabled, it configures its own memory protection
+     * scheme using the CPU-inherent features PMP and PMA and the APM peripheral.
+     */
+#if !CONFIG_SECURE_ENABLE_TEE
     bootloader_init_mem();
+#endif
 
 #if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
     s_cpu_up[0] = true;
@@ -629,6 +648,9 @@ void IRAM_ATTR call_start_cpu0(void)
     REG_SET_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RUNSTALL);
     REG_CLR_BIT(SYSTEM_CORE_1_CONTROL_0_REG, SYSTEM_CONTROL_CORE_1_RESETING);
 #endif
+#elif CONFIG_IDF_TARGET_ESP32P4
+    REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL0_REG, HP_SYS_CLKRST_REG_CORE1_CPU_CLK_EN);
+    REG_SET_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
 #endif // CONFIG_IDF_TARGET_ESP32
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 #endif // SOC_CPU_CORES_NUM > 1
@@ -787,9 +809,13 @@ void IRAM_ATTR call_start_cpu0(void)
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
 
-    // This assumes that DROM is the first segment in the application binary, i.e. that we can read
-    // the binary header through cache by accessing SOC_DROM_LOW address.
-    hal_memcpy(&fhdr, (void *) SOC_DROM_LOW, sizeof(fhdr));
+    // We can access the image header through the cache by reading from the memory-mapped virtual DROM start offset
+    uint32_t fhdr_src_addr = (uint32_t)(&_rodata_reserved_start) - sizeof(esp_image_header_t) - sizeof(esp_image_segment_header_t);
+    hal_memcpy(&fhdr, (void *) fhdr_src_addr, sizeof(fhdr));
+    if (fhdr.magic != ESP_IMAGE_HEADER_MAGIC) {
+        ESP_EARLY_LOGE(TAG, "Invalid app image header");
+        abort();
+    }
 
 #if CONFIG_IDF_TARGET_ESP32
 #if !CONFIG_SPIRAM_BOOT_INIT

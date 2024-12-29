@@ -88,7 +88,6 @@
 #define AES_TEXT_OUT_BASE       ((DR_REG_AES_BASE) + 0x30)
 #define AES_IV_BASE             ((DR_REG_AES_BASE) + 0x50)
 
-
 /* HMAC Module */
 #define HMAC_SET_START_REG             ((DR_REG_HMAC_BASE) + 0x40)
 #define HMAC_SET_PARA_PURPOSE_REG      ((DR_REG_HMAC_BASE) + 0x44)

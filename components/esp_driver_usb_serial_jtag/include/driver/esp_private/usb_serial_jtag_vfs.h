@@ -20,7 +20,7 @@ extern "C" {
  *
  * @return pointer to structure esp_vfs_t
  */
-const esp_vfs_t *esp_vfs_usb_serial_jtag_get_vfs(void);
+const esp_vfs_fs_ops_t *esp_vfs_usb_serial_jtag_get_vfs(void);
 
 #ifdef __cplusplus
 }

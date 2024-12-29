@@ -108,23 +108,23 @@ uint32_t esp_dport_access_sequence_reg_read(uint32_t reg);
 void esp_dport_access_read_buffer(uint32_t *buff_out, uint32_t address, uint32_t num_words);
 
 #if defined(BOOTLOADER_BUILD) || defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE) || !SOC_DPORT_WORKAROUND
-    #define DPORT_INTERRUPT_DISABLE()
-    #define DPORT_INTERRUPT_RESTORE()
-    #define DPORT_REG_READ(reg)          _DPORT_REG_READ(reg)
-    #define DPORT_SEQUENCE_REG_READ(reg) _DPORT_REG_READ(reg)
+#define DPORT_INTERRUPT_DISABLE()
+#define DPORT_INTERRUPT_RESTORE()
+#define DPORT_REG_READ(reg)          _DPORT_REG_READ(reg)
+#define DPORT_SEQUENCE_REG_READ(reg) _DPORT_REG_READ(reg)
 #else
-    #define DPORT_REG_READ(reg)          esp_dport_access_reg_read(reg)
-    #define DPORT_SEQUENCE_REG_READ(reg) esp_dport_access_sequence_reg_read(reg)
-    #ifndef XTSTR
-    #define _XTSTR(x) # x
-    #define XTSTR(x)  _XTSTR(x)
-    #endif
+#define DPORT_REG_READ(reg)          esp_dport_access_reg_read(reg)
+#define DPORT_SEQUENCE_REG_READ(reg) esp_dport_access_sequence_reg_read(reg)
+#ifndef XTSTR
+#define _XTSTR(x) # x
+#define XTSTR(x)  _XTSTR(x)
+#endif
 
-    #define DPORT_INTERRUPT_DISABLE() unsigned intLvl = __extension__({ unsigned __tmp; \
+#define DPORT_INTERRUPT_DISABLE() unsigned intLvl = __extension__({ unsigned __tmp; \
                 __asm__ __volatile__("rsil %0, " XTSTR(SOC_DPORT_WORKAROUND_DIS_INTERRUPT_LVL) "\n" \
                                     : "=a" (__tmp) : : "memory" ); \
                 __tmp;})
-    #define DPORT_INTERRUPT_RESTORE() do{ unsigned __tmp = (intLvl); \
+#define DPORT_INTERRUPT_RESTORE() do{ unsigned __tmp = (intLvl); \
                 __asm__ __volatile__("wsr.ps %0 ; rsync\n" \
                                     : : "a" (__tmp) : "memory" ); \
                 }while(0)

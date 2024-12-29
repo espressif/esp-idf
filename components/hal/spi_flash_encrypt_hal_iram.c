@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 // This part is put in iram.
 
 #include "hal/spi_flash_encrypted_ll.h"
+#include "soc/soc_caps.h"
 
 void spi_flash_encryption_hal_enable(void)
 {
@@ -49,3 +50,10 @@ bool spi_flash_encryption_hal_check(uint32_t address, uint32_t length)
 {
     return spi_flash_encrypt_ll_check(address, length);
 }
+
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+void spi_flash_encryption_hal_enable_pseudo_rounds(uint8_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    spi_flash_encrypt_ll_enable_pseudo_rounds(mode, base, increment, key_rng_cnt);
+}
+#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND */

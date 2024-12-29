@@ -9,6 +9,7 @@
 #include <esp_http_client.h>
 #include <bootloader_common.h>
 #include "esp_app_desc.h"
+#include "esp_bootloader_desc.h"
 #include <sdkconfig.h>
 
 #include "esp_event.h"
@@ -26,7 +27,7 @@ ESP_EVENT_DECLARE_BASE(ESP_HTTPS_OTA_EVENT);
 typedef enum {
     ESP_HTTPS_OTA_START,                    /*!< OTA started */
     ESP_HTTPS_OTA_CONNECTED,                /*!< Connected to server */
-    ESP_HTTPS_OTA_GET_IMG_DESC,             /*!< Read app description from image header */
+    ESP_HTTPS_OTA_GET_IMG_DESC,             /*!< Read app/bootloader description from image header */
     ESP_HTTPS_OTA_VERIFY_CHIP_ID,           /*!< Verify chip id of new image */
     ESP_HTTPS_OTA_DECRYPT_CB,               /*!< Callback to decrypt function */
     ESP_HTTPS_OTA_WRITE_FLASH,              /*!< Flash write operation */
@@ -68,6 +69,11 @@ typedef struct {
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
     uint16_t enc_img_header_size;                  /*!< Header size of pre-encrypted ota image header */
 #endif
+    struct {                                        /*!< Details of staging and final partitions for OTA update */
+        const esp_partition_t *staging;             /*!< New image will be downloaded in this staging partition. If NULL then a free app partition (passive app partition) is selected as the staging partition. */
+        const esp_partition_t *final;               /*!< Final destination partition. Its type/subtype will be used for verification. If set to NULL, staging partition shall be set as the final partition. */
+        bool finalize_with_copy;                    /*!< Flag to copy the staging image to the final partition at the end of OTA update */
+    } partition;                                    /*!< Struct containing details about the staging and final partitions for OTA update. */
 } esp_https_ota_config_t;
 
 #define ESP_ERR_HTTPS_OTA_BASE            (0x9000)
@@ -97,6 +103,7 @@ typedef struct {
  *    - ESP_ERR_OTA_VALIDATE_FAILED: Invalid app image
  *    - ESP_ERR_NO_MEM: Cannot allocate memory for OTA operation.
  *    - ESP_ERR_FLASH_OP_TIMEOUT or ESP_ERR_FLASH_OP_FAIL: Flash write failed.
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer OTA documentation in esp-idf's app_update component.
  */
 esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
@@ -123,6 +130,7 @@ esp_err_t esp_https_ota(const esp_https_ota_config_t *ota_config);
  *    - ESP_OK: HTTPS OTA Firmware upgrade context initialised and HTTPS connection established
  *    - ESP_FAIL: For generic failure.
  *    - ESP_ERR_INVALID_ARG: Invalid argument (missing/incorrect config, certificate, etc.)
+ *    - ESP_ERR_HTTP_NOT_MODIFIED: OTA image is not modified on server side
  *    - For other return codes, refer documentation in app_update component and esp_http_client
  *      component in esp-idf.
  */
@@ -223,6 +231,23 @@ esp_err_t esp_https_ota_abort(esp_https_ota_handle_t https_ota_handle);
  */
 esp_err_t esp_https_ota_get_img_desc(esp_https_ota_handle_t https_ota_handle, esp_app_desc_t *new_app_info);
 
+/**
+ * @brief   Reads bootloader description from image header. The bootloader description provides information
+ *          like the "Bootloader version" of the image.
+ *
+ * @note    This API can be called only after esp_https_ota_begin() and before esp_https_ota_perform().
+ *          Calling this API is not mandatory.
+ *
+ * @param[in]   https_ota_handle   pointer to esp_https_ota_handle_t structure
+ * @param[out]  new_img_info       pointer to an allocated esp_bootloader_desc_t structure
+ *
+ * @return
+ *    - ESP_ERR_INVALID_ARG: Invalid arguments
+ *    - ESP_ERR_INVALID_STATE: Invalid state to call this API. esp_https_ota_begin() not called yet.
+ *    - ESP_FAIL: Failed to read image descriptor
+ *    - ESP_OK: Successfully read image descriptor
+ */
+esp_err_t esp_https_ota_get_bootloader_img_desc(esp_https_ota_handle_t https_ota_handle, esp_bootloader_desc_t *new_img_info);
 
 /**
 * @brief  This function returns OTA image data read so far.

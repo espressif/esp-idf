@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 set(srcs "hal_utils.c")
 set(includes "platform_port/include")
@@ -44,7 +45,7 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     endif()
 endif()
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
     list(APPEND srcs "color_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)

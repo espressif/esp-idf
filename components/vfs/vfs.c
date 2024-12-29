@@ -86,16 +86,17 @@ static ssize_t esp_get_free_index(void) {
 }
 
 static void esp_vfs_free_fs_ops(esp_vfs_fs_ops_t *vfs) {
+// We can afford to cast away the const qualifier here, because we know that we allocated the struct and therefore its safe
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    free(vfs->termios);
+    free((void*)vfs->termios);
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    free(vfs->dir);
+    free((void*)vfs->dir);
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    free(vfs->select);
+    free((void*)vfs->select);
 #endif
 
     free(vfs);
@@ -113,36 +114,37 @@ static void esp_vfs_free_entry(vfs_entry_t *entry) {
     free(entry);
 }
 
-static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
-    assert(vfs != NULL);
-    assert(min != NULL);
-    *min = (esp_vfs_fs_ops_t) {
-        .write = vfs->write,
-        .lseek = vfs->lseek,
-        .read = vfs->read,
-        .pread = vfs->pread,
-        .pwrite = vfs->pwrite,
-        .open = vfs->open,
-        .close = vfs->close,
-        .fstat = vfs->fstat,
-        .fcntl = vfs->fcntl,
-        .ioctl = vfs->ioctl,
-        .fsync = vfs->fsync,
+typedef struct {
 #ifdef CONFIG_VFS_SUPPORT_DIR
-        .dir = min->dir,
+    esp_vfs_dir_ops_t *dir;
 #endif
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-        .termios = min->termios,
+    esp_vfs_termios_ops_t *termios;
 #endif
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-        .select = min->select,
+    esp_vfs_select_ops_t *select;
 #endif
-    };
+} vfs_component_proxy_t;
+
+static void free_proxy_members(vfs_component_proxy_t *proxy) {
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    free(proxy->dir);
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+    free(proxy->termios);
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+    free(proxy->select);
+#endif
+}
+
+static esp_vfs_fs_ops_t *esp_minify_vfs(const esp_vfs_t * const vfs, vfs_component_proxy_t proxy) {
+    assert(vfs != NULL);
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
     // If the dir functions are not implemented, we don't need to convert them
-    if (min->dir != NULL) {
-        *(min->dir) = (esp_vfs_dir_ops_t) {
+    if (proxy.dir != NULL) {
+        esp_vfs_dir_ops_t tmp = {
             .stat = vfs->stat,
             .link = vfs->link,
             .unlink = vfs->unlink,
@@ -160,13 +162,15 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
             .ftruncate = vfs->ftruncate,
             .utime = vfs->utime,
         };
+
+        memcpy(proxy.dir, &tmp, sizeof(esp_vfs_dir_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_DIR
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
     // If the termios functions are not implemented, we don't need to convert them
-    if (min->termios != NULL) {
-        *(min->termios) = (esp_vfs_termios_ops_t) {
+    if (proxy.termios != NULL) {
+        esp_vfs_termios_ops_t tmp = {
             .tcsetattr = vfs->tcsetattr,
             .tcgetattr = vfs->tcgetattr,
             .tcdrain = vfs->tcdrain,
@@ -175,13 +179,15 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
             .tcgetsid = vfs->tcgetsid,
             .tcsendbreak = vfs->tcsendbreak,
         };
+
+        memcpy(proxy.termios, &tmp, sizeof(esp_vfs_termios_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
     // If the select functions are not implemented, we don't need to convert them
-    if (min->select != NULL) {
-        *(min->select) = (esp_vfs_select_ops_t) {
+    if (proxy.select != NULL) {
+        esp_vfs_select_ops_t tmp = {
             .start_select = vfs->start_select,
             .socket_select = vfs->socket_select,
             .stop_socket_select = vfs->stop_socket_select,
@@ -189,66 +195,114 @@ static void esp_minify_vfs(const esp_vfs_t * const vfs, esp_vfs_fs_ops_t *min) {
             .get_socket_select_semaphore = vfs->get_socket_select_semaphore,
             .end_select = vfs->end_select,
         };
+
+        memcpy(proxy.select, &tmp, sizeof(esp_vfs_select_ops_t));
     }
 #endif // CONFIG_VFS_SUPPORT_SELECT
 
-}
+    esp_vfs_fs_ops_t tmp = {
+        .write = vfs->write,
+        .lseek = vfs->lseek,
+        .read = vfs->read,
+        .pread = vfs->pread,
+        .pwrite = vfs->pwrite,
+        .open = vfs->open,
+        .close = vfs->close,
+        .fstat = vfs->fstat,
+        .fcntl = vfs->fcntl,
+        .ioctl = vfs->ioctl,
+        .fsync = vfs->fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .dir = proxy.dir,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+        .termios = proxy.termios,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = proxy.select,
+#endif
+    };
 
-static esp_vfs_fs_ops_t* esp_vfs_duplicate_fs_ops(const esp_vfs_fs_ops_t *vfs) {
-    esp_vfs_fs_ops_t *min = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
-    if (min == NULL) {
+    esp_vfs_fs_ops_t *out = heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
+    if (out == NULL) {
         return NULL;
     }
 
-    memcpy(min, vfs, sizeof(esp_vfs_fs_ops_t));
+    // Doing this is the only way to correctly initialize const members of a struct according to C standard
+    memcpy(out, &tmp, sizeof(esp_vfs_fs_ops_t));
 
-    // remove references to the original components
-#ifdef CONFIG_VFS_SUPPORT_DIR
-    min->dir = NULL;
-#endif
-#ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    min->termios = NULL;
-#endif
-#ifdef CONFIG_VFS_SUPPORT_SELECT
-    min->select = NULL;
-#endif
+    return out;
+}
+
+
+static esp_vfs_fs_ops_t* esp_vfs_duplicate_fs_ops(const esp_vfs_fs_ops_t *orig) {
+    vfs_component_proxy_t proxy = {};
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    if (vfs->dir != NULL) {
-        min->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
-        if (min->dir == NULL) {
+    if (orig->dir != NULL) {
+        proxy.dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.dir == NULL) {
             goto fail;
         }
-        memcpy(min->dir, vfs->dir, sizeof(esp_vfs_dir_ops_t));
+        memcpy(proxy.dir, orig->dir, sizeof(esp_vfs_dir_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    if (vfs->termios != NULL) {
-        min->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
-        if (min->termios == NULL) {
+    if (orig->termios != NULL) {
+        proxy.termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.termios == NULL) {
             goto fail;
         }
-        memcpy(min->termios, vfs->termios, sizeof(esp_vfs_termios_ops_t));
+        memcpy(proxy.termios, orig->termios, sizeof(esp_vfs_termios_ops_t));
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    if (vfs->select != NULL) {
-        min->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
-        if (min->select == NULL) {
+    if (orig->select != NULL) {
+        proxy.select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.select == NULL) {
             goto fail;
         }
-        memcpy(min->select, vfs->select, sizeof(esp_vfs_select_ops_t));
+        memcpy(proxy.select, orig->select, sizeof(esp_vfs_select_ops_t));
     }
 #endif
 
-    return min;
+    // This tediousness is required because of const members
+    esp_vfs_fs_ops_t tmp = {
+        .write = orig->write,
+        .lseek = orig->lseek,
+        .read = orig->read,
+        .pread = orig->pread,
+        .pwrite = orig->pwrite,
+        .open = orig->open,
+        .close = orig->close,
+        .fstat = orig->fstat,
+        .fcntl = orig->fcntl,
+        .ioctl = orig->ioctl,
+        .fsync = orig->fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+        .dir = proxy.dir,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+        .termios = proxy.termios,
+#endif
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+        .select = proxy.select,
+#endif
+    };
 
-#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
+    esp_vfs_fs_ops_t *out = heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
+    if (out == NULL) {
+        goto fail;
+    }
+
+    memcpy(out, &tmp, sizeof(esp_vfs_fs_ops_t));
+
+    return out;
+
 fail:
-#endif
-    esp_vfs_free_fs_ops(min);
+    free_proxy_members(&proxy);
     return NULL;
 }
 
@@ -263,16 +317,10 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_vfs_fs_ops_t *main = (esp_vfs_fs_ops_t*) heap_caps_malloc(sizeof(esp_vfs_fs_ops_t), VFS_MALLOC_FLAGS);
-    if (main == NULL) {
-        return ESP_ERR_NO_MEM;
-    }
-
-    // Initialize all fields to NULL
-    memset(main, 0, sizeof(esp_vfs_fs_ops_t));
+    vfs_component_proxy_t proxy = {};
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    bool skip_dir =
+    const bool skip_dir =
         vfs->stat == NULL &&
         vfs->link == NULL &&
         vfs->unlink == NULL &&
@@ -291,15 +339,15 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->utime == NULL;
 
     if (!skip_dir) {
-        main->dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
-        if (main->dir == NULL) {
+        proxy.dir = (esp_vfs_dir_ops_t*) heap_caps_malloc(sizeof(esp_vfs_dir_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.dir == NULL) {
             goto fail;
         }
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    bool skip_termios =
+    const bool skip_termios =
         vfs->tcsetattr == NULL &&
         vfs->tcgetattr == NULL &&
         vfs->tcdrain == NULL &&
@@ -309,15 +357,15 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->tcsendbreak == NULL;
 
     if (!skip_termios) {
-        main->termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
-        if (main->termios == NULL) {
+        proxy.termios = (esp_vfs_termios_ops_t*) heap_caps_malloc(sizeof(esp_vfs_termios_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.termios == NULL) {
             goto fail;
         }
     }
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    bool skip_select =
+    const bool skip_select =
         vfs->start_select == NULL &&
         vfs->socket_select == NULL &&
         vfs->stop_socket_select == NULL &&
@@ -326,24 +374,25 @@ static esp_err_t esp_vfs_make_fs_ops(const esp_vfs_t *vfs, esp_vfs_fs_ops_t **mi
         vfs->end_select == NULL;
 
     if (!skip_select) {
-        main->select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
-        if (main->select == NULL) {
+        proxy.select = (esp_vfs_select_ops_t*) heap_caps_malloc(sizeof(esp_vfs_select_ops_t), VFS_MALLOC_FLAGS);
+        if (proxy.select == NULL) {
             goto fail;
         }
     }
 #endif
 
-    esp_minify_vfs(vfs, main);
+    esp_vfs_fs_ops_t *main = esp_minify_vfs(vfs, proxy);
+    if (main == NULL) {
+        goto fail;
+    }
 
     *min = main;
     return ESP_OK;
 
-#if defined(CONFIG_VFS_SUPPORT_SELECT) || defined(CONFIG_VFS_SUPPORT_TERMIOS) || defined(CONFIG_VFS_SUPPORT_DIR)
 fail:
 
-    esp_vfs_free_fs_ops(main);
+    free_proxy_members(&proxy);
     return ESP_ERR_NO_MEM;
-#endif
 }
 
 static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, int *vfs_index)
@@ -480,7 +529,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
                     }
                 }
                 _lock_release(&s_fd_table_lock);
-                ESP_LOGD(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
+                ESP_LOGW(TAG, "esp_vfs_register_fd_range cannot set fd %d (used by other VFS)", i);
                 return ESP_ERR_INVALID_ARG;
             }
             s_fd_table[i].permanent = true;
@@ -489,7 +538,7 @@ esp_err_t esp_vfs_register_fd_range(const esp_vfs_t *vfs, void *ctx, int min_fd,
         }
         _lock_release(&s_fd_table_lock);
 
-        ESP_LOGW(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
+        ESP_LOGD(TAG, "esp_vfs_register_fd_range is successful for range <%d; %d) and VFS ID %d", min_fd, max_fd, index);
     }
 
     return ret;
@@ -925,7 +974,7 @@ ssize_t esp_vfs_read(struct _reent *r, int fd, void * dst, size_t size)
 
 ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset)
 {
-    struct _reent *r = __getreent();
+    [[maybe_unused]] struct _reent *r = __getreent();
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
     if (vfs == NULL || local_fd < 0) {
@@ -939,7 +988,7 @@ ssize_t esp_vfs_pread(int fd, void *dst, size_t size, off_t offset)
 
 ssize_t esp_vfs_pwrite(int fd, const void *src, size_t size, off_t offset)
 {
-    struct _reent *r = __getreent();
+    [[maybe_unused]] struct _reent *r = __getreent();
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
     if (vfs == NULL || local_fd < 0) {
@@ -1004,15 +1053,27 @@ int esp_vfs_ioctl(int fd, int cmd, ...)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
     }
-    int ret;
+
     va_list args;
     va_start(args, cmd);
-    CHECK_AND_CALL(ret, r, vfs, ioctl, local_fd, cmd, args);
+    if (vfs->vfs->ioctl == NULL) {
+        __errno_r(r) = ENOSYS;
+        va_end(args);
+        return -1;
+    }
+
+    int ret;
+    if (vfs->flags & ESP_VFS_FLAG_CONTEXT_PTR) {
+        ret = (*vfs->vfs->ioctl_p)(vfs->ctx, local_fd, cmd, args);
+    } else {
+        ret = (*vfs->vfs->ioctl)(local_fd, cmd, args);
+    }
+
     va_end(args);
     return ret;
 }
@@ -1021,7 +1082,7 @@ int esp_vfs_fsync(int fd)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1050,7 +1111,7 @@ int esp_vfs_utime(const char *path, const struct utimbuf *times)
 {
     int ret;
     const vfs_entry_t* vfs = get_vfs_for_path(path);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
@@ -1126,7 +1187,7 @@ int esp_vfs_rename(struct _reent *r, const char *src, const char *dst)
 DIR* esp_vfs_opendir(const char* name)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return NULL;
@@ -1143,7 +1204,7 @@ DIR* esp_vfs_opendir(const char* name)
 struct dirent* esp_vfs_readdir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
        __errno_r(r) = EBADF;
         return NULL;
@@ -1156,7 +1217,7 @@ struct dirent* esp_vfs_readdir(DIR* pdir)
 int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_dirent)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
         return -1;
@@ -1169,7 +1230,7 @@ int esp_vfs_readdir_r(DIR* pdir, struct dirent* entry, struct dirent** out_diren
 long esp_vfs_telldir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
         return -1;
@@ -1182,7 +1243,7 @@ long esp_vfs_telldir(DIR* pdir)
 void esp_vfs_seekdir(DIR* pdir, long loc)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
         return;
@@ -1198,7 +1259,7 @@ void esp_vfs_rewinddir(DIR* pdir)
 int esp_vfs_closedir(DIR* pdir)
 {
     const vfs_entry_t* vfs = get_vfs_for_index(pdir->dd_vfs_idx);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         errno = EBADF;
         return -1;
@@ -1211,7 +1272,7 @@ int esp_vfs_closedir(DIR* pdir)
 int esp_vfs_mkdir(const char* name, mode_t mode)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
@@ -1228,7 +1289,7 @@ int esp_vfs_mkdir(const char* name, mode_t mode)
 int esp_vfs_rmdir(const char* name)
 {
     const vfs_entry_t* vfs = get_vfs_for_path(name);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
@@ -1246,7 +1307,7 @@ int esp_vfs_access(const char *path, int amode)
 {
     int ret;
     const vfs_entry_t* vfs = get_vfs_for_path(path);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
@@ -1260,7 +1321,7 @@ int esp_vfs_truncate(const char *path, off_t length)
 {
     int ret;
     const vfs_entry_t* vfs = get_vfs_for_path(path);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL) {
         __errno_r(r) = ENOENT;
         return -1;
@@ -1277,7 +1338,7 @@ int esp_vfs_ftruncate(int fd, off_t length)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1367,7 +1428,7 @@ int esp_vfs_select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds
     // NOTE: Please see the "Synchronous input/output multiplexing" section of the ESP-IDF Programming Guide
     // (API Reference -> Storage -> Virtual Filesystem) for a general overview of the implementation of VFS select().
     int ret = 0;
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
 
     ESP_LOGD(TAG, "esp_vfs_select starts with nfds = %d", nfds);
     if (timeout) {
@@ -1639,7 +1700,7 @@ int tcgetattr(int fd, struct termios *p)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1653,7 +1714,7 @@ int tcsetattr(int fd, int optional_actions, const struct termios *p)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1667,7 +1728,7 @@ int tcdrain(int fd)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1681,7 +1742,7 @@ int tcflush(int fd, int select)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1695,7 +1756,7 @@ int tcflow(int fd, int action)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1709,7 +1770,7 @@ pid_t tcgetsid(int fd)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;
@@ -1723,7 +1784,7 @@ int tcsendbreak(int fd, int duration)
 {
     const vfs_entry_t* vfs = get_vfs_for_fd(fd);
     const int local_fd = get_local_fd(vfs, fd);
-    struct _reent* r = __getreent();
+    [[maybe_unused]] struct _reent* r = __getreent();
     if (vfs == NULL || local_fd < 0) {
         __errno_r(r) = EBADF;
         return -1;

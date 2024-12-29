@@ -380,6 +380,7 @@ static bool test_dw_gdma_list_mode_invalid_block_cb(dw_gdma_channel_handle_t cha
     udata->count++;
     // clear the destination buffer
     memset(udata->dst_buffer_addr, 0, udata->dst_buffer_size);
+    esp_cache_msync(udata->dst_buffer_addr, udata->dst_buffer_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M);
     dw_gdma_block_markers_t markers = {
         .is_last = true,  // mark the next block as the last one
         .is_valid = true, // mark the block as valid so that the DMA can continue the transfer

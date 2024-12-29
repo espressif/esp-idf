@@ -21,6 +21,7 @@
 #include "soc/soc_caps.h"
 #include "hal/mcpwm_ll.h"
 #include "mcpwm_private.h"
+#include "esp_private/rtc_clk.h"
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define MCPWM_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -32,6 +33,10 @@
 #define MCPWM_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
 #define MCPWM_RCC_ATOMIC()
+#endif
+
+#if MCPWM_USE_RETENTION_LINK
+static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg);
 #endif
 
 static const char *TAG = "mcpwm";
@@ -59,6 +64,23 @@ mcpwm_group_t *mcpwm_acquire_group_handle(int group_id)
             group->group_id = group_id;
             group->intr_priority = -1;
             group->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
+#if MCPWM_USE_RETENTION_LINK
+            sleep_retention_module_t module = mcpwm_reg_retention_info[group_id].retention_module;
+            sleep_retention_module_init_param_t init_param = {
+                .cbs = {
+                    .create = {
+                        .handle = mcpwm_create_sleep_retention_link_cb,
+                        .arg = group,
+                    },
+                },
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
+            };
+            // we only do retention init here. Allocate retention module in the unit initialization
+            if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
+                // even though the sleep retention module init failed, MCPWM driver should still work, so just warning here
+                ESP_LOGW(TAG, "init sleep retention failed %d, power domain may be turned off during sleep", group_id);
+            }
+#endif // MCPWM_USE_RETENTION_LINK
             // enable APB to access MCPWM registers
             MCPWM_RCC_ATOMIC() {
                 mcpwm_ll_enable_bus_clock(group_id, true);
@@ -116,6 +138,15 @@ void mcpwm_release_group_handle(mcpwm_group_t *group)
         if (group->pm_lock) {
             esp_pm_lock_delete(group->pm_lock);
         }
+#if MCPWM_USE_RETENTION_LINK
+        const periph_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
+        if (sleep_retention_is_module_created(module_id)) {
+            sleep_retention_module_free(module_id);
+        }
+        if (sleep_retention_is_module_inited(module_id)) {
+            sleep_retention_module_deinit(module_id);
+        }
+#endif // MCPWM_USE_RETENTION_LINK
         free(group);
     }
     _lock_release(&s_platform.mutex);
@@ -257,3 +288,29 @@ esp_err_t mcpwm_set_prescale(mcpwm_group_t *group, uint32_t expect_module_resolu
 
     return ESP_OK;
 }
+
+#if MCPWM_USE_RETENTION_LINK
+static esp_err_t mcpwm_create_sleep_retention_link_cb(void *arg)
+{
+    mcpwm_group_t *group = (mcpwm_group_t *)arg;
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
+    esp_err_t err = sleep_retention_entries_create(mcpwm_reg_retention_info[group_id].regdma_entry_array,
+                                                   mcpwm_reg_retention_info[group_id].array_size,
+                                                   REGDMA_LINK_PRI_MCPWM, module_id);
+    return err;
+}
+void mcpwm_create_retention_module(mcpwm_group_t *group)
+{
+    int group_id = group->group_id;
+    sleep_retention_module_t module_id = mcpwm_reg_retention_info[group_id].retention_module;
+    _lock_acquire(&s_platform.mutex);
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
+        if (sleep_retention_module_allocate(module_id) != ESP_OK) {
+            // even though the sleep retention module create failed, MCPWM driver should still work, so just warning here
+            ESP_LOGW(TAG, "create retention module failed, power domain can't turn off");
+        }
+    }
+    _lock_release(&s_platform.mutex);
+}
+#endif // MCPWM_USE_RETENTION_LINK

@@ -441,7 +441,9 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
     if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
         IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_RPR_SRV) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT))) {
         bt_mesh_proxy_client_init();
     }
 
@@ -591,7 +593,9 @@ int bt_mesh_deinit(struct bt_mesh_deinit_param *param)
 
     if ((IS_ENABLED(CONFIG_BLE_MESH_PROVISIONER) &&
          IS_ENABLED(CONFIG_BLE_MESH_PB_GATT)) ||
-        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT)) {
+        IS_ENABLED(CONFIG_BLE_MESH_GATT_PROXY_CLIENT) ||
+        (IS_ENABLED(CONFIG_BLE_MESH_RPR_SRV) &&
+        IS_ENABLED(CONFIG_BLE_MESH_PB_GATT))) {
         bt_mesh_proxy_client_deinit();
     }
 

@@ -976,6 +976,11 @@ However, the driver can prevent the system from going into Light-sleep by acquir
 
 Likewise, whenever the driver creates an MCPWM capture timer instance, the driver guarantees that the power management lock is acquired when enabling the timer by :cpp:func:`mcpwm_capture_timer_enable`. And releases the lock in  :cpp:func:`mcpwm_capture_timer_disable`.
 
+.. only:: SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+
+    {IDF_TARGET_NAME} supports to retain the MCPWM register context before entering **Light-sleep** and restore them after woke up. Which means you don't have to re-init the MCPWM driver after the **Light-sleep**.
+
+    This feature can be enabled by setting the flag :cpp:member:`mcpwm_timer_config_t::allow_pd` or :cpp:member:`mcpwm_capture_timer_config_t::allow_pd`. It will allow the system to power down the MCPWM in Light-sleep, meanwhile save the MCPWM register context. It can help to save more power consumption with some extra cost of the memory.
 
 .. _mcpwm-iram-safe:
 

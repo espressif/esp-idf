@@ -22,6 +22,10 @@ if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     list(APPEND srcs "eth_connect.c")
 endif()
 
+if(CONFIG_EXAMPLE_CONNECT_THREAD)
+    list(APPEND srcs "thread_connect.c")
+endif()
+
 if(CONFIG_EXAMPLE_CONNECT_PPP)
     list(APPEND srcs "ppp_connect.c")
 endif()
@@ -29,7 +33,7 @@ endif()
 
 idf_component_register(SRCS "${srcs}"
                        INCLUDE_DIRS "include"
-                       PRIV_REQUIRES esp_netif driver esp_wifi vfs console esp_eth)
+                       PRIV_REQUIRES esp_netif esp_driver_gpio esp_driver_uart esp_wifi vfs console esp_eth openthread)
 
 if(CONFIG_EXAMPLE_PROVIDE_WIFI_CONSOLE_CMD)
     idf_component_optional_requires(PRIVATE console)
@@ -37,6 +41,10 @@ endif()
 
 if(CONFIG_EXAMPLE_CONNECT_ETHERNET)
     idf_component_optional_requires(PUBLIC esp_eth)
+endif()
+
+if(CONFIG_EXAMPLE_CONNECT_THREAD)
+    idf_component_optional_requires(PRIVATE openthread)
 endif()
 
 if(CONFIG_EXAMPLE_CONNECT_PPP)

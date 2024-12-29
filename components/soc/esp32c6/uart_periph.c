@@ -11,7 +11,8 @@
  Bunch of constants for every UART peripheral: GPIO signals, irqs, hw addr of registers etc
 */
 const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
-   { // HP UART0
+    {
+        // HP UART0
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U0TXD_GPIO_NUM,
@@ -44,7 +45,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART0_INTR_SOURCE,
     },
 
-    { // HP UART1
+    {
+        // HP UART1
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = U1TXD_GPIO_NUM,
@@ -77,7 +79,8 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
         .irq = ETS_UART1_INTR_SOURCE,
     },
 
-    { // LP UART0
+    {
+        // LP UART0
         .pins = {
             [SOC_UART_TX_PIN_IDX] = {
                 .default_gpio = LP_U0TXD_GPIO_NUM,
@@ -121,11 +124,11 @@ const uart_signal_conn_t uart_periph_signal[SOC_UART_NUM] = {
  * UART_HWFC_CONF_SYNC_REG, UART_SLEEP_CONF0_REG, UART_SLEEP_CONF1_REG, UART_SLEEP_CONF2_REG,
  * UART_SWFC_CONF0_SYNC_REG, UART_SWFC_CONF1_REG, UART_TXBRK_CONF_SYNC_REG, UART_IDLE_CONF_SYNC_REG,
  * UART_RS485_CONF_SYNC_REG, UART_AT_CMD_PRECNT_SYNC_REG, UART_AT_CMD_POSTCNT_SYNC_REG, UART_AT_CMD_GAPTOUT_SYNC_REG,
- * UART_AT_CMD_CHAR_SYNC_REG, UART_MEM_CONF_REG, UART_TOUT_CONF_SYNC_REG, UART_ID_REG
+ * UART_AT_CMD_CHAR_SYNC_REG, UART_MEM_CONF_REG, UART_TOUT_CONF_SYNC_REG, UART_CLK_CONF_REG, UART_ID_REG
  */
-#define UART_RETENTION_ADDR_MAP_REGS_CNT 21
+#define UART_RETENTION_ADDR_MAP_REGS_CNT 22
 #define UART_RETENTION_REGS_BASE(i) UART_INT_ENA_REG(i)
-static const uint32_t uart_regs_map[4] = {0x7fff6d, 0x10, 0x0, 0x0};
+static const uint32_t uart_regs_map[4] = {0x807fff6d, 0x10, 0x0, 0x0};
 #define UART_SLEEP_RETENTION_ENTRIES(uart_num) { \
     [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_UART_LINK(0x00), \
                                                UART_RETENTION_REGS_BASE(uart_num), UART_RETENTION_REGS_BASE(uart_num), \

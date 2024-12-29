@@ -2,4 +2,4 @@
 # This is to avoid any timing impact on test behavior
 CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
 
-CONFIG_NEWLIB_TIME_SYSCALL_USE_RTC=y
+CONFIG_LIBC_TIME_SYSCALL_USE_RTC=y

@@ -17,6 +17,8 @@ extern "C" {
 #include "esp_regdma.h"
 #include "soc/retention_periph_defs.h"
 
+#define SLEEP_RETENTION_MODULE_BITMAP_SZ    ((SLEEP_RETENTION_MODULE_MAX >> 5) + 1)
+
 /**
  * @file sleep_retention.h
  *
@@ -24,7 +26,10 @@ extern "C" {
  * includes sleep retention list creation, destruction and debugging interfaces.
  */
 typedef periph_retention_module_t           sleep_retention_module_t;
-typedef periph_retention_module_bitmap_t    sleep_retention_module_bitmap_t;
+typedef struct {
+#define RETENTION_MODULE_BITMAP_INIT(module) { .bitmap[(SLEEP_RETENTION_MODULE_ ## module) >> 5] = BIT((SLEEP_RETENTION_MODULE_ ## module) % 32) }
+    uint32_t bitmap[SLEEP_RETENTION_MODULE_BITMAP_SZ];
+} sleep_retention_module_bitmap_t;
 typedef regdma_entry_buf_t                  sleep_retention_entries_t;
 typedef regdma_entries_config_t             sleep_retention_entries_config_t;
 
@@ -58,6 +63,11 @@ typedef enum {
  *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
  */
 esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t retent[], int num, regdma_link_priority_t priority, sleep_retention_module_t module);
+
+/**
+ * @brief Dump the initialization status of all modules.
+*/
+void sleep_retention_dump_modules(FILE *out);
 
 /**
  * @brief Dump all runtime sleep retention linked lists
@@ -140,6 +150,23 @@ esp_err_t sleep_retention_module_allocate(sleep_retention_module_t module);
 esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
 
 /**
+ * @brief Force take the power lock so that during sleep the power domain won't be powered off.
+ *
+ * @return
+ *      - ESP_OK if success
+ *      - other value when the internal `sleep_retention_module_init` fails.
+*/
+esp_err_t sleep_retention_power_lock_acquire(void);
+
+/**
+ * @brief Release the power lock so that the peripherals' power domain can be powered off.
+ *        Please note that there is an internal reference counter and the power domain will be kept on until same number
+ *        of `sleep_retention_power_lock_release` is called as `sleep_retention_power_lock_acquire`.
+ * @return always ESP_OK
+*/
+esp_err_t sleep_retention_power_lock_release(void);
+
+/**
  * @brief Get all initialized modules that require sleep retention
  *
  * This is an unprotected interface for getting a bitmap of all modules that
@@ -149,7 +176,7 @@ esp_err_t sleep_retention_module_free(sleep_retention_module_t module);
  *
  * @return the bitmap for all modules that require sleep retention
  */
-uint32_t sleep_retention_get_inited_modules(void);
+sleep_retention_module_bitmap_t sleep_retention_get_inited_modules(void);
 
 /**
  * @brief Get all created modules that require sleep retention
@@ -162,7 +189,74 @@ uint32_t sleep_retention_get_inited_modules(void);
  * @return the bitmap for all modules that have successfully created a sleep
  * retention context
  */
-uint32_t sleep_retention_get_created_modules(void);
+sleep_retention_module_bitmap_t sleep_retention_get_created_modules(void);
+
+/**
+ * @brief Get the initialization state of module
+ *
+ * @param module   module number
+ *
+ * @return false if the module is not initialized or the module number is
+ * invalid, otherwise return true
+ */
+bool sleep_retention_is_module_inited(sleep_retention_module_t module);
+
+/**
+ * @brief Get the creation state of module
+ *
+ * @param module   module number
+ *
+ * @return false if the module is not created or the module number is
+ * invalid, otherwise return true
+ */
+bool sleep_retention_is_module_created(sleep_retention_module_t module);
+
+/**
+ * @brief Calculates the bitwise logical and of the module bitmap and return results
+ *
+ * This is an unprotected interface. It can only be called by the sleep procedure.
+ *
+ * @param op0   module bitmap operator 0
+ * @param op1   module bitmap operator 1
+ *
+ * @return the bitwise logical and result of module bitmap
+ */
+sleep_retention_module_bitmap_t sleep_retention_module_bitmap_and(sleep_retention_module_bitmap_t op0, sleep_retention_module_bitmap_t op1);
+
+/**
+ * @brief Calculates the bitwise logical or of the module bitmap and return results
+ *
+ * This is an unprotected interface. It can only be called by the sleep procedure.
+ *
+ * @param op0   module bitmap operator 0
+ * @param op1   module bitmap operator 1
+ *
+ * @return the bitwise logical or result of module bitmap
+ */
+sleep_retention_module_bitmap_t sleep_retention_module_bitmap_or(sleep_retention_module_bitmap_t op0, sleep_retention_module_bitmap_t op1);
+
+/**
+ * @brief Calculates the bitwise logical not of the module bitmap and return results
+ *
+ * This is an unprotected interface. It can only be called by the sleep procedure.
+ *
+ * @param op0   module bitmap operator
+ *
+ * @return the bitwise logical not result of module bitmap
+ */
+sleep_retention_module_bitmap_t sleep_retention_module_bitmap_not(sleep_retention_module_bitmap_t op);
+
+/**
+ * @brief Compares the module bitmap values are equal and return results
+ *
+ * This is an unprotected interface. It can only be called by the sleep procedure.
+ *
+ * @param op0   module bitmap operator 0
+ * @param op1   module bitmap operator 1
+ *
+ * @return If the module bitmap values are equal then return true, otherwise return false
+ */
+bool sleep_retention_module_bitmap_eq(sleep_retention_module_bitmap_t op0, sleep_retention_module_bitmap_t op1);
 
 /**
  * @brief Software trigger REGDMA to do extra linked list retention

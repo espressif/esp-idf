@@ -1,7 +1,7 @@
 :orphan:
 
 安全启动 (secure boot) v2
-============================
+=========================
 
 :link_to_translation:`en:[English]`
 
@@ -9,7 +9,7 @@
 
 {IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 或 ECDSA-192", esp32c6="RSA-3072、ECDSA-256 或 ECDSA-192", esp32h2="RSA-3072、ECDSA-256 或 ECDSA-192", esp32p4="RSA-3072、ECDSA-256 或 ECDSA-192", esp32c5="RSA-3072、ECDSA-256、或 ECDSA-192", esp32c61="ECDSA-256 或 ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32c5="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。"}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32h2="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。", esp32p4="推荐使用 RSA，其验证时间更短。可以在菜单中选择 RSA 和 ECDSA 方案。"}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="（v3.0 及以上版本）", esp32c3="（v0.3 及以上版本）"}
 
@@ -31,7 +31,7 @@
 
         芯片版本低于 v3.0 的 ESP32 安全启动请参阅 :doc:`secure-boot-v1`。如果当前芯片版本支持安全启动 v2，推荐使用此模式，相比安全启动 v1 更安全且灵活。
 
-    安全启动 v2 使用基于 {IDF_TARGET_SBV2_SCHEME} 的应用程序和 :ref:`second-stage-bootloader` 验证。若需要使用 {IDF_TARGET_SBV2_SCHEME} 方案对应用程序签名，且无需对引导加载程序签名，同样可以参考本文档。
+    安全启动 v2 使用基于 {IDF_TARGET_SBV2_SCHEME} 的应用程序和 :ref:`second-stage-bootloader` 验证。若需要使用 {IDF_TARGET_SBV2_SCHEME} 方案对应用程序签名，且无需对引导加载程序 (bootloader) 签名，同样可以参考本文档。
 
 .. only:: esp32
 
@@ -47,7 +47,7 @@
     在本指南中，最常用的命令形式为 ``idf.py secure-<command>``，这是对应 ``espsecure.py <command>`` 的封装。基于 ``idf.py`` 的命令能提供更好的用户体验，但与基于 ``espsecure.py`` 的命令相比，可能会损失一部分高级功能。
 
 背景
-----------
+----
 
 安全启动通过检查每个启动的软件是否已签名来确保设备不会运行任何未经授权（即未签名）的代码。在 {IDF_TARGET_NAME} 上，这些软件包括二级引导加载程序和每个应用程序的二进制文件。注意，一级 (ROM) 引导加载程序是无法更改的 ROM 代码，因此不需要签名。
 
@@ -71,7 +71,7 @@
 
 
 优势
-----------
+----
 
 - {IDF_TARGET_SBV2_SCHEME} 的公钥存储在设备上，而相应的 {IDF_TARGET_SBV2_SCHEME} 私钥存储在私密位置，设备无法访问。
 
@@ -94,7 +94,7 @@
 
 
 使用安全启动 v2
-----------------------
+---------------
 
 以下为使用安全启动 v2 流程的概述。有关如何启用安全启动，请参阅 :ref:`secure-boot-v2-howto`。
 
@@ -136,7 +136,7 @@
 .. _signature-block-format:
 
 签名块格式
-----------------------
+----------
 
 签名块以 4 KB 的整数倍为起始位置，拥有独立 flash 扇区。签名计算覆盖了镜像中的所有字节，包括填充字节，请参阅 :ref:`secure_padding`。
 
@@ -152,21 +152,21 @@
 
         .. only:: not esp32p4 or not esp32c5
 
-        .. list-table:: 签名验证耗时比较
-            :widths: 10 10 20
-            :header-rows: 1
+            .. list-table:: 签名验证耗时比较
+                :widths: 10 10 20
+                :header-rows: 1
 
-            * - **验证方案**
-              - **耗时**
-              - **CPU 频率**
-            * - RSA-3072
-              - {IDF_TARGET_RSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
-            * - ECDSA-P256
-              - {IDF_TARGET_ECDSA_TIME}
-              - {IDF_TARGET_CPU_FREQ}
+                * - **验证方案**
+                  - **耗时**
+                  - **CPU 频率**
+                * - RSA-3072
+                  - {IDF_TARGET_RSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
+                * - ECDSA-P256
+                  - {IDF_TARGET_ECDSA_TIME}
+                  - {IDF_TARGET_CPU_FREQ}
 
-        上表比较了特定方案中验证签名所需的时间，不代表启动时间。
+            上表比较了特定方案中验证签名所需的时间，不代表启动时间。
 
 各签名块内容如下表所示：
 
@@ -216,7 +216,7 @@
 
     .. note::
 
-      R 和 M' 用于硬件辅助的蒙哥马利乘法 (Montgomery Multiplication)。
+        R 和 M' 用于硬件辅助的蒙哥马利乘法 (Montgomery Multiplication)。
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
@@ -264,7 +264,7 @@
 .. _secure_padding:
 
 安全填充
---------------
+--------
 
 在安全启动 v2 方案中，应用程序镜像经过处理，会填充到与 flash MMU 页面大小边界对齐，确保只有经过验证的内容会映射到内部地址空间，这称为安全填充。填充后会进行镜像签名计算，随后将签名块 (4 KB) 附加到镜像上。
 
@@ -301,7 +301,7 @@
 .. _verify_signature-block:
 
 验证签名块
------------------------------
+----------
 
 如果签名块的第一个字节是 ``0xe7``，并且偏移量 1196 处存储了有效的 CRC32，则签名块有效，否则无效。
 
@@ -309,7 +309,7 @@
 .. _verify_image:
 
 验证镜像
------------------------------
+--------
 
 如果存储在某个签名块中的公钥是适用于当前设备的有效公钥，且该签名块中存储的签名与从 flash 中读取的镜像数据计算出的签名匹配，则该镜像通过验证。
 
@@ -327,10 +327,10 @@
 
 .. only:: SOC_SECURE_BOOT_V2_ECC and SOC_SECURE_BOOT_V2_RSA
 
-    1. 使用公钥，采用 RSA-PSS（RFC8017 的第 8.1.2 节）算法或 ECDSA（RFC6090 的第 5.3.3 节）算法，验证引导加载程序镜像的签名，并与步骤 (2) 中计算的镜像摘要比较。
+    3. 使用公钥，采用 RSA-PSS（RFC8017 的第 8.1.2 节）算法或 ECDSA（RFC6090 的第 5.3.3 节）算法，验证引导加载程序镜像的签名，并与步骤 (2) 中计算的镜像摘要比较。
 
 
-bootloader 大小
+引导加载程序的大小
 ------------------
 
 启用安全启动和/或 flash 加密都会增加引导加载程序的大小，因此可能需要更新分区表偏移量，请参阅 :ref:`bootloader-size`。
@@ -341,7 +341,7 @@ bootloader 大小
 .. _efuse-usage:
 
 使用 eFuse
------------
+----------
 
 .. only:: esp32
 
@@ -373,7 +373,7 @@ bootloader 大小
 .. _secure-boot-v2-howto:
 
 启用安全启动 v2
-----------------------------
+---------------
 
 1. 打开 :ref:`project-configuration-menu`，在 ``Security features`` 下设置 ``Enable hardware Secure Boot in bootloader`` 以启用安全启动模式。
 
@@ -399,11 +399,11 @@ bootloader 大小
 
 .. important::
 
-   通过此方法生成的签名密钥将使用操作系统和其 Python 安装中提供的最佳随机数源，在 OSX/Linux 上为 `/dev/urandom`，在 Windows 上为 `CryptGenRandom()`。如果此随机数源不足以提供足够的安全性，那么生成的私钥也不足以提供足够的安全性。
+    通过此方法生成的签名密钥将使用操作系统和其 Python 安装中提供的最佳随机数源，在 OSX/Linux 上为 `/dev/urandom`，在 Windows 上为 `CryptGenRandom()`。如果此随机数源不足以提供足够的安全性，那么生成的私钥也不足以提供足够的安全性。
 
 .. important::
 
-   在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-v2-generate-key`。
+    在生产环境下，建议使用 OpenSSL 或其他行业标准的加密程序生成密钥对，详情请参阅 :ref:`secure-boot-v2-generate-key`。
 
 7. 运行 ``idf.py bootloader`` 构建启用了安全启动的引导加载程序，构建输出中会包含一个烧录命令的提示，使用 ``esptool.py write_flash`` 烧录。
 
@@ -413,23 +413,23 @@ bootloader 大小
 
 .. note::
 
-  如果启用了安全启动，``idf.py flash`` 不会烧录引导加载程序。
+    如果启用了安全启动，``idf.py flash`` 不会烧录引导加载程序。
 
-10.  重置 {IDF_TARGET_NAME}，它将启动你烧录的二级引导加载程序。该二级引导加载程序会在芯片上启用安全启动，然后验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
-
-.. note::
-
-  在烧录了有效的分区表和应用程序镜像之前，安全启动不会启用，避免在系统完全配置前发生意外情况。
+10.  重置 {IDF_TARGET_NAME} 将启动烧录的二级引导加载程序。该二级引导加载程序会在芯片上启用安全启动，然后验证应用程序镜像签名，并启动应用程序。请查看 {IDF_TARGET_NAME} 的串行控制器输出，确保已启用安全启动，且没有因构建配置发生错误。
 
 .. note::
 
-  如果在初次启动过程中重置或关闭了 {IDF_TARGET_NAME}，它会在下次启动时重新开始上述步骤。
+    在烧录了有效的分区表和应用程序镜像之前，安全启动不会启用，避免在系统完全配置前发生意外情况。
+
+.. note::
+
+    如果在初次启动过程中重置或关闭了 {IDF_TARGET_NAME}，它会在下次启动时重新开始上述步骤。
 
 11. 在后续启动过程中，安全启动硬件会验证二级引导加载程序是否更改，二级引导加载程序会使用其附加的签名块中经验证的公钥部分，验证已签名的应用程序镜像。
 
 
 启用安全启动后的限制
------------------------------------------
+--------------------
 
 - 任何更新过的引导加载程序或应用程序都需要使用与已存储在 eFuse 中的摘要相匹配的密钥来签名。
 
@@ -438,28 +438,28 @@ bootloader 大小
 - 一旦启用安全启动，就无法再对 eFuse 密钥进行读保护，这可以避免攻击者对存储公共密钥摘要的 eFuse 块进行读保护，进而导致系统无法验证和处理签名，系统服务无法正常运行。有关读保护密钥的更多信息，请参阅下方详细说明。
 
 烧录读保护密钥
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~
 
 **读保护密钥**：
 以下密钥受到读保护后，相应的硬件将直接访问这些密钥（软件无法读取）：
 
 .. list::
 
-  :SOC_FLASH_ENC_SUPPORTED:* flash 加密密钥
+    :SOC_FLASH_ENC_SUPPORTED:* flash 加密密钥
 
-  :SOC_HMAC_SUPPORTED:* HMAC 密钥
+    :SOC_HMAC_SUPPORTED:* HMAC 密钥
 
-  :SOC_ECDSA_SUPPORTED:* ECDSA 密钥
+    :SOC_ECDSA_SUPPORTED:* ECDSA 密钥
 
-  :SOC_KEY_MANAGER_SUPPORTED:* 密钥管理器密钥
+    :SOC_KEY_MANAGER_SUPPORTED:* 密钥管理器密钥
 
 **不受读保护的密钥**：
 因软件访问需要（软件可读取），以下密钥不受读保护：
 
 .. list::
 
-  :SOC_SECURE_BOOT_SUPPORTED:* 安全启动公共密钥摘要
-  * 用户数据
+    :SOC_SECURE_BOOT_SUPPORTED:* 安全启动公共密钥摘要
+    * 用户数据
 
 启用安全启动后，默认禁用 eFuses 读保护功能。如后续需在应用程序中对某个 eFuse（例如上述读保护密钥列表中的密钥）进行读保护，请在启用安全启动的同时启用配置项 :ref:`CONFIG_SECURE_BOOT_V2_ALLOW_EFUSE_RD_DIS`。
 
@@ -467,22 +467,22 @@ bootloader 大小
 
 .. note::
 
-   如果在启用安全启动时，第二阶段引导加载程序启用了 :doc:`/security/flash-encryption`，则首次启动时生成的 flash 加密密钥已经受到读保护。
+    如果在启用安全启动时，二级引导加载程序启用了 :doc:`/security/flash-encryption`，则首次启动时生成的 flash 加密密钥已经受到读保护。
 
 .. _secure-boot-v2-generate-key:
 
 生成安全启动签名密钥
-----------------------------------
+--------------------
 
 根据构建系统提示，使用 ``idf.py secure-generate-signing-key`` 命令生成新签名密钥。
 
 .. only:: esp32 or SOC_SECURE_BOOT_V2_RSA
 
-   参数 ``--version 2`` 会为安全启动 v2 生成 RSA 3072 私钥。此外，也可以传递 ``--scheme rsa3072`` 生成 RSA 3072 私钥。
+    参数 ``--version 2`` 会为安全启动 v2 生成 RSA 3072 私钥。此外，也可以传递 ``--scheme rsa3072`` 生成 RSA 3072 私钥。
 
 .. only:: SOC_SECURE_BOOT_V2_ECC
 
-   传递 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
+    传递 ``--version 2 --scheme ecdsa256`` 或 ``--version 2 --scheme ecdsa192`` 选择 ECDSA 方案，生成相应的 ECDSA 私钥。
 
 签名密钥的强度取决于 (a) 系统的随机数源和 (b) 所用算法的正确性。对于生产设备，建议从具有高质量熵源的系统生成签名密钥，并使用最佳的可用 {IDF_TARGET_SBV2_SCHEME} 密钥生成工具。
 
@@ -502,13 +502,13 @@ bootloader 大小
 
     .. code-block::
 
-      openssl ecparam -name prime192v1 -genkey -noout -out my_secure_boot_signing_key.pem
+        openssl ecparam -name prime192v1 -genkey -noout -out my_secure_boot_signing_key.pem
 
     生成 ECC NIST256p 曲线密钥
 
     .. code-block::
 
-      openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.pem
+        openssl ecparam -name prime256v1 -genkey -noout -out my_secure_boot_signing_key.pem
 
 注意，安全启动系统的强度取决于能否保持签名密钥的私密性。
 
@@ -516,10 +516,10 @@ bootloader 大小
 .. _remote-sign-v2-image:
 
 远程镜像签名
-------------------------
+------------
 
 使用 ``idf.py`` 进行签名
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 对于生产构建，将签名密钥存储在远程签名服务器上，而不是本地构建机器上，是一种比较好的方案，这也是默认的 ESP-IDF 安全启动配置。可以使用命令行工具 ``espsecure.py`` 在远程系统上为应用程序镜像和分区表数据签名，供安全启动使用。
 
@@ -529,17 +529,17 @@ bootloader 大小
 
 .. code-block::
 
-  idf.py secure-sign-data BINARY_FILE --keyfile PRIVATE_SIGNING_KEY
+    idf.py secure-sign-data BINARY_FILE --keyfile PRIVATE_SIGNING_KEY
 
 上述命令将镜像签名附加到现有的二进制文件中，可以使用 `--output` 参数将签名后的二进制文件写入单独的文件：
 
 .. code-block::
 
-  idf.py secure-sign-data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
+    idf.py secure-sign-data --keyfile PRIVATE_SIGNING_KEY --output SIGNED_BINARY_FILE BINARY_FILE
 
 
 使用预计算的签名进行签名
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 如果存在为镜像生成的有效预计算签名及相应公钥，可以使用这些签名生成一个签名扇区，并将其附加到镜像中。注意，预计算的签名应计算在镜像中的所有字节，包括安全填充字节。
 
@@ -547,13 +547,13 @@ bootloader 大小
 
 .. code-block::
 
-  idf.py secure-sign-data --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
+    idf.py secure-sign-data --pub-key PUBLIC_SIGNING_KEY --signature SIGNATURE_FILE --output SIGNED_BINARY_FILE BINARY_FILE
 
 上述命令会验证签名，生成签名块（请参阅 :ref:`signature-block-format`），并将其附加到二进制文件中。
 
 
 使用外部硬件安全模块 (HSM) 进行签名
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 为了提高安全性，可能需要使用外部硬件安全模块 (HSM) 存储私钥，该私钥无法直接访问，但具备一个接口，可以生成二进制文件及其相应公钥的签名。
 
@@ -563,17 +563,17 @@ bootloader 大小
 
     .. note::
 
-      在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append_signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
+        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。选项 ``--append_signatures`` 支持将多个签名（最多 3 个）附加到镜像中。
 
 .. only:: not SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
     .. note::
 
-      在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。
+        在上述三种远程签名工作流程中，已签名的二进制文件将写入提供给 ``--output`` 参数的文件名中。
 
 
 使用安全启动的建议
---------------------------
+------------------
 
 * 在具备高质量熵源的系统上生成签名密钥。
 * 时刻对签名密钥保密，泄漏此密钥将危及安全启动系统。
@@ -584,7 +584,7 @@ bootloader 大小
 .. only:: SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS
 
     密钥管理
-    --------------
+    --------
 
     * 应独立计算并分别存储 1 到 3 个 {IDF_TARGET_SBV2_KEY} 公钥对（密钥 #0, #1, #2）。
     * 完成烧录后，应设置 KEY_DIGEST eFuse 为写保护位。
@@ -596,11 +596,11 @@ bootloader 大小
 
 
     多个密钥管理
-    -------------
+    ------------
 
     * 在烧录引导加载程序之前，应使用设备整个生命周期所需的所有私钥对引导加载程序签名。
-    * 构建系统每次只能使用一个私钥签名，如果需要，你必须手动运行命令以附加更多签名。
-    * 你可以使用 ``idf.py secure-sign-data`` 的附加功能，此命令也将在启用安全启动 v2 的引导加载程序编译的末尾显示。
+    * 构建系统每次只能使用一个私钥签名，如果需要，必须手动运行命令以附加更多签名。
+    * 可以使用 ``idf.py secure-sign-data`` 的附加功能，此命令也将在启用安全启动 v2 的引导加载程序编译的末尾显示。
 
     .. code-block::
 
@@ -616,7 +616,7 @@ bootloader 大小
     .. _secure-boot-v2-key-revocation:
 
     撤销密钥管理
-    --------------
+    ------------
 
     * 密钥按线性顺序处理，即密钥 #0、密钥 #1、密钥 #2。
     * 撤销一个密钥后，其余未被撤销的密钥仍可用于应用程序签名。例如，如密钥 #1 被撤销，仍然可以使用密钥 #0 和密钥 #2 给应用程序签名。
@@ -630,7 +630,7 @@ bootloader 大小
         如果在开发流程中需要保留未使用摘要槽，则应从外部启用安全启动 (:ref:`enable-secure-boot-v2-externally`)，而不是在启动设备时启用安全启动，这样引导加载程序就无需启用安全启动，从而避免安全隐患。
 
     保守方法
-    ~~~~~~~~~~~~
+    ~~~~~~~~
 
     假设一个受信任的私钥 (N-1) 受到威胁，需要升级到新的密钥对 (N)。
 
@@ -652,7 +652,7 @@ bootloader 大小
     .. _secure-boot-v2-aggressive-key-revocation:
 
     激进方法
-    ~~~~~~~~~~~~~~
+    ~~~~~~~~
 
     ROM 代码具备一项额外功能，即在签名验证失败时可以撤销公钥摘要。
 
@@ -666,49 +666,49 @@ bootloader 大小
 .. _secure-boot-v2-technical-details:
 
 技术细节
------------------
+--------
 
-以下章节包含安全启动元件的详细参考描述。
+以下章节包含对各安全启动要素的详细参考描述。
 
 安全启动已集成到 ESP-IDF 构建系统中，因此 ``idf.py build`` 将进行应用程序镜像签名。启用 :ref:`CONFIG_SECURE_BOOT_BUILD_SIGNED_BINARIES` 后，``idf.py bootloader`` 将生成一个已签名的引导加载程序。
 
-另外，也可以使用 ``idf.py`` 或 ``openssl`` 工具生成独立签名并进行验证。建议使用 ``idf.py``，但如果需在非 ESP-IDF 环境中生成或验证签名，也可以使用 ``openssl`` 命令，因为安全引导 v2 生成签名符合标准的签名算法。
+当然，也可以使用 ``idf.py`` 或 ``openssl`` 工具生成独立的签名并对其进行验证。推荐使用 ``idf.py``，但如果需要在非 ESP-IDF 环境中生成或验证签名，也可以使用 ``openssl`` 命令，安全启动 v2 的签名生成符合标准签名算法。
 
-用 ``idf.py`` 生成和验证签名
+使用 ``idf.py`` 生成并验证签名
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. 二进制镜像签名：
 
 .. code-block::
 
-  idf.py secure-sign-data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
+    idf.py secure-sign-data --keyfile ./my_signing_key.pem --output ./image_signed.bin image-unsigned.bin
 
 Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 签名私钥的 PEM 文件。
 
-2. 验证签名的二进制镜像：
+2. 验证二进制镜像签名：
 
-  .. code-block::
+.. code-block::
 
     idf.py secure-verify-signature --keyfile ./my_signing_key.pem image_signed.bin
 
-Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
+Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 签名公钥/私钥的 PEM 文件。
 
-用 OpenSSL 生成和验证签名
-~~~~~~~~~~~~~~~~~~~~~~~~~
+使用 OpenSSL 生成并验证签名
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-最好使用 ``idf.py`` 工具生成和验证签名，但如果需要使用 OpenSSL 执行这些操作，可参考以下命令：
+一般推荐使用 ``idf.py`` 工具来生成并验证签名，如果想通过 OpenSSL 生成并验证签名，请参照下列命令：
 
-1. 生成需要计算签名的二进制文件镜像的摘要。
+1. 生成镜像二进制文件的摘要。
 
     .. code-block:: bash
 
         openssl dgst -sha256 -binary BINARY_FILE  > DIGEST_BINARY_FILE
 
-2. 使用上一步计算出的摘要生成该镜像的签名。
+2. 使用上述摘要，生成镜像签名。
 
-    .. only:: SOC_SECURE_BOOT_V2_RSA
+   .. only:: SOC_SECURE_BOOT_V2_RSA
 
-        用于生成 RSA-PSS 签名：
+        生成 RSA-PSS 签名：
 
             .. code-block:: bash
 
@@ -722,7 +722,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
     .. only:: SOC_SECURE_BOOT_V2_ECC
 
-        用于生成 ECDSA 签名：
+        生成 ECDSA 签名：
 
             .. code-block:: bash
 
@@ -735,7 +735,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
     .. only:: SOC_SECURE_BOOT_V2_RSA
 
-        For verifying an RSA-PSS signature:
+        验证 RSA-PSS 签名：
 
             .. code-block:: bash
 
@@ -749,7 +749,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
     .. only:: SOC_SECURE_BOOT_V2_ECC
 
-        用于验证 ECDSA 签名：
+        验证 ECDSA 签名：
 
             .. code-block:: bash
 
@@ -762,7 +762,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 .. _secure-boot-v2-and-flash-encr:
 
 安全启动 & flash 加密
-------------------------------
+---------------------
 
 如果使用安全启动时没有启用 :doc:`flash-encryption`，可能会发生 ``time-of-check to time-of-use`` 攻击，即在验证并运行镜像后交换 flash 内容。因此，建议同时使用这两个功能。
 
@@ -770,7 +770,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
     .. important::
 
-       {IDF_TARGET_NAME} 只有一个 eFuse 密钥块，用于存储两种密钥：安全启动和 flash 加密，但 eFuse 密钥块只能烧录一次，因此建议同时烧录这两种密钥。注意，``Secure Boot`` 和 ``Flash Encryption`` 无法分别启用，否则后续写入 eFuse 密钥块将返回错误。
+        {IDF_TARGET_NAME} 只有一个 eFuse 密钥块，用于存储两种密钥：安全启动和 flash 加密，但 eFuse 密钥块只能烧录一次，因此建议同时烧录这两种密钥。注意，``Secure Boot`` 和 ``Flash Encryption`` 无法分别启用，否则后续写入 eFuse 密钥块将返回错误。
 
 
 .. _signed-app-verify-v2:
@@ -798,7 +798,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 .. _signed-app-verify-v2-howto:
 
 启用已签名的应用程序验证
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~
 
 1. 打开 :ref:`project-configuration-menu` > ``Security features``。
 
@@ -812,7 +812,7 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
 .. only:: SOC_SECURE_BOOT_V2_ECC and not SOC_SECURE_BOOT_V2_RSA
 
-    1. 确保 ``App Signing Scheme`` 设置为 ``ECDSA (v2)``。
+    2. 确保 ``App Signing Scheme`` 设置为 ``ECDSA (v2)``。
 
 .. only:: SOC_SECURE_BOOT_V2_RSA and SOC_SECURE_BOOT_V2_ECC
 
@@ -831,11 +831,11 @@ Keyfile 是包含 {IDF_TARGET_SBV2_KEY} 公钥/私钥签名的 PEM 文件。
 
 
 进阶功能
------------------
+--------
 
 JTAG 调试
-~~~~~~~~~~~~~~
+~~~~~~~~~
 
-启用安全启动模式时，eFuse 会默认禁用 JTAG。初次启动时，引导加载程序即禁用 JTAG 调试功能，并启用安全启动模式。
+启用安全启动模式时，eFuse 会默认禁用 JTAG。初次启动时，引导加载程序禁用 JTAG 调试功能，并启用安全启动模式。
 
 有关在启用安全启动或已签名应用程序验证的情况下使用 JTAG 调试的更多信息，请参阅 :ref:`jtag-debugging-security-features`。

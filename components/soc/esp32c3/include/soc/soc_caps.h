@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -216,8 +216,11 @@
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PCM        (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
-#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
+#define SOC_I2S_SUPPORTS_PCM2PDM    (1)     // Support to write PCM format but output PDM format data with the help of PCM to PDM filter
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)     // Support to input raw PDM format data
 #define SOC_I2S_PDM_MAX_TX_LINES    (2)
+#define SOC_I2S_PDM_MAX_RX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_TDM        (1)
 
 /*-------------------------- LEDC CAPS ---------------------------------------*/
@@ -449,6 +452,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D2           (1)     /*!< Support XTAL_D2 clock as the LP_FAST clock source */
 
 /*-------------------------- Temperature Sensor CAPS -------------------------------------*/
 #define SOC_TEMPERATURE_SENSOR_SUPPORT_FAST_RC                (1)

@@ -112,7 +112,8 @@
 // On Linux, we don't need __fbufsize (see comments below), and
 // __fbufsize not available on MacOS (which is also considered "Linux" target)
 #include <stdio_ext.h> // for __fbufsize
-#endif
+#endif // !CONFIG_IDF_TARGET_LINUX
+#include <stddef.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -226,10 +227,15 @@ static void flushWrite(void) {
 // Performance on Linux is not considered as critical as on chip targets. Additionally,
 // MacOS does not have __fbufsize.
 #if !CONFIG_IDF_TARGET_LINUX
-    if (__fbufsize(stdout) > 0) {
+#if CONFIG_LIBC_PICOLIBC
+    if (((struct __file_bufio *)(stdout))->len > 0)
+#else // CONFIG_LIBC_PICOLIBC
+    if (__fbufsize(stdout) > 0)
+#endif // CONFIG_LIBC_PICOLIBC
+    {
         fflush(stdout);
     }
-#endif
+#endif // !CONFIG_IDF_TARGET_LINUX
     fsync(fileno(stdout));
 }
 

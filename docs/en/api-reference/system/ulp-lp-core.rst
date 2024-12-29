@@ -287,11 +287,16 @@ When programming the LP core, it can sometimes be challenging to figure out why 
 
 * Share program state through shared variables: as described in :ref:`ulp-lp-core-access-variables`, both the main CPU and the ULP core can easily access global variables in RTC memory. Writing state information to such a variable from the ULP and reading it from the main CPU can help you discern what is happening on the ULP core. The downside of this approach is that it requires the main CPU to be awake, which will not always be the case. Keeping the main CPU awake might even, in some cases, mask problems, as some issues may only occur when certain power domains are powered down.
 
-* Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP-UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use  esp-idf-monitor_., e.g.:
+* Panic handler: the LP core has a panic handler that can dump the state of the LP core registers by the LP-UART when an exception is detected. To enable the panic handler, set the :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` option to ``y``. This option can be kept disabled to reduce LP-RAM usage by the LP core application. To recover a backtrace from the panic dump, it is possible to use ``idf.py monitor``.
+
+.. warning::
+
+    If multiple ULP applications are used in a single project, backtrace decoding might not work correctly. In such cases, it is recommended to use the esp-idf-monitor_ tool directly with the correct ULP ELF file:
 
     .. code-block:: bash
 
         python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+
 
 Debugging ULP LP Core Applications with GDB and OpenOCD
 -------------------------------------------------------

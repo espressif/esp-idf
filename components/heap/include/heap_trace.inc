@@ -122,6 +122,7 @@ static HEAP_IRAM_ATTR __attribute__((noinline)) void *trace_malloc(size_t alignm
         .address = p,
         .ccount = ccount,
         .size = size,
+        .freed = false,
     };
     get_call_stack(rec.alloced_by);
     record_allocation(&rec);

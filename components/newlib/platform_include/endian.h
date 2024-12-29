@@ -41,6 +41,7 @@
 
 #pragma once
 
+#include <sdkconfig.h>
 #include <stdint.h>
 
 /*
@@ -65,6 +66,7 @@ extern "C" {
  * Host to big endian, host to little endian, big endian to host, and little
  * endian to host byte order functions as detailed in byteorder(9).
  */
+#if CONFIG_LIBC_NEWLIB
 #if _BYTE_ORDER == _LITTLE_ENDIAN
 #define htobe16(x)  bswap16((x))
 #define htobe32(x)  bswap32((x))
@@ -94,6 +96,7 @@ extern "C" {
 #define le32toh(x)  bswap32((x))
 #define le64toh(x)  bswap64((x))
 #endif /* _BYTE_ORDER == _LITTLE_ENDIAN */
+#endif /* CONFIG_LIBC_NEWLIB */
 
 /* Alignment-agnostic encode/decode bytestream to/from little/big endian. */
 

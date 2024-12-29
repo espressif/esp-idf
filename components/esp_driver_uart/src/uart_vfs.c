@@ -27,17 +27,17 @@
 // Token signifying that no character is available
 #define NONE -1
 
-#if CONFIG_NEWLIB_STDOUT_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDOUT_LINE_ENDING_CRLF
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDOUT_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDOUT_LINE_ENDING_CR
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_TX_MODE ESP_LINE_ENDINGS_LF
 #endif
 
-#if CONFIG_NEWLIB_STDIN_LINE_ENDING_CRLF
+#if CONFIG_LIBC_STDIN_LINE_ENDING_CRLF
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CRLF
-#elif CONFIG_NEWLIB_STDIN_LINE_ENDING_CR
+#elif CONFIG_LIBC_STDIN_LINE_ENDING_CR
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_CR
 #else
 #   define DEFAULT_RX_MODE ESP_LINE_ENDINGS_LF
@@ -215,7 +215,7 @@ static int uart_rx_char(int fd)
 static int uart_rx_char_via_driver(int fd)
 {
     uint8_t c;
-    int timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
+    TickType_t timeout = s_ctx[fd]->non_blocking ? 0 : portMAX_DELAY;
     int n = uart_read_bytes(fd, &c, 1, timeout);
     if (n <= 0) {
         return NONE;
@@ -226,6 +226,8 @@ static int uart_rx_char_via_driver(int fd)
 static ssize_t uart_write(int fd, const void * data, size_t size)
 {
     assert(fd >= 0 && fd < 3);
+    tx_func_t tx_func = s_ctx[fd]->tx_func;
+    esp_line_endings_t tx_mode = s_ctx[fd]->tx_mode;
     const char *data_c = (const char *)data;
     /*  Even though newlib does stream locking on each individual stream, we need
      *  a dedicated UART lock if two streams (stdout and stderr) point to the
@@ -234,13 +236,13 @@ static ssize_t uart_write(int fd, const void * data, size_t size)
     _lock_acquire_recursive(&s_ctx[fd]->write_lock);
     for (size_t i = 0; i < size; i++) {
         int c = data_c[i];
-        if (c == '\n' && s_ctx[fd]->tx_mode != ESP_LINE_ENDINGS_LF) {
-            s_ctx[fd]->tx_func(fd, '\r');
-            if (s_ctx[fd]->tx_mode == ESP_LINE_ENDINGS_CR) {
+        if (c == '\n' && tx_mode != ESP_LINE_ENDINGS_LF) {
+            tx_func(fd, '\r');
+            if (tx_mode == ESP_LINE_ENDINGS_CR) {
                 continue;
             }
         }
-        s_ctx[fd]->tx_func(fd, c);
+        tx_func(fd, c);
     }
     _lock_release_recursive(&s_ctx[fd]->write_lock);
     return size;
@@ -1032,8 +1034,29 @@ static int uart_tcflush(int fd, int select)
 }
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 
-static const esp_vfs_t uart_vfs = {
-    .flags = ESP_VFS_FLAG_DEFAULT,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_uart_dir = {
+    .access = &uart_access,
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#ifdef CONFIG_VFS_SUPPORT_SELECT
+static const esp_vfs_select_ops_t s_vfs_uart_select = {
+    .start_select = &uart_start_select,
+    .end_select = &uart_end_select,
+};
+#endif // CONFIG_VFS_SUPPORT_SELECT
+
+#ifdef CONFIG_VFS_SUPPORT_TERMIOS
+static const esp_vfs_termios_ops_t s_vfs_uart_termios = {
+    .tcsetattr = &uart_tcsetattr,
+    .tcgetattr = &uart_tcgetattr,
+    .tcdrain = &uart_tcdrain,
+    .tcflush = &uart_tcflush,
+};
+#endif // CONFIG_VFS_SUPPORT_TERMIOS
+
+static const esp_vfs_fs_ops_t s_vfs_uart = {
     .write = &uart_write,
     .open = &uart_open,
     .fstat = &uart_fstat,
@@ -1042,28 +1065,24 @@ static const esp_vfs_t uart_vfs = {
     .fcntl = &uart_fcntl,
     .fsync = &uart_fsync,
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    .access = &uart_access,
+    .dir = &s_vfs_uart_dir,
 #endif // CONFIG_VFS_SUPPORT_DIR
 #ifdef CONFIG_VFS_SUPPORT_SELECT
-    .start_select = &uart_start_select,
-    .end_select = &uart_end_select,
+    .select = &s_vfs_uart_select,
 #endif // CONFIG_VFS_SUPPORT_SELECT
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    .tcsetattr = &uart_tcsetattr,
-    .tcgetattr = &uart_tcgetattr,
-    .tcdrain = &uart_tcdrain,
-    .tcflush = &uart_tcflush,
+    .termios = &s_vfs_uart_termios,
 #endif // CONFIG_VFS_SUPPORT_TERMIOS
 };
 
-const esp_vfs_t *esp_vfs_uart_get_vfs(void)
+const esp_vfs_fs_ops_t *esp_vfs_uart_get_vfs(void)
 {
-    return &uart_vfs;
+    return &s_vfs_uart;
 }
 
 void uart_vfs_dev_register(void)
 {
-    ESP_ERROR_CHECK(esp_vfs_register("/dev/uart", &uart_vfs, NULL));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/dev/uart", &s_vfs_uart, ESP_VFS_FLAG_STATIC, NULL));
 }
 
 int uart_vfs_dev_port_set_rx_line_endings(int uart_num, esp_line_endings_t mode)

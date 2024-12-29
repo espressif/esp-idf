@@ -56,6 +56,13 @@ menu "Example Configuration"
         help
             Set voice volume
 
+    config EXAMPLE_PA_CTRL_IO
+        int "Power Amplifier control IO"
+        default 53 if IDF_TARGET_ESP32P4
+        default -1
+        help
+            Set GPIO number for PA control. Set -1 to disable PA control.
+
     config EXAMPLE_BSP
         bool "Enable Board Support Package (BSP) support"
         default n

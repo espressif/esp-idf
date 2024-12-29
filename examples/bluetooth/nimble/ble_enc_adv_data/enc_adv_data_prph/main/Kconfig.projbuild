@@ -2,7 +2,7 @@ menu "Example Configuration"
 
     choice EXAMPLE_USE_IO_TYPE
         prompt "I/O Capability"
-        default BLE_SM_IO_CAP_NO_IO
+        default BLE_SM_IO_CAP_DISP_ONLY
         help
             I/O capability of device.
 

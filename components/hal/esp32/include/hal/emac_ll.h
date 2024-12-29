@@ -88,19 +88,6 @@ extern "C" {
 #define EMAC_LL_DMA_ARBITRATION_ROUNDROBIN_RXTX_3_1 (2)
 #define EMAC_LL_DMA_ARBITRATION_ROUNDROBIN_RXTX_4_1 (3)
 
-/* PTP register bits */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_SYNC 0x00000100U                      /* SYNC message (all clock types) */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_FOLLOWUP 0x00000200U                  /* FollowUp message (all clock types) */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_DELAYREQ 0x00000300U                  /* DelayReq message (all clock types) */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_DELAYRESP 0x00000400U                 /* DelayResp message (all clock types) */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_PDELAYREQ_ANNOUNCE 0x00000500U        /* PdelayReq message (peer-to-peer transparent clock) or Announce message (Ordinary or Boundary clock) */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_PDELAYRESP_MANAG 0x00000600U          /* PdelayResp message (peer-to-peer transparent clock) or Management message (Ordinary or Boundary clock)  */
-#define EMAC_LL_DMAPTPRXDESC_PTPMT_PDELAYRESPFOLLOWUP_SIGNAL 0x00000700U /* PdelayRespFollowUp message (peer-to-peer transparent clock) or Signaling message (Ordinary or Boundary clock) */
-
-#define EMAC_LL_DMAPTPRXDESC_IPPT_UDP 0x00000001U  /* UDP payload encapsulated in the IP datagram */
-#define EMAC_LL_DMAPTPRXDESC_IPPT_TCP 0x00000002U  /* TCP payload encapsulated in the IP datagram */
-#define EMAC_LL_DMAPTPRXDESC_IPPT_ICMP 0x00000003U /* ICMP payload encapsulated in the IP datagram */
-
 #define EMAC_LL_DMADESC_OWNER_CPU  (0)
 #define EMAC_LL_DMADESC_OWNER_DMA  (1)
 

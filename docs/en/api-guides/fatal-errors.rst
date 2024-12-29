@@ -13,17 +13,17 @@ In certain situations, the execution of the program can not be continued in a we
 - CPU Exceptions: |CPU_EXCEPTIONS_LIST|
 - System level checks and safeguards:
 
-  .. list::
+    .. list::
 
-     - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
-     - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
-     - Cache access error
-     :SOC_MEMPROT_SUPPORTED: - Memory protection fault
-     - Brownout detection event
-     - Stack overflow
-     - Stack smashing protection check
-     - Heap integrity check
-     - Undefined behavior sanitizer (UBSAN) checks
+        - :doc:`Interrupt watchdog <../api-reference/system/wdts>` timeout
+        - :doc:`Task watchdog <../api-reference/system/wdts>` timeout (only fatal if :ref:`CONFIG_ESP_TASK_WDT_PANIC` is set)
+        - Cache access error
+        :SOC_MEMPROT_SUPPORTED: - Memory protection fault
+        - Brownout detection event
+        - Stack overflow
+        - Stack smashing protection check
+        - Heap integrity check
+        - Undefined behavior sanitizer (UBSAN) checks
 
 - Failed assertions, via ``assert``, ``configASSERT`` and similar macros.
 
@@ -32,7 +32,7 @@ This guide explains the procedure used in ESP-IDF for handling these errors, and
 Panic Handler
 -------------
 
-Every error cause listed in the `Overview`_ will be handled by the *panic handler*.
+Every error cause listed in the :ref:`Overview` will be handled by the *panic handler*.
 
 The panic handler will start by printing the cause of the error to the console. For CPU exceptions, the message will be similar to
 
@@ -46,29 +46,29 @@ For some of the system level checks (interrupt watchdog, cache access error), th
 
     Guru Meditation Error: Core 0 panic'ed (|CACHE_ERR_MSG|). Exception was unhandled.
 
-In all cases, the error cause will be printed in parentheses. See `Guru Meditation Errors`_ for a list of possible error causes.
+In all cases, the error cause will be printed in parentheses. See :ref:`Guru-Meditation-Errors` for a list of possible error causes.
 
 Subsequent behavior of the panic handler can be set using :ref:`CONFIG_ESP_SYSTEM_PANIC` configuration choice. The available options are:
 
 - Print registers and reboot (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) — default option.
 
-  This will print register values at the point of the exception, print the backtrace, and restart the chip.
+    This will print register values at the point of the exception, print the backtrace, and restart the chip.
 
 - Print registers and halt (``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``)
 
-  Similar to the above option, but halt instead of rebooting. External reset is required to restart the program.
+    Similar to the above option, but halt instead of rebooting. External reset is required to restart the program.
 
 - Silent reboot (``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``)
 
-  Do not print registers or backtrace, restart the chip immediately.
+    Do not print registers or backtrace, restart the chip immediately.
 
 - Invoke GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
-  Start GDB server which can communicate with GDB over console UART port. This option will only provide read-only debugging or post-mortem debugging. See `GDB Stub`_ for more details.
+    Start GDB server which can communicate with GDB over console UART port. This option will only provide read-only debugging or post-mortem debugging. See `GDB Stub`_ for more details.
 
 .. note::
 
-  The ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` choice in the configuration option :ref:`CONFIG_ESP_SYSTEM_PANIC` is only available when the component ``esp_gdbstub`` is included in the build.
+    The ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` choice in the configuration option :ref:`CONFIG_ESP_SYSTEM_PANIC` is only available when the component ``esp_gdbstub`` is included in the build.
 
 The behavior of the panic handler is affected by three other configuration options.
 
@@ -78,7 +78,7 @@ The behavior of the panic handler is affected by three other configuration optio
 
 - If :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` is disabled (disabled by default), the panic handler code is placed in flash memory, not IRAM. This means that if ESP-IDF crashes while flash cache is disabled, the panic handler will automatically re-enable flash cache before running GDB Stub or Core Dump. This adds some minor risk, if the flash cache status is also corrupted during the crash.
 
-  If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM, and hence will decrease the usable memory space in SRAM. But this may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
+    If this option is enabled, the panic handler code (including required UART functions) is placed in IRAM, and hence will decrease the usable memory space in SRAM. But this may be necessary to debug some complex issues with crashes while flash cache is disabled (for example, when writing to SPI flash) or when flash cache is corrupted when an exception is triggered.
 
 - If :ref:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` is enabled (disabled by default) and set to a number higher than 0, the panic handler will delay the reboot for that amount of time in seconds. This can help if the tool used to monitor serial output does not provide a possibility to stop and examine the serial output. In that case, delaying the reboot will allow users to examine and debug the panic handler output (backtrace, etc.) for the duration of the delay. After the delay, the device will reboot. The reset reason is preserved.
 
@@ -134,7 +134,7 @@ Unless the ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, the pani
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Core 0 register dump:
         PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -148,7 +148,7 @@ Unless the ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` option is enabled, the pani
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Core  0 register dump:
         MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
@@ -176,7 +176,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Core 0 register dump:
         PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -197,7 +197,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Core  0 register dump:
         MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
@@ -220,7 +220,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
     Moreover, :doc:`IDF Monitor <tools/idf-monitor>` is also capable of generating and printing a backtrace thanks to the stack dump provided by the board in the panic handler.
     The output looks like this:
 
-    ::
+    .. code-block:: none
 
         Backtrace:
 
@@ -238,7 +238,7 @@ If :doc:`IDF Monitor <tools/idf-monitor>` is used, Program Counter values will b
 
     This option will let the compiler generate DWARF information for each function of the project. Then, when a CPU exception occurs, the panic handler will parse these data and determine the backtrace of the task that failed. The output looks like this:
 
-    ::
+    .. code-block:: none
 
         Backtrace: 0x42009e9a:0x3fc92120 0x42009ea6:0x3fc92120 0x42009ec2:0x3fc92130 0x42024620:0x3fc92150 0x40387d7c:0x3fc92160 0xfffffffe:0x3fc92170
 
@@ -256,7 +256,9 @@ GDB Stub
 
 If the ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` option is enabled, the panic handler will not reset the chip when a fatal error happens. Instead, it will start a GDB remote protocol server, commonly referred to as GDB Stub. When this happens, a GDB instance running on the host computer can be instructed to connect to the {IDF_TARGET_NAME} UART port.
 
-If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when a GDB Stub prompt is detected on the UART. The output looks like this::
+If :doc:`IDF Monitor <tools/idf-monitor>` is used, GDB is started automatically when a GDB Stub prompt is detected on the UART. The output looks like this:
+
+.. code-block:: none
 
     Entering gdb stub now.
     $T0b#e6GNU gdb (crosstool-NG crosstool-ng-1.22.0-80-gff1f415) 7.10
@@ -286,11 +288,12 @@ The GDB prompt can be used to inspect CPU registers, local and static variables,
 
 RTC Watchdog Timeout
 --------------------
+
 {IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
 The RTC watchdog is used in the startup code to keep track of execution time and it also helps to prevent a lock-up caused by an unstable power source. It is enabled by default (see :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`). If the execution time is exceeded, the RTC watchdog will restart the system. In this case, the first stage (ROM) bootloader will print a message with the ``RTC Watchdog Timeout`` reason for the reboot.
 
-::
+.. code-block:: none
 
     rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
@@ -310,7 +313,7 @@ This section explains the meaning of different error causes, printed in parens a
 
 .. note::
 
-  See the `Guru Meditation Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
+    See the `Guru Meditation Wikipedia article <https://en.wikipedia.org/wiki/Guru_Meditation>`_ for historical origins of "Guru Meditation".
 
 
 |ILLEGAL_INSTR_MSG|
@@ -322,9 +325,9 @@ This CPU exception indicates that the instruction which was executed was not a v
 
 - Failure to read next instruction from SPI flash. This usually happens if:
 
-  - Application has reconfigured the SPI flash pins as some other function (GPIO, UART, etc.). Consult the Hardware Design Guidelines and the datasheet for the chip or module for details about the SPI flash pins.
+    - Application has reconfigured the SPI flash pins as some other function (GPIO, UART, etc.). Consult the Hardware Design Guidelines and the datasheet for the chip or module for details about the SPI flash pins.
 
-  - Some external device has accidentally been connected to the SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
+    - Some external device has accidentally been connected to the SPI flash pins, and has interfered with communication between {IDF_TARGET_NAME} and SPI flash.
 
 - In C++ code, exiting from a non-void function without returning a value is considered to be an undefined behavior. When optimizations are enabled, the compiler will often omit the epilogue in such functions. This most often results in an |ILLEGAL_INSTR_MSG| exception. By default, ESP-IDF build system enables ``-Werror=return-type`` which means that missing return statements are treated as compile time errors. However if the application project disables compiler warnings, this issue might go undetected and the |ILLEGAL_INSTR_MSG| exception will occur at run time.
 
@@ -424,7 +427,9 @@ Other Fatal Errors
 
     {IDF_TARGET_NAME} has a built-in brownout detector, which is enabled by default. The brownout detector can trigger a system reset if the supply voltage goes below a safe level. The brownout detector can be configured using :ref:`CONFIG_ESP_BROWNOUT_DET` and :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` options.
 
-    When the brownout detector triggers, the following message is printed::
+    When the brownout detector triggers, the following message is printed:
+
+    .. code-block:: none
 
         Brownout detector was triggered
 
@@ -436,7 +441,9 @@ Other Fatal Errors
 Corrupt Heap
 ^^^^^^^^^^^^
 
-ESP-IDF's heap implementation contains a number of run-time checks of the heap structure. Additional checks ("Heap Poisoning") can be enabled in menuconfig. If one of the checks fails, a message similar to the following will be printed::
+ESP-IDF's heap implementation contains a number of run-time checks of the heap structure. Additional checks ("Heap Poisoning") can be enabled in menuconfig. If one of the checks fails, a message similar to the following will be printed:
+
+.. code-block:: none
 
     CORRUPT HEAP: Bad tail at 0x3ffe270a. Expected 0xbaad5678 got 0xbaac5678
     assertion "head != NULL" failed: file "/Users/user/esp/esp-idf/components/heap/multi_heap_poisoning.c", line 201, function: multi_heap_free
@@ -480,19 +487,20 @@ ESP-IDF provides a custom FreeRTOS stack overflow detecting mechanism based on w
 Generally, this may cause the watchpoint to be triggered up to 28 bytes earlier than expected. The value 32 is chosen because it is larger than the stack canary size in FreeRTOS (20 bytes). Adopting this approach ensures that the watchpoint triggers before the stack canary is corrupted, not after.
 
 .. note::
+
     Not every stack overflow is guaranteed to trigger the watchpoint. It is possible that the task writes to memory beyond the stack canary location, in which case the watchpoint will not be triggered.
 
 If watchpoint triggers, the message will be similar to:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Debug exception reason: Stack canary watchpoint triggered (task_name)
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
 
@@ -507,7 +515,9 @@ See :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`
 Stack Smashing
 ^^^^^^^^^^^^^^
 
-Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed::
+Stack smashing protection (based on GCC ``-fstack-protector*`` flags) can be enabled in ESP-IDF using :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` option. If stack smashing is detected, message similar to the following will be printed:
+
+.. code-block:: none
 
     Stack smashing protect failure!
 
@@ -522,7 +532,7 @@ The backtrace should point to the function where stack smashing has occurred. Ch
 
     .. |CPU_EXCEPTIONS_LIST| replace:: Illegal Instruction, Load/Store Alignment Error, Load/Store Prohibited error, Double Exception.
     .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
-    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+    .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: Stack overflow
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
@@ -537,9 +547,10 @@ The backtrace should point to the function where stack smashing has occurred. Ch
 
     CPU Lockup
     ^^^^^^^^^^
-    A CPU lockup reset happens when there is a double exception, i.e. when an exception occurs while the CPU is already in an exception handler. The most common cause for this is when the cache is in such a state that accessing external memory not possible. If this is the case then the panic handler will crash as well due to being unable to fetch instructions or read data.
 
-    If this is the case you can try placing the panic handler code in IRAM, which can be accessed when cache is disabled, to get more information about the cause of the lockup. This can be done with :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
+    A CPU lockup reset happens when there is a double exception, i.e. when an exception occurs while the CPU is already in an exception handler. The most common cause for this is when the cache is in a state where accessing external memory becomes impossible. In such cases, the panic handler will crash as well due to being unable to fetch instructions or read data.
+
+    To gather more information about the cause of the lockup, you can try placing the panic handler code in IRAM, which remains accessible even when the cache is disabled. This can be done with :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`.
 
 
 Undefined Behavior Sanitizer (UBSAN) Checks
@@ -560,7 +571,9 @@ UBSAN is disabled by default. It can be enabled at file, component, or project l
 
 When enabling UBSAN for code which uses the SOC hardware register header files (``soc/xxx_reg.h``), it is recommended to disable shift-base sanitizer using ``-fno-sanitize=shift-base`` option. This is due to the fact that ESP-IDF register header files currently contain patterns which cause false positives for this specific sanitizer option.
 
-To enable UBSAN at project level, add the following code at the end of the project's ``CMakeLists.txt`` file::
+To enable UBSAN at project level, add the following code at the end of the project's ``CMakeLists.txt`` file:
+
+.. code-block:: none
 
     idf_build_set_property(COMPILE_OPTIONS "-fsanitize=undefined" "-fno-sanitize=shift-base" APPEND)
 
@@ -568,29 +581,37 @@ Alternatively, pass these options through the ``EXTRA_CFLAGS`` and ``EXTRA_CXXFL
 
 Enabling UBSAN results in significant increase of code and data size. Most applications, except for the trivial ones, will not fit into the available RAM of the microcontroller when UBSAN is enabled for the whole application. Therefore it is recommended that UBSAN is instead enabled for specific components under test.
 
-To enable UBSAN for a specific component (``component_name``) from the project's ``CMakeLists.txt`` file, add the following code at the end of the file::
+To enable UBSAN for a specific component (``component_name``) from the project's ``CMakeLists.txt`` file, add the following code at the end of the file:
+
+.. code-block:: none
 
     idf_component_get_property(lib component_name COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
 .. note::
 
-  See the build system documentation for more information about :ref:`build properties <cmake-build-properties>` and :ref:`component properties <cmake-component-properties>`.
+    See the build system documentation for more information about :ref:`build properties <cmake-build-properties>` and :ref:`component properties <cmake-component-properties>`.
 
-To enable UBSAN for a specific component (``component_name``) from ``CMakeLists.txt`` of the same component, add the following at the end of the file::
+To enable UBSAN for a specific component (``component_name``) from ``CMakeLists.txt`` of the same component, add the following at the end of the file:
+
+.. code-block:: none
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
 UBSAN Output
 """"""""""""
 
-When UBSAN detects an error, a message and the backtrace are printed, for example::
+When UBSAN detects an error, a message and the backtrace are printed, for example:
+
+.. code-block:: none
 
     Undefined behavior of type out_of_bounds
 
     Backtrace:0x4008b383:0x3ffcd8b0 0x4008c791:0x3ffcd8d0 0x4008c587:0x3ffcd8f0 0x4008c6be:0x3ffcd950 0x400db74f:0x3ffcd970 0x400db99c:0x3ffcd9a0
 
-When using :doc:`IDF Monitor <tools/idf-monitor>`, the backtrace will be decoded to function names and source code locations, pointing to the location where the issue has happened (here it is ``main.c:128``)::
+When using :doc:`IDF Monitor <tools/idf-monitor>`, the backtrace will be decoded to function names and source code locations, pointing to the location where the issue has happened (here it is ``main.c:128``):
+
+.. code-block:: none
 
     0x4008b383: panic_abort at /path/to/esp-idf/components/esp_system/panic.c:367
 
@@ -608,34 +629,34 @@ The types of errors reported by UBSAN can be as follows:
 
 
 .. list-table::
-  :widths: 40 60
-  :header-rows: 1
+    :widths: 40 60
+    :header-rows: 1
 
-  * - Name
-    - Meaning
-  * - ``type_mismatch``, ``type_mismatch_v1``
-    - Incorrect pointer value: null, unaligned, not compatible with the given type.
-  * - ``add_overflow``, ``sub_overflow``, ``mul_overflow``, ``negate_overflow``
-    - Integer overflow during addition, subtraction, multiplication, negation.
-  * - ``divrem_overflow``
-    - Integer division by 0 or ``INT_MIN``.
-  * - ``shift_out_of_bounds``
-    - Overflow in left or right shift operators.
-  * - ``out_of_bounds``
-    - Access outside of bounds of an array.
-  * - ``unreachable``
-    - Unreachable code executed.
-  * - ``missing_return``
-    - Non-void function has reached its end without returning a value (C++ only).
-  * - ``vla_bound_not_positive``
-    - Size of variable length array is not positive.
-  * - ``load_invalid_value``
-    - Value of ``bool`` or ``enum`` (C++ only) variable is invalid (out of bounds).
-  * - ``nonnull_arg``
-    - Null argument passed to a function which is declared with a ``nonnull`` attribute.
-  * - ``nonnull_return``
-    - Null value returned from a function which is declared with ``returns_nonnull`` attribute.
-  * - ``builtin_unreachable``
-    - ``__builtin_unreachable`` function called.
-  * - ``pointer_overflow``
-    - Overflow in pointer arithmetic.
+    * - Name
+      - Meaning
+    * - ``type_mismatch``, ``type_mismatch_v1``
+      - Incorrect pointer value: null, unaligned, not compatible with the given type.
+    * - ``add_overflow``, ``sub_overflow``, ``mul_overflow``, ``negate_overflow``
+      - Integer overflow during addition, subtraction, multiplication, negation.
+    * - ``divrem_overflow``
+      - Integer division by 0 or ``INT_MIN``.
+    * - ``shift_out_of_bounds``
+      - Overflow in left or right shift operators.
+    * - ``out_of_bounds``
+      - Access outside of bounds of an array.
+    * - ``unreachable``
+      - Unreachable code executed.
+    * - ``missing_return``
+      - Non-void function has reached its end without returning a value (C++ only).
+    * - ``vla_bound_not_positive``
+      - Size of variable length array is not positive.
+    * - ``load_invalid_value``
+      - Value of ``bool`` or ``enum`` (C++ only) variable is invalid (out of bounds).
+    * - ``nonnull_arg``
+      - Null argument passed to a function which is declared with a ``nonnull`` attribute.
+    * - ``nonnull_return``
+      - Null value returned from a function which is declared with ``returns_nonnull`` attribute.
+    * - ``builtin_unreachable``
+      - ``__builtin_unreachable`` function called.
+    * - ``pointer_overflow``
+      - Overflow in pointer arithmetic.

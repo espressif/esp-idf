@@ -157,9 +157,10 @@
         .flags=0,\
     }
 
-//default device config for slave hd devices
+//default device config for slave hd devices, DMA is always required for slave hd
 #define SPI_SLOT_TEST_DEFAULT_CONFIG() {\
         .spics_io_num = PIN_NUM_CS, \
+        .dma_chan = SPI_DMA_CH_AUTO, \
         .flags = 0, \
         .mode = 0, \
         .command_bits = 8,\
@@ -282,5 +283,10 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
 void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
+
+// Soft simulated spi master host for slave testing
+// TODO: `speed_hz` is not implemented yet, temp to max 500Hz
+// TODO: mode 0 only
+void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len);
 
 #endif  //_TEST_COMMON_SPI_H_

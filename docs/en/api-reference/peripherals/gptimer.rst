@@ -86,7 +86,7 @@ Set up Alarm Action
 
 For most of the use cases of GPTimer, you should set up the alarm action before starting the timer, except for the simple wall-clock scenario, where a free running timer is enough. To set up the alarm action, you should configure several members of :cpp:type:`gptimer_alarm_config_t` based on how you make use of the alarm event:
 
-- :cpp:member:`gptimer_alarm_config_t::alarm_count` sets the target count value that triggers the alarm event. You should also take the counting direction into consideration when setting the alarm value. Specially, :cpp:member:`gptimer_alarm_config_t::alarm_count` and :cpp:member:`gptimer_alarm_config_t::reload_count` cannot be set to the same value when :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is true, as keeping reload with a target alarm count is meaningless.
+- :cpp:member:`gptimer_alarm_config_t::alarm_count` sets the target count value that triggers the alarm event. You should also take the counting direction into consideration when setting the alarm value. Specially, :cpp:member:`gptimer_alarm_config_t::alarm_count` and :cpp:member:`gptimer_alarm_config_t::reload_count` cannot be set to the same value when :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is true, as keeping reload with a target alarm count is meaningless. Please also note, because of the interrupt latency, it's not recommended to set the alarm period smaller than 5 us.
 
 - :cpp:member:`gptimer_alarm_config_t::reload_count` sets the count value to be reloaded when the alarm event happens. This configuration only takes effect when :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
 

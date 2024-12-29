@@ -37,18 +37,34 @@ static esp_err_t i2s_pdm_tx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     i2s_pdm_tx_clk_config_t *pdm_tx_clk = (i2s_pdm_tx_clk_config_t *)clk_cfg;
 
     // Over sampling ratio (integer, mostly should be 1 or 2)
-    uint32_t over_sample_ratio = pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
-    clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * over_sample_ratio;
+    uint32_t over_sample_ratio = 0;
     clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_TX_BCLK_DIV_MIN ? I2S_PDM_TX_BCLK_DIV_MIN : clk_cfg->bclk_div;
+    if (!handle->is_raw_pdm) {
+        over_sample_ratio = pdm_tx_clk->up_sample_fp / pdm_tx_clk->up_sample_fs;
+        clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * over_sample_ratio;
+    } else {
+        /* Mainly warns the case when the user uses the raw PDM mode but set a PCM sample rate
+         * The typical PDM over sample rate is several MHz (above 1 MHz),
+         * but the typical PCM sample rate is less than 100 KHz */
+        if (rate < 512000) {
+            ESP_LOGW(TAG, "the over sample rate might be too small for the raw PDM mode");
+        }
+        clk_info->bclk = rate * 2;
+    }
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
-    /* Set up sampling configuration */
-    i2s_ll_tx_set_pdm_fpfs(handle->controller->hal.dev, pdm_tx_clk->up_sample_fp, pdm_tx_clk->up_sample_fs);
-    i2s_ll_tx_set_pdm_over_sample_ratio(handle->controller->hal.dev, over_sample_ratio);
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > 1.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_info->mclk_div < 256, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
+#if SOC_I2S_SUPPORTS_PCM2PDM
+    if (!handle->is_raw_pdm) {
+        /* Set up sampling configuration */
+        i2s_ll_tx_set_pdm_fpfs(handle->controller->hal.dev, pdm_tx_clk->up_sample_fp, pdm_tx_clk->up_sample_fs);
+        i2s_ll_tx_set_pdm_over_sample_ratio(handle->controller->hal.dev, over_sample_ratio);
+    }
+#endif
 
     return ESP_OK;
 }
@@ -88,7 +104,11 @@ static esp_err_t i2s_pdm_tx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_tx
 
 static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_slot_config_t *slot_cfg)
 {
+#if !SOC_I2S_SUPPORTS_PCM2PDM
+    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW, ESP_ERR_NOT_SUPPORTED, TAG, "not support PCM2PDM converter on this target");
+#endif
     /* Update the total slot num and active slot num */
+    handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
 
@@ -195,7 +215,7 @@ esp_err_t i2s_channel_init_pdm_tx_mode(i2s_chan_handle_t handle, const i2s_pdm_t
     ESP_GOTO_ON_ERROR(i2s_pdm_tx_set_clock(handle, &pdm_tx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
-    i2s_ll_tx_enable_pdm(handle->controller->hal.dev);
+    i2s_ll_tx_enable_pdm(handle->controller->hal.dev, pdm_tx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
@@ -331,16 +351,30 @@ static esp_err_t i2s_pdm_rx_calculate_clock(i2s_chan_handle_t handle, const i2s_
     uint32_t rate = clk_cfg->sample_rate_hz;
     i2s_pdm_rx_clk_config_t *pdm_rx_clk = (i2s_pdm_rx_clk_config_t *)clk_cfg;
 
-    clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * (pdm_rx_clk->dn_sample_mode == I2S_PDM_DSR_16S ? 2 : 1);
+    if (!handle->is_raw_pdm) {
+        clk_info->bclk = rate * I2S_LL_PDM_BCK_FACTOR * (pdm_rx_clk->dn_sample_mode == I2S_PDM_DSR_16S ? 2 : 1);
+    } else {
+        /* Mainly warns the case when the user uses the raw PDM mode but set a PCM sample rate
+         * The typical PDM over sample rate is several MHz (above 1 MHz),
+         * but the typical PCM sample rate is less than 100 KHz */
+        if (rate < 512000) {
+            ESP_LOGW(TAG, "the over sample rate might be too small for the raw PDM mode");
+        }
+        clk_info->bclk = rate * 2;
+    }
     clk_info->bclk_div = clk_cfg->bclk_div < I2S_PDM_RX_BCLK_DIV_MIN ? I2S_PDM_RX_BCLK_DIV_MIN : clk_cfg->bclk_div;
     clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
-    /* Set down-sampling configuration */
-    i2s_ll_rx_set_pdm_dsr(handle->controller->hal.dev, pdm_rx_clk->dn_sample_mode);
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk >= 0.99, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+#if SOC_I2S_SUPPORTS_PDM2PCM
+    if (!handle->is_raw_pdm) {
+        /* Set down-sampling configuration */
+        i2s_ll_rx_set_pdm_dsr(handle->controller->hal.dev, pdm_rx_clk->dn_sample_mode);
+    }
+#endif
     return ESP_OK;
 }
 
@@ -373,7 +407,11 @@ static esp_err_t i2s_pdm_rx_set_clock(i2s_chan_handle_t handle, const i2s_pdm_rx
 
 static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_slot_config_t *slot_cfg)
 {
+#if !SOC_I2S_SUPPORTS_PDM2PCM
+    ESP_RETURN_ON_FALSE(slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW, ESP_ERR_NOT_SUPPORTED, TAG, "not support PDM2PCM converter on this target");
+#endif
     /* Update the total slot num and active slot num */
+    handle->is_raw_pdm = slot_cfg->data_fmt == I2S_PDM_DATA_FMT_RAW;
     handle->total_slot = 2;
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
 
@@ -450,6 +488,9 @@ static esp_err_t i2s_pdm_rx_set_gpio(i2s_chan_handle_t handle, const i2s_pdm_rx_
 
 esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_rx_config_t *pdm_rx_cfg)
 {
+#if CONFIG_I2S_ENABLE_DEBUG_LOG
+    esp_log_level_set(TAG, ESP_LOG_DEBUG);
+#endif
     I2S_NULL_POINTER_CHECK(TAG, handle);
     ESP_RETURN_ON_FALSE(handle->dir == I2S_DIR_RX, ESP_ERR_INVALID_ARG, TAG, "This channel handle is not a RX handle");
     ESP_RETURN_ON_FALSE(handle->controller->id == I2S_NUM_0, ESP_ERR_INVALID_ARG, TAG, "This channel handle is registered on I2S1, but PDM is only supported on I2S0");
@@ -478,7 +519,7 @@ esp_err_t i2s_channel_init_pdm_rx_mode(i2s_chan_handle_t handle, const i2s_pdm_r
     ESP_GOTO_ON_ERROR(i2s_pdm_rx_set_clock(handle, &pdm_rx_cfg->clk_cfg), err, TAG, "initialize channel failed while setting clock");
     ESP_GOTO_ON_ERROR(i2s_init_dma_intr(handle, I2S_INTR_ALLOC_FLAGS), err, TAG, "initialize dma interrupt failed");
 
-    i2s_ll_rx_enable_pdm(handle->controller->hal.dev);
+    i2s_ll_rx_enable_pdm(handle->controller->hal.dev, pdm_rx_cfg->slot_cfg.data_fmt == I2S_PDM_DATA_FMT_PCM);
 
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;

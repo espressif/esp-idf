@@ -238,7 +238,15 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         ESP_LOGI(GATTC_TAG, "Scan stop successfully");
         if (is_connect == false) {
             ESP_LOGI(GATTC_TAG, "Connect to the remote device.");
-            esp_ble_gattc_open(gl_profile_tab[PROFILE_APP_ID].gattc_if, scan_rst.scan_rst.bda, scan_rst.scan_rst.ble_addr_type, true);
+            esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+            memcpy(&creat_conn_params.remote_bda, scan_rst.scan_rst.bda,ESP_BD_ADDR_LEN);
+            creat_conn_params.remote_addr_type = scan_rst.scan_rst.ble_addr_type;
+            creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+            creat_conn_params.is_direct = true;
+            creat_conn_params.is_aux = false;
+            creat_conn_params.phy_mask = 0x0;
+            esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_APP_ID].gattc_if,
+                                &creat_conn_params);
         }
         break;
     case ESP_GAP_BLE_SCAN_RESULT_EVT: {

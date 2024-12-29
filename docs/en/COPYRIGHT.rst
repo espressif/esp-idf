@@ -19,7 +19,9 @@ Firmware Components
 
 These third party libraries can be included into the application (firmware) produced by ESP-IDF.
 
-* :component:`Newlib <newlib>` is licensed under the BSD License and is Copyright of various parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`.
+* :component:`Newlib <newlib>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.NEWLIB <newlib/COPYING.NEWLIB>`. If :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` is enabled, see also :component_file:`COPYING.picolibc <newlib/COPYING.picolibc>`.
+
+:component:`Picolibc <newlib>` is licensed under the BSD License, with copyright held by the respective parties, as described in :component_file:`COPYING.picolibc <newlib/COPYING.NEWLIB>`.
 
 * :component:`Xtensa header files <xtensa/include/xtensa>` are Copyright (C) 2013 Tensilica Inc and are licensed under the MIT License as reproduced in the individual header files.
 
@@ -67,7 +69,7 @@ These third party libraries can be included into the application (firmware) prod
 
 * :component:`HTTP Parser <http_parser>` is based on src/http/ngx_http_parse.c from NGINX copyright Igor Sysoev. Additional changes are licensed under the same terms as NGINX and Joyent, Inc. and other Node contributors. For details please check :component_file:`LICENSE file <http_parser/LICENSE.txt>`.
 
-* `SEGGER SystemView`_ target-side library, Copyright (C) 1995-2021 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
+* `SEGGER SystemView`_ target-side library, Copyright (C) 1995-2024 SEGGER Microcontroller GmbH, is licensed under BSD 1-clause license.
 
 * `protobuf-c`_ is Protocol Buffers implementation in C, Copyright (C) 2008-2022 Dave Benson and the protobuf-c authors. For details please check :component_file:`LICENSE file <protobuf-c/protobuf-c/LICENSE>`.
 
@@ -141,6 +143,7 @@ Copyright (C) 2011 ChaN, all right reserved.
 
 
 .. _Newlib: https://sourceware.org/newlib/
+.. _Picolibc: https://keithp.com/picolibc/
 .. _FreeRTOS: https://freertos.org/
 .. _esptool.py: https://github.com/espressif/esptool
 .. _LWIP: https://savannah.nongnu.org/projects/lwip/

@@ -141,7 +141,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
 
         If :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP` is enabled, when the driver initializes the peripheral, the driver will register the working register context of the peripheral to the sleep retention link. Before entering sleep, the ``REG_DMA`` peripheral reads the configuration in the sleep retention link, and back up the register context to memory according to the configuration. ``REG_DMA`` also restores context from memory to peripheral registers on wakeup.
 
-        Currently ESP-IDF supports Light-sleep context retention for the following peripherals:
+        Currently ESP-IDF supports Light-sleep context retention for the following peripherals. Their context is automatically restored, or they provide some option for the user to enable this feature and goes into peripheral power down mode.
 
         .. list::
 
@@ -156,13 +156,20 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             :SOC_LEDC_SUPPORT_SLEEP_RETENTION: - LEDC
             :SOC_I2C_SUPPORT_SLEEP_RETENTION: - I2C
             :SOC_I2S_SUPPORT_SLEEP_RETENTION: - I2S
+            :SOC_MCPWM_SUPPORT_SLEEP_RETENTION: - MCPWM
             :SOC_UART_SUPPORT_SLEEP_RETENTION: - All UARTs
             :SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION: - Temperature Sensor
             :SOC_TWAI_SUPPORT_SLEEP_RETENTION: - All TWAIs
             :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: - PARL_IO
             :SOC_SPI_SUPPORT_SLEEP_RETENTION: - All GPSPIs
 
-        The following peripherals are not yet supported:
+        Some peripherals haven't support Light-sleep context retention, or it cannot survive from the register lose. They will prevent the power-down of peripherals even when the feature is enabled.
+
+        .. list::
+
+            :SOC_SDIO_SLAVE_SUPPORTED: - SDIO Slave
+
+        The following peripherals (and those not listed in any group of this section) are not yet supported. If your application uses these peripherals, they may not work well after waking up from sleep.
 
         .. list::
 
@@ -171,11 +178,7 @@ The following peripheral drivers are not aware of DFS yet. Applications need to 
             - Crypto: AES/ECC/HMAC/RSA/SHA/DS/XTA_AES/ECDSA
             - PCNT
             - USB-Serial-JTAG
-            - MCPWM
             - SARADC
-            - SDIO
-
-        For peripherals that do not support Light-sleep context retention, if the Power management is enabled, the ``ESP_PM_NO_LIGHT_SLEEP`` lock should be held when the peripheral is working to avoid losing the working context of the peripheral when entering sleep.
 
         .. note::
 

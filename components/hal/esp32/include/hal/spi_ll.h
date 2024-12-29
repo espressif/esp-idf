@@ -44,6 +44,9 @@ extern "C" {
 #define SPI_LL_CPU_MAX_BIT_LEN    (16 * 32)    //Fifo len: 16 words
 #define SPI_LL_MOSI_FREE_LEVEL    0            //Default level after bus initialized
 
+#define SPI_LL_SLAVE_NEEDS_RESET_WORKAROUND 1
+#define SPI_LL_SUPPORT_TIME_TUNING          1
+
 /**
  * The data structure holding calculated clock configuration. Since the
  * calculation needs long time, it should be calculated during initialization and
@@ -63,10 +66,10 @@ typedef spi_dev_t spi_dma_dev_t;
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+{
     if (enable) {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI1_HOST:
             DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
             break;
@@ -79,8 +82,7 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
         default: HAL_ASSERT(false);
         }
     } else {
-        switch (host_id)
-        {
+        switch (host_id) {
         case SPI1_HOST:
             DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI01_CLK_EN);
             break;
@@ -104,9 +106,9 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
  *
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
-static inline void spi_ll_reset_register(spi_host_device_t host_id) {
-    switch (host_id)
-    {
+static inline void spi_ll_reset_register(spi_host_device_t host_id)
+{
+    switch (host_id) {
     case SPI1_HOST:
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
         DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI01_RST);
@@ -793,7 +795,9 @@ static inline void spi_ll_set_miso_delay(spi_dev_t *hw, int delay_mode, int dela
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    if (dummy_n > 0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    }
 }
 
 /**
@@ -1061,7 +1065,8 @@ static inline void spi_ll_enable_int(spi_dev_t *hw)
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
+static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+{
     (void)host_id; // has only one spi_dma
     if (enable) {
         DPORT_SET_PERI_REG_MASK(DPORT_PERIP_CLK_EN_REG, DPORT_SPI_DMA_CLK_EN);
@@ -1080,7 +1085,8 @@ static inline void spi_dma_ll_enable_bus_clock(spi_host_device_t host_id, bool e
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
 __attribute__((always_inline))
-static inline void spi_dma_ll_reset_register(spi_host_device_t host_id) {
+static inline void spi_dma_ll_reset_register(spi_host_device_t host_id)
+{
     (void)host_id; // has only one spi_dma
     DPORT_SET_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_DMA_RST);
     DPORT_CLEAR_PERI_REG_MASK(DPORT_PERIP_RST_EN_REG, DPORT_SPI_DMA_RST);

@@ -16,7 +16,7 @@ tools/test_apps/protocols/mqtt/publish_connect_test:
       temporary: true
       reason: lack of runners
   depends_components:
-    - esp_eth
+    - mqtt
   depends_filepatterns:
     - tools/ci/python_packages/common_test_methods.py
     - examples/common_components/**/*

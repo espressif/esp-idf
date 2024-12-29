@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include <spi_flash_mmap.h> /* including in bootloader for error values */
 #include "sdkconfig.h"
 #include "bootloader_flash.h"
+#include "soc/ext_mem_defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -20,8 +21,11 @@ extern "C" {
 
 #define FLASH_SECTOR_SIZE 0x1000
 #define FLASH_BLOCK_SIZE 	0x10000
+
 #define MMAP_ALIGNED_MASK 	(SPI_FLASH_MMU_PAGE_SIZE - 1)
 #define MMU_FLASH_MASK    (~(SPI_FLASH_MMU_PAGE_SIZE - 1))
+#define MMU_FLASH_MASK_FROM_VAL(PAGE_SZ) (~((PAGE_SZ) - 1))
+#define MMU_DROM_END_ENTRY_VADDR_FROM_VAL(PAGE_SZ) (SOC_DRAM_FLASH_ADDRESS_HIGH - (PAGE_SZ))
 
 /**
  * MMU mapping must always be in the unit of a SPI_FLASH_MMU_PAGE_SIZE
@@ -89,7 +93,7 @@ uint32_t bootloader_mmap_get_free_pages(void);
  * @param length - Length of data to map.
  *
  * @return Pointer to mapped data memory (at src_addr), or NULL
- * if an allocation error occured.
+ * if an allocation error occurred.
  */
 const void *bootloader_mmap(uint32_t src_addr, uint32_t size);
 

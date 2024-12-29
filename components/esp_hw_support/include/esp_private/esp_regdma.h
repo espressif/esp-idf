@@ -35,7 +35,7 @@ extern "C" {
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_continuous(void *backup, void *buff, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_continuous(void *backup, void *buff, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA addr_map type linked list node without retention buffer and the retention buffer is passed in by the caller
@@ -52,7 +52,7 @@ void *regdma_link_new_continuous(void *backup, void *buff, int len, void *restor
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_addr_map(void *backup, void *buff, uint32_t bitmap[4], int len, void *restore, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_addr_map(void *backup, void *buff, uint32_t bitmap[4], int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief  Create a REGDMA write type linked list node without retention buffer and the retention buffer is passed in by the caller
@@ -66,7 +66,7 @@ void *regdma_link_new_addr_map(void *backup, void *buff, uint32_t bitmap[4], int
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_write(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_write(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA write type linked list node without retention buffer and the retention buffer is passed in by the caller
@@ -80,7 +80,7 @@ void *regdma_link_new_write(void *backup, uint32_t value, uint32_t mask, void *n
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_wait(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_wait(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA continuouos branch list node without retention buffer and the retention buffer is passed in by the caller
@@ -95,7 +95,7 @@ void *regdma_link_new_wait(void *backup, uint32_t value, uint32_t mask, void *ne
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_continuous(void *backup, void *buff, int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_continuous(void *backup, void *buff, int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA addr_map branch list node without retention buffer and the retention buffer is passed in by the caller
@@ -112,7 +112,7 @@ void *regdma_link_new_branch_continuous(void *backup, void *buff, int len, void 
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_addr_map(void *backup, void *buff, uint32_t bitmap[4], int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_addr_map(void *backup, void *buff, uint32_t bitmap[4], int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA write branch list node without retention buffer and the retention buffer is passed in by the caller
@@ -126,7 +126,7 @@ void *regdma_link_new_branch_addr_map(void *backup, void *buff, uint32_t bitmap[
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_write(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_write(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a REGDMA wait branch list node without retention buffer and the retention buffer is passed in by the caller
@@ -140,7 +140,7 @@ void *regdma_link_new_branch_write(void *backup, uint32_t value, uint32_t mask, 
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_wait(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_wait(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA continuous type linked list node with retention buffer
@@ -154,7 +154,7 @@ void *regdma_link_new_branch_wait(void *backup, uint32_t value, uint32_t mask, r
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_continuous_default(void *backup, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_continuous_default(void *backup, int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA addr_map type linked list node with retention buffer
@@ -170,7 +170,7 @@ void *regdma_link_new_continuous_default(void *backup, int len, void *restore, v
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_addr_map_default(void *backup, uint32_t bitmap[4], int len, void *restore, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_addr_map_default(void *backup, uint32_t bitmap[4], int len, void *restore, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA write type linked list node with retention buffer
@@ -184,7 +184,7 @@ void *regdma_link_new_addr_map_default(void *backup, uint32_t bitmap[4], int len
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_write_default(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_write_default(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA wait type linked list node with retention buffer
@@ -198,7 +198,7 @@ void *regdma_link_new_write_default(void *backup, uint32_t value, uint32_t mask,
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_wait_default(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_wait_default(void *backup, uint32_t value, uint32_t mask, void *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA continuous branch list node with retention buffer
@@ -212,7 +212,7 @@ void *regdma_link_new_wait_default(void *backup, uint32_t value, uint32_t mask, 
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_continuous_default(void *backup, int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_continuous_default(void *backup, int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA addr_map branch list node with retention buffer
@@ -228,7 +228,7 @@ void *regdma_link_new_branch_continuous_default(void *backup, int len, void *res
  * @param  module  The module identifier of the current linked list node
  * @return         Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_addr_map_default(void *backup, uint32_t bitmap[4], int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_addr_map_default(void *backup, uint32_t bitmap[4], int len, void *restore, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA write branch list node with retention buffer
@@ -242,7 +242,7 @@ void *regdma_link_new_branch_addr_map_default(void *backup, uint32_t bitmap[4], 
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_write_default(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_write_default(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create a default REGDMA wait branch list node with retention buffer
@@ -256,7 +256,7 @@ void *regdma_link_new_branch_write_default(void *backup, uint32_t value, uint32_
  * @param  module The module identifier of the current linked list node
  * @return        Created REGDMA linked list node pointer
  */
-void *regdma_link_new_branch_wait_default(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, uint32_t module);
+void *regdma_link_new_branch_wait_default(void *backup, uint32_t value, uint32_t mask, regdma_entry_buf_t *next, bool skip_b, bool skip_r, int id, int module);
 
 /**
  * @brief Create and initialize a REGDMA linked list node through configuration parameters
@@ -267,7 +267,7 @@ void *regdma_link_new_branch_wait_default(void *backup, uint32_t value, uint32_t
  * @param  args   next pointer, Since REGDMA supports 4 entries, it supports up to 4 variable parameter next pointers, and more will be ignored
  * @return        Initialized REGDMA linked list head node pointer
  */
-void *regdma_link_init(const regdma_link_config_t *config, bool branch, uint32_t module, int nentry, ...);
+void *regdma_link_init(const regdma_link_config_t *config, bool branch, int module, int nentry, ...);
 
 /**
  * @brief Get REGDMA linked list node mode through configuration parameters
@@ -361,7 +361,7 @@ uint32_t regdma_link_get_owner_bitmap(void *link, void *tail, int entry);
  * @param  module Module bitmap Identification
  * @return        The found head node pointer or NULL
  */
-void *regdma_find_module_link_head(void *link, void *tail, int entry, uint32_t module);
+void *regdma_find_module_link_head(void *link, void *tail, int entry, int module);
 
 /**
  * @brief Find the tail node of the specified module in the REGDMA linked list indicated by the
@@ -372,7 +372,7 @@ void *regdma_find_module_link_head(void *link, void *tail, int entry, uint32_t m
  * @param  module Module bitmap Identification
  * @return        The found tail node pointer or NULL
  */
-void *regdma_find_module_link_tail(void *link, void *tail, int entry, uint32_t module);
+void *regdma_find_module_link_tail(void *link, void *tail, int entry, int module);
 
 /**
  * @brief Find the tail node of the previous module of the specified module in the REGDMA linked list
@@ -383,7 +383,7 @@ void *regdma_find_module_link_tail(void *link, void *tail, int entry, uint32_t m
  * @param  module Module bitmap Identification
  * @return        The found tail node pointer or NULL
  */
-void *regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint32_t module);
+void *regdma_find_prev_module_link_tail(void *link, void *tail, int entry, int module);
 
 /**
  * @brief Find the head node of the next module of the specified module in the REGDMA linked list
@@ -394,7 +394,7 @@ void *regdma_find_prev_module_link_tail(void *link, void *tail, int entry, uint3
  * @param  module Module bitmap Identification
  * @return        The found head node pointer or NULL
  */
-void *regdma_find_next_module_link_head(void *link, void *tail, int entry, uint32_t module);
+void *regdma_find_next_module_link_head(void *link, void *tail, int entry, int module);
 
 #define regdma_link_init_safe(pcfg, branch, module, ...)    regdma_link_init((pcfg), (branch), (module), ESP_VA_NARG(__VA_ARGS__), ##__VA_ARGS__)
 

@@ -791,7 +791,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 
         1. 执行全双工传输事务。
         2. 将总线初始化函数的最后一个参数设置为 0 以禁用 DMA，即：
-            ``ret=spi_bus_initialize(VSPI_HOST, &buscfg, 0);``
+            ``ret=spi_bus_initialize(SPI3_HOST, &buscfg, 0);``
 
         此举可避免传输和接收超过 64 字节的数据。
         1. 尝试用命令和地址字段代替写入阶段。

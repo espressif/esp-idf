@@ -73,26 +73,26 @@ typedef enum {
 } esp_ble_power_type_t;
 
 /**
- * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dbm).
+ * @brief Bluetooth TX power level(index), it's just a index corresponding to power(dBm).
  */
 typedef enum {
-    ESP_PWR_LVL_N24 = 0,              /*!< Corresponding to -24dbm */
-    ESP_PWR_LVL_N21 = 1,              /*!< Corresponding to -21dbm */
-    ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18dbm */
-    ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15dbm */
-    ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12dbm */
-    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9dbm */
-    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to  -6dbm */
-    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to  -3dbm */
-    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to   0dbm */
-    ESP_PWR_LVL_P3  = 9,             /*!< Corresponding to  +3dbm */
-    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to  +6dbm */
-    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9dbm */
-    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12dbm */
-    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15dbm */
-    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18dbm */
-    ESP_PWR_LVL_P20 = 15,              /*!< Corresponding to  +20dbm */
-    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +20dbm, this enum variable has been deprecated */
+    ESP_PWR_LVL_N24 = 0,              /*!< Corresponding to -24 dBm */
+    ESP_PWR_LVL_N21 = 1,              /*!< Corresponding to -21 dBm */
+    ESP_PWR_LVL_N18 = 2,              /*!< Corresponding to -18 dBm */
+    ESP_PWR_LVL_N15 = 3,              /*!< Corresponding to -15 dBm */
+    ESP_PWR_LVL_N12 = 4,              /*!< Corresponding to -12 dBm */
+    ESP_PWR_LVL_N9  = 5,              /*!< Corresponding to  -9 dBm */
+    ESP_PWR_LVL_N6  = 6,              /*!< Corresponding to  -6 dBm */
+    ESP_PWR_LVL_N3  = 7,              /*!< Corresponding to  -3 dBm */
+    ESP_PWR_LVL_N0  = 8,              /*!< Corresponding to   0 dBm */
+    ESP_PWR_LVL_P3  = 9,             /*!< Corresponding to  +3 dBm */
+    ESP_PWR_LVL_P6  = 10,             /*!< Corresponding to  +6 dBm */
+    ESP_PWR_LVL_P9  = 11,             /*!< Corresponding to  +9 dBm */
+    ESP_PWR_LVL_P12 = 12,             /*!< Corresponding to  +12 dBm */
+    ESP_PWR_LVL_P15 = 13,             /*!< Corresponding to  +15 dBm */
+    ESP_PWR_LVL_P18 = 14,             /*!< Corresponding to  +18 dBm */
+    ESP_PWR_LVL_P20 = 15,              /*!< Corresponding to  +20 dBm */
+    ESP_PWR_LVL_P21 = 15,              /*!< Corresponding to  +20 dBm, this enum variable has been deprecated */
     ESP_PWR_LVL_INVALID = 0xFF,         /*!< Indicates an invalid value */
 } esp_power_level_t;
 
@@ -128,7 +128,7 @@ typedef struct {
  * @brief  Set BLE TX power
  *         Connection Tx power should only be set after connection created.
  * @param  power_type : The type of which tx power, could set Advertising/Connection/Default and etc
- * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @param  power_level: Power level(index) corresponding to absolute value(dBm)
  * @return              ESP_OK - success, other - failed
  */
 esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_t power_level);
@@ -146,7 +146,7 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type);
  *         Connection Tx power should only be set after connection created.
  * @param  power_type : The enhanced type of which tx power, could set Advertising/Connection/Default and etc
  * @param  handle : The handle of Advertising or Connection and the value 0 for other enhanced power types.
- * @param  power_level: Power level(index) corresponding to absolute value(dbm)
+ * @param  power_level: Power level(index) corresponding to absolute value(dBm)
  * @return              ESP_OK - success, other - failed
  */
 esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle, esp_power_level_t power_level);
@@ -167,7 +167,7 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
  */
 uint8_t esp_ble_get_chip_rev_version(void);
 
-#define CONFIG_VERSION  0x20231124
+#define CONFIG_VERSION  0x20241121
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -227,6 +227,7 @@ typedef struct {
     uint8_t version_num;                        /*!< Version number */
     uint8_t ignore_wl_for_direct_adv;           /*!< Ignore the white list for directed advertising */
     uint8_t csa2_select;                        /*!< Select CSA#2 */
+    uint8_t ble_aa_check;                            /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
     uint32_t config_magic;                      /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
@@ -273,6 +274,7 @@ typedef struct {
     .version_num                = esp_ble_get_chip_rev_version(),                       \
     .ignore_wl_for_direct_adv   = 0,                                                    \
     .csa2_select                = DEFAULT_BT_LE_50_FEATURE_SUPPORT,                     \
+    .ble_aa_check               = DEFAULT_BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS,  \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 

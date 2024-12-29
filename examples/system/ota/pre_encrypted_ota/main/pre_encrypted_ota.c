@@ -108,6 +108,9 @@ void pre_encrypted_ota_task(void *pvParameter)
         .cert_pem = server_cert_pem_start,
         .timeout_ms = CONFIG_EXAMPLE_OTA_RECV_TIMEOUT,
         .keep_alive_enable = true,
+#ifdef CONFIG_EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
+        .save_client_session = true,
+#endif
     };
     esp_decrypt_cfg_t cfg = {};
     cfg.rsa_priv_key = rsa_private_pem_start;

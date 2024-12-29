@@ -55,6 +55,17 @@ SPI 从机驱动程序允许将 SPI 外设作为全双工设备使用。驱动�
 
 SPI 从机驱动程序支持将 SPI ISR 注册至指定 CPU 内核。如果多个任务同时尝试访问一个 SPI 设备，建议重构应用程序，以使每个 SPI 外设一次只由一个任务访问。此外，请使用 :cpp:member:`spi_bus_config_t::isr_cpu_id` 将 SPI ISR 注册至与 SPI 外设相关任务相同的内核，确保线程安全。
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
+
+    睡眠保留
+    ^^^^^^^^
+
+    {IDF_TARGET_NAME} 支持在进入 **Light Sleep** 之前保留 SPI 寄存器中的内容，并在唤醒后恢复。即程序不需要在 **Light Sleep** 唤醒后重新配置 SPI。
+
+    该特性可以通过置位配置中的 :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD` 标志位启用。启用后驱动允许系统在 Light Sleep 时对 SPI 掉电，同时保存寄存器配置。它可以帮助降低轻度睡眠时的功耗，但需要花费一些额外的存储来保存寄存器的配置。
+
+    注意在 Slave 角色下，不支持在所有传输（发送和接收）未完成时进入睡眠，否则将会出错。
+
 SPI 传输事务
 ----------------
 

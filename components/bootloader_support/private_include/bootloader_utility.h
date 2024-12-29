@@ -39,6 +39,13 @@ bool bootloader_utility_load_partition_table(bootloader_state_t* bs);
 int bootloader_utility_get_selected_boot_partition(const bootloader_state_t *bs);
 
 /**
+ * @brief Load and verify the TEE image from the selected partition
+ *
+ * @param bs Bootloader state structure
+ */
+void bootloader_utility_load_tee_image(const bootloader_state_t *bs);
+
+/**
  * @brief Load the selected partition and start application.
  *
  * Start from partition 'start_index', if not bootable then work backwards to FACTORY_INDEX

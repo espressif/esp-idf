@@ -424,7 +424,7 @@ static inline bool spimem_flash_ll_host_idle(const spi_mem_dev_t *dev)
  */
 static inline void spimem_flash_ll_read_phase(spi_mem_dev_t *dev)
 {
-    typeof (dev->user) user = {
+    typeof(dev->user) user = {
         .usr_mosi = 0,
         .usr_miso = 1,
         .usr_addr = 1,
@@ -455,7 +455,7 @@ static inline void spimem_flash_ll_set_cs_pin(spi_mem_dev_t *dev, int pin)
  */
 static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_io_mode_t read_mode)
 {
-    typeof (dev->ctrl) ctrl;
+    typeof(dev->ctrl) ctrl;
     ctrl.val = dev->ctrl.val;
     ctrl.val &= ~(SPI1_MEM_C_FREAD_QIO_M | SPI1_MEM_C_FREAD_QUAD_M | SPI1_MEM_C_FREAD_DIO_M | SPI1_MEM_C_FREAD_DUAL_M);
     ctrl.val |= SPI1_MEM_C_FASTRD_MODE_M;
@@ -611,7 +611,9 @@ static inline void spimem_flash_ll_set_usr_address(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_dummy(spi_mem_dev_t *dev, uint32_t dummy_n)
 {
     dev->user.usr_dummy = dummy_n ? 1 : 0;
-    dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    if (dummy_n > 0) {
+        dev->user1.usr_dummy_cyclelen = dummy_n - 1;
+    }
 }
 
 /**
@@ -641,6 +643,11 @@ static inline void spimem_flash_ll_set_extra_dummy(spi_mem_dev_t *dev, uint32_t 
     //for compatibility
 }
 
+static inline void spimem_flash_ll_set_fdummy_rin(spi_mem_dev_t *dev, uint32_t fdummy_rin)
+{
+    dev->ctrl.fdummy_rin = fdummy_rin;
+}
+
 /**
  * Get the spi flash source clock frequency. Used for calculating
  * the divider parameters.
@@ -654,8 +661,7 @@ static inline uint8_t spimem_flash_ll_get_source_freq_mhz(void)
     // return 80;
     int source_clk_mhz = 0;
 
-    switch (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel)
-    {
+    switch (HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel) {
     case 0:
         source_clk_mhz = clk_ll_xtal_load_freq_mhz();
         break;
@@ -687,7 +693,7 @@ static inline uint32_t spimem_flash_ll_calculate_clock_reg(uint8_t clkdiv)
     if (clkdiv == 1) {
         div_parameter = (1 << 31);
     } else {
-        div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8 ) | (((clkdiv - 1) & 0xff) << 16));
+        div_parameter = ((clkdiv - 1) | (((clkdiv - 1) / 2 & 0xff) << 8) | (((clkdiv - 1) & 0xff) << 16));
     }
     return div_parameter;
 }
@@ -726,59 +732,6 @@ static inline void spimem_flash_ll_set_dummy_out(spi_mem_dev_t *dev, uint32_t ou
     dev->ctrl.d_pol = out_lev;
     dev->ctrl.wp_reg = out_lev;
 }
-
-/*
- * @brief Select FLASH clock source
- *
- * @param mspi_id      mspi_id
- * @param clk_src      clock source, see valid sources in type `soc_periph_flash_clk_src_t`
- */
-__attribute__((always_inline))
-static inline void _spimem_flash_ll_select_clk_source(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
-{
-    (void)mspi_id;
-    uint32_t clk_val = 0;
-    switch (clk_src) {
-    case FLASH_CLK_SRC_XTAL:
-        clk_val = 0;
-        break;
-    case FLASH_CLK_SRC_SPLL:
-        clk_val = 1;
-        break;
-    case FLASH_CLK_SRC_CPLL:
-        clk_val = 2;
-        break;
-    default:
-        HAL_ASSERT(false);
-        break;
-    }
-
-    HP_SYS_CLKRST.soc_clk_ctrl0.reg_flash_sys_clk_en = 1;
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_pll_clk_en = 1;
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_clk_src_sel = clk_val;
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spimem_flash_ll_select_clk_source(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_flash_ll_select_clk_source(__VA_ARGS__)
-
-/**
- * @brief Set FLASH core clock
- *
- * @param mspi_id  mspi_id
- * @param freqdiv  Divider value
- */
-__attribute__((always_inline))
-static inline void _spimem_ctrlr_ll_set_core_clock(uint8_t mspi_id, uint32_t freqdiv)
-{
-    (void)mspi_id;
-    HP_SYS_CLKRST.peri_clk_ctrl00.reg_flash_core_clk_en = 1;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl00, reg_flash_core_clk_div_num, freqdiv - 1);
-}
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define spimem_ctrlr_ll_set_core_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _spimem_ctrlr_ll_set_core_clock(__VA_ARGS__)
 
 /**
  * @brief Disable FLASH MSPI clock

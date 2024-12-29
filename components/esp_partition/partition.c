@@ -33,6 +33,7 @@
 #include "esp_log.h"
 #include "esp_rom_md5.h"
 #include "bootloader_util.h"
+#include "hal/efuse_hal.h"
 
 #if CONFIG_IDF_TARGET_LINUX
 #include "esp_private/partition_linux.h"
@@ -92,6 +93,10 @@ static bool is_partition_encrypted(bool encryption_config, esp_partition_type_t 
             are always encrypted */
         ret_encrypted = true;
     }
+#ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
+    // FE can be enabled in virt eFuses but not in real eFuses.
+    ret_encrypted &= efuse_hal_flash_encryption_enabled();
+#endif
     return ret_encrypted;
 #endif
 }

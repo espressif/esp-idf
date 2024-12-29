@@ -298,3 +298,46 @@ TEST_CASE("pthread mutex trylock timedlock", "[pthread]")
         pthread_mutex_destroy(&mutex);
     }
 }
+
+static volatile bool finish_test;
+
+static void *test_thread(void * arg)
+{
+    while (!finish_test) {
+        vTaskDelay(1);
+    }
+    printf("Thread 0x%"PRIx32" exiting\n", pthread_self());
+    return NULL;
+}
+
+TEST_CASE("pthread set and get sched param", "[pthread]")
+{
+    finish_test = false;
+    pthread_t thread;
+    TEST_ASSERT_EQUAL_INT(0, pthread_create(&thread, NULL, test_thread, NULL));
+
+    int policy;
+    struct sched_param param;
+    TEST_ASSERT_EQUAL_INT(0, pthread_getschedparam(thread, &policy, &param));
+    int orig_prio = param.sched_priority;
+    printf("Origin Priority: %d\n", param.sched_priority);
+    printf("Policy: %d (2=SCHED_RR)\n", policy);
+
+    param.sched_priority += 1;
+    TEST_ASSERT_EQUAL_INT(0, pthread_setschedparam(thread, policy, &param));
+    param.sched_priority += 1;
+    TEST_ASSERT_EQUAL_INT(0, pthread_setschedprio(thread, param.sched_priority));
+
+    TEST_ASSERT_EQUAL_INT(0, pthread_getschedparam(thread, &policy, &param));
+    printf("Priority: %d + 2 = %d\n", orig_prio, param.sched_priority);
+    TEST_ASSERT_EQUAL_INT(orig_prio + 2, param.sched_priority);
+
+    // return priority back
+    TEST_ASSERT_EQUAL_INT(0, pthread_setschedprio(thread, orig_prio));
+    TEST_ASSERT_EQUAL_INT(0, pthread_getschedparam(thread, &policy, &param));
+    TEST_ASSERT_EQUAL_INT(orig_prio, param.sched_priority);
+    printf("Return Priority back to %d, current is %d\n", orig_prio, param.sched_priority);
+    // Wait for the thread to finish 100ms sleep
+    finish_test = true;
+    TEST_ASSERT_EQUAL_INT(0, pthread_join(thread, NULL));
+}

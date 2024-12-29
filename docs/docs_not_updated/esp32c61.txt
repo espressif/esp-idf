@@ -35,8 +35,6 @@ api-reference/storage/fatfsgen.rst
 api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/isp.rst
-api-reference/peripherals/adc_continuous.rst
-api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/usb_host/usb_host_notes_arch.rst
 api-reference/peripherals/usb_host/usb_host_notes_index.rst
@@ -47,9 +45,7 @@ api-reference/peripherals/usb_device.rst
 api-reference/peripherals/dac.rst
 api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ppa.rst
-api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/camera_driver.rst
-api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/touch_pad.rst

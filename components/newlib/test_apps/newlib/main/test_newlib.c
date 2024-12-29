@@ -136,18 +136,19 @@ static bool fn_in_rom(void *fn)
 
 TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
 {
-#if PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT)
+#if CONFIG_LIBC_NEWLIB && (PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT))
     TEST_ASSERT(fn_in_rom(vfprintf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(vfprintf));
-#endif // PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT)
+#endif // CONFIG_LIBC_NEWLIB && (PRINTF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT  && !CONFIG_NEWLIB_NANO_FORMAT))
 
-#if SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT)
+#if CONFIG_LIBC_NEWLIB && (SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT))
     TEST_ASSERT(fn_in_rom(sscanf));
 #else
     TEST_ASSERT_FALSE(fn_in_rom(sscanf));
-#endif //  SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT)
+#endif // CONFIG_LIBC_NEWLIB && (SSCANF_NANO_IN_ROM || (ESP_ROM_HAS_NEWLIB_NORMAL_FORMAT && !CONFIG_NEWLIB_NANO_FORMAT))
 
+#if CONFIG_LIBC_NEWLIB
 #if defined(CONFIG_IDF_TARGET_ESP32)
 
 #if defined(CONFIG_SPIRAM_CACHE_WORKAROUND)
@@ -162,10 +163,15 @@ TEST_CASE("check if ROM or Flash is used for functions", "[newlib]")
     /* S2 do not have these in ROM */
     TEST_ASSERT_FALSE(fn_in_rom(atoi));
     TEST_ASSERT_FALSE(fn_in_rom(strtol));
-#else
+#else // defined(CONFIG_IDF_TARGET_ESP32)
     TEST_ASSERT(fn_in_rom(atoi));
     TEST_ASSERT(fn_in_rom(strtol));
 #endif // defined(CONFIG_IDF_TARGET_ESP32)
+#else // CONFIG_LIBC_NEWLIB
+    /* picolobc uses it's own implementation without using struct reent */
+    TEST_ASSERT_FALSE(fn_in_rom(atoi));
+    TEST_ASSERT_FALSE(fn_in_rom(strtol));
+#endif // CONFIG_LIBC_NEWLIB
 }
 
 #ifndef CONFIG_NEWLIB_NANO_FORMAT

@@ -43,7 +43,6 @@ typedef enum {
     RESET_REASON_CPU0_JTAG       = 0x18, // JTAG resets the CPU 0
 } soc_reset_reason_t;
 
-
 #ifdef __cplusplus
 }
 #endif

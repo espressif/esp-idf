@@ -380,24 +380,31 @@ static void heap_trace_dump_base(bool internal_ram, bool psram)
                 label = ",    PSRAM";
             }
 
-            esp_rom_printf("%6d bytes (@ %p%s) allocated CPU %d ccount 0x%08x caller ",
+            esp_rom_printf("%6d bytes (@ %p%s) allocated CPU %d ccount 0x%08x",
                    r_cur->size, r_cur->address, label, r_cur->ccount & 1, r_cur->ccount & ~3);
 
-            for (int j = 0; j < STACK_DEPTH && r_cur->alloced_by[j] != 0; j++) {
-                esp_rom_printf("%p%s", r_cur->alloced_by[j],
-                       (j < STACK_DEPTH - 1) ? ":" : "");
+            if (STACK_DEPTH != 0 && r_cur->alloced_by[0] != NULL) {
+                esp_rom_printf(" caller ");
+                for (int j = 0; j < STACK_DEPTH && r_cur->alloced_by[j] != 0; j++) {
+                    esp_rom_printf("%p%s", r_cur->alloced_by[j],
+                           (j < STACK_DEPTH - 1) ? ":" : "");
+                }
             }
 
-            if (mode != HEAP_TRACE_ALL || STACK_DEPTH == 0 || r_cur->freed_by[0] == NULL) {
+            if (r_cur->freed == true) {
+                if ((mode == HEAP_TRACE_ALL) && (STACK_DEPTH != 0) && (r_cur->freed_by[0] != NULL)) {
+                    esp_rom_printf("\nfreed by ");
+                    for (int j = 0; j < STACK_DEPTH; j++) {
+                        esp_rom_printf("%p%s", r_cur->freed_by[j],
+                            (j < STACK_DEPTH - 1) ? ":" : "\n");
+                    }
+                } else {
+                    esp_rom_printf(" freed\n");
+                }
+            } else {
                 delta_size += r_cur->size;
                 delta_allocs++;
                 esp_rom_printf("\n");
-            } else {
-                esp_rom_printf("\nfreed by ");
-                for (int j = 0; j < STACK_DEPTH; j++) {
-                    esp_rom_printf("%p%s", r_cur->freed_by[j],
-                           (j < STACK_DEPTH - 1) ? ":" : "\n");
-                }
             }
         }
 
@@ -500,6 +507,7 @@ static HEAP_IRAM_ATTR void record_free(void *p, void **callers)
             heap_trace_record_t *r_found = list_find(p);
             if (r_found != NULL) {
                 // add 'freed_by' info to the record
+                r_found->freed = true;
                 memcpy(r_found->freed_by, callers, sizeof(void *) * STACK_DEPTH);
             }
         } else { // HEAP_TRACE_LEAKS
@@ -538,6 +546,7 @@ static HEAP_IRAM_ATTR void list_remove(heap_trace_record_t* r_remove)
     // set as unused
     r_remove->address = 0;
     r_remove->size = 0;
+    r_remove->freed = false;
 
     // add to records.unused
     TAILQ_INSERT_HEAD(&records.unused, r_remove, tailq_list);
@@ -559,6 +568,7 @@ static HEAP_IRAM_ATTR heap_trace_record_t* list_pop_unused(void)
     heap_trace_record_t *r_unused = TAILQ_FIRST(&records.unused);
     assert(r_unused->address == NULL);
     assert(r_unused->size == 0);
+    assert(r_unused->freed == false);
 
     // remove from records.unused
     TAILQ_REMOVE(&records.unused, r_unused, tailq_list);
@@ -573,6 +583,7 @@ static HEAP_IRAM_ATTR void record_deep_copy(heap_trace_record_t *r_dest, const h
     r_dest->ccount  = r_src->ccount;
     r_dest->address = r_src->address;
     r_dest->size    = r_src->size;
+    r_dest->freed    = r_src->freed;
     memcpy(r_dest->freed_by,   r_src->freed_by,   sizeof(void *) * STACK_DEPTH);
     memcpy(r_dest->alloced_by, r_src->alloced_by, sizeof(void *) * STACK_DEPTH);
 }

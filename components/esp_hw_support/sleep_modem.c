@@ -196,21 +196,26 @@ inline __attribute__((always_inline)) bool sleep_modem_wifi_modem_link_done(void
 bool modem_domain_pd_allowed(void)
 {
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA
-    const uint32_t inited_modules = sleep_retention_get_inited_modules();
-    const uint32_t created_modules = sleep_retention_get_created_modules();
+    const sleep_retention_module_bitmap_t inited_modules = sleep_retention_get_inited_modules();
+    const sleep_retention_module_bitmap_t created_modules = sleep_retention_get_created_modules();
 
-    uint32_t mask = 0;
+    sleep_retention_module_bitmap_t mask = (sleep_retention_module_bitmap_t){ .bitmap = { 0 } };
 #if SOC_WIFI_SUPPORTED
-    mask |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC) | BIT(SLEEP_RETENTION_MODULE_WIFI_BB);
+    mask.bitmap[SLEEP_RETENTION_MODULE_WIFI_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_WIFI_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_WIFI_BB % 32);
 #endif
 #if SOC_BT_SUPPORTED
-    mask |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+    mask.bitmap[SLEEP_RETENTION_MODULE_BLE_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_BLE_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
 #endif
 #if SOC_IEEE802154_SUPPORTED
-    mask |= BIT(SLEEP_RETENTION_MODULE_802154_MAC) | BIT(SLEEP_RETENTION_MODULE_BT_BB);
+    mask.bitmap[SLEEP_RETENTION_MODULE_802154_MAC >> 5] |= BIT(SLEEP_RETENTION_MODULE_802154_MAC % 32);
+    mask.bitmap[SLEEP_RETENTION_MODULE_BT_BB >> 5] |= BIT(SLEEP_RETENTION_MODULE_BT_BB % 32);
 #endif
 
-    return ((inited_modules & mask) == (created_modules & mask));
+    const sleep_retention_module_bitmap_t modem_domain_inited_modules = sleep_retention_module_bitmap_and(inited_modules, mask);
+    const sleep_retention_module_bitmap_t modem_domain_created_modules = sleep_retention_module_bitmap_and(created_modules, mask);
+    return sleep_retention_module_bitmap_eq(modem_domain_inited_modules, modem_domain_created_modules);
 #else
     return false; /* MODEM power domain is controlled by each module (WiFi, Bluetooth or 15.4) of modem */
 #endif

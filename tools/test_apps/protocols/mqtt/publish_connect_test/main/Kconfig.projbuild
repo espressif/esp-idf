@@ -24,18 +24,6 @@ menu "Example Configuration"
         help
             URL of an mqtt broker for wss transport
 
-    config EXAMPLE_PUBLISH_TOPIC
-        string "publish topic"
-        default "/topic/publish/esp2py"
-        help
-            topic to which esp32 client publishes
-
-    config EXAMPLE_SUBSCRIBE_TOPIC
-        string "subscribe topic"
-        default "/topic/subscribe/py2esp"
-        help
-            topic to which esp32 client subsribes (and expects data)
-
     config EXAMPLE_BROKER_CERTIFICATE_OVERRIDE
         string "Broker certificate override"
         default ""
@@ -46,6 +34,27 @@ menu "Example Configuration"
     config EXAMPLE_BROKER_CERTIFICATE_OVERRIDDEN
         bool
         default y if EXAMPLE_BROKER_CERTIFICATE_OVERRIDE != ""
+
+    config EXAMPLE_RUN_LOCAL_BROKER
+        bool "Run local mosquitto"
+        default n
+        help
+            If enabled, this tests uses local mosquitto broker
+            running on the same endpoint as the client
+
+    config EXAMPLE_BROKER_HOST
+        string "Broker host address"
+        default "0.0.0.0"
+        depends on EXAMPLE_RUN_LOCAL_BROKER
+        help
+            Host name of the endpoint to bind the mosquitto listener.
+
+    config EXAMPLE_BROKER_PORT
+        int "Broker port"
+        default 1234
+        depends on EXAMPLE_RUN_LOCAL_BROKER
+        help
+            Port of the endpoint to bind the mosquitto listener
 
     config EXAMPLE_CONNECT_CASE_NO_CERT
         # Note: All the below config values (EXAMPLE_CONNECT_CASE...) are hidden and

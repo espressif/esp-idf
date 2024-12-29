@@ -15,7 +15,15 @@ An application on "ESP-Dev-Board" may be upgraded at runtime by downloading a ne
 - Using the native APIs provided by the [`app_update`](../../../components/app_update) component.
 - Using simplified APIs provided by the [`esp_https_ota`](../../../components/esp_https_ota) component, which provides functionality to upgrade over HTTPS.
 
-Use of the native API is demonstrated in the `native_ota_example` directory while the API provided by the `esp_https_ota` component is demonstrated under `simple_ota_example` and `advanced_https_ota`.
+Use of the native API is demonstrated in the `native_ota_example` directory while the API provided by the `esp_https_ota` component is demonstrated under `simple_ota_example`, `advanced_https_ota`, and `partitions_ota`.
+
+The `partitions_ota` demonstrates the OTA update process for any partition type (other examples support only safe updates for application):
+- Application (safe update).
+- Bootloader (unsafe update).
+- Partition table (unsafe update).
+- other data partitions (unsafe update).
+
+**Note:** **Safe updates** are designed to ensure that the device remains operational even if the update process is interrupted. This means that the device can still boot and function normally, minimizing the risk of failure. On the other hand, **unsafe updates** carry a significant risk. If the update is disrupted while copying to the destination partition, it can lead to critical failures, potentially making the device inoperable and unrecoverable. Since the final copying is performed on the user side, this risk can be minimized by ensuring stable power and error-free conditions during this time.
 
 For information regarding the `esp_https_ota` component, please refer to [ESP HTTPS OTA](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_https_ota.html).
 

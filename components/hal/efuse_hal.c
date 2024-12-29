@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "sdkconfig.h"
 #include <sys/param.h>
 #include "soc/soc_caps.h"
 #include "hal/efuse_ll.h"
@@ -32,6 +31,11 @@ IRAM_ATTR uint32_t efuse_hal_blk_version(void)
 IRAM_ATTR bool efuse_hal_get_disable_wafer_version_major(void)
 {
     return efuse_ll_get_disable_wafer_version_major();
+}
+
+IRAM_ATTR uint32_t efuse_hal_get_chip_ver_pkg(void)
+{
+    return efuse_ll_get_chip_ver_pkg();
 }
 
 IRAM_ATTR bool efuse_hal_get_disable_blk_version_major(void)

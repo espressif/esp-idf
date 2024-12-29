@@ -161,6 +161,12 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
     spi_flash_ll_set_miso_bitlen(dev, 0);
     spi_flash_ll_set_mosi_bitlen(dev, 0);
     spi_flash_ll_set_read_mode(dev, io_mode);
+#if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
+    spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
+    if (ctx->fdummy_rin) {
+        spimem_flash_ll_set_fdummy_rin((spi_mem_dev_t*)dev, ctx->fdummy_rin);
+    }
+#endif
     return ESP_OK;
 }
 

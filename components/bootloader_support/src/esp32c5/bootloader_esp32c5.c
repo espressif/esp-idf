@@ -85,7 +85,7 @@ static void bootloader_super_wdt_auto_feed(void)
 
 static inline void bootloader_hardware_init(void)
 {
-    regi2c_ctrl_ll_master_enable_clock(true);
+    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
     regi2c_ctrl_ll_master_force_enable_clock(true); // TODO: IDF-8667 Remove this?
     regi2c_ctrl_ll_master_configure_clock();
 }
@@ -103,6 +103,15 @@ static inline void bootloader_ana_reset_config(void)
 
 esp_err_t bootloader_init(void)
 {
+#if CONFIG_SECURE_BOOT
+#if CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME
+    if (efuse_hal_chip_revision() == 0) {
+        ESP_LOGE(TAG, "Chip version 0.0 is not supported with RSA secure boot scheme. Please select the ECDSA scheme.");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif /* CONFIG_SECURE_SIGNED_APPS_RSA_SCHEME */
+#endif /* CONFIG_SECURE_BOOT */
+
     esp_err_t ret = ESP_OK;
 
     bootloader_hardware_init();

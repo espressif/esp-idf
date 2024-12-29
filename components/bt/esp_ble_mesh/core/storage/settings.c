@@ -1483,6 +1483,8 @@ int settings_core_commit(void)
         struct bt_mesh_hb_pub *hb_pub = NULL;
         struct bt_mesh_cfg_srv *cfg = NULL;
 
+        bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID);
+
         hb_pub = bt_mesh_hb_pub_get();
         if (hb_pub && hb_pub->dst != BLE_MESH_ADDR_UNASSIGNED &&
             hb_pub->count && hb_pub->period) {
@@ -1501,7 +1503,6 @@ int settings_core_commit(void)
             cfg->default_ttl = stored_cfg.cfg.default_ttl;
         }
 
-        bt_mesh_atomic_set_bit(bt_mesh.flags, BLE_MESH_VALID);
         bt_mesh_net_start();
     }
 #endif /* CONFIG_BLE_MESH_NODE */

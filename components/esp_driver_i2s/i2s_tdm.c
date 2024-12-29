@@ -61,10 +61,11 @@ static esp_err_t i2s_tdm_calculate_clock(i2s_chan_handle_t handle, const i2s_tdm
     }
     clk_info->sclk = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ?
                      clk_cfg->ext_clk_freq_hz : i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+    float min_mclk_div = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ? 0.99 : 1.99;
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
-    /* Check if the configuration is correct */
-    ESP_RETURN_ON_FALSE(clk_info->mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large for the current clock source");
+    /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
+    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate or mclk_multiple is too large for the current clock source");
 
     return ESP_OK;
 }
@@ -104,8 +105,8 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
     handle->active_slot = slot_cfg->slot_mode == I2S_SLOT_MODE_MONO ? 1 : __builtin_popcount(slot_cfg->slot_mask);
     uint32_t max_slot_num = 32 - __builtin_clz(slot_cfg->slot_mask);
     handle->total_slot = slot_cfg->total_slot < max_slot_num ? max_slot_num : slot_cfg->total_slot;
-    handle->total_slot = handle->total_slot < 2 ? 2 : handle->total_slot;  // At least two slots in a frame
-
+    // At least two slots in a frame if not using PCM short format
+    handle->total_slot = ((handle->total_slot < 2) && (slot_cfg->ws_width != 1)) ? 2 : handle->total_slot;
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {

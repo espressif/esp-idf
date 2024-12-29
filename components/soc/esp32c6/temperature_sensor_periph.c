@@ -29,8 +29,10 @@ const temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_S
 #define TEMPERATURE_SENSOR_RETENTION_MAP_BASE  APB_SARADC_INT_ENA_REG
 static const uint32_t temperature_sensor_regs_map[4] = {0x6c1, 0, 0, 0};
 static const regdma_entries_config_t temperature_sensor_regs_entries[] = {
-    [0] = {.config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TSENS_LINK(0x00), TEMPERATURE_SENSOR_RETENTION_MAP_BASE, TEMPERATURE_SENSOR_RETENTION_MAP_BASE, TEMPERATURE_SENSOR_RETENTION_REGS_CNT, 0, 0, temperature_sensor_regs_map[0], temperature_sensor_regs_map[1], temperature_sensor_regs_map[2], temperature_sensor_regs_map[3]), \
-           .owner = ENTRY(0) | ENTRY(2) }, \
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_TSENS_LINK(0x00), TEMPERATURE_SENSOR_RETENTION_MAP_BASE, TEMPERATURE_SENSOR_RETENTION_MAP_BASE, TEMPERATURE_SENSOR_RETENTION_REGS_CNT, 0, 0, temperature_sensor_regs_map[0], temperature_sensor_regs_map[1], temperature_sensor_regs_map[2], temperature_sensor_regs_map[3]), \
+        .owner = ENTRY(0) | ENTRY(2)
+    }, \
 };
 
 const temperature_sensor_reg_ctx_link_t temperature_sensor_regs_retention = {

@@ -24,12 +24,14 @@ PARTITION_TABLE_SIZE  = 0x1000  # Size of partition table
 
 MIN_PARTITION_SUBTYPE_APP_OTA = 0x10
 NUM_PARTITION_SUBTYPE_APP_OTA = 16
+MIN_PARTITION_SUBTYPE_APP_TEE = 0x30
+NUM_PARTITION_SUBTYPE_APP_TEE = 2
 
 SECURE_NONE = None
 SECURE_V1 = 'v1'
 SECURE_V2 = 'v2'
 
-__version__ = '1.3'
+__version__ = '1.4'
 
 APP_TYPE = 0x00
 DATA_TYPE = 0x01
@@ -60,6 +62,7 @@ SUBTYPES = {
     BOOTLOADER_TYPE: {
         'primary': 0x00,
         'ota': 0x01,
+        'recovery': 0x02,
     },
     PARTITION_TABLE_TYPE: {
         'primary': 0x00,
@@ -81,6 +84,8 @@ SUBTYPES = {
         'fat': 0x81,
         'spiffs': 0x82,
         'littlefs': 0x83,
+        'tee_ota': 0x90,
+        'tee_sec_stg': 0x91,
     },
 }
 
@@ -154,6 +159,7 @@ md5sum = True
 secure = SECURE_NONE
 offset_part_table = 0
 primary_bootloader_offset = None
+recovery_bootloader_offset = None
 
 
 def status(msg):
@@ -306,6 +312,18 @@ class PartitionTable(list):
             critical('%s' % (p.to_csv()))
             raise InputError('otadata partition must have size = 0x2000')
 
+        # Above checks but for TEE otadata
+        otadata_duplicates = [p for p in self if p.type == TYPES['data'] and p.subtype == SUBTYPES[DATA_TYPE]['tee_ota']]
+        if len(otadata_duplicates) > 1:
+            for p in otadata_duplicates:
+                critical('%s' % (p.to_csv()))
+            raise InputError('Found multiple TEE otadata partitions. Only one partition can be defined with type="data"(1) and subtype="tee_ota"(0x90).')
+
+        if len(otadata_duplicates) == 1 and otadata_duplicates[0].size != 0x2000:
+            p = otadata_duplicates[0]
+            critical('%s' % (p.to_csv()))
+            raise InputError('TEE otadata partition must have size = 0x2000')
+
     def flash_size(self):
         """ Return the size that partitions will occupy in flash
             (ie the offset the last partition ends at)
@@ -376,6 +394,10 @@ class PartitionDefinition(object):
     # add subtypes for the 16 OTA slot values ("ota_XX, etc.")
     for ota_slot in range(NUM_PARTITION_SUBTYPE_APP_OTA):
         SUBTYPES[TYPES['app']]['ota_%d' % ota_slot] = MIN_PARTITION_SUBTYPE_APP_OTA + ota_slot
+
+    # add subtypes for the 2 TEE OTA slot values ("tee_XX, etc.")
+    for tee_slot in range(NUM_PARTITION_SUBTYPE_APP_TEE):
+        SUBTYPES[TYPES['app']]['tee_%d' % tee_slot] = MIN_PARTITION_SUBTYPE_APP_TEE + tee_slot
 
     def __init__(self):
         self.name = ''
@@ -464,10 +486,15 @@ class PartitionDefinition(object):
         return parse_int(strval)
 
     def parse_address(self, strval, ptype, psubtype):
-        if ptype == BOOTLOADER_TYPE and psubtype == SUBTYPES[ptype]['primary']:
-            if primary_bootloader_offset is None:
-                raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
-            return primary_bootloader_offset
+        if ptype == BOOTLOADER_TYPE:
+            if psubtype == SUBTYPES[ptype]['primary']:
+                if primary_bootloader_offset is None:
+                    raise InputError(f'Primary bootloader offset is not defined. Please use --primary-bootloader-offset')
+                return primary_bootloader_offset
+            if psubtype == SUBTYPES[ptype]['recovery']:
+                if recovery_bootloader_offset is None:
+                    raise InputError(f'Recovery bootloader offset is not defined. Please use --recovery-bootloader-offset')
+                return recovery_bootloader_offset
         if ptype == PARTITION_TABLE_TYPE and psubtype == SUBTYPES[ptype]['primary']:
             return offset_part_table
         if strval == '':
@@ -590,6 +617,7 @@ def main():
     global offset_part_table
     global secure
     global primary_bootloader_offset
+    global recovery_bootloader_offset
     parser = argparse.ArgumentParser(description='ESP32 partition table utility')
 
     parser.add_argument('--flash-size', help='Optional flash size limit, checks partition table fits in flash',
@@ -601,6 +629,7 @@ def main():
     parser.add_argument('--quiet', '-q', help="Don't print non-critical status messages to stderr", action='store_true')
     parser.add_argument('--offset', '-o', help='Set offset partition table', default='0x8000')
     parser.add_argument('--primary-bootloader-offset', help='Set primary bootloader offset', default=None)
+    parser.add_argument('--recovery-bootloader-offset', help='Set recovery bootloader offset', default=None)
     parser.add_argument('--secure', help='Require app partitions to be suitable for secure boot', nargs='?', const=SECURE_V1, choices=[SECURE_V1, SECURE_V2])
     parser.add_argument('--extra-partition-subtypes', help='Extra partition subtype entries', nargs='*')
     parser.add_argument('input', help='Path to CSV or binary file to parse.', type=argparse.FileType('rb'))
@@ -620,6 +649,8 @@ def main():
                 f'Unsupported configuration. Primary bootloader must be below partition table. '
                 f'Check --primary-bootloader-offset={primary_bootloader_offset:#x} and --offset={offset_part_table:#x}'
             )
+    if args.recovery_bootloader_offset is not None:
+        recovery_bootloader_offset = int(args.recovery_bootloader_offset, 0)
     if args.extra_partition_subtypes:
         add_extra_subtypes(args.extra_partition_subtypes)
 

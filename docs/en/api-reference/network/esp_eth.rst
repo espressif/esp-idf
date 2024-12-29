@@ -382,7 +382,7 @@ To install the Ethernet driver, we need to combine the instance of MAC and PHY a
 
 * :cpp:member:`esp_eth_config_t::check_link_period_ms`: Ethernet driver starts an OS timer to check the link status periodically, this field is used to set the interval, in milliseconds.
 
-* :cpp:member:`esp_eth_config_t::stack_input`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
+* :cpp:member:`esp_eth_config_t::stack_input` or :cpp:member:`esp_eth_config_t::stack_input_info`: In most Ethernet IoT applications, any Ethernet frame received by a driver should be passed to the upper layer (e.g., TCP/IP stack). This field is set to a function that is responsible to deal with the incoming frames. You can even update this field at runtime via function :cpp:func:`esp_eth_update_input_path` after driver installation.
 
 * :cpp:member:`esp_eth_config_t::on_lowlevel_init_done` and :cpp:member:`esp_eth_config_t::on_lowlevel_deinit_done`: These two fields are used to specify the hooks which get invoked when low-level hardware has been initialized or de-initialized.
 
@@ -517,6 +517,58 @@ The following functions should only be invoked after the Ethernet driver has bee
     esp_eth_ioctl(eth_handle, ETH_CMD_G_PHY_ADDR, &phy_addr);
     ESP_LOGI(TAG, "Ethernet PHY Address: %d", phy_addr);
 
+.. _time-stamping:
+
+.. only:: SOC_EMAC_IEEE1588V2_SUPPORTED
+
+    EMAC Hardware Time Stamping
+    ---------------------------
+
+    Time stamping in EMAC allows precise tracking of when Ethernet frames are transmitted or received. Hardware time stamping is crucial for applications like Precision Time Protocol (PTP) because it minimizes jitter and inaccuracies that can occur when relying on software time stamps. Embedded time stamps in hardware avoid delays introduced by software layers or processing overhead. Therefore, it ensures nanosecond-level precision.
+
+    .. warning::
+
+        Time stamp associated API is currently in **"Experimental Feature"** state so be aware it may change with future releases.
+
+    The basic way how to enable time stamping, get and set time in the EMAC is demonstrated below.
+
+    .. highlight:: c
+
+    ::
+
+        // Enable hardware time stamping
+        bool ptp_enable = true;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_PTP_ENABLE, &ptp_enable);
+
+        // Get current EMAC time
+        eth_mac_time_t ptp_time;
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_G_PTP_TIME, &ptp_time);
+
+        // Set EMAC time
+        ptp_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_PTP_TIME, &ptp_time);
+
+    You have an option to schedule event at precise point in time by registering callback function and configuring a target time when the event is supposed to be fired. Note that the callback function is then called from ISR context so it should be as brief as possible.
+
+    .. highlight:: c
+
+    ::
+
+        // Register the callback function
+        esp_eth_ioctl(eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_CB, ts_callback);
+
+        // Set time when event is triggered
+        eth_mac_time_t mac_target_time = {
+            .seconds = 42,
+            .nanoseconds = 0
+        };
+        esp_eth_ioctl(s_eth_hndl, ETH_MAC_ESP_CMD_S_TARGET_TIME, &mac_target_time);
+
+    Time stamps for transmitted and received frames can be accessed via the last argument of the registered :cpp:member:`esp_eth_config_t::stack_input_info` function for the receive path, and via the ``ctrl`` argument of the :cpp:func:`esp_eth_transmit_ctrl_vargs` function for the transmit path. However, a more user-friendly approach to retrieve time stamp information in user space is by utilizing the L2 TAP :ref:`Extended Buffer <esp_netif_l2tap_ext_buff>` mechanism.
+
 .. _flow-control:
 
 Flow Control
@@ -545,6 +597,8 @@ Application Examples
   * :example:`ethernet/basic` demonstrates how to use the Ethernet driver, covering driver installation, attaching it to `esp_netif`, sending DHCP requests, and obtaining a pingable IP address.
 
   * :example:`ethernet/iperf` demonstrates how to use the Ethernet capabilities to measure the throughput/bandwidth using iPerf.
+
+  * :example:`ethernet/ptp` demonstrates the use of Precision Time Protocol (PTP) for time synchronization over Ethernet.
 
   * :example:`network/vlan_support` demonstrates how to create virtual network interfaces over Ethernet, including VLAN and non-VLAN interfaces.
 

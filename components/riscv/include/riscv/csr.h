@@ -187,6 +187,13 @@ extern "C" {
 #define STPC1       0xBF1
 #define STPC2       0xBF2
 
+/* Espressif's custom CSR for the current privilege mode */
+#if CONFIG_IDF_TARGET_ESP32C6 || CONFIG_IDF_TARGET_ESP32H2
+#define CSR_PRV_MODE   0xC10
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32P4
+#define CSR_PRV_MODE   0x810
+#endif
+
 /* RISC-V CSR macros
  * Adapted from https://github.com/michaeljclark/riscv-probe/blob/master/libfemto/include/arch/riscv/machine.h
  */

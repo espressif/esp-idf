@@ -818,7 +818,7 @@ alloc_err:
         vSemaphoreDelete(event_sem);
     }
     heap_caps_free(client_obj);
-    return ESP_OK;
+    return ret;
 }
 
 esp_err_t usb_host_client_deregister(usb_host_client_handle_t client_hdl)

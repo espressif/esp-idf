@@ -111,7 +111,7 @@ ESP-IDF 环形 buffer 是一个典型的 FIFO buffer，支持任意大小的数�
             .buf = item->buf,
         };
         //实际发送到环形 buffer 以供使用
-        res = xRingbufferSendComplete(buf_handle, &item);
+        res = xRingbufferSendComplete(buf_handle, (void *)item);
         if (res != pdTRUE) {
             printf("Failed to send item\n");
         }

@@ -29,6 +29,10 @@ struct cached_data{
 #endif
 	FILINFO fileinfo;
 };
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+#if !defined(FILENAME_MAX)
+#define FILENAME_MAX 255
 #endif
 
 typedef struct {
@@ -39,7 +43,7 @@ typedef struct {
     FATFS fs;           /* fatfs library FS structure */
     char tmp_path_buf[FILENAME_MAX+3];  /* temporary buffer used to prepend drive name to the path */
     char tmp_path_buf2[FILENAME_MAX+3]; /* as above; used in functions which take two path arguments */
-    bool *o_append;  /* O_APPEND is stored here for each max_files entries (because O_APPEND is not compatible with FA_OPEN_APPEND) */
+    uint32_t *flags; /* file descriptor flags, array of max_files size */
 #ifdef CONFIG_VFS_SUPPORT_DIR
     char dir_path[FILENAME_MAX]; /* variable to store path of opened directory*/
     struct cached_data cached_fileinfo;
@@ -85,6 +89,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode);
 static int vfs_fat_close(void* ctx, int fd);
 static int vfs_fat_fstat(void* ctx, int fd, struct stat * st);
 static int vfs_fat_fsync(void* ctx, int fd);
+static int vfs_fat_fcntl(void* ctx, int fd, int cmd, int arg);
 #ifdef CONFIG_VFS_SUPPORT_DIR
 static int vfs_fat_stat(void* ctx, const char * path, struct stat * st);
 static int vfs_fat_link(void* ctx, const char* n1, const char* n2);
@@ -140,6 +145,43 @@ esp_err_t esp_vfs_fat_register(const char* base_path, const char* fat_drive, siz
     return esp_vfs_fat_register_cfg(&conf, out_fs);
 }
 
+#ifdef CONFIG_VFS_SUPPORT_DIR
+static const esp_vfs_dir_ops_t s_vfs_fat_dir = {
+    .stat_p = &vfs_fat_stat,
+    .link_p = &vfs_fat_link,
+    .unlink_p = &vfs_fat_unlink,
+    .rename_p = &vfs_fat_rename,
+    .opendir_p = &vfs_fat_opendir,
+    .closedir_p = &vfs_fat_closedir,
+    .readdir_p = &vfs_fat_readdir,
+    .readdir_r_p = &vfs_fat_readdir_r,
+    .seekdir_p = &vfs_fat_seekdir,
+    .telldir_p = &vfs_fat_telldir,
+    .mkdir_p = &vfs_fat_mkdir,
+    .rmdir_p = &vfs_fat_rmdir,
+    .access_p = &vfs_fat_access,
+    .truncate_p = &vfs_fat_truncate,
+    .ftruncate_p = &vfs_fat_ftruncate,
+    .utime_p = &vfs_fat_utime,
+};
+#endif // CONFIG_VFS_SUPPORT_DIR
+
+static const esp_vfs_fs_ops_t s_vfs_fat = {
+    .write_p = &vfs_fat_write,
+    .lseek_p = &vfs_fat_lseek,
+    .read_p = &vfs_fat_read,
+    .pread_p = &vfs_fat_pread,
+    .pwrite_p = &vfs_fat_pwrite,
+    .open_p = &vfs_fat_open,
+    .close_p = &vfs_fat_close,
+    .fstat_p = &vfs_fat_fstat,
+    .fcntl_p = &vfs_fat_fcntl,
+    .fsync_p = &vfs_fat_fsync,
+#ifdef CONFIG_VFS_SUPPORT_DIR
+    .dir = &s_vfs_fat_dir,
+#endif // CONFIG_VFS_SUPPORT_DIR
+};
+
 esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_fs)
 {
     size_t ctx = find_context_index_by_path(conf->base_path);
@@ -152,37 +194,6 @@ esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_f
         return ESP_ERR_NO_MEM;
     }
 
-    const esp_vfs_t vfs = {
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
-        .write_p = &vfs_fat_write,
-        .lseek_p = &vfs_fat_lseek,
-        .read_p = &vfs_fat_read,
-        .pread_p = &vfs_fat_pread,
-        .pwrite_p = &vfs_fat_pwrite,
-        .open_p = &vfs_fat_open,
-        .close_p = &vfs_fat_close,
-        .fstat_p = &vfs_fat_fstat,
-        .fsync_p = &vfs_fat_fsync,
-#ifdef CONFIG_VFS_SUPPORT_DIR
-        .stat_p = &vfs_fat_stat,
-        .link_p = &vfs_fat_link,
-        .unlink_p = &vfs_fat_unlink,
-        .rename_p = &vfs_fat_rename,
-        .opendir_p = &vfs_fat_opendir,
-        .closedir_p = &vfs_fat_closedir,
-        .readdir_p = &vfs_fat_readdir,
-        .readdir_r_p = &vfs_fat_readdir_r,
-        .seekdir_p = &vfs_fat_seekdir,
-        .telldir_p = &vfs_fat_telldir,
-        .mkdir_p = &vfs_fat_mkdir,
-        .rmdir_p = &vfs_fat_rmdir,
-        .access_p = &vfs_fat_access,
-        .truncate_p = &vfs_fat_truncate,
-        .ftruncate_p = &vfs_fat_ftruncate,
-        .utime_p = &vfs_fat_utime,
-#endif // CONFIG_VFS_SUPPORT_DIR
-    };
-
     size_t max_files = conf->max_files;
     if (max_files < 1) {
         max_files = 1;  // ff_memalloc(max_files * sizeof(bool)) below will fail if max_files == 0
@@ -194,19 +205,19 @@ esp_err_t esp_vfs_fat_register_cfg(const esp_vfs_fat_conf_t* conf, FATFS** out_f
         return ESP_ERR_NO_MEM;
     }
     memset(fat_ctx, 0, ctx_size);
-    fat_ctx->o_append = ff_memalloc(max_files * sizeof(bool));
-    if (fat_ctx->o_append == NULL) {
+    fat_ctx->flags = ff_memalloc(max_files * sizeof(*fat_ctx->flags));
+    if (fat_ctx->flags == NULL) {
         free(fat_ctx);
         return ESP_ERR_NO_MEM;
     }
-    memset(fat_ctx->o_append, 0, max_files * sizeof(bool));
+    memset(fat_ctx->flags, 0, max_files * sizeof(*fat_ctx->flags));
     fat_ctx->max_files = max_files;
     strlcpy(fat_ctx->fat_drive, conf->fat_drive, sizeof(fat_ctx->fat_drive) - 1);
     strlcpy(fat_ctx->base_path, conf->base_path, sizeof(fat_ctx->base_path) - 1);
 
-    esp_err_t err = esp_vfs_register(conf->base_path, &vfs, fat_ctx);
+    esp_err_t err = esp_vfs_register_fs(conf->base_path, &s_vfs_fat, ESP_VFS_FLAG_CONTEXT_PTR | ESP_VFS_FLAG_STATIC, fat_ctx);
     if (err != ESP_OK) {
-        free(fat_ctx->o_append);
+        free(fat_ctx->flags);
         free(fat_ctx);
         return err;
     }
@@ -234,7 +245,7 @@ esp_err_t esp_vfs_fat_unregister_path(const char* base_path)
         return err;
     }
     _lock_close(&fat_ctx->lock);
-    free(fat_ctx->o_append);
+    free(fat_ctx->flags);
     free(fat_ctx);
     s_fat_ctxs[ctx] = NULL;
     return ESP_OK;
@@ -422,7 +433,7 @@ static int vfs_fat_open(void* ctx, const char * path, int flags, int mode)
     // Other VFS drivers handles O_APPEND well (to the best of my knowledge),
     // therefore this flag is stored here (at this VFS level) in order to save
     // memory.
-    fat_ctx->o_append[fd] = (flags & O_APPEND) == O_APPEND;
+    fat_ctx->flags[fd] = (flags & (O_APPEND | O_ACCMODE));
     _lock_release(&fat_ctx->lock);
     return fd;
 }
@@ -433,7 +444,7 @@ static ssize_t vfs_fat_write(void* ctx, int fd, const void * data, size_t size)
     FIL* file = &fat_ctx->files[fd];
     FRESULT res;
     _lock_acquire(&fat_ctx->lock);
-    if (fat_ctx->o_append[fd]) {
+    if (fat_ctx->flags[fd] & O_APPEND) {
         if ((res = f_lseek(file, f_size(file))) != FR_OK) {
             ESP_LOGD(TAG, "%s: fresult=%d", __func__, res);
             errno = fresult_to_errno(res);
@@ -665,6 +676,26 @@ static int vfs_fat_fstat(void* ctx, int fd, struct stat * st)
     st->st_ctime = 0;
     st->st_blksize = CONFIG_FATFS_VFS_FSTAT_BLKSIZE;
     return 0;
+}
+
+static int vfs_fat_fcntl(void* ctx, int fd, int cmd, int arg)
+{
+    vfs_fat_ctx_t* fat_ctx = (vfs_fat_ctx_t*) ctx;
+    switch (cmd) {
+        case F_GETFL:
+            return fat_ctx->flags[fd];
+        case F_SETFL:
+            fat_ctx->flags[fd] = arg;
+            return 0;
+        // no-ops:
+        case F_SETLK:
+        case F_SETLKW:
+        case F_GETLK:
+            return 0;
+        default:
+            errno = EINVAL;
+            return -1;
+    }
 }
 
 #ifdef CONFIG_VFS_SUPPORT_DIR

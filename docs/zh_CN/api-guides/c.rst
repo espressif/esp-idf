@@ -3,7 +3,14 @@ C 支持
 
 :link_to_translation:`en:[English]`
 
-ESP-IDF 主要使用 C 语言编写，并提供 C 语言 API。ESP-IDF 使用 `Newlib <https://sourceware.org/newlib/>`_ 作为 C 标准函数库对实现（Newlib 版本可以在 :component_file:`newlib/sbom.yml` 指定）。一般来说，除非在下面的 :ref:`unsupported_c_features` 中特别说明，当前使用的编译器（目前是 GCC）支持的所有 C 语言功能在 ESP-IDF 中均可使用。
+ESP-IDF 主要使用 C 语言编写，并提供 C API。ESP-IDF 可以使用以下 C 标准函数库的实现之一：
+
+- `Newlib <https://sourceware.org/newlib/>`_ (默认)
+- `Picolibc <https://keithp.com/picolibc/>`_ (通过 :ref:`CONFIG_LIBC_PICOLIBC<CONFIG_LIBC_PICOLIBC>` Kconfig 选项启用)
+
+Newlib 的版本号记录在 :component_file:`newlib/sbom.yml` 文件中。
+
+一般来说，除非在 :ref:`unsupported_c_features` 特别说明，当前编译器（目前是 GCC）支持的所有 C 语言功能在 ESP-IDF 中均可使用。
 
 .. _c_version:
 

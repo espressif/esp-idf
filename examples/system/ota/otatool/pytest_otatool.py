@@ -18,7 +18,7 @@ def test_otatool_example(dut: Dut) -> None:
     dut.expect('Example end')
 
     # Close connection to DUT
-    dut.serial.proc.close()
+    dut.serial.close()
 
     script_path = os.path.join(str(os.getenv('IDF_PATH')), 'examples', 'system', 'ota', 'otatool', 'otatool_example.py')
     binary_path = ''

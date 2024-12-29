@@ -18,7 +18,15 @@ This example requires the following tools:
 NOTE: In order to run this example you need OpenOCD version `v0.10.0-esp32-20190313` or later.
 
 2. [GDB](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#setup-toolchain) can be used to start and/or stop tracing automatically. To do this you need to prepare special GDB command file. Having provided with `gdbinit` file from the example project directory GDB will connect to the target, reset it, start and stop tracing automatically.
-when program hits breakpoint at `heap_trace_start`. Trace data will be saved to `/tmp/hesp_log.svdat`. Tracing will be stopped when program hits breakpoint at `heap_trace_stop`.
+
+    The gdbinit file includes commands to start tracing:
+    ```
+    mon esp sysview start file:///tmp/heap_log.svdat
+    # For dual-core mode uncomment the line below and comment the line above
+    # mon esp sysview start file:///tmp/heap_log0.svdat file:///tmp/heap_log1.svdat
+    ```
+    When program hits breakpoint at `heap_trace_start`, in single core mode, trace data will be saved to `/tmp/heap_log.svdat`. In dual core mode, there will be two trace data files, one for each core. `/tmp/heap_log0.svdat` and `/tmp/heap_log1.svdat`
+    Tracing will be stopped when program hits breakpoint at `heap_trace_stop`.
 
 3. [SEGGER SystemView tool](https://www.segger.com/products/development-tools/systemview/). By default SystemView shows only numeric values of IDs and parameters for IDF's heap messages in `Events` view. To make them pretty-looking you need to copy `SYSVIEW_FreeRTOS.txt` from the project's root directory to SystemView installation one.
 
@@ -58,6 +66,10 @@ Since SystemView tool is mostly intended for OS level analysis. It allows just t
 
 ```
 $IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b build/sysview_tracing_heap_log.elf /tmp/heap_log.svdat
+```
+And in dual core mode
+```
+$IDF_PATH/tools/esp_app_trace/sysviewtrace_proc.py -p -b build/sysview_tracing_heap_log.elf /tmp/heap_log0.svdat /tmp/heap_log1.svdat
 ```
 
 Below is the sample scripts output.

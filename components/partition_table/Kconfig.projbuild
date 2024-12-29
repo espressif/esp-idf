@@ -100,6 +100,30 @@ menu "Partition Table"
                 The corresponding CSV file in the IDF directory is
                 components/partition_table/partitions_two_ota_encr_nvs.csv
 
+        config PARTITION_TABLE_SINGLE_APP_TEE
+            bool "Single factory app, no OTA, TEE"
+            depends on SECURE_ENABLE_TEE
+            help
+                This is a variation of the default "Single factory app, no OTA" partition table
+                that supports the ESP-TEE framework. See the Trusted Execution Environment (TEE) section
+                in the ESP-IDF Programmers Guide for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_singleapp_tee.csv
+
+        config PARTITION_TABLE_TWO_OTA_TEE
+            bool "Two OTA definitions, TEE"
+            depends on SECURE_ENABLE_TEE
+            help
+                This is a basic OTA-enabled partition table with two OTA app partitions each
+                for the TEE and the user (REE) application. The user app partition sizes are 1536K,
+                so this partition table requires 4MB or larger flash size. See the
+                Trusted Execution Environment (TEE) section in the ESP-IDF Programmers Guide
+                for more information.
+
+                The corresponding CSV file in the IDF directory is
+                components/partition_table/partitions_two_ota_tee.csv
+
     endchoice
 
     config PARTITION_TABLE_CUSTOM_FILENAME
@@ -122,6 +146,8 @@ menu "Partition Table"
         default "partitions_two_ota_coredump.csv" if PARTITION_TABLE_TWO_OTA && ESP_COREDUMP_ENABLE_TO_FLASH
         default "partitions_two_ota_encr_nvs.csv" if PARTITION_TABLE_TWO_OTA_ENCRYPTED_NVS
         default "partitions_two_ota_large.csv" if PARTITION_TABLE_TWO_OTA_LARGE && !ESP_COREDUMP_ENABLE_TO_FLASH
+        default "partitions_singleapp_tee.csv" if PARTITION_TABLE_SINGLE_APP_TEE
+        default "partitions_two_ota_tee.csv" if PARTITION_TABLE_TWO_OTA_TEE
         default PARTITION_TABLE_CUSTOM_FILENAME if PARTITION_TABLE_CUSTOM
 
     config PARTITION_TABLE_OFFSET

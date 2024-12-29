@@ -1,4 +1,5 @@
 idf_build_get_property(target IDF_TARGET)
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 
 # On Linux, we only support a few features, hence this simple component registration
 if(${target} STREQUAL "linux")
@@ -22,7 +23,7 @@ if(CONFIG_IDF_ENV_FPGA OR CONFIG_ESP_BRINGUP_BYPASS_RANDOM_SETTING)
     list(APPEND srcs "fpga_overrides_rng.c")
 endif()
 
-if(BOOTLOADER_BUILD)
+if(BOOTLOADER_BUILD OR esp_tee_build)
         # "_esp_error_check_failed()" requires spi_flash module
         # Bootloader relies on some Kconfig options defined in esp_system.
         idf_component_register(SRCS "${srcs}" REQUIRES spi_flash)

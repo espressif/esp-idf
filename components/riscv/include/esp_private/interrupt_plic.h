@@ -12,6 +12,7 @@
 #include "soc/interrupt_reg.h"
 #include "soc/soc_caps.h"
 #include "riscv/csr.h"
+#include "sdkconfig.h"
 
 #if SOC_INT_PLIC_SUPPORTED
 
@@ -84,12 +85,34 @@ FORCE_INLINE_ATTR void rv_utils_restore_intlevel_regval(uint32_t restoreval)
  */
 FORCE_INLINE_ATTR uint32_t rv_utils_set_intlevel_regval(uint32_t intlevel)
 {
+#if CONFIG_SECURE_ENABLE_TEE
+    unsigned prv_mode = RV_READ_CSR(CSR_PRV_MODE);
+
+    unsigned old_xstatus;
+    if (prv_mode == PRV_M) {
+        old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    } else {
+        old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    }
+
+    uint32_t old_thresh = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
+    rv_utils_restore_intlevel_regval(intlevel);
+
+    if (prv_mode == PRV_M) {
+        RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
+    } else {
+        RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
+    }
+
+    return old_thresh;
+#else
     uint32_t old_mstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
     uint32_t old_thresh = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
     rv_utils_restore_intlevel_regval(intlevel);
     RV_SET_CSR(mstatus, old_mstatus & MSTATUS_MIE);
 
     return old_thresh;
+#endif
 }
 
 

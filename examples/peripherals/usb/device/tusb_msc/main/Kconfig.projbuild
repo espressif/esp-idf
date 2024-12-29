@@ -78,6 +78,23 @@ menu "TinyUSB MSC Example Configuration"
 
         endif  # SOC_SDMMC_USE_GPIO_MATRIX
 
+        config EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+            depends on SOC_SDMMC_IO_POWER_EXTERNAL
+            bool "SDMMC powered by internal LDO"
+            default y
+            help
+                Enable when internal LDO of ESP32-P4 is used as a power supply for SD card. Specify the LDO IO.
+                Disable when external power supply is used as a power supply for SD card.
+
+        config EXAMPLE_SD_PWR_CTRL_LDO_IO_ID
+            depends on SOC_SDMMC_IO_POWER_EXTERNAL && EXAMPLE_SD_PWR_CTRL_LDO_INTERNAL_IO
+            int "LDO IO"
+            default 4 if IDF_TARGET_ESP32P4
+            help
+                There are several IOs in ESP32-P4 which are in "SD card IO" power domain.
+                Power has to be supplied to this power domain externally (from outside the chip) via one of the pins.
+                Based on the schematic, specify the LDO IO pin.
+
     endif  # EXAMPLE_STORAGE_MEDIA_SDMMC
 
 endmenu

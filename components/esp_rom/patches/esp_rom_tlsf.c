@@ -16,6 +16,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "esp_rom_caps.h"
 #include "esp_rom_tlsf.h"

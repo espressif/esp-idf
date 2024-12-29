@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/lock.h>
 #include <sys/param.h>
 #include "esp_types.h"
 #include "freertos/FreeRTOS.h"
@@ -247,8 +248,7 @@ static uint32_t ledc_get_max_duty(ledc_mode_t speed_mode, ledc_channel_t channel
     return max_duty;
 }
 
-esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
-                         ledc_clk_src_t clk_src)
+static esp_err_t ledc_set_timer_params(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution, ledc_clk_src_t clk_src)
 {
     LEDC_ARG_CHECK(speed_mode < LEDC_SPEED_MODE_MAX, "speed_mode");
     LEDC_ARG_CHECK(timer_sel < LEDC_TIMER_MAX, "timer_select");
@@ -265,6 +265,13 @@ esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_
     ledc_ls_timer_update(speed_mode, timer_sel);
     portEXIT_CRITICAL(&ledc_spinlock);
     return ESP_OK;
+}
+
+// Deprecated public API
+esp_err_t ledc_timer_set(ledc_mode_t speed_mode, ledc_timer_t timer_sel, uint32_t clock_divider, uint32_t duty_resolution,
+                         ledc_clk_src_t clk_src)
+{
+    return ledc_set_timer_params(speed_mode, timer_sel, clock_divider, duty_resolution, clk_src);
 }
 
 static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel_t channel, int hpoint_val,
@@ -434,7 +441,7 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
                         .arg = NULL,
                     },
                 },
-                .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM),
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
                 ESP_LOGW(LEDC_TAG, "init sleep retention failed for ledc, power domain may be turned off during sleep");
@@ -710,7 +717,7 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
     }
 
     /* The divisor is correct, we can write in the hardware. */
-    ledc_timer_set(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
+    ledc_set_timer_params(speed_mode, timer_num, div_param, duty_resolution, timer_clk_src);
 
     portENTER_CRITICAL(&ledc_spinlock);
     if (p_ledc_obj[speed_mode]->timer_xpd_ref_cnt[timer_num] > 0 && !p_ledc_obj[speed_mode]->glb_clk_xpd) {
@@ -1116,7 +1123,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     ledc_hal_get_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clock_divider);
     ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &duty_resolution);
     ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clk_cfg);
-    uint32_t precision = (0x1 << duty_resolution);
+    uint64_t precision = (0x1 << duty_resolution);
     uint32_t src_clk_freq = 0;
     esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_cfg, LEDC_CLK_SRC_FREQ_PRECISION, &src_clk_freq);
     portEXIT_CRITICAL(&ledc_spinlock);
@@ -1334,6 +1341,7 @@ static esp_err_t _ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t
     ledc_hal_get_duty(&(p_ledc_obj[speed_mode]->ledc_hal), channel, &duty_cur);
     // When duty == max_duty, meanwhile, if scale == 1 and fade_down == 1, counter would overflow.
     if (duty_cur == ledc_get_max_duty(speed_mode, channel)) {
+        assert(duty_cur > 0);
         duty_cur -= 1;
     }
     s_ledc_fade_rec[speed_mode][channel]->speed_mode = speed_mode;
@@ -1775,7 +1783,7 @@ esp_err_t ledc_fill_multi_fade_param_list(ledc_mode_t speed_mode, ledc_channel_t
         }
         surplus_cycles_last_phase = cycles_per_phase - step * cycle;
         // If next phase is the last one, then account for all remaining duty and cycles
-        if (i == linear_phase_num - 2) {
+        if (linear_phase_num >= 2 && i == linear_phase_num - 2) {
             phase_tail = end_duty;
             surplus_cycles_last_phase += total_cycles - avg_cycles_per_phase * linear_phase_num;
         }

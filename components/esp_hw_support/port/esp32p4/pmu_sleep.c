@@ -35,6 +35,9 @@
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
 #include "hal/efuse_hal.h"
+#if CONFIG_SPIRAM
+#include "hal/ldo_ll.h"
+#endif
 
 #define HP(state)   (PMU_MODE_HP_ ## state)
 #define LP(state)   (PMU_MODE_LP_ ## state)
@@ -365,6 +368,14 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         rtc_clk_mpll_disable();
     }
 
+
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+    // Disable PSRAM chip power supply
+    if (dslp) {
+        ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), false);
+    }
+#endif
+
     /* Start entry into sleep mode */
     pmu_ll_hp_set_sleep_enable(PMU_instance()->hal->dev);
 
@@ -372,6 +383,13 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
         !pmu_ll_hp_is_sleep_reject(PMU_instance()->hal->dev)) {
         ;
     }
+
+#if CONFIG_SPIRAM && CONFIG_ESP_LDO_RESERVE_PSRAM
+    // Enable PSRAM chip power supply after deepsleep request rejected
+    if (dslp) {
+        ldo_ll_enable(LDO_ID2UNIT(CONFIG_ESP_LDO_CHAN_PSRAM_DOMAIN), true);
+    }
+#endif
 
     return pmu_sleep_finish(dslp);
 }

@@ -25,7 +25,6 @@ typedef struct {
 extern const soc_mipi_csi_phy_pll_freq_range_t soc_mipi_csi_phy_pll_ranges[];
 extern const size_t num_of_soc_mipi_csi_phy_pll_ranges;
 
-
 #ifdef __cplusplus
 }
 #endif

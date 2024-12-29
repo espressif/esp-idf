@@ -98,6 +98,8 @@ ESP-Protocols 组件：
 
 * `esp_wifi_remote <https://components.espressif.com/component/espressif/esp_wifi_remote>`_ 是一个 Wi-Fi 通信库，提供标准的 Wi-Fi API，并且能够借助指定的传输接口，帮助目标设备通过外部 ESP32 芯片实现 Wi-Fi 通信。详情请参阅 :doc:`../api-guides/wifi-expansion`。
 
+* `esp-extconn <https://components.espressif.com/component/espressif/esp-extconn>`_ 是一个 Wi-Fi 通信库，为不具备内置无线功能的 ESP 芯片提供外部无线连接（Wi-Fi 和蓝牙）。详情请参阅 :doc:`../api-guides/wifi-expansion`。
+
 ESP-BSP
 -------
 

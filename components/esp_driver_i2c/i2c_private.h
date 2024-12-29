@@ -19,6 +19,7 @@
 #include "driver/i2c_slave.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_pm.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -196,6 +197,8 @@ typedef struct {
     uint32_t rcv_fifo_cnt;      // receive fifo count.
 } i2c_slave_receive_t;
 
+#if !CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
+
 struct i2c_slave_dev_t {
     i2c_bus_t *base;                            // bus base class
     SemaphoreHandle_t slv_rx_mux;               // Mutex for slave rx direction
@@ -212,6 +215,22 @@ struct i2c_slave_dev_t {
     i2c_slave_receive_t receive_desc;           // Slave receive descriptor
     uint32_t already_receive_len;               // Data length already received in ISR.
 };
+
+#else // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
+
+struct i2c_slave_dev_t {
+    i2c_bus_t *base;                                  // bus base class
+    SemaphoreHandle_t operation_mux;                  // Mux for i2c slave operation
+    i2c_slave_request_callback_t request_callback;    // i2c slave request callback
+    i2c_slave_received_callback_t receive_callback;   // i2c_slave receive callback
+    void *user_ctx;                                   // Callback user context
+    RingbufHandle_t rx_ring_buf;                      // receive ringbuffer
+    RingbufHandle_t tx_ring_buf;                      // transmit ringbuffer
+    uint32_t rx_data_count;                           // receive data count
+    i2c_slave_receive_t receive_desc;                 // slave receive descriptor
+};
+
+#endif // CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2
 
 /**
  * @brief Acquire I2C bus handle

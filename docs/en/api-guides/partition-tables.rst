@@ -54,7 +54,7 @@ Here is the summary printed for the "Factory app, two OTA definitions" configura
 Creating Custom Tables
 ----------------------
 
-If you choose "Custom partition table CSV" in menuconfig then you can also enter the name of a CSV file (in the project directory) to use for your partition table. The CSV file can describe any number of definitions for the table you need.
+If you choose "Custom partition table CSV" in ``menuconfig``, then you can also enter the name of a CSV file (in the project directory) to use for your partition table. The CSV file can describe any number of definitions for the table you need.
 
 The CSV format is the same format as printed in the summaries shown above. However, not all fields are required in the CSV. For example, here is the "input" CSV for the OTA partition table:
 
@@ -84,6 +84,7 @@ Here is an example of a CSV partition table that includes bootloader and partiti
     nvs,              data,            nvs,      ,        0x6000,
     phy_init,         data,            phy,      ,        0x1000,
     factory,          app,             factory,  ,        1M,
+    recoveryBloader,  bootloader,      recovery, N/A,     N/A,
 
 The ``gen_esp32part.py`` tool will replace each ``N/A`` with appropriate values based on the selected Kconfig options: {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} for the bootloader offset and :ref:`CONFIG_PARTITION_TABLE_OFFSET` for the partition table offset.
 
@@ -134,17 +135,18 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
 
 * When type is ``bootloader``, the SubType field can be specified as:
 
-  - ``primary`` (0x00). This is the 2nd stage bootloader, located at the {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
-  - ``ota`` (0x01). This is a temporary bootloader partition used by the bootloader OTA update functionality to download a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can only specify an offset, or leave it blank to have the tool calculate it based on the offsets of previously used partitions.
+    - ``primary`` (0x00). This is the 2nd stage bootloader, located at the {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH} address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
+    - ``ota`` (0x01). This is a temporary bootloader partition used by the bootloader OTA update functionality to download a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can only specify an offset, or leave it blank to have the tool calculate it based on the offsets of previously used partitions.
+    - ``recovery`` (0x02). This is the recovery bootloader partition used for safely performing OTA updates to the bootloader. The ``gen_esp32part.py`` tool automatically determines the address and size for this partition, so you can leave these fields blank or use ``N/A`` as a placeholder. The address must match an eFuse field, which is defined through a Kconfig option. If the normal bootloader loading path fails, the first stage (ROM) bootloader will attempt to load the recovery partition at the address specified by the eFuse field.
 
-  The size of the bootloader type is calculated by the ``gen_esp32part.py`` tool  based on the specified ``--offset`` (the partition table offset) and ``--primary-partition-offset`` arguments. Specifically, the bootloader size is defined as (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}). This calculated size applies to all subtypes of the bootloader.
+    The size of the bootloader type is calculated by the ``gen_esp32part.py`` tool  based on the specified ``--offset`` (the partition table offset) and ``--primary-partition-offset`` arguments. Specifically, the bootloader size is defined as (:ref:`CONFIG_PARTITION_TABLE_OFFSET` - {IDF_TARGET_CONFIG_BOOTLOADER_OFFSET_IN_FLASH}). This calculated size applies to all subtypes of the bootloader.
 
 * When type is ``partition_table``, the SubType field can be specified as:
 
-  - ``primary`` (0x00). This is the primary partition table, located at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
-  - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can specify an offset, or leave it blank, in which case the tool will calculate it based on the offsets of previously allocated partitions.
+    - ``primary`` (0x00). This is the primary partition table, located at the :ref:`CONFIG_PARTITION_TABLE_OFFSET` address in flash memory. The tool automatically determines the appropriate size and offset for this subtype, so any size or offset specified for this subtype will be ignored. You can either leave these fields blank or use ``N/A`` as a placeholder.
+    - ``ota`` (0x01). It is a temporary partition table partition used by the partition table OTA update functionality for downloading a new image. The tool ignores the size for this subtype, allowing you to leave it blank or use ``N/A``. You can specify an offset, or leave it blank, in which case the tool will calculate it based on the offsets of previously allocated partitions.
 
-  The size for the ``partition_table`` type is fixed at ``0x1000`` and applies uniformly across all subtypes of ``partition_table``.
+    The size for the ``partition_table`` type is fixed at ``0x1000`` and applies uniformly across all subtypes of ``partition_table``.
 
 * When type is ``data``, the subtype field can be specified as ``ota`` (0x00), ``phy`` (0x01), ``nvs`` (0x02), nvs_keys (0x04), or a range of other component-specific subtypes (see :cpp:type:`subtype enum <esp_partition_subtype_t>`).
 
@@ -218,21 +220,21 @@ Two flags are currently supported, ``encrypted`` and ``readonly``:
 
     .. note::
 
-      The following type partitions will always be encrypted, regardless of whether this flag is set or not:
+        The following type partitions will always be encrypted, regardless of whether this flag is set or not:
 
-      .. list::
+        .. list::
 
-          - ``app``,
-          - ``bootloader``,
-          - ``partition_table``,
-          - type ``data`` and subtype ``ota``,
-          - type ``data`` and subtype ``nvs_keys``.
+            - ``app``,
+            - ``bootloader``,
+            - ``partition_table``,
+            - type ``data`` and subtype ``ota``,
+            - type ``data`` and subtype ``nvs_keys``.
 
-    - If ``readonly`` flag is set, the partition will be read-only. This flag is only supported for ``data`` type partitions except ``ota``` and ``coredump``` subtypes. This flag can help to protect against accidental writes to a partition that contains critical device-specific configuration data, e.g., factory data partition.
+    - If ``readonly`` flag is set, the partition will be read-only. This flag is only supported for ``data`` type partitions except ``ota`` and ``coredump`` subtypes. This flag can help to protect against accidental writes to a partition that contains critical device-specific configuration data, e.g., factory data partition.
 
     .. note::
 
-        Using C file I/O API to open a file (``fopen```) in any write mode (``w``, ``w+``, ``a``, ``a+``, ``r+``) will fail and return ``NULL``. Using ``open`` with any other flag than ``O_RDONLY`` will fail and return ``-1`` while ``errno`` global variable will be set to ``EROFS``. This is also true for any other POSIX syscall function performing write or erase operations. Opening a handle in read-write mode for NVS on a read-only partition will fail and return :c:macro:`ESP_ERR_NOT_ALLOWED` error code. Using a lower level API like ``esp_partition``, ``spi_flash``, etc. to write to a read-only partition will result in :c:macro:`ESP_ERR_NOT_ALLOWED` error code.
+        Using C file I/O API to open a file (``fopen``) in any write mode (``w``, ``w+``, ``a``, ``a+``, ``r+``) will fail and return ``NULL``. Using ``open`` with any other flag than ``O_RDONLY`` will fail and return ``-1`` while ``errno`` global variable will be set to ``EROFS``. This is also true for any other POSIX syscall function performing write or erase operations. Opening a handle in read-write mode for NVS on a read-only partition will fail and return :c:macro:`ESP_ERR_NOT_ALLOWED` error code. Using a lower level API like ``esp_partition``, ``spi_flash``, etc. to write to a read-only partition will result in :c:macro:`ESP_ERR_NOT_ALLOWED` error code.
 
 You can specify multiple flags by separating them with a colon. For example, ``encrypted:readonly``.
 

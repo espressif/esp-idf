@@ -65,7 +65,7 @@ static esp_ble_ext_scan_params_t ext_scan_params = {
     .coded_cfg = {BLE_SCAN_TYPE_ACTIVE, 40, 40},
 };
 
-const esp_ble_gap_conn_params_t phy_1m_conn_params = {
+const esp_ble_conn_params_t phy_1m_conn_params = {
     .scan_interval = 0x40,
     .scan_window = 0x40,
     .interval_min = 320,
@@ -75,7 +75,7 @@ const esp_ble_gap_conn_params_t phy_1m_conn_params = {
     .min_ce_len  = 0,
     .max_ce_len = 0,
 };
-const esp_ble_gap_conn_params_t phy_2m_conn_params = {
+const esp_ble_conn_params_t phy_2m_conn_params = {
     .scan_interval = 0x40,
     .scan_window = 0x40,
     .interval_min = 320,
@@ -85,7 +85,7 @@ const esp_ble_gap_conn_params_t phy_2m_conn_params = {
     .min_ce_len  = 0,
     .max_ce_len = 0,
 };
-const esp_ble_gap_conn_params_t phy_coded_conn_params = {
+const esp_ble_conn_params_t phy_coded_conn_params = {
     .scan_interval = 0x40,
     .scan_window = 0x40,
     .interval_min = 320, // 306-> 362Kbps
@@ -500,12 +500,18 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             ESP_LOG_BUFFER_CHAR("Adv name", adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, "Stop extend scan and create aux open, primary_phy %d secondary phy %d", param->ext_adv_report.params.primary_phy, param->ext_adv_report.params.secondly_phy);
 
-            esp_ble_gap_prefer_ext_connect_params_set(param->ext_adv_report.params.addr,
-                                                     ESP_BLE_GAP_PHY_1M_PREF_MASK | ESP_BLE_GAP_PHY_2M_PREF_MASK | ESP_BLE_GAP_PHY_CODED_PREF_MASK ,
-                                                     &phy_1m_conn_params, &phy_2m_conn_params, &phy_coded_conn_params);
-            esp_ble_gattc_aux_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
-                                    param->ext_adv_report.params.addr,
-                                    param->ext_adv_report.params.addr_type, true);
+            // create gattc virtual connection
+            esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+            memcpy(&creat_conn_params.remote_bda, param->ext_adv_report.params.addr, ESP_BD_ADDR_LEN);
+            creat_conn_params.remote_addr_type = param->ext_adv_report.params.addr_type;
+            creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+            creat_conn_params.is_direct = true;
+            creat_conn_params.is_aux = true;
+            creat_conn_params.phy_mask = ESP_BLE_PHY_1M_PREF_MASK | ESP_BLE_PHY_2M_PREF_MASK | ESP_BLE_PHY_CODED_PREF_MASK;
+            creat_conn_params.phy_1m_conn_params = &phy_1m_conn_params;
+            creat_conn_params.phy_2m_conn_params = &phy_2m_conn_params;
+            creat_conn_params.phy_coded_conn_params = &phy_coded_conn_params;
+            esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, &creat_conn_params);
         }
 
         break;

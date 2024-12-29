@@ -31,9 +31,11 @@ menu "Example Configuration"
     config EXAMPLE_ENABLE_PARTIAL_HTTP_DOWNLOAD
         bool "Enable partial HTTP download"
         default n
+        select ESP_TLS_CLIENT_SESSION_TICKETS
         help
             This enables use of Range header in esp_https_ota component.
-            Firmware image will be downloaded over multiple HTTP requests.
+            The firmware image will be downloaded over multiple HTTP requests,
+            with session resumption enabled between them.
 
     config EXAMPLE_HTTP_REQUEST_SIZE
         int "HTTP request size"

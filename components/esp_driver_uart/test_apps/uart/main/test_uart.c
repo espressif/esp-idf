@@ -306,9 +306,7 @@ static void uart_write_task(void *param)
 {
     uart_port_t uart_num = (uart_port_t)param;
     uint8_t *tx_buf = (uint8_t *)malloc(1024);
-    if (tx_buf == NULL) {
-        TEST_FAIL_MESSAGE("tx buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(tx_buf);
     for (int i = 1; i < 1023; i++) {
         tx_buf[i] = (i & 0xff);
     }
@@ -330,9 +328,7 @@ TEST_CASE("uart read write test", "[uart]")
 
     uart_port_t uart_num = port_param.port_num;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
-    if (rd_data == NULL) {
-        TEST_FAIL_MESSAGE("rx buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(rd_data);
     uart_config_t uart_config = {
         .baud_rate = 2000000,
         .data_bits = UART_DATA_8_BITS,
@@ -399,10 +395,9 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
 
     uart_port_t uart_num = port_param.port_num;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
+    TEST_ASSERT_NOT_NULL(rd_data);
     uint8_t *wr_data = (uint8_t *)malloc(1024);
-    if (rd_data == NULL || wr_data == NULL) {
-        TEST_FAIL_MESSAGE("buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(wr_data);
     uart_config_t uart_config = {
         .baud_rate = 2000000,
         .data_bits = UART_DATA_8_BITS,
@@ -535,4 +530,57 @@ TEST_CASE("uart int state restored after flush", "[uart]")
 
     TEST_ESP_OK(uart_driver_delete(uart_num));
     free(data);
+}
+
+TEST_CASE("uart in one-wire mode", "[uart]")
+{
+    uart_port_param_t port_param = {};
+    TEST_ASSERT(port_select(&port_param));
+    port_param.tx_pin_num = port_param.rx_pin_num; // let tx and rx use the same pin
+
+    uart_port_t uart_num = port_param.port_num;
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = port_param.default_src_clk,
+    };
+
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    esp_err_t err = uart_set_pin(uart_num, port_param.tx_pin_num, port_param.rx_pin_num, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE);
+    if (uart_num < SOC_UART_HP_NUM) {
+        TEST_ESP_OK(err);
+#if SOC_UART_LP_NUM > 0
+    } else {
+#if !SOC_LP_GPIO_MATRIX_SUPPORTED
+        TEST_ESP_ERR(ESP_FAIL, err); // For LP UART port, if no LP GPIO Matrix, unable to be used in one-wire mode
+#else
+        TEST_ESP_OK(err);
+#endif
+#endif // SOC_UART_LP_NUM > 0
+    }
+
+    // If configured successfully in one-wire mode
+    if (err == ESP_OK) {
+        TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
+        vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
+        TEST_ESP_OK(uart_flush_input(uart_num));
+
+        const char *wr_data = "ECHO!";
+        const int len = strlen(wr_data);
+        uint8_t *rd_data = (uint8_t *)calloc(1, 1024);
+        TEST_ASSERT_NOT_NULL(rd_data);
+
+        uart_write_bytes(uart_num, wr_data, len);
+        int bytes_received = uart_read_bytes(uart_num, rd_data, BUF_SIZE, pdMS_TO_TICKS(20));
+        TEST_ASSERT_EQUAL(len, bytes_received);
+        TEST_ASSERT_EQUAL_STRING_LEN(wr_data, rd_data, bytes_received);
+
+        free(rd_data);
+    }
+
+    TEST_ESP_OK(uart_driver_delete(uart_num));
 }

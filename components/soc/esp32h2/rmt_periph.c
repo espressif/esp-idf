@@ -50,10 +50,10 @@ static const regdma_entries_config_t rmt_regdma_entries[] = {
     // restore stage: restore the configuration registers
     [0] = {
         .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_RMT_LINK(0x00),
-        RMT_RETENTION_REGS_BASE, RMT_RETENTION_REGS_BASE,
-        RMT_RETENTION_REGS_CNT, 0, 0,
-        rmt_regs_map[0], rmt_regs_map[1],
-        rmt_regs_map[2], rmt_regs_map[3]),
+                                            RMT_RETENTION_REGS_BASE, RMT_RETENTION_REGS_BASE,
+                                            RMT_RETENTION_REGS_CNT, 0, 0,
+                                            rmt_regs_map[0], rmt_regs_map[1],
+                                            rmt_regs_map[2], rmt_regs_map[3]),
         .owner = ENTRY(0) | ENTRY(2),
     },
 };

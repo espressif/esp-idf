@@ -117,7 +117,7 @@ static void bta_hh_le_hid_report_dbg(tBTA_HH_DEV_CB *p_cb)
         if (p_cb->hid_srvc[i].in_use) {
             p_rpt = &p_cb->hid_srvc[i].report[0];
 
-            APPL_TRACE_DEBUG("\t HID serivce inst: %d", i);
+            APPL_TRACE_DEBUG("\t HID service inst: %d", i);
 
             for (j = 0; j < BTA_HH_LE_RPT_MAX; j ++, p_rpt++) {
                 rpt_name = "Unknown";
@@ -334,14 +334,15 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB *p_cb, BD_ADDR remote_bda)
     bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;
     p_cb->in_use = TRUE;
 
-    BTA_GATTC_Open(bta_hh_cb.gatt_if, remote_bda, BLE_ADDR_UNKNOWN_TYPE, TRUE, BTA_GATT_TRANSPORT_LE, FALSE);
+    BTA_GATTC_Enh_Open(bta_hh_cb.gatt_if, remote_bda, BLE_ADDR_UNKNOWN_TYPE, TRUE,
+            BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, 0, NULL, NULL, NULL);
 }
 
 /*******************************************************************************
 **
 ** Function         bta_hh_le_fill_16bits_gatt_id
 **
-** Description      Utility function to fill a GATT ID strucure
+** Description      Utility function to fill a GATT ID structure
 **
 *******************************************************************************/
 void bta_hh_le_fill_16bits_gatt_id(UINT8 inst_id, UINT16 uuid,  tBTA_GATT_ID *p_output)
@@ -355,7 +356,7 @@ void bta_hh_le_fill_16bits_gatt_id(UINT8 inst_id, UINT16 uuid,  tBTA_GATT_ID *p_
 **
 ** Function         bta_hh_le_fill_16bits_srvc_id
 **
-** Description      Utility function to fill a service ID strucure with a 16 bits
+** Description      Utility function to fill a service ID structure with a 16 bits
 **                  service UUID.
 **
 *******************************************************************************/
@@ -372,7 +373,7 @@ void bta_hh_le_fill_16bits_srvc_id(BOOLEAN is_pri, UINT8 inst_id, UINT16 srvc_uu
 **
 ** Function         bta_hh_le_fill_16bits_char_id
 **
-** Description      Utility function to fill a char ID strucure with a 16 bits
+** Description      Utility function to fill a char ID structure with a 16 bits
 **                  char UUID.
 **
 *******************************************************************************/
@@ -624,7 +625,7 @@ tBTA_HH_STATUS bta_hh_le_read_char_dscrpt(tBTA_HH_DEV_CB *p_cb, UINT16 srvc_uuid
 **
 ** Function         bta_hh_le_read_rpt_ref_descr
 **
-** Description      read report refernece descriptors in service discovery process
+** Description      read report reference descriptors in service discovery process
 **
 *******************************************************************************/
 void bta_hh_le_read_rpt_ref_descr(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_LE_RPT *p_rpt)
@@ -841,7 +842,7 @@ void bta_hh_le_register_input_notif(tBTA_HH_DEV_CB *p_dev_cb, UINT8 srvc_inst,
                 }
             }
             /*
-            else unknow protocol mode */
+            else unknown protocol mode */
         }
     }
 }
@@ -1486,7 +1487,7 @@ void bta_hh_le_gatt_disc_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_STATUS status)
 {
     APPL_TRACE_DEBUG("bta_hh_le_gatt_disc_cmpl ");
 
-    /* if open sucessful or protocol mode not desired, keep the connection open but inform app */
+    /* if open successful or protocol mode not desired, keep the connection open but inform app */
     if (status == BTA_HH_OK || status == BTA_HH_ERR_PROTO) {
         /* assign a special APP ID temp, since device type unknown */
         p_cb->app_id = BTA_HH_APP_ID_LE;
@@ -1504,7 +1505,7 @@ void bta_hh_le_gatt_disc_cmpl(tBTA_HH_DEV_CB *p_cb, tBTA_HH_STATUS status)
 **
 ** Function         bta_hh_le_srvc_expl_srvc
 **
-** Description      This function discover the next avaible HID service.
+** Description      This function discover the next available HID service.
 **
 ** Parameters:
 **
@@ -2076,7 +2077,7 @@ void bta_hh_w4_le_read_descr_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 **
 ** Function         bta_hh_w4_le_write_cmpl
 **
-** Description      Write charactersitic complete event at W4_CONN st.
+** Description      Write characteristic complete event at W4_CONN st.
 **
 ** Parameters:
 **
@@ -2104,7 +2105,7 @@ void bta_hh_w4_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 **
 ** Function         bta_hh_le_write_cmpl
 **
-** Description      Write charactersitic complete event at CONN st.
+** Description      Write characteristic complete event at CONN st.
 **
 ** Parameters:
 **
@@ -2162,7 +2163,7 @@ void bta_hh_le_write_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
 **
 ** Function         bta_hh_le_write_char_descr_cmpl
 **
-** Description      Write charactersitic descriptor complete event
+** Description      Write characteristic descriptor complete event
 **
 ** Parameters:
 **
@@ -2216,7 +2217,7 @@ void bta_hh_le_write_char_descr_cmpl(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_b
 **
 ** Function         bta_hh_le_input_rpt_notify
 **
-** Description      process the notificaton event, most likely for input report.
+** Description      process the notification event, most likely for input report.
 **
 ** Parameters:
 **
@@ -2357,7 +2358,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB *p_cb, tBTA_HH_DATA *p_data)
 **
 ** Function         bta_hh_le_api_disc_act
 **
-** Description      initaite a Close API to a remote HID device
+** Description      initiate a Close API to a remote HID device
 **
 ** Returns          void
 **
@@ -2601,7 +2602,8 @@ static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB *p_cb, BOOLEAN check_bond)
     if (/*p_cb->dscp_info.flag & BTA_HH_LE_NORMAL_CONN &&*/
         !p_cb->in_bg_conn && to_add) {
         /* add device into BG connection to accept remote initiated connection */
-        BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, BLE_ADDR_UNKNOWN_TYPE, FALSE, BTA_GATT_TRANSPORT_LE, FALSE);
+        BTA_GATTC_Enh_Open(bta_hh_cb.gatt_if, p_cb->addr, BLE_ADDR_UNKNOWN_TYPE, FALSE,
+                BTA_GATT_TRANSPORT_LE, FALSE, BLE_ADDR_UNKNOWN_TYPE, 0, NULL, NULL);
         p_cb->in_bg_conn = TRUE;
 
         BTA_DmBleSetBgConnType(BTA_DM_BLE_CONN_AUTO, NULL);
@@ -2682,7 +2684,7 @@ void bta_hh_le_update_scpp(tBTA_HH_DEV_CB *p_dev_cb, tBTA_HH_DATA *p_buf)
     if (!p_dev_cb->is_le_device ||
             p_dev_cb->mode != BTA_HH_PROTO_RPT_MODE ||
             p_dev_cb->scps_supported == FALSE) {
-        APPL_TRACE_ERROR("Can not set ScPP scan paramter as boot host, or remote does not support ScPP ");
+        APPL_TRACE_ERROR("Can not set ScPP scan parameter as boot host, or remote does not support ScPP ");
 
         cback_data.handle = p_dev_cb->hid_handle;
         cback_data.status = BTA_HH_ERR;
@@ -2908,7 +2910,7 @@ static void bta_hh_le_search_scps_chars(tBTA_HH_DEV_CB *p_cb)
 **
 ** Function         bta_hh_le_register_scpp_notif
 **
-** Description      register scan parameter refresh notitication complete
+** Description      register scan parameter refresh notification complete
 **
 **
 ** Parameters:
@@ -2919,7 +2921,7 @@ static void bta_hh_le_register_scpp_notif(tBTA_HH_DEV_CB *p_dev_cb, tBTA_GATT_ST
     UINT8               sec_flag = 0;
     tBTA_GATTC_CHAR_ID  char_id;
 
-    /* if write scan parameter sucessful */
+    /* if write scan parameter successful */
     /* if bonded and notification is not enabled, configure the client configuration */
     if (status == BTA_GATT_OK &&
             (p_dev_cb->scps_notify & BTA_HH_LE_SCPS_NOTIFY_SPT) != 0 &&
@@ -2949,7 +2951,7 @@ static void bta_hh_le_register_scpp_notif(tBTA_HH_DEV_CB *p_dev_cb, tBTA_GATT_ST
 **
 ** Function         bta_hh_le_register_scpp_notif_cmpl
 **
-** Description      action function to register scan parameter refresh notitication
+** Description      action function to register scan parameter refresh notification
 **
 ** Parameters:
 **

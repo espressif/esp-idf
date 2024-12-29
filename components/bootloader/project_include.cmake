@@ -1,7 +1,9 @@
+idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
+
 set(BOOTLOADER_OFFSET ${CONFIG_BOOTLOADER_OFFSET_IN_FLASH})
 
 # Do not generate flash file when building bootloader
-if(BOOTLOADER_BUILD OR NOT CONFIG_APP_BUILD_BOOTLOADER)
+if(BOOTLOADER_BUILD OR esp_tee_build OR NOT CONFIG_APP_BUILD_BOOTLOADER)
     return()
 endif()
 

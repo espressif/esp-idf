@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <string.h>
+#include "sys/reent.h"
 #include "esp_gdbstub.h"
 #include "esp_gdbstub_common.h"
 #include "esp_gdbstub_memory_regions.h"
@@ -21,6 +22,7 @@
 #include "hal/wdt_hal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "sdkconfig.h"
 
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 static inline int gdb_tid_to_task_index(int tid);
@@ -41,7 +43,6 @@ static bool command_name_matches(const char *pattern, const unsigned char *ucmd,
 #endif // (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 
 static void send_reason(void);
-static char gdb_packet(char *dest_buff, char *src_buff, int len);
 
 esp_gdbstub_scratch_t s_scratch;
 esp_gdbstub_gdb_regfile_t *gdb_local_regfile = &s_scratch.regfile;
@@ -237,8 +238,12 @@ void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame)
     if (doDebug) {
         process_gdb_kill = false;
         /* To enable console output in GDB, we replace the default stdout->_write function */
+#if CONFIG_LIBC_NEWLIB
         stdout->_write = gdbstub__swrite;
         stderr->_write = gdbstub__swrite;
+#else
+        // TODO IDF-11287
+#endif
         /* Stall other core until GDB exit */
         esp_gdbstub_stall_other_cpus_start();
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
@@ -696,7 +701,7 @@ static void handle_P_command(const unsigned char *cmd, int len)
 static void handle_qSupported_command(const unsigned char *cmd, int len)
 {
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;QThreadEvents+;no-resumed+");
+    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+");
     esp_gdbstub_send_end();
 }
 
@@ -753,8 +758,12 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
     } else if (cmd[0] == 'k') {
         /* Kill GDB and continue without */
         /* By exit from GDB we have to replcae stdout->_write back */
+#if CONFIG_LIBC_NEWLIB
         stdout->_write = __swrite;
         stderr->_write = __swrite;
+#else
+        // TODO IDF-11287
+#endif
         process_gdb_kill = true;
         return GDBSTUB_ST_CONT;
     } else if (cmd[0] == 's') {
@@ -784,6 +793,35 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
     }
     return GDBSTUB_ST_OK;
 }
+
+#if CONFIG_LIBC_NEWLIB
+/** @brief Convert to ASCI
+ * Function convert byte value to two ASCI carecters
+ */
+void gdb_get_asci_char(unsigned char data, char *buff)
+{
+    const char *hex_chars = "0123456789abcdef";
+    buff[0] = hex_chars[(data >> 4) & 0x0f];
+    buff[1] = hex_chars[(data) & 0x0f];
+}
+
+/** @brief Prepare GDB packet
+ * Function build GDB asci packet and return checksum
+ *
+ * Return checksum
+ */
+char gdb_packet(char *dest_buff, char *src_buff, int len)
+{
+    char s_chsum = 0;
+    for (size_t i = 0; i < len; i++) {
+        gdb_get_asci_char(src_buff[i], &dest_buff[i * 2 + 0]);
+    }
+    for (size_t i = 0; i < len * 2; i++) {
+        s_chsum += dest_buff[i];
+    }
+    return s_chsum;
+}
+
 /**
  * Replace standard __swrite function for GDB
  */
@@ -813,37 +851,11 @@ int gdbstub__swrite(struct _reent *data1, void *data2, const char *buff, int len
     }
     return len;
 }
-
-
-/** @brief Convert to ASCI
- * Function convert byte value to two ASCI carecters
- */
-void gdb_get_asci_char(unsigned char data, char *buff)
-{
-    const char *hex_chars = "0123456789abcdef";
-    buff[0] = hex_chars[(data >> 4) & 0x0f];
-    buff[1] = hex_chars[(data) & 0x0f];
-}
-
+#else
+// TODO IDF-11287
+#endif // CONFIG_LIBC_NEWLIB
 
 /* Everything below is related to the support for listing FreeRTOS tasks as threads in GDB */
-
-/** @brief Prepare GDB packet
- * Function build GDB asci packet and return checksum
- *
- * Return checksum
- */
-char gdb_packet(char *dest_buff, char *src_buff, int len)
-{
-    char s_chsum = 0;
-    for (size_t i = 0; i < len; i++) {
-        gdb_get_asci_char(src_buff[i], &dest_buff[i * 2 + 0]);
-    }
-    for (size_t i = 0; i < len * 2; i++) {
-        s_chsum += dest_buff[i];
-    }
-    return s_chsum;
-}
 
 #if (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 static bool command_name_matches(const char *pattern, const unsigned char *ucmd, int len)

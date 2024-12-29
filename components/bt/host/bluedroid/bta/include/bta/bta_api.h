@@ -1512,18 +1512,18 @@ typedef UINT8 tBTA_DM_LINK_TYPE;
 #define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_INCLUDE_TX_PWR    (1 << 6)
 #define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_MASK              (0x7F)
 
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND        (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_LD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_HD_DIR     (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_SCAN       (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
-                                                        ESP_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
-#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_NONCONN    (ESP_BLE_GAP_SET_EXT_ADV_PROP_LEGACY)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_IND        (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_LD_DIR     (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_DIRECTED)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_HD_DIR     (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_CONNECTABLE |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_HD_DIRECTED)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_SCAN       (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY |\
+                                                           BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_SCANNABLE)
+#define BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY_NONCONN    (BTA_DM_BLE_GAP_SET_EXT_ADV_PROP_LEGACY)
 typedef UINT16 tBTA_DM_BLE_EXT_ADV_TYPE_MASK;
 
 

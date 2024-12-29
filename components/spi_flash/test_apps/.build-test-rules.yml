@@ -31,7 +31,7 @@ components/spi_flash/test_apps/flash_mmap:
     - esp_mm
     - spi_flash
   enable:
-    - if: CONFIG_NAME in ["release", "rom_impl"] and IDF_TARGET != "linux"
+    - if: CONFIG_NAME in ["release", "rom_impl"] and IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32p4", "esp32s2", "esp32s3"]
     - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3", "esp32p4"]
     # S2 doesn't have ROM for flash
     - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3", "esp32p4"]

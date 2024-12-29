@@ -1259,7 +1259,9 @@ esp_err_t i2s_set_pdm_rx_down_sample(i2s_port_t i2s_num, i2s_pdm_dsr_t downsampl
     xSemaphoreTake(p_i2s[i2s_num]->rx->mux, portMAX_DELAY);
     i2s_stop(i2s_num);
     p_i2s[i2s_num]->clk_cfg.dn_sample_mode = downsample;
+#if SOC_I2S_SUPPORTS_PDM2PCM
     i2s_ll_rx_set_pdm_dsr(p_i2s[i2s_num]->hal.dev, downsample);
+#endif
     i2s_start(i2s_num);
     xSemaphoreGive(p_i2s[i2s_num]->rx->mux);
     return i2s_set_clk(i2s_num, p_i2s[i2s_num]->clk_cfg.sample_rate_hz, p_i2s[i2s_num]->slot_cfg.data_bit_width, p_i2s[i2s_num]->slot_cfg.slot_mode);
@@ -1276,8 +1278,10 @@ esp_err_t i2s_set_pdm_tx_up_sample(i2s_port_t i2s_num, const i2s_pdm_tx_upsample
     i2s_stop(i2s_num);
     p_i2s[i2s_num]->clk_cfg.up_sample_fp = upsample_cfg->fp;
     p_i2s[i2s_num]->clk_cfg.up_sample_fs = upsample_cfg->fs;
+#if SOC_I2S_SUPPORTS_PCM2PDM
     i2s_ll_tx_set_pdm_fpfs(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp, upsample_cfg->fs);
     i2s_ll_tx_set_pdm_over_sample_ratio(p_i2s[i2s_num]->hal.dev, upsample_cfg->fp / upsample_cfg->fs);
+#endif
     i2s_start(i2s_num);
     xSemaphoreGive(p_i2s[i2s_num]->tx->mux);
     return i2s_set_clk(i2s_num, p_i2s[i2s_num]->clk_cfg.sample_rate_hz, p_i2s[i2s_num]->slot_cfg.data_bit_width, p_i2s[i2s_num]->slot_cfg.slot_mode);
@@ -1393,6 +1397,11 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
 #if SOC_I2S_SUPPORTS_PDM_TX
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
         /* Generate PDM TX slot configuration */
+#if SOC_I2S_SUPPORTS_PCM2PDM
+        SLOT_CFG(pdm_tx).data_fmt = I2S_PDM_DATA_FMT_PCM;
+#else
+        SLOT_CFG(pdm_tx).data_fmt = I2S_PDM_DATA_FMT_RAW;
+#endif
         SLOT_CFG(pdm_tx).sd_prescale = 0;
         SLOT_CFG(pdm_tx).sd_scale = I2S_PDM_SIG_SCALING_MUL_1;
         SLOT_CFG(pdm_tx).hp_scale = I2S_PDM_SIG_SCALING_MUL_1;
@@ -1417,6 +1426,11 @@ static esp_err_t i2s_config_transfer(i2s_port_t i2s_num, const i2s_config_t *i2s
 
 #if SOC_I2S_SUPPORTS_PDM_RX
     if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
+#if SOC_I2S_SUPPORTS_PDM2PCM
+        SLOT_CFG(pdm_rx).data_fmt = I2S_PDM_DATA_FMT_PCM;
+#else
+        SLOT_CFG(pdm_rx).data_fmt = I2S_PDM_DATA_FMT_RAW;
+#endif
         /* Generate PDM RX clock configuration */
         CLK_CFG().dn_sample_mode = I2S_PDM_DSR_8S;
         p_i2s[i2s_num]->active_slot = (int)p_i2s[i2s_num]->slot_cfg.slot_mode == I2S_SLOT_MODE_MONO ? 1 : 2;
@@ -1501,12 +1515,22 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
     else if (p_i2s[i2s_num]->mode == I2S_COMM_MODE_PDM) {
 #if SOC_I2S_SUPPORTS_PDM_TX
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_hal_pdm_enable_tx_channel(&(p_i2s[i2s_num]->hal));
+#if SOC_I2S_SUPPORTS_PCM2PDM
+            i2s_hal_pdm_enable_tx_channel(&(p_i2s[i2s_num]->hal), true);
+#else
+            ESP_LOGW(TAG, "CAUTION! This target has no PCM2PDM filter, please write raw PDM data");
+            i2s_hal_pdm_enable_tx_channel(&(p_i2s[i2s_num]->hal), false);
+#endif  // SOC_I2S_SUPPORTS_PCM2PDM
         }
 #endif
 #if SOC_I2S_SUPPORTS_PDM_RX
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            i2s_hal_pdm_enable_rx_channel(&(p_i2s[i2s_num]->hal));
+#if SOC_I2S_SUPPORTS_PDM2PCM
+            i2s_hal_pdm_enable_rx_channel(&(p_i2s[i2s_num]->hal), true);
+#else
+            ESP_LOGW(TAG, "CAUTION! This target has no PDM2PCM filter, the data read are in raw PDM format");
+            i2s_hal_pdm_enable_rx_channel(&(p_i2s[i2s_num]->hal), false);
+#endif  // SOC_I2S_SUPPORTS_PDM2PCM
         }
 #endif
     }
@@ -1957,6 +1981,7 @@ esp_err_t i2s_set_pin(i2s_port_t i2s_num, const i2s_pin_config_t *pin)
     return ESP_OK;
 }
 
+#if !CONFIG_I2S_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that the new i2s driver is not running along with the legacy i2s driver
  */
@@ -1970,3 +1995,4 @@ static __attribute__((constructor)) void check_i2s_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy i2s driver is deprecated, please migrate to use driver/i2s_std.h, driver/i2s_pdm.h or driver/i2s_tdm.h");
 }
+#endif //CONFIG_I2S_SKIP_LEGACY_CONFLICT_CHECK

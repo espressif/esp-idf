@@ -810,7 +810,7 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 #if SOC_I2C_SUPPORT_SLAVE
     if (i2c_conf->mode == I2C_MODE_SLAVE) {  //slave mode
         i2c_hal_slave_init(&(i2c_context[i2c_num].hal));
-        i2c_ll_slave_tx_auto_start_en(i2c_context[i2c_num].hal.dev, true);
+        i2c_ll_slave_enable_auto_start(i2c_context[i2c_num].hal.dev, true);
         I2C_CLOCK_SRC_ATOMIC() {
             i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
         }
@@ -1504,7 +1504,7 @@ static void IRAM_ATTR i2c_master_cmd_begin_static(i2c_port_t i2c_num, BaseType_t
         }
     }
     i2c_ll_update(i2c_context[i2c_num].hal.dev);
-    i2c_ll_master_trans_start(i2c_context[i2c_num].hal.dev);
+    i2c_ll_start_trans(i2c_context[i2c_num].hal.dev);
     return;
 }
 
@@ -1705,6 +1705,7 @@ int i2c_slave_read_buffer(i2c_port_t i2c_num, uint8_t *data, size_t max_size, Ti
 }
 #endif
 
+#if !CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy i2c driver is not running along with the new I2C driver
  */
@@ -1720,3 +1721,4 @@ static void check_i2c_driver_conflict(void)
     }
     ESP_EARLY_LOGW(I2C_TAG, "This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`");
 }
+#endif //CONFIG_I2C_SKIP_LEGACY_CONFLICT_CHECK

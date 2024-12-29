@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -36,6 +36,24 @@
 #define EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY CONFIG_EXAMPLE_WIFI_CONNECTION_MAXIMUM_RETRY
 #define EXAMPLE_INVALID_REASON                255
 #define EXAMPLE_INVALID_RSSI                  -128
+
+#if CONFIG_ESP_WIFI_AUTH_OPEN
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_OPEN
+#elif CONFIG_ESP_WIFI_AUTH_WEP
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WEP
+#elif CONFIG_ESP_WIFI_AUTH_WPA_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA2_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA_WPA2_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA_WPA2_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA3_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA3_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WPA2_WPA3_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WPA2_WPA3_PSK
+#elif CONFIG_ESP_WIFI_AUTH_WAPI_PSK
+#define EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD WIFI_AUTH_WAPI_PSK
+#endif
 
 static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_param_t *param);
 
@@ -313,7 +331,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         ESP_ERROR_CHECK( esp_wifi_set_mode(param->wifi_mode.op_mode) );
         break;
     case ESP_BLUFI_EVENT_REQ_CONNECT_TO_AP:
-        BLUFI_INFO("BLUFI requset wifi connect to AP\n");
+        BLUFI_INFO("BLUFI request wifi connect to AP\n");
         /* there is no wifi callback when the device has already connected to this wifi
         so disconnect wifi before connection.
         */
@@ -321,7 +339,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
         example_wifi_connect();
         break;
     case ESP_BLUFI_EVENT_REQ_DISCONNECT_FROM_AP:
-        BLUFI_INFO("BLUFI requset wifi disconnect from AP\n");
+        BLUFI_INFO("BLUFI request wifi disconnect from AP\n");
         esp_wifi_disconnect();
         break;
     case ESP_BLUFI_EVENT_REPORT_ERROR:
@@ -372,6 +390,7 @@ static void example_event_callback(esp_blufi_cb_event_t event, esp_blufi_cb_para
 	case ESP_BLUFI_EVENT_RECV_STA_PASSWD:
         strncpy((char *)sta_config.sta.password, (char *)param->sta_passwd.passwd, param->sta_passwd.passwd_len);
         sta_config.sta.password[param->sta_passwd.passwd_len] = '\0';
+        sta_config.sta.threshold.authmode = EXAMPLE_WIFI_SCAN_AUTH_MODE_THRESHOLD;
         esp_wifi_set_config(WIFI_IF_STA, &sta_config);
         BLUFI_INFO("Recv STA PASSWORD %s\n", sta_config.sta.password);
         break;

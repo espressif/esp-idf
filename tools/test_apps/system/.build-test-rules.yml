@@ -24,8 +24,8 @@ tools/test_apps/system/cxx_no_except:
       reason: the other targets are not tested yet
 
 tools/test_apps/system/eh_frame:
-  enable:
-    - if: IDF_TARGET not in ["esp32", "esp32s2", "esp32s3", "linux"]
+  disable:
+    - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3", "linux"]
       reason: Only relevant for riscv targets
 
 tools/test_apps/system/esp_intr_dump:
@@ -35,6 +35,12 @@ tools/test_apps/system/g0_components:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c5", "esp32c61"] # preview targets
 
 tools/test_apps/system/g1_components:
+
+tools/test_apps/system/gdb:
+  disable_test:
+    - if: IDF_TARGET in ["esp32s3", "esp32c2", "esp32c3", "esp32c5", "esp32c61", "esp32p4"]
+      temporary: true
+      reason: lack of runners
 
 tools/test_apps/system/gdb_loadable_elf:
   disable_test:
@@ -61,6 +67,15 @@ tools/test_apps/system/memprot:
     - if: IDF_TARGET in ["esp32c3", "esp32s2", "esp32s3"]
       temporary: true
       reason: the other targets are not tested yet
+
+tools/test_apps/system/mmu_page_size:
+  enable:
+    - if: IDF_TARGET in ["esp32c6", "esp32h2"]
+      reason: Coverage for two targets with configurable MMU page size is sufficient
+  depends_components:
+    - esp_app_format
+    - bootloader_support
+    - esp_mm
 
 tools/test_apps/system/no_embedded_paths:
   enable:

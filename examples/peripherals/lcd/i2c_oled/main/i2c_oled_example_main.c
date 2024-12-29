@@ -192,7 +192,7 @@ void app_main(void)
     ESP_LOGI(TAG, "Allocate separate LVGL draw buffers");
     // LVGL reserves 2 x 4 bytes in the buffer, as these are assumed to be used as a palette.
     size_t draw_buffer_sz = EXAMPLE_LCD_H_RES * EXAMPLE_LCD_V_RES / 8 + EXAMPLE_LVGL_PALETTE_SIZE;
-    buf = heap_caps_calloc(1, draw_buffer_sz, MALLOC_CAP_INTERNAL);
+    buf = heap_caps_calloc(1, draw_buffer_sz, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(buf);
 
     // LVGL9 suooprt new monochromatic format.

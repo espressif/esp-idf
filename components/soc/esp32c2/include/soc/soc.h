@@ -23,7 +23,6 @@
                                                     0 \
                                                 )
 
-
 #define REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE - (i) * 0x8000)
 #define REG_UART_BASE(i)                        (DR_REG_UART_BASE + (i) * 0x10000)
 #define REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)

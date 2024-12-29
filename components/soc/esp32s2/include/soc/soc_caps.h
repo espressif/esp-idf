@@ -200,6 +200,7 @@
 #define SOC_I2C_FIFO_LEN       (32) /*!< I2C hardware FIFO depth */
 #define SOC_I2C_CMD_REG_NUM    (16) /*!< Number of I2C command registers */
 #define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE (1)
 
 // FSM_RST only resets the FSM, not using it. So SOC_I2C_SUPPORT_HW_FSM_RST not defined.
 //ESP32-S2 support hardware clear bus
@@ -398,14 +399,12 @@
 #define SOC_SHA_SUPPORT_SHA512_256      (1)
 #define SOC_SHA_SUPPORT_SHA512_T        (1)
 
-
 /*--------------------------- MPI CAPS ---------------------------------------*/
 #define SOC_MPI_MEM_BLOCKS_NUM (4)
 #define SOC_MPI_OPERATIONS_NUM (3)
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
-
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
@@ -481,6 +480,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D4           (1)     /*!< Support XTAL_D4 clock as the LP_FAST clock source */
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

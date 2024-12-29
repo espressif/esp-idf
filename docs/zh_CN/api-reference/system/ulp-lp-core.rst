@@ -287,11 +287,16 @@ ULP LP 内核的时钟源来自系统时钟 ``LP_FAST_CLK``，详情请参见 `�
 
 * 通过共享变量共享程序状态：如 :ref:`ulp-lp-core-access-variables` 所述，主 CPU 和 ULP 内核都可以轻松访问 RTC 内存中的全局变量。若想了解 ULP 内核的运行状态，可以将状态信息从 ULP 写入变量中，并通过主 CPU 读取信息。这种方法的缺点在于它需要主 CPU 一直处于唤醒状态，而这通常很难实现。另外，若主 CPU 一直处于唤醒状态，可能会掩盖某些问题，因为部分问题只会在特定电源域断电时发生。
 
-* 紧急处理程序：当检测到异常时，LP 内核的紧急处理程序会把 LP 内核寄存器的状态通过 LP-UART 发送出去。将 :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` 选项设置为 ``y``，可以启用紧急处理程序。禁用此选项将减少 LP 内核应用程序的 LP-RAM 使用量。若想从紧急转储中解析栈回溯，可以使用 esp-idf-monitor_，例如：
+* 紧急处理程序：当检测到异常时，LP 内核的紧急处理程序会把 LP 内核寄存器的状态通过 LP-UART 发送出去。将 :ref:`CONFIG_ULP_PANIC_OUTPUT_ENABLE` 选项设置为 ``y``，可以启用紧急处理程序。禁用此选项将减少 LP 内核应用程序的 LP-RAM 使用量。若想从紧急转储中解析栈回溯，可以使用 ``idf.py monitor``。
+
+.. warning::
+
+    如果在单个项目中使用多个 ULP 应用程序，栈回溯解码可能无法正常工作。此时建议直接使用 esp-idf-monitor_ 工具，并指定正确的 ULP ELF 文件：
 
     .. code-block:: bash
 
         python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+
 
 调试 ULP LP 内核应用程序：使用 GDB 和 OpenOCD
 ----------------------------------------------

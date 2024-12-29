@@ -204,9 +204,9 @@ typedef struct {
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
-    unsigned channel: 4;                          /**< the primary channel */
-    unsigned second: 4;                           /**< the second channel if in HT40 */
-    unsigned : 12;                                /**< reserved */
+    unsigned channel: 8;                          /**< the primary channel */
+    unsigned second: 8;                           /**< the second channel if in HT40 */
+    unsigned : 4;                                 /**< reserved */
     unsigned : 4;                                 /**< reserved */
     unsigned : 1;                                 /**< reserved */
     unsigned : 7;                                 /**< reserved */
@@ -406,6 +406,7 @@ typedef enum {
 /** Argument structure for twt configuration */
 typedef struct {
     bool post_wakeup_event;              /**< post twt wakeup event */
+    bool twt_enable_keep_alive;          /**< twt enable send qos null to keep alive */
 } wifi_twt_config_t;
 
 /** Argument structure for WIFI_EVENT_TWT_WAKEUP event */

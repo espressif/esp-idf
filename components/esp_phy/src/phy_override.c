@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_private/sar_periph_ctrl.h"
 #include "freertos/FreeRTOS.h"
 
+#include "hal/efuse_hal.h"
 
 /*
  * This file is used to override the hooks provided by the PHY lib for some system features.
@@ -98,4 +99,21 @@ int16_t phy_get_tsens_value(void)
 #else
     return 0;
 #endif
+}
+
+/* NOTE:: With ESP-TEE enabled, we override certain functions from the libphy
+ * component archive which directly access the eFuse later (e.g. REG_READ)
+ * with the HAL APIs.
+ *
+ * In the future, ESP-TEE would need to protect the entire eFuse range through
+ * APM and expects users to use HAL APIs which would be redirected as service calls.
+ */
+void esp_phy_efuse_get_mac(uint8_t *mac)
+{
+    efuse_hal_get_mac(mac);
+}
+
+uint32_t esp_phy_efuse_get_chip_ver_pkg(void)
+{
+    return efuse_hal_get_chip_ver_pkg();
 }

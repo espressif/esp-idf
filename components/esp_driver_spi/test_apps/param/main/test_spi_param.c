@@ -1527,10 +1527,16 @@ static void test_master_hd_dma(void)
             TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
 
             for (uint8_t speed_level = 0; speed_level < sizeof(s_spi_bus_freq) / sizeof(int); speed_level++) {
-                spi_device_interface_config_t devcfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
-                devcfg.mode = mode;
-                devcfg.flags = SPI_DEVICE_HALFDUPLEX;
-                devcfg.clock_speed_hz = s_spi_bus_freq[speed_level];
+                spi_device_interface_config_t devcfg = {
+                    .spics_io_num = PIN_NUM_CS,
+                    .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .mode = mode,
+                    .flags = SPI_DEVICE_HALFDUPLEX,
+                    .command_bits = 8,
+                    .address_bits = 8,
+                    .dummy_bits = 8,
+                    .queue_size = 10,
+                };
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
@@ -1629,10 +1635,16 @@ static void test_master_hd_no_dma(void)
             TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_DISABLED));
 
             for (uint8_t speed_level = 0; speed_level < sizeof(s_spi_bus_freq) / sizeof(int); speed_level++) {
-                spi_device_interface_config_t devcfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
-                devcfg.mode = mode;
-                devcfg.flags = SPI_DEVICE_HALFDUPLEX;
-                devcfg.clock_speed_hz = s_spi_bus_freq[speed_level];
+                spi_device_interface_config_t devcfg = {
+                    .spics_io_num = PIN_NUM_CS,
+                    .clock_speed_hz = s_spi_bus_freq[speed_level],
+                    .mode = mode,
+                    .flags = SPI_DEVICE_HALFDUPLEX,
+                    .command_bits = 8,
+                    .address_bits = 8,
+                    .dummy_bits = 8,
+                    .queue_size = 10,
+                };
                 TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
                 printf("Next trans: %s\tmode:%d\t@%.2f MHz\n", (is_gpio) ? "GPIO_Matrix" : "IOMUX", mode, s_spi_bus_freq[speed_level] / 1000000.f);
 
@@ -1644,6 +1656,7 @@ static void test_master_hd_no_dma(void)
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(essl_spi_rddma(dev0, master_receive, test_trans_len, -1, 0));
+                    unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(essl_spi_wrdma(dev0, master_send, test_trans_len, -1, 0));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
@@ -1691,11 +1704,12 @@ static void test_slave_hd_no_dma(void)
                         .len = test_trans_len,
                         .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
-                    unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
+                    unity_send_signal("Slave ready");
+                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
                     slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
-                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+                    unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);

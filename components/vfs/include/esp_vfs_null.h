@@ -13,13 +13,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Get VFS structure for /dev/null
- *
- * @return VFS structure for /dev/null
- */
-const esp_vfs_t *esp_vfs_null_get_vfs(void);
-
-/**
  * @brief Register filesystem for /dev/null
  *
  * @return ESP_OK on success; any other value indicates an error

@@ -585,7 +585,7 @@ static esp_err_t sleep_modem_ble_mac_modem_state_init(uint8_t extra)
     int retention_args = extra;
     sleep_retention_module_init_param_t init_param = {
         .cbs     = { .create = { .handle = sleep_modem_ble_mac_retention_init, .arg = &retention_args } },
-        .depends = BIT(SLEEP_RETENTION_MODULE_BT_BB)
+        .depends = RETENTION_MODULE_BITMAP_INIT(BT_BB)
     };
     esp_err_t err = sleep_retention_module_init(SLEEP_RETENTION_MODULE_BLE_MAC, &init_param);
     if (err == ESP_OK) {

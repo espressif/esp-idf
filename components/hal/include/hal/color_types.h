@@ -211,6 +211,16 @@ typedef enum {
     COLOR_COMPONENT_INVALID,    /*!< Invalid color component */
 } color_component_t;
 
+/**
+ * @brief The order of the components per pack in the YUV422 format
+ */
+typedef enum {
+    COLOR_YUV422_PACK_ORDER_YUYV, /*!< YUYV */
+    COLOR_YUV422_PACK_ORDER_YVYU, /*!< YVYU */
+    COLOR_YUV422_PACK_ORDER_UYVY, /*!< UYVY */
+    COLOR_YUV422_PACK_ORDER_VYUY, /*!< VYUY */
+} color_yuv422_pack_order_t;
+
 #ifdef __cplusplus
 }
 #endif

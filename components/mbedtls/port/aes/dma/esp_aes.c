@@ -36,8 +36,14 @@
 #include "esp_private/esp_crypto_lock_internal.h"
 
 #if SOC_AES_GDMA
+#if !ESP_TEE_BUILD
 #define AES_LOCK() esp_crypto_sha_aes_lock_acquire()
 #define AES_RELEASE() esp_crypto_sha_aes_lock_release()
+#else
+#define AES_RCC_ATOMIC()
+#define AES_LOCK()
+#define AES_RELEASE()
+#endif
 #elif SOC_AES_CRYPTO_DMA
 #define AES_LOCK() esp_crypto_dma_lock_acquire()
 #define AES_RELEASE() esp_crypto_dma_lock_release()

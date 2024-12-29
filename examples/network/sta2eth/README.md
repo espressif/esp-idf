@@ -12,6 +12,8 @@ This example aims to demonstrate 1-1 bridge using WiFi station and one of these 
 It also allows for reconfiguring WiFi settings using a virtual network in the Ethernet. The reconfiguration mode is initialized if the WiFi settings are not available, connection fails or manually by long pressing the Boot button (GPIO0).
 It is possible to configure WiFi settings (SSID and password) in a browser on a hostname `"http://wifi.settings"` or using unified provisioning.
 
+Note: This page is intended solely for initial setup and is not recommended for production use, as it lacks any security measures—data is transmitted in plain text over HTTP. For secure, production-grade configuration, we recommend using the default option: unified provisioning.
+
 ## How to use example
 
 This example could be used to *bring* wireless connectivity to devices that support only Ethernet (or USB Ethernet implemented as NCM device).

@@ -89,12 +89,6 @@ static void IRAM_ATTR ipc_task(void* arg)
         }
 #endif // !CONFIG_FREERTOS_UNICORE
     }
-    // TODO: currently this is unreachable code. Introduce esp_ipc_uninit
-    // function which will signal to both tasks that they can shut down.
-    // Not critical at this point, we don't have a use case for stopping
-    // IPC yet.
-    // Also need to delete the semaphore here.
-    vTaskDelete(NULL);
 }
 
 /*

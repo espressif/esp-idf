@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os.path
 import time
@@ -13,33 +13,42 @@ from pytest_embedded_idf import IdfDut
 @pytest.mark.parametrize('config', ['app_trace_jtag'], indirect=True)
 @pytest.mark.parametrize('embedded_services', ['esp,idf,jtag'], indirect=True)
 def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
-    trace_log = os.path.join(os.path.dirname(dut.gdb._logfile), 'heap_log.svdat')  # pylint: disable=protected-access
+    # Construct trace log paths
+    trace_log = [
+        os.path.join(os.path.dirname(dut.gdb._logfile), 'heap_log0.svdat')  # pylint: disable=protected-access
+    ]
+    if dut.target in ['esp32', 'esp32s3', 'esp32p4']:
+        trace_log.append(os.path.join(os.path.dirname(dut.gdb._logfile), 'heap_log1.svdat'))  # pylint: disable=protected-access
 
+    # Set up GDB
     dut.gdb.write('set width unlimited')  # Don't split output lines for easy parsing
     dut.gdb.write('mon reset halt')
     dut.gdb.write('maintenance flush register-cache')
 
+    # Start sysview tracing
     dut.gdb.write('tb heap_trace_start')
     dut.gdb.write('commands', non_blocking=True)
-    dut.gdb.write(f'mon esp sysview start file://{trace_log}', non_blocking=True)
+    trace_files = ' '.join([f'file://{log}' for log in trace_log])
+    dut.gdb.write(f'mon esp sysview start {trace_files}', non_blocking=True)
     dut.gdb.write('c', non_blocking=True)
     dut.gdb.write('end')
 
+    # Stop sysview tracing
     dut.gdb.write('tb heap_trace_stop')
     dut.gdb.write('commands', non_blocking=True)
     dut.gdb.write('mon esp sysview stop', non_blocking=True)
     dut.gdb.write('end')
-
     dut.gdb.write('c', non_blocking=True)
-    dut.expect('esp_apptrace: Initialized TRAX on CPU0')
 
-    time.sleep(1)  # make sure that the sysview file has been generated
-    with pexpect.spawn(' '.join([os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'),
-                                 '-p',
-                                 '-b', dut.app.elf_file,
-                                 trace_log])) as sysviewtrace:
+    # Wait for sysview files to be generated
+    time.sleep(1)
+
+    # Process sysview trace logs
+    command = [os.path.join(idf_path, 'tools', 'esp_app_trace', 'sysviewtrace_proc.py'), '-p'] + trace_log
+    with pexpect.spawn(' '.join(command)) as sysviewtrace:
         sysviewtrace.expect(r'Found \d+ leaked bytes in \d+ blocks.', timeout=120)
 
+    # Validate GDB logs
     with open(dut.gdb._logfile) as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
         gdb_pexpect_proc.expect_exact(

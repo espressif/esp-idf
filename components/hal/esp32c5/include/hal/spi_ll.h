@@ -77,7 +77,7 @@ typedef enum {
 
 // SPI base command
 typedef enum {
-     /* Slave HD Only */
+    /* Slave HD Only */
     SPI_LL_BASE_CMD_HD_WRBUF    = 0x01,
     SPI_LL_BASE_CMD_HD_RDBUF    = 0x02,
     SPI_LL_BASE_CMD_HD_WRDMA    = 0x03,
@@ -99,9 +99,9 @@ typedef enum {
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  * @param enable    Enable/Disable
  */
-static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable) {
-    switch (host_id)
-    {
+static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enable)
+{
+    switch (host_id) {
     case SPI2_HOST:
         PCR.spi2_conf.spi2_clk_en = enable;
         break;
@@ -115,9 +115,9 @@ static inline void spi_ll_enable_bus_clock(spi_host_device_t host_id, bool enabl
  *
  * @param host_id   Peripheral index number, see `spi_host_device_t`
  */
-static inline void spi_ll_reset_register(spi_host_device_t host_id) {
-    switch (host_id)
-    {
+static inline void spi_ll_reset_register(spi_host_device_t host_id)
+{
+    switch (host_id) {
     case SPI2_HOST:
         PCR.spi2_conf.spi2_rst_en = 1;
         PCR.spi2_conf.spi2_rst_en = 0;
@@ -1028,7 +1028,9 @@ static inline void spi_ll_set_command(spi_dev_t *hw, uint16_t cmd, int cmdlen, b
 static inline void spi_ll_set_dummy(spi_dev_t *hw, int dummy_n)
 {
     hw->user.usr_dummy = dummy_n ? 1 : 0;
-    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    if (dummy_n > 0) {
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->user1, usr_dummy_cyclelen, dummy_n - 1);
+    }
 }
 
 /**
@@ -1194,8 +1196,7 @@ static inline uint32_t spi_ll_slave_hd_get_last_addr(spi_dev_t *hw)
 static inline uint8_t spi_ll_get_slave_hd_base_command(spi_command_t cmd_t)
 {
     uint8_t cmd_base = 0x00;
-    switch (cmd_t)
-    {
+    switch (cmd_t) {
     case SPI_CMD_HD_WRBUF:
         cmd_base = SPI_LL_BASE_CMD_HD_WRBUF;
         break;

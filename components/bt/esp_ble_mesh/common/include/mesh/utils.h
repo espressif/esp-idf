@@ -200,7 +200,7 @@ extern "C" {
  *    { MY_PWM0 , MY_PWM1 }
  *
  * @param LEN The length of the sequence. Must be an integer literal less
- *            than 255.
+ *            than 255 (ref: utils_loops.h).
  * @param F A macro function that accepts at least two arguments:
  *          <tt>F(i, ...)</tt>. @p F is called repeatedly in the expansion.
  *          Its first argument @p i is the index in the sequence, and

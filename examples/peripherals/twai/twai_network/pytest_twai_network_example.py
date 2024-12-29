@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import os.path
 from threading import Thread
 from typing import Tuple
@@ -35,7 +34,6 @@ def dut_thread_callback(**kwargs) -> None:  # type: ignore
     result[0] = True
 
 
-@pytest.mark.esp32
 @pytest.mark.skip(reason="there's not a good approach to sync multiple DUTs")
 @pytest.mark.twai_network
 @pytest.mark.parametrize(

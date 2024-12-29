@@ -34,17 +34,23 @@ The Host Library has the following features:
     - Allows multiple class drivers to run simultaneously, i.e., multiple clients of the Host Library.
     - A single device can be used by multiple clients simultaneously, e.g., composite devices.
     - The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
+    - Allows single Hub support (If option :ref:`CONFIG_USB_HOST_HUBS_SUPPORTED` is enabled).
+    - Allows multiple Hubs support (If option :ref:`CONFIG_USB_HOST_HUB_MULTI_LEVEL` is enabled).
 
 Currently, the Host Library and the underlying Host Stack has the following limitations:
 
 .. list::
 
-    - Only supports a single device, but the Host Library's API is designed for multiple device support.
     - Only supports Asynchronous transfers.
     - Only supports using one configuration. Changing to other configurations after enumeration is not supported yet.
     - Transfer timeouts are not supported yet.
     :esp32p4: - {IDF_TARGET_NAME} contains two USB-OTG peripherals USB 2.0 OTG High-Speed and USB 2.0 OTG Full-Speed. Only the High-Speed instance is supported now.
-    :esp32p4: - {IDF_TARGET_NAME} cannot enumerate Low-Speed devices yet.
+    - The External Hub Driver: Supports only devices with the same speed as upstream port speed (e.g., Low-speed device won't work through Full-speed external Hub).
+    - The External Hub Driver: Remote Wakeup feature is not supported (External Hubs are active, even if there are no devices inserted).
+    - The External Hub Driver: Doesn't handle error cases (overcurrent handling, errors during initialization etc. are not implemented yet).
+    - The External Hub Driver: No Interface selection. The Driver uses the first available Interface with Hub Class code (09h).
+    - The External Port Driver: No downstream port debounce mechanism (not implemented yet)
+    :esp32p4: - The External Hub Driver: No Transaction Translator layer (No FS/LS Devices support when a Hub is attached to HS Host).
 
 
 .. -------------------------------------------------- Architecture -----------------------------------------------------
@@ -97,7 +103,7 @@ Therefore, in addition to the client tasks, the Host Library also requires a tas
 Devices
 ^^^^^^^
 
-The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. By default during enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``. If option  :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` is enabled, a different ``bConfigurationValue`` can be selected, see `Multiple configuration Support`_ for more details.
+The Host Library shields clients from the details of device handling, encompassing details such as connection, memory allocation, and enumeration. The clients are provided only with a list of already connected and enumerated devices to choose from. By default during enumeration, each device is automatically configured to use the first configuration found, namely, the first configuration descriptor returned on a Get Configuration Descriptor request. For most standard devices, the first configuration will have a ``bConfigurationValue`` of ``1``. If option  :ref:`CONFIG_USB_HOST_ENABLE_ENUM_FILTER_CALLBACK` is enabled, a different ``bConfigurationValue`` can be selected, see `Multiple Configuration Support`_ for more details.
 
 It is possible for two or more clients to simultaneously communicate with the same device as long as they are not communicating to the same interface. However, multiple clients can simultaneously communicate with the same device's default endpoint (i.e., EP0), which will result in their control transfers being serialized.
 
@@ -166,8 +172,8 @@ Lifecycle
 
 The graph above illustrates the typical lifecycle of the Host Library with multiple clients and devices. Specifically, the example involves:
 
-- two registered clients (Client 1 and Client 2).
-- two connected devices (Device 1 and Device 2), where Client 1 communicates with Device 1 and Client 2 communicates with Device 2.
+- Two registered clients (Client 1 and Client 2).
+- Two connected devices (Device 1 and Device 2), where Client 1 communicates with Device 1 and Client 2 communicates with Device 2.
 
 With reference to the graph above, the typical lifecycle involves the following key stages.
 
@@ -437,6 +443,44 @@ Configurable parameters of the USB host stack can be configured with multiple op
 * For reset hold interval, refer to :ref:`CONFIG_USB_HOST_RESET_HOLD_MS`.
 * For reset recovery interval, refer to :ref:`CONFIG_USB_HOST_RESET_RECOVERY_MS`.
 * For ``SetAddress()`` recovery interval, refer to :ref:`CONFIG_USB_HOST_SET_ADDR_RECOVERY_MS`.
+
+Downstream Port Configuration
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When external Hubs feature is supported, there are several parameters which could be configured for the external Hubs port.
+
+Each external Hub has a Hub Descriptor which describes the device characteristics.
+
+.. note::
+
+    For detailed information about Hub Descriptor, please refer to `USB 2.0 Specification <https://www.usb.org/document-library/usb-20-specification>`_ > Chapter 11.23.2.1 *Hub Descriptor*.
+
+Configurable parameters of the downstream port can be configured with multiple options via Menuconfig.
+
+* For custom value to stabilize the power after powering on the port (PwrOn2PwrGood value), refer to :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_MS`.
+* For reset recovery interval, refer to :ref:`CONFIG_USB_HOST_EXT_PORT_RESET_RECOVERY_DELAY_MS`.
+
+.. note::
+
+    The specification claims, that for a hub with no power switches, PwrOn2PwrGood must be set to zero. Meanwhile, for some devices, this value could be increased to give extra time for device to power-up. To enable this feature, refer to :ref:`CONFIG_USB_HOST_EXT_PORT_CUSTOM_POWER_ON_DELAY_ENABLE`.
+
+Host Channels
+"""""""""""""
+
+When external Hubs support feature is enabled (:ref:`CONFIG_USB_HOST_HUBS_SUPPORTED`), the amount of Host channels plays important role, as each downstream device requires vacant channel.
+
+To handle each attached device, different amount of channels are required. This amount does depend on the device class (EPs number).
+
+Supported amount of channels for {IDF_TARGET_NAME} is {OTG_NUM_HOST_CHAN}.
+
+.. note::
+
+    - One free channel is required to enumerate the device.
+
+    - From 1 to N (when N - number of EPs) free channels are required to claim the interface.
+
+    - When there are no more free Host channels available, the device could not be enumerated and its interface cannot be claimed.
+
 
 Multiple Configuration Support
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

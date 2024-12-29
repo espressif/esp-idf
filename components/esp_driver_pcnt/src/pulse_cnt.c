@@ -667,8 +667,10 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
 esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
 {
-    pcnt_group_t *group = NULL;
-
+    pcnt_group_t *group = unit->group;
+    if (!pcnt_ll_is_step_notify_supported(group->group_id)) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "watch step is not supported by this chip revision");
+    }
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((step_interval > 0 && unit->flags.en_step_notify_up) || (step_interval < 0 && unit->flags.en_step_notify_down),
                         ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
@@ -677,7 +679,6 @@ esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
     ESP_RETURN_ON_FALSE(unit->step_interval == 0,
                         ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
 
-    group = unit->group;
     unit->step_interval = step_interval;
     pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval);
     // different units are mixing in the same register, so we use the group's spinlock here
@@ -881,7 +882,7 @@ static pcnt_group_t *pcnt_acquire_group_handle(int group_id)
                         .arg = group,
                     },
                 },
-                .depends = SLEEP_RETENTION_MODULE_BM_CLOCK_SYSTEM
+                .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
             };
             // we only do retention init here. Allocate retention module in the unit initialization
             if (sleep_retention_module_init(module_id, &init_param) != ESP_OK) {
@@ -928,7 +929,7 @@ static void pcnt_release_group_handle(pcnt_group_t *group)
     if (do_deinitialize) {
 #if PCNT_USE_RETENTION_LINK
         const periph_retention_module_t module_id = pcnt_reg_retention_info[group_id].retention_module;
-        if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+        if (sleep_retention_is_module_inited(module_id)) {
             sleep_retention_module_deinit(module_id);
         }
 #endif // PCNT_USE_RETENTION_LINK

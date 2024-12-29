@@ -1,0 +1,239 @@
+#
+# For a description of the syntax of this configuration file,
+# see the file kconfig-language.txt in the NuttX tools repository.
+#
+menu "PTP Daemon Configuration"
+
+    config NETUTILS_PTPD
+        bool "PTPD client/server"
+        default y
+    #depends on NET_IPv4
+    #depends on NET_IGMP
+    #depends on NET_UDP
+        help
+            Build a minimal implementation of IEEE-1588 precision time protocol.
+            Uses system gettimeofday() and adjtime() calls to synchronize clock
+            with a master clock through network, or to provide a master clock to
+            other systems.
+
+    if NETUTILS_PTPD
+
+        config NETUTILS_PTPD_DEBUG
+            bool "Enable PTP debug messages"
+            default n
+            depends on DEBUG_INFO
+            help
+                Enable PTP debug messages even if CONFIG_DEBUG_NET_INFO is not enabled.
+
+        config NETUTILS_PTPD_CLIENT
+            bool "Enable client support"
+            default y
+            help
+                Act as a PTP client, synchronizing the NuttX clock to a remote master
+                clock.
+
+        config NETUTILS_PTPD_SERVER
+            bool "Enable server support"
+            default n
+            help
+                Act as a PTP server, providing NuttX clock time to other systems.
+
+                Both server and client can be simultaneously enabled. NuttX will then
+                synchronize to a higher priority master clock, or act as a master
+                clock itself if it has the highest priority.
+                Refer to Best Master Clock algorithm in IEEE-1588 for details.
+
+        config NETUTILS_PTPD_STACKSIZE
+            int "PTP daemon stack stack size"
+            default 4096 # DEFAULT_TASK_STACKSIZE
+
+        config NETUTILS_PTPD_SERVERPRIO
+            int "PTP daemon priority"
+            default 100
+
+        config NETUTILS_PTPD_DOMAIN
+            int    "PTP domain selection"
+            default 0
+            range 0 127
+            help
+                Set PTP domain to participate in. Default domain is 0, other domains
+                can be used to isolate reference clocks from each other.
+
+        if NETUTILS_PTPD_SERVER
+
+            config NETUTILS_PTPD_PRIORITY1
+                int "PTP server priority1"
+                default 128
+                range 0 255
+                help
+                    Set clock priority to announce when acting as a PTP server.
+                    Lower value is higher priority.
+                    A higher priority1 clock will be selected without regard to announced
+                    clock quality fields.
+                    Refer to Best Master Clock algorithm in IEEE-1588 for details.
+
+            config NETUTILS_PTPD_PRIORITY2
+                int "PTP server priority2"
+                default 128
+                range 0 255
+                help
+                    Set clock subpriority to announce when acting as a PTP server.
+                    This will distinguish between two clocks that are equivalent in
+                    priority1, class and accuracy values.
+                    Lower value is higher priority.
+
+            config NETUTILS_PTPD_CLASS
+                int "PTP server class"
+                default 248
+                range 0 255
+                help
+                    Set master clock class to announce when acting as a PTP server.
+                    Lower value means higher quality clock source.
+                    248 is the default for unknown class.
+
+            config NETUTILS_PTPD_ACCURACY
+                int "PTP server accuracy"
+                default 254
+                range 0 255
+                help
+                    Set master clock accuracy to announce when acting as a PTP server.
+                    Logarithmic scale is defined in IEEE-1588:
+                    32: +-  25 ns
+                    33: +- 100 ns
+                    34: +- 250 ns
+                    35: +-   1 us
+                    36: +-   2.5 us
+                    37: +-  10 us
+                    38: +-  25 us
+                    39: +- 100 us
+                    40: +- 250 us
+                    41: +-   1 ms
+                    42: +-   2.5 ms
+                    43: +-  10 ms
+                    44: +-  25 ms
+                    45: +- 100 ms
+                    46: +- 250 ms
+                    47: +-   1 s
+                    48: +-  10 s
+                    49: +-  more than 10 s
+                    254: Unknown
+
+            config NETUTILS_PTPD_CLOCKSOURCE
+                int "PTP server clock source type"
+                default 160
+                range 0 255
+                help
+                    Set clock source type to announce when acting as a PTP server.
+                    Common values:
+                    32: GPS
+                    64: PTP
+                    80: NTP
+                    144: Other
+                    160: Internal oscillator
+
+            config NETUTILS_PTPD_SYNC_INTERVAL_MSEC
+                int "PTP server sync transmit interval (ms)"
+                default 1000
+                help
+                    How often to transmit sync packets in server mode.
+
+            config NETUTILS_PTPD_ANNOUNCE_INTERVAL_MSEC
+                int "PTP server announce transmit interval (ms)"
+                default 10000
+                help
+                    How often to transmit announce packets in server mode.
+
+            config NETUTILS_PTPD_TWOSTEP_SYNC
+                bool "PTP server sends two-step synchronization packets"
+                default y
+                help
+                    If enabled, sends a follow-up packet after every sync packet.
+                    This helps compensate for the time taken to initiate the transmission.
+
+            config NETUTILS_PTPD_DELAYRESP_INTERVAL
+                int "PTP server suggested interval of delay requests"
+                range 0 255
+                default 4
+                help
+                    When responding to a delay request, the server can inform the client
+                    how often it should test path delay. This is done using header field
+                    logMessageInterval. The delay will be 2^N seconds.
+
+                    Default value 4 results in 16 second interval.
+
+        endif # NETUTILS_PTPD_SERVER
+
+        if NETUTILS_PTPD_CLIENT
+
+            config NETUTILS_PTPD_TIMEOUT_MS
+                int "PTP client timeout for changing clock source (ms)"
+                default 60000
+                help
+                    If no packets are being received from currently chosen clock source,
+                    fall back to next best clock source after this many seconds.
+
+            config NETUTILS_PTPD_SETTIME_THRESHOLD_MS
+                int "PTP client threshold for changing system time (ms)"
+                default 1000
+                help
+                    If difference between local and remote clock exceeds this threshold,
+                    time is reset with settimeofday() instead of changing the rate with
+                    adjtime().
+
+        # Commented options not used by ESP_PTP
+        #config NETUTILS_PTPD_MULTICAST_TIMEOUT_MS
+        #    int "PTP client timeout to rejoin multicast group (ms)"
+        #    default 30000 #esp32
+        #    default 0
+        #    help
+        #        If no PTP multicast packets are being received, attempt to rejoin the
+        #        multicast group. This can be necessary if network topology changes, or
+        #        depending on hardware, after some error recovery events.
+        #        Set to 0 to disable.
+
+        #config NETUTILS_PTPD_DRIFT_AVERAGE_S
+        #    int "PTP client clock drift rate averaging time (s)"
+        #    default 600
+        #    range 10 86400
+        #    help
+        #        Clock drift rate is averaged over this time pediod. Larger value
+        #        gives more stable estimate but reacts slower to crystal oscillator speed
+        #        changes (such as caused by temperature changes).
+
+            config NETUTILS_PTPD_SEND_DELAYREQ
+                bool "PTP client enable delay requests"
+                default n
+                help
+                    If enabled, sends delay request messages to measure the network delay
+                    to server. If disabled, assumes zero delay.
+
+            if NETUTILS_PTPD_SEND_DELAYREQ
+
+                config NETUTILS_PTPD_MAX_PATH_DELAY_NS
+                    int "PTP client maximum path delay (ns)"
+                    default 100000
+                    range 1 1000000000
+                    help
+                        Measured path delay longer than this is ignored. Delay requests are
+                        also not transmitted until clock synchronization is better than this.
+
+                config NETUTILS_PTPD_DELAYREQ_AVGCOUNT
+                    int "PTP client path delay averaging count"
+                    default 100
+                    help
+                        Measured path delay is averaged over this many samples.
+
+                config NETUTILS_PTPD_PATH_DELAY_STABILITY_NS
+                    int "PTP client send delay request when clock stability (ns)"
+                    default 250
+                    help
+                        Sends path delay request only once the internal clock is stable and skews only
+                        in defined interval.
+
+            endif # NETUTILS_PTPD_SEND_DELAYREQ
+
+        endif # NETUTILS_PTPD_CLIENT
+
+    endif # NETUTILS_PTPD
+
+endmenu # PTP Daemon Configuration

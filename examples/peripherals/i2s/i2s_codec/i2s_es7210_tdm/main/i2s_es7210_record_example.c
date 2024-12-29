@@ -168,7 +168,7 @@ sdmmc_card_t * mount_sdcard(void)
 
     ESP_LOGI(TAG, "Card size: %lluMB, speed: %dMHz",
              (((uint64_t)sdmmc_card->csd.capacity) * sdmmc_card->csd.sector_size) >> 20,
-             sdmmc_card->max_freq_khz / 1000);
+             (int)(sdmmc_card->max_freq_khz / 1000));
 
     return sdmmc_card;
 }
@@ -234,7 +234,7 @@ static esp_err_t record_wav(i2s_chan_handle_t i2s_rx_chan)
     ESP_GOTO_ON_ERROR(i2s_channel_enable(i2s_rx_chan), err, TAG, "error while starting i2s rx channel");
     while (wav_written < wav_size) {
         if (wav_written % byte_rate < sizeof(i2s_readraw_buff)) {
-            ESP_LOGI(TAG, "Recording: %"PRIu32"/%ds", wav_written / byte_rate + 1, EXAMPLE_RECORD_TIME_SEC);
+            ESP_LOGI(TAG, "Recording: %"PRIu32"/%ds", wav_written / byte_rate + 1, (int)EXAMPLE_RECORD_TIME_SEC);
         }
         size_t bytes_read = 0;
         /* Read RAW samples from ES7210 */

@@ -10,12 +10,15 @@ choice ESP32C5_REV_MIN
         this will also help to reduce binary size.
 
     config ESP32C5_REV_MIN_0
-        bool "Rev v0.0"
+        bool "Rev v0.0 (ECO0)"
+    config ESP32C5_REV_MIN_1
+        bool "Rev v0.1 (ECO1)"
 endchoice
 
 config ESP32C5_REV_MIN_FULL
     int
     default 0 if ESP32C5_REV_MIN_0
+    default 1 if ESP32C5_REV_MIN_1
 
 config ESP_REV_MIN_FULL
     int

@@ -48,6 +48,10 @@ static void run_all_tests(void)
     RUN_TEST_GROUP(ecdsa)
 #endif
 
+#if CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES && CONFIG_CRYPTO_TEST_APP_ENABLE_XTS_AES_TESTS
+    RUN_TEST_GROUP(xts_aes)
+#endif
+
 #endif /* CONFIG_CRYPTO_TEST_APP_ENABLE_FPGA_TESTS */
 }
 

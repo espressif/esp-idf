@@ -33,3 +33,15 @@ totally or partially re-write it, in order to include, remove or modify
 parts of it. Thanks to this, it will be fully customizable.
 This shall only be used if heavy changes are required and they cannot
 be done with hooks or within an application.
+
+## Component code supported in bootloader
+
+Links to the resources of component APIs supporting bootloader code are
+listed below.
+
+### NVS Flash
+
+NVS flash component provides limited, read-only API. It is documented in
+[NVS Flash Component for Bootloader](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/storage/nvs_bootloader.html)
+
+Examples of it's use are located in `examples/storage/nvs_bootloader`

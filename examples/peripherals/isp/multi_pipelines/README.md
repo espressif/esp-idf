@@ -116,6 +116,10 @@ Set CONFIG_CAMERA_OV5647 to y
 Set CONFIG_CAMERA_SC2336 to y
 ```
 
+Remember to select the LCD screen model and set corresponding correct horizontal/vertical resolution in ``menuconfig`` > ``Example DSI Configuration``.
+
+Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
+
 
 ### Build and Flash
 

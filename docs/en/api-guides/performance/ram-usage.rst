@@ -57,10 +57,10 @@ Configuration Options for Stack Overflow Detection
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-    Hardware Stack Guard
-    ~~~~~~~~~~~~~~~~~~~~
+   Hardware Stack Guard
+   ~~~~~~~~~~~~~~~~~~~~
 
-    The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
+   The Hardware Stack Guard is a reliable method for detecting stack overflow. This method uses the hardware's Debug Assistant module to monitor the CPU's stack pointer register. A panic is immediately triggered if the stack pointer register goes beyond the bounds of the current stack (see :ref:`Hardware-Stack-Guard` for more details). The Hardware Stack Guard can be enabled via the :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` option.
 
 End of Stack Watchpoint
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,11 +74,11 @@ The Stack Canary Bytes feature adds a set of magic bytes at the end of each task
 
 .. note::
 
-    When using the End of Stack Watchpoint or Stack Canary Bytes, it is possible that a stack pointer skips over the watchpoint or canary bytes on a stack overflow and corrupts another region of RAM instead. Thus, these methods cannot detect all stack overflows.
+   When using the End of Stack Watchpoint or Stack Canary Bytes, it is possible that a stack pointer skips over the watchpoint or canary bytes on a stack overflow and corrupts another region of RAM instead. Thus, these methods cannot detect all stack overflows.
 
-    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+   .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-        Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
+      Recommended and default option is :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` which avoids this disadvantage.
 
 Run-time Methods to Determine Stack Size
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -96,6 +96,7 @@ Reducing Stack Sizes
 
 - Avoid stack heavy functions. String formatting functions (like ``printf()``) are particularly heavy users of the stack, so any task which does not ever call these can usually have its stack size reduced.
 
+  - Using experimental :ref:`picolibc-instead-of-newlib` reduces the stack usage of ``printf()`` calls significantly.
   - Enabling :ref:`newlib-nano-formatting` reduces the stack usage of any task that calls ``printf()`` or other C string formatting functions.
 
 - Avoid allocating large variables on the stack. In C, any large structures or arrays allocated as an automatic variable (i.e., default scope of a C declaration) uses space on the stack. To minimize the sizes of these, allocate them statically and/or see if you can save memory by dynamically allocating them from the heap only when they are needed.
@@ -192,7 +193,6 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     - Refer to the sdkconfig menu ``Auto-detect Flash chips``, and you can disable flash drivers which you do not need to save some IRAM.
     :SOC_GPSPI_SUPPORTED: - Enable :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`. Provided that :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` is not enabled and the heap functions are not incorrectly used from ISRs, this option is safe to enable in all configurations.
     :esp32c2: - Enable :ref:`CONFIG_BT_RELEASE_IRAM`. Release BT text section and merge BT data, bss & text into a large free heap region when ``esp_bt_mem_release`` is called. This makes Bluetooth unavailable until the next restart, but saving ~22 KB or more of IRAM.
-    :SOC_DEBUG_HAVE_OCD_STUB_BINS: - Disabling :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` frees 8 KB IRAM but overall speed of debugging might be impacted due to the added overhead of runtime stub loading especially when using flash breakpoints.
 
 .. only:: esp32
 

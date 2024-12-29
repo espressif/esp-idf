@@ -172,6 +172,25 @@ examples/system/ota/otatool:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61"]
 
+examples/system/ota/partitions_ota:
+  disable:
+    - if: IDF_TARGET in ["esp32h2"]
+      temporary: true
+      reason: target esp32h2 is not supported yet
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      temporary: true
+      reason: lack of runners
+  depends_components:
+    - app_update
+    - esp_https_ota
+    - esp_http_client
+    # different configs need different components
+    - esp_eth
+    - esp_wifi
+    - esp_phy
+    - mbedtls
+
 examples/system/ota/pre_encrypted_ota:
   disable:
     - if: IDF_TARGET in ["esp32h2"]
@@ -324,6 +343,12 @@ examples/system/ulp/lp_core/lp_i2c:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: target esp32p4 is not supported yet, TODO IDF-9407
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_spi:
+  enable:
+    - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
   depends_components:
     - ulp
 

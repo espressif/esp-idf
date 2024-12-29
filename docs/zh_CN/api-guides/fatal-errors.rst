@@ -13,17 +13,17 @@
 - CPU 异常：|CPU_EXCEPTIONS_LIST|
 - 系统级检查错误：
 
-  .. list::
+    .. list::
 
-      - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
-      - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
-      - 高速缓存访问错误
-      :SOC_MEMPROT_SUPPORTED: - 内存保护故障
-      - 掉电检测事件
-      - 堆栈溢出
-      - 堆栈粉碎保护检查
-      - 堆完整性检查
-      - 未定义行为清理器 (UBSAN) 检查
+        - :doc:`中断看门狗 <../api-reference/system/wdts>` 超时
+        - :doc:`任务看门狗 <../api-reference/system/wdts>` 超时（只有开启 :ref:`CONFIG_ESP_TASK_WDT_PANIC` 后才会触发严重错误）
+        - 高速缓存访问错误
+        :SOC_MEMPROT_SUPPORTED: - 内存保护故障
+        - 掉电检测事件
+        - 堆栈溢出
+        - 堆栈粉碎保护检查
+        - 堆完整性检查
+        - 未定义行为清理器 (UBSAN) 检查
 
 - 使用 ``assert``、``configASSERT`` 等类似的宏断言失败。
 
@@ -50,25 +50,25 @@
 
 紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
-- 打印 CPU 寄存器，然后重启（``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``）- 默认选项
+- 打印 CPU 寄存器，然后重启 (``CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT``) - 默认选项
 
-  打印系统发生异常时 CPU 寄存器的值，打印回溯，最后重启芯片。
+    打印系统发生异常时 CPU 寄存器的值，打印回溯，最后重启芯片。
 
-- 打印 CPU 寄存器，然后暂停（``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``）
+- 打印 CPU 寄存器，然后暂停 (``CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT``)
 
-  与上一个选项类似，但不会重启，而是选择暂停程序的运行。重启程序需要外部执行复位操作。
+    与上一个选项类似，但不会重启，而是选择暂停程序的运行。重启程序需要外部执行复位操作。
 
-- 静默重启（``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``）
+- 静默重启 (``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT``)
 
-  不打印 CPU 寄存器的值，也不打印回溯，立即重启芯片。
+    不打印 CPU 寄存器的值，也不打印回溯，立即重启芯片。
 
-- 调用 GDB Stub（``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``）
+- 调用 GDB Stub (``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB``)
 
-  启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。该选项只提供只读调试或者事后调试，详细信息请参阅 `GDB Stub`_。
+    启动 GDB 服务器，通过控制台 UART 接口与 GDB 进行通信。该选项只提供只读调试或者事后调试，详细信息请参阅 `GDB Stub`_。
 
 .. note::
 
-  仅当构建中包含组件 ``esp_gdbstub`` 时，配置选项 :ref:`CONFIG_ESP_SYSTEM_PANIC` 中的 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项可用。
+    仅当构建中包含组件 ``esp_gdbstub`` 时，配置选项 :ref:`CONFIG_ESP_SYSTEM_PANIC` 中的 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项可用。
 
 紧急处理程序的行为还受到另外两个配置项的影响：
 
@@ -78,7 +78,7 @@
 
 - 如果 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM` 被禁用（默认情况下禁用），紧急处理程序的代码会放置在 flash 而不是 IRAM 中。这意味着，如果 ESP-IDF 在 flash 高速缓存禁用时崩溃，在运行 GDB Stub 和内核转储之前紧急处理程序会自动重新使能 flash 高速缓存。如果 flash 高速缓存也崩溃了，这样做会增加一些小风险。
 
-  如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中，导致 SRAM 中的可用内存空间变小。当禁用 flash 高速缓存（如写入 SPI flash）时或触发异常导致 flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
+    如果使能了该选项，紧急处理程序的代码（包括所需的 UART 函数）会放置在 IRAM 中，导致 SRAM 中的可用内存空间变小。当禁用 flash 高速缓存（如写入 SPI flash）时或触发异常导致 flash 高速缓存崩溃时，可用此选项调试一些复杂的崩溃问题。
 
 - 如果启用 :ref:`CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS` （默认为禁用）并将其配置为大于 0 的数字，紧急处理程序将基于该数字延迟重启的时间，单位为秒。如果用于监测串行输出的工具不支持停止和检查串行输出，可启用该选项。在这种情况下，借助延迟重启，用户可以在延迟期间检查和调试紧急处理程序的输出（例如回溯）。延迟结束后，设备将重新启动，并记录重置原因。
 
@@ -134,7 +134,7 @@
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Core 0 register dump:
         PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -148,7 +148,7 @@
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Core  0 register dump:
         MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
@@ -176,7 +176,7 @@
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Core 0 register dump:
         PC      : 0x400e14ed  PS      : 0x00060030  A0      : 0x800d0805  A1      : 0x3ffb5030
@@ -197,7 +197,7 @@
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Core  0 register dump:
         MEPC    : 0x420048b4  RA      : 0x420048b4  SP      : 0x3fc8f2f0  GP      : 0x3fc8a600
@@ -220,7 +220,7 @@
     此外，由于紧急处理程序中提供了堆栈转储，因此 :doc:`IDF 监视器 <tools/idf-monitor>` 也可以生成并打印回溯。
     输出结果如下：
 
-    ::
+    .. code-block:: none
 
         Backtrace:
 
@@ -238,7 +238,7 @@
 
     该选项会让编译器为项目的每个函数生成 DWARF 信息。然后，当 CPU 异常发生时，紧急处理程序将解析这些数据并生成出错任务的堆栈回溯信息。输出结果如下：
 
-    ::
+    .. code-block:: none
 
         Backtrace: 0x42009e9a:0x3fc92120 0x42009ea6:0x3fc92120 0x42009ec2:0x3fc92130 0x42024620:0x3fc92150 0x40387d7c:0x3fc92160 0xfffffffe:0x3fc92170
 
@@ -256,7 +256,9 @@ GDB Stub
 
 如果启用了 ``CONFIG_ESP_SYSTEM_PANIC_GDBSTUB`` 选项，在发生严重错误时，紧急处理程序不会复位芯片，相反，它将启动 GDB 远程协议服务器，通常称为 GDB Stub。发生这种情况时，可以让主机上运行的 GDB 实例通过 UART 端口连接到 ESP32。
 
-如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会在 UART 端口检测到 GDB Stub 提示符后自动启动 GDB，输出会类似于::
+如果使用了 :doc:`IDF 监视器 <tools/idf-monitor>`，该工具会在 UART 端口检测到 GDB Stub 提示符后自动启动 GDB，输出会类似于：
+
+.. code-block:: none
 
     Entering gdb stub now.
     $T0b#e6GNU gdb (crosstool-NG crosstool-ng-1.22.0-80-gff1f415) 7.10
@@ -286,11 +288,12 @@ GDB Stub
 
 RTC 看门狗超时
 ----------------
-{IDF_TARGET_RTCWDT_RTC_RESET:default="Not updated", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
+
+{IDF_TARGET_RTCWDT_RTC_RESET:default="未更新", esp32="RTCWDT_RTC_RESET", esp32s2="RTCWDT_RTC_RST", esp32s3="RTCWDT_RTC_RST", esp32c3="RTCWDT_RTC_RST", esp32c2="RTCWDT_RTC_RST", esp32c6="LP_WDT_SYS", esp32h2="LP_WDT_SYS", esp32p4="LP_WDT_SYS"}
 
 RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由于电源不稳定引起的锁定。RTC 看门狗默认启用，参见 :ref:`CONFIG_BOOTLOADER_WDT_ENABLE`。如果执行时间超时，RTC 看门狗将自动重启系统。此时，一级 (ROM) 引导加载程序将打印消息 ``RTC Watchdog Timeout`` 说明重启原因。
 
-::
+.. code-block:: none
 
     rst:0x10 ({IDF_TARGET_RTCWDT_RTC_RESET})
 
@@ -310,7 +313,7 @@ Guru Meditation 错误
 
 .. note::
 
-  想要了解 "Guru Meditation" 的历史渊源，请参阅 `维基百科 <https://en.wikipedia.org/wiki/Guru_Meditation>`_ 。
+    想要了解 "Guru Meditation" 的历史渊源，请参阅 `维基百科 <https://en.wikipedia.org/wiki/Guru_Meditation>`_ 。
 
 
 |ILLEGAL_INSTR_MSG|
@@ -322,9 +325,9 @@ Guru Meditation 错误
 
 - 无法从 SPI flash 中读取下一条指令，这通常发生在：
 
-  - 应用程序将 SPI flash 的管脚重新配置为其它功能（如 GPIO、UART 等）。有关 SPI flash 管脚的详细信息，请参阅硬件设计指南和芯片/模组的数据手册。
+    - 应用程序将 SPI flash 的管脚重新配置为其它功能（如 GPIO、UART 等）。有关 SPI flash 管脚的详细信息，请参阅硬件设计指南和芯片/模组的数据手册。
 
-  - 某些外部设备意外连接到 SPI flash 的管脚上，干扰了 {IDF_TARGET_NAME} 和 SPI flash 之间的通信。
+    - 某些外部设备意外连接到 SPI flash 的管脚上，干扰了 {IDF_TARGET_NAME} 和 SPI flash 之间的通信。
 
 - 在 C++ 代码中，退出 non-void 函数而无返回值被认为是未定义的行为。启用优化后，编译器通常会忽略此类函数的结尾，导致 |ILLEGAL_INSTR_MSG| 异常。默认情况下，ESP-IDF 构建系统启用 ``-Werror=return-type``，这意味着缺少返回语句会被视为编译时错误。但是，如果应用程序项目禁用了编译器警告，可能就无法检测到该问题，在运行时就会出现 |ILLEGAL_INSTR_MSG| 异常。
 
@@ -402,8 +405,8 @@ Interrupt wdt timeout on CPU0 / CPU1
 
 .. only:: SOC_MEMPROT_SUPPORTED
 
-    内存保护错误
-    ^^^^^^^^^^^^
+    Memory Protection Fault
+    ^^^^^^^^^^^^^^^^^^^^^^^
 
     ESP-IDF 中使用 {IDF_TARGET_NAME} 的权限控制功能来防止以下类型的内存访问：
 
@@ -424,7 +427,9 @@ Interrupt wdt timeout on CPU0 / CPU1
 
     {IDF_TARGET_NAME} 内部集成掉电检测电路，并且会默认启用。如果电源电压低于安全值，掉电检测器可以触发系统复位。掉电检测器可以使用 :ref:`CONFIG_ESP_BROWNOUT_DET` 和 :ref:`CONFIG_ESP_BROWNOUT_DET_LVL_SEL` 这两个选项进行设置。
 
-    当掉电检测器被触发时，会打印如下信息::
+    当掉电检测器被触发时，会打印如下信息：
+
+    .. code-block:: none
 
         Brownout detector was triggered
 
@@ -434,9 +439,11 @@ Interrupt wdt timeout on CPU0 / CPU1
 
 
 堆不完整
-^^^^^^^^^^^
+^^^^^^^^
 
-ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconfig 中开启额外的检查（“Heap Poisoning”）。如果其中的某项检查失败，则会打印类似如下信息::
+ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconfig 中开启额外的检查（“Heap Poisoning”）。如果其中的某项检查失败，则会打印类似如下信息：
+
+.. code-block:: none
 
     CORRUPT HEAP: Bad tail at 0x3ffe270a. Expected 0xbaad5678 got 0xbaac5678
     assertion "head != NULL" failed: file "/Users/user/esp/esp-idf/components/heap/multi_heap_poisoning.c", line 201, function: multi_heap_free
@@ -452,7 +459,7 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
     .. _Hardware-Stack-Guard:
 
     硬件堆栈保护
-    """"""""""""""""""""
+    """"""""""""
 
     {IDF_TARGET_NAME} 集成了辅助调试模块，支持监测堆栈指针 (SP) 寄存器，确保其值位于已分配给堆栈的内存范围内。发生中断处理或 FreeRTOS 切换上下文时，辅助调试模块都会设置新的堆栈监测范围。注意，该操作会对性能产生一定影响。
 
@@ -473,26 +480,27 @@ ESP-IDF 堆的实现包含许多运行时的堆结构检查，可以在 menuconf
 .. _FreeRTOS-End-Of-Stack-Watchpoint:
 
 FreeRTOS 任务堆栈末尾监视点
-""""""""""""""""""""""""""""""""
+"""""""""""""""""""""""""""
 
 ESP-IDF 支持基于监视点的 FreeRTOS 堆栈溢出检测机制。每次 FreeRTOS 切换任务上下文时，都会设置一个监视点，用于监视堆栈的最后 32 字节。
 
 通常，该设置会提前触发监视点，触发点可能会比预期提前多达 28 字节。基于 FreeRTOS 中堆栈金丝雀的大小为 20 字节，故将观察范围设置为 32 字节，确保可以在堆栈金丝雀遭到破坏前及时触发监测点。
 
 .. note::
+
     并非每次堆栈溢出都能触发监视点。如果任务绕过堆栈金丝雀的位置访问堆栈，则无法触发监视点。
 
 监视点触发后，将打印类似如下信息：
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    ::
+    .. code-block:: none
 
         Debug exception reason: Stack canary watchpoint triggered (task_name)
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    ::
+    .. code-block:: none
 
         Guru Meditation Error: Core  0 panic'ed (Breakpoint). Exception was unhandled.
 
@@ -500,14 +508,16 @@ ESP-IDF 支持基于监视点的 FreeRTOS 堆栈溢出检测机制。每次 Free
 
 
 FreeRTOS 堆栈检查
-"""""""""""""""""""""
+"""""""""""""""""
 
 请参见 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW`。
 
 堆栈粉碎
-^^^^^^^^^^
+^^^^^^^^
 
-堆栈粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到堆栈粉碎，则会打印类似如下的信息::
+堆栈粉碎保护（基于 GCC ``-fstack-protector*`` 标志）可以通过 ESP-IDF 中的 :ref:`CONFIG_COMPILER_STACK_CHECK_MODE` 选项来开启。如果检测到堆栈粉碎，则会打印类似如下的信息：
+
+.. code-block:: none
 
     Stack smashing protect failure!
 
@@ -522,7 +532,7 @@ FreeRTOS 堆栈检查
 
     .. |CPU_EXCEPTIONS_LIST| replace:: 非法指令，加载/存储时的内存对齐错误，加载/存储时的访问权限错误，双重异常。
     .. |ILLEGAL_INSTR_MSG| replace:: IllegalInstruction
-    .. |CACHE_ERR_MSG| replace:: Cache disabled but cached memory region accessed
+    .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
@@ -532,8 +542,19 @@ FreeRTOS 堆栈检查
     .. |CACHE_ERR_MSG| replace:: Cache error
     .. |STACK_OVERFLOW| replace:: 堆栈溢出
 
+
+.. only:: SOC_CPU_HAS_LOCKUP_RESET
+
+    CPU 锁死
+    ^^^^^^^^
+
+    若出现双重异常，即当 CPU 已经在异常处理程序中时，又出现了其他异常，则 CPU 会锁死，并触发系统复位。当 cache 出现问题，导致 CPU 无法访问外部存储时，CPU 就会进入锁死状态。此时，紧急处理程序也会因为无法获取指令或读取数据而崩溃。
+
+    通过配置选项 :ref:`CONFIG_ESP_PANIC_HANDLER_IRAM`，可以将紧急处理程序的代码放在 IRAM 中，这样即使 cache 被禁用也可以访问 IRAM，从而获取更多关于锁死原因的信息。
+
+
 未定义行为清理器 (UBSAN) 检查
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 未定义行为清理器 (UBSAN) 是一种编译器功能，它会为可能不正确的操作添加运行时检查，例如：
 
@@ -544,13 +565,15 @@ FreeRTOS 堆栈检查
 请参考 `GCC 文档 <https://gcc.gnu.org/onlinedocs/gcc/Instrumentation-Options.html>`_ 中的 ``-fsanitize=undefined`` 选项，查看支持检查的完整列表。
 
 使能 UBSAN
-""""""""""""""
+""""""""""
 
 默认情况下未启用 UBSAN。可以通过在构建系统中添加编译器选项 ``-fsanitize=undefined`` 在文件、组件或项目级别上使能 UBSAN。
 
 在对使用 SoC 硬件寄存器头文件（``soc/xxx_reg.h``）的代码使能 UBSAN 时，建议使用 ``-fno-sanitize=shift-base`` 选项禁用移位基数清理器。这是由于 ESP-IDF 寄存器头文件目前包含的模式会对这个特定的清理器选项造成误报。
 
-要在项目级使能 UBSAN，请在项目 CMakeLists.txt 文件的末尾添加以下内容::
+要在项目级使能 UBSAN，请在项目 CMakeLists.txt 文件的末尾添加以下内容：
+
+.. code-block:: none
 
     idf_build_set_property(COMPILE_OPTIONS "-fsanitize=undefined" "-fno-sanitize=shift-base" APPEND)
 
@@ -558,29 +581,37 @@ FreeRTOS 堆栈检查
 
 使能 UBSAN 会明显增加代码量和数据大小。当为整个应用程序使能 UBSAN 时，微控制器的可用 RAM 无法容纳大多数应用程序（除了一些微小程序）。因此，建议为特定的待测组件使能 UBSAN。
 
-要为项目 CMakeLists.txt 文件中的特定组件（``component_name``）启用 UBSAN，请在文件末尾添加以下内容::
+要为项目 CMakeLists.txt 文件中的特定组件（``component_name``）启用 UBSAN，请在文件末尾添加以下内容：
+
+.. code-block:: none
 
     idf_component_get_property(lib component_name COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
-.. 注意::
+.. note::
 
-  关于 :ref:`构建属性 <cmake-build-properties>` 和 :ref:`组件属性 <cmake-component-properties>` 的更多信息，请查看构建系统文档。
+    关于 :ref:`构建属性 <cmake-build-properties>` 和 :ref:`组件属性 <cmake-component-properties>` 的更多信息，请查看构建系统文档。
 
-要为同一组件的 CMakeLists.txt 中的特定组件（``component_name``）使能 UBSAN，在文件末尾添加以下内容::
+要为同一组件的 CMakeLists.txt 中的特定组件（``component_name``）使能 UBSAN，在文件末尾添加以下内容：
+
+.. code-block:: none
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-fsanitize=undefined" "-fno-sanitize=shift-base")
 
 UBSAN 输出
-""""""""""""""""
+""""""""""
 
-当 UBSAN 检测到一个错误时，会打印一个信息和回溯，例如::
+当 UBSAN 检测到一个错误时，会打印一个信息和回溯，例如：
+
+.. code-block:: none
 
     Undefined behavior of type out_of_bounds
 
     Backtrace:0x4008b383:0x3ffcd8b0 0x4008c791:0x3ffcd8d0 0x4008c587:0x3ffcd8f0 0x4008c6be:0x3ffcd950 0x400db74f:0x3ffcd970 0x400db99c:0x3ffcd9a0
 
-当使用 :doc:`IDF 监视器 <tools/idf-monitor>` 时，回溯会被解码为函数名以及源代码位置，并指向问题发生的位置（这里是 ``main.c:128``）::
+当使用 :doc:`IDF 监视器 <tools/idf-monitor>` 时，回溯会被解码为函数名以及源代码位置，并指向问题发生的位置（这里是 ``main.c:128``）：
+
+.. code-block:: none
 
     0x4008b383: panic_abort at /path/to/esp-idf/components/esp_system/panic.c:367
 
@@ -598,34 +629,34 @@ UBSAN 报告的错误类型为以下几种：
 
 
 .. list-table::
-  :widths: 40 60
-  :header-rows: 1
+    :widths: 40 60
+    :header-rows: 1
 
-  * - 名称
-    - 含义
-  * - ``type_mismatch``、``type_mismatch_v1``
-    - 指针值不正确：空、未对齐、或与给定类型不兼容
-  * - ``add_overflow``、``sub_overflow``、``mul_overflow``、``negate_overflow``
-    - 加法、减法、乘法、求反过程中的整数溢出
-  * - ``divrem_overflow``
-    - 整数除以 0 或 ``INT_MIN``
-  * - ``shift_out_of_bounds``
-    - 左移或右移运算符导致的溢出
-  * - ``out_of_bounds``
-    - 访问超出数组范围
-  * - ``unreachable``
-    - 执行无法访问的代码
-  * - ``missing_return``
-    - Non-void 函数已结束而没有返回值（仅限 C++）
-  * - ``vla_bound_not_positive``
-    - 可变长度数组的大小不是正数
-  * - ``load_invalid_value``
-    - bool 或 enum（仅 C++）变量的值无效（超出范围）
-  * - ``nonnull_arg``
-    - 对于 ``nonnull`` 属性的函数，传递给函数的参数为空
-  * - ``nonnull_return``
-    - 对于 ``returns_nonnull`` 属性的函数，函数返回值为空
-  * - ``builtin_unreachable``
-    - 调用 ``__builtin_unreachable`` 函数
-  * - ``pointer_overflow``
-    - 指针运算过程中的溢出
+    * - 名称
+      - 含义
+    * - ``type_mismatch``、``type_mismatch_v1``
+      - 指针值不正确：空、未对齐、或与给定类型不兼容
+    * - ``add_overflow``、``sub_overflow``、``mul_overflow``、``negate_overflow``
+      - 加法、减法、乘法、求反过程中的整数溢出
+    * - ``divrem_overflow``
+      - 整数除以 0 或 ``INT_MIN``
+    * - ``shift_out_of_bounds``
+      - 左移或右移运算符导致的溢出
+    * - ``out_of_bounds``
+      - 访问超出数组范围
+    * - ``unreachable``
+      - 执行无法访问的代码
+    * - ``missing_return``
+      - Non-void 函数已结束而没有返回值（仅限 C++）
+    * - ``vla_bound_not_positive``
+      - 可变长度数组的大小不是正数
+    * - ``load_invalid_value``
+      - bool 或 enum（仅 C++）变量的值无效（超出范围）
+    * - ``nonnull_arg``
+      - 对于 ``nonnull`` 属性的函数，传递给函数的参数为空
+    * - ``nonnull_return``
+      - 对于 ``returns_nonnull`` 属性的函数，函数返回值为空
+    * - ``builtin_unreachable``
+      - 调用 ``__builtin_unreachable`` 函数
+    * - ``pointer_overflow``
+      - 指针运算过程中的溢出

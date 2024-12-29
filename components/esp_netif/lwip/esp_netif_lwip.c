@@ -72,7 +72,7 @@
  * @brief macros to check netif related data to evaluate interface type
  */
 #if CONFIG_PPP_SUPPORT
-#define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) (netif->related_data && netif->related_data->is_point2point)
+#define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) (netif && netif->related_data && netif->related_data->is_point2point)
 #else
 #define _IS_NETIF_ANY_POINT2POINT_TYPE(netif) false
 #endif
@@ -2306,6 +2306,15 @@ int esp_netif_get_route_prio(esp_netif_t *esp_netif)
     if (esp_netif == NULL) {
         return -1;
     }
+    return esp_netif->route_prio;
+}
+
+int esp_netif_set_route_prio(esp_netif_t *esp_netif, int route_prio)
+{
+    if (esp_netif == NULL) {
+        return -1;
+    }
+    esp_netif->route_prio = route_prio;
     return esp_netif->route_prio;
 }
 

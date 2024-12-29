@@ -1,0 +1,52 @@
+/*
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+_cleanup_r = 0x4001a480;
+creat = 0x4000788c;
+open = 0x400080c4;
+fclose = 0x4001a804;
+_fclose_r = 0x4001a714;
+fflush = 0x40001bb8;
+_fflush_r = 0x40001b30;
+__fp_unlock_all = 0x4001a64c;
+__fputwc = 0x40001770;
+fputwc = 0x40001864;
+_fputwc_r = 0x400017f8;
+_fwalk = 0x4001bcec;
+_fwalk_reent = 0x4001bd24;
+__sflush_r = 0x400019dc;
+__swbuf = 0x4000167c;
+__swbuf_r = 0x400015bc;
+__swrite = 0x4001a698;
+__sread = 0x4001a660;
+__sseek = 0x4001a6cc;
+srand = 0x40007a24;
+__ascii_mbtowc = 0x40007a04;
+__ascii_wctomb = 0x400018d0;
+_mbtowc_r = 0x400079e0;
+rand_r = 0x40007af4;
+__sclose = 0x4001a700;
+__seofread = 0x4001a690;
+setlocale = 0x40001c44;
+_setlocale_r = 0x40001bdc;
+__sfmoreglue = 0x4001a4c8;
+__sfp = 0x4001a590;
+__sfp_lock_acquire = 0x4001a508;
+__sfp_lock_release = 0x4001a514;
+__sinit = 0x4001a538;
+__sinit_lock_acquire = 0x4001a520;
+__sinit_lock_release = 0x4001a52c;
+strndup = 0x40007fe8;
+_strndup_r = 0x40007ffc;
+wcrtomb = 0x400012f4;
+_wcrtomb_r = 0x400012a0;
+_wctomb_r = 0x400018ac;
+strdup = 0x40007d84;
+_strdup_r = 0x40007d98;
+__locale_ctype_ptr = 0x40001c2c;
+__locale_ctype_ptr_l = 0x40001c24;
+__locale_mb_cur_max = 0x40001c0c;
+strcasecmp = 0x40007b38;
+strcasestr = 0x40007b7c;

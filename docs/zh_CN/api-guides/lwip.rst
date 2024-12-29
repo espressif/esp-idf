@@ -43,7 +43,7 @@ BSD 套接字 API
 
 BSD 套接字 API 是一种常见的跨平台 TCP/IP 套接字 API，最初源于 UNIX 操作系统的伯克利标准发行版，现已标准化为 POSIX 规范的一部分。BSD 套接字有时也称 POSIX 套接字，或伯克利套接字。
 
-在 ESP-IDF 中，lwIP 支持 BSD 套接字 API 的所有常见用法。
+在 ESP-IDF 中，lwIP 支持 BSD 套接字 API 的所有常见用法。然而，并非所有操作都完全线程安全，因此多个线程同时进行读写可能需要额外的同步机制。详情请参见 :ref:`lwip-limitations`。
 
 参考
 ^^^^^^^^^^
@@ -173,7 +173,7 @@ BSD 套接字的相关参考资料十分丰富，包括但不限于：
 套接字错误原因代码
 ++++++++++++++++++++++++
 
-以下是常见错误代码列表。有关标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`newlib/platform_include/errno.h`。
+以下是常见错误代码列表。获取标准 POSIX/C 错误代码的详细列表，请参阅 `newlib errno.h <https://github.com/espressif/newlib-esp32/blob/master/newlib/libc/include/sys/errno.h>`_ 和特定平台扩展 :component_file:`newlib/platform_include/sys/errno.h`。
 
 .. list-table::
     :header-rows: 1
@@ -461,14 +461,20 @@ NAPT 和端口转发
 
 另一种方法是在头文件中定义函数式宏，该头文件将预先包含在 lwIP 钩子文件中，请参考 :ref:`lwip-custom-hooks`。
 
+.. _lwip-limitations:
+
 限制
 ^^^^^^^^^^^
+
+在 ESP-IDF 中，lwIP 在某些场景下线程安全，但存在一定的限制。在 lwIP 中，可以在同一套接字上由多个线程同时分别执行读、写和关闭操作，但不支持在同一套接字上由多个线程同时执行多个读操作或多个写操作。如果应用程序需要在多个线程中同时对同一套接字进行读、写操作，就需要额外的同步机制来确保线程安全。例如，在套接字操作周围加锁。
 
 如 :ref:`lwip-dns-limitation` 所述，ESP-IDF 中的 lwIP 扩展功能仍然受到全局 DNS 限制的影响。为了在应用程序代码中解决这一限制，可以使用 ``FALLBACK_DNS_SERVER_ADDRESS()`` 宏定义所有接口能够访问的全局 DNS 备用服务器，或者单独维护每个接口的 DNS 服务器，并在默认接口更改时重新配置。
 
 通过网络数据库 API 返回的 IP 地址数量受限：``getaddrinfo()`` 和 ``gethostbyname()`` 受到宏 ``DNS_MAX_HOST_IP`` 的限制，宏的默认值为 1。
 
 在调用 ``getaddrinfo()`` 函数时，不会返回规范名称。因此，第一个返回的 ``addrinfo`` 结构中的 ``ai_canonname`` 字段仅包含 ``nodename`` 参数或相同内容的字符串。
+
+ESP-IDF 中 lwIP 的 ``getaddrinfo()`` 系统调用在使用 ``AF_UNSPEC`` 时存在限制：双栈模式下默认只返回 IPv4 地址，因此在仅支持 IPv6 的网络中可能会出现问题。为了解决这个问题，可以通过以下方法进行处理：分别调用两次 ``getaddrinfo()``，第一次使用 ``AF_INET`` 查询 IPv4 地址，第二次使用 ``AF_INET6`` 查询 IPv6 地址。为了进一步优化，lwIP 移植层中新增了自定义函数 ``esp_getaddrinfo()``，该函数在使用 ``AF_UNSPEC`` 时能够同时处理 IPv4 和 IPv6 地址。同时启用 IPv4 和 IPv6 后，可通过 :ref:`CONFIG_LWIP_USE_ESP_GETADDRINFO` 选项选择使用自定义的 ``esp_getaddrinfo()`` 或默认的 ``getaddrinfo()`` 实现。``esp_getaddrinfo()`` 默认处于禁用状态。
 
 在 UDP 套接字上重复调用 ``send()`` 或 ``sendto()`` 最终可能会导致错误。此时 ``errno`` 报错为 ``ENOMEM``，错误原因是底层网络接口驱动程序中的 buffer 大小有限。当所有驱动程序的传输 buffer 已满时，UDP 传输事务失败。如果应用程序需要发送大量 UDP 数据报，且不希望发送方丢弃数据报，建议检查错误代码，采用短延迟的重传机制。
 

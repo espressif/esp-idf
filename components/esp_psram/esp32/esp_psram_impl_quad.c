@@ -171,19 +171,19 @@ typedef struct {
 //For 4MB PSRAM, we need one more SPI host, select which one to use by kconfig
 #ifdef CONFIG_SPIRAM_OCCUPY_HSPI_HOST
 #define PSRAM_SPI_MODULE    PERIPH_HSPI_MODULE
-#define PSRAM_SPI_HOST      HSPI_HOST
+#define PSRAM_SPI_HOST      SPI2_HOST
 #define PSRAM_CLK_SIGNAL    HSPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_2
 #define PSRAM_SPICLKEN      DPORT_SPI2_CLK_EN
 #elif defined CONFIG_SPIRAM_OCCUPY_VSPI_HOST
 #define PSRAM_SPI_MODULE    PERIPH_VSPI_MODULE
-#define PSRAM_SPI_HOST      VSPI_HOST
+#define PSRAM_SPI_HOST      SPI3_HOST
 #define PSRAM_CLK_SIGNAL    VSPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_3
 #define PSRAM_SPICLKEN      DPORT_SPI3_CLK_EN
 #else   //set to SPI avoid HSPI and VSPI being used
 #define PSRAM_SPI_MODULE    PERIPH_SPI_MODULE
-#define PSRAM_SPI_HOST      SPI_HOST
+#define PSRAM_SPI_HOST      SPI1_HOST
 #define PSRAM_CLK_SIGNAL    SPICLK_OUT_IDX
 #define PSRAM_SPI_NUM       PSRAM_SPI_1
 #define PSRAM_SPICLKEN      DPORT_SPI01_CLK_EN
@@ -867,7 +867,7 @@ esp_err_t IRAM_ATTR esp_psram_impl_enable(void)   //psram init
         psram_io.psram_cs_io  = D2WD_PSRAM_CS_IO;
     } else if (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4 && ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 300)) {
         ESP_EARLY_LOGE(TAG, "This chip is ESP32-PICO-V3. It does not support PSRAM (disable it in Kconfig)");
-        abort();
+        return ESP_FAIL;
     } else if ((pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) || (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32U4WDH)) {
         ESP_EARLY_LOGI(TAG, "This chip is %s",
                        (pkg_ver == EFUSE_RD_CHIP_VER_PKG_ESP32PICOD4) ? "ESP32-PICO" : "ESP32-U4WDH");

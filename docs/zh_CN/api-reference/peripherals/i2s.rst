@@ -10,6 +10,12 @@ I2S
 
 I2S（Inter-IC Sound，集成电路内置音频总线）是一种同步串行通信协议，通常用于在两个数字音频设备之间传输音频数据。
 
+.. only:: SOC_LP_I2S_SUPPORTED
+
+    .. note::
+
+        LP I2S 文档请参阅 :doc:`Low Power Inter-IC Sound <./lp_i2s>`.
+
 {IDF_TARGET_NAME} 包含 {IDF_TARGET_I2S_NUM} 个 I2S 外设。通过配置这些外设，可以借助 I2S 驱动来输入和输出采样数据。
 
 标准或 TDM 通信模式下的 I2S 总线包含以下几条线路：
@@ -115,18 +121,23 @@ I2S 通信模式
 模式概览
 ^^^^^^^^
 
-=========  ========  ========  ========  ========  ========  ==========
-芯片       I2S 标准   PDM TX    PDM RX     TDM      ADC/DAC   LCD/摄像头
-=========  ========  ========  ========  ========  ========  ==========
-ESP32      I2S 0/1    I2S 0     I2S 0      无       I2S 0      I2S 0
-ESP32-S2    I2S 0     无        无         无       无         I2S 0
-ESP32-C3    I2S 0     I2S 0     无        I2S 0     无         无
-ESP32-C6    I2S 0     I2S 0     无        I2S 0     无         无
-ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    无         无
-ESP32-H2    I2S 0     I2S 0     无        I2S 0     无         无
-ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    无         无
-ESP32-C5    I2S 0     I2S 0     无        I2S 0     无         无
-=========  ========  ========  ========  ========  ========  ==========
+=========  ========  ==========  ==========  ===========  ==========  ========  ===========
+芯片       I2S 标准  PCM-to-PDM  PDM-to-PCM      PDM         TDM      ADC/DAC   LCD/摄像头
+=========  ========  ==========  ==========  ===========  ==========  ========  ===========
+ESP32      I2S 0/1     I2S 0       I2S 0       I2S 0/1        无        I2S 0      I2S 0
+ESP32-S2    I2S 0        无         无           无           无         无        I2S 0
+ESP32-C3    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+ESP32-C6    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+ESP32-S3   I2S 0/1     I2S 0       I2S 0       I2S 0/1      I2S 0/1      无         无
+ESP32-H2    I2S 0      I2S 0        无          I2S 0        I2S 0       无         无
+ESP32-P4   I2S 0~2     I2S 0       I2S 0       I2S 0~2      I2S 0~2      无         无
+ESP32-C5    I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
+ESP32-C61   I2S 0      I2S 0       I2S 0        I2S 0        I2S 0       无         无
+=========  ========  ==========  ==========  ===========  ==========  ========  ===========
+
+.. note::
+
+    如需使用 PDM 模式，请注意不是所有 I2S 端口都支持原始 PDM 格式与 PCM 格式之间的转换，因为有些端口在 TX 方向上没有 PCM-to-PDM 数据格式转换器，或在 RX 方向上没有 PDM-to-PCM 数据格式转换器。因此，这些没有硬件格式转换器的端口只能读写原始 PDM 格式的数据。如果需要在这些端口上处理 PCM 格式的数据，则需额外采用一个软件滤波器来实现 PDM 格式和 PCM 格式之间的转换。
 
 标准模式
 ^^^^^^^^
@@ -146,28 +157,76 @@ ESP32-C5    I2S 0     I2S 0     无        I2S 0     无         无
 .. wavedrom:: /../_static/diagrams/i2s/std_pcm.json
 
 
-.. only:: SOC_I2S_SUPPORTS_PDM_TX
 
-    PDM 模式 (TX)
-    ^^^^^^^^^^^^^
+.. only:: SOC_I2S_SUPPORTS_PDM
 
-    在 PDM（Pulse-density Modulation，脉冲密度调制）模式下，TX 通道可以将 PCM 数据转换为 PDM 格式，该格式始终有左右两个声道。PDM TX 只在 I2S0 中受支持，且只支持 16 位宽的采样数据。PDM TX 至少需要一个 CLK 管脚用于时钟信号，一个 DOUT 管脚用于数据信号（即下图中的 WS 和 SD 信号。BCK 信号为内部位采样时钟，在 PDM 设备之间不需要）。PDM 模式允许用户配置上采样参数 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` 和 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`，上采样率可以通过公式 ``up_sample_rate = i2s_pdm_tx_clk_config_t::up_sample_fp / i2s_pdm_tx_clk_config_t::up_sample_fs`` 来计算。在 PDM TX 中有以下两种上采样模式：
+    PDM 模式
+    ^^^^^^^^
 
-    - **固定时钟频率模式**：在这种模式下，上采样率将根据采样率的变化而变化。设置 ``fp = 960``、 ``fs = sample_rate / 100``，则 CLK 管脚上的时钟频率 (Fpdm) 将固定为 ``128 * 48 KHz = 6.144 MHz``。注意此频率不等于采样率 (Fpcm)。
-    - **固定上采样率模式**：在这种模式下，上采样率固定为 2。设置 ``fp = 960``、 ``fs = 480``，则 CLK 管脚上的时钟频率 (Fpdm) 将为 ``128 * sample_rate``。
+    PDM（Pulse-density Modulation，脉冲密度调制）通过采样的方式将模拟信号数字化为 1 位精度的数字信号。它以脉冲密度的方式呈现模拟信号的大小，即密度越高，对应的模拟信号值越大。PDM 时序图如下所示：
 
     .. wavedrom:: /../_static/diagrams/i2s/pdm.json
 
+    PDM 格式的数据通常可以经过以下几个步骤转换为 PCM 格式：
 
-.. only:: SOC_I2S_SUPPORTS_PDM_RX
+    1. 低通滤波：用于还原模拟信号波形。一般采用 FIR 滤波器；
+    2. 下采样：用于将 PDM 的过采样率降低到期望的 PCM 采样率。下采样可以用简单的抽值法实现；
+    3. 高通滤波：用于去除信号的直流部分；
+    4. 放大：用于调整转换后的 PCM 数据的増益。一般由转换后的 PCM 信号乘以一个系数得到最终 PCM 信号。
 
-    PDM 模式 (RX)
-    ^^^^^^^^^^^^^
+    对于具有 ``PCM-to-PDM`` 格式转换器的 I2S 端口，可以在发送数据的时候，将 PCM 数据转换为 PDM 格式发送。
+    对于具有 ``PDM-to-PCM`` 格式转换器的 I2S 端口，可以再接收数据的时候，将收到的 PDM 格式的数据转换为 PCM 格式。
+    若硬件不具备上述的格式转换器，则 PDM 模式只能收发原始的 PDM 格式数据。需要在软件上实现 PDM-to-PCM 的转换逻辑以此得到常用的 PCM 格式数据。
 
-    在 PDM（Pulse-density Modulation，脉冲密度调制）模式下，RX 通道可以接收 PDM 格式的数据并将数据转换成 PCM 格式。PDM RX 只在 I2S0 中受支持，且只支持 16 位宽的采样数据。PDM RX 至少需要一个 CLK 管脚用于时钟信号，一个 DIN 管脚用于数据信号。此模式允许用户配置下采样参数 :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`。在 PDM RX 中有以下两种下采样模式：
+    .. note::
 
-    - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_8S`：在这种模式下，WS 管脚的时钟频率 (Fpdm) 将为 ``sample_rate (Fpcm) * 64``。
-    - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_16S`： 在这种模式下，WS 管脚的时钟频率 (Fpdm) 将为 ``sample_rate (Fpcm) * 128``。
+        无论原始 PDM 格式还是 PCM 格式，PDM 模式下的一个数据单元总是 16 比特的位宽。例如，用原始 PDM 格式发送数据，那么您数组中的数据应该像这样排列：CH0 0x1234，CH1 0x5678，CH0 0x9abc，CH1 0xdef0。RX 方向同理。
+
+    .. only:: SOC_I2S_SUPPORTS_PDM_TX
+
+        PDM TX 模式原始 PDM 数据格式
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        要发送原始 PDM 格式的数据，您需要将 :cpp:member:`i2s_pdm_tx_slot_config_t::data_fmt` 设为 :cpp:enumerator:`i2s_pdm_data_fmt_t::I2S_PDM_DATA_FMT_RAW`。另外在设置 :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate_hz` 时请注意，PDM 的采样率通常在若干 MHz，典型值范围一般是 1.024MHz 到 6.144MHz 之间，您可以根据需求来设置。
+
+        而原始 PDM 数据格式下的声道配置，可以通过帮助宏 :c:macro:`I2S_PDM_TX_SLOT_RAW_FMT_DEFAULT_CONFIG` 或 ::c:macro:`I2S_PDM_TX_SLOT_RAW_FMT_DAC_DEFAULT_CONFIG` 来配置。
+
+        .. only:: SOC_I2S_SUPPORTS_PCM2PDM
+
+            PDM TX 模式 PCM 数据格式（采用 PCM-to-PDM 格式转换器）
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            {IDF_TARGET_NAME} 在 ``I2S0`` 上支持 PCM-to-PDM 格式转换器，您可以通过 :cpp:member:`i2s_pdm_tx_slot_config_t::data_fmt` 设为 :cpp:enumerator:`i2s_pdm_data_fmt_t::I2S_PDM_DATA_FMT_PCM` 来启用 PCM-to-PDM 格式转换器。启用后会将发送的 PCM 格式的数据转换为 PDM 格式发送。另外在设置 :cpp:member:`i2s_pdm_tx_clk_config_t::sample_rate_hz` 时请注意，PCM 的采样率通常低于 100 KHz，典型值的范围一般是 16KHz 到 48KHz 之间，您可以根据需求来设置。
+
+            另外 PCM-to-PDM 转换器可配置上采样参数 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fp` 和 :cpp:member:`i2s_pdm_tx_clk_config_t::up_sample_fs`。上采样率可以通过公式 ``up_sample_rate = i2s_pdm_tx_clk_config_t::up_sample_fp / i2s_pdm_tx_clk_config_t::up_sample_fs`` 来计算。在 PDM TX 中有以下两种上采样模式，输出的 PDM 采样频率和配置的 PCM 采样频率关系如下：
+
+            - **固定时钟频率模式**：在这种模式下，上采样率将根据采样率的变化而变化。设置 ``fp = 960``、 ``fs = (PCM)sample_rate / 100``，则 CLK 管脚上的输出的 PDM 时钟频率将固定为 ``128 * 48 KHz = 6.144 MHz``。
+            - **固定上采样率模式**：在这种模式下，上采样率固定为 2。即设置 ``fp = 960``、 ``fs = 480``，则 CLK 管脚上的 PDM 的时钟频率将为 ``128 * sample_rate``。
+
+            而 PCM 数据格式下的声道配置，您可以通过帮助宏 :c:macro:`I2S_PDM_TX_SLOT_PCM_FMT_DEFAULT_CONFIG` 和 :c:macro:`I2S_PDM_TX_SLOT_PCM_FMT_DAC_DEFAULT_CONFIG` 来配置。
+
+    .. only:: SOC_I2S_SUPPORTS_PDM_RX
+
+        PDM RX 模式原始 PDM 数据格式
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        要接收原始 PDM 格式的数据，您需要将 :cpp:member:`i2s_pdm_rx_slot_config_t::data_fmt` 设为 :cpp:enumerator:`i2s_pdm_data_fmt_t::I2S_PDM_DATA_FMT_RAW`。另外在设置 :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate_hz` 时请注意，PDM 的采样率通常在若干 MHz，典型值范围一般是 1.024MHz 到 6.144MHz 之间，您可以根据需求来设置。
+
+        而原始 PDM 数据格式下的声道配置，可以通过帮助宏 :c:macro:`I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG` 来配置。
+
+        .. only:: SOC_I2S_SUPPORTS_PDM2PCM
+
+            PDM RX 模式 PCM 数据格式（采用 PDM-to-PCM 格式转换器）
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+            {IDF_TARGET_NAME} 在 ``I2S0`` 上支持 PDM-to-PCM 格式转换器，您可以通过 :cpp:member:`i2s_pdm_rx_slot_config_t::data_fmt` 设为 :cpp:enumerator:`i2s_pdm_data_fmt_t::I2S_PDM_DATA_FMT_PCM` 来启用 PDM-to-PCM 格式转换器。启用后会将接收到的 PDM 格式的数据转换为 PCM 格式。另外在设置 :cpp:member:`i2s_pdm_rx_clk_config_t::sample_rate_hz` 时请注意，PCM 的采样率通常低于 100 KHz，典型值的范围一般是 16KHz 到 48KHz 之间，您可以根据需求来设置。
+
+            另外 PDM-to-PCM 转换器可配置下采样参数 :cpp:member:`i2s_pdm_rx_clk_config_t::dn_sample_mode`。在 PDM RX 中有以下两种下采样模式，输出的 PDM 采样频率和配置的 PCM 采样频率关系如下：
+
+            - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_8S`：在这种模式下，CLK 管脚的 PDM 时钟频率将为 ``(PCM) sample_rate * 64``。
+            - :cpp:enumerator:`i2s_pdm_dsr_t::I2S_PDM_DSR_16S`： 在这种模式下，CLK 管脚的 PDM 时钟频率将为 ``(PCM) sample_rate * 128``。
+
+            而 PCM 数据格式下的声道配置，可以通过帮助宏 :c:macro:`I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG` 来配置。
 
 
 .. only:: SOC_I2S_SUPPORTS_TDM
@@ -667,7 +726,11 @@ STD RX 模式
 
     针对 RX 通道的 PDM 模式，声道配置的辅助宏为：
 
-    - :c:macro:`I2S_PDM_RX_SLOT_DEFAULT_CONFIG`
+    - :c:macro:`I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG` 该辅助宏为接收原始 PDM 数据格式提供了一些默认配置。
+
+    .. only:: SOC_I2S_SUPPORTS_PDM2PCM
+
+        - :c:macro:`I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG` 该辅助宏为接收转换后的 PCM 数据格式提供了一些默认配置。
 
     时钟配置的辅助宏为：
 
@@ -729,7 +792,9 @@ STD RX 模式
         /* 初始化通道为 PDM RX 模式 */
         i2s_pdm_rx_config_t pdm_rx_cfg = {
             .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(36000),
-            .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+            // 若不支持 PDM 转 PCM 格式转换器，请使用原始 PDM 格式
+            // .slot_cfg = I2S_PDM_RX_SLOT_RAW_FMT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+            .slot_cfg = I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
             .gpio_cfg = {
                 .clk = GPIO_NUM_5,
                 .din = GPIO_NUM_19,

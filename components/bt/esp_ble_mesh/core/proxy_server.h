@@ -12,6 +12,7 @@
 
 #include "net.h"
 #include "mesh/adapter.h"
+#include "adv.h"
 
 #ifdef __cplusplus
 extern "C" {

@@ -38,7 +38,6 @@ typedef struct {
     TaskHandle_t rx_task_hdl;
     int cur_rx_desc;
     int cur_tx_desc;
-    uint8_t addr[6];
     uint8_t *rx_buf[RX_BUF_COUNT];
     uint8_t *tx_buf[TX_BUF_COUNT];
 } emac_opencores_t;
@@ -143,8 +142,6 @@ static esp_err_t emac_opencores_set_addr(esp_eth_mac_t *mac, uint8_t *addr)
     ESP_LOGV(TAG, "%s: " MACSTR, __func__, MAC2STR(addr));
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
-    emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
-    memcpy(emac->addr, addr, 6);
     const uint8_t mac0[4] = {addr[5], addr[4], addr[3], addr[2]};
     const uint8_t mac1[4] = {addr[1], addr[0]};
     uint32_t mac0_u32, mac1_u32;
@@ -162,8 +159,17 @@ static esp_err_t emac_opencores_get_addr(esp_eth_mac_t *mac, uint8_t *addr)
     ESP_LOGV(TAG, "%s: " MACSTR, __func__, MAC2STR(addr));
     esp_err_t ret = ESP_OK;
     ESP_GOTO_ON_FALSE(addr, ESP_ERR_INVALID_ARG, err, TAG, "can't set mac addr to null");
-    emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
-    memcpy(addr, emac->addr, 6);
+    uint32_t mac0_u32 = REG_READ(OPENETH_MAC_ADDR0_REG);
+    uint32_t mac1_u32 = REG_READ(OPENETH_MAC_ADDR1_REG);
+    const uint8_t mac_addr[ETH_ADDR_LEN] = {
+        (mac1_u32 >> 8) & 0xFF,
+        mac1_u32 & 0xFF,
+        (mac0_u32 >> 24) & 0xFF,
+        (mac0_u32 >> 16) & 0xFF,
+        (mac0_u32 >> 8) & 0xFF,
+        mac0_u32 & 0xFF,
+    };
+    memcpy(addr, mac_addr, ETH_ADDR_LEN);
     return ESP_OK;
 err:
     return ret;
@@ -288,7 +294,6 @@ static esp_err_t emac_opencores_init(esp_eth_mac_t *mac)
     emac_opencores_t *emac = __containerof(mac, emac_opencores_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     ESP_GOTO_ON_ERROR(eth->on_state_changed(eth, ETH_STATE_LLINIT, NULL), err, TAG, "lowlevel init failed");
-    ESP_GOTO_ON_ERROR(esp_read_mac(emac->addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
 
     // Sanity check
     if (REG_READ(OPENETH_MODER_REG) != OPENETH_MODER_DEFAULT) {
@@ -299,7 +304,19 @@ static esp_err_t emac_opencores_init(esp_eth_mac_t *mac)
     // Initialize the MAC
     openeth_reset();
     openeth_set_tx_desc_cnt(TX_BUF_COUNT);
-    emac_opencores_set_addr(mac, emac->addr);
+
+    // Check if MAC address has been set in QEMU
+    uint8_t mac_addr[ETH_ADDR_LEN];
+    emac_opencores_get_addr(mac, mac_addr);
+    const uint8_t zero_mac[ETH_ADDR_LEN] = {0};
+    if (memcmp(mac_addr, zero_mac, ETH_ADDR_LEN) != 0) {
+        ESP_LOGD(TAG, "Using MAC address " MACSTR " set in QEMU", MAC2STR(mac_addr));
+    } else {
+        // Fall back to the default MAC address
+        ESP_GOTO_ON_ERROR(esp_read_mac(mac_addr, ESP_MAC_ETH), err, TAG, "fetch ethernet mac address failed");
+        ESP_LOGD(TAG, "Using MAC address " MACSTR " from esp_read_mac", MAC2STR(mac_addr));
+        emac_opencores_set_addr(mac, mac_addr);
+    }
 
     return ESP_OK;
 err:

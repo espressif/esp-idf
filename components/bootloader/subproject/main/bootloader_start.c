@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,11 @@ void __attribute__((noreturn)) call_start_cpu0(void)
     if (boot_index == INVALID_INDEX) {
         bootloader_reset();
     }
+
+    // 2.1 Load the TEE image
+#if CONFIG_SECURE_ENABLE_TEE
+    bootloader_utility_load_tee_image(&bs);
+#endif
 
     // 3. Load the app image for booting
     bootloader_utility_load_boot_image(&bs, boot_index);
@@ -129,8 +134,10 @@ static int selected_boot_partition(const bootloader_state_t *bs)
     return boot_index;
 }
 
+#if CONFIG_LIBC_NEWLIB
 // Return global reent struct if any newlib functions are linked to bootloader
 struct _reent *__getreent(void)
 {
     return _GLOBAL_REENT;
 }
+#endif

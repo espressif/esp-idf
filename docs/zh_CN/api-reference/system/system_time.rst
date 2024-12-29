@@ -26,7 +26,7 @@
 - 高分辨率定时器
 - 无
 
-默认时钟源的时间精度最高，建议使用该配置。此外，用户也可以通过配置选项 :ref:`CONFIG_NEWLIB_TIME_SYSCALL` 来选择其他时钟源。
+默认时钟源的时间精度最高，建议使用该配置。此外，你可以通过配置选项 :ref:`CONFIG_LIBC_TIME_SYSCALL` 来选择其他时钟源。
 
 
 .. _rtc-clock-source-choice:
@@ -45,8 +45,6 @@ RTC 定时器有以下时钟源：
     - ``管脚 {IDF_TARGET_EXT_OSC_PIN} 外置 32 kHz 振荡器``：允许使用由外部电路产生的 32 kHz 时钟。外部时钟信号必须连接到管脚 {IDF_TARGET_EXT_OSC_PIN}。正弦波信号的振幅应小于 1.2 V，方波信号的振幅应小于 1 V。正常模式下，电压范围应为 0.1 < Vcm < 0.5 xVamp，其中 Vamp 代表信号振幅。使用此时钟源时，管脚 {IDF_TARGET_EXT_OSC_PIN} 无法用作 GPIO 管脚。
 
     :not esp32c5 and not esp32c6 and not esp32h2 and not esp32p4: - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
-
-    :esp32c5 or esp32c6 or esp32h2 or esp32p4: - ``内置 32 kHz RC 振荡器``
 
 时钟源的选择取决于系统时间精度要求和睡眠模式下的功耗要求。要修改 RTC 时钟源，请在项目配置中设置 :ref:`CONFIG_RTC_CLK_SRC`。
 

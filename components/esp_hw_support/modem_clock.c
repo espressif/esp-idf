@@ -18,6 +18,7 @@
 #include "hal/efuse_hal.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "esp_private/regi2c_ctrl.h"
 
 // Please define the frequently called modules in the low bit,
 // which will improve the execution efficiency
@@ -118,7 +119,11 @@ static void IRAM_ATTR modem_clock_modem_private_fe_configure(modem_clock_context
 
 static void IRAM_ATTR modem_clock_i2c_master_configure(modem_clock_context_t *ctx, bool enable)
 {
-    regi2c_ctrl_ll_master_enable_clock(enable);
+    if (enable) {
+        ANALOG_CLOCK_ENABLE();
+    } else {
+        ANALOG_CLOCK_DISABLE();
+    }
 }
 
 static void IRAM_ATTR modem_clock_etm_configure(modem_clock_context_t *ctx, bool enable)
@@ -346,6 +351,17 @@ void IRAM_ATTR modem_clock_module_disable(periph_module_t module)
     assert(IS_MODEM_MODULE(module));
     uint32_t deps = modem_clock_get_module_deps(module);
     modem_clock_device_disable(MODEM_CLOCK_instance(), deps);
+}
+
+void modem_clock_deselect_all_module_lp_clock_source(void)
+{
+#if SOC_WIFI_SUPPORTED
+    modem_clock_hal_deselect_all_wifi_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+#if SOC_BT_SUPPORTED
+    modem_clock_hal_deselect_all_ble_rtc_timer_lpclk_source(MODEM_CLOCK_instance()->hal);
+#endif
+    modem_clock_hal_deselect_all_coex_lpclk_source(MODEM_CLOCK_instance()->hal);
 }
 
 void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpclk_src_t src, uint32_t divider)

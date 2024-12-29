@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -1256,27 +1256,6 @@ extern "C" {
 #define LP_UART_SCLK_DIV_NUM_M  (LP_UART_SCLK_DIV_NUM_V << LP_UART_SCLK_DIV_NUM_S)
 #define LP_UART_SCLK_DIV_NUM_V  0x000000FFU
 #define LP_UART_SCLK_DIV_NUM_S  12
-/** LP_UART_SCLK_SEL : R/W; bitpos: [21:20]; default: 3;
- *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
- */
-#define LP_UART_SCLK_SEL    0x00000003U
-#define LP_UART_SCLK_SEL_M  (LP_UART_SCLK_SEL_V << LP_UART_SCLK_SEL_S)
-#define LP_UART_SCLK_SEL_V  0x00000003U
-#define LP_UART_SCLK_SEL_S  20
-/** LP_UART_SCLK_EN : R/W; bitpos: [22]; default: 1;
- *  Set this bit to enable UART Tx/Rx clock.
- */
-#define LP_UART_SCLK_EN    (BIT(22))
-#define LP_UART_SCLK_EN_M  (LP_UART_SCLK_EN_V << LP_UART_SCLK_EN_S)
-#define LP_UART_SCLK_EN_V  0x00000001U
-#define LP_UART_SCLK_EN_S  22
-/** LP_UART_RST_CORE : R/W; bitpos: [23]; default: 0;
- *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
- */
-#define LP_UART_RST_CORE    (BIT(23))
-#define LP_UART_RST_CORE_M  (LP_UART_RST_CORE_V << LP_UART_RST_CORE_S)
-#define LP_UART_RST_CORE_V  0x00000001U
-#define LP_UART_RST_CORE_S  23
 /** LP_UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
  *  Set this bit to enable UART Tx clock.
  */

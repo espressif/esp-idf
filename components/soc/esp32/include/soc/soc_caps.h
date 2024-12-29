@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -206,6 +206,7 @@
 #define SOC_I2C_SUPPORT_SLAVE   (1)
 
 #define SOC_I2C_SUPPORT_APB     (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR (1)
 
 // On ESP32, the stop bit should be independent, we can't put trans data and stop command together
 #define SOC_I2C_STOP_INDEPENDENT (1)
@@ -217,9 +218,11 @@
 #define SOC_I2S_SUPPORTS_APLL       (1)
 #define SOC_I2S_SUPPORTS_PLL_F160M  (1)
 #define SOC_I2S_SUPPORTS_PDM        (1)
-#define SOC_I2S_SUPPORTS_PDM_TX     (1)
+#define SOC_I2S_SUPPORTS_PDM_TX     (1)     // Support to output raw PDM format data
+#define SOC_I2S_SUPPORTS_PCM2PDM    (1)     // Support to write PCM format but output PDM format data with the help of PCM to PDM filter
+#define SOC_I2S_SUPPORTS_PDM_RX     (1)     // Support to input raw PDM format data
+#define SOC_I2S_SUPPORTS_PDM2PCM    (1)     // Support to input PDM format but read PCM format data with the help of PDM to PCM filter
 #define SOC_I2S_PDM_MAX_TX_LINES    (1U)
-#define SOC_I2S_SUPPORTS_PDM_RX     (1)
 #define SOC_I2S_PDM_MAX_RX_LINES    (1U)
 #define SOC_I2S_SUPPORTS_ADC_DAC    (1)
 #define SOC_I2S_SUPPORTS_ADC        (1)
@@ -316,7 +319,6 @@
 #define SOC_MEMSPI_SRC_FREQ_26M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
-
 // Peripheral supports DIO, DOUT, QIO, or QOUT
 #define SOC_SPI_PERIPH_SUPPORT_MULTILINE_MODE(spi_host)         ({(void)spi_host; 1;})
 
@@ -354,7 +356,6 @@
 #define SOC_UART_FIFO_LEN           (128)       /*!< The UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX        (5000000)   /*!< Max bit rate supported by UART */
 
-
 /*-------------------------- SPIRAM CAPS -------------------------------------*/
 #define SOC_SPIRAM_SUPPORTED    1
 
@@ -380,7 +381,6 @@
 
 /*--------------------------- RSA CAPS ---------------------------------------*/
 #define SOC_RSA_MAX_BIT_LEN    (4096)
-
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_AES_128 (1)
@@ -425,6 +425,8 @@
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
+
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D4           (1)     /*!< Support XTAL_D4 clock as the LP_FAST clock source */
 
 /*-------------------------- SDMMC CAPS -----------------------------------------*/
 

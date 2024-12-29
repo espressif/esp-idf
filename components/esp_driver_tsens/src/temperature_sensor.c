@@ -29,6 +29,7 @@
 #include "soc/temperature_sensor_periph.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_sleep.h"
 #if TEMPERATURE_SENSOR_USE_RETENTION_LINK
 #include "esp_private/sleep_retention.h"
 #endif
@@ -107,7 +108,7 @@ static esp_err_t s_temperature_sensor_sleep_retention_init(void *arg)
 void temperature_sensor_create_retention_module(temperature_sensor_handle_t tsens)
 {
     sleep_retention_module_t module_id = temperature_sensor_regs_retention.module_id;
-    if ((sleep_retention_get_inited_modules() & BIT(module_id)) && !(sleep_retention_get_created_modules() & BIT(module_id))) {
+    if (sleep_retention_is_module_inited(module_id) && !sleep_retention_is_module_created(module_id)) {
         if (sleep_retention_module_allocate(module_id) != ESP_OK) {
             // even though the sleep retention module_id create failed, temperature sensor driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed, power domain won't be turned off during sleep");
@@ -136,6 +137,10 @@ esp_err_t temperature_sensor_install(const temperature_sensor_config_t *tsens_co
 #if !SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
     ESP_RETURN_ON_FALSE(tsens_config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
+
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && !SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
+#endif
 
 #if TEMPERATURE_SENSOR_USE_RETENTION_LINK
     sleep_retention_module_init_param_t init_param = {
@@ -191,13 +196,17 @@ esp_err_t temperature_sensor_uninstall(temperature_sensor_handle_t tsens)
 
 #if TEMPERATURE_SENSOR_USE_RETENTION_LINK
     sleep_retention_module_t module_id = temperature_sensor_regs_retention.module_id;
-    if (sleep_retention_get_created_modules() & BIT(module_id)) {
+    if (sleep_retention_is_module_created(module_id)) {
         sleep_retention_module_free(temperature_sensor_regs_retention.module_id);
     }
-    if (sleep_retention_get_inited_modules() & BIT(module_id)) {
+    if (sleep_retention_is_module_inited(module_id)) {
         sleep_retention_module_deinit(temperature_sensor_regs_retention.module_id);
     }
 #endif // TEMPERATURE_SENSOR_USE_RETENTION_LINK
+
+#if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION && !SOC_TEMPERATURE_SENSOR_UNDER_PD_TOP_DOMAIN
+    esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_OFF);
+#endif
 
     temperature_sensor_power_release();
 

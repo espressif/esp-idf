@@ -38,6 +38,7 @@ PROVIDE ( TWAI2             = 0x500D9000 );
 PROVIDE ( ADC               = 0x500DE000 );
 PROVIDE ( USB_SERIAL_JTAG   = 0x500D2000 );
 PROVIDE ( SDMMC             = 0x50083000 );
+PROVIDE ( BITSCRAMBLER      = 0x500A3000 );
 
 PROVIDE ( INTMTX        = 0x500D6000 );
 PROVIDE ( PCNT          = 0x500C9000 );
@@ -116,6 +117,7 @@ PROVIDE ( USB_DWC_FS         = 0x50040000 );
 PROVIDE ( USB_UTMI           = 0x5009C000 );
 
 PROVIDE ( EMAC_MAC           = 0x50098000 );
+PROVIDE ( EMAC_PTP           = 0x50098700 );
 PROVIDE ( EMAC_DMA           = 0x50099000 );
 
 PROVIDE ( CACHE              = 0x3FF10000);

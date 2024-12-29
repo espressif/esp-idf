@@ -178,6 +178,10 @@ typedef struct {
     int                         keep_alive_interval; /*!< Keep-alive interval time. Default is 5 (second) */
     int                         keep_alive_count;    /*!< Keep-alive packet retry send count. Default is 3 counts */
     struct ifreq                *if_name;            /*!< The name of interface for data to go through. Use the default interface without setting */
+#if CONFIG_ESP_HTTP_CLIENT_ENABLE_HTTPS
+    const char                  **alpn_protos;       /*!< Application protocols required for HTTP2. If HTTP2/ALPN support is required, a list of protocols that should be negotiated. The format is length followed by protocol
+                                                     name. For the most common cases the following is ok: const char **alpn_protos = { "h2", NULL }; - where 'h2' is the protocol name */
+#endif
 #if CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     bool use_secure_element;                /*!< Enable this option to use secure element */
 #endif
@@ -204,6 +208,7 @@ typedef enum {
     HttpStatus_MovedPermanently  = 301,
     HttpStatus_Found             = 302,
     HttpStatus_SeeOther          = 303,
+    HttpStatus_NotModified       = 304,
     HttpStatus_TemporaryRedirect = 307,
     HttpStatus_PermanentRedirect = 308,
 
@@ -226,6 +231,7 @@ typedef enum {
 #define ESP_ERR_HTTP_CONNECTING         (ESP_ERR_HTTP_BASE + 6)     /*!< HTTP connection hasn't been established yet */
 #define ESP_ERR_HTTP_EAGAIN             (ESP_ERR_HTTP_BASE + 7)     /*!< Mapping of errno EAGAIN to esp_err_t */
 #define ESP_ERR_HTTP_CONNECTION_CLOSED  (ESP_ERR_HTTP_BASE + 8)     /*!< Read FIN from peer and the connection closed */
+#define ESP_ERR_HTTP_NOT_MODIFIED       (ESP_ERR_HTTP_BASE + 9)     /*!< HTTP 304 Not Modified, no update available */
 
 /**
  * @brief      Start a HTTP session

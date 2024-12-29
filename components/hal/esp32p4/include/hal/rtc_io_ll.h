@@ -268,6 +268,17 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
 }
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
+{
+    return LP_IOMUX.pad[rtcio_num].rue;
+}
+
+/**
  * @brief RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -287,6 +298,17 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     /* Enable internal weak pull-down */
     LP_IOMUX.pad[rtcio_num].rde = 0;
+}
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
+{
+    return LP_IOMUX.pad[rtcio_num].rde;
 }
 
 /**

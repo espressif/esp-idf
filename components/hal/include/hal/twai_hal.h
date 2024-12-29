@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,16 +16,22 @@
 #include <stdbool.h>
 #include "sdkconfig.h"
 #include "soc/soc_caps.h"
-#if SOC_TWAI_SUPPORTED
 #include "hal/twai_types.h"
+
+#if SOC_TWAI_SUPPORTED
+#if SOC_TWAI_SUPPORT_FD
+#include "hal/twaifd_ll.h"
+typedef twaifd_dev_t* twai_soc_handle_t;
+typedef twaifd_frame_buffer_t twai_hal_frame_t;
+#else
 #include "hal/twai_ll.h"
+typedef twai_dev_t* twai_soc_handle_t;
+typedef twai_ll_frame_buffer_t twai_hal_frame_t;
 #endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#if SOC_TWAI_SUPPORTED
 
 /* ------------------------- Defines and Typedefs --------------------------- */
 
@@ -59,10 +65,8 @@ extern "C" {
 #define TWAI_HAL_EVENT_NEED_PERIPH_RESET        (1 << 11)
 #endif
 
-typedef twai_ll_frame_buffer_t twai_hal_frame_t;
-
 typedef struct {
-    twai_dev_t *dev;
+    twai_soc_handle_t dev; // TWAI SOC layer handle (i.e. register base address)
     uint32_t state_flags;
     uint32_t clock_source_hz;
 #if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
@@ -80,6 +84,34 @@ typedef struct {
 } twai_hal_config_t;
 
 /**
+ * @brief Translate TWAIFD format DLC code to bytes length
+ * @param[in] dlc The frame DLC code follow the FD spec
+ * @return        The byte length of DLC stand for
+ */
+__attribute__((always_inline))
+static inline int twaifd_dlc2len(uint8_t dlc) {
+    HAL_ASSERT(dlc <= TWAIFD_FRAME_MAX_DLC);
+    return (dlc <= 8) ? dlc :
+           (dlc <= 12) ? (dlc - 8) * 4 + 8 :
+           (dlc <= 13) ? (dlc - 12) * 8 + 24 :
+           (dlc - 13) * 16 + 32;
+}
+
+/**
+ * @brief Translate TWAIFD format bytes length to DLC code
+ * @param[in] byte_len The byte length of the message
+ * @return             The FD adopted frame DLC code
+ */
+__attribute__((always_inline))
+static inline uint8_t twaifd_len2dlc(int byte_len) {
+    HAL_ASSERT((byte_len <= TWAIFD_FRAME_MAX_LEN) && (byte_len >= 0));
+    return (byte_len <= 8) ? byte_len :
+           (byte_len <= 24) ? (byte_len - 8 + 3) / 4 + 8 :
+           (byte_len <= 32) ? (byte_len - 24 + 7) / 8 + 12 :
+           (byte_len - 32 + 15) / 16 + 13;
+}
+
+/**
  * @brief Initialize TWAI peripheral and HAL context
  *
  * Sets HAL context, puts TWAI peripheral into reset mode, then sets some
@@ -91,6 +123,7 @@ typedef struct {
  */
 bool twai_hal_init(twai_hal_context_t *hal_ctx, const twai_hal_config_t *config);
 
+#if !SOC_TWAI_SUPPORT_FD
 /**
  * @brief Deinitialize the TWAI peripheral and HAL context
  *
@@ -300,7 +333,7 @@ static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx
     }
 #else
     if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_DOS) {
-        //No need to release RX buffer as we'll be releaseing all RX frames in continuously later
+        //No need to release RX buffer as we'll be releasing all RX frames in continuously later
         return false;
     }
 #endif
@@ -323,7 +356,7 @@ __attribute__((always_inline))
 static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx)
 {
     uint32_t msg_cnt = 0;
-    //Note: Need to keep polling th rx message counter incase another message arrives whilst clearing
+    //Note: Need to keep polling th rx message counter in case another message arrives whilst clearing
     while (twai_ll_get_rx_msg_count(hal_ctx->dev) > 0) {
         twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
         msg_cnt++;
@@ -347,7 +380,7 @@ static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ct
  * - Checking if a reset will cancel a TX. If so, mark that we need to retry that message after the reset
  * - Save how many RX messages were lost due to this reset
  * - Enter reset mode to stop any the peripheral from receiving any bus activity
- * - Store the regsiter state of the peripheral
+ * - Store the register state of the peripheral
  *
  * @param hal_ctx Context of the HAL layer
  */
@@ -381,9 +414,9 @@ static inline uint32_t twai_hal_get_reset_lost_rx_cnt(twai_hal_context_t *hal_ct
     return hal_ctx->rx_msg_cnt_save;
 }
 #endif  //defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
-
-#endif
+#endif // !SOC_TWAI_SUPPORT_FD
 
 #ifdef __cplusplus
 }
 #endif
+#endif // SOC_TWAI_SUPPORTED

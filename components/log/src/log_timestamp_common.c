@@ -12,7 +12,7 @@
 #include "esp_private/log_timestamp.h"
 #include "sdkconfig.h"
 
-#ifndef NON_OS_BUILD
+#if !NON_OS_BUILD
 #include <sys/lock.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"

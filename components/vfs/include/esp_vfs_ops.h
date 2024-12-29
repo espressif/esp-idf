@@ -50,7 +50,41 @@ typedef struct
     void *sem;              /*!< semaphore instance */
 } esp_vfs_select_sem_t;
 
+
 #ifdef CONFIG_VFS_SUPPORT_DIR
+
+typedef           int  (*esp_vfs_stat_ctx_op_t)      (void *ctx, const char *path, struct stat *st);                    /*!< stat with context pointer */
+typedef           int  (*esp_vfs_stat_op_t)          (           const char *path, struct stat *st);                    /*!< stat without context pointer */
+typedef           int  (*esp_vfs_link_ctx_op_t)      (void *ctx, const char *n1, const char *n2);                       /*!< link with context pointer */
+typedef           int  (*esp_vfs_link_op_t)          (           const char *n1, const char *n2);                       /*!< link without context pointer */
+typedef           int  (*esp_vfs_unlink_ctx_op_t)    (void *ctx, const char *path);                                     /*!< unlink with context pointer */
+typedef           int  (*esp_vfs_unlink_op_t)        (           const char *path);                                     /*!< unlink without context pointer */
+typedef           int  (*esp_vfs_rename_ctx_op_t)    (void *ctx, const char *src, const char *dst);                     /*!< rename with context pointer */
+typedef           int  (*esp_vfs_rename_op_t)        (           const char *src, const char *dst);                     /*!< rename without context pointer */
+typedef           DIR* (*esp_vfs_opendir_ctx_op_t)   (void *ctx, const char *name);                                     /*!< opendir with context pointer */
+typedef           DIR* (*esp_vfs_opendir_op_t)       (           const char *name);                                     /*!< opendir without context pointer */
+typedef struct dirent* (*esp_vfs_readdir_ctx_op_t)   (void *ctx, DIR *pdir);                                            /*!< readdir with context pointer */
+typedef struct dirent* (*esp_vfs_readdir_op_t)       (           DIR *pdir);                                            /*!< readdir without context pointer */
+typedef           int  (*esp_vfs_readdir_r_ctx_op_t) (void *ctx, DIR *pdir, struct dirent *entry, struct dirent **out); /*!< readdir_r with context pointer */
+typedef           int  (*esp_vfs_readdir_r_op_t)     (           DIR *pdir, struct dirent *entry, struct dirent **out); /*!< readdir_r without context pointer */
+typedef          long  (*esp_vfs_telldir_ctx_op_t)   (void *ctx, DIR *pdir);                                            /*!< telldir with context pointer */
+typedef          long  (*esp_vfs_telldir_op_t)       (           DIR *pdir);                                            /*!< telldir without context pointer */
+typedef          void  (*esp_vfs_seekdir_ctx_op_t)   (void *ctx, DIR *pdir, long offset);                               /*!< seekdir with context pointer */
+typedef          void  (*esp_vfs_seekdir_op_t)       (           DIR *pdir, long offset);                               /*!< seekdir without context pointer */
+typedef           int  (*esp_vfs_closedir_ctx_op_t)  (void *ctx, DIR *pdir);                                            /*!< closedir with context pointer */
+typedef           int  (*esp_vfs_closedir_op_t)      (           DIR *pdir);                                            /*!< closedir without context pointer */
+typedef           int  (*esp_vfs_mkdir_ctx_op_t)     (void *ctx, const char *name, mode_t mode);                        /*!< mkdir with context pointer */
+typedef           int  (*esp_vfs_mkdir_op_t)         (           const char *name, mode_t mode);                        /*!< mkdir without context pointer */
+typedef           int  (*esp_vfs_rmdir_ctx_op_t)     (void *ctx, const char *name);                                     /*!< rmdir with context pointer */
+typedef           int  (*esp_vfs_rmdir_op_t)         (           const char *name);                                     /*!< rmdir without context pointer */
+typedef           int  (*esp_vfs_access_ctx_op_t)    (void *ctx, const char *path, int amode);                          /*!< access with context pointer */
+typedef           int  (*esp_vfs_access_op_t)        (           const char *path, int amode);                          /*!< access without context pointer */
+typedef           int  (*esp_vfs_truncate_ctx_op_t)  (void *ctx, const char *path, off_t length);                       /*!< truncate with context pointer */
+typedef           int  (*esp_vfs_truncate_op_t)      (           const char *path, off_t length);                       /*!< truncate without context pointer */
+typedef           int  (*esp_vfs_ftruncate_ctx_op_t) (void *ctx, int fd, off_t length);                                 /*!< ftruncate with context pointer */
+typedef           int  (*esp_vfs_ftruncate_op_t)     (           int fd, off_t length);                                 /*!< ftruncate without context pointer */
+typedef           int  (*esp_vfs_utime_ctx_op_t)     (void *ctx, const char *path, const struct utimbuf *times);        /*!< utime with context pointer */
+typedef           int  (*esp_vfs_utime_op_t)         (           const char *path, const struct utimbuf *times);        /*!< utime without context pointer */
 
 /**
  * @brief Struct containing function pointers to directory related functionality.
@@ -58,68 +92,68 @@ typedef struct
  */
 typedef struct {
     union {
-        int (*stat_p)(void* ctx, const char * path, struct stat * st);                               /*!< stat with context pointer */
-        int (*stat)(const char * path, struct stat * st);                                            /*!< stat without context pointer */
+        const esp_vfs_stat_ctx_op_t      stat_p;      /*!< stat with context pointer */
+        const esp_vfs_stat_op_t          stat;        /*!< stat without context pointer */
     };
     union {
-        int (*link_p)(void* ctx, const char* n1, const char* n2);                                    /*!< link with context pointer */
-        int (*link)(const char* n1, const char* n2);                                                 /*!< link without context pointer */
+        const esp_vfs_link_ctx_op_t      link_p;      /*!< link with context pointer */
+        const esp_vfs_link_op_t          link;        /*!< link without context pointer */
     };
     union {
-        int (*unlink_p)(void* ctx, const char *path);                                                /*!< unlink with context pointer */
-        int (*unlink)(const char *path);                                                             /*!< unlink without context pointer */
+        const esp_vfs_unlink_ctx_op_t    unlink_p;    /*!< unlink with context pointer */
+        const esp_vfs_unlink_op_t        unlink;      /*!< unlink without context pointer */
     };
     union {
-        int (*rename_p)(void* ctx, const char *src, const char *dst);                               /*!< rename with context pointer */
-        int (*rename)(const char *src, const char *dst);                                            /*!< rename without context pointer */
+        const esp_vfs_rename_ctx_op_t    rename_p;    /*!< rename with context pointer */
+        const esp_vfs_rename_op_t        rename;      /*!< rename without context pointer */
     };
     union {
-        DIR* (*opendir_p)(void* ctx, const char* name);                                             /*!< opendir with context pointer */
-        DIR* (*opendir)(const char* name);                                                          /*!< opendir without context pointer */
+        const esp_vfs_opendir_ctx_op_t   opendir_p;   /*!< opendir with context pointer */
+        const esp_vfs_opendir_op_t       opendir;     /*!< opendir without context pointer */
     };
     union {
-        struct dirent* (*readdir_p)(void* ctx, DIR* pdir);                                          /*!< readdir with context pointer */
-        struct dirent* (*readdir)(DIR* pdir);                                                       /*!< readdir without context pointer */
+        const esp_vfs_readdir_ctx_op_t   readdir_p;   /*!< readdir with context pointer */
+        const esp_vfs_readdir_op_t       readdir;     /*!< readdir without context pointer */
     };
     union {
-        int (*readdir_r_p)(void* ctx, DIR* pdir, struct dirent* entry, struct dirent** out_dirent); /*!< readdir_r with context pointer */
-        int (*readdir_r)(DIR* pdir, struct dirent* entry, struct dirent** out_dirent);              /*!< readdir_r without context pointer */
+        const esp_vfs_readdir_r_ctx_op_t readdir_r_p; /*!< readdir_r with context pointer */
+        const esp_vfs_readdir_r_op_t     readdir_r;   /*!< readdir_r without context pointer */
     };
     union {
-        long (*telldir_p)(void* ctx, DIR* pdir);                                                    /*!< telldir with context pointer */
-        long (*telldir)(DIR* pdir);                                                                 /*!< telldir without context pointer */
+        const esp_vfs_telldir_ctx_op_t   telldir_p;   /*!< telldir with context pointer */
+        const esp_vfs_telldir_op_t       telldir;     /*!< telldir without context pointer */
     };
     union {
-        void (*seekdir_p)(void* ctx, DIR* pdir, long offset);                                       /*!< seekdir with context pointer */
-        void (*seekdir)(DIR* pdir, long offset);                                                    /*!< seekdir without context pointer */
+        const esp_vfs_seekdir_ctx_op_t   seekdir_p;   /*!< seekdir with context pointer */
+        const esp_vfs_seekdir_op_t       seekdir;     /*!< seekdir without context pointer */
     };
     union {
-        int (*closedir_p)(void* ctx, DIR* pdir);                                                    /*!< closedir with context pointer */
-        int (*closedir)(DIR* pdir);                                                                 /*!< closedir without context pointer */
+        const esp_vfs_closedir_ctx_op_t  closedir_p;  /*!< closedir with context pointer */
+        const esp_vfs_closedir_op_t      closedir;    /*!< closedir without context pointer */
     };
     union {
-        int (*mkdir_p)(void* ctx, const char* name, mode_t mode);                                   /*!< mkdir with context pointer */
-        int (*mkdir)(const char* name, mode_t mode);                                                /*!< mkdir without context pointer */
+        const esp_vfs_mkdir_ctx_op_t     mkdir_p;     /*!< mkdir with context pointer */
+        const esp_vfs_mkdir_op_t         mkdir;       /*!< mkdir without context pointer */
     };
     union {
-        int (*rmdir_p)(void* ctx, const char* name);                                                /*!< rmdir with context pointer */
-        int (*rmdir)(const char* name);                                                             /*!< rmdir without context pointer */
+        const esp_vfs_rmdir_ctx_op_t     rmdir_p;     /*!< rmdir with context pointer */
+        const esp_vfs_rmdir_op_t         rmdir;       /*!< rmdir without context pointer */
     };
     union {
-        int (*access_p)(void* ctx, const char *path, int amode);                                    /*!< access with context pointer */
-        int (*access)(const char *path, int amode);                                                 /*!< access without context pointer */
+        const esp_vfs_access_ctx_op_t    access_p;    /*!< access with context pointer */
+        const esp_vfs_access_op_t        access;      /*!< access without context pointer */
     };
     union {
-        int (*truncate_p)(void* ctx, const char *path, off_t length);                               /*!< truncate with context pointer */
-        int (*truncate)(const char *path, off_t length);                                            /*!< truncate without context pointer */
+        const esp_vfs_truncate_ctx_op_t  truncate_p;  /*!< truncate with context pointer */
+        const esp_vfs_truncate_op_t      truncate;    /*!< truncate without context pointer */
     };
     union {
-        int (*ftruncate_p)(void* ctx, int fd, off_t length);                                        /*!< ftruncate with context pointer */
-        int (*ftruncate)(int fd, off_t length);                                                     /*!< ftruncate without context pointer */
+        const esp_vfs_ftruncate_ctx_op_t ftruncate_p; /*!< ftruncate with context pointer */
+        const esp_vfs_ftruncate_op_t     ftruncate;   /*!< ftruncate without context pointer */
     };
     union {
-        int (*utime_p)(void* ctx, const char *path, const struct utimbuf *times);                   /*!< utime with context pointer */
-        int (*utime)(const char *path, const struct utimbuf *times);                                /*!< utime without context pointer */
+        const esp_vfs_utime_ctx_op_t     utime_p;     /*!< utime with context pointer */
+        const esp_vfs_utime_op_t         utime;       /*!< utime without context pointer */
     };
 } esp_vfs_dir_ops_t;
 
@@ -127,38 +161,53 @@ typedef struct {
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
 
+typedef   int (*esp_vfs_tcsetattr_ctx_op_t)   (void *ctx, int fd, int optional_actions, const struct termios *p); /*!< tcsetattr with context pointer */
+typedef   int (*esp_vfs_tcsetattr_op_t)       (           int fd, int optional_actions, const struct termios *p); /*!< tcsetattr without context pointer */
+typedef   int (*esp_vfs_tcgetattr_ctx_op_t)   (void *ctx, int fd, struct termios *p);                             /*!< tcgetattr with context pointer */
+typedef   int (*esp_vfs_tcgetattr_op_t)       (           int fd, struct termios *p);                             /*!< tcgetattr without context pointer */
+typedef   int (*esp_vfs_tcdrain_ctx_op_t)     (void *ctx, int fd);                                                /*!< tcdrain with context pointer */
+typedef   int (*esp_vfs_tcdrain_op_t)         (           int fd);                                                /*!< tcdrain without context pointer */
+typedef   int (*esp_vfs_tcflush_ctx_op_t)     (void *ctx, int fd, int select);                                    /*!< tcflush with context pointer */
+typedef   int (*esp_vfs_tcflush_op_t)         (           int fd, int select);                                    /*!< tcflush without context pointer */
+typedef   int (*esp_vfs_tcflow_ctx_op_t)      (void *ctx, int fd, int action);                                    /*!< tcflow with context pointer */
+typedef   int (*esp_vfs_tcflow_op_t)          (           int fd, int action);                                    /*!< tcflow without context pointer */
+typedef pid_t (*esp_vfs_tcgetsid_ctx_op_t)    (void *ctx, int fd);                                                /*!< tcgetsid with context pointer */
+typedef pid_t (*esp_vfs_tcgetsid_op_t)        (           int fd);                                                /*!< tcgetsid without context pointer */
+typedef   int (*esp_vfs_tcsendbreak_ctx_op_t) (void *ctx, int fd, int duration);                                  /*!< tcsendbreak with context pointer */
+typedef   int (*esp_vfs_tcsendbreak_op_t)     (           int fd, int duration);                                  /*!< tcsendbreak without context pointer */
+
 /**
  * @brief Struct containing function pointers to termios related functionality.
  *
  */
 typedef struct {
     union {
-        int (*tcsetattr_p)(void *ctx, int fd, int optional_actions, const struct termios *p);       /*!< tcsetattr with context pointer */
-        int (*tcsetattr)(int fd, int optional_actions, const struct termios *p);                    /*!< tcsetattr without context pointer */
+        const esp_vfs_tcsetattr_ctx_op_t   tcsetattr_p;   /*!< tcsetattr with context pointer */
+        const esp_vfs_tcsetattr_op_t       tcsetattr;     /*!< tcsetattr without context pointer */
     };
     union {
-        int (*tcgetattr_p)(void *ctx, int fd, struct termios *p);                                   /*!< tcgetattr with context pointer */
-        int (*tcgetattr)(int fd, struct termios *p);                                                /*!< tcgetattr without context pointer */
+        const esp_vfs_tcgetattr_ctx_op_t   tcgetattr_p;   /*!< tcgetattr with context pointer */
+        const esp_vfs_tcgetattr_op_t       tcgetattr;     /*!< tcgetattr without context pointer */
     };
     union {
-        int (*tcdrain_p)(void *ctx, int fd);                                                        /*!< tcdrain with context pointer */
-        int (*tcdrain)(int fd);                                                                     /*!< tcdrain without context pointer */
+        const esp_vfs_tcdrain_ctx_op_t     tcdrain_p;     /*!< tcdrain with context pointer */
+        const esp_vfs_tcdrain_op_t         tcdrain;       /*!< tcdrain without context pointer */
     };
     union {
-        int (*tcflush_p)(void *ctx, int fd, int select);                                            /*!< tcflush with context pointer */
-        int (*tcflush)(int fd, int select);                                                         /*!< tcflush without context pointer */
+        const esp_vfs_tcflush_ctx_op_t     tcflush_p;     /*!< tcflush with context pointer */
+        const esp_vfs_tcflush_op_t         tcflush;       /*!< tcflush without context pointer */
     };
     union {
-        int (*tcflow_p)(void *ctx, int fd, int action);                                             /*!< tcflow with context pointer */
-        int (*tcflow)(int fd, int action);                                                          /*!< tcflow without context pointer */
+        const esp_vfs_tcflow_ctx_op_t      tcflow_p;      /*!< tcflow with context pointer */
+        const esp_vfs_tcflow_op_t          tcflow;        /*!< tcflow without context pointer */
     };
     union {
-        pid_t (*tcgetsid_p)(void *ctx, int fd);                                                     /*!< tcgetsid with context pointer */
-        pid_t (*tcgetsid)(int fd);                                                                  /*!< tcgetsid without context pointer */
+        const esp_vfs_tcgetsid_ctx_op_t    tcgetsid_p;    /*!< tcgetsid with context pointer */
+        const esp_vfs_tcgetsid_op_t        tcgetsid;      /*!< tcgetsid without context pointer */
     };
     union {
-        int (*tcsendbreak_p)(void *ctx, int fd, int duration);                                      /*!< tcsendbreak with context pointer */
-        int (*tcsendbreak)(int fd, int duration);                                                   /*!< tcsendbreak without context pointer */
+        const esp_vfs_tcsendbreak_ctx_op_t tcsendbreak_p; /*!< tcsendbreak with context pointer */
+        const esp_vfs_tcsendbreak_op_t     tcsendbreak;   /*!< tcsendbreak without context pointer */
     };
 } esp_vfs_termios_ops_t;
 
@@ -166,31 +215,61 @@ typedef struct {
 
 #ifdef CONFIG_VFS_SUPPORT_SELECT
 
+typedef esp_err_t  (*esp_vfs_start_select_op_t)                (int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
+typedef       int  (*esp_vfs_socket_select_op_t)               (int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+typedef      void  (*esp_vfs_stop_socket_select_op_t)          (void *sem);
+typedef      void  (*esp_vfs_stop_socket_select_isr_op_t)      (void *sem, BaseType_t *woken);
+typedef      void* (*esp_vfs_get_socket_select_semaphore_op_t) (void);
+typedef esp_err_t  (*esp_vfs_end_select_op_t)                  (void *end_select_args);
+
 /**
  * @brief Struct containing function pointers to select related functionality.
  *
  */
 typedef struct {
     /** start_select is called for setting up synchronous I/O multiplexing of the desired file descriptors in the given VFS */
-    esp_err_t (*start_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds, esp_vfs_select_sem_t sem, void **end_select_args);
+    const esp_vfs_start_select_op_t                start_select;
 
     /** socket select function for socket FDs with the functionality of POSIX select(); this should be set only for the socket VFS */
-    int (*socket_select)(int nfds, fd_set *readfds, fd_set *writefds, fd_set *errorfds, struct timeval *timeout);
+    const esp_vfs_socket_select_op_t               socket_select;
 
     /** called by VFS to interrupt the socket_select call when select is activated from a non-socket VFS driver; set only for the socket driver */
-    void (*stop_socket_select)(void *sem);
+    const esp_vfs_stop_socket_select_op_t          stop_socket_select;
 
     /** stop_socket_select which can be called from ISR; set only for the socket driver */
-    void (*stop_socket_select_isr)(void *sem, BaseType_t *woken);
+    const esp_vfs_stop_socket_select_isr_op_t      stop_socket_select_isr;
 
     /** end_select is called to stop the I/O multiplexing and deinitialize the environment created by start_select for the given VFS */
-    void* (*get_socket_select_semaphore)(void);
+    const esp_vfs_get_socket_select_semaphore_op_t get_socket_select_semaphore;
 
     /** get_socket_select_semaphore returns semaphore allocated in the socket driver; set only for the socket driver */
-    esp_err_t (*end_select)(void *end_select_args);
+    const esp_vfs_end_select_op_t                  end_select;
 } esp_vfs_select_ops_t;
 
 #endif // CONFIG_VFS_SUPPORT_SELECT
+
+typedef ssize_t (*esp_vfs_write_ctx_op_t)  (void *ctx, int fd, const void *data, size_t size);              /*!< Write with context pointer */
+typedef ssize_t (*esp_vfs_write_op_t)      (           int fd, const void *data, size_t size);              /*!< Write without context pointer */
+typedef   off_t (*esp_vfs_lseek_ctx_op_t)  (void *ctx, int fd, off_t size, int mode);                       /*!< Seek with context pointer */
+typedef   off_t (*esp_vfs_lseek_op_t)      (           int fd, off_t size, int mode);                       /*!< Seek without context pointer */
+typedef ssize_t (*esp_vfs_read_ctx_op_t)   (void *ctx, int fd, void *dst, size_t size);                     /*!< Read with context pointer */
+typedef ssize_t (*esp_vfs_read_op_t)       (           int fd, void *dst, size_t size);                     /*!< Read without context pointer */
+typedef ssize_t (*esp_vfs_pread_ctx_op_t)  (void *ctx, int fd, void *dst, size_t size, off_t offset);       /*!< pread with context pointer */
+typedef ssize_t (*esp_vfs_pread_op_t)      (           int fd, void *dst, size_t size, off_t offset);       /*!< pread without context pointer */
+typedef ssize_t (*esp_vfs_pwrite_ctx_op_t) (void *ctx, int fd, const void *src, size_t size, off_t offset); /*!< pwrite with context pointer */
+typedef ssize_t (*esp_vfs_pwrite_op_t)     (           int fd, const void *src, size_t size, off_t offset); /*!< pwrite without context pointer */
+typedef     int (*esp_vfs_open_ctx_op_t)   (void *ctx, const char *path, int flags, int mode);              /*!< open with context pointer */
+typedef     int (*esp_vfs_open_op_t)       (           const char *path, int flags, int mode);              /*!< open without context pointer */
+typedef     int (*esp_vfs_close_ctx_op_t)  (void *ctx, int fd);                                             /*!< close with context pointer */
+typedef     int (*esp_vfs_close_op_t)      (           int fd);                                             /*!< close without context pointer */
+typedef     int (*esp_vfs_fstat_ctx_op_t)  (void *ctx, int fd, struct stat *st);                            /*!< fstat with context pointer */
+typedef     int (*esp_vfs_fstat_op_t)      (           int fd, struct stat *st);                            /*!< fstat without context pointer */
+typedef     int (*esp_vfs_fcntl_ctx_op_t)  (void *ctx, int fd, int cmd, int arg);                           /*!< fcntl with context pointer */
+typedef     int (*esp_vfs_fcntl_op_t)      (           int fd, int cmd, int arg);                           /*!< fcntl without context pointer */
+typedef     int (*esp_vfs_ioctl_ctx_op_t)  (void *ctx, int fd, int cmd, va_list args);                      /*!< ioctl with context pointer */
+typedef     int (*esp_vfs_ioctl_op_t)      (           int fd, int cmd, va_list args);                      /*!< ioctl without context pointer */
+typedef     int (*esp_vfs_fsync_ctx_op_t)  (void *ctx, int fd);                                             /*!< fsync with context pointer */
+typedef     int (*esp_vfs_fsync_op_t)      (           int fd);                                             /*!< fsync without context pointer */
 
 /**
  * @brief Main struct of the minified vfs API, containing basic function pointers as well as pointers to the other subcomponents.
@@ -198,60 +277,60 @@ typedef struct {
  */
 typedef struct {
     union {
-        ssize_t (*write_p)(void* p, int fd, const void * data, size_t size);                         /*!< Write with context pointer */
-        ssize_t (*write)(int fd, const void * data, size_t size);                                    /*!< Write without context pointer */
+        const esp_vfs_write_ctx_op_t  write_p;  /*!< Write with context pointer */
+        const esp_vfs_write_op_t      write;    /*!< Write without context pointer */
     };
     union {
-        off_t (*lseek_p)(void* p, int fd, off_t size, int mode);                                     /*!< Seek with context pointer */
-        off_t (*lseek)(int fd, off_t size, int mode);                                                /*!< Seek without context pointer */
+        const esp_vfs_lseek_ctx_op_t  lseek_p;  /*!< Seek with context pointer */
+        const esp_vfs_lseek_op_t      lseek;    /*!< Seek without context pointer */
     };
     union {
-        ssize_t (*read_p)(void* ctx, int fd, void * dst, size_t size);                               /*!< Read with context pointer */
-        ssize_t (*read)(int fd, void * dst, size_t size);                                            /*!< Read without context pointer */
+        const esp_vfs_read_ctx_op_t   read_p;   /*!< Read with context pointer */
+        const esp_vfs_read_op_t       read;     /*!< Read without context pointer */
     };
     union {
-        ssize_t (*pread_p)(void *ctx, int fd, void * dst, size_t size, off_t offset);                /*!< pread with context pointer */
-        ssize_t (*pread)(int fd, void * dst, size_t size, off_t offset);                             /*!< pread without context pointer */
+        const esp_vfs_pread_ctx_op_t  pread_p;  /*!< pread with context pointer */
+        const esp_vfs_pread_op_t      pread;    /*!< pread without context pointer */
     };
     union {
-        ssize_t (*pwrite_p)(void *ctx, int fd, const void *src, size_t size, off_t offset);          /*!< pwrite with context pointer */
-        ssize_t (*pwrite)(int fd, const void *src, size_t size, off_t offset);                       /*!< pwrite without context pointer */
+        const esp_vfs_pwrite_ctx_op_t pwrite_p; /*!< pwrite with context pointer */
+        const esp_vfs_pwrite_op_t     pwrite;   /*!< pwrite without context pointer */
     };
     union {
-        int (*open_p)(void* ctx, const char * path, int flags, int mode);                            /*!< open with context pointer */
-        int (*open)(const char * path, int flags, int mode);                                         /*!< open without context pointer */
+        const esp_vfs_open_ctx_op_t   open_p;   /*!< open with context pointer */
+        const esp_vfs_open_op_t       open;     /*!< open without context pointer */
     };
     union {
-        int (*close_p)(void* ctx, int fd);                                                           /*!< close with context pointer */
-        int (*close)(int fd);                                                                        /*!< close without context pointer */
+        const esp_vfs_close_ctx_op_t  close_p;  /*!< close with context pointer */
+        const esp_vfs_close_op_t      close;    /*!< close without context pointer */
     };
     union {
-        int (*fstat_p)(void* ctx, int fd, struct stat * st);                                         /*!< fstat with context pointer */
-        int (*fstat)(int fd, struct stat * st);                                                      /*!< fstat without context pointer */
+        const esp_vfs_fstat_ctx_op_t  fstat_p;  /*!< fstat with context pointer */
+        const esp_vfs_fstat_op_t      fstat;    /*!< fstat without context pointer */
     };
     union {
-        int (*fcntl_p)(void* ctx, int fd, int cmd, int arg);                                        /*!< fcntl with context pointer */
-        int (*fcntl)(int fd, int cmd, int arg);                                                     /*!< fcntl without context pointer */
+        const esp_vfs_fcntl_ctx_op_t  fcntl_p;  /*!< fcntl with context pointer */
+        const esp_vfs_fcntl_op_t      fcntl;    /*!< fcntl without context pointer */
     };
     union {
-        int (*ioctl_p)(void* ctx, int fd, int cmd, va_list args);                                   /*!< ioctl with context pointer */
-        int (*ioctl)(int fd, int cmd, va_list args);                                                /*!< ioctl without context pointer */
+        const esp_vfs_ioctl_ctx_op_t  ioctl_p;  /*!< ioctl with context pointer */
+        const esp_vfs_ioctl_op_t      ioctl;    /*!< ioctl without context pointer */
     };
     union {
-        int (*fsync_p)(void* ctx, int fd);                                                          /*!< fsync with context pointer */
-        int (*fsync)(int fd);                                                                       /*!< fsync without context pointer */
+        const esp_vfs_fsync_ctx_op_t  fsync_p;  /*!< fsync with context pointer */
+        const esp_vfs_fsync_op_t      fsync;    /*!< fsync without context pointer */
     };
 
 #ifdef CONFIG_VFS_SUPPORT_DIR
-    esp_vfs_dir_ops_t *dir;                                                                             /*!< pointer to the dir subcomponent */
+    const esp_vfs_dir_ops_t *const dir;         /*!< pointer to the dir subcomponent */
 #endif
 
 #ifdef CONFIG_VFS_SUPPORT_TERMIOS
-    esp_vfs_termios_ops_t *termios;                                                                     /*!< pointer to the termios subcomponent */
+    const esp_vfs_termios_ops_t *const termios; /*!< pointer to the termios subcomponent */
 #endif
 
 #if CONFIG_VFS_SUPPORT_SELECT || defined __DOXYGEN__
-    esp_vfs_select_ops_t *select;                                                                       /*!< pointer to the select subcomponent */
+    const esp_vfs_select_ops_t *const select;   /*!< pointer to the select subcomponent */
 #endif
 
 } esp_vfs_fs_ops_t;
@@ -285,18 +364,18 @@ typedef struct {
  * @return  ESP_OK if successful, ESP_ERR_NO_MEM if too many FSes are
  *          registered.
  */
-esp_err_t esp_vfs_register_fs(const char* base_path, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx);
+esp_err_t esp_vfs_register_fs(const char *base_path, const esp_vfs_fs_ops_t *vfs, int flags, void *ctx);
 
 /**
  * Analog of esp_vfs_register_with_id which accepts esp_vfs_fs_ops_t instead.
  *
  */
-esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, esp_vfs_id_t* id);
+esp_err_t esp_vfs_register_fs_with_id(const esp_vfs_fs_ops_t *vfs, int flags, void *ctx, esp_vfs_id_t *id);
 
 /**
  * Alias for esp_vfs_unregister for naming consistency
  */
-esp_err_t esp_vfs_unregister_fs(const char* base_path);
+esp_err_t esp_vfs_unregister_fs(const char *base_path);
 
 /**
  * Alias for esp_vfs_unregister_with_id for naming consistency

@@ -34,6 +34,9 @@ void sdmmc_test_board_get_config_sdmmc(int slot_index, sdmmc_host_t *out_host_co
     if (slot->max_freq_khz > 0) {
         out_host_config->max_freq_khz = slot->max_freq_khz;
     }
+    if (slot->uhs1_supported) {
+        out_slot_config->flags |= SDMMC_SLOT_FLAG_UHS1;
+    }
 
 #if SOC_SDMMC_USE_GPIO_MATRIX
     out_slot_config->clk = slot->clk;

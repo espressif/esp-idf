@@ -54,6 +54,7 @@
 #include "hal/usb_serial_jtag_ll.h"
 #include "hal/usb_utmi_ll.h"
 #include "hal/wdt_hal.h"
+#include "hal/bitscrambler_ll.h"
 
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/esp_sleep_internal.h"
@@ -113,8 +114,6 @@ __attribute__((weak)) void esp_clk_init(void)
 
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
-#elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
-    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
@@ -245,17 +244,21 @@ __attribute__((weak)) void esp_perip_clk_init(void)
     }
 
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if ((rst_reason != RESET_REASON_CPU0_SW) && (rst_reason != RESET_REASON_CPU_MWDT)      \
-            && (rst_reason != RESET_REASON_CPU_RWDT) && (rst_reason != RESET_REASON_CPU_JTAG)    \
-            && (rst_reason != RESET_REASON_CPU_LOCKUP)) {
+    // HP modules related clock control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)
+            || (rst_reason == RESET_REASON_SYS_BROWN_OUT) || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_SUPER_WDT)
+            || (rst_reason == RESET_REASON_CORE_SW) || (rst_reason == RESET_REASON_CORE_MWDT) || (rst_reason == RESET_REASON_CORE_RWDT) || (rst_reason == RESET_REASON_CORE_PWR_GLITCH) || (rst_reason == RESET_REASON_CORE_EFUSE_CRC) || (rst_reason == RESET_REASON_CORE_USB_JTAG) || (rst_reason == RESET_REASON_CORE_USB_UART)
+       ) {
+        // hp_sys_clkrst register gets reset only if chip reset or pmu powers down hp
+        // but at core reset and above, we will also disable HP modules' clock gating to save power consumption
         _gdma_ll_enable_bus_clock(0, false);
         _gdma_ll_enable_bus_clock(1, false);
         _pau_ll_enable_bus_clock(false);
         _parlio_ll_enable_bus_clock(0, false);
         _etm_ll_enable_bus_clock(0, false);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_SYS_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_RX_SYS_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_SOC_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_BITSRAMBLER_TX_SYS_CLK_EN);
+        _bitscrambler_ll_set_bus_clock_sys_enable(false);
+        _bitscrambler_ll_set_bus_clock_rx_enable(false);
+        _bitscrambler_ll_set_bus_clock_tx_enable(false);
 
 // Non-Console UART
 #if CONFIG_ESP_CONSOLE_UART_NUM != 0
@@ -304,14 +307,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
 #endif
 
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
-        // 240M CLK is for Key Management use, should not be gated
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
-        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
-
         _spi_ll_enable_bus_clock(SPI2_HOST, false);
         _spi_ll_enable_bus_clock(SPI3_HOST, false);
         _spi_ll_enable_clock(SPI2_HOST, false);
@@ -358,33 +353,50 @@ __attribute__((weak)) void esp_perip_clk_init(void)
 #endif
     }
 
+    // HP modules' clock source gating control
+    if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CORE_PMU_PWR_DOWN)) {
+        // Only safe to disable these clock source gatings if all HP modules clock configurations has been reset
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_50M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL1_REG, HP_SYS_CLKRST_REG_REF_25M_CLK_EN);
+        // 240M CLK is for Key Management use, should not be gated
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_160M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_120M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_80M_CLK_EN);
+        REG_CLR_BIT(HP_SYS_CLKRST_REF_CLK_CTRL2_REG, HP_SYS_CLKRST_REG_REF_20M_CLK_EN);
+    }
+
+    // LP related clock control
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_SYS_SUPER_WDT) \
             || (rst_reason == RESET_REASON_SYS_RWDT) || (rst_reason == RESET_REASON_SYS_BROWN_OUT)) {
-        _lp_uart_ll_enable_bus_clock(0, false);
+        // lpperi,lp peripheral registers get reset for reset level equal or higher than system reset
         lp_uart_ll_sclk_disable(0);
+        _lp_uart_ll_enable_bus_clock(0, false);
         _rtcio_ll_enable_io_clock(false);
-        // LP_Peri & Clock Control
-        _uart_ll_enable_pad_sleep_clock(&UART0, false);
-        _uart_ll_enable_pad_sleep_clock(&UART1, false);
-        _uart_ll_enable_pad_sleep_clock(&UART2, false);
-        _uart_ll_enable_pad_sleep_clock(&UART3, false);
-        _uart_ll_enable_pad_sleep_clock(&UART4, false);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_TX_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_RX_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S2_MCLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S1_MCLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S0_MCLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PLL_8M_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_AUDIO_PLL_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL2_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL1_CLK_EN);
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
+
+        if (rst_reason == RESET_REASON_CHIP_POWER_ON) {
+            // lp_aon_clkrst, lp_system registers get reset only if chip reset
+            _uart_ll_enable_pad_sleep_clock(&UART0, false);
+            _uart_ll_enable_pad_sleep_clock(&UART1, false);
+            _uart_ll_enable_pad_sleep_clock(&UART2, false);
+            _uart_ll_enable_pad_sleep_clock(&UART3, false);
+            _uart_ll_enable_pad_sleep_clock(&UART4, false);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_TX_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_PARLIO_RX_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S2_MCLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S1_MCLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_I2S0_MCLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TX_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_RX_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PAD_EMAC_TXRX_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_PLL_8M_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_AUDIO_PLL_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL2_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL1_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_SDIO_PLL0_CLK_EN);
 #if !CONFIG_SPIRAM_BOOT_INIT
-        REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
+            REG_CLR_BIT(LP_CLKRST_HP_CLK_CTRL_REG, LP_CLKRST_HP_MPLL_500M_CLK_EN);
 #endif
-        REG_CLR_BIT(LP_SYSTEM_REG_HP_ROOT_CLK_CTRL_REG, LP_SYSTEM_REG_CPU_CLK_EN);
+            REG_CLR_BIT(LP_SYSTEM_REG_HP_ROOT_CLK_CTRL_REG, LP_SYSTEM_REG_CPU_CLK_EN);
+        }
     }
 }

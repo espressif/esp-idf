@@ -18,7 +18,7 @@
 #include "esp_attr.h"
 #include "hal/assert.h"
 #include "soc/hp_sys_clkrst_struct.h"
-#include "sdkconfig.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,7 +125,7 @@ FORCE_INLINE_ATTR void _assist_debug_ll_enable_bus_clock(bool enable)
 FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(void)
 {
     /* esp32p4 has no assist_debug reset register: disable & clear interrupts manually.  */
-    for (int i = 0; i < CONFIG_SOC_CPU_CORES_NUM; i++) {
+    for (int i = 0; i < SOC_CPU_CORES_NUM; i++) {
         assist_debug_ll_sp_spill_monitor_disable(i);
         assist_debug_ll_sp_spill_interrupt_clear(i);
         assist_debug_ll_sp_spill_set_min(i, 0);

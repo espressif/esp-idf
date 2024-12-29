@@ -5,7 +5,6 @@
  */
 
 #include <sys/param.h>
-#include "sdkconfig.h"
 #include "soc/soc_caps.h"
 #include "hal/adc_hal_common.h"
 #include "hal/adc_ll.h"

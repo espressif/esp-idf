@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,11 @@ typedef struct {
     int group_id;                         /*!< Specify from which group to allocate the capture timer */
     mcpwm_capture_clock_source_t clk_src; /*!< MCPWM capture timer clock source */
     uint32_t resolution_hz;               /*!< Resolution of capture timer */
+    struct {
+        uint32_t allow_pd: 1;       /*!< Set to allow power down. When this flag set, the driver will backup/restore the MCPWM registers before/after entering/exist sleep mode.
+                                      By this approach, the system can power off MCPWM's power domain.
+                                      This can save power, but at the expense of more RAM being consumed.*/
+    } flags;                        /*!< Extra configuration flags for timer */
 } mcpwm_capture_timer_config_t;
 
 /**

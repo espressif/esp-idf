@@ -29,6 +29,7 @@ INPUT = \
     $(PROJECT_PATH)/components/bootloader_support/include/esp_flash_encrypt.h \
     $(PROJECT_PATH)/components/esp_coex/include/esp_coexist.h \
     $(PROJECT_PATH)/components/bt/common/api/include/api/esp_blufi_api.h \
+    $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_ble_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_common_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_local_data_operation_api.h \
     $(PROJECT_PATH)/components/bt/esp_ble_mesh/api/core/include/esp_ble_mesh_low_power_api.h \
@@ -178,6 +179,7 @@ INPUT = \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_io_i2c.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_io_i80.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_io_spi.h \
+    $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_io_parl.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_io.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_ops.h \
     $(PROJECT_PATH)/components/esp_lcd/include/esp_lcd_panel_vendor.h \
@@ -261,7 +263,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/spi_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/temperature_sensor_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/timer_types.h \
-    $(PROJECT_PATH)/components/hal/include/hal/twai_types.h \
+    $(PROJECT_PATH)/components/hal/include/hal/twai_types_deprecated.h \
     $(PROJECT_PATH)/components/hal/include/hal/uart_types.h \
     $(PROJECT_PATH)/components/hal/include/hal/efuse_hal.h \
     $(PROJECT_PATH)/components/hal/include/hal/eth_types.h \
@@ -277,6 +279,7 @@ INPUT = \
     $(PROJECT_PATH)/components/log/include/esp_log_buffer.h \
     $(PROJECT_PATH)/components/log/include/esp_log_timestamp.h \
     $(PROJECT_PATH)/components/log/include/esp_log_color.h \
+    $(PROJECT_PATH)/components/log/include/esp_log_write.h \
     $(PROJECT_PATH)/components/lwip/include/apps/esp_sntp.h \
     $(PROJECT_PATH)/components/lwip/include/apps/ping/ping_sock.h \
     $(PROJECT_PATH)/components/mbedtls/esp_crt_bundle/include/esp_crt_bundle.h \
@@ -284,6 +287,7 @@ INPUT = \
     $(PROJECT_PATH)/components/mqtt/esp-mqtt/include/mqtt_client.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs_flash.h \
     $(PROJECT_PATH)/components/nvs_flash/include/nvs.h \
+    $(PROJECT_PATH)/components/nvs_flash/include/nvs_bootloader.h \
     $(PROJECT_PATH)/components/nvs_sec_provider/include/nvs_sec_provider.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_border_router.h \
     $(PROJECT_PATH)/components/openthread/include/esp_openthread_lock.h \

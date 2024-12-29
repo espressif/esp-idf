@@ -191,7 +191,7 @@ IDE
 .. note:: 建议通过自己喜欢的集成开发环境 (IDE) 安装 ESP-IDF。
 
 * `Eclipse Plugin <https://github.com/espressif/idf-eclipse-plugin/blob/master/README.md>`_
-* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/tutorial/install.md>`_
+* `VSCode Extension <https://github.com/espressif/vscode-esp-idf-extension/blob/master/README_CN.md>`_
 
 手动安装
 ~~~~~~~~~~~~~~~~~~~

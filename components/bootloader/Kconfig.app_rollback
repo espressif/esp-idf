@@ -1,0 +1,68 @@
+menu "Application Rollback"
+
+    config BOOTLOADER_APP_ROLLBACK_ENABLE
+        bool "Enable app rollback support"
+        default n
+        help
+            After updating the app, the bootloader runs a new app with the "ESP_OTA_IMG_PENDING_VERIFY" state set.
+            This state prevents the re-run of this app. After the first boot of the new app in the user code, the
+            function should be called to confirm the operability of the app or vice versa about its non-operability.
+            If the app is working, then it is marked as valid. Otherwise, it is marked as not valid and rolls back to
+            the previous working app. A reboot is performed, and the app is booted before the software update.
+            Note: If during the first boot a new app the power goes out or the WDT works, then roll back will happen.
+            Rollback is possible only between the apps with the same security versions.
+
+    config BOOTLOADER_APP_ANTI_ROLLBACK
+        bool "Enable app anti-rollback support"
+        depends on BOOTLOADER_APP_ROLLBACK_ENABLE
+        default n
+        help
+            This option prevents rollback to previous firmware/application image with lower security version.
+
+    config BOOTLOADER_APP_SECURE_VERSION
+        int "eFuse secure version of app"
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        default 0
+        help
+            The secure version is the sequence number stored in the header of each firmware.
+            The security version is set in the bootloader, version is recorded in the eFuse field
+            as the number of set ones. The allocated number of bits in the efuse field
+            for storing the security version is limited (see BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD option).
+
+            Bootloader: When bootloader selects an app to boot, an app is selected that has
+            a security version greater or equal that recorded in eFuse field.
+            The app is booted with a higher (or equal) secure version.
+
+            The security version is worth increasing if in previous versions there is
+            a significant vulnerability and their use is not acceptable.
+
+            Your partition table should has a scheme with ota_0 + ota_1 (without factory).
+
+    config BOOTLOADER_APP_SEC_VER_SIZE_EFUSE_FIELD
+        int "Size of the efuse secure version field"
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        range 1 32 if IDF_TARGET_ESP32
+        default 32 if IDF_TARGET_ESP32
+        range 1 4 if IDF_TARGET_ESP32C2
+        default 4 if IDF_TARGET_ESP32C2
+        range 1 16
+        default 16
+        help
+            The size of the efuse secure version field.
+            Its length is limited to 32 bits for ESP32 and 16 bits for ESP32-S2.
+            This determines how many times the security version can be increased.
+
+    config BOOTLOADER_EFUSE_SECURE_VERSION_EMULATE
+        bool "Emulate operations with efuse secure version(only test)"
+        default n
+        depends on BOOTLOADER_APP_ANTI_ROLLBACK
+        select EFUSE_VIRTUAL
+        select EFUSE_VIRTUAL_KEEP_IN_FLASH
+        help
+            This option allows to emulate read/write operations with all eFuses and efuse secure version.
+            It allows to test anti-rollback implementation without permanent write eFuse bits.
+            There should be an entry in partition table with following details: `emul_efuse, data, efuse, , 0x2000`.
+
+            This option enables: EFUSE_VIRTUAL and EFUSE_VIRTUAL_KEEP_IN_FLASH.
+
+endmenu

@@ -18,7 +18,7 @@
 #include "sd_pwr_ctrl.h"
 #include "sd_pwr_ctrl_by_on_chip_ldo.h"
 
-void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr)
+void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz, int ddr, int is_emmc)
 {
     sdmmc_host_t config = SDMMC_HOST_DEFAULT();
     sdmmc_slot_config_t slot_config = SDMMC_SLOT_CONFIG_DEFAULT();
@@ -26,6 +26,13 @@ void sdmmc_test_sd_skip_if_board_incompatible(int slot, int width, int freq_khz,
     if (!sdmmc_test_board_has_slot(slot)) {
         TEST_IGNORE_MESSAGE("Board doesn't have the required slot");
     }
+
+    if (is_emmc) {
+        if (!sdmmc_test_board_slot_is_emmc(slot)) {
+            TEST_IGNORE_MESSAGE("Board doesn't have the emmc card inserted");
+        }
+    }
+
     sdmmc_test_board_get_config_sdmmc(slot, &config, &slot_config);
 
     int board_max_freq_khz = sdmmc_test_board_get_slot_info(slot)->max_freq_khz;
@@ -58,6 +65,7 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
     }
 
     config.max_freq_khz = freq_khz;
+    bool slot_is_uhs1 = slot_config.flags & SDMMC_SLOT_FLAG_UHS1;
 
     if (width == 1) {
         config.flags = SDMMC_HOST_FLAG_1BIT;
@@ -76,6 +84,10 @@ void sdmmc_test_sd_begin(int slot, int width, int freq_khz, int ddr, sdmmc_card_
      */
     if (ddr) {
         config.flags |= SDMMC_HOST_FLAG_DDR;
+    }
+
+    if (slot_is_uhs1) {
+        slot_config.flags |= SDMMC_SLOT_FLAG_UHS1;
     }
 
 #if SOC_SDMMC_IO_POWER_EXTERNAL

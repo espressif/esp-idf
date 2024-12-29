@@ -379,6 +379,8 @@ uint16_t bt_mesh_provisioner_get_fast_prov_net_idx(void);
  */
 uint8_t bt_mesh_set_fast_prov_unicast_addr_range(uint16_t min, uint16_t max);
 
+bool bt_mesh_is_unprov_dev_being_prov(const uint8_t uuid[16]);
+
 int bt_mesh_rpr_cli_pdu_recv(struct bt_mesh_prov_link *link, uint8_t type,
                              struct net_buf_simple *buf);
 

@@ -260,7 +260,6 @@ extern int API_vhci_host_register_callback(const vhci_host_callback_t *callback)
 extern int ble_txpwr_set(int power_type, uint16_t handle, int power_level);
 extern int ble_txpwr_get(int power_type, uint16_t handle);
 
-extern uint16_t l2c_ble_link_get_tx_buf_num(void);
 extern void coex_pti_v2(void);
 
 extern bool btdm_deep_sleep_mem_init(void);
@@ -276,6 +275,7 @@ extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, b
 #endif
 
 extern void btdm_cca_feature_enable(void);
+extern void btdm_aa_check_enhance_enable(void);
 
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
@@ -964,6 +964,9 @@ static void btdm_funcs_table_ready_wrapper(void)
 {
 #if BT_BLE_CCA_MODE == 2
     btdm_cca_feature_enable();
+#endif
+#if BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
+    btdm_aa_check_enhance_enable();
 #endif
 }
 
@@ -1875,11 +1878,6 @@ void esp_bt_controller_wakeup_request(void)
 int IRAM_ATTR esp_bt_h4tl_eif_io_event_notify(int event)
 {
     return btdm_hci_tl_io_event_post(event);
-}
-
-uint16_t esp_bt_get_tx_buf_num(void)
-{
-    return l2c_ble_link_get_tx_buf_num();
 }
 
 static void coex_wifi_sleep_set_hook(bool sleep)

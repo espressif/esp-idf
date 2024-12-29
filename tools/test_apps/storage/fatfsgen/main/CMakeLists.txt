@@ -1,5 +1,6 @@
 idf_component_register(SRCS "fatfsgen_example_main.c"
-                    INCLUDE_DIRS ".")
+                       PRIV_REQUIRES fatfs vfs
+                       INCLUDE_DIRS ".")
 
 # Create a FATFS image from the contents of the 'fatfs_image' directory
 # that fits the partition named 'storage'. FLASH_IN_PROJECT indicates that

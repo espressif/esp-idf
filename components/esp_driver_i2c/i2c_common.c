@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <sys/lock.h>
 #include <string.h>
 #include <stdio.h>
 #include "sdkconfig.h"
@@ -169,7 +170,11 @@ esp_err_t i2c_acquire_bus_handle(i2c_port_num_t port_num, i2c_bus_handle_t *i2c_
                 break;
             }
         }
-        ESP_RETURN_ON_FALSE((bus_found == true), ESP_ERR_NOT_FOUND, TAG, "acquire bus failed, no free bus");
+        if (bus_found == false) {
+            ESP_LOGE(TAG, "acquire bus failed, no free bus");
+            _lock_release(&s_i2c_platform.mutex);
+            return ESP_ERR_NOT_FOUND;
+        }
     } else {
         ret = s_i2c_bus_handle_acquire(port_num, i2c_new_bus, mode);
         if (ret != ESP_OK) {

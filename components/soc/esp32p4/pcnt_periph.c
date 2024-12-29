@@ -83,12 +83,14 @@ static const uint32_t pcnt_regs_map[4] = {0x1f040fff, 0x0, 0x0, 0x0};
 static const regdma_entries_config_t pcnt_regs_retention[] = {
     // backup stage: save configuration registers
     // restore stage: restore the configuration registers
-    [0] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCNT_LINK(0x00), \
-                                               PCNT_RETENTION_REGS_BASE, PCNT_RETENTION_REGS_BASE, \
-                                               PCNT_RETENTION_REGS_CNT, 0, 0, \
-                                               pcnt_regs_map[0], pcnt_regs_map[1], \
-                                               pcnt_regs_map[2], pcnt_regs_map[3]), \
-                                               .owner = ENTRY(0)}, \
+    [0] = {
+        .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCNT_LINK(0x00), \
+                                            PCNT_RETENTION_REGS_BASE, PCNT_RETENTION_REGS_BASE, \
+                                            PCNT_RETENTION_REGS_CNT, 0, 0, \
+                                            pcnt_regs_map[0], pcnt_regs_map[1], \
+                                            pcnt_regs_map[2], pcnt_regs_map[3]), \
+        .owner = ENTRY(0)
+    }, \
 };
 
 const pcnt_reg_retention_info_t pcnt_reg_retention_info[SOC_PCNT_GROUPS] = {

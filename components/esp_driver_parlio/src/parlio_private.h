@@ -68,13 +68,6 @@ typedef dma_descriptor_align8_t     parlio_dma_desc_t;
 #define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 #endif
 
-#ifdef CACHE_LL_L2MEM_NON_CACHE_ADDR
-/* The descriptor address can be mapped by a fixed offset */
-#define PARLIO_GET_NON_CACHED_DESC_ADDR(desc)   (desc ? (parlio_dma_desc_t *)(CACHE_LL_L2MEM_NON_CACHE_ADDR(desc)) : NULL)
-#else
-#define PARLIO_GET_NON_CACHED_DESC_ADDR(desc)   (desc)
-#endif // CACHE_LL_L2MEM_NON_CACHE_ADDR
-
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else

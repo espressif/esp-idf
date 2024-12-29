@@ -7,6 +7,10 @@ config SOC_ADC_SUPPORTED
     bool
     default y
 
+config SOC_ANA_CMPR_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDICATED_GPIO_SUPPORTED
     bool
     default y
@@ -264,6 +268,10 @@ config SOC_AES_SUPPORT_AES_128
     default y
 
 config SOC_AES_SUPPORT_AES_256
+    bool
+    default y
+
+config SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
     bool
     default y
 
@@ -567,6 +575,18 @@ config SOC_DEDIC_PERIPH_ALWAYS_ENABLE
     bool
     default y
 
+config SOC_ANA_CMPR_NUM
+    int
+    default 1
+
+config SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
+    bool
+    default y
+
+config SOC_ANA_CMPR_SUPPORT_ETM
+    bool
+    default y
+
 config SOC_I2C_NUM
     int
     default 2
@@ -643,10 +663,6 @@ config SOC_I2S_SUPPORTS_ETM
     bool
     default y
 
-config SOC_I2S_SUPPORTS_TX_SYNC_CNT
-    bool
-    default y
-
 config SOC_I2S_SUPPORTS_XTAL
     bool
     default y
@@ -671,9 +687,33 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM2PCM
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_TX_SYNC_CNT
+    bool
+    default y
+
 config SOC_I2S_PDM_MAX_TX_LINES
     int
     default 2
+
+config SOC_I2S_PDM_MAX_RX_LINES
+    int
+    default 1
 
 config SOC_I2S_SUPPORTS_TDM
     bool
@@ -887,6 +927,10 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_PARLIO_GROUPS
     int
     default 1
@@ -928,6 +972,10 @@ config SOC_PARLIO_TX_SIZE_BY_DMA
     default y
 
 config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_SPI_LCD
     bool
     default y
 
@@ -1055,6 +1103,10 @@ config SOC_SPIRAM_XIP_SUPPORTED
     bool
     default y
 
+config SOC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
 config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
     default y
@@ -1092,10 +1144,6 @@ config SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
     default y
 
 config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
-    bool
-    default y
-
-config SOC_MEMSPI_FLASH_CLK_SRC_IS_INDEPENDENT
     bool
     default y
 
@@ -1179,6 +1227,42 @@ config SOC_MWDT_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_TWAI_CONTROLLER_NUM
+    int
+    default 2
+
+config SOC_TWAI_MASK_FILTER_NUM
+    int
+    default 3
+
+config SOC_TWAI_RANGE_FILTER_NUM
+    int
+    default 1
+
+config SOC_TWAI_BRP_MIN
+    int
+    default 1
+
+config SOC_TWAI_BRP_MAX
+    int
+    default 255
+
+config SOC_TWAI_CLK_SUPPORT_XTAL
+    bool
+    default y
+
+config SOC_TWAI_SUPPORTS_RX_STATUS
+    bool
+    default y
+
+config SOC_TWAI_SUPPORT_FD
+    bool
+    default y
+
+config SOC_TWAI_SUPPORT_TIMESTAMP
+    bool
+    default y
+
 config SOC_EFUSE_ECDSA_KEY
     bool
     default y
@@ -1188,6 +1272,10 @@ config SOC_KEY_MANAGER_ECDSA_KEY_DEPLOY
     default y
 
 config SOC_KEY_MANAGER_FE_KEY_DEPLOY
+    bool
+    default y
+
+config SOC_SECURE_BOOT_V2_RSA
     bool
     default y
 
@@ -1216,6 +1304,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 
@@ -1375,10 +1467,6 @@ config SOC_PM_MODEM_RETENTION_BY_REGDMA
     bool
     default y
 
-config SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
-    bool
-    default y
-
 config SOC_EXT_MEM_CACHE_TAG_IN_CPU_DOMAIN
     bool
     default y
@@ -1398,6 +1486,10 @@ config SOC_PM_PAU_REGDMA_LINK_IDX_WIFIMAC
 config SOC_PM_PAU_REGDMA_UPDATE_CACHE_BEFORE_WAIT_COMPARE
     bool
     default y
+
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
 
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
@@ -1419,7 +1511,15 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     bool
     default y
 
+config SOC_CLK_LP_FAST_SUPPORT_XTAL_D2
+    bool
+    default y
+
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 

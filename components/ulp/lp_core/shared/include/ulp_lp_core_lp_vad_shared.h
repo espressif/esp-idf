@@ -82,7 +82,6 @@ esp_err_t lp_core_lp_vad_init(lp_vad_t vad_id, const lp_core_lp_vad_cfg_t *init_
  * @brief Enable LP VAD
  *
  * @param[in] vad_id        VAD ID
- * @param[in] init_config   Initial configurations
  *
  * @return
  *        - ESP_OK:                 On success
@@ -95,7 +94,6 @@ esp_err_t lp_core_lp_vad_enable(lp_vad_t vad_id);
  * @brief Disable LP VAD
  *
  * @param[in] vad_id        VAD ID
- * @param[in] init_config   Initial configurations
  *
  * @return
  *        - ESP_OK:                 On success

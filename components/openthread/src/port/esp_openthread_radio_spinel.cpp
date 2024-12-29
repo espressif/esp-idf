@@ -54,6 +54,8 @@ static const char *radiospinel_workflow = "radio_spinel";
 
 static const esp_openthread_radio_config_t *s_esp_openthread_radio_config = NULL;
 
+static esp_openthread_compatibility_error_callback s_compatibility_error_callback = NULL;
+
 static void esp_openthread_radio_config_set(const esp_openthread_radio_config_t *config)
 {
     s_esp_openthread_radio_config = config;
@@ -62,6 +64,22 @@ static void esp_openthread_radio_config_set(const esp_openthread_radio_config_t 
 static const esp_openthread_radio_config_t *esp_openthread_radio_config_get(void)
 {
     return s_esp_openthread_radio_config;
+}
+
+static void ot_spinel_compatibility_error_callback(void *context)
+{
+    OT_UNUSED_VARIABLE(context);
+    if (s_compatibility_error_callback) {
+        s_compatibility_error_callback();
+    } else {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "None callback to handle compatibility error of openthread spinel");
+        assert(false);
+    }
+}
+
+void esp_openthread_set_compatibility_error_callback(esp_openthread_compatibility_error_callback callback)
+{
+    s_compatibility_error_callback = callback;
 }
 
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
@@ -89,7 +107,8 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
                         "Spinel interface init failed");
 #endif
     s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
-    s_radio.Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver, s_radio_caps);
+    s_radio.SetCompatibilityErrorCallback(ot_spinel_compatibility_error_callback, esp_openthread_get_instance());
+    s_radio.Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver, s_radio_caps, /*RCP_time_sync=*/true);
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_SPI // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().AfterRadioInit(), OT_PLAT_LOG_TAG, "Spinel interface init failed");
 #endif
@@ -336,15 +355,15 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCoun
 }
 
 #if CONFIG_OPENTHREAD_DIAG
-otError otPlatDiagProcess(otInstance *instance, int argc, char *argv[], char *output, size_t output_max_len)
+otError otPlatDiagProcess(otInstance *aInstance, uint8_t aArgsLength, char *aArgs[])
 {
     // deliver the platform specific diags commands to radio only ncp.
     char cmd[OPENTHREAD_CONFIG_DIAG_CMD_LINE_BUFFER_SIZE] = {'\0'};
     char *cur = cmd;
     char *end = cmd + sizeof(cmd);
 
-    for (int index = 0; index < argc; index++) {
-        cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", argv[index]);
+    for (int index = 0; index < aArgsLength; index++) {
+        cur += snprintf(cur, static_cast<size_t>(end - cur), "%s ", aArgs[index]);
     }
 
     return s_radio.PlatDiagProcess(cmd);

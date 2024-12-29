@@ -7,6 +7,7 @@
 #include "unity.h"
 #include "unity_test_utils.h"
 #include "esp_heap_caps.h"
+#include "esp_newlib.h"
 
 // Some resources are lazy allocated in LEDC driver, the threshold is left for that case
 // This leak is large since LEDC driver does not provide channel delete mechanism

@@ -104,6 +104,10 @@ If a previously created PCNT channel is no longer needed, it is recommended to r
     pcnt_channel_handle_t pcnt_chan = NULL;
     ESP_ERROR_CHECK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
 
+.. note::
+
+    In PCNT, the GPIOs involved can be reconfigured for pull-up or pull-down after initializing PCNT using functions such as :cpp:func:`gpio_pullup_en` and :cpp:func:`gpio_pullup_dis`.
+
 .. _pcnt-setup-channel-actions:
 
 Set Up Channel Actions

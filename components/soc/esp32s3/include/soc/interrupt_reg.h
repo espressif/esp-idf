@@ -15,11 +15,8 @@
 extern "C" {
 #endif
 
-
 #ifdef __cplusplus
 }
 #endif
-
-
 
 #endif /*_SOC_INTERRUPT_REG_H_ */

@@ -15,10 +15,12 @@ Frame Format
 
 ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The default ESP-NOW bit rate is 1 Mbps.
 
-Currently, ESP-NOW supports two versions: v1.0 and v2.0. The maximum packet length supported by v2.0 devices is ESP_NOW_MAX_DATA_LEN_V2 bytes, while the maximum packet length supported by v1.0 devices is ESP_NOW_MAX_DATA_LEN bytes.
+Currently, ESP-NOW supports two versions: v1.0 and v2.0. The maximum packet length supported by v2.0 devices is 1490 (``ESP_NOW_MAX_DATA_LEN_V2``) bytes, while the maximum packet length supported by v1.0 devices is 250 (``ESP_NOW_MAX_DATA_LEN``)  bytes.
+
 The v2.0 devices are capable of receiving packets from both v2.0 and v1.0 devices. In contrast, v1.0 devices can only receive packets from other v1.0 devices.
-However, v1.0 devices can receive v2.0 packets if the packet length is less than or equal to ESP_NOW_MAX_IE_DATA_LEN.
-For packets exceeding this length, the v1.0 devices will either truncate the data to the first ESP_NOW_MAX_IE_DATA_LEN bytes or discard the packet entirely.
+
+However, v1.0 devices can receive v2.0 packets if the packet length is less than or equal to 250 (``ESP_NOW_MAX_IE_DATA_LEN``).For packets exceeding this length, the v1.0 devices will either truncate the data to the first 250 (``ESP_NOW_MAX_IE_DATA_LEN``) bytes or discard the packet entirely.
+
 For detailed behavior, please refer to the documentation corresponding to the specific IDF version.
 
 The format of the vendor-specific action frame is as follows:

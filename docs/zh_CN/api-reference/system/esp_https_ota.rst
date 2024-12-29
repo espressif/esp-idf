@@ -49,7 +49,7 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 
 
 签名验证
-----------------------
+-----------------
 
 要进一步提升安全性，还可以验证 OTA 固件镜像的签名。更多内容请参考 :ref:`secure-ota-updates`。
 
@@ -66,7 +66,7 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 
  * 即使设备未启用 flash 加密，仍可能要求进行 OTA 的固件镜像保持加密。
 
-无论底层传输安全性如何，预加密固件的分发都能确保固件镜像在从服务器到设备的**传输过程中**保持加密状态。首先，预加密软件层在设备上通过网络接收并解密固件，然后使用平台 flash 加密（如果已启用）重新加密内容，最后写入 flash。
+无论底层传输安全性如何，预加密固件的分发都能确保固件镜像在从服务器到设备的 **传输过程中** 保持加密状态。首先，预加密软件层在设备上通过网络接收并解密固件，然后使用平台 flash 加密（如果已启用）重新加密内容，最后写入 flash。
 
 设计
 ^^^^
@@ -80,6 +80,7 @@ mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_downloa
 整个工作流程由外部组件 `esp_encrypted_image <https://github.com/espressif/idf-extra-components/blob/master/esp_encrypted_img>`_ 管理，并通过解密回调 (:cpp:member:`esp_https_ota_config_t::decrypt_cb`) 机制插入到 OTA 更新框架中。
 
 .. note::
+
     该支持方案基于 RSA-3072，必须使用平台安全功能保护设备端的私钥。
 
 OTA 系统事件
@@ -149,6 +150,8 @@ ESP HTTPS OTA 过程中可能发生各种系统事件。当特定事件发生时
 - :example:`system/ota/pre_encrypted_ota` 演示了如何使用 `esp_encrypted_img` 组件的 API 和工具进行带预加密二进制文件的 OTA 更新，确保固件在网络通道上的机密性，但不保证其真实性。要进行带预加密固件的 OTA 升级，请在组件 `menuconfig` 中启用 :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB`。
 
 - :example:`system/ota/advanced_https_ota` 演示了如何在 {IDF_TARGET_NAME} 上使用 `esp_https_ota` 组件的 API 来使用 HTTPS OTA 更新功能。关于该示例适用的芯片，请参考 :example_file:`system/ota/advanced_https_ota/README.md`。
+
+- :example:`system/ota/partitions_ota` 演示了如何使用 `esp_https_ota` 组件的 API 对多个分区（应用、引导加载程序、分区表、存储）进行 OTA 更新。
 
 - :example:`system/ota/simple_ota_example` 演示了如何使用 `esp_https_ota` 组件的 API，通过特定的网络接口，如以太网或 Wi-Fi Station，在 {IDF_TARGET_NAME} 上进行固件升级。关于该示例适用的芯片，请参考 :example_file:`system/ota/simple_ota_example/README.md`。
 

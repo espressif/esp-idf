@@ -154,21 +154,15 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data,
     uint32_t written = 0;
     uint32_t wr_sz = 0;
 
-    /* Make sure that the partition is large enough to hold the data. */
-    ESP_COREDUMP_ASSERT((wr_data->off + data_size) < s_core_flash_config.partition.size);
+    /* Make sure that the partition is large enough to store both the cached and new data. */
+    ESP_COREDUMP_ASSERT((wr_data->off + wr_data->cached_bytes + data_size) < s_core_flash_config.partition.size);
 
-    if (wr_data->cached_bytes) {
-        /* Some bytes are in the cache, let's continue filling the cache
-         * with the data received as parameter. Let's calculate the maximum
-         * amount of bytes we can still fill the cache with. */
-        if ((COREDUMP_CACHE_SIZE - wr_data->cached_bytes) > data_size) {
-            wr_sz = data_size;
-        } else {
-            wr_sz = COREDUMP_CACHE_SIZE - wr_data->cached_bytes;
-        }
+    while (data_size > 0) {
+        /* Calculate the maximum amount of bytes we can still fill the cache with. */
+        wr_sz = MIN(data_size, COREDUMP_CACHE_SIZE - wr_data->cached_bytes);
 
         /* Append wr_sz bytes from data parameter to the cache. */
-        memcpy(&wr_data->cached_data[wr_data->cached_bytes], data, wr_sz);
+        memcpy(&wr_data->cached_data[wr_data->cached_bytes], data + written, wr_sz);
         wr_data->cached_bytes += wr_sz;
 
         if (wr_data->cached_bytes == COREDUMP_CACHE_SIZE) {
@@ -185,7 +179,7 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data,
             wr_data->off += COREDUMP_CACHE_SIZE;
 
             /* Update checksum with the newly written data on the flash. */
-            esp_core_dump_checksum_update(&wr_data->checksum_ctx, &wr_data->cached_data, COREDUMP_CACHE_SIZE);
+            esp_core_dump_checksum_update(&wr_data->checksum_ctx, wr_data->cached_data, COREDUMP_CACHE_SIZE);
 
             /* Reset cache from the next use. */
             wr_data->cached_bytes = 0;
@@ -194,47 +188,6 @@ static esp_err_t esp_core_dump_flash_write_data(core_dump_write_data_t* wr_data,
 
         written += wr_sz;
         data_size -= wr_sz;
-    }
-
-    /* Figure out how many bytes we can write onto the flash directly, without
-     * using the cache. In our case the cache size is a multiple of the flash's
-     * minimum writing block size, so we will use it for our calculation.
-     * For example, if COREDUMP_CACHE_SIZE equals 32, here are interesting
-     * values:
-     * +---------+-----------------------+
-     * |         |       data_size       |
-     * +---------+---+----+----+----+----+
-     * |         | 0 | 31 | 32 | 40 | 64 |
-     * +---------+---+----+----+----+----+
-     * | (blocks | 0 | 0  | 1  | 1  | 2) |
-     * +---------+---+----+----+----+----+
-     * | wr_sz   | 0 | 0  | 32 | 32 | 64 |
-     * +---------+---+----+----+----+----+
-     */
-    wr_sz = (data_size / COREDUMP_CACHE_SIZE) * COREDUMP_CACHE_SIZE;
-    if (wr_sz) {
-        /* Write the contiguous amount of bytes to the flash,
-         * without using the cache */
-        err = esp_core_dump_flash_custom_write(s_core_flash_config.partition.start + wr_data->off, data + written, wr_sz);
-
-        if (err != ESP_OK) {
-            ESP_COREDUMP_LOGE("Failed to write data to flash (%d)!", err);
-            return err;
-        }
-
-        /* Update the checksum with the newly written bytes */
-        esp_core_dump_checksum_update(&wr_data->checksum_ctx, data + written, wr_sz);
-        wr_data->off += wr_sz;
-        written += wr_sz;
-        data_size -= wr_sz;
-    }
-
-    if (data_size > 0) {
-        /* There still some bytes from the data parameter that need to be sent,
-         * append it to cache in order to write them later. (i.e. when there
-         * will be enough bytes to fill the cache) */
-        memcpy(&wr_data->cached_data, data + written, data_size);
-        wr_data->cached_bytes = data_size;
     }
 
     return ESP_OK;

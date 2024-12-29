@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@ extern "C" {
 /** MCPWM_CLK_CFG_REG register
  *  PWM clock prescaler register.
  */
-#define MCPWM_CLK_CFG_REG (DR_REG_MCPWM_BASE + 0x0)
+#define MCPWM_CLK_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x0)
 /** MCPWM_CLK_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of clock, so that the period of PWM_clk = 6.25ns *
  *  (PWM_CLK_PRESCALE + 1).
@@ -27,7 +27,7 @@ extern "C" {
 /** MCPWM_TIMER0_CFG0_REG register
  *  PWM timer0 period and update method configuration register.
  */
-#define MCPWM_TIMER0_CFG0_REG (DR_REG_MCPWM_BASE + 0x4)
+#define MCPWM_TIMER0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x4)
 /** MCPWM_TIMER0_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer0, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER0_PRESCALE + 1)
@@ -56,7 +56,7 @@ extern "C" {
 /** MCPWM_TIMER0_CFG1_REG register
  *  PWM timer$n working mode and start/stop control register.
  */
-#define MCPWM_TIMER0_CFG1_REG (DR_REG_MCPWM_BASE + 0x8)
+#define MCPWM_TIMER0_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x8)
 /** MCPWM_TIMER0_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
  *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
@@ -80,7 +80,7 @@ extern "C" {
 /** MCPWM_TIMER0_SYNC_REG register
  *  PWM timer$n sync function configuration register.
  */
-#define MCPWM_TIMER0_SYNC_REG (DR_REG_MCPWM_BASE + 0xc)
+#define MCPWM_TIMER0_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0xc)
 /** MCPWM_TIMER0_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer$n reloading with phase on sync input
  *  event is enabled.\\0: Disable\\1: Enable
@@ -124,7 +124,7 @@ extern "C" {
 /** MCPWM_TIMER0_STATUS_REG register
  *  PWM timer$n status register.
  */
-#define MCPWM_TIMER0_STATUS_REG (DR_REG_MCPWM_BASE + 0x10)
+#define MCPWM_TIMER0_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x10)
 /** MCPWM_TIMER0_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer$n counter value.
  */
@@ -143,7 +143,7 @@ extern "C" {
 /** MCPWM_TIMER1_CFG0_REG register
  *  PWM timer1 period and update method configuration register.
  */
-#define MCPWM_TIMER1_CFG0_REG (DR_REG_MCPWM_BASE + 0x14)
+#define MCPWM_TIMER1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x14)
 /** MCPWM_TIMER0_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer1, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER1_PRESCALE + 1)
@@ -172,7 +172,7 @@ extern "C" {
 /** MCPWM_TIMER1_CFG1_REG register
  *  PWM timer$n working mode and start/stop control register.
  */
-#define MCPWM_TIMER1_CFG1_REG (DR_REG_MCPWM_BASE + 0x18)
+#define MCPWM_TIMER1_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x18)
 /** MCPWM_TIMER1_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
  *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
@@ -196,7 +196,7 @@ extern "C" {
 /** MCPWM_TIMER1_SYNC_REG register
  *  PWM timer$n sync function configuration register.
  */
-#define MCPWM_TIMER1_SYNC_REG (DR_REG_MCPWM_BASE + 0x1c)
+#define MCPWM_TIMER1_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0x1c)
 /** MCPWM_TIMER1_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer$n reloading with phase on sync input
  *  event is enabled.\\0: Disable\\1: Enable
@@ -240,7 +240,7 @@ extern "C" {
 /** MCPWM_TIMER1_STATUS_REG register
  *  PWM timer$n status register.
  */
-#define MCPWM_TIMER1_STATUS_REG (DR_REG_MCPWM_BASE + 0x20)
+#define MCPWM_TIMER1_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x20)
 /** MCPWM_TIMER1_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer$n counter value.
  */
@@ -259,7 +259,7 @@ extern "C" {
 /** MCPWM_TIMER2_CFG0_REG register
  *  PWM timer2 period and update method configuration register.
  */
-#define MCPWM_TIMER2_CFG0_REG (DR_REG_MCPWM_BASE + 0x24)
+#define MCPWM_TIMER2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x24)
 /** MCPWM_TIMER0_PRESCALE : R/W; bitpos: [7:0]; default: 0;
  *  Configures the prescaler value of timer2, so that the period of PT0_clk = Period of
  *  PWM_clk * (PWM_TIMER2_PRESCALE + 1)
@@ -288,7 +288,7 @@ extern "C" {
 /** MCPWM_TIMER2_CFG1_REG register
  *  PWM timer$n working mode and start/stop control register.
  */
-#define MCPWM_TIMER2_CFG1_REG (DR_REG_MCPWM_BASE + 0x28)
+#define MCPWM_TIMER2_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x28)
 /** MCPWM_TIMER2_START : R/W/SC; bitpos: [2:0]; default: 0;
  *  Configures whether or not to start/stop PWM timer$n.\\0: If PWM timer$n starts,
  *  then stops at TEZ\\1: If timer$n starts, then stops at TEP\\2: PWM timer$n starts
@@ -312,7 +312,7 @@ extern "C" {
 /** MCPWM_TIMER2_SYNC_REG register
  *  PWM timer$n sync function configuration register.
  */
-#define MCPWM_TIMER2_SYNC_REG (DR_REG_MCPWM_BASE + 0x2c)
+#define MCPWM_TIMER2_SYNC_REG(i) (REG_MCPWM_BASE(i) + 0x2c)
 /** MCPWM_TIMER2_SYNCI_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer$n reloading with phase on sync input
  *  event is enabled.\\0: Disable\\1: Enable
@@ -356,7 +356,7 @@ extern "C" {
 /** MCPWM_TIMER2_STATUS_REG register
  *  PWM timer$n status register.
  */
-#define MCPWM_TIMER2_STATUS_REG (DR_REG_MCPWM_BASE + 0x30)
+#define MCPWM_TIMER2_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x30)
 /** MCPWM_TIMER2_VALUE : RO; bitpos: [15:0]; default: 0;
  *  Represents current PWM timer$n counter value.
  */
@@ -375,7 +375,7 @@ extern "C" {
 /** MCPWM_TIMER_SYNCI_CFG_REG register
  *  Synchronization input selection register for PWM timers.
  */
-#define MCPWM_TIMER_SYNCI_CFG_REG (DR_REG_MCPWM_BASE + 0x34)
+#define MCPWM_TIMER_SYNCI_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x34)
 /** MCPWM_TIMER0_SYNCISEL : R/W; bitpos: [2:0]; default: 0;
  *  Configures the selection of sync input for PWM timer0.\\1: PWM timer0 sync_out\\2:
  *  PWM timer1 sync_out\\3: PWM timer2 sync_out\\4: SYNC0 from GPIO matrix\\5: SYNC1
@@ -431,7 +431,7 @@ extern "C" {
 /** MCPWM_OPERATOR_TIMERSEL_REG register
  *  PWM operator's timer select register
  */
-#define MCPWM_OPERATOR_TIMERSEL_REG (DR_REG_MCPWM_BASE + 0x38)
+#define MCPWM_OPERATOR_TIMERSEL_REG(i) (REG_MCPWM_BASE(i) + 0x38)
 /** MCPWM_OPERATOR0_TIMERSEL : R/W; bitpos: [1:0]; default: 0;
  *  Configures which PWM timer will be the timing reference for PWM operator0.\\0:
  *  Timer0\\1: Timer1\\2: Timer2\\3: Invalid, will select timer2
@@ -460,7 +460,7 @@ extern "C" {
 /** MCPWM_GEN0_STMP_CFG_REG register
  *  Generator0 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN0_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0x3c)
+#define MCPWM_GEN0_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x3c)
 /** MCPWM_CMPR0_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 0 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
@@ -501,7 +501,7 @@ extern "C" {
 /** MCPWM_GEN0_TSTMP_A_REG register
  *  Generator$n time stamp A's shadow register
  */
-#define MCPWM_GEN0_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0x40)
+#define MCPWM_GEN0_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0x40)
 /** MCPWM_CMPR0_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp A's shadow register.
  */
@@ -513,7 +513,7 @@ extern "C" {
 /** MCPWM_GEN0_TSTMP_B_REG register
  *  Generator$n time stamp B's shadow register
  */
-#define MCPWM_GEN0_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0x44)
+#define MCPWM_GEN0_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0x44)
 /** MCPWM_CMPR0_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp B's shadow register.
  */
@@ -525,7 +525,7 @@ extern "C" {
 /** MCPWM_GEN0_CFG0_REG register
  *  Generator$n fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN0_CFG0_REG (DR_REG_MCPWM_BASE + 0x48)
+#define MCPWM_GEN0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x48)
 /** MCPWM_GEN0_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator $n's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -557,7 +557,7 @@ extern "C" {
 /** MCPWM_GEN0_FORCE_REG register
  *  Generator$n output signal force mode register.
  */
-#define MCPWM_GEN0_FORCE_REG (DR_REG_MCPWM_BASE + 0x4c)
+#define MCPWM_GEN0_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0x4c)
 /** MCPWM_GEN0_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator$n.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -621,7 +621,7 @@ extern "C" {
 /** MCPWM_GEN0_A_REG register
  *  PWM$n output signal A actions configuration register
  */
-#define MCPWM_GEN0_A_REG (DR_REG_MCPWM_BASE + 0x50)
+#define MCPWM_GEN0_A_REG(i) (REG_MCPWM_BASE(i) + 0x50)
 /** MCPWM_GEN0_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -722,7 +722,7 @@ extern "C" {
 /** MCPWM_GEN0_B_REG register
  *  PWM$n output signal B actions configuration register
  */
-#define MCPWM_GEN0_B_REG (DR_REG_MCPWM_BASE + 0x54)
+#define MCPWM_GEN0_B_REG(i) (REG_MCPWM_BASE(i) + 0x54)
 /** MCPWM_GEN0_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -823,7 +823,7 @@ extern "C" {
 /** MCPWM_DT0_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT0_CFG_REG (DR_REG_MCPWM_BASE + 0x58)
+#define MCPWM_DT0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x58)
 /** MCPWM_DB0_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -917,7 +917,7 @@ extern "C" {
 /** MCPWM_DT0_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT0_FED_CFG_REG (DR_REG_MCPWM_BASE + 0x5c)
+#define MCPWM_DT0_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x5c)
 /** MCPWM_DB0_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
@@ -929,7 +929,7 @@ extern "C" {
 /** MCPWM_DT0_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT0_RED_CFG_REG (DR_REG_MCPWM_BASE + 0x60)
+#define MCPWM_DT0_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x60)
 /** MCPWM_DB0_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
@@ -941,7 +941,7 @@ extern "C" {
 /** MCPWM_CARRIER0_CFG_REG register
  *  Carrier$n configuration register
  */
-#define MCPWM_CARRIER0_CFG_REG (DR_REG_MCPWM_BASE + 0x64)
+#define MCPWM_CARRIER0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x64)
 /** MCPWM_CHOPPER0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier$n.\\0: Bypassed\\1: Enabled
  */
@@ -991,7 +991,7 @@ extern "C" {
 /** MCPWM_FH0_CFG0_REG register
  *  PWM$n A and PWM$n B trip events actions configuration register
  */
-#define MCPWM_FH0_CFG0_REG (DR_REG_MCPWM_BASE + 0x68)
+#define MCPWM_FH0_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x68)
 /** MCPWM_TZ0_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
@@ -1124,7 +1124,7 @@ extern "C" {
 /** MCPWM_FH0_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH0_CFG1_REG (DR_REG_MCPWM_BASE + 0x6c)
+#define MCPWM_FH0_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0x6c)
 /** MCPWM_TZ0_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
@@ -1161,7 +1161,7 @@ extern "C" {
 /** MCPWM_FH0_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH0_STATUS_REG (DR_REG_MCPWM_BASE + 0x70)
+#define MCPWM_FH0_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x70)
 /** MCPWM_TZ0_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
@@ -1182,7 +1182,7 @@ extern "C" {
 /** MCPWM_GEN1_STMP_CFG_REG register
  *  Generator1 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN1_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0x74)
+#define MCPWM_GEN1_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x74)
 /** MCPWM_CMPR0_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 1 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
@@ -1223,7 +1223,7 @@ extern "C" {
 /** MCPWM_GEN1_TSTMP_A_REG register
  *  Generator$n time stamp A's shadow register
  */
-#define MCPWM_GEN1_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0x78)
+#define MCPWM_GEN1_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0x78)
 /** MCPWM_CMPR1_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp A's shadow register.
  */
@@ -1235,7 +1235,7 @@ extern "C" {
 /** MCPWM_GEN1_TSTMP_B_REG register
  *  Generator$n time stamp B's shadow register
  */
-#define MCPWM_GEN1_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0x7c)
+#define MCPWM_GEN1_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0x7c)
 /** MCPWM_CMPR1_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp B's shadow register.
  */
@@ -1247,7 +1247,7 @@ extern "C" {
 /** MCPWM_GEN1_CFG0_REG register
  *  Generator$n fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN1_CFG0_REG (DR_REG_MCPWM_BASE + 0x80)
+#define MCPWM_GEN1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0x80)
 /** MCPWM_GEN1_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator $n's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -1279,7 +1279,7 @@ extern "C" {
 /** MCPWM_GEN1_FORCE_REG register
  *  Generator$n output signal force mode register.
  */
-#define MCPWM_GEN1_FORCE_REG (DR_REG_MCPWM_BASE + 0x84)
+#define MCPWM_GEN1_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0x84)
 /** MCPWM_GEN1_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator$n.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -1343,7 +1343,7 @@ extern "C" {
 /** MCPWM_GEN1_A_REG register
  *  PWM$n output signal A actions configuration register
  */
-#define MCPWM_GEN1_A_REG (DR_REG_MCPWM_BASE + 0x88)
+#define MCPWM_GEN1_A_REG(i) (REG_MCPWM_BASE(i) + 0x88)
 /** MCPWM_GEN1_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -1444,7 +1444,7 @@ extern "C" {
 /** MCPWM_GEN1_B_REG register
  *  PWM$n output signal B actions configuration register
  */
-#define MCPWM_GEN1_B_REG (DR_REG_MCPWM_BASE + 0x8c)
+#define MCPWM_GEN1_B_REG(i) (REG_MCPWM_BASE(i) + 0x8c)
 /** MCPWM_GEN1_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -1545,7 +1545,7 @@ extern "C" {
 /** MCPWM_DT1_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT1_CFG_REG (DR_REG_MCPWM_BASE + 0x90)
+#define MCPWM_DT1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x90)
 /** MCPWM_DB1_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -1639,7 +1639,7 @@ extern "C" {
 /** MCPWM_DT1_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT1_FED_CFG_REG (DR_REG_MCPWM_BASE + 0x94)
+#define MCPWM_DT1_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x94)
 /** MCPWM_DB1_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
@@ -1651,7 +1651,7 @@ extern "C" {
 /** MCPWM_DT1_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT1_RED_CFG_REG (DR_REG_MCPWM_BASE + 0x98)
+#define MCPWM_DT1_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x98)
 /** MCPWM_DB1_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
@@ -1663,7 +1663,7 @@ extern "C" {
 /** MCPWM_CARRIER1_CFG_REG register
  *  Carrier$n configuration register
  */
-#define MCPWM_CARRIER1_CFG_REG (DR_REG_MCPWM_BASE + 0x9c)
+#define MCPWM_CARRIER1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x9c)
 /** MCPWM_CHOPPER1_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier$n.\\0: Bypassed\\1: Enabled
  */
@@ -1713,7 +1713,7 @@ extern "C" {
 /** MCPWM_FH1_CFG0_REG register
  *  PWM$n A and PWM$n B trip events actions configuration register
  */
-#define MCPWM_FH1_CFG0_REG (DR_REG_MCPWM_BASE + 0xa0)
+#define MCPWM_FH1_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xa0)
 /** MCPWM_TZ1_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
@@ -1846,7 +1846,7 @@ extern "C" {
 /** MCPWM_FH1_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH1_CFG1_REG (DR_REG_MCPWM_BASE + 0xa4)
+#define MCPWM_FH1_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0xa4)
 /** MCPWM_TZ1_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
@@ -1883,7 +1883,7 @@ extern "C" {
 /** MCPWM_FH1_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH1_STATUS_REG (DR_REG_MCPWM_BASE + 0xa8)
+#define MCPWM_FH1_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0xa8)
 /** MCPWM_TZ1_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
@@ -1904,7 +1904,7 @@ extern "C" {
 /** MCPWM_GEN2_STMP_CFG_REG register
  *  Generator2 time stamp registers A and B transfer status and update method register
  */
-#define MCPWM_GEN2_STMP_CFG_REG (DR_REG_MCPWM_BASE + 0xac)
+#define MCPWM_GEN2_STMP_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xac)
 /** MCPWM_CMPR0_A_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures the update method for PWM generator 2 time stamp A's active
  *  register.\\0: Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is
@@ -1945,7 +1945,7 @@ extern "C" {
 /** MCPWM_GEN2_TSTMP_A_REG register
  *  Generator$n time stamp A's shadow register
  */
-#define MCPWM_GEN2_TSTMP_A_REG (DR_REG_MCPWM_BASE + 0xb0)
+#define MCPWM_GEN2_TSTMP_A_REG(i) (REG_MCPWM_BASE(i) + 0xb0)
 /** MCPWM_CMPR2_A : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp A's shadow register.
  */
@@ -1957,7 +1957,7 @@ extern "C" {
 /** MCPWM_GEN2_TSTMP_B_REG register
  *  Generator$n time stamp B's shadow register
  */
-#define MCPWM_GEN2_TSTMP_B_REG (DR_REG_MCPWM_BASE + 0xb4)
+#define MCPWM_GEN2_TSTMP_B_REG(i) (REG_MCPWM_BASE(i) + 0xb4)
 /** MCPWM_CMPR2_B : R/W; bitpos: [15:0]; default: 0;
  *  Configures the value of PWM generator $n time stamp B's shadow register.
  */
@@ -1969,7 +1969,7 @@ extern "C" {
 /** MCPWM_GEN2_CFG0_REG register
  *  Generator$n fault event T0 and T1 configuration register
  */
-#define MCPWM_GEN2_CFG0_REG (DR_REG_MCPWM_BASE + 0xb8)
+#define MCPWM_GEN2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xb8)
 /** MCPWM_GEN2_CFG_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for PWM generator $n's active register.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -2001,7 +2001,7 @@ extern "C" {
 /** MCPWM_GEN2_FORCE_REG register
  *  Generator$n output signal force mode register.
  */
-#define MCPWM_GEN2_FORCE_REG (DR_REG_MCPWM_BASE + 0xbc)
+#define MCPWM_GEN2_FORCE_REG(i) (REG_MCPWM_BASE(i) + 0xbc)
 /** MCPWM_GEN2_CNTUFORCE_UPMETHOD : R/W; bitpos: [5:0]; default: 32;
  *  Configures update method for continuous software force of PWM generator$n.\\0:
  *  Immediately\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -2065,7 +2065,7 @@ extern "C" {
 /** MCPWM_GEN2_A_REG register
  *  PWM$n output signal A actions configuration register
  */
-#define MCPWM_GEN2_A_REG (DR_REG_MCPWM_BASE + 0xc0)
+#define MCPWM_GEN2_A_REG(i) (REG_MCPWM_BASE(i) + 0xc0)
 /** MCPWM_GEN2_A_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n A triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -2166,7 +2166,7 @@ extern "C" {
 /** MCPWM_GEN2_B_REG register
  *  PWM$n output signal B actions configuration register
  */
-#define MCPWM_GEN2_B_REG (DR_REG_MCPWM_BASE + 0xc4)
+#define MCPWM_GEN2_B_REG(i) (REG_MCPWM_BASE(i) + 0xc4)
 /** MCPWM_GEN2_B_UTEZ : R/W; bitpos: [1:0]; default: 0;
  *  Configures action on PWM$n B triggered by event TEZ when timer increasing.\\0: No
  *  change\\1: Low\\2: High\\3: Toggle
@@ -2267,7 +2267,7 @@ extern "C" {
 /** MCPWM_DT2_CFG_REG register
  *  Dead time configuration register
  */
-#define MCPWM_DT2_CFG_REG (DR_REG_MCPWM_BASE + 0xc8)
+#define MCPWM_DT2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xc8)
 /** MCPWM_DB2_FED_UPMETHOD : R/W; bitpos: [3:0]; default: 0;
  *  Configures update method for FED (Falling edge delay) active register.\\0:
  *  Immediate\\Bit0 is set to 1: TEZ\\Bit1 is set to 1: TEP\\Bit2 is set to 1:
@@ -2361,7 +2361,7 @@ extern "C" {
 /** MCPWM_DT2_FED_CFG_REG register
  *  Falling edge delay (FED) shadow register
  */
-#define MCPWM_DT2_FED_CFG_REG (DR_REG_MCPWM_BASE + 0xcc)
+#define MCPWM_DT2_FED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xcc)
 /** MCPWM_DB2_FED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for FED.
  */
@@ -2373,7 +2373,7 @@ extern "C" {
 /** MCPWM_DT2_RED_CFG_REG register
  *  Rising edge delay (RED) shadow register
  */
-#define MCPWM_DT2_RED_CFG_REG (DR_REG_MCPWM_BASE + 0xd0)
+#define MCPWM_DT2_RED_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xd0)
 /** MCPWM_DB2_RED : R/W; bitpos: [15:0]; default: 0;
  *  Configures shadow register for RED.
  */
@@ -2385,7 +2385,7 @@ extern "C" {
 /** MCPWM_CARRIER2_CFG_REG register
  *  Carrier$n configuration register
  */
-#define MCPWM_CARRIER2_CFG_REG (DR_REG_MCPWM_BASE + 0xd4)
+#define MCPWM_CARRIER2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xd4)
 /** MCPWM_CHOPPER2_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable carrier$n.\\0: Bypassed\\1: Enabled
  */
@@ -2435,7 +2435,7 @@ extern "C" {
 /** MCPWM_FH2_CFG0_REG register
  *  PWM$n A and PWM$n B trip events actions configuration register
  */
-#define MCPWM_FH2_CFG0_REG (DR_REG_MCPWM_BASE + 0xd8)
+#define MCPWM_FH2_CFG0_REG(i) (REG_MCPWM_BASE(i) + 0xd8)
 /** MCPWM_TZ2_SW_CBC : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable software force cycle-by-cycle mode action.\\0:
  *  Disable\\1: Enable
@@ -2568,7 +2568,7 @@ extern "C" {
 /** MCPWM_FH2_CFG1_REG register
  *  Software triggers for fault handler actions configuration register
  */
-#define MCPWM_FH2_CFG1_REG (DR_REG_MCPWM_BASE + 0xdc)
+#define MCPWM_FH2_CFG1_REG(i) (REG_MCPWM_BASE(i) + 0xdc)
 /** MCPWM_TZ2_CLR_OST : R/W; bitpos: [0]; default: 0;
  *  Configures the generation of software one-shot mode action clear. A toggle
  *  (software negate its value) triggers a clear for on going one-shot mode action.
@@ -2605,7 +2605,7 @@ extern "C" {
 /** MCPWM_FH2_STATUS_REG register
  *  Fault events status register
  */
-#define MCPWM_FH2_STATUS_REG (DR_REG_MCPWM_BASE + 0xe0)
+#define MCPWM_FH2_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0xe0)
 /** MCPWM_TZ2_CBC_ON : RO; bitpos: [0]; default: 0;
  *  Represents whether or not an cycle-by-cycle mode action is on going.\\0:No
  *  action\\1: On going
@@ -2626,7 +2626,7 @@ extern "C" {
 /** MCPWM_FAULT_DETECT_REG register
  *  Fault detection configuration and status register
  */
-#define MCPWM_FAULT_DETECT_REG (DR_REG_MCPWM_BASE + 0xe4)
+#define MCPWM_FAULT_DETECT_REG(i) (REG_MCPWM_BASE(i) + 0xe4)
 /** MCPWM_F0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable event_f0 generation.\\0: Disable\\1: Enable
  */
@@ -2697,7 +2697,7 @@ extern "C" {
 /** MCPWM_CAP_TIMER_CFG_REG register
  *  Capture timer configuration register
  */
-#define MCPWM_CAP_TIMER_CFG_REG (DR_REG_MCPWM_BASE + 0xe8)
+#define MCPWM_CAP_TIMER_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xe8)
 /** MCPWM_CAP_TIMER_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture timer increment.\\0: Disable\\1: Enable
  */
@@ -2734,7 +2734,7 @@ extern "C" {
 /** MCPWM_CAP_TIMER_PHASE_REG register
  *  Capture timer sync phase register
  */
-#define MCPWM_CAP_TIMER_PHASE_REG (DR_REG_MCPWM_BASE + 0xec)
+#define MCPWM_CAP_TIMER_PHASE_REG(i) (REG_MCPWM_BASE(i) + 0xec)
 /** MCPWM_CAP_PHASE : R/W; bitpos: [31:0]; default: 0;
  *  Configures phase value for capture timer sync operation.
  */
@@ -2746,7 +2746,7 @@ extern "C" {
 /** MCPWM_CAP_CH0_CFG_REG register
  *  Capture channel 0 configuration register
  */
-#define MCPWM_CAP_CH0_CFG_REG (DR_REG_MCPWM_BASE + 0xf0)
+#define MCPWM_CAP_CH0_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf0)
 /** MCPWM_CAP0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 0.\\0: Disable\\1: Enable
  */
@@ -2791,7 +2791,7 @@ extern "C" {
 /** MCPWM_CAP_CH1_CFG_REG register
  *  Capture channel 1 configuration register
  */
-#define MCPWM_CAP_CH1_CFG_REG (DR_REG_MCPWM_BASE + 0xf4)
+#define MCPWM_CAP_CH1_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf4)
 /** MCPWM_CAP0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 1.\\0: Disable\\1: Enable
  */
@@ -2836,7 +2836,7 @@ extern "C" {
 /** MCPWM_CAP_CH2_CFG_REG register
  *  Capture channel 2 configuration register
  */
-#define MCPWM_CAP_CH2_CFG_REG (DR_REG_MCPWM_BASE + 0xf8)
+#define MCPWM_CAP_CH2_CFG_REG(i) (REG_MCPWM_BASE(i) + 0xf8)
 /** MCPWM_CAP0_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable capture on channel 2.\\0: Disable\\1: Enable
  */
@@ -2881,7 +2881,7 @@ extern "C" {
 /** MCPWM_CAP_CH0_REG register
  *  CAP0 capture value register
  */
-#define MCPWM_CAP_CH0_REG (DR_REG_MCPWM_BASE + 0xfc)
+#define MCPWM_CAP_CH0_REG(i) (REG_MCPWM_BASE(i) + 0xfc)
 /** MCPWM_CAP0_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP0
  */
@@ -2893,7 +2893,7 @@ extern "C" {
 /** MCPWM_CAP_CH1_REG register
  *  CAP1 capture value register
  */
-#define MCPWM_CAP_CH1_REG (DR_REG_MCPWM_BASE + 0x100)
+#define MCPWM_CAP_CH1_REG(i) (REG_MCPWM_BASE(i) + 0x100)
 /** MCPWM_CAP0_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP1
  */
@@ -2905,7 +2905,7 @@ extern "C" {
 /** MCPWM_CAP_CH2_REG register
  *  CAP2 capture value register
  */
-#define MCPWM_CAP_CH2_REG (DR_REG_MCPWM_BASE + 0x104)
+#define MCPWM_CAP_CH2_REG(i) (REG_MCPWM_BASE(i) + 0x104)
 /** MCPWM_CAP0_VALUE : RO; bitpos: [31:0]; default: 0;
  *  Represents value of last capture on CAP2
  */
@@ -2917,7 +2917,7 @@ extern "C" {
 /** MCPWM_CAP_STATUS_REG register
  *  Last capture trigger edge information register
  */
-#define MCPWM_CAP_STATUS_REG (DR_REG_MCPWM_BASE + 0x108)
+#define MCPWM_CAP_STATUS_REG(i) (REG_MCPWM_BASE(i) + 0x108)
 /** MCPWM_CAP0_EDGE : RO; bitpos: [0]; default: 0;
  *  Represents edge of last capture trigger on channel0.\\0: Posedge\\1: Negedge
  */
@@ -2943,7 +2943,7 @@ extern "C" {
 /** MCPWM_UPDATE_CFG_REG register
  *  Generator Update configuration register
  */
-#define MCPWM_UPDATE_CFG_REG (DR_REG_MCPWM_BASE + 0x10c)
+#define MCPWM_UPDATE_CFG_REG(i) (REG_MCPWM_BASE(i) + 0x10c)
 /** MCPWM_GLOBAL_UP_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether or not to enable global update for all active registers in MCPWM
  *  module.\\0: Disable\\1: Enable
@@ -3016,7 +3016,7 @@ extern "C" {
 /** MCPWM_INT_ENA_REG register
  *  Interrupt enable register
  */
-#define MCPWM_INT_ENA_REG (DR_REG_MCPWM_BASE + 0x110)
+#define MCPWM_INT_ENA_REG(i) (REG_MCPWM_BASE(i) + 0x110)
 /** MCPWM_TIMER0_STOP_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Enable bit: Write 1 to enable the interrupt triggered when the timer 0 stops.
  */
@@ -3237,7 +3237,7 @@ extern "C" {
 /** MCPWM_INT_RAW_REG register
  *  Interrupt raw status register
  */
-#define MCPWM_INT_RAW_REG (DR_REG_MCPWM_BASE + 0x114)
+#define MCPWM_INT_RAW_REG(i) (REG_MCPWM_BASE(i) + 0x114)
 /** MCPWM_TIMER0_STOP_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  Raw status bit: The raw interrupt status of the interrupt triggered when the timer
  *  0 stops.
@@ -3482,7 +3482,7 @@ extern "C" {
 /** MCPWM_INT_ST_REG register
  *  Interrupt masked status register
  */
-#define MCPWM_INT_ST_REG (DR_REG_MCPWM_BASE + 0x118)
+#define MCPWM_INT_ST_REG(i) (REG_MCPWM_BASE(i) + 0x118)
 /** MCPWM_TIMER0_STOP_INT_ST : RO; bitpos: [0]; default: 0;
  *  Masked status bit: The masked interrupt status of the interrupt triggered when the
  *  timer 0 stops.
@@ -3727,7 +3727,7 @@ extern "C" {
 /** MCPWM_INT_CLR_REG register
  *  Interrupt clear register
  */
-#define MCPWM_INT_CLR_REG (DR_REG_MCPWM_BASE + 0x11c)
+#define MCPWM_INT_CLR_REG(i) (REG_MCPWM_BASE(i) + 0x11c)
 /** MCPWM_TIMER0_STOP_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Clear bit: Write 1 to clear the interrupt triggered when the timer 0 stops.
  */
@@ -3948,7 +3948,7 @@ extern "C" {
 /** MCPWM_EVT_EN_REG register
  *  Event enable register
  */
-#define MCPWM_EVT_EN_REG (DR_REG_MCPWM_BASE + 0x120)
+#define MCPWM_EVT_EN_REG(i) (REG_MCPWM_BASE(i) + 0x120)
 /** MCPWM_EVT_TIMER0_STOP_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable timer0 stop event generate.\\0: Disable\\1:
  *  Enable
@@ -4187,7 +4187,7 @@ extern "C" {
 /** MCPWM_TASK_EN_REG register
  *  Task enable register
  */
-#define MCPWM_TASK_EN_REG (DR_REG_MCPWM_BASE + 0x124)
+#define MCPWM_TASK_EN_REG(i) (REG_MCPWM_BASE(i) + 0x124)
 /** MCPWM_TASK_CMPR0_A_UP_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable PWM generator0 timer stamp A's shadow register
  *  update task receive.\\0: Disable\\1: Enable
@@ -4362,7 +4362,7 @@ extern "C" {
 /** MCPWM_EVT_EN2_REG register
  *  Event enable register2
  */
-#define MCPWM_EVT_EN2_REG (DR_REG_MCPWM_BASE + 0x128)
+#define MCPWM_EVT_EN2_REG(i) (REG_MCPWM_BASE(i) + 0x128)
 /** MCPWM_EVT_OP0_TEE1_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable PWM generator0 timer equal OP0_TSTMP_E1_REG
  *  event generate.\\0: Disable\\1: Enable
@@ -4415,7 +4415,7 @@ extern "C" {
 /** MCPWM_OP0_TSTMP_E1_REG register
  *  Generator0 timer stamp E1 value register
  */
-#define MCPWM_OP0_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x12c)
+#define MCPWM_OP0_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x12c)
 /** MCPWM_OP0_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator0 timer stamp E1 value register
  */
@@ -4427,7 +4427,7 @@ extern "C" {
 /** MCPWM_OP0_TSTMP_E2_REG register
  *  Generator$n timer stamp E2 value register
  */
-#define MCPWM_OP0_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x130)
+#define MCPWM_OP0_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x130)
 /** MCPWM_OP0_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator$n timer stamp E2 value register
  */
@@ -4439,7 +4439,7 @@ extern "C" {
 /** MCPWM_OP1_TSTMP_E1_REG register
  *  Generator1 timer stamp E1 value register
  */
-#define MCPWM_OP1_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x134)
+#define MCPWM_OP1_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x134)
 /** MCPWM_OP0_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator1 timer stamp E1 value register
  */
@@ -4451,7 +4451,7 @@ extern "C" {
 /** MCPWM_OP1_TSTMP_E2_REG register
  *  Generator$n timer stamp E2 value register
  */
-#define MCPWM_OP1_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x138)
+#define MCPWM_OP1_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x138)
 /** MCPWM_OP1_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator$n timer stamp E2 value register
  */
@@ -4463,7 +4463,7 @@ extern "C" {
 /** MCPWM_OP2_TSTMP_E1_REG register
  *  Generator2 timer stamp E1 value register
  */
-#define MCPWM_OP2_TSTMP_E1_REG (DR_REG_MCPWM_BASE + 0x13c)
+#define MCPWM_OP2_TSTMP_E1_REG(i) (REG_MCPWM_BASE(i) + 0x13c)
 /** MCPWM_OP0_TSTMP_E1 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator2 timer stamp E1 value register
  */
@@ -4475,7 +4475,7 @@ extern "C" {
 /** MCPWM_OP2_TSTMP_E2_REG register
  *  Generator$n timer stamp E2 value register
  */
-#define MCPWM_OP2_TSTMP_E2_REG (DR_REG_MCPWM_BASE + 0x140)
+#define MCPWM_OP2_TSTMP_E2_REG(i) (REG_MCPWM_BASE(i) + 0x140)
 /** MCPWM_OP2_TSTMP_E2 : R/W; bitpos: [15:0]; default: 0;
  *  Configures generator$n timer stamp E2 value register
  */
@@ -4487,7 +4487,7 @@ extern "C" {
 /** MCPWM_CLK_REG register
  *  Global configuration register
  */
-#define MCPWM_CLK_REG (DR_REG_MCPWM_BASE + 0x144)
+#define MCPWM_CLK_REG(i) (REG_MCPWM_BASE(i) + 0x144)
 /** MCPWM_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to open register clock gate.\\0: Open the clock gate only
  *  when application writes registers\\1: Force open the clock gate for register
@@ -4500,7 +4500,7 @@ extern "C" {
 /** MCPWM_VERSION_REG register
  *  Version register.
  */
-#define MCPWM_VERSION_REG (DR_REG_MCPWM_BASE + 0x148)
+#define MCPWM_VERSION_REG(i) (REG_MCPWM_BASE(i) + 0x148)
 /** MCPWM_DATE : R/W; bitpos: [27:0]; default: 35725968;
  *  Configures the version.
  */

@@ -18,6 +18,9 @@
 #include "driver/gpio.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_slave_internal.h"
+#include "esp_private/sleep_cpu.h"
+#include "esp_private/esp_sleep_internal.h"
+#include "esp_private/esp_pmu.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
 
@@ -778,3 +781,62 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
     TEST_ASSERT_EQUAL_UINT32(TEST_ISR_CNT, slave_expect);
 }
 #endif
+
+TEST_CASE("test spi slave sleep retention", "[spi]")
+{
+    // Prepare a TOP PD sleep
+    TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
+#if ESP_SLEEP_POWER_DOWN_CPU
+    sleep_cpu_configure(true);
+#endif
+    esp_sleep_context_t sleep_ctx;
+    esp_sleep_set_sleep_context(&sleep_ctx);
+
+    uint8_t slv_send[14] = "I'm slave  x\n", slv_rexcv[14];
+    uint8_t mst_send[14] = "I'm master x\n", mst_rexcv[14];
+    spi_slave_transaction_t *ret_trans, trans_cfg = {
+        .tx_buffer = slv_send,
+        .rx_buffer = slv_rexcv,
+        .length = sizeof(slv_send) * 8,
+    };
+
+    for (uint8_t allow_pd = 0; allow_pd < 2; allow_pd ++) {
+        spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+        buscfg.flags = (allow_pd) ? SPICOMMON_BUSFLAG_SLP_ALLOW_PD : 0;
+        buscfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+        spi_slave_interface_config_t slvcfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
+        TEST_ESP_OK(spi_slave_initialize(TEST_SPI_HOST, &buscfg, &slvcfg, SPI_DMA_DISABLED));
+        gpio_pullup_en(slvcfg.spics_io_num);
+        vTaskDelay(1);
+
+        for (uint8_t cnt = 0; cnt < 3; cnt ++) {
+            printf("Going into sleep with power %s ...\n", (buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");
+            TEST_ESP_OK(esp_light_sleep_start());
+            printf("Waked up!\n");
+
+            // check if the sleep happened as expected
+            TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+            // check if the power domain also is powered down
+            TEST_ASSERT_EQUAL((buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
+#endif
+            slv_send[11] = cnt + '0';
+            mst_send[11] = cnt + 'A';
+            memset(mst_rexcv, 0, sizeof(mst_rexcv));
+            memset(slv_rexcv, 0, sizeof(slv_rexcv));
+            TEST_ESP_OK(spi_slave_queue_trans(TEST_SPI_HOST, &trans_cfg, portMAX_DELAY));
+            spi_master_trans_impl_gpio(buscfg, slvcfg.spics_io_num, 0, mst_send, mst_rexcv, sizeof(mst_send));
+            TEST_ESP_OK(spi_slave_get_trans_result(TEST_SPI_HOST, &ret_trans, portMAX_DELAY));
+
+            spitest_cmp_or_dump(slv_send, mst_rexcv, sizeof(mst_rexcv));
+            spitest_cmp_or_dump(mst_send, slv_rexcv, sizeof(slv_rexcv));
+        }
+
+        TEST_ESP_OK(spi_slave_free(TEST_SPI_HOST));
+    }
+
+    esp_sleep_set_sleep_context(NULL);
+#if ESP_SLEEP_POWER_DOWN_CPU
+    TEST_ESP_OK(sleep_cpu_configure(false));
+#endif
+}

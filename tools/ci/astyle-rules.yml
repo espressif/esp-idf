@@ -84,7 +84,6 @@ components_not_formatted_temporary:
     - "/components/protocomm/"
     - "/components/riscv/"
     - "/components/sdmmc/"
-    - "/components/soc/"
     - "/components/spi_flash/"
     - "/components/spiffs/"
     - "/components/tcp_transport/"
@@ -155,7 +154,7 @@ components_not_formatted_permanent:
     # FreeRTOS-Plux-POSIX files (upstream source code)
     - "/components/rt/"
     # SoC header files (generated)
-    - "/components/soc/*/include/soc/"
+    - "/components/soc/*/register/soc/"
     # Example resource files (generated)
     - "/examples/peripherals/lcd/i80_controller/main/images/"
     - "/examples/peripherals/dac/dac_continuous/dac_audio/main/audio_example_file.h"

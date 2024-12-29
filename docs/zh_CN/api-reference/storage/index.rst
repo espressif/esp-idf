@@ -27,6 +27,7 @@
    fatfsgen
    mass_mfg.rst
    nvs_flash
+   nvs_bootloader
    nvs_encryption
    nvs_partition_gen.rst
    nvs_partition_parse.rst
@@ -52,6 +53,8 @@
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写整数数据类型。
     * - :example:`nvs_rw_value <storage/nvs_rw_value>`
       - 演示了如何在 NVS flash 中使用 C++ 语言 API 读写整数数据类型。
+    * - :example:`nvs_bootloader <storage/nvs_bootloader>`
+      - 演示了如何使用引导加载程序代码中可用的 API 来读取 NVS 数据。
     * - :example:`nvsgen <storage/nvsgen>`
       - 演示了如何使用基于 Python 的 NVS 镜像生成工具，根据 CSV 文件内容创建 NVS 分区镜像。
 

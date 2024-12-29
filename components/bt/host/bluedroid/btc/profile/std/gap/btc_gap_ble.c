@@ -958,7 +958,7 @@ static void btc_read_ble_rssi_cmpl_callback(void *p_data)
 }
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
+void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
                                                 tBTA_DM_BLE_5_GAP_CB_PARAMS *params)
 {
     esp_ble_gap_cb_param_t param;

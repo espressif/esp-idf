@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,19 +17,21 @@
 #include "soc/periph_defs.h"
 #include "riscv/interrupt.h"
 #include "hal/cache_ll.h"
+#include "esp_private/cache_err_int.h"
 
 static const char *TAG = "CACHE_ERR";
 
 const char cache_error_msg[] = "Cache access error";
 
-const char *esp_cache_err_panic_string(void)
+void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info)
 {
+    if (err_info == NULL) {
+        return;
+    }
     const uint32_t access_err_status = cache_ll_l1_get_access_error_intr_status(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
 
     /* Return the error string if a cache error is active */
-    const char* err_str = access_err_status ? cache_error_msg : NULL;
-
-    return err_str;
+    err_info->err_str = access_err_status ? cache_error_msg : NULL;
 }
 
 bool esp_cache_err_has_active_err(void)
@@ -60,7 +62,7 @@ void esp_cache_err_int_init(void)
     esprv_int_set_priority(ETS_CACHEERR_INUM, SOC_INTERRUPT_LEVEL_MEDIUM);
 
     ESP_DRAM_LOGV(TAG, "access error intr clr & ena mask is: 0x%x", CACHE_LL_L1_ACCESS_EVENT_MASK);
-    /* On the hardware side, start by clearing all the bits reponsible for cache access error */
+    /* On the hardware side, start by clearing all the bits responsible for cache access error */
     cache_ll_l1_clear_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);
     /* Then enable cache access error interrupts. */
     cache_ll_l1_enable_access_error_intr(0, CACHE_LL_L1_ACCESS_EVENT_MASK);

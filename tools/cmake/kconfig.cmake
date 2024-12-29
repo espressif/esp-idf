@@ -129,6 +129,13 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
     idf_build_get_property(idf_toolchain IDF_TOOLCHAIN)
     idf_build_get_property(idf_path IDF_PATH)
     idf_build_get_property(idf_env_fpga __IDF_ENV_FPGA)
+    idf_build_get_property(idf_minimal_build MINIMAL_BUILD)
+
+    if(idf_minimal_build)
+        set(idf_minimal_build "y")
+    else()
+        set(idf_minimal_build "n")
+    endif()
 
     # These are the paths for files which will contain the generated "source" lines for COMPONENT_KCONFIGS and
     # COMPONENT_KCONFIGS_PROJBUILD
@@ -167,6 +174,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         --sdkconfig-rename ${root_sdkconfig_rename}
         --config ${sdkconfig}
         ${defaults_arg}
+        --env "IDF_MINIMAL_BUILD=${idf_minimal_build}"
         --env-file ${config_env_path})
 
     idf_build_get_property(build_dir BUILD_DIR)
@@ -256,6 +264,7 @@ function(__kconfig_generate_config sdkconfig sdkconfig_defaults)
         "IDF_TOOLCHAIN=${idf_toolchain}"
         "IDF_ENV_FPGA=${idf_env_fpga}"
         "IDF_INIT_VERSION=${idf_init_version}"
+        "IDF_MINIMAL_BUILD=${idf_minimal_build}"
         ${MENUCONFIG_CMD} ${root_kconfig}
         USES_TERMINAL
         # additional run of kconfgen esures that the deprecated options will be inserted into sdkconfig (for backward

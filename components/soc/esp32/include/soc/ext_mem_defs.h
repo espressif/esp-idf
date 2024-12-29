@@ -8,7 +8,6 @@
 
 #include "esp_bit_defs.h"
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -58,7 +57,6 @@ extern "C" {
 //MMU entry num, 384 entries that are used in IDF for Flash
 #define SOC_MMU_ENTRY_NUM                     384
 
-
 #define SOC_MMU_DBUS_VADDR_BASE               0x3E000000
 #define SOC_MMU_IBUS_VADDR_BASE               0x40000000
 
@@ -87,9 +85,6 @@ extern "C" {
 
 #define SOC_MMU_DRAM1_LINEAR_ADDRESS_LOW      (SOC_DRAM1_CACHE_ADDRESS_LOW & SOC_MMU_LINEAR_ADDR_MASK)
 #define SOC_MMU_DRAM1_LINEAR_ADDRESS_HIGH     (SOC_DRAM1_CACHE_ADDRESS_HIGH & SOC_MMU_LINEAR_ADDR_MASK)
-
-
-
 
 #ifdef __cplusplus
 }

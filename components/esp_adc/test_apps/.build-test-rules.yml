@@ -8,6 +8,9 @@ components/esp_adc/test_apps/adc:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: not runners for ESP32P4 ADC # TODO: IDF-9573
+    - if: IDF_TARGET == "esp32c61"
+      temporary: true
+      reason: not runners for ESP32C61 ADC
   depends_components:
     - esp_adc
     - esp_driver_gpio

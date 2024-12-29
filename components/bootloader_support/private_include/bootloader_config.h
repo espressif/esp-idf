@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,11 +21,16 @@ extern "C"
 #define SPI_ERROR_LOG "spi flash error"
 
 #define MAX_OTA_SLOTS 16
+#define MAX_TEE_OTA_SLOTS 2
 
 typedef struct {
     esp_partition_pos_t ota_info;
     esp_partition_pos_t factory;
     esp_partition_pos_t test;
+#if CONFIG_SECURE_ENABLE_TEE
+    esp_partition_pos_t tee_ota_info;
+    esp_partition_pos_t tee[MAX_TEE_OTA_SLOTS];
+#endif
     esp_partition_pos_t ota[MAX_OTA_SLOTS];
     uint32_t app_count;
     uint32_t selected_subtype;

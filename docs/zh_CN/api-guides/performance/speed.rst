@@ -314,4 +314,5 @@ ESP-IDF 支持动态 :doc:`/api-reference/system/intr_alloc` 和中断抢占。�
     - 要提高诸如 ``fread`` 和 ``fgets`` 等缓冲读取函数的执行速度，可以增加文件缓冲区的大小。Newlib 的默认值为 128 字节，但可将其增加到 4096、8192 或 16384 字节。为此，可以使用 ``setvbuf`` 函数对特定文件指针进行局部设置，或者通过修改 :ref:`CONFIG_FATFS_VFS_FSTAT_BLKSIZE` 设置来进行全局修改。
 
         .. note::
+
             增加缓冲区的大小会增加堆内存的使用量。

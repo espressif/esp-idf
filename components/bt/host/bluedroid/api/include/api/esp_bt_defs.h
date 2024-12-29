@@ -145,6 +145,25 @@ typedef uint8_t esp_link_key[ESP_BT_OCTET16_LEN];      /* Link Key */
 #define ESP_BLE_CONN_SUP_TOUT_MIN           0x000A       /*!< relate to BTM_BLE_CONN_SUP_TOUT_MIN in stack/btm_ble_api.h */
 #define ESP_BLE_CONN_SUP_TOUT_MAX           0x0C80       /*!< relate to ESP_BLE_CONN_SUP_TOUT_MAX in stack/btm_ble_api.h */
 
+#define ESP_BLE_PHY_1M_PREF_MASK       (1 << 0) /*!< The Host prefers use the LE1M transmitter or receiver PHY */
+#define ESP_BLE_PHY_2M_PREF_MASK       (1 << 1) /*!< The Host prefers use the LE2M transmitter or receiver PHY */
+#define ESP_BLE_PHY_CODED_PREF_MASK    (1 << 2) /*!< The Host prefers use the LE CODED transmitter or receiver PHY */
+typedef uint8_t esp_ble_phy_mask_t;
+
+/**
+* @brief create connection parameters
+*/
+typedef struct {
+    uint16_t scan_interval;       /*!< Initial scan interval, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
+    uint16_t scan_window;         /*!< Initial scan window, in units of 0.625ms, the range is 0x0004(2.5ms) to 0xFFFF(10.24s). */
+    uint16_t interval_min;        /*!< Minimum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
+    uint16_t interval_max;        /*!< Maximum connection interval, in units of 1.25ms, the range is 0x0006(7.5ms) to 0x0C80(4s). */
+    uint16_t latency;             /*!< Connection latency, the range is 0x0000(0) to 0x01F3(499). */
+    uint16_t supervision_timeout; /*!< Connection supervision timeout, in units of 10ms, the range is from 0x000A(100ms) to 0x0C80(32s). */
+    uint16_t min_ce_len;          /*!< Minimum connection event length, in units of 0.625ms, setting to 0 for no preferred parameters. */
+    uint16_t max_ce_len;          /*!< Maximum connection event length, in units of 0.625ms, setting to 0 for no preferred parameters. */
+} esp_ble_conn_params_t;
+
 /// Check the param is valid or not
 #define ESP_BLE_IS_VALID_PARAM(x, min, max)  (((x) >= (min) && (x) <= (max)) )
 

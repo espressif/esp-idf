@@ -1,0 +1,107 @@
+# Refer to https://ast-grep.github.io/guide/rule-config.html for Rule Essentials
+id: no-kconfig-in-hal-component
+message: Don't use Kconfig macros in the hal component
+severity: error # error, warning, info, hint
+note: hal component should be able to deliver without 3rd party config system
+language: C
+files:
+  - "components/hal/**/*"
+ignores:
+  # porting layer and test apps are allowed to use Kconfig macros
+  - "components/hal/platform_port/**/*"
+  - "components/hal/test_apps/**/*"
+  # the following files should be refactored to remove Kconfig macros
+  - "components/hal/adc_hal.c"
+  - "components/hal/adc_oneshot_hal.c"
+  - "components/hal/apm_hal.c"
+  - "components/hal/ecdsa_hal.c"
+  - "components/hal/emac_hal.c"
+  - "components/hal/mmu_hal.c"
+  - "components/hal/sha_hal.c"
+  - "components/hal/spi_flash_encrypt_hal_iram.c"
+  - "components/hal/spi_flash_hal_iram.c"
+  - "components/hal/spi_flash_hal.c"
+  - "components/hal/twai_hal_iram.c"
+  - "components/hal/twai_hal.c"
+  - "components/hal/usb_dwc_hal.c"
+  - "components/hal/wdt_hal_iram.c"
+  - "components/hal/esp32/efuse_hal.c"
+  - "components/hal/esp32/gpio_hal_workaround.c"
+  - "components/hal/esp32/include/hal/twai_ll.h"
+  - "components/hal/esp32/include/hal/uart_ll.h"
+  - "components/hal/esp32c2/clk_tree_hal.c"
+  - "components/hal/*/efuse_hal.c"
+  - "components/hal/include/hal/adc_types.h"
+  - "components/hal/include/hal/adc_hal.h"
+  - "components/hal/include/hal/apm_hal.h"
+  - "components/hal/include/hal/ecdsa_hal.h"
+  - "components/hal/include/hal/emac_hal.h"
+  - "components/hal/include/hal/gpio_hal.h"
+  - "components/hal/include/hal/mmu_hal.h"
+  - "components/hal/include/hal/pmu_types.h"
+  - "components/hal/include/hal/sha_types.h"
+  - "components/hal/include/hal/touch_sensor_legacy_types.h"
+  - "components/hal/include/hal/twai_types_deprecated.h"
+rule:
+  any:
+    - kind: argument_list
+      has:
+        kind: identifier
+        pattern: $N
+    - kind: preproc_if
+      has:
+        field: condition
+        pattern: $M
+constraints:
+  N:
+    regex: "^CONFIG"
+  M:
+    regex: "^CONFIG"
+
+---
+
+id: no-sdkconfig-include-in-hal-component
+message: Don't include sdkconfig.h in the hal component
+severity: error # error, warning, info, hint
+note: hal component should be able to deliver without 3rd party config system
+language: C
+files:
+  - "components/hal/**/*"
+ignores:
+  # porting layer and test apps are allowed to include sdkconfig.h
+  - "components/hal/platform_port/**/*"
+  - "components/hal/test_apps/**/*"
+  # the following files should be refactored to remove sdkconfig.h
+  - "components/hal/adc_hal.c"
+  - "components/hal/adc_oneshot_hal.c"
+  - "components/hal/cache_hal.c"
+  - "components/hal/emac_hal.c"
+  - "components/hal/mmu_hal.c"
+  - "components/hal/mpi_hal.c"
+  - "components/hal/spi_flash_hal_iram.c"
+  - "components/hal/twai_hal_iram.c"
+  - "components/hal/twai_hal.c"
+  - "components/hal/usb_dwc_hal.c"
+  - "components/hal/efuse_hal.c"
+  - "components/hal/esp32/include/hal/twai_ll.h"
+  - "components/hal/esp32c2/clk_tree_hal.c"
+  - "components/hal/*/efuse_hal.c"
+  - "components/hal/include/hal/adc_types.h"
+  - "components/hal/include/hal/ecdsa_hal.h"
+  - "components/hal/include/hal/modem_clock_hal.h"
+  - "components/hal/include/hal/mpi_hal.h"
+  - "components/hal/include/hal/pmu_types.h"
+  - "components/hal/include/hal/rtc_hal.h"
+  - "components/hal/include/hal/sha_types.h"
+  - "components/hal/include/hal/touch_sensor_legacy_types.h"
+  - "components/hal/include/hal/twai_hal.h"
+  - "components/hal/include/hal/twai_types_deprecated.h"
+rule:
+  kind: preproc_include
+  has:
+    field: path
+    pattern: $N
+constraints:
+  N:
+   regex: '^["<]sdkconfig' # match "sdkconfig.h" or <sdkconfig.h>
+fix: ''

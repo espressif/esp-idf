@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2006 Uwe Stuehler <uwe@openbsd.org>
- * Adaptations to ESP-IDF Copyright (c) 2016-2018 Espressif Systems (Shanghai) PTE LTD
+ * Adaptations to ESP-IDF Copyright (c) 2016-2024 Espressif Systems (Shanghai) PTE LTD
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -17,7 +17,7 @@
 
 #include <inttypes.h>
 #include <unistd.h>
-#include "sdmmc_common.h"
+#include "esp_private/sdmmc_common.h"
 
 static const char* TAG = "sdmmc_mmc";
 
@@ -69,7 +69,7 @@ esp_err_t sdmmc_init_mmc_read_ext_csd(sdmmc_card_t* card)
     }
     /* For MMC cards, use speed value from EXT_CSD */
     card->csd.tr_speed = card->max_freq_khz * 1000;
-    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%d, is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
+    ESP_LOGD(TAG, "MMC card type %d, max_freq_khz=%"PRId32", is_ddr=%d", card_type, card->max_freq_khz, card->is_ddr);
     card->max_freq_khz = MIN(card->max_freq_khz, card->host.max_freq_khz);
 
     if (card->host.flags & SDMMC_HOST_FLAG_8BIT) {

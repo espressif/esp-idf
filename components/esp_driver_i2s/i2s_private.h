@@ -7,6 +7,7 @@
 #pragma once
 
 #include <sys/lock.h>
+#include <stdatomic.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
@@ -163,6 +164,7 @@ struct i2s_channel_obj_t {
 #if SOC_I2S_SUPPORTS_APLL
     bool                    apll_en;        /*!< Flag of whether APLL enabled */
 #endif
+    bool                    is_raw_pdm;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
     /* Locks and queues */
@@ -199,7 +201,7 @@ struct lp_i2s_channel_obj_t {
     i2s_comm_mode_t            mode;           /*!< lp i2s channel communication mode */
     i2s_role_t                 role;           /*!< lp i2s role */
     i2s_dir_t                  dir;            /*!< lp i2s channel direction */
-    i2s_state_t                state;          /*!< lp i2s driver state. Ensuring the driver working in a correct sequence */
+    _Atomic i2s_state_t        state;          /*!< lp i2s driver state. Ensuring the driver working in a correct sequence */
     SemaphoreHandle_t          semphr;         /*!< lp i2s event semphr*/
     lp_i2s_trans_t             trans;          /*!< transaction */
     size_t                     threshold;      /*!< lp i2s threshold*/

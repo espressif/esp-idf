@@ -84,6 +84,10 @@ typedef struct {
     mipi_dsi_dpi_clock_source_t dpi_clk_src;   /*!< MIPI DSI DPI clock source */
     uint32_t dpi_clock_freq_mhz;               /*!< DPI clock frequency in MHz */
     lcd_color_rgb_pixel_format_t pixel_format; /*!< Pixel format that used by the MIPI LCD device */
+    lcd_color_format_t in_color_format;        /*!< Format of the input data (color space and pixel format),
+                                                    which is the format stored in the frame buffer */
+    lcd_color_format_t out_color_format;       /*!< Format of the output data (color space and pixel format),
+                                                    which is the format that the panel can accept */
     uint8_t num_fbs;                           /*!< Number of screen-sized frame buffers that allocated by the driver
                                                     By default (set to either 0 or 1) only one frame buffer will be created */
     esp_lcd_video_timing_t video_timing;       /*!< Video timing */
@@ -133,6 +137,18 @@ esp_err_t esp_lcd_dpi_panel_get_frame_buffer(esp_lcd_panel_handle_t dpi_panel, u
  *      - ESP_FAIL: Set pattern failed because of other error
  */
 esp_err_t esp_lcd_dpi_panel_set_pattern(esp_lcd_panel_handle_t dpi_panel, mipi_dsi_pattern_type_t pattern);
+
+/**
+ * @brief Set color conversion configuration for DPI panel
+ *
+ * @param[in] dpi_panel MIPI DPI panel handle, returned from esp_lcd_new_panel_dpi()
+ * @param[in] config Color conversion configuration
+ * @return
+ *      - ESP_OK: Set color conversion configuration successfully
+ *      - ESP_ERR_INVALID_ARG: Set color conversion configuration failed because of invalid argument
+ *      - ESP_FAIL: Set color conversion configuration failed because of other error
+ */
+esp_err_t esp_lcd_dpi_panel_set_color_conversion(esp_lcd_panel_handle_t dpi_panel, const esp_lcd_color_conv_config_t *config);
 
 /**
  * @brief Type of LCD DPI panel event data

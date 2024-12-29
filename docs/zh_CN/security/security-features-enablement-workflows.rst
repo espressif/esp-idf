@@ -250,6 +250,7 @@
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG
         :not esp32: - ``DIS_DOWNLOAD_MANUAL_ENCRYPT``：禁用 UART 引导加载程序加密访问
         :SOC_EFUSE_DIS_DOWNLOAD_MSPI: - ``DIS_DOWNLOAD_MSPI``：禁用下载模式下的 MSPI 访问
+        :SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND: - ``XTS_DPA_PSEUDO_LEVEL``：启用 XTS-AES 外设的伪轮次功能。要烧录到 eFuse 中的值可以是 1、2 或 3，表示安全等级。默认情况下，ESP-IDF 的引导加载程序在启动过程中启用 flash 加密的发布模式时，会将该 eFuse 的值配置为 1。
 
     可运行以下命令烧录相应的 eFuse：
 

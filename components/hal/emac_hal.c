@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,10 @@
 #include "esp_attr.h"
 #include "hal/emac_hal.h"
 #include "hal/emac_ll.h"
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+#include "esp_rom_sys.h"
+#define EMAC_PTP_INIT_TIMEOUT_US (10)
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
 
 static esp_err_t emac_hal_flush_trans_fifo(emac_hal_context_t *hal)
 {
@@ -27,6 +31,11 @@ void emac_hal_init(emac_hal_context_t *hal)
     hal->mac_regs = &EMAC_MAC;
 #if CONFIG_IDF_TARGET_ESP32
     hal->ext_regs = &EMAC_EXT;
+#else
+    hal->ext_regs = NULL;
+#endif
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+    hal->ptp_regs = &EMAC_PTP;
 #endif
 }
 
@@ -75,11 +84,11 @@ void emac_hal_init_mac_default(emac_hal_context_t *hal)
     emac_ll_set_duplex(hal->mac_regs, ETH_DUPLEX_FULL);
     /* Select the checksum mode for received frame payload's TCP/UDP/ICMP headers */
     emac_ll_checksum_offload_mode(hal->mac_regs, ETH_CHECKSUM_HW);
-    /* Enable MAC retry transmission when a colision occurs in half duplex mode */
+    /* Enable MAC retry transmission when a collision occurs in half duplex mode */
     emac_ll_retry_enable(hal->mac_regs, true);
     /* MAC passes all incoming frames to host, without modifying them */
     emac_ll_auto_pad_crc_strip_enable(hal->mac_regs, false);
-    /* Set Back-Off limit time before retry a transmittion after a collision */
+    /* Set Back-Off limit time before retry a transmission after a collision */
     emac_ll_set_back_off_limit(hal->mac_regs, EMAC_LL_BACKOFF_LIMIT_10);
     /* Disable deferral check, MAC defers until the CRS signal goes inactive */
     emac_ll_deferral_check_enable(hal->mac_regs, false);
@@ -192,6 +201,249 @@ void emac_hal_set_address(emac_hal_context_t *hal, uint8_t *mac_addr)
         emac_ll_set_addr(hal->mac_regs, mac_addr);
     }
 }
+
+#if SOC_EMAC_IEEE1588V2_SUPPORTED
+static inline uint32_t subsecond2nanosecond(emac_hal_context_t *hal, uint32_t subsecond)
+{
+    if (emac_ll_is_ts_digital_roll_set(hal->ptp_regs)) {
+        return subsecond;
+    }
+    uint64_t val = subsecond * 1000000000ll; // 1 s = 10e9 ns
+    val >>= 31; // Sub-Second register is 31 bit
+    return (uint32_t)val;
+}
+
+static inline uint32_t nanosecond2subsecond(emac_hal_context_t *hal, uint32_t nanosecond)
+{
+    if (emac_ll_is_ts_digital_roll_set(hal->ptp_regs)) {
+        return nanosecond;
+    }
+    uint64_t val = (uint64_t)nanosecond << 31;
+    val /= 1000000000ll;
+    return (uint32_t)val;
+}
+
+esp_err_t emac_hal_get_rxdesc_timestamp(emac_hal_context_t *hal, eth_dma_rx_descriptor_t *rxdesc, uint32_t *seconds, uint32_t *nano_seconds)
+{
+    if (!rxdesc->RDES0.TSAvailIPChecksumErrGiantFrame) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (seconds) {
+        *seconds = rxdesc->TimeStampHigh;
+    }
+    if (nano_seconds) {
+        *nano_seconds = subsecond2nanosecond(hal, rxdesc->TimeStampLow);
+    }
+    rxdesc->RDES0.TSAvailIPChecksumErrGiantFrame = 0;
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_get_txdesc_timestamp(emac_hal_context_t *hal, eth_dma_tx_descriptor_t *txdesc, uint32_t *seconds, uint32_t *nano_seconds)
+{
+    if (txdesc->TDES0.Own == EMAC_LL_DMADESC_OWNER_DMA || !txdesc->TDES0.TxTimestampStatus) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (seconds) {
+        *seconds = txdesc->TimeStampHigh;
+    }
+    if (nano_seconds) {
+        *nano_seconds = subsecond2nanosecond(hal, txdesc->TimeStampLow);
+    }
+    txdesc->TDES0.TxTimestampStatus = 0;
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_start(emac_hal_context_t *hal, const emac_hal_ptp_config_t *config)
+{
+    uint8_t base_increment;
+
+    // Enable time stamping frame filtering (applicable to receive)
+    emac_ll_ts_ptp_ether_enable(hal->ptp_regs, true);
+    // Process frames with v2 format
+    emac_ll_ptp_v2_proc_enable(hal->ptp_regs, true);
+
+    /* Un-mask the Time stamp trigger interrupt */
+    emac_ll_enable_corresponding_emac_intr(hal->mac_regs, EMAC_LL_CONFIG_ENABLE_MAC_INTR_MASK);
+
+    /* Enable the timestamp feature */
+    emac_ll_ts_enable(hal->ptp_regs, true);
+    /* Set digital or binary rollover */
+    if (config->roll == ETH_PTP_DIGITAL_ROLLOVER) {
+        emac_ll_ts_digital_roll_enable(hal->ptp_regs, true);
+    } else {
+        emac_ll_ts_digital_roll_enable(hal->ptp_regs, false);
+    }
+    /* Set sub second increment based on the required PTP accuracy */
+    if (emac_ll_is_ts_digital_roll_set(hal->ptp_regs)) {
+        /**
+         *   tick(ns)         10^9
+         * ———————————— = ————————————— ==> Increment = tick
+         *   Increment        10^9
+         */
+        base_increment = config->ptp_req_accuracy_ns;
+    } else {
+        /**
+         *   tick(ns)         10^9                       tick * 2^31      tick
+         * ———————————— = ————————————— ==> Increment = ————————————— ≈ —————————
+         *   Increment        2^31                           10^9         0.465
+         */
+        base_increment = config->ptp_req_accuracy_ns / 0.465;
+    }
+    emac_ll_set_ts_sub_second_incre_val(hal->ptp_regs, base_increment);
+    /* Set Update Mode */
+    emac_ll_set_ts_update_method(hal->ptp_regs, config->upd_method);
+    int32_t to = 0;
+    /* If you are using the Fine correction method */
+    if (config->upd_method == ETH_PTP_UPDATE_METHOD_FINE) {
+        /**
+         *           2^32                 2^32                      TsysClk(ns)
+         * Addend = ——————— = —————————————————————————— = 2^32 * ——————————————
+         *           ratio     SysClk(MHz)/PTPaccur(MHz)            Taccur(ns)
+         */
+        uint32_t base_addend = (1ll << 32) * config->ptp_clk_src_period_ns / config->ptp_req_accuracy_ns;
+        emac_ll_set_ts_addend_val(hal->ptp_regs, base_addend);
+        emac_ll_ts_addend_do_update(hal->ptp_regs);
+        while (!emac_ll_is_ts_addend_update_done(hal->ptp_regs) && to < EMAC_PTP_INIT_TIMEOUT_US) {
+            esp_rom_delay_us(1);
+            to++;
+        }
+        if (to >= EMAC_PTP_INIT_TIMEOUT_US) {
+            return ESP_ERR_TIMEOUT;
+        }
+    }
+    /* Initialize timestamp */
+    emac_ll_set_ts_update_second_val(hal->ptp_regs, 0);
+    emac_ll_set_ts_update_sub_second_val(hal->ptp_regs, 0);
+    emac_ll_ts_init_do(hal->ptp_regs);
+    to = 0;
+    while (!emac_ll_is_ts_init_done(hal->ptp_regs) && to < EMAC_PTP_INIT_TIMEOUT_US) {
+        esp_rom_delay_us(1);
+        to++;
+    }
+    if (to >= EMAC_PTP_INIT_TIMEOUT_US) {
+        return ESP_ERR_TIMEOUT;
+    }
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_stop(emac_hal_context_t *hal)
+{
+    /* Disable the timestamp feature */
+    emac_ll_ts_enable(hal->ptp_regs, false);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_adj_inc(emac_hal_context_t *hal, int32_t adj_ppb)
+{
+    if (emac_ll_get_ts_update_method(hal->ptp_regs) != ETH_PTP_UPDATE_METHOD_FINE ||
+        !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    /**
+     *       Sysclk(MHz) * ppb    Sysclk * ppb
+     * var = ————————————————— = ———————————————
+     *            10^9                10^9
+     *
+     *          2^32 * PTPClk(MHz)                    2^32 * PTPClk(MHz)
+     * old = —————————————————————————  =>  SysClk = ——————————————————————
+     *             SysClk(MHz)                             old
+     *
+     *        2^32 * PTPClk(MHz)        2^32 * PTPClk(MHz)           2^32 * PTPClk(MHz)
+     * new = ———————————————————— = —————————————————————————— = ———————————————————————————————————— =
+     *        SysClk(MHz) - var                Sysclk * ppb       2^32 * PTPClk(MHz)    (     ppb  )
+     *                               SysClk - ———————————————    ———————————————————— - (1 - ——————)
+     *                                             10^9                old              (     10^9 )
+     *
+     *      old           old * 10^9
+     * = ————————————— = —————————————
+     *        ppb         10^9 - ppb
+     *   1 - ——————
+     *        10^9
+     */
+    static uint32_t addend_base = 0;
+    if (addend_base == 0) {
+        addend_base = emac_ll_get_ts_addend_val(hal->ptp_regs);
+    }
+
+    if (adj_ppb > 5120000) {
+        adj_ppb = 5120000;
+    }
+    if (adj_ppb < -5120000) {
+        adj_ppb = -5120000;
+    }
+    /* calculate the rate by which you want to speed up or slow down the system time increments */
+    int64_t addend_new = (int64_t)addend_base * 1000000000ll;
+    addend_new /= 1000000000ll - adj_ppb;
+
+    emac_ll_set_ts_addend_val(hal->ptp_regs, addend_new);
+    emac_ll_ts_addend_do_update(hal->ptp_regs);
+
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_adj_freq_factor(emac_hal_context_t *hal, double scale_factor)
+{
+    if (emac_ll_get_ts_update_method(hal->ptp_regs) != ETH_PTP_UPDATE_METHOD_FINE ||
+        !emac_ll_is_ts_addend_update_done(hal->ptp_regs)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    uint32_t addend_new = (emac_ll_get_ts_addend_val(hal->ptp_regs) * scale_factor);
+    emac_ll_set_ts_addend_val(hal->ptp_regs, addend_new);
+    emac_ll_ts_addend_do_update(hal->ptp_regs);
+
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_time_add(emac_hal_context_t *hal, uint32_t off_sec, uint32_t off_nsec, bool sign)
+{
+    emac_ll_set_ts_update_second_val(hal->ptp_regs, off_sec);
+    emac_ll_set_ts_update_sub_second_val(hal->ptp_regs, nanosecond2subsecond(hal, off_nsec));
+    if (sign) {
+        emac_ll_ts_update_time_add(hal->ptp_regs);
+    } else {
+        emac_ll_ts_update_time_sub(hal->ptp_regs);
+    }
+    if (!emac_ll_is_ts_update_time_done(hal->ptp_regs)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    emac_ll_ts_update_time_do(hal->ptp_regs);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_set_sys_time(emac_hal_context_t *hal, uint32_t seconds, uint32_t nano_seconds)
+{
+    emac_ll_set_ts_update_second_val(hal->ptp_regs, seconds);
+    emac_ll_set_ts_update_sub_second_val(hal->ptp_regs, nanosecond2subsecond(hal, nano_seconds));
+
+    if (!emac_ll_is_ts_init_done(hal->ptp_regs)) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    emac_ll_ts_init_do(hal->ptp_regs);
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_get_sys_time(emac_hal_context_t *hal, uint32_t *seconds, uint32_t *nano_seconds)
+{
+    if (seconds == NULL || nano_seconds == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    *seconds = emac_ll_get_ts_seconds_val(hal->ptp_regs);
+    *nano_seconds = subsecond2nanosecond(hal, emac_ll_get_ts_sub_seconds_val(hal->ptp_regs));
+    return ESP_OK;
+}
+
+esp_err_t emac_hal_ptp_set_target_time(emac_hal_context_t *hal, uint32_t seconds, uint32_t nano_seconds)
+{
+    emac_ll_set_ts_target_second_val(hal->ptp_regs, seconds);
+    emac_ll_set_ts_target_sub_second_val(hal->ptp_regs, nanosecond2subsecond(hal, nano_seconds));
+    /*  Enable the PTP Time Stamp interrupt trigger */
+    emac_ll_ts_target_int_trig_enable(hal->ptp_regs);
+    return ESP_OK;
+}
+#endif // SOC_EMAC_IEEE1588V2_SUPPORTED
+
 
 void emac_hal_start(emac_hal_context_t *hal)
 {

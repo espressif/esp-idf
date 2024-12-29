@@ -36,6 +36,7 @@
 #include "osi/allocator.h"
 #include "osi/mutex.h"
 #include "bta_hh_int.h"
+#include "btm_int.h"
 
 #if (defined BTA_HH_LE_INCLUDED && BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
@@ -70,6 +71,7 @@ static void bta_gattc_req_cback (UINT16 conn_id, UINT32 trans_id, tGATTS_REQ_TYP
 static tBTA_GATTC_FIND_SERVICE_CB bta_gattc_register_service_change_notify(UINT16 conn_id, BD_ADDR remote_bda);
 
 extern void btc_gattc_congest_callback(tBTA_GATTC *param);
+extern uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
 
 static const tGATT_CBACK bta_gattc_cl_cback = {
     bta_gattc_conn_cback,
@@ -336,6 +338,10 @@ void bta_gattc_process_api_open (tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
     UNUSED(p_cb);
 
     if (p_clreg != NULL) {
+        if (p_msg->api_conn.own_addr_type <= BLE_ADDR_TYPE_MAX) {
+            // update own address type for creating connection
+            BTM_BleUpdateOwnType(&p_msg->api_conn.own_addr_type, NULL);
+        }
         if (p_msg->api_conn.is_direct) {
             if ((p_clcb = bta_gattc_find_alloc_clcb(p_msg->api_conn.client_if,
                                                     p_msg->api_conn.remote_bda,
@@ -503,6 +509,7 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     tBTA_GATTC_DATA gattc_data;
     BOOLEAN found_app = FALSE;
     tGATT_TCB *p_tcb;
+    tBTM_SEC_DEV_REC *p_dev_rec = NULL;
 
     if (!p_clcb || !p_data) {
         return;
@@ -512,6 +519,33 @@ void bta_gattc_open(tBTA_GATTC_CLCB *p_clcb, tBTA_GATTC_DATA *p_data)
     if(p_tcb) {
         found_app = gatt_find_specific_app_in_hold_link(p_tcb, p_clcb->p_rcb->client_if);
     }
+
+    if (p_data->api_conn.phy_mask) {
+        p_dev_rec = btm_find_or_alloc_dev(p_data->api_conn.remote_bda);
+        if (p_dev_rec) {
+            if (p_data->api_conn.is_aux) {
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+                p_dev_rec->ext_conn_params.phy_mask = p_data->api_conn.phy_mask;
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_1M_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_1m_conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_2M_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_2m_conn_params, &p_data->api_conn.phy_2m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_CODED_MASK) {
+                    memcpy(&p_dev_rec->ext_conn_params.phy_coded_conn_params, &p_data->api_conn.phy_coded_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+#endif
+            } else {
+                if (p_data->api_conn.phy_mask & BTA_BLE_PHY_1M_MASK) {
+                    memcpy(&p_dev_rec->conn_params, &p_data->api_conn.phy_1m_conn_params, sizeof(tBTA_BLE_CONN_PARAMS));
+                }
+            }
+        } else {
+            APPL_TRACE_ERROR("Unknown Device, setting rejected");
+        }
+    }
+
     /* open/hold a connection */
     if (!GATT_Connect(p_clcb->p_rcb->client_if, p_data->api_conn.remote_bda, p_data->api_conn.remote_addr_type,
                       TRUE, p_data->api_conn.transport, p_data->api_conn.is_aux)) {
@@ -1807,8 +1841,8 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, BD_ADDR bda)
 *******************************************************************************/
 void bta_gattc_process_api_refresh(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 {
-    tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_conn.remote_bda);
-    tBTA_GATTC_CLCB      *p_clcb = &bta_gattc_cb.clcb[0];
+    tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_refresh.remote_bda);
+    tBTA_GATTC_CLCB *p_clcb = &bta_gattc_cb.clcb[0];
     BOOLEAN         found = FALSE;
     UINT8           i;
     UNUSED(p_cb);
@@ -1928,7 +1962,7 @@ void bta_gattc_process_api_cache_get_addr_list(tBTA_GATTC_CB *p_cb, tBTA_GATTC_D
 *******************************************************************************/
 void bta_gattc_process_api_cache_clean(tBTA_GATTC_CB *p_cb, tBTA_GATTC_DATA *p_msg)
 {
-    tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_conn.remote_bda);
+    tBTA_GATTC_SERV *p_srvc_cb = bta_gattc_find_srvr_cache(p_msg->api_clean.remote_bda);
     UNUSED(p_cb);
 
     if (p_srvc_cb != NULL && p_srvc_cb->p_srvc_cache != NULL) {

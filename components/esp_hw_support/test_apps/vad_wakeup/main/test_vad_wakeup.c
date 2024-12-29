@@ -98,8 +98,6 @@ static void s_hp_i2s_config(void)
 static void s_lp_vad_config(void)
 {
     ESP_ERROR_CHECK(esp_sleep_enable_vad_wakeup());
-    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON));
-    ESP_ERROR_CHECK(esp_sleep_pd_config(ESP_PD_DOMAIN_XTAL, ESP_PD_OPTION_ON));
 
     lp_i2s_chan_handle_t rx_handle = NULL;
     lp_i2s_chan_config_t config = {

@@ -13,7 +13,6 @@
 
 #define ANA_I2C_SAR_FORCE_PD BIT(18)
 
-
 #define ANA_CONFIG2_REG  0x50124020
 #define ANA_CONFIG2_M    BIT(18)
 

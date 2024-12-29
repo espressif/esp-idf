@@ -121,6 +121,16 @@ Receiving General Purpose Interrupts from the Master
 
 When the master sends ``CMD8``, ``CMD9`` or ``CMDA``, the slave corresponding is triggered. Currently the ``CMD8`` is permanently used to indicate the termination of ``Rd_DMA`` segments. To receive general-purpose interrupts, register callbacks for ``CMD9`` and ``CMDA`` when the slave is initialized, see :ref:`spi_slave_hd_callbacks`.
 
+.. only:: SOC_SPI_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    ^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports to retain the SPI register context before entering **light sleep** and restore them after waking up. This means you don't have to re-init the SPI driver after the light sleep.
+
+    This feature can be enabled by setting the flag :c:macro:`SPICOMMON_BUSFLAG_SLP_ALLOW_PD`. It will allow the system to power down the SPI in light sleep, meanwhile save the register context. It can help to save more power consumption with some extra cost of the memory.
+
+    Notice that when GPSPI is working as a slave, it is **not** support to enter sleep when any transaction (including TX and RX) is not finished.
 
 .. only:: not esp32
 

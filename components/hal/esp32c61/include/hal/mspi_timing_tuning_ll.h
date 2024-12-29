@@ -21,21 +21,24 @@ extern "C" {
 
 /************************** MSPI pll clock configurations **************************/
 
-/**
- * @brief Select mspi clock source
+/*
+ * @brief Select FLASH clock source
  *
- * @param clk_src the clock source of mspi clock
+ * @param mspi_id      mspi_id
+ * @param clk_src      clock source, see valid sources in type `soc_periph_flash_clk_src_t`
  */
-static inline __attribute__((always_inline)) void mspi_ll_clock_src_sel(soc_periph_mspi_clk_src_t clk_src)
+__attribute__((always_inline))
+static inline void _mspi_timing_ll_set_flash_clk_src(uint32_t mspi_id, soc_periph_flash_clk_src_t clk_src)
 {
+    HAL_ASSERT(mspi_id == 0);
     switch (clk_src) {
-    case MSPI_CLK_SRC_XTAL:
+    case FLASH_CLK_SRC_XTAL:
         PCR.mspi_clk_conf.mspi_func_clk_sel = 0;
         break;
-    case MSPI_CLK_SRC_RC_FAST:
+    case FLASH_CLK_SRC_RC_FAST:
         PCR.mspi_clk_conf.mspi_func_clk_sel = 1;
         break;
-    case MSPI_CLK_SRC_SPLL:
+    case FLASH_CLK_SRC_SPLL:
         PCR.mspi_clk_conf.mspi_func_clk_sel = 2;
         break;
     default:

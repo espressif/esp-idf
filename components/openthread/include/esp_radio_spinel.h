@@ -46,6 +46,7 @@ typedef struct {
 typedef void (*esp_radio_spinel_rcp_failure_handler)(void);                                                                     /* The handler for rcp failure.*/
 typedef esp_err_t (*esp_radio_spinel_uart_init_handler)(const esp_radio_spinel_uart_config_t *uart_config_t, int *uart_fd);     /* The handler for UART initialization.*/
 typedef esp_err_t (*esp_radio_spinel_uart_deinit_handler)(const esp_radio_spinel_uart_config_t *uart_config_t, int *uart_fd);   /* The handler for UART deinitialization.*/
+typedef void (*esp_radio_spinel_compatibility_error_callback)(void);
 
 typedef struct
 {
@@ -390,6 +391,16 @@ esp_err_t esp_radio_spinel_rcp_deinit(esp_radio_spinel_idx_t idx);
  *
  */
 esp_err_t esp_radio_spinel_rcp_version_get(char *running_rcp_version, esp_radio_spinel_idx_t idx);
+
+/**
+ * @brief   Registers the callback for spinel compatibility error.
+ *
+ * @note This function must be called before esp_radio_spinel_init.
+ *
+ * @param[in]  callback   The callback.
+ *
+ */
+void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback);
 
 #ifdef __cplusplus
 }

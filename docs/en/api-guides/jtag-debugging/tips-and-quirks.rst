@@ -103,8 +103,20 @@ In order to achieve higher data rates and minimize number of dropped packets it 
 3.  In particular reduce frequency, if you get DSR/DIR errors (and they do not relate to OpenOCD trying to read from a memory range without physical memory being present there).
 4.  ESP-WROVER-KIT operates stable at 20 MHz or 26 MHz.
 
+.. only:: SOC_DEBUG_HAVE_OCD_STUB_BINS
 
-.. _jtag-debugging-tip-debugger-startup-commands:
+    .. _jtag-debugging-tip-improve-debugging-speed:
+
+    Improve Debugging Speed
+    ^^^^^^^^^^^^^^^^^^^^^^^
+
+    Enabling :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` allocates 8 KB of RAM and embeds pre-built stub binaries into RAM. This improves the overall debugging speed by eliminating the need to load the stub binaries at runtime. It is particularly beneficial when using flash breakpoints, as it reduces the latency of add/remove breakpoints. However, keep in mind that the increased RAM usage may reduce memory availability for other tasks.
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
+
+.. only:: not SOC_DEBUG_HAVE_OCD_STUB_BINS
+
+    .. _jtag-debugging-tip-debugger-startup-commands:
 
 What Is the Meaning of Debugger's Startup Commands?
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

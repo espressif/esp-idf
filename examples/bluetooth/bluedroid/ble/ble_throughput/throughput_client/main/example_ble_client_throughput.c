@@ -401,14 +401,29 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
                     if (connect == false) {
                         connect = true;
                         ESP_LOGI(GATTC_TAG, "Connect to the remote device");
-#if(CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT && CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
-                        esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 34, 34, 0, 600);
-#else
-                        esp_ble_gap_set_prefer_conn_params(scan_result->scan_rst.bda, 32, 32, 0, 600);
-#endif
-
                         esp_ble_gap_stop_scanning();
-                        esp_ble_gattc_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if, scan_result->scan_rst.bda, BLE_ADDR_TYPE_PUBLIC, true);
+
+                        esp_ble_conn_params_t phy_1m_conn_params = {0};
+#if(CONFIG_EXAMPLE_GATTC_WRITE_THROUGHPUT && CONFIG_EXAMPLE_GATTS_NOTIFY_THROUGHPUT)
+                        phy_1m_conn_params.interval_max = 34;
+                        phy_1m_conn_params.interval_max = 34;
+#else
+                        phy_1m_conn_params.interval_max = 32;
+                        phy_1m_conn_params.interval_min = 32;
+#endif
+                        phy_1m_conn_params.latency = 0;
+                        phy_1m_conn_params.supervision_timeout = 600;
+
+                        esp_ble_gatt_creat_conn_params_t creat_conn_params = {0};
+                        memcpy(&creat_conn_params.remote_bda, scan_result->scan_rst.bda, ESP_BD_ADDR_LEN);
+                        creat_conn_params.remote_addr_type = scan_result->scan_rst.ble_addr_type;
+                        creat_conn_params.own_addr_type = BLE_ADDR_TYPE_PUBLIC;
+                        creat_conn_params.is_direct = true;
+                        creat_conn_params.is_aux = false;
+                        creat_conn_params.phy_mask = ESP_BLE_PHY_1M_PREF_MASK;
+                        creat_conn_params.phy_1m_conn_params = &phy_1m_conn_params;
+                        esp_ble_gattc_enh_open(gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
+                                            &creat_conn_params);
                     }
                 }
             }

@@ -779,6 +779,10 @@ config SOC_I2C_SLAVE_SUPPORT_BROADCAST
     bool
     default y
 
+config SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+    bool
+    default y
+
 config SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
     bool
     default y
@@ -831,7 +835,15 @@ config SOC_I2S_SUPPORTS_PDM_TX
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PCM2PDM
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_PDM_RX
+    bool
+    default y
+
+config SOC_I2S_SUPPORTS_PDM2PCM
     bool
     default y
 
@@ -1119,6 +1131,10 @@ config SOC_PCNT_SUPPORT_CLEAR_SIGNAL
     bool
     default y
 
+config SOC_PCNT_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_RMT_GROUPS
     int
     default 1
@@ -1271,6 +1287,10 @@ config SOC_MCPWM_CAPTURE_CLK_FROM_GROUP
     bool
     default y
 
+config SOC_MCPWM_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
 config SOC_USB_OTG_PERIPH_NUM
     int
     default 2
@@ -1323,6 +1343,14 @@ config SOC_PARLIO_SUPPORT_SLEEP_RETENTION
     bool
     default y
 
+config SOC_PARLIO_SUPPORT_SPI_LCD
+    bool
+    default y
+
+config SOC_PARLIO_SUPPORT_I80_LCD
+    bool
+    default y
+
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4
@@ -1356,6 +1384,10 @@ config SOC_SDMMC_IO_POWER_EXTERNAL
     default y
 
 config SOC_SDMMC_PSRAM_DMA_CAPABLE
+    bool
+    default y
+
+config SOC_SDMMC_UHS_I_SUPPORTED
     bool
     default y
 
@@ -1535,6 +1567,10 @@ config SOC_MEMSPI_TIMING_TUNING_BY_DQS
     bool
     default y
 
+config SOC_MEMSPI_TIMING_TUNING_BY_FLASH_DELAY
+    bool
+    default y
+
 config SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP
     bool
     default y
@@ -1552,6 +1588,10 @@ config SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED
     default y
 
 config SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED
+    bool
+    default y
+
+config SOC_MEMSPI_SRC_FREQ_120M_SUPPORTED
     bool
     default y
 
@@ -1927,6 +1967,10 @@ config SOC_SLEEP_TGWDT_STOP_WORKAROUND
     bool
     default y
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 64
+
 config SOC_PSRAM_VDD_POWER_MPLL
     bool
     default y
@@ -1935,15 +1979,15 @@ config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y
 
-config SOC_MODEM_CLOCK_IS_INDEPENDENT
-    bool
-    default n
-
 config SOC_CLK_APLL_SUPPORTED
     bool
     default y
 
 config SOC_CLK_MPLL_SUPPORTED
+    bool
+    default y
+
+config SOC_CLK_SDIO_PLL_SUPPORTED
     bool
     default y
 
@@ -1964,6 +2008,10 @@ config SOC_CLK_LP_FAST_SUPPORT_XTAL
     default y
 
 config SOC_PERIPH_CLK_CTRL_SHARED
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
 
@@ -1999,7 +2047,7 @@ config SOC_ASYNCHRONOUS_BUS_ERROR_MODE
     bool
     default y
 
-config SOC_EMAC_IEEE_1588_SUPPORT
+config SOC_EMAC_IEEE1588V2_SUPPORTED
     bool
     default y
 

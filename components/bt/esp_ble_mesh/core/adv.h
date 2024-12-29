@@ -2,7 +2,7 @@
 
 /*
  * SPDX-FileCopyrightText: 2017 Intel Corporation
- * SPDX-FileContributor: 2018-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,7 @@
 #include "mesh/atomic.h"
 #include "mesh/access.h"
 #include "mesh/adapter.h"
+#include "mesh/utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -67,6 +68,19 @@ typedef enum {
     BLE_MESH_BUF_REF_MAX,
 } bt_mesh_buf_ref_flag_t;
 
+#if CONFIG_BLE_MESH_USE_BLE_50
+
+#define BLE_MESH_ADV_INS_UNUSED 0xFF
+#define BLE_MESH_ADV_INS_CNT    1
+
+struct bt_mesh_adv_inst {
+    uint8_t id;
+};
+
+int ble_mesh_adv_task_wakeup(uint16_t adv_inst_id);
+bool bt_mesh_is_adv_inst_used(uint8_t adv_inst_id);
+#endif /* CONFIG_BLE_MESH_USE_BLE_50 */
+
 void bt_mesh_adv_buf_ref_debug(const char *func, struct net_buf *buf,
                                uint8_t ref_cmp, bt_mesh_buf_ref_flag_t flag);
 
@@ -80,6 +94,10 @@ void bt_mesh_unref_buf_from_pool(struct net_buf_pool *pool);
 void bt_mesh_adv_send(struct net_buf *buf, uint8_t xmit,
                       const struct bt_mesh_send_cb *cb,
                       void *cb_data);
+
+#if CONFIG_BLE_MESH_USE_BLE_50 && (CONFIG_BLE_MESH_GATT_PROXY_SERVER || CONFIG_BLE_MESH_PB_GATT)
+uint8_t bt_mesh_get_proxy_inst(void);
+#endif
 
 struct net_buf *bt_mesh_relay_adv_create(enum bt_mesh_adv_type type, int32_t timeout);
 

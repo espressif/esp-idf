@@ -32,6 +32,10 @@ else()
     set(final_partition_target "build_partition_table")
 endif()
 
+if(CONFIG_BOOTLOADER_RECOVERY_OFFSET)
+    set(recovery_bootloader_option --recovery-bootloader-offset ${CONFIG_BOOTLOADER_RECOVERY_OFFSET})
+endif()
+
 if(NOT CONFIG_PARTITION_TABLE_MD5)
     set(md5_opt --disable-md5sum)
 endif()
@@ -67,6 +71,7 @@ set(gen_partition_table "${python}" "${CMAKE_CURRENT_SOURCE_DIR}/gen_esp32part.p
                         "-q"
                         "--offset" "${PARTITION_TABLE_OFFSET}"
                         "--primary-bootloader-offset" "${BOOTLOADER_OFFSET}"
+                        "${recovery_bootloader_option}"
                         "${md5_opt}"
                         "${flashsize_opt}"
                         "${partition_secure_opt}" ${extra_partition_subtypes} "--")

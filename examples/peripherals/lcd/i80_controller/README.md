@@ -50,7 +50,6 @@ The connection between ESP Board and the LCD is as follows:
 +-------------+              +----------------+
 ```
 
-The GPIO number used by this example can be changed in [i80_controller_example_main.c](main/i80_controller_example_main.c).
 Especially, please pay attention to the binary signal level used to turn the LCD backlight on, some LCD modules need a low level to turn it on, while others require a high level. You can change the backlight level macro `EXAMPLE_LCD_BK_LIGHT_ON_LEVEL` in [i80_controller_example_main.c](main/i80_controller_example_main.c).
 
 ### Build and Flash
@@ -63,6 +62,7 @@ Run `idf.py menuconfig` to open a terminal UI where you can tune specific config
 * `Allocate color data from PSRAM`: Select this option if you want to allocate the LVGL draw buffers from PSRAM.
 * `Pixel clock frequency (Hz)`: Set the pixel clock frequency for the LCD controller.
 * `LCD image source from`: Select where to load the image resource. See [Image Resource](#image-resource) for more details.
+* `LCD GPIO Configuration`: Select the GPIO number used by this example
 
 Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
 
@@ -100,6 +100,6 @@ This example supports two ways of reading images
 
 * Can't get a stable UI when `EXAMPLE_LCD_I80_COLOR_IN_PSRAM` is enabled.
 
-   This is because of the limited PSRAM bandwidth, compared to the internal SRAM. You can either decrease the PCLK clock `EXAMPLE_LCD_PIXEL_CLOCK_HZ` from the menuconfig or increase the PSRAM working frequency `SPIRAM_SPEED` from the KConfig (e.g. **ESP32S3-Specific** -> **Set RAM clock speed**) or decrease the FPS in LVGL configuration. For illustration, this example has set the refresh period to 100ms in the default sdkconfig file.
+   This is because of the limited PSRAM bandwidth, compared to the internal SRAM. You can either decrease the PCLK clock `EXAMPLE_LCD_PIXEL_CLOCK_HZ` from the menuconfig or increase the PSRAM working frequency `SPIRAM_SPEED` from the KConfig (e.g. **Component-config** -> **ESP PSRAM** -> **PSRAM config** -> **Set PSRAM clock speed**) or decrease the FPS in LVGL configuration. In addition, enabling `SPIRAM_XIP_FROM_PSRAM` can help increase the PCLK frequency when the Frame Buffer is allocated from the PSRAM.
 
 For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.

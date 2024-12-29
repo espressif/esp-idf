@@ -109,7 +109,6 @@ extern "C" {
 _Static_assert(SOC_MMU_IRAM0_LINEAR_ADDRESS_LOW == SOC_MMU_DRAM0_LINEAR_ADDRESS_LOW, "IRAM0 and DRAM0 linear address should be same");
 #endif
 
-
 /**
  * ROM flash mmap driver needs below definitions
  */

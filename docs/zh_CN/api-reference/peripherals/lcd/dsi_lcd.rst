@@ -60,7 +60,7 @@ MIPI DSI 接口的 LCD
     - :cpp:member:`esp_lcd_dpi_panel_config_t::virtual_channel` 设置虚拟通道号。与 DBI 接口类似，DPI 接口也需要设置虚拟通道。如果只连接了一个 LCD，则将此值设置为 ``0``。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clk_src` 设置 DPI 接口的时钟源。可用的时钟源列表见 :cpp:type:`mipi_dsi_dpi_clock_source_t`。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::dpi_clock_freq_mhz` 设置 DPI 时钟频率 (MHz)。像素时钟频率越高，刷新率越高，但如果 DMA 带宽不足或 LCD 控制器芯片不支持高像素时钟频率，则可能会导致闪烁。
-    - :cpp:member:`esp_lcd_dpi_panel_config_t::pixel_format` 设置像素数据的像素格式。可用的像素格式见 :cpp:type:`lcd_color_rgb_pixel_format_t`。MIPI LCD 通常使用 **RGB888** 来获得最佳色彩深度。
+    - :cpp:member:`esp_lcd_dpi_panel_config_t::in_color_format` 设置输入的像素数据的格式。可用的像素格式见 :cpp:type:`lcd_color_format_t`。MIPI LCD 通常使用 **RGB888** 来获得最佳色彩深度。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::video_timing` 设置 LCD 面板的特定时序参数。包括 LCD 分辨率和消隐间隔在内的必要参数列表见 :cpp:type:`esp_lcd_video_timing_t`，请依据 LCD 技术规格书填写参数。
     - :cpp:member:`esp_lcd_dpi_panel_config_t::extra_dpi_panel_flags::use_dma2d` 设置是否用 2D DMA 将用户数据异步复制到帧 buffer 中。
 
@@ -71,7 +71,7 @@ MIPI DSI 接口的 LCD
             .virtual_channel = 0,
             .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
             .dpi_clock_freq_mhz = 1 * 1000,
-            .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+            .in_color_format = LCD_COLOR_FMT_RGB888,
             .video_timing = {
                 .h_size = EXAMPLE_MIPI_DSI_LCD_H_RES,
                 .v_size = EXAMPLE_MIPI_DSI_LCD_V_RES,

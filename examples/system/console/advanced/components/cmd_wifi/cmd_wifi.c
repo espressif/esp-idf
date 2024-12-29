@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -23,11 +23,6 @@
 #include "esp_netif.h"
 #include "esp_event.h"
 #include "cmd_wifi.h"
-
-/**
- * This component will be supported using esp_wifi_remote
- */
-#if CONFIG_SOC_WIFI_SUPPORTED
 
 #define JOIN_TIMEOUT_MS (10000)
 
@@ -139,5 +134,3 @@ void register_wifi(void)
 
     ESP_ERROR_CHECK( esp_console_cmd_register(&join_cmd) );
 }
-
-#endif // CONFIG_SOC_WIFI_SUPPORTED

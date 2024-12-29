@@ -27,6 +27,43 @@ ESP_SYSTEM_INIT_FN(init_heap, CORE, BIT(0), 100)
     return ESP_OK;
 }
 
+/**
+ * @brief This helper function adds a new heap to list of registered
+ * heaps making sure to keep the heaps sorted by ascending size.
+ *
+ * @param new_heap heap to be inserted in the list of registered
+ * heaps
+ */
+static void sorted_add_to_registered_heaps(heap_t *new_heap)
+{
+    // if list empty, insert head and return
+    if (SLIST_EMPTY(&registered_heaps)) {
+        SLIST_INSERT_HEAD(&registered_heaps, new_heap, next);
+        return;
+    }
+
+    // else, go through the registered heaps and add the new one
+    // so the registered heaps are sorted by increasing heap size.
+    heap_t *cur_heap = NULL;
+    heap_t *prev_heap = NULL;
+    const size_t new_heap_size = new_heap->end - new_heap->start;
+    SLIST_FOREACH(cur_heap, &registered_heaps, next) {
+        const size_t cur_heap_size = cur_heap->end - cur_heap->start;
+        if (cur_heap_size >= new_heap_size) {
+            if (prev_heap != NULL) {
+                SLIST_INSERT_AFTER(prev_heap, new_heap, next);
+            } else {
+                SLIST_INSERT_HEAD(&registered_heaps, new_heap, next);
+            }
+            return;
+        }
+        prev_heap = cur_heap;
+    }
+
+    // new heap size if the biggest so far, insert it at the end
+    SLIST_INSERT_AFTER(prev_heap, new_heap, next);
+}
+
 static void register_heap(heap_t *region)
 {
     size_t heap_size = region->end - region->start;
@@ -154,11 +191,13 @@ void heap_caps_init(void)
         if (heaps_array[i].heap != NULL) {
             multi_heap_set_lock(heaps_array[i].heap, &heaps_array[i].heap_mux);
         }
-        if (i == 0) {
-            SLIST_INSERT_HEAD(&registered_heaps, &heaps_array[0], next);
-        } else {
-            SLIST_INSERT_AFTER(&heaps_array[i-1], &heaps_array[i], next);
-        }
+        /* Since the registered heaps list is always traversed from head
+         * to tail when looking for a suitable heap when allocating memory, it is
+         * best to place smaller heap first. In that way, if several heaps share
+         * the same set of capabilities, the smallest heaps will be used first when
+         * processing small allocation requests, leaving the bigger heaps untouched
+         * until the smaller heaps are full. */
+        sorted_add_to_registered_heaps(&heaps_array[i]);
     }
 }
 

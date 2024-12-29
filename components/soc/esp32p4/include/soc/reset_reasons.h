@@ -48,7 +48,6 @@ typedef enum {
     RESET_REASON_CPU_LOCKUP        = 0x1A, // Triggered when the CPU enters lockup (exception inside the exception handler would cause this)
 } soc_reset_reason_t;
 
-
 #ifdef __cplusplus
 }
 #endif

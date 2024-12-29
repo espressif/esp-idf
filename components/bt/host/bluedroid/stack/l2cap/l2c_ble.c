@@ -902,6 +902,12 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
 
     scan_int = (p_cb->scan_int == BTM_BLE_SCAN_PARAM_UNDEF) ? BTM_BLE_SCAN_FAST_INT : p_cb->scan_int;
     scan_win = (p_cb->scan_win == BTM_BLE_SCAN_PARAM_UNDEF) ? BTM_BLE_SCAN_FAST_WIN : p_cb->scan_win;
+    if (p_dev_rec->conn_params.scan_interval && p_dev_rec->conn_params.scan_interval != BTM_BLE_CONN_PARAM_UNDEF) {
+        scan_int = p_dev_rec->conn_params.scan_interval;
+    }
+    if (p_dev_rec->conn_params.scan_window && p_dev_rec->conn_params.scan_window != BTM_BLE_CONN_PARAM_UNDEF) {
+        scan_win = p_dev_rec->conn_params.scan_window;
+    }
 
     peer_addr_type = p_lcb->ble_addr_type;
     memcpy(peer_addr, p_lcb->remote_bd_addr, BD_ADDR_LEN);
@@ -966,22 +972,24 @@ BOOLEAN l2cble_init_direct_conn (tL2C_LCB *p_lcb)
     }
 
     if (!p_lcb->is_aux) {
-        if (!btsnd_hcic_ble_create_ll_conn (scan_int,/* UINT16 scan_int      */
-                                            scan_win, /* UINT16 scan_win      */
-                                            FALSE,                   /* UINT8 white_list     */
-                                            peer_addr_type,          /* UINT8 addr_type_peer */
-                                            peer_addr,               /* BD_ADDR bda_peer     */
-                                            own_addr_type,         /* UINT8 addr_type_own  */
+        if (!btsnd_hcic_ble_create_ll_conn (scan_int, /* UINT16 scan_int */
+                                            scan_win, /* UINT16 scan_win */
+                                            FALSE, /* UINT8 white_list */
+                                            peer_addr_type, /* UINT8 addr_type_peer */
+                                            peer_addr, /* BD_ADDR bda_peer */
+                                            own_addr_type, /* UINT8 addr_type_own */
                                             (UINT16) ((p_dev_rec->conn_params.min_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ?
-                                                    p_dev_rec->conn_params.min_conn_int : BTM_BLE_CONN_INT_MIN_DEF),  /* UINT16 conn_int_min  */
+                                                    p_dev_rec->conn_params.min_conn_int : BTM_BLE_CONN_INT_MIN_DEF), /* UINT16 conn_int_min */
                                             (UINT16) ((p_dev_rec->conn_params.max_conn_int != BTM_BLE_CONN_PARAM_UNDEF) ?
-                                                    p_dev_rec->conn_params.max_conn_int : BTM_BLE_CONN_INT_MAX_DEF),  /* UINT16 conn_int_max  */
+                                                    p_dev_rec->conn_params.max_conn_int : BTM_BLE_CONN_INT_MAX_DEF), /* UINT16 conn_int_max */
                                             (UINT16) ((p_dev_rec->conn_params.slave_latency != BTM_BLE_CONN_PARAM_UNDEF) ?
-                                                    p_dev_rec->conn_params.slave_latency : BTM_BLE_CONN_SLAVE_LATENCY_DEF), /* UINT16 conn_latency  */
+                                                    p_dev_rec->conn_params.slave_latency : BTM_BLE_CONN_SLAVE_LATENCY_DEF), /* UINT16 conn_latency */
                                             (UINT16) ((p_dev_rec->conn_params.supervision_tout != BTM_BLE_CONN_PARAM_UNDEF) ?
-                                                    p_dev_rec->conn_params.supervision_tout : BTM_BLE_CONN_TIMEOUT_DEF), /* conn_timeout */
-                                            BLE_CE_LEN_MIN,                       /* UINT16 min_len       */
-                                            BLE_CE_LEN_MIN)) {                    /* UINT16 max_len       */
+                                                    p_dev_rec->conn_params.supervision_tout : BTM_BLE_CONN_TIMEOUT_DEF), /* UINT16 conn_timeout */
+                                            (UINT16) ((p_dev_rec->conn_params.min_ce_len != BTM_BLE_CONN_PARAM_UNDEF) ?
+                                                    p_dev_rec->conn_params.min_ce_len : BLE_CE_LEN_MIN), /* UINT16 min_ce_len */
+                                            (UINT16) ((p_dev_rec->conn_params.max_ce_len != BTM_BLE_CONN_PARAM_UNDEF) ?
+                                                    p_dev_rec->conn_params.max_ce_len : BLE_CE_LEN_MIN) /* UINT16 max_ce_len */)) {
             l2cu_release_lcb (p_lcb);
             L2CAP_TRACE_ERROR("initiate direct connection fail, no resources");
             return (FALSE);

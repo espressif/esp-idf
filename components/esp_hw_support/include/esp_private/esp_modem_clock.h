@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,8 +107,14 @@ void modem_clock_select_lp_clock_source(periph_module_t module, modem_clock_lpcl
 
 /**
  * @brief Disable lowpower clock source selection
+ * @param module  modem module
  */
 void modem_clock_deselect_lp_clock_source(periph_module_t module);
+
+/**
+* @brief Disable all modem module's lowpower clock source selection
+ */
+void modem_clock_deselect_all_module_lp_clock_source(void);
 
 /**
  * @brief Reset wifi mac

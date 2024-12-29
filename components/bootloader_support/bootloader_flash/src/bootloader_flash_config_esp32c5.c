@@ -53,7 +53,7 @@ void IRAM_ATTR bootloader_init_mspi_clock(void)
     // Set source mspi pll clock as 80M in bootloader stage.
     // SPLL clock on C5 is 480MHz , and mspi_pll needs 80MHz
     // in this stage, set divider as 6
-    mspi_ll_clock_src_sel(MSPI_CLK_SRC_SPLL);
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_SPLL);
     mspi_ll_fast_set_hs_divider(6);
 }
 
@@ -218,6 +218,9 @@ esp_err_t bootloader_init_spi_flash(void)
 
     bootloader_init_flash_configure();
     bootloader_spi_flash_resume();
+    if ((void*)bootloader_flash_unlock != (void*)bootloader_flash_unlock_default) {
+        ESP_EARLY_LOGD(TAG, "Using overridden bootloader_flash_unlock");
+    }
     bootloader_flash_unlock();
 
 #if CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT

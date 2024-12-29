@@ -2122,8 +2122,12 @@ def process_tool(
 
     if not tool.versions_installed:
         if tool.get_install_type() == IDFTool.INSTALL_ALWAYS:
-            handle_missing_versions(tool, tool_name, install_cmd, prefer_system_hint)
-            tool_found = False
+            if os.getenv('IDF_SKIP_TOOLS_CHECK', '0') == '1':
+                warn(f'Tool {tool_name} is not installed and IDF_SKIP_TOOLS_CHECK is set. '
+                     'This may cause build failures.')
+            else:
+                handle_missing_versions(tool, tool_name, install_cmd, prefer_system_hint)
+                tool_found = False
         # If a tool found, but it is optional and does not have versions installed, use whatever is in PATH.
         return tool_export_paths, tool_export_vars, tool_found
 
@@ -2656,8 +2660,14 @@ def action_install_python_env(args):  # type: ignore
 
     constraint_file = get_constraints(idf_version) if use_constraints else None
 
-    info('Upgrading pip and setuptools...')
-    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools']
+    info('Upgrading pip...')
+    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'pip']
+    if constraint_file:
+        run_args += ['--constraint', constraint_file]
+    subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
+
+    info('Upgrading setuptools...')
+    run_args = [virtualenv_python, '-m', 'pip', 'install', '--upgrade', 'setuptools']
     if constraint_file:
         run_args += ['--constraint', constraint_file]
     subprocess.check_call(run_args, stdout=sys.stdout, stderr=sys.stderr, env=env_copy)
@@ -2835,7 +2845,12 @@ def action_add_version(args: Any) -> None:
     checksum_info: ChecksumFileParser = (ChecksumFileParser(filename_prefix, args.checksum_file)
                                          if args.checksum_file
                                          else ChecksumCalculator(args.artifact_file))  # type: ignore
+    updated_tools = []
     for file_size, file_sha256, file_name in checksum_info:
+        xz_file = file_name.replace('.tar.gz', '.tar.xz')
+        if xz_file in updated_tools:
+            # .tar.xz archives are preferable, but .tar.gz is needed, for example, when using PlatformIO
+            continue
         # Guess which platform this file is for
         try:
             found_platform = Platforms.get_by_filename(file_name)
@@ -2848,6 +2863,7 @@ def action_add_version(args: Any) -> None:
         info(f'    SHA256: {file_sha256}')
         info(f'    URL:    {url}')
         version_obj.add_download(found_platform, url, file_size, file_sha256)
+        updated_tools.append(file_name)
     json_str = dump_tools_json(tools_info)
     if not args.output:
         args.output = os.path.join(g.idf_path, TOOLS_FILE_NEW)  # type: ignore

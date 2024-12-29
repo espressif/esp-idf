@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,7 +127,7 @@ esp_err_t WL_Flash::init()
     WL_RESULT_CHECK(result);
 
     int check_size = WL_STATE_CRC_LEN_V2;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     uint32_t crc2 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)state_copy, check_size);
 
@@ -259,7 +259,7 @@ esp_err_t WL_Flash::recoverPos()
     }
 
     this->state.wl_dummy_sec_pos = position;
-    if (this->state.wl_dummy_sec_pos == this->state.wl_part_max_sec_pos) {
+    if (this->state.wl_dummy_sec_pos == this->state.wl_part_max_sec_pos && this->state.wl_dummy_sec_pos != 0) {
         this->state.wl_dummy_sec_pos--;
     }
     ESP_LOGD(TAG, "%s - this->state.wl_dummy_sec_pos= 0x%08" PRIx32 ", position= 0x%08" PRIx32 ", result= 0x%08" PRIx32 ", wl_part_max_sec_pos= 0x%08" PRIx32 , __func__, (uint32_t)this->state.wl_dummy_sec_pos, (uint32_t)position, (uint32_t)result, (uint32_t)this->state.wl_part_max_sec_pos);
@@ -325,7 +325,7 @@ esp_err_t WL_Flash::updateV1_V2()
     // Check crc for old version and old version
     ESP_LOGV(TAG, "%s start", __func__);
     int check_size = WL_STATE_CRC_LEN_V1;
-    // Chech CRC and recover state
+    // Check CRC and recover state
     uint32_t crc1 = crc32::crc32_le(WL_CFG_CRC_CONST, (uint8_t *)&this->state, check_size);
     wl_state_t sa_copy;
     wl_state_t *state_copy = &sa_copy;
@@ -355,7 +355,7 @@ esp_err_t WL_Flash::updateV1_V2()
             }
         }
         ESP_LOGI(TAG, "%s wl_part_max_sec_pos=%" PRIu32 ", pos=%" PRIu32 ", state.ver=%" PRIu32 ", state2.ver=%" PRIu32, __func__, (uint32_t) this->state.wl_part_max_sec_pos, (uint32_t) pos, (uint32_t) this->state.version, (uint32_t) state_copy->version);
-        if (pos == this->state.wl_part_max_sec_pos) {
+        if (pos == this->state.wl_part_max_sec_pos && pos != 0) {
             pos--;
         }
         WL_RESULT_CHECK(result);

@@ -8,9 +8,17 @@ OTA Process Overview
 
 The OTA update mechanism allows a device to update itself based on data received while the normal firmware is running (for example, over Wi-Fi, Bluetooth or Ethernet).
 
-OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition.
+The following modes support OTA updates for certain partitions:
 
-The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
+- **Safe update mode**. The update process for certain partitions is designed to be resilient, ensuring that even if the power is cut off during the update, the chip will remain operational and capable of booting the current application. The following partitions support this mode:
+
+  - Application. OTA requires configuring the :doc:`../../api-guides/partition-tables` of the device with at least two OTA app slot partitions (i.e., ``ota_0`` and ``ota_1``) and an OTA Data Partition. The OTA operation functions write a new app firmware image to whichever OTA app slot that is currently not selected for booting. Once the image is verified, the OTA Data partition is updated to specify that this image should be used for the next boot.
+
+- **Unsafe update mode**. The update process is vulnerable, meaning that a power interruption during the update can cause issues that prevent the current application from loading, potentially leading to an unrecoverable state. The temporary partition receives the new image, and once it is fully downloaded, the image is copied to the final destination partition. If an interruption occurs during this final copying process, it can lead to issues. The following partitions support this mode:
+
+  - Bootloader.
+  - Partition table.
+  - Other data partitions like NVS, FAT, etc.
 
 .. _ota_data_partition:
 

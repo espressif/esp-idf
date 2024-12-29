@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -351,6 +351,31 @@ static inline void cache_ll_invalidate_addr(uint32_t cache_level, cache_type_t t
 }
 
 /**
+ * @brief Invalidate all
+ *
+ * @param cache_level       level of the cache
+ * @param type              see `cache_type_t`
+ * @param cache_id          id of the cache in this type and level
+ */
+__attribute__((always_inline))
+static inline void cache_ll_invalidate_all(uint32_t cache_level, cache_type_t type, uint32_t cache_id)
+{
+    switch (type)
+    {
+    case CACHE_TYPE_DATA:
+        Cache_Invalidate_DCache_All();
+        break;
+    case CACHE_TYPE_INSTRUCTION:
+        Cache_Invalidate_ICache_All();
+        break;
+    default: //CACHE_TYPE_ALL
+        Cache_Invalidate_ICache_All();
+        Cache_Invalidate_DCache_All();
+        break;
+    }
+}
+
+/**
  * @brief Writeback cache supported addr
  *
  * Writeback a cache item
@@ -549,6 +574,26 @@ static inline bool cache_ll_vaddr_to_cache_level_id(uint32_t vaddr_start, uint32
     }
 
     return valid;
+}
+
+/**
+ * @brief Get cache debug status 0
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status0(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS0_REG);
+}
+
+/**
+ * @brief Get cache debug status 1
+ *
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_dbg_status1(void)
+{
+    return REG_READ(EXTMEM_CACHE_DBG_STATUS1_REG);
 }
 
 #ifdef __cplusplus

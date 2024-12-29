@@ -305,6 +305,31 @@ TEST_CASE("SDIO_Slave: test to host", "[sdio]")
     test_to_host();
 }
 
+#if SOC_PAU_SUPPORTED
+#include "esp_private/sleep_sys_periph.h"
+#include "esp_private/sleep_retention.h"
+
+TEST_CASE("SDIO_Slave: test sleep retention", "[sdio_retention]")
+{
+    TEST_ASSERT_EQUAL_INT32(true, peripheral_domain_pd_allowed());
+    sleep_retention_dump_modules(stdout);
+
+    s_slave_init(SDIO_SLAVE_SEND_STREAM);
+    TEST_ESP_OK(sdio_slave_start());
+    ESP_LOGI(TAG, "slave ready");
+
+    TEST_ASSERT_EQUAL_INT32(false, peripheral_domain_pd_allowed());
+    sleep_retention_dump_modules(stdout);
+
+    wait_for_finish(&s_test_slv_ctx);
+
+    sdio_slave_stop();
+    sdio_slave_deinit();
+
+    TEST_ASSERT_EQUAL_INT32(true, peripheral_domain_pd_allowed());
+}
+#endif
+
 TEST_CASE("SDIO_Slave: test to host (Performance)", "[sdio_speed]")
 {
     test_to_host();

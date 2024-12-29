@@ -10,9 +10,11 @@
 #include "platform/exit_code.h"
 #include "radio_spinel.hpp"
 #include "esp_radio_spinel.h"
+#include "esp_radio_spinel_platform.h"
 #include "esp_radio_spinel_adapter.hpp"
 #include "esp_radio_spinel_uart_interface.hpp"
 #include "spinel_driver.hpp"
+#include "openthread/link.h"
 
 #define SPINEL_VENDOR_PROPERTY_BIT_PENDINGMODE BIT(0)
 #define SPINEL_VENDOR_PROPERTY_BIT_COORDINATOR BIT(1)
@@ -38,6 +40,8 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_TRANSMIT_TIMING   |
                                    OT_RADIO_CAPS_ACK_TIMEOUT       |
                                    OT_RADIO_CAPS_SLEEP_TO_TX);
+
+static esp_radio_spinel_compatibility_error_callback s_radio_spinel_compatibility_error_callback = NULL;
 
 static esp_radio_spinel_idx_t get_index_from_instance(otInstance *instance)
 {
@@ -65,6 +69,22 @@ static void esp_radio_spinel_restore_vendor_properities(void *context)
             ESP_LOGE(ESP_SPINEL_LOG_TAG, "Fail to restore coordinator: %d", idx);
         }
     }
+}
+
+static void radio_spinel_compatibility_error_callback(void *context)
+{
+    OT_UNUSED_VARIABLE(context);
+    if (s_radio_spinel_compatibility_error_callback) {
+        s_radio_spinel_compatibility_error_callback();
+    } else {
+        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None callback to handle compatibility error of openthread spinel");
+        assert(false);
+    }
+}
+
+void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
+{
+    s_radio_spinel_compatibility_error_callback = callback;
 }
 
 void ReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
@@ -242,12 +262,13 @@ esp_err_t esp_radio_spinel_uart_interface_enable(const esp_radio_spinel_uart_con
 void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
 {
     spinel_iid_t iidList[ot::Spinel::kSpinelHeaderMaxNumIid];
+    otInstance *instance = get_instance_from_index(idx);
 
     // Multipan is not currently supported
     iidList[0] = 0;
     s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
-    s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps);
-    otInstance *instance = get_instance_from_index(idx);
+    s_radio[idx].SetCompatibilityErrorCallback(radio_spinel_compatibility_error_callback, instance);
+    s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps, false);
     s_radio[idx].SetVendorRestorePropertiesCallback(esp_radio_spinel_restore_vendor_properities, instance);
 }
 
@@ -294,7 +315,7 @@ esp_err_t esp_radio_spinel_transmit(uint8_t *frame, uint8_t channel, bool cca, e
     s_transmit_frame.mLength = frame[0];
     s_transmit_frame.mPsdu = frame + 1;
     s_transmit_frame.mInfo.mTxInfo.mCsmaCaEnabled = cca;
-    s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_MAC_MAX_CSMA_BACKOFFS_DIRECT;
+    s_transmit_frame.mInfo.mTxInfo.mMaxCsmaBackoffs = CONFIG_OPENTHREAD_SPINEL_MAC_MAX_CSMA_BACKOFFS_DIRECT;
     s_transmit_frame.mChannel = channel;
     s_transmit_frame.mInfo.mTxInfo.mRxChannelAfterTxDone = channel;
     return (s_radio[idx].Transmit(s_transmit_frame) == OT_ERROR_NONE) ? ESP_OK : ESP_FAIL;
@@ -403,6 +424,19 @@ esp_err_t esp_radio_spinel_set_rcp_ready(esp_radio_spinel_idx_t idx)
 {
     s_spinel_driver[idx].SetCoprocessorReady();
     return ESP_OK;
+}
+
+// TZ-1261
+uint32_t otLinkGetFrameCounter(otInstance *aInstance)
+{
+    esp_radio_spinel_idx_t idx = get_index_from_instance(aInstance);
+    return esp_radio_spinel_extern_get_frame_counter(idx);
+}
+
+__attribute__((weak)) uint32_t esp_radio_spinel_extern_get_frame_counter(esp_radio_spinel_idx_t idx)
+{
+    ESP_LOGW(ESP_SPINEL_LOG_TAG, "None function to get frame counter");
+    return 0;
 }
 
 namespace ot {

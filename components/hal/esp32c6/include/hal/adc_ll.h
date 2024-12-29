@@ -128,7 +128,7 @@ static inline void adc_ll_digi_set_fsm_time(uint32_t rst_wait, uint32_t start_wa
  */
 static inline void adc_ll_set_sample_cycle(uint32_t sample_cycle)
 {
-    /* Peripheral reg i2c has powered up in rtc_init, write directly */
+    /* Analog i2c master clock needs to be enabled for regi2c operations (done inside REGI2C_WRITE_MASK) */
     REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_SAMPLE_CYCLE_ADDR, sample_cycle);
 }
 
@@ -565,7 +565,6 @@ static inline void adc_ll_enable_bus_clock(bool enable)
     PCR.saradc_conf.saradc_reg_clk_en = enable;
 }
 
-#if SOC_RCC_IS_INDEPENDENT
 /**
  * @brief Enable the ADC function clock
  * @param enable true to enable, false to disable
@@ -574,7 +573,6 @@ static inline void adc_ll_enable_func_clock(bool enable)
 {
     PCR.saradc_clkm_conf.saradc_clkm_en = enable;
 }
-#endif
 
 /**
  * @brief Reset ADC module

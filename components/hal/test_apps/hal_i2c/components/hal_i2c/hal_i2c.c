@@ -221,7 +221,7 @@ esp_err_t hal_i2c_write(i2c_port_t port_num, uint16_t addr, const uint8_t *txdat
         i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_WRITE, ACK_VALUE, 0, NOT_CHECK_ACK_VALUE, tx_len_tmp);
         i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_END, ACK_VALUE, 0, NOT_CHECK_ACK_VALUE, 0);
         i2c_ll_update(dev);
-        i2c_ll_master_trans_start(dev);
+        i2c_ll_start_trans(dev);
         ESP_RETURN_ON_ERROR(i2c_wait_done(port_num, cmd_idx - 1, timeout_ms), TAG, "wait done failed");
         cmd_idx = 0;
         txdata += tx_len_tmp;
@@ -230,7 +230,7 @@ esp_err_t hal_i2c_write(i2c_port_t port_num, uint16_t addr, const uint8_t *txdat
 
     i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_STOP, ACK_VALUE, 0, NOT_CHECK_ACK_VALUE, 0);
     i2c_ll_update(dev);
-    i2c_ll_master_trans_start(dev);
+    i2c_ll_start_trans(dev);
     ESP_RETURN_ON_ERROR(i2c_wait_done(port_num, cmd_idx - 1, timeout_ms), TAG, "wait done failed");
     return ESP_OK;
 }
@@ -270,7 +270,7 @@ esp_err_t hal_i2c_read(i2c_port_t port_num, uint16_t addr, uint8_t *rxdata, uint
         }
 
         i2c_ll_update(dev);
-        i2c_ll_master_trans_start(dev);
+        i2c_ll_start_trans(dev);
         ESP_RETURN_ON_ERROR(i2c_wait_done(port_num, cmd_idx - 1, timeout_ms), TAG, "wait done failed");
         cmd_idx = 0;
         i2c_ll_read_rxfifo(dev, &rxdata[data_idx], 1);
@@ -309,7 +309,7 @@ esp_err_t hal_i2c_write_read(i2c_port_t port_num, uint16_t addr, const uint8_t *
         i2c_format_cmd(port_num, cmd_idx++, I2C_LL_CMD_END, ACK_VALUE, 0, NOT_CHECK_ACK_VALUE, 0);
         /* Initiate I2C transfer */
         i2c_ll_update(dev);
-        i2c_ll_master_trans_start(dev);
+        i2c_ll_start_trans(dev);
         ESP_RETURN_ON_ERROR(i2c_wait_done(port_num, cmd_idx - 1, timeout_ms), TAG, "wait done failed");
         cmd_idx = 0;
         txdata += tx_len_tmp;
@@ -341,7 +341,7 @@ esp_err_t hal_i2c_write_read(i2c_port_t port_num, uint16_t addr, const uint8_t *
         }
 
         i2c_ll_update(dev);
-        i2c_ll_master_trans_start(dev);
+        i2c_ll_start_trans(dev);
         ESP_RETURN_ON_ERROR(i2c_wait_done(port_num, cmd_idx - 1, timeout_ms), TAG, "wait done failed");
         i2c_ll_read_rxfifo(dev, &rxdata[data_idx], tmp_rx_length);
         cmd_idx = 0;

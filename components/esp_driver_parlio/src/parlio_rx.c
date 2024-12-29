@@ -138,7 +138,9 @@ static IRAM_ATTR size_t s_parlio_mount_transaction_buffer(parlio_rx_unit_handle_
     /* Update the current transaction to the next one, and declare the delimiter is under using of the rx unit */
     memcpy(&rx_unit->curr_trans, trans, sizeof(parlio_rx_transaction_t));
     portENTER_CRITICAL_SAFE(&s_rx_spinlock);
-    trans->delimiter->under_using = true;
+    if (trans->delimiter) {
+        trans->delimiter->under_using = true;
+    }
     portEXIT_CRITICAL_SAFE(&s_rx_spinlock);
 
     uint32_t desc_num = trans->size / PARLIO_MAX_ALIGNED_DMA_BUF_SIZE;

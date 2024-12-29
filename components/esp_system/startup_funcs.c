@@ -15,6 +15,9 @@
 #include "esp_log.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
+#if CONFIG_NEWLIB_ENABLED
+#include "esp_newlib.h"
+#endif
 #include "esp_newlib.h"
 #include "esp_xt_wdt.h"
 #include "esp_cpu.h"
@@ -63,6 +66,12 @@ ESP_SYSTEM_INIT_FN(init_show_cpu_freq, CORE, BIT(0), 10)
     return ESP_OK;
 }
 
+/* NOTE: When ESP-TEE is enabled, the Brownout Detection module is part
+ * of the TEE and is initialized in the TEE startup routine itself.
+ * It is protected from all REE accesses through memory protection mechanisms,
+ * as it is a critical module for device functioning.
+ */
+#if !CONFIG_SECURE_ENABLE_TEE
 ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
@@ -76,10 +85,11 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 #endif // CONFIG_ESP_BROWNOUT_DET
     return ESP_OK;
 }
+#endif
 
 ESP_SYSTEM_INIT_FN(init_newlib_time, CORE, BIT(0), 105)
 {
-    esp_newlib_time_init();
+    esp_libc_time_init();
     return ESP_OK;
 }
 

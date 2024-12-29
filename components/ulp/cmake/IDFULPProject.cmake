@@ -180,6 +180,11 @@ endfunction()
 
 function(ulp_add_build_binary_targets ulp_app_name)
 
+    if(ADD_PICOLIBC_SPECS)
+        target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:C,GNU>:-specs=picolibc.specs>)
+        target_compile_options(${ulp_app_name} PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,GNU>:-specs=picolibcpp.specs>)
+    endif()
+
     if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
         set(ULP_BASE_ADDR "0x0")
     else()

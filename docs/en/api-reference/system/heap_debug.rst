@@ -30,7 +30,7 @@ To obtain information about the state of the heap, call the following functions:
 Heap Allocation and Free Function Hooks
 ---------------------------------------
 
-Heap allocation and free detection hooks allow you to be notified of every successful allocation and free operation:
+Users can use allocation and free detection hooks to be notified of every successful allocation and free operation:
 
 - Providing a definition of :cpp:func:`esp_heap_trace_alloc_hook` allows you to be notified of every successful memory allocation operation
 - Providing a definition of :cpp:func:`esp_heap_trace_free_hook` allows you to be notified of every successful memory-free operations
@@ -56,31 +56,14 @@ The example below shows how to define the allocation and free function hooks:
 
   void app_main()
   {
-      ...
+    ...
   }
 
-.. _heap-corruption:
 
-Heap Corruption Detection
--------------------------
-
-Heap corruption detection allows you to detect various types of heap memory errors:
-
-- Out-of-bound writes & buffer overflows
-- Writes to freed memory
-- Reads from freed or uninitialized memory
-
-Assertions
-^^^^^^^^^^
-
-The heap implementation (:component_file:`heap/multi_heap.c`, etc.) includes numerous assertions that will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in the project configuration via the :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` option.
-
-If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address printed is the address of the heap structure that has corrupt content.
-
-It is also possible to manually check heap integrity by calling :cpp:func:`heap_caps_check_integrity_all` or related functions. This function checks all of the requested heap memory for integrity and can be used even if assertions are disabled. If the integrity checks detects an error, it will print the error along with the address(es) of corrupt heap structures.
+.. _heap-allocation-failed:
 
 Memory Allocation Failed Hook
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-----------------------------
 
 Users can use :cpp:func:`heap_caps_register_failed_alloc_callback` to register a callback that is invoked every time an allocation operation fails.
 
@@ -106,6 +89,34 @@ The example below shows how to register an allocation failure callback:
       ...
   }
 
+
+.. _heap-corruption:
+
+Heap Corruption Detection
+-------------------------
+
+Heap corruption detection allows you to detect various types of heap memory errors:
+
+- Out-of-bound writes & buffer overflows
+- Writes to freed memory
+- Reads from freed or uninitialized memory
+
+Three levels of corruption detection are available. Each one providing a finer level of detection than the previous:
+
+.. list::
+    - `Basic (No Poisoning)`_
+    - `Light Impact`_
+    - `Comprehensive`_
+
+Assertions
+^^^^^^^^^^
+
+The heap implementation (:component_file:`heap/multi_heap.c`, etc.) includes numerous assertions that will fail if the heap memory is corrupted. To detect heap corruption most effectively, ensure that assertions are enabled in the project configuration via the :ref:`CONFIG_COMPILER_OPTIMIZATION_ASSERTION_LEVEL` option.
+
+If a heap integrity assertion fails, a line will be printed like ``CORRUPT HEAP: multi_heap.c:225 detected at 0x3ffbb71c``. The memory address printed is the address of the heap structure that has corrupt content.
+
+It is also possible to manually check heap integrity by calling :cpp:func:`heap_caps_check_integrity_all` or related functions. This function checks all of the requested heap memory for integrity and can be used even if assertions are disabled. If the integrity checks detects an error, it will print the error along with the address(es) of corrupt heap structures.
+
 Finding Heap Corruption
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -126,6 +137,7 @@ Temporarily increasing the heap corruption detection level can give more detaile
 
 In the project configuration menu, under ``Component config``, there is a menu ``Heap memory debugging``. The option :ref:`CONFIG_HEAP_CORRUPTION_DETECTION` can be set to one of the following three levels:
 
+
 Basic (No Poisoning)
 ++++++++++++++++++++
 
@@ -135,31 +147,35 @@ If assertions are enabled, an assertion will also trigger if a double-free occur
 
 Calling :cpp:func:`heap_caps_check_integrity` in Basic mode checks the integrity of all heap structures, and print errors if any appear to be corrupted.
 
+
 Light Impact
 ++++++++++++
 
-At this level, heap memory is additionally "poisoned" with head and tail "canary bytes" before and after each block that is allocated. If an application writes outside the bounds of allocated buffers, the canary bytes will be corrupted, and the integrity check will fail.
+This level incorporates the "Basic" detection features. Additionally, each block of memory allocated is "poisoned" with head and tail "canary bytes". If an application writes over the "canary bytes", they will be seen as corrupted and integrity checks will fail.
 
 The head canary word is ``0xABBA1234`` (``3412BAAB`` in byte order), and the tail canary word is ``0xBAAD5678`` (``7856ADBA`` in byte order).
 
 With basic heap corruption checks, most out-of-bound writes can be detected and the number of overrun bytes before a failure is detected depends on the properties of the heap. However, the Light Impact mode is more precise as even a single-byte overrun can be detected.
 
-Enabling light-impact checking increases the memory usage. Each individual allocation uses 9 to 12 additional bytes of memory depending on alignment.
+Enabling light-impact checking increases the memory usage since each individual allocation uses additional bytes of metadata.
 
 Each time :cpp:func:`heap_caps_free` is called in Light Impact mode, the head and tail canary bytes of the buffer being freed are checked against the expected values.
 
-When :cpp:func:`heap_caps_check_integrity` is called, all allocated blocks of heap memory have their canary bytes checked against the expected values.
+When :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all` is called, all allocated blocks of heap memory have their canary bytes checked against the expected values.
 
 In both cases, the functions involve checking that the first 4 bytes of an allocated block (before the buffer is returned to the user) should be the word ``0xABBA1234``, and the last 4 bytes of the allocated block (after the buffer is returned to the user) should be the word ``0xBAAD5678``.
 
 Different values usually indicate buffer underrun or overrun. Overrun indicates that when writing to memory, the data written exceeds the size of the allocated memory, resulting in writing to an unallocated memory area; underrun indicates that when reading memory, the data read exceeds the allocated memory and reads data from an unallocated memory area.
 
+
 Comprehensive
 +++++++++++++
 
-This level incorporates the "light impact" detection features plus additional checks for uninitialized-access and use-after-free bugs. In this mode, all freshly allocated memory is filled with the pattern ``0xCE``, and all freed memory is filled with the pattern ``0xFE``.
+This level incorporates the "Light Impact" detection features. Additionally, it checks for uninitialized-access and use-after-free bugs. In this mode, all freshly allocated memory is filled with the pattern ``0xCE``, and all freed memory is filled with the pattern ``0xFE``.
 
-Enabling Comprehensive mode has a substantial impact on runtime performance, as all memory needs to be set to the allocation patterns each time a :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_free` completes, and the memory also needs to be checked each time. However, this mode allows easier detection of memory corruption bugs which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
+Enabling Comprehensive mode has a substantial impact on runtime performance, as all memory needs to be set to the allocation patterns each time a :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_free` completes, and the memory also needs to be checked each time. However, this mode allows easier detection of memory corruptions which are much more subtle to find otherwise. It is recommended to only enable this mode when debugging, not in production.
+
+The checks for allocated and free patterns (``0xCE`` and ``0xFE``, respectively) are also done when calling :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all`.
 
 Crashes in Comprehensive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -173,10 +189,11 @@ If a call to :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_realloc` cause
 Manual Heap Checks in Comprehensive Mode
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Calls to :cpp:func:`heap_caps_check_integrity` may print errors relating to ``0xFEFEFEFE``, ``0xABBA1234``, or ``0xBAAD5678``. In each case the checker is expected to find a given pattern, and will error out if not found:
+Calls to :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_integrity_all` may print errors relating to ``0xFEFEFEFE``, ``0xABBA1234``, or ``0xBAAD5678``. In each case the checker is expected to find a given pattern, and will error out if not found:
 
 - For free heap blocks, the checker expects to find all bytes set to ``0xFE``. Any other values indicate a use-after-free bug where free memory has been incorrectly overwritten.
 - For allocated heap blocks, the behavior is the same as for the Light Impact mode. The canary bytes ``0xABBA1234`` and ``0xBAAD5678`` are checked at the head and tail of each allocated buffer, and any variation indicates a buffer overrun or underrun.
+
 
 .. _heap-task-tracking:
 
@@ -186,6 +203,7 @@ Heap Task Tracking
 Heap Task Tracking can be used to get per-task info for heap memory allocation. The application has to specify the heap capabilities for which the heap allocation is to be tracked.
 
 Example code is provided in :example:`system/heap_task_tracking`.
+
 
 .. _heap-tracing:
 
@@ -209,7 +227,7 @@ If you suspect a memory leak, the first step is to figure out which part of the 
 
 
 Standalone Mode
-+++++++++++++++
+^^^^^^^^^^^^^^^
 
 Once you have identified the code which you think is leaking:
 
@@ -253,39 +271,107 @@ The output from the heap trace has a similar format to the following example:
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
-    .. code-block:: none
+  .. code-block:: none
 
-        2 allocations trace (100 entry buffer)
-        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller 0x400d276d:0x400d27c1
-        0x400d276d: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:27
+    ====== Heap Trace: 8 records (8 capacity) ======
+        6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
 
-        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
 
-        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller 0x400d2776:0x400d27c1
-        0x400d2776: leak_some_memory at /path/to/idf/examples/get-started/blink/main/./blink.c:29
+        9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
 
-        0x400d27c1: blink_task at /path/to/idf/examples/get-started/blink/main/./blink.c:52
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
 
-        40 bytes 'leaked' in trace (2 allocations)
-        total allocations 2 total frees 0
+        12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    freed by 0x403839e4:0x42008096
+    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+        6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
+    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+    ====== Heap Trace Summary ======
+    Mode: Heap Trace All
+    6 bytes alive in trace (1/8 allocations)
+    records: 8 (8 capacity, 8 high water mark)
+    total allocations: 9
+    total frees: 8
+    ================================
 
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
-    .. code-block:: none
+  .. code-block:: none
 
-        2 allocations trace (100 entry buffer)
-        32 bytes (@ 0x3ffaf214) allocated CPU 0 ccount 0x2e9b7384 caller
-        8 bytes (@ 0x3ffaf804) allocated CPU 0 ccount 0x2e9b79c0 caller
-        40 bytes 'leaked' in trace (2 allocations)
-        total allocations 2 total frees 0
+    ====== Heap Trace: 8 records (8 capacity) ======
+        3 bytes (@ 0x3fcb26f8, Internal) allocated CPU 0 ccount 0x1e7af728 freed
+        6 bytes (@ 0x3fcb4ff0, Internal) allocated CPU 0 ccount 0x1e7afc38 freed
+        9 bytes (@ 0x3fcb5000, Internal) allocated CPU 0 ccount 0x1e7b01d4 freed
+        12 bytes (@ 0x3fcb5010, Internal) allocated CPU 0 ccount 0x1e7b0778 freed
+        15 bytes (@ 0x3fcb5020, Internal) allocated CPU 0 ccount 0x1e7b0d18 freed
+        18 bytes (@ 0x3fcb5034, Internal) allocated CPU 0 ccount 0x1e7b12b8 freed
+        21 bytes (@ 0x3fcb504c, Internal) allocated CPU 0 ccount 0x1e7b1858 freed
+        24 bytes (@ 0x3fcb5068, Internal) allocated CPU 0 ccount 0x1e7b1dfc freed
+    ====== Heap Trace Summary ======
+    Mode: Heap Trace All
+    0 bytes alive in trace (0/8 allocations)
+    records: 8 (8 capacity, 8 high water mark)
+    total allocations: 8
+    total frees: 8
+    ================================
 
 .. note::
 
     The above example output uses :doc:`IDF Monitor </api-guides/tools/idf-monitor>` to automatically decode PC addresses to their source files and line numbers.
 
-The first line indicates how many allocation entries are in the buffer, compared to its total size.
+    ``(NB: Internal Buffer has overflowed, so trace data is incomplete.)`` will be logged if the list of records overflow. If you see this log, consider either shortening the tracing period or increasing the number of records in the trace buffer.
 
-In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation that has not already been freed, a line is printed with:
+    ``(NB: New entries were traced while dumping, so trace dump may have duplicate entries.)`` will be logged in the summary if new entries are traced while calling :cpp:func:`heap_trace_dump` or :cpp:func:`heap_trace_dump_caps`.
+
+In ``HEAP_TRACE_LEAKS`` or ``HEAP_TRACE_ALL`` mode, for each traced memory allocation that has not already been freed, a line is printed with:
 
 .. list::
 
@@ -294,25 +380,51 @@ In ``HEAP_TRACE_LEAKS`` mode, for each traced memory allocation that has not alr
     - ``Internal`` or ``PSRAM`` is the general location of the allocated memory.
     - ``CPU x`` is the CPU (0 or 1) running when the allocation was made.
     - ``ccount 0x...`` is the CCOUNT (CPU cycle count) register value the allocation was made. The value is different for CPU 0 vs CPU 1.
-    :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` gives the call stack of the call to :cpp:func:`heap_caps_malloc` or :cpp:func:`heap_caps_free` , as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
+    :CONFIG_IDF_TARGET_ARCH_XTENSA: - ``caller 0x...`` gives the call stack of the call to :cpp:func:`heap_caps_malloc`, as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
 
-.. only:: not CONFIG_IDF_TARGET_ARCH_RISCV
+In ``HEAP_TRACE_LEAKS`` mode, when memory is freed, the associated record is dropped.
+
+In ``HEAP_TRACE_ALL``:
+
+.. list::
+
+  :CONFIG_IDF_TARGET_ARCH_RISCV: - when memory is freed, the associated record is kept in the list and its field ``freed`` is set to true.
+  :CONFIG_IDF_TARGET_ARCH_XTENSA: - when memory is freed, the associated record field ``freed by`` is filled with the call stack of the call to :cpp:func:`heap_caps_free`, as a list of PC addresses. These can be decoded to source files and line numbers, as shown above.
+  - After the maximum number of records is reached, old records are dropped and replaced with new records.
+
+.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 
-A warning will be printed if the trace buffer was not large enough to hold all the allocations happened. If you see this warning, consider either shortening the tracing period or increasing the number of records in the trace buffer.
+Using hashmap for increased performance
++++++++++++++++++++++++++++++++++++++++
 
+By default, the heap tracing uses a statically allocated doubly-linked list to store the trace records. This has the disadvantage of causing runtime performance issues as the list gets fuller since the more items are in the list, the more time consuming it is to find a given item. This problem makes the use of the doubly linked list particularly inefficient if the user wishes to store a very large amount of records (to the point where the feature is simply no longer usable as the time it takes to retrieve an item in the list prevents the user application from executing properly).
+
+For this reason, the option to use a hashmap mechanism to store records is available by enabling ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP` in the project configuration menu, allowing users to track significant amounts of records without suffering from drastic performance loss.
+
+Each hashmap entry is a singly linked list of records sharing the same hash ID.
+
+Each record hash ID is calculated based on the pointer to the memory they track. The hash function used is based on the Fowler-Noll-Vo hash function modified to ensure an even spread of all records in the range [0, hashmap size[ where hashmap size can be defined by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` in the project configuration menu.
+
+.. note::
+
+  .. list::
+
+    - The option :ref:`CONFIG_HEAP_TRACE_HASH_MAP_SIZE` defines the number of entries in the hashmap. The total number of records that can be stored is still defined by the user when calling :cpp:func:`heap_trace_init_standalone`. If ``N`` is the maximum number of records and ``H`` the number of entries in the hashmap, Then each entry will contain at max ``N / H`` records.
+    - The hashmap complements the doubly-linked list and does not replace it. This means that the hashmap usage can create a significant memory overhead.
+    :SOC_SPIRAM_SUPPORTED: - The memory used to store the hashmap is dynamically allocated (in internal memory by default) but by setting ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACE_HASH_MAP_IN_EXT_RAM`, the user can force the hashmap in external memory (this option is available under the condition that :ref:`CONFIG_SPIRAM` is enabled).
 
 Host-Based Mode
-+++++++++++++++
+^^^^^^^^^^^^^^^
 
 Once you have identified the code which you think is leaking:
 
-- In the project configuration menu, navigate to ``Component settings`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
-- In the project configuration menu, navigate to ``Component settings`` > ``Application Level Tracing`` > :ref:`CONFIG_APPTRACE_DESTINATION1` and select ``Trace memory``.
-- In the project configuration menu, navigate to ``Component settings`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_APPTRACE_SV_ENABLE`.
+- In the project configuration menu, navigate to ``Component config`` > ``Heap Memory Debugging`` > :ref:`CONFIG_HEAP_TRACING_DEST` and select ``Host-Based``.
+- In the project configuration menu, navigate to ``Component config`` > ``Application Level Tracing`` > :ref:`CONFIG_APPTRACE_DESTINATION1` and select ``Trace memory``.
+- In the project configuration menu, navigate to ``Component config`` > ``Application Level Tracing`` > ``FreeRTOS SystemView Tracing`` and enable :ref:`CONFIG_APPTRACE_SV_ENABLE`.
 - Call the function :cpp:func:`heap_trace_init_tohost` early in the program, to initialize the JTAG heap tracing module.
 - Call the function :cpp:func:`heap_trace_start` to begin recording all memory allocation and free calls in the system. Call this immediately before the piece of code which you suspect is leaking memory.
 

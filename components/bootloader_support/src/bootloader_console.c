@@ -74,6 +74,12 @@ void bootloader_console_init(void)
         // Enable the peripheral
         uart_ll_enable_bus_clock(uart_num, true);
         uart_ll_reset_register(uart_num);
+        // Set clock source
+#if SOC_UART_SUPPORT_XTAL_CLK
+        uart_ll_set_sclk(UART_LL_GET_HW(uart_num), (soc_module_clk_t)UART_SCLK_XTAL);
+#else
+        uart_ll_set_sclk(UART_LL_GET_HW(uart_num), (soc_module_clk_t)UART_SCLK_APB);
+#endif
         // Reset TX and RX FIFOs
         uart_ll_txfifo_rst(UART_LL_GET_HW(uart_num));
         uart_ll_rxfifo_rst(UART_LL_GET_HW(uart_num));

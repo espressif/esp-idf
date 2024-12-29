@@ -916,6 +916,81 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
     return EINVAL;
 }
 
+int pthread_getschedparam(pthread_t thread, int *policy, struct sched_param *param)
+{
+    int ret;
+    if (!policy || !param) {
+        return EINVAL;
+    }
+
+    _lock_acquire(&s_threads_lock);
+    TaskHandle_t handle = pthread_find_handle(thread);
+    if (!handle) {
+        ret = ESRCH;
+    } else {
+        *policy = SCHED_OTHER;
+        param->sched_priority = uxTaskPriorityGet(handle);
+        ret = 0;
+    }
+    _lock_release(&s_threads_lock);
+
+    return ret;
+}
+
+static int set_prio(pthread_t thread, int policy, int prio)
+{
+    int ret;
+    if (prio < sched_get_priority_min(policy) || sched_get_priority_max(policy) < prio) {
+        return EINVAL;
+    }
+
+    _lock_acquire(&s_threads_lock);
+    TaskHandle_t handle = pthread_find_handle(thread);
+    if (!handle) {
+        ret = ESRCH;
+    } else {
+        vTaskPrioritySet(handle, prio);
+        ret = 0;
+    }
+    _lock_release(&s_threads_lock);
+
+    return ret;
+}
+
+int pthread_setschedparam(pthread_t thread, int policy, const struct sched_param *param)
+{
+    // the policy does not change anything for the FreeRTOS kernel, ignore it.
+    int ret;
+    if (!param) {
+        return EINVAL;
+    }
+
+    ret = set_prio(thread, policy, param->sched_priority);
+
+    return ret;
+}
+
+int pthread_setschedprio(pthread_t thread, int prio)
+{
+    // the policy does not change anything for the FreeRTOS kernel, ignore it.
+    int policy = SCHED_OTHER;
+    return set_prio(thread, policy, prio);
+}
+
+int sched_get_priority_min(int policy)
+{
+    // the policy does not change anything for the FreeRTOS kernel, ignore it.
+    (void) policy;
+    return tskIDLE_PRIORITY;
+}
+
+int sched_get_priority_max(int policy)
+{
+    // the policy does not change anything for the FreeRTOS kernel, ignore it.
+    (void) policy;
+    return configMAX_PRIORITIES - 1;
+}
+
 /* Hook function to force linking this file */
 void pthread_include_pthread_impl(void)
 {

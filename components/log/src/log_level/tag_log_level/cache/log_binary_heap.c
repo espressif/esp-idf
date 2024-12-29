@@ -56,12 +56,12 @@
 
 ESP_STATIC_ASSERT(((CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_SIZE & (CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_SIZE + 1)) == 0), "Number of tags to be cached must be 2**n - 1, n >= 2. [1, 3, 7, 15, 31, 63, 127, 255, ...]");
 #define TAG_CACHE_SIZE (CONFIG_LOG_TAG_LEVEL_IMPL_CACHE_SIZE)
-#define MAX_GENERATION ((1 << 29) - 1)
+#define MAX_GENERATION ((1 << (32 - ESP_LOG_LEVEL_LEN)) - 1)
 
 typedef struct {
     const char *tag;
-    uint32_t level : 3;
-    uint32_t generation : 29; // this size should be the same in MAX_GENERATION
+    uint32_t level : ESP_LOG_LEVEL_LEN;
+    uint32_t generation : (32 - ESP_LOG_LEVEL_LEN); // this size should be the same in MAX_GENERATION
 } cached_tag_entry_t;
 
 static cached_tag_entry_t s_log_cache[TAG_CACHE_SIZE];

@@ -21,7 +21,6 @@
 #define ANA_I2C_SAR_FORCE_PD BIT(18)
 #define ANA_I2C_BBPLL_M      BIT(17) /* Clear to enable BBPLL */
 
-
 // I2C_MST_ANA_CONF2_REG
 #define ANA_CONFIG2_M    BIT(18)
 

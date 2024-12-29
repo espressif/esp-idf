@@ -10,7 +10,6 @@
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_err.h"
-#include "sdkconfig.h"
 #include "soc/spi_periph.h"
 #include "soc/lldesc.h"
 #include "soc/soc_caps.h"
@@ -235,7 +234,6 @@ bool spi_slave_hd_hal_get_tx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
     }
     *out_trans = hal->tx_dma_head->arg;
     s_desc_get_received_len_addr(hal->tx_dma_head->desc, NULL, real_buff_addr);
-    hal->tx_recycled_desc_cnt++;
     return true;
 }
 
@@ -252,6 +250,5 @@ bool spi_slave_hd_hal_get_rx_finished_trans(spi_slave_hd_hal_context_t *hal, voi
     }
     *out_trans = hal->rx_dma_head->arg;
     *out_len = s_desc_get_received_len_addr(hal->rx_dma_head->desc, NULL, real_buff_addr);
-    hal->rx_recycled_desc_cnt++;
     return true;
 }

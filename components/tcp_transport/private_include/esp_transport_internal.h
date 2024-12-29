@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,16 +115,6 @@ void esp_transport_destroy_foundation_transport(esp_foundation_transport_t *foun
  *
  */
 void capture_tcp_transport_error(esp_transport_handle_t t, enum esp_tcp_transport_err_t error);
-
-/**
- * @brief Returns underlying socket for the supplied transport handle
- *
- * @param t Transport handle
- *
- * @return Socket file descriptor in case of success
- *         -1 in case of error
- */
-int esp_transport_get_socket(esp_transport_handle_t t);
 
 /**
  * @brief      Captures the current errno

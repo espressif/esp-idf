@@ -67,18 +67,20 @@ typedef struct {
  * @brief UART event types used in the ring buffer
  */
 typedef enum {
-    UART_DATA,              /*!< UART data event*/
-    UART_BREAK,             /*!< UART break event*/
-    UART_BUFFER_FULL,       /*!< UART RX buffer full event*/
-    UART_FIFO_OVF,          /*!< UART FIFO overflow event*/
-    UART_FRAME_ERR,         /*!< UART RX frame error event*/
-    UART_PARITY_ERR,        /*!< UART RX parity event*/
-    UART_DATA_BREAK,        /*!< UART TX data and break event*/
-    UART_PATTERN_DET,       /*!< UART pattern detected */
+    UART_DATA,              /*!< Triggered when the receiver either takes longer than rx_timeout_thresh
+                                 to receive a byte, or when more data is received than what rxfifo_full_thresh
+                                 specifies*/
+    UART_BREAK,             /*!< Triggered when the receiver detects a NULL character*/
+    UART_BUFFER_FULL,       /*!< Triggered when RX ring buffer is full*/
+    UART_FIFO_OVF,          /*!< Triggered when the received data exceeds the capacity of the RX FIFO*/
+    UART_FRAME_ERR,         /*!< Triggered when the receiver detects a data frame error*/
+    UART_PARITY_ERR,        /*!< Triggered when a parity error is detected in the received data*/
+    UART_DATA_BREAK,        /*!< Internal event triggered to signal a break afte data transmission*/
+    UART_PATTERN_DET,       /*!< Triggered when a specified pattern  is detected in the incoming data*/
 #if SOC_UART_SUPPORT_WAKEUP_INT
-    UART_WAKEUP,            /*!< UART wakeup event */
+    UART_WAKEUP,            /*!< Triggered when a wakeup signal is detected*/
 #endif
-    UART_EVENT_MAX,         /*!< UART event max index*/
+    UART_EVENT_MAX,         /*!< Maximum index for UART events*/
 } uart_event_type_t;
 
 /**
@@ -398,8 +400,10 @@ esp_err_t uart_enable_tx_intr(uart_port_t uart_num, int enable, int thresh);
  *       RX pin binded to a GPIO through the GPIO matrix, whereas TX is binded
  *       to its GPIO through the IOMUX.
  *
- * @note Internal signal can be output to multiple GPIO pads.
- *       Only one GPIO pad can connect with input signal.
+ * @note It is possible to configure TX and RX to share the same IO (single wire mode),
+ *       but please be aware of output conflict, which could damage the pad.
+ *       Apply open-drain and pull-up to the pad ahead of time as a protection,
+ *       or the upper layer protocol must guarantee no output from two ends at the same time.
  *
  * @param uart_num   UART port number, the max port number is (UART_NUM_MAX -1).
  * @param tx_io_num  UART TX pin GPIO number.

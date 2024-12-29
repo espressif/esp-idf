@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,7 +73,7 @@ esp_transport_list_handle_t esp_transport_list_init(void);
 esp_err_t esp_transport_list_destroy(esp_transport_list_handle_t list);
 
 /**
- * @brief      Add a transport to the list, and define a scheme to indentify this transport in the list
+ * @brief      Add a transport to the list, and define a scheme to identify this transport in the list
  *
  * @param[in]  list    The list
  * @param[in]  t       The Transport
@@ -329,7 +329,7 @@ esp_err_t esp_transport_set_parent_transport_func(esp_transport_handle_t t, payl
  *             Warning: The returned pointer is valid only as long as esp_transport_handle_t exists. Once transport
  *             handle gets destroyed, this value (esp_tls_error_handle_t) is freed automatically.
  *
- * @param[in]  A transport handle
+ * @param[in] t The transport handle
  *
  * @return
  *            - valid pointer of esp_error_handle_t
@@ -353,6 +353,15 @@ esp_tls_error_handle_t esp_transport_get_error_handle(esp_transport_handle_t t);
  *   - -1  Invalid transport handle or invalid transport's internal error storage
  */
 int esp_transport_get_errno(esp_transport_handle_t t);
+
+/**
+ * @brief      Get the underlying socket from the transport
+ *
+ * @param[in] t The transport handle
+ *
+ * @return socket descriptor
+ */
+int esp_transport_get_socket(esp_transport_handle_t t);
 
 /**
  * @brief Translates the TCP transport error codes to esp_err_t error codes

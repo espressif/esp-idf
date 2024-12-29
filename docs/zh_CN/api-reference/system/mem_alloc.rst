@@ -105,7 +105,7 @@ DMA 存储器
 
 使用 ``MALLOC_CAP_DMA`` 标志分配适合与硬件 DMA 引擎（如 SPI 和 I2S）配合使用的内存，此属性标志不包括外部 PSRAM。
 
-.. only SOC_SPIRAM_SUPPORTED and not esp32::
+.. only:: SOC_SPIRAM_SUPPORTED and not esp32
 
     EDMA 硬件功能可以将 DMA buffer 放置在外部 PSRAM，但可能存在一定的对齐限制，详情请参阅 {IDF_TARGET_NAME} 技术参考手册。若要分配一个可用 DMA 的外部 buffer，请使用 ``MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA`` 属性标志，堆分配器将处理 cache 及 DMA 子系统的对齐要求。如果某个外设有额外的对齐要求，可以调用 :cpp:func:heap_caps_aligned_alloc 并指定必要的对齐方式。
 

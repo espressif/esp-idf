@@ -87,8 +87,7 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
 
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
-    int __DECLARE_RCC_RC_ATOMIC_ENV __attribute__ ((unused)); // Right now this patch in rom can not depend on esp_hw_support, after IDF-10110 is done, this should be removed, should have spinlock protection
-    regi2c_ctrl_ll_master_enable_clock(true);
+    assert(regi2c_ctrl_ll_master_is_clock_enabled());
     REG_SET_FIELD(I2C_ANA_MST_ANA_CONF2_REG, I2C_ANA_MST_ANA_CONF2, 0);
     REG_SET_FIELD(I2C_ANA_MST_ANA_CONF1_REG, I2C_ANA_MST_ANA_CONF1, 0);
 

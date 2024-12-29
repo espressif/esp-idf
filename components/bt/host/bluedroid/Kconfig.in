@@ -191,6 +191,29 @@ config BT_HID_DEVICE_ENABLED
     help
         This enables the BT HID Device
 
+menuconfig BT_PBAC_ENABLED
+    bool "PBAP Client"
+    depends on BT_CLASSIC_ENABLED
+    default n
+    select BT_GOEPC_ENABLED
+    help
+        This enables the Phone Book Access Profile Client
+
+config BT_PBAC_SUPPORTED_FEAT
+    hex "PBAP Client Supported Features"
+    depends on BT_PBAC_ENABLED
+    default 0x000003FF
+    help
+        Set the supported features of PBAP Client, the default value is supported all features
+
+config BT_PBAC_PREFERRED_MTU
+    int "PBAP Client Preferred MTU"
+    depends on BT_PBAC_ENABLED
+    default 0
+    help
+        MTU is limited by the max MTU of transport layer, and should not be smaller than 255,
+        but can be set to zero to use a default MTU of transport layer
+
 config BT_GOEPC_ENABLED
     bool
     depends on BT_CLASSIC_ENABLED
@@ -357,6 +380,13 @@ config BT_BLE_SMP_ID_RESET_ENABLE
         when all pairing and bonding records are deleted. This would decrease the ability
         of a previously paired peer to be used to determine whether a device
         with which it previously shared an IRK is within range.
+
+config BT_BLE_SMP_BOND_NVS_FLASH
+    bool "Save SMP bonding keys to nvs flash"
+    depends on BT_BLE_SMP_ENABLE
+    default y
+    help
+        This select can save SMP bonding keys to nvs flash
 
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
@@ -1217,19 +1247,23 @@ config BT_BLE_RPA_TIMEOUT
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
 config BT_BLE_50_FEATURES_SUPPORTED
-    bool "Enable BLE 5.0 features"
+    bool "Enable BLE 5.0 features(please disable BLE 4.2 if enable BLE 5.0)"
     depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default y
     help
         Enabling this option activates BLE 5.0 features.
         This option is universally supported in chips that support BLE, except for ESP32.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
 
 config BT_BLE_42_FEATURES_SUPPORTED
-    bool "Enable BLE 4.2 features"
-    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
+    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default n
     help
         This enables BLE 4.2 features.
+        This option is universally supported by all ESP chips with BLE capabilities.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"

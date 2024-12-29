@@ -1,0 +1,102 @@
+menu "Example DNS-over-HTTPS Configuration"
+
+    choice HTTPS_DNS_SERVER
+        prompt "Choose DNS-over-HTTPS Server"
+        default HTTPS_DNS_SERVER_GOOGLE
+
+        config HTTPS_DNS_SERVER_GOOGLE
+            bool "Google DNS (dns.google)"
+            help
+                Use Google's DNS-over-HTTPS server (dns.google) with its corresponding root certificate.
+
+        config HTTPS_DNS_SERVER_CLOUDFLARE
+            bool "Cloudflare DNS (cloudflare-dns.com)"
+            help
+                Use Cloudflare's DNS-over-HTTPS server (cloudflare-dns.com) with its corresponding root certificate.
+
+        config HTTPS_DNS_SERVER_CUSTOM
+            bool "Custom DNS-over-HTTPS Server"
+            help
+                Use a custom DNS-over-HTTPS server. You must specify both the server URL and certificate manually.
+    endchoice
+
+    config HTTPS_DNS_SERVER_URL_GOOGLE
+        string
+        prompt "Google DNS-over-HTTPS Server URL"
+        default "dns.google"
+        depends on HTTPS_DNS_SERVER_GOOGLE
+        help
+            Google DNS-over-HTTPS server URL.
+
+    config HTTPS_DNS_SERVICE_PATH_GOOGLE
+        string
+        prompt "Path to Google DNS-over-HTTPS Service"
+        default "dns-query"
+        depends on HTTPS_DNS_SERVER_GOOGLE
+        help
+            Path to Google DNS-over-HTTPS Service.
+
+    config HTTPS_DNS_SERVER_URL_CLOUDFLARE
+        string
+        prompt "Cloudflare DNS-over-HTTPS Server URL"
+        default "cloudflare-dns.com"
+        depends on HTTPS_DNS_SERVER_CLOUDFLARE
+        help
+            Cloudflare DNS-over-HTTPS server URL.
+
+    config HTTPS_DNS_SERVICE_PATH_CLOUDFLARE
+        string
+        prompt "Path to Cloudflare DNS-over-HTTPS Service"
+        default "dns-query"
+        depends on HTTPS_DNS_SERVER_CLOUDFLARE
+        help
+            Path to Cloudflare DNS-over-HTTPS Service.
+
+    config HTTPS_DNS_SERVER_URL_CUSTOM
+        string
+        prompt "Custom DNS-over-HTTPS Server URL"
+        depends on HTTPS_DNS_SERVER_CUSTOM
+        help
+            Specify your custom DNS-over-HTTPS server URL here.
+
+    config HTTPS_DNS_SERVICE_PATH_CUSTOM
+        string
+        prompt "Path to the Custom DNS-over-HTTPS Service"
+        default "dns-query"
+        depends on HTTPS_DNS_SERVER_CUSTOM
+        help
+            Path to the Custom DNS-over-HTTPS Service.
+
+    config HTTPS_DNS_ESP_CERT_BUNDLE
+        bool "Use internal certificate bundle"
+        default y
+        help
+            Enable this option to use the internal certificate bundle for DNS-over-HTTPS.
+
+    config HTTPS_DNS_CERT_GOOGLE_HIDDEN
+        string
+        default "cert_google_root.pem"
+        depends on HTTPS_DNS_SERVER_GOOGLE && !HTTPS_DNS_ESP_CERT_BUNDLE
+
+    config HTTPS_DNS_CERT_GOOGLE
+        string
+        prompt "Google DNS Certificate (readonly)"
+        default HTTPS_DNS_CERT_GOOGLE_HIDDEN
+        depends on HTTPS_DNS_SERVER_GOOGLE && !HTTPS_DNS_ESP_CERT_BUNDLE
+        help
+            Google DNS root certificate in PEM format. This option is read-only.
+
+    config HTTPS_DNS_CERT_CUSTOM_HIDDEN
+        string
+        default "cert_custom_root.pem"
+        depends on HTTPS_DNS_SERVER_CUSTOM && !HTTPS_DNS_ESP_CERT_BUNDLE
+
+    config HTTPS_DNS_CERT_CUSTOM
+        string
+        prompt "Custom DNS Certificate (readonly)"
+        default HTTPS_DNS_CERT_CUSTOM_HIDDEN
+        depends on HTTPS_DNS_SERVER_CUSTOM && !HTTPS_DNS_ESP_CERT_BUNDLE
+        help
+            Specify the certificate file for the custom DNS server in PEM format. This option is read-only.
+
+endmenu

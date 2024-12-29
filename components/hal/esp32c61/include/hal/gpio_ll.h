@@ -57,15 +57,33 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
                                          bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
                                          uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
 {
-    *pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
-    *pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
-    *ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
-    *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
-    *od = hw->pinn[gpio_num].pinn_pad_driver;
-    *drv = IO_MUX.gpion[gpio_num].gpion_fun_drv;
-    *fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
-    *sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
-    *slp_sel = IO_MUX.gpion[gpio_num].gpion_slp_sel;
+    if (pu) {
+        *pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
+    }
+    if (pd) {
+        *pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
+    }
+    if (ie) {
+        *ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
+    }
+    if (oe) {
+        *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    }
+    if (od) {
+        *od = hw->pinn[gpio_num].pinn_pad_driver;
+    }
+    if (drv) {
+        *drv = IO_MUX.gpion[gpio_num].gpion_fun_drv;
+    }
+    if (fun_sel) {
+        *fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
+    }
+    if (sig_out) {
+        *sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
+    }
+    if (slp_sel) {
+        *slp_sel = IO_MUX.gpion[gpio_num].gpion_slp_sel;
+    }
 }
 
 /**
@@ -356,9 +374,9 @@ __attribute__((always_inline))
 static inline void gpio_ll_set_level(gpio_dev_t *hw, uint32_t gpio_num, uint32_t level)
 {
     if (level) {
-        hw->out_w1ts.out_w1ts = (1 << gpio_num);
+        hw->out_w1ts.val = 1 << gpio_num;
     } else {
-        hw->out_w1tc.out_w1tc = (1 << gpio_num);
+        hw->out_w1tc.val = 1 << gpio_num;
     }
 }
 

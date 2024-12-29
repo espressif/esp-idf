@@ -7,7 +7,7 @@
 
 固件应用程序的可用 RAM 在某些情况下可能处于低水平，甚至完全耗尽。为此，应调整这些情况下固件应用程序的内存使用情况。
 
-固件应用程序通常需要为内部 RAM 保留备用空间，用于应对非常规情况，或在后续版本的更新中，适应 RAM 使用需求的变化。
+固件通常需要为内部 RAM 保留备用空间，用于应对非常规情况，或在后续版本的更新中，适应 RAM 使用需求的变化。
 
 背景
 ----------
@@ -57,28 +57,28 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-    硬件栈保护
-    ~~~~~~~~~~~~
+   硬件栈保护
+   ~~~~~~~~~~~~
 
-    硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
+   硬件栈保护是一种检测栈溢出的可靠方法，通过硬件的辅助调试模块来监视 CPU 的栈指针寄存器。如果栈指针寄存器超出了当前栈的边界，则立即触发紧急情况提示（更多详细信息，请参阅 :ref:`Hardware-Stack-Guard`）。可以通过 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD` 选项启用硬件栈保护。
 
 栈末尾监视点
 ~~~~~~~~~~~~~~
 
 栈末尾监视点将 CPU 监视点放置在当前栈的末尾。如果该字被覆盖（例如栈溢出），则会立即触发紧急情况提示。在未使用调试器的监视点时，可以设置 :ref:`CONFIG_FREERTOS_WATCHPOINT_END_OF_STACK` 选项，启用栈末尾监视点功能。
 
-栈金丝雀字节
-~~~~~~~~~~~~~~
+栈 canary 字节
+~~~~~~~~~~~~~~~~~
 
-栈金丝雀字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈金丝雀字节功能。
+栈 canary 字节功能在每个任务的栈末尾添加一组魔术字节，并在每次上下文切换时检查这些字节是否已更改。如果这些魔术字节被覆盖，则会触发紧急情况提示。可以通过 :ref:`CONFIG_FREERTOS_CHECK_STACKOVERFLOW` 选项启用栈 canary 字节功能。
 
 .. note::
 
-    使用栈末尾监视点或栈金丝雀字节时，栈指针可能在栈溢出时跳过监视点或金丝雀字节，损坏 RAM 的其他区域。因此，上述方法并不能检测所有的栈溢出。
+   使用栈末尾监视点或栈 canary 字节时，栈指针可能在栈溢出时跳过监视点或 canary 字节，损坏 RAM 的其他区域。因此，上述方法并不能检测所有的栈溢出。
 
-    .. only:: SOC_ASSIST_DEBUG_SUPPORTED
+   .. only:: SOC_ASSIST_DEBUG_SUPPORTED
 
-        推荐启用默认选项 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
+      推荐启用默认选项 :ref:`CONFIG_ESP_SYSTEM_HW_STACK_GUARD`，避免这个缺点。
 
 任务运行时确定栈内存大小的方法
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -96,6 +96,7 @@ ESP-IDF 包含一系列堆 API，可以在运行时测量空闲堆内存，请�
 
 - 避免占用过多栈内存的函数。字符串格式化函数（如 ``printf()``）会使用大量栈内存，如果任务不调用这类函数，通常可以减小其占用的栈内存。
 
+  - 使用实验性的选项 :ref:`picolibc-instead-of-newlib` 可以显著减少 ``printf()`` 调用的堆栈使用量。
   - 启用 :ref:`newlib-nano-formatting`，可以在任务调用 ``printf()`` 或其他 C 语言字符串格式化函数时，减少这类任务的栈内存使用量。
 
 - 避免在栈上分配大型变量。在 C 语言声明的默认作用域中，任何分配为自动变量的大型结构体或数组都会占用栈内存。要优化这些变量占用的栈内存大小，可以使用静态分配，或仅在需要时从堆中动态分配。
@@ -192,7 +193,6 @@ IRAM 优化
     - 要禁用不需要的 flash 驱动程序，节省 IRAM 空间，请参阅 sdkconfig 菜单中的 ``Auto-detect Flash chips`` 选项。
     :SOC_GPSPI_SUPPORTED: - 启用 :ref:`CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH`。只要未启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` 选项，且没有从 ISR 中错误地调用堆函数，就可以在所有配置中安全启用此选项。
     :esp32c2: - 启用 :ref:`CONFIG_BT_RELEASE_IRAM`。 蓝牙所使用的 data，bss 和 text 段已经被分配在连续的RAM区间。当调用 ``esp_bt_mem_release`` 时，这些段都会被添加到 Heap 中。 这将节省约 22 KB 的 RAM。但要再次使用蓝牙功能，需要重启程序。
-    :SOC_DEBUG_HAVE_OCD_STUB_BINS: - 禁用 :ref:`CONFIG_ESP_DEBUG_INCLUDE_OCD_STUB_BINS` 选项可以释放 8 KB 的 IRAM, 但由于运行时加载存根的额外开销，特别是在使用 flash 断点时，可能会影响调试的整体速度。
 
 .. only:: esp32
 

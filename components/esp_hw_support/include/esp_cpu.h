@@ -15,6 +15,7 @@
 #include "xtensa_api.h"
 #include "xt_utils.h"
 #elif __riscv
+#include "riscv/csr.h"
 #include "riscv/rv_utils.h"
 #endif
 #include "esp_intr_alloc.h"
@@ -129,6 +130,27 @@ FORCE_INLINE_ATTR __attribute__((pure)) int esp_cpu_get_core_id(void)
     return (int)rv_utils_get_core_id();
 #endif
 }
+/**
+ * @brief Get the current [RISC-V] CPU core's privilege level
+ *
+ * This function returns the current privilege level of the CPU core executing
+ * this function.
+ *
+ * @return The current CPU core's privilege level, -1 if not supported.
+ */
+
+FORCE_INLINE_ATTR __attribute__((always_inline)) int esp_cpu_get_curr_privilege_level(void)
+{
+#ifdef __XTENSA__
+    return -1;
+#else
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+    return PRV_M;
+#else
+    return RV_READ_CSR(CSR_PRV_MODE);
+#endif
+#endif
+}
 
 /**
  * @brief Read the current stack pointer address
@@ -229,7 +251,7 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_ivt_addr(const void *ivt_addr)
 #ifdef __XTENSA__
     xt_utils_set_vecbase((uint32_t)ivt_addr);
 #else
-    rv_utils_set_mtvec((uint32_t)ivt_addr);
+    rv_utils_set_xtvec((uint32_t)ivt_addr);
 #endif
 }
 
@@ -430,7 +452,12 @@ FORCE_INLINE_ATTR void esp_cpu_intr_edge_ack(int intr_num)
 #ifdef __XTENSA__
     xthal_set_intclear((unsigned) (1 << intr_num));
 #else
+#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+    extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
+    esp_tee_intr_sec_srv_cb(2, TEE_INTR_EDGE_ACK_SRV_ID, intr_num);
+#else
     rv_utils_intr_edge_ack((unsigned) intr_num);
+#endif
 #endif
 }
 

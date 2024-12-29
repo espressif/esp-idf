@@ -212,7 +212,8 @@ This allows the interrupt to run while the cache is disabled, but comes at the c
 Application Examples
 --------------------
 
-* :example:`peripherals/camera/camera_dsi` demonstrates how to use the ``esp_driver_cam`` component to capture signals from a camera sensor and display it on an ILI9881C LCD screen via a DSI interface.
+* :example:`peripherals/camera/mipi_isp_dsi` demonstrates how to use the ``esp_driver_cam`` component to capture signals from a MIPI CSI camera sensor via the ISP module and display it on a LCD screen via a DSI interface.
+* :example:`peripherals/camera/dvp_isp_dsi` demonstrates how to use the ``esp_driver_cam`` component to capture signals from a DVP camera sensor via the ISP module and display it on a LCD screen via a DSI interface.
 
 API Reference
 -------------

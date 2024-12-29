@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-
 /**
  * @brief GPIO number
  */

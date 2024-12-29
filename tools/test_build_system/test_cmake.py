@@ -30,7 +30,8 @@ def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
     idf_path = Path(os.environ['IDF_PATH'])
     (test_app_copy / 'sdkconfig.defaults').write_text('\n'.join(['CONFIG_SPIRAM=y',
                                                                  'CONFIG_SPIRAM_CACHE_WORKAROUND=y']))
-    run_cmake('-G', 'Ninja', '-DSDKCONFIG_DEFAULTS={}'.format(test_app_copy / 'sdkconfig.defaults'),
+    run_cmake('-G', 'Ninja', '-DCOMPONENTS=main;esp_psram',
+              '-DSDKCONFIG_DEFAULTS={}'.format(test_app_copy / 'sdkconfig.defaults'),
               str(idf_path / 'examples' / 'build_system' / 'cmake' / 'import_lib'))
     with open((test_app_copy / 'build' / 'compile_commands.json'), 'r', encoding='utf-8') as f:
         data = f.read()

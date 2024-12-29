@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import argparse
@@ -262,10 +262,13 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
             values_file_reader = csv.reader(csv_values_file, delimiter=',')
             next(values_file_reader)
 
-            # Create new directory(if doesn't exist) to store csv file generated
+            # Create new directory (if doesn't exist) to store csv file generated
             output_csv_target_dir = create_dir('csv', args.outdir)
-            # Create new directory(if doesn't exist) to store bin file generated
+            # Create new directory (if doesn't exist) to store bin file generated
             output_bin_target_dir = create_dir('bin', args.outdir)
+
+            if args.prefix_num:
+                prefix_num_start, prefix_num_digits = args.prefix_num
 
             for values_data_line in values_file_reader:
                 key_value_data = list(zip_longest(keys_in_values_file, values_data_line))
@@ -275,9 +278,22 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
 
                 key_value_pair = key_value_data[:]
 
-                # Verify if output csv file does not exist
-                csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
+                if args.prefix_num:
+                    # Create file name prefix based on user supplied start and length
+                    prefix_number = f'{prefix_num_start:0{prefix_num_digits}}'
+                    csv_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'csv'
+                    bin_filename = args.prefix + '-' + prefix_number + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + prefix_number + '-' + file_identifier_value
+                    prefix_num_start += 1
+                else:
+                    csv_filename = args.prefix + '-' + file_identifier_value + '.' + 'csv'
+                    bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
+                    if args.keygen:
+                        args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
+
                 output_csv_file = output_csv_target_dir + csv_filename
+                # Verify if output csv file does not exist
                 if os.path.isfile(output_csv_file):
                     raise SystemExit('Target csv file: %s already exists.`' % output_csv_file)
 
@@ -285,16 +301,13 @@ def create_intermediate_csv(args, keys_in_values_file, keys_repeat, is_encr=Fals
                 add_data_to_file(config_data_to_write, key_value_pair, output_csv_file)
                 print('\nCreated CSV file: ===>', output_csv_file)
 
-                # Verify if output bin file does not exist
-                bin_filename = args.prefix + '-' + file_identifier_value + '.' + 'bin'
                 output_bin_file = output_bin_target_dir + bin_filename
+                # Verify if output bin file does not exist
                 if os.path.isfile(output_bin_file):
                     raise SystemExit('Target binary file: %s already exists.`' % output_bin_file)
 
                 args.input = output_csv_file
                 args.output = os.path.join('bin', bin_filename)
-                if args.keygen:
-                    args.keyfile = 'keys-' + args.prefix + '-' + file_identifier_value
 
                 if is_encr:
                     nvs_partition_gen.encrypt(args)
@@ -398,6 +411,11 @@ def main():
                                 default=None,
                                 help='Size of NVS partition in bytes\
                                     \n(must be multiple of 4096)')
+        parser_gen.add_argument('--prefix_num',
+                                type=int,
+                                nargs=2,
+                                metavar=('start', 'length'),
+                                help='Prefix number (counter) start and length (in digits) to be added for each output filename')
         parser_gen.add_argument('--fileid',
                                 default=None,
                                 help='''Unique file identifier(any key in values file) \

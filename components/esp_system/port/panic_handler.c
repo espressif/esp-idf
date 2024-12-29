@@ -42,8 +42,6 @@
 #include "esp_private/hw_stack_guard.h"
 #endif
 
-extern int _invalid_pc_placeholder;
-
 extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
 
 extern void esp_panic_handler(panic_info_t *);
@@ -199,6 +197,7 @@ static void panic_handler(void *frame, bool pseudo_excause)
              * In case the PC is invalid, GDB will fail to translate addresses to function names
              * Hence replacing the PC to a placeholder address in case of invalid PC
              */
+            extern int _invalid_pc_placeholder;
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);
         }
 #endif

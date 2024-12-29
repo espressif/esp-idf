@@ -23,8 +23,8 @@ static const char *TAG = "i2s_multi_dev_test";
 
 #define TEST_I2S_FRAME_SIZE             (128)       // Frame numbers in every writing / reading
 #define TEST_I2S_ARRAY_LENGTH           (1024)      // The loop data length for verification
-#define TEST_I2S_MAX_DATA               (128)       // The maximum data value in the data buffer
-#define TEST_I2S_MAX_FAIL_CNT           (3)         // Max broken packet count
+#define TEST_I2S_MAX_DATA               (64)        // The maximum data value in the data buffer
+#define TEST_I2S_MAX_FAIL_CNT           (10)        // Max broken packet count
 #define TEST_I2S_FRAME_TIMEOUT_SEC      (10.0f)     // Timeout seconds of waiting for a correct frame
 
 #define TEST_I2S_NUM            (I2S_NUM_0) // ESP32-C3 has only I2S0
@@ -38,6 +38,12 @@ static const char *TAG = "i2s_multi_dev_test";
 #define TEST_I2S_DO_IO          (GPIO_NUM_6)
 #define TEST_I2S_DI_IO          (GPIO_NUM_7) // DI and DO gpio will be reversed on slave runner
 #endif  // CONFIG_IDF_TARGET_ESP32H2
+
+#if I2S_LL_DEFAULT_CLK_FREQ < 160000000
+#define TEST_SAMPLE_RATE        (16000)      // I2S source clock is relatively low, test case is not stable when sample rate is 48KHz high
+#else
+#define TEST_SAMPLE_RATE        (48000)
+#endif
 
 typedef struct {
     uint32_t *buffer;
@@ -71,27 +77,25 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     i2s_tdm_config_t i2s_tdm_config = {
         .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(sample_rate),
         .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
-        .gpio_cfg = TEST_I2S_DEFAULT_GPIO(GPIO_NUM_NC, true),
+        .gpio_cfg = TEST_I2S_DEFAULT_GPIO(I2S_GPIO_UNUSED, true),
     };
-    i2s_tdm_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_384;
+    i2s_tdm_config.clk_cfg.mclk_multiple = I2S_MCLK_MULTIPLE_512;
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
     uint32_t channel_count = 32 - __builtin_clz(slot_mask);
-    size_t buf_size = channel_count * TEST_I2S_FRAME_SIZE * (bit_width / 8);
+    size_t buf_size = channel_count * TEST_I2S_FRAME_SIZE * (bit_width / 8) * 2;
     /* Allocate I2S rx buffer */
     ESP_LOGI(TAG, "Allocating I2S TDM master rx buffer, size=%u", buf_size);
-    uint32_t *rx_buffer = malloc(buf_size);
+    uint8_t *rx_buffer = calloc(1, buf_size);
     TEST_ASSERT(rx_buffer);
     /* Allocate I2S tx buffer */
     ESP_LOGI(TAG, "Allocating I2S TDM master tx buffer, size=%u", buf_size);
-    uint32_t *tx_buffer = malloc(buf_size);
+    uint8_t *tx_buffer = calloc(1, buf_size);
     TEST_ASSERT(tx_buffer);
     /* Fill in the tx buffer */
-    for (uint32_t i = 0, data_cnt = 0; i < buf_size / sizeof(uint32_t); i ++) {
-        tx_buffer[i] = data_cnt;
-        data_cnt++;
-        data_cnt %= TEST_I2S_MAX_DATA;
+    for (uint32_t i = 0; i < buf_size; i ++) {
+        tx_buffer[i] = i % TEST_I2S_MAX_DATA;
     }
     size_t w_bytes = buf_size;
     while (w_bytes != 0) {
@@ -107,22 +111,39 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     /* Slave is ready, start the writing task */
     ESP_LOGI(TAG, "I2S TDM master receive & send start");
     esp_err_t read_ret = ESP_OK;
-    uint32_t count = 1;
+    uint8_t count = 1;
     uint8_t fail_cnt = 0;
     size_t bytes_read = 0;
+    unity_wait_for_signal("Slave Data Ready");
+    // Start to read the data from slave, and retry several times if not success
     for (fail_cnt = 0; fail_cnt < TEST_I2S_MAX_FAIL_CNT && count < TEST_I2S_MAX_DATA; fail_cnt++) {
-        if (i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, buf_size, &bytes_read, 1000) != ESP_OK) {
+        if (fail_cnt > 0) {
+            // Delay a while in case the slave has not finished to prepare the data
+            vTaskDelay(pdMS_TO_TICKS(50));
+        }
+        // Try to read the data from slave, continue if failed
+        read_ret = i2s_channel_read(i2s_tdm_rx_handle, rx_buffer, buf_size, &bytes_read, 1000);
+        if (read_ret != ESP_OK) {
+            ESP_LOGE(TAG, "master read failed: %s", esp_err_to_name(read_ret));
             continue;
         }
-        for (int i = 0; i < buf_size && count < TEST_I2S_MAX_DATA; i++) {
+        // When success to read, check the buffer content whether match what master sent
+        for (int i = 0; i < buf_size; i++) {
+            printf("%"PRIu8" ", rx_buffer[i]);
             if (rx_buffer[i] == count) {
-                count++;
+                // If the piece of data match, means the communication between slave and master success, break the loop
+                if (++count >= TEST_I2S_MAX_DATA) {
+                    break;
+                }
             } else if (count != 1) {
-                ESP_LOGE(TAG, "Failed at index: %d real: %" PRIu32 " expect: %" PRIu32, i, rx_buffer[i], count);
+                // If the data not fully matched, reset the counter and try again
+                ESP_LOGE(TAG, "Failed at index: %d real: %" PRIu8 " expect: %" PRIu8, i, rx_buffer[i], count);
                 count = 1;
             }
         }
+        printf("\n");
     }
+    unity_send_signal("Master Finished");
 
     ESP_LOGI(TAG, "I2S TDM master stop");
     TEST_ESP_OK(i2s_channel_disable(i2s_tdm_tx_handle));
@@ -132,7 +153,7 @@ static void test_i2s_tdm_master(uint32_t sample_rate, i2s_data_bit_width_t bit_w
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_rx_handle));
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_tx_handle));
     ESP_LOGI(TAG, "I2S TDM master resources freed");
-    TEST_ASSERT_TRUE_MESSAGE(read_ret == ESP_OK, "Master read timeout ");
+    TEST_ASSERT_TRUE_MESSAGE(read_ret == ESP_OK, "Master read failed ");
     TEST_ASSERT_TRUE_MESSAGE(fail_cnt < TEST_I2S_MAX_FAIL_CNT, "Exceed retry times ");
     TEST_ASSERT_EQUAL_UINT32(TEST_I2S_MAX_DATA, count);
 }
@@ -143,10 +164,11 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     i2s_chan_handle_t i2s_tdm_rx_handle = NULL;
 
     /* Create I2S tx and rx channels */
+    uint32_t desc_num = 4;
     i2s_chan_config_t i2s_channel_config = {
         .id = TEST_I2S_NUM,
         .role = I2S_ROLE_SLAVE,
-        .dma_desc_num = 4,
+        .dma_desc_num = desc_num,
         .dma_frame_num = TEST_I2S_FRAME_SIZE,
         .auto_clear = false
     };
@@ -156,58 +178,87 @@ static void test_i2s_tdm_slave(uint32_t sample_rate, i2s_data_bit_width_t bit_wi
     i2s_tdm_config_t i2s_tdm_config = {
         .clk_cfg = I2S_TDM_CLK_DEFAULT_CONFIG(sample_rate),
         .slot_cfg = I2S_TDM_PHILIPS_SLOT_DEFAULT_CONFIG(bit_width, I2S_SLOT_MODE_STEREO, slot_mask),
-        .gpio_cfg = TEST_I2S_DEFAULT_GPIO(GPIO_NUM_NC, false),
+        .gpio_cfg = TEST_I2S_DEFAULT_GPIO(I2S_GPIO_UNUSED, false),
     };
-    if (sample_rate >= 96000) {
-        i2s_tdm_config.clk_cfg.bclk_div = 12;
-    }
 #if SOC_I2S_SUPPORTS_APLL
     i2s_tdm_config.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    /* APLL clock source can only reach upto 125MHz, and the max BCLK among these cases is 6.144 MHz
+       The BCLK can only be 10 using APLL clock source, see the reason below
+       Formula: MAX_BCLK = 48K * 32 * 4 = 6.144 MHz.  MAX_BCLK_DIV <= (125 /2) / MAX_BCLK */
+    i2s_tdm_config.clk_cfg.bclk_div = 10;
+#else
+    /* The greater the bclk division is, the greater mclk frequency will be, and the less data latency the slave will have
+       As the sample rate of the test cases are high, we need a greater BCLK division to reduce the slave data latency,
+       Otherwise the large data latency will cause the data shifted when receiving on the master side.
+       However, due to the MCLK limitation(i.e., less or equal than half of the source clock),
+       the max bclk division is depended on the source clock, sample rate and the bclk ticks in one frame
+       Formula: MAX_BCLK = 48K * 32 * 4 = 6.144 MHz.  MAX_BCLK_DIV <= (160 /2) / MAX_BCLK */
+    i2s_tdm_config.clk_cfg.bclk_div = 12;
 #endif
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_tx_handle, &i2s_tdm_config));
     TEST_ESP_OK(i2s_channel_init_tdm_mode(i2s_tdm_rx_handle, &i2s_tdm_config));
 
     /* Allocate I2S rx buffer */
     uint32_t channel_count = 32 - __builtin_clz(slot_mask);
-    uint32_t buffer_size = TEST_I2S_FRAME_SIZE * channel_count * (bit_width / 8);
+    uint32_t buffer_size = TEST_I2S_FRAME_SIZE * channel_count * (bit_width / 8) * 2;
     ESP_LOGI(TAG, "Allocating I2S TDM slave buffer, size=%"PRIu32, buffer_size);
-    uint32_t *echo_buffer = malloc(buffer_size);
+    uint8_t *echo_buffer = calloc(1, buffer_size);
     TEST_ASSERT(echo_buffer);
 
     unity_send_signal("Slave Ready");
     unity_wait_for_signal("Master Ready");
     TEST_ESP_OK(i2s_channel_enable(i2s_tdm_rx_handle));
-    TEST_ESP_OK(i2s_channel_enable(i2s_tdm_tx_handle));
 
     ESP_LOGI(TAG, "I2S TDM slave receive & send start");
-    size_t bytes_read = 0, bytes_written = 0;
-    /* Loop until reading or writing failed, which indicates the master has finished and deleted the I2S peripheral */
+    size_t bytes_read = 0;
+    int read_fail_cnt = 0;
+    bool success_flag = true;
+    // Continuously read data from master until the first piece of valid data is received
     while (true) {
-        if (i2s_channel_read(i2s_tdm_rx_handle, echo_buffer, buffer_size, &bytes_read, 500) != ESP_OK) {
-            break;
+        if (i2s_channel_read(i2s_tdm_rx_handle, echo_buffer, buffer_size, &bytes_read, 1000) != ESP_OK) {
+            vTaskDelay(pdMS_TO_TICKS(50));
+            if (read_fail_cnt++ >= TEST_I2S_MAX_FAIL_CNT) {
+                ESP_LOGE(TAG, "Slave failed to read after %d retries", (int)TEST_I2S_MAX_FAIL_CNT);
+                success_flag = false;
+                goto exit;
+            }
         }
-        if (i2s_channel_write(i2s_tdm_tx_handle, echo_buffer, buffer_size, &bytes_written, 500) != ESP_OK) {
+        // When receive valid data, then break the loop and start writing
+        if (echo_buffer[0] || echo_buffer[1]) {
             break;
         }
     }
+    size_t bytes_written = buffer_size;
+    /* Load the data to write */
+    while (bytes_written) {
+        esp_err_t ret = i2s_channel_preload_data(i2s_tdm_tx_handle, echo_buffer, buffer_size, &bytes_written);
+        printf("ret %x, bytes_written %d\n", ret, (int)bytes_written);
+    }
+    TEST_ESP_OK(i2s_channel_enable(i2s_tdm_tx_handle));
+    vTaskDelay(pdMS_TO_TICKS(100));
+    unity_send_signal("Slave Data Ready");
+    unity_wait_for_signal("Master Finished");
 
+    TEST_ESP_OK(i2s_channel_disable(i2s_tdm_tx_handle));
+
+exit:
     ESP_LOGI(TAG, "I2S TDM slave receive stop");
     TEST_ESP_OK(i2s_channel_disable(i2s_tdm_rx_handle));
-    TEST_ESP_OK(i2s_channel_disable(i2s_tdm_tx_handle));
     free(echo_buffer);
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_rx_handle));
     TEST_ESP_OK(i2s_del_channel(i2s_tdm_tx_handle));
     ESP_LOGI(TAG, "I2S TDM slave resources freed");
+    TEST_ASSERT_TRUE_MESSAGE(success_flag, "Slave failed to read");
 }
 
 static void test_i2s_tdm_master_48k_32bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_32bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_32BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2S_TDM]",
@@ -215,12 +266,12 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_32bits_4slots", "[I2
 
 static void test_i2s_tdm_master_48k_16bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_16bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_16BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2S_TDM]",
@@ -228,12 +279,12 @@ TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_16bits_4slots", "[I2
 
 static void test_i2s_tdm_master_48k_8bits_4slots(void)
 {
-    test_i2s_tdm_master(48000, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_master(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 static void test_i2s_tdm_slave_48k_8bits_4slots(void)
 {
-    test_i2s_tdm_slave(48000, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
+    test_i2s_tdm_slave(TEST_SAMPLE_RATE, I2S_DATA_BIT_WIDTH_8BIT, I2S_TDM_SLOT0 | I2S_TDM_SLOT1 | I2S_TDM_SLOT2 | I2S_TDM_SLOT3);
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2S_TDM_full_duplex_test_in_48k_8bits_4slots", "[I2S_TDM]",
@@ -288,6 +339,13 @@ static void test_i2s_external_clk_src(bool is_master, bool is_external)
         std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_EXTERNAL;
         std_cfg.clk_cfg.ext_clk_freq_hz = 22579200;
     }
+#if CONFIG_IDF_TARGET_ESP32P4
+    else {
+        // Use APLL instead.
+        // Because the default clock source is not sufficient for 22.58M MCLK
+        std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+    }
+#endif
     TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
     TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
 

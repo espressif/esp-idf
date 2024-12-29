@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include <sys/time.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include "freertos/FreeRTOS.h"
@@ -101,7 +102,7 @@ void esp_netif_sntp_deinit(void);
 /**
  * @brief Wait for time sync event
  * @param tout Specified timeout in RTOS ticks
- * @return ESP_TIMEOUT if sync event didn't came withing the timeout
+ * @return ESP_TIMEOUT if sync event didn't came within the timeout
  *         ESP_ERR_NOT_FINISHED if the sync event came, but we're in smooth update mode and still in progress (SNTP_SYNC_STATUS_IN_PROGRESS)
  *         ESP_OK if time sync'ed
  */

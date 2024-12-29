@@ -69,6 +69,7 @@ typedef enum {
 typedef enum {
     ESP_PARTITION_SUBTYPE_BOOTLOADER_PRIMARY = 0x00,                          //!< Primary Bootloader
     ESP_PARTITION_SUBTYPE_BOOTLOADER_OTA = 0x01,                              //!< Temporary OTA storage for Bootloader, where the OTA uploads a new Bootloader image
+    ESP_PARTITION_SUBTYPE_BOOTLOADER_RECOVERY = 0x02,                         //!< Recovery Bootloader
 
     ESP_PARTITION_SUBTYPE_PARTITION_TABLE_PRIMARY = 0x00,                     //!< Primary Partition table
     ESP_PARTITION_SUBTYPE_PARTITION_TABLE_OTA = 0x01,                         //!< Temporary OTA storage for Partition table, where the OTA uploads a new Partition table image
@@ -94,6 +95,11 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_APP_OTA_MAX = ESP_PARTITION_SUBTYPE_APP_OTA_MIN + 16,//!< Max subtype of OTA partition
     ESP_PARTITION_SUBTYPE_APP_TEST = 0x20,                                    //!< Test application partition
 
+    ESP_PARTITION_SUBTYPE_APP_TEE_MIN = 0x30,                                 //!< Base for TEE partition subtypes
+    ESP_PARTITION_SUBTYPE_APP_TEE_0 = ESP_PARTITION_SUBTYPE_APP_TEE_MIN + 0,  //!< TEE partition 0
+    ESP_PARTITION_SUBTYPE_APP_TEE_1 = ESP_PARTITION_SUBTYPE_APP_TEE_MIN + 1,  //!< TEE partition 1
+    ESP_PARTITION_SUBTYPE_APP_TEE_MAX = ESP_PARTITION_SUBTYPE_APP_TEE_1,      //!< Max subtype of TEE partition
+
     ESP_PARTITION_SUBTYPE_DATA_OTA = 0x00,                                    //!< OTA selection partition
     ESP_PARTITION_SUBTYPE_DATA_PHY = 0x01,                                    //!< PHY init data partition
     ESP_PARTITION_SUBTYPE_DATA_NVS = 0x02,                                    //!< NVS partition
@@ -106,6 +112,9 @@ typedef enum {
     ESP_PARTITION_SUBTYPE_DATA_FAT = 0x81,                                    //!< FAT partition
     ESP_PARTITION_SUBTYPE_DATA_SPIFFS = 0x82,                                 //!< SPIFFS partition
     ESP_PARTITION_SUBTYPE_DATA_LITTLEFS = 0x83,                               //!< LITTLEFS partition
+
+    ESP_PARTITION_SUBTYPE_DATA_TEE_OTA = 0x90,                                //!< TEE OTA selection partition
+    ESP_PARTITION_SUBTYPE_DATA_TEE_SEC_STORAGE= 0x91,                         //!< TEE secure storage partition
 
 #if __has_include("extra_partition_subtypes.inc")
     #include "extra_partition_subtypes.inc"

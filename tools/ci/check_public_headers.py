@@ -270,7 +270,8 @@ class PublicHeaderChecker:
             os.unlink(os.path.join(project_dir, 'sdkconfig'))
         except FileNotFoundError:
             pass
-        subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', 'reconfigure'], cwd=project_dir)
+        subprocess.check_call(['idf.py', '-B', build_dir, f'-DSDKCONFIG={sdkconfig}', '-DCOMPONENTS=', 'reconfigure'],
+                              cwd=project_dir)
 
         def get_std(json: List, extension: str) -> str:
             # compile commands for the files with specified extension, containing C(XX) standard flag

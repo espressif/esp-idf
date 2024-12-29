@@ -336,6 +336,8 @@
 
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< ESP32C2 only supports to connect an external oscillator, not a crystal */
 
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D2           (1)     /*!< Support XTAL_D2 clock as the LP_FAST clock source */
+
 /*------------------------------------ WI-FI CAPS ------------------------------------*/
 #define SOC_WIFI_HW_TSF                           (1)    /*!< Support hardware TSF */
 #define SOC_WIFI_FTM_SUPPORT                      (1)    /*!< Support FTM */

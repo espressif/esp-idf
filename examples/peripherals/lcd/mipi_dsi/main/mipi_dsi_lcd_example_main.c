@@ -216,7 +216,7 @@ void app_main(void)
         .virtual_channel = 0,
         .dpi_clk_src = MIPI_DSI_DPI_CLK_SRC_DEFAULT,
         .dpi_clock_freq_mhz = EXAMPLE_MIPI_DSI_DPI_CLK_MHZ,
-        .pixel_format = LCD_COLOR_PIXEL_FORMAT_RGB888,
+        .in_color_format = LCD_COLOR_FMT_RGB888,
         .video_timing = {
             .h_size = EXAMPLE_MIPI_DSI_LCD_H_RES,
             .v_size = EXAMPLE_MIPI_DSI_LCD_V_RES,

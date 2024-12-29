@@ -36,6 +36,15 @@ I2C 是一种串行同步半双工通信协议，总线上可以同时挂载多�
 
     请注意，SCL 的频率越高，上拉电阻应该越小（但不能小于 1 kΩ）。较大的电阻会降低电流，增加时钟切换时间并降低频率。通常推荐 2 kΩ 到 5 kΩ 左右的电阻，也可根据电流需求进行一定调整。
 
+.. toctree::
+    :hidden:
+
+    i2c_slave_v1
+
+.. note::
+
+    我们发现 :ref:`i2c-slave-v1` 存在一些问题，且使用体验不够友好。为此，我们推出了 I2C 从机驱动 v2.0，此版本不仅解决了现有问题，还将成为我们未来的主要维护版本。我们建议并鼓励你使用 I2C 从机驱动 v2.0，你可以通过配置选项 :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` 启用该功能。本文档主要介绍 I2C 从机驱动 v2.0 的功能。如果你想使用 I2C 从机驱动 v1.0，请参考 :ref:`i2c-slave-v1`。I2C 从机驱动 v1.0 将在 ESP-IDF v6.0 中移除。
+
 
 I2C 时钟配置
 ------------
@@ -218,27 +227,26 @@ I2C 从机设备需要 :cpp:type:`i2c_slave_config_t` 指定的配置：
     - :cpp:member:`i2c_slave_config_t::sda_io_num` 设置串行数据总线 (SDA) 的 GPIO 编号。
     - :cpp:member:`i2c_slave_config_t::scl_io_num` 设置串行时钟总线 (SCL) 的 GPIO 编号。
     - :cpp:member:`i2c_slave_config_t::clk_source` 选择 I2C 总线的时钟源。可用时钟列表见 :cpp:type:`i2c_clock_source_t`。有关不同时钟源对功耗的影响，请参阅 `电源管理 <#power-management>`__。
-    - :cpp:member:`i2c_slave_config_t::send_buf_depth` 设置发送 buffer 的长度。
+    - :cpp:member:`i2c_slave_config_t::send_buf_depth` 设置发送软件 buffer 的长度。
     - :cpp:member:`i2c_slave_config_t::slave_addr` 设置从机地址。
-    - :cpp:member:`i2c_master_bus_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0`` ，则驱动程序将使用低或中优先级的中断（优先级可设为 1、2 或 3 中的一个），若未设置，则将使用 :cpp:member:`i2c_master_bus_config_t::intr_priority` 指示的优先级。请使用数字形式（1、2、3），不要用位掩码形式（(1<<1)、(1<<2)、(1<<3)）。请注意，中断优先级一旦设置完成，在调用 :cpp:func:`i2c_del_master_bus` 之前都无法更改。
-    - :cpp:member:`i2c_slave_config_t::addr_bit_len`。如果需要从机设备具有 10 位地址，则将该成员变量设为 ``I2C_ADDR_BIT_LEN_10``。
-    :SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE: - :cpp:member:`i2c_slave_config_t::stretch_en`。如果要启用从机控制器拉伸功能，请将该成员变量设为 true。有关 I2C 拉伸的工作原理，请参阅 [`TRM <{IDF_TARGET_TRM_EN_URL}#i2c>`__]。
-    :SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE: - :cpp:member:`i2c_slave_config_t::broadcast_en`。如果要启用从机广播，请将该成员变量设为 true。当从机设备接收到来自主机设备的通用调用地址 0x00，且后面的读写位为 0 时，无论从机设备自身地址如何，都会响应主机设备。
-    :SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS: - :cpp:member:`i2c_slave_config_t::access_ram_en`。如果要启用 non-FIFO 模式，请将该成员变量设为 true，则 I2C 数据 FIFO 可用作 RAM，并将同步打开双地址。
-    :SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH: - :cpp:member:`i2c_slave_config_t::slave_unmatch_en`。将该成员变量设为 true，将启用从机设备不匹配中断。如果主机设备发送的命令地址与从机设备地址不匹配，则会触发不匹配中断。
+    - :cpp:member:`i2c_slave_config_t::intr_priority` 设置中断的优先级。如果设置为 ``0`` ，则驱动程序将使用低或中优先级的中断（优先级可设为 1、2 或 3 中的一个），若未设置，则将使用 :cpp:member:`i2c_slave_config_t::intr_priority` 指示的优先级。请使用数字形式（1、2、3），不要用位掩码形式（(1<<1)、(1<<2)、(1<<3)）。请注意，中断优先级一旦设置完成，在调用 :cpp:func:`i2c_del_slave_device` 之前都无法更改。
+    - :cpp:member:`i2c_slave_config_t::addr_bit_len` 如果需要从机设备具有 10 位地址，则将该成员变量设为 ``I2C_ADDR_BIT_LEN_10``。
+    - :cpp:member:`i2c_slave_config_t::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 I2C 寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``not able to power down in light sleep`` 的错误消息。
+    :SOC_I2C_SLAVE_SUPPORT_BROADCAST: - :cpp:member:`i2c_slave_config_t::broadcast_en` 如果要启用从机广播，请将该成员变量设为 true。当从机设备接收到来自主机设备的通用调用地址 0x00，且后面的读写位为 0 时，无论从机设备自身地址如何，都会响应主机设备。
+    - :cpp:member:`i2c_slave_config_t::enable_internal_pullup` 置 true 使能内部上拉。尽管如此，我们强烈建议您使用外部上拉电阻。
 
 一旦填充好 :cpp:type:`i2c_slave_config_t` 结构体的必要参数，就可调用 :cpp:func:`i2c_new_slave_device` 来分配和初始化 I2C 主机总线。如果函数运行正确，则将返回一个 I2C 总线句柄。若没有可用的 I2C 端口，此函数将返回 :c:macro:`ESP_ERR_NOT_FOUND` 错误。
 
 .. code:: c
 
     i2c_slave_config_t i2c_slv_config = {
-        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
+        .i2c_port = I2C_SLAVE_NUM,
         .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .send_buf_depth = 256,
         .scl_io_num = I2C_SLAVE_SCL_IO,
         .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x58,
+        .slave_addr = ESP_SLAVE_ADDR,
+        .send_buf_depth = 100,
+        .receive_buf_depth = 100,
     };
 
     i2c_slave_dev_handle_t slave_handle;
@@ -393,7 +401,7 @@ I2C 主机写入后读取
     };
 
     i2c_master_dev_handle_t dev_handle;
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(I2C_PORT_NUM_0, &dev_cfg, &dev_handle));
+    ESP_ERROR_CHECK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
     uint8_t buf[20] = {0x20};
     uint8_t buffer[2];
     ESP_ERROR_CHECK(i2c_master_transmit_receive(dev_handle, buf, sizeof(buf), buffer, 2, -1));
@@ -435,144 +443,73 @@ I2C 驱动程序可以使用 :cpp:func:`i2c_master_probe` 来检测设备是否�
 I2C 从机控制器
 ^^^^^^^^^^^^^^
 
-通过调用 :cpp:func:`i2c_new_slave_device` 安装好 I2C 从机驱动程序后，{IDF_TARGET_NAME} 就可以作为从机与其他 I2C 主机进行通信了。
+I2C 从机不像 I2C 主机那样主观，主机知道自己何时应该发送数据，何时应该接收数据。在绝大多数情况下，I2C 从机是非常被动的，这意味着 I2C 从机发送和接收数据的能力在很大程度上取决于主机的操作。因此，我们在驱动程序中抛出了两个回调函数，分别代表 I2C 主机的读取请求和写入请求。
 
 I2C 从机写入
 ~~~~~~~~~~~~~
 
-I2C 从机的发送 buffer 可作为 FIFO 来存储要发送的数据。在主机请求这些数据前，它们会一直排队。可通过调用 :cpp:func:`i2c_slave_transmit` 来传输数据。
+你可以通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_request` 回调来获取 I2C 从机写事件，并在获取请求事件的任务中调用 `i2c_slave_write` 来发送数据。
 
-将数据写入 FIFO 的简单示例：
+传输数据的简单示例：
 
 .. code:: c
 
-    uint8_t *data_wr = (uint8_t *) malloc(DATA_LENGTH);
-
-    i2c_slave_config_t i2c_slv_config = {
-        .addr_bit_len = I2C_ADDR_BIT_LEN_7,   // 7 位地址
-        .clk_source = I2C_CLK_SRC_DEFAULT,    // 设置时钟源
-        .i2c_port = TEST_I2C_PORT,            // 设置 I2C 端口编号
-        .send_buf_depth = 256,                // 设置 TX buffer 长度
-        .scl_io_num = I2C_SLAVE_SCL_IO,       // SCL 管脚编号
-        .sda_io_num = I2C_SLAVE_SDA_IO,       // SDA 管脚编号
-        .slave_addr = 0x58,                   // 从机地址
-    };
-
-    i2c_slave_dev_handle_t slave_handle;
-    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
-    for (int i = 0; i < DATA_LENGTH; i++) {
-        data_wr[i] = i;
+    // Prepare a callback function
+    static bool i2c_slave_request_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_request_event_data_t *evt_data, void *arg)
+    {
+        i2c_slave_event_t evt = I2C_SLAVE_EVT_TX;
+        BaseType_t xTaskWoken = 0;
+        xQueueSendFromISR(context->event_queue, &evt, &xTaskWoken);
+        return xTaskWoken;
     }
 
-    ESP_ERROR_CHECK(i2c_slave_transmit(slave_handle, data_wr, DATA_LENGTH, 10000));
+    // Register callback in a task
+    i2c_slave_event_callbacks_t cbs = {
+        .on_request = i2c_slave_request_cb,
+    };
+    ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(context.handle, &cbs, &context));
+
+    // Waiting for request event and send data in a task
+    static void i2c_slave_task(void *arg)
+    {
+        uint8_t buffer_size = 64;
+        uint32_t write_len;
+        uint8_t *data_buffer;
+
+        while (true) {
+            i2c_slave_event_t evt;
+            if (xQueueReceive(context->event_queue, &evt, 10) == pdTRUE) {
+                ESP_ERROR_CHECK(i2c_slave_write(handle, data_buffer, buffer_size, &write_len, 1000));
+            }
+        }
+        vTaskDelete(NULL);
+    }
 
 I2C 从机读取
 ~~~~~~~~~~~~~
 
-每当主机将数据写入从机，从机都会自动将数据存储在接收 buffer 中，从而使从机应用程序能自由调用 :cpp:func:`i2c_slave_receive`。:cpp:func:`i2c_slave_receive` 为非阻塞接口，因此要想知道接收是否完成，需注册回调函数 :cpp:func:`i2c_slave_register_event_callbacks`。
+与写入一样，您可以通过注册 :cpp:member:`i2c_slave_event_callbacks_t::on_receive` 回调来获取 I2C 从机读取事件，在任务中获取请求事件时，您可以保存数据并做您想做的事情。
+
+接收数据的简单示例
 
 .. code:: c
 
-    static IRAM_ATTR bool i2c_slave_rx_done_callback(i2c_slave_dev_handle_t channel, const i2c_slave_rx_done_event_data_t *edata, void *user_data)
+    // Prepare a callback function
+    static bool i2c_slave_receive_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_slave_rx_done_event_data_t *evt_data, void *arg)
     {
-        BaseType_t high_task_wakeup = pdFALSE;
-        QueueHandle_t receive_queue = (QueueHandle_t)user_data;
-        xQueueSendFromISR(receive_queue, edata, &high_task_wakeup);
-        return high_task_wakeup == pdTRUE;
+        i2c_slave_event_t evt = I2C_SLAVE_EVT_RX;
+        BaseType_t xTaskWoken = 0;
+        // You can get data and length via i2c_slave_rx_done_event_data_t
+        xQueueSendFromISR(context->event_queue, &evt, &xTaskWoken);
+        return xTaskWoken;
     }
 
-    uint8_t *data_rd = (uint8_t *) malloc(DATA_LENGTH);
-    uint32_t size_rd = 0;
-
-    i2c_slave_config_t i2c_slv_config = {
-        .addr_bit_len = I2C_ADDR_BIT_LEN_7,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .i2c_port = TEST_I2C_PORT,
-        .send_buf_depth = 256,
-        .scl_io_num = I2C_SLAVE_SCL_IO,
-        .sda_io_num = I2C_SLAVE_SDA_IO,
-        .slave_addr = 0x58,
-    };
-
-    i2c_slave_dev_handle_t slave_handle;
-    ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
-
-    s_receive_queue = xQueueCreate(1, sizeof(i2c_slave_rx_done_event_data_t));
+    // Register callback in a task
     i2c_slave_event_callbacks_t cbs = {
-        .on_recv_done = i2c_slave_rx_done_callback,
+        .on_receive = i2c_slave_receive_cb,
     };
-    ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(slave_handle, &cbs, s_receive_queue));
+    ESP_ERROR_CHECK(i2c_slave_register_event_callbacks(context.handle, &cbs, &context));
 
-    i2c_slave_rx_done_event_data_t rx_data;
-    ESP_ERROR_CHECK(i2c_slave_receive(slave_handle, data_rd, DATA_LENGTH));
-    xQueueReceive(s_receive_queue, &rx_data, pdMS_TO_TICKS(10000));
-    // 接收完成。
-
-.. only:: SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS
-
-    将数据放入 I2C 从机 RAM 中
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    如上所述，I2C 从机 FIFO 可被用作 RAM，即可以通过地址字段直接访问 RAM。例如，可参照下图将数据写入第三个 RAM 块。请注意，在进行操作前需要先将 :cpp:member:`i2c_slave_config_t::access_ram_en` 设为 true。
-
-    .. figure:: ../../../_static/diagrams/i2c/i2c_slave_write_slave_ram.png
-        :align: center
-        :alt: 将数据放入 I2C 从机 RAM 中
-
-        将数据放入 I2C 从机 RAM 中
-
-    .. code:: c
-
-        uint8_t data_rd[DATA_LENGTH_RAM] = {0};
-
-        i2c_slave_config_t i2c_slv_config = {
-            .addr_bit_len = I2C_ADDR_BIT_LEN_7,
-            .clk_source = I2C_CLK_SRC_DEFAULT,
-            .i2c_port = TEST_I2C_PORT,
-            .send_buf_depth = 256,
-            .scl_io_num = I2C_SLAVE_SCL_IO,
-            .sda_io_num = I2C_SLAVE_SDA_IO,
-            .slave_addr = 0x58,
-            .flags.access_ram_en = true,
-        };
-
-        // 主机将数据写入从机。
-
-        i2c_slave_dev_handle_t slave_handle;
-        ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
-        ESP_ERROR_CHECK(i2c_slave_read_ram(slave_handle, 0x5, data_rd, DATA_LENGTH_RAM));
-        ESP_ERROR_CHECK(i2c_del_slave_device(slave_handle));
-
-    从 I2C 从机 RAM 中获取数据
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    数据可被存储在相对从机一定偏移量的 RAM 中，且主机可直接通过 RAM 地址读取这些数据。例如，如果数据被存储在第三个 RAM 块中，则主机可参照下图读取这些数据。请注意，在操作前需要先将 :cpp:member:`i2c_slave_config_t::access_ram_en` 设为 true。
-
-    .. figure:: ../../../_static/diagrams/i2c/i2c_slave_read_slave_ram.png
-        :align: center
-        :alt: 从 I2C 从机 RAM 中获取数据
-
-        从 I2C 从机 RAM 中获取数据
-
-    .. code:: c
-
-        uint8_t data_wr[DATA_LENGTH_RAM] = {0};
-
-        i2c_slave_config_t i2c_slv_config = {
-            .addr_bit_len = I2C_ADDR_BIT_LEN_7,
-            .clk_source = I2C_CLK_SRC_DEFAULT,
-            .i2c_port = TEST_I2C_PORT,
-            .send_buf_depth = 256,
-            .scl_io_num = I2C_SLAVE_SCL_IO,
-            .sda_io_num = I2C_SLAVE_SDA_IO,
-            .slave_addr = 0x58,
-            .flags.access_ram_en = true,
-        };
-
-        i2c_slave_dev_handle_t slave_handle;
-        ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
-        ESP_ERROR_CHECK(i2c_slave_write_ram(slave_handle, 0x2, data_wr, DATA_LENGTH_RAM));
-        ESP_ERROR_CHECK(i2c_del_slave_device(slave_handle));
 
 注册事件回调函数
 ^^^^^^^^^^^^^^^^^
@@ -601,8 +538,8 @@ I2C 从机事件回调函数列表见 :cpp:type:`i2c_slave_event_callbacks_t`。
 
 .. list::
 
-    - :cpp:member:`i2c_slave_event_callbacks_t::on_recv_done` 可设置用于“接收完成”事件的回调函数。该函数原型在 :cpp:type:`i2c_slave_received_callback_t` 中声明。
-    :SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE: - :cpp:member:`i2c_slave_event_callbacks_t::on_stretch_occur` 可设置用于“时钟拉伸”事件的回调函数。该函数原型在 :cpp:type:`i2c_slave_stretch_callback_t` 中声明。
+    - :cpp:member:`i2c_slave_event_callbacks_t::on_request` 为请求事件设置回调函数。
+    - :cpp:member:`i2c_slave_event_callbacks_t::on_receive` 为 receive 事件设置回调函数。函数原型在 :cpp:type:`i2c_slave_received_callback_t` 中声明。
 
 电源管理
 ^^^^^^^^^^
@@ -637,21 +574,39 @@ Kconfig 选项 :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 能够做到以下几点：
 线程安全
 ^^^^^^^^^^^^^
 
-工厂函数 :cpp:func:`i2c_new_master_bus` 和 :cpp:func:`i2c_new_slave_device` 由驱动程序保证其线程安全，不需要额外的锁保护，也可从不同的 RTOS 任务中调用这些函数。应避免从多个任务中调用其他非线程安全的公共 I2C API，若确实需要调用，请添加额外的锁。
+工厂函数 :cpp:func:`i2c_new_master_bus` 和 :cpp:func:`i2c_new_slave_device` 由驱动程序保证线程安全，这意味着可以从不同的 RTOS 任务调用这些函数，而无需额外的锁保护。
+
+I2C 主机操作函数也通过总线操作信号保证线程安全。
+
+- :cpp:func:`i2c_master_transmit`.
+- :cpp:func:`i2c_master_multi_buffer_transmit`.
+- :cpp:func:`i2c_master_transmit_receive`.
+- :cpp:func:`i2c_master_receive`.
+- :cpp:func:`i2c_master_probe`.
+
+I2C 从机操作函数也通过总线操作信号保证线程安全。
+
+- :cpp:func:`i2c_slave_write`.
+
+其他函数不保证线程安全。因此，应避免在没有互斥保护的不同任务中调用这些函数。
 
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
 - :ref:`CONFIG_I2C_ISR_IRAM_SAFE` 将在 cache 被禁用时控制默认的 ISR 处理程序正常工作，详情请参阅 `IRAM 安全 <#iram-safe>`__。
 - :ref:`CONFIG_I2C_ENABLE_DEBUG_LOG` 可启用调试日志，但会增加固件二进制文件大小。
+- :ref:`CONFIG_I2C_ENABLE_SLAVE_DRIVER_VERSION_2` 用于启用 I2C 从机驱动 v2.0 程序。
 
 应用示例
 --------
+
+- :example:`peripherals/i2c/i2c_basic` 演示了初始化 I2C 主机驱动程序并从 MPU9250 传感器读取数据的基本步骤。
 
 - :example:`peripherals/i2c/i2c_eeprom` 演示了如何使用 I2C 主机模式从连接的 EEPROM 读取和写入数据。
 
 - :example:`peripherals/i2c/i2c_tools` 演示了如何使用 I2C 工具开发 I2C 相关的应用程序，提供了用于配置 I2C 总线、扫描设备、读取、设置和检查寄存器的命令行工具。
 
+- :example:`peripherals/i2c/i2c_slave_network_sensor` 演示如何使用 I2C 从机开发 I2C 相关应用程序，提供 I2C 从机如何充当网络传感器，以及如何使用事件回调接收和发送数据。
 
 API 参考
 --------

@@ -76,20 +76,24 @@ The driver of FIFOs works as below:
 */
 
 #include <string.h>
-#include "driver/sdio_slave.h"
-#include "soc/sdio_slave_periph.h"
-#include "esp_log.h"
-#include "esp_intr_alloc.h"
-#include "freertos/FreeRTOS.h"
+
 #include "soc/soc_memory_layout.h"
 #include "soc/gpio_periph.h"
 #include "soc/soc_caps.h"
+#include "soc/sdio_slave_periph.h"
 #include "esp_cpu.h"
-#include "freertos/semphr.h"
-#include "esp_private/periph_ctrl.h"
-#include "driver/gpio.h"
+#include "esp_intr_alloc.h"
+#include "esp_log.h"
 #include "hal/sdio_slave_hal.h"
 #include "hal/gpio_hal.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
+#include "esp_private/periph_ctrl.h"
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#include "esp_private/sleep_retention.h"
+#endif
+#include "driver/gpio.h"
+#include "driver/sdio_slave.h"
 
 #define SDIO_SLAVE_CHECK(res, str, ret_val) do { if(!(res)){\
     SDIO_SLAVE_LOGE("%s", str);\
@@ -365,6 +369,13 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
     }
     context.intr_handle = intr_handle;
 
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    r = sleep_retention_power_lock_acquire();
+    if (r != ESP_OK) {
+        return r;
+    }
+#endif
+
     r = sdio_slave_hw_init(config);
     if (r != ESP_OK) {
         return r;
@@ -377,6 +388,11 @@ esp_err_t sdio_slave_initialize(sdio_slave_config_t *config)
 void sdio_slave_deinit(void)
 {
     sdio_slave_hw_deinit();
+
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    esp_err_t r = sleep_retention_power_lock_release();
+    assert(r == ESP_OK);
+#endif
 
     //unregister all buffers registered but returned (not loaded)
     recv_desc_t *temp_desc;
