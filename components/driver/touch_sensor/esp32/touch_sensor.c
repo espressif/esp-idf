@@ -301,7 +301,7 @@ esp_err_t touch_pad_config(touch_pad_t touch_num, uint16_t threshold)
 
         //If the FSM mode is 'TOUCH_FSM_MODE_TIMER', The data will be ready after one measurement cycle
         //after this function is executed, otherwise, the "touch_value" by "touch_pad_read" is 0.
-        wait_time_ms = sleep_time / (rtc_clk_freq / 1000) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
+        wait_time_ms = (uint32_t)(sleep_time / ((float)rtc_clk_freq / 1000.0)) + meas_cycle / (SOC_CLK_RC_FAST_FREQ_APPROX / 1000);
         wait_tick = wait_time_ms / portTICK_PERIOD_MS;
         vTaskDelay(wait_tick ? wait_tick : 1);
         s_touch_pad_init_bit |= (1 << touch_num);

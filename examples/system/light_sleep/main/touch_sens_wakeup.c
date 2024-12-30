@@ -94,9 +94,7 @@ esp_err_t example_register_touch_wakeup(void)
     };
     ESP_ERROR_CHECK(touch_sensor_register_callbacks(sens_handle, &callbacks, NULL));
 
-    touch_sleep_config_t light_slp_cfg = {
-        .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,
-    };
+    touch_sleep_config_t light_slp_cfg = TOUCH_SENSOR_DEFAULT_LSLP_CONFIG();
     ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
 
     ESP_ERROR_CHECK(touch_sensor_enable(sens_handle));

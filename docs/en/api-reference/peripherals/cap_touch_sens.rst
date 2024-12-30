@@ -380,24 +380,26 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     - Light sleep wake-up: you need to set :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` to enable the light sleep wake-up by touch sensor. Note that any registered touch channel can wake-up the chip from light sleep.
     - Deep sleep wake-up: beside setting :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`, you need to specify :cpp:member:`deep_slp_chan` additionally. In order to reduce the power consumption, only the specified channel can wake-up the chip from the deep sleep when RTC_PREI power domain off. And also, the driver supports to store another set of configurations for the deep sleep via :cpp:member:`deep_slp_sens_cfg`, this set of configurations only takes effect during the deep sleep, you can customize the configurations to save more power. The configurations will be reset to the previous set after waking-up from the deep sleep. Please be aware that, not only deep sleep wake-up, but also light sleep wake-up will be enabled when the :cpp:member:`slp_wakeup_lvl` is :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`.
 
+    .. only:: not esp32
+
+        You can decide whether allow to power down RTC_PERIPH domain during the Deep-sleep by :cpp:member:`touch_sleep_config_t::deep_slp_allow_pd`. If allowed, the RTC_PERIPH domain will be powered down after the chip enters Deep-sleep, and only the specified :cpp:member:`touch_sleep_config_t::deep_slp_chan` can wake-up the chip from Deep-sleep. If not allowed, all enabled touch channels can wake-up the chip from Deep-sleep.
+
     To deregister the sleep wake-up function, you can call :cpp:func:`touch_sensor_config_sleep_wakeup` again, and set the second parameter (i.e. :cpp:type:`touch_sleep_config_t` pointer) to ``NULL``.
 
     .. code-block:: c
 
-        touch_sleep_config_t light_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,
-        };
+        touch_sleep_config_t light_slp_cfg = TOUCH_SENSOR_DEFAULT_LSLP_CONFIG();
         // Register the light sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
         // ...
         // Deregister the light sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, NULL));
-        touch_sleep_config_t deep_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,
-            .deep_slp_chan = dslp_chan_handle,
-            // Other deep sleep configurations
-            // ...
-        };
+        // Default Deep-sleep wake-up configurations: RTC_PERIPH will keep power on during the Deep-sleep,
+        // All enabled touch channel can wake-up the chip from Deep-sleep
+        touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_CONFIG();
+        // Default Deep-sleep wake-up power down configurations: RTC_PERIPH will be powered down during the Deep-sleep,
+        // only the specified sleep pad can wake-up the chip from Deep-sleep
+        // touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_PD_CONFIG(sleep_channel, slp_chan_thresh1, ...);
         // Register the deep sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 

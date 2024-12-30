@@ -12,6 +12,7 @@
 
 
 typedef struct {
+    bool deep_slp_allow_pd;
     int deep_slp_chan;
     touch_hal_config_t slp_cfg;
     bool apply_slp_cfg;
@@ -52,11 +53,12 @@ void touch_hal_config_controller(const touch_hal_config_t *cfg)
 #endif
 }
 
-void touch_hal_save_sleep_config(int deep_slp_chan, const touch_hal_config_t *deep_slp_cfg)
+void touch_hal_save_sleep_config(int deep_slp_chan, const touch_hal_config_t *deep_slp_cfg, bool dslp_allow_pd)
 {
     s_touch_slp_obj.deep_slp_chan = deep_slp_chan;
+    s_touch_slp_obj.deep_slp_allow_pd = dslp_allow_pd;
     /* If particular deep sleep configuration is given, save it and apply it before entering the deep sleep */
-    if (deep_slp_chan >= 0 && deep_slp_cfg) {
+    if (deep_slp_cfg) {
         s_touch_slp_obj.apply_slp_cfg = true;
         memcpy(&s_touch_slp_obj.slp_cfg, deep_slp_cfg, sizeof(touch_hal_config_t));
     } else {
@@ -73,8 +75,13 @@ static void s_touch_hal_apply_sleep_config(void)
     }
     /* Whether to enable touch sensor wake-up the chip from deep sleep */
     if (s_touch_slp_obj.deep_slp_chan >= 0) {
-        touch_ll_sleep_set_channel_num(s_touch_slp_obj.deep_slp_chan);
-        touch_ll_enable_channel_mask(BIT(s_touch_slp_obj.deep_slp_chan));
+        if (s_touch_slp_obj.deep_slp_allow_pd) {
+            touch_ll_sleep_set_channel_num(s_touch_slp_obj.deep_slp_chan);
+        } else {
+            /* If not allow power down but sleep channel is set, then only enable this channel during the deep sleep */
+            touch_ll_sleep_set_channel_num(TOUCH_LL_NULL_CHANNEL);
+            touch_ll_enable_channel_mask(BIT(s_touch_slp_obj.deep_slp_chan));
+        }
     } else {
         touch_ll_sleep_set_channel_num(TOUCH_LL_NULL_CHANNEL);
     }

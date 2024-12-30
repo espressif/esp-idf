@@ -380,24 +380,26 @@
     - Light-sleep 状态唤醒：通过指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` 即可启用触摸传感器 Light-sleep 唤醒功能。注意任何已注册的触摸传感器通道都会在 Light-sleep 状态下保持采样并支持唤醒 Light-sleep。
     - Deep-sleep 状态唤醒：启用触摸传感器 Deep-sleep 唤醒功能除了指定 :cpp:member:`slp_wakeup_lvl` 为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 外，还需要指定 Deep-sleep 唤醒通道 :cpp:member:`deep_slp_chan`，注意只有该指定的通道才会在 Deep-sleep 状态下保持采样以及唤醒，以此降低在 Deep-sleep 状态下的功耗。此外，若需要在深度睡眠下使用另一套低功耗的配置来进一步降低功耗，可以通过 :cpp:member:`deep_slp_sens_cfg` 额外指定一套低功耗配置，在进入 Deep-sleep 前，驱动会应用这套配置，从 Deep-sleep 状态唤醒后，则会重新配置到之前的配置。请注意当 :cpp:member:`slp_wakeup_lvl` 配置为 :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` 后，触摸传感器不仅能唤醒 Deep-sleep 状态，还能唤醒 Light-sleep 状态。
 
+    .. only:: not esp32
+
+        Deep-sleep 状态唤醒可由 :cpp:member:`touch_sleep_config_t::deep_slp_allow_pd` 配置是否允许关闭 RTC_PERIPH 电源域。若允许关闭，则芯片进入 Deep-sleep 后触摸传感器所在的 RTC_PERIPH 电源域有可能被关闭，此时只有指定的 :cpp:member:`touch_sleep_config_t::deep_slp_chan` 可唤醒，若不允许关闭，则所有已使能的触摸通道都可以将芯片从 Deep-sleep 状态中唤醒。
+
     若需要注销睡眠唤醒功能，可再次调用 :cpp:func:`touch_sensor_config_sleep_wakeup` 并将第二个参数（即 :cpp:type:`touch_sleep_config_t` 的配置结构体指针）设为 ``NULL`` 来注销睡眠唤醒功能。
 
     .. code-block:: c
 
-        touch_sleep_config_t light_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,
-        };
+        touch_sleep_config_t light_slp_cfg = TOUCH_SENSOR_DEFAULT_LSLP_CONFIG();
         // 注册 Light-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
         // ...
         // 注销睡眠唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, NULL));
-        touch_sleep_config_t deep_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,
-            .deep_slp_chan = dslp_chan_handle,
-            // 其他 Deep-sleep 唤醒配置
-            // ...
-        };
+        // 默认 Deep-sleep 唤醒配置：RTC_PERIPH 电源域在 Deep-sleep 状态下保持上电，
+        // 且所有使能 Touch 通道都能正常唤醒
+        touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_CONFIG();
+        // 默认 Deep-sleep 掉电唤醒配置：RTC_PERIPH 电源域在 Deep-sleep 状态下掉电，
+        // 仅有指定的 sleep pad 能正常唤醒
+        // touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_PD_CONFIG(sleep_channel, slp_chan_thresh1, ...);
         // 注册 Deep-sleep 唤醒功能
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 

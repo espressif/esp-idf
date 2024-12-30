@@ -83,15 +83,21 @@ struct touch_sensor_s {
 
     uint8_t                 sample_cfg_num;             /*!< The number of sample configurations that in used */
     void                    *user_ctx;                  /*!< User context that will pass to the callback function */
-    bool                    is_enabled;                 /*!< Flag to indicate whether the scanning is enabled */
-    bool                    is_started;                 /*!< Flag to indicate whether the scanning has started */
-    bool                    is_meas_timeout;            /*!< Flag to indicate whether the measurement timeout, will force to stop the current measurement if the timeout is triggered */
-    bool                    sleep_en;                   /*!< Flag to indicate whether the sleep wake-up feature is enabled */
-    bool                    waterproof_en;              /*!< Flag to indicate whether the water proof feature is enabled */
-    bool                    immersion_proof;            /*!< Flag to indicate whether to disable scanning when the guard ring is triggered */
-    bool                    proximity_en;               /*!< Flag to indicate whether the proximity sensing feature is enabled */
-    bool                    timeout_en;                 /*!< Flag to indicate whether the measurement timeout feature (hardware timeout) is enabled */
-    bool                    denoise_en;                 /*!< Flag to indicate whether the denoise channel feature is enabled */
+    union {
+        struct {
+            bool            is_enabled : 1;             /*!< Flag to indicate whether the scanning is enabled */
+            bool            is_started : 1;             /*!< Flag to indicate whether the scanning has started */
+            bool            is_meas_timeout : 1;        /*!< Flag to indicate whether the measurement timeout, will force to stop the current measurement if the timeout is triggered */
+            bool            sleep_en : 1;               /*!< Flag to indicate whether the sleep wake-up feature is enabled */
+            bool            allow_pd : 1;               /*!< Flag to indicate whether allow RTC_PERIPH power down during the sleep */
+            bool            waterproof_en : 1;          /*!< Flag to indicate whether the water proof feature is enabled */
+            bool            immersion_proof : 1;        /*!< Flag to indicate whether to disable scanning when the guard ring is triggered */
+            bool            proximity_en : 1;           /*!< Flag to indicate whether the proximity sensing feature is enabled */
+            bool            timeout_en : 1;             /*!< Flag to indicate whether the measurement timeout feature (hardware timeout) is enabled */
+            bool            denoise_en : 1;             /*!< Flag to indicate whether the denoise channel feature is enabled */
+        };
+        uint32_t flags;
+    };
 };
 
 /**
