@@ -22,6 +22,9 @@ To create a ping session, you need to fill in the ``esp_ping_config_t`` configur
 Example method to create a new ping session and register callbacks:
 
 .. code-block:: c
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <netdb.h>
 
     static void test_on_ping_success(esp_ping_handle_t hdl, void *args)
     {
