@@ -163,6 +163,8 @@ static void i2c_master_write_test_large_write_small_read(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -180,6 +182,7 @@ static void i2c_master_write_test_large_write_small_read(void)
 
 static void i2c_slave_read_test_large_write_small_read(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_rd[7] = {0};
 
     i2c_slave_config_t i2c_slv_config = {
@@ -321,6 +324,8 @@ static void i2c_master_write_read_test(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     printf("master read buffer\n");
@@ -351,6 +356,7 @@ static void i2c_master_write_read_test(void)
 
 static void i2c_slave_read_write_test(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_rd[DATA_LENGTH] = {0};
     uint8_t data_wr[DATA_LENGTH] = {0};
 
@@ -426,6 +432,8 @@ static void i2c_master_repeat_write(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     for (int j = 0; j < times; j++) {
@@ -442,6 +450,7 @@ static void i2c_master_repeat_write(void)
 
 static void i2c_slave_repeat_read(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint32_t size = 0;
     int times = 3;
     uint8_t data_rd[DATA_LENGTH * 3] = {0};
@@ -654,6 +663,8 @@ static void i2c_master_write_multi_buffer_test(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -670,6 +681,7 @@ static void i2c_master_write_multi_buffer_test(void)
 
 static void i2c_slave_read_multi_buffer_test(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_rd[DATA_LENGTH * 3] = {0};
 
     i2c_slave_config_t i2c_slv_config = {
