@@ -261,7 +261,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_master->contains_read = true;
 #if !SOC_I2C_STOP_INDEPENDENT
     if (remaining_bytes < SOC_I2C_FIFO_LEN - 1) {
-        if (i2c_operation->hw_cmd.ack_val == ACK_VAL) {
+        if (i2c_operation->hw_cmd.ack_val == I2C_ACK_VAL) {
             if (remaining_bytes != 0) {
                 i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
                 i2c_master->read_len_static = i2c_master->rx_cnt;
