@@ -94,8 +94,6 @@ def test_heap_misc_options(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.parametrize(
     'config',
     [

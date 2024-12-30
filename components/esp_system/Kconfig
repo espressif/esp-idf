@@ -126,15 +126,15 @@ menu "ESP System Settings"
                 unwinding and generation of both .eh_frame and .eh_frame_hdr sections, resulting in a bigger binary
                 size (20% to 100% larger). The main purpose of this option is to be able to have a backtrace parsed
                 and printed by the program itself, regardless of the serial monitor used.
-                This option shall NOT be used for production.
+                This option is not recommended to be used for production.
 
         config ESP_SYSTEM_USE_FRAME_POINTER
             bool "Use CPU Frame Pointer register"
             help
                 This configuration allows the compiler to allocate CPU register s0 as the frame pointer. The main usage
                 of the frame pointer is to be able to generate a backtrace from the panic handler on exception.
-                Enabling this option results in bigger code and slower code since all functions will have to populate
-                this register and won't be able to use it as a general-purpose register anymore.
+                Enabling this option results in bigger and slightly slower code since all functions will have
+                to populate this register and won't be able to use it as a general-purpose register anymore.
 
     endchoice
 

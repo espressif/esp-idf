@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,10 +28,9 @@ extern void panic_print_registers(const void *frame, int core);
 
 /* Targets based on a RISC-V CPU cannot perform backtracing that easily.
     * We have two options here:
-    *     - Perform backtracing at runtime.
+    *     - Perform backtracing at runtime thanks to the configuration options
+    *       CONFIG_ESP_SYSTEM_USE_EH_FRAME and CONFIG_ESP_SYSTEM_USE_FRAME_POINTER.
     *     - Let IDF monitor do the backtracing for us. Used during panic already.
-    * This could be configurable, choosing one or the other depending on
-    * CONFIG_ESP_SYSTEM_USE_EH_FRAME configuration option.
     *
     * In both cases, this takes time, and we might be in an ISR, we must
     * exit this handler as fast as possible, then we will simply print
@@ -64,6 +63,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
 
     panic_print_registers(&backtrace_frame, current_core);
     esp_rom_printf("\r\n");
+    esp_rom_printf("Please enable CONFIG_ESP_SYSTEM_USE_FRAME_POINTER option to have a full backtrace.\r\n");
 #endif // CONFIG_ESP_SYSTEM_USE_EH_FRAME
 
     return ESP_OK;
