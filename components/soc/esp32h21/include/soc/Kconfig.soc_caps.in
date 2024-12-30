@@ -195,10 +195,6 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_AHB_GDMA_VERSION
-    int
-    default 1
-
 config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
@@ -504,10 +500,6 @@ config SOC_EFUSE_DIS_ICACHE
     default y
 
 config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
-    bool
-    default y
-
-config SOC_EFUSE_ECDSA_USE_HARDWARE_K
     bool
     default y
 

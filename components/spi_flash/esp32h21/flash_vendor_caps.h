@@ -1,8 +1,8 @@
-
 /*
  * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#pragma once
 
-//TODO: [ESP32H21] IDF-11611
+#define SPI_FLASH_VENDOR_XMC_SUPPORTED       (1)

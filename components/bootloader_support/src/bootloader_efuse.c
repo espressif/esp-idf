@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@ IRAM_ATTR uint32_t bootloader_common_get_chip_ver_pkg(void)
 
 int bootloader_clock_get_rated_freq_mhz(void)
 {
+    //TODO: IDF-6570, need refactor
 #ifdef CONFIG_IDF_TARGET_ESP32
     return efuse_hal_get_rated_freq_mhz();
 
@@ -38,6 +39,10 @@ int bootloader_clock_get_rated_freq_mhz(void)
 
 #elif CONFIG_IDF_TARGET_ESP32H2
     //IDF-6570
+    return 96;
+
+#elif CONFIG_IDF_TARGET_ESP32H21
+    //TODO: [ESP32H21] IDF-11556, please check
     return 96;
 
 #elif CONFIG_IDF_TARGET_ESP32P4

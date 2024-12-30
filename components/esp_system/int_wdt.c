@@ -28,6 +28,11 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32H21
+#define ETS_TG0_WDT_LEVEL_INTR_SOURCE        ETS_TG0_WDT_INTR_SOURCE
+#define ETS_TG1_WDT_LEVEL_INTR_SOURCE        ETS_TG1_WDT_INTR_SOURCE
+#endif
+
 #if SOC_TIMER_GROUPS > 1
 
 /* If we have two hardware timer groups, use the second one for interrupt watchdog. */

@@ -24,18 +24,21 @@ int esp_efuse_rtc_calib_get_ver(void)
     uint32_t cali_version = 0;
     // TODO: [ESP32H21] IDF-11590
     abort();
+    return cali_version;
 }
 
 uint32_t esp_efuse_rtc_calib_get_init_code(int version, uint32_t adc_unit, int atten)
 {
     // TODO: [ESP32H21] IDF-11590
     abort();
+    return 0;
 }
 
 int esp_efuse_rtc_calib_get_chan_compens(int version, uint32_t adc_unit, uint32_t adc_channel, int atten)
 {
     // TODO: [ESP32H21] IDF-11590
     abort();
+    return ESP_OK;
 }
 
 esp_err_t esp_efuse_rtc_calib_get_cal_voltage(int version, uint32_t adc_unit, int atten, uint32_t* out_digi, uint32_t* out_vol_mv)

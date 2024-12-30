@@ -42,7 +42,6 @@
 #define MHZ (1000000)
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src);
-static __attribute__((unused)) void recalib_bbpll(void);
 
 static const char *TAG = "clk";
 
