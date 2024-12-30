@@ -31,7 +31,7 @@ config ESP_REV_MIN_FULL
     # MAX Revision
     #
 
-    comment "Maximum Supported ESP32-C2 Revision (Rev v1.99)"
+    comment "Maximum Supported ESP32-C2 Revision (Rev v2.99)"
     # Maximum revision that IDF supports.
     # It can not be changed by user.
     # Only Espressif can change it when a new version will be supported in IDF.
@@ -39,14 +39,9 @@ config ESP_REV_MIN_FULL
 
 config ESP32C2_REV_MAX_FULL
     int
-    default 199
+    default 299
     # keep in sync the "Maximum Supported Revision" description with this value
-
-config ESP32C2_REV2_DEVELOPMENT
-    bool "Develop on ESP32-C2 v2.0 (Preview)"
-    default y if IDF_CI_BUILD
 
 config ESP_REV_MAX_FULL
     int
-    default 299 if ESP32C2_REV2_DEVELOPMENT
-    default ESP32C2_REV_MAX_FULL if !ESP32C2_REV2_DEVELOPMENT
+    default ESP32C2_REV_MAX_FULL
