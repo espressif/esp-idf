@@ -63,9 +63,6 @@ extern "C" {
 #define I2C_PM_LOCK_NAME_LEN_MAX 16
 #define I2C_STATIC_OPERATION_ARRAY_MAX 6
 
-#define ACK_VAL 0
-#define NACK_VAL 1
-
 #define I2C_TRANS_READ_COMMAND(ack_value)    {.ack_val = (ack_value), .op_code = I2C_LL_CMD_READ}
 #define I2C_TRANS_WRITE_COMMAND(ack_check)   {.ack_en = (ack_check), .op_code = I2C_LL_CMD_WRITE}
 #define I2C_TRANS_STOP_COMMAND               {.op_code = I2C_LL_CMD_STOP}

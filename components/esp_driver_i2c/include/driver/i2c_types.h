@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,6 +44,29 @@ typedef enum {
     I2C_EVENT_NACK,       /*!< i2c bus nack */
     I2C_EVENT_TIMEOUT,    /*!< i2c bus timeout */
 } i2c_master_event_t;
+
+/**
+ * @brief Enum for I2C master commands
+ *
+ * These commands are used to define the I2C master operations.
+ * They correspond to hardware-level commands supported by the I2C peripheral.
+ */
+typedef enum {
+    I2C_MASTER_CMD_START,    /**< Start or Restart condition */
+    I2C_MASTER_CMD_WRITE,    /**< Write operation */
+    I2C_MASTER_CMD_READ,     /**< Read operation */
+    I2C_MASTER_CMD_STOP,     /**< Stop condition */
+} i2c_master_command_t;
+
+/**
+ * @brief Enum for I2C master ACK values
+ *
+ * These values define the acknowledgment (ACK) behavior during read operations.
+ */
+typedef enum {
+    I2C_ACK_VAL = 0,  /**< Acknowledge (ACK) signal */
+    I2C_NACK_VAL = 1, /**< Not Acknowledge (NACK) signal */
+}  __attribute__((packed)) i2c_ack_value_t;
 
 /**
  * @brief Type of I2C master bus handle
