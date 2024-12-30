@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "sdkconfig.h"
 #include "nvs_flash.h"
 #include "nvs_sec_provider.h"
+#include "private/nvs_sec_provider_private.h"
 
 #include "esp_private/startup_internal.h"
 #if SOC_HMAC_SUPPORTED
@@ -112,8 +113,8 @@ ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0)
 
 static esp_err_t compute_nvs_keys_with_hmac(hmac_key_id_t hmac_key_id, nvs_sec_cfg_t* cfg)
 {
-    uint32_t ekey_seed[8] = {[0 ... 7] = 0xAEBE5A5A};
-    uint32_t tkey_seed[8] = {[0 ... 7] = 0xCEDEA5A5};
+    uint32_t ekey_seed[8] = {[0 ... 7] = EKEY_SEED};
+    uint32_t tkey_seed[8] = {[0 ... 7] = TKEY_SEED};
 
     esp_err_t err = esp_hmac_calculate(hmac_key_id, ekey_seed, sizeof(ekey_seed), (uint8_t *)cfg->eky);
     if (err != ESP_OK) {

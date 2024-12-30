@@ -9,94 +9,114 @@
 #include "nvs_bootloader.h"
 #include "nvs_bootloader_private.h"
 #include "esp_assert.h"
+#include "sdkconfig.h"
 
 #include "esp_partition.h"
 #include "nvs_constants.h"
 #include <esp_rom_crc.h>
 
+#if CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER && BOOTLOADER_BUILD
+#include "mbedtls_rom_osi.h"
+#endif
+
 static const char* TAG = "nvs_bootloader";
-const bool const_is_encrypted = false;
 
 // Static asserts ensuring that the size of the c structures match NVS physical footprint on the flash
 ESP_STATIC_ASSERT(sizeof(nvs_bootloader_page_header_t) == NVS_CONST_ENTRY_SIZE, "nvs_bootloader_page_header_t size is not 32 bytes");
 ESP_STATIC_ASSERT(sizeof(nvs_bootloader_page_entry_states_t) == NVS_CONST_ENTRY_SIZE, "nvs_bootloader_page_entry_states_t size is not 32 bytes");
 ESP_STATIC_ASSERT(sizeof(nvs_bootloader_single_entry_t) == NVS_CONST_ENTRY_SIZE, "nvs_bootloader_single_entry_t size is not 32 bytes");
 
-esp_err_t nvs_bootloader_read(const char* partition_name,
-                              const size_t read_list_count,
-                              nvs_bootloader_read_list_t read_list[])
+#define NVS_KEY_SIZE 32 // AES-256
+
+/* Currently we support only single-threaded use-cases of reading encrypted NVS partitions */
+static nvs_bootloader_xts_aes_context dec_ctx;
+static bool is_nvs_partition_encrypted = false;
+
+static esp_err_t decrpyt_data(uint32_t src_offset, void* dst, size_t size)
 {
+    // decrypt data
+    // sector num, could have been just uint64/32.
+    uint8_t data_unit[16];
+    uint8_t *destination = (uint8_t *)dst;
+    uint32_t relAddr = src_offset;
+
+    memset(data_unit, 0, sizeof(data_unit));
+    memcpy(data_unit, &relAddr, sizeof(relAddr));
+
+    return nvs_bootloader_aes_crypt_xts(&dec_ctx, AES_DEC, size, data_unit, destination, destination);
+}
+
+static esp_err_t nvs_bootloader_partition_read_string_value(const esp_partition_t *partition, size_t src_offset, void *block, size_t block_len)
+{
+    esp_err_t ret = ESP_FAIL;
+
+    /* For the bootloader build, the esp_partition_read() API internally is calls bootloader_flash_read() that
+     * requires the src_address, length and the destination address to be word aligned.
+     * src_address: NVS keys and values are always stored at a word aligned offset
+     * length: Reading bytes of length divisible by 4 at a time (BOOTLOADER_FLASH_READ_LEN)
+     * destination address: Using a word aligned buffer to read the flash contents (bootloader_flash_read_buffer)
+     */
+    #define BOOTLOADER_FLASH_READ_LEN 32 // because it matches the below discussed XTS-AES requirements as well
 
     /*
-    The flow:
+     * When reading an encrypted partition, we implement the splitting method, that is, we read and decrypt data size in the multiples of 16.
+     * This is necessary because of a bug present in the mbedtls_aes_crypt_xts() function wherein "inplace" encryption/decryption
+     * calculation fails if the length of buffers is not a multiple of 16.
+     * Reference: https://github.com/Mbed-TLS/mbedtls/issues/4302
+     *
+     * Thus, in this case we first operate over the aligned down to 16 length of data and then over the remaining data, by copying
+     * it to a buffer of size 16.
+     *
+     * Also, until https://github.com/Mbed-TLS/mbedtls/issues/9827 is resolved, we need to operate over chunks of length 32.
+     */
+    #define XTS_AES_PROCESS_BLOCK_LEN 32
 
-    1. validate parameters and if there are any, report errors.
-    2. check if the partition exists
-    3. read the partition and browse all NVS pages to figure out whether there is any page in the state of "FREEING"
-        3.1. if there is a page in the state of "FREEING", then reading from the page marked as "ACTIVE" will be skipped
-    4. read entries from pages marked as "FULL" or ("ACTIVE" xor "FREEING") to identify namespace indexes of the requested namespaces
-    5. read the requested entries, same skipping of pages in the state of "ACTIVE" as in step 4
+    if (src_offset & 3 || block_len & 3 || (intptr_t) block & 3
+        || is_nvs_partition_encrypted
+    ) {
+        WORD_ALIGNED_ATTR uint8_t bootloader_flash_read_buffer[BOOTLOADER_FLASH_READ_LEN] = { 0 };
 
-    */
-    // load input parameters
-    ESP_LOGD(TAG, "nvs_bootloader_read called with partition_name: %s, read_list_count: %u", partition_name, (unsigned)read_list_count);
+        size_t block_data_len = block_len / BOOTLOADER_FLASH_READ_LEN * BOOTLOADER_FLASH_READ_LEN;
+        size_t remaining_data_len = block_len % BOOTLOADER_FLASH_READ_LEN;
 
-    // Placeholder return value, replace with actual error handling
-    esp_err_t ret = ESP_OK;
+        /* Process block data */
+        if (block_data_len > 0) {
+            for (size_t data_processed = 0; data_processed < block_data_len; data_processed += BOOTLOADER_FLASH_READ_LEN) {
+                ret = esp_partition_read(partition, src_offset + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+                if (ret != ESP_OK) {
+                    return ret;
+                }
 
-    // Check if the parameters are valid
-    ret = nvs_bootloader_check_parameters(partition_name, read_list_count, read_list);
-    if (ret != ESP_OK) {
-        ESP_LOGD(TAG, "nvs_bootloader_check_parameters failed");
-        return ret;
+                if (is_nvs_partition_encrypted) {
+                    ret = decrpyt_data(src_offset + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+                    if (ret != ESP_OK) {
+                        return ret;
+                    }
+                }
+
+                memcpy(block + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+            }
+        }
+
+        /* Process remaining data */
+        if (remaining_data_len) {
+            ret = esp_partition_read(partition, src_offset + block_data_len, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+            if (ret != ESP_OK) {
+                return ret;
+            }
+
+            if (is_nvs_partition_encrypted) {
+                ret = decrpyt_data(src_offset + block_data_len, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+                if (ret != ESP_OK) {
+                    return ret;
+                }
+            }
+
+            memcpy(block + block_data_len, bootloader_flash_read_buffer, remaining_data_len);
+        }
+    } else {
+        ret = esp_partition_read(partition, src_offset, block, block_len);
     }
-
-    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, partition_name);
-    if (partition == NULL) {
-        ESP_LOGV(TAG, "esp_partition_find_first failed");
-        return ESP_ERR_NVS_PART_NOT_FOUND;
-    }
-
-    // log the partition details
-    ESP_LOGV(TAG, "Partition %s found, size is: %" PRIu32 "", partition->label, partition->size);
-
-    // visit pages to get the number of pages in the state of "ACTIVE" and "FREEING"
-    nvs_bootloader_page_visitor_param_get_page_states_t page_states_count = {0};
-
-    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_page_states, (nvs_bootloader_page_visitor_param_t*)&page_states_count);
-
-    if (ret != ESP_OK) {
-        ESP_LOGV(TAG, "Failed reading page states");
-        return ret;
-    }
-    if (page_states_count.no_freeing_pages > 1) {
-        ESP_LOGV(TAG, "Multiple pages in the state of FREEING");
-        return ESP_ERR_INVALID_STATE;
-    }
-    if (page_states_count.no_active_pages > 1) {
-        ESP_LOGV(TAG, "Multiple pages in the state of ACTIVE");
-        return ESP_ERR_INVALID_STATE;
-    }
-
-    // Here we have at most 1 active page and at most 1 freeing page. If there exists a freeing page, we will skip reading from the active page
-    // Visit pages to get the namespace indexes of the requested namespaces
-    nvs_bootloader_page_visitor_param_read_entries_t read_entries = { .skip_active_page = page_states_count.no_freeing_pages > 0, .read_list_count = read_list_count, .read_list = read_list };
-
-    // log the visitor parameters
-    ESP_LOGV(TAG, "nvs_bootloader_read - visiting pages to get namespace indexes");
-
-    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_namespaces, (nvs_bootloader_page_visitor_param_t*) &read_entries);
-
-    if (ret != ESP_OK) {
-        ESP_LOGV(TAG, "nvs_bootloader_page_visitor_get_namespaces failed");
-        return ret;
-    }
-
-    // log the visitor parameters
-    ESP_LOGV(TAG, "nvs_bootloader_read - visiting pages to get key - value pairs");
-
-    // Visit pages to read the requested key - value pairs
-    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_key_value_pairs, (nvs_bootloader_page_visitor_param_t*) &read_entries);
 
     return ret;
 }
@@ -446,7 +466,6 @@ esp_err_t nvs_bootloader_read_next_single_entry_item(const esp_partition_t *part
                                                      uint8_t *entry_index,
                                                      nvs_bootloader_single_entry_t *item)
 {
-
     // log parameters
     ESP_LOGV(TAG, "nvs_bootloader_read_next_single_entry_item called with page_index: %u, entry_index: %d", (unsigned)page_index, *entry_index);
 
@@ -463,9 +482,15 @@ esp_err_t nvs_bootloader_read_next_single_entry_item(const esp_partition_t *part
         if (NVS_BOOTLOADER_GET_ENTRY_STATE(page_entry_states, *entry_index) == NVS_CONST_ENTRY_STATE_WRITTEN) {
 
             ret = esp_partition_read(partition, page_index * NVS_CONST_PAGE_SIZE + NVS_CONST_PAGE_ENTRY_DATA_OFFSET + (*entry_index) * NVS_CONST_ENTRY_SIZE, (void*)item, sizeof(nvs_bootloader_single_entry_t));
-
             if (ret != ESP_OK) {
                 return ret;
+            }
+
+            if (is_nvs_partition_encrypted) {
+                ret = decrpyt_data(page_index * NVS_CONST_PAGE_SIZE + NVS_CONST_PAGE_ENTRY_DATA_OFFSET + (*entry_index) * NVS_CONST_ENTRY_SIZE, (void*)item, sizeof(nvs_bootloader_single_entry_t));
+                if (ret != ESP_OK) {
+                    return ret;
+                }
             }
 
             // only look at item with consistent header
@@ -544,44 +569,9 @@ esp_err_t nvs_bootloader_read_entries_block(const esp_partition_t *partition,
         return ret;
     }
 
-    size_t data_offset = page_index * NVS_CONST_PAGE_SIZE + NVS_CONST_PAGE_ENTRY_DATA_OFFSET + entry_index * NVS_CONST_ENTRY_SIZE ;
+    size_t data_offset = page_index * NVS_CONST_PAGE_SIZE + NVS_CONST_PAGE_ENTRY_DATA_OFFSET + entry_index * NVS_CONST_ENTRY_SIZE;
 
-    if (data_offset & 3 || block_len & 3 || (intptr_t) block & 3) {
-        /* For the bootloader build, the esp_partition_read() API internally is calls bootloader_flash_read() that
-        * requires the src_address, length and the destination address to be word aligned.
-        * src_address: NVS keys and values are always stored at a word aligned offset
-        * length: Reading bytes of length divisible by 4 at a time (BOOTLOADER_FLASH_READ_LEN)
-        * destination address: Using a word aligned buffer to read the flash contents (bootloader_flash_read_buffer)
-        */
-        #define BOOTLOADER_FLASH_READ_LEN 32 // because it satisfies the above conditions
-        WORD_ALIGNED_ATTR uint8_t bootloader_flash_read_buffer[BOOTLOADER_FLASH_READ_LEN] = { 0 };
-
-        size_t block_data_len = block_len / BOOTLOADER_FLASH_READ_LEN * BOOTLOADER_FLASH_READ_LEN;
-        size_t remaining_data_len = block_len % BOOTLOADER_FLASH_READ_LEN;
-
-        /* Process block data */
-        if (block_data_len > 0) {
-            for (size_t data_processed = 0; data_processed < block_data_len; data_processed += BOOTLOADER_FLASH_READ_LEN) {
-                ret = esp_partition_read(partition, data_offset + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
-                if (ret != ESP_OK) {
-                    return ret;
-                }
-                memcpy(block + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
-            }
-        }
-
-        /* Process remaining data */
-        if (remaining_data_len) {
-            ret = esp_partition_read(partition, data_offset + block_data_len, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
-            if (ret != ESP_OK) {
-                return ret;
-            }
-            memcpy(block + block_data_len, bootloader_flash_read_buffer, remaining_data_len);
-        }
-    } else {
-        ret = esp_partition_read(partition, data_offset, block, block_len);
-    }
-    return ret;
+    return nvs_bootloader_partition_read_string_value(partition, data_offset, block, block_len);
 }
 
 // validates item's header
@@ -636,4 +626,117 @@ bool nvs_bootloader_check_item_header_consistency(const nvs_bootloader_single_en
     } while (false);
 
     return ret;
+}
+
+esp_err_t nvs_bootloader_read(const char* partition_name,
+                            const size_t read_list_count,
+                            nvs_bootloader_read_list_t read_list[])
+{
+    /*
+    The flow:
+
+    1. validate parameters and if there are any, report errors.
+    2. check if the partition exists
+    3. read the partition and browse all NVS pages to figure out whether there is any page in the state of "FREEING"
+        3.1. if there is a page in the state of "FREEING", then reading from the page marked as "ACTIVE" will be skipped
+    4. read entries from pages marked as "FULL" or ("ACTIVE" xor "FREEING") to identify namespace indexes of the requested namespaces
+    5. read the requested entries, same skipping of pages in the state of "ACTIVE" as in step 4
+
+    */
+    // load input parameters
+    ESP_LOGD(TAG, "nvs_bootloader_read called with partition_name: %s, read_list_count: %u", partition_name, (unsigned)read_list_count);
+
+    // Placeholder return value, replace with actual error handling
+    esp_err_t ret = ESP_OK;
+
+    // Check if the parameters are valid
+    ret = nvs_bootloader_check_parameters(partition_name, read_list_count, read_list);
+    if (ret != ESP_OK) {
+        ESP_LOGD(TAG, "nvs_bootloader_check_parameters failed");
+        return ret;
+    }
+
+    const esp_partition_t *partition = esp_partition_find_first(ESP_PARTITION_TYPE_DATA, ESP_PARTITION_SUBTYPE_DATA_NVS, partition_name);
+    if (partition == NULL) {
+        ESP_LOGV(TAG, "esp_partition_find_first failed");
+        return ESP_ERR_NVS_PART_NOT_FOUND;
+    }
+
+    // log the partition details
+    ESP_LOGV(TAG, "Partition %s found, size is: %" PRIu32 "", partition->label, partition->size);
+
+    // visit pages to get the number of pages in the state of "ACTIVE" and "FREEING"
+    nvs_bootloader_page_visitor_param_get_page_states_t page_states_count = {0};
+
+    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_page_states, (nvs_bootloader_page_visitor_param_t*)&page_states_count);
+
+    if (ret != ESP_OK) {
+        ESP_LOGV(TAG, "Failed reading page states");
+        return ret;
+    }
+    if (page_states_count.no_freeing_pages > 1) {
+        ESP_LOGV(TAG, "Multiple pages in the state of FREEING");
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (page_states_count.no_active_pages > 1) {
+        ESP_LOGV(TAG, "Multiple pages in the state of ACTIVE");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // Here we have at most 1 active page and at most 1 freeing page. If there exists a freeing page, we will skip reading from the active page
+    // Visit pages to get the namespace indexes of the requested namespaces
+    nvs_bootloader_page_visitor_param_read_entries_t read_entries = { .skip_active_page = page_states_count.no_freeing_pages > 0, .read_list_count = read_list_count, .read_list = read_list };
+
+    // log the visitor parameters
+    ESP_LOGV(TAG, "nvs_bootloader_read - visiting pages to get namespace indexes");
+
+    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_namespaces, (nvs_bootloader_page_visitor_param_t*) &read_entries);
+
+    if (ret != ESP_OK) {
+        ESP_LOGV(TAG, "nvs_bootloader_page_visitor_get_namespaces failed");
+        return ret;
+    }
+
+    // log the visitor parameters
+    ESP_LOGV(TAG, "nvs_bootloader_read - visiting pages to get key - value pairs");
+
+    // Visit pages to read the requested key - value pairs
+    ret = nvs_bootloader_visit_pages(partition, nvs_bootloader_page_visitor_get_key_value_pairs, (nvs_bootloader_page_visitor_param_t*) &read_entries);
+
+    return ret;
+}
+
+esp_err_t nvs_bootloader_secure_init(const nvs_sec_cfg_t *sec_cfg)
+{
+#if CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER && BOOTLOADER_BUILD
+    // To enable usage of mbedtls APIs form the ROM, we need to initialize the rom mbedtls functions table pointer.
+    // In case of application, a constructor present in the mbedtls component initializes the rom mbedtls functions table pointer during boot up.
+    mbedtls_rom_osi_functions_init_bootloader();
+#endif /* CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER && BOOTLOADER_BUILD */
+
+    nvs_bootloader_xts_aes_init(&dec_ctx);
+
+    esp_err_t ret = nvs_bootloader_xts_aes_setkey(&dec_ctx, (const uint8_t*) sec_cfg, 2 * NVS_KEY_SIZE);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    is_nvs_partition_encrypted = true;
+    return ret;
+}
+
+void nvs_bootloader_secure_deinit(void)
+{
+    if (is_nvs_partition_encrypted) {
+        nvs_bootloader_xts_aes_free(&dec_ctx);
+        is_nvs_partition_encrypted = false;
+    }
+}
+
+esp_err_t nvs_bootloader_read_security_cfg(nvs_sec_scheme_t *scheme_cfg, nvs_sec_cfg_t* cfg)
+{
+    if (scheme_cfg == NULL || cfg == NULL || scheme_cfg->nvs_flash_read_cfg == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    return (scheme_cfg->nvs_flash_read_cfg)(scheme_cfg->scheme_data, cfg);
 }
