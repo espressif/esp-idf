@@ -1,16 +1,16 @@
 CPU 0 interrupt status:
  Int  Level  Type   Status
   0     *      *    Reserved
-  1     *      *    Reserved
-  2     1    Level  Shared: LP_RTC_TIMER 
+  1     1    Level  Shared: LP_RTC_TIMER
+  2     1    Level  Used: CPUFROM_CPU_0
   3     *      *    Reserved
   4     *      *    Reserved
-  5     1    Level  Used: CPUFROM_CPU_0
+  5     1    Level  Used: SYSTIMER_TARGET0
   6     *      *    Reserved
   7     *      *    Reserved
-  8     1    Level  Used: SYSTIMER_TARGET0
-  9     1    Level  Used: TG0_WDT
- 10     1    Level  Used: UART0
+  8     1    Level  Used: TG0_WDT
+  9     1    Level  Used: UART0
+ 10     *      *    Free
  11     *      *    Free
  12     *      *    Free
  13     *      *    Free
@@ -32,5 +32,6 @@ CPU 0 interrupt status:
  29     *      *    Free
  30     *      *    Free
  31     *      *    Free
-Interrupts available for general use: 18
+Interrupts available for general use: 19
+
 Shared interrupts: 1
