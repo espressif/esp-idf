@@ -636,6 +636,8 @@ static esp_err_t esp_http_client_prepare_digest_auth(esp_http_client_handle_t cl
     char *auth_response = NULL;
     esp_err_t ret = ESP_FAIL;
 
+    // Freeing the allocated memory for auth_data->uri and setting it to NULL to prevent potential memory leaks
+    free(client->auth_data->uri);
     client->auth_data->uri = NULL;
     ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&client->auth_data->uri, client->connection_info.path, -1), ESP_ERR_NO_MEM, error, TAG, "failed to assign string");
 
