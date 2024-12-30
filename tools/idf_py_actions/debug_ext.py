@@ -70,7 +70,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     if p.poll() is not None:
                         print('OpenOCD exited with {}'.format(p.poll()))
                         break
-                    with open(name, 'r') as f:
+                    with open(name, 'r', encoding='utf-8') as f:
                         content = f.read()
                         if re.search(r'Listening on port \d+ for gdb connections', content):
                             # expect OpenOCD has started successfully - stop watching
@@ -78,7 +78,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     time.sleep(0.5)
 
                 # OpenOCD exited or is not listening -> print full log and terminate
-                with open(name, 'r') as f:
+                with open(name, 'r', encoding='utf-8') as f:
                     print(f.read())
 
                 raise FatalError('Action "{}" failed due to errors in OpenOCD'.format(target), ctx)
@@ -194,7 +194,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 name = processes[target + '_outfile_name']
                 pos = 0
                 while True:
-                    with open(name, 'r') as f:
+                    with open(name, 'r', encoding='utf-8') as f:
                         f.seek(pos)
                         for line in f:
                             print(line.rstrip())
@@ -212,7 +212,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r') as f:
+        with open(desc_path, 'r', encoding='utf-8') as f:
             project_desc = json.load(f)
             return project_desc
 
@@ -237,7 +237,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         local_dir = project_desc['build_dir']
         args = ['openocd'] + shlex.split(openocd_arguments)
         openocd_out_name = os.path.join(local_dir, OPENOCD_OUT_FILE)
-        openocd_out = open(openocd_out_name, 'w')
+        openocd_out = open(openocd_out_name, 'w', encoding='utf-8')
         try:
             process = subprocess.Popen(args, stdout=openocd_out, stderr=subprocess.STDOUT, bufsize=1)
         except Exception as e:
@@ -350,7 +350,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         if gdbgui_port is not None:
             gdbgui_args += ['--port', gdbgui_port]
         gdbgui_out_name = os.path.join(local_dir, GDBGUI_OUT_FILE)
-        gdbgui_out = open(gdbgui_out_name, 'w')
+        gdbgui_out = open(gdbgui_out_name, 'w', encoding='utf-8')
         env = os.environ.copy()
         # The only known solution for https://github.com/cs01/gdbgui/issues/359 is to set the following environment
         # variable. The greenlet package cannot be downgraded for compatibility with other requirements (gdbgui,

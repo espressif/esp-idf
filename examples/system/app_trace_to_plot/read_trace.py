@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import datetime
 import json
@@ -9,7 +8,8 @@ import signal
 import sys
 from enum import Enum
 from functools import partial
-from typing import Any, List
+from typing import Any
+from typing import List
 
 try:
     import espytrace.apptrace
@@ -47,7 +47,7 @@ app.layout = html.Div(
     html.Div([
         html.H2('Telemetry Data'),
         html.Div(id='live-update-data'),
-        dcc.Graph(id='live-update-graph', style={'height': 800}),  # Height of the plotting area setted to 800px
+        dcc.Graph(id='live-update-graph', style={'height': 800}),  # Height of the plotting area set to 800px
         dcc.Interval(
             id='interval-component',
             interval=5 * 100,  # Graph will be updated every 500 ms
@@ -57,7 +57,7 @@ app.layout = html.Div(
 )
 
 
-# Multiple components can update everytime interval gets fired.
+# Multiple components can update every time interval gets fired.
 @app.callback(Output('live-update-graph', 'figure'),
               Input('interval-component', 'n_intervals'))
 def update_graph_live(_n: Any) -> Any:  # pylint: disable=undefined-argument
@@ -162,13 +162,13 @@ class CustomRequestHandler(espytrace.apptrace.TCPRequestHandler):
 
 
 def read_json(file_path: str) -> Any:
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
         return data
 
 
 def save_data(file_path: str) -> None:
-    with open(file_path, 'w') as f:
+    with open(file_path, 'w', encoding='utf-8') as f:
         f.writelines(output_lines)
 
 

@@ -64,7 +64,7 @@ def _set_build_context(args: 'PropertyDict') -> None:
 
     proj_desc_fn = f'{args.build_dir}/project_description.json'
     try:
-        with open(proj_desc_fn, 'r') as f:
+        with open(proj_desc_fn, 'r', encoding='utf-8') as f:
             ctx['proj_desc'] = json.load(f)
     except (OSError, ValueError) as e:
         raise FatalError(f'Cannot load {proj_desc_fn}: {e}')
@@ -85,7 +85,7 @@ def _idf_version_from_cmake() -> Optional[str]:
     regex = re.compile(r'^\s*set\s*\(\s*IDF_VERSION_([A-Z]{5})\s+(\d+)')
     ver = {}
     try:
-        with open(version_path) as f:
+        with open(version_path, encoding='utf-8') as f:
             for line in f:
                 m = regex.match(line)
 
@@ -189,7 +189,7 @@ def load_hints() -> Dict:
     }
 
     current_module_dir = os.path.dirname(__file__)
-    with open(os.path.join(current_module_dir, 'hints.yml'), 'r') as file:
+    with open(os.path.join(current_module_dir, 'hints.yml'), 'r', encoding='utf-8') as file:
         hints['yml'] = yaml.safe_load(file)
 
     hint_modules_dir = os.path.join(current_module_dir, 'hint_modules')
@@ -263,7 +263,7 @@ def generate_hints(*filenames: str) -> Generator:
     """Getting output files and printing hints on how to resolve errors based on the output."""
     hints = load_hints()
     for file_name in filenames:
-        with open(file_name, 'r') as file:
+        with open(file_name, 'r', encoding='utf-8') as file:
             yield from generate_hints_buffer(file.read(), hints)
 
 
@@ -693,7 +693,7 @@ def get_sdkconfig_filename(args: 'PropertyDict', cache_cmdl: Optional[Dict]=None
 
     proj_desc_path = os.path.join(args.build_dir, 'project_description.json')
     try:
-        with open(proj_desc_path, 'r') as f:
+        with open(proj_desc_path, 'r', encoding='utf-8') as f:
             proj_desc = json.load(f)
         return str(proj_desc['config_file'])
     except (OSError, KeyError):
@@ -714,7 +714,7 @@ def get_sdkconfig_value(sdkconfig_file: str, key: str) -> Optional[str]:
     value = None
     # if the value is quoted, this excludes the quotes from the value
     pattern = re.compile(r"^{}=\"?([^\"]*)\"?$".format(key))
-    with open(sdkconfig_file, 'r') as f:
+    with open(sdkconfig_file, 'r', encoding='utf-8') as f:
         for line in f:
             match = re.match(pattern, line)
             if match:
