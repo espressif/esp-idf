@@ -275,7 +275,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type, esp_ex
     return ESP_OK;
 }
 
-esp_err_t esp_disable_extern_coex_gpio_pin()
+esp_err_t esp_disable_extern_coex_gpio_pin(void)
 {
     esp_coex_external_stop();
 

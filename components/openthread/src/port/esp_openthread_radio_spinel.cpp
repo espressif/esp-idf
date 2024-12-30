@@ -156,6 +156,8 @@ esp_err_t esp_openthread_rcp_init(void)
 void esp_openthread_radio_deinit(void)
 {
     s_radio.Deinit();
+    s_spinel_driver.Deinit();
+    s_spinel_interface.GetSpinelInterface().Disable();
     esp_openthread_platform_workflow_unregister(radiospinel_workflow);
 }
 
