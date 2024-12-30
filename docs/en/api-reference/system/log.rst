@@ -41,7 +41,7 @@ Features of **Log V2**
 - Drawbacks:
 
   - Consumes more stack and memory.
-  - The log handler is slightly slower than **Log V1**, but the difference is negligible during UART transmission.
+  - The log handler is slightly slower than **Log V1**, but the difference is negligible compared to the time spent transferring the data, e.g. over UART.
 
 Log Levels
 ----------
@@ -50,14 +50,12 @@ Log levels are configured separately for application and bootloader. This separa
 
 There are six verbosity levels:
 
-- (highest)
-- **Verbose** - Highly detailed and frequent debugging messages, often including internal states, that may overwhelm the output.
+- **Verbose** - Highly detailed and frequent debugging messages, often including internal states, that may overwhelm the output. (highest)
 - **Debug** - Detailed diagnostic messages intended to aid in debugging (e.g., variable values, pointer addresses).
 - **Info** - General information messages that describe the normal operation of the system.
 - **Warning** - Events that could potentially cause issues but have been handled or mitigated.
 - **Error** - Critical errors indicating that the software cannot recover without intervention.
-- **None** - No log output. Used to completely disable logging.
-- (lowest)
+- **None** - No log output. Used to completely disable logging. (lowest)
 
 Log Level Settings
 ------------------
@@ -304,11 +302,7 @@ There are three settings that control the ability to change the log level at run
 
   - **None**: Disables per-tag log level checks entirely, reducing overhead but removing runtime flexibility.
 
-  - **Linked List**: Enables per-tag log level settings using a linked list-only implementation (no cache). This method searches through all tags in the linked list to determine the log level, which may result in slower lookups for a large number of tags but consumes less memory compared to the **cache** approach. The linked list approach performs full string comparisons of log tags to identify the appropriate log level. Unlike **Cache**, it does not rely on tag pointer comparisons, making it suitable for dynamic tag definitions. Select this option if you prioritize memory savings, need to enable or disable logs for specific modules, or want to use tags defined as variables. Selecting this option automatically enables **Dynamic Log Level Control**.
-
-    .. note::
-
-        Keep in mind that the linked list per-tag log level check implementation has the following flaw: The linked list entries are allocated on the task stack during the execution of ``ESP_LOGx`` macros when a new tag is encountered. Deleting the task that created these entries may lead to invalid list entries and potential crashes during traversal.
+  - **Linked List**: Enables per-tag log level settings using a linked list-only implementation (no cache). This method searches through all tags in the linked list to determine the log level, which may result in slower lookups for a large number of tags but consumes less memory compared to the **cache** approach. The linked list approach performs full string comparisons of log tags to identify the appropriate log level. Unlike **Cache**, it does not rely on tag pointer comparisons, making it suitable for dynamic tag definitions. Select this option if you prioritize memory savings, need to enable or disable logs for specific modules, or want to use tags defined as variables. Selecting this option automatically enables **Dynamic Log Level Control**. The linked list entries are allocated on the heap during the execution of ``ESP_LOGx`` macros when a new tag is encountered.
 
   - **Cache + Linked List** (Default): It is a hybrid mode that combines caching with a **linked list** for log tag level checks. This hybrid approach offers a balance between speed and memory usage. The cache stores recently accessed log tags and their corresponding log levels, providing faster lookups for frequently used tags. The cache approach compares the tag pointers, which is faster than performing full string comparisons. For less frequently used tags, the **linked list** is utilized to search for the log level. This option may not work properly when dynamic tag definitions are used, as it relies on tag pointer comparisons in the cache, which are not suitable for dynamically defined tags. This hybrid approach improves the efficiency of log level retrieval by leveraging the speed of caching for common tags and the memory efficiency of a linked list for less frequently used tags. Selecting this option automatically enables **Dynamic Log Level Control**.
 
