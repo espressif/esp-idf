@@ -50,8 +50,11 @@ void bootloader_clock_configure(void)
 {
     s_warn();
     esp_rom_output_tx_wait_idle(0);
-
+#if CONFIG_IDF_TARGET_ESP32H21
+    uint32_t xtal_freq_mhz = 32;
+#else
     uint32_t xtal_freq_mhz = 40;
+#endif
 #ifdef CONFIG_IDF_TARGET_ESP32S2
     uint32_t apb_freq_hz = 20000000;
 #else

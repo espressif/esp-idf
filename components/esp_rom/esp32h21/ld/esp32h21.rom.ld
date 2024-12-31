@@ -226,9 +226,8 @@ gpio_input_get = 0x4000069c;
 gpio_matrix_in = 0x400006a0;
 gpio_matrix_out = 0x400006a4;
 
-//TODO: [ESP32H21] IDF-11621
-gpio_output_disable = 0x400006a8;
-gpio_output_enable = 0x400006ac;
+/*gpio_output_disable = 0x400006a8;*/
+/*gpio_output_enable = 0x400006ac;*/
 
 gpio_output_set = 0x400006b0;
 gpio_pad_hold = 0x400006b4;

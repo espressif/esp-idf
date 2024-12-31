@@ -42,9 +42,10 @@ if(NOT non_os_build)
                      "port/esp_clk_tree_common.c"
                      "dma/esp_dma_utils.c"
                      "dma/gdma_link.c"
-                     "spi_share_hw_ctrl.c"
                      "spi_bus_lock.c")
-
+    if(CONFIG_SOC_GPSPI_SUPPORTED)
+        list(APPEND srcs "spi_share_hw_ctrl.c")
+    endif()
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
     endif()
@@ -156,6 +157,12 @@ endif()
 set(public_include_dirs "include" "include/soc" "include/soc/${target}"
                         "dma/include" "ldo/include" "debug_probe/include"
                         "mspi_timing_tuning/include")
+
+if(CONFIG_IDF_TARGET_ESP32H21)
+    list(REMOVE_ITEM srcs
+        "sleep_modes.c" # TODO: [ESP32H21] IDF-11515, IDF-11517
+    )
+endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}

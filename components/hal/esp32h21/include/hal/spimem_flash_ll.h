@@ -242,13 +242,14 @@ static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t c
  * Initialize auto wait idle mode
  *
  * @param dev Beginning address of the peripheral registers.
- * @param auto_waiti Enable/disable auto wait-idle function
+ * @param per_waiti Enable wait-idle with time delay function after resume.
+ * @param pes_waiti Enable wait-idle with time delay function after suspend.
  */
-static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool auto_waiti)
+static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool per_waiti, bool pes_waiti)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05);
-    dev->flash_sus_ctrl.flash_per_wait_en = auto_waiti;
-    dev->flash_sus_ctrl.flash_pes_wait_en = auto_waiti;
+    dev->flash_sus_ctrl.flash_per_wait_en = per_waiti;
+    dev->flash_sus_ctrl.flash_pes_wait_en = pes_waiti;
 }
 
 /**
@@ -472,27 +473,6 @@ static inline void spimem_flash_ll_set_read_mode(spi_mem_dev_t *dev, esp_flash_i
         abort();
     }
     dev->ctrl.val = ctrl.val;
-}
-
-__attribute__((always_inline))
-static inline void spimem_flash_ll_set_clock_source(soc_periph_mspi_clk_src_t clk_src)
-{
-    switch (clk_src) {
-    case MSPI_CLK_SRC_XTAL:
-        PCR.mspi_conf.mspi_clk_sel = 0;
-        break;
-    case MSPI_CLK_SRC_RC_FAST:
-        PCR.mspi_conf.mspi_clk_sel = 1;
-        break;
-    case MSPI_CLK_SRC_PLL_F64M:
-        PCR.mspi_conf.mspi_clk_sel = 2;
-        break;
-    case MSPI_CLK_SRC_PLL_F48M:
-        PCR.mspi_conf.mspi_clk_sel = 3;
-        break;
-    default:
-        HAL_ASSERT(false);
-    }
 }
 
 /**

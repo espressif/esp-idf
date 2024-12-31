@@ -19,10 +19,11 @@
 // TODO: IDF-11856
 #define DR_REG_UHCI_BASE(i)                        (DR_REG_UHCI0_BASE - (i) * 0x8000)
 #define DR_REG_UART_BASE(i)                        (DR_REG_UART0_BASE + (i) * 0x1000)
+#define REG_UART_BASE(i)                           (DR_REG_UART0_BASE + (i) * 0x1000)
 #define DR_REG_UART_AHB_BASE(i)                    (0x60000000 + (i) * 0x10000)
 #define DR_UART_FIFO_AHB_REG(i)                    (REG_UART_AHB_BASE(i) + 0x0)
 #define DR_REG_I2S_BASE(i)                         (DR_REG_I2S_BASE)                       // only one I2S on H21
-#define DR_REG_TIMG_BASE(i)                        (DR_REG_TIMERGROUP0_BASE + (i)*0x1000)
+#define DR_REG_TIMG_BASE(i)                        (DR_REG_TIMERG0_BASE + (i)*0x1000)
 #define DR_REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)
 #define DR_REG_SPI_BASE(i)                         (((i)==2) ? (DR_REG_SPI2_BASE) : (0))    // only one GPSPI
 #define DR_REG_I2C_BASE(i)                         (DR_REG_I2C_EXT0_BASE + (i) * 0x1000)

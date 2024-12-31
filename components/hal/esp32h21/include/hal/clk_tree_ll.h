@@ -45,8 +45,8 @@ Set the frequency division factor of ref_tick
 The FOSC of rtc calibration uses the 32 frequency division clock for ECO2,
 So the frequency division factor of ref_tick must be greater than or equal to 32
 */
-#define CLK_LL_RC_FAST_TICK_DIV_BITS        5
-#define REG_FOSC_TICK_NUM                   255
+#define CLK_LL_RC_FAST_CALIB_TICK_DIV_BITS      5
+#define REG_FOSC_TICK_NUM                       255
 
 /**
  * @brief XTAL32K_CLK enable modes

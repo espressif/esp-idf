@@ -23,7 +23,6 @@
 #include "hal/wdt_hal.h"
 #include "hal/spimem_flash_ll.h"
 #include "esp_private/cache_err_int.h"
-#include "esp_private/mspi_timing_tuning.h"
 
 #include "esp32h21/rom/cache.h"
 #include "esp32h21/rom/rtc.h"
@@ -97,16 +96,6 @@ void IRAM_ATTR esp_restart_noos(void)
     WRITE_PERI_REG(GPIO_FUNC0_IN_SEL_CFG_REG, 0x30);
 
     esp_system_reset_modules_on_exit();
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    /**
-     * Turn down MSPI speed
-     *
-     * We set MSPI clock to a high speed one before, ROM doesn't have such high speed clock source option.
-     * This function will change clock source to a ROM supported one when system restarts.
-     */
-    mspi_timing_change_speed_mode_cache_safe(true);
-#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 
     // Set CPU back to XTAL source, same as hard reset, but keep BBPLL on so that USB Serial JTAG can log at 1st stage bootloader.
 #if !CONFIG_IDF_ENV_FPGA
