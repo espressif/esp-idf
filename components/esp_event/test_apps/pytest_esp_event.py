@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -41,3 +41,16 @@ def test_esp_event_profiling(dut: Dut) -> None:
     matches = dut.expect(r'HANDLER .+ inv:[1-9][0-9]{0,} time:[1-9][0-9]{0,} us', timeout=2)
     matches_arr = matches.group().split(b'\r\n')
     assert (len(matches_arr) == 3)
+    dut.expect('1 Tests 0 Failures 0 Ignored', timeout=120)
+    dut.expect_exact("Enter next test, or 'enter' to see menu")
+
+    dut.write('"esp_event_dump does not show self unregistered handler"')
+    # look for 1 handlers never invoked
+    matches = dut.expect(r'HANDLER .+ inv:0 time:0 us', timeout=2)
+    matches_arr = matches.group().split(b'\r\n')
+    assert (len(matches_arr) == 1)
+    dut.expect('1 Tests 0 Failures 0 Ignored', timeout=120)
+    dut.expect_exact("Enter next test, or 'enter' to see menu")
+
+    dut.write('"self unregistered handlers are never called again after they return"')
+    dut.expect('1 Tests 0 Failures 0 Ignored', timeout=120)
