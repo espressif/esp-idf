@@ -232,6 +232,8 @@ static IRAM_ATTR esp_err_t ledc_duty_config(ledc_mode_t speed_mode, ledc_channel
     ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0, duty_direction, duty_cycle, duty_scale, duty_num);
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
     return ESP_OK;
 }
@@ -303,16 +305,20 @@ static bool ledc_speed_mode_ctx_create(ledc_mode_t speed_mode)
         ledc_obj_t *ledc_new_mode_obj = (ledc_obj_t *) heap_caps_calloc(1, sizeof(ledc_obj_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
         if (ledc_new_mode_obj) {
             new_ctx = true;
+            LEDC_BUS_CLOCK_ATOMIC() {
+                ledc_ll_enable_bus_clock(true);
+                ledc_ll_enable_reset_reg(false);
+            }
+            // Enable core clock gating at early stage, some LEDC registers and gamma RAM rely on the LEDC core clock existence
+            LEDC_FUNC_CLOCK_ATOMIC() {
+                ledc_ll_enable_clock(LEDC_LL_GET_HW(), true);
+            }
             ledc_hal_init(&(ledc_new_mode_obj->ledc_hal), speed_mode);
             ledc_new_mode_obj->glb_clk = LEDC_SLOW_CLK_UNINIT;
 #if SOC_LEDC_HAS_TIMER_SPECIFIC_MUX
             memset(ledc_new_mode_obj->timer_specific_clk, LEDC_TIMER_SPECIFIC_CLK_UNINIT, sizeof(ledc_clk_src_t) * LEDC_TIMER_MAX);
 #endif
             p_ledc_obj[speed_mode] = ledc_new_mode_obj;
-            LEDC_BUS_CLOCK_ATOMIC() {
-                ledc_ll_enable_bus_clock(true);
-                ledc_ll_enable_reset_reg(false);
-            }
         }
     }
     _lock_release(&s_ledc_mutex[speed_mode]);
@@ -562,7 +568,6 @@ static esp_err_t ledc_set_timer_div(ledc_mode_t speed_mode, ledc_timer_t timer_n
             // TODO: release old glb_clk (if not UNINIT), and acquire new glb_clk [clk_tree]
             p_ledc_obj[speed_mode]->glb_clk = glb_clk;
             LEDC_FUNC_CLOCK_ATOMIC() {
-                ledc_ll_enable_clock(p_ledc_obj[speed_mode]->ledc_hal.dev, true);
                 ledc_hal_set_slow_clk_sel(&(p_ledc_obj[speed_mode]->ledc_hal), glb_clk);
             }
         }
@@ -1376,6 +1381,8 @@ static esp_err_t _ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t cha
         ledc_hal_set_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i, fade_param.dir, fade_param.cycle_num, fade_param.scale, fade_param.step_num);
     }
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
     portEXIT_CRITICAL(&ledc_spinlock);
     // Calculate target duty, and take account for overflow
     uint32_t target_duty = start_duty;

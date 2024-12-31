@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 // The HAL layer for LEDC (common part, in iram)
-// make these functions in a seperate file to make sure all LL functions are in the IRAM.
+// make these functions in a separate file to make sure all LL functions are in the IRAM.
 
 #include "hal/ledc_hal.h"
 #include "hal/assert.h"
@@ -57,6 +57,13 @@ void ledc_hal_set_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_n
 void ledc_hal_get_range_number(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t *range_num)
 {
     ledc_ll_get_range_number(hal->dev, hal->speed_mode, channel_num, range_num);
+}
+
+void ledc_hal_clear_left_off_fade_param(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t start_range)
+{
+    for (int i = start_range; i < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX; i++) {
+        ledc_ll_set_fade_param_range(hal->dev, hal->speed_mode, channel_num, i, 0, 0, 0, 0);
+    }
 }
 #endif //SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
 
