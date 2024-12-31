@@ -212,6 +212,8 @@ int duty_val, ledc_duty_direction_t duty_direction, uint32_t duty_num, uint32_t 
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
     ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 0);
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, 1);
 #endif
     return ESP_OK;
 }
@@ -1274,6 +1276,8 @@ static esp_err_t _ledc_set_multi_fade(ledc_mode_t speed_mode, ledc_channel_t cha
         ledc_hal_set_duty_range_wr_addr(&(p_ledc_obj[speed_mode]->ledc_hal), channel, i);
     }
     ledc_hal_set_range_number(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
+    // Clear left-off LEDC gamma ram registers, random data in ram could cause output waveform error
+    ledc_hal_clear_left_off_fade_param(&(p_ledc_obj[speed_mode]->ledc_hal), channel, list_len);
     portEXIT_CRITICAL(&ledc_spinlock);
     // Calculate target duty, and take account for overflow
     uint32_t target_duty = start_duty;
