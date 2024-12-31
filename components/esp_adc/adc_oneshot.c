@@ -243,6 +243,10 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     bool success_free = s_adc_unit_free(handle->unit_id);
     ESP_RETURN_ON_FALSE(success_free, ESP_ERR_NOT_FOUND, TAG, "adc%"PRId32" isn't in use", handle->unit_id + 1);
 
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+    adc_ll_set_power_manage(handle->unit_id, ADC_LL_POWER_SW_OFF);
+#endif
+
     _lock_acquire(&s_ctx.mutex);
     s_ctx.units[handle->unit_id] = NULL;
     _lock_release(&s_ctx.mutex);
