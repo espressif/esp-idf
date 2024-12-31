@@ -150,14 +150,21 @@ esp_err_t esp_ieee802154_transmit(const uint8_t *frame, bool cca);
 /**
  * @brief  Set the time to wait for the ack frame.
  *
- * @param[in]  timeout  The time to wait for the ack frame, in symbol unit (16 us).
- *                      Default: 0x006C, Range: 0x0000 - 0xFFFF.
+ * @param[in]  timeout  The time to wait for the ack frame, in us.
+ *                      It Should be a multiple of 16. The default value is 1728 us (108 * 16).
  *
  * @return
  *      - ESP_OK on success.
  *      - ESP_FAIL on failure.
  */
 esp_err_t esp_ieee802154_set_ack_timeout(uint32_t timeout);
+
+/**
+ * @brief  Get the time to wait for the ack frame.
+ *
+ * @return  The time to wait for the ack frame, in us.
+ */
+uint32_t esp_ieee802154_get_ack_timeout(void);
 
 /**
  * @brief  Get the device PAN ID.
