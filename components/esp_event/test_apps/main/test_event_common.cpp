@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -1601,19 +1601,27 @@ TEST_CASE("default event loop: registering event handler instance without instan
 #if CONFIG_ESP_EVENT_LOOP_PROFILING
 static void handler_all(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
 {
-    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+    printf("base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
 }
 
 static void handler_base(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
 {
-    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+    printf("base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
 }
 
 static void handler_id(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
 {
-    printf("Event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+    printf("base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
 }
 
+/* This test executes the following steps:
+ * 1) register handler_id for a event id A and event base B,
+ * 2) register handler_base for a given event base,
+ * 3) register handler_all for on the loop level,
+ * 4) post an event (A, B),
+ * 5) call esp_event_dump and make sure by parsing the string IN PYTEST ENVIRONMENT that
+ * all handlers profiling data is printed
+ * 6) unregister the handlers successfully */
 TEST_CASE("profiling reports valid values", "[event][default]")
 {
     TEST_ESP_OK(esp_event_loop_create_default());
@@ -1641,5 +1649,115 @@ TEST_CASE("profiling reports valid values", "[event][default]")
 
     /* delete loop */
     TEST_ESP_OK(esp_event_loop_delete_default());
+}
+
+static void handler_id2(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
+{
+    printf("event received: base=%s, id=%" PRId32 ", data=%p\n", event_base, event_id, data);
+
+    /* self unregistering handler */
+    TEST_ESP_OK(esp_event_handler_unregister(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id2));
+
+    /* register a new handler on id level */
+    TEST_ESP_OK(esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id, NULL));
+}
+
+/* This test executes the following steps:
+ * 1) register handler_id2 for a given event id and event base,
+ * 2) post an event to trigger the handler_id2,
+ * 3) unregister the handler_id2 during the execution of the handler_id2 and register
+ * handler_id instead.
+ * 4) call esp_event_dump and make sure by parsing the string IN PYTEST ENVIRONMENT that
+ * 1 handler profiling data is printed
+ * 5) unregister the handler_id successfully */
+TEST_CASE("esp_event_dump does not show self unregistered handler", "[event][default]")
+{
+    TEST_ESP_OK(esp_event_loop_create_default());
+
+    /* register handler for event base 1 and event id 1 */
+    TEST_ESP_OK(esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id2, NULL));
+
+    /* post an event on event base 1, event id 1 */
+    TEST_ESP_OK(esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(1000)));
+
+    /* post an event 1 from base 1 and check the dump.
+     * - 1 handler invoked 0 times, exec time is 0 us */
+    esp_event_dump(stdout);
+
+    /* unregister handler id */
+    TEST_ESP_OK(esp_event_handler_unregister(s_test_base1, TEST_EVENT_BASE1_EV1, handler_id));
+
+    /* delete loop */
+    TEST_ESP_OK(esp_event_loop_delete_default());
+}
+
+static SemaphoreHandle_t s_event_mutex;
+static StaticSemaphore_t s_event_mutex_buf;
+static size_t s_handler_triggered = 0;
+
+static void self_unregistering_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* data)
+{
+    xSemaphoreTake(s_event_mutex, portMAX_DELAY);
+
+    /* self unregistering handler */
+    TEST_ESP_OK(esp_event_handler_unregister(s_test_base1, TEST_EVENT_BASE1_EV1, self_unregistering_handler));
+
+    s_handler_triggered++;
+
+    xSemaphoreGive(s_event_mutex);
+}
+
+/* This test makes sure that once a handler is unregistered, it is never called again.
+ * This test follows the update in esp event unregistration process where a handler can
+ * be marked as unregistered but not removed directly from the list it belongs to.
+ * The test creates a handler triggered by a specific combination of event base / event id
+ * and generates 2 consecutive events that should trigger the handler. The handler unregisters
+ * itself. Make sure that the second event does not trigger the handler again.
+ *
+ * Both event posts need to be queued before the unregistration happens, to make sure that event if
+ * the handler is still present in the handlers lists when the second event triggers, it will not
+ * be called. To make sure of that, the execution of the handler is blocked by a mutex released from
+ * test after the 2 events are posted. */
+TEST_CASE("self unregistered handlers are never called again after they return", "[event][default]")
+{
+    s_event_mutex = xSemaphoreCreateMutexStatic(&s_event_mutex_buf);
+    TEST_ASSERT_NOT_NULL(s_event_mutex);
+
+    esp_err_t ret = esp_event_loop_create_default();
+    printf("esp_event_loop_create_default %d\n", ret);
+    TEST_ESP_OK(ret);
+
+    /* register handler for event base 1 and event id 1 */
+    ret = esp_event_handler_register(s_test_base1, TEST_EVENT_BASE1_EV1, self_unregistering_handler, NULL);
+    printf("esp_event_handler_register %d\n", ret);
+    TEST_ESP_OK(ret);
+
+    /* take the mutex to block the execution of the self_unregistering_handler */
+    xSemaphoreTake(s_event_mutex, portMAX_DELAY);
+
+    /* post 2 times the event on event base 1, event id 1 */
+    ret = esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(1000));
+    printf("esp_event_post %d\n", ret);
+    TEST_ESP_OK(ret);
+    ret = esp_event_post(s_test_base1, TEST_EVENT_BASE1_EV1, NULL, 0, pdMS_TO_TICKS(1000));
+    printf("esp_event_post %d\n", ret);
+    TEST_ESP_OK(ret);
+
+    /* release the mutex to execute the self_unregistering_handler */
+    xSemaphoreGive(s_event_mutex);
+
+    /* make sure the handler was called only once */
+    TEST_ASSERT(s_handler_triggered == 1);
+
+    /* delete mutex */
+    vSemaphoreDelete(s_event_mutex);
+
+    /* reset the static variable in case the test gets called once more */
+    s_handler_triggered = 0;
+
+    /* delete loop */
+    ret = esp_event_loop_delete_default();
+    printf("esp_event_loop_delete_default %d\n", ret);
+    TEST_ESP_OK(ret);
 }
 #endif // CONFIG_ESP_EVENT_LOOP_PROFILING
