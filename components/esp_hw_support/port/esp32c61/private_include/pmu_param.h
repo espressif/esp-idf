@@ -483,7 +483,7 @@ typedef struct pmu_sleep_machine_constant {
         .regdma_rf_on_work_time_us      = 138,  \
         .regdma_rf_off_work_time_us     = 28,   \
         .xtal_wait_stable_time_us       = 250,  \
-        .pll_wait_stable_time_us        = 300   \
+        .pll_wait_stable_time_us        = 50    \
     }                                           \
 }
 

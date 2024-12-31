@@ -447,7 +447,7 @@ typedef struct pmu_sleep_machine_constant {
         .regdma_s2a_work_time_us        = PMU_REGDMA_S2A_WORK_TIME_PD_TOP_US, \
         .regdma_a2s_work_time_us        = 0,    \
         .xtal_wait_stable_time_us       = 250,  \
-        .pll_wait_stable_time_us        = 300   \
+        .pll_wait_stable_time_us        = 50    \
     }                                           \
 }
 
