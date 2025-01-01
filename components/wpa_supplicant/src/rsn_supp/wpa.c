@@ -189,21 +189,9 @@ static bool is_wpa2_enterprise_connection(void)
 }
 #endif
 
-/**
- * get_bssid - Get the current BSSID
- * @priv: private driver interface data
- * @bssid: buffer for BSSID (ETH_ALEN = 6 bytes)
- *
- * Returns: 0 on success, -1 on failure
- *
- * Query kernel driver for the current BSSID and copy it to bssid.
- * Setting bssid to 00:00:00:00:00:00 is recommended if the STA is not
- * associated.
- */
-static inline int   wpa_sm_get_bssid(struct wpa_sm *sm, u8 *bssid)
+const u8 * wpa_sm_get_auth_addr(struct wpa_sm *sm)
 {
-    memcpy(bssid, sm->bssid, ETH_ALEN);
-    return 0;
+    return sm->bssid;
 }
 
  /*
@@ -233,11 +221,13 @@ static inline int wpa_sm_ether_send(struct wpa_sm *sm, const u8 *dest, u16 proto
  * @msg_len: Length of message
  * @key_mic: Pointer to the buffer to which the EAPOL-Key MIC is written
  */
-void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
+int  wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
                         int ver, const u8 *dest, u16 proto,
                         u8 *msg, size_t msg_len, u8 *key_mic)
 {
+    int ret = -1;
     if (is_zero_ether_addr(dest) && is_zero_ether_addr(sm->bssid)) {
+#ifndef ESP_SUPPLICANT
         /*
          * Association event was not yet received; try to fetch
          * BSSID from the driver.
@@ -251,6 +241,9 @@ void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
                    ") as the destination for EAPOL-Key",
                    MAC2STR(dest));
         }
+#else
+        return ret;
+#endif
     }
     if (key_mic &&
         wpa_eapol_key_mic(kck, kck_len, sm->key_mgmt, ver, msg, msg_len,
@@ -263,9 +256,9 @@ void wpa_eapol_key_send(struct wpa_sm *sm, const u8 *kck, size_t kck_len,
     wpa_hexdump_key(MSG_DEBUG, "WPA: KCK", kck, kck_len);
     wpa_hexdump(MSG_DEBUG, "WPA: Derived Key MIC", key_mic, wpa_mic_len(sm->key_mgmt, sm->pmk_len));
     wpa_hexdump(MSG_MSGDUMP, "WPA: TX EAPOL-Key", msg, msg_len);
-    wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
+    return wpa_sm_ether_send(sm, dest, proto, msg, msg_len);
 out:
-    return;
+    return ret;
 }
 
 /**
@@ -284,7 +277,7 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
     struct wpa_eapol_key *reply;
     struct wpa_eapol_key_192 *reply192;
     int key_info, ver;
-    u8 bssid[ETH_ALEN], *rbuf, *key_mic;
+    u8 *rbuf, *key_mic;
 
     if (wpa_use_akm_defined(sm->key_mgmt))
         ver = WPA_KEY_INFO_TYPE_AKM_DEFINED;
@@ -294,12 +287,6 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
         ver = WPA_KEY_INFO_TYPE_HMAC_SHA1_AES;
     else
         ver = WPA_KEY_INFO_TYPE_HMAC_MD5_RC4;
-
-    if (wpa_sm_get_bssid(sm, bssid) < 0) {
-        wpa_printf(MSG_DEBUG, "Failed to read BSSID for EAPOL-Key "
-               "request");
-        return;
-    }
 
     mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
     hdrlen = mic_len == 24 ? sizeof(*reply192) : sizeof(*reply);
@@ -342,7 +329,7 @@ static void wpa_sm_key_request(struct wpa_sm *sm, int error, int pairwise)
     wpa_printf(MSG_DEBUG, "WPA: Sending EAPOL-Key Request (error=%d "
            "pairwise=%d ptk_set=%d len=%lu)",
            error, pairwise, sm->ptk_set, (unsigned long) rlen);
-    wpa_eapol_key_send(sm, sm->ptk.kck, sm->ptk.kck_len, ver, bssid,
+    wpa_eapol_key_send(sm, sm->ptk.kck, sm->ptk.kck_len, ver, wpa_sm_get_auth_addr(sm),
                        ETH_P_EAPOL, rbuf, rlen, key_mic);
     wpa_sm_free_eapol(rbuf);
 }
