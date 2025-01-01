@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -705,7 +705,10 @@ int esp_send_sae_auth_reply(struct hostapd_data *hapd,
     ((uint16_t *)req->data)[0] = htole16(auth_alg);
     ((uint16_t *)req->data)[1] = htole16(auth_transaction);
     ((uint16_t *)req->data)[2] = htole16(resp);
-    os_memcpy(&((uint16_t *)req->data)[3], ies, ies_len - 3 * sizeof(uint16_t));
+
+    if (ies_len) {
+        os_memcpy(&((uint16_t *)req->data)[3], ies, ies_len - 3 * sizeof(uint16_t));
+    }
 
     req->ifx = WIFI_IF_AP;
     req->subtype = (WLAN_FC_STYPE_AUTH << 4);
