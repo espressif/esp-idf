@@ -300,14 +300,14 @@ LED PWM 控制器 API 有多种方式即时改变 PWM 频率：
 控制 PWM 的更多方式
 """""""""""""""""""""
 
-有一些较底层的定时器特定函数可用于更改 PWM 设置：
+有一些较独立的定时器特定函数可用于更改 PWM 输出：
 
 * :cpp:func:`ledc_timer_set`
 * :cpp:func:`ledc_timer_rst`
 * :cpp:func:`ledc_timer_pause`
 * :cpp:func:`ledc_timer_resume`
 
-前两个功能可通过函数 :cpp:func:`ledc_channel_config` 在后台运行，在定时器配置后启动。
+前两个功能可通过函数 :cpp:func:`ledc_timer_config` 在后台运行，在定时器配置后启动。
 
 
 使用中断
