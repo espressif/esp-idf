@@ -149,6 +149,7 @@ static esp_err_t spi_flash_hpm_probe_chip_with_dummy(uint32_t flash_id)
     // XMC chips.
     case 0x204017:
     case 0x204018:
+    case 0x464016:
     case 0x464017:
     case 0x464018:
         break;
