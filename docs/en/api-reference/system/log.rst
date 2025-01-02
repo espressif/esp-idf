@@ -68,7 +68,7 @@ Log level settings control which logs are included in the binary and their visib
 
 Example for the application: if the **log level** is set to **Warning** and the **maximum log level** is set to **Debug**, the binary will include log messages of levels **Error**, **Warning**, **Info**, and **Debug**. However, at runtime, only log messages of levels **Error** and **Warning** will be outputted unless the log level is explicitly changed using :cpp:func:`esp_log_level_set`. The log level can be adjusted, increased or decreased, depending on the user's needs.
 
-**Maximum Log Level** Setting
+``Maximum Log Level`` Setting
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``LOG_LOCAL_LEVEL`` definition allows you to override the **maximum log level** for a specific source file or component without modifying the Kconfig options. It effectively sets the **maximum log level** locally, enabling or excluding specific logs in the binary.
@@ -105,13 +105,13 @@ Example: Set the log level to ``ERROR`` for all components (global setting):
 
 Adjusting log output per module (tag) depends on :ref:`CONFIG_LOG_TAG_LEVEL_IMPL`, which is enabled by default. If this feature is not required, you can disable it to reduce code size and improve performance:
 
-Example: Set the log level to ``WARNING`` only for the Wi-Fi component (module-specific setting).
+Example: Set the log level to ``WARNING`` only for the Wi-Fi component (module-specific setting):
 
 .. code-block:: c
 
    esp_log_level_set("wifi", ESP_LOG_WARN);
 
-Using Logging Library
+Use Logging Library
 ---------------------
 
 In each C file that uses the logging functionality, define the ``TAG`` variable.
@@ -203,7 +203,7 @@ The logging system supports the following formatting options, applicable for bot
   - **System time (HH:MM:SS.sss)** `(14:31:18.532)`: Displays time in hours, minutes, seconds, and milliseconds.
   - **System time (YY-MM-DD HH:MM:SS.sss)** `(2023-08-15 14:31:18.532)`: Similar to the above, but also includes the date.
   - **Unix time in milliseconds** `(1692099078532)`: Displays Unix time in milliseconds.
-  - For **Log V2**, the :ref:`CONFIG_LOG_TIMESTAMP_SUPPORT` option enables runtime support for adding timestamp output to specific logs, files, or components, even if global timestamp is disabled. To enable the **Milliseconds since boot** timestamp for a specific context use ``ESP_LOG_TIMESTAMP_DISABLED``.
+  - For **Log V2**, the :ref:`CONFIG_LOG_TIMESTAMP_SUPPORT` option enables runtime support for adding timestamp output to specific logs, files, or components, even if global timestamp is disabled. To enable the **Milliseconds since boot** timestamp for a specific context, use ``ESP_LOG_TIMESTAMP_DISABLED``.
 
 - **Tag**: Displays a user-defined identifier for the source module.
 
@@ -292,9 +292,9 @@ There are three settings that control the ability to change the log level at run
 
   - Reducing memory consumption:
 
-    - **IRAM**: ~260 bytes
-    - **DRAM**: ~264 bytes
-    - **Flash**: ~1 KB
+    - **IRAM**: about 260 bytes
+    - **DRAM**: about 264 bytes
+    - **Flash**: about 1 KB
 
   - Boosting log operation performance by up to 10 times.
 
@@ -302,7 +302,7 @@ There are three settings that control the ability to change the log level at run
 
   - **None**: Disables per-tag log level checks entirely, reducing overhead but removing runtime flexibility.
 
-  - **Linked List**: Enables per-tag log level settings using a linked list-only implementation (no cache). This method searches through all tags in the linked list to determine the log level, which may result in slower lookups for a large number of tags but consumes less memory compared to the **cache** approach. The linked list approach performs full string comparisons of log tags to identify the appropriate log level. Unlike **Cache**, it does not rely on tag pointer comparisons, making it suitable for dynamic tag definitions. Select this option if you prioritize memory savings, need to enable or disable logs for specific modules, or want to use tags defined as variables. Selecting this option automatically enables **Dynamic Log Level Control**. The linked list entries are allocated on the heap during the execution of ``ESP_LOGx`` macros when a new tag is encountered.
+  - **Linked List**: Enables per-tag log level settings using a linked list-only implementation (no cache). This method searches through all tags in the linked list to determine the log level, which may result in slower lookups for a large number of tags but consumes less memory compared to the **Cache** approach. The linked list approach performs full string comparisons of log tags to identify the appropriate log level. Unlike **Cache**, it does not rely on tag pointer comparisons, making it suitable for dynamic tag definitions. Select this option if you prioritize memory savings, need to enable or disable logs for specific modules, or want to use tags defined as variables. Selecting this option automatically enables **Dynamic Log Level Control**. The linked list entries are allocated on the heap during the execution of ``ESP_LOGx`` macros when a new tag is encountered.
 
   - **Cache + Linked List** (Default): It is a hybrid mode that combines caching with a **linked list** for log tag level checks. This hybrid approach offers a balance between speed and memory usage. The cache stores recently accessed log tags and their corresponding log levels, providing faster lookups for frequently used tags. The cache approach compares the tag pointers, which is faster than performing full string comparisons. For less frequently used tags, the **linked list** is utilized to search for the log level. This option may not work properly when dynamic tag definitions are used, as it relies on tag pointer comparisons in the cache, which are not suitable for dynamically defined tags. This hybrid approach improves the efficiency of log level retrieval by leveraging the speed of caching for common tags and the memory efficiency of a linked list for less frequently used tags. Selecting this option automatically enables **Dynamic Log Level Control**.
 
@@ -402,6 +402,7 @@ The logging system provides macros for logging buffer data. These macros can be 
 
 The number of lines in the output depends on the size of the buffer.
 
+
 Performance and Measurements
 ----------------------------
 
@@ -409,60 +410,96 @@ When logging is used in a task, the task stack must be configured with at least 
 
 The following measurements were performed using tests inside the log component with default settings (the maximum and default log levels were set to INFO, color support was disabled, without master log and timestamps were enabled) across different chips:
 
-- ``Performance measurements for log APIs``.
-- ``Stack usage for log APIs``.
+- Performance measurements for log APIs
+- Stack usage for log APIs
 
 ``esp_rom_printf`` and ``esp_rom_vprintf`` produce similar results. Similarly, ``vprintf`` and ``printf`` yield comparable outcomes. Hence, only one of each pair is included in the tables below.
 
-**Stack Usage (bytes):**
+.. list-table:: Stack Usage (bytes)
+   :header-rows: 1
 
-+-------------------+-------+---------+---------+
-| Function          | ESP32 | ESP32C2 | ESP32C3 |
-+===================+=======+=========+=========+
-| esp_rom_printf    | 128   | 192     | 192     |
-+-------------------+-------+---------+---------+
-| ESP_EARLY_LOGI V1 | 128   | 192     | 192     |
-+-------------------+-------+---------+---------+
-| ESP_EARLY_LOGI V2 | 336   | 324     | 324     |
-+-------------------+-------+---------+---------+
-| ESP_DRAM_LOGI  V1 | 128   | 192     | 192     |
-+-------------------+-------+---------+---------+
-| ESP_DRAM_LOGI  V2 | 336   | 324     | 324     |
-+-------------------+-------+---------+---------+
-| vprintf           | 1168  | 384     | 1344    |
-+-------------------+-------+---------+---------+
-| ESP_LOGI V1       | 1184  | 384     | 1344    |
-+-------------------+-------+---------+---------+
-| ESP_LOGI V2       | 1152  | 592     | 1504    |
-+-------------------+-------+---------+---------+
+   * - Function
+     - ESP32
+     - ESP32C2
+     - ESP32C3
+   * - esp_rom_printf
+     - 128
+     - 192
+     - 192
+   * - ESP_EARLY_LOGI V1
+     - 128
+     - 192
+     - 192
+   * - ESP_EARLY_LOGI V2
+     - 336
+     - 324
+     - 324
+   * - ESP_DRAM_LOGI V1
+     - 128
+     - 192
+     - 192
+   * - ESP_DRAM_LOGI V2
+     - 336
+     - 324
+     - 324
+   * - vprintf
+     - 1168
+     - 384
+     - 1344
+   * - ESP_LOGI V1
+     - 1184
+     - 384
+     - 1344
+   * - ESP_LOGI V2
+     - 1152
+     - 592
+     - 1504
 
 The stack usage differences between **Log V1** and **Log V2** are negligible.
 
-**Performance (without output in microseconds):**
+.. list-table:: Performance (without output in microseconds)
+   :header-rows: 1
 
-+-------------------+-------+---------+---------+
-| Function          | ESP32 | ESP32C2 | ESP32C3 |
-+===================+=======+=========+=========+
-| esp_rom_printf    | 1     | 2       | 1       |
-+-------------------+-------+---------+---------+
-| ESP_EARLY_LOGI V1 | 15    | 24      | 14      |
-+-------------------+-------+---------+---------+
-| ESP_EARLY_LOGI V2 | 28    | 36      | 25      |
-+-------------------+-------+---------+---------+
-| ESP_DRAM_LOGI V1  | 6     | 9       | 5       |
-+-------------------+-------+---------+---------+
-| ESP_DRAM_LOGI V2  | 19    | 22      | 14      |
-+-------------------+-------+---------+---------+
-| vprintf           | 15    | 9       | 7       |
-+-------------------+-------+---------+---------+
-| ESP_LOGI V1       | 27    | 16      | 12      |
-+-------------------+-------+---------+---------+
-| ESP_LOGI V2       | 77    | 54      | 40      |
-+-------------------+-------+---------+---------+
+   * - Function
+     - ESP32
+     - ESP32C2
+     - ESP32C3
+   * - esp_rom_printf
+     - 1
+     - 2
+     - 1
+   * - ESP_EARLY_LOGI V1
+     - 15
+     - 24
+     - 14
+   * - ESP_EARLY_LOGI V2
+     - 28
+     - 36
+     - 25
+   * - ESP_DRAM_LOGI V1
+     - 6
+     - 9
+     - 5
+   * - ESP_DRAM_LOGI V2
+     - 19
+     - 22
+     - 14
+   * - vprintf
+     - 15
+     - 9
+     - 7
+   * - ESP_LOGI V1
+     - 27
+     - 16
+     - 12
+   * - ESP_LOGI V2
+     - 77
+     - 54
+     - 40
 
 If logging to UART is measured, the performance numbers for **Log V1** and **Log V2** are nearly identical. The slight differences in processing overhead introduced by **Log V2** become negligible compared to the time it takes to send logs over UART. Thus, in most practical use cases, the performance impact of switching to **Log V2** will be unnoticeable.
 
-**Memory Usage (bytes):**
+**Memory Usage (bytes)**
 
 The following measurements were performed using the ``esp_timer`` example with default settings for ESP32: the maximum and default log levels were set to INFO, color support was disabled, and timestamps were enabled. After enabling the **Log V2** option, the example was rebuilt, and the memory usage differences were compared using the command:
 
@@ -470,17 +507,31 @@ The following measurements were performed using the ``esp_timer`` example with d
 
   idf.py size --diff ~/esp/logv2/build_v1
 
-+------------------------+---------------+--------------+---------------+------------+-----------------+
-| Version                | IRAM          | DRAM         | Flash Code    | Flash Data | App binary size |
-+========================+===============+==============+===============+============+=================+
-| Log V2                 | +1772         | -36          | -956          | -1172      | 181104 (-384)   |
-+------------------------+---------------+--------------+---------------+------------+-----------------+
+.. list-table::
+   :header-rows: 1
 
-+------------------------+-------------------------+
-| Version                | Bootloader binary size  |
-+========================+=========================+
-| Log V2                 | 26272 (+160)            |
-+------------------------+-------------------------+
+   * - Version
+     - IRAM
+     - DRAM
+     - Flash Code
+     - Flash Data
+     - App binary size
+   * - Log V2
+     - +1772
+     - –36
+     - –956
+     - –1172
+     - 181104 (–384)
+
+
+.. list-table::
+   :header-rows: 1
+   :align: center
+
+   * - Version
+     - Bootloader binary size
+   * - Log V2
+     - 26272 (+160)
 
 Enabling **Log V2** increases IRAM usage while reducing the overall application binary size, Flash code, and data usage.
 
