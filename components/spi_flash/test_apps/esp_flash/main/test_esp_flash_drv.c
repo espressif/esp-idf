@@ -781,6 +781,41 @@ static void test_write_large_buffer(const esp_partition_t* part, const uint8_t *
     read_and_check(part, source, length);
 }
 
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+static void test_write_over_boundary(const esp_partition_t* part)
+{
+    esp_flash_t* chip = part->flash_chip;
+    uint32_t flash_size;
+    esp_err_t err = esp_flash_get_size(chip, &flash_size);
+    TEST_ESP_OK(err);
+    const uint32_t SECTOR_SIZE = 4096;
+    uint8_t buf[0];
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, SECTOR_SIZE, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, SECTOR_SIZE, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size/2, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write(chip, buf, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
+}
+
+TEST_CASE_FLASH("Test flash write over boundary", test_write_over_boundary);
+TEST_CASE_MULTI_FLASH("Test flash write over boundary", test_write_over_boundary);
+#endif //CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+
 #if !CONFIG_SPI_FLASH_WARN_SETTING_ZERO_TO_ONE
 
 typedef struct {
@@ -1094,3 +1129,16 @@ void test_flash_counter(const esp_partition_t* part)
 
 TEST_CASE_FLASH("SPI flash counter test", test_flash_counter);
 #endif //CONFIG_SPI_FLASH_ENABLE_COUNTERS
+
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+TEST_CASE("test writes to dangerous regions like bootloader", "[esp_flash]")
+{
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, 4*4096));
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_erase_region(NULL, CONFIG_PARTITION_TABLE_OFFSET, 4096));
+    char buffer[32] = {0xa5};
+    // Encrypted writes to bootloader region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write(NULL, buffer, CONFIG_BOOTLOADER_OFFSET_IN_FLASH, sizeof(buffer)));
+    // Encrypted writes to partition table region not allowed
+    TEST_ASSERT_EQUAL_HEX(ESP_ERR_INVALID_ARG, esp_flash_write(NULL, buffer, CONFIG_PARTITION_TABLE_OFFSET, sizeof(buffer)));
+}
+#endif //!CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
