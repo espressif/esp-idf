@@ -277,6 +277,16 @@ static inline void ieee802154_ll_set_power(uint8_t power)
     IEEE802154.txpower.power = power;
 }
 
+static inline void ieee802154_ll_set_ack_timeout(uint32_t timeout)
+{
+    IEEE802154.ack_timeout.timeout = timeout;
+}
+
+static inline uint32_t ieee802154_ll_get_ack_timeout(void)
+{
+    return IEEE802154.ack_timeout.timeout;
+}
+
 static inline void ieee802154_ll_set_multipan_panid(ieee802154_ll_multipan_index_t index, uint16_t panid)
 {
     IEEE802154.conf.multipan_mask |= BIT(index);
