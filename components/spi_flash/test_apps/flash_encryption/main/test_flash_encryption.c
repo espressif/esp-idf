@@ -371,4 +371,37 @@ TEST_CASE("test read & write encrypted data with large buffer in ram", "[flash_e
     free(buf);
 }
 
+#if CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+#elif CONFIG_SPI_FLASH_DANGEROUS_WRITE_ALLOWED
+TEST_CASE("Test flash encrypted write over boundary", "[flash_encryption]")
+{
+    esp_flash_t* chip = NULL;
+    uint32_t flash_size;
+    esp_err_t err = esp_flash_get_size(chip, &flash_size);
+    TEST_ESP_OK(err);
+    const uint32_t SECTOR_SIZE = 4096;
+    uint8_t buf[0];
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 0, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, SECTOR_SIZE, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size/2 + SECTOR_SIZE, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, 2 * SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, flash_size - SECTOR_SIZE, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_erase_region(chip, UINT32_MAX - SECTOR_SIZE + 1, flash_size - SECTOR_SIZE));
+
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, 0, buf, flash_size+SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, SECTOR_SIZE, buf, flash_size));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size/2, buf, flash_size/2 + SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size/2 + SECTOR_SIZE, buf, flash_size/2));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size - SECTOR_SIZE, buf, 2 * SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, 2 * SECTOR_SIZE, buf, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size - SECTOR_SIZE, buf, flash_size - SECTOR_SIZE));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, flash_size - SECTOR_SIZE, buf, UINT32_MAX - SECTOR_SIZE + 1));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_flash_write_encrypted(chip, UINT32_MAX - SECTOR_SIZE + 1, buf, flash_size - SECTOR_SIZE));
+}
+#endif //CONFIG_SPI_FLASH_DANGEROUS_WRITE_FAILS
+
 #endif // CONFIG_SECURE_FLASH_ENC_ENABLED
