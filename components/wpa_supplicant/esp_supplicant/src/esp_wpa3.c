@@ -681,35 +681,39 @@ int esp_send_sae_auth_reply(struct hostapd_data *hapd,
                             u16 auth_alg, u16 auth_transaction, u16 resp,
                             const u8 *ies, size_t ies_len)
 {
-    int reply_res = ESP_FAIL;
-    ies_len += 3 * sizeof(uint16_t);
+    int status = ESP_FAIL;
+    /* Calculate total frame data length (auth_alg + transaction + resp + IEs) */
+    size_t data_len = ies_len + 3 * sizeof(uint16_t);
 
-    wifi_mgmt_frm_req_t *req = os_zalloc(sizeof(*req) + ies_len);
+    wifi_mgmt_frm_req_t *req = os_zalloc(sizeof(*req) + data_len);
     if (!req) {
-        wpa_printf(MSG_ERROR, "failed to send sae auth reply");
-        return reply_res;
+        wpa_printf(MSG_ERROR, "Failed to allocate SAE authentication reply");
+        return status;
     }
-    ((uint16_t *)req->data)[0] = htole16(auth_alg);
-    ((uint16_t *)req->data)[1] = htole16(auth_transaction);
-    ((uint16_t *)req->data)[2] = htole16(resp);
 
-    if (ies_len) {
-        os_memcpy(&((uint16_t *)req->data)[3], ies, ies_len - 3 * sizeof(uint16_t));
+    /* Populate the frame data */
+    ((uint16_t *)req->data)[0] = htole16(auth_alg); /* Authentication algorithm */
+    ((uint16_t *)req->data)[1] = htole16(auth_transaction); /* Transaction number */
+    ((uint16_t *)req->data)[2] = htole16(resp); /* Response code */
+
+    if (ies && ies_len) {
+        os_memcpy(&((uint16_t *)req->data)[3], ies, ies_len);
     }
 
     req->ifx = WIFI_IF_AP;
     req->subtype = (WLAN_FC_STYPE_AUTH << 4);
-    req->data_len = ies_len;
+    req->data_len = data_len;
     os_memcpy(req->da, bssid, ETH_ALEN);
 
     if (esp_wifi_send_mgmt_frm_internal(req) != 0) {
-        wpa_printf(MSG_INFO, "%s: send failed", __func__);
+        wpa_printf(MSG_INFO, "%s: SAE authentication reply send failed", __func__);
     } else {
-        reply_res = ESP_OK;
+        status = ESP_OK;
     }
 
     os_free(req);
-    return reply_res;
+
+    return status;
 }
 
 void esp_wifi_register_wpa3_ap_cb(struct wpa_funcs *wpa_cb)

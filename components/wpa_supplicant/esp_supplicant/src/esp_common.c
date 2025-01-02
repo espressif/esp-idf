@@ -785,15 +785,16 @@ int wpa_drv_send_action(struct wpa_supplicant *wpa_s,
 			const u8 *data, size_t data_len,
 			int no_cck)
 {
-	int ret = 0;
-	wifi_mgmt_frm_req_t *req = os_zalloc(sizeof(*req) + data_len);;
-	if (!req)
-		return -1;
+	int ret = -1;
+	wifi_mgmt_frm_req_t *req;
 
 	if (!wpa_s->current_bss) {
-		wpa_printf(MSG_ERROR, "STA not associated, return");
-		ret = -1;
-		goto cleanup;
+		return ret;
+	}
+
+	req = os_zalloc(sizeof(*req) + data_len);
+	if (!req) {
+		return ret;
 	}
 
 	req->ifx = WIFI_IF_STA;
@@ -801,14 +802,14 @@ int wpa_drv_send_action(struct wpa_supplicant *wpa_s,
 	req->data_len = data_len;
 	os_memcpy(req->data, data, req->data_len);
 
-	if (esp_wifi_send_mgmt_frm_internal(req) != 0) {
-		wpa_printf(MSG_ERROR, "action frame sending failed");
-		ret = -1;
-		goto cleanup;
-	}
-	wpa_printf(MSG_INFO, "action frame sent");
+	ret = esp_wifi_send_mgmt_frm_internal(req);
 
-cleanup:
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "action frame sending failed");
+	} else {
+		wpa_printf(MSG_INFO, "action frame sent");
+	}
+
 	os_free(req);
 	return ret;
 }
