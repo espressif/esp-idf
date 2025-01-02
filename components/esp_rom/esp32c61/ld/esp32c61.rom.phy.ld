@@ -305,7 +305,9 @@ phy_rate_to_index = 0x400014b8;
 phy_get_target_pwr = 0x400014bc;
 phy_get_max_pwr = 0x400014c0;
 phy_get_pwr_index = 0x400014c4;
-phy_chip_set_chan_ana = 0x40005a8a;
+phy_chip_set_chan_ana = 0x400014d4;
+phy_get_romfuncs = 0x400014d8;
 /* Data (.data, .bss, .rodata) */
 phy_param_rom = 0x4084fc6c;
 rom_phyFuns = 0x4084fb84;
+rom_phyFuns_eco2 = 0x4084fc68;
