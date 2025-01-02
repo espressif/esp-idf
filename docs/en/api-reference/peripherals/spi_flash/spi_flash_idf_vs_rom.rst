@@ -35,3 +35,4 @@ Bugfixes Introduced in ESP-IDF but not in Chip-ROM
     :esp32s3: - Fixed issue that only 16MB virtual address ranges can be mapped to read-only data on Flash.
     :esp32c3: - Fixed issue that only 128KB virtual address ranges can be mapped to instructions on Flash.
     :esp32c2: - Fixed issue that only at most 128KB virtual address ranges can be mapped to instructions on Flash.
+    - Fixed issue that address range may escape from checking for erasing and writing function when their sum overflows 32-bit boundary.
