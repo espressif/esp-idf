@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -201,10 +201,26 @@ int usleep(useconds_t us)
     if (us < us_per_tick) {
         esp_rom_delay_us((uint32_t) us);
     } else {
-        /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
-         * round up to compensate.
-         */
-        vTaskDelay((us + us_per_tick - 1) / us_per_tick);
+        /* vTaskDelay may return up to (n-1) tick periods due to the tick ISR
+           being asynchronous to the call. We must sleep at least the specified
+           time, or longer. Checking the monotonic clock allows making an
+           additional call to vTaskDelay when needed to ensure minimal time is
+           actually slept. Adding `us_per_tick - 1` prevents ever passing 0 to
+           vTaskDelay().
+        */
+        uint64_t now_us = esp_time_impl_get_time();
+        uint64_t target_us = now_us + us;
+        do {
+            vTaskDelay((((target_us - now_us) + us_per_tick - 1) / us_per_tick));
+            now_us = esp_time_impl_get_time();
+            /* It is possible that the time left until the target time is less
+             * than a tick period. However, we let usleep() to sleep for an
+             * entire tick period. This, could result in usleep() sleeping for
+             * a longer time than the requested time but that does not violate
+             * the spec of usleep(). Additionally, it allows FreeRTOS to schedule
+             * other tasks while the current task is sleeping.
+             */
+        } while (now_us < target_us);
     }
     return 0;
 }
