@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,14 @@ typedef struct {
     uint8_t lqi;                 /*!< LQI */
     uint64_t timestamp;          /*!< The timestamp when the frame's SFD field was received */
 } esp_ieee802154_frame_info_t;
+
+/**
+ * @brief The O-QPSK PHY transmission power table for 2.4 GHz channels as defined by the IEEE 802.15.4 specification.
+ *
+ */
+typedef struct {
+    int8_t channel[16];         /*!< Index 0 -> Channel 11, Index 1 -> Channel 12 ... Index 15 -> Channel 26 */
+} esp_ieee802154_txpower_table_t;
 
 #ifdef __cplusplus
 }
