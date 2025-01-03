@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "unity_test_utils.h"
 #include "driver/bitscrambler.h"
 #include "driver/bitscrambler_loopback.h"
-#include "esp_dma_utils.h"
+#include "esp_heap_caps.h"
 
 BITSCRAMBLER_PROGRAM(bitscrambler_program_trivial, "trivial");
 BITSCRAMBLER_PROGRAM(bitscrambler_program_timeout, "timeout");
@@ -33,6 +33,7 @@ TEST_CASE("Basic BitScrambler I/O", "[bs]")
     bitscrambler_free(bs);
 
     TEST_ASSERT_EQUAL_HEX8_ARRAY(data_in, data_out, len);
+    TEST_ASSERT_EQUAL(len, res_len);
 
     free(data_in);
     free(data_out);

@@ -1,39 +1,42 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stddef.h>
-#include "driver/bitscrambler.h"
-#include "bitscrambler_private.h"
-#include "bitscrambler_loopback_private.h"
-#include "esp_private/gdma.h"
-#include "hal/dma_types.h"
-#include "hal/cache_ll.h"
-#include "hal/gdma_ll.h"
-#include "bitscrambler_soc_specific.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "driver/bitscrambler.h"
+#include "esp_private/gdma.h"
+#include "esp_private/gdma_link.h"
+#include "esp_private/bitscrambler.h"
+#include "hal/dma_types.h"
+#include "bitscrambler_private.h"
+#include "bitscrambler_soc_specific.h"
 #include "esp_err.h"
 #include "esp_check.h"
-#include "soc/ahb_dma_struct.h"
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
 #include "esp_dma_utils.h"
 
 const static char *TAG = "bs_loop";
 
-//Note: given that the first member is a bitscrambler_t, this can be safely passed to
-//any of the non-loopback bitscrambler functions.
 typedef struct {
     bitscrambler_t bs;
-    dma_descriptor_t *tx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
-    dma_descriptor_t *rx_desc_link; // descriptor link list, the length of the link is determined by the copy buffer size
     gdma_channel_handle_t tx_channel; // GDMA TX channel handle
     gdma_channel_handle_t rx_channel; // GDMA RX channel handle
+    gdma_link_list_handle_t tx_link_list; // GDMA TX link list handle, the length of the link is determined by the copy buffer size
+    gdma_link_list_handle_t rx_link_list; // GDMA RX link list handle, the length of the link is determined by the copy buffer size
     SemaphoreHandle_t sema_done;
     size_t max_transfer_sz_bytes;
 } bitscrambler_loopback_t;
+
+/// @brief make sure bs is indeed the first member of bitscrambler_loopback_t so we can cast it to a bitscrambler_t and safely passed to
+//         any of the non-loopback bitscrambler functions.
+_Static_assert(offsetof(bitscrambler_loopback_t, bs) == 0, "bs needs to be 1st member of bitscrambler_loopback_t");
+
+static void bitscrambler_loopback_free(bitscrambler_loopback_t *bsl);
+static esp_err_t bitscrambler_loopback_cleanup(bitscrambler_handle_t bs, void* user_ctx);
 
 static esp_err_t new_dma_channel(const gdma_channel_alloc_config_t *cfg, gdma_channel_handle_t *handle, int bus)
 {
@@ -63,8 +66,6 @@ static IRAM_ATTR bool trans_done_cb(gdma_channel_handle_t dma_chan, gdma_event_d
 
 esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach_to, size_t max_transfer_sz_bytes)
 {
-    ///make sure bs is indeed the first member of bitscrambler_loopback_t so we can cast it to a bitscrambler_t
-    _Static_assert(offsetof(bitscrambler_loopback_t, bs) == 0, "bs needs to be 1st member of bitscrambler_loopback_t");
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -85,6 +86,9 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     };
     ESP_GOTO_ON_ERROR(bitscrambler_init_loopback(&bs->bs, &cfg), err, TAG, "failed bitscrambler init for loopback");
 
+    // register extra cleanup function to free loopback resources
+    bitscrambler_register_extra_clean_up(&bs->bs, bitscrambler_loopback_cleanup, bs);
+
     bs->sema_done = xSemaphoreCreateBinary();
     if (!bs->sema_done) {
         goto err;
@@ -93,19 +97,21 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     bs->max_transfer_sz_bytes = max_transfer_sz_bytes;
     int desc_ct = (max_transfer_sz_bytes + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     int bus = g_bitscrambler_periph_desc[attach_to].bus;
-    uint32_t caps = (bus == SOC_GDMA_BUS_AXI) ? MALLOC_CAP_DMA_DESC_AXI : MALLOC_CAP_DMA_DESC_AHB;
     size_t align = (bus == SOC_GDMA_BUS_AXI) ? 8 : 4;
-    bs->rx_desc_link = heap_caps_aligned_calloc(align, desc_ct, sizeof(dma_descriptor_t), caps);
-    bs->tx_desc_link = heap_caps_aligned_calloc(align, desc_ct, sizeof(dma_descriptor_t), caps);
-    if (!bs->rx_desc_link || !bs->tx_desc_link) {
-        ret = ESP_ERR_NO_MEM;
-        goto err;
-    }
+
+    // create DMA link list for TX and RX
+    gdma_link_list_config_t dma_link_cfg = {
+        .buffer_alignment = 4,
+        .item_alignment = align,
+        .num_items = desc_ct,
+    };
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_cfg, &bs->tx_link_list), err, TAG, "failed to create TX link list");
+    ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_cfg, &bs->rx_link_list), err, TAG, "failed to create RX link list");
 
     // create TX channel and RX channel, they should reside in the same DMA pair
     gdma_channel_alloc_config_t tx_alloc_config = {
-        .flags.reserve_sibling = 1,
         .direction = GDMA_CHANNEL_DIRECTION_TX,
+        .flags.reserve_sibling = 1,
     };
     ESP_GOTO_ON_ERROR(new_dma_channel(&tx_alloc_config, &bs->tx_channel, bus), err, TAG, "failed to create GDMA TX channel");
     gdma_channel_alloc_config_t rx_alloc_config = {
@@ -132,18 +138,13 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     return ESP_OK;
 
 err:
-    bitscrambler_loopback_free(&bs->bs);
+    bitscrambler_loopback_free(bs);
     free(bs);
     return ret;
 }
 
-//note this is never called directly; bitscrambler_free calls this to clear
-//the loopback-specific things of a loopback bitscrambler.
-//bitscrambler_loopback_create also calls this in an error situation, so
-//we should only delete not-NULL members.
-void bitscrambler_loopback_free(bitscrambler_handle_t bs)
+static void bitscrambler_loopback_free(bitscrambler_loopback_t *bsl)
 {
-    bitscrambler_loopback_t *bsl = (bitscrambler_loopback_t*)bs;
     if (bsl->rx_channel) {
         gdma_disconnect(bsl->rx_channel);
         gdma_del_channel(bsl->rx_channel);
@@ -152,36 +153,22 @@ void bitscrambler_loopback_free(bitscrambler_handle_t bs)
         gdma_disconnect(bsl->tx_channel);
         gdma_del_channel(bsl->tx_channel);
     }
+    if (bsl->tx_link_list) {
+        gdma_del_link_list(bsl->tx_link_list);
+    }
+    if (bsl->rx_link_list) {
+        gdma_del_link_list(bsl->rx_link_list);
+    }
     if (bsl->sema_done) {
         vSemaphoreDelete(bsl->sema_done);
     }
-    free(bsl->rx_desc_link);
-    free(bsl->tx_desc_link);
 }
 
-static int fill_dma_links(dma_descriptor_t *link, void *buffer, size_t len_bytes, int set_eof)
+static esp_err_t bitscrambler_loopback_cleanup(bitscrambler_handle_t bs, void* user_ctx)
 {
-    uint8_t *buffer_p = (uint8_t*)buffer;
-    int link_ct = 0;
-    for (int p = 0; p < len_bytes; p += DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-        int seg_len = len_bytes - p;
-        if (seg_len > DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
-            seg_len = DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
-        }
-        link[link_ct].dw0.size = seg_len;
-        link[link_ct].dw0.length = seg_len;
-        link[link_ct].dw0.err_eof = 0;
-        link[link_ct].dw0.suc_eof = 0;
-        link[link_ct].dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        link[link_ct].buffer = &buffer_p[p];
-        link[link_ct].next = &link[link_ct + 1];
-        link_ct++;
-    }
-    link[link_ct - 1].next = NULL; //fix last entry to end transaction
-    if (set_eof) {
-        link[link_ct - 1].dw0.suc_eof = 1;
-    }
-    return link_ct;
+    bitscrambler_loopback_t *bsl = (bitscrambler_loopback_t*)user_ctx;
+    bitscrambler_loopback_free(bsl);
+    return ESP_OK;
 }
 
 /*
@@ -232,18 +219,33 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     gdma_reset(bsl->tx_channel);
     bitscrambler_reset(bs);
 
-    int link_ct_in = fill_dma_links(bsl->tx_desc_link, buffer_in, length_bytes_in, 1);
-    int link_ct_out = fill_dma_links(bsl->rx_desc_link, buffer_out, length_bytes_out, 0);
+    // mount in and out buffer to the DMA link list
+    gdma_buffer_mount_config_t in_buf_mount_config = {
+        .buffer = buffer_in,
+        .length = length_bytes_in,
+        .flags = {
+            .mark_eof = true,
+            .mark_final = true,
+        }
+    };
+    gdma_link_mount_buffers(bsl->tx_link_list, 0, &in_buf_mount_config, 1, NULL);
+    gdma_buffer_mount_config_t out_buf_mount_config = {
+        .buffer = buffer_out,
+        .length = length_bytes_out,
+        .flags = {
+            .mark_eof = false,
+            .mark_final = true,
+        }
+    };
+    gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);
 
     //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
     //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
     //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
-
-    esp_cache_msync(bsl->rx_desc_link, link_ct_out * sizeof(dma_descriptor_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    esp_cache_msync(bsl->tx_desc_link, link_ct_in * sizeof(dma_descriptor_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
     esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    gdma_start(bsl->rx_channel, (intptr_t)bsl->rx_desc_link);
-    gdma_start(bsl->tx_channel, (intptr_t)bsl->tx_desc_link);
+
+    gdma_start(bsl->rx_channel, gdma_link_get_head_addr(bsl->rx_link_list));
+    gdma_start(bsl->tx_channel, gdma_link_get_head_addr(bsl->tx_link_list));
     bitscrambler_start(bs);
 
     int timeout_ms = (length_bytes_out + length_bytes_in) / (BS_MIN_BYTES_PER_SEC / 1000);
@@ -259,14 +261,7 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
 
     if (bytes_written) {
-        size_t l = 0;
-        for (int i = 0; i < link_ct_out; i++) {
-            l += bsl->rx_desc_link[i].dw0.length;
-            if (bsl->rx_desc_link[i].dw0.suc_eof) {
-                break;
-            }
-        }
-        *bytes_written = l;
+        *bytes_written = gdma_link_count_buffer_size_till_eof(bsl->rx_link_list, 0);
     }
 
     return ret;
