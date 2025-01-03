@@ -1,0 +1,82 @@
+{
+    "binary_ver": 1,
+    "hw_rev": 0,
+    "hdr_len": 3,
+    "inst_ct": 8,
+    "lut_size_words": 0,
+    "lut_width_bits": 2,
+    "inst": [
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 0
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IFN",
+                "src": 32
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 32
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 1
+        },
+        {
+            "opcode": {
+                "op": "IFN",
+                "src": 32
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 1,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 96
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IFN",
+                "src": 95
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IF",
+                "src": 94
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        },
+        {
+            "opcode": {
+                "op": "IFN",
+                "src": 127
+            },
+            "mux_rel": 0,
+            "ctr_src_sel": 0,
+            "lut_src_sel": 0
+        }
+    ]
+}

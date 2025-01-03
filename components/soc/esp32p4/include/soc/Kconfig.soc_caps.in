@@ -331,6 +331,10 @@ config SOC_PM_SUPPORTED
     bool
     default y
 
+config SOC_BITSCRAMBLER_SUPPORTED
+    bool
+    default y
+
 config SOC_XTAL_SUPPORT_40M
     bool
     default y

@@ -126,6 +126,9 @@
 
   - "tools/check_python_dependencies.py"
 
+  - "tools/bsasm.py"
+  - "tools/test_bsasm/**/*"
+
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"
 
