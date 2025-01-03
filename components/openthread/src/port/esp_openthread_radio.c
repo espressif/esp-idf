@@ -798,3 +798,15 @@ void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
     esp_ieee802154_set_rx_when_idle(aEnable);
 }
 #endif
+
+uint32_t otPlatRadioGetPreferredChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_PREFERRED_CHANNEL_MASK;
+}
+
+uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_SUPPORTED_CHANNEL_MASK;
+}
