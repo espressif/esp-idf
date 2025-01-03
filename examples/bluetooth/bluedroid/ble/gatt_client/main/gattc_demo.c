@@ -549,7 +549,7 @@ void app_main(void)
         extern void bt_hci_log_hci_adv_show(void);
         bt_hci_log_hci_data_show();
         bt_hci_log_hci_adv_show();
-        vTaskDelay(1000 / portNUM_PROCESSORS);
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
     */
 
