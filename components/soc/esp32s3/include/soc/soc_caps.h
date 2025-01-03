@@ -136,6 +136,7 @@
 /*-------------------------- CACHE CAPS --------------------------------------*/
 #define SOC_CACHE_WRITEBACK_SUPPORTED           1
 #define SOC_CACHE_FREEZE_SUPPORTED              1
+#define SOC_CACHE_ACS_INVALID_STATE_ON_PANIC    1 /*!< Certain ACS errors may cause the cache to be in a bad state until cleared */
 
 /*-------------------------- CPU CAPS ----------------------------------------*/
 #define SOC_CPU_CORES_NUM               2
