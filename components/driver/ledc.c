@@ -838,7 +838,7 @@ uint32_t ledc_get_freq(ledc_mode_t speed_mode, ledc_timer_t timer_num)
     ledc_hal_get_clock_divider(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clock_divider);
     ledc_hal_get_duty_resolution(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &duty_resolution);
     ledc_hal_get_clk_cfg(&(p_ledc_obj[speed_mode]->ledc_hal), timer_num, &clk_cfg);
-    uint32_t precision = (0x1 << duty_resolution);
+    uint64_t precision = (0x1 << duty_resolution);
     uint32_t src_clk_freq = ledc_get_src_clk_freq(clk_cfg);
     portEXIT_CRITICAL(&ledc_spinlock);
     if (clock_divider == 0) {
