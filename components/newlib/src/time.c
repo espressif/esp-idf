@@ -207,10 +207,19 @@ int usleep(useconds_t us)
     if (us < us_per_tick) {
         esp_rom_delay_us((uint32_t) us);
     } else {
-        /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
-         * round up to compensate.
-         */
-        vTaskDelay((us + us_per_tick - 1) / us_per_tick);
+        /* vTaskDelay may return up to (n-1) tick periods due to the tick ISR
+           being asynchronous to the call. We must sleep at least the specified
+           time, or longer. Checking the monotonic clock allows making an
+           additional call to vTaskDelay when needed to ensure minimal time is
+           actually slept. Adding `us_per_tick - 1` prevents ever passing 0 to
+           vTaskDelay(). 
+        */
+        uint64_t now_us = esp_time_impl_get_time();
+        uint64_t target_us = now_us + us;
+        do {
+            vTaskDelay((((target_us - now_us) + us_per_tick - 1) / us_per_tick));
+            now_us = esp_time_impl_get_time();
+        } while (now_us < target_us);
     }
     return 0;
 }
