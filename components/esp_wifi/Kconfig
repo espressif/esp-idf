@@ -11,8 +11,8 @@ menu "Wi-Fi"
         int "Max number of WiFi static RX buffers"
         range 2 25 if !SOC_WIFI_HE_SUPPORT
         range 2 128 if SOC_WIFI_HE_SUPPORT
-        default 10 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 10 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+        default 16 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
         help
             Set the number of WiFi static RX buffers. Each buffer takes approximately 1.6KB of RAM.
             The static rx buffers are allocated when esp_wifi_init is called, they are not freed
@@ -63,7 +63,7 @@ menu "Wi-Fi"
             bool "Static"
         config ESP_WIFI_DYNAMIC_TX_BUFFER
             bool "Dynamic"
-            depends on !SPIRAM_USE_MALLOC
+            depends on !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
     endchoice
 
     config ESP_WIFI_TX_BUFFER_TYPE
@@ -88,8 +88,8 @@ menu "Wi-Fi"
 
     config ESP_WIFI_CACHE_TX_BUFFER_NUM
         int "Max number of WiFi cache TX buffers"
-        depends on SPIRAM
-        range 16 128
+        depends on (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+        range 0 128
         default 32
         help
             Set the number of WiFi cache TX buffer number.
@@ -186,19 +186,19 @@ menu "Wi-Fi"
         depends on ESP_WIFI_AMPDU_RX_ENABLED
         range 2 32 if !SOC_WIFI_HE_SUPPORT
         range 2 64 if SOC_WIFI_HE_SUPPORT
-        default 6 if !SPIRAM_TRY_ALLOCATE_WIFI_LWIP
-        default 16 if SPIRAM_TRY_ALLOCATE_WIFI_LWIP
+        default 6 if !(SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
+        default 16 if (SPIRAM_TRY_ALLOCATE_WIFI_LWIP && !SPIRAM_IGNORE_NOTFOUND)
         help
             Set the size of WiFi Block Ack RX window. Generally a bigger value means higher throughput and better
             compatibility but more memory. Most of time we should NOT change the default value unless special
             reason, e.g. test the maximum UDP RX throughput with iperf etc. For iperf test in shieldbox, the
-            recommended value is 9~12. If PSRAM is used and WiFi memory is prefered to allocat in PSRAM first,
+            recommended value is 9~12. If PSRAM is used and WiFi memory is preferred to allocate in PSRAM first,
             the default and minimum value should be 16 to achieve better throughput and compatibility with both
             stations and APs.
 
     config ESP_WIFI_AMSDU_TX_ENABLED
         bool "WiFi AMSDU TX"
-        depends on SPIRAM
+        depends on (ESP_WIFI_CACHE_TX_BUFFER_NUM >= 2)
         default n
         help
             Select this option to enable AMSDU TX feature

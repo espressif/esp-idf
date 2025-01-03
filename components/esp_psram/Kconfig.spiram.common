@@ -17,16 +17,12 @@ config SPIRAM_IGNORE_NOTFOUND
     help
         Normally, if psram initialization is enabled during compile time but not found at runtime, it
         is seen as an error making the CPU panic. If this is enabled, booting will complete
-        but no PSRAM will be available. If PSRAM failed to initialize, the following configs may be affected
-        and may need to be corrected manually. SPIRAM_TRY_ALLOCATE_WIFI_LWIP will affect some LWIP and WiFi buffer
-        default values and range values. Enable SPIRAM_TRY_ALLOCATE_WIFI_LWIP, ESP_WIFI_AMSDU_TX_ENABLED,
-        ESP_WIFI_CACHE_TX_BUFFER_NUM and use static WiFi Tx buffer may cause potential memory exhaustion issues.
-        Suggest disable SPIRAM_TRY_ALLOCATE_WIFI_LWIP.
-        Suggest disable ESP_WIFI_AMSDU_TX_ENABLED.
-        Suggest disable ESP_WIFI_CACHE_TX_BUFFER_NUM,
-        need clear CONFIG_FEATURE_CACHE_TX_BUF_BIT of config->feature_caps.
-        Suggest change ESP_WIFI_TX_BUFFER from static to dynamic. Also suggest to adjust some buffer numbers to the
-        values used without PSRAM case. Such as, ESP_WIFI_STATIC_TX_BUFFER_NUM, ESP_WIFI_DYNAMIC_TX_BUFFER_NUM.
+        but no PSRAM will be available. In particular, it is important to note that when SPIRAM_IGNORE_NOTFOUND
+        is enabled, some WIFI related configs will be set to the default value used when SPIRAM is disabled.
+        It can be assumed that by enabling this config, WIFI and LWIP will assume that the current chip does not
+        have SPIRAM. SPIRAM_TRY_ALLOCATE_WIFI_LWIP will not work, buffers in WIFI and LWIP will be set to smaller
+        ranges and default values. WIFI_CACHE_TX_BUFFER_NUM and ESP_WIFI_AMSDU_TX_ENABLED will be disabled,
+        ESP_WIFI_TX_BUFFER will be set to ESP_WIFI_DYNAMIC_TX_BUFFER.
 
 choice SPIRAM_USE
     prompt "SPI RAM access method"
