@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,9 @@ typedef enum {
     ADC_ATTEN_DB_11 __attribute__((deprecated)) = ADC_ATTEN_DB_12,  ///<This is deprecated, it behaves the same as `ADC_ATTEN_DB_12`
 } adc_atten_t;
 
+/**
+ * @brief ADC bitwidth
+ */
 typedef enum {
     ADC_BITWIDTH_DEFAULT = 0, ///< Default ADC output bits, max supported width will be selected
     ADC_BITWIDTH_9  = 9,      ///< ADC output width is 9Bit
@@ -60,6 +63,12 @@ typedef enum {
     ADC_BITWIDTH_13 = 13,     ///< ADC output width is 13Bit
 } adc_bitwidth_t;
 
+/**
+ * @brief ADC ULP working mode
+ *
+ * This decides the controller that controls ADC when in low power mode.
+ * Set `ADC_ULP_MODE_DISABLE` for normal mode.
+ */
 typedef enum {
     ADC_ULP_MODE_DISABLE = 0, ///< ADC ULP mode is disabled
     ADC_ULP_MODE_FSM     = 1, ///< ADC is controlled by ULP FSM
