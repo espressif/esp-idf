@@ -2381,7 +2381,7 @@ static int wpa_gtk_update(struct wpa_authenticator *wpa_auth,
             group->GTK[group->GN - 1], group->GTK_len);
 
 #ifdef CONFIG_IEEE80211W
-    if (wpa_auth->conf.ieee80211w != NO_MGMT_FRAME_PROTECTION) {
+    if (wpa_auth_pmf_enabled(&wpa_auth->conf)) {
         len = wpa_cipher_key_len(wpa_auth->conf.group_mgmt_cipher);
         memcpy(group->GNonce, group->Counter, WPA_NONCE_LEN);
         inc_byte_array(group->Counter, WPA_NONCE_LEN);
@@ -2577,7 +2577,7 @@ static int wpa_group_config_group_keys(struct wpa_authenticator *wpa_auth,
         ret = -1;
 
 #ifdef CONFIG_IEEE80211W
-    if (wpa_auth->conf.ieee80211w != NO_MGMT_FRAME_PROTECTION &&
+    if (wpa_auth_pmf_enabled(&wpa_auth->conf) &&
         wpa_auth_set_key(wpa_auth, group->vlan_id, WIFI_WPA_ALG_IGTK,
                  broadcast_ether_addr, group->GN_igtk,
                  group->IGTK[group->GN_igtk - 4],

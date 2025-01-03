@@ -310,5 +310,10 @@ void wpa_auth_pmksa_remove(struct wpa_authenticator *wpa_auth,
 			    const u8 *sta_addr);
 void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
                                size_t len);
+static inline bool wpa_auth_pmf_enabled(struct wpa_auth_config *conf)
+{
+       return conf->ieee80211w != NO_MGMT_FRAME_PROTECTION ||
+               conf->rsn_override_mfp != NO_MGMT_FRAME_PROTECTION;
+}
 
 #endif /* WPA_AUTH_H */
