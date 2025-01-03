@@ -70,6 +70,7 @@ check_blobs:
     - IDF_TARGET=esp32s2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32s3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     - IDF_TARGET=esp32c3 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
+    - IDF_TARGET=esp32c2 $IDF_PATH/components/esp_wifi/test_md5/test_md5.sh
     # Check if Wi-Fi, PHY, BT blobs contain references to specific symbols
     - bash $IDF_PATH/tools/ci/check_blobs.sh
 
