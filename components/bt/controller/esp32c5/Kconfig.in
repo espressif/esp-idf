@@ -613,6 +613,12 @@ choice BT_LE_DFT_TX_POWER_LEVEL_DBM
     default BT_LE_DFT_TX_POWER_LEVEL_P9
     help
         Specify default Tx power level(dBm).
+    config BT_LE_DFT_TX_POWER_LEVEL_N24
+        bool "-24dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N21
+        bool "-21dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N18
+        bool "-18dBm"
     config BT_LE_DFT_TX_POWER_LEVEL_N15
         bool "-15dBm"
     config BT_LE_DFT_TX_POWER_LEVEL_N12
