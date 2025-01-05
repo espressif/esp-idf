@@ -49,7 +49,7 @@ def test_examples_sysview_tracing_heap_log(idf_path: str, dut: IdfDut) -> None:
         sysviewtrace.expect(r'Found \d+ leaked bytes in \d+ blocks.', timeout=120)
 
     # Validate GDB logs
-    with open(dut.gdb._logfile) as fr:  # pylint: disable=protected-access
+    with open(dut.gdb._logfile, encoding='utf-8') as fr:  # pylint: disable=protected-access
         gdb_pexpect_proc = pexpect.fdpexpect.fdspawn(fr.fileno())
         gdb_pexpect_proc.expect_exact(
             'Thread 2 "main" hit Temporary breakpoint 1, heap_trace_start (mode_param', timeout=10)  # should be (mode_param=HEAP_TRACE_ALL) # TODO GCC-329

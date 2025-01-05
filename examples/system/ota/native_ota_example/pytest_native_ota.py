@@ -67,7 +67,7 @@ server_key = '-----BEGIN PRIVATE KEY-----\n'\
 
 
 def create_file(server_file: str, file_data: str) -> None:
-    with open(server_file, 'w+') as file:
+    with open(server_file, 'w+', encoding='utf-8') as file:
         file.write(file_data)
 
 

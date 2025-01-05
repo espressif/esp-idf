@@ -1,11 +1,12 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import ssl
 import sys
-from threading import Event, Thread
+from threading import Event
+from threading import Thread
 
 import paho.mqtt.client as mqtt
 import pexpect
@@ -47,7 +48,7 @@ def on_message(client, userdata, msg):  # type: (mqtt.Client, tuple, mqtt.client
                 event_client_received_binary.set()
                 return
             recv_binary = binary + '.received'
-            with open(recv_binary, 'w') as fw:
+            with open(recv_binary, 'w', encoding='utf-8') as fw:
                 fw.write(msg.payload)
             raise ValueError('Received binary (saved as: {}) does not match the original file: {}'.format(recv_binary, binary))
 

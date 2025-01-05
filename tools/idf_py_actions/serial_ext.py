@@ -45,7 +45,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         desc_path = os.path.join(args.build_dir, 'project_description.json')
         if not os.path.exists(desc_path):
             ensure_build_directory(args, ctx.info_name)
-        with open(desc_path, 'r') as f:
+        with open(desc_path, 'r', encoding='utf-8') as f:
             project_desc = json.load(f)
         return project_desc
 
@@ -61,7 +61,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         result += ['-p', args.port]
         result += ['-b', str(args.baud)]
 
-        with open(os.path.join(args.build_dir, 'flasher_args.json')) as f:
+        with open(os.path.join(args.build_dir, 'flasher_args.json'), encoding='utf-8') as f:
             flasher_args = json.load(f)
 
         extra_esptool_args = flasher_args['extra_esptool_args']

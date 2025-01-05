@@ -50,7 +50,7 @@ def main() -> None:
         glob_iter = glob.glob(os.path.join(idf_path, 'components', '**', f'*.{extension}'), recursive=True)
         source_files_iters.append(glob_iter)
     for filename in itertools.chain(*source_files_iters):
-        with open(filename, 'r') as f_obj:
+        with open(filename, 'r', encoding='utf-8') as f_obj:
             file_contents = f_obj.read()
         if ESP_SYSTEM_INIT_FN_STR not in file_contents:
             continue
@@ -80,7 +80,7 @@ def main() -> None:
     # 3. Load startup entries list from STARTUP_ENTRIES_FILE, removing comments and empty lines
     #
     startup_entries_expected_lines = []
-    with open(os.path.join(idf_path, STARTUP_ENTRIES_FILE), 'r') as startup_entries_expected_file:
+    with open(os.path.join(idf_path, STARTUP_ENTRIES_FILE), 'r', encoding='utf-8') as startup_entries_expected_file:
         for line in startup_entries_expected_file:
             if line.startswith('#') or len(line.strip()) == 0:
                 continue

@@ -180,7 +180,7 @@ def check_performance(idf_path: str) -> Callable[[str, float, str], None]:
         """
 
         def _find_perf_item(operator: str, path: str) -> float:
-            with open(path, 'r') as f:
+            with open(path, 'r', encoding='utf-8') as f:
                 data = f.read()
             match = re.search(r'#define\s+IDF_PERFORMANCE_{}_{}\s+([\d.]+)'.format(operator, item.upper()), data)
             return float(match.group(1))  # type: ignore

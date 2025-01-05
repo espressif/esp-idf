@@ -45,12 +45,12 @@ if __name__ == '__main__':
 
     required_set = set()
     for req_path in args.requirements:
-        with open(req_path) as f:
+        with open(req_path, encoding='utf-8') as f:
             required_set |= set(i for i in map(str.strip, f.readlines()) if len(i) > 0 and not i.startswith('#'))
 
     constr_dict = {}  # for example package_name -> package_name==1.0
     for const_path in args.constraints:
-        with open(const_path) as f:
+        with open(const_path, encoding='utf-8') as f:
             for con in [i for i in map(str.strip, f.readlines()) if len(i) > 0 and not i.startswith('#')]:
                 if con.startswith('file://'):
                     con = os.path.basename(con)
