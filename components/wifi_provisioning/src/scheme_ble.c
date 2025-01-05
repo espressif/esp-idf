@@ -170,7 +170,7 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
             /* XXX Does it even make any sense to set truncated mfg_data ? The
              * only reason to not return failure from here is provisioning
              * should continue as it is with error prints for mfg_data length */
-            mfg_data_len = MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2;
+            mfg_data_len = (size_t)(MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2);
         }
 
         ble_config->manufacturer_data = custom_manufacturer_data;
@@ -213,6 +213,7 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
                 realloc(ble_config->nu_lookup, (ble_config->nu_lookup_count + 1) * sizeof(protocomm_ble_name_uuid_t)));
     if (!lookup_table) {
         ESP_LOGE(TAG, "Error allocating memory for EP-UUID lookup table");
+        free(copy_ep_name);
         return ESP_ERR_NO_MEM;
     }
 
