@@ -4,6 +4,8 @@ set basedir (realpath (dirname (status -f)))
 
 set -x IDF_PATH $basedir
 
+echo "INFO: Using IDF_PATH '$IDF_PATH' for installation."
+
 echo "Detecting the Python interpreter"
 source "$IDF_PATH"/tools/detect_python.fish
 
@@ -27,7 +29,7 @@ or exit 1
 set FEATURES ("$ESP_PYTHON" "$IDF_PATH"/tools/install_util.py extract features $argv) || exit 1
 
 echo "Installing Python environment and packages"
-"$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py install-python-env --features=$FEATURES
+"$ESP_PYTHON" "$IDF_PATH"/tools/idf_tools.py install-python-env --features=$FEATURES || exit 1
 
 echo "All done! You can now run:"
 echo ""

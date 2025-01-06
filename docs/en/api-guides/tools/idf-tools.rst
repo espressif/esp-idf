@@ -182,9 +182,9 @@ Since the installed tools are not permanently added to the user or system ``PATH
 
 .. note::
 
-    To modify the shell environment in Bash, ``export.sh`` must be "sourced" by using the ``. ./export.sh`` command. Please ensure to include the leading dot and space.
+    To modify the shell environment in Bash, ``export.sh`` must be "sourced" by using the command ``. ./export.sh``. Please ensure to include the leading dot and space.
 
-    ``export.sh`` may be used with shells other than Bash (such as zsh). However, in this case, it is required to set the ``IDF_PATH`` environment variable before running the script. When used in Bash, the script guesses the ``IDF_PATH`` value from its own location.
+    ``export.sh`` may be used with various shells like Bash, Zsh, sh, dash, etc. When using Bash or Zsh, you can run it from any path (e.g., ``. ./<<some_path>>/export.sh``) as it automatically detects ``IDF_PATH``. For other shells, it must be run from the ESP-IDF directory (``. ./export.sh``) to locate ``IDF_PATH`` correctly.
 
 activate.py
 ~~~~~~~~~~~

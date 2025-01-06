@@ -3,6 +3,8 @@ if defined MSYSTEM (
 	echo This .bat file is for Windows CMD.EXE shell only.
 	goto :__end
 )
+:: Set local ensures that variables like IDF_PATH are not changed/propagated out of the script
+setlocal
 
 set SCRIPT_EXIT_CODE=0
 
@@ -29,6 +31,8 @@ set IDF_PATH=%IDF_PATH:~0,-1%
 if /I "%1" == "/?" goto :__help
 if /I "%1" == "-h" goto :__help
 if /I "%1" == "--help" goto :__help
+
+echo INFO: Using IDF_PATH '%IDF_PATH%' for installation.
 
 for /f "delims=" %%i in ('python.exe "%IDF_PATH%\tools\install_util.py" extract targets "%*"') do set TARGETS=%%i
 

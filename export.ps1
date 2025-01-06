@@ -13,8 +13,8 @@ if (-not (Test-Path "$idf_path/tools/idf.py") -or
     -not (Test-Path "$idf_path/tools/idf_tools.py") -or
     -not (Test-Path "$idf_path/tools/activate.py")) {
 
-    Write-Output "Could not detect IDF_PATH. Please set it before running this script:"
-    Write-Output '  $env:IDF_PATH=(add path here)'
+    Write-Output "Could not detect IDF_PATH. Please navigate to your ESP-IDF directory and run:"
+    Write-Output ".\export.ps1"
 
     $env:IDF_PATH = ""
 
