@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <esp_openthread_dns64.h>
 #include <esp_openthread_lock.h>
 #include <esp_openthread_netif_glue_priv.h>
+#include <esp_openthread_radio.h>
 #include <esp_openthread_state.h>
 #include <lwip/dns.h>
 
@@ -62,6 +63,12 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
+        esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
+        config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;
+        esp_openthread_set_coex_config(config);
+#endif
     static otDeviceRole s_previous_role = OT_DEVICE_ROLE_DISABLED;
     otDeviceRole role = otThreadGetDeviceRole(instance);
     esp_err_t ret = ESP_OK;
