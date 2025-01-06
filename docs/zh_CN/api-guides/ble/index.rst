@@ -1,6 +1,6 @@
-################
-低功耗蓝牙®
-################
+#####################
+低功耗蓝牙\ :sup:`®`
+#####################
 
 :link_to_translation:`en:[English]`
 
@@ -12,6 +12,7 @@
 
    overview
    ble-feature-support-status
+   ble-qualification
 
 **********
 快速入门
