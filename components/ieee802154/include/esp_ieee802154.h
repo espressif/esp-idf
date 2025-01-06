@@ -12,6 +12,10 @@
 #include "esp_err.h"
 #include "esp_ieee802154_types.h"
 
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -699,6 +703,27 @@ void esp_ieee802154_rx_buffer_statistic_print(void);
  */
 void esp_ieee802154_record_print(void);
 #endif // CONFIG_IEEE802154_RECORD
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+
+/**
+ * @brief  Set the IEEE802.15.4 coexist config.
+ *
+ * @param[in]  config     The config of IEEE802.15.4 coexist.
+ *
+ */
+void esp_ieee802154_set_coex_config(esp_ieee802154_coex_config_t config);
+
+/**
+ * @brief  Get the IEEE802.15.4 coexist config.
+ *
+ * @return
+ *        - The config of IEEE802.15.4 coexist.
+ *
+ */
+esp_ieee802154_coex_config_t esp_ieee802154_get_coex_config(void);
+#endif
+
 #ifdef __cplusplus
 }
 #endif
