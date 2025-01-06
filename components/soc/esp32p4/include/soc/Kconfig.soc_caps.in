@@ -429,7 +429,15 @@ config SOC_ADC_RTC_MAX_BITWIDTH
 
 config SOC_ADC_CALIBRATION_V1_SUPPORTED
     bool
-    default n
+    default y
+
+config SOC_ADC_SELF_HW_CALI_SUPPORTED
+    bool
+    default y
+
+config SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED
+    bool
+    default y
 
 config SOC_ADC_SHARED_POWER
     bool

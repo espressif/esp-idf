@@ -18,9 +18,6 @@ components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners, TODO IDF-9573
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
