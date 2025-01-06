@@ -378,7 +378,7 @@ typedef union {
         uint32_t in_etm_en_chn:1;
         /** in_data_burst_mode_sel_chn : R/W; bitpos: [7:6]; default: 0;
          *  Configures max burst size for Rx channeln.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
-         *  incr8\\ 2'b11: incr16\\
+         *  incr8\\ 2'b11: reserved\\
          */
         uint32_t in_data_burst_mode_sel_chn:2;
         uint32_t reserved_8:24;
@@ -454,54 +454,6 @@ typedef union {
     };
     uint32_t val;
 } ahb_dma_in_link_chn_reg_t;
-
-/** Type of out_conf0_ch0 register
- *  Configuration register 0 of TX channel 0
- */
-typedef union {
-    struct {
-        /** out_rst_ch0 : R/W; bitpos: [0]; default: 0;
-         *  Configures the reset state of AHB_DMA channel 0 TX FSM and TX FIFO pointer.\\0:
-         *  Release reset\\1: Reset\\
-         */
-        uint32_t out_rst_ch0:1;
-        /** out_loop_test_ch0 : R/W; bitpos: [1]; default: 0;
-         *  Reserved.
-         */
-        uint32_t out_loop_test_ch0:1;
-        /** out_auto_wrback_ch0 : R/W; bitpos: [2]; default: 0;
-         *  Configures whether or not to enable automatic outlink write-back when all the data
-         *  in TX FIFO has been transmitted.\\0: Disable\\1: Enable\\
-         */
-        uint32_t out_auto_wrback_ch0:1;
-        /** out_eof_mode_ch0 : R/W; bitpos: [3]; default: 1;
-         *  Configures when to generate EOF flag.\\0: EOF flag for TX channel 0 is generated
-         *  when data to be transmitted has been pushed into FIFO in AHB_DMA.\\ 1: EOF flag for
-         *  TX channel 0 is generated when data to be transmitted has been popped from FIFO in
-         *  AHB_DMA.\\
-         */
-        uint32_t out_eof_mode_ch0:1;
-        /** outdscr_burst_en_ch0 : R/W; bitpos: [4]; default: 0;
-         *  Configures whether or not to enable INCR burst transfer for TX channel 0 reading
-         *  descriptors.\\0: Disable\\1: Enable\\
-         */
-        uint32_t outdscr_burst_en_ch0:1;
-        uint32_t reserved_5:1;
-        /** out_etm_en_ch0 : R/W; bitpos: [6]; default: 0;
-         *  Configures whether or not to enable ETM control for TX channel 0.\\0: Disable\\1:
-         *  Enable\\
-         */
-        uint32_t out_etm_en_ch0:1;
-        uint32_t reserved_7:1;
-        /** out_data_burst_mode_sel_ch0 : R/W; bitpos: [9:8]; default: 0;
-         *  Configures max burst size for TX channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
-         *  incr8\\ 2'b11: incr16\\
-         */
-        uint32_t out_data_burst_mode_sel_ch0:2;
-        uint32_t reserved_10:22;
-    };
-    uint32_t val;
-} ahb_dma_out_conf0_ch0_reg_t;
 
 /** Type of out_conf1_chn register
  *  Configuration register 1 of TX channel 0
@@ -607,7 +559,7 @@ typedef union {
         uint32_t reserved_7:1;
         /** out_data_burst_mode_sel_chn : R/W; bitpos: [9:8]; default: 0;
          *  Configures max burst size for TX channeln.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
-         *  incr8\\ 2'b11: incr16\\
+         *  incr8\\ 2'b11: reserved\\
          */
         uint32_t out_data_burst_mode_sel_chn:2;
         uint32_t reserved_10:22;

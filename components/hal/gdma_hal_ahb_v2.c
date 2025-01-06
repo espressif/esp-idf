@@ -8,6 +8,7 @@
 #include "hal/assert.h"
 #include "hal/gdma_hal_ahb.h"
 #include "hal/ahb_dma_ll.h"
+#include "hal/gdma_ll.h"
 
 static gdma_hal_priv_data_t gdma_ahb_hal_priv_data = {
     .m2m_free_periph_mask = AHB_DMA_LL_M2M_FREE_PERIPH_ID_MASK,

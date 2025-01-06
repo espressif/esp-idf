@@ -212,9 +212,6 @@ static inline void ahb_dma_ll_rx_set_burst_size(ahb_dma_dev_t *dev, uint32_t cha
     case 32:
         burst_mode = 2; // incr8
         break;
-    case 64:
-        burst_mode = 3; // incr16
-        break;
     default:
         HAL_ASSERT(false);
         break;
@@ -464,9 +461,6 @@ static inline void ahb_dma_ll_tx_set_burst_size(ahb_dma_dev_t *dev, uint32_t cha
         break;
     case 32:
         burst_mode = 2; // incr8
-        break;
-    case 64:
-        burst_mode = 3; // incr16
         break;
     default:
         HAL_ASSERT(false);
