@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -10,6 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s_std.h"
+#include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_check.h"
 #include "es8311.h"
@@ -198,6 +199,17 @@ void app_main(void)
     } else {
         ESP_LOGI(TAG, "es8311 codec init success");
     }
+
+#if EXAMPLE_PA_CTRL_IO >= 0
+    /* Enable PA by setting the PA_CTRL_IO to high, because the power amplifier on some dev-kits are disabled by default */
+    gpio_config_t gpio_cfg = {
+        .pin_bit_mask = (1ULL << EXAMPLE_PA_CTRL_IO),
+        .mode = GPIO_MODE_OUTPUT,
+    };
+    ESP_ERROR_CHECK(gpio_config(&gpio_cfg));
+    ESP_ERROR_CHECK(gpio_set_level(EXAMPLE_PA_CTRL_IO, 1));
+#endif
+
 #if CONFIG_EXAMPLE_MODE_MUSIC
     /* Play a piece of music in music mode */
     xTaskCreate(i2s_music, "i2s_music", 4096, NULL, 5, NULL);
