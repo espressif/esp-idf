@@ -1593,6 +1593,8 @@ typedef void (* esp_gap_ble_cb_t)(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_p
  *
  * @param[in]       callback: callback function
  *
+ * @note            Avoid performing time-consuming operations within the callback functions.
+ *
  * @return
  *                  - ESP_OK : success
  *                  - other  : failed
