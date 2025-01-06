@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -50,10 +50,14 @@
 #define OPENTHREAD_SPINEL_CONFIG_RCP_RESTORATION_MAX_COUNT 3
 #endif
 
+/**
+ * @def OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE
+ *
+ * Enables compilation of vendor specific code for Spinel
+ */
 #ifndef OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE
 #define OPENTHREAD_SPINEL_CONFIG_VENDOR_HOOK_ENABLE 1
 #endif
-
 
 /**
  * @def OPENTHREAD_SPINEL_CONFIG_COMPATIBILITY_ERROR_CALLBACK_ENABLE
