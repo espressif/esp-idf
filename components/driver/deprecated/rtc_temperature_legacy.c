@@ -155,6 +155,7 @@ esp_err_t temp_sensor_read_celsius(float *celsius)
     return ESP_OK;
 }
 
+#if !CONFIG_TEMP_SENSOR_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy temp sensor driver is not running along with the new driver
  */
@@ -170,3 +171,4 @@ static void check_legacy_temp_sensor_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/temperature_sensor.h`");
 }
+#endif //CONFIG_TEMP_SENSOR_SKIP_LEGACY_CONFLICT_CHECK

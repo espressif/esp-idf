@@ -128,6 +128,7 @@ esp_err_t dac_cw_generator_config(dac_cw_config_t *cw)
     return ESP_OK;
 }
 
+#if !CONFIG_DAC_SKIP_LEGACY_CONFLICT_CHECK
 /**
  * @brief This function will be called during start up, to check that this legacy DAC driver is not running along with the new driver
  */
@@ -143,3 +144,4 @@ static void check_dac_legacy_driver_conflict(void)
     }
     ESP_EARLY_LOGW(TAG, "legacy driver is deprecated, please migrate to `driver/dac_oneshot.h`, `driver/dac_cosine.h` or `driver/dac_continuous.h` instead");
 }
+#endif //CONFIG_DAC_SKIP_LEGACY_CONFLICT_CHECK
