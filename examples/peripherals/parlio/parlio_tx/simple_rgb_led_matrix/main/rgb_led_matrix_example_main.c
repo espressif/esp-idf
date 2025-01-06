@@ -94,7 +94,7 @@ static IRAM_ATTR bool parlio_tx_line_done_cb(parlio_tx_unit_handle_t tx_unit, co
 {
     static uint32_t line_number = 0;
     dedic_gpio_bundle_handle_t gpio_bundle = (dedic_gpio_bundle_handle_t)user_ctx;
-    dedic_gpio_bundle_write(gpio_bundle, 0x0F, line_number++);
+    dedic_gpio_bundle_write(gpio_bundle, 0x0F, ++line_number);
     return false;
 }
 
