@@ -15,6 +15,7 @@ if BLE_MESH
     config BLE_MESH_RANDOM_ADV_INTERVAL
         bool "Support using random adv interval for mesh packets"
         select BT_BLE_HIGH_DUTY_ADV_INTERVAL if BT_BLUEDROID_ENABLED
+        select BT_NIMBLE_HIGH_DUTY_ADV_ITVL if BT_NIMBLE_ENABLED
         default n
         help
             Enable this option to allow using random advertising interval
