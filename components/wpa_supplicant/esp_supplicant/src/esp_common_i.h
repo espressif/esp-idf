@@ -12,7 +12,7 @@
 struct wpa_funcs;
 extern struct wpa_supplicant g_wpa_supp;
 
-#ifdef CONFIG_IEEE80211KV
+#if defined(CONFIG_RRM) || defined(CONFIG_WNM)
 struct ieee_mgmt_frame {
     u8 sender[ETH_ALEN];
     u8 channel;
@@ -21,25 +21,11 @@ struct ieee_mgmt_frame {
     u8 payload[0];
 };
 
-int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data);
-
-typedef struct {
-    uint32_t id;
-    uint32_t data;
-} supplicant_event_t;
-
-enum SIG_SUPPLICANT {
-    SIG_SUPPLICANT_RX_ACTION,
-    SIG_SUPPLICANT_SCAN_DONE,
-    SIG_SUPPLICANT_DEL_TASK,
-    SIG_SUPPLICANT_MAX,
-};
-
 void esp_get_tx_power(uint8_t *tx_power);
 #ifdef CONFIG_MBO
 bool mbo_bss_profile_match(u8 *bssid);
 #endif
-#endif
+#endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) */
 int esp_supplicant_common_init(struct wpa_funcs *wpa_cb);
 void esp_supplicant_common_deinit(void);
 void esp_supplicant_unset_all_appie(void);
