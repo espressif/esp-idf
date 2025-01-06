@@ -33,7 +33,7 @@ esp_err_t esp_clk_tree_src_get_freq_hz(soc_module_clk_t clk_src, esp_clk_tree_sr
         clk_src_freq = clk_hal_xtal_get_freq_mhz() * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F20M:
-        clk_src_freq = CLK_LL_PLL_20M_FREQ_MHZ * MHZ;
+        clk_src_freq = CLK_LL_PLL_480M_FREQ_MHZ / clk_ll_pll_f20m_get_divider() * MHZ;
         break;
     case SOC_MOD_CLK_PLL_F80M:
         clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
