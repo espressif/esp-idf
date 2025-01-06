@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -161,7 +161,7 @@ static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_o
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
-    HAL_ASSERT(prescale <= LCD_LL_PCLK_DIV_MAX);
+    HAL_ASSERT(prescale > 0 && prescale <= LCD_LL_PCLK_DIV_MAX);
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
     // clkcnt_n can't be zero
     uint32_t scale = 1;
@@ -571,7 +571,7 @@ static inline void lcd_ll_set_command(lcd_cam_dev_t *dev, uint32_t data_width, u
 }
 
 /**
- * @brief Wether to enable RGB interface
+ * @brief Whether to enable RGB interface
  *
  * @param dev LCD register base address
  * @param en True to enable RGB interface, False to disable RGB interface
@@ -594,7 +594,7 @@ static inline void lcd_ll_enable_auto_next_frame(lcd_cam_dev_t *dev, bool en)
 }
 
 /**
- * @brief Wether to output HSYNC signal in porch resion
+ * @brief Whether to output HSYNC signal in porch resion
  *
  * @param dev LCD register base address
  * @param en True to enable, False to disable
@@ -726,7 +726,7 @@ static inline uint32_t lcd_ll_get_interrupt_status(lcd_cam_dev_t *dev)
  * @brief Clear interrupt status by mask
  *
  * @param dev LCD register base address
- * @param mask Interupt status mask
+ * @param mask Interrupt status mask
  */
 __attribute__((always_inline))
 static inline void lcd_ll_clear_interrupt_status(lcd_cam_dev_t *dev, uint32_t mask)
