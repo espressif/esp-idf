@@ -1,16 +1,14 @@
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 # APIs for interpreting and creating protobuf packets for Wi-Fi provisioning
-
 import proto
 from utils import str_to_bytes
 
 
 def print_verbose(security_ctx, data):
     if (security_ctx.verbose):
-        print(f'\x1b[32;20m++++ {data} ++++\x1b[0m')
+        print(f'++++ {data} ++++')
 
 
 def config_get_status_request(security_ctx):
@@ -37,6 +35,11 @@ def config_get_status_response(security_ctx, response_data):
         return 'connected'
     elif cmd_resp1.resp_get_status.sta_state == 1:
         print('++++ WiFi state: Connecting... ++++')
+        if cmd_resp1.resp_get_status.HasField('attempt_failed'):
+            if cmd_resp1.resp_get_status.attempt_failed.attempts_remaining:
+                print(cmd_resp1.resp_get_status)
+            else:
+                print('attempt_failed {\n  attempts_remaining: 0\n}')
         return 'connecting'
     elif cmd_resp1.resp_get_status.sta_state == 2:
         print('---- WiFi state: Disconnected ----')

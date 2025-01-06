@@ -111,9 +111,6 @@ static EventGroupHandle_t wifi_event_group;
 static void event_handler(void* arg, esp_event_base_t event_base,
                           int32_t event_id, void* event_data)
 {
-#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
-    static int retries;
-#endif
     if (event_base == WIFI_PROV_EVENT) {
         switch (event_id) {
             case WIFI_PROV_START:
@@ -134,20 +131,19 @@ static void event_handler(void* arg, esp_event_base_t event_base,
                          (*reason == WIFI_PROV_STA_AUTH_ERROR) ?
                          "Wi-Fi station authentication failed" : "Wi-Fi access-point not found");
 #ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
-                retries++;
-                if (retries >= CONFIG_EXAMPLE_PROV_MGR_MAX_RETRY_CNT) {
-                    ESP_LOGI(TAG, "Failed to connect with provisioned AP, resetting provisioned credentials");
-                    wifi_prov_mgr_reset_sm_state_on_failure();
-                    retries = 0;
-                }
+                /* Reset the state machine on provisioning failure.
+                 * This is enabled by the CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE configuration.
+                 * It allows the provisioning manager to retry the provisioning process
+                 * based on the number of attempts specified in wifi_conn_attempts. After attempting
+                 * the maximum number of retries, the provisioning manager will reset the state machine
+                 * and the provisioning process will be terminated.
+                 */
+                wifi_prov_mgr_reset_sm_state_on_failure();
 #endif
                 break;
             }
             case WIFI_PROV_CRED_SUCCESS:
                 ESP_LOGI(TAG, "Provisioning successful");
-#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
-                retries = 0;
-#endif
                 break;
             case WIFI_PROV_END:
                 /* De-initialize manager once provisioning is finished */
@@ -334,7 +330,6 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_TRANSPORT_BLE_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 #endif
     ESP_ERROR_CHECK(esp_event_handler_register(PROTOCOMM_SECURITY_SESSION_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
 
     /* Initialize Wi-Fi including netif with default config */
@@ -347,6 +342,11 @@ void app_main(void)
 
     /* Configuration for the provisioning manager */
     wifi_prov_mgr_config_t config = {
+#ifdef CONFIG_EXAMPLE_RESET_PROV_MGR_ON_FAILURE
+        .wifi_prov_conn_cfg = {
+           .wifi_conn_attempts =  CONFIG_EXAMPLE_PROV_MGR_CONNECTION_CNT,
+        },
+#endif
         /* What is the Provisioning Scheme that we want ?
          * wifi_prov_scheme_softap or wifi_prov_scheme_ble */
 #ifdef CONFIG_EXAMPLE_PROV_TRANSPORT_BLE
@@ -522,6 +522,7 @@ void app_main(void)
          * so let's release it's resources */
         wifi_prov_mgr_deinit();
 
+        ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
         /* Start Wi-Fi station */
         wifi_init_sta();
     }

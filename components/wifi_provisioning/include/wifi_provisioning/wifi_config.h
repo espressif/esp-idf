@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,8 @@ extern "C" {
 typedef enum {
     WIFI_PROV_STA_CONNECTING,
     WIFI_PROV_STA_CONNECTED,
-    WIFI_PROV_STA_DISCONNECTED
+    WIFI_PROV_STA_DISCONNECTED,
+    WIFI_PROV_STA_CONN_ATTEMPT_FAILED
 } wifi_prov_sta_state_t;
 
 /**
@@ -47,6 +48,13 @@ typedef struct {
 } wifi_prov_sta_conn_info_t;
 
 /**
+ * @brief   WiFi STA connecting status information
+ */
+typedef struct {
+    uint32_t attempts_remaining; /*!< Number of Wi-Fi connection attempts remaining */
+} wifi_prov_sta_connecting_info_t;
+
+/**
  * @brief   WiFi status data to be sent in response to `get_status` request from master
  */
 typedef struct {
@@ -61,6 +69,11 @@ typedef struct {
          * Connection information (valid only when `wifi_state` is `WIFI_STATION_CONNECTED`)
          */
         wifi_prov_sta_conn_info_t   conn_info;
+
+        /**
+         * Connecting information (valid only when `wifi_state` is `WIFI_STATION_CONNECTING`)
+         */
+        wifi_prov_sta_connecting_info_t connecting_info;
     };
 } wifi_prov_config_get_data_t;
 
