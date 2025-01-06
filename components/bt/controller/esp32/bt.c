@@ -1345,7 +1345,8 @@ static esp_err_t esp_bt_controller_rom_mem_release(esp_bt_mode_t mode)
 
     //already released
     if (!(mode & btdm_dram_available_region[0].mode)) {
-        return ESP_ERR_INVALID_STATE;
+        ESP_LOGW(BTDM_LOG_TAG, "%s already released, mode %d",__func__, mode);
+        return ESP_OK;
     }
 
     for (int i = 0; i < sizeof(btdm_dram_available_region)/sizeof(btdm_dram_available_region_t); i++) {

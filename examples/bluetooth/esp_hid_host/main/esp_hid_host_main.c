@@ -76,8 +76,10 @@ void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *
     case ESP_HIDH_OPEN_EVENT: {
         if (param->open.status == ESP_OK) {
             const uint8_t *bda = esp_hidh_dev_bda_get(param->open.dev);
-            ESP_LOGI(TAG, ESP_BD_ADDR_STR " OPEN: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->open.dev));
-            esp_hidh_dev_dump(param->open.dev, stdout);
+            if (bda) {
+                ESP_LOGI(TAG, ESP_BD_ADDR_STR " OPEN: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->open.dev));
+                esp_hidh_dev_dump(param->open.dev, stdout);
+            }
         } else {
             ESP_LOGE(TAG, " OPEN failed!");
         }
@@ -85,26 +87,34 @@ void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *
     }
     case ESP_HIDH_BATTERY_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->battery.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " BATTERY: %d%%", ESP_BD_ADDR_HEX(bda), param->battery.level);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " BATTERY: %d%%", ESP_BD_ADDR_HEX(bda), param->battery.level);
+        }
         break;
     }
     case ESP_HIDH_INPUT_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->input.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
-        ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
+            ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
+        }
         break;
     }
     case ESP_HIDH_FEATURE_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->feature.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " FEATURE: %8s, MAP: %2u, ID: %3u, Len: %d", ESP_BD_ADDR_HEX(bda),
-                 esp_hid_usage_str(param->feature.usage), param->feature.map_index, param->feature.report_id,
-                 param->feature.length);
-        ESP_LOG_BUFFER_HEX(TAG, param->feature.data, param->feature.length);
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " FEATURE: %8s, MAP: %2u, ID: %3u, Len: %d", ESP_BD_ADDR_HEX(bda),
+                    esp_hid_usage_str(param->feature.usage), param->feature.map_index, param->feature.report_id,
+                    param->feature.length);
+            ESP_LOG_BUFFER_HEX(TAG, param->feature.data, param->feature.length);
+        }
         break;
     }
     case ESP_HIDH_CLOSE_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->close.dev);
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " CLOSE: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->close.dev));
+        if (bda) {
+            ESP_LOGI(TAG, ESP_BD_ADDR_STR " CLOSE: %s", ESP_BD_ADDR_HEX(bda), esp_hidh_dev_name_get(param->close.dev));
+        }
         break;
     }
     default:
