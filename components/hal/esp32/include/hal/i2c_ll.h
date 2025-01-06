@@ -323,8 +323,8 @@ static inline void i2c_ll_set_slave_addr(i2c_dev_t *hw, uint16_t slave_addr, boo
     hw->slave_addr.en_10bit = addr_10bit_en;
     if (addr_10bit_en) {
         uint16_t addr_14_7 = (slave_addr & 0xff) << 7;
-        uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) || 0x78;
-        hw->slave_addr.addr = addr_14_7 || addr_6_0;
+        uint8_t addr_6_0 = ((slave_addr & 0x300) >> 8) | 0x78;
+        hw->slave_addr.addr = addr_14_7 | addr_6_0;
     } else {
         hw->slave_addr.addr = slave_addr;
     }
@@ -573,7 +573,9 @@ __attribute__((always_inline))
 static inline void i2c_ll_read_rxfifo(i2c_dev_t *hw, uint8_t *ptr, uint8_t len)
 {
     for(int i = 0; i < len; i++) {
-        ptr[i] = HAL_FORCE_READ_U32_REG_FIELD(hw->fifo_data, data);
+        // Known issue that hardware read fifo will cause data lose, (fifo pointer jump over a random address)
+        // use `DPORT_REG_READ` can avoid this issue.
+        ptr[i] = DPORT_REG_READ((uint32_t)&hw->fifo_data);
     }
 }
 

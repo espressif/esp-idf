@@ -451,7 +451,7 @@ Whenever the master writes data to the slave, the slave will automatically store
     i2c_slave_dev_handle_t slave_handle;
     ESP_ERROR_CHECK(i2c_new_slave_device(&i2c_slv_config, &slave_handle));
 
-    s_receive_queue = xQueueCreate(1, sizeof(i2c_slave_rx_done_event_data_t));
+    QueueHandle_t s_receive_queue = xQueueCreate(1, sizeof(i2c_slave_rx_done_event_data_t));
     i2c_slave_event_callbacks_t cbs = {
         .on_recv_done = i2c_slave_rx_done_callback,
     };

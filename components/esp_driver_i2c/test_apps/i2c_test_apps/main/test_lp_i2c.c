@@ -64,6 +64,20 @@ TEST_CASE("LP I2C initialize with wrong IO", "[i2c]")
 
 #endif
 
+TEST_CASE("LP I2C initialize with wrong clock source", "[i2c]")
+{
+    i2c_master_bus_config_t i2c_mst_config = {
+        .lp_source_clk = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = LP_I2C_NUM_0,
+        .scl_io_num = LP_I2C_SCL_IO,
+        .sda_io_num = LP_I2C_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+
+    TEST_ESP_ERR(ESP_ERR_NOT_SUPPORTED, i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+}
+
 static IRAM_ATTR bool test_i2c_rx_done_callback(i2c_slave_dev_handle_t channel, const i2c_slave_rx_done_event_data_t *edata, void *user_data)
 {
     BaseType_t high_task_wakeup = pdFALSE;

@@ -146,6 +146,41 @@ TEST_CASE("I2C device add & remove check", "[i2c]")
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 
+TEST_CASE("I2C peripheral allocate all", "[i2c]")
+{
+    i2c_master_bus_handle_t bus_handle[SOC_HP_I2C_NUM];
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        i2c_master_bus_config_t i2c_mst_config_1 = {
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .i2c_port = -1,
+            .scl_io_num = I2C_MASTER_SCL_IO,
+            .sda_io_num = I2C_MASTER_SDA_IO,
+            .flags.enable_internal_pullup = true,
+        };
+
+        TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config_1, &bus_handle[i]));
+    }
+    i2c_master_bus_config_t i2c_mst_config_1 = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = -1,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle_2;
+
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2c_new_master_bus(&i2c_mst_config_1, &bus_handle_2));
+
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        TEST_ESP_OK(i2c_del_master_bus(bus_handle[i]));
+    }
+
+    // Get another one
+
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config_1, &bus_handle_2));
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle_2));
+}
+
 TEST_CASE("I2C master probe device test", "[i2c]")
 {
     // 0x22,33,44,55 does not exist on the I2C bus, so it's expected to return `not found` error
