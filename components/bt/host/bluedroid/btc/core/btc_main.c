@@ -122,6 +122,11 @@ uint32_t btc_get_ble_status(void)
 {
     uint32_t status = BTC_BLE_STATUS_IDLE;
 
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        BTC_TRACE_ERROR("%s Bluedroid not enabled", __func__);
+        return status;
+    }
+
     #if (BLE_INCLUDED == TRUE)
     // Number of active advertising
     extern uint8_t btm_ble_adv_active_count(void);
