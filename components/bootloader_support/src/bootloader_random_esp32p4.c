@@ -30,8 +30,8 @@ static void adc1_fix_initcode_set(uint32_t initcode_value)
 {
     uint32_t msb = initcode_value >> 8;
     uint32_t lsb = initcode_value & 0xff;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_MSB, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_LSB, lsb);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
 }
 
 //total 4 tables
@@ -94,15 +94,8 @@ void bootloader_random_enable(void)
 
 void bootloader_random_disable(void)
 {
-    //TODO IDF-4714
-    // disable timer
-    REG_CLR_BIT(ADC_CTRL2_REG, ADC_TIMER_EN);
-    // Write reset value of this register
-    REG_WRITE(ADC_SAR1_PATT_TAB1_REG, 0xFFFFFF);
-    // Revert ADC I2C configuration and initial voltage source setting
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_MSB, 0);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_SAR1_INIT_CODE_LSB, 0);
-
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, 0);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_ENT_VDD_GRP1, 0);
     REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SAR_ADC_DTEST_VDD_GRP1, 0);
 }

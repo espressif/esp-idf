@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -88,10 +88,10 @@ extern "C" {
 #define ADC_TEST_HIGH_THRESH     200
 
 #elif CONFIG_IDF_TARGET_ESP32P4
-#define ADC_TEST_LOW_VAL         2152
-#define ADC_TEST_LOW_THRESH      200
+#define ADC_TEST_LOW_VAL         0
+#define ADC_TEST_LOW_THRESH      10
 
-#define ADC_TEST_HIGH_VAL        4095
+#define ADC_TEST_HIGH_VAL        3360
 #define ADC_TEST_HIGH_VAL_DMA    4095
 #define ADC_TEST_HIGH_THRESH     200
 
