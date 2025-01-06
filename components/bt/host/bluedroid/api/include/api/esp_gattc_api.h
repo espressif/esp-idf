@@ -266,6 +266,8 @@ typedef void (* esp_gattc_cb_t)(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_
  *
  * @param[in]       callback : pointer to the application callback function.
  *
+ * @note            Avoid performing time-consuming operations within the callback functions.
+ *
  * @return
  *                  - ESP_OK: success
  *                  - other: failed
