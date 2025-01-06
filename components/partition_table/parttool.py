@@ -5,8 +5,6 @@
 #
 # SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from __future__ import division, print_function
-
 import argparse
 import os
 import re
@@ -92,7 +90,7 @@ class ParttoolTarget():
                     partition_table = gen.PartitionTable.from_binary(f.read())
 
             if partition_table is None:
-                with open(partition_table_file, 'r') as f:
+                with open(partition_table_file, 'r', encoding='utf-8') as f:
                     f.seek(0)
                     partition_table = gen.PartitionTable.from_csv(f.read())
         else:
