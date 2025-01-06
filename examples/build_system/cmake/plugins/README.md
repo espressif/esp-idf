@@ -52,6 +52,14 @@ For each plugin, a structure describing the plugin (or a pointer to it) is place
 
 ## Example code overview
 
+This example uses the optional `COMPONENTS` project variable to streamline the build process. By specifying components in this variable, only those components and their dependencies are linked to the application, reducing build time. Additionally, listing plugin components in the `COMPONENTS` variable ensures that only the specified plugins are linked. This approach provides a convenient way to quickly select the plugins to include in the application. The `COMPONENTS` variable is set in the project's CMakeLists.txt file:
+
+```cmake
+set(COMPONENTS main plugin_hello plugin_nihao)
+```
+
+For details about the `COMPONENTS` project variable, please refer to the Build System documentation.
+
 This example contains 4 components:
 
 * `main` — Only calls two sample functions defined in `plugins` component.
