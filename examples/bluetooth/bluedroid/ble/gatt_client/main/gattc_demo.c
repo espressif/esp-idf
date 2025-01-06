@@ -483,15 +483,15 @@ void app_main(void)
         ESP_LOGE(GATTC_TAG, "%s enable bluetooth failed: %s\n", __func__, esp_err_to_name(ret));
         return;
     }
-
-    //register the  callback function to the gap module
+    // Note: Avoid performing time-consuming operations within callback functions.
+    // Register the callback function to the gap module
     ret = esp_ble_gap_register_callback(esp_gap_cb);
     if (ret){
         ESP_LOGE(GATTC_TAG, "%s gap register failed, error code = %x\n", __func__, ret);
         return;
     }
 
-    //register the callback function to the gattc module
+    // Register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);
     if(ret){
         ESP_LOGE(GATTC_TAG, "%s gattc register failed, error code = %x\n", __func__, ret);
