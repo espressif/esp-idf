@@ -615,15 +615,13 @@ Including Components in the Build
 
   - Components mentioned explicitly in ``COMPONENTS``.
   - Those components' requirements (evaluated recursively).
-  - The "common" components that every component depends on.
+  - The :ref:`common components <component-common-requirements>` that every component depends on.
 
 - Setting ``COMPONENTS`` to the minimal list of required components can significantly reduce compile times.
-- The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
+- The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. This means that the build will include only the :ref:`common components <component-common-requirements>`, the ``main`` component, and all dependencies associated with it, both direct and indirect. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
 
 .. note::
-
-   When using the ``COMPONENTS`` variable or the ``MINIMAL_BUILD`` build property to specify components, certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be included by default. To include these features, you must add the relevant components to the ``COMPONENTS`` variable or list them in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
-
+   Certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be available to your project by default if the minimal list of components is used. When using the ``COMPONENTS`` variable, ensure that all necessary components are included. Similarly, when using the ``MINIMAL_BUILD`` build property, ensure that all required components are specified in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
 
 .. _component-circular-dependencies:
 

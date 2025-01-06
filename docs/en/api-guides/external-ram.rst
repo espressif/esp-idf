@@ -47,7 +47,7 @@ Configuring External RAM
 ========================
 
 .. note::
-    The ``SPI RAM`` configuration options are available only if the ``esp_psram`` component is included in the build.
+    The ``SPI RAM`` configuration options are available only if the ``esp_psram`` component is included in the build. To include ``SPI RAM`` into your project, add the ``esp_psram`` component as a dependency in either REQUIRES or PRIV_REQUIRES when registering your component with ``idf_component_register``.
 
 ESP-IDF fully supports the use of external RAM in applications. Once the external RAM is initialized at startup, ESP-IDF can be configured to integrate the external RAM in several ways:
 
