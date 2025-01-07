@@ -42,6 +42,8 @@
 #include "adc_dma_internal.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "esp_private/esp_cache_private.h"
 #endif
 
@@ -122,7 +124,7 @@ static IRAM_ATTR bool adc_dma_intr(adc_continuous_ctx_t *adc_digi_ctx)
         }
     }
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    esp_err_t msync_ret = esp_cache_msync((void *)(adc_digi_ctx->hal.rx_desc), adc_digi_ctx->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    esp_err_t msync_ret = esp_cache_msync((void *)(adc_digi_ctx->hal.rx_desc), adc_digi_ctx->adc_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_INVALIDATE);
     assert(msync_ret == ESP_OK);
 #endif
     return need_yield;
@@ -204,6 +206,13 @@ esp_err_t adc_continuous_new_handle(const adc_continuous_handle_cfg_t *hdl_confi
     uint32_t dma_desc_num_per_frame = (hdl_config->conv_frame_size + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     uint32_t dma_desc_max_num = dma_desc_num_per_frame * INTERNAL_BUF_NUM;
     adc_ctx->hal.rx_desc = heap_caps_aligned_calloc(ADC_DMA_DESC_ALIGN, dma_desc_max_num, sizeof(dma_descriptor_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_8BIT);
+
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+    //adc_desc_size should be aligned with cache line size
+    uint32_t cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    adc_ctx->adc_desc_size = ((dma_desc_max_num * sizeof(dma_descriptor_t) + cache_line_size - 1) / cache_line_size) * cache_line_size;
+#endif
+
     if (!adc_ctx->hal.rx_desc) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;

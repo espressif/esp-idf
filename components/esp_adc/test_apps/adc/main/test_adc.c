@@ -80,35 +80,35 @@ TEST_CASE("ADC oneshot high/low test", "[adc_oneshot]")
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
+    ESP_LOGI(TAG_CH[0][0], "low  raw  data: %d", adc_raw[0][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][0]);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
+    ESP_LOGI(TAG_CH[0][1], "low  raw  data: %d", adc_raw[0][1]);
+    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 0);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
+    ESP_LOGI(TAG_CH[1][0], "low  raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
     test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN0, &adc_raw[0][0]));
-    ESP_LOGI(TAG_CH[0][0], "raw  data: %d", adc_raw[0][0]);
+    ESP_LOGI(TAG_CH[0][0], "high raw  data: %d", adc_raw[0][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][0]);
 
-    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 0);
+    test_adc_set_io_level(ADC_UNIT_1, ADC1_TEST_CHAN1, 1);
     TEST_ESP_OK(adc_oneshot_read(adc1_handle, ADC1_TEST_CHAN1, &adc_raw[0][1]));
-    ESP_LOGI(TAG_CH[0][1], "raw  data: %d", adc_raw[0][1]);
-    TEST_ASSERT_INT_WITHIN(ADC_TEST_LOW_THRESH, ADC_TEST_LOW_VAL, adc_raw[0][1]);
+    ESP_LOGI(TAG_CH[0][1], "high raw  data: %d", adc_raw[0][1]);
+    TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[0][1]);
 
 #if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
     test_adc_set_io_level(ADC_UNIT_2, ADC2_TEST_CHAN0, 1);
     TEST_ESP_OK(adc_oneshot_read(adc2_handle, ADC2_TEST_CHAN0, &adc_raw[1][0]));
-    ESP_LOGI(TAG_CH[1][0], "raw  data: %d", adc_raw[1][0]);
+    ESP_LOGI(TAG_CH[1][0], "high raw  data: %d", adc_raw[1][0]);
     TEST_ASSERT_INT_WITHIN(ADC_TEST_HIGH_THRESH, ADC_TEST_HIGH_VAL, adc_raw[1][0]);
 #endif //#if ADC_TEST_ONESHOT_HIGH_LOW_TEST_ADC2
 
