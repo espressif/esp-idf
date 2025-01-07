@@ -37,6 +37,8 @@ extern "C" {
 
 #define MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT         80
 
+#define MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED       1
+
 typedef enum {
     MSPI_TIMING_LL_FLASH_OPI_MODE = BIT(0),
     MSPI_TIMING_LL_FLASH_QIO_MODE = BIT(1),
