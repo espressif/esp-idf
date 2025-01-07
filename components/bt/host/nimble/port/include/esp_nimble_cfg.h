@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1950,6 +1950,14 @@
 #define MYNEWT_VAL_BLE_AOA_AOD CONFIG_BT_NIMBLE_AOA_AOD
 #else
 #define MYNEWT_VAL_BLE_AOA_AOD (0)
+#endif
+#endif
+
+#ifndef MYNEWT_VAL_BLE_GATTC_PROC_PREEMPTION_PROTECT
+#ifdef CONFIG_BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
+#define MYNEWT_VAL_BLE_GATTC_PROC_PREEMPTION_PROTECT CONFIG_BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
+#else
+#define MYNEWT_VAL_BLE_GATTC_PROC_PREEMPTION_PROTECT (0)
 #endif
 #endif
 

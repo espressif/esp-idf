@@ -190,9 +190,9 @@ ble_prph_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
     case BLE_GAP_EVENT_LINK_ESTAB:
-        if (event->connect.status == 0) {
+        if (event->link_estab.status == 0) {
             /* A new connection was established. */
-            ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->connect.conn_handle,
+            ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->link_estab.conn_handle,
                      ++s_ble_prph_conn_num);
 #if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
             ble_prph_restart_adv();
