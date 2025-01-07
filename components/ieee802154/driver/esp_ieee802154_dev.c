@@ -87,6 +87,7 @@ static pending_tx_t s_pending_tx = { 0 };
 static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *frame_info)
 {
     // If the RX done packet is written in the stub buffer, drop it silently.
+    IEEE802154_RX_BUFFER_STAT_IS_FREE(false);
     if (s_rx_index != CONFIG_IEEE802154_RX_BUFFER_SIZE) {
         // Otherwise, post it to the upper layer.
         // Ignore bit8 for the frame length, due to the max frame length is 127 based 802.15.4 spec.
@@ -99,6 +100,7 @@ static void ieee802154_receive_done(uint8_t *data, esp_ieee802154_frame_info_t *
 static void ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack, esp_ieee802154_frame_info_t *ack_frame_info)
 {
     if (ack && ack_frame_info) {
+        IEEE802154_RX_BUFFER_STAT_IS_FREE(false);
         if (s_rx_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) {
             esp_ieee802154_transmit_failed(frame, ESP_IEEE802154_TX_ERR_NO_ACK);
         } else {
@@ -118,6 +120,7 @@ esp_err_t ieee802154_receive_handle_done(const uint8_t *data)
         return ESP_FAIL;
     }
     s_rx_frame_info[size / IEEE802154_RX_FRAME_SIZE].process = false;
+    IEEE802154_RX_BUFFER_STAT_IS_FREE(true);
     return ESP_OK;
 }
 
