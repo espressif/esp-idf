@@ -589,6 +589,10 @@ After calling :cpp:func:`esp_isp_color_configure`, you need to enable the ISP co
 
 Calling :cpp:func:`esp_isp_color_disable` does the opposite, that is, put the driver back to the **init** state.
 
+.. note::
+
+    When the ISP DVP peripheral is used with the output color format set to the RGB color space, :ref:`isp-color` is automatically enabled in the camera driver to ensure correct data output. The function :cpp:func:`esp_isp_color_disable` should never be called in this case, otherwise it may result in disarrayed camera data.
+
 .. _isp-ccm-config:
 
 Configure CCM
