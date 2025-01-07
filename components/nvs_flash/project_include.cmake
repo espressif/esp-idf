@@ -53,6 +53,7 @@ function(nvs_create_partition_image partition csv)
         if(arg_FLASH_IN_PROJECT)
             esptool_py_flash_to_partition(flash "${partition}" "${image_file}")
             add_dependencies(flash nvs_${partition}_bin)
+            add_dependencies(encrypted-flash nvs_${partition}_bin)
         endif()
     else()
         set(message
