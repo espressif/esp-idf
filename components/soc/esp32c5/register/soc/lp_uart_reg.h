@@ -1287,6 +1287,27 @@ extern "C" {
  *  LP UART core clock configuration
  */
 #define LP_UART_CLK_CONF_REG (DR_REG_LP_UART_BASE + 0x88)
+/** LP_UART_SCLK_DIV_B : R/W; bitpos: [5:0]; default: 0;
+ *  The  denominator of the frequency divider factor.
+ */
+#define LP_UART_SCLK_DIV_B    0x0000003FU
+#define LP_UART_SCLK_DIV_B_M  (LP_UART_SCLK_DIV_B_V << LP_UART_SCLK_DIV_B_S)
+#define LP_UART_SCLK_DIV_B_V  0x0000003FU
+#define LP_UART_SCLK_DIV_B_S  0
+/** LP_UART_SCLK_DIV_A : R/W; bitpos: [11:6]; default: 0;
+ *  The numerator of the frequency divider factor.
+ */
+#define LP_UART_SCLK_DIV_A    0x0000003FU
+#define LP_UART_SCLK_DIV_A_M  (LP_UART_SCLK_DIV_A_V << LP_UART_SCLK_DIV_A_S)
+#define LP_UART_SCLK_DIV_A_V  0x0000003FU
+#define LP_UART_SCLK_DIV_A_S  6
+/** LP_UART_SCLK_DIV_NUM : R/W; bitpos: [19:12]; default: 1;
+ *  The integral part of the frequency divider factor.
+ */
+#define LP_UART_SCLK_DIV_NUM    0x000000FFU
+#define LP_UART_SCLK_DIV_NUM_M  (LP_UART_SCLK_DIV_NUM_V << LP_UART_SCLK_DIV_NUM_S)
+#define LP_UART_SCLK_DIV_NUM_V  0x000000FFU
+#define LP_UART_SCLK_DIV_NUM_S  12
 /** LP_UART_TX_SCLK_EN : R/W; bitpos: [24]; default: 1;
  *  Configures whether or not to enable LP UART TX clock.\\
  *  0: Disable\\

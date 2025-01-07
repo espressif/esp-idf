@@ -1263,7 +1263,7 @@ typedef struct uart_dev_t{
     volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
     volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
     volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
-    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1/2/3/4 instance have this register reserved, configure in corresponding PCR registers */
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;

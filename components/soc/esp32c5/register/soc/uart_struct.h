@@ -16,7 +16,7 @@ extern "C" {
  */
 typedef union {
     struct {
-        /** rxfifo_rd_byte : RO; bitpos: [7:0]; default: 0;
+        /** rxfifo_rd_byte : RO; bitpos: [31:0]; default: 0;
          *  Represents the data UART $n read from FIFO.\\
          *  Measurement unit: byte.
          */
@@ -950,17 +950,17 @@ typedef union {
          *  The  denominator of the frequency divider factor.'
          *  Only available to LP UART instance
          */
-        uint32_t sclk_div_b:6;
+        uint32_t sclk_div_b:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
         /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
          *  The numerator of the frequency divider factor.
          *  Only available to LP UART instance
          */
-        uint32_t sclk_div_a:6;
+        uint32_t sclk_div_a:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
         /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
          *  The integral part of the frequency divider factor.
          *  Only available to LP UART instance
          */
-        uint32_t sclk_div_num:8;
+        uint32_t sclk_div_num:8;                                    /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
         uint32_t reserved_20:4;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Configures whether or not to enable UART TX clock.\\
@@ -1308,7 +1308,7 @@ typedef union {
 } uart_id_reg_t;
 
 
-typedef struct {
+typedef struct uart_dev_s {
     volatile uart_fifo_reg_t fifo;
     volatile uart_int_raw_reg_t int_raw;
     volatile uart_int_st_reg_t int_st;

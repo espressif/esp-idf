@@ -169,10 +169,6 @@ typedef struct {
     uart_hal_context_t hal;        /*!< UART hal context*/
     DECLARE_CRIT_SECTION_LOCK_IN_STRUCT(spinlock)
     bool hw_enabled;
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-    bool retention_link_inited;    /*!< Mark whether the retention link is inited */
-    bool retention_link_created;   /*!< Mark whether the retention link is created */
-#endif
 } uart_context_t;
 
 static uart_obj_t *p_uart_obj[UART_NUM_MAX] = {0};
@@ -196,7 +192,7 @@ static uart_context_t uart_context[UART_NUM_MAX] = {
 
 static portMUX_TYPE uart_selectlock = portMUX_INITIALIZER_UNLOCKED;
 
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 static esp_err_t uart_create_sleep_retention_link_cb(void *arg);
 #endif
 
@@ -217,11 +213,11 @@ static void uart_module_enable(uart_port_t uart_num)
                 }
             }
 
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP // for targets that is !SOC_UART_SUPPORT_SLEEP_RETENTION, retention module should still be inited to avoid TOP PD
             // Initialize sleep retention module for HP UART
             if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM) { // Console uart retention has been taken care in sleep_sys_periph_stdout_console_uart_retention_init
-                assert(!uart_context[uart_num].retention_link_inited);
                 sleep_retention_module_t module = uart_reg_retention_info[uart_num].module;
+                assert(!sleep_retention_is_module_inited(module));
                 sleep_retention_module_init_param_t init_param = {
                     .cbs = {
                         .create = {
@@ -231,9 +227,7 @@ static void uart_module_enable(uart_port_t uart_num)
                     },
                     .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
                 };
-                if (sleep_retention_module_init(module, &init_param) == ESP_OK) {
-                    uart_context[uart_num].retention_link_inited = true;
-                } else {
+                if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
                     ESP_LOGW(UART_TAG, "init sleep retention failed for uart%d, power domain may be turned off during sleep", uart_num);
                 }
             }
@@ -258,13 +252,12 @@ static void uart_module_disable(uart_port_t uart_num)
     _lock_acquire(&(uart_context[uart_num].mutex));
     if (uart_context[uart_num].hw_enabled != false) {
         if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
             // Uninitialize sleep retention module for HP UART
             sleep_retention_module_t module = uart_reg_retention_info[uart_num].module;
-            assert(!uart_context[uart_num].retention_link_created); // HP UART sleep retention should have been freed at this moment
-            if (uart_context[uart_num].retention_link_inited) {
+            assert(!sleep_retention_is_module_created(module)); // HP UART sleep retention should have been freed at this moment
+            if (sleep_retention_is_module_inited(module)) {
                 sleep_retention_module_deinit(module);
-                uart_context[uart_num].retention_link_inited = false;
             }
 #endif
             HP_UART_SRC_CLK_ATOMIC() {
@@ -868,21 +861,18 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
         _lock_acquire(&(uart_context[uart_num].mutex));
         sleep_retention_module_t module = uart_reg_retention_info[uart_num].module;
-        if (allow_pd && !uart_context[uart_num].retention_link_created) {
-            if (uart_context[uart_num].retention_link_inited) {
-                if (sleep_retention_module_allocate(module) == ESP_OK) {
-                    uart_context[uart_num].retention_link_created = true;
-                } else {
+        if (allow_pd && !sleep_retention_is_module_created(module)) {
+            if (sleep_retention_is_module_inited(module)) {
+                if (sleep_retention_module_allocate(module) != ESP_OK) {
                     // Even though the sleep retention module create failed, UART driver should still work, so just warning here
                     ESP_LOGW(UART_TAG, "create retention module failed, power domain can't turn off");
                 }
             } else {
                 ESP_LOGW(UART_TAG, "retention module not initialized first, unable to create retention module");
             }
-        } else if (!allow_pd && uart_context[uart_num].retention_link_created) {
-            assert(uart_context[uart_num].retention_link_inited);
+        } else if (!allow_pd && sleep_retention_is_module_created(module)) {
+            assert(sleep_retention_is_module_inited(module));
             sleep_retention_module_free(module);
-            uart_context[uart_num].retention_link_created = false;
         }
         _lock_release(&(uart_context[uart_num].mutex));
     }
@@ -1808,10 +1798,9 @@ esp_err_t uart_driver_delete(uart_port_t uart_num)
     if (uart_num != CONFIG_ESP_CONSOLE_UART_NUM && uart_num < SOC_UART_HP_NUM) {
         sleep_retention_module_t module = uart_reg_retention_info[uart_num].module;
         _lock_acquire(&(uart_context[uart_num].mutex));
-        if (uart_context[uart_num].retention_link_created) {
-            assert(uart_context[uart_num].retention_link_inited);
+        if (sleep_retention_is_module_created(module)) {
+            assert(sleep_retention_is_module_inited(module));
             sleep_retention_module_free(module);
-            uart_context[uart_num].retention_link_created = false;
         }
         _lock_release(&(uart_context[uart_num].mutex));
     }
@@ -1975,9 +1964,10 @@ void uart_set_always_rx_timeout(uart_port_t uart_num, bool always_rx_timeout)
     }
 }
 
-#if SOC_UART_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 static esp_err_t uart_create_sleep_retention_link_cb(void *arg)
 {
+#if SOC_UART_SUPPORT_SLEEP_RETENTION
     uart_context_t *group = (uart_context_t *)arg;
     uart_port_t uart_num = group->port_id;
     sleep_retention_module_t module = uart_reg_retention_info[uart_num].module;
@@ -1985,6 +1975,7 @@ static esp_err_t uart_create_sleep_retention_link_cb(void *arg)
                                                    uart_reg_retention_info[uart_num].array_size,
                                                    REGDMA_LINK_PRI_UART, module);
     ESP_RETURN_ON_ERROR(err, UART_TAG, "create retention link failed");
+#endif
     return ESP_OK;
 }
 #endif
