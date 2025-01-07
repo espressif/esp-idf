@@ -1,6 +1,7 @@
 Ethernet
 ========
 
+{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 bytes", esp32p4=" 32 bytes (64 bytes in fact due to the need for proper memory alignment)"}
 {IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
 {IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
 {IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
@@ -256,6 +257,19 @@ Basic common configuration for MAC layer is described in :cpp:class:`eth_mac_con
         :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`: configuration of EMAC MII/RMII data plane GPIO numbers.
 
         :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`: configuration of EMAC input interface clock when ``REF_CLK`` signal is generated internally and is looped back to the EMAC externally. The mode must be always configured to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`. This option is valid only when configuration of :cpp:member:`eth_esp32_emac_config_t::clock_config` is set to :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT`.
+
+    Memory Considerations when Using Internal MAC
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    The internal MAC subsystem transfers data to and from the CPU domain via DMA using a linked list of descriptors. There are two types of descriptors: Transmit and Receive. Based on its type, a descriptor holds status information about the received or transmitted frame or provides controls for transmission. Each descriptor also contains pointers to the current data buffer and the next descriptor. As such, a single EMAC DMA descriptor has size of {IDF_TARGET_SOC_DMA_DESC_SIZE} in DMA-capable memory.
+
+    The default configuration should cover most use cases. However, certain scenarios may require configuring the Ethernet DMA memory utilization to suit specific needs. Typical problems may arise in the following situations:
+
+    .. list::
+
+        * **Short and frequent frames dominate network traffic**: If your network traffic primarily consists of very short and frequently transmitted/received frames, you may observe issues such as lower-than-expected throughput (despite the rated 100 Mbps) and missed frames during reception. On transmission, the socket send API may return ``errno`` equals to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled). This is because the default memory configuration is optimized for larger frames; :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` is set to 512 bytes by default to ensure a better *data buffer* to *descriptor* size overhead ratio. The solution is to increase :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM` or :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`. Additionally, consider decreasing :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` to match the typical frame size in your network to maintain a reasonable memory footprint of the Ethernet driver.
+
+        * **High throughput leads to buffer exhaustion**: If the socket send API intermittently returns ``errno`` equals to ``ENOMEM``, accompanied by the `insufficient TX buffer size` message (if debug log level is enabled), and the throughput is close to the rated 100 Mbps, this likely indicates nearing hardware limitations. In such case, the hardware cannot keep up with the transmission requests. The solution is to increase :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM` to buffer more frames and mitigate temporary peaks in transmission requests. However, this will not help if the requested traffic consistently exceeds the rated throughput. In such situations, the only solution is to limit the bandwidth by software means at the application level.
 
 Configuration for PHY is described in :cpp:class:`eth_phy_config_t`, including:
 
