@@ -53,14 +53,18 @@
 typedef void (*tx_func_t)(int, int);
 // UART read bytes function type
 typedef int (*rx_func_t)(int);
+// UART get available received bytes function type
+typedef size_t (*get_available_data_len_func_t)(int);
 
-// Basic functions for sending and receiving bytes over UART
+// Basic functions for sending, receiving bytes, and get available data length over UART
 static void uart_tx_char(int fd, int c);
 static int uart_rx_char(int fd);
+static size_t uart_get_avail_data_len(int fd);
 
-// Functions for sending and receiving bytes which use UART driver
+// Functions for sending, receiving bytes, and get available data length which use UART driver
 static void uart_tx_char_via_driver(int fd, int c);
 static int uart_rx_char_via_driver(int fd);
+static size_t uart_get_avail_data_len_via_driver(int fd);
 
 typedef struct {
     // Pointers to UART peripherals
@@ -82,6 +86,8 @@ typedef struct {
     tx_func_t tx_func;
     // Functions used to read bytes from UART. Default to "basic" functions.
     rx_func_t rx_func;
+    // Function used to get available data bytes from UART. Default to "basic" functions.
+    get_available_data_len_func_t get_avail_data_len_func;
 } uart_vfs_context_t;
 
 #define VFS_CTX_DEFAULT_VAL(uart_dev) (uart_vfs_context_t) {\
@@ -91,6 +97,7 @@ typedef struct {
     .rx_mode = DEFAULT_RX_MODE,\
     .tx_func = uart_tx_char,\
     .rx_func = uart_rx_char,\
+    .get_avail_data_len_func = uart_get_avail_data_len,\
 }
 
 //If the context should be dynamically initialized, remove this structure
@@ -160,6 +167,19 @@ static int uart_open(const char *path, int flags, int mode)
     s_ctx[fd]->non_blocking = ((flags & O_NONBLOCK) == O_NONBLOCK);
 
     return fd;
+}
+
+size_t uart_get_avail_data_len(int fd)
+{
+    uart_dev_t* uart = s_ctx[fd]->uart;
+    return uart_ll_get_rxfifo_len(uart);
+}
+
+size_t uart_get_avail_data_len_via_driver(int fd)
+{
+    size_t buffered_size = 0;
+    uart_get_buffered_data_len(fd, &buffered_size);
+    return buffered_size;
 }
 
 static void uart_tx_char(int fd, int c)
@@ -253,38 +273,65 @@ static ssize_t uart_read(int fd, void* data, size_t size)
     assert(fd >= 0 && fd < 3);
     char *data_c = (char *) data;
     size_t received = 0;
+    size_t available_size = 0;
+    int c = NONE; // store the read char
     _lock_acquire_recursive(&s_ctx[fd]->read_lock);
-    while (received < size) {
-        int c = uart_read_char(fd);
-        if (c == '\r') {
-            if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
-                c = '\n';
-            } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
-                /* look ahead */
-                int c2 = uart_read_char(fd);
-                if (c2 == NONE) {
-                    /* could not look ahead, put the current character back */
-                    uart_return_char(fd, c);
-                    break;
-                }
-                if (c2 == '\n') {
-                    /* this was \r\n sequence. discard \r, return \n */
+
+    if (!s_ctx[fd]->non_blocking) {
+        c = uart_read_char(fd); // blocking until data available for non-O_NONBLOCK mode
+    }
+
+    // find the actual fetch size
+    available_size += s_ctx[fd]->get_avail_data_len_func(fd);
+    if (c != NONE) {
+        available_size++;
+    }
+    if (s_ctx[fd]->peek_char != NONE) {
+        available_size++;
+    }
+    size_t fetch_size = MIN(available_size, size);
+
+    if (fetch_size > 0) {
+        do {
+            if (c == NONE) { // for non-O_NONBLOCK mode, there is already a pre-fetched char
+                c = uart_read_char(fd);
+            }
+            assert(c != NONE);
+
+            if (c == '\r') {
+                if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CR) {
                     c = '\n';
-                } else {
-                    /* \r followed by something else. put the second char back,
-                     * it will be processed on next iteration. return \r now.
-                     */
-                    uart_return_char(fd, c2);
+                } else if (s_ctx[fd]->rx_mode == ESP_LINE_ENDINGS_CRLF) {
+                    /* look ahead */
+                    int c2 = uart_read_char(fd);
+                    fetch_size--;
+                    if (c2 == NONE) {
+                        /* could not look ahead, put the current character back */
+                        uart_return_char(fd, c);
+                        c = NONE;
+                        break;
+                    }
+                    if (c2 == '\n') {
+                        /* this was \r\n sequence. discard \r, return \n */
+                        c = '\n';
+                    } else {
+                        /* \r followed by something else. put the second char back,
+                         * it will be processed on next iteration. return \r now.
+                         */
+                        uart_return_char(fd, c2);
+                        fetch_size++;
+                    }
                 }
             }
-        } else if (c == NONE) {
-            break;
-        }
-        data_c[received] = (char) c;
-        ++received;
-        if (c == '\n') {
-            break;
-        }
+
+            data_c[received] = (char) c;
+            ++received;
+            c = NONE;
+        } while (received < fetch_size);
+    }
+
+    if (c != NONE) { // fetched, but not used
+        uart_return_char(fd, c);
     }
     _lock_release_recursive(&s_ctx[fd]->read_lock);
     if (received > 0) {
@@ -1078,6 +1125,7 @@ void uart_vfs_dev_use_nonblocking(int uart_num)
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
     s_ctx[uart_num]->tx_func = uart_tx_char;
     s_ctx[uart_num]->rx_func = uart_rx_char;
+    s_ctx[uart_num]->get_avail_data_len_func = uart_get_avail_data_len;
     _lock_release_recursive(&s_ctx[uart_num]->write_lock);
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
@@ -1088,6 +1136,7 @@ void uart_vfs_dev_use_driver(int uart_num)
     _lock_acquire_recursive(&s_ctx[uart_num]->write_lock);
     s_ctx[uart_num]->tx_func = uart_tx_char_via_driver;
     s_ctx[uart_num]->rx_func = uart_rx_char_via_driver;
+    s_ctx[uart_num]->get_avail_data_len_func = uart_get_avail_data_len_via_driver;
     _lock_release_recursive(&s_ctx[uart_num]->write_lock);
     _lock_release_recursive(&s_ctx[uart_num]->read_lock);
 }
