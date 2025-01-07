@@ -340,7 +340,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     int isr_flags = PARLIO_INTR_ALLOC_FLAG;
     ret = esp_intr_alloc_intrstatus(parlio_periph_signals.groups[group->group_id].tx_irq_id, isr_flags,
                                     (uint32_t)parlio_ll_get_interrupt_status_reg(hal->regs),
-                                    PARLIO_LL_EVENT_TX_EOF, parlio_tx_default_isr, unit, &unit->intr);
+                                    PARLIO_LL_EVENT_TX_MASK, parlio_tx_default_isr, unit, &unit->intr);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "install interrupt failed");
 
     // install DMA service
@@ -491,7 +491,7 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
             esp_pm_lock_acquire(tx_unit->pm_lock);
         }
         parlio_hal_context_t *hal = &tx_unit->base.group->hal;
-        parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, true);
+        parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, true);
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
@@ -550,7 +550,7 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     }
     gdma_stop(tx_unit->dma_chan);
     parlio_ll_tx_start(hal->regs, false);
-    parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
+    parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, false);
 
     // release power management lock
     if (tx_unit->pm_lock) {
@@ -635,6 +635,11 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
     bool need_yield = false;
 
     uint32_t status = parlio_ll_tx_get_interrupt_status(hal->regs);
+
+    if (status & PARLIO_LL_EVENT_TX_FIFO_EMPTY) {
+        parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_FIFO_EMPTY);
+        ESP_EARLY_LOGE(TAG, "FIFO empty interrupt triggered unexpectedly");
+    }
 
     if (status & PARLIO_LL_EVENT_TX_EOF) {
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
