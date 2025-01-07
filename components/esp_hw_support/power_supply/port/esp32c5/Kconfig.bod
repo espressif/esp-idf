@@ -42,4 +42,14 @@ menu "Brownout Detector"
         default 6 if ESP_BROWNOUT_DET_LVL_SEL_6
         default 7 if ESP_BROWNOUT_DET_LVL_SEL_7
 
+    config ESP_BROWNOUT_USE_INTR
+        bool
+        default n
+        help
+            This config allows to trigger an interrupt when brownout detected. Software restart will be done
+            at the end of the default callback.
+            This is because for some special workflow, the chip needs do more things when brownout happens
+            before restart instead of restarting directly. This part needs to be done in callback function
+            of interrupt.
+
 endmenu

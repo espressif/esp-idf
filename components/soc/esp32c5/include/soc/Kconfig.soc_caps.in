@@ -1215,10 +1215,6 @@ config SOC_LP_TIMER_BIT_WIDTH_HI
     int
     default 16
 
-config SOC_LP_TIMER_BOD_SHARE_INTR_SOURCE
-    bool
-    default y
-
 config SOC_TIMER_GROUPS
     int
     default 2

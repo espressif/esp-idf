@@ -429,7 +429,6 @@
 /*-------------------------- LP_TIMER CAPS ----------------------------------*/
 #define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
 #define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
-#define SOC_LP_TIMER_BOD_SHARE_INTR_SOURCE 1   //LP timer and brownout detector share the interrupt source
 
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
