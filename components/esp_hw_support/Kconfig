@@ -79,7 +79,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
             bool "Pull-up Flash CS pin in light sleep"
-            depends on !APP_BUILD_TYPE_PURE_RAM_APP && !ESP_SLEEP_POWER_DOWN_FLASH
+            depends on !APP_BUILD_TYPE_PURE_RAM_APP
             default y
             help
                 All IOs will be set to isolate(floating) state by default during sleep.
@@ -111,8 +111,7 @@ menu "Hardware Settings"
 
         config ESP_SLEEP_MSPI_NEED_ALL_IO_PU
             bool "Pull-up all SPI pins in light sleep"
-            depends on !ESP_SLEEP_POWER_DOWN_FLASH \
-                && (ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND || ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
+            depends on (ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND || ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND)
             default y if IDF_TARGET_ESP32C2 || IDF_TARGET_ESP32S3
             help
                 To reduce leakage current, some types of SPI Flash/RAM only need to pull up the CS pin
