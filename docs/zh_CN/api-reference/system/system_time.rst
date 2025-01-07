@@ -47,8 +47,6 @@ RTC 定时器有以下时钟源：
 
     :not esp32c6 and not esp32h2 and not esp32p4: - ``内置 {IDF_TARGET_INT_OSC_FRE} 振荡器的 256 分频时钟 ({IDF_TARGET_INT_OSC_FRE_DIVIDED})``：频率稳定性优于 ``内置 {IDF_TARGET_RTC_CLK_FRE} RC 振荡器``，同样无需外部元件，但 Deep-sleep 模式下电流消耗更高（比默认模式高 5 μA）。
 
-    :esp32c6 or esp32h2 or esp32p4: - ``内置 32 kHz RC 振荡器``
-
 时钟源的选择取决于系统时间精度要求和睡眠模式下的功耗要求。要修改 RTC 时钟源，请在项目配置中设置 :ref:`CONFIG_RTC_CLK_SRC`。
 
 想要了解外置晶振或外置振荡器的更多布线要求，请参考 {IDF_TARGET_HARDWARE_DESIGN_URL}。

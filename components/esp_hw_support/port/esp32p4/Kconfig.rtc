@@ -14,18 +14,13 @@ choice RTC_CLK_SRC
     config RTC_CLK_SRC_EXT_OSC
         bool "External 32kHz oscillator at 32K_XP pin"
         select ESP_SYSTEM_RTC_EXT_OSC
-    config RTC_CLK_SRC_INT_RC32K
-        bool "Internal 32kHz RC oscillator"
-        help
-            Internal RC32K clock is unstable at extreme temperatures and is not recommended for use.
-            This option will be removed in IDF v6.0.
 endchoice
 
 config RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
-    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC || RTC_CLK_SRC_INT_8MD256
+    default 3000 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_EXT_OSC
     default 1024 if RTC_CLK_SRC_INT_RC
-    range 0 8190 if RTC_CLK_SRC_EXT_CRYS || RTC_CLK_SRC_INT_RC32K
+    range 0 8190 if RTC_CLK_SRC_EXT_CRYS
     range 0 32766 if RTC_CLK_SRC_INT_RC
     help
         When the startup code initializes RTC_SLOW_CLK, it can perform
