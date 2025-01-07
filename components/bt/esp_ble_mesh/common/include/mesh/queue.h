@@ -23,7 +23,7 @@ typedef struct {
 #endif
 } bt_mesh_queue_t;
 
-int bt_mesh_queue_init(bt_mesh_queue_t *queue, uint8_t queue_size, uint8_t item_size);
+int bt_mesh_queue_init(bt_mesh_queue_t *queue, uint16_t queue_size, uint8_t item_size);
 int bt_mesh_queue_deinit(bt_mesh_queue_t *queue);
 
 #ifdef __cplusplus
