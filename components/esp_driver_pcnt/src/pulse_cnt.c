@@ -667,8 +667,10 @@ esp_err_t pcnt_unit_remove_watch_point(pcnt_unit_handle_t unit, int watch_point)
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
 esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
 {
-    pcnt_group_t *group = NULL;
-
+    pcnt_group_t *group = unit->group;
+    if (!pcnt_ll_is_step_notify_supported(group->group_id)) {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_NOT_SUPPORTED, TAG, "watch step is not supported by this chip revision");
+    }
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE((step_interval > 0 && unit->flags.en_step_notify_up) || (step_interval < 0 && unit->flags.en_step_notify_down),
                         ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
@@ -677,7 +679,6 @@ esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
     ESP_RETURN_ON_FALSE(unit->step_interval == 0,
                         ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
 
-    group = unit->group;
     unit->step_interval = step_interval;
     pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval);
     // different units are mixing in the same register, so we use the group's spinlock here
