@@ -618,7 +618,6 @@ def test_ot_sleepy_device(dut: Tuple[IdfDut, IdfDut]) -> None:
         assert not bool(fail_info.search(str(info)))
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=20)
         assert not bool(fail_info.search(str(output)))
-        ocf.clean_buffer(sleepy_device)
         ocf.execute_command(leader, 'factoryreset')
         output = sleepy_device.expect(pexpect.TIMEOUT, timeout=5)
         assert not bool(fail_info.search(str(output)))
@@ -648,7 +647,6 @@ def test_basic_startup(dut: Tuple[IdfDut, IdfDut]) -> None:
     try:
         ocf.init_thread(br)
         time.sleep(3)
-        ocf.clean_buffer(br)
         ocf.execute_command(br, 'ifconfig up')
         br.expect('Done', timeout=5)
         ocf.execute_command(br, 'thread start')
