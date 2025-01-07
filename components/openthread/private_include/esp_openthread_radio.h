@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,10 @@
 #include "esp_err.h"
 #include "esp_openthread_types.h"
 #include "openthread/instance.h"
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -52,6 +56,27 @@ void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop);
  *
  */
 esp_err_t esp_openthread_radio_process(otInstance *instance, const esp_openthread_mainloop_context_t *mainloop);
+
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+
+/**
+ * @brief  Set the coexist config.
+ *
+ * @param[in]  config     The config of coexist.
+ *
+ */
+void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config);
+
+/**
+ * @brief  Get the coexist config.
+ *
+ * @return
+ *        - The config of coexist.
+ *
+ */
+esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void);
+#endif
 
 #ifdef __cplusplus
 }
