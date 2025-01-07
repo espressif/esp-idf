@@ -13,11 +13,17 @@ choice RTC_CLK_SRC
         bool "External 32kHz oscillator at 32K_XP pin"
         select ESP_SYSTEM_RTC_EXT_OSC
     config RTC_CLK_SRC_INT_RC32K
-        bool "Internal 32kHz RC oscillator"
+        bool "Internal 32kHz RC oscillator (NOT RECOMMENDED TO USE, READ DOCS FIRST)"
+        depends on RTC_CLK_SRC_USE_DANGEROUS_RC32K_ALLOWED
         help
-            Internal RC32K clock is unstable at extreme temperatures and is not recommended for use.
+            To be able to select this option, please select `RTC_CLK_SRC_USE_DANGEROUS_RC32K_ALLOWED` first.
             This option will be removed in IDF v6.0.
 endchoice
+
+config RTC_CLK_SRC_USE_DANGEROUS_RC32K_ALLOWED
+    bool "Confirm to use the unrecommended 32 kHz RC oscillator (READ DOCS FIRST)"
+    help
+        Internal RC32K clock is unstable at extreme temperatures and is not recommended for use.
 
 config RTC_CLK_CAL_CYCLES
     int "Number of cycles for RTC_SLOW_CLK calibration"
