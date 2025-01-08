@@ -1,3 +1,12 @@
+
+if( NOT CONFIG_ESP_WIFI_ENABLED
+    AND NOT CMAKE_BUILD_EARLY_EXPANSION )
+    # This component provides only "esp_provisioning" headers if WiFi not enabled
+    # (implementation supported optionally in a managed component esp_wifi_remote)
+    idf_component_register(INCLUDE_DIRS include)
+    return()
+endif()
+
 set(srcs "src/wifi_config.c"
         "src/wifi_scan.c"
         "src/wifi_ctrl.c"

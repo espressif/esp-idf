@@ -1,3 +1,3 @@
 # This config is split between targets since different component needs to be included
 CONFIG_IDF_TARGET="esp32h2"
-TEST_EXCLUDE_COMPONENTS=app_trace esp_eth esp_hid esp_netif esp_phy esp_ringbuf esp_wifi espcoredump hal lwip mdns newlib nvs_flash partition_table sdmmc driver soc spi_flash vfs
+TEST_EXCLUDE_COMPONENTS=app_trace esp_eth esp_hid esp_netif esp_phy esp_ringbuf esp_wifi espcoredump hal lwip mdns newlib nvs_flash partition_table sdmmc driver soc spi_flash vfs wpa_supplicant
