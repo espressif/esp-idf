@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,6 +198,22 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint32
 {
     HAL_ASSERT(touch_num > 0);
     SENS.touch_thresh[touch_num - 1].thresh = thresh;
+}
+
+/**
+ * Get touch sensor threshold of charge cycles that triggers pad active state.
+ * The threshold determines the sensitivity of the touch sensor.
+ * The threshold is the original value of the trigger state minus the benchmark value.
+ *
+ * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be triggered.
+ * @param touch_num The touch pad id
+ * @return
+ *      - The threshold of charge cycles
+ */
+static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num)
+{
+    HAL_ASSERT(touch_num > 0);
+    return SENS.touch_thresh[touch_num - 1].thresh;
 }
 
 /**
@@ -597,6 +613,17 @@ static inline void touch_ll_sleep_set_threshold(uint32_t touch_thres)
 static inline void touch_ll_sleep_set_channel_num(uint32_t touch_num)
 {
     RTCCNTL.touch_slp_thres.touch_slp_pad = touch_num;
+}
+
+/**
+ * Get touch channel number for sleep pad.
+ *
+ * @note Only one touch sensor channel is supported in deep sleep mode.
+ * @param touch_num Touch sensor channel number.
+ */
+static inline void touch_ll_sleep_get_channel_num(uint32_t *touch_num)
+{
+    *touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
 }
 
 /**
@@ -1609,16 +1636,6 @@ static inline bool touch_ll_proximity_pad_check(touch_pad_t touch_num)
 }
 
 /************** sleep pad setting ***********************/
-/**
- * Get touch channel number for sleep pad.
- *
- * @note Only one touch sensor channel is supported in deep sleep mode.
- * @param touch_num Touch sensor channel number.
- */
-static inline void touch_ll_sleep_get_channel_num(touch_pad_t *touch_num)
-{
-    *touch_num = (touch_pad_t)(RTCCNTL.touch_slp_thres.touch_slp_pad);
-}
 
 /**
  * Get the trigger threshold of touch sensor in deep sleep.

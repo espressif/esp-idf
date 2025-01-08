@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,8 @@
 #include "soc/clk_tree_defs.h"
 #include "soc/touch_sensor_periph.h"
 #include "soc/rtc.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "hal/hal_utils.h"
 #include "driver/touch_sens.h"
 #include "esp_private/rtc_ctrl.h"
@@ -205,6 +207,9 @@ esp_err_t touch_priv_config_channel(touch_channel_handle_t chan_handle, const to
         touch_ll_set_chan_active_threshold(chan_handle->id, smp_cfg_id, chan_cfg->active_thresh[smp_cfg_id]);
     }
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_chan_benchmark_config_t bm_cfg = {.do_reset = true};
+    /* Reset the benchmark to overwrite the legacy benchmark during the deep sleep */
+    touch_channel_config_benchmark(chan_handle, &bm_cfg);
     return ESP_OK;
 }
 
@@ -264,13 +269,6 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
     return ESP_OK;
 }
 
-void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    if (benchmark_cfg->do_reset) {
-        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
-    }
-}
-
 /******************************************************************************
  *                              Scope: public APIs                            *
  ******************************************************************************/
@@ -308,6 +306,16 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     return ret;
 }
 
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
+{
+    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
+    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+    if (benchmark_cfg->do_reset) {
+        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    return ESP_OK;
+}
+
 esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, const touch_sleep_config_t *sleep_cfg)
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
@@ -336,6 +344,14 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
             if (sleep_cfg->deep_slp_allow_pd) {
                 ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG,
                                   "deep sleep waken channel can't be NULL when allow RTC power down");
+#if CONFIG_IDF_TARGET_ESP32P4
+                /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
+                 * triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
+                if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+                    slp_opt = ESP_PD_OPTION_ON;
+                    ESP_LOGW(TAG, "Keep the RTC_PERIPH power on");
+                }
+#endif
             } else {
                 /* Keep the RTC_PERIPH power domain on in deep sleep */
                 slp_opt = ESP_PD_OPTION_ON;

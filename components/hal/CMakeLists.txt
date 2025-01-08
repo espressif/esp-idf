@@ -283,15 +283,13 @@ if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
     endif()
 
     if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
-        # Source files for legacy touch driver
+        # Source files for the legacy touch hal driver
         if(CONFIG_SOC_TOUCH_SENSOR_VERSION LESS 3)
             list(APPEND srcs "${target}/touch_sensor_hal.c")
             list(APPEND srcs "touch_sensor_hal.c")
         endif()
-        # Source files for touch driver-ng (currently only support ver2 & ver3)
-        if(CONFIG_SOC_TOUCH_SENSOR_VERSION GREATER 1)
-            list(APPEND srcs "touch_sens_hal.c")
-        endif()
+        # Source files for the new touch hal driver
+        list(APPEND srcs "touch_sens_hal.c")
     endif()
 
     if(${target} STREQUAL "esp32")

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,6 @@
 #include "hal/wdt_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
-#include "hal/touch_sensor_hal.h"
 #include "hal/touch_sens_hal.h"
 #endif
 #include "hal/mspi_ll.h"
@@ -304,7 +303,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
@@ -877,7 +876,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     misc_modules_sleep_prepare(pd_flags, deep_sleep);
 
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
     bool keep_rtc_power_on = false;
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
@@ -1733,14 +1732,11 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void)
 {
     touch_hal_prepare_deep_sleep();
 }
-#endif
-
-#if SOC_TOUCH_SENSOR_SUPPORTED
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
@@ -1759,18 +1755,18 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void)
     return ESP_OK;
 }
 
-touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
+int esp_sleep_get_touchpad_wakeup_status(void)
 {
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TOUCHPAD) {
-        return TOUCH_PAD_MAX;
+        return -1;
     }
-    touch_pad_t pad_num;
-#if SOC_TOUCH_SENSOR_VERSION == 3
-    touch_ll_sleep_get_channel_num((uint32_t *)(&pad_num));
+    uint32_t chan_num;
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    touch_ll_get_active_channel_mask(&chan_num);
 #else
-    touch_hal_get_wakeup_status(&pad_num);
+    touch_ll_sleep_get_channel_num(&chan_num);
 #endif
-    return pad_num;
+    return (int)chan_num;
 }
 
 #endif // SOC_TOUCH_SENSOR_SUPPORTED

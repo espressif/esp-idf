@@ -1711,6 +1711,10 @@ config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
     default y
 
+config SOC_TOUCH_SUPPORT_BENCHMARK
+    bool
+    default y
+
 config SOC_TOUCH_SUPPORT_WATERPROOF
     bool
     default y

@@ -214,7 +214,7 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void);
  *
  * @return touch pad which caused wakeup
  */
-touch_pad_t esp_sleep_get_touchpad_wakeup_status(void);
+int esp_sleep_get_touchpad_wakeup_status(void);
 #endif // SOC_TOUCH_SENSOR_SUPPORTED
 
 /**

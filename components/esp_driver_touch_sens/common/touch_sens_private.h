@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,9 @@
 #include "esp_memory_utils.h"
 #include "esp_check.h"
 #include "sdkconfig.h"
+#if SOC_TOUCH_SENSOR_VERSION == 1
+#include "esp_timer.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,8 +79,16 @@ struct touch_sensor_s {
     intr_handle_t           intr_handle;                /*!< Interrupt handle */
     touch_event_callbacks_t cbs;                        /*!< Event callbacks */
     touch_channel_handle_t  deep_slp_chan;              /*!< The configured channel for depp sleep, will be NULL if not enable the deep sleep */
+#if SOC_TOUCH_SUPPORT_WATERPROOF
     touch_channel_handle_t  guard_chan;                 /*!< The configured channel for the guard ring, will be NULL if not set */
     touch_channel_handle_t  shield_chan;                /*!< The configured channel for the shield pad, will be NULL if not set */
+#endif
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    uint32_t                timer_interval_ms;          /*!< Timer interval in milliseconds for software filter */
+    esp_timer_handle_t      sw_filter_timer;            /*!< Software filter timer handle */
+    touch_sw_filter_t       data_filter_fn;             /*!< Software filter function pointer */
+    void                    *user_filter_ctx;           /*!< User context that will pass to the software filter function */
+#endif
 
     SemaphoreHandle_t       mutex;                      /*!< Mutex lock to ensure thread safety */
 
@@ -87,14 +98,18 @@ struct touch_sensor_s {
         struct {
             bool            is_enabled : 1;             /*!< Flag to indicate whether the scanning is enabled */
             bool            is_started : 1;             /*!< Flag to indicate whether the scanning has started */
-            bool            is_meas_timeout : 1;        /*!< Flag to indicate whether the measurement timeout, will force to stop the current measurement if the timeout is triggered */
             bool            sleep_en : 1;               /*!< Flag to indicate whether the sleep wake-up feature is enabled */
+#if SOC_TOUCH_SENSOR_VERSION == 1
+            bool            is_below_trig;              /*!< Whether the touch sensor interrupt will trigger below the trigger threshold */
+#else  // SOC_TOUCH_SENSOR_VERSION >= 2
             bool            allow_pd : 1;               /*!< Flag to indicate whether allow RTC_PERIPH power down during the sleep */
+            bool            is_meas_timeout : 1;        /*!< Flag to indicate whether the measurement timeout, will force to stop the current measurement if the timeout is triggered */
             bool            waterproof_en : 1;          /*!< Flag to indicate whether the water proof feature is enabled */
             bool            immersion_proof : 1;        /*!< Flag to indicate whether to disable scanning when the guard ring is triggered */
             bool            proximity_en : 1;           /*!< Flag to indicate whether the proximity sensing feature is enabled */
             bool            timeout_en : 1;             /*!< Flag to indicate whether the measurement timeout feature (hardware timeout) is enabled */
             bool            denoise_en : 1;             /*!< Flag to indicate whether the denoise channel feature is enabled */
+#endif
         };
         uint32_t flags;
     };
@@ -107,6 +122,7 @@ struct touch_sensor_s {
 struct touch_channel_s {
     touch_sensor_handle_t   base;                       /*!< The touch sensor controller handle */
     int                     id;                         /*!< Touch channel id, the range is target-specific */
+#if SOC_TOUCH_SUPPORT_PROX_SENSING
     int                     prox_id;                    /*!< The proximity channel id + 1. It is 0 if not a proximity channel */
     uint32_t                prox_cnt;                   /*!< Cache the proximity measurement count, only takes effect when the channel is a proximity channel.
                                                          *   When this count reaches `touch_proximity_config_t::scan_times`,
@@ -116,6 +132,12 @@ struct touch_channel_s {
                                                          *   The value will accumulate for each scanning until it reaches `touch_proximity_config_t::scan_times`.
                                                          *   This accumulated proximity value can be read via `touch_channel_read_data` when all scanning finished.
                                                          */
+#endif
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    uint32_t                abs_thresh;                 /*!< Absolute threshold value that evaluate whether the channel is active */
+    uint32_t                smooth_data;                /*!< The smoothed data value, which is filtered by the software filter */
+    bool                    is_active;                  /*!< Flag to indicate whether the channel is active */
+#endif
 };
 
 extern touch_sensor_handle_t g_touch;  /*!< Global touch sensor controller handle for `esp_driver_touch_sens` use only */
@@ -190,15 +212,14 @@ esp_err_t touch_priv_deinit_controller(touch_sensor_handle_t sens_handle);
  */
 esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch_chan_data_type_t type, uint32_t *data);
 
+#if SOC_TOUCH_SENSOR_VERSION == 1
 /**
- * @brief Touch sensor channel benchmark set interface
- * @note  This is a private interface of `esp_driver_touch_sens`
- *        It should be implemented by each hardware version
- *
- * @param[in] chan_handle   The channel handle
- * @param[in] benchmark_cfg  The benchmark operation
+ * @brief Execute software filter for once
+ * @note  This is the implementation of the esp_timer callback
+ * @param[in]  arg the touch sensor controller handle
  */
-void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg);
+void touch_priv_execute_sw_filter(void *arg);
+#endif
 
 #ifdef __cplusplus
 }
