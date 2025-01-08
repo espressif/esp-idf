@@ -1,7 +1,7 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 /** AHB_DMA_IN_INT_RAW_CH0_REG register
- *  Raw interrupt status of RX channel 0
+ *  RX channel 0 raw interrupt status register
  */
 #define AHB_DMA_IN_INT_RAW_CH0_REG (DR_REG_AHB_DMA_BASE + 0x0)
 /** AHB_DMA_IN_DONE_CH0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
@@ -66,7 +66,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH0_INT_RAW_S  6
 
 /** AHB_DMA_IN_INT_ST_CH0_REG register
- *  Masked interrupt status of RX channel 0
+ *  RX channel 0 masked interrupt status register
  */
 #define AHB_DMA_IN_INT_ST_CH0_REG (DR_REG_AHB_DMA_BASE + 0x4)
 /** AHB_DMA_IN_DONE_CH0_INT_ST : RO; bitpos: [0]; default: 0;
@@ -120,7 +120,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH0_INT_ST_S  6
 
 /** AHB_DMA_IN_INT_ENA_CH0_REG register
- *  Interrupt enable bits of RX channel 0
+ *  RX channel 0 interrupt enable register
  */
 #define AHB_DMA_IN_INT_ENA_CH0_REG (DR_REG_AHB_DMA_BASE + 0x8)
 /** AHB_DMA_IN_DONE_CH0_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -174,7 +174,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH0_INT_ENA_S  6
 
 /** AHB_DMA_IN_INT_CLR_CH0_REG register
- *  Interrupt clear bits of RX channel 0
+ *  RX channel 0 interrupt clear register
  */
 #define AHB_DMA_IN_INT_CLR_CH0_REG (DR_REG_AHB_DMA_BASE + 0xc)
 /** AHB_DMA_IN_DONE_CH0_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -228,7 +228,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH0_INT_CLR_S  6
 
 /** AHB_DMA_IN_INT_RAW_CH1_REG register
- *  Raw interrupt status of RX channel 0
+ *  RX channel 1 raw interrupt status register
  */
 #define AHB_DMA_IN_INT_RAW_CH1_REG (DR_REG_AHB_DMA_BASE + 0x10)
 /** AHB_DMA_IN_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
@@ -282,7 +282,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH1_INT_RAW_S  6
 
 /** AHB_DMA_IN_INT_ST_CH1_REG register
- *  Masked interrupt status of RX channel 0
+ *  RX channel 1 masked interrupt status register
  */
 #define AHB_DMA_IN_INT_ST_CH1_REG (DR_REG_AHB_DMA_BASE + 0x14)
 /** AHB_DMA_IN_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
@@ -336,7 +336,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH1_INT_ST_S  6
 
 /** AHB_DMA_IN_INT_ENA_CH1_REG register
- *  Interrupt enable bits of RX channel 0
+ *  RX channel 1 interrupt enable register
  */
 #define AHB_DMA_IN_INT_ENA_CH1_REG (DR_REG_AHB_DMA_BASE + 0x18)
 /** AHB_DMA_IN_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -390,7 +390,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH1_INT_ENA_S  6
 
 /** AHB_DMA_IN_INT_CLR_CH1_REG register
- *  Interrupt clear bits of RX channel 0
+ *  RX channel 1 interrupt clear register
  */
 #define AHB_DMA_IN_INT_CLR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1c)
 /** AHB_DMA_IN_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -444,7 +444,7 @@ extern "C" {
 #define AHB_DMA_INFIFO_UDF_CH1_INT_CLR_S  6
 
 /** AHB_DMA_OUT_INT_RAW_CH0_REG register
- *  Raw interrupt status of TX channel 0
+ *  TX channel 0 raw interrupt status register
  */
 #define AHB_DMA_OUT_INT_RAW_CH0_REG (DR_REG_AHB_DMA_BASE + 0x30)
 /** AHB_DMA_OUT_DONE_CH0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
@@ -491,7 +491,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH0_INT_RAW_S  5
 
 /** AHB_DMA_OUT_INT_ST_CH0_REG register
- *  Masked interrupt status of TX channel 0
+ *  TX channel 0 masked interrupt status register
  */
 #define AHB_DMA_OUT_INT_ST_CH0_REG (DR_REG_AHB_DMA_BASE + 0x34)
 /** AHB_DMA_OUT_DONE_CH0_INT_ST : RO; bitpos: [0]; default: 0;
@@ -538,7 +538,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH0_INT_ST_S  5
 
 /** AHB_DMA_OUT_INT_ENA_CH0_REG register
- *  Interrupt enable bits of TX channel 0
+ *  TX channel 0 interrupt enable register
  */
 #define AHB_DMA_OUT_INT_ENA_CH0_REG (DR_REG_AHB_DMA_BASE + 0x38)
 /** AHB_DMA_OUT_DONE_CH0_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -585,7 +585,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH0_INT_ENA_S  5
 
 /** AHB_DMA_OUT_INT_CLR_CH0_REG register
- *  Interrupt clear bits of TX channel 0
+ *  TX channel 0 interrupt clear register
  */
 #define AHB_DMA_OUT_INT_CLR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x3c)
 /** AHB_DMA_OUT_DONE_CH0_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -632,7 +632,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH0_INT_CLR_S  5
 
 /** AHB_DMA_OUT_INT_RAW_CH1_REG register
- *  Raw interrupt status of TX channel 0
+ *  TX channel 1 raw interrupt status register
  */
 #define AHB_DMA_OUT_INT_RAW_CH1_REG (DR_REG_AHB_DMA_BASE + 0x40)
 /** AHB_DMA_OUT_DONE_CH1_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
@@ -679,7 +679,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH1_INT_RAW_S  5
 
 /** AHB_DMA_OUT_INT_ST_CH1_REG register
- *  Masked interrupt status of TX channel 0
+ *  TX channel 1 masked interrupt status register
  */
 #define AHB_DMA_OUT_INT_ST_CH1_REG (DR_REG_AHB_DMA_BASE + 0x44)
 /** AHB_DMA_OUT_DONE_CH1_INT_ST : RO; bitpos: [0]; default: 0;
@@ -726,7 +726,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH1_INT_ST_S  5
 
 /** AHB_DMA_OUT_INT_ENA_CH1_REG register
- *  Interrupt enable bits of TX channel 0
+ *  TX channel 1 interrupt enable register
  */
 #define AHB_DMA_OUT_INT_ENA_CH1_REG (DR_REG_AHB_DMA_BASE + 0x48)
 /** AHB_DMA_OUT_DONE_CH1_INT_ENA : R/W; bitpos: [0]; default: 0;
@@ -773,7 +773,7 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH1_INT_ENA_S  5
 
 /** AHB_DMA_OUT_INT_CLR_CH1_REG register
- *  Interrupt clear bits of TX channel 0
+ *  TX channel 1 interrupt clear register
  */
 #define AHB_DMA_OUT_INT_CLR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x4c)
 /** AHB_DMA_OUT_DONE_CH1_INT_CLR : WT; bitpos: [0]; default: 0;
@@ -819,25 +819,6 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_UDF_CH1_INT_CLR_V  0x00000001U
 #define AHB_DMA_OUTFIFO_UDF_CH1_INT_CLR_S  5
 
-/** AHB_DMA_AHB_TEST_REG register
- *  reserved
- */
-#define AHB_DMA_AHB_TEST_REG (DR_REG_AHB_DMA_BASE + 0x60)
-/** AHB_DMA_AHB_TESTMODE : R/W; bitpos: [2:0]; default: 0;
- *  reserved
- */
-#define AHB_DMA_AHB_TESTMODE    0x00000007U
-#define AHB_DMA_AHB_TESTMODE_M  (AHB_DMA_AHB_TESTMODE_V << AHB_DMA_AHB_TESTMODE_S)
-#define AHB_DMA_AHB_TESTMODE_V  0x00000007U
-#define AHB_DMA_AHB_TESTMODE_S  0
-/** AHB_DMA_AHB_TESTADDR : R/W; bitpos: [5:4]; default: 0;
- *  reserved
- */
-#define AHB_DMA_AHB_TESTADDR    0x00000003U
-#define AHB_DMA_AHB_TESTADDR_M  (AHB_DMA_AHB_TESTADDR_V << AHB_DMA_AHB_TESTADDR_S)
-#define AHB_DMA_AHB_TESTADDR_V  0x00000003U
-#define AHB_DMA_AHB_TESTADDR_S  4
-
 /** AHB_DMA_MISC_CONF_REG register
  *  Miscellaneous register
  */
@@ -850,16 +831,18 @@ extern "C" {
 #define AHB_DMA_AHBM_RST_INTER_V  0x00000001U
 #define AHB_DMA_AHBM_RST_INTER_S  0
 /** AHB_DMA_ARB_PRI_DIS : R/W; bitpos: [2]; default: 0;
- *  Configures whether or not to disable the fixed-priority channel arbitration.\\0:
- *  Enable\\1: Disable\\
+ *  Configures whether to disable the priority arbitration.
+ *  0: Enable
+ *  1: Disable
  */
 #define AHB_DMA_ARB_PRI_DIS    (BIT(2))
 #define AHB_DMA_ARB_PRI_DIS_M  (AHB_DMA_ARB_PRI_DIS_V << AHB_DMA_ARB_PRI_DIS_S)
 #define AHB_DMA_ARB_PRI_DIS_V  0x00000001U
 #define AHB_DMA_ARB_PRI_DIS_S  2
 /** AHB_DMA_CLK_EN : R/W; bitpos: [3]; default: 0;
- *  Configures clock gating.\\0: Support clock only when the application writes
- *  registers.\\ 1: Always force the clock on for registers.\\
+ *  Configures AHB DMA clock gating.
+ *  0: Support clock only when the application writes registers
+ *  1: Always force the clock on for registers
  */
 #define AHB_DMA_CLK_EN    (BIT(3))
 #define AHB_DMA_CLK_EN_M  (AHB_DMA_CLK_EN_V << AHB_DMA_CLK_EN_S)
@@ -883,46 +866,53 @@ extern "C" {
  */
 #define AHB_DMA_IN_CONF0_CH0_REG (DR_REG_AHB_DMA_BASE + 0x70)
 /** AHB_DMA_IN_RST_CH0 : R/W; bitpos: [0]; default: 0;
- *  Write 1 and then 0 to reset AHB_DMA channel 0 RX FSM and RX FIFO pointer.
+ *  Write 1 and then 0 to reset RX channel 0 FSM and RX FIFO pointer.
  */
 #define AHB_DMA_IN_RST_CH0    (BIT(0))
 #define AHB_DMA_IN_RST_CH0_M  (AHB_DMA_IN_RST_CH0_V << AHB_DMA_IN_RST_CH0_S)
 #define AHB_DMA_IN_RST_CH0_V  0x00000001U
 #define AHB_DMA_IN_RST_CH0_S  0
 /** AHB_DMA_IN_LOOP_TEST_CH0 : R/W; bitpos: [1]; default: 0;
- *  Reserved.
+ *  Configures the owner bit value for inlink write-back.
  */
 #define AHB_DMA_IN_LOOP_TEST_CH0    (BIT(1))
 #define AHB_DMA_IN_LOOP_TEST_CH0_M  (AHB_DMA_IN_LOOP_TEST_CH0_V << AHB_DMA_IN_LOOP_TEST_CH0_S)
 #define AHB_DMA_IN_LOOP_TEST_CH0_V  0x00000001U
 #define AHB_DMA_IN_LOOP_TEST_CH0_S  1
 /** AHB_DMA_INDSCR_BURST_EN_CH0 : R/W; bitpos: [2]; default: 0;
- *  Configures whether or not to enable INCR burst transfer for RX channel 0 to read
- *  descriptors.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable INCR burst transfer for RX channel 0 to read
+ *  descriptors.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_INDSCR_BURST_EN_CH0    (BIT(2))
 #define AHB_DMA_INDSCR_BURST_EN_CH0_M  (AHB_DMA_INDSCR_BURST_EN_CH0_V << AHB_DMA_INDSCR_BURST_EN_CH0_S)
 #define AHB_DMA_INDSCR_BURST_EN_CH0_V  0x00000001U
 #define AHB_DMA_INDSCR_BURST_EN_CH0_S  2
 /** AHB_DMA_MEM_TRANS_EN_CH0 : R/W; bitpos: [4]; default: 0;
- *  Configures whether or not to enable memory-to-memory data transfer.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable memory-to-memory data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_MEM_TRANS_EN_CH0    (BIT(4))
 #define AHB_DMA_MEM_TRANS_EN_CH0_M  (AHB_DMA_MEM_TRANS_EN_CH0_V << AHB_DMA_MEM_TRANS_EN_CH0_S)
 #define AHB_DMA_MEM_TRANS_EN_CH0_V  0x00000001U
 #define AHB_DMA_MEM_TRANS_EN_CH0_S  4
 /** AHB_DMA_IN_ETM_EN_CH0 : R/W; bitpos: [5]; default: 0;
- *  Configures whether or not to enable ETM control for RX channel0.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable ETM control for RX channel0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_IN_ETM_EN_CH0    (BIT(5))
 #define AHB_DMA_IN_ETM_EN_CH0_M  (AHB_DMA_IN_ETM_EN_CH0_V << AHB_DMA_IN_ETM_EN_CH0_S)
 #define AHB_DMA_IN_ETM_EN_CH0_V  0x00000001U
 #define AHB_DMA_IN_ETM_EN_CH0_S  5
 /** AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0 : R/W; bitpos: [7:6]; default: 0;
- *  Configures max burst size for Rx channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: reserved\\
+ *  Configures maximum burst length for RX channel0.
+ *  0: SINGLE
+ *  1: INCR4
+ *  2: INCR8
+ *  3: Reserved
  */
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0    0x00000003U
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_M  (AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_V << AHB_DMA_IN_DATA_BURST_MODE_SEL_CH0_S)
@@ -934,8 +924,9 @@ extern "C" {
  */
 #define AHB_DMA_IN_CONF1_CH0_REG (DR_REG_AHB_DMA_BASE + 0x74)
 /** AHB_DMA_IN_CHECK_OWNER_CH0 : R/W; bitpos: [12]; default: 0;
- *  Configures whether or not to enable owner bit check for RX channel 0.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable owner bit check for RX channel 0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_IN_CHECK_OWNER_CH0    (BIT(12))
 #define AHB_DMA_IN_CHECK_OWNER_CH0_M  (AHB_DMA_IN_CHECK_OWNER_CH0_V << AHB_DMA_IN_CHECK_OWNER_CH0_S)
@@ -943,18 +934,22 @@ extern "C" {
 #define AHB_DMA_IN_CHECK_OWNER_CH0_S  12
 
 /** AHB_DMA_INFIFO_STATUS_CH0_REG register
- *  Receive FIFO status of RX channel 0
+ *  RX channel 0 FIFO status
  */
 #define AHB_DMA_INFIFO_STATUS_CH0_REG (DR_REG_AHB_DMA_BASE + 0x78)
 /** AHB_DMA_INFIFO_FULL_CH0 : RO; bitpos: [0]; default: 1;
- *  Represents whether or not L1 RX FIFO is full.\\0: Not Full\\1: Full\\
+ *  Represents whether L1 RX FIFO is full.
+ *  0: Not Full
+ *  1: Full
  */
 #define AHB_DMA_INFIFO_FULL_CH0    (BIT(0))
 #define AHB_DMA_INFIFO_FULL_CH0_M  (AHB_DMA_INFIFO_FULL_CH0_V << AHB_DMA_INFIFO_FULL_CH0_S)
 #define AHB_DMA_INFIFO_FULL_CH0_V  0x00000001U
 #define AHB_DMA_INFIFO_FULL_CH0_S  0
 /** AHB_DMA_INFIFO_EMPTY_CH0 : RO; bitpos: [1]; default: 1;
- *  Represents whether or not  L1 RX FIFO is empty.\\0: Not empty\\1: Empty\\
+ *  Represents whether L1 RX FIFO is empty.
+ *  0: Not empty
+ *  1: Empty
  */
 #define AHB_DMA_INFIFO_EMPTY_CH0    (BIT(1))
 #define AHB_DMA_INFIFO_EMPTY_CH0_M  (AHB_DMA_INFIFO_EMPTY_CH0_V << AHB_DMA_INFIFO_EMPTY_CH0_S)
@@ -968,35 +963,35 @@ extern "C" {
 #define AHB_DMA_INFIFO_CNT_CH0_V  0x0000007FU
 #define AHB_DMA_INFIFO_CNT_CH0_S  8
 /** AHB_DMA_IN_REMAIN_UNDER_1B_CH0 : RO; bitpos: [23]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH0    (BIT(23))
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH0_M  (AHB_DMA_IN_REMAIN_UNDER_1B_CH0_V << AHB_DMA_IN_REMAIN_UNDER_1B_CH0_S)
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH0_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH0_S  23
 /** AHB_DMA_IN_REMAIN_UNDER_2B_CH0 : RO; bitpos: [24]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH0    (BIT(24))
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH0_M  (AHB_DMA_IN_REMAIN_UNDER_2B_CH0_V << AHB_DMA_IN_REMAIN_UNDER_2B_CH0_S)
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH0_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH0_S  24
 /** AHB_DMA_IN_REMAIN_UNDER_3B_CH0 : RO; bitpos: [25]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH0    (BIT(25))
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH0_M  (AHB_DMA_IN_REMAIN_UNDER_3B_CH0_V << AHB_DMA_IN_REMAIN_UNDER_3B_CH0_S)
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH0_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH0_S  25
 /** AHB_DMA_IN_REMAIN_UNDER_4B_CH0 : RO; bitpos: [26]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH0    (BIT(26))
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH0_M  (AHB_DMA_IN_REMAIN_UNDER_4B_CH0_V << AHB_DMA_IN_REMAIN_UNDER_4B_CH0_S)
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH0_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH0_S  26
 /** AHB_DMA_IN_BUF_HUNGRY_CH0 : RO; bitpos: [27]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_BUF_HUNGRY_CH0    (BIT(27))
 #define AHB_DMA_IN_BUF_HUNGRY_CH0_M  (AHB_DMA_IN_BUF_HUNGRY_CH0_V << AHB_DMA_IN_BUF_HUNGRY_CH0_S)
@@ -1008,15 +1003,16 @@ extern "C" {
  */
 #define AHB_DMA_IN_POP_CH0_REG (DR_REG_AHB_DMA_BASE + 0x7c)
 /** AHB_DMA_INFIFO_RDATA_CH0 : RO; bitpos: [11:0]; default: 2048;
- *  Represents the data popped from AHB_DMA FIFO.
+ *  Represents the data popped from AHB DMA RX FIFO.
  */
 #define AHB_DMA_INFIFO_RDATA_CH0    0x00000FFFU
 #define AHB_DMA_INFIFO_RDATA_CH0_M  (AHB_DMA_INFIFO_RDATA_CH0_V << AHB_DMA_INFIFO_RDATA_CH0_S)
 #define AHB_DMA_INFIFO_RDATA_CH0_V  0x00000FFFU
 #define AHB_DMA_INFIFO_RDATA_CH0_S  0
 /** AHB_DMA_INFIFO_POP_CH0 : WT; bitpos: [12]; default: 0;
- *  Configures whether or not to pop data from AHB_DMA FIFO.\\0: Invalid. No effect\\1:
- *  Pop\\
+ *  Configures whether to pop data from AHB DMA RX FIFO.
+ *  0: Invalid. No effect
+ *  1: Pop
  */
 #define AHB_DMA_INFIFO_POP_CH0    (BIT(12))
 #define AHB_DMA_INFIFO_POP_CH0_M  (AHB_DMA_INFIFO_POP_CH0_V << AHB_DMA_INFIFO_POP_CH0_S)
@@ -1028,39 +1024,46 @@ extern "C" {
  */
 #define AHB_DMA_IN_LINK_CH0_REG (DR_REG_AHB_DMA_BASE + 0x80)
 /** AHB_DMA_INLINK_AUTO_RET_CH0 : R/W; bitpos: [0]; default: 1;
- *  Configures whether or not to return to current receive descriptor's address when
- *  there are some errors in current receiving data.\\0: Not return\\1: Return\\
+ *  Configures whether to return to the current receive descriptor's address when there
+ *  are some errors in current receiving data.
+ *  0: Not return
+ *  1: Return
  */
 #define AHB_DMA_INLINK_AUTO_RET_CH0    (BIT(0))
 #define AHB_DMA_INLINK_AUTO_RET_CH0_M  (AHB_DMA_INLINK_AUTO_RET_CH0_V << AHB_DMA_INLINK_AUTO_RET_CH0_S)
 #define AHB_DMA_INLINK_AUTO_RET_CH0_V  0x00000001U
 #define AHB_DMA_INLINK_AUTO_RET_CH0_S  0
 /** AHB_DMA_INLINK_STOP_CH0 : WT; bitpos: [1]; default: 0;
- *  Configures whether or not to stop AHB_DMA's RX channel 0 from receiving data.\\0:
- *  Invalid. No effect\\1: Stop\\
+ *  Configures whether to stop RX channel 0 from receiving data.
+ *  0: Invalid. No effect
+ *  1: Stop
  */
 #define AHB_DMA_INLINK_STOP_CH0    (BIT(1))
 #define AHB_DMA_INLINK_STOP_CH0_M  (AHB_DMA_INLINK_STOP_CH0_V << AHB_DMA_INLINK_STOP_CH0_S)
 #define AHB_DMA_INLINK_STOP_CH0_V  0x00000001U
 #define AHB_DMA_INLINK_STOP_CH0_S  1
 /** AHB_DMA_INLINK_START_CH0 : WT; bitpos: [2]; default: 0;
- *  Configures whether or not to enable AHB_DMA's RX channel 0 for data transfer.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable RX channel 0 for data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_INLINK_START_CH0    (BIT(2))
 #define AHB_DMA_INLINK_START_CH0_M  (AHB_DMA_INLINK_START_CH0_V << AHB_DMA_INLINK_START_CH0_S)
 #define AHB_DMA_INLINK_START_CH0_V  0x00000001U
 #define AHB_DMA_INLINK_START_CH0_S  2
 /** AHB_DMA_INLINK_RESTART_CH0 : WT; bitpos: [3]; default: 0;
- *  Configures whether or not to restart RX channel 0 for AHB_DMA transfer.\\0:
- *  Invalid. No effect\\1: Restart\\
+ *  Configures whether to restart RX channel 0 for AHB DMA transfer.
+ *  0: Invalid. No effect
+ *  1: Restart
  */
 #define AHB_DMA_INLINK_RESTART_CH0    (BIT(3))
 #define AHB_DMA_INLINK_RESTART_CH0_M  (AHB_DMA_INLINK_RESTART_CH0_V << AHB_DMA_INLINK_RESTART_CH0_S)
 #define AHB_DMA_INLINK_RESTART_CH0_V  0x00000001U
 #define AHB_DMA_INLINK_RESTART_CH0_S  3
 /** AHB_DMA_INLINK_PARK_CH0 : RO; bitpos: [4]; default: 1;
- *  Represents the status of the receive descriptor's FSM.\\0: Running\\1: Idle\\
+ *  Represents the status of the receive descriptor's FSM.
+ *  0: Running
+ *  1: Idle
  */
 #define AHB_DMA_INLINK_PARK_CH0    (BIT(4))
 #define AHB_DMA_INLINK_PARK_CH0_M  (AHB_DMA_INLINK_PARK_CH0_V << AHB_DMA_INLINK_PARK_CH0_S)
@@ -1068,26 +1071,28 @@ extern "C" {
 #define AHB_DMA_INLINK_PARK_CH0_S  4
 
 /** AHB_DMA_IN_STATE_CH0_REG register
- *  Receive status of RX channel 0
+ *  RX channel 0 status
  */
 #define AHB_DMA_IN_STATE_CH0_REG (DR_REG_AHB_DMA_BASE + 0x84)
 /** AHB_DMA_INLINK_DSCR_ADDR_CH0 : RO; bitpos: [17:0]; default: 0;
- *  Represents the address of the lower 18 bits of the next receive descriptor to be
- *  processed.
+ *  Represents the lower 18 bits of the next receive descriptor address that is
+ *  pre-read (but not processed yet). If the current receive descriptor is the last
+ *  descriptor, then this field represents the address of the current receive
+ *  descriptor.
  */
 #define AHB_DMA_INLINK_DSCR_ADDR_CH0    0x0003FFFFU
 #define AHB_DMA_INLINK_DSCR_ADDR_CH0_M  (AHB_DMA_INLINK_DSCR_ADDR_CH0_V << AHB_DMA_INLINK_DSCR_ADDR_CH0_S)
 #define AHB_DMA_INLINK_DSCR_ADDR_CH0_V  0x0003FFFFU
 #define AHB_DMA_INLINK_DSCR_ADDR_CH0_S  0
 /** AHB_DMA_IN_DSCR_STATE_CH0 : RO; bitpos: [19:18]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_DSCR_STATE_CH0    0x00000003U
 #define AHB_DMA_IN_DSCR_STATE_CH0_M  (AHB_DMA_IN_DSCR_STATE_CH0_V << AHB_DMA_IN_DSCR_STATE_CH0_S)
 #define AHB_DMA_IN_DSCR_STATE_CH0_V  0x00000003U
 #define AHB_DMA_IN_DSCR_STATE_CH0_S  18
 /** AHB_DMA_IN_STATE_CH0 : RO; bitpos: [22:20]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_STATE_CH0    0x00000007U
 #define AHB_DMA_IN_STATE_CH0_M  (AHB_DMA_IN_STATE_CH0_V << AHB_DMA_IN_STATE_CH0_S)
@@ -1121,12 +1126,13 @@ extern "C" {
 #define AHB_DMA_IN_ERR_EOF_DES_ADDR_CH0_S  0
 
 /** AHB_DMA_IN_DSCR_CH0_REG register
- *  Current receive descriptor address of RX channel 0
+ *  Address of the next receive descriptor pointed by the current pre-read receive
+ *  descriptor on RX channel 0
  */
 #define AHB_DMA_IN_DSCR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x90)
 /** AHB_DMA_INLINK_DSCR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the address of the next receive descriptor x+1 pointed by the current
- *  receive descriptor that has already been fetched.
+ *  receive descriptor that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_CH0    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_CH0_M  (AHB_DMA_INLINK_DSCR_CH0_V << AHB_DMA_INLINK_DSCR_CH0_S)
@@ -1134,12 +1140,11 @@ extern "C" {
 #define AHB_DMA_INLINK_DSCR_CH0_S  0
 
 /** AHB_DMA_IN_DSCR_BF0_CH0_REG register
- *  The last receive descriptor address of RX channel 0
+ *  Address of the current pre-read receive descriptor on RX channel 0
  */
 #define AHB_DMA_IN_DSCR_BF0_CH0_REG (DR_REG_AHB_DMA_BASE + 0x94)
 /** AHB_DMA_INLINK_DSCR_BF0_CH0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the current receive descriptor x that has already been
- *  fetched.
+ *  Represents the address of the current receive descriptor x that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_BF0_CH0    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_BF0_CH0_M  (AHB_DMA_INLINK_DSCR_BF0_CH0_V << AHB_DMA_INLINK_DSCR_BF0_CH0_S)
@@ -1147,12 +1152,11 @@ extern "C" {
 #define AHB_DMA_INLINK_DSCR_BF0_CH0_S  0
 
 /** AHB_DMA_IN_DSCR_BF1_CH0_REG register
- *  The second-to-last receive descriptor address of RX channel 0
+ *  Address of the previous pre-read receive descriptor on RX channel 0
  */
 #define AHB_DMA_IN_DSCR_BF1_CH0_REG (DR_REG_AHB_DMA_BASE + 0x98)
 /** AHB_DMA_INLINK_DSCR_BF1_CH0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the previous receive descriptor x-1 that has already been
- *  fetched.
+ *  Represents the address of the previous receive descriptor x-1 that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_BF1_CH0    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_BF1_CH0_M  (AHB_DMA_INLINK_DSCR_BF1_CH0_V << AHB_DMA_INLINK_DSCR_BF1_CH0_S)
@@ -1164,8 +1168,9 @@ extern "C" {
  */
 #define AHB_DMA_IN_PRI_CH0_REG (DR_REG_AHB_DMA_BASE + 0x9c)
 /** AHB_DMA_RX_PRI_CH0 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the priority of RX channel 0.The larger of the value, the higher of the
+ *  Configures the priority of RX channel 0. The larger the value, the higher the
  *  priority.
+ *  Value range: 0  ~  5
  */
 #define AHB_DMA_RX_PRI_CH0    0x0000000FU
 #define AHB_DMA_RX_PRI_CH0_M  (AHB_DMA_RX_PRI_CH0_V << AHB_DMA_RX_PRI_CH0_S)
@@ -1177,9 +1182,16 @@ extern "C" {
  */
 #define AHB_DMA_IN_PERI_SEL_CH0_REG (DR_REG_AHB_DMA_BASE + 0xa0)
 /** AHB_DMA_PERI_IN_SEL_CH0 : R/W; bitpos: [5:0]; default: 63;
- *  Configures the peripheral connected to RX channel 0.\\ 0: Dummy\\ 1: SPI2\\ 2:
- *  UHCI0\\ 3: I2S0\\ 4: Dummy\\ 5: Dummy\\ 6: AES\\ 7: SHA\\ 8: ADC_DAC\\ 9: PARL_IO\\
- *  10: Dummy\\ 11~15: Dummy\\
+ *  Configures the peripheral connected to RX channel 0.
+ *  0: Dummy
+ *  1: GP-SPI
+ *  2: Dummy
+ *  3: I2S
+ *  4 ~ 6: Dummy
+ *  7: SHA
+ *  8: ADC
+ *  9 ~ 15: Dummy
+ *  16 ~ 63: Invalid
  */
 #define AHB_DMA_PERI_IN_SEL_CH0    0x0000003FU
 #define AHB_DMA_PERI_IN_SEL_CH0_M  (AHB_DMA_PERI_IN_SEL_CH0_V << AHB_DMA_PERI_IN_SEL_CH0_S)
@@ -1187,11 +1199,11 @@ extern "C" {
 #define AHB_DMA_PERI_IN_SEL_CH0_S  0
 
 /** AHB_DMA_IN_DONE_DES_ADDR_CH0_REG register
- *  RX_done Inlink descriptor address of RX channel 0
+ *  Address of the completed inlink descriptor on RX channel 0
  */
 #define AHB_DMA_IN_DONE_DES_ADDR_CH0_REG (DR_REG_AHB_DMA_BASE + 0xb0)
 /** AHB_DMA_IN_DONE_DES_ADDR_CH0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the inlink descriptor when  this descriptor is completed .
+ *  Represents the address of the inlink descriptor when this descriptor is completed.
  */
 #define AHB_DMA_IN_DONE_DES_ADDR_CH0    0xFFFFFFFFU
 #define AHB_DMA_IN_DONE_DES_ADDR_CH0_M  (AHB_DMA_IN_DONE_DES_ADDR_CH0_V << AHB_DMA_IN_DONE_DES_ADDR_CH0_S)
@@ -1203,57 +1215,67 @@ extern "C" {
  */
 #define AHB_DMA_OUT_CONF0_CH0_REG (DR_REG_AHB_DMA_BASE + 0xd0)
 /** AHB_DMA_OUT_RST_CH0 : R/W; bitpos: [0]; default: 0;
- *  Configures the reset state of AHB_DMA channel 0 TX FSM and TX FIFO pointer.\\0:
- *  Release reset\\1: Reset\\
+ *  Configures the reset state of TX channel 0 FSM and TX FIFO pointer.
+ *  0: Release reset
+ *  1: Reset
  */
 #define AHB_DMA_OUT_RST_CH0    (BIT(0))
 #define AHB_DMA_OUT_RST_CH0_M  (AHB_DMA_OUT_RST_CH0_V << AHB_DMA_OUT_RST_CH0_S)
 #define AHB_DMA_OUT_RST_CH0_V  0x00000001U
 #define AHB_DMA_OUT_RST_CH0_S  0
 /** AHB_DMA_OUT_LOOP_TEST_CH0 : R/W; bitpos: [1]; default: 0;
- *  Reserved.
+ *  Configures the owner bit value for outlink write-back.
  */
 #define AHB_DMA_OUT_LOOP_TEST_CH0    (BIT(1))
 #define AHB_DMA_OUT_LOOP_TEST_CH0_M  (AHB_DMA_OUT_LOOP_TEST_CH0_V << AHB_DMA_OUT_LOOP_TEST_CH0_S)
 #define AHB_DMA_OUT_LOOP_TEST_CH0_V  0x00000001U
 #define AHB_DMA_OUT_LOOP_TEST_CH0_S  1
 /** AHB_DMA_OUT_AUTO_WRBACK_CH0 : R/W; bitpos: [2]; default: 0;
- *  Configures whether or not to enable automatic outlink write-back when all the data
- *  in TX FIFO has been transmitted.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable automatic outlink write-back when all the data in TX
+ *  FIFO has been transmitted.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_AUTO_WRBACK_CH0    (BIT(2))
 #define AHB_DMA_OUT_AUTO_WRBACK_CH0_M  (AHB_DMA_OUT_AUTO_WRBACK_CH0_V << AHB_DMA_OUT_AUTO_WRBACK_CH0_S)
 #define AHB_DMA_OUT_AUTO_WRBACK_CH0_V  0x00000001U
 #define AHB_DMA_OUT_AUTO_WRBACK_CH0_S  2
 /** AHB_DMA_OUT_EOF_MODE_CH0 : R/W; bitpos: [3]; default: 1;
- *  Configures when to generate EOF flag.\\0: EOF flag for TX channel 0 is generated
- *  when data to be transmitted has been pushed into FIFO in AHB_DMA.\\ 1: EOF flag for
- *  TX channel 0 is generated when data to be transmitted has been popped from FIFO in
- *  AHB_DMA.\\
+ *  Configures when to generate EOF flag.
+ *  0: EOF flag for TX channel 0 is generated when data to be transmitted has been
+ *  pushed into FIFO in AHB DMA.
+ *  1: EOF flag for TX channel 0 is generated when data to be transmitted has been
+ *  popped from FIFO in AHB DMA.
  */
 #define AHB_DMA_OUT_EOF_MODE_CH0    (BIT(3))
 #define AHB_DMA_OUT_EOF_MODE_CH0_M  (AHB_DMA_OUT_EOF_MODE_CH0_V << AHB_DMA_OUT_EOF_MODE_CH0_S)
 #define AHB_DMA_OUT_EOF_MODE_CH0_V  0x00000001U
 #define AHB_DMA_OUT_EOF_MODE_CH0_S  3
 /** AHB_DMA_OUTDSCR_BURST_EN_CH0 : R/W; bitpos: [4]; default: 0;
- *  Configures whether or not to enable INCR burst transfer for TX channel 0 reading
- *  descriptors.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable INCR burst transfer for TX channel 0 reading
+ *  descriptors.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUTDSCR_BURST_EN_CH0    (BIT(4))
 #define AHB_DMA_OUTDSCR_BURST_EN_CH0_M  (AHB_DMA_OUTDSCR_BURST_EN_CH0_V << AHB_DMA_OUTDSCR_BURST_EN_CH0_S)
 #define AHB_DMA_OUTDSCR_BURST_EN_CH0_V  0x00000001U
 #define AHB_DMA_OUTDSCR_BURST_EN_CH0_S  4
 /** AHB_DMA_OUT_ETM_EN_CH0 : R/W; bitpos: [6]; default: 0;
- *  Configures whether or not to enable ETM control for TX channel 0.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable ETM control for TX channel 0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_ETM_EN_CH0    (BIT(6))
 #define AHB_DMA_OUT_ETM_EN_CH0_M  (AHB_DMA_OUT_ETM_EN_CH0_V << AHB_DMA_OUT_ETM_EN_CH0_S)
 #define AHB_DMA_OUT_ETM_EN_CH0_V  0x00000001U
 #define AHB_DMA_OUT_ETM_EN_CH0_S  6
 /** AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0 : R/W; bitpos: [9:8]; default: 0;
- *  Configures max burst size for TX channel0.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: reserved\\
+ *  Configures maximum burst length for TX channel0.
+ *  0: SINGLE
+ *  1: INCR4
+ *  2: INCR8
+ *  3: Reserved
  */
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0    0x00000003U
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_M  (AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_V << AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH0_S)
@@ -1265,8 +1287,9 @@ extern "C" {
  */
 #define AHB_DMA_OUT_CONF1_CH0_REG (DR_REG_AHB_DMA_BASE + 0xd4)
 /** AHB_DMA_OUT_CHECK_OWNER_CH0 : R/W; bitpos: [12]; default: 0;
- *  Configures whether or not to enable owner bit check for TX channel 0.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable owner bit check for TX channel 0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_CHECK_OWNER_CH0    (BIT(12))
 #define AHB_DMA_OUT_CHECK_OWNER_CH0_M  (AHB_DMA_OUT_CHECK_OWNER_CH0_V << AHB_DMA_OUT_CHECK_OWNER_CH0_S)
@@ -1274,18 +1297,22 @@ extern "C" {
 #define AHB_DMA_OUT_CHECK_OWNER_CH0_S  12
 
 /** AHB_DMA_OUTFIFO_STATUS_CH0_REG register
- *  Transmit FIFO status of TX channel 0
+ *  TX channel 0 FIFO status
  */
 #define AHB_DMA_OUTFIFO_STATUS_CH0_REG (DR_REG_AHB_DMA_BASE + 0xd8)
 /** AHB_DMA_OUTFIFO_FULL_CH0 : RO; bitpos: [0]; default: 0;
- *  Represents whether or not L1 TX FIFO is full.\\0: Not Full\\1: Full\\
+ *  Represents whether L1 TX FIFO is full.
+ *  0: Not Full
+ *  1: Full
  */
 #define AHB_DMA_OUTFIFO_FULL_CH0    (BIT(0))
 #define AHB_DMA_OUTFIFO_FULL_CH0_M  (AHB_DMA_OUTFIFO_FULL_CH0_V << AHB_DMA_OUTFIFO_FULL_CH0_S)
 #define AHB_DMA_OUTFIFO_FULL_CH0_V  0x00000001U
 #define AHB_DMA_OUTFIFO_FULL_CH0_S  0
 /** AHB_DMA_OUTFIFO_EMPTY_CH0 : RO; bitpos: [1]; default: 1;
- *  Represents whether or not L1 TX FIFO is empty.\\0: Not empty\\1: Empty\\
+ *  Represents whether L1 TX FIFO is empty.
+ *  0: Not empty
+ *  1: Empty
  */
 #define AHB_DMA_OUTFIFO_EMPTY_CH0    (BIT(1))
 #define AHB_DMA_OUTFIFO_EMPTY_CH0_M  (AHB_DMA_OUTFIFO_EMPTY_CH0_V << AHB_DMA_OUTFIFO_EMPTY_CH0_S)
@@ -1332,15 +1359,16 @@ extern "C" {
  */
 #define AHB_DMA_OUT_PUSH_CH0_REG (DR_REG_AHB_DMA_BASE + 0xdc)
 /** AHB_DMA_OUTFIFO_WDATA_CH0 : R/W; bitpos: [8:0]; default: 0;
- *  Configures the data that need to be pushed into AHB_DMA FIFO.
+ *  Represents the data that need to be pushed into AHB DMA TX FIFO.
  */
 #define AHB_DMA_OUTFIFO_WDATA_CH0    0x000001FFU
 #define AHB_DMA_OUTFIFO_WDATA_CH0_M  (AHB_DMA_OUTFIFO_WDATA_CH0_V << AHB_DMA_OUTFIFO_WDATA_CH0_S)
 #define AHB_DMA_OUTFIFO_WDATA_CH0_V  0x000001FFU
 #define AHB_DMA_OUTFIFO_WDATA_CH0_S  0
 /** AHB_DMA_OUTFIFO_PUSH_CH0 : WT; bitpos: [9]; default: 0;
- *  Configures whether or not to push data into AHB_DMA FIFO.\\0: Invalid. No
- *  effect\\1: Push\\
+ *  Configures whether to push data into AHB DMA TX FIFO.
+ *  0: Invalid. No effect
+ *  1: Push
  */
 #define AHB_DMA_OUTFIFO_PUSH_CH0    (BIT(9))
 #define AHB_DMA_OUTFIFO_PUSH_CH0_M  (AHB_DMA_OUTFIFO_PUSH_CH0_V << AHB_DMA_OUTFIFO_PUSH_CH0_S)
@@ -1352,31 +1380,36 @@ extern "C" {
  */
 #define AHB_DMA_OUT_LINK_CH0_REG (DR_REG_AHB_DMA_BASE + 0xe0)
 /** AHB_DMA_OUTLINK_STOP_CH0 : WT; bitpos: [0]; default: 0;
- *  Configures whether or not to stop AHB_DMA's TX channel 0 from transmitting
- *  data.\\0: Invalid. No effect\\1: Stop\\
+ *  Configures whether to stop TX channel 0 from transmitting data.
+ *  0: Invalid. No effect
+ *  1: Stop
  */
 #define AHB_DMA_OUTLINK_STOP_CH0    (BIT(0))
 #define AHB_DMA_OUTLINK_STOP_CH0_M  (AHB_DMA_OUTLINK_STOP_CH0_V << AHB_DMA_OUTLINK_STOP_CH0_S)
 #define AHB_DMA_OUTLINK_STOP_CH0_V  0x00000001U
 #define AHB_DMA_OUTLINK_STOP_CH0_S  0
 /** AHB_DMA_OUTLINK_START_CH0 : WT; bitpos: [1]; default: 0;
- *  Configures whether or not to enable AHB_DMA's TX channel 0 for data transfer.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable TX channel 0 for data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUTLINK_START_CH0    (BIT(1))
 #define AHB_DMA_OUTLINK_START_CH0_M  (AHB_DMA_OUTLINK_START_CH0_V << AHB_DMA_OUTLINK_START_CH0_S)
 #define AHB_DMA_OUTLINK_START_CH0_V  0x00000001U
 #define AHB_DMA_OUTLINK_START_CH0_S  1
 /** AHB_DMA_OUTLINK_RESTART_CH0 : WT; bitpos: [2]; default: 0;
- *  Configures whether or not to restart TX channel 0 for AHB_DMA transfer.\\0:
- *  Invalid. No effect\\1: Restart\\
+ *  Configures whether to restart TX channel 0 for AHB DMA transfer.
+ *  0: Invalid. No effect
+ *  1: Restart
  */
 #define AHB_DMA_OUTLINK_RESTART_CH0    (BIT(2))
 #define AHB_DMA_OUTLINK_RESTART_CH0_M  (AHB_DMA_OUTLINK_RESTART_CH0_V << AHB_DMA_OUTLINK_RESTART_CH0_S)
 #define AHB_DMA_OUTLINK_RESTART_CH0_V  0x00000001U
 #define AHB_DMA_OUTLINK_RESTART_CH0_S  2
 /** AHB_DMA_OUTLINK_PARK_CH0 : RO; bitpos: [3]; default: 1;
- *  Represents the status of the transmit descriptor's FSM.\\0: Running\\1: Idle\\
+ *  Represents the status of the transmit descriptor's FSM.
+ *  0: Running
+ *  1: Idle
  */
 #define AHB_DMA_OUTLINK_PARK_CH0    (BIT(3))
 #define AHB_DMA_OUTLINK_PARK_CH0_M  (AHB_DMA_OUTLINK_PARK_CH0_V << AHB_DMA_OUTLINK_PARK_CH0_S)
@@ -1384,26 +1417,28 @@ extern "C" {
 #define AHB_DMA_OUTLINK_PARK_CH0_S  3
 
 /** AHB_DMA_OUT_STATE_CH0_REG register
- *  Transmit status of TX channel 0
+ *  TX channel 0 status
  */
 #define AHB_DMA_OUT_STATE_CH0_REG (DR_REG_AHB_DMA_BASE + 0xe4)
 /** AHB_DMA_OUTLINK_DSCR_ADDR_CH0 : RO; bitpos: [17:0]; default: 0;
- *  Represents the lower 18 bits of the address of the next transmit descriptor to be
- *  processed.
+ *  Represents the lower 18 bits of the next transmit descriptor address that is
+ *  pre-read (but not processed yet). If the current transmit descriptor is the last
+ *  descriptor, then this field represents the address of the current transmit
+ *  descriptor.
  */
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH0    0x0003FFFFU
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH0_M  (AHB_DMA_OUTLINK_DSCR_ADDR_CH0_V << AHB_DMA_OUTLINK_DSCR_ADDR_CH0_S)
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH0_V  0x0003FFFFU
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH0_S  0
 /** AHB_DMA_OUT_DSCR_STATE_CH0 : RO; bitpos: [19:18]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_OUT_DSCR_STATE_CH0    0x00000003U
 #define AHB_DMA_OUT_DSCR_STATE_CH0_M  (AHB_DMA_OUT_DSCR_STATE_CH0_V << AHB_DMA_OUT_DSCR_STATE_CH0_S)
 #define AHB_DMA_OUT_DSCR_STATE_CH0_V  0x00000003U
 #define AHB_DMA_OUT_DSCR_STATE_CH0_S  18
 /** AHB_DMA_OUT_STATE_CH0 : RO; bitpos: [22:20]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_OUT_STATE_CH0    0x00000007U
 #define AHB_DMA_OUT_STATE_CH0_M  (AHB_DMA_OUT_STATE_CH0_V << AHB_DMA_OUT_STATE_CH0_S)
@@ -1437,12 +1472,13 @@ extern "C" {
 #define AHB_DMA_OUT_EOF_BFR_DES_ADDR_CH0_S  0
 
 /** AHB_DMA_OUT_DSCR_CH0_REG register
- *  Current transmit descriptor address of TX channel 0
+ *  Address of the next transmit descriptor pointed by the current pre-read transmit
+ *  descriptor on TX channel 0
  */
 #define AHB_DMA_OUT_DSCR_CH0_REG (DR_REG_AHB_DMA_BASE + 0xf0)
 /** AHB_DMA_OUTLINK_DSCR_CH0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the address of the next transmit descriptor y+1 pointed by the current
- *  transmit descriptor that has already been fetched.
+ *  transmit descriptor that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_CH0    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_CH0_M  (AHB_DMA_OUTLINK_DSCR_CH0_V << AHB_DMA_OUTLINK_DSCR_CH0_S)
@@ -1450,12 +1486,11 @@ extern "C" {
 #define AHB_DMA_OUTLINK_DSCR_CH0_S  0
 
 /** AHB_DMA_OUT_DSCR_BF0_CH0_REG register
- *  The last transmit descriptor address of TX channel 0
+ *  Address of the current pre-read transmit descriptor on TX channel 0
  */
 #define AHB_DMA_OUT_DSCR_BF0_CH0_REG (DR_REG_AHB_DMA_BASE + 0xf4)
 /** AHB_DMA_OUTLINK_DSCR_BF0_CH0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the current transmit descriptor y that has already been
- *  fetched.
+ *  Represents the address of the current transmit descriptor y that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH0    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH0_M  (AHB_DMA_OUTLINK_DSCR_BF0_CH0_V << AHB_DMA_OUTLINK_DSCR_BF0_CH0_S)
@@ -1463,12 +1498,11 @@ extern "C" {
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH0_S  0
 
 /** AHB_DMA_OUT_DSCR_BF1_CH0_REG register
- *  The second-to-last transmit descriptor address of TX channel 0
+ *  Address of the previous pre-read transmit descriptor on TX channel 0
  */
 #define AHB_DMA_OUT_DSCR_BF1_CH0_REG (DR_REG_AHB_DMA_BASE + 0xf8)
 /** AHB_DMA_OUTLINK_DSCR_BF1_CH0 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the previous transmit descriptor y-1 that has already
- *  been fetched.
+ *  Represents the address of the previous transmit descriptor y-1 that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_BF1_CH0    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_BF1_CH0_M  (AHB_DMA_OUTLINK_DSCR_BF1_CH0_V << AHB_DMA_OUTLINK_DSCR_BF1_CH0_S)
@@ -1480,8 +1514,9 @@ extern "C" {
  */
 #define AHB_DMA_OUT_PRI_CH0_REG (DR_REG_AHB_DMA_BASE + 0xfc)
 /** AHB_DMA_TX_PRI_CH0 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the priority of TX channel 0.The larger of the value, the higher of the
+ *  Configures the priority of TX channel 0. The larger the value, the higher the
  *  priority.
+ *  Value range: 0  ~  5
  */
 #define AHB_DMA_TX_PRI_CH0    0x0000000FU
 #define AHB_DMA_TX_PRI_CH0_M  (AHB_DMA_TX_PRI_CH0_V << AHB_DMA_TX_PRI_CH0_S)
@@ -1493,9 +1528,16 @@ extern "C" {
  */
 #define AHB_DMA_OUT_PERI_SEL_CH0_REG (DR_REG_AHB_DMA_BASE + 0x100)
 /** AHB_DMA_PERI_OUT_SEL_CH0 : R/W; bitpos: [5:0]; default: 63;
- *  Configures the peripheral connected to TX channel 0.\\ 0: Dummy\\ 1: SPI2\\ 2:
- *  UHCI0\\ 3: I2S0\\ 4: Dummy\\ 5: Dummy\\ 6: AES\\ 7: SHA\\ 8: ADC_DAC\\ 9: PARL_IO\\
- *  10: Dummy\\ 11~15: Dummy\\
+ *  Configures the peripheral connected to TX channel 0.
+ *  0: Dummy
+ *  1: GP-SPI
+ *  2: Dummy
+ *  3: I2S
+ *  4 ~ 6: Dummy
+ *  7: SHA
+ *  8: ADC
+ *  9 ~ 15: Dummy
+ *  16 ~ 63: Invalid
  */
 #define AHB_DMA_PERI_OUT_SEL_CH0    0x0000003FU
 #define AHB_DMA_PERI_OUT_SEL_CH0_M  (AHB_DMA_PERI_OUT_SEL_CH0_V << AHB_DMA_PERI_OUT_SEL_CH0_S)
@@ -1503,7 +1545,7 @@ extern "C" {
 #define AHB_DMA_PERI_OUT_SEL_CH0_S  0
 
 /** AHB_DMA_OUT_DONE_DES_ADDR_CH0_REG register
- *  TX done outlink descriptor address of TX channel 0
+ *  Address of the completed outlink descriptor on TX channel 0
  */
 #define AHB_DMA_OUT_DONE_DES_ADDR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x110)
 /** AHB_DMA_OUT_DONE_DES_ADDR_CH0 : RO; bitpos: [31:0]; default: 0;
@@ -1515,50 +1557,57 @@ extern "C" {
 #define AHB_DMA_OUT_DONE_DES_ADDR_CH0_S  0
 
 /** AHB_DMA_IN_CONF0_CH1_REG register
- *  Configuration register 0 of RX channel 0
+ *  Configuration register 0 of RX channel 1
  */
 #define AHB_DMA_IN_CONF0_CH1_REG (DR_REG_AHB_DMA_BASE + 0x130)
 /** AHB_DMA_IN_RST_CH1 : R/W; bitpos: [0]; default: 0;
- *  Write 1 and then 0 to reset AHB_DMA channel 0 RX FSM and RX FIFO pointer.
+ *  Write 1 and then 0 to reset RX channel 1 FSM and RX FIFO pointer.
  */
 #define AHB_DMA_IN_RST_CH1    (BIT(0))
 #define AHB_DMA_IN_RST_CH1_M  (AHB_DMA_IN_RST_CH1_V << AHB_DMA_IN_RST_CH1_S)
 #define AHB_DMA_IN_RST_CH1_V  0x00000001U
 #define AHB_DMA_IN_RST_CH1_S  0
 /** AHB_DMA_IN_LOOP_TEST_CH1 : R/W; bitpos: [1]; default: 0;
- *  Reserved.
+ *  Configures the owner bit value for inlink write-back.
  */
 #define AHB_DMA_IN_LOOP_TEST_CH1    (BIT(1))
 #define AHB_DMA_IN_LOOP_TEST_CH1_M  (AHB_DMA_IN_LOOP_TEST_CH1_V << AHB_DMA_IN_LOOP_TEST_CH1_S)
 #define AHB_DMA_IN_LOOP_TEST_CH1_V  0x00000001U
 #define AHB_DMA_IN_LOOP_TEST_CH1_S  1
 /** AHB_DMA_INDSCR_BURST_EN_CH1 : R/W; bitpos: [2]; default: 0;
- *  Configures whether or not to enable INCR burst transfer for RX channel 1 to read
- *  descriptors.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable INCR burst transfer for RX channel 1 to read
+ *  descriptors.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_INDSCR_BURST_EN_CH1    (BIT(2))
 #define AHB_DMA_INDSCR_BURST_EN_CH1_M  (AHB_DMA_INDSCR_BURST_EN_CH1_V << AHB_DMA_INDSCR_BURST_EN_CH1_S)
 #define AHB_DMA_INDSCR_BURST_EN_CH1_V  0x00000001U
 #define AHB_DMA_INDSCR_BURST_EN_CH1_S  2
 /** AHB_DMA_MEM_TRANS_EN_CH1 : R/W; bitpos: [4]; default: 0;
- *  Configures whether or not to enable memory-to-memory data transfer.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable memory-to-memory data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_MEM_TRANS_EN_CH1    (BIT(4))
 #define AHB_DMA_MEM_TRANS_EN_CH1_M  (AHB_DMA_MEM_TRANS_EN_CH1_V << AHB_DMA_MEM_TRANS_EN_CH1_S)
 #define AHB_DMA_MEM_TRANS_EN_CH1_V  0x00000001U
 #define AHB_DMA_MEM_TRANS_EN_CH1_S  4
 /** AHB_DMA_IN_ETM_EN_CH1 : R/W; bitpos: [5]; default: 0;
- *  Configures whether or not to enable ETM control for RX channel1.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable ETM control for RX channel1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_IN_ETM_EN_CH1    (BIT(5))
 #define AHB_DMA_IN_ETM_EN_CH1_M  (AHB_DMA_IN_ETM_EN_CH1_V << AHB_DMA_IN_ETM_EN_CH1_S)
 #define AHB_DMA_IN_ETM_EN_CH1_V  0x00000001U
 #define AHB_DMA_IN_ETM_EN_CH1_S  5
 /** AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1 : R/W; bitpos: [7:6]; default: 0;
- *  Configures max burst size for Rx channel1.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: reserved\\
+ *  Configures maximum burst length for RX channel1.
+ *  0: SINGLE
+ *  1: INCR4
+ *  2: INCR8
+ *  3: Reserved
  */
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1    0x00000003U
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_M  (AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_V << AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_S)
@@ -1566,12 +1615,13 @@ extern "C" {
 #define AHB_DMA_IN_DATA_BURST_MODE_SEL_CH1_S  6
 
 /** AHB_DMA_IN_CONF1_CH1_REG register
- *  Configuration register 1 of RX channel 0
+ *  Configuration register 1 of RX channel 1
  */
 #define AHB_DMA_IN_CONF1_CH1_REG (DR_REG_AHB_DMA_BASE + 0x134)
 /** AHB_DMA_IN_CHECK_OWNER_CH1 : R/W; bitpos: [12]; default: 0;
- *  Configures whether or not to enable owner bit check for RX channel 1.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable owner bit check for RX channel 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_IN_CHECK_OWNER_CH1    (BIT(12))
 #define AHB_DMA_IN_CHECK_OWNER_CH1_M  (AHB_DMA_IN_CHECK_OWNER_CH1_V << AHB_DMA_IN_CHECK_OWNER_CH1_S)
@@ -1579,18 +1629,22 @@ extern "C" {
 #define AHB_DMA_IN_CHECK_OWNER_CH1_S  12
 
 /** AHB_DMA_INFIFO_STATUS_CH1_REG register
- *  Receive FIFO status of RX channel 0
+ *  RX channel 1 FIFO status
  */
 #define AHB_DMA_INFIFO_STATUS_CH1_REG (DR_REG_AHB_DMA_BASE + 0x138)
 /** AHB_DMA_INFIFO_FULL_CH1 : RO; bitpos: [0]; default: 1;
- *  Represents whether or not L1 RX FIFO is full.\\0: Not Full\\1: Full\\
+ *  Represents whether L1 RX FIFO is full.
+ *  0: Not Full
+ *  1: Full
  */
 #define AHB_DMA_INFIFO_FULL_CH1    (BIT(0))
 #define AHB_DMA_INFIFO_FULL_CH1_M  (AHB_DMA_INFIFO_FULL_CH1_V << AHB_DMA_INFIFO_FULL_CH1_S)
 #define AHB_DMA_INFIFO_FULL_CH1_V  0x00000001U
 #define AHB_DMA_INFIFO_FULL_CH1_S  0
 /** AHB_DMA_INFIFO_EMPTY_CH1 : RO; bitpos: [1]; default: 1;
- *  Represents whether or not  L1 RX FIFO is empty.\\0: Not empty\\1: Empty\\
+ *  Represents whether L1 RX FIFO is empty.
+ *  0: Not empty
+ *  1: Empty
  */
 #define AHB_DMA_INFIFO_EMPTY_CH1    (BIT(1))
 #define AHB_DMA_INFIFO_EMPTY_CH1_M  (AHB_DMA_INFIFO_EMPTY_CH1_V << AHB_DMA_INFIFO_EMPTY_CH1_S)
@@ -1604,35 +1658,35 @@ extern "C" {
 #define AHB_DMA_INFIFO_CNT_CH1_V  0x0000007FU
 #define AHB_DMA_INFIFO_CNT_CH1_S  8
 /** AHB_DMA_IN_REMAIN_UNDER_1B_CH1 : RO; bitpos: [23]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH1    (BIT(23))
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH1_M  (AHB_DMA_IN_REMAIN_UNDER_1B_CH1_V << AHB_DMA_IN_REMAIN_UNDER_1B_CH1_S)
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH1_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_1B_CH1_S  23
 /** AHB_DMA_IN_REMAIN_UNDER_2B_CH1 : RO; bitpos: [24]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH1    (BIT(24))
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH1_M  (AHB_DMA_IN_REMAIN_UNDER_2B_CH1_V << AHB_DMA_IN_REMAIN_UNDER_2B_CH1_S)
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH1_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_2B_CH1_S  24
 /** AHB_DMA_IN_REMAIN_UNDER_3B_CH1 : RO; bitpos: [25]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH1    (BIT(25))
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH1_M  (AHB_DMA_IN_REMAIN_UNDER_3B_CH1_V << AHB_DMA_IN_REMAIN_UNDER_3B_CH1_S)
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH1_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_3B_CH1_S  25
 /** AHB_DMA_IN_REMAIN_UNDER_4B_CH1 : RO; bitpos: [26]; default: 1;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH1    (BIT(26))
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH1_M  (AHB_DMA_IN_REMAIN_UNDER_4B_CH1_V << AHB_DMA_IN_REMAIN_UNDER_4B_CH1_S)
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH1_V  0x00000001U
 #define AHB_DMA_IN_REMAIN_UNDER_4B_CH1_S  26
 /** AHB_DMA_IN_BUF_HUNGRY_CH1 : RO; bitpos: [27]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_BUF_HUNGRY_CH1    (BIT(27))
 #define AHB_DMA_IN_BUF_HUNGRY_CH1_M  (AHB_DMA_IN_BUF_HUNGRY_CH1_V << AHB_DMA_IN_BUF_HUNGRY_CH1_S)
@@ -1640,19 +1694,20 @@ extern "C" {
 #define AHB_DMA_IN_BUF_HUNGRY_CH1_S  27
 
 /** AHB_DMA_IN_POP_CH1_REG register
- *  Pop control register of RX channel 0
+ *  Pop control register of RX channel 1
  */
 #define AHB_DMA_IN_POP_CH1_REG (DR_REG_AHB_DMA_BASE + 0x13c)
 /** AHB_DMA_INFIFO_RDATA_CH1 : RO; bitpos: [11:0]; default: 2048;
- *  Represents the data popped from AHB_DMA FIFO.
+ *  Represents the data popped from AHB DMA RX FIFO.
  */
 #define AHB_DMA_INFIFO_RDATA_CH1    0x00000FFFU
 #define AHB_DMA_INFIFO_RDATA_CH1_M  (AHB_DMA_INFIFO_RDATA_CH1_V << AHB_DMA_INFIFO_RDATA_CH1_S)
 #define AHB_DMA_INFIFO_RDATA_CH1_V  0x00000FFFU
 #define AHB_DMA_INFIFO_RDATA_CH1_S  0
 /** AHB_DMA_INFIFO_POP_CH1 : WT; bitpos: [12]; default: 0;
- *  Configures whether or not to pop data from AHB_DMA FIFO.\\0: Invalid. No effect\\1:
- *  Pop\\
+ *  Configures whether to pop data from AHB DMA RX FIFO.
+ *  0: Invalid. No effect
+ *  1: Pop
  */
 #define AHB_DMA_INFIFO_POP_CH1    (BIT(12))
 #define AHB_DMA_INFIFO_POP_CH1_M  (AHB_DMA_INFIFO_POP_CH1_V << AHB_DMA_INFIFO_POP_CH1_S)
@@ -1660,43 +1715,50 @@ extern "C" {
 #define AHB_DMA_INFIFO_POP_CH1_S  12
 
 /** AHB_DMA_IN_LINK_CH1_REG register
- *  Linked list descriptor configuration and control register of RX channel 0
+ *  Linked list descriptor configuration and control register of RX channel 1
  */
 #define AHB_DMA_IN_LINK_CH1_REG (DR_REG_AHB_DMA_BASE + 0x140)
 /** AHB_DMA_INLINK_AUTO_RET_CH1 : R/W; bitpos: [0]; default: 1;
- *  Configures whether or not to return to current receive descriptor's address when
- *  there are some errors in current receiving data.\\0: Not return\\1: Return\\
+ *  Configures whether to return to the current receive descriptor's address when there
+ *  are some errors in current receiving data.
+ *  0: Not return
+ *  1: Return
  */
 #define AHB_DMA_INLINK_AUTO_RET_CH1    (BIT(0))
 #define AHB_DMA_INLINK_AUTO_RET_CH1_M  (AHB_DMA_INLINK_AUTO_RET_CH1_V << AHB_DMA_INLINK_AUTO_RET_CH1_S)
 #define AHB_DMA_INLINK_AUTO_RET_CH1_V  0x00000001U
 #define AHB_DMA_INLINK_AUTO_RET_CH1_S  0
 /** AHB_DMA_INLINK_STOP_CH1 : WT; bitpos: [1]; default: 0;
- *  Configures whether or not to stop AHB_DMA's RX channel 1 from receiving data.\\0:
- *  Invalid. No effect\\1: Stop\\
+ *  Configures whether to stop RX channel 1 from receiving data.
+ *  0: Invalid. No effect
+ *  1: Stop
  */
 #define AHB_DMA_INLINK_STOP_CH1    (BIT(1))
 #define AHB_DMA_INLINK_STOP_CH1_M  (AHB_DMA_INLINK_STOP_CH1_V << AHB_DMA_INLINK_STOP_CH1_S)
 #define AHB_DMA_INLINK_STOP_CH1_V  0x00000001U
 #define AHB_DMA_INLINK_STOP_CH1_S  1
 /** AHB_DMA_INLINK_START_CH1 : WT; bitpos: [2]; default: 0;
- *  Configures whether or not to enable AHB_DMA's RX channel 1 for data transfer.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable RX channel 1 for data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_INLINK_START_CH1    (BIT(2))
 #define AHB_DMA_INLINK_START_CH1_M  (AHB_DMA_INLINK_START_CH1_V << AHB_DMA_INLINK_START_CH1_S)
 #define AHB_DMA_INLINK_START_CH1_V  0x00000001U
 #define AHB_DMA_INLINK_START_CH1_S  2
 /** AHB_DMA_INLINK_RESTART_CH1 : WT; bitpos: [3]; default: 0;
- *  Configures whether or not to restart RX channel 1 for AHB_DMA transfer.\\0:
- *  Invalid. No effect\\1: Restart\\
+ *  Configures whether to restart RX channel 1 for AHB DMA transfer.
+ *  0: Invalid. No effect
+ *  1: Restart
  */
 #define AHB_DMA_INLINK_RESTART_CH1    (BIT(3))
 #define AHB_DMA_INLINK_RESTART_CH1_M  (AHB_DMA_INLINK_RESTART_CH1_V << AHB_DMA_INLINK_RESTART_CH1_S)
 #define AHB_DMA_INLINK_RESTART_CH1_V  0x00000001U
 #define AHB_DMA_INLINK_RESTART_CH1_S  3
 /** AHB_DMA_INLINK_PARK_CH1 : RO; bitpos: [4]; default: 1;
- *  Represents the status of the receive descriptor's FSM.\\0: Running\\1: Idle\\
+ *  Represents the status of the receive descriptor's FSM.
+ *  0: Running
+ *  1: Idle
  */
 #define AHB_DMA_INLINK_PARK_CH1    (BIT(4))
 #define AHB_DMA_INLINK_PARK_CH1_M  (AHB_DMA_INLINK_PARK_CH1_V << AHB_DMA_INLINK_PARK_CH1_S)
@@ -1704,26 +1766,28 @@ extern "C" {
 #define AHB_DMA_INLINK_PARK_CH1_S  4
 
 /** AHB_DMA_IN_STATE_CH1_REG register
- *  Receive status of RX channel 0
+ *  RX channel 1 status
  */
 #define AHB_DMA_IN_STATE_CH1_REG (DR_REG_AHB_DMA_BASE + 0x144)
 /** AHB_DMA_INLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
- *  Represents the address of the lower 18 bits of the next receive descriptor to be
- *  processed.
+ *  Represents the lower 18 bits of the next receive descriptor address that is
+ *  pre-read (but not processed yet). If the current receive descriptor is the last
+ *  descriptor, then this field represents the address of the current receive
+ *  descriptor.
  */
 #define AHB_DMA_INLINK_DSCR_ADDR_CH1    0x0003FFFFU
 #define AHB_DMA_INLINK_DSCR_ADDR_CH1_M  (AHB_DMA_INLINK_DSCR_ADDR_CH1_V << AHB_DMA_INLINK_DSCR_ADDR_CH1_S)
 #define AHB_DMA_INLINK_DSCR_ADDR_CH1_V  0x0003FFFFU
 #define AHB_DMA_INLINK_DSCR_ADDR_CH1_S  0
 /** AHB_DMA_IN_DSCR_STATE_CH1 : RO; bitpos: [19:18]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_DSCR_STATE_CH1    0x00000003U
 #define AHB_DMA_IN_DSCR_STATE_CH1_M  (AHB_DMA_IN_DSCR_STATE_CH1_V << AHB_DMA_IN_DSCR_STATE_CH1_S)
 #define AHB_DMA_IN_DSCR_STATE_CH1_V  0x00000003U
 #define AHB_DMA_IN_DSCR_STATE_CH1_S  18
 /** AHB_DMA_IN_STATE_CH1 : RO; bitpos: [22:20]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_IN_STATE_CH1    0x00000007U
 #define AHB_DMA_IN_STATE_CH1_M  (AHB_DMA_IN_STATE_CH1_V << AHB_DMA_IN_STATE_CH1_S)
@@ -1731,7 +1795,7 @@ extern "C" {
 #define AHB_DMA_IN_STATE_CH1_S  20
 
 /** AHB_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG register
- *  Receive descriptor address when EOF occurs on RX channel 0
+ *  Receive descriptor address when EOF occurs on RX channel 1
  */
 #define AHB_DMA_IN_SUC_EOF_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x148)
 /** AHB_DMA_IN_SUC_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1744,7 +1808,7 @@ extern "C" {
 #define AHB_DMA_IN_SUC_EOF_DES_ADDR_CH1_S  0
 
 /** AHB_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG register
- *  Receive descriptor address when errors occur of RX channel 0
+ *  Receive descriptor address when errors occur of RX channel 1
  */
 #define AHB_DMA_IN_ERR_EOF_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x14c)
 /** AHB_DMA_IN_ERR_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -1757,12 +1821,13 @@ extern "C" {
 #define AHB_DMA_IN_ERR_EOF_DES_ADDR_CH1_S  0
 
 /** AHB_DMA_IN_DSCR_CH1_REG register
- *  Current receive descriptor address of RX channel 0
+ *  Address of the next receive descriptor pointed by the current pre-read receive
+ *  descriptor on RX channel 1
  */
 #define AHB_DMA_IN_DSCR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x150)
 /** AHB_DMA_INLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the address of the next receive descriptor x+1 pointed by the current
- *  receive descriptor that has already been fetched.
+ *  receive descriptor that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_CH1    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_CH1_M  (AHB_DMA_INLINK_DSCR_CH1_V << AHB_DMA_INLINK_DSCR_CH1_S)
@@ -1770,12 +1835,11 @@ extern "C" {
 #define AHB_DMA_INLINK_DSCR_CH1_S  0
 
 /** AHB_DMA_IN_DSCR_BF0_CH1_REG register
- *  The last receive descriptor address of RX channel 0
+ *  Address of the current pre-read receive descriptor on RX channel 1
  */
 #define AHB_DMA_IN_DSCR_BF0_CH1_REG (DR_REG_AHB_DMA_BASE + 0x154)
 /** AHB_DMA_INLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the current receive descriptor x that has already been
- *  fetched.
+ *  Represents the address of the current receive descriptor x that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_BF0_CH1    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_BF0_CH1_M  (AHB_DMA_INLINK_DSCR_BF0_CH1_V << AHB_DMA_INLINK_DSCR_BF0_CH1_S)
@@ -1783,12 +1847,11 @@ extern "C" {
 #define AHB_DMA_INLINK_DSCR_BF0_CH1_S  0
 
 /** AHB_DMA_IN_DSCR_BF1_CH1_REG register
- *  The second-to-last receive descriptor address of RX channel 0
+ *  Address of the previous pre-read receive descriptor on RX channel 1
  */
 #define AHB_DMA_IN_DSCR_BF1_CH1_REG (DR_REG_AHB_DMA_BASE + 0x158)
 /** AHB_DMA_INLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the previous receive descriptor x-1 that has already been
- *  fetched.
+ *  Represents the address of the previous receive descriptor x-1 that is pre-read.
  */
 #define AHB_DMA_INLINK_DSCR_BF1_CH1    0xFFFFFFFFU
 #define AHB_DMA_INLINK_DSCR_BF1_CH1_M  (AHB_DMA_INLINK_DSCR_BF1_CH1_V << AHB_DMA_INLINK_DSCR_BF1_CH1_S)
@@ -1796,12 +1859,13 @@ extern "C" {
 #define AHB_DMA_INLINK_DSCR_BF1_CH1_S  0
 
 /** AHB_DMA_IN_PRI_CH1_REG register
- *  Priority register of RX channel 0
+ *  Priority register of RX channel 1
  */
 #define AHB_DMA_IN_PRI_CH1_REG (DR_REG_AHB_DMA_BASE + 0x15c)
 /** AHB_DMA_RX_PRI_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the priority of RX channel 1.The larger of the value, the higher of the
+ *  Configures the priority of RX channel 1. The larger the value, the higher the
  *  priority.
+ *  Value range: 0  ~  5
  */
 #define AHB_DMA_RX_PRI_CH1    0x0000000FU
 #define AHB_DMA_RX_PRI_CH1_M  (AHB_DMA_RX_PRI_CH1_V << AHB_DMA_RX_PRI_CH1_S)
@@ -1809,13 +1873,20 @@ extern "C" {
 #define AHB_DMA_RX_PRI_CH1_S  0
 
 /** AHB_DMA_IN_PERI_SEL_CH1_REG register
- *  Peripheral selection register of RX channel 0
+ *  Peripheral selection register of RX channel 1
  */
 #define AHB_DMA_IN_PERI_SEL_CH1_REG (DR_REG_AHB_DMA_BASE + 0x160)
 /** AHB_DMA_PERI_IN_SEL_CH1 : R/W; bitpos: [5:0]; default: 63;
- *  Configures the peripheral connected to RX channel 1.\\ 0: Dummy\\ 1: SPI2\\ 2:
- *  UHCI0\\ 3: I2S0\\ 4: Dummy\\ 5: Dummy\\ 6: AES\\ 7: SHA\\ 8: ADC_DAC\\ 9: PARL_IO\\
- *  10: Dummy\\ 11~15: Dummy\\
+ *  Configures the peripheral connected to RX channel 1.
+ *  0: Dummy
+ *  1: GP-SPI
+ *  2: Dummy
+ *  3: I2S
+ *  4 ~ 6: Dummy
+ *  7: SHA
+ *  8: ADC
+ *  9 ~ 15: Dummy
+ *  16 ~ 63: Invalid
  */
 #define AHB_DMA_PERI_IN_SEL_CH1    0x0000003FU
 #define AHB_DMA_PERI_IN_SEL_CH1_M  (AHB_DMA_PERI_IN_SEL_CH1_V << AHB_DMA_PERI_IN_SEL_CH1_S)
@@ -1823,11 +1894,11 @@ extern "C" {
 #define AHB_DMA_PERI_IN_SEL_CH1_S  0
 
 /** AHB_DMA_IN_DONE_DES_ADDR_CH1_REG register
- *  RX_done Inlink descriptor address of RX channel 0
+ *  Address of the completed inlink descriptor on RX channel 1
  */
 #define AHB_DMA_IN_DONE_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x170)
 /** AHB_DMA_IN_DONE_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the inlink descriptor when  this descriptor is completed .
+ *  Represents the address of the inlink descriptor when this descriptor is completed.
  */
 #define AHB_DMA_IN_DONE_DES_ADDR_CH1    0xFFFFFFFFU
 #define AHB_DMA_IN_DONE_DES_ADDR_CH1_M  (AHB_DMA_IN_DONE_DES_ADDR_CH1_V << AHB_DMA_IN_DONE_DES_ADDR_CH1_S)
@@ -1839,57 +1910,67 @@ extern "C" {
  */
 #define AHB_DMA_OUT_CONF0_CH1_REG (DR_REG_AHB_DMA_BASE + 0x190)
 /** AHB_DMA_OUT_RST_CH1 : R/W; bitpos: [0]; default: 0;
- *  Configures the reset state of AHB_DMA channel 1 TX FSM and TX FIFO pointer.\\0:
- *  Release reset\\1: Reset\\
+ *  Configures the reset state of TX channel 1 FSM and TX FIFO pointer.
+ *  0: Release reset
+ *  1: Reset
  */
 #define AHB_DMA_OUT_RST_CH1    (BIT(0))
 #define AHB_DMA_OUT_RST_CH1_M  (AHB_DMA_OUT_RST_CH1_V << AHB_DMA_OUT_RST_CH1_S)
 #define AHB_DMA_OUT_RST_CH1_V  0x00000001U
 #define AHB_DMA_OUT_RST_CH1_S  0
 /** AHB_DMA_OUT_LOOP_TEST_CH1 : R/W; bitpos: [1]; default: 0;
- *  Reserved.
+ *  Configures the owner bit value for outlink write-back.
  */
 #define AHB_DMA_OUT_LOOP_TEST_CH1    (BIT(1))
 #define AHB_DMA_OUT_LOOP_TEST_CH1_M  (AHB_DMA_OUT_LOOP_TEST_CH1_V << AHB_DMA_OUT_LOOP_TEST_CH1_S)
 #define AHB_DMA_OUT_LOOP_TEST_CH1_V  0x00000001U
 #define AHB_DMA_OUT_LOOP_TEST_CH1_S  1
 /** AHB_DMA_OUT_AUTO_WRBACK_CH1 : R/W; bitpos: [2]; default: 0;
- *  Configures whether or not to enable automatic outlink write-back when all the data
- *  in TX FIFO has been transmitted.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable automatic outlink write-back when all the data in TX
+ *  FIFO has been transmitted.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_AUTO_WRBACK_CH1    (BIT(2))
 #define AHB_DMA_OUT_AUTO_WRBACK_CH1_M  (AHB_DMA_OUT_AUTO_WRBACK_CH1_V << AHB_DMA_OUT_AUTO_WRBACK_CH1_S)
 #define AHB_DMA_OUT_AUTO_WRBACK_CH1_V  0x00000001U
 #define AHB_DMA_OUT_AUTO_WRBACK_CH1_S  2
 /** AHB_DMA_OUT_EOF_MODE_CH1 : R/W; bitpos: [3]; default: 1;
- *  Configures when to generate EOF flag.\\0: EOF flag for TX channel 1 is generated
- *  when data to be transmitted has been pushed into FIFO in AHB_DMA.\\ 1: EOF flag for
- *  TX channel 1 is generated when data to be transmitted has been popped from FIFO in
- *  AHB_DMA.\\
+ *  Configures when to generate EOF flag.
+ *  0: EOF flag for TX channel 1 is generated when data to be transmitted has been
+ *  pushed into FIFO in AHB DMA.
+ *  1: EOF flag for TX channel 1 is generated when data to be transmitted has been
+ *  popped from FIFO in AHB DMA.
  */
 #define AHB_DMA_OUT_EOF_MODE_CH1    (BIT(3))
 #define AHB_DMA_OUT_EOF_MODE_CH1_M  (AHB_DMA_OUT_EOF_MODE_CH1_V << AHB_DMA_OUT_EOF_MODE_CH1_S)
 #define AHB_DMA_OUT_EOF_MODE_CH1_V  0x00000001U
 #define AHB_DMA_OUT_EOF_MODE_CH1_S  3
 /** AHB_DMA_OUTDSCR_BURST_EN_CH1 : R/W; bitpos: [4]; default: 0;
- *  Configures whether or not to enable INCR burst transfer for TX channel 1 reading
- *  descriptors.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable INCR burst transfer for TX channel 1 reading
+ *  descriptors.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUTDSCR_BURST_EN_CH1    (BIT(4))
 #define AHB_DMA_OUTDSCR_BURST_EN_CH1_M  (AHB_DMA_OUTDSCR_BURST_EN_CH1_V << AHB_DMA_OUTDSCR_BURST_EN_CH1_S)
 #define AHB_DMA_OUTDSCR_BURST_EN_CH1_V  0x00000001U
 #define AHB_DMA_OUTDSCR_BURST_EN_CH1_S  4
 /** AHB_DMA_OUT_ETM_EN_CH1 : R/W; bitpos: [6]; default: 0;
- *  Configures whether or not to enable ETM control for TX channel 1.\\0: Disable\\1:
- *  Enable\\
+ *  Configures whether to enable ETM control for TX channel 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_ETM_EN_CH1    (BIT(6))
 #define AHB_DMA_OUT_ETM_EN_CH1_M  (AHB_DMA_OUT_ETM_EN_CH1_V << AHB_DMA_OUT_ETM_EN_CH1_S)
 #define AHB_DMA_OUT_ETM_EN_CH1_V  0x00000001U
 #define AHB_DMA_OUT_ETM_EN_CH1_S  6
 /** AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1 : R/W; bitpos: [9:8]; default: 0;
- *  Configures max burst size for TX channel1.\\2'b00: single\\ 2'b01: incr4\\ 2'b10:
- *  incr8\\ 2'b11: reserved\\
+ *  Configures maximum burst length for TX channel1.
+ *  0: SINGLE
+ *  1: INCR4
+ *  2: INCR8
+ *  3: Reserved
  */
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1    0x00000003U
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_M  (AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_V << AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_S)
@@ -1897,12 +1978,13 @@ extern "C" {
 #define AHB_DMA_OUT_DATA_BURST_MODE_SEL_CH1_S  8
 
 /** AHB_DMA_OUT_CONF1_CH1_REG register
- *  Configuration register 1 of TX channel 0
+ *  Configuration register 1 of TX channel 1
  */
 #define AHB_DMA_OUT_CONF1_CH1_REG (DR_REG_AHB_DMA_BASE + 0x194)
 /** AHB_DMA_OUT_CHECK_OWNER_CH1 : R/W; bitpos: [12]; default: 0;
- *  Configures whether or not to enable owner bit check for TX channel 1.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable owner bit check for TX channel 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUT_CHECK_OWNER_CH1    (BIT(12))
 #define AHB_DMA_OUT_CHECK_OWNER_CH1_M  (AHB_DMA_OUT_CHECK_OWNER_CH1_V << AHB_DMA_OUT_CHECK_OWNER_CH1_S)
@@ -1910,18 +1992,22 @@ extern "C" {
 #define AHB_DMA_OUT_CHECK_OWNER_CH1_S  12
 
 /** AHB_DMA_OUTFIFO_STATUS_CH1_REG register
- *  Transmit FIFO status of TX channel 0
+ *  TX channel 1 FIFO status
  */
 #define AHB_DMA_OUTFIFO_STATUS_CH1_REG (DR_REG_AHB_DMA_BASE + 0x198)
 /** AHB_DMA_OUTFIFO_FULL_CH1 : RO; bitpos: [0]; default: 0;
- *  Represents whether or not L1 TX FIFO is full.\\0: Not Full\\1: Full\\
+ *  Represents whether L1 TX FIFO is full.
+ *  0: Not Full
+ *  1: Full
  */
 #define AHB_DMA_OUTFIFO_FULL_CH1    (BIT(0))
 #define AHB_DMA_OUTFIFO_FULL_CH1_M  (AHB_DMA_OUTFIFO_FULL_CH1_V << AHB_DMA_OUTFIFO_FULL_CH1_S)
 #define AHB_DMA_OUTFIFO_FULL_CH1_V  0x00000001U
 #define AHB_DMA_OUTFIFO_FULL_CH1_S  0
 /** AHB_DMA_OUTFIFO_EMPTY_CH1 : RO; bitpos: [1]; default: 1;
- *  Represents whether or not L1 TX FIFO is empty.\\0: Not empty\\1: Empty\\
+ *  Represents whether L1 TX FIFO is empty.
+ *  0: Not empty
+ *  1: Empty
  */
 #define AHB_DMA_OUTFIFO_EMPTY_CH1    (BIT(1))
 #define AHB_DMA_OUTFIFO_EMPTY_CH1_M  (AHB_DMA_OUTFIFO_EMPTY_CH1_V << AHB_DMA_OUTFIFO_EMPTY_CH1_S)
@@ -1964,19 +2050,20 @@ extern "C" {
 #define AHB_DMA_OUT_REMAIN_UNDER_4B_CH1_S  26
 
 /** AHB_DMA_OUT_PUSH_CH1_REG register
- *  Push control register of TX channel 0
+ *  Push control register of TX channel 1
  */
 #define AHB_DMA_OUT_PUSH_CH1_REG (DR_REG_AHB_DMA_BASE + 0x19c)
 /** AHB_DMA_OUTFIFO_WDATA_CH1 : R/W; bitpos: [8:0]; default: 0;
- *  Configures the data that need to be pushed into AHB_DMA FIFO.
+ *  Represents the data that need to be pushed into AHB DMA TX FIFO.
  */
 #define AHB_DMA_OUTFIFO_WDATA_CH1    0x000001FFU
 #define AHB_DMA_OUTFIFO_WDATA_CH1_M  (AHB_DMA_OUTFIFO_WDATA_CH1_V << AHB_DMA_OUTFIFO_WDATA_CH1_S)
 #define AHB_DMA_OUTFIFO_WDATA_CH1_V  0x000001FFU
 #define AHB_DMA_OUTFIFO_WDATA_CH1_S  0
 /** AHB_DMA_OUTFIFO_PUSH_CH1 : WT; bitpos: [9]; default: 0;
- *  Configures whether or not to push data into AHB_DMA FIFO.\\0: Invalid. No
- *  effect\\1: Push\\
+ *  Configures whether to push data into AHB DMA TX FIFO.
+ *  0: Invalid. No effect
+ *  1: Push
  */
 #define AHB_DMA_OUTFIFO_PUSH_CH1    (BIT(9))
 #define AHB_DMA_OUTFIFO_PUSH_CH1_M  (AHB_DMA_OUTFIFO_PUSH_CH1_V << AHB_DMA_OUTFIFO_PUSH_CH1_S)
@@ -1984,35 +2071,40 @@ extern "C" {
 #define AHB_DMA_OUTFIFO_PUSH_CH1_S  9
 
 /** AHB_DMA_OUT_LINK_CH1_REG register
- *  Linked list descriptor configuration and control register of TX channel 0
+ *  Linked list descriptor configuration and control register of TX channel 1
  */
 #define AHB_DMA_OUT_LINK_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1a0)
 /** AHB_DMA_OUTLINK_STOP_CH1 : WT; bitpos: [0]; default: 0;
- *  Configures whether or not to stop AHB_DMA's TX channel 1 from transmitting
- *  data.\\0: Invalid. No effect\\1: Stop\\
+ *  Configures whether to stop TX channel 1 from transmitting data.
+ *  0: Invalid. No effect
+ *  1: Stop
  */
 #define AHB_DMA_OUTLINK_STOP_CH1    (BIT(0))
 #define AHB_DMA_OUTLINK_STOP_CH1_M  (AHB_DMA_OUTLINK_STOP_CH1_V << AHB_DMA_OUTLINK_STOP_CH1_S)
 #define AHB_DMA_OUTLINK_STOP_CH1_V  0x00000001U
 #define AHB_DMA_OUTLINK_STOP_CH1_S  0
 /** AHB_DMA_OUTLINK_START_CH1 : WT; bitpos: [1]; default: 0;
- *  Configures whether or not to enable AHB_DMA's TX channel 1 for data transfer.\\0:
- *  Disable\\1: Enable\\
+ *  Configures whether to enable TX channel 1 for data transfer.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_OUTLINK_START_CH1    (BIT(1))
 #define AHB_DMA_OUTLINK_START_CH1_M  (AHB_DMA_OUTLINK_START_CH1_V << AHB_DMA_OUTLINK_START_CH1_S)
 #define AHB_DMA_OUTLINK_START_CH1_V  0x00000001U
 #define AHB_DMA_OUTLINK_START_CH1_S  1
 /** AHB_DMA_OUTLINK_RESTART_CH1 : WT; bitpos: [2]; default: 0;
- *  Configures whether or not to restart TX channel 1 for AHB_DMA transfer.\\0:
- *  Invalid. No effect\\1: Restart\\
+ *  Configures whether to restart TX channel 1 for AHB DMA transfer.
+ *  0: Invalid. No effect
+ *  1: Restart
  */
 #define AHB_DMA_OUTLINK_RESTART_CH1    (BIT(2))
 #define AHB_DMA_OUTLINK_RESTART_CH1_M  (AHB_DMA_OUTLINK_RESTART_CH1_V << AHB_DMA_OUTLINK_RESTART_CH1_S)
 #define AHB_DMA_OUTLINK_RESTART_CH1_V  0x00000001U
 #define AHB_DMA_OUTLINK_RESTART_CH1_S  2
 /** AHB_DMA_OUTLINK_PARK_CH1 : RO; bitpos: [3]; default: 1;
- *  Represents the status of the transmit descriptor's FSM.\\0: Running\\1: Idle\\
+ *  Represents the status of the transmit descriptor's FSM.
+ *  0: Running
+ *  1: Idle
  */
 #define AHB_DMA_OUTLINK_PARK_CH1    (BIT(3))
 #define AHB_DMA_OUTLINK_PARK_CH1_M  (AHB_DMA_OUTLINK_PARK_CH1_V << AHB_DMA_OUTLINK_PARK_CH1_S)
@@ -2020,26 +2112,28 @@ extern "C" {
 #define AHB_DMA_OUTLINK_PARK_CH1_S  3
 
 /** AHB_DMA_OUT_STATE_CH1_REG register
- *  Transmit status of TX channel 0
+ *  TX channel 1 status
  */
 #define AHB_DMA_OUT_STATE_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1a4)
 /** AHB_DMA_OUTLINK_DSCR_ADDR_CH1 : RO; bitpos: [17:0]; default: 0;
- *  Represents the lower 18 bits of the address of the next transmit descriptor to be
- *  processed.
+ *  Represents the lower 18 bits of the next transmit descriptor address that is
+ *  pre-read (but not processed yet). If the current transmit descriptor is the last
+ *  descriptor, then this field represents the address of the current transmit
+ *  descriptor.
  */
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH1    0x0003FFFFU
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH1_M  (AHB_DMA_OUTLINK_DSCR_ADDR_CH1_V << AHB_DMA_OUTLINK_DSCR_ADDR_CH1_S)
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH1_V  0x0003FFFFU
 #define AHB_DMA_OUTLINK_DSCR_ADDR_CH1_S  0
 /** AHB_DMA_OUT_DSCR_STATE_CH1 : RO; bitpos: [19:18]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_OUT_DSCR_STATE_CH1    0x00000003U
 #define AHB_DMA_OUT_DSCR_STATE_CH1_M  (AHB_DMA_OUT_DSCR_STATE_CH1_V << AHB_DMA_OUT_DSCR_STATE_CH1_S)
 #define AHB_DMA_OUT_DSCR_STATE_CH1_V  0x00000003U
 #define AHB_DMA_OUT_DSCR_STATE_CH1_S  18
 /** AHB_DMA_OUT_STATE_CH1 : RO; bitpos: [22:20]; default: 0;
- *  reserved
+ *  Reserved.
  */
 #define AHB_DMA_OUT_STATE_CH1    0x00000007U
 #define AHB_DMA_OUT_STATE_CH1_M  (AHB_DMA_OUT_STATE_CH1_V << AHB_DMA_OUT_STATE_CH1_S)
@@ -2047,7 +2141,7 @@ extern "C" {
 #define AHB_DMA_OUT_STATE_CH1_S  20
 
 /** AHB_DMA_OUT_EOF_DES_ADDR_CH1_REG register
- *  Transmit descriptor address when EOF occurs on TX channel 0
+ *  Transmit descriptor address when EOF occurs on TX channel 1
  */
 #define AHB_DMA_OUT_EOF_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1a8)
 /** AHB_DMA_OUT_EOF_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -2060,7 +2154,7 @@ extern "C" {
 #define AHB_DMA_OUT_EOF_DES_ADDR_CH1_S  0
 
 /** AHB_DMA_OUT_EOF_BFR_DES_ADDR_CH1_REG register
- *  The last transmit descriptor address when EOF occurs on TX channel 0
+ *  The last transmit descriptor address when EOF occurs on TX channel 1
  */
 #define AHB_DMA_OUT_EOF_BFR_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1ac)
 /** AHB_DMA_OUT_EOF_BFR_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -2073,12 +2167,13 @@ extern "C" {
 #define AHB_DMA_OUT_EOF_BFR_DES_ADDR_CH1_S  0
 
 /** AHB_DMA_OUT_DSCR_CH1_REG register
- *  Current transmit descriptor address of TX channel 0
+ *  Address of the next transmit descriptor pointed by the current pre-read transmit
+ *  descriptor on TX channel 1
  */
 #define AHB_DMA_OUT_DSCR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1b0)
 /** AHB_DMA_OUTLINK_DSCR_CH1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the address of the next transmit descriptor y+1 pointed by the current
- *  transmit descriptor that has already been fetched.
+ *  transmit descriptor that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_CH1    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_CH1_M  (AHB_DMA_OUTLINK_DSCR_CH1_V << AHB_DMA_OUTLINK_DSCR_CH1_S)
@@ -2086,12 +2181,11 @@ extern "C" {
 #define AHB_DMA_OUTLINK_DSCR_CH1_S  0
 
 /** AHB_DMA_OUT_DSCR_BF0_CH1_REG register
- *  The last transmit descriptor address of TX channel 0
+ *  Address of the current pre-read transmit descriptor on TX channel 1
  */
 #define AHB_DMA_OUT_DSCR_BF0_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1b4)
 /** AHB_DMA_OUTLINK_DSCR_BF0_CH1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the current transmit descriptor y that has already been
- *  fetched.
+ *  Represents the address of the current transmit descriptor y that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH1    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH1_M  (AHB_DMA_OUTLINK_DSCR_BF0_CH1_V << AHB_DMA_OUTLINK_DSCR_BF0_CH1_S)
@@ -2099,12 +2193,11 @@ extern "C" {
 #define AHB_DMA_OUTLINK_DSCR_BF0_CH1_S  0
 
 /** AHB_DMA_OUT_DSCR_BF1_CH1_REG register
- *  The second-to-last transmit descriptor address of TX channel 0
+ *  Address of the previous pre-read transmit descriptor on TX channel 1
  */
 #define AHB_DMA_OUT_DSCR_BF1_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1b8)
 /** AHB_DMA_OUTLINK_DSCR_BF1_CH1 : RO; bitpos: [31:0]; default: 0;
- *  Represents the address of the previous transmit descriptor y-1 that has already
- *  been fetched.
+ *  Represents the address of the previous transmit descriptor y-1 that is pre-read.
  */
 #define AHB_DMA_OUTLINK_DSCR_BF1_CH1    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_DSCR_BF1_CH1_M  (AHB_DMA_OUTLINK_DSCR_BF1_CH1_V << AHB_DMA_OUTLINK_DSCR_BF1_CH1_S)
@@ -2112,12 +2205,13 @@ extern "C" {
 #define AHB_DMA_OUTLINK_DSCR_BF1_CH1_S  0
 
 /** AHB_DMA_OUT_PRI_CH1_REG register
- *  Priority register of TX channel 0
+ *  Priority register of TX channel 1
  */
 #define AHB_DMA_OUT_PRI_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1bc)
 /** AHB_DMA_TX_PRI_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the priority of TX channel 1.The larger of the value, the higher of the
+ *  Configures the priority of TX channel 1. The larger the value, the higher the
  *  priority.
+ *  Value range: 0  ~  5
  */
 #define AHB_DMA_TX_PRI_CH1    0x0000000FU
 #define AHB_DMA_TX_PRI_CH1_M  (AHB_DMA_TX_PRI_CH1_V << AHB_DMA_TX_PRI_CH1_S)
@@ -2125,13 +2219,20 @@ extern "C" {
 #define AHB_DMA_TX_PRI_CH1_S  0
 
 /** AHB_DMA_OUT_PERI_SEL_CH1_REG register
- *  Peripheral selection register of TX channel 0
+ *  Peripheral selection register of TX channel 1
  */
 #define AHB_DMA_OUT_PERI_SEL_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1c0)
 /** AHB_DMA_PERI_OUT_SEL_CH1 : R/W; bitpos: [5:0]; default: 63;
- *  Configures the peripheral connected to TX channel 1.\\ 0: Dummy\\ 1: SPI2\\ 2:
- *  UHCI0\\ 3: I2S0\\ 4: Dummy\\ 5: Dummy\\ 6: AES\\ 7: SHA\\ 8: ADC_DAC\\ 9: PARL_IO\\
- *  10: Dummy\\ 11~15: Dummy\\
+ *  Configures the peripheral connected to TX channel 1.
+ *  0: Dummy
+ *  1: GP-SPI
+ *  2: Dummy
+ *  3: I2S
+ *  4 ~ 6: Dummy
+ *  7: SHA
+ *  8: ADC
+ *  9 ~ 15: Dummy
+ *  16 ~ 63: Invalid
  */
 #define AHB_DMA_PERI_OUT_SEL_CH1    0x0000003FU
 #define AHB_DMA_PERI_OUT_SEL_CH1_M  (AHB_DMA_PERI_OUT_SEL_CH1_V << AHB_DMA_PERI_OUT_SEL_CH1_S)
@@ -2139,7 +2240,7 @@ extern "C" {
 #define AHB_DMA_PERI_OUT_SEL_CH1_S  0
 
 /** AHB_DMA_OUT_DONE_DES_ADDR_CH1_REG register
- *  TX done outlink descriptor address of TX channel 0
+ *  Address of the completed outlink descriptor on TX channel 1
  */
 #define AHB_DMA_OUT_DONE_DES_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x1d0)
 /** AHB_DMA_OUT_DONE_DES_ADDR_CH1 : RO; bitpos: [31:0]; default: 0;
@@ -2155,7 +2256,8 @@ extern "C" {
  */
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH0_REG (DR_REG_AHB_DMA_BASE + 0x2dc)
 /** AHB_DMA_TX_CH_ARB_WEIGH_CH0 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the weight(i.e the number of tokens) of TX channel0
+ *  Configures the weight (i.e the number of tokens) of TX channel0.
+ *  Value range: 0 ~ 15.
  */
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH0    0x0000000FU
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH0_M  (AHB_DMA_TX_CH_ARB_WEIGH_CH0_V << AHB_DMA_TX_CH_ARB_WEIGH_CH0_S)
@@ -2167,7 +2269,9 @@ extern "C" {
  */
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x2e0)
 /** AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0 : R/W; bitpos: [0]; default: 0;
- *  reserved
+ *  Configures whether to enable weight optimization for TX channel 0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0    (BIT(0))
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_M  (AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_V << AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_S)
@@ -2175,11 +2279,12 @@ extern "C" {
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH0_S  0
 
 /** AHB_DMA_TX_CH_ARB_WEIGH_CH1_REG register
- *  TX channel 0 arbitration weight configuration register
+ *  TX channel 1 arbitration weight configuration register
  */
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH1_REG (DR_REG_AHB_DMA_BASE + 0x304)
 /** AHB_DMA_TX_CH_ARB_WEIGH_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the weight(i.e the number of tokens) of TX channel1
+ *  Configures the weight (i.e the number of tokens) of TX channel1.
+ *  Value range: 0 ~ 15.
  */
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH1    0x0000000FU
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH1_M  (AHB_DMA_TX_CH_ARB_WEIGH_CH1_V << AHB_DMA_TX_CH_ARB_WEIGH_CH1_S)
@@ -2187,11 +2292,13 @@ extern "C" {
 #define AHB_DMA_TX_CH_ARB_WEIGH_CH1_S  0
 
 /** AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_REG register
- *  TX channel 0 weight arbitration optimization enable register
+ *  TX channel 1 weight arbitration optimization enable register
  */
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x308)
 /** AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1 : R/W; bitpos: [0]; default: 0;
- *  reserved
+ *  Configures whether to enable weight optimization for TX channel 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1    (BIT(0))
 #define AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_M  (AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_V << AHB_DMA_TX_ARB_WEIGH_OPT_DIR_CH1_S)
@@ -2203,7 +2310,8 @@ extern "C" {
  */
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH0_REG (DR_REG_AHB_DMA_BASE + 0x354)
 /** AHB_DMA_RX_CH_ARB_WEIGH_CH0 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the weight(i.e the number of tokens) of RX channel0
+ *  Configures the weight (i.e the number of tokens) of RX channel0.
+ *  Value range: 0 ~ 15.
  */
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH0    0x0000000FU
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH0_M  (AHB_DMA_RX_CH_ARB_WEIGH_CH0_V << AHB_DMA_RX_CH_ARB_WEIGH_CH0_S)
@@ -2215,7 +2323,9 @@ extern "C" {
  */
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x358)
 /** AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0 : R/W; bitpos: [0]; default: 0;
- *  reserved
+ *  Configures whether to enable weight optimization for RX channel 0.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0    (BIT(0))
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_M  (AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_V << AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_S)
@@ -2223,11 +2333,12 @@ extern "C" {
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH0_S  0
 
 /** AHB_DMA_RX_CH_ARB_WEIGH_CH1_REG register
- *  RX channel 0 arbitration weight configuration register
+ *  RX channel 1 arbitration weight configuration register
  */
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH1_REG (DR_REG_AHB_DMA_BASE + 0x37c)
 /** AHB_DMA_RX_CH_ARB_WEIGH_CH1 : R/W; bitpos: [3:0]; default: 0;
- *  Configures the weight(i.e the number of tokens) of RX channel1
+ *  Configures the weight (i.e the number of tokens) of RX channel1.
+ *  Value range: 0 ~ 15.
  */
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH1    0x0000000FU
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH1_M  (AHB_DMA_RX_CH_ARB_WEIGH_CH1_V << AHB_DMA_RX_CH_ARB_WEIGH_CH1_S)
@@ -2235,11 +2346,13 @@ extern "C" {
 #define AHB_DMA_RX_CH_ARB_WEIGH_CH1_S  0
 
 /** AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_REG register
- *  RX channel 0 weight arbitration optimization enable register
+ *  RX channel 1 weight arbitration optimization enable register
  */
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x380)
 /** AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1 : R/W; bitpos: [0]; default: 0;
- *  reserved
+ *  Configures whether to enable weight optimization for RX channel 1.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1    (BIT(0))
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_M  (AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_V << AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_S)
@@ -2247,11 +2360,11 @@ extern "C" {
 #define AHB_DMA_RX_ARB_WEIGH_OPT_DIR_CH1_S  0
 
 /** AHB_DMA_IN_LINK_ADDR_CH0_REG register
- *  Link list descriptor address configuration of RX channel 0
+ *  Linked list descriptor configuration register of RX channel 0
  */
 #define AHB_DMA_IN_LINK_ADDR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x3ac)
 /** AHB_DMA_INLINK_ADDR_CH0 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 32 bits of the first receive descriptor's address.
+ *  Represents the first receive descriptor's address.
  */
 #define AHB_DMA_INLINK_ADDR_CH0    0xFFFFFFFFU
 #define AHB_DMA_INLINK_ADDR_CH0_M  (AHB_DMA_INLINK_ADDR_CH0_V << AHB_DMA_INLINK_ADDR_CH0_S)
@@ -2259,11 +2372,11 @@ extern "C" {
 #define AHB_DMA_INLINK_ADDR_CH0_S  0
 
 /** AHB_DMA_IN_LINK_ADDR_CH1_REG register
- *  Link list descriptor address configuration of RX channel 0
+ *  Linked list descriptor configuration register of RX channel 1
  */
 #define AHB_DMA_IN_LINK_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x3b0)
 /** AHB_DMA_INLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 32 bits of the first receive descriptor's address.
+ *  Represents the first receive descriptor's address.
  */
 #define AHB_DMA_INLINK_ADDR_CH1    0xFFFFFFFFU
 #define AHB_DMA_INLINK_ADDR_CH1_M  (AHB_DMA_INLINK_ADDR_CH1_V << AHB_DMA_INLINK_ADDR_CH1_S)
@@ -2271,11 +2384,11 @@ extern "C" {
 #define AHB_DMA_INLINK_ADDR_CH1_S  0
 
 /** AHB_DMA_OUT_LINK_ADDR_CH0_REG register
- *  Link list descriptor address configuration of TX channel 0
+ *  Linked list descriptor configuration register of TX channel 0
  */
 #define AHB_DMA_OUT_LINK_ADDR_CH0_REG (DR_REG_AHB_DMA_BASE + 0x3b8)
 /** AHB_DMA_OUTLINK_ADDR_CH0 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 32 bits of the first receive descriptor's address.
+ *  Represents the first transmit descriptor's address.
  */
 #define AHB_DMA_OUTLINK_ADDR_CH0    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_ADDR_CH0_M  (AHB_DMA_OUTLINK_ADDR_CH0_V << AHB_DMA_OUTLINK_ADDR_CH0_S)
@@ -2283,11 +2396,11 @@ extern "C" {
 #define AHB_DMA_OUTLINK_ADDR_CH0_S  0
 
 /** AHB_DMA_OUT_LINK_ADDR_CH1_REG register
- *  Link list descriptor address configuration of TX channel 0
+ *  Linked list descriptor configuration register of TX channel 1
  */
 #define AHB_DMA_OUT_LINK_ADDR_CH1_REG (DR_REG_AHB_DMA_BASE + 0x3bc)
 /** AHB_DMA_OUTLINK_ADDR_CH1 : R/W; bitpos: [31:0]; default: 0;
- *  Configures the 32 bits of the first receive descriptor's address.
+ *  Represents the first transmit descriptor's address.
  */
 #define AHB_DMA_OUTLINK_ADDR_CH1    0xFFFFFFFFU
 #define AHB_DMA_OUTLINK_ADDR_CH1_M  (AHB_DMA_OUTLINK_ADDR_CH1_V << AHB_DMA_OUTLINK_ADDR_CH1_S)
@@ -2347,7 +2460,9 @@ extern "C" {
  */
 #define AHB_DMA_WEIGHT_EN_TX_REG (DR_REG_AHB_DMA_BASE + 0x3d4)
 /** AHB_DMA_WEIGHT_EN_TX : R/W; bitpos: [0]; default: 0;
- *  Configures whether to enable weight arbitration for TX.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable weight arbitration for TX.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_WEIGHT_EN_TX    (BIT(0))
 #define AHB_DMA_WEIGHT_EN_TX_M  (AHB_DMA_WEIGHT_EN_TX_V << AHB_DMA_WEIGHT_EN_TX_S)
@@ -2359,7 +2474,9 @@ extern "C" {
  */
 #define AHB_DMA_WEIGHT_EN_RX_REG (DR_REG_AHB_DMA_BASE + 0x3d8)
 /** AHB_DMA_WEIGHT_EN_RX : R/W; bitpos: [0]; default: 0;
- *  Configures whether to enable weight arbitration for RX.\\0: Disable\\1: Enable\\
+ *  Configures whether to enable weight arbitration for RX.
+ *  0: Disable
+ *  1: Enable
  */
 #define AHB_DMA_WEIGHT_EN_RX    (BIT(0))
 #define AHB_DMA_WEIGHT_EN_RX_M  (AHB_DMA_WEIGHT_EN_RX_V << AHB_DMA_WEIGHT_EN_RX_S)
