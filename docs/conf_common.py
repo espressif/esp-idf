@@ -199,6 +199,13 @@ PPA_DOCS = ['api-reference/peripherals/ppa.rst']
 
 QEMU_DOCS = ['api-guides/tools/qemu.rst']
 
+ESP_TEE_DOCS = ['security/tee/index.rst',
+                'security/tee/tee.rst',
+                'security/tee/tee-advanced.rst',
+                'security/tee/tee-attestation.rst',
+                'security/tee/tee-ota.rst',
+                'security/tee/tee-sec-storage.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
@@ -242,7 +249,7 @@ ESP32C61_DOCS = ['api-guides/phy.rst']
 
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
-                'api-guides/phy.rst']
+                'api-guides/phy.rst'] + ESP_TEE_DOCS
 
 ESP32H2_DOCS = ['api-guides/RF_calibration.rst',
                 'api-guides/phy.rst']

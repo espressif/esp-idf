@@ -18,6 +18,7 @@ Features
    flash-encryption
    :esp32: secure-boot-v1
    secure-boot-v2
+   :esp32c6: tee/index
 
 Workflows
 ---------

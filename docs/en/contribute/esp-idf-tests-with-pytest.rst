@@ -481,6 +481,8 @@ In CI, all generated target test jobs are named according to the pattern "<targe
 
 The binaries in the target test jobs are downloaded from our internal MinIO servers. For most of the test cases, only the files that are required by flash (like .bin files, flash_args files, etc) would be downloaded. For some test cases, like jtag test cases, .elf files are also downloaded.
 
+.. _run_the_tests_locally:
+
 Running Tests Locally
 =====================
 
