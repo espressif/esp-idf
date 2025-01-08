@@ -25,7 +25,7 @@
 #include "esp_private/rtc_clk.h"
 #include "esp_private/periph_ctrl.h"
 #include "hal/psram_ctrlr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 
 #define AP_HEX_PSRAM_SYNC_READ             0x0000
 #define AP_HEX_PSRAM_SYNC_WRITE            0x8080

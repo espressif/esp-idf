@@ -15,7 +15,7 @@
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_tuning_configs.h"
 #include "hal/psram_ctrlr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "soc/hp_sys_clkrst_struct.h"
 
 const static char *TAG = "MSPI Timing";

@@ -65,7 +65,7 @@
 #include "hal/touch_sensor_hal.h"
 #include "hal/touch_sens_hal.h"
 #endif
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"

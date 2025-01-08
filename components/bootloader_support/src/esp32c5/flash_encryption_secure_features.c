@@ -12,7 +12,7 @@
 #include "esp_efuse_table.h"
 #include "esp_log.h"
 #include "hal/key_mgr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 

@@ -19,7 +19,7 @@
 #include "bootloader_init.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "esp_private/bootloader_flash_internal.h"

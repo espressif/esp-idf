@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -227,15 +227,15 @@ void esp_cache_err_int_init(void)
             .spi1_w = 1,
         };
 
-        mspi_ll_set_flash_protection_addr(0, 0x0);
-        mspi_ll_set_flash_protection_size(0, max_flash_size);
+        mspi_ll_set_flash_protection_addr(0, 0, 0x0);
+        mspi_ll_set_flash_protection_size(0, 0, max_flash_size);
 
         // Set other flash_aceN_size to 0 to disable them.
-        mspi_ll_set_flash_protection_size(1, 0);
-        mspi_ll_set_flash_protection_size(2, 0);
-        mspi_ll_set_flash_protection_size(3, 0);
+        mspi_ll_set_flash_protection_size(0, 1, 0);
+        mspi_ll_set_flash_protection_size(0, 2, 0);
+        mspi_ll_set_flash_protection_size(0, 3, 0);
 
-        mspi_ll_set_flash_protection_access(0, ctrl);
+        mspi_ll_set_flash_protection_access(0, 0, ctrl);
 
     }
 

@@ -12,7 +12,7 @@
 #include "esp_log.h"
 #include "sdkconfig.h"
 #include "hal/key_mgr_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 
 static __attribute__((unused)) const char *TAG = "flash_encrypt";
 

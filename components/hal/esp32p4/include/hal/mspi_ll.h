@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,18 @@
  * The ll is not public api, don't use in application code.
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
+
+/**
+ * Background
+ *
+ * This file is for the MSPI related, but not Flash driver related registers, these registers:
+ * - may influence both Flash and PSRAM
+ * - not related or directly related to Flash controller driver
+ *
+ * Some hints for naming convention:
+ * - For MSPI timing tuning related registers, the LL should start with `mspi_timing_ll_`
+ * - For others, the LL should start with `mspi_ll_`
+ */
 
 #pragma once
 
@@ -24,6 +36,8 @@
 #include "soc/spi_mem_c_reg.h"
 #include "soc/spi1_mem_c_reg.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/spi_mem_struct.h"
+#include "soc/spi_mem_s_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,6 +58,8 @@ extern "C" {
 #define MSPI_TIMING_LL_FLASH_DUAL_MODE_MASK           (SPI_MEM_C_FREAD_DUAL | SPI_MEM_C_FASTRD_MODE)
 #define MSPI_TIMING_LL_FLASH_FAST_MODE_MASK           (SPI_MEM_C_FASTRD_MODE)
 #define MSPI_TIMING_LL_FLASH_SLOW_MODE_MASK           0
+
+#define MSPI_LL_AXI_DISABLE_SUPPORTED                 1
 
 /**
  * MSPI DQS ID
@@ -597,6 +613,30 @@ static inline uint32_t mspi_timing_ll_get_invalid_dqs_mask(uint8_t spi_num)
     } else {
         HAL_ASSERT(false);
     }
+}
+
+/**
+ * Enable AXI access to flash
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_flash_enable_axi_access(uint8_t spi_num, bool enable)
+{
+    SPIMEM0.cache_fctrl.close_axi_inf_en = !enable;
+}
+
+/**
+ * Enable AXI access to PSRAM
+ *
+ * @param spi_num  SPI0 / SPI1
+ * @param enable   Enable / Disable
+ */
+__attribute__((always_inline))
+static inline void mspi_ll_psram_enable_axi_access(uint8_t spi_num, bool enable)
+{
+    SPIMEM2.mem_cache_fctrl.close_axi_inf_en = !enable;
 }
 
 #ifdef __cplusplus

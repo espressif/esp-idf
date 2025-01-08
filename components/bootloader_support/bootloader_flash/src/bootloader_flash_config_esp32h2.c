@@ -24,6 +24,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "hal/mspi_ll.h"
 #include "soc/pcr_reg.h"
 
 void bootloader_flash_update_id()
@@ -87,7 +88,7 @@ void IRAM_ATTR bootloader_configure_spi_pins(int drv)
 static void IRAM_ATTR bootloader_flash_clock_init(void)
 {
     // At this moment, BBPLL should be enabled, safe to switch MSPI clock source to PLL_F64M (default clock src) to raise speed
-    REG_SET_FIELD(PCR_MSPI_CONF_REG, PCR_MSPI_CLK_SEL, 2);
+    _mspi_timing_ll_set_flash_clk_src(0, FLASH_CLK_SRC_PLL_F64M);
 }
 
 static void update_flash_config(const esp_image_header_t *bootloader_hdr)

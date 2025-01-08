@@ -28,7 +28,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "bootloader_flash_override.h"
 
 void bootloader_flash_update_id()
