@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -752,13 +752,13 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
                 int iterations, u8 *buf, size_t buflen)
 {
 #ifdef CONFIG_FAST_PBKDF2
-# if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_IDF_TARGET_ESP32
     fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
                          ssid, ssid_len, iterations, buf, buflen);
     return 0;
-# else
+#else
     return esp_fast_psk(passphrase, os_strlen(passphrase), ssid, ssid_len, iterations, buf, buflen);
-# endif
+#endif
 #else
     int ret = mbedtls_pkcs5_pbkdf2_hmac_ext(MBEDTLS_MD_SHA1, (const u8 *) passphrase,
                                             os_strlen(passphrase), ssid,
