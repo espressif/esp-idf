@@ -10,6 +10,7 @@
 #include "esp_private/usb_phy.h"
 #include "hal/usb_wrap_ll.h" // For USB_WRAP_LL_EXT_PHY_SUPPORTED symbol
 #include "soc/soc_caps.h"    // For SOC_USB_UTMI_PHY_NUM symbol
+#include "sdkconfig.h"       // For CONFIG_IDF_TARGET_***
 
 #if USB_WRAP_LL_EXT_PHY_SUPPORTED
 #define EXT_PHY_SUPPORTED 1
@@ -55,9 +56,13 @@ void app_main(void)
 
 /**
  * Test init and deinit of internal FSLS PHY
+ *
+ * 1. Init + deinit in Host mode
+ * 2. Init + deinit in Device mode
  */
 TEST_CASE("Init internal FSLS PHY", "[phy]")
 {
+    // Host mode
     usb_phy_handle_t phy_handle = NULL;
     const usb_phy_config_t phy_config = {
         .controller = USB_PHY_CTRL_OTG,
@@ -70,6 +75,20 @@ TEST_CASE("Init internal FSLS PHY", "[phy]")
     TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
     TEST_ASSERT_NOT_NULL(phy_handle);
     TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle));
+
+    // Device mode
+    usb_phy_handle_t phy_handle_2 = NULL;
+    const usb_phy_config_t phy_config_2 = {
+        .controller = USB_PHY_CTRL_OTG,
+        .target = USB_PHY_TARGET_INT,
+        .otg_mode = USB_OTG_MODE_DEVICE,
+        .otg_speed = USB_PHY_SPEED_FULL,
+        .ext_io_conf = NULL,
+        .otg_io_conf = NULL,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config_2, &phy_handle_2));
+    TEST_ASSERT_NOT_NULL(phy_handle_2);
+    TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
 }
 
 /**
@@ -137,44 +156,85 @@ TEST_CASE("Init internal UTMI PHY", "[phy]")
 }
 
 /**
- * Test init and deinit of all PHYs at the same time
+ * Test init and deinit of all PHYs at the same time multiple times
  */
-TEST_CASE("Init all PHYs", "[phy]")
+TEST_CASE("Init all PHYs in a loop", "[phy]")
 {
+    for (int i = 0; i < 2; i++) {
+        usb_phy_handle_t phy_handle = NULL;
+        usb_phy_handle_t phy_handle_2 = NULL;
+        usb_phy_config_t phy_config = {
+            .controller = USB_PHY_CTRL_OTG,
+            .target = USB_PHY_TARGET_INT,
+            .otg_mode = USB_OTG_MODE_HOST,
+            .otg_speed = USB_PHY_SPEED_UNDEFINED,
+            .ext_io_conf = NULL,
+            .otg_io_conf = NULL,
+        };
+        TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
+        TEST_ASSERT_NOT_NULL(phy_handle);
+
+        // Our current targets support either UTMI or external PHY
+        // so if/else suffice here
+#if UTMI_PHY_SUPPORTED
+        phy_config.target = USB_PHY_TARGET_UTMI;
+#else
+        phy_config.target = USB_PHY_TARGET_EXT;
+        const usb_phy_ext_io_conf_t ext_io_conf = { // Some random values
+            .vp_io_num = 1,
+            .vm_io_num = 1,
+            .rcv_io_num = 1,
+            .suspend_n_io_num = 1,
+            .oen_io_num = 1,
+            .vpo_io_num = 1,
+            .vmo_io_num = 1,
+            .fs_edge_sel_io_num = 1,
+        };
+        phy_config.ext_io_conf = &ext_io_conf;
+#endif
+        TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle_2));
+        TEST_ASSERT_NOT_NULL(phy_handle_2);
+
+        TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle));
+        TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
+    }
+}
+
+#if CONFIG_IDF_TARGET_ESP32P4
+/**
+ * Test backward compatibility of ESP32-P4 PHY
+ *
+ * Initial P4 device support was for USB-DWC HS and UTMI PHY. To maintain backward compatibility on ESP32-P4 in USB Device mode,
+ * we select UTMI PHY in case otg_speed is UNDEFINED or HIGH
+ */
+TEST_CASE("ESP32-P4 TinyUSB backward compatibility", "[phy]")
+{
+    // This configuration is used in esp_tinyusb
     usb_phy_handle_t phy_handle = NULL;
-    usb_phy_handle_t phy_handle_2 = NULL;
     usb_phy_config_t phy_config = {
         .controller = USB_PHY_CTRL_OTG,
         .target = USB_PHY_TARGET_INT,
-        .otg_mode = USB_OTG_MODE_HOST,
+        .otg_mode = USB_OTG_MODE_DEVICE,
         .otg_speed = USB_PHY_SPEED_UNDEFINED,
         .ext_io_conf = NULL,
         .otg_io_conf = NULL,
     };
     TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle));
     TEST_ASSERT_NOT_NULL(phy_handle);
-
-    // Our current targets support either UTMI or external PHY
-    // so if/else suffice here
-#if UTMI_PHY_SUPPORTED
-    phy_config.target = USB_PHY_TARGET_UTMI;
-#else
-    const usb_phy_ext_io_conf_t ext_io_conf = { // Some random values
-        .vp_io_num = 1,
-        .vm_io_num = 1,
-        .rcv_io_num = 1,
-        .suspend_n_io_num = 1,
-        .oen_io_num = 1,
-        .vpo_io_num = 1,
-        .vmo_io_num = 1,
-        .fs_edge_sel_io_num = 1,
-    };
-    phy_config.target = USB_PHY_TARGET_EXT;
-    phy_config.ext_io_conf = &ext_io_conf;
-#endif
-    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config, &phy_handle_2));
-    TEST_ASSERT_NOT_NULL(phy_handle_2);
-
     TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle));
+
+    // This configuration is used in upstream tinyusb examples
+    usb_phy_handle_t phy_handle_2 = NULL;
+    usb_phy_config_t phy_config_2 = {
+        .controller = USB_PHY_CTRL_OTG,
+        .target = USB_PHY_TARGET_INT,
+        .otg_mode = USB_OTG_MODE_DEVICE,
+        .otg_speed = USB_PHY_SPEED_HIGH,
+        .ext_io_conf = NULL,
+        .otg_io_conf = NULL,
+    };
+    TEST_ASSERT_EQUAL(ESP_OK, usb_new_phy(&phy_config_2, &phy_handle_2));
+    TEST_ASSERT_NOT_NULL(phy_handle_2);
     TEST_ASSERT_EQUAL(ESP_OK, usb_del_phy(phy_handle_2));
 }
+#endif
