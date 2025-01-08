@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,7 @@
 #include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp_memprot.h"
+#include "soc/lpperi_struct.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
 #include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"
@@ -427,6 +428,13 @@ void IRAM_ATTR call_start_cpu0(void)
     if (rst_reas[0] != RESET_REASON_CORE_DEEP_SLEEP) {
         memset(&_rtc_bss_start, 0, (&_rtc_bss_end - &_rtc_bss_start) * sizeof(_rtc_bss_start));
     }
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32H2
+    // Some modules' register layout are not binary compatible among the different chip revisions,
+    // they will be wrapped into a new compatible instance which will point to the correct register address according to the revision.
+    // To ensure the compatible instance is initialized before used, the initialization is done after BBS is cleared
+    lpperi_compatible_reg_addr_init();
 #endif
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
