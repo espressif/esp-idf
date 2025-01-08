@@ -61,6 +61,8 @@ static void i2c_master_write_test_broadcast(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -78,6 +80,7 @@ static void i2c_master_write_test_broadcast(void)
 
 static void i2c_slave_read_test_broadcast(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_rd[DATA_LENGTH] = {0};
 
     i2c_slave_config_t i2c_slv_config = {
