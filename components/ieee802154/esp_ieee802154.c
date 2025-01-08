@@ -12,6 +12,7 @@
 #include "esp_phy_init.h"
 #include "esp_ieee802154_ack.h"
 #include "esp_ieee802154_dev.h"
+#include "esp_ieee802154_event.h"
 #include "esp_ieee802154_frame.h"
 #include "esp_ieee802154_pib.h"
 #include "esp_ieee802154_sec.h"
@@ -20,6 +21,15 @@
 #include "esp_coex_i154.h"
 #include "hal/ieee802154_ll.h"
 #include "hal/ieee802154_common_ll.h"
+
+esp_err_t esp_ieee802154_event_callback_list_register(esp_ieee802154_event_cb_list_t cb_list)
+{
+    return ieee802154_event_callback_list_register(cb_list);
+}
+esp_err_t esp_ieee802154_event_callback_list_unregister(void)
+{
+    return ieee802154_event_callback_list_unregister();
+}
 
 esp_err_t esp_ieee802154_enable(void)
 {
