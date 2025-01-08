@@ -1,0 +1,5 @@
+# Use external power switch to control USB device's power
+# switch is controlled by GPIO 21
+
+CONFIG_USB_HOST_TEST_OTG_DRVVBUS_ENABLE=y
+CONFIG_USB_HOST_TEST_OTG_DRVVBUS_GPIO=21
