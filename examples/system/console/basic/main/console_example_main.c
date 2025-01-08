@@ -92,7 +92,7 @@ void app_main(void)
     esp_console_register_help_command();
     register_system_common();
     register_system_sleep();
-#if SOC_WIFI_SUPPORTED
+#if CONFIG_ESP_WIFI_ENABLED
     register_wifi();
 #endif
     register_nvs();
