@@ -1,8 +1,6 @@
 
 menu "Wi-Fi"
-    # TODO: Disable WIFI support on ESP32-H2 (WIFI-5796)
-    # visible if SOC_WIFI_SUPPORTED
-
+    visible if (SOC_WIFI_SUPPORTED)
     config ESP_WIFI_ENABLED
         bool
         default y if SOC_WIFI_SUPPORTED
