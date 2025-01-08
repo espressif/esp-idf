@@ -40,7 +40,7 @@ REE_ISOLATION_TEST_EXC_RSN: Dict[str, Any] = {
     }
 }
 
-TEE_APM_VIOLATION_EXC_CHK = ['AES', 'eFuse']
+TEE_APM_VIOLATION_EXC_CHK = ['AES', 'eFuse', 'MMU']
 
 # ---------------- TEE default tests ----------------
 
@@ -133,6 +133,53 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
         if actual_exc != expected_exc:
             raise RuntimeError('Incorrect exception received!')
         dut.expect('Exception origin: U-mode')
+
+
+def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int) -> None:
+    for stage in range(1, stages + 1):
+        dut.write(str(test_case_num))
+        dut.expect(r'\s+\((\d+)\)\s+"([^"]+)"\r?\n', timeout=30)
+        dut.write(str(stage))
+
+        if 1 < stage <= stages:
+            rst_rsn = dut.expect(r"Core ([01]) panic\'ed \(([^)]+)\)", timeout=30).group(2).decode()
+            if rst_rsn != 'Cache error':
+                raise RuntimeError('Incorrect reset reason observed after TEE image failure!')
+
+        if stage != stages:
+            dut.expect_exact('Press ENTER to see the list of tests.')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_OTA, indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
+    # Flash the bootloader, TEE and REE firmware
+    dut.serial.custom_flash()
+
+    # start test
+    extra_data = dut.parse_test_menu()
+    for test_case in extra_data:
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_partition_mmap)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases))
+        else:
+            continue
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_OTA, indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
+    # Flash the bootloader, TEE and REE firmware
+    dut.serial.custom_flash()
+
+    # start test
+    extra_data = dut.parse_test_menu()
+    for test_case in extra_data:
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases))
+        else:
+            continue
 
 # ---------------- TEE Local OTA tests ----------------
 

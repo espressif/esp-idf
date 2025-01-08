@@ -134,8 +134,11 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "spi_flash/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
+#include "esp_fault.h"
 #include "esp_flash_partitions.h"
 #include "esp32c6/rom/spi_flash.h"
+
+extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
 #endif
 
 static const char *TAG = "bootloader_flash";
@@ -515,6 +518,19 @@ esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool a
 
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
+    /* NOTE: [ESP-TEE] Flash operation address validation with anti-FI check
+     *
+     * Ensure that flash operations cannot be executed within forbidden memory ranges
+     * by validating the address before proceeding.
+     */
+#if ESP_TEE_BUILD
+    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(dest_addr);
+    if (addr_chk) {
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_write invalid dest_addr");
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(!addr_chk);
+#endif
     size_t alignment = write_encrypted ? 32 : 4;
     if ((dest_addr % alignment) != 0) {
         ESP_EARLY_LOGE(TAG, "bootloader_flash_write dest_addr 0x%x not %d-byte aligned", dest_addr, alignment);
@@ -561,6 +577,13 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
 
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
+#if ESP_TEE_BUILD
+    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(start_addr);
+    if (addr_chk) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(!addr_chk);
+#endif
     if (start_addr % FLASH_SECTOR_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
