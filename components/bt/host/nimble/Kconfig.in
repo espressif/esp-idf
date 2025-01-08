@@ -177,7 +177,7 @@ config BT_NIMBLE_SMP_ID_RESET
     default n
     help
         There are tracking risks associated with using a fixed or static IRK.
-        If enabled this option, Bluedroid will assign a new randomly-generated IRK
+        If enabled this option, NimBLE will assign a new randomly-generated IRK
         when all pairing and bonding records are deleted. This would decrease the ability
         of a previously paired peer to be used to determine whether a device
         with which it previously shared an IRK is within range.
