@@ -216,25 +216,25 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
  * Enable the bus clock for USB Wrap module
  * @param clk_en True if enable the clock of USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void _usb_wrap_ll_enable_bus_clock(bool clk_en)
 {
     SYSTEM.perip_clk_en0.usb_clk_en = clk_en;
 }
 
 // SYSTEM.perip_clk_enx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
+FORCE_INLINE_ATTR void _usb_wrap_ll_reset_register(void)
 {
     SYSTEM.perip_rst_en0.usb_rst = 1;
     SYSTEM.perip_rst_en0.usb_rst = 0;
 }
 
 // SYSTEM.perip_rst_enx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
+#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
