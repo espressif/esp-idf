@@ -206,6 +206,7 @@
 
 /tools/                       @esp-idf-codeowners/tools
 /tools/ble/                   @esp-idf-codeowners/app-utilities
+/tools/bt/                    @esp-idf-codeowners/bluetooth
 /tools/catch/                 @esp-idf-codeowners/ci
 /tools/ci/                    @esp-idf-codeowners/ci
 /tools/cmake/                 @esp-idf-codeowners/build-config
