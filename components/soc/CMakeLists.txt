@@ -27,6 +27,10 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
+if(target STREQUAL "esp32h2")
+    list(APPEND srcs "${target_folder}/lpperi_struct.c")
+endif()
+
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target_folder}/adc_periph.c")
 endif()
