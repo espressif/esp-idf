@@ -752,6 +752,9 @@ int pbkdf2_sha1(const char *passphrase, const u8 *ssid, size_t ssid_len,
                 int iterations, u8 *buf, size_t buflen)
 {
 #ifdef CONFIG_FAST_PBKDF2
+    /* For ESP32: Using pbkdf2_hmac_sha1() because esp_fast_psk() utilizes hardware,
+     * but for ESP32, the SHA1 hardware implementation is slower than the software implementation.
+     */
 #if CONFIG_IDF_TARGET_ESP32
     fastpbkdf2_hmac_sha1((const u8 *) passphrase, os_strlen(passphrase),
                          ssid, ssid_len, iterations, buf, buflen);
