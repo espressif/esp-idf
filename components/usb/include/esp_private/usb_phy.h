@@ -11,6 +11,8 @@
 #include "soc/soc_caps.h"
 #include "hal/usb_phy_types.h"
 
+#define USB_PHY_SUPPORTS_P4_OTG11 1 // This version of usb_phy supports P4 OTG1.1 PHY
+
 #ifdef __cplusplus
 extern "C" {
 #endif
