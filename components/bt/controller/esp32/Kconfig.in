@@ -467,6 +467,29 @@ menu "BLE disconnect when instant passed"
             when instant passed in channel map update procedure.
 endmenu
 
+config BTDM_BLE_CHAN_ASS_EN
+    bool "Enable channel assessment"
+    depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
+    default y
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BTDM_BLE_PING_EN
+    bool "Enable LE Ping procedure"
+    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    default y
+    help
+        If this option is disabled, The Controller will not start the LE authenticated payload timer.
+        This option is used for some compatibility problems related to LE ping procedure.
+
+config BTDM_BLE_VS_QA_SUPPORT
+    bool "BLE vendor HCI QA support"
+    depends on (BTDM_CTRL_MODE_BTDM || BTDM_CTRL_MODE_BLE_ONLY)
+    default n
+    help
+        This enables BLE vendor HCI command and event for QA.
+
 config BTDM_RESERVE_DRAM
     hex
     default 0xdb5c if BT_ENABLED
