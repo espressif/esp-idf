@@ -37,6 +37,21 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 ``ulp_embed_binary`` 的第一个参数指定生成的 ULP 二进制文件名。该文件名也用于其他生成的文件，如 ELF 文件、映射文件、头文件和链接器导出文件。第二个参数指定 ULP 源文件。第三个参数指定组件源文件列表，其中包括生成的头文件。此列表用以正确构建依赖，并确保在编译这些文件前创建要生成的头文件。有关 ULP 应用程序生成头文件的概念，请参阅本文档后续章节。
 
+在这个生成的头文件中，ULP 代码中的变量默认以 ``ulp_`` 作为前缀。
+
+如果需要嵌入多个 ULP 程序，可以添加自定义前缀，以避免变量名冲突，如下所示：
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+最后的 PREFIX 参数可以是 C 语言风格命名的前缀（如 ``ulp2_``）或 C++ 风格命名的前缀（如 ``ULP::``）。
 
 使用自定义的 CMake 项目
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,13 +155,7 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
     extern uint32_t ulp_measurement_count;
 
-注意，所有的符号（变量、数组、函数）都被声明为 ``uint32_t`` 类型。对于函数和数组，获取符号的地址并将其转换为合适的类型。
-
-生成的链接器脚本文件定义了 LP_MEM 中符号的位置：
-
-.. code-block:: none
-
-    PROVIDE ( ulp_measurement_count = 0x50000060 );
+注意，所有的符号（变量、函数）都被声明为 ``uint32_t`` 类型。数组被声明为 ``uint32_t [SIZE]`` 类型。函数需要先获取符号地址，再转换为适当的类型。
 
 要从主程序访问 ULP LP 内核程序变量，应使用 ``include`` 语句将生成的头文件包含在主程序中，这样就可以像访问常规变量一样访问 ULP LP 内核程序变量。
 
@@ -160,7 +169,9 @@ ULP LP 内核代码会与 ESP-IDF 项目共同编译，生成一个单独的二�
 
 .. note::
 
-    LP 内核程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 LP 内核二进制文件时被初始化。在首次运行 LP 内核之前，从 HP-Core 主程序访问这些变量可能会导致未定义行为。
+    - LP 内核程序全局变量存储在二进制文件的 ``.bss`` 或者 ``.data`` 部分。这些部分在加载和执行 LP 内核二进制文件时被初始化。在首次运行 LP 内核之前，从 HP-Core 主程序访问这些变量可能会导致未定义行为。
+
+    - 默认以 ``ulp_`` 作为前缀。你可以在使用 ``ulp_embed_binary`` 时指定前缀，以避免多个 ULP 程序之间的命名冲突。
 
 
 启动 ULP LP 内核程序

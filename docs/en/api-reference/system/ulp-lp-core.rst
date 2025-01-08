@@ -7,7 +7,7 @@ The ULP LP core (Low-power core) coprocessor is a variant of the ULP present in 
 
 The ULP LP core coprocessor has the following features:
 
-* A RV32I (32-bit RISC-V ISA) processor, with the multiplication/division (M), atomic (A), and compressed (C) extensions.
+* An RV32I (32-bit RISC-V ISA) processor, with the multiplication/division (M), atomic (A), and compressed (C) extensions.
 * Interrupt controller.
 * Includes a debug module that supports external debugging via JTAG.
 * Can access all of the High-power (HP) SRAM and peripherals when the entire system is active.
@@ -37,6 +37,21 @@ Using ``ulp_embed_binary``
 
 The first argument to ``ulp_embed_binary`` specifies the ULP binary name. The name specified here is also used by other generated artifacts such as the ELF file, map file, header file, and linker export file. The second argument specifies the ULP source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file is created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
+Variables in the ULP code will be prefixed with ``ulp_`` (default value) in this generated header file.
+
+If you need to embed multiple ULP programs, you may add a custom prefix in order to avoid conflicting variable names like this:
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++ style prefix (like ``ULP::``).
 
 Using a Custom CMake Project
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -140,13 +155,7 @@ The header file contains the declaration of the symbol:
 
     extern uint32_t ulp_measurement_count;
 
-Note that all symbols (variables, arrays, functions) are declared as ``uint32_t``. For functions and arrays, take the address of the symbol and cast it to the appropriate type.
-
-The generated linker script file defines the locations of symbols in LP_MEM:
-
-.. code-block:: none
-
-    PROVIDE ( ulp_measurement_count = 0x50000060 );
+Note that all symbols (variables, functions) are declared as ``uint32_t``. Arrays are declared as ``uint32_t [SIZE]``. For functions, take the address of the symbol and cast it to the appropriate type.
 
 To access the ULP LP core program variables from the main program, the generated header file should be included using an ``include`` statement. This allows the ULP LP core program variables to be accessed as regular variables.
 
@@ -160,7 +169,9 @@ To access the ULP LP core program variables from the main program, the generated
 
 .. note::
 
-    Variables declared in the global scope of the LP core program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the LP core binary is loaded and executed. Accessing these variables from the main program on the HP-Core before the first LP core run may result in undefined behavior.
+    - Variables declared in the global scope of the LP core program reside in either the ``.bss`` or ``.data`` section of the binary. These sections are initialized when the LP core binary is loaded and executed. Accessing these variables from the main program on the HP-Core before the first LP core run may result in undefined behavior.
+
+    - The ``ulp_`` prefix is the default value. You can specify the prefix to use with ``ulp_embed_binary`` to avoid name collisions for multiple ULP programs.
 
 
 Starting the ULP LP Core Program
