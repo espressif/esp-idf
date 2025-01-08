@@ -154,7 +154,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps~=2.0
+          - idf-build-apps~=2.5
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py
