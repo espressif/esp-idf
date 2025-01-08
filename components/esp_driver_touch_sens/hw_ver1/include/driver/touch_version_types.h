@@ -108,7 +108,7 @@ typedef struct {
  *
  */
 typedef struct {
-    uint32_t                        abs_active_thresh[TOUCH_SAMPLE_CFG_NUM];    /*!< The ablolute active threshould. The ``on_active`` and ``on_hw_active`` callback will trigger when
+    uint32_t                        abs_active_thresh[TOUCH_SAMPLE_CFG_NUM];    /*!< The absolute active threshould. The ``on_active`` and ``on_hw_active`` callback will trigger when
                                                                                  *   - If touch_sensor_config_t::intr_trig_mode = TOUCH_INTR_TRIG_ON_BELOW_THRESH, the callback will keep triggering when the touch channel value below the threshold.
                                                                                  *   - If touch_sensor_config_t::intr_trig_mode = TOUCH_INTR_TRIG_ON_ABOVE_THRESH, the callback will keep triggering when the touch channel value above the threshold.
                                                                                  */
@@ -148,9 +148,9 @@ typedef struct {
     touch_sw_filter_t               data_filter_fn;     /*!< The data filter function pointer.
                                                          *   You can specify your own filter algorithm, or set NULL to use default software filter
                                                          */
-    void                            *user_filter_ctx;   /*!< User costomized filter context pointer.
+    void                            *user_filter_ctx;   /*!< User customized filter context pointer.
                                                          *   This pointer will be passed to the second parameter of `touch_sw_filter_t` .
-                                                         *   So that users can access their costomized filter context in the software filter function.
+                                                         *   So that users can access their customized filter context in the software filter function.
                                                          */
 } touch_sensor_filter_config_t;
 
