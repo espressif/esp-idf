@@ -295,7 +295,7 @@ ULP LP 内核的时钟源来自系统时钟 ``LP_FAST_CLK``，详情请参见 `�
 
     .. code-block:: bash
 
-        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_PATH_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
 
 
 调试 ULP LP 内核应用程序：使用 GDB 和 OpenOCD

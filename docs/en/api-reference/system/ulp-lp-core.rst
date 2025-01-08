@@ -295,7 +295,7 @@ When programming the LP core, it can sometimes be challenging to figure out why 
 
     .. code-block:: bash
 
-        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
+        python -m esp_idf_monitor --toolchain-prefix riscv32-esp-elf- --target {IDF_TARGET_PATH_NAME} --decode-panic backtrace PATH_TO_ULP_ELF_FILE
 
 
 Debugging ULP LP Core Applications with GDB and OpenOCD
