@@ -1,4 +1,4 @@
-# tee_project.cmake file must be manually included in the project's top level CMakeLists.txt before project()
+# This file must be manually included in the project's top level CMakeLists.txt before project()
 # This ensures that the variables are set before TEE starts building
 
 get_filename_component(directory "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE DIRECTORY)

@@ -255,7 +255,7 @@ API Reference
 
 .. note::
 
-  - To use the TEE Attestation APIs into your project, ensure the :component:`tee_attestation <esp_tee/subproject/components/tee_attestation>` component is included by setting ``EXTRA_COMPONENT_DIRS`` in your project's ``CMakeLists.txt`` file, as shown in the :example:`tee_attestation <security/tee/tee_attestation>` example. For more information, refer to the :ref:`optional_project_variable` section from the :doc:`Build System </api-guides/build-system>` documentation.
+  - To use the TEE Attestation APIs in your project, ensure that the :component:`tee_attestation <esp_tee/subproject/components/tee_attestation>` component is listed as a local dependency in the component manager manifest file `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_. Refer to the :example:`tee_attestation <security/tee/tee_attestation>` example for guidance.
 
   - Additionally, the component-specific :component_file:`CMake <esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake>` file needs to be included in the top-level ``CMakeLists.txt`` of your project before calling the ``project()`` command to integrate the corresponding service calls into the project.
 
