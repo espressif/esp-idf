@@ -365,3 +365,14 @@ void adc_hal_digi_clr_eof(void)
     adc_ll_digi_dma_clr_eof();
 }
 #endif
+
+#if SOC_ADC_MONITOR_SUPPORTED
+void adc_hal_digi_monitor_set_thres(adc_monitor_id_t monitor_id, adc_unit_t adc_n, uint8_t adc_ch, int32_t h_thres, int32_t l_thres)
+{
+    adc_ll_digi_monitor_set_thres(monitor_id, adc_n, adc_ch, h_thres, l_thres);
+
+    // enable peripheral intr_ena accordingly
+    adc_ll_digi_monitor_enable_intr(monitor_id, ADC_MONITOR_MODE_HIGH, (h_thres >= 0));
+    adc_ll_digi_monitor_enable_intr(monitor_id, ADC_MONITOR_MODE_LOW, (l_thres >= 0));
+}
+#endif  //SOC_ADC_MONITOR_SUPPORTED

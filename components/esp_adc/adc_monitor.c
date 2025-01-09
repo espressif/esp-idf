@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -173,10 +173,6 @@ esp_err_t adc_new_continuous_monitor(adc_continuous_handle_t handle, const adc_m
         ESP_GOTO_ON_ERROR(adc_monitor_intr_alloc(), intr_err, MNTOR_TAG, "esp intr alloc failed");
     }
 
-    // config hardware
-    adc_ll_digi_monitor_clear_intr();
-    adc_ll_digi_monitor_set_thres(monitor_ctx->monitor_id, monitor_ctx->config.adc_unit, monitor_ctx->config.channel, monitor_ctx->config.h_threshold, monitor_ctx->config.l_threshold);
-
     *ret_handle = monitor_ctx;
     return ESP_OK;
 
@@ -191,7 +187,6 @@ esp_err_t adc_continuous_monitor_register_event_callbacks(adc_monitor_handle_t m
 {
     ESP_RETURN_ON_FALSE(monitor_handle && cbs, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(monitor_handle->fsm == ADC_MONITOR_FSM_INIT, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor should be in init state");
-    ESP_RETURN_ON_FALSE(!(monitor_handle->cbs.on_over_high_thresh || monitor_handle->cbs.on_below_low_thresh), ESP_ERR_INVALID_STATE, MNTOR_TAG, "callbacks had beed registered");
 #if CONFIG_IDF_TARGET_ESP32S2
     ESP_RETURN_ON_FALSE(!(cbs->on_below_low_thresh && cbs->on_over_high_thresh), ESP_ERR_NOT_SUPPORTED, MNTOR_TAG, "ESP32S2 support only one threshold");
 #endif
@@ -216,45 +211,31 @@ esp_err_t adc_continuous_monitor_register_event_callbacks(adc_monitor_handle_t m
 
 esp_err_t adc_continuous_monitor_enable(adc_monitor_handle_t monitor_handle)
 {
-    ESP_RETURN_ON_FALSE(monitor_handle, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(monitor_handle->fsm == ADC_MONITOR_FSM_INIT, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor should be in init state");
+    ESP_RETURN_ON_FALSE_ISR(monitor_handle, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE_ISR(monitor_handle->fsm == ADC_MONITOR_FSM_INIT, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor should be in init state");
 
-    // enable peripheral intr_ena
-    if ((monitor_handle->config.h_threshold >= 0)) {
-        adc_ll_digi_monitor_enable_intr(monitor_handle->monitor_id, ADC_MONITOR_MODE_HIGH, true);
-    }
-    if ((monitor_handle->config.l_threshold >= 0)) {
-        adc_ll_digi_monitor_enable_intr(monitor_handle->monitor_id, ADC_MONITOR_MODE_LOW, true);
-    }
-
-    adc_ll_digi_monitor_user_start(monitor_handle->monitor_id, true);
+    // start monitor
+    adc_ll_digi_monitor_user_start(monitor_handle->monitor_id, ((monitor_handle->config.h_threshold >= 0) || (monitor_handle->config.l_threshold >= 0)));
     monitor_handle->fsm = ADC_MONITOR_FSM_ENABLED;
-    return esp_intr_enable(s_adc_monitor_platform.monitor_intr_handle);
+    return ESP_OK;
 }
 
 esp_err_t adc_continuous_monitor_disable(adc_monitor_handle_t monitor_handle)
 {
-    ESP_RETURN_ON_FALSE(monitor_handle, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
-    ESP_RETURN_ON_FALSE(monitor_handle->fsm == ADC_MONITOR_FSM_ENABLED, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor not in running");
+    ESP_RETURN_ON_FALSE_ISR(monitor_handle, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
+    ESP_RETURN_ON_FALSE_ISR(monitor_handle->fsm == ADC_MONITOR_FSM_ENABLED, ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor not in running");
 
-    // disable peripheral intr_ena
-    if ((monitor_handle->config.h_threshold >= 0)) {
-        adc_ll_digi_monitor_enable_intr(monitor_handle->monitor_id, ADC_MONITOR_MODE_HIGH, false);
-    }
-    if ((monitor_handle->config.l_threshold >= 0)) {
-        adc_ll_digi_monitor_enable_intr(monitor_handle->monitor_id, ADC_MONITOR_MODE_LOW, false);
-    }
-
+    // stop monitor
     adc_ll_digi_monitor_user_start(monitor_handle->monitor_id, false);
     monitor_handle->fsm = ADC_MONITOR_FSM_INIT;
-    return esp_intr_disable(s_adc_monitor_platform.monitor_intr_handle);
+    return ESP_OK;
 }
 
 esp_err_t adc_del_continuous_monitor(adc_monitor_handle_t monitor_handle)
 {
     ESP_RETURN_ON_FALSE(monitor_handle, ESP_ERR_INVALID_ARG, MNTOR_TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE((monitor_handle->fsm == ADC_MONITOR_FSM_INIT) && (s_adc_monitor_platform.continuous_ctx->fsm == ADC_FSM_INIT), \
-                        ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor and ADC continuous driver should all be in init state");
+                        ESP_ERR_INVALID_STATE, MNTOR_TAG, "monitor and ADC continuous driver should all stopped");
     ESP_RETURN_ON_ERROR(s_adc_monitor_release(monitor_handle), MNTOR_TAG, "monitor not find or isn't in use");
 
     for (int i = 0; i < SOC_ADC_DIGI_MONITOR_NUM; i++) {
@@ -265,7 +246,7 @@ esp_err_t adc_del_continuous_monitor(adc_monitor_handle_t monitor_handle)
         }
     }
 
-    // If no monitor is using, the release intr handle as well
+    // If no monitor is using, then release intr handle as well
     ESP_RETURN_ON_ERROR(esp_intr_free(s_adc_monitor_platform.monitor_intr_handle), MNTOR_TAG, "esp intr release failed\n");
     s_adc_monitor_platform.monitor_intr_handle = NULL;
     free(monitor_handle);
