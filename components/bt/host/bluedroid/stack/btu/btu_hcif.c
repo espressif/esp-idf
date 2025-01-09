@@ -136,13 +136,21 @@ static void btu_ble_proc_enhanced_conn_cmpl (UINT8 *p, UINT16 evt_len);
 //#endif
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 static void btu_ble_phy_update_complete_evt(UINT8 *p);
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len);
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p);
 static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len);
 static void btu_ble_periodic_adv_sync_lost_evt(UINT8 *p);
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_scan_timeout_evt(UINT8 *p);
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 static void btu_ble_adv_set_terminate_evt(UINT8 *p);
 static void btu_ble_scan_req_received_evt(UINT8 *p);
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 static void btu_ble_channel_select_alg_evt(UINT8 *p);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
@@ -389,10 +397,13 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         case HCI_BLE_PHY_UPDATE_COMPLETE_EVT:
             btu_ble_phy_update_complete_evt(p);
             break;
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
         case HCI_BLE_EXT_ADV_REPORT_EVT:
             //HCI_TRACE_ERROR("%s, HCI_BLE_EXT_ADV_REPORT_EVT.", __func__);
             btu_ble_ext_adv_report_evt(p, hci_evt_len);
             break;
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
         case HCI_BLE_PERIOD_ADV_SYNC_ESTAB_EVT:
             btu_ble_periodic_adv_sync_establish_evt(p);
             break;
@@ -402,15 +413,20 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
         case HCI_BLE_PERIOD_ADV_SYNC_LOST_EVT:
             btu_ble_periodic_adv_sync_lost_evt(p);
             break;
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
         case HCI_BLE_SCAN_TIMEOUT_EVT:
             btu_ble_scan_timeout_evt(p);
             break;
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
         case HCI_BLE_ADV_SET_TERMINATED_EVT:
             btu_ble_adv_set_terminate_evt(p);
             break;
         case HCI_BLE_SCAN_REQ_RECEIVED_EVT:
             btu_ble_scan_req_received_evt(p);
             break;
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
         case HCI_BLE_CHANNEL_SELECT_ALG:
             btu_ble_channel_select_alg_evt(p);
             break;
@@ -1070,9 +1086,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 
     case HCI_BLE_TRANSMITTER_TEST:
     case HCI_BLE_RECEIVER_TEST:
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_TEST_END:
         btm_ble_test_command_complete(p);
         break;
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     case HCI_BLE_CREATE_CONN_CANCEL:
         btm_ble_create_conn_cancel_complete(p);
         break;
@@ -1107,6 +1125,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
 #endif // #if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     case HCI_BLE_SET_EXT_ADV_PARAM:
     case HCI_BLE_SET_EXT_ADV_DATA:
     case HCI_BLE_SET_EXT_SCAN_RSP_DATA:
@@ -1115,6 +1134,7 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         HCI_TRACE_EVENT("%s opcode 0x%x status 0x%x", __func__, opcode, status);
 	    break;
     }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
     case HCI_BLE_READ_PHY: {
         uint16_t conn_handle;
         uint8_t tx_phy;
@@ -1126,11 +1146,14 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_read_phy_callback(status, conn_handle, tx_phy, rx_phy);
         break;
     }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
     case HCI_BLE_ENH_RX_TEST:
     case HCI_BLE_ENH_TX_TEST:
         btm_ble_test_command_complete(p);
         break;
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
+
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     case HCI_BLE_SET_PERIOD_ADV_RECV_ENABLE:
     case HCI_BLE_SET_DEFAULT_PAST_PARAMS:
@@ -1194,6 +1217,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
     uint8_t *stream = response->data + response->offset + 3;
     STREAM_TO_UINT16(opcode, stream);
     switch (opcode) {
+#if (BLE_42_ADV_EN == TRUE)
         case HCI_BLE_WRITE_ADV_DATA:
             adv_data_status = *stream;
             osi_sem_give(&adv_data_sem);
@@ -1211,6 +1235,8 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
             adv_param_status = *stream;
             osi_sem_give(&adv_param_sem);
             break;
+#endif // #if (BLE_42_ADV_EN == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
         case HCI_BLE_WRITE_SCAN_PARAMS:
             scan_param_status = *stream;
             osi_sem_give(&scan_param_sem);
@@ -1219,6 +1245,7 @@ static void btu_hcif_command_complete_evt(BT_HDR *response, void *context)
             scan_enable_status = *stream;
             osi_sem_give(&scan_enable_sem);
             break;
+#endif // #if (BLE_42_SCAN_EN == TRUE)
         default:
             break;
     }
@@ -1287,6 +1314,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_pm_proc_cmd_status(status);
         break;
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     case HCI_BLE_PERIOD_ADV_CREATE_SYNC:
     {
         uint8_t btm_status = BTM_SUCCESS;
@@ -1297,6 +1325,7 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_create_sync_callback(btm_status);
         break;
     }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
     case HCI_BLE_SET_PHY:
     {
         uint8_t btm_status = BTM_SUCCESS;
@@ -2138,6 +2167,7 @@ static void btu_ble_phy_update_complete_evt(UINT8 *p)
 }
 
 #if BLE_PRIVACY_SPT == TRUE
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_resolve_random_addr_adv_ext
@@ -2158,8 +2188,10 @@ static void btm_ble_resolve_random_addr_adv_ext(void *p_rec, void *p)
         BDADDR_TO_STREAM(pp,bda);
     }
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #endif
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
 {
     tBTM_BLE_EXT_ADV_REPORT ext_adv_report = {0};
@@ -2240,7 +2272,9 @@ static void btu_ble_ext_adv_report_evt(UINT8 *p, UINT16 evt_len)
     }
 
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 static void btu_ble_periodic_adv_sync_establish_evt(UINT8 *p)
 {
     tBTM_BLE_PERIOD_ADV_SYNC_ESTAB sync_estab = {0};
@@ -2313,14 +2347,18 @@ static void btu_ble_periodic_adv_sync_lost_evt(UINT8 *p)
 
     btm_ble_periodic_adv_sync_lost_evt(&sync_lost);
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 static void btu_ble_scan_timeout_evt(UINT8 *p)
 {
     UNUSED(p);
 
     btm_ble_scan_timeout_evt();
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 static void btu_ble_adv_set_terminate_evt(UINT8 *p)
 {
     tBTM_BLE_ADV_TERMINAT adv_term = {0};
@@ -2353,6 +2391,7 @@ static void btu_ble_scan_req_received_evt(UINT8 *p)
 
     btm_ble_scan_req_received_evt(&req_received);
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
 static void btu_ble_channel_select_alg_evt(UINT8 *p)
 {

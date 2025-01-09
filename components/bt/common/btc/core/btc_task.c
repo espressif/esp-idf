@@ -389,6 +389,7 @@ static void btc_deinit_mem(void) {
     }
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
     if (gl_bta_adv_data_ptr) {
         osi_free(gl_bta_adv_data_ptr);
         gl_bta_adv_data_ptr = NULL;
@@ -398,6 +399,7 @@ static void btc_deinit_mem(void) {
         osi_free(gl_bta_scan_rsp_data_ptr);
         gl_bta_scan_rsp_data_ptr = NULL;
     }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // BLE_42_FEATURE_SUPPORT
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
@@ -452,6 +454,7 @@ static bt_status_t btc_init_mem(void) {
 
 #if BTC_DYNAMIC_MEMORY == TRUE
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
         goto error_exit;
     }
@@ -461,6 +464,7 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)gl_bta_scan_rsp_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // (BLE_42_FEATURE_SUPPORT == TRUE)
 #endif // BTC_DYNAMIC_MEMORY == TRUE
 

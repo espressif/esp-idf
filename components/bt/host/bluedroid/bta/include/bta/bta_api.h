@@ -1615,6 +1615,7 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT     BTM_BLE_5_GAP_SET_PREFERED_DEFAULT_PHY_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT             BTM_BLE_5_GAP_SET_PREFERED_PHY_COMPLETE_EVT
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT        BTM_BLE_5_GAP_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT           BTM_BLE_5_GAP_EXT_ADV_SET_PARAMS_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT             BTM_BLE_5_GAP_EXT_ADV_DATA_SET_COMPLETE_EVT
@@ -1623,6 +1624,8 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT                 BTM_BLE_5_GAP_EXT_ADV_STOP_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT           BTM_BLE_5_GAP_EXT_ADV_SET_REMOVE_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT            BTM_BLE_5_GAP_EXT_ADV_SET_CLEAR_COMPLETE_EVT
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT      BTM_BLE_5_GAP_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT        BTM_BLE_5_GAP_PERIODIC_ADV_DATA_SET_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT           BTM_BLE_5_GAP_PERIODIC_ADV_START_COMPLETE_EVT
@@ -1633,19 +1636,28 @@ typedef struct {
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT         BTM_BLE_5_GAP_PERIODIC_ADV_ADD_DEV_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT      BTM_BLE_5_GAP_PERIODIC_ADV_REMOVE_DEV_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT       BTM_BLE_5_GAP_PERIODIC_ADV_CLEAR_DEV_COMPLETE_EVT
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT          BTM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT               BTM_BLE_5_GAP_EXT_SCAN_START_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT                BTM_BLE_5_GAP_EXT_SCAN_STOP_COMPLETE_EVT
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_PREFER_EXT_CONN_PARAMS_SET_COMPLETE_EVT   BTM_BLE_5_GAP_PREFER_EXT_CONN_PARAMS_SET_COMPLETE_EVT
 #define BTA_DM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT                   BTM_BLE_5_GAP_PHY_UPDATE_COMPLETE_EVT
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_EXT_ADV_REPORT_EVT                        BTM_BLE_5_GAP_EXT_ADV_REPORT_EVT
 #define BTA_DM_BLE_5_GAP_SCAN_TIMEOUT_EVT                          BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_ADV_TERMINATED_EVT                        BTM_BLE_5_GAP_ADV_TERMINATED_EVT
 #define BTA_DM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT                     BTM_BLE_5_GAP_SCAN_REQ_RECEIVED_EVT
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT              BTM_BLE_5_GAP_CHANNEL_SELETE_ALGORITHM_EVT
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT                   BTM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT                BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_LOST_EVT
 #define BTA_DM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT               BTM_BLE_5_GAP_PERIODIC_ADV_SYNC_ESTAB_EVT
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define BTA_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT          BTM_BLE_GAP_PERIODIC_ADV_RECV_ENABLE_COMPLETE_EVT
 #define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT           BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_COMPLETE_EVT
@@ -2492,24 +2504,6 @@ extern void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interva
         UINT8 addr_type_own, UINT8 scan_duplicate_filter, tBLE_SCAN_PARAM_SETUP_CBACK scan_param_setup_cback);
 
 
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleAdvParams
-**
-** Description      This function sets the advertising parameters BLE functionality.
-**                  It is to be called when device act in peripheral or broadcaster
-**                  role.
-**
-** Parameters:      adv_int_min    - adv interval minimum
-**                  adv_int_max    - adv interval max
-**                  p_dir_bda      - directed adv initiator address
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
-                                   tBLE_BD_ADDR *p_dir_bda);
-
 extern void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
                                       UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                       tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
@@ -2725,21 +2719,6 @@ extern void BTA_DmBleSetAdvConfig (tBTA_BLE_AD_MASK data_mask,
 extern void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
                             tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
 
-/*******************************************************************************
-**
-** Function         BTA_DmBleSetLongAdv
-**
-** Description      This function is called to set long Advertising data
-**
-** Parameters       adv_data : long advertising data.
-**                  adv_data_len : long advertising data length.
-**                  p_adv_data_cback : set long adv data complete callback.
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback);
 
 /*******************************************************************************
 **
@@ -2916,9 +2895,11 @@ extern void BTA_DmBleDisconnect(BD_ADDR bd_addr);
 **
 *******************************************************************************/
 extern void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_SET_PKT_DATA_LENGTH_CBACK *p_set_pkt_data_cback);
-
+#if (BLE_42_DTM_TEST_EN == TRUE)
 extern void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 extern void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
+
 extern void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 
 extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback);
@@ -3179,11 +3160,13 @@ extern void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
                                                   const tBTA_DM_BLE_CONN_PARAMS *phy_coded_conn_params);
 
 extern void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_addr);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_50_DTM_TEST_EN == TRUE)
 extern void BTA_DmBleDtmEnhTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, uint8_t phy, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
 
 extern void BTA_DmBleDtmEnhRxStart(uint8_t rx_channel, uint8_t phy, uint8_t modulation_index, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback);
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 extern void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable);

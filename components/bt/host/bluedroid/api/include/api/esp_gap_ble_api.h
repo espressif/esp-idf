@@ -1291,6 +1291,7 @@ typedef union {
     struct ble_set_perf_phy_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate perf phy set status */
     } set_perf_phy;                                 /*!< Event parameter of ESP_GAP_BLE_SET_PREFERRED_PHY_COMPLETE_EVT */
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_EXT_ADV_SET_RAND_ADDR_COMPLETE_EVT
      */
@@ -1349,6 +1350,7 @@ typedef union {
         esp_bt_status_t status;                     /*!< Indicate advertising stop operation success status */
         uint8_t instance;                           /*!< extend advertising handle */
     } ext_adv_clear;                                /*!< Event parameter of ESP_GAP_BLE_EXT_ADV_SET_CLEAR_COMPLETE_EVT */
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
     /**
      * @brief ESP_GAP_BLE_PERIODIC_ADV_SET_PARAMS_COMPLETE_EVT
      */

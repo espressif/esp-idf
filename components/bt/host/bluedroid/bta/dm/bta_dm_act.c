@@ -5192,6 +5192,7 @@ void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
                          p_data->ble_set_scan_params.scan_param_setup_cback);
 }
 
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_scan_fil_params
@@ -5223,7 +5224,7 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
     }
 
 }
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5319,8 +5320,9 @@ void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
     if (p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT) {
         APPL_TRACE_ERROR("Invalid BTA event,can't stop the BLE adverting\n");
     }
-
+#if (BLE_42_ADV_EN == TRUE)
     btm_ble_stop_adv();
+#endif // #if (BLE_42_ADV_EN == TRUE)
 }
 
 
@@ -5438,23 +5440,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
     }
 }
 
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_adv_params
-**
-** Description      This function set the adv parameters.
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
-{
-    BTM_BleSetAdvParams(p_data->ble_set_adv_params.adv_int_min,
-                        p_data->ble_set_adv_params.adv_int_max,
-                        p_data->ble_set_adv_params.p_dir_bda,
-                        BTA_DM_BLE_ADV_CHNL_MAP);
-}
-
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_params_all
@@ -5492,6 +5478,7 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5509,6 +5496,7 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
                                           p_data->ble_duplicate_exceptional_list.exceptional_list_cb);
 }
 
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_config
@@ -5524,29 +5512,6 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 
     if (BTM_BleWriteAdvData(p_data->ble_set_adv_data.data_mask,
                             (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
-
-    if (p_data->ble_set_adv_data.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_long_adv
-**
-** Description      This function set the long ADV data
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_long_adv (tBTA_DM_MSG *p_data)
-{
-    tBTA_STATUS status = BTA_FAILURE;
-
-    if (BTM_BleWriteLongAdvData(p_data->ble_set_long_adv_data.adv_data,
-                                p_data->ble_set_long_adv_data.adv_data_len) == BTM_SUCCESS) {
         status = BTA_SUCCESS;
     }
 
@@ -5577,7 +5542,6 @@ void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
-
 
 /*******************************************************************************
 **
@@ -5624,7 +5588,7 @@ void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
-
+#endif // #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_data_length
@@ -5681,6 +5645,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 
 }
 
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_broadcast
@@ -5706,6 +5671,7 @@ void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data)
     }
 
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5815,6 +5781,7 @@ void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
     }
 }
 
+#if (BLE_42_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleTransmitterTest(p_data->dtm_tx_start.tx_channel, p_data->dtm_tx_start.len_of_data, p_data->dtm_tx_start.pkt_payload, p_data->dtm_tx_start.p_dtm_cmpl_cback);
@@ -5824,11 +5791,14 @@ void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleReceiverTest(p_data->dtm_rx_start.rx_channel, p_data->dtm_rx_start.p_dtm_cmpl_cback);
 }
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
 {
     BTM_BleTestEnd(p_data->dtm_stop.p_dtm_cmpl_cback);
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
 void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
 {
@@ -5867,7 +5837,8 @@ void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
     BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
 }
 
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_50_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleEnhancedTransmitterTest(p_data->dtm_enh_tx_start.tx_channel, p_data->dtm_enh_tx_start.len_of_data,
@@ -5879,7 +5850,8 @@ void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data)
     BTM_BleEnhancedReceiverTest(p_data->dtm_enh_rx_start.rx_channel, p_data->dtm_enh_rx_start.phy,
                                     p_data->dtm_enh_rx_start.modulation_index, p_data->dtm_enh_rx_start.p_dtm_cmpl_cback);
 }
-
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data)
 {
     //tBTM_STATUS btm_status = 0;
@@ -5905,6 +5877,7 @@ void bta_dm_ble_gap_set_prefer_phy(tBTA_DM_MSG *p_data)
                         p_data->ble_set_per_phy.phy_options);
 }
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 void bta_dm_ble_gap_ext_adv_set_rand_addr(tBTA_DM_MSG *p_data)
 {
     BTM_BleSetExtendedAdvRandaddr(p_data->ble_set_ext_adv_rand_addr.instance, p_data->ble_set_ext_adv_rand_addr.rand_addr);
@@ -5945,7 +5918,9 @@ void bta_dm_ble_gap_ext_adv_set_clear(tBTA_DM_MSG *p_data)
 {
     BTM_BleExtAdvSetClear();
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 void bta_dm_ble_gap_periodic_adv_set_params(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, instance = %d", __func__, p_data->ble_set_periodic_adv_params.instance);
@@ -5972,7 +5947,9 @@ void bta_dm_ble_gap_periodic_adv_enable(tBTA_DM_MSG *p_data)
     BTM_BlePeriodicAdvEnable(p_data->ble_enable_periodic_adv.instance,
                              p_data->ble_enable_periodic_adv.enable);
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void bta_dm_ble_gap_periodic_adv_create_sync(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -6017,8 +5994,9 @@ void bta_dm_ble_gap_periodic_adv_clear_dev(tBTA_DM_MSG *p_data)
     APPL_TRACE_API("%s", __func__);
     BTM_BlePeriodicAdvClearDev();
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
-
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void bta_dm_ble_gap_set_ext_scan_params(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -6032,14 +6010,14 @@ void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data)
     BTM_BleExtendedScan(p_data->ble_ext_scan.start, p_data->ble_ext_scan.duration,
                         p_data->ble_ext_scan.period);
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
 {
     tBTM_EXT_CONN_PARAMS conn_params;
     conn_params.phy_mask = p_data->ble_set_per_ext_conn_params.phy_mask;
 
-    APPL_TRACE_API("%s, start = %d, duration = %d, period = %d", __func__, p_data->ble_ext_scan.start, p_data->ble_ext_scan.duration,
-                    p_data->ble_ext_scan.period);
+    APPL_TRACE_API("%s, phy_mask %d", __func__, p_data->ble_set_per_ext_conn_params.phy_mask);
 
     if (conn_params.phy_mask & BTA_PHY_1M_MASK) {
         memcpy(&conn_params.phy_1m_conn_params, &p_data->ble_set_per_ext_conn_params.phy_1m_conn_params,
