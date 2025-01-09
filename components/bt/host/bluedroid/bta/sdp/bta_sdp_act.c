@@ -344,7 +344,7 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     tSDP_PROTOCOL_ELEM pe;
     UINT16 pversion = -1;
 
-    record->sap.hdr.type = SDP_TYPE_MAP_MAS;
+    record->sap.hdr.type = SDP_TYPE_SAP_SERVER;
     record->sap.hdr.service_name_length = 0;
     record->sap.hdr.service_name = NULL;
     record->sap.hdr.rfcomm_channel_number = 0;
