@@ -1,5 +1,7 @@
 menu "Wi-Fi Provisioning Manager"
 
+    visible if SOC_WIFI_SUPPORTED
+
     config WIFI_PROV_SCAN_MAX_ENTRIES
         int "Max Wi-Fi Scan Result Entries"
         default 16

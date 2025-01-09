@@ -4,6 +4,20 @@ if(${idf_target} STREQUAL "linux")
     return() # This component is not supported by the POSIX/Linux simulator
 endif()
 
+if( NOT CONFIG_ESP_WIFI_ENABLED AND NOT CMAKE_BUILD_EARLY_EXPANSION )
+    # No local wifi: provide only netif bindings
+    set(srcs
+            "src/wifi_default.c"
+            "src/wifi_netif.c"
+            "src/wifi_default_ap.c")
+
+    # This component provides "esp_wifi" "wifi_apps" headers if WiFi not enabled
+    # (implementation supported optionally in a managed component esp_wifi_remote)
+    idf_component_register(SRCS "${srcs}"
+                        INCLUDE_DIRS "include" "wifi_apps/include")
+    return()
+endif()
+
 if(CONFIG_ESP_WIFI_ENABLED)
 
     if(CONFIG_APP_NO_BLOBS)
