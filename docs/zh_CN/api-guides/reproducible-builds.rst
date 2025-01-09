@@ -52,6 +52,8 @@ ESP-IDF 可通过以下方式实现可重复构建：
 - 如果启用 :ref:`CONFIG_APP_REPRODUCIBLE_BUILD`，则不会将构建日期和时间包括在 :ref:`应用程序元数据结构 <app-image-format-application-description>` 和 :ref:`引导加载程序元数据结构 <image-format-bootloader-description>` 中。
 - ESP-IDF 构建系统在将源文件列表、组件列表和其他序列传递给 CMake 之前会对其进行排序。构建系统的其他各个部分，如链接器脚本生成器，也会先排序，从而确保无论环境如何，输出都一致。
 
+.. _reproducible-builds-and-debugging:
+
 可重复构建与调试
 ----------------
 
@@ -63,9 +65,9 @@ ESP-IDF 可通过以下方式实现可重复构建：
 
     set substitute-path /COMPONENT_FREERTOS_DIR /home/user/esp/esp-idf/components/freertos
 
-ESP-IDF 构建系统在构建过程中会自动生成一个包含 ``set substitute-path`` 命令列表的文件。该文件名为 ``prefix_map_gdbinit``，位于项目 ``build`` 目录中。
+ESP-IDF 构建系统在构建过程中会自动生成一个包含 ``set substitute-path`` 命令列表的文件。该文件名为 ``prefix_map``，位于项目 ``build/gdbinit`` 目录中。
 
-当使用 :ref:`idf.py gdb <jtag-debugging-with-idf-py>` 开始调试时，此额外的 ``gdbinit`` 文件会自动传递给 GDB。当手动启动 GDB 或从 IDE 启动 GDB 时，请使用 ``-x build/prefix_map_gdbinit`` 参数将此额外的 ``gdbinit`` 脚本传递给 GDB。
+当使用 :ref:`idf.py gdb <jtag-debugging-with-idf-py>` 开始调试时，此额外的 ``gdbinit`` 文件会自动传递给 GDB。当手动启动 GDB 或从 IDE 启动 GDB 时，请使用 ``-x build/gdbinit/prefix_map`` 参数将此额外的 ``gdbinit`` 脚本传递给 GDB。
 
 仍可能影响可重复构建的因素
 --------------------------

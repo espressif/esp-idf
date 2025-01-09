@@ -397,6 +397,17 @@ test_nvs_gen_check:
     - cd ${IDF_PATH}/components/nvs_flash/nvs_partition_tool
     - pytest --noconftest test_nvs_gen_check.py --junitxml=XUNIT_RESULT.xml
 
+test_esp_rom:
+  extends: .host_test_template
+  artifacts:
+    paths:
+      - XUNIT_RESULT.xml
+    reports:
+      junit: XUNIT_RESULT.xml
+  script:
+    - cd ${IDF_PATH}/components/esp_rom/
+    - pytest --noconftest test_esp_rom.py --junitxml=XUNIT_RESULT.xml
+
 make_sure_soc_caps_compatible_in_idf_build_apps:
     extends:
       - .host_test_template

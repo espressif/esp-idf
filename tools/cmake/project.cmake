@@ -353,6 +353,13 @@ function(__project_info test_components)
     idf_build_get_property(COMPONENT_KCONFIGS_PROJBUILD KCONFIG_PROJBUILDS)
     idf_build_get_property(debug_prefix_map_gdbinit DEBUG_PREFIX_MAP_GDBINIT)
 
+    __generate_gdbinit()
+    idf_build_get_property(gdbinit_files_prefix_map GDBINIT_FILES_PREFIX_MAP)
+    idf_build_get_property(gdbinit_files_symbols GDBINIT_FILES_SYMBOLS)
+    idf_build_get_property(gdbinit_files_py_extensions GDBINIT_FILES_PY_EXTENSIONS)
+    idf_build_get_property(gdbinit_files_connect GDBINIT_FILES_CONNECT)
+    __get_openocd_options(debug_arguments_openocd)
+
     if(CONFIG_APP_BUILD_TYPE_RAM)
         set(PROJECT_BUILD_TYPE ram_app)
     else()
