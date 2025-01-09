@@ -1,5 +1,5 @@
-Security
-========
+Security Overview
+=================
 
 {IDF_TARGET_CIPHER_SCHEME:default="RSA", esp32h2="RSA or ECDSA", esp32p4="RSA or ECDSA"}
 
