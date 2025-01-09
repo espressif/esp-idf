@@ -52,9 +52,6 @@
 #define HCI_HAL_BLE_ADV_RPT_QUEUE_LEN_MAX      (200)
 #endif
 
-extern bool BTU_check_queue_is_congest(void);
-
-
 static const uint8_t preamble_sizes[] = {
     HCI_COMMAND_PREAMBLE_SIZE,
     HCI_ACL_PREAMBLE_SIZE,
@@ -510,13 +507,6 @@ static void hci_hal_h4_hdl_rx_adv_rpt(pkt_linked_item_t *linked_pkt)
                   "pkt_len=%d", type, hdr_size, length, packet->len);
         goto _discard_packet;
     }
-
-#if SCAN_QUEUE_CONGEST_CHECK
-    if(BTU_check_queue_is_congest()) {
-        HCI_TRACE_DEBUG("BtuQueue is congested");
-        goto _discard_packet;
-    }
-#endif
 
     packet->event = outbound_event_types[PACKET_TYPE_TO_INDEX(type)];
     hci_hal_env.callbacks->adv_rpt_ready(linked_pkt);
