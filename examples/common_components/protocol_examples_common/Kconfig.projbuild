@@ -4,7 +4,7 @@ menu "Example Connection Configuration"
 
     config EXAMPLE_CONNECT_WIFI
         bool "connect using WiFi interface"
-        depends on !IDF_TARGET_LINUX && (SOC_WIFI_SUPPORTED || ESP_WIFI_REMOTE_ENABLED)
+        depends on !IDF_TARGET_LINUX && (SOC_WIFI_SUPPORTED || ESP_WIFI_REMOTE_ENABLED || ESP_HOST_WIFI_ENABLED)
         default y if SOC_WIFI_SUPPORTED
         help
             Protocol examples can use Wi-Fi, Ethernet and/or Thread to connect to the network.
