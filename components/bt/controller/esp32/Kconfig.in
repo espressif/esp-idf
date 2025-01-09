@@ -320,7 +320,7 @@ choice BTDM_BLE_SLEEP_CLOCK_ACCURACY
         needs a larger RX window to synchronize with master in each anchor point, thus resulting in an
         increase of power consumption but a higher level of robustness in keeping connected. According
         to the requirements of Bluetooth Core specification 4.2, the worst-case accuracy of Classic
-        Bluetooth low power oscialltor(LPO) is +/-250ppm in STANDBY and in low power modes such as
+        Bluetooth Low Power Oscillator (LPO) is +/-250ppm in STANDBY and in low power modes such as
         sniff. For BLE the worst-case SCA is +/-500ppm.
 
         - "151ppm to 250ppm" option is the default value for Bluetooth Dual mode
@@ -487,14 +487,14 @@ config BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD
         If you set `BTDM_BLE_ADV_REPORT_DISCARD_THRSHOLD` to a small value or printf every adv lost event, it
         may cause adv packets lost more.
 
-menu "BLE disconnect when instant passed"
+menu "BLE disconnects when Instant Passed (0x28) occurs"
     config BTDM_BLE_LLCP_CONN_UPDATE
         bool "BLE ACL connection update procedure"
         depends on (BTDM_CTRL_MODE_BLE_ONLY || BTDM_CTRL_MODE_BTDM)
         default n
         help
             If this option is enabled, Controller will terminate the connection
-            when instant passed during connection update procedure.
+            when Instant Passed (0x28) error occurs during connection update procedure.
 
     config BTDM_BLE_LLCP_CHAN_MAP_UPDATE
         bool "BLE ACL channel map update procedure"
@@ -502,7 +502,7 @@ menu "BLE disconnect when instant passed"
         default n
         help
             If this option is enabled, Controller will terminate the connection
-            when instant passed in channel map update procedure.
+            when Instant Passed (0x28) error occurs in channel map update procedure.
 endmenu
 
 config BTDM_RESERVE_DRAM
