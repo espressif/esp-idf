@@ -1,5 +1,5 @@
-Migration from 5.5 to 5.5
--------------------------
+从 5.4 迁移到 5.5
+-----------------
 
 :link_to_translation:`en:[English]`
 

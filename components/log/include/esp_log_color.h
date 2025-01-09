@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "esp_log_config.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -13,6 +14,13 @@ extern "C" {
 #endif
 
 /** @cond */
+// Determines whether esp_log() includes code to handle color codes.
+#if (!BOOTLOADER_BUILD && CONFIG_LOG_COLORS_SUPPORT) || (BOOTLOADER_BUILD && CONFIG_BOOTLOADER_LOG_COLORS_SUPPORT)
+#define ESP_LOG_SUPPORT_COLOR                    (1)
+#else
+#define ESP_LOG_SUPPORT_COLOR                    (0)
+#endif
+
 // ANSI Color Codes:
 // Macros for defining foreground colors (text).
 #define LOG_ANSI_COLOR_BLACK                                        "30"
@@ -77,7 +85,7 @@ extern "C" {
  * printf(LOG_ANSI_COLOR_FORMAT(LOG_ANSI_COLOR_STYLE_BOLD, LOG_ANSI_COLOR_WHITE, LOG_ANSI_COLOR_BG_BLUE) "%s" LOG_ANSI_COLOR_RESET "\n", text_str);
  */
 
-#if (!BOOTLOADER_BUILD && CONFIG_LOG_COLORS) || (BOOTLOADER_BUILD && CONFIG_BOOTLOADER_LOG_COLORS)
+#if !ESP_LOG_COLOR_DISABLED
 #define LOG_COLOR_BLACK       LOG_ANSI_COLOR_BLACK
 #define LOG_COLOR_RED         LOG_ANSI_COLOR_RED
 #define LOG_COLOR_GREEN       LOG_ANSI_COLOR_GREEN

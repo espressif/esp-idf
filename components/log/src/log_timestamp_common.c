@@ -7,6 +7,7 @@
 #include <assert.h>
 #include <time.h>
 #include <sys/time.h>
+#include "esp_log_config.h"
 #include "esp_log_timestamp.h"
 #include "esp_private/log_util.h"
 #include "esp_private/log_timestamp.h"
@@ -62,14 +63,14 @@ char *esp_log_system_timestamp(void)
 }
 #endif // !NON_OS_BUILD
 
-uint64_t esp_log_timestamp64(bool critical)
+uint64_t esp_log_timestamp64(bool constrained_env)
 {
     uint64_t timestamp_ms;
-#if CONFIG_BOOTLOADER_LOG_TIMESTAMP_SOURCE_NONE || CONFIG_LOG_TIMESTAMP_SOURCE_NONE
-    (void) critical;
+#if ESP_LOG_TIMESTAMP_DISABLED
+    (void) constrained_env;
     timestamp_ms = 0;
-#elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM || CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
-    if (critical) {
+#elif !BOOTLOADER_BUILD && (CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM || CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL || CONFIG_LOG_TIMESTAMP_SOURCE_UNIX)
+    if (constrained_env) {
         timestamp_ms = esp_log_early_timestamp();
     } else {
 #if CONFIG_IDF_TARGET_LINUX
@@ -84,20 +85,20 @@ uint64_t esp_log_timestamp64(bool critical)
 #endif
     }
 #else
-    (void) critical;
+    (void) constrained_env;
     timestamp_ms = esp_log_timestamp();
 #endif
     return timestamp_ms;
 }
 
-char* esp_log_timestamp_str(bool critical, uint64_t timestamp_ms, char* buffer)
+char* esp_log_timestamp_str(bool constrained_env, uint64_t timestamp_ms, char* buffer)
 {
     char* out_buffer = buffer;
-#if CONFIG_BOOTLOADER_LOG_TIMESTAMP_SOURCE_NONE || CONFIG_LOG_TIMESTAMP_SOURCE_NONE
-    (void)critical;
+#if ESP_LOG_TIMESTAMP_DISABLED
+    (void)constrained_env;
     *buffer = '\0';
-#elif CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM || CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL
-    if (critical) {
+#elif !BOOTLOADER_BUILD && (CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM || CONFIG_LOG_TIMESTAMP_SOURCE_SYSTEM_FULL)
+    if (constrained_env) {
         esp_log_util_cvt_dec(timestamp_ms, 0, buffer);
     } else {
         struct tm timeinfo;
@@ -122,7 +123,7 @@ char* esp_log_timestamp_str(bool critical, uint64_t timestamp_ms, char* buffer)
         esp_log_util_cvt_dec(msec, 3, buffer); // (ms)
     }
 #else
-    (void)critical;
+    (void)constrained_env;
     esp_log_util_cvt_dec(timestamp_ms, 0, buffer);
 #endif
     return out_buffer;

@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,6 +65,45 @@ int esp_log_util_cvt_hex(unsigned long long val, int pad, char *buf);
  * @return The length of the converted string.
  */
 int esp_log_util_cvt_dec(unsigned long long val, int pad, char *buf);
+
+/**
+ * @typedef esp_log_cache_enabled_t
+ * @brief Callback function type for checking the state of the SPI flash cache.
+ *
+ * This function pointer is used to determine whether the SPI flash cache is enabled
+ * during logging operations.
+ *
+ * @return
+ *      - true if the SPI flash cache is enabled.
+ *      - false if the SPI flash cache is disabled.
+ */
+typedef bool (*esp_log_cache_enabled_t)(void);
+
+/**
+ * @brief Sets the callback function to check the SPI flash cache state.
+ *
+ * This function allows setting a custom callback to check whether the SPI flash
+ * cache is enabled. If a callback is provided, it will be used during logging
+ * operations to ensure that logging does not interfere with cache-disabled scenarios.
+ *
+ * @note This function must be called during system startup to initialize it.
+ *
+ * @param[in] func Pointer to the callback function of type `esp_log_cache_enabled_t`.
+ *                 Pass `NULL` to disable the cache check.
+ */
+void esp_log_util_set_cache_enabled_cb(esp_log_cache_enabled_t func);
+
+/**
+ * @brief Check if the current context is constrained.
+ *
+ * This function checks if logging in the current context is doing from:
+ * - ISR context.
+ * - Disabled SPI flash cache.
+ * - Task scheduler not running.
+ *
+ * @return true if the context is constrained, false otherwise.
+ */
+bool esp_log_util_is_constrained(void);
 
 #ifdef __cplusplus
 }
