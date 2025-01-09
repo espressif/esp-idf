@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,7 +215,7 @@ esp_err_t nvs_bootloader_page_visitor_get_namespaces(nvs_bootloader_page_visitor
     // iterate over all entries with state written
     // if the entry is namespace entry, then iterate the read_list and populate the namespace index by matching the namespace name
     uint8_t start_index = 0;
-    nvs_bootloader_single_entry_t item = {0};
+    WORD_ALIGNED_ATTR nvs_bootloader_single_entry_t item = {0};
 
     // repeat finding single entry items on the page until all entries are processed or error occurs
     while (ret == ESP_OK) {
@@ -275,7 +275,7 @@ esp_err_t nvs_bootloader_page_visitor_get_key_value_pairs(nvs_bootloader_page_vi
     // if the entry is not a namespace entry, then iterate the read_list and populate the value by matching the namespace index, key name and value type
     uint8_t next_index = 0;     // index of the next entry to read, updated to the next entry by the read_next_single_entry_item
     uint8_t current_index = 0;  // index of the actual entry being processed
-    nvs_bootloader_single_entry_t item = {0};
+    WORD_ALIGNED_ATTR nvs_bootloader_single_entry_t item = {0};
 
     // repeat finding single entry items on the page until all entries are processed or error occurs
     while (ret == ESP_OK) {
@@ -546,7 +546,42 @@ esp_err_t nvs_bootloader_read_entries_block(const esp_partition_t *partition,
 
     size_t data_offset = page_index * NVS_CONST_PAGE_SIZE + NVS_CONST_PAGE_ENTRY_DATA_OFFSET + entry_index * NVS_CONST_ENTRY_SIZE ;
 
-    return esp_partition_read(partition, data_offset, block, block_len);
+    if (data_offset & 3 || block_len & 3 || (intptr_t) block & 3) {
+        /* For the bootloader build, the esp_partition_read() API internally is calls bootloader_flash_read() that
+        * requires the src_address, length and the destination address to be word aligned.
+        * src_address: NVS keys and values are always stored at a word aligned offset
+        * length: Reading bytes of length divisible by 4 at a time (BOOTLOADER_FLASH_READ_LEN)
+        * destination address: Using a word aligned buffer to read the flash contents (bootloader_flash_read_buffer)
+        */
+        #define BOOTLOADER_FLASH_READ_LEN 32 // because it satisfies the above conditions
+        WORD_ALIGNED_ATTR uint8_t bootloader_flash_read_buffer[BOOTLOADER_FLASH_READ_LEN] = { 0 };
+
+        size_t block_data_len = block_len / BOOTLOADER_FLASH_READ_LEN * BOOTLOADER_FLASH_READ_LEN;
+        size_t remaining_data_len = block_len % BOOTLOADER_FLASH_READ_LEN;
+
+        /* Process block data */
+        if (block_data_len > 0) {
+            for (size_t data_processed = 0; data_processed < block_data_len; data_processed += BOOTLOADER_FLASH_READ_LEN) {
+                ret = esp_partition_read(partition, data_offset + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+                if (ret != ESP_OK) {
+                    return ret;
+                }
+                memcpy(block + data_processed, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+            }
+        }
+
+        /* Process remaining data */
+        if (remaining_data_len) {
+            ret = esp_partition_read(partition, data_offset + block_data_len, bootloader_flash_read_buffer, BOOTLOADER_FLASH_READ_LEN);
+            if (ret != ESP_OK) {
+                return ret;
+            }
+            memcpy(block + block_data_len, bootloader_flash_read_buffer, remaining_data_len);
+        }
+    } else {
+        ret = esp_partition_read(partition, data_offset, block, block_len);
+    }
+    return ret;
 }
 
 // validates item's header
