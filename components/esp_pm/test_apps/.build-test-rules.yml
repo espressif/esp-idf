@@ -1,0 +1,7 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+components/esp_pm/test_apps/esp_pm:
+  disable:
+    - if: IDF_TARGET == "esp32p4"
+      temporary: true
+      reason: target esp32p4 is not supported yet
