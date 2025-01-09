@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,19 +284,19 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
-                    event->link_estab.status == 0 ? "established" : "failed",
-                    event->link_estab.status);
-        if (event->link_estab.status == 0) {
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+                    event->connect.status == 0 ? "established" : "failed",
+                    event->connect.status);
+        if (event->connect.status == 0) {
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
         }
         MODLOG_DFLT(INFO, "\n");
 
-        if (event->link_estab.status != 0) {
+        if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
             ext_bleprph_advertise();
@@ -306,7 +306,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-	bleprph_power_control(event->link_estab.conn_handle);
+	bleprph_power_control(event->connect.conn_handle);
 
 	ble_gap_event_listener_register(&power_control_event_listener,
                                         bleprph_gap_power_event, NULL);
