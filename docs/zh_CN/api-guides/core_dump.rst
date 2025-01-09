@@ -17,7 +17,8 @@
 --------------
 
 .. note::
-    只有在构建中包含 ``espcoredump`` 组件时，``Core dump`` 配置选项才可用。
+
+    只有在构建中包含 ``espcoredump`` 组件时，``Core dump`` 配置选项才可用。要在项目中包含 ``Core dump`` 功能，在使用 ``idf_component_register`` 注册组件时，将 ``espcoredump`` 组件添加为 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 的依赖项。
 
 目标
 ^^^^^^^^^^^
