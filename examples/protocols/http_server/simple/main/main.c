@@ -407,7 +407,7 @@ static esp_err_t sse_handler(httpd_req_t *req)
         gettimeofday(&tv, NULL); // Get the current time
         int64_t time_since_boot = tv.tv_sec; // Time since boot in seconds
         esp_err_t err;
-        int len = snprintf(sse_data, sizeof(sse_data), "data: Time since boot: %lld seconds\n\n", time_since_boot);
+        int len = snprintf(sse_data, sizeof(sse_data), "data: Time since boot: %" PRIi64 " seconds\n\n", time_since_boot);
         if ((err = httpd_resp_send_chunk(req, sse_data, len)) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to send sse data (returned %02X)", err);
             break;

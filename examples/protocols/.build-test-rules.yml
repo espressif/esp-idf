@@ -73,6 +73,16 @@ examples/protocols/http_server/restful_server:
   depends_filepatterns:
     - components/esp_http_server/**/*
 
+examples/protocols/http_server/simple:
+  <<: *default_dependencies
+  enable:
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
+      reason: only test on these targets
+  depends_filepatterns:
+    - components/esp_http_server/**/*
+
 examples/protocols/http_server/ws_echo_server:
   <<: *default_dependencies
   disable_test:
