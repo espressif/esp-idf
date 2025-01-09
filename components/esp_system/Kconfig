@@ -583,19 +583,7 @@ menu "ESP System Settings"
     endchoice
 
     # Insert chip-specific system config
-    rsource "./port/soc/$IDF_TARGET/Kconfig.system"
-
-    config ESP_SYSTEM_BROWNOUT_INTR
-        bool
-        default n
-        help
-            This config allows to trigger an interrupt when brownout detected. Software restart will be done
-            at the end of the default callback.
-            Two occasions need to restart the chip with interrupt so far.
-            (1). For ESP32 version 1, brown-out reset function doesn't work (see ESP32 errata 3.4).
-                  So that we must restart from interrupt.
-            (2). For special workflow, the chip needs do more things instead of restarting directly. This part
-                 needs to be done in callback function of interrupt.
+    orsource "./port/soc/$IDF_TARGET/Kconfig.system"
 
     config ESP_SYSTEM_HW_STACK_GUARD
         bool "Hardware stack guard"

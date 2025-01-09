@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,6 +25,7 @@
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "hal/uart_ll.h"
+#include "soc/power_supply_periph.h"
 
 #if defined(CONFIG_ESP_BROWNOUT_DET_LVL)
 #define BROWNOUT_DET_LVL CONFIG_ESP_BROWNOUT_DET_LVL
@@ -34,7 +35,7 @@
 
 static __attribute__((unused)) DRAM_ATTR const char TAG[] = "BOD";
 
-#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+#if CONFIG_ESP_BROWNOUT_USE_INTR
 IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
 {
     /* Normally RTC ISR clears the interrupt flag after the application-supplied
@@ -71,11 +72,11 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
 
     ESP_INFINITE_LOOP();
 }
-#endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+#endif // CONFIG_ESP_BROWNOUT_USE_INTR
 
 void esp_brownout_init(void)
 {
-#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+#if CONFIG_ESP_BROWNOUT_USE_INTR
     brownout_hal_config_t cfg = {
         .threshold = BROWNOUT_DET_LVL,
         .enabled = true,
@@ -87,15 +88,12 @@ void esp_brownout_init(void)
     brownout_hal_config(&cfg);
     brownout_ll_intr_clear();
 
-#if SOC_LP_TIMER_BOD_SHARE_INTR_SOURCE
-    // TODO IDF-6606: LP_RTC_TIMER interrupt source is shared by lp_timer and brownout detector, but lp_timer interrupt
-    // is not used now. An interrupt allocator is needed when lp_timer intr gets supported.
-    esp_intr_alloc_intrstatus(ETS_LP_RTC_TIMER_INTR_SOURCE, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, (uint32_t)brownout_ll_intr_get_status_reg(), BROWNOUT_DETECTOR_LL_INTERRUPT_MASK, &rtc_brownout_isr_handler, NULL, NULL);
-#elif CONFIG_IDF_TARGET_ESP32P4
-    esp_intr_alloc(ETS_LP_ANAPERI_INTR_SOURCE, ESP_INTR_FLAG_IRAM, &rtc_brownout_isr_handler, NULL, NULL);
-#else
+#if CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
     rtc_isr_register(rtc_brownout_isr_handler, NULL, RTC_CNTL_BROWN_OUT_INT_ENA_M, RTC_INTR_FLAG_IRAM);
+#else
+    esp_intr_alloc_intrstatus(power_supply_periph_signal.irq, ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_SHARED, (uint32_t)brownout_ll_intr_get_status_reg(), BROWNOUT_DETECTOR_LL_INTERRUPT_MASK, &rtc_brownout_isr_handler, NULL, NULL);
 #endif
+
     brownout_ll_intr_enable(true);
 
 #else // brownout without interrupt
@@ -119,8 +117,8 @@ void esp_brownout_disable(void)
     };
 
     brownout_hal_config(&cfg);
-#if CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+#if CONFIG_ESP_BROWNOUT_USE_INTR
     brownout_ll_intr_enable(false);
     rtc_isr_deregister(rtc_brownout_isr_handler, NULL);
-#endif // CONFIG_ESP_SYSTEM_BROWNOUT_INTR
+#endif // CONFIG_ESP_BROWNOUT_USE_INTR
 }

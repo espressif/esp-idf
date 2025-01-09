@@ -146,6 +146,11 @@ if(NOT non_os_build)
     if(CONFIG_SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX OR CONFIG_SOC_GPIO_CLOCKOUT_BY_IO_MUX)
         list(APPEND srcs "esp_clock_output.c")
     endif()
+
+    if(CONFIG_SOC_BOD_SUPPORTED)
+        list(APPEND srcs "power_supply/brownout.c")
+    endif()
+
 else()
     if(ESP_TEE_BUILD)
         list(APPEND srcs "esp_clk.c" "hw_random.c")
@@ -156,7 +161,7 @@ endif()
 
 set(public_include_dirs "include" "include/soc" "include/soc/${target}"
                         "dma/include" "ldo/include" "debug_probe/include"
-                        "mspi_timing_tuning/include")
+                        "mspi_timing_tuning/include" "power_supply/include")
 
 if(CONFIG_IDF_TARGET_ESP32H21)
     list(REMOVE_ITEM srcs

@@ -16,7 +16,7 @@ menu "Main Flash configuration"
         config SPI_FLASH_BROWNOUT_RESET
             bool
             default y
-            select ESP_SYSTEM_BROWNOUT_INTR
+            select ESP_BROWNOUT_USE_INTR
             help
                 When brownout happens during flash erase/write operations,
                 send reset command to stop the flash operations to improve stability.
