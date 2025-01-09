@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,20 +33,13 @@
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
 #include "spi_flash_override.h"
+#include "esp_private/cache_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_log.h"
 #include "esp_cpu.h"
 
 static __attribute__((unused)) const char *TAG = "cache";
-
-
-/**
- * These two shouldn't be declared as static otherwise if `CONFIG_SPI_FLASH_ROM_IMPL` is enabled,
- * they won't get replaced by the rom version
- */
-void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
-void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 // Used only on ROM impl. in idf, this param unused, cache status hold by hal
 static uint32_t s_flash_op_cache_state[2];
