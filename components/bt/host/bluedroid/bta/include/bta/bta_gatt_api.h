@@ -1205,37 +1205,6 @@ extern void BTA_GATTC_Clean(BD_ADDR remote_bda);
 
 /*******************************************************************************
 **
-** Function         BTA_GATTC_Listen
-**
-** Description      Start advertisement to listen for connection request.
-**
-** Parameters       client_if: server interface.
-**                  start: to start or stop listening for connection
-**                  remote_bda: remote device BD address, if listen to all device
-**                              use NULL.
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_GATTC_Listen(tBTA_GATTC_IF client_if, BOOLEAN start, BD_ADDR_PTR target_bda);
-
-/*******************************************************************************
-**
-** Function         BTA_GATTC_Broadcast
-**
-** Description      Start broadcasting (non-connectable advertisements)
-**
-** Parameters       client_if: client interface.
-**                  start: to start or stop listening for connection
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_GATTC_Broadcast(tBTA_GATTC_IF client_if, BOOLEAN start);
-
-
-/*******************************************************************************
-**
 ** Function         BTA_GATTC_ConfigureMTU
 **
 ** Description      Configure the MTU size in the GATT channel. This can be done
@@ -1558,24 +1527,6 @@ extern void BTA_GATTS_Close(UINT16 conn_id);
 *******************************************************************************/
 
 void BTA_GATTS_SendServiceChangeIndication(tBTA_GATTS_IF server_if, BD_ADDR remote_bda);
-
-/*******************************************************************************
-**
-** Function         BTA_GATTS_Listen
-**
-** Description      Start advertisement to listen for connection request for a
-**                  GATT server
-**
-** Parameters       server_if: server interface.
-**                  start: to start or stop listening for connection
-**                  remote_bda: remote device BD address, if listen to all device
-**                              use NULL.
-**
-** Returns          void
-**
-*******************************************************************************/
-extern void BTA_GATTS_Listen(tBTA_GATTS_IF server_if, BOOLEAN start,
-                             BD_ADDR_PTR target_bda);
 
 /*******************************************************************************
 **

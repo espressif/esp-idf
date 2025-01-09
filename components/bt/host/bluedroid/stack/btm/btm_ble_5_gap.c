@@ -286,6 +286,7 @@ tBTM_STATUS BTM_BleSetPreferPhy(BD_ADDR bd_addr, UINT8 all_phys, UINT8 tx_phy_ma
     return BTM_SUCCESS;
 }
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 tBTM_STATUS BTM_BleSetExtendedAdvRandaddr(UINT8 instance, BD_ADDR rand_addr)
 {
     tBTM_STATUS status = BTM_SUCCESS;
@@ -678,7 +679,9 @@ tBTM_STATUS BTM_BleExtAdvSetClear(void)
 
     return status;
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 tBTM_STATUS BTM_BlePeriodicAdvSetParams(UINT8 instance, tBTM_BLE_Periodic_Adv_Params *params)
 {
     tBTM_STATUS status = BTM_SUCCESS;
@@ -806,7 +809,9 @@ end:
     return status;
 
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
 {
     //tHCI_STATUS err = HCI_SUCCESS;
@@ -864,6 +869,7 @@ end:
 
     return status;
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 void btm_set_phy_callback(UINT8 status)
 {
@@ -874,6 +880,7 @@ void btm_set_phy_callback(UINT8 status)
 
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void btm_create_sync_callback(UINT8 status)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -881,6 +888,7 @@ void btm_create_sync_callback(UINT8 status)
 
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT, &cb_params);
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_phy, uint8_t rx_phy)
 {
@@ -901,6 +909,7 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT, &cb_params);
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 tBTM_STATUS BTM_BlePeriodicAdvSyncCancel(void)
 {
     tHCI_STATUS err = HCI_SUCCESS;
@@ -1001,7 +1010,9 @@ tBTM_STATUS BTM_BlePeriodicAdvClearDev(void)
 
     return status;
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 tBTM_STATUS BTM_BleSetExtendedScanParams(tBTM_BLE_EXT_SCAN_PARAMS *params)
 {
     UINT8 phy_mask = 0;
@@ -1082,6 +1093,7 @@ end:
 
     return status;
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void BTM_BleSetPreferExtenedConnParams (BD_ADDR bd_addr, tBTM_EXT_CONN_PARAMS *params)
 {
@@ -1218,11 +1230,14 @@ void btm_ble_update_phy_evt(tBTM_BLE_UPDATE_PHY *params)
     return;
 }
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void btm_ble_scan_timeout_evt(void)
 {
     BTM_ExtBleCallbackTrigger(BTM_BLE_5_GAP_SCAN_TIMEOUT_EVT, NULL);
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -1248,7 +1263,9 @@ void btm_ble_adv_set_terminated_evt(tBTM_BLE_ADV_TERMINAT *params)
 
     return;
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -1266,6 +1283,7 @@ void btm_ble_ext_adv_report_evt(tBTM_BLE_EXT_ADV_REPORT *params)
     return;
 
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void btm_ble_scan_req_received_evt(tBTM_BLE_SCAN_REQ_RECEIVED *params)
 {
@@ -1301,6 +1319,7 @@ void btm_ble_channel_select_algorithm_evt(tBTM_BLE_CHANNEL_SEL_ALG *params)
     return;
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void btm_ble_periodic_adv_report_evt(tBTM_PERIOD_ADV_REPORT *params)
 {
     tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
@@ -1354,6 +1373,7 @@ void btm_ble_periodic_adv_sync_establish_evt(tBTM_BLE_PERIOD_ADV_SYNC_ESTAB *par
     return;
 
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 uint8_t btm_ble_ext_adv_active_count(void)
 {
