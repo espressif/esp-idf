@@ -160,10 +160,58 @@
 #define UC_BT_BLE_42_FEATURES_SUPPORTED            FALSE
 #endif
 
+#ifdef CONFIG_BT_BLE_42_DTM_TEST_EN
+#define UC_BT_BLE_42_DTM_TEST_EN                   CONFIG_BT_BLE_42_DTM_TEST_EN
+#else
+#define UC_BT_BLE_42_DTM_TEST_EN                   FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_42_ADV_EN
+#define UC_BT_BLE_42_ADV_EN                   CONFIG_BT_BLE_42_ADV_EN
+#else
+#define UC_BT_BLE_42_ADV_EN                   FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_42_SCAN_EN
+#define UC_BT_BLE_42_SCAN_EN                   CONFIG_BT_BLE_42_SCAN_EN
+#else
+#define UC_BT_BLE_42_SCAN_EN                   FALSE
+#endif
+
 #ifdef CONFIG_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
 #define UC_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER            CONFIG_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
 #else
 #define UC_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER            FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_50_EXTEND_ADV_EN
+#define UC_BT_BLE_50_EXTEND_ADV_EN           CONFIG_BT_BLE_50_EXTEND_ADV_EN
+#else
+#define UC_BT_BLE_50_EXTEND_ADV_EN           FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_50_PERIODIC_ADV_EN
+#define UC_BT_BLE_50_PERIODIC_ADV_EN           CONFIG_BT_BLE_50_PERIODIC_ADV_EN
+#else
+#define UC_BT_BLE_50_PERIODIC_ADV_EN           FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_50_EXTEND_SCAN_EN
+#define UC_BT_BLE_50_EXTEND_SCAN_EN           CONFIG_BT_BLE_50_EXTEND_SCAN_EN
+#else
+#define UC_BT_BLE_50_EXTEND_SCAN_EN           FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_50_EXTEND_SYNC_EN
+#define UC_BT_BLE_50_EXTEND_SYNC_EN           CONFIG_BT_BLE_50_EXTEND_SYNC_EN
+#else
+#define UC_BT_BLE_50_EXTEND_SYNC_EN           FALSE
+#endif
+
+#ifdef CONFIG_BT_BLE_50_DTM_TEST_EN
+#define UC_BT_BLE_50_DTM_TEST_EN           CONFIG_BT_BLE_50_DTM_TEST_EN
+#else
+#define UC_BT_BLE_50_DTM_TEST_EN           FALSE
 #endif
 
 #ifdef CONFIG_BT_BLE_FEAT_PERIODIC_ADV_ENH

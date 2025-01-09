@@ -206,7 +206,7 @@ config BT_BLE_ENABLED
     help
         This enables Bluetooth Low Energy
 
-config BT_GATTS_ENABLE
+menuconfig BT_GATTS_ENABLE
     bool "Include GATT server module(GATTS)"
     depends on BT_BLE_ENABLED
     default y
@@ -296,7 +296,7 @@ config BT_GATTS_APPEARANCE_WRITABLE
     help
         Enabling this option allows remote GATT clients to write appearance
 
-config BT_GATTC_ENABLE
+menuconfig BT_GATTC_ENABLE
     bool "Include GATT client module(GATTC)"
     depends on BT_BLE_ENABLED
     default y
@@ -334,7 +334,16 @@ config BT_GATTC_CONNECT_RETRY_COUNT
     help
         The number of attempts to reconnect if the connection establishment failed
 
-config BT_BLE_SMP_ENABLE
+config BT_BLE_ESTAB_LINK_CONN_TOUT
+    int "Timeout of BLE connection establishment"
+    depends on BT_GATTC_ENABLE
+    range 1 60
+    default 30
+    help
+        Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
+        establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
+
+menuconfig BT_BLE_SMP_ENABLE
     bool "Include BLE security module(SMP)"
     depends on BT_BLE_ENABLED
     default y
@@ -366,6 +375,23 @@ config BT_BLE_SMP_BOND_NVS_FLASH
     default y
     help
         This select can save SMP bonding keys to nvs flash
+
+config BT_BLE_RPA_SUPPORTED
+    bool "Update RPA to Controller"
+    depends on (BT_BLE_SMP_ENABLE && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
+    default y if BT_CONTROLLER_DISABLED
+    help
+        This enables controller RPA list function.
+        For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
+        advertising packets from peer devices that contain private address, HW will not receive the advertising
+        packets contain identity address after IRK changed. If this option is disabled, address resolution will
+        be performed in the host, so the functions that require controller to resolve address in the white list
+        cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
+        to your own needs.
+
+        For other BLE chips, devices support network privacy mode and device privacy mode,
+        users can switch the two modes according to their own needs. So this option is enabled by default.
 
 config BT_STACK_NO_LOG
     bool "Disable BT debug logs (minimize bin size)"
@@ -1171,15 +1197,6 @@ config BT_BLE_ACT_SCAN_REP_ADV_SCAN
 
         # Memory reserved at start of DRAM for Bluetooth stack
 
-config BT_BLE_ESTAB_LINK_CONN_TOUT
-    int "Timeout of BLE connection establishment"
-    depends on BT_BLE_ENABLED
-    range 1 60
-    default 30
-    help
-        Bluetooth Connection establishment maximum time, if connection time exceeds this value, the connection
-        establishment fails, ESP_GATTC_OPEN_EVT or ESP_GATTS_OPEN_EVT is triggered.
-
 config BT_MAX_DEVICE_NAME_LEN
     int "length of bluetooth device name"
     depends on BT_BLUEDROID_ENABLED
@@ -1190,23 +1207,6 @@ config BT_MAX_DEVICE_NAME_LEN
         the complete device name, then only the shortname will be displayed, the rest parts that can't fit in
         will be truncated.
 
-config BT_BLE_RPA_SUPPORTED
-    bool "Update RPA to Controller"
-    depends on (BT_BLUEDROID_ENABLED && ((BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
-    default n if (BT_CONTROLLER_ENABLED && !SOC_BLE_DEVICE_PRIVACY_SUPPORTED)
-    default y if BT_CONTROLLER_DISABLED
-    help
-        This enables controller RPA list function.
-        For ESP32, ESP32 only support network privacy mode. If this option is enabled, ESP32 will only accept
-        advertising packets from peer devices that contain private address, HW will not receive the advertising
-        packets contain identity address after IRK changed. If this option is disabled, address resolution will
-        be performed in the host, so the functions that require controller to resolve address in the white list
-        cannot be used. This option is disabled by default on ESP32, please enable or disable this option according
-        to your own needs.
-
-        For other BLE chips, devices support network privacy mode and device privacy mode,
-        users can switch the two modes according to their own needs. So this option is enabled by default.
-
 config BT_BLE_RPA_TIMEOUT
     int "Timeout of resolvable private address"
     depends on BT_BLE_ENABLED
@@ -1216,7 +1216,7 @@ config BT_BLE_RPA_TIMEOUT
         This set RPA timeout of Controller and Host.
         Default is 900 s (15 minutes). Range is 1 s to 1 hour (3600 s).
 
-config BT_BLE_50_FEATURES_SUPPORTED
+menuconfig BT_BLE_50_FEATURES_SUPPORTED
     bool "Enable BLE 5.0 features(please disable BLE 4.2 if enable BLE 5.0)"
     depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
     default y
@@ -1224,6 +1224,41 @@ config BT_BLE_50_FEATURES_SUPPORTED
         Enabling this option activates BLE 5.0 features.
         This option is universally supported in chips that support BLE, except for ESP32.
         BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_50_EXTEND_ADV_EN
+    bool "Enable BLE extend advertising"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE extend advertising
+
+config BT_BLE_50_PERIODIC_ADV_EN
+    bool "Enable BLE periodic advertising"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE periodic advertising
+
+config BT_BLE_50_EXTEND_SCAN_EN
+    bool "Enable BLE extend scan"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE extend scan
+
+config BT_BLE_50_EXTEND_SYNC_EN
+    bool "Enable BLE periodic advertising sync"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE periodic advertising sync
+
+config BT_BLE_50_DTM_TEST_EN
+    bool "Enable BLE 5.0 DTM test"
+    depends on BT_BLE_50_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 5.0 direct test mode
 
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
@@ -1246,14 +1281,36 @@ config BT_BLE_FEAT_CREATE_SYNC_ENH
     help
         Enable the create sync enhancements
 
-config BT_BLE_42_FEATURES_SUPPORTED
+menuconfig BT_BLE_42_FEATURES_SUPPORTED
     bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
-    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    depends on BT_BLE_ENABLED
+    default y if IDF_TARGET_ESP32
     default n
     help
         This enables BLE 4.2 features.
         This option is universally supported by all ESP chips with BLE capabilities.
         BLE 4.2 and BLE 5.0 cannot be used simultaneously.
+
+config BT_BLE_42_DTM_TEST_EN
+    bool "Enable BLE 4.2 DTM test"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE 4.2 direct test mode
+
+config BT_BLE_42_ADV_EN
+    bool "Enable BLE 4.2 advertising"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 advertising
+
+config BT_BLE_42_SCAN_EN
+    bool "Enable BLE 4.2 scan"
+    depends on BT_BLE_42_FEATURES_SUPPORTED
+    default y
+    help
+        This enables BLE v4.2 scan
 
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"

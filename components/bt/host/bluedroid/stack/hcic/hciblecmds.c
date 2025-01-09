@@ -686,6 +686,7 @@ BOOLEAN btsnd_hcic_ble_ltk_req_neg_reply (UINT16 handle)
     return (TRUE);
 }
 
+#if (BLE_42_DTM_TEST_EN == TRUE)
 BOOLEAN btsnd_hcic_ble_receiver_test(UINT8 rx_freq)
 {
     BT_HDR *p;
@@ -733,7 +734,9 @@ BOOLEAN btsnd_hcic_ble_transmitter_test(UINT8 tx_freq, UINT8 test_data_len, UINT
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
 }
+#endif // // #if (BLE_42_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 BOOLEAN btsnd_hcic_ble_test_end(void)
 {
     BT_HDR *p;
@@ -754,6 +757,7 @@ BOOLEAN btsnd_hcic_ble_test_end(void)
     btu_hcif_send_cmd (LOCAL_BR_EDR_CONTROLLER_ID,  p);
     return (TRUE);
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
 BOOLEAN btsnd_hcic_ble_read_host_supported (void)
 {
@@ -1174,6 +1178,7 @@ BOOLEAN btsnd_hcic_ble_set_phy(UINT16 conn_handle,
     return TRUE;
 }
 
+#if (BLE_50_DTM_TEST_EN == TRUE)
 UINT8 btsnd_hcic_ble_enhand_rx_test(UINT8 rx_channel, UINT8 phy,
                                                          UINT8 modulation_idx)
 {
@@ -1218,7 +1223,9 @@ UINT8 btsnd_hcic_ble_enhand_tx_test(UINT8 tx_channel, UINT8 len,
 
     return TRUE;
 }
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_extend_rand_address(UINT8 adv_handle, BD_ADDR rand_addr)
 {
     BT_HDR *p;
@@ -1432,7 +1439,9 @@ UINT8 btsnd_hcic_ble_clear_adv_set(void)
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_periodic_adv_params(UINT8 adv_handle,
                                                                      UINT16 interval_min,
                                                                      UINT16 interval_max,
@@ -1507,7 +1516,9 @@ UINT8 btsnd_hcic_ble_periodic_adv_enable(UINT8 enable, UINT8 adv_handle)
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 UINT8 btsnd_hcic_ble_set_ext_scan_params(UINT8 own_addr_type, UINT8 filter_policy,
                                                                UINT8 phy_mask, UINT8 phy_count,
                                                                tHCI_EXT_SCAN_PARAMS *params)
@@ -1555,6 +1566,7 @@ UINT8 btsnd_hcic_ble_ext_scan_enable(UINT8 enable, UINT8 filter_dups,
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
 {
@@ -1627,6 +1639,7 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
 
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
                                                                        UINT16 sync_timeout, UINT8 unused)
@@ -1750,6 +1763,7 @@ UINT8 btsnd_hcic_ble_read_periodic_adv_list_size(void)
 
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 UINT8 btsnd_hcic_ble_read_trans_power(void)
 {

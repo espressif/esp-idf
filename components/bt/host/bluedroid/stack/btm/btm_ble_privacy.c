@@ -683,10 +683,12 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
 
     p_ble_cb->suspended_rl_state = BTM_BLE_RL_IDLE;
 
+#if (BLE_42_ADV_EN == TRUE)
     if (p_ble_cb->inq_var.adv_mode == BTM_BLE_ADV_ENABLE) {
         btm_ble_stop_adv();
         p_ble_cb->suspended_rl_state |= BTM_BLE_RL_ADV;
     }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
     if (BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
         btm_ble_stop_scan();
@@ -714,15 +716,16 @@ BOOLEAN btm_ble_suspend_resolving_list_activity(void)
 void btm_ble_resume_resolving_list_activity(void)
 {
     tBTM_BLE_CB *p_ble_cb = &btm_cb.ble_ctr_cb;
-
+#if (BLE_42_ADV_EN == TRUE)
     if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_ADV) {
         btm_ble_start_adv();
     }
-
+#endif // #if (BLE_42_ADV_EN == TRUE)
+#if (BLE_42_SCAN_EN == TRUE)
     if (p_ble_cb->suspended_rl_state & BTM_BLE_RL_SCAN) {
         btm_ble_start_scan();
     }
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     if  (p_ble_cb->suspended_rl_state & BTM_BLE_RL_INIT) {
         btm_ble_resume_bg_conn();
     }
