@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -530,9 +530,6 @@ bt_status_t btc_init(void)
     btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 
-#if SCAN_QUEUE_CONGEST_CHECK
-    btc_adv_list_init();
-#endif
     /* TODO: initial the profile_tab */
     return BT_STATUS_SUCCESS;
 }
@@ -548,18 +545,6 @@ void btc_deinit(void)
 #if (BLE_INCLUDED == TRUE)
     btc_gap_ble_deinit();
 #endif  ///BLE_INCLUDED == TRUE
-#if SCAN_QUEUE_CONGEST_CHECK
-    btc_adv_list_deinit();
-#endif
-}
-
-bool btc_check_queue_is_congest(void)
-{
-    if (osi_thread_queue_wait_size(btc_thread, 0) >= BT_QUEUE_CONGEST_SIZE) {
-        return true;
-    }
-
-    return false;
 }
 
 int get_btc_work_queue_size(void)

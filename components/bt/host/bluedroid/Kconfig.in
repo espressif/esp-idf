@@ -241,8 +241,9 @@ config BT_GATTS_PPCP_CHAR_GAP
     depends on BT_GATTS_ENABLE
     default n
     help
-        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04) in GAP service that has
-        connection parameters like min/max connection interval, slave latency and supervision timeout multiplier
+        This enables "Peripheral Preferred Connection Parameters" characteristic (UUID: 0x2A04)
+        in GAP service that has connection parameters like min/max connection interval, slave
+        latency and supervision timeout multiplier
 
 config BT_BLE_BLUFI_ENABLE
     bool "Include blufi function"
@@ -1169,15 +1170,6 @@ config BT_BLE_DYNAMIC_ENV_MEMORY
     help
         This select can make the allocation of memory will become more flexible
 
-config BT_BLE_HOST_QUEUE_CONG_CHECK
-    bool "BLE queue congestion check"
-    depends on BT_BLE_ENABLED
-    default n
-    help
-        When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
-        or application layer handling adv packets is slow, it will cause the controller memory
-        to run out. if enabled, adv packets will be lost when host queue is congested.
-
 config BT_SMP_ENABLE
     bool
     depends on BT_BLUEDROID_ENABLED
@@ -1256,16 +1248,6 @@ config BT_BLE_50_FEATURES_SUPPORTED
         This option is universally supported in chips that support BLE, except for ESP32.
         BLE 4.2 and BLE 5.0 cannot be used simultaneously.
 
-
-config BT_BLE_42_FEATURES_SUPPORTED
-    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
-    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
-    default n
-    help
-        This enables BLE 4.2 features.
-        This option is universally supported by all ESP chips with BLE capabilities.
-        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
-
 config BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER
     bool "Enable BLE periodic advertising sync transfer feature"
     depends on (BT_BLUEDROID_ENABLED && BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_ESP_NIMBLE_CONTROLLER) || BT_CONTROLLER_DISABLED)) # NOERROR
@@ -1286,6 +1268,15 @@ config BT_BLE_FEAT_CREATE_SYNC_ENH
     default n
     help
         Enable the create sync enhancements
+
+config BT_BLE_42_FEATURES_SUPPORTED
+    bool "Enable BLE 4.2 features(please disable BLE 5.0 if enable BLE 4.2)"
+    depends on (BT_BLE_ENABLED && ((BT_CONTROLLER_ENABLED && SOC_BLE_50_SUPPORTED) || BT_CONTROLLER_DISABLED))
+    default n
+    help
+        This enables BLE 4.2 features.
+        This option is universally supported by all ESP chips with BLE capabilities.
+        BLE 4.2 and BLE 5.0 cannot be used simultaneously.
 
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
