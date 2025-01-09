@@ -127,9 +127,13 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_set_conn_params,             /* BTA_DM_API_BLE_CONN_PARAM_EVT */
     bta_dm_ble_set_conn_scan_params,        /* BTA_DM_API_BLE_CONN_SCAN_PARAM_EVT */
     bta_dm_ble_set_scan_params,             /* BTA_DM_API_BLE_SCAN_PARAM_EVT */
+#if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_set_scan_fil_params,         /* BTA_DM_API_BLE_SCAN_FIL_PARAM_EVT */
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_observe,                     /* BTA_DM_API_BLE_OBSERVE_EVT */
+#if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_scan,                        /* BTA_DM_API_BLE_SCAN_EVT */
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     bta_dm_ble_update_conn_params,          /* BTA_DM_API_UPDATE_CONN_PARAM_EVT */
     /* This handler function added by
        Yulong at 2016/9/9 to support the
@@ -145,7 +149,7 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_config_local_privacy,        /* BTA_DM_API_LOCAL_PRIVACY_EVT */
 #endif
     bta_dm_ble_config_local_icon,           /* BTA_DM_API_LOCAL_ICON_EVT */
-    bta_dm_ble_set_adv_params,              /* BTA_DM_API_BLE_ADV_PARAM_EVT */
+#if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_adv_params_all,          /* BTA_DM_API_BLE_ADV_PARAM_All_EVT */
     bta_dm_ble_set_adv_config,              /* BTA_DM_API_BLE_SET_ADV_CONFIG_EVT */
     /* New function to allow set raw adv
@@ -156,8 +160,8 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
        response data to HCI */
     bta_dm_ble_set_scan_rsp_raw,            /* BTA_DM_API_BLE_SET_SCAN_RSP_RAW_EVT */
     bta_dm_ble_broadcast,                   /* BTA_DM_API_BLE_BROADCAST_EVT */
+#endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_set_data_length,             /* BTA_DM_API_SET_DATA_LENGTH_EVT */
-    bta_dm_ble_set_long_adv,                /* BTA_DM_API_BLE_SET_LONG_ADV_EVT */
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     bta_dm_cfg_filter_cond,                 /* BTA_DM_API_CFG_FILTER_COND_EVT */
     bta_dm_scan_filter_param_setup,         /* BTA_DM_API_SCAN_FILTER_SETUP_EVT */
@@ -194,28 +198,38 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_read_phy,                /* BTA_DM_API_READ_PHY_EVT */
     bta_dm_ble_gap_set_prefer_default_phy,  /* BTA_DM_API_SET_PER_DEF_PHY_EVT */
     bta_dm_ble_gap_set_prefer_phy,          /* BTA_DM_API_SET_PER_PHY_EVT */
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     bta_dm_ble_gap_ext_adv_set_rand_addr,   /* BTA_DM_API_SET_EXT_ADV_RAND_ADDR_EVT */
     bta_dm_ble_gap_ext_adv_set_params,      /* BTA_DM_API_SET_EXT_ADV_PARAMS_EVT */
     bta_dm_ble_gap_config_ext_adv_data_raw, /* BTA_DM_API_CFG_ADV_DATA_RAW_EVT */
     bta_dm_ble_gap_start_ext_adv,           /* BTA_DM_API_EXT_ADV_ENABLE_EVT */
     bta_dm_ble_gap_ext_adv_set_remove,      /* BTA_DM_API_EXT_ADV_SET_REMOVE_EVT */
     bta_dm_ble_gap_ext_adv_set_clear,       /* BTA_DM_API_EXT_ADV_SET_CLEAR_EVT */
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
     bta_dm_ble_gap_periodic_adv_set_params, /* BTA_DM_API_PERIODIC_ADV_SET_PARAMS_EVT */
     bta_dm_ble_gap_periodic_adv_cfg_data_raw, /* BTA_DM_API_PERIODIC_ADV_CFG_DATA_EVT */
     bta_dm_ble_gap_periodic_adv_enable,     /* BTA_DM_API_PERIODIC_ADV_ENABLE_EVT */
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     bta_dm_ble_gap_periodic_adv_create_sync, /* BTA_DM_API_PERIODIC_ADV_SYNC_EVT */
     bta_dm_ble_gap_periodic_adv_sync_cancel, /* BTA_DM_API_PERIODIC_ADV_SYNC_CANCEL_EVT */
     bta_dm_ble_gap_periodic_adv_sync_terminate, /* BTA_DM_API_PERIODIC_ADV_SYNC_TERMINATE_EVT */
     bta_dm_ble_gap_periodic_adv_add_dev_to_list, /* BTA_DM_API_PERIODIC_ADV_ADD_DEV_TO_LSIT_EVT */
     bta_dm_ble_gap_periodic_adv_remove_dev_from_list, /* BTA_DM_API_PERIODIC_ADV_REMOVE_DEV_FROM_LSIT_EVT */
     bta_dm_ble_gap_periodic_adv_clear_dev,  /* BTA_DM_API_PERIODIC_ADV_CLEAR_DEV_EVT */
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
     bta_dm_ble_gap_set_ext_scan_params,     /* BTA_DM_API_SET_EXT_SCAN_PARAMS_EVT */
     bta_dm_ble_gap_ext_scan,                /* BTA_DM_API_START_EXT_SCAN_EVT */
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
     bta_dm_ble_gap_set_prefer_ext_conn_params, /* BTA_DM_API_SET_PERF_EXT_CONN_PARAMS_EVT */
     NULL,                                   /* BTA_DM_API_EXT_CONN_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
     bta_dm_ble_gap_dtm_enhance_tx_start,    /* BTA_DM_API_DTM_ENH_TX_START_EVT */
     bta_dm_ble_gap_dtm_enhance_rx_start,    /* BTA_DM_API_DTM_ENH_RX_START_EVT */
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     bta_dm_ble_gap_periodic_adv_recv_enable, /* BTA_DM_API_PERIODIC_ADV_RECV_ENABLE_EVT */
     bta_dm_ble_gap_periodic_adv_sync_trans,  /* BTA_DM_API_PERIODIC_ADV_SYNC_TRANS_EVT */
@@ -223,10 +237,16 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_periodic_adv_sync_trans_params, /* BTA_DM_API_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS_EVT */
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_DTM_TEST_EN == TRUE)
     bta_dm_ble_gap_dtm_tx_start, /* BTA_DM_API_DTM_TX_START_EVT */
     bta_dm_ble_gap_dtm_rx_start, /* BTA_DM_API_DTM_RX_START_EVT */
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
     bta_dm_ble_gap_dtm_stop, /* BTA_DM_API_DTM_STOP_EVT */
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
+#if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_gap_clear_adv, /* BTA_DM_API_BLE_CLEAR_ADV_EVT */
+#endif // #if (BLE_42_ADV_EN == TRUE)
     bta_dm_ble_gap_set_rpa_timeout, /* BTA_DM_API_SET_RPA_TIMEOUT_EVT */
     bta_dm_ble_gap_add_dev_to_resolving_list, /* BTA_DM_API_ADD_DEV_TO_RESOLVING_LIST_EVT */
     bta_dm_ble_gap_set_privacy_mode, /* BTA_DM_API_SET_PRIVACY_MODE_EVT */

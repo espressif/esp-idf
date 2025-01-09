@@ -1415,7 +1415,7 @@ void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
     }
 }
 
-
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleScanFilterParams
@@ -1455,46 +1455,9 @@ void BTA_DmSetBleScanFilterParams(tGATT_IF client_if, UINT32 scan_interval,
 
 
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
-/*******************************************************************************
-**
-** Function         BTA_DmSetBleAdvParams
-**
-** Description      This function sets the advertising parameters BLE functionality.
-**                  It is to be called when device act in peripheral or broadcaster
-**                  role.
-**
-**
-** Returns          void
-**
-*******************************************************************************/
-void BTA_DmSetBleAdvParams (UINT16 adv_int_min, UINT16 adv_int_max,
-                            tBLE_BD_ADDR *p_dir_bda)
-{
-#if BLE_INCLUDED == TRUE
-    tBTA_DM_API_BLE_ADV_PARAMS    *p_msg;
-
-    APPL_TRACE_API ("BTA_DmSetBleAdvParam: %d, %d\n", adv_int_min, adv_int_max);
-
-    if ((p_msg = (tBTA_DM_API_BLE_ADV_PARAMS *) osi_malloc(sizeof(tBTA_DM_API_BLE_ADV_PARAMS)
-                 + sizeof(tBLE_BD_ADDR))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_BLE_ADV_PARAMS) + sizeof(tBLE_BD_ADDR));
-
-        p_msg->hdr.event = BTA_DM_API_BLE_ADV_PARAM_EVT;
-
-        p_msg->adv_int_min      = adv_int_min;
-        p_msg->adv_int_max      = adv_int_max;
-
-        if (p_dir_bda != NULL) {
-            p_msg->p_dir_bda = (tBLE_BD_ADDR *)(p_msg + 1);
-            memcpy(p_msg->p_dir_bda, p_dir_bda, sizeof(tBLE_BD_ADDR));
-        }
-
-        bta_sys_sendmsg(p_msg);
-    }
-#endif
-}
-
+#if (BLE_42_ADV_EN == TRUE)
 void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
                                UINT8 adv_type, tBLE_ADDR_TYPE addr_type_own,
                                tBTM_BLE_ADV_CHNL_MAP chnl_map, tBTM_BLE_AFP adv_fil_pol,
@@ -1528,6 +1491,8 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
     }
 #endif
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
+
 #endif  ///BLE_INCLUDED == TRUE
 
 
@@ -1536,6 +1501,7 @@ void BTA_DmSetBleAdvParamsAll (UINT16 adv_int_min, UINT16 adv_int_max,
 ********************************************************************************/
 
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetAdvConfig
@@ -1599,35 +1565,6 @@ void BTA_DmBleSetAdvConfigRaw (UINT8 *p_raw_adv, UINT32 raw_adv_len,
 
 /*******************************************************************************
 **
-** Function         BTA_DmBleSetLongAdv
-**
-** Description      This function is called to set long Advertising data
-**
-** Parameters       adv_data : long advertising data.
-**                  adv_data_len : long advertising data length.
-**                  p_adv_data_cback : set long adv data complete callback.
-**
-** Returns          None
-**
-*******************************************************************************/
-void BTA_DmBleSetLongAdv (UINT8 *adv_data, UINT32 adv_data_len,
-                            tBTA_SET_ADV_DATA_CMPL_CBACK *p_adv_data_cback)
-{
-    tBTA_DM_API_SET_LONG_ADV  *p_msg;
-
-    if ((p_msg = (tBTA_DM_API_SET_LONG_ADV *)
-                 osi_malloc(sizeof(tBTA_DM_API_SET_LONG_ADV))) != NULL) {
-        p_msg->hdr.event = BTA_DM_API_BLE_SET_LONG_ADV_EVT;
-        p_msg->p_adv_data_cback = p_adv_data_cback;
-        p_msg->adv_data = adv_data;
-        p_msg->adv_data_len = adv_data_len;
-
-        bta_sys_sendmsg(p_msg);
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         BTA_DmBleSetScanRsp
 **
 ** Description      This function is called to override the BTA scan response.
@@ -1682,6 +1619,7 @@ void BTA_DmBleSetScanRspRaw (UINT8 *p_raw_scan_rsp, UINT32 raw_scan_rsp_len,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -1869,7 +1807,7 @@ extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
 **                      BLE ADV data management API
 ********************************************************************************/
 #if BLE_INCLUDED == TRUE
-
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleBroadcast
@@ -1923,6 +1861,8 @@ void BTA_DmBleClearAdv (tBTA_CLEAR_ADV_CMPL_CBACK *p_clear_adv_cback)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
+
 #endif
 /*******************************************************************************
 **
@@ -2657,6 +2597,7 @@ void BTA_DmBleSetDataLength(BD_ADDR remote_device, UINT16 tx_data_length, tBTA_S
     }
 }
 
+#if (BLE_42_DTM_TEST_EN == TRUE)
 void BTA_DmBleDtmTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_TX_START *p_msg;
@@ -2686,7 +2627,9 @@ void BTA_DmBleDtmRxStart(uint8_t rx_channel, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_STOP *p_msg;
@@ -2699,6 +2642,7 @@ void BTA_DmBleDtmStop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
 void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t privacy_mode, tBTA_SET_PRIVACY_MODE_CMPL_CBACK *p_cback)
 {
@@ -2834,7 +2778,7 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
         bta_sys_sendmsg(p_msg);
     }
 }
-
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleScan
@@ -2875,6 +2819,7 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -3116,7 +3061,7 @@ void BTA_DmBleGapSetPreferedPHY(BD_ADDR addr,
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
-
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 void BTA_DmBleGapExtAdvSetRandaddr(UINT16 instance, BD_ADDR addr)
 {
     tBTA_DM_API_EXT_ADV_SET_RAND_ADDR *p_msg;
@@ -3222,7 +3167,9 @@ void BTA_DmBleGapExtAdvSetClear(void)
         APPL_TRACE_ERROR("%s malloc failed", __func__);
     }
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 void BTA_DmBleGapPeriodicAdvSetParams(UINT8 instance,
                                                          tBTA_DM_BLE_Periodic_Adv_Params *params)
 {
@@ -3279,7 +3226,9 @@ void BTA_DmBleGapPeriodicAdvEnable(UINT8 enable, UINT8 instance)
     }
 
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void BTA_DmBleGapPeriodicAdvCreateSync(tBTA_DM_BLE_Periodic_Sync_Params *params)
 {
     tBTA_DM_API_PERIODIC_ADV_SYNC *p_msg;
@@ -3381,7 +3330,9 @@ void BTA_DmBleGapPeriodicAdvClearDev(void)
     }
 
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void BTA_DmBleGapSetExtScanParams(tBTA_DM_BLE_EXT_SCAN_PARAMS *params)
 {
     tBTA_DM_API_SET_EXT_SCAN_PARAMS *p_msg;
@@ -3415,6 +3366,7 @@ void BTA_DmBleGapExtScan(BOOLEAN start, UINT32 duration, UINT16 period)
     }
 
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void BTA_DmBleGapPreferExtConnectParamsSet(BD_ADDR bd_addr,
                                                                  UINT8 phy_mask,
@@ -3468,7 +3420,9 @@ void BTA_DmBleGapExtConnect(tBLE_ADDR_TYPE own_addr_type, const BD_ADDR peer_add
     }
 
 }
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
+#if (BLE_50_DTM_TEST_EN == TRUE)
 void BTA_DmBleDtmEnhTxStart(uint8_t tx_channel, uint8_t len_of_data, uint8_t pkt_payload, uint8_t phy, tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
     tBTA_DM_API_BLE_DTM_ENH_TX_START *p_msg;
@@ -3501,8 +3455,7 @@ void BTA_DmBleDtmEnhRxStart(uint8_t rx_channel, uint8_t phy, uint8_t modulation_
         bta_sys_sendmsg(p_msg);
     }
 }
-
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void BTA_DmBleGapPeriodicAdvRecvEnable(UINT16 sync_handle, UINT8 enable)

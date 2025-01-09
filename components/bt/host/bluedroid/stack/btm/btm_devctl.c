@@ -752,9 +752,6 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
 #if (BLE_INCLUDED == TRUE)
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
-        case HCI_VENDOR_BLE_LONG_ADV_DATA:
-            BTM_TRACE_EVENT("Set long adv data complete\n");
-            break;
         case HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST: {
             uint8_t subcode, status; uint32_t length;
             STREAM_TO_UINT8(status, p);
