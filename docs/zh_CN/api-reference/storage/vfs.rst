@@ -3,70 +3,98 @@
 
 :link_to_translation:`en:[English]`
 
+
 概述
 --------
 
 虚拟文件系统 (VFS) 组件为驱动程序提供一个统一接口，可以操作类文件对象。这类驱动程序可以是 FAT、SPIFFS 等真实文件系统，也可以是提供文件类接口的设备驱动程序。
 
-VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 驱动程序协同工作。在高层级，每个 FS 驱动程序均与某些路径前缀相关联。当一个 C 库函数需要打开文件时，VFS 组件将搜索与该文件所在文件路径相关联的 FS 驱动程序，并将调用传递给该驱动程序。针对该文件的读取、写入等其他操作的调用也将传递给这个驱动程序。
+VFS 组件支持 C 库函数（如 fopen 和 fprintf 等）与文件系统 (FS) 驱动程序协同工作。在高层级，每个 FS 驱动程序均挂载到以某个前缀开头的路径上。当一个 C 库函数需要打开文件时，VFS 组件将搜索与该文件所在文件路径相关联的 FS 驱动程序，并将调用传递给该驱动程序。针对该文件的读取、写入等其他操作的调用也将传递给这个驱动程序。
 
-例如，使用 ``/fat`` 前缀注册 FAT 文件系统驱动，之后即可调用 ``fopen("/fat/file.txt", "w")``。之后，VFS 将调用 FAT 驱动的 ``open`` 函数，并将参数 ``/file.txt`` 和合适的打开模式传递给 ``open`` 函数；后续对返回的 ``FILE*`` 数据流调用 C 库函数也同样会传递给 FAT 驱动。
+例如，将 FAT 文件系统驱动挂载到 ``/fat`` 前缀开头的路径上，之后即可调用 ``fopen("/fat/file.txt", "w")``。之后，VFS 将调用 FAT 驱动的 ``open`` 函数，并将参数 ``/file.txt`` 和合适的打开模式传递给 ``open`` 函数；后续对返回的 ``FILE*`` 数据流调用 C 库函数也同样会传递给 FAT 驱动。
 
 
 注册 FS 驱动程序
 ---------------------
 
-如需注册 FS 驱动程序，应用程序首先要定义一个 :cpp:type:`esp_vfs_t` 结构体实例，并用指向 FS API 的函数指针填充它。
+.. note::
+
+    有关先前版本 API（使用 :cpp:type:`esp_vfs_t`）的内容，可以查阅之前发布的文档。
+
+如需注册 FS 驱动程序，应用程序首先要定义一个 :cpp:type:`esp_vfs_fs_ops_t` 结构体实例，并用指向 FS API 的函数指针填充它。
 
 .. highlight:: c
 
 ::
 
-    esp_vfs_t myfs = {
-        .flags = ESP_VFS_FLAG_DEFAULT,
-        .write = &myfs_write,
-        .open = &myfs_open,
+    // esp_vfs_fs_ops_t 及其子组件的声明必须是静态的
+    static const esp_vfs_dir_ops_t myfs_dir = {
         .fstat = &myfs_fstat,
-        .close = &myfs_close,
-        .read = &myfs_read,
     };
 
-    ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
-
-在上述代码中需要用到 ``read``、 ``write`` 或 ``read_p``、 ``write_p``，具体使用哪组函数由 FS 驱动程序 API 的声明方式决定。
-
-示例 1：声明 API 函数时不带额外的上下文指针参数，即 FS 驱动程序为单例模式，此时使用 ``write`` ::
-
-    ssize_t myfs_write(int fd, const void * data, size_t size);
-
-    // 在 esp_vfs_t 的定义中：
-        .flags = ESP_VFS_FLAG_DEFAULT,
+    static const esp_vfs_fs_ops_t myfs = {
         .write = &myfs_write,
-    // ... 其他成员已初始化
+        .open = &myfs_open,
+        .close = &myfs_close,
+        .read = &myfs_read,
+        .dir = &myfs_dir,
+    };
 
-    // 注册文件系统时，上下文指针（第三个参数）为 NULL：
-    ESP_ERROR_CHECK(esp_vfs_register("/data", &myfs, NULL));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_STATIC, NULL));
 
-示例 2：声明 API 函数时需要一个额外的上下文指针作为参数，即可支持多个 FS 驱动程序实例，此时使用 ``write_p`` ::
+
+非静态 :cpp:type:`esp_vfs_fs_ops_t`
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+推荐使用静态分配的 :cpp:type:`esp_vfs_fs_ops_t` 和 ``ESP_VFS_FLAG_STATIC`` 来注册文件系统，因为这种方式更高效。若无法使用静态分配，则将 ``ESP_VFS_FLAG_STATIC`` 替换为 ``ESP_VFS_FLAG_DEFAULT``，指示 VFS 在 RAM 中对传递的结构体进行深拷贝，并由 VFS 组件来管理这份拷贝。
+
+.. highlight:: c
+
+::
+
+    // 可能是局部作用域
+    {
+        esp_vfs_dir_ops_t myfs_dir = {
+            .fstat = &myfs_fstat,
+        };
+
+        bool some_condition = false;
+
+        esp_vfs_fs_ops_t myfs = {
+            .write = some_condition ? &myfs_special_write : &myfs_write,
+            // ... 其他成员
+            .dir = &myfs_dir,
+        };
+
+        ESP_ERROR_CHECK(esp_vfs_register_fs("/data", &myfs, ESP_VFS_FLAG_DEFAULT, NULL));
+    }
+
+
+上下文感知文件系统
+^^^^^^^^^^^^^^^^^^
+
+在某些情况下，当挂载多个文件系统实例时，向文件系统功能传递一些上下文信息（比如特定挂载点的文件描述符表）是有益的，甚至是必要的。因此，:cpp:type:`esp_vfs_fs_ops_t` 中包含了每个成员带有 ``_p`` 后缀的第二个版本。例如，``read`` 函数有其对应的 ``read_p`` 函数，后者需要额外的第一个参数。在注册文件系统时，必须指定 ``ESP_VFS_FLAG_CONTEXT_PTR`` 标志，并将上下文指针作为最后一个参数传递。
+
+::
 
     ssize_t myfs_write(myfs_t* fs, int fd, const void * data, size_t size);
 
     // 在 esp_vfs_t 的定义中：
-        .flags = ESP_VFS_FLAG_CONTEXT_PTR,
         .write_p = &myfs_write,
-    // ... 其他成员已初始化
+    // ... 初始化其他成员
 
-    // 注册文件系统时，将文件系统上下文指针传递给第三个参数
-    // （使用假设的 myfs_mount 函数进行示例说明）
+    // 注册文件系统时，将 ESP_VFS_FLAG_CONTEXT_PTR 标志与文件系统上下文指针分别作为第三和第四个参数传递
+    // （假设的 myfs_mount 函数用于实例说明）
     myfs_t* myfs_inst1 = myfs_mount(partition1->offset, partition1->size);
-    ESP_ERROR_CHECK(esp_vfs_register("/data1", &myfs, myfs_inst1));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data1", &myfs, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, myfs_inst1));
 
     // 可以注册另一个实例：
     myfs_t* myfs_inst2 = myfs_mount(partition2->offset, partition2->size);
-    ESP_ERROR_CHECK(esp_vfs_register("/data2", &myfs, myfs_inst2));
+    ESP_ERROR_CHECK(esp_vfs_register_fs("/data2", &myfs, ESP_VFS_FLAG_STATIC | ESP_VFS_FLAG_CONTEXT_PTR, myfs_inst2));
+
 
 同步输入/输出多路复用
-^^^^^^^^^^^^^^^^^^^^^^^^
+----------------------
 
 VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用，其实现方式如下：
 
@@ -82,8 +110,9 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 6. :cpp:func:`select` 调用结束并返回适当的结果。
 
+
 非套接字 VFS 驱动
-""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^
 
 如果要使用非套接字 VFS 驱动的文件描述符调用 :cpp:func:`select`，那么需要用函数 :cpp:func:`start_select` 和 :cpp:func:`end_select` 注册该驱动，具体如下：
 
@@ -91,7 +120,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 ::
 
-    // 在 esp_vfs_t 的定义中：
+    // 在 esp_vfs_select_ops_t 的定义中：
         .start_select = &uart_start_select,
         .end_select = &uart_end_select,
     // ... 其他成员已初始化
@@ -113,7 +142,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 
 套接字 VFS 驱动
-""""""""""""""""""""""
+^^^^^^^^^^^^^^^
 
 套接字 VFS 驱动会使用自实现的 :cpp:func:`socket_select` 函数，在读取/写入/错误条件时，非套接字 VFS 驱动会通知该函数。
 
@@ -123,7 +152,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
 
 ::
 
-    // 在 esp_vfs_t 的定义中：
+    // 在 esp_vfs_select_ops_t 的定义中：
         .socket_select = &lwip_select,
         .get_socket_select_semaphore = &lwip_get_socket_select_semaphore,
         .stop_socket_select = &lwip_stop_socket_select,
@@ -145,6 +174,7 @@ VFS 组件支持通过 :cpp:func:`select` 进行同步输入/输出多路复用�
     如果 :cpp:func:`select` 用于套接字文件描述符，可以禁用 :ref:`CONFIG_VFS_SUPPORT_SELECT` 选项来减少代码量，提高性能。
 
     不要在 :cpp:func:`select` 调用过程中更改套接字驱动，否则会出现一些未定义行为。
+
 
 路径
 -----
@@ -195,24 +225,15 @@ VFS 对文件路径长度没有限制，但文件系统路径前缀受 ``ESP_VFS
 注意，用 ``EFD_SUPPORT_ISR`` 创建 eventfd 将导致在读取、写入文件时，以及在设置这个文件的 ``select()`` 开始和结束时，暂时禁用中断。
 
 
-精简版 VFS
-------------
-
-为尽量减少 RAM 使用，提供了另一版本的 :cpp:func:`esp_vfs_register` 函数，即 :cpp:func:`esp_vfs_register_fs`。这个版本的函数接受 :cpp:class:`esp_vfs_fs_ops_t` 而不是 :cpp:class:`esp_vfs_t`，并且还接受按位或 (OR-ed) 的标志参数。与 :cpp:func:`esp_vfs_register` 函数不同，只要在调用时提供 ``ESP_VFS_FLAG_STATIC`` 标志，该函数就可以处理静态分配的结构体。
-
-:cpp:class:`esp_vfs_fs_ops_t` 根据功能（如，目录操作、选择支持、termios 支持等）被拆分为不同的结构体。主结构体包含基本功能，如 ``read``、``write`` 等，并包含指向特定功能结构体的指针。这些指针可以设置为 ``NULL``，表示不支持该结构体中提供的所有功能，从而减少所需内存。
-
-在内部，VFS 组件使用的是该版本的 API，并在注册时通过额外步骤将 :cpp:class:`esp_vfs_t` 转换为 :cpp:class:`esp_vfs_fs_ops_t`。
-
-
 常用 VFS 设备
 -------------
 
 IDF 定义了多个可供应用程序使用的 VFS 设备。这些设备包括：
 
- * ``/dev/uart/<UART NUMBER>`` - 此文件映射到使用 VFS 驱动程序打开的 UART 中。UART 编号是 UART 外设的编号。
- * ``/dev/null`` - 此文件丢弃所有写入的数据，并在读取时返回 EOF。启用 :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` 会自动创建此文件。
- * ``/dev/console`` - 此文件连接到在 menuconfig 中由 :ref:`CONFIG_ESP_CONSOLE_UART` 和 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 指定的主输出和次输出。更多信息请参考 :doc:`../../api-guides/stdio`。
+* ``/dev/uart/<UART NUMBER>`` - 此文件映射到使用 VFS 驱动程序打开的 UART 中。UART 编号是 UART 外设的编号。
+* ``/dev/null`` - 此文件丢弃所有写入的数据，并在读取时返回 EOF。启用 :ref:`CONFIG_VFS_INITIALIZE_DEV_NULL` 会自动创建此文件。
+* ``/dev/console`` - 此文件连接到在 menuconfig 中由 :ref:`CONFIG_ESP_CONSOLE_UART` 和 :ref:`CONFIG_ESP_CONSOLE_SECONDARY` 指定的主输出和次输出。更多信息请参考 :doc:`../../api-guides/stdio`。
+
 
 应用示例
 ----------------
@@ -222,6 +243,7 @@ IDF 定义了多个可供应用程序使用的 VFS 设备。这些设备包括�
 - :example:`system/select` 演示了如何使用 ``select()`` 函数进行同步 I/O 多路复用，使用 UART 和套接字文件描述符，并将二者配置为回环模式，以接收来自其他任务发送的消息。
 
 - :example:`storage/semihost_vfs` 演示了如何使用半托管 VFS 驱动程序，包括注册主机目录、将 UART 的 stdout 重定向到主机上的文件，并读取和打印文本文件的内容。
+
 
 API 参考
 -------------
