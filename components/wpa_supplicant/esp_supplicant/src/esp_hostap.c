@@ -168,7 +168,10 @@ void *hostap_init(void)
         wpa_printf(MSG_DEBUG, "overriding transition_disable config with 0 as authmode is not WPA3");
     }
 
+#ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
+#endif /* CONFIG_SAE */
+
     //TODO change it when AP support GCMP-PSK
     auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
 
