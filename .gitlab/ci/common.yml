@@ -57,7 +57,7 @@ variables:
   # Docker images
   ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.4:1"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.4:1-1"
-  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.4:1"
+  TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.4:2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
   PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"
 
@@ -141,40 +141,48 @@ variables:
     export IDF_MIRROR_PREFIX_MAP=
   fi
 
-  # install latest python packages
-  # target test jobs
-  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
-  elif [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
-    run_cmd bash install.sh --enable-ci --enable-docs
-  elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
-    run_cmd bash install.sh --enable-ci
-  else
-    if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
+  if [[ "${CI_JOB_STAGE}" != "target_test" ]]; then
+    section_start "running_install_sh" "Running install.sh"
+    if [[ "${CI_JOB_STAGE}" == "build_doc" ]]; then
+      run_cmd bash install.sh --enable-ci --enable-docs
+    elif [[ "${CI_JOB_STAGE}" == "build" ]]; then
       run_cmd bash install.sh --enable-ci
     else
-      run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
+      if ! echo "${CI_JOB_NAME}" | egrep ".*pytest.*"; then
+        run_cmd bash install.sh --enable-ci
+      else
+        run_cmd bash install.sh --enable-ci --enable-pytest --enable-test-specific
+      fi
     fi
+    section_end "running_install_sh"
+  else
+    section_start "install_python_env" "Install Python environment"
+    run_cmd python tools/idf_tools.py install-python-env --features ci,pytest,test-specific
+    section_end "install_python_env"
   fi
 
-  # Install esp-clang if necessary
+  if [[ ! -z "$INSTALL_EXTRA_TOOLS" ]]; then
+    section_start "installing_optional_tools" "Install optional tools ${INSTALL_EXTRA_TOOLS}"
+    $IDF_PATH/tools/idf_tools.py --non-interactive install $INSTALL_EXTRA_TOOLS
+    section_end "installing_optional_tools"
+  fi
+
+  # Install esp-clang if necessary (esp-clang is separately installed)
   if [[ "$IDF_TOOLCHAIN" == "clang" && -z "$CI_CLANG_DISTRO_URL" ]]; then
     $IDF_PATH/tools/idf_tools.py --non-interactive install esp-clang
   fi
 
-  # Install QEMU if necessary
-  if [[ ! -z "$INSTALL_QEMU" ]]; then
-    $IDF_PATH/tools/idf_tools.py --non-interactive install qemu-xtensa qemu-riscv32
+  if [[ "${CI_JOB_STAGE}" == "target_test" ]]; then
+    section_start "IDF_SKIP_TOOLS_CHECK" "Skip required tools check"
+    export IDF_SKIP_TOOLS_CHECK=1
+    section_end "IDF_SKIP_TOOLS_CHECK"
   fi
-
-  # Since the version 3.21 CMake passes source files and include dirs to ninja using absolute paths.
-  # Needed for pytest junit reports.
-  $IDF_PATH/tools/idf_tools.py --non-interactive install cmake
-
+  section_start "source_export" "Source export.sh"
   source ./export.sh
+  section_end "source_export"
 
   # Custom clang toolchain
-  if [[ ! -z "$CI_CLANG_DISTRO_URL" ]]; then
+  if [[ "$IDF_TOOLCHAIN" == "clang" && ! -z "$CI_CLANG_DISTRO_URL" ]]; then
     echo "Using custom clang from ${CI_CLANG_DISTRO_URL}"
     wget $CI_CLANG_DISTRO_URL
     ARCH_NAME=$(basename $CI_CLANG_DISTRO_URL)
@@ -197,6 +205,8 @@ variables:
     pip install ./${CI_PYTHON_TOOL_REPO}
     rm -rf ${CI_PYTHON_TOOL_REPO}
   fi
+
+  info "setup tools and python venv done"
 
 .show_ccache_statistics: &show_ccache_statistics |
   # Show ccache statistics if enabled globally
@@ -222,10 +232,11 @@ variables:
     - export IDF_TOOLS_PATH="${HOME}/.espressif_runner_${CI_RUNNER_ID}_${CI_CONCURRENT_ID}"
     # remove idf-env.json, since it may contains enabled "features"
     - rm -f $IDF_TOOLS_PATH/idf-env.json
-    - $IDF_PATH/tools/idf_tools.py --non-interactive install cmake ninja
     # This adds tools (compilers) and the version-specific Python environment to PATH
     - *setup_tools_and_idf_python_venv
     - fetch_submodules
+  variables:
+    INSTALL_EXTRA_TOOLS: cmake ninja
 
 .after_script:build:macos:upload-failed-job-logs:ccache-show-stats:
   after_script:

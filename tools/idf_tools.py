@@ -2122,8 +2122,12 @@ def process_tool(
 
     if not tool.versions_installed:
         if tool.get_install_type() == IDFTool.INSTALL_ALWAYS:
-            handle_missing_versions(tool, tool_name, install_cmd, prefer_system_hint)
-            tool_found = False
+            if os.getenv('IDF_SKIP_TOOLS_CHECK', '0') == '1':
+                warn(f'Tool {tool_name} is not installed and IDF_SKIP_TOOLS_CHECK is set. '
+                     'This may cause build failures.')
+            else:
+                handle_missing_versions(tool, tool_name, install_cmd, prefer_system_hint)
+                tool_found = False
         # If a tool found, but it is optional and does not have versions installed, use whatever is in PATH.
         return tool_export_paths, tool_export_vars, tool_found
 
