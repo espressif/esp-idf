@@ -1216,7 +1216,7 @@ void btm_remove_sco_links (BD_ADDR bda)
 ** Returns          void
 **
 *******************************************************************************/
-void btm_sco_removed (UINT16 hci_handle, UINT8 reason)
+BOOLEAN btm_sco_removed (UINT16 hci_handle, UINT8 reason)
 {
 #if (BTM_MAX_SCO_LINKS>0)
     tSCO_CONN   *p = &btm_cb.sco_cb.sco_db[0];
@@ -1240,10 +1240,11 @@ void btm_sco_removed (UINT16 hci_handle, UINT8 reason)
             p->esco.p_esco_cback = NULL;    /* Deregister eSCO callback */
             (*p->p_disc_cb)(xx);
 
-            return;
+            return TRUE;
         }
     }
 #endif
+    return FALSE;
 }
 
 

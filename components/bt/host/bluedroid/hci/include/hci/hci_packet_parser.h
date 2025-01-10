@@ -79,6 +79,16 @@ typedef struct {
         uint8_t *acl_buffer_count_ptr
     );
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+    void (*parse_ble_read_buffer_size_response_v2) (
+        BT_HDR *response,
+        uint16_t *data_size_ptr,
+        uint8_t *acl_buffer_count_ptr,
+        uint16_t *iso_pkt_len_ptr,
+        uint8_t *iso_pkt_num_ptr
+    );
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
     void (*parse_ble_read_supported_states_response)(
         BT_HDR *response,
         uint8_t *supported_states,

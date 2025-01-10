@@ -174,9 +174,39 @@ static void btu_ble_scan_req_received_evt(UINT8 *p);
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 static void btu_ble_channel_select_alg_evt(UINT8 *p);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+void btu_ble_create_big_cmd_status(UINT8 status);
+static void btu_ble_big_create_complete_evt(UINT8 *p);
+void btu_ble_big_terminate_cmd_status(UINT8 status);
+static void btu_ble_big_terminate_complete_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+static void btu_ble_create_big_sync_cmd_status(UINT8 status);
+static void btu_ble_big_sync_establish_evt(UINT8 *p);
+static void btu_ble_big_sync_lost_evt(UINT8 *p);
+static void btu_ble_biginfo_adv_report_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+static void btu_ble_create_cis_cmd_status(UINT8 status);
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+static void btu_ble_accept_cis_req_cmd_status(UINT8 status);
+static void btu_ble_cis_request_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+static void btu_ble_cis_established_evt(UINT8 *p);
+static void btu_ble_cis_disconnected(UINT16 handle, UINT8 reason);
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
 #if (BLE_42_ADV_EN == TRUE)
 extern osi_sem_t adv_enable_sem;
@@ -474,6 +504,38 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_periodic_adv_sync_trans_recv(p);
             break;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+        case HCI_BLE_CIS_ESTABLISHED_V1_EVT:
+        case HCI_BLE_CIS_ESTABLISHED_V2_EVT:
+            btu_ble_cis_established_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+        case HCI_BLE_CIS_REQUEST_EVT:
+            btu_ble_cis_request_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+        case HCI_BLE_BIG_CREATE_COMPLETE_EVT:
+            btu_ble_big_create_complete_evt(p);
+            break;
+        case HCI_BLE_BIG_TERMINATE_COMPLETE_EVT:
+            btu_ble_big_terminate_complete_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+        case HCI_BLE_BIG_SYNC_ESTABLISHED_EVT:
+            btu_ble_big_sync_establish_evt(p);
+            break;
+        case HCI_BLE_BIG_SYNC_LOST_EVT:
+            btu_ble_big_sync_lost_evt(p);
+            break;
+        case HCI_BLE_BIGINFO_ADV_REPORT_EVT:
+            btu_ble_biginfo_adv_report_evt(p);
+            break;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -758,6 +820,7 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 {
     UINT16  handle;
     UINT8   reason;
+    BOOLEAN dev_find = FALSE;
 
     ++p;
     STREAM_TO_UINT16 (handle, p);
@@ -765,9 +828,18 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     handle = HCID_GET_HANDLE (handle);
 
-    btm_acl_disconnected(handle, reason);
+    dev_find = btm_acl_disconnected(handle, reason);
 
-    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    // Not find device. it is iso handle
+    if (!dev_find) {
+        btu_ble_cis_disconnected(handle, reason);
+    }
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x dev_find %d", handle, reason, dev_find);
+
+    UNUSED(dev_find);
 }
 
 /*******************************************************************************
@@ -1212,6 +1284,47 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         break;
     }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    case HCI_BLE_BIG_TERMINATE_SYNC:
+        UINT16 big_handle;
+        STREAM_TO_UINT8(status, p);
+        STREAM_TO_UINT8(big_handle, p);
+        btm_ble_big_sync_terminate_complete(status, big_handle);
+        break;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    case HCI_BLE_ISO_SET_DATA_PATH:
+    case HCI_BLE_ISO_REMOVE_DATA_PATH:
+        UINT16 conn_handle;
+        STREAM_TO_UINT8(status, p);
+        STREAM_TO_UINT16(conn_handle, p);
+        btm_ble_iso_data_path_update_complete(opcode, status, conn_handle);
+        break;
+    case HCI_BLE_ISO_READ_TX_SYNC:
+        btm_ble_iso_read_iso_tx_sync_complete(p);
+        break;
+    case HCI_BLE_ISO_READ_ISO_LINK_QUALITY:
+        btm_ble_iso_read_iso_link_quality_complete(p);
+        break;
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    case HCI_BLE_ISO_SET_CIG_PARAMS:
+    case HCI_BLE_ISO_SET_CIG_PARAMS_TEST:
+        btm_ble_iso_set_cig_params_complete(p);
+        break;
+    case HCI_BLE_ISO_REMOVE_CIG:
+        // do nothing
+        break;
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    case HCI_BLE_ISO_ACCEPT_CIS_REQ:
+    case HCI_BLE_ISO_REJECT_CIS_REQ:
+        // do nothing
+        break;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1383,6 +1496,32 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         break;
     }
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    case HCI_BLE_CREATE_BIG:
+    case HCI_BLE_CREATE_BIG_TEST:
+        btu_ble_create_big_cmd_status(status);
+        break;
+    case HCI_BLE_TERMINATE_BIG:
+        btu_ble_big_terminate_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    case HCI_BLE_BIG_CREATE_SYNC:
+        btu_ble_create_big_sync_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    case HCI_BLE_ISO_CREATE_CIS:
+        btu_ble_create_cis_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    case HCI_BLE_ISO_ACCEPT_CIS_REQ:
+        btu_ble_accept_cis_req_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     default:
         /* If command failed to start, we may need to tell BTM */
         if (status != HCI_SUCCESS) {
@@ -2491,6 +2630,248 @@ static void btu_ble_periodic_adv_sync_trans_recv(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+static void btu_ble_create_cis_cmd_status(UINT8 status)
+{
+    tBTM_BLE_ISO_CB_PARAMS cb_params = {0};
+    if (status != HCI_SUCCESS) {
+        status = (BTM_HCI_ERROR | status);
+    }
+    cb_params.status = status;
+    btm_ble_create_cis_cmd_status(&cb_params);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+static void btu_ble_accept_cis_req_cmd_status(UINT8 status)
+{
+    tBTM_BLE_ISO_CB_PARAMS cb_params = {0};
+    if (status != HCI_SUCCESS) {
+        status = (BTM_HCI_ERROR | status);
+    }
+    cb_params.status = status;
+
+    btm_ble_accept_cis_req_cmd_status(&cb_params);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+static void btu_ble_cis_disconnected(UINT16 handle, UINT8 reason)
+{
+    tBTM_BLE_CIS_DISCON_CMPL cis_disconnected_evt = {0};
+    cis_disconnected_evt.cis_handle = handle;
+    cis_disconnected_evt.reason = reason;
+    btm_ble_cis_disconnected_evt(&cis_disconnected_evt);
+}
+
+static void btu_ble_cis_established_evt(UINT8 *p)
+{
+    HCI_TRACE_DEBUG("%s", __func__);
+    tBTM_BLE_CIS_ESTABLISHED_CMPL cis_estab_evt = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(cis_estab_evt.status, p);
+    STREAM_TO_UINT16(cis_estab_evt.conn_handle, p);
+    STREAM_TO_UINT24(cis_estab_evt.cig_sync_delay, p);
+    STREAM_TO_UINT24(cis_estab_evt.cis_sync_delay, p);
+    STREAM_TO_UINT24(cis_estab_evt.trans_lat_c_to_p, p);
+    STREAM_TO_UINT24(cis_estab_evt.trans_lat_p_to_c, p);
+    STREAM_TO_UINT8(cis_estab_evt.phy_c_to_p, p);
+    STREAM_TO_UINT8(cis_estab_evt.phy_p_to_c, p);
+    STREAM_TO_UINT8(cis_estab_evt.nse, p);
+    STREAM_TO_UINT8(cis_estab_evt.bn_c_to_p, p);
+    STREAM_TO_UINT8(cis_estab_evt.bn_p_to_c, p);
+    STREAM_TO_UINT8(cis_estab_evt.ft_c_to_p, p);
+    STREAM_TO_UINT8(cis_estab_evt.ft_p_to_c, p);
+    STREAM_TO_UINT16(cis_estab_evt.max_pdu_c_to_p, p);
+    STREAM_TO_UINT16(cis_estab_evt.max_pdu_p_to_c, p);
+    STREAM_TO_UINT16(cis_estab_evt.iso_interval, p);
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    STREAM_TO_UINT24(cis_estab_evt.sub_interval, p);
+    STREAM_TO_UINT16(cis_estab_evt.max_sdu_c_to_p, p);
+    STREAM_TO_UINT16(cis_estab_evt.max_sdu_p_to_c, p);
+    STREAM_TO_UINT24(cis_estab_evt.sdu_int_c_to_p, p);
+    STREAM_TO_UINT24(cis_estab_evt.sdu_int_p_to_c, p);
+    STREAM_TO_UINT8(cis_estab_evt.framing, p);
+#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
+
+    btm_ble_cis_established_evt(&cis_estab_evt);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+static void btu_ble_cis_request_evt(UINT8 *p)
+{
+    HCI_TRACE_DEBUG("%s", __func__);
+    tBTM_BLE_CIS_REQUEST_CMPL cis_req_evt = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(cis_req_evt.acl_handle, p);
+    STREAM_TO_UINT16(cis_req_evt.cis_handle, p);
+    STREAM_TO_UINT8(cis_req_evt.cig_id, p);
+    STREAM_TO_UINT8(cis_req_evt.cis_id, p);
+
+
+    btm_ble_cis_request_evt(&cis_req_evt);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+void btu_ble_create_big_cmd_status(UINT8 status)
+{
+    if (status != HCI_SUCCESS) {
+        tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
+        btm_ble_big_create_cmpl_evt(&big_cmpl);
+    }
+}
+
+static void btu_ble_big_create_complete_evt(UINT8 *p)
+{
+    HCI_TRACE_DEBUG("%s", __func__);
+    tBTM_BLE_BIG_CREATE_CMPL big_cmpl = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(big_cmpl.status, p);
+    STREAM_TO_UINT8(big_cmpl.big_handle, p);
+    STREAM_TO_UINT24(big_cmpl.big_sync_delay, p);
+    STREAM_TO_UINT24(big_cmpl.transport_latency, p);
+    STREAM_TO_UINT8(big_cmpl.phy, p);
+    STREAM_TO_UINT8(big_cmpl.nse, p);
+    STREAM_TO_UINT8(big_cmpl.bn, p);
+    STREAM_TO_UINT8(big_cmpl.pto, p);
+    STREAM_TO_UINT8(big_cmpl.irc, p);
+    STREAM_TO_UINT16(big_cmpl.max_pdu, p);
+    STREAM_TO_UINT16(big_cmpl.iso_interval, p);
+    STREAM_TO_UINT8(big_cmpl.num_bis, p);
+    for (uint8_t i = 0; i < big_cmpl.num_bis; i++)
+    {
+        STREAM_TO_UINT16(big_cmpl.bis_handle[i], p);
+        // only 12 bits meaningful
+        big_cmpl.bis_handle[i] = (big_cmpl.bis_handle[i] & 0x0FFF);
+    }
+
+    btm_ble_big_create_cmpl_evt(&big_cmpl);
+}
+
+void btu_ble_big_terminate_cmd_status(UINT8 status)
+{
+    if (status != HCI_SUCCESS) {
+        tBTM_BLE_BIG_TERMINATE_CMPL big_term = {0};
+        big_term.status = (status | BTM_HCI_ERROR);
+        btm_ble_big_terminate_cmpl_evt(&big_term);
+    }
+}
+
+static void btu_ble_big_terminate_complete_evt(UINT8 *p)
+{
+    tBTM_BLE_BIG_TERMINATE_CMPL big_term = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(big_term.big_handle, p);
+    STREAM_TO_UINT8(big_term.reason, p);
+    big_term.status = HCI_SUCCESS;
+
+    btm_ble_big_terminate_cmpl_evt(&big_term);
+}
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+void btu_ble_create_big_sync_cmd_status(UINT8 status)
+{
+    if (status != HCI_SUCCESS) {
+        tBTM_BLE_BIG_SYNC_ESTAB_CMPL big_estb = {0};
+        big_estb.status = status;
+        btm_ble_big_sync_estab_evt(&big_estb);
+    }
+}
+
+static void btu_ble_big_sync_establish_evt(UINT8 *p)
+{
+    tBTM_BLE_BIG_SYNC_ESTAB_CMPL big_estb = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(big_estb.status, p);
+    STREAM_TO_UINT8(big_estb.big_handle, p);
+    STREAM_TO_UINT24(big_estb.transport_latency_big, p);
+    STREAM_TO_UINT8(big_estb.nse, p);
+    STREAM_TO_UINT8(big_estb.bn, p);
+    STREAM_TO_UINT8(big_estb.pto, p);
+    STREAM_TO_UINT8(big_estb.irc, p);
+    STREAM_TO_UINT16(big_estb.max_pdu, p);
+    STREAM_TO_UINT16(big_estb.iso_interval, p);
+    STREAM_TO_UINT8(big_estb.num_bis, p);
+    for (uint8_t i = 0; i < big_estb.num_bis; i++)
+    {
+        STREAM_TO_UINT16(big_estb.bis_handle[i], p);
+    }
+
+    btm_ble_big_sync_estab_evt(&big_estb);
+}
+
+static void btu_ble_big_sync_lost_evt(UINT8 *p)
+{
+    tBTM_BLE_BIG_SYNC_LOST_EVT big_sync_lost = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(big_sync_lost.big_handle, p);
+    STREAM_TO_UINT8(big_sync_lost.reason, p);
+
+    btm_ble_big_sync_lost_evt(&big_sync_lost);
+}
+
+static void btu_ble_biginfo_adv_report_evt(UINT8 *p)
+{
+    tBTM_BLE_BIGINFO_ADV_REPORT_EVT biginfo_report = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(biginfo_report.sync_handle, p);
+    STREAM_TO_UINT8(biginfo_report.num_bis, p);
+    STREAM_TO_UINT8(biginfo_report.nse, p);
+    STREAM_TO_UINT16(biginfo_report.iso_interval, p);
+    STREAM_TO_UINT8(biginfo_report.bn, p);
+    STREAM_TO_UINT8(biginfo_report.pto, p);
+    STREAM_TO_UINT8(biginfo_report.irc, p);
+    STREAM_TO_UINT16(biginfo_report.max_pdu, p);
+    STREAM_TO_UINT24(biginfo_report.sdu_interval, p);
+    STREAM_TO_UINT16(biginfo_report.max_sdu, p);
+    STREAM_TO_UINT8(biginfo_report.phy, p);
+    STREAM_TO_UINT8(biginfo_report.framing, p);
+    STREAM_TO_UINT8(biginfo_report.encryption, p);
+
+    btm_ble_biginfo_adv_report_evt(&biginfo_report);
+}
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 /**********************************************
 ** End of BLE Events Handler
 ***********************************************/

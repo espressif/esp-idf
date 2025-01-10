@@ -4594,10 +4594,10 @@ tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason)
 ** Description      This function is when a connection to the peer device is
 **                  dropped
 **
-** Returns          void
+** Returns          tBTM_SEC_DEV_REC is not NULL
 **
 *******************************************************************************/
-void btm_sec_disconnected (UINT16 handle, UINT8 reason)
+BOOLEAN btm_sec_disconnected (UINT16 handle, UINT8 reason)
 {
     tBTM_SEC_DEV_REC  *p_dev_rec = btm_find_dev_by_handle (handle);
     UINT8             old_pairing_flags = btm_cb.pairing_flags;
@@ -4613,7 +4613,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
 #endif
 
     if (!p_dev_rec) {
-        return;
+        return FALSE;
     }
     p_dev_rec->enc_init_by_we = FALSE;
     transport  = (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
@@ -4654,7 +4654,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
     if (p_dev_rec->sec_state == BTM_SEC_STATE_DISCONNECTING_BOTH) {
         p_dev_rec->sec_state = (transport == BT_TRANSPORT_LE) ?
                                BTM_SEC_STATE_DISCONNECTING : BTM_SEC_STATE_DISCONNECTING_BLE;
-        return;
+        return TRUE;
     }
 #endif
     p_dev_rec->sec_state  = BTM_SEC_STATE_IDLE;
@@ -4690,6 +4690,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
                                                     p_dev_rec->sec_bd_name, result);
         }
     }
+    return TRUE;
 }
 
 /*******************************************************************************
