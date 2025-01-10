@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +123,11 @@ static char IRAM_ATTR *bt_data_type_to_str(uint8_t data_type)
     case HCI_LOG_DATA_TYPE_SELF_DEFINE:
         // self-defining data
         tag = "S";
+        break;
+    case HCI_LOG_DATA_TYPE_ISO_DATA:
+        // 5.2 iso data
+        tag = "I";
+        break;
         break;
     default:
         // unknown data type

@@ -159,6 +159,13 @@ static BT_HDR *make_ble_read_buffer_size(void)
     return make_command_no_params(HCI_BLE_READ_BUFFER_SIZE);
 }
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+static BT_HDR *make_ble_read_buffer_size_v2(void)
+{
+    return make_command_no_params(HCI_BLE_READ_BUFFER_SZIE_V2);
+}
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
 static BT_HDR *make_ble_read_supported_states(void)
 {
     return make_command_no_params(HCI_BLE_READ_SUPPORTED_STATES);
@@ -276,6 +283,9 @@ static const hci_packet_factory_t interface = {
     make_ble_write_host_support,
     make_ble_read_white_list_size,
     make_ble_read_buffer_size,
+#if (BLE_FEAT_ISO_EN == TRUE)
+    make_ble_read_buffer_size_v2,
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     make_ble_read_supported_states,
     make_ble_read_local_supported_features,
     make_ble_read_resolving_list_size,
