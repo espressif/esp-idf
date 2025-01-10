@@ -31,10 +31,14 @@
 #include "osi/future.h"
 #include "config/stack_config.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_FEAT_ISO_EN == TRUE)
+const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x02\xff\xff\xff\xff" };
+#else
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\xff\xff\xff" };
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 #else
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
-#endif
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_INCLUDED)
 const bt_event_mask_t CLASSIC_EVENT_MASK = { HCI_DUMO_EVENT_MASK_EXT };
@@ -106,6 +110,10 @@ static controller_local_param_t *controller_param_ptr;
 static void start_up(void)
 {
     BT_HDR *response;
+#if (BLE_FEAT_ISO_EN == TRUE)
+    uint16_t iso_pktlen = 0;
+    uint8_t iso_max_pkts = 0;
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
     // Send the initial reset command
     response = AWAIT_COMMAND(controller_param.packet_factory->make_reset());
@@ -244,7 +252,19 @@ static void start_up(void)
             &controller_param.acl_data_size_ble,
             &controller_param.acl_buffer_count_ble
         );
-
+#if (BLE_FEAT_ISO_EN == TRUE)
+        // Request the ble buffer size next
+        response = AWAIT_COMMAND(controller_param.packet_factory->make_ble_read_buffer_size_v2());
+        controller_param.packet_parser->parse_ble_read_buffer_size_response_v2(
+            response,
+            &controller_param.acl_data_size_ble,
+            &controller_param.acl_buffer_count_ble,
+            &iso_pktlen,
+            &iso_max_pkts
+        );
+        extern int ble_hci_set_iso_buf_sz(uint16_t pktlen, uint8_t max_pkts);
+        ble_hci_set_iso_buf_sz(iso_pktlen, iso_max_pkts);
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
         // Response of 0 indicates ble has the same buffer size as classic
         if (controller_param.acl_data_size_ble == 0) {
             controller_param.acl_data_size_ble = controller_param.acl_data_size_classic;

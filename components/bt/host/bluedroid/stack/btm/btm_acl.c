@@ -2739,9 +2739,10 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
 ** Description      Handle ACL disconnection complete event
 **
 *******************************************************************************/
-void btm_acl_disconnected(UINT16 handle, UINT8 reason)
+BOOLEAN btm_acl_disconnected(UINT16 handle, UINT8 reason)
 {
-
+    BOOLEAN status = FALSE;
+    BOOLEAN dis_status;
     /* Report BR/EDR ACL disconnection result to upper layer */
     tACL_CONN *conn = btm_handle_to_acl(handle);
     if (conn) {
@@ -2749,6 +2750,7 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
         if (conn->transport == BT_TRANSPORT_BR_EDR)
 #endif
         {
+            status = TRUE;
             tBTM_ACL_LINK_STAT_EVENT_DATA evt_data = {
                 .event = BTM_ACL_DISCONN_CMPL_EVT,
                 .link_act.disconn_cmpl.reason = reason,
@@ -2760,16 +2762,29 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
     }
 
 #if BTM_SCO_INCLUDED == TRUE
+    dis_status = l2c_link_hci_disc_comp (handle, reason);
     /* If L2CAP doesn't know about it, send it to SCO */
-    if (!l2c_link_hci_disc_comp (handle, reason)) {
-        btm_sco_removed (handle, reason);
+    if (!dis_status) {
+        dis_status = btm_sco_removed (handle, reason);
+    } else {
+        status = TRUE;
     }
 #else
-    l2c_link_hci_disc_comp(handle, reason);
+    dis_status = l2c_link_hci_disc_comp(handle, reason);
 #endif /* BTM_SCO_INCLUDED */
+    if (dis_status) {
+        // find tL2C_LCB
+        status = TRUE;
+    }
 
 #if (SMP_INCLUDED == TRUE)
     /* Notify security manager */
-    btm_sec_disconnected(handle, reason);
+    if (btm_sec_disconnected(handle, reason)) {
+        // find tBTM_SEC_DEV_REC
+        status = TRUE;
+    }
+
 #endif  /* SMP_INCLUDED == TRUE */
+
+    return status;
 }

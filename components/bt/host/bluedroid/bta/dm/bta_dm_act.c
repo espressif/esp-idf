@@ -6096,6 +6096,145 @@ void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
                                          p_data->ble_set_past_params.params.cte_type);
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+void bta_dm_ble_big_create(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_BIG_CREATE_PARAMS param = p_data->big_creat.big_creat_param;
+    BTM_BleBigCreate(param.big_handle, param.adv_handle, param.num_bis,
+                    param.sdu_interval, param.max_sdu, param.max_transport_latency,
+                    param.rtn, param.phy, param.packing, param.framing,
+                    param.encryption, &param.broadcast_code[0]);
+}
+
+void bta_dm_ble_big_create_test(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_BIG_CREATE_TEST_PARAMS param = p_data->big_creat_test.big_creat_test_param;
+    BTM_BleBigCreateTest(param.big_handle, param.adv_handle, param.num_bis,
+                        param.sdu_interval, param.iso_interval, param.nse,
+                        param.max_sdu, param.max_pdu, param.phy,
+                        param.packing, param.framing, param.bn, param.irc,
+                        param.pto, param.encryption, &param.broadcast_code[0]);
+}
+
+void bta_dm_ble_big_terminate(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_BIG_TERMINATE_PARAMS param = p_data->big_terminate.big_terminate_param;
+    BTM_BleBigTerminate(param.big_handle, param.reason);
+}
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+void bta_dm_ble_big_sync_create(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS param = p_data->big_sync.big_sync_param;
+    BTM_BleBigSyncCreate(param.big_handle, param.sync_handle,
+                                param.encryption, &param.bc_code[0],
+                                param.mse, param.big_sync_timeout,
+                                param.num_bis, &param.bis[0]);
+}
+
+void bta_dm_ble_big_sync_terminate(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_BIG_SYNC_TERMINATE_PARAMS param = p_data->big_sync_terminate.big_sync_terminate_param;
+    BTM_BleBigSyncTerminate(param.big_handle);
+}
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+
+void bta_dm_ble_iso_set_data_path(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_ISO_SET_DATA_PATH_PARAMS param = p_data->iso_set_data_path.iso_data_path_param;
+    BTM_BleIsoSetDataPath(param.conn_handle, param.data_path_dir, param.data_path_id, param.coding_fmt,
+                            param.company_id, param.vs_codec_id, param.controller_delay, param.codec_len,
+                            param.codec_cfg);
+}
+
+void bta_dm_ble_iso_remove_data_path(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS param = p_data->iso_remove_data_path.iso_data_path_remove_param;
+    BTM_BleIsoRemoveDataPath(param.conn_handle, param.data_path_dir);
+}
+
+void bta_dm_ble_iso_set_host_feature(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleIsoSetHostFeature(p_data->iso_set_host_feat.bit_num, p_data->iso_set_host_feat.bit_val);
+}
+
+void bta_dm_ble_iso_read_tx_sync(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleIsoReadTxSync(p_data->iso_read_tx_sync.iso_hdl);
+}
+
+void bta_dm_ble_iso_read_link_quality(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleIsoReadLinkQuality(p_data->iso_read_link_quality.iso_hdl);
+}
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+void bta_dm_ble_set_cig_params(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleSetCigParams(p_data->api_cig_params.cig_id, p_data->api_cig_params.sdu_int_c_to_p, p_data->api_cig_params.sdu_int_p_to_c, p_data->api_cig_params.worse_case_SCA, p_data->api_cig_params.packing,
+                        p_data->api_cig_params.framing, p_data->api_cig_params.mtl_c_to_p, p_data->api_cig_params.mtl_p_to_c, p_data->api_cig_params.cis_cnt, (uint8_t *)p_data->api_cig_params.cis_params);
+}
+
+void bta_dm_ble_set_cig_params_test(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleSetCigParamsTest(p_data->api_cig_params_test.cig_id, p_data->api_cig_params_test.sdu_int_c_to_p, p_data->api_cig_params_test.sdu_int_p_to_c,
+                            p_data->api_cig_params_test.ft_c_to_p, p_data->api_cig_params_test.ft_p_to_c, p_data->api_cig_params_test.iso_interval,
+                            p_data->api_cig_params_test.worse_case_SCA, p_data->api_cig_params_test.packing, p_data->api_cig_params_test.framing,
+                            p_data->api_cig_params_test.cis_cnt, (uint8_t *)p_data->api_cig_params_test.cis_params_test);
+}
+
+void bta_dm_ble_create_cis(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleCreateCis(p_data->create_cis.cis_count, (uint8_t *)&p_data->create_cis.cis_hdls[0]);
+}
+
+void bta_dm_ble_remove_cig(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleRemoveCig(p_data->remove_cig.cig_id);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+void bta_dm_ble_accept_cis_req(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleAcceptCisReq(p_data->accept_cis_req.cis_handle);
+}
+
+void bta_dm_ble_reject_cis_req(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleRejectCisReq(p_data->reject_cis_req.cis_handle, p_data->reject_cis_req.reason);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+void bta_dm_ble_discon_cis(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s", __func__);
+    BTM_BleDisconCis(p_data->discon_cis.cis_handle, p_data->discon_cis.reason);
+}
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **

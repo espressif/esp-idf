@@ -287,6 +287,35 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_gap_set_csa_support, /* BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT */
     bta_dm_ble_gap_set_vendor_evt_mask, /* BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT */
 #endif
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    bta_dm_ble_big_create,             /* BTA_DM_API_ISO_BIG_CREATE_EVT */
+    bta_dm_ble_big_create_test,        /* BTA_DM_API_ISO_BIG_CREATE_TEST_EVT */
+    bta_dm_ble_big_terminate,          /* BTA_DM_API_ISO_BIG_TERMINATE_EVT */
+#endif// #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    bta_dm_ble_big_sync_create,        /* BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT */
+    bta_dm_ble_big_sync_terminate,     /* BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT */
+#endif// #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    bta_dm_ble_iso_set_data_path,      /* BTA_DM_API_ISO_SET_DATA_PATH_EVT */
+    bta_dm_ble_iso_remove_data_path,   /* BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT */
+    bta_dm_ble_iso_set_host_feature,   /* BTA_DM_API_ISO_SET_HOST_FEATURE_EVT */
+    bta_dm_ble_iso_read_tx_sync,       /* BTA_DM_API_ISO_READ_TX_SYNC_EVT */
+    bta_dm_ble_iso_read_link_quality,  /* BTA_DM_API_ISO_READ_LINK_QUALITY_EVT */
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    bta_dm_ble_set_cig_params,         /* BTA_DM_API_SET_CIG_PARAMS_EVT */
+    bta_dm_ble_set_cig_params_test,    /* BTA_DM_API_SET_CIG_PARAMS_TEST_EVT */
+    bta_dm_ble_create_cis,             /* BTA_DM_API_CREATE_CIS_EVT */
+    bta_dm_ble_remove_cig,             /* BTA_DM_API_REMOVE_CIG_PARAMS_EVT*/
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    bta_dm_ble_accept_cis_req,         /* BTA_DM_API_ACCEPT_CIS_REQ_PARAMS_EVT */
+    bta_dm_ble_reject_cis_req,         /* BTA_DM_API_REJECT_CIS_REQ_PARAMS_EVT */
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    bta_dm_ble_discon_cis,            /* BTA_DM_API_DISCON_CIS_EVT */
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 };
 
 

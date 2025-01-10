@@ -306,6 +306,72 @@
 #define BLE_FEAT_CREATE_SYNC_ENH   FALSE
 #endif
 
+#if (UC_BT_BLE_FEAT_ISO_EN == TRUE)
+#define BLE_FEAT_ISO_EN     TRUE
+#else
+#define BLE_FEAT_ISO_EN     FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_ISO_60_EN == TRUE)
+#define BLE_FEAT_ISO_60_EN     TRUE
+#else
+#define BLE_FEAT_ISO_60_EN     FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_ISO_BIG_BROCASTER == TRUE)
+#define BLE_FEAT_ISO_BIG_BROCASTER_EN   TRUE
+#else
+#define BLE_FEAT_ISO_BIG_BROCASTER_EN   FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_ISO_BIG_SYNCER == TRUE)
+#define BLE_FEAT_ISO_BIG_SYNCER_EN   TRUE
+#else
+#define BLE_FEAT_ISO_BIG_SYNCER_EN   FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_ISO_CIG_CENTRAL == TRUE)
+#define BLE_FEAT_ISO_CIG_CENTRAL_EN   TRUE
+#else
+#define BLE_FEAT_ISO_CIG_CENTRAL_EN   FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_ISO_CIG_PERIPHERAL == TRUE)
+#define BLE_FEAT_ISO_CIG_PERIPHERAL_EN   TRUE
+#else
+#define BLE_FEAT_ISO_CIG_PERIPHERAL_EN   FALSE
+#endif
+
+#if ((BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE) || (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE))
+#define BLE_FEAT_ISO_CIG_EN             TRUE
+#else
+#define BLE_FEAT_ISO_CIG_EN             FALSE
+#endif
+
+#ifdef UC_BT_BLE_ISO_CIS_MAX_COUNT
+#define BLE_ISO_CIS_MAX_COUNT   UC_BT_BLE_ISO_CIS_MAX_COUNT
+#else
+#define BLE_ISO_CIS_MAX_COUNT   (0)
+#endif
+
+#ifdef CONFIG_BT_BLE_ISO_BIS_MAX_COUNT
+#define BLE_ISO_BIS_MAX_COUNT   CONFIG_BT_BLE_ISO_BIS_MAX_COUNT
+#else
+#define BLE_ISO_BIS_MAX_COUNT   (0)
+#endif
+
+#ifdef UC_BT_BLE_ISO_STD_FLOW_CTRL
+#define BLE_ISO_STD_FLOW_CTRL        TRUE
+#endif
+
+#ifdef UC_BT_BLE_ISO_NON_STD_FLOW_CTRL
+#define BLE_ISO_NON_STD_FLOW_CTRL        TRUE
+#endif
+
+#if ((UC_BT_BLE_ISO_STD_FLOW_CTRL == TRUE) && (UC_BT_BLE_ISO_NON_STD_FLOW_CTRL == TRUE))
+#error "Only one of standard or non-standard can be enabled"
+#endif
+
 #if (UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL == TRUE)
 #define BLE_HIGH_DUTY_ADV_INTERVAL TRUE
 #else

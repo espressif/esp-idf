@@ -1363,6 +1363,83 @@ config BT_BLE_42_SCAN_EN
     help
         This enables BLE v4.2 scan
 
+menuconfig BT_BLE_FEAT_ISO_EN
+    bool "Enable BLE 5.2 iso feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_AUDIO_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.2 iso
+
+config BT_BLE_FEAT_ISO_60_EN
+    bool "Enable ISO v6.0 feature"
+    depends on BT_BLE_FEAT_ISO_EN
+    default n
+    help
+        Enable iso 6.0 feature
+
+config BT_BLE_FEAT_ISO_BIG_BROCASTER
+    bool "Enable BLE iso BIG brocaster"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG brocaster
+
+config BT_BLE_FEAT_ISO_BIG_SYNCER
+    bool "Enable BLE iso BIG syncer"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 BIG syncer
+
+config BT_BLE_ISO_BIS_MAX_COUNT
+    int "Maximum bis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_BIG_BROCASTER || BT_BLE_FEAT_ISO_BIG_SYNCER)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_FEAT_ISO_CIG_CENTRAL
+    bool "Enable BLE iso CIG central"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG central
+
+config BT_BLE_FEAT_ISO_CIG_PERIPHERAL
+    bool "Enable BLE iso CIG peripheral"
+    depends on BT_BLE_FEAT_ISO_EN
+    default y
+    help
+        Enable BLE 5.2 CIG peripheral
+
+config BT_BLE_ISO_CIS_MAX_COUNT
+    int "Maximum cis count"
+    depends on BT_BLE_FEAT_ISO_EN && (BT_BLE_FEAT_ISO_CIG_CENTRAL || BT_BLE_FEAT_ISO_CIG_PERIPHERAL)
+    default 2
+    range 1 31
+    help
+        Enable BLE 5.2 CIG peripheral
+
+choice BT_BLE_ISO_FLOW_CONTROL
+    prompt "Select ISO flow control type"
+    depends on BT_BLE_FEAT_ISO_EN
+    default BT_BLE_ISO_NON_STD_FLOW_CTRL
+    help
+        Select ISO flow control type
+
+    config BT_BLE_ISO_STD_FLOW_CTRL
+        bool "ISO standard flow control"
+        help
+            Enable ISO standard flow control
+
+    config BT_BLE_ISO_NON_STD_FLOW_CTRL
+        bool "ISO non-standard flow control"
+        help
+            Enable ISO non-standard flow control
+
+endchoice
+
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_BLE_ENABLED

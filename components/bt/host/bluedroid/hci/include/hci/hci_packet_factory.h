@@ -41,6 +41,9 @@ typedef struct {
     BT_HDR *(*make_ble_write_host_support)(uint8_t supported_host, uint8_t simultaneous_host);
     BT_HDR *(*make_ble_read_white_list_size)(void);
     BT_HDR *(*make_ble_read_buffer_size)(void);
+#if (BLE_FEAT_ISO_EN == TRUE)
+    BT_HDR *(*make_ble_read_buffer_size_v2)(void);
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     BT_HDR *(*make_ble_read_supported_states)(void);
     BT_HDR *(*make_ble_read_local_supported_features)(void);
     BT_HDR *(*make_ble_read_resolving_list_size)(void);

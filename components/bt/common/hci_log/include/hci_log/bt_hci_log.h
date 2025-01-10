@@ -21,6 +21,7 @@ extern "C" {
 #define    HCI_LOG_DATA_TYPE_ADV             (5)
 #define    HCI_LOG_DATA_TYPE_SELF_DEFINE     (6)
 #define    HCI_LOG_DATA_TYPE_C2H_ACL         (7)
+#define    HCI_LOG_DATA_TYPE_ISO_DATA        (8)
 
 /**
  *

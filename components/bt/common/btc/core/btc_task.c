@@ -24,6 +24,7 @@
 #include "btc_gattc.h"
 #include "btc_gatt_common.h"
 #include "btc_gap_ble.h"
+#include "btc_iso_ble.h"
 #include "btc/btc_dm.h"
 #include "bta/bta_gatt_api.h"
 #if CLASSIC_BT_INCLUDED
@@ -264,6 +265,9 @@ static const btc_func_t profile_tab[BTC_PID_NUM] = {
     [BTC_PID_BLE_MESH_BLE_COEX] = {btc_ble_mesh_ble_call_handler,               btc_ble_mesh_ble_cb_handler              },
 #endif /* CONFIG_BLE_MESH_BLE_COEX_SUPPORT || CONFIG_BLE_MESH_USE_BLE_50 */
 #endif /* #if CONFIG_BLE_MESH */
+#if (BLE_FEAT_ISO_EN == TRUE)
+    [BTC_PID_ISO_BLE]           = {btc_iso_ble_call_handler,                    btc_iso_ble_cb_handler                   },
+#endif  // #if (BLE_FEAT_ISO_EN == TRUE)
 };
 
 /*****************************************************************************
@@ -531,6 +535,9 @@ bt_status_t btc_init(void)
 
 #if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
+#if (BLE_FEAT_ISO_EN == TRUE)
+    btc_iso_callback_init();
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 

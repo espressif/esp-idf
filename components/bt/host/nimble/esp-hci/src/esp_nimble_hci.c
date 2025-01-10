@@ -209,7 +209,12 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
         || (data[3] == BLE_HCI_LE_SUBEV_EXT_ADV_RPT) || (data[3] == BLE_HCI_LE_SUBEV_PERIODIC_ADV_RPT))) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
     } else {
-        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        uint8_t data_type;
+        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
+            data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
+        } else {
+            data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        }
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)

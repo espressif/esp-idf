@@ -135,6 +135,7 @@ static bool hci_hal_env_init(const hci_hal_callbacks_t *upper_callbacks, osi_thr
     hci_hal_env.adv_rpt_q = pkt_queue_create();
     assert(hci_hal_env.adv_rpt_q != NULL);
 #endif // #if (BLE_42_SCAN_EN == TRUE)
+
     struct osi_event *event = osi_event_create(hci_upstream_data_handler, NULL);
     assert(event != NULL);
     hci_hal_env.upstream_data_ready = event;
@@ -156,7 +157,6 @@ static void hci_hal_env_deinit(void)
     hci_hal_env.adv_rpt_q = NULL;
 #endif // #if (BLE_42_SCAN_EN == TRUE)
     hci_hal_env.upstream_data_ready = NULL;
-
     fixed_queue_free(rx_q, osi_free_func);
 #if (BLE_42_SCAN_EN == TRUE)
     pkt_queue_destroy(adv_rpt_q, NULL);
@@ -230,6 +230,30 @@ static uint16_t transmit_data(serial_data_type_t type,
 
     return length - 1;
 }
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+typedef void ble_host_rx_iso_data_fn(uint8_t *data, uint16_t len);
+
+static ble_host_rx_iso_data_fn *ble_host_iso_rx_cb = NULL;
+
+void ble_host_register_rx_iso_data_cb(void *cb)
+{
+    /* If the iso rx cb is already registered, we will give
+     * a warning log here, and the cb will still be updated.
+     */
+    if (ble_host_iso_rx_cb) {
+        HCI_TRACE_WARNING("iso rx cb %p already registered\n", ble_host_iso_rx_cb);
+    }
+
+    ble_host_iso_rx_cb = cb;
+}
+
+void ble_hci_register_rx_iso_data_cb(void *cb)
+{
+    ble_host_register_rx_iso_data_cb(cb);
+}
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
 // Internal functions
 static void hci_upstream_data_handler(void *arg)
@@ -563,7 +587,12 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
     )) {
         bt_hci_log_record_hci_adv(HCI_LOG_DATA_TYPE_ADV, &data[2], len - 2);
     } else {
-        uint8_t data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        uint8_t data_type;
+        if (data[0] == HCI_LOG_DATA_TYPE_ISO_DATA) {
+            data_type = HCI_LOG_DATA_TYPE_ISO_DATA;
+        } else {
+            data_type = ((data[0] == 2) ? HCI_LOG_DATA_TYPE_C2H_ACL : data[0]);
+        }
         bt_hci_log_record_hci_data(data_type, &data[1], len - 1);
     }
 #endif // (BT_HCI_LOG_INCLUDED == TRUE)
@@ -581,11 +610,22 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 #endif // #if (BLE_42_SCAN_EN == TRUE)
     size_t pkt_size;
 
-    if (hci_hal_env.rx_q == NULL) {
+    if ((hci_hal_env.rx_q == NULL) || (data == NULL)) {
         return 0;
     }
 
     bt_record_hci_data(data, len);
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+    if (data[0] == DATA_TYPE_ISO) {
+        if (ble_host_iso_rx_cb) {
+            ble_host_iso_rx_cb(&data[1], len -1);
+        }
+
+        free(data);
+        return 0;
+    }
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
     bool is_adv_rpt = host_recv_adv_packet(data);
 
@@ -601,7 +641,9 @@ static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
         pkt->len = len;
         pkt->layer_specific = 0;
         memcpy(pkt->data, data, len);
-        fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
+        {
+            fixed_queue_enqueue(hci_hal_env.rx_q, pkt, FIXED_QUEUE_MAX_TIMEOUT);
+        }
     } else {
 #if (BLE_42_SCAN_EN == TRUE)
 #if !BLE_ADV_REPORT_FLOW_CONTROL
