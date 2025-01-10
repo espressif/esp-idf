@@ -47,6 +47,14 @@ config SOC_SHA_SUPPORTED
     bool
     default y
 
+config SOC_HMAC_SUPPORTED
+    bool
+    default y
+
+config SOC_DIG_SIGN_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
