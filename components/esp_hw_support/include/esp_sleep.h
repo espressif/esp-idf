@@ -286,7 +286,7 @@ esp_err_t esp_sleep_enable_ext0_wakeup(gpio_num_t gpio_num, int level);
  * @note Call this func will reset the previous ext1 configuration.
  *
  * @note This function will be deprecated in release/v6.0. Please switch to use `esp_sleep_enable_ext1_wakeup_io` and `esp_sleep_disable_ext1_wakeup_io`
- *
+ * @note On ESP32-H2, although GPIO7 is an RTC GPIO, it is not led out for external wakeup.
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 For different SoCs, the related GPIOs are:
@@ -335,7 +335,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup(uint64_t io_mask, esp_sleep_ext1_wakeup_m
  *       we will use the HOLD feature to maintain the pull-up and pull-down on
  *       the pins during sleep. HOLD feature will be acted on the pin internally
  *       before the system entering sleep, and this can further reduce power consumption.
- *
+ * @note On ESP32-H2, although GPIO7 is an RTC GPIO, it is not led out for external wakeup.
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 For different SoCs, the related GPIOs are:
@@ -362,6 +362,7 @@ esp_err_t esp_sleep_enable_ext1_wakeup_io(uint64_t io_mask, esp_sleep_ext1_wakeu
 
 /**
  * @brief Disable ext1 wakeup pins with IO masks. This will remove selected IOs from the wakeup IOs.
+ * @note On ESP32-H2, although GPIO7 is an RTC GPIO, it is not led out for external wakeup.
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 If value is zero, this func will remove all previous ext1 configuration.
@@ -401,12 +402,12 @@ esp_err_t esp_sleep_disable_ext1_wakeup_io(uint64_t io_mask);
  *       we will use the HOLD feature to maintain the pull-up and pull-down on
  *       the pins during sleep. HOLD feature will be acted on the pin internally
  *       before the system entering sleep, and this can further reduce power consumption.
- *
+ * @note On ESP32-H2, although GPIO7 is an RTC GPIO, it is not led out for external wakeup.
  * @param io_mask  Bit mask of GPIO numbers which will cause wakeup. Only GPIOs
  *                 which have RTC functionality can be used in this bit map.
  *                 For different SoCs, the related GPIOs are:
- *                    - ESP32-C6: 0-7.
- *                    - ESP32-H2: 7-14.
+ *                    - ESP32-C6: 0-7
+ *                    - ESP32-H2: 7-14
  * @param level_mask Select logic function used to determine wakeup condition per pin.
  *                   Each bit of the level_mask corresponds to the respective GPIO. Each bit's corresponding
  *                   position is set to 0, the wakeup level will be low, on the contrary,
