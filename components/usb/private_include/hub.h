@@ -191,13 +191,13 @@ esp_err_t hub_port_active(usb_device_handle_t parent_dev_hdl, uint8_t parent_por
  */
 esp_err_t hub_port_disable(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num);
 
-#if ENABLE_USB_HUBS
 /**
  * @brief Notify Hub driver that new device has been attached
  *
  * If device is has a HUB class, then it will be added as External Hub to Hub Driver.
  *
  * @note This function should only be called from the Host Library task
+ * @note If the Hub support feature is disabled and device has a Hub class, only the warning message will be shown.
  *
  * @param[in] dev_addr  Device bus address
  *
@@ -213,6 +213,7 @@ esp_err_t hub_notify_new_dev(uint8_t dev_addr);
  * If the device was an External Hub, then it will be removed from the Hub Driver.
  *
  * @note This function should only be called from the Host Library task
+ * @note If the Hub support feature is disabled, no additional logic requires here.
  *
  * @param[in] dev_addr  Device bus address
  *
@@ -222,6 +223,7 @@ esp_err_t hub_notify_new_dev(uint8_t dev_addr);
  */
 esp_err_t hub_notify_dev_gone(uint8_t dev_addr);
 
+#if ENABLE_USB_HUBS
 /**
  * @brief Notify Hub driver that all devices should be freed
  *

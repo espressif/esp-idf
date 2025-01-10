@@ -309,21 +309,21 @@ static void usbh_event_callback(usbh_event_data_t *event_data, void *arg)
         break;
     }
     case USBH_EVENT_NEW_DEV: {
+        // Internal client
+        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
+        // External clients
         // Prepare a NEW_DEV client event message, the send it to all clients
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_NEW_DEV,
             .new_dev.address = event_data->new_dev_data.dev_addr,
         };
         send_event_msg_to_clients(&event_msg, true, 0);
-#if ENABLE_USB_HUBS
-        hub_notify_new_dev(event_data->new_dev_data.dev_addr);
-#endif // ENABLE_USB_HUBS
         break;
     }
     case USBH_EVENT_DEV_GONE: {
-#if ENABLE_USB_HUBS
+        // Internal client
         hub_notify_dev_gone(event_data->new_dev_data.dev_addr);
-#endif // ENABLE_USB_HUBS
+        // External clients
         // Prepare event msg, send only to clients that have opened the device
         usb_host_client_event_msg_t event_msg = {
             .event = USB_HOST_CLIENT_EVENT_DEV_GONE,
