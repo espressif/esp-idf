@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include <stdbool.h>
 #include "soc/bitscrambler_struct.h"
 #include "hal/bitscrambler_types.h"
-#include "soc/hp_sys_clkrst_struct.h"
+#include "soc/pcr_struct.h"
 #include "soc/hp_system_struct.h"
 #include "hal/misc.h"
 
@@ -34,9 +34,9 @@ extern "C" {
 static inline void bitscrambler_ll_select_peripheral(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, int peri)
 {
     if (dir == BITSCRAMBLER_DIR_TX) {
-        HP_SYSTEM.bitscrambler_peri_sel.bitscrambler_peri_tx_sel = peri;
+        HP_SYSTEM.bitscrambler_peri_sel.bitscrambler_tx_sel = peri;
     } else { // RX
-        HP_SYSTEM.bitscrambler_peri_sel.bitscrambler_peri_rx_sel = peri;
+        HP_SYSTEM.bitscrambler_peri_sel.bitscrambler_rx_sel = peri;
     }
 }
 
@@ -285,7 +285,7 @@ static inline bitscrambler_state_t bitscrambler_ll_get_current_state(bitscramble
  */
 static inline void _bitscrambler_ll_set_bus_clock_sys_enable(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_sys_clk_en = enable;
+    PCR.bs_conf.bs_clk_en = enable;
 }
 
 /**
@@ -293,7 +293,7 @@ static inline void _bitscrambler_ll_set_bus_clock_sys_enable(bool enable)
  */
 static inline void _bitscrambler_ll_set_bus_clock_rx_enable(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_rx_sys_clk_en = enable;
+    // empty
 }
 
 /**
@@ -301,7 +301,7 @@ static inline void _bitscrambler_ll_set_bus_clock_rx_enable(bool enable)
  */
 static inline void _bitscrambler_ll_set_bus_clock_tx_enable(bool enable)
 {
-    HP_SYS_CLKRST.soc_clk_ctrl1.reg_bitscrambler_tx_sys_clk_en = enable;
+    // empty
 }
 
 /**
@@ -309,7 +309,8 @@ static inline void _bitscrambler_ll_set_bus_clock_tx_enable(bool enable)
  */
 static inline void bitscrambler_ll_mem_force_power_on(void)
 {
-    // empty
+    PCR.bs_pd_ctrl.bs_mem_force_pu = 1;
+    PCR.bs_pd_ctrl.bs_mem_force_pd = 0;
 }
 
 /**
@@ -317,7 +318,8 @@ static inline void bitscrambler_ll_mem_force_power_on(void)
  */
 static inline void bitscrambler_ll_mem_force_power_off(void)
 {
-    // empty
+    PCR.bs_pd_ctrl.bs_mem_force_pd = 1;
+    PCR.bs_pd_ctrl.bs_mem_force_pu = 0;
 }
 
 /**
@@ -325,7 +327,8 @@ static inline void bitscrambler_ll_mem_force_power_off(void)
  */
 static inline void bitscrambler_ll_mem_power_by_pmu(void)
 {
-    // empty
+    PCR.bs_pd_ctrl.bs_mem_force_pd = 0;
+    PCR.bs_pd_ctrl.bs_mem_force_pu = 0;
 }
 
 /**
@@ -333,8 +336,8 @@ static inline void bitscrambler_ll_mem_power_by_pmu(void)
  */
 static inline void _bitscrambler_ll_reset_sys(void)
 {
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler = 0;
+    PCR.bs_conf.bs_rst_en = 1;
+    PCR.bs_conf.bs_rst_en = 0;
 }
 
 /**
@@ -342,8 +345,8 @@ static inline void _bitscrambler_ll_reset_sys(void)
  */
 static inline void _bitscrambler_ll_reset_rx(void)
 {
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_rx = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_rx = 0;
+    PCR.bs_func_conf.bs_rx_rst_en = 1;
+    PCR.bs_func_conf.bs_rx_rst_en = 0;
 }
 
 /**
@@ -351,8 +354,8 @@ static inline void _bitscrambler_ll_reset_rx(void)
  */
 static inline void _bitscrambler_ll_reset_tx(void)
 {
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_tx = 1;
-    HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_bitscrambler_tx = 0;
+    PCR.bs_func_conf.bs_tx_rst_en = 1;
+    PCR.bs_func_conf.bs_tx_rst_en = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section

@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-P4 |
+| ----------------- | -------- | -------- |
 
 # BitScrambler Loopback Example
 
