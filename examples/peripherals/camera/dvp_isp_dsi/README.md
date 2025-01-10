@@ -2,25 +2,22 @@
 | ----------------- | -------- |
 
 
-# Camera display via DSI example
+# DVP Camera display via DSI example
 
 ## Overview
 
-This example demonstrates how to use the ISP (image signal processor) to work with esp_driver_cam component. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor/versions/0.5.3) and capture camera sensor signals via CSI interface and display it via DSI interface. This example also enables the ISP AF (auto-focus) feature and ISP BF (bayer denoise) feature.
+This example demonstrates how to use the esp_driver_cam component to capture DVP camera sensor signals and display it via DSI interface. This example will auto-detect camera sensors via [ESP camera sensor driver](https://components.espressif.com/components/espressif/esp_cam_sensor) and capture camera sensor signals via DVP interface and display it via DSI interface.
 
 ## Usage
 
 The subsections below give only absolutely necessary information. For full steps to configure ESP-IDF and use it to build and run projects, see [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started).
 
+
 ### Hardware Required
 
-This example requires:
-
-- OV5647 or SC2336 camera sensor, or other camera sensors
+- OV2640 camera sensor, or other camera sensors with DVP port that can output raw format color data
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
-
-**Note:** OV5647 has its own ISP functions, whereas SC2336 is a camera sensor without ISP functions. You can use the ESP on-chip ISP functions to tune the image together with the sensor ISP functions, if the image quality is not as expected.
 
 **Note:** For EK79007 you will need to connect following pins:
 - 5V - 5V
@@ -28,6 +25,7 @@ This example requires:
 - RST_LCD - 3V3
 
 You can also connect camera sensors and LCD screens from other vendors to the ESP chip, you can find corresponding camera or LCD drivers from [ESP Component Registry](https://components.espressif.com), or design your own customized drivers.
+
 
                                    GND                                                                   GND
                 ┌────────────────────────────────────────────────┐             ┌─────────────────────────────────────────────────────────┐
@@ -43,22 +41,22 @@ You can also connect camera sensors and LCD screens from other vendors to the ES
                 │                                │                                                │                           ┌──────────┴───────────┐
                 │                                │                                                │      DSI DATA 1P          │                      │
                 │                                │                                                ├───────────────────────────┤                      │
-    ┌───────────┴─────────┐ CSI DATA 1P          │                                                │                           │                      │
-    │                     ├──────────────────────┤                                                │      DSI DATA 1N          │                      │
+    ┌───────────┴─────────┐                      │                                                │                           │                      │
+    │                     │                      │                                                │      DSI DATA 1N          │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
-    │                     │ CSI DATA 1N          │                  ESP32-P4                      │                           │                      │
-    │       Camera        ├──────────────────────┤                                                │      DSI CLK N            │      LCD Screen      │
+    │                     │       XCLK           │                  ESP32-P4                      │                           │                      │
+    │     DVP Camera      ├──────────────────────┤                                                │      DSI CLK N            │      LCD Screen      │
     │                     │                      │                                                ├───────────────────────────┤                      │
-    │                     │ CSI CLK N            │                                                │                           │                      │
+    │                     │       D0~7           │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │      DSI CLK P            │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
-    │                     │ CSI CLK P            │                                                │                           │                      │
+    │                     │       PCLK           │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │      DSI DATA 0P          │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
-    │                     │ CSI DATA 0P          │                                                │                           │                      │
+    │                     │       VSYNC          │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │      DSI DATA 0N          │                      │
     │                     │                      │                                                ├───────────────────────────┤                      │
-    │                     │ CSI DATA 0N          │                                                │                           │                      │
+    │                     │      DE (HREF)       │                                                │                           │                      │
     │                     ├──────────────────────┤                                                │                           └──────────────────────┘
     │                     │                      │                                                │
     └───────┬──┬──────────┘                      │                                                │
@@ -103,8 +101,7 @@ idf.py menuconfig
 ```
 
 ```
-Set CONFIG_CAMERA_OV5647 to y
-Set CONFIG_CAMERA_SC2336 to y
+Set CONFIG_CAMERA_OV2640 to y
 ```
 
 Remember to select the LCD screen model and set corresponding correct horizontal/vertical resolution in ``menuconfig`` > ``Example DSI Configuration``.
@@ -132,22 +129,26 @@ To exit the serial monitor, use `Ctrl` + `]`.
 If you see the following console output, your example should be running correctly:
 
 ```
-I (1085) main_task: Calling app_main()
-I (1095) ili9881c: ID1: 0x98, ID2: 0x81, ID3: 0x5c
-I (1125) gpio: GPIO[31]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1125) gpio: GPIO[34]| InputEn: 1| OutputEn: 1| OpenDrain: 1| Pullup: 1| Pulldown: 0| Intr:0
-I (1295) ov5647: Detected Camera sensor PID=0x5647 with index 0
-I (1305) cam_dsi: fmt[0].name:MIPI_2lane_24Minput_RAW8_800x1280_50fps
-I (1305) cam_dsi: fmt[1].name:MIPI_2lane_24Minput_RAW8_800x640_50fps
-I (1315) cam_dsi: fmt[2].name:MIPI_2lane_24Minput_RAW8_800x800_50fps
-I (1355) cam_dsi: Format in use:MIPI_2lane_24Minput_RAW8_800x640_50fps
+I (1509) main_task: Calling app_main()
+I (1509) ek79007: version: 1.0.1
+I (1549) ov2640: Detected Camera sensor PID=0x26
+I (1549) sensor_init: fmt[0].name:DVP_8bit_20Minput_RGB565_640x480_6fps
+I (1549) sensor_init: fmt[1].name:DVP_8bit_20Minput_YUV422_640x480_6fps
+I (1549) sensor_init: fmt[2].name:DVP_8bit_20Minput_JPEG_640x480_25fps
+I (1559) sensor_init: fmt[3].name:DVP_8bit_20Minput_RGB565_240x240_25fps
+I (1569) sensor_init: fmt[4].name:DVP_8bit_20Minput_YUV422_240x240_25fps
+I (1569) sensor_init: fmt[5].name:DVP_8bit_20Minput_JPEG_320x240_50fps
+I (1579) sensor_init: fmt[6].name:DVP_8bit_20Minput_JPEG_1280x720_12fps
+I (1589) sensor_init: fmt[7].name:DVP_8bit_20Minput_JPEG_1600x1200_12fps
+I (1589) sensor_init: fmt[8].name:DVP_8bit_20Minput_RAW8_800x640_15fps
+I (1599) sensor_init: fmt[9].name:DVP_8bit_20Minput_RAW8_800x800_15fps
+I (1609) sensor_init: fmt[10].name:DVP_8bit_20Minput_RAW8_1024x600_15fps
+I (2609) sensor_init: Format in use:DVP_8bit_20Minput_RAW8_1024x600_15fps
 ```
 
-You will also see the screen auto-focus when the screen image changes.
 
 ## Reference
 
-- Link to the ESP-IDF camera controller driver API reference, [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/camera_driver.html)
-- Link to the ESP-IDF ISP driver API reference, [ESP-IDF: Image Signal Processor](https://docs.espressif.com/projects/esp-idf/en/latest/esp32p4/api-reference/peripherals/isp.html)
+- Link to the ESP-IDF feature's API reference, for example [ESP-IDF: Camera Controller Driver](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/peripherals/camera_driver.html)
 - [ESP-IDF Getting Started](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html#get-started)
 - [Project Configuration](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/kconfig.html) (Kconfig Options)

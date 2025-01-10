@@ -1,0 +1,58 @@
+menu "Example Configuration"
+    config EXAMPLE_USED_LDO_CHAN_ID
+        int "Occupied channel ID of the LDO to power on the MIPI DSI PHY"
+        default 3
+        help
+            Example used LDO channel ID, you may check datasheet to know more details.
+
+    config EXAMPLE_USED_LDO_VOLTAGE_MV
+        int "Occupied LDO voltage in mV"
+        default 2500
+        range 0 3300
+        help
+            Example used LDO voltage, in mV
+
+    config EXAMPLE_CAM_PORT_ISP_DVP
+        bool
+        default y
+
+    choice EXAMPLE_CAM_HRES
+        bool "Set camera horizontal resolution"
+        default EXAMPLE_CAM_HRES_1024 if EXAMPLE_MIPI_DSI_DISP_HRES_1024
+        default EXAMPLE_CAM_HRES_800 if EXAMPLE_MIPI_DSI_DISP_HRES_800
+
+        config EXAMPLE_CAM_HRES_1024
+            depends on EXAMPLE_MIPI_DSI_DISP_HRES_1024
+            bool "1024"
+        config EXAMPLE_CAM_HRES_800
+            depends on EXAMPLE_MIPI_DSI_DISP_HRES_800
+            bool "800"
+    endchoice
+
+    config EXAMPLE_CAM_HRES
+        int
+        default 1024 if EXAMPLE_CAM_HRES_1024
+        default 800 if EXAMPLE_CAM_HRES_800
+
+    choice EXAMPLE_CAM_VRES
+        bool "Set camera vertical resolution"
+        default EXAMPLE_CAM_VRES_600 if EXAMPLE_MIPI_DSI_DISP_VRES_600
+        default EXAMPLE_CAM_VRES_640 if EXAMPLE_MIPI_DSI_DISP_VRES_1280
+
+        config EXAMPLE_CAM_VRES_600
+            depends on EXAMPLE_MIPI_DSI_DISP_VRES_600
+            bool "600"
+        config EXAMPLE_CAM_VRES_640
+            depends on EXAMPLE_MIPI_DSI_DISP_VRES_1280
+            bool "640"
+        config EXAMPLE_CAM_VRES_800
+            depends on EXAMPLE_MIPI_DSI_DISP_VRES_1280
+            bool "800"
+    endchoice
+
+    config EXAMPLE_CAM_VRES
+        int
+        default 600 if EXAMPLE_CAM_VRES_600
+        default 640 if EXAMPLE_CAM_VRES_640
+        default 800 if EXAMPLE_CAM_VRES_800
+endmenu

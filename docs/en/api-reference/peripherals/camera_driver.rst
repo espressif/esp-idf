@@ -152,6 +152,12 @@ There is a Kconfig option :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` that:
 
 This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption. So user callbacks need to notice that the code and data inside (the callback) should be IRAM-safe or DRAM-safe, when cache is disabled.
 
+Application Examples
+--------------------
+
+* :example:`peripherals/camera/mipi_isp_dsi` demonstrates how to use the ``esp_driver_cam`` component to capture signals from a MIPI CSI camera sensor via the ISP module and display it on a LCD screen via a DSI interface.
+* :example:`peripherals/camera/dvp_isp_dsi` demonstrates how to use the ``esp_driver_cam`` component to capture signals from a DVP camera sensor via the ISP module and display it on a LCD screen via a DSI interface.
+
 API Reference
 -------------
 
