@@ -63,7 +63,7 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
  *
  * @param group_id Group ID
  */
-static inline void lcd_ll_reset_register(int group_id)
+static inline void _lcd_ll_reset_register(int group_id)
 {
     (void)group_id;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 1;
@@ -72,7 +72,7 @@ static inline void lcd_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_reset_register(__VA_ARGS__)
+#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _lcd_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable clock gating
