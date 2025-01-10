@@ -255,10 +255,15 @@ esp_err_t parlio_tx_get_alignment_constraints(parlio_tx_unit_t *tx_unit, size_t 
 static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const parlio_tx_unit_config_t *config)
 {
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
-    parlio_clock_source_t clk_src = config->clk_in_gpio_num >= 0 ? PARLIO_CLK_SRC_EXTERNAL : config->clk_src;
+    parlio_clock_source_t clk_src = config->clk_src;
+    if (config->clk_in_gpio_num >= 0 && clk_src != PARLIO_CLK_SRC_EXTERNAL) {
+        ESP_LOGW(TAG, "input clock GPIO is set, use external clk src");
+        clk_src = PARLIO_CLK_SRC_EXTERNAL;
+    }
     uint32_t periph_src_clk_hz = 0;
     // if the source clock is input from the GPIO, then we're in the slave mode
     if (clk_src == PARLIO_CLK_SRC_EXTERNAL) {
+        ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "invalid input clock GPIO number");
         periph_src_clk_hz = config->input_clk_src_freq_hz;
     } else {
         // get the internal clock source frequency

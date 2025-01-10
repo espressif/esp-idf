@@ -128,7 +128,7 @@ CPU 频率越低，最小超时值就越高。一般来说，如果所需的超�
 
 .. only:: SOC_PARLIO_SUPPORTED
 
-    若需要更小的超时值，例如生成或接收波形、进行位操作时，ESP 定时器的分辨率可能不能满足要求。此时建议使用专用外设，例如 :doc:`并行 IO </api-reference/peripherals/parlio>`，以及使用它们的 DMA 功能（如果可用）。
+    若需要更小的超时值，例如生成或接收波形、进行位操作时，ESP 定时器的分辨率可能不能满足要求。此时建议使用专用外设，例如 :doc:`并行 IO </api-reference/peripherals/parlio/index>`，以及使用它们的 DMA 功能（如果可用）。
 
 
 睡眠模式注意事项

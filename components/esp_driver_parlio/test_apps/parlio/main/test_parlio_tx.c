@@ -410,7 +410,7 @@ TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
     printf("install parlio tx unit\r\n");
     parlio_tx_unit_handle_t tx_unit = NULL;
     parlio_tx_unit_config_t config = {
-        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .clk_src = PARLIO_CLK_SRC_EXTERNAL,
         .data_width = 8,
         .clk_in_gpio_num = TEST_EXT_CLK_GPIO,
         .input_clk_src_freq_hz = 80 * 1000 * 1000, // Note that this is not the real input frequency, we just use it to calculate the clock divider
