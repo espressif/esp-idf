@@ -12,7 +12,7 @@
 #include "soc/rtc.h"
 #include "soc/clk_tree_defs.h"
 #include "soc/touch_sensor_periph.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "driver/touch_sens.h"
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
@@ -42,10 +42,7 @@ touch_sensor_handle_t g_touch = NULL;
 static void touch_channel_pin_init(int id)
 {
     gpio_num_t pin = touch_sensor_channel_io_map[id];
-    rtc_gpio_init(pin);
-    rtc_gpio_set_direction(pin, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pulldown_dis(pin);
-    rtc_gpio_pullup_dis(pin);
+    gpio_config_as_analog(pin);
 }
 
 static void s_touch_free_resource(touch_sensor_handle_t sens_handle)

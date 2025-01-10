@@ -11,8 +11,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/io_mux.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/semphr.h"
-#include "freertos/timers.h"
 #include "driver/rtc_io.h"
 #include "driver/lp_io.h"
 #include "hal/rtc_io_hal.h"
@@ -241,8 +239,10 @@ esp_err_t rtc_gpio_force_hold_dis_all(void)
 esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
+    int rtcio_num = rtc_io_number_get(gpio_num);
     RTCIO_ENTER_CRITICAL();
-    rtcio_hal_isolate(rtc_io_number_get(gpio_num));
+    rtcio_hal_isolate(rtcio_num);
+    rtcio_hal_hold_enable(rtcio_num);
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;

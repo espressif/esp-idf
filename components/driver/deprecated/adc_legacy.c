@@ -17,9 +17,8 @@
 #include "esp_pm.h"
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "sys/lock.h"
-#include "driver/gpio.h"
 #include "esp_private/adc_share_hw_ctrl.h"
 #include "esp_private/sar_periph_ctrl.h"
 #include "adc1_private.h"
@@ -175,7 +174,6 @@ static void adc_rtc_chan_init(adc_unit_t adc_unit)
 esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(adc_unit), ESP_ERR_INVALID_ARG, ADC_TAG, "invalid channel");
-#if ADC_LL_RTC_GPIO_SUPPORTED
     gpio_num_t gpio_num = 0;
     //If called with `ADC_UNIT_BOTH (ADC_UNIT_1 | ADC_UNIT_2)`, both if blocks will be run
     if (adc_unit == ADC_UNIT_1) {
@@ -186,13 +184,7 @@ esp_err_t adc_common_gpio_init(adc_unit_t adc_unit, adc_channel_t channel)
     } else {
         return ESP_ERR_INVALID_ARG;
     }
-
-    ESP_RETURN_ON_ERROR(rtc_gpio_init(gpio_num), ADC_TAG, "rtc_gpio_init fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED), ADC_TAG, "rtc_gpio_set_direction fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(gpio_num), ADC_TAG, "rtc_gpio_pulldown_dis fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(gpio_num), ADC_TAG, "rtc_gpio_pullup_dis fail");
-#endif
-    return ESP_OK;
+    return gpio_config_as_analog(gpio_num);
 }
 
 esp_err_t adc_set_data_inv(adc_unit_t adc_unit, bool inv_en)
@@ -678,7 +670,6 @@ static int8_t adc_digi_get_io_num(adc_unit_t adc_unit, uint8_t adc_channel)
 static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
 {
     esp_err_t ret = ESP_OK;
-    uint64_t gpio_mask = 0;
     uint32_t n = 0;
     int8_t io = 0;
 
@@ -688,18 +679,11 @@ static esp_err_t adc_digi_gpio_init(adc_unit_t adc_unit, uint16_t channel_mask)
             if (io < 0) {
                 return ESP_ERR_INVALID_ARG;
             }
-            gpio_mask |= BIT64(io);
+            gpio_config_as_analog(io);
         }
         channel_mask = channel_mask >> 1;
         n++;
     }
-
-    gpio_config_t cfg = {
-        .pin_bit_mask = gpio_mask,
-        .mode = GPIO_MODE_DISABLE,
-    };
-    ret = gpio_config(&cfg);
-
     return ret;
 }
 

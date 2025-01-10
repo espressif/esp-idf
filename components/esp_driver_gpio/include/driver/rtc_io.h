@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,17 +11,17 @@
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "hal/rtc_io_types.h"
-#include "driver/gpio.h"
+#include "hal/gpio_types.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * @brief Determine if the specified GPIO is a valid RTC GPIO.
+ * @brief Determine if the specified IO is a valid RTC GPIO.
  *
  * @param gpio_num GPIO number
- * @return true if GPIO is valid for RTC GPIO use. false otherwise.
+ * @return true if the IO is valid for RTC GPIO use. false otherwise.
  */
 bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num);
 
@@ -29,36 +29,34 @@ bool rtc_gpio_is_valid_gpio(gpio_num_t gpio_num);
 
 #if SOC_RTCIO_PIN_COUNT > 0
 /**
- * @brief Get RTC IO index number by gpio number.
+ * @brief Get RTC IO index number by GPIO number.
  *
  * @param gpio_num GPIO number
  * @return
- *        >=0: Index of rtcio.
- *        -1 : The gpio is not rtcio.
+ *        >=0: Index of RTC IO.
+ *        -1 : The IO is not an RTC IO.
  */
 int rtc_io_number_get(gpio_num_t gpio_num);
 
 /**
- * @brief Init a GPIO as RTC GPIO
- *
- * This function must be called when initializing a pad for an analog function.
+ * @brief Init an IO to be an RTC GPIO, route to RTC IO MUX
  *
  * @param  gpio_num GPIO number (e.g. GPIO_NUM_12)
  *
  * @return
- *     - ESP_OK success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_init(gpio_num_t gpio_num);
 
 /**
- * @brief Init a GPIO as digital GPIO
+ * @brief Deinit an IO as an RTC GPIO, route back to IO MUX
  *
  * @param  gpio_num GPIO number (e.g. GPIO_NUM_12)
  *
  * @return
- *     - ESP_OK success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_OK Success
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num);
 
@@ -71,7 +69,7 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num);
  * @return
  *     - 1 High level
  *     - 0 Low level
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 uint32_t rtc_gpio_get_level(gpio_num_t gpio_num);
 
@@ -83,7 +81,7 @@ uint32_t rtc_gpio_get_level(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level);
 
@@ -94,11 +92,11 @@ esp_err_t rtc_gpio_set_level(gpio_num_t gpio_num, uint32_t level);
  * output and input.
  *
  * @param  gpio_num GPIO number (e.g. GPIO_NUM_12)
- * @param  mode GPIO direction
+ * @param  mode RTC GPIO direction
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode);
 
@@ -110,11 +108,11 @@ esp_err_t rtc_gpio_set_direction(gpio_num_t gpio_num, rtc_gpio_mode_t mode);
  *       The rest targets support INPUT_ONLY, OUTPUT_ONLY, INPUT_OUTPUT mode.
  *
  * @param  gpio_num GPIO number (e.g. GPIO_NUM_12)
- * @param  mode GPIO direction
+ * @param  mode RTC GPIO direction
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_set_direction_in_sleep(gpio_num_t gpio_num, rtc_gpio_mode_t mode);
 
@@ -128,7 +126,7 @@ esp_err_t rtc_gpio_set_direction_in_sleep(gpio_num_t gpio_num, rtc_gpio_mode_t m
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_pullup_en(gpio_num_t gpio_num);
 
@@ -142,7 +140,7 @@ esp_err_t rtc_gpio_pullup_en(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num);
 
@@ -156,7 +154,7 @@ esp_err_t rtc_gpio_pulldown_en(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num);
 
@@ -170,7 +168,7 @@ esp_err_t rtc_gpio_pullup_dis(gpio_num_t gpio_num);
  *
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_pulldown_dis(gpio_num_t gpio_num);
 
@@ -225,7 +223,7 @@ esp_err_t rtc_gpio_iomux_func_sel(gpio_num_t gpio_num, int func);
  * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num);
 
@@ -239,7 +237,7 @@ esp_err_t rtc_gpio_hold_en(gpio_num_t gpio_num);
  * @param gpio_num GPIO number (e.g. GPIO_NUM_12)
  * @return
  *     - ESP_OK Success
- *     - ESP_ERR_INVALID_ARG GPIO is not an RTC IO
+ *     - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_hold_dis(gpio_num_t gpio_num);
 
@@ -275,8 +273,8 @@ esp_err_t rtc_gpio_force_hold_dis_all(void);
  *
  * @param gpio_num GPIO number (e.g. GPIO_NUM_12).
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if GPIO is not an RTC IO
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
 #endif // SOC_RTCIO_HOLD_SUPPORTED && SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
@@ -289,8 +287,8 @@ esp_err_t rtc_gpio_isolate(gpio_num_t gpio_num);
  * @param intr_type  Wakeup on high level (GPIO_INTR_HIGH_LEVEL) or low level
  *                   (GPIO_INTR_LOW_LEVEL)
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO, or intr_type is not
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO, or intr_type is not
  *        one of GPIO_INTR_HIGH_LEVEL, GPIO_INTR_LOW_LEVEL.
  */
 esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type);
@@ -299,8 +297,8 @@ esp_err_t rtc_gpio_wakeup_enable(gpio_num_t gpio_num, gpio_int_type_t intr_type)
  * @brief Disable wakeup from sleep mode using specific GPIO
  * @param gpio_num  GPIO number
  * @return
- *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if gpio_num is not an RTC IO
+ *      - ESP_OK Success
+ *      - ESP_ERR_INVALID_ARG The IO is not an RTC IO
  */
 esp_err_t rtc_gpio_wakeup_disable(gpio_num_t gpio_num);
 
