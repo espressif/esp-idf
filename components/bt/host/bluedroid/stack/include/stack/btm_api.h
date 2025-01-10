@@ -981,9 +981,6 @@ typedef void (tBTM_ACL_DB_CHANGE_CB) (BD_ADDR p_bda, DEV_CLASS p_dc,
 #define BTM_INVALID_SCO_INDEX       0xFFFF
 #define BTM_INVALID_HCI_HANDLE      0xFFFF
 
-/* Define an invalid SCO disconnect reason */
-#define BTM_INVALID_SCO_DISC_REASON 0xFFFF
-
 /* Define first active SCO index */
 #define BTM_FIRST_ACTIVE_SCO_INDEX  BTM_MAX_SCO_LINKS
 
@@ -3160,21 +3157,6 @@ UINT16 BTM_ReadScoHandle (UINT16 sco_inx);
 *******************************************************************************/
 //extern
 UINT8 *BTM_ReadScoBdAddr (UINT16 sco_inx);
-
-
-/*******************************************************************************
-**
-** Function         BTM_ReadScoDiscReason
-**
-** Description      This function is returns the reason why an (e)SCO connection
-**                  has been removed. It contains the value until read, or until
-**                  another (e)SCO connection has disconnected.
-**
-** Returns          HCI reason or BTM_INVALID_SCO_DISC_REASON if not set.
-**
-*******************************************************************************/
-//extern
-UINT16 BTM_ReadScoDiscReason (void);
 
 
 /*******************************************************************************

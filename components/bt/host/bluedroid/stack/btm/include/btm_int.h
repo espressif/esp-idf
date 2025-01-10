@@ -464,7 +464,6 @@ typedef struct {
     tSCO_CONN            sco_db[BTM_MAX_SCO_LINKS];
     tBTM_ESCO_PARAMS     def_esco_parms;
     BD_ADDR              xfer_addr;
-    UINT16               sco_disc_reason;
     BOOLEAN              esco_supported;    /* TRUE if 1.2 cntlr AND supports eSCO links */
     tBTM_SCO_TYPE        desired_sco_mode;
     tBTM_SCO_TYPE        xfer_sco_type;
