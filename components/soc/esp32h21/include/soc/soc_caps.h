@@ -43,7 +43,7 @@
 // #define SOC_I2C_SUPPORTED               1    //TODO: [ESP32H21] IDF-11578, IDF-11580
 #define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32H21] IDF-11596, IDF-11598
 // #define SOC_SUPPORT_COEXISTENCE         1    //TODO: [ESP32H21] IDF-11658, IDF-11659, IDF-11660
-// #define SOC_MPI_SUPPORTED               1
+#define SOC_MPI_SUPPORTED               1
 // #define SOC_SHA_SUPPORTED               1    //TODO: [ESP32H21] IDF-11501
 // #define SOC_HMAC_SUPPORTED              1    //TODO: [ESP32H21] IDF-11495
 // #define SOC_DIG_SIGN_SUPPORTED          1    //TODO: [ESP32H21] IDF-11497
