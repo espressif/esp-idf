@@ -44,7 +44,7 @@
 #define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32H21] IDF-11596, IDF-11598
 // #define SOC_SUPPORT_COEXISTENCE         1    //TODO: [ESP32H21] IDF-11658, IDF-11659, IDF-11660
 #define SOC_MPI_SUPPORTED               1
-// #define SOC_SHA_SUPPORTED               1    //TODO: [ESP32H21] IDF-11501
+#define SOC_SHA_SUPPORTED               1
 // #define SOC_HMAC_SUPPORTED              1    //TODO: [ESP32H21] IDF-11495
 // #define SOC_DIG_SIGN_SUPPORTED          1    //TODO: [ESP32H21] IDF-11497
 #define SOC_ECC_SUPPORTED               1
@@ -72,7 +72,7 @@
 // #define SOC_ETM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11576
 // #define SOC_PARLIO_SUPPORTED            1    //TODO: [ESP32H21] IDF-11570, IDF-11572
 // #define SOC_RMT_SUPPORTED               1    //TODO: [ESP32H21] IDF-11622
-// #define SOC_AES_SUPPORTED               1    //TODO: [ESP32H21] IDF-11504
+#define SOC_AES_SUPPORTED               1
 // #define SOC_SDIO_SLAVE_SUPPORTED        1
 #define SOC_PAU_SUPPORTED               1
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
@@ -91,6 +91,8 @@
 
 #define SOC_AES_SUPPORT_AES_128 (1)
 #define SOC_AES_SUPPORT_AES_256 (1)
+
+#define SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION (1)
 
 /*-------------------------- ADC CAPS -------------------------------*/
 /*!< SAR ADC Module*/
