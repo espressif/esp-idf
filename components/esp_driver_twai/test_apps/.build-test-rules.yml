@@ -1,0 +1,6 @@
+components/esp_driver_twai/test_apps/twaifd_test:
+  disable:
+    - if: SOC_TWAI_SUPPORTED != 1 or SOC_TWAI_SUPPORT_FD != 1
+      reason: Only support FD targets now
+  depends_components:
+    - esp_driver_twai
