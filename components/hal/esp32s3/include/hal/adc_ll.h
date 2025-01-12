@@ -57,8 +57,8 @@ extern "C" {
 #define ADC_LL_DIGI_SAR_CLK_DIV_DEFAULT                (1)
 
 #define ADC_LL_CLKM_DIV_NUM_DEFAULT       15
-#define ADC_LL_CLKM_DIV_B_DEFAULT         1
-#define ADC_LL_CLKM_DIV_A_DEFAULT         0
+#define ADC_LL_CLKM_DIV_B_DEFAULT         5
+#define ADC_LL_CLKM_DIV_A_DEFAULT         33
 #define ADC_LL_DEFAULT_CONV_LIMIT_EN      0
 #define ADC_LL_DEFAULT_CONV_LIMIT_NUM     10
 
