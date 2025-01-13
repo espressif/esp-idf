@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -207,6 +207,9 @@ esp_err_t touch_priv_config_channel(touch_channel_handle_t chan_handle, const to
     touch_ll_set_charge_speed(chan_handle->id, chan_cfg->charge_speed);
     touch_ll_set_init_charge_voltage(chan_handle->id, chan_cfg->init_charge_volt);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_chan_benchmark_config_t bm_cfg = {.do_reset = true};
+    /* Reset the benchmark to overwrite the legacy benchmark during the deep sleep */
+    touch_channel_config_benchmark(chan_handle, &bm_cfg);
     return ESP_OK;
 }
 
@@ -255,13 +258,6 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
     return ESP_OK;
 }
 
-void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    if (benchmark_cfg->do_reset) {
-        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
-    }
-}
-
 /******************************************************************************
  *                              Scope: public APIs                            *
  ******************************************************************************/
@@ -299,6 +295,16 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     return ret;
 }
 
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
+{
+    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
+    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+    if (benchmark_cfg->do_reset) {
+        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    return ESP_OK;
+}
+
 esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, const touch_sleep_config_t *sleep_cfg)
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
@@ -317,13 +323,18 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
                           ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
         /* Enabled touch sensor as wake-up source */
         ESP_GOTO_ON_ERROR(esp_sleep_enable_touchpad_wakeup(), err, TAG, "Failed to enable touch sensor wakeup");
-
         /* If set the deep sleep channel (i.e., enable deep sleep wake-up),
            configure the deep sleep related settings. */
         if (sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP) {
             if (sleep_cfg->deep_slp_allow_pd) {
                 ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG,
                                   "deep sleep waken channel can't be NULL when allow RTC power down");
+#if CONFIG_IDF_TARGET_ESP32S2
+                /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
+                 * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely. */
+                slp_opt = ESP_PD_OPTION_ON;
+                ESP_LOGW(TAG, "Keep the RTC_PERIPH power on in case the false trigger");
+#endif
             } else {
                 /* Keep the RTC_PERIPH power domain on in deep sleep */
                 slp_opt = ESP_PD_OPTION_ON;

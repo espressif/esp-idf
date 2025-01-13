@@ -117,7 +117,7 @@ typedef struct {
  *
  */
 typedef struct {
-    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];      /*!< The active threshold of each sample configuration,
+    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];      /*!< The relative active threshold of each sample configuration,
                                                                                *   while the touch channel smooth value minus benchmark value exceed this threshold,
                                                                                *   will be regarded as activated
                                                                                */

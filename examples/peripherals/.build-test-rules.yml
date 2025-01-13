@@ -461,15 +461,8 @@ examples/peripherals/touch_sensor/touch_element:
 examples/peripherals/touch_sensor/touch_sens_basic:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
-    - if: SOC_TOUCH_SENSOR_VERSION == 1
-      temporary: true
-      reason: not supported yet
   depends_components:
     - esp_driver_touch_sens
-
-examples/peripherals/touch_sensor/touch_sensor_v1:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

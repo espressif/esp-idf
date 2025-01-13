@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "driver/touch_sens.h"
@@ -14,6 +15,7 @@ static const char *TAG = "touch_wakeup";
 #define EXAMPLE_TOUCH_CHANNEL_NUM            3
 #define EXAMPLE_TOUCH_CHAN_INIT_SCAN_TIMES   3
 
+// The touch channel IDs that used in this example
 // If you want to change the wake-up channels, please make sure the channel GPIOs won't conflict to the EXT wakeup GPIOs
 static int s_channel_id[EXAMPLE_TOUCH_CHANNEL_NUM] = {7, 8, 9};
 
@@ -78,8 +80,10 @@ static void example_touch_do_initial_scanning(touch_sensor_handle_t sens_handle,
     }
 }
 
-esp_err_t example_register_touch_wakeup(void)
+esp_err_t example_deep_sleep_register_touch_wakeup(void)
 {
+    printf("Enabling touch wakeup\n");
+
     /* Handles of touch sensor */
     touch_sensor_handle_t sens_handle = NULL;
     touch_channel_handle_t chan_handle[EXAMPLE_TOUCH_CHANNEL_NUM];
@@ -108,18 +112,34 @@ esp_err_t example_register_touch_wakeup(void)
      */
     example_touch_do_initial_scanning(sens_handle, chan_handle);
 
-    /* (Optional) Register the callbacks, optional for light sleep wakeup */
+    /* (Optional) Register the callbacks, optional for deep sleep wakeup */
     touch_event_callbacks_t callbacks = {
         .on_active = example_touch_on_active_cb,
         .on_inactive = example_touch_on_inactive_cb,
     };
     ESP_ERROR_CHECK(touch_sensor_register_callbacks(sens_handle, &callbacks, NULL));
 
-    /* Step 4: Enable the light sleep wake-up with the basic configuration */
-    touch_sleep_config_t light_slp_cfg = TOUCH_SENSOR_DEFAULT_LSLP_CONFIG();
-    ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
+    /* Step 4: Enable the deep sleep wake-up with the basic configuration */
+#if CONFIG_EXAMPLE_TOUCH_ALLOW_DSLP_PD
+    /* Get the channel information to use same active threshold for the sleep channel */
+    touch_chan_info_t chan_info = {};
+    ESP_ERROR_CHECK(touch_sensor_get_channel_info(chan_handle[0], &chan_info));
 
-    /* Step 5: Enable touch sensor controller and start continuous scanning before entering light sleep */
+    touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_PD_CONFIG(chan_handle[0],
+                                                                            chan_info.active_thresh[0],
+#if SOC_TOUCH_SENSOR_VERSION == 3
+                                                                            chan_info.active_thresh[1],
+                                                                            chan_info.active_thresh[2],
+#endif
+                                                                        );
+    printf("Touch channel %d (GPIO%d) is selected as deep sleep wakeup channel\n", chan_info.chan_id, chan_info.chan_gpio);
+#else
+    touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_CONFIG();
+#endif
+    /* Enable deep sleep wake up for touch sensor */
+    ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
+
+    /* Step 5: Enable touch sensor controller and start continuous scanning before entering deep sleep */
     ESP_ERROR_CHECK(touch_sensor_enable(sens_handle));
     ESP_ERROR_CHECK(touch_sensor_start_continuous_scanning(sens_handle));
 

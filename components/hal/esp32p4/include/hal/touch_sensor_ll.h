@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -281,6 +281,24 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
     // Channel shift workaround
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
+}
+
+/**
+ * Get touch sensor threshold of charge cycles that triggers pad active state.
+ * The threshold determines the sensitivity of the touch sensor.
+ * The threshold is the original value of the trigger state minus the benchmark value.
+ *
+ * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be triggered.
+ * @param touch_num The touch pad id
+ * @param sample_cfg_id The sample configuration index
+ * @return
+ *      - The threshold of charge cycles
+ */
+static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id)
+{
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    // Channel shift workaround
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold);  // codespell:ignore
 }
 
 /**

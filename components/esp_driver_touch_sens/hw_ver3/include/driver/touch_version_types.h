@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ extern "C" {
 /**
  * @brief Helper macro to the default sample configurations
  * @note  This default configuration uses `sample frequency = clock frequency / 1`
+ *        This helper macro mostly focus on the final result scaling
  *
  * @param[in] _div_num              The division of the final data, used to scaling the final data
  * @param[in] coarse_freq_tune      The coarse frequency tuning value
@@ -51,6 +52,28 @@ extern "C" {
     .charge_times = 500, \
     .rc_filter_res = 1, \
     .rc_filter_cap = 1, \
+    .low_drv = fine_freq_tune, \
+    .high_drv = coarse_freq_tune, \
+    .bias_volt = 5, \
+    .bypass_shield_output = false, \
+}
+
+/**
+ * @brief Helper macro to the default sample configurations
+ * @note  This default configuration uses `sample frequency = clock frequency / 1`
+ *        This helper macro mostly focus on the sawtooth wave frequency tuning
+ *        Recommended for the frequency hopping usage
+ *
+ * @param[in] res                   The resistance of the RC filter
+ * @param[in] cap                   The capacitance of the RC filter
+ * @param[in] coarse_freq_tune      The coarse frequency tuning value
+ * @param[in] fine_freq_tune        The fine frequency tuning value
+ */
+#define TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG2(res, cap, coarse_freq_tune, fine_freq_tune) { \
+    .div_num = 8, \
+    .charge_times = 500, \
+    .rc_filter_res = res, \
+    .rc_filter_cap = cap, \
     .low_drv = fine_freq_tune, \
     .high_drv = coarse_freq_tune, \
     .bias_volt = 5, \
@@ -122,7 +145,7 @@ typedef struct {
  *
  */
 typedef struct {
-    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];  /*!< The active threshold of each sample configuration,
+    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];  /*!< The relative active threshold of each sample configuration,
                                                                            *   while the touch channel smooth value minus benchmark value exceed this threshold,
                                                                            *   will be regarded as activated
                                                                            */

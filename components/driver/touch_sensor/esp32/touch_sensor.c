@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,7 +17,7 @@
 #include "esp_timer.h"
 #include "esp_intr_alloc.h"
 #include "driver/rtc_io.h"
-#include "driver/touch_pad.h"
+#include "driver/touch_sensor_legacy.h"
 #include "esp_private/rtc_ctrl.h"
 #include "driver/gpio.h"
 #include "esp_check.h"
@@ -522,3 +522,19 @@ err:
     xSemaphoreGive(rtc_touch_mux);
     return ret;
 }
+
+#if !CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK
+/**
+ * @brief This function will be called during start up, to check that the new touch driver is not running along with the legacy touch driver
+ */
+static __attribute__((constructor)) void check_touch_driver_conflict(void)
+{
+    extern __attribute__((weak)) esp_err_t touch_sensor_new_controller(const void*, void *);
+    /* If the new Touch driver is linked, the weak function will point to the actual function in the new driver, otherwise it is NULL*/
+    if ((void *)touch_sensor_new_controller != NULL) {
+        ESP_EARLY_LOGE("legacy_touch_driver", "CONFLICT! The new touch driver can't work along with the legacy touch driver");
+        abort();
+    }
+    ESP_EARLY_LOGW("legacy_touch_driver", "legacy touch driver is deprecated, please migrate to use driver/touch_sens.h");
+}
+#endif //CONFIG_TOUCH_SKIP_LEGACY_CONFLICT_CHECK
