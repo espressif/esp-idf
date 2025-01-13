@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -31,4 +31,28 @@ def test_stack_smash_protection(dut: Dut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.write('"stack smashing protection"')
     dut.expect_exact('Stack smashing protect failure!')
+    dut.expect_exact('Rebooting...')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        # Testing this feature on a single RISC-V target is enough
+        pytest.param('framepointer', marks=[pytest.mark.esp32c3]),
+    ]
+)
+def test_frame_pointer_backtracing(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Backtrace detects corrupted frames"')
+    dut.expect_exact('Guru Meditation Error')
+    # The backtrace should be composed of a single entry
+    dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8}\s*[\r]?\n')
+    dut.expect_exact('Rebooting...')
+
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.write('"Backtrace detects ROM functions"')
+    dut.expect_exact('Guru Meditation Error')
+    # The backtrace should have two entries
+    dut.expect(r'Backtrace: 0x[0-9a-f]{8}:0x[0-9a-f]{8} 0x[0-9a-f]{8}:0x[0-9a-f]{8}\s*[\r]?\n')
     dut.expect_exact('Rebooting...')

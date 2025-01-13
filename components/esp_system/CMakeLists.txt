@@ -56,6 +56,10 @@ else()
         list(APPEND srcs "eh_frame_parser.c")
     endif()
 
+    if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+        list(APPEND srcs "fp_unwind.c")
+    endif()
+
     if(CONFIG_SOC_SYSTIMER_SUPPORT_ETM)
         list(APPEND srcs "systick_etm.c")
     endif()

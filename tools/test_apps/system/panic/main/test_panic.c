@@ -344,3 +344,34 @@ void test_capture_dram(void)
     assert(0);
 }
 #endif
+
+
+#if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+
+static NOINLINE_ATTR void step3(void) {
+    printf("Step 3\n");
+    /* For some reason, the compiler doesn't generate the proper sequence for `panic_abort` function:
+     * the `ra` register is not saved on the stack upon entry */
+    abort();
+}
+
+static NOINLINE_ATTR void step2(void) {
+    step3();
+    printf("Step 2\n");
+}
+
+static NOINLINE_ATTR void step1(void) {
+    step2();
+    printf("Step 1\n");
+}
+
+/**
+ * @brief Create a stack trace of several functions that will be shown at runtime,
+ * The functions must not be inlined!
+ */
+void test_panic_print_backtrace(void)
+{
+    step1();
+}
+
+#endif
