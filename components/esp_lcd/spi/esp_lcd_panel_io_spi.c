@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,7 @@
 #include "esp_lcd_panel_io.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "hal/gpio_ll.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
@@ -400,12 +401,13 @@ err:
     return ret;
 }
 
-static void lcd_spi_pre_trans_cb(spi_transaction_t *trans)
+IRAM_ATTR static void lcd_spi_pre_trans_cb(spi_transaction_t *trans)
 {
     esp_lcd_panel_io_spi_t *spi_panel_io = trans->user;
     lcd_spi_trans_descriptor_t *lcd_trans = __containerof(trans, lcd_spi_trans_descriptor_t, base);
     if (spi_panel_io->dc_gpio_num >= 0) { // set D/C line level if necessary
-        gpio_set_level(spi_panel_io->dc_gpio_num, lcd_trans->flags.dc_gpio_level);
+        // use ll function to speed up
+        gpio_ll_set_level(&GPIO, spi_panel_io->dc_gpio_num, lcd_trans->flags.dc_gpio_level);
     }
 }
 
