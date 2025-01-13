@@ -12,6 +12,7 @@ if(CONFIG_IEEE802154_ENABLED)
     list(APPEND srcs "esp_ieee802154.c"
         "driver/esp_ieee802154_ack.c"
         "driver/esp_ieee802154_dev.c"
+        "driver/esp_ieee802154_event.c"
         "driver/esp_ieee802154_frame.c"
         "driver/esp_ieee802154_pib.c"
         "driver/esp_ieee802154_util.c"
