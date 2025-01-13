@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,14 +64,14 @@ typedef struct {
     twai_clock_source_t clk_src;    /**< Optional, clock source, remain 0 to using TWAI_CLK_SRC_DEFAULT by default */
     uint32_t quanta_resolution_hz;  /**< The resolution of one timing quanta, in Hz. If setting, brp will be ignored */
     uint32_t brp;                   /**< Bit rate pre-divider, clock_source_freq / brp = quanta_resolution_hz */
+    uint8_t  prop_seg;              /**< Prop_seg length, in quanta time */
     uint8_t  tseg_1;                /**< Seg_1 length, in quanta time */
     uint8_t  tseg_2;                /**< Seg_2 length, in quanta time */
     uint8_t  sjw;                   /**< Sync jump width, in quanta time */
     union {
-        bool en_multi_samp;         /**< Multi-sampling for one bit to avoid noise and detect errors */
-        bool triple_sampling;       /**< Deprecate, using `en_multi_samp`, Enables triple sampling when the TWAI controller samples a bit, [deprecated("in favor of en_multi_samp")] */
+        bool en_multi_samp;   /**< Enable multi-sampling for one bit to avoid noise and detect errors */
+        bool triple_sampling; /**< Deprecated, in favor of `en_multi_samp` */
     };
-    uint8_t  prop_seg;              /**< Prop_seg length, in quanta time */
 } twai_timing_config_t;
 
 /**
