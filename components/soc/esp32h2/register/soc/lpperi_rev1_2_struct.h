@@ -1,9 +1,14 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
+
+/**
+ * @file lpperi_rev1_2_struct.h
+ * @brief Applicable to the ESP32-H2 that chip revision >= 1.2.
+ */
 
 #include <stdint.h>
 #ifdef __cplusplus
@@ -99,15 +104,29 @@ typedef union {
     uint32_t val;
 } lpperi_reset_en_reg_t;
 
+/** Type of rng_cfg register
+ *  need_des
+ */
+typedef union {
+    struct {
+        /** rng_cfg_enable : R/W; bitpos: [1:0]; default: 0;
+         *  need_des
+         */
+        uint32_t rng_cfg_enable:2;
+        uint32_t reserved_2:30;
+    };
+    uint32_t val;
+} lpperi_rng_cfg_reg_t;
+
 /** Type of rng_data register
  *  need_des
  */
 typedef union {
     struct {
-        /** rng_data : RO; bitpos: [31:0]; default: 0;
+        /** rnd_data : RO; bitpos: [31:0]; default: 0;
          *  need_des
          */
-        uint32_t rng_data:32;
+        uint32_t rnd_data:32;
     };
     uint32_t val;
 } lpperi_rng_data_reg_t;
@@ -267,7 +286,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** lpperi_date : R/W; bitpos: [30:0]; default: 35676464;
+        /** lpperi_date : R/W; bitpos: [30:0]; default: 36732976 (0x2308030);
          *  need_des
          */
         uint32_t lpperi_date:31;
@@ -283,6 +302,7 @@ typedef union {
 typedef struct {
     volatile lpperi_clk_en_reg_t clk_en;
     volatile lpperi_reset_en_reg_t reset_en;
+    volatile lpperi_rng_cfg_reg_t rng_cfg;
     volatile lpperi_rng_data_reg_t rng_data;
     volatile lpperi_cpu_reg_t cpu;
     volatile lpperi_bus_timeout_reg_t bus_timeout;
@@ -292,14 +312,15 @@ typedef struct {
     volatile lpperi_interrupt_source_reg_t interrupt_source;
     volatile lpperi_debug_sel0_reg_t debug_sel0;
     volatile lpperi_debug_sel1_reg_t debug_sel1;
-    uint32_t reserved_02c[244];
+    uint32_t reserved_030[243];
     volatile lpperi_date_reg_t date;
-} lpperi_dev_t;
+} lpperi_rev1_2_dev_t;
 
-extern lpperi_dev_t LPPERI;
+/* Please don't use the following instance, use the compatible instance LPPERI in `lpperi_struct.h` instead. */
+extern lpperi_rev1_2_dev_t LPPERI_REV1_2;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(lpperi_dev_t) == 0x400, "Invalid size of lpperi_dev_t structure");
+_Static_assert(sizeof(lpperi_rev1_2_dev_t) == 0x400, "Invalid size of lpperi_rev1_2_dev_t structure");
 #endif
 
 #ifdef __cplusplus
