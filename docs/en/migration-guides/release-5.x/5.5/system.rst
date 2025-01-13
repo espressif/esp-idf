@@ -34,3 +34,8 @@ The log handler (``esp_log``) supports internal formatting, so there is no need 
             esp_log(ESP_LOG_CONFIG_INIT(ESP_LOG_ERROR), OT_PLAT_LOG_TAG, LOG_RESET_COLOR "\n");
         }
     #endif
+
+Pre-Encrypted OTA
+-----------------
+
+The 'pre_encrypted_ota' example has been moved to `idf-extra-components <https://github.com/espressif/idf-extra-components/tree/master/esp_encrypted_img/examples/pre_encrypted_ota>`__ repository.
