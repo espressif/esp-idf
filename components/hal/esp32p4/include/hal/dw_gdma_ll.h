@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@
 #include "soc/hp_sys_clkrst_struct.h"
 #include "soc/reg_base.h"
 
-#define DW_GDMA_LL_GET_HW() (&DW_GDMA)
+#define DW_GDMA_LL_GET_HW(id)          (((id) == 0) ? (&DW_GDMA) : NULL)
 
 #define DW_GDMA_LL_GROUPS              1 // there's one DW-GDMA instance connected to the AXI bus
 #define DW_GDMA_LL_CHANNELS_PER_GROUP  4 // there are 4 independent channels in the DW-GDMA
@@ -101,7 +101,7 @@ static inline void dw_gdma_ll_enable_bus_clock(int group_id, bool enable)
 /**
  * @brief Reset the DMA module
  */
-static inline void dw_gdma_ll_reset_register(int group_id)
+static inline void _dw_gdma_ll_reset_register(int group_id)
 {
     (void)group_id;
     HP_SYS_CLKRST.hp_rst_en0.reg_rst_en_gdma = 1;
@@ -110,7 +110,17 @@ static inline void dw_gdma_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define dw_gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; dw_gdma_ll_reset_register(__VA_ARGS__)
+#define dw_gdma_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _dw_gdma_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief Check if the bus clock is enabled for the DMA module
+ */
+__attribute__((always_inline))
+static inline bool dw_gdma_ll_is_bus_clock_enabled(int group_id)
+{
+    (void) group_id;
+    return HP_SYS_CLKRST.soc_clk_ctrl1.reg_gdma_sys_clk_en && HP_SYS_CLKRST.soc_clk_ctrl0.reg_gdma_cpu_clk_en;
+}
 
 /**
  * @brief Reset the DMA controller by software
@@ -320,10 +330,12 @@ static inline void dw_gdma_ll_channel_suspend(dw_gdma_dev_t *dev, uint8_t channe
  * @param dev Pointer to the DW_GDMA registers
  * @param channel Channel number
  */
+__attribute__((always_inline))
 static inline void dw_gdma_ll_channel_abort(dw_gdma_dev_t *dev, uint8_t channel)
 {
     // the abort bit clears itself after the abort is done
     dev->chen1.val = 0x101 << channel;
+    while (dev->chen1.val & (0x101 << channel));
 }
 
 /**
