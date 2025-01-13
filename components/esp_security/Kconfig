@@ -50,4 +50,13 @@ menu "ESP Security Specific"
             the cases when trusted boot is not enabled and the attacker tries carrying out non-constant
             time point multiplication operations by changing the default ESP-IDF configurations.
             Performing constant time operations protect the ECC multiplication operations from timing attacks.
+
+    config ESP_ECDSA_ENABLE_P192_CURVE
+        bool "Enable ECDSA 192-curve operations"
+        depends on SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+        default N
+        help
+            By default, only the 256-bit curve operations are allowed. If this configuration is enabled,
+            it will set the eFuse to allow ECDSA operations using both the 192-bit and 256-bit curves.
+
 endmenu

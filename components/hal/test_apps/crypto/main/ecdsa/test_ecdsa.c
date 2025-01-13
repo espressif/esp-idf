@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -12,8 +12,12 @@
 #include "esp_efuse_chip.h"
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_random.h"
+#include "esp_err.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "hal/ecc_ll.h"
 #include "hal/ecdsa_hal.h"
+#include "hal/efuse_ll.h"
 #include "hal/ecdsa_ll.h"
 #include "hal/ecdsa_types.h"
 #ifdef SOC_MPI_SUPPORTED
@@ -26,6 +30,8 @@
 
 #include "ecdsa_params.h"
 #include "hal_crypto_common.h"
+
+__attribute__((unused)) static const char * TAG = "crypto_test";
 
 static void ecdsa_enable_and_reset(void)
 {
@@ -280,19 +286,41 @@ TEST_TEAR_DOWN(ecdsa)
                                          test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
 }
 
+
 TEST(ecdsa, ecdsa_SECP192R1_signature_verification)
 {
-    TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        TEST_ASSERT_EQUAL(0, test_ecdsa_verify(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y));
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP192R1_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_TRNG);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP192R1_corrupt_signature)
 {
-    test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        test_ecdsa_corrupt_data(0, sha, ecdsa192_r, ecdsa192_s, ecdsa192_pub_x, ecdsa192_pub_y);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_signature_verification)
@@ -313,7 +341,14 @@ TEST(ecdsa, ecdsa_SECP256R1_corrupt_signature)
 #ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 TEST(ecdsa, ecdsa_SECP192R1_det_sign_and_verify)
 {
-    test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        test_ecdsa_sign_and_verify(0, sha, ecdsa192_pub_x, ecdsa192_pub_y, false, ECDSA_K_TYPE_DETERMINISITIC);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
@@ -325,7 +360,14 @@ TEST(ecdsa, ecdsa_SECP256R1_det_sign_and_verify)
 #ifdef SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
 TEST(ecdsa, ecdsa_SECP192R1_export_pubkey)
 {
-    test_ecdsa_export_pubkey(0, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        test_ecdsa_export_pubkey(0, ecdsa192_pub_x, ecdsa192_pub_y, 0);
+    }
 }
 
 TEST(ecdsa, ecdsa_SECP256R1_export_pubkey)
