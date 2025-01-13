@@ -393,6 +393,7 @@ static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
     rtc_clk_apb_freq_update(80 * MHZ);
     ets_update_cpu_frequency(cpu_freq_mhz);
     rtc_clk_wait_for_slow_cycle();
+    esp_rom_delay_us(30);
 }
 
 void rtc_clk_cpu_freq_set_xtal(void)
