@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -13,7 +13,7 @@
 
 #define TAG                     "NimBLE_BLE_PAwR"
 #define TARGET_NAME             "Nimble_PAwR"
-#define BLE_PAWR_RSP_DATA_LEN   (20)
+#define BLE_PAWR_RSP_DATA_LEN   (16)
 static uint8_t sub_data_pattern[BLE_PAWR_RSP_DATA_LEN] = {0};
 
 static int create_periodic_sync(struct ble_gap_ext_disc_desc *disc);
@@ -22,6 +22,7 @@ static void start_scan(void);
 static struct ble_hs_adv_fields fields;
 static bool synced = false;
 
+uint8_t rsp_slot_idx = 0;
 static int
 gap_event_cb(struct ble_gap_event *event, void *arg)
 {
@@ -51,20 +52,17 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_PERIODIC_REPORT:
-        if (event->periodic_report.event_counter % 10 == 0) {
-            // print every 10th event
-            ESP_LOGI(TAG, "[Periodic Adv Report] handle:%d, rssi:%d, data status:0x%x",
-                     event->periodic_report.sync_handle, event->periodic_report.rssi,
-                     event->periodic_report.data_status);
-            ESP_LOGI(TAG, "[Periodic Adv Report] event_counter(%d), subevent(%d)",
-                     event->periodic_report.event_counter, event->periodic_report.subevent);
-        }
+        ESP_LOGI(TAG, "[Periodic Adv Report] handle:%d, event_counter(%d), subevent(%d)",
+            event->periodic_report.sync_handle,
+            event->periodic_report.event_counter,
+            event->periodic_report.subevent);
 
+        rsp_slot_idx += 1;
         struct ble_gap_periodic_adv_response_params param = {
             .request_event = event->periodic_report.event_counter,
             .request_subevent = event->periodic_report.subevent,
             .response_subevent = event->periodic_report.subevent,
-            .response_slot = 0
+            .response_slot = rsp_slot_idx,
         };
 
         struct os_mbuf *data = os_msys_get_pkthdr(BLE_PAWR_RSP_DATA_LEN, 0);
@@ -79,8 +77,12 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
 
         rc = ble_gap_periodic_adv_set_response_data(event->periodic_report.sync_handle, &param, data);
         if (rc) {
-            ESP_LOGE(TAG, "Set response data failed, subev(%x), rsp_slot(%d), rc(0x%x)",
-                     sub_data_pattern[0], event->periodic_report.subevent, rc);
+            ESP_LOGE(TAG, "Set response data failed, sync handle: %d, subev(%x), rsp_slot(%d), rc(0x%x)",
+                    event->periodic_report.sync_handle, param.response_subevent, param.response_slot, rc);
+        }
+        else{
+            ESP_LOGI(TAG, "[RSP Data Set] sync handle: %d, subev(%x), rsp_slot(%d), rc(0x%x)",
+                    event->periodic_report.sync_handle, param.response_subevent, param.response_slot, rc);
         }
         os_mbuf_free_chain(data);
 
