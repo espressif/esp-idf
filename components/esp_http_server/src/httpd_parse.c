@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -920,6 +920,11 @@ size_t httpd_req_get_url_query_len(httpd_req_t *r)
         return 0;
     }
 
+    if (r->uri[0] == '\0') {
+        ESP_LOGD(TAG, "uri is empty");
+        return 0;
+    }
+
     struct httpd_req_aux   *ra  = r->aux;
     struct http_parser_url *res = &ra->url_parse_res;
 
@@ -938,6 +943,11 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 
     if (!httpd_valid_req(r)) {
         return ESP_ERR_HTTPD_INVALID_REQ;
+    }
+
+    if (r->uri[0] == '\0') {
+        ESP_LOGD(TAG, "uri is empty");
+        return ESP_FAIL;
     }
 
     struct httpd_req_aux   *ra  = r->aux;
