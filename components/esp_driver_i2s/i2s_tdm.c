@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -251,6 +251,13 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
 #endif
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
+#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
+    if (tdm_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
+        /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
+         * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
+        pm_type = ESP_PM_NO_LIGHT_SLEEP;
+    }
+#endif // SOC_I2S_SUPPORTS_APLL
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
 #endif
 
@@ -299,8 +306,10 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
     if (tdm_cfg->clk_cfg.clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
         esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL
+#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
         if (clk_cfg->clk_src == I2S_CLK_SRC_APLL) {
+            /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
+             * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
             pm_type = ESP_PM_NO_LIGHT_SLEEP;
         }
 #endif // SOC_I2S_SUPPORTS_APLL
