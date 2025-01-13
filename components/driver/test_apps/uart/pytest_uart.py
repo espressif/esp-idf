@@ -24,7 +24,7 @@ input_argv = {
     indirect=True,
 )
 def test_uart_single_dev(case_tester) -> None:                # type: ignore
-    dut = case_tester.dut
+    dut = case_tester.first_dut
     chip_type = dut.app.target
     for case in case_tester.test_menu:
         if 'hp-uart-only' not in case.groups:

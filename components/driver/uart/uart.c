@@ -764,7 +764,7 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     if (rx_io_num >= 0 && (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX))) {
         if (uart_num < SOC_UART_HP_NUM) {
             gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
-            gpio_set_direction(rx_io_num, GPIO_MODE_INPUT);
+            gpio_ll_input_enable(&GPIO, rx_io_num);
             esp_rom_gpio_connect_in_signal(rx_io_num, UART_PERIPH_SIGNAL(uart_num, SOC_UART_RX_PIN_IDX), 0);
         }
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
