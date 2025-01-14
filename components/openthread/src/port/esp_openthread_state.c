@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,7 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE && OPENTHREAD_RADIO_NATIVE) || CONFIG_EXTERNAL_COEX_ENABLE)
         otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
         esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
         config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;
@@ -83,14 +83,13 @@ static void handle_ot_role_change(otInstance* instance)
             otOperationalDataset dataset;
             ESP_GOTO_ON_FALSE(otDatasetGetActive(instance, &dataset) == OT_ERROR_NONE, ESP_FAIL, exit, TAG,
                 "Failed to get the active dataset");
-            ESP_GOTO_ON_ERROR(esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_ATTACHED, &dataset, sizeof(dataset), 0),
-                exit, TAG, "Failed to post OPENTHREAD_EVENT_ATTACHED. Err: %s", esp_err_to_name(ret));
+            ret = esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_ATTACHED, &dataset, sizeof(dataset), 0);
+            ESP_GOTO_ON_ERROR(ret, exit, TAG, "Failed to post OPENTHREAD_EVENT_ATTACHED. Err: %s", esp_err_to_name(ret));
         }
     } else if (role == OT_DEVICE_ROLE_DETACHED) {
         if (s_previous_role != OT_DEVICE_ROLE_DISABLED) {
-            ESP_GOTO_ON_ERROR(
-                esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_DETACHED, &s_previous_role, sizeof(s_previous_role), 0),
-                exit, TAG, "Failed to post OPENTHREAD_EVENT_DETACHED. Err: %s", esp_err_to_name(ret));
+            ret = esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_DETACHED, &s_previous_role, sizeof(s_previous_role), 0);
+            ESP_GOTO_ON_ERROR(ret, exit, TAG, "Failed to post OPENTHREAD_EVENT_DETACHED. Err: %s", esp_err_to_name(ret));
         }
     }
 exit:
