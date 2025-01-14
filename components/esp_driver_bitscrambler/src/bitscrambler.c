@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,8 +8,6 @@
 #include "esp_log.h"
 #include "driver/bitscrambler.h"
 #include "bitscrambler_private.h"
-#include "bitscrambler_loopback_private.h"
-#include "soc/soc.h"
 #include "hal/bitscrambler_ll.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -42,7 +40,7 @@ typedef struct {
     uint8_t unused;
 } bitscrambler_program_hdr_t;
 
-#define INST_LEN_WORDS 9 //length of one instruction in 32-bit words as defined by HW
+#define INST_LEN_WORDS BITSCRAMBLER_LL_INST_LEN_WORDS
 
 // For now, hardware only has one TX and on RX unit. Need to make this more flexible if we get
 // non-specific and/or more channels.
@@ -251,17 +249,32 @@ esp_err_t bitscrambler_load_lut(bitscrambler_handle_t handle, void *lut, size_t 
     return ESP_OK;
 }
 
+esp_err_t bitscrambler_register_extra_clean_up(bitscrambler_handle_t handle, bitscrambler_extra_clean_up_func_t clean_up, void* user_ctx)
+{
+    if (!handle) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    handle->extra_clean_up = clean_up;
+    handle->clean_up_user_ctx = user_ctx;
+    return ESP_OK;
+}
+
 void bitscrambler_free(bitscrambler_handle_t handle)
 {
+    if (!handle) {
+        return;
+    }
     disable_clocks(handle);
     if (handle->loopback) {
         atomic_flag_clear(&tx_in_use);
         atomic_flag_clear(&rx_in_use);
-        bitscrambler_loopback_free(handle);
     } else if (handle->cfg.dir == BITSCRAMBLER_DIR_TX) {
         atomic_flag_clear(&tx_in_use);
     } else if (handle->cfg.dir == BITSCRAMBLER_DIR_RX) {
         atomic_flag_clear(&rx_in_use);
+    }
+    if (handle->extra_clean_up) {
+        handle->extra_clean_up(handle, handle->clean_up_user_ctx);
     }
     free(handle);
 }

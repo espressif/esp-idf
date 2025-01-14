@@ -22,6 +22,8 @@ extern "C" {
 
 #define BITSCRAMBLER_LL_GET_HW(num)      (((num) == 0) ? (&BITSCRAMBLER) : NULL)
 
+#define BITSCRAMBLER_LL_INST_LEN_WORDS   9 //length of one instruction in 32-bit words as defined by HW
+
 /**
  * @brief Select peripheral BitScrambler is attached to
  *

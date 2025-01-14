@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,15 +7,36 @@
 
 #include <stdbool.h>
 #include "esp_err.h"
+#include "soc/soc_caps.h"
 #include "hal/bitscrambler_types.h"
+#if SOC_BITSCRAMBLER_SUPPORTED
 #include "soc/bitscrambler_peri_select.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+/**
+ * @brief Declare a BitScrambler binary program.
+ *
+ * This macro declares an external reference to a BitScrambler binary program.
+ * The binary program is expected to be linked into the binary with a specific
+ * naming convention.
+ *
+ * @param VAR The variable name to declare.
+ * @param NAME The name of the binary program.
+ */
 #define BITSCRAMBLER_PROGRAM(VAR, NAME) extern const uint8_t VAR[] asm("_binary_bitscrambler_program_" NAME "_start")
 
+/**
+ * @brief Handle for the bitscrambler instance.
+ *
+ * This typedef defines a handle for a bitscrambler instance, which is used to
+ * manage and interact with the bitscrambler. The handle is a pointer to an
+ * opaque structure, meaning that the internal details of the structure are
+ * hidden from the user.
+ */
 typedef struct bitscrambler_t *bitscrambler_handle_t;
 
 /**
