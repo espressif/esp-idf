@@ -17,6 +17,7 @@
 #include "hal/clk_tree_ll.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
+#include "esp_private/gpio.h"
 
 typedef struct clkout_channel_handle {
     bool is_mapped;

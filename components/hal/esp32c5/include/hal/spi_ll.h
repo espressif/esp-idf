@@ -180,7 +180,7 @@ static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint
 {
     // In IDF master driver 'mst_div' will be const 2 and 'hs_div' is actually pre_div temporally
     (void) hs_div;
-    PCR.spi2_clkm_conf.spi2_clkm_div_num = mst_div - 1;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.spi2_clkm_conf, spi2_clkm_div_num, mst_div - 1);
 }
 
 /**
