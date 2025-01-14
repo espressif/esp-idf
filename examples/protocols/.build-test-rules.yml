@@ -107,8 +107,8 @@ examples/protocols/https_request:
       temporary: true
       reason: not supported on h2
   disable_test:
-    - if: IDF_TARGET != "esp32"
-      reason: only test on esp32
+    - if: IDF_TARGET not in ["esp32", "esp32c2"]
+      reason: only test on these target
 
 examples/protocols/https_server/simple:
   <<: *default_dependencies
