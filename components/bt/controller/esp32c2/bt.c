@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1145,9 +1145,17 @@ esp_err_t esp_ble_tx_power_set(esp_ble_power_type_t power_type, esp_power_level_
 
     switch (power_type) {
     case ESP_BLE_PWR_TYPE_DEFAULT:
-    case ESP_BLE_PWR_TYPE_ADV:
-    case ESP_BLE_PWR_TYPE_SCAN:
         if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    case ESP_BLE_PWR_TYPE_ADV:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_ADV, 0xFF, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
+    case ESP_BLE_PWR_TYPE_SCAN:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_SCAN, 0, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
@@ -1177,9 +1185,13 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
     esp_err_t stat = ESP_FAIL;
     switch (power_type) {
     case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+            stat = ESP_OK;
+        }
+        break;
     case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
     case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
-        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0, power_level) == 0) {
+        if (ble_txpwr_set(ESP_BLE_ENHANCED_PWR_TYPE_SCAN, 0, power_level) == 0) {
             stat = ESP_OK;
         }
         break;
@@ -1202,10 +1214,14 @@ esp_power_level_t esp_ble_tx_power_get(esp_ble_power_type_t power_type)
     int tx_level = 0;
 
     switch (power_type) {
-    case ESP_BLE_PWR_TYPE_ADV:
-    case ESP_BLE_PWR_TYPE_SCAN:
     case ESP_BLE_PWR_TYPE_DEFAULT:
         tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        break;
+    case ESP_BLE_PWR_TYPE_ADV:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_ADV, 0);
+        break;
+    case ESP_BLE_PWR_TYPE_SCAN:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_SCAN, 0);
         break;
     case ESP_BLE_PWR_TYPE_CONN_HDL0:
     case ESP_BLE_PWR_TYPE_CONN_HDL1:
@@ -1235,9 +1251,11 @@ esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t po
 
     switch (power_type) {
     case ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT:
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        break;
     case ESP_BLE_ENHANCED_PWR_TYPE_SCAN:
     case ESP_BLE_ENHANCED_PWR_TYPE_INIT:
-        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_DEFAULT, 0);
+        tx_level = ble_txpwr_get(ESP_BLE_ENHANCED_PWR_TYPE_SCAN, 0);
         break;
     case ESP_BLE_ENHANCED_PWR_TYPE_ADV:
     case ESP_BLE_ENHANCED_PWR_TYPE_CONN:
