@@ -872,6 +872,7 @@ static inline esp_err_t ieee802154_transmit_internal(const uint8_t *frame, bool 
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX);
 
     if (cca) {
+        ieee802154_ll_set_ed_duration(CCA_DETECTION_TIME);
         ieee802154_set_cmd(IEEE802154_CMD_CCA_TX_START);
         ieee802154_set_state(IEEE802154_STATE_TX_CCA);
     } else {
@@ -921,6 +922,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
     if (cca) {
+        ieee802154_ll_set_ed_duration(CCA_DETECTION_TIME);
         tx_target_time = time - IEEE802154_ED_TRIG_TX_RAMPUP_TIME_US;
         ieee802154_set_state(IEEE802154_STATE_TX_CCA);
         ieee802154_enter_critical();
