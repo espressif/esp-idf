@@ -56,7 +56,7 @@ static const esp_openthread_radio_config_t *s_esp_openthread_radio_config = NULL
 
 static esp_openthread_compatibility_error_callback s_compatibility_error_callback = NULL;
 
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if CONFIG_EXTERNAL_COEX_ENABLE
 
 #define SPINEL_PROP_VENDOR_ESP_COEX_EVENT (SPINEL_PROP_VENDOR_ESP__BEGIN + 3)
 
@@ -138,7 +138,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     s_radio.SetCompatibilityErrorCallback(ot_spinel_compatibility_error_callback, esp_openthread_get_instance());
     s_radio.Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver, s_radio_caps, /*RCP_time_sync=*/true);
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if CONFIG_EXTERNAL_COEX_ENABLE
     ESP_RETURN_ON_ERROR(esp_openthread_radio_spinel_coex_config_init(), OT_PLAT_LOG_TAG, "Coex config init failed");
 #endif
 #if CONFIG_OPENTHREAD_RADIO_SPINEL_SPI // CONFIG_OPENTHREAD_RADIO_SPINEL_SPI
@@ -516,7 +516,7 @@ uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
     return s_radio.GetRadioChannelMask(false);
 }
 
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if CONFIG_EXTERNAL_COEX_ENABLE
 
 void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config)
 {
