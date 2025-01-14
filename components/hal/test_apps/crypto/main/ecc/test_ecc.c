@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -159,12 +159,18 @@ TEST(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1)
     test_ecc_point_mul_inner(false);
 }
 
-#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL
 
 #define CONST_TIME_DEVIATION_PERCENT 0.002
 
 static void test_ecc_point_mul_inner_constant_time(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        TEST_IGNORE_MESSAGE("Skipping test, not supported on ESP32-H2 <v1.2\n");
+        return;
+    }
+#endif
     uint8_t scalar_le[32];
     uint8_t x_le[32];
     uint8_t y_le[32];
@@ -559,7 +565,7 @@ TEST_GROUP_RUNNER(ecc)
 {
 #if SOC_ECC_SUPPORT_POINT_MULT
     RUN_TEST_CASE(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1);
-#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL
     RUN_TEST_CASE(ecc, ecc_point_multiplication_const_time_check_on_SECP192R1_and_SECP256R1);
 #endif
 #endif

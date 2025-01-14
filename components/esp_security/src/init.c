@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,10 @@ ESP_SYSTEM_INIT_FN(esp_security_init, SECONDARY, BIT(0), 103)
     esp_key_mgr_init();
 #if CONFIG_ESP_CRYPTO_DPA_PROTECTION_AT_STARTUP
     esp_crypto_dpa_protection_startup();
+#endif
+
+#if SOC_ECDSA_REGISTER_INCOMPATIBILITY_ACROSS_REV
+    ecdsa_compatible_mem_reg_addr_init();
 #endif
 
 #if CONFIG_ESP_CRYPTO_FORCE_ECC_CONSTANT_TIME_POINT_MUL
