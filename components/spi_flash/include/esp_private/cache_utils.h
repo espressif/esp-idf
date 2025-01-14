@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,7 +64,22 @@ bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length);
 void esp_config_instruction_cache_mode(void);
 //config data cache size and cache block size by menuconfig
 void esp_config_data_cache_mode(void);
-//enable cache wrap mode for instruction cache and data cache
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32C3 || CONFIG_IDF_TARGET_ESP32C2
+/**
+ * @brief   enable cache wrap mode for i/d shared cache
+ * @param   icache_wrap_enable  enable cache wrap mode for i/d shared cache
+ * @return  ESP_OK on success, ESP_FAIL otherwise
+ */
+esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable);
+#elif CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+/**
+ * @brief  enable cache wrap mode for instruction cache and data cache
+ * @param  icache_wrap_enable   enable cache wrap mode for i cache
+ * @param  dcache_wrap_enable   enable cache wrap mode for d cache
+ * @return ESP_OK on success, ESP_FAIL otherwise
+ */
 esp_err_t esp_enable_cache_wrap(bool icache_wrap_enable, bool dcache_wrap_enable);
 #endif
 
@@ -80,6 +95,22 @@ bool spi_flash_cache_enabled(void);
  * @param cpuid the core number to enable instruction cache for
  */
 void spi_flash_enable_cache(uint32_t cpuid);
+
+/**
+ * @brief Suspend the Cache access to external memory, will disable branch predictor if supported.
+ *
+ * @param cpuid       the core number to enable the cache for, meaning less on shared cache.
+ * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
+ */
+void spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state);
+
+/**
+ * @brief Resume the Cache access to external memory, will enable branch predictor if supported.
+ *
+ * @param cpuid       the core number to enable the cache for, meaning less on shared cache.
+ * @param saved_state Cache status hold by hal (Used only on ROM impl. in idf, this param unused)
+ */
+void spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state);
 
 #ifdef __cplusplus
 }

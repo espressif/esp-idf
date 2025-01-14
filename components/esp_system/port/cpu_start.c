@@ -63,6 +63,7 @@
 #include "esp_memprot.h"
 #endif
 
+#include "esp_private/cache_utils.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_rtc_time.h"
 #include "rom/rtc.h"
@@ -694,7 +695,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESP32S2_DATA_CACHE_WRAP || CONFIG_ESP32S3_DATA_CACHE_WRAP
     dcache_wrap_enable = 1;
 #endif
-    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
 #endif
 
@@ -706,7 +706,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_IDF_TARGET_ESP32C2
 // TODO : IDF-5020
 #if CONFIG_ESP32C2_INSTRUCTION_CACHE_WRAP
-    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable);
     esp_enable_cache_wrap(1);
 #endif
 #endif
