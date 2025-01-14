@@ -471,7 +471,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
 
     spi_slave_trans_priv_t trans;
     while (uxQueueMessagesWaiting(spihost[host]->trans_queue)) {
-        xQueueReceive(spihost[host]->trans_queue, &trans, 0);
+        SPI_CHECK(pdTRUE == xQueueReceive(spihost[host]->trans_queue, &trans, 0), "can't reset queue", ESP_ERR_INVALID_STATE);
         spi_slave_uninstall_priv_trans(host, &trans);
     }
     spihost[host]->cur_trans.trans = NULL;
@@ -527,7 +527,7 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
     spi_slave_trans_priv_t trans;
     BaseType_t do_yield = pdFALSE;
     while (pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
-        xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield);
+        ESP_RETURN_ON_FALSE_ISR(pdTRUE == xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield), ESP_ERR_INVALID_STATE, SPI_TAG, "can't reset queue");
         spi_slave_uninstall_priv_trans(host, &trans);
     }
     if (do_yield) {
