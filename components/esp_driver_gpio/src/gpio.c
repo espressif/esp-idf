@@ -1064,24 +1064,18 @@ esp_err_t gpio_deep_sleep_wakeup_disable(gpio_num_t gpio_num)
 }
 #endif // SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
 
-esp_err_t gpio_get_io_config(gpio_num_t gpio_num,
-                             bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                             uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+esp_err_t gpio_get_io_config(gpio_num_t gpio_num, gpio_io_config_t *out_io_config)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
-    gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel);
+    ESP_RETURN_ON_FALSE(out_io_config, ESP_ERR_INVALID_ARG, GPIO_TAG, "out_io_config is a null pointer");
+
+    gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, out_io_config);
 #if !SOC_GPIO_SUPPORT_RTC_INDEPENDENT && SOC_RTCIO_PIN_COUNT > 0
     if (rtc_gpio_is_valid_gpio(gpio_num)) {
         int rtcio_num = rtc_io_number_get(gpio_num);
-        if (pu) {
-            *pu = rtcio_hal_is_pullup_enabled(rtcio_num);
-        }
-        if (pd) {
-            *pd = rtcio_hal_is_pulldown_enabled(rtcio_num);
-        }
-        if (drv) {
-            *drv = rtcio_hal_get_drive_capability(rtcio_num);
-        }
+        out_io_config->pu = rtcio_hal_is_pullup_enabled(rtcio_num);
+        out_io_config->pd = rtcio_hal_is_pulldown_enabled(rtcio_num);
+        out_io_config->drv = rtcio_hal_get_drive_capability(rtcio_num);
     }
 #endif
     return ESP_OK;
@@ -1097,25 +1091,17 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         uint32_t gpio_num = __builtin_ffsll(io_bit_mask) - 1;
         io_bit_mask &= ~(1ULL << gpio_num);
 
-        bool pu = 0;
-        bool pd = 0;
-        bool ie = 0;
-        bool oe = 0;
-        bool od = 0;
-        bool slp_sel = 0;
-        uint32_t drv = 0;
-        uint32_t fun_sel = 0;
-        uint32_t sig_out = 0;
-        gpio_get_io_config(gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
+        gpio_io_config_t io_config = {};
+        gpio_get_io_config(gpio_num, &io_config);
 
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
-        fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", pu, pd, drv);
-        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", ie, oe, od);
-        fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", fun_sel, (fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
-        if (oe && fun_sel == PIN_FUNC_GPIO) {
-            fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", sig_out, (sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
+        fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", io_config.pu, io_config.pd, (uint32_t)io_config.drv);
+        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", io_config.ie, io_config.oe, io_config.od);
+        fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", io_config.fun_sel, (io_config.fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
+        if (io_config.oe && io_config.fun_sel == PIN_FUNC_GPIO) {
+            fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", io_config.sig_out, (io_config.sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
         }
-        if (ie && fun_sel == PIN_FUNC_GPIO) {
+        if (io_config.ie && io_config.fun_sel == PIN_FUNC_GPIO) {
             uint32_t cnt = 0;
             fprintf(out_stream, "  GPIO Matrix SigIn ID:");
             for (int i = 0; i < SIG_GPIO_OUT_IDX; i++) {
@@ -1129,7 +1115,7 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
             }
             fprintf(out_stream, "\n");
         }
-        fprintf(out_stream, "  SleepSelEn: %d\n", slp_sel);
+        fprintf(out_stream, "  SleepSelEn: %d\n", io_config.slp_sel);
         fprintf(out_stream, "\n");
     }
     fprintf(out_stream, "=================IO DUMP End=================\n");

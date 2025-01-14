@@ -37,50 +37,22 @@ extern "C" {
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
+ * @param[out] io_config Pointer to the structure that saves the specific IO configuration
  */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio_io_config_t *io_config)
 {
     uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
     uint32_t bit_mask = 1 << bit_shift;
     uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    if (pu) {
-        *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    }
-    if (pd) {
-        *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    }
-    if (ie) {
-        *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    }
-    if (oe) {
-        *oe = (((gpio_num < 32) ? hw->enable : hw->enable1.val) & bit_mask) >> bit_shift;
-    }
-    if (od) {
-        *od = hw->pin[gpio_num].pad_driver;
-    }
-    if (drv) {
-        *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    }
-    if (fun_sel) {
-        *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    }
-    if (sig_out) {
-        *sig_out = hw->func_out_sel_cfg[gpio_num].func_sel;
-    }
-    if (slp_sel) {
-        *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
-    }
+    io_config->pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    io_config->pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    io_config->ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    io_config->oe = (((gpio_num < 32) ? hw->enable : hw->enable1.val) & bit_mask) >> bit_shift;
+    io_config->od = hw->pin[gpio_num].pad_driver;
+    io_config->drv = (gpio_drive_cap_t)((iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S);
+    io_config->fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    io_config->sig_out = hw->func_out_sel_cfg[gpio_num].func_sel;
+    io_config->slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
 /**

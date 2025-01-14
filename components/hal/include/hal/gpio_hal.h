@@ -39,18 +39,9 @@ typedef struct {
  *
  * @param hal Context of the HAL layer
  * @param gpio_num GPIO number
- * @param pu Pointer to accept the status of pull-up enabled or not
- * @param pd Pointer to accept the status of pull-down enabled or not
- * @param ie Pointer to accept the status of input enabled or not
- * @param oe Pointer to accept the status of output enabled or not
- * @param od Pointer to accept the status of open-drain enabled or not
- * @param drv Pointer to accept the value of drive strength
- * @param fun_sel Pointer to accept the value of IOMUX function selection
- * @param sig_out Pointer to accept the index of outputting peripheral signal
- * @param slp_sel Pointer to accept the status of pin sleep mode enabled or not
+ * @param[out] out_io_config Pointer to the structure that saves the specific IO configuration
  */
-#define gpio_hal_get_io_config(hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel) \
-            gpio_ll_get_io_config((hal)->dev, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel)
+#define gpio_hal_get_io_config(hal, gpio_num, out_io_config) gpio_ll_get_io_config((hal)->dev, gpio_num, out_io_config)
 
 /**
   * @brief Enable pull-up on GPIO.

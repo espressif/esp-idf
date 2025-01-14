@@ -43,47 +43,19 @@ extern "C" {
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
+ * @param[out] io_config Pointer to the structure that saves the specific IO configuration
  */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio_io_config_t *io_config)
 {
-    if (pu) {
-        *pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
-    }
-    if (pd) {
-        *pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
-    }
-    if (ie) {
-        *ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
-    }
-    if (oe) {
-        *oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
-    }
-    if (od) {
-        *od = hw->pinn[gpio_num].pinn_pad_driver;
-    }
-    if (drv) {
-        *drv = IO_MUX.gpion[gpio_num].gpion_fun_drv;
-    }
-    if (fun_sel) {
-        *fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
-    }
-    if (sig_out) {
-        *sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
-    }
-    if (slp_sel) {
-        *slp_sel = IO_MUX.gpion[gpio_num].gpion_slp_sel;
-    }
+    io_config->pu = IO_MUX.gpion[gpio_num].gpion_fun_wpu;
+    io_config->pd = IO_MUX.gpion[gpio_num].gpion_fun_wpd;
+    io_config->ie = IO_MUX.gpion[gpio_num].gpion_fun_ie;
+    io_config->oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    io_config->od = hw->pinn[gpio_num].pinn_pad_driver;
+    io_config->drv = (gpio_drive_cap_t)IO_MUX.gpion[gpio_num].gpion_fun_drv;
+    io_config->fun_sel = IO_MUX.gpion[gpio_num].gpion_mcu_sel;
+    io_config->sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
+    io_config->slp_sel = IO_MUX.gpion[gpio_num].gpion_slp_sel;
 }
 
 /**
