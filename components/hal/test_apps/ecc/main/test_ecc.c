@@ -136,12 +136,18 @@ TEST_CASE("ECC point multiplication on SECP192R1 and SECP256R1", "[ecc][hal]")
     test_ecc_point_mul_inner(false);
 }
 
-#if SOC_ECC_CONSTANT_TIME_POINT_MUL || (CONFIG_IDF_TARGET_ESP32H2 && CONFIG_ESP32H2_REV_MIN_FULL >= 102)
+#if SOC_ECC_CONSTANT_TIME_POINT_MUL
 
 #define CONST_TIME_DEVIATION_THRESHOLD 2 // 0.2 %
 
 static void test_ecc_point_mul_inner_constant_time(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        TEST_IGNORE_MESSAGE("Skipping test, not supported on ESP32-H2 <v1.2\n");
+        return;
+    }
+#endif
     uint8_t scalar_le[32];
     uint8_t x_le[32];
     uint8_t y_le[32];

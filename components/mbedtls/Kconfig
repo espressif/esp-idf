@@ -549,7 +549,7 @@ menu "mbedTLS"
 
     menu "Enable Software Countermeasure for ECDSA signing using on-chip ECDSA peripheral"
         depends on MBEDTLS_HARDWARE_ECDSA_SIGN
-        depends on IDF_TARGET_ESP32H2 && ESP32H2_REV_MIN_FULL < 102
+        depends on IDF_TARGET_ESP32H2
         config MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
             bool "Mask original ECDSA sign operation under dummy sign operations"
             select HAL_ECDSA_GEN_SIG_CM
