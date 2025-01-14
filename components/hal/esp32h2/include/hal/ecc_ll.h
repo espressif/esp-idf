@@ -13,7 +13,7 @@
 #include "soc/pcr_struct.h"
 #include "soc/pcr_reg.h"
 #include "soc/chip_revision.h"
-#include "hal/efuse_ll.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -216,7 +216,7 @@ static inline ecc_mod_base_t ecc_ll_get_mod_base(void)
 static inline void ecc_ll_enable_constant_time_point_mul(bool enable)
 {
     // ECC constant time point multiplication is supported only on rev 1.2 and above
-    if ((efuse_ll_get_chip_wafer_version_major() >= 1) && (efuse_ll_get_chip_wafer_version_minor() >= 2)) {
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)){
         if (enable) {
             REG_SET_BIT(ECC_MULT_CONF_REG, ECC_MULT_SECURITY_MODE);
         } else {
