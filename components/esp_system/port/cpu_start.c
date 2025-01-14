@@ -218,7 +218,9 @@ void IRAM_ATTR call_start_cpu1(void)
      */
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
 #endif
-
+#if SOC_CPU_SUPPORT_WFE
+    rv_utils_disable_wfe_mode();
+#endif
     ets_set_appcpu_boot_addr(0);
 
     bootloader_init_mem();
@@ -418,6 +420,9 @@ void IRAM_ATTR call_start_cpu0(void)
      * the CPU jumps to this base address + 4 * interrupt_id.
      */
     esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
+#endif
+#if SOC_CPU_SUPPORT_WFE
+    rv_utils_disable_wfe_mode();
 #endif
 
     rst_reas[0] = esp_rom_get_reset_reason(0);
