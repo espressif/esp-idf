@@ -155,6 +155,7 @@
 #define SOC_CPU_CORES_NUM               (1U)
 #define SOC_CPU_INTR_NUM                32
 #define SOC_CPU_HAS_FLEXIBLE_INTC       1
+#define SOC_CPU_SUPPORT_WFE             1
 #define SOC_INT_CLIC_SUPPORTED          1
 #define SOC_INT_HW_NESTED_SUPPORTED     1       // Support for hardware interrupts nesting
 #define SOC_BRANCH_PREDICTOR_SUPPORTED  1

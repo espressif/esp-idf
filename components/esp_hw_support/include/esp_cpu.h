@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -268,6 +268,16 @@ FORCE_INLINE_ATTR void esp_cpu_intr_set_mtvt_addr(const void *mtvt_addr)
     rv_utils_set_mtvt((uint32_t)mtvt_addr);
 }
 #endif  //#if SOC_INT_CLIC_SUPPORTED
+
+#if SOC_CPU_SUPPORT_WFE
+/**
+ * @brief Disable the WFE (wait for event) feature for CPU.
+ */
+FORCE_INLINE_ATTR void rv_utils_disable_wfe_mode(void)
+{
+    rv_utils_wfe_mode_enable(false);
+}
+#endif
 
 #if SOC_CPU_HAS_FLEXIBLE_INTC
 /**
