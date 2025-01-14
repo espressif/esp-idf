@@ -7,17 +7,22 @@ if ($env:ESP_IDF_LEGACY_EXPORT) {
     exit $LASTEXITCODE
 }
 
-$idf_path = "$PSScriptRoot"
+if ("$env:IDF_PATH" -ne "") {
+    $idf_path = "$env:IDF_PATH"
+} else {
+    Write-Output "No IDF_PATH enviroment variable detected. Using the root directory as IDF_PATH"
+    $idf_path = "$PSScriptRoot"
+}
 
 if (-not (Test-Path "$idf_path/tools/idf.py") -or
     -not (Test-Path "$idf_path/tools/idf_tools.py") -or
     -not (Test-Path "$idf_path/tools/activate.py")) {
-
-    Write-Output "Could not detect IDF_PATH. Please navigate to your ESP-IDF directory and run:"
-    Write-Output ".\export.ps1"
-
-    $env:IDF_PATH = ""
-
+    
+    Write-Output "`"$idf_path`" doesn't contain needed scripts. Please, add IDF_PATH enviroment variable:"
+    Write-Output '  $env:IDF_PATH=(add path here), '
+    Write-Output 'or navigate to your ESP-IDF directory and run:'
+    Write-Output '  .\export.ps1'
+    
     exit 1
 }
 
