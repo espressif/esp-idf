@@ -143,7 +143,6 @@ static esp_clock_output_mapping_t* clkout_mapping_alloc(clkout_channel_handle_t*
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
         gpio_set_pull_mode(gpio_num, GPIO_FLOATING);
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[gpio_num], PIN_FUNC_GPIO);
-        gpio_set_direction(gpio_num, GPIO_MODE_OUTPUT);
         esp_rom_gpio_connect_out_signal(gpio_num, CLKOUT_CHANNEL_TO_GPIO_SIG_ID(allocated_mapping->clkout_channel_hdl->channel_id), false, false);
 #endif
     }
@@ -175,7 +174,7 @@ static void clkout_mapping_free(esp_clock_output_mapping_t *mapping_hdl)
     if (--mapping_hdl->ref_cnt == 0) {
         gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[mapping_hdl->mapped_io], PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(mapping_hdl->mapped_io, SIG_GPIO_OUT_IDX, false, false);
-        gpio_set_direction(mapping_hdl->mapped_io, GPIO_MODE_DISABLE);
+        gpio_output_disable(mapping_hdl->mapped_io);
 
         portENTER_CRITICAL(&mapping_hdl->clkout_channel_hdl->clkout_channel_lock);
         mapping_hdl->clkout_channel_hdl->mapped_io_bmap &= ~BIT(mapping_hdl->mapped_io);
