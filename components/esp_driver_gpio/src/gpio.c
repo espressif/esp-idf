@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -815,14 +815,39 @@ esp_err_t IRAM_ATTR gpio_force_unhold_all()
 }
 #endif //SOC_GPIO_SUPPORT_FORCE_HOLD
 
+// Deprecated function
 void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
 {
-    gpio_hal_iomux_in(gpio_context.gpio_hal, gpio, signal_idx);
+    gpio_ll_set_input_signal_from(gpio_context.gpio_hal->dev, signal_idx, false);
+    gpio_hal_input_enable(gpio_context.gpio_hal, gpio);
 }
 
+esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_iomux_in(gpio_context.gpio_hal, gpio_num, func, signal_idx);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
+}
+
+// Deprecated function
 void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
 {
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, (uint32_t)out_en_inv);
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+}
+
+esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func, bool out_en_inv)
+{
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+
+    portENTER_CRITICAL(&gpio_context.gpio_spinlock);
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+    portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
+
+    return ESP_OK;
 }
 
 static esp_err_t gpio_sleep_pullup_en(gpio_num_t gpio_num)

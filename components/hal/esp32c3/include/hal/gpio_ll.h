@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -473,17 +473,30 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @brief Configure peripheral signal input whether to bypass GPIO matrix.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param from_gpio_matrix True if not to bypass GPIO matrix, otherwise False.
+  */
+__attribute__((always_inline))
+static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal_idx, bool from_gpio_matrix)
+{
+    hw->func_in_sel_cfg[signal_idx].sig_in_sel = from_gpio_matrix;
+}
+
+/**
+  * @brief Configure the source of output enable signal for the GPIO pin.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number of the pad.
-  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-__attribute__((always_inline))
-static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
 }
 
 /**
@@ -513,22 +526,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
     SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
-}
-
-/**
-  * @brief Set peripheral output to an GPIO pad through the IOMUX.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  * @param gpio_num gpio_num GPIO number of the pad.
-  * @param func The function number of the peripheral pin to output pin.
-  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
-  */
-static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
-{
-    hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
-    gpio_ll_func_sel(hw, gpio_num, func);
 }
 
 /**

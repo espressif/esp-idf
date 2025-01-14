@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -460,7 +460,7 @@ void gpio_deep_sleep_hold_dis(void);
   * @param gpio_num GPIO number of the pad.
   * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
   */
-void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
+void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx) __attribute__((deprecated("Please use `gpio_iomux_input` instead")));
 
 /**
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
@@ -469,7 +469,7 @@ void gpio_iomux_in(uint32_t gpio_num, uint32_t signal_idx);
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
   * @param out_en_inv True if the output enable needs to be inverted, otherwise False.
   */
-void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv);
+void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv) __attribute__((deprecated("Please use `gpio_iomux_output` instead")));
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -360,20 +360,22 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   *
   * @param hal Context of the HAL layer
   * @param gpio_num GPIO number of the pad.
+  * @param func The index number of the IOMUX function to be selected for the pin.
+  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
   * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
   */
-#define gpio_hal_iomux_in(hal, gpio_num, signal_idx) gpio_ll_iomux_in((hal)->dev, gpio_num, signal_idx)
+void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uint32_t signal_idx);
 
 /**
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
   *
   * @param hal Context of the HAL layer
-  * @param gpio_num gpio_num GPIO number of the pad.
-  * @param func The function number of the peripheral pin to output pin.
+  * @param gpio_num GPIO number of the pad.
+  * @param func The index number of the IOMUX function to be selected for the pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
   * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-#define gpio_hal_iomux_out(hal, gpio_num, func, oen_inv) gpio_ll_iomux_out((hal)->dev, gpio_num, func, oen_inv)
+ void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func, bool oen_inv);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

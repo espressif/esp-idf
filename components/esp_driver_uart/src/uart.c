@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 #include "freertos/idf_additions.h"
 #include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
-#include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
 #include "soc/soc_caps.h"
 #include "driver/uart.h"
@@ -684,12 +683,10 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     /* Assign the correct funct to the GPIO. */
     assert(upin->iomux_func != -1);
     if (uart_num < SOC_UART_HP_NUM) {
-        gpio_iomux_out(io_num, upin->iomux_func, false);
-
-        /* If the pin is input, we also have to redirect the signal,
-         * in order to bypasse the GPIO matrix. */
         if (upin->input) {
-            gpio_iomux_in(io_num, upin->signal);
+            gpio_iomux_input(io_num, upin->iomux_func, upin->signal);
+        } else {
+            gpio_iomux_output(io_num, upin->iomux_func, false);
         }
     }
 #if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)

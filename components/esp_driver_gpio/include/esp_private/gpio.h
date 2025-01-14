@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -105,6 +105,34 @@ esp_err_t gpio_od_enable(gpio_num_t gpio_num);
  *      - ESP_ERR_INVALID_ARG GPIO number error
  */
 esp_err_t gpio_config_as_analog(gpio_num_t gpio_num);
+
+/**
+  * @brief Set pad input to a peripheral signal through the IOMUX.
+  *
+  * @param gpio_num GPIO number of the pad.
+  * @param func The index number of the IOMUX function to be selected for the pin.
+  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
+  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx);
+
+/**
+  * @brief Set peripheral output to an GPIO pad through the IOMUX.
+  *
+  * @param gpio_num GPIO number of the pad.
+  * @param func The index number of the IOMUX function to be selected for the pin.
+  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
+  * @param out_en_inv Whether the output enable control is inverted or not.
+  *
+  * @return
+  *     - ESP_OK Success
+  *     - ESP_ERR_INVALID_ARG GPIO number error
+  */
+esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func, bool out_en_inv);
 
 #ifdef __cplusplus
 }

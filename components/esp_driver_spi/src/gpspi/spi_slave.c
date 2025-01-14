@@ -111,7 +111,7 @@ static void SPI_SLAVE_ISR_ATTR freeze_cs(spi_slave_t *host)
 static inline void SPI_SLAVE_ISR_ATTR restore_cs(spi_slave_t *host)
 {
     if (host->cs_iomux) {
-        gpio_ll_iomux_in(GPIO_HAL_GET_HW(GPIO_PORT_0), host->cfg.spics_io_num, host->cs_in_signal);
+        gpio_ll_set_input_signal_from(GPIO_HAL_GET_HW(GPIO_PORT_0), host->cs_in_signal, false);
     } else {
         esp_rom_gpio_connect_in_signal(host->cfg.spics_io_num, host->cs_in_signal, false);
     }
