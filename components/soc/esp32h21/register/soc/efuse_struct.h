@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -252,14 +252,20 @@ typedef union {
          *  functioned.
          */
         uint32_t vdd_spi_as_gpio:1;
-        /** rpt4_reserved0_2 : RO; bitpos: [28:27]; default: 0;
-         *  Reserved.
+        /** ecdsa_curve_mode : RO; bitpos: [28:27]; default: 0;
+         *  Represents the configuration of the curve of ECDSA calculation.
+         *  0: Only enable P256
+         *  1: Only enable P192
+         *  2: Both enable P256 and P192
+         *  3: Only enable P256
          */
-        uint32_t rpt4_reserved0_2:2;
-        /** rpt4_reserved0_1 : RO; bitpos: [29]; default: 0;
-         *  Reserved.
+        uint32_t ecdsa_curve_mode:2;
+        /** ecc_force_const_time : RO; bitpos: [29]; default: 0;
+         *  Represents whether to permanently turn on ECC const-time mode.
+         *  0: Disabled
+         *  1: Enabled
          */
-        uint32_t rpt4_reserved0_1:1;
+        uint32_t ecc_force_const_time:1;
         /** rpt4_reserved0_0 : RO; bitpos: [31:30]; default: 0;
          *  Reserved.
          */
@@ -339,11 +345,10 @@ typedef union {
          *  Represents the spa secure level by configuring the clock random divide mode.
          */
         uint32_t sec_dpa_level:2;
-        /** ecdsa_force_use_hardware_k : RO; bitpos: [18]; default: 1;
-         *  Represents whether hardware random number k is forced used in ESDCA. 1: force used.
-         *  0: not force used.
+        /** rpt4_reserved2_1 : RO; bitpos: [18]; default: 0;
+         *  Reserved.
          */
-        uint32_t ecdsa_force_use_hardware_k:1;
+        uint32_t rpt4_reserved2_1:1;
         /** crypt_dpa_enable : RO; bitpos: [19]; default: 1;
          *  Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled.
          */
@@ -1684,14 +1689,14 @@ typedef union {
          *  Indicates a programming error of VDD_SPI_AS_GPIO.
          */
         uint32_t vdd_spi_as_gpio_err:1;
-        /** rpt4_reserved0_err_2 : RO; bitpos: [28:27]; default: 0;
-         *  Reserved.
+        /** ecdsa_curve_mode_err : RO; bitpos: [28:27]; default: 0;
+         *  Represents the programming error of EFUSE_ECDSA_CURVE_MODE
          */
-        uint32_t rpt4_reserved0_err_2:2;
-        /** rpt4_reserved0_err_1 : RO; bitpos: [29]; default: 0;
-         *  Reserved.
+        uint32_t ecdsa_curve_mode_err:2;
+        /** ecc_force_const_time_err : RO; bitpos: [29]; default: 0;
+         *  Represents the programming error of EFUSE_ECC_FORCE_CONST_TIME
          */
-        uint32_t rpt4_reserved0_err_1:1;
+        uint32_t ecc_force_const_time_err:1;
         /** rpt4_reserved0_err_0 : RO; bitpos: [31:30]; default: 0;
          *  Reserved.
          */

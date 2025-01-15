@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -289,20 +289,26 @@ extern "C" {
 #define EFUSE_VDD_SPI_AS_GPIO_M  (EFUSE_VDD_SPI_AS_GPIO_V << EFUSE_VDD_SPI_AS_GPIO_S)
 #define EFUSE_VDD_SPI_AS_GPIO_V  0x00000001U
 #define EFUSE_VDD_SPI_AS_GPIO_S  26
-/** EFUSE_RPT4_RESERVED0_2 : RO; bitpos: [28:27]; default: 0;
- *  Reserved.
+/** EFUSE_ECDSA_CURVE_MODE : RO; bitpos: [28:27]; default: 0;
+ *  Represents the configuration of the curve of ECDSA calculation.
+ *  0: Only enable P256
+ *  1: Only enable P192
+ *  2: Both enable P256 and P192
+ *  3: Only enable P256
  */
-#define EFUSE_RPT4_RESERVED0_2    0x00000003U
-#define EFUSE_RPT4_RESERVED0_2_M  (EFUSE_RPT4_RESERVED0_2_V << EFUSE_RPT4_RESERVED0_2_S)
-#define EFUSE_RPT4_RESERVED0_2_V  0x00000003U
-#define EFUSE_RPT4_RESERVED0_2_S  27
-/** EFUSE_RPT4_RESERVED0_1 : RO; bitpos: [29]; default: 0;
- *  Reserved.
+#define EFUSE_ECDSA_CURVE_MODE    0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_M  (EFUSE_ECDSA_CURVE_MODE_V << EFUSE_ECDSA_CURVE_MODE_S)
+#define EFUSE_ECDSA_CURVE_MODE_V  0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_S  27
+/** EFUSE_ECC_FORCE_CONST_TIME : RO; bitpos: [29]; default: 0;
+ *  Represents whether to permanently turn on ECC const-time mode.
+ *  0: Disabled
+ *  1: Enabled
  */
-#define EFUSE_RPT4_RESERVED0_1    (BIT(29))
-#define EFUSE_RPT4_RESERVED0_1_M  (EFUSE_RPT4_RESERVED0_1_V << EFUSE_RPT4_RESERVED0_1_S)
-#define EFUSE_RPT4_RESERVED0_1_V  0x00000001U
-#define EFUSE_RPT4_RESERVED0_1_S  29
+#define EFUSE_ECC_FORCE_CONST_TIME    (BIT(29))
+#define EFUSE_ECC_FORCE_CONST_TIME_M  (EFUSE_ECC_FORCE_CONST_TIME_V << EFUSE_ECC_FORCE_CONST_TIME_S)
+#define EFUSE_ECC_FORCE_CONST_TIME_V  0x00000001U
+#define EFUSE_ECC_FORCE_CONST_TIME_S  29
 /** EFUSE_RPT4_RESERVED0_0 : RO; bitpos: [31:30]; default: 0;
  *  Reserved.
  */
@@ -416,14 +422,13 @@ extern "C" {
 #define EFUSE_SEC_DPA_LEVEL_M  (EFUSE_SEC_DPA_LEVEL_V << EFUSE_SEC_DPA_LEVEL_S)
 #define EFUSE_SEC_DPA_LEVEL_V  0x00000003U
 #define EFUSE_SEC_DPA_LEVEL_S  16
-/** EFUSE_ECDSA_FORCE_USE_HARDWARE_K : RO; bitpos: [18]; default: 1;
- *  Represents whether hardware random number k is forced used in ESDCA. 1: force used.
- *  0: not force used.
+/** EFUSE_RPT4_RESERVED2_1 : RO; bitpos: [18]; default: 0;
+ *  Reserved
  */
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K    (BIT(18))
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_M  (EFUSE_ECDSA_FORCE_USE_HARDWARE_K_V << EFUSE_ECDSA_FORCE_USE_HARDWARE_K_S)
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_V  0x00000001U
-#define EFUSE_ECDSA_FORCE_USE_HARDWARE_K_S  18
+#define EFUSE_RPT4_RESERVED2_1    (BIT(18))
+#define EFUSE_RPT4_RESERVED2_1_M  (EFUSE_RPT4_RESERVED2_1_V << EFUSE_RPT4_RESERVED2_1_S)
+#define EFUSE_RPT4_RESERVED2_1_V  0x00000001U
+#define EFUSE_RPT4_RESERVED2_1_S  18
 /** EFUSE_CRYPT_DPA_ENABLE : RO; bitpos: [19]; default: 1;
  *  Represents whether anti-dpa attack is enabled. 1:enabled. 0: disabled.
  */
@@ -1888,20 +1893,20 @@ extern "C" {
 #define EFUSE_VDD_SPI_AS_GPIO_ERR_M  (EFUSE_VDD_SPI_AS_GPIO_ERR_V << EFUSE_VDD_SPI_AS_GPIO_ERR_S)
 #define EFUSE_VDD_SPI_AS_GPIO_ERR_V  0x00000001U
 #define EFUSE_VDD_SPI_AS_GPIO_ERR_S  26
-/** EFUSE_RPT4_RESERVED0_ERR_2 : RO; bitpos: [28:27]; default: 0;
- *  Reserved.
+/** EFUSE_ECDSA_CURVE_MODE_ERR : RO; bitpos: [28:27]; default: 0;
+ *  Represents the programming error of EFUSE_ECDSA_CURVE_MODE
  */
-#define EFUSE_RPT4_RESERVED0_ERR_2    0x00000003U
-#define EFUSE_RPT4_RESERVED0_ERR_2_M  (EFUSE_RPT4_RESERVED0_ERR_2_V << EFUSE_RPT4_RESERVED0_ERR_2_S)
-#define EFUSE_RPT4_RESERVED0_ERR_2_V  0x00000003U
-#define EFUSE_RPT4_RESERVED0_ERR_2_S  27
-/** EFUSE_RPT4_RESERVED0_ERR_1 : RO; bitpos: [29]; default: 0;
- *  Reserved.
+#define EFUSE_ECDSA_CURVE_MODE_ERR    0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_ERR_M  (EFUSE_ECDSA_CURVE_MODE_ERR_V << EFUSE_ECDSA_CURVE_MODE_ERR_S)
+#define EFUSE_ECDSA_CURVE_MODE_ERR_V  0x00000003U
+#define EFUSE_ECDSA_CURVE_MODE_ERR_S  27
+/** EFUSE_ECC_FORCE_CONST_TIME_ERR : RO; bitpos: [29]; default: 0;
+ *  Represents the programming error of EFUSE_ECC_FORCE_CONST_TIME
  */
-#define EFUSE_RPT4_RESERVED0_ERR_1    (BIT(29))
-#define EFUSE_RPT4_RESERVED0_ERR_1_M  (EFUSE_RPT4_RESERVED0_ERR_1_V << EFUSE_RPT4_RESERVED0_ERR_1_S)
-#define EFUSE_RPT4_RESERVED0_ERR_1_V  0x00000001U
-#define EFUSE_RPT4_RESERVED0_ERR_1_S  29
+#define EFUSE_ECC_FORCE_CONST_TIME_ERR    (BIT(29))
+#define EFUSE_ECC_FORCE_CONST_TIME_ERR_M  (EFUSE_ECC_FORCE_CONST_TIME_ERR_V << EFUSE_ECC_FORCE_CONST_TIME_ERR_S)
+#define EFUSE_ECC_FORCE_CONST_TIME_ERR_V  0x00000001U
+#define EFUSE_ECC_FORCE_CONST_TIME_ERR_S  29
 /** EFUSE_RPT4_RESERVED0_ERR_0 : RO; bitpos: [31:30]; default: 0;
  *  Reserved.
  */
