@@ -148,3 +148,6 @@
 [submodule "components/bt/esp_ble_mesh/lib/lib"]
 	path = components/bt/esp_ble_mesh/lib/lib
 	url = ../../espressif/esp-ble-mesh-lib.git
+[submodule "components/esp-nimble"]
+	path = components/esp-nimble
+	url = https://github.com/espressif/esp-nimble.git
