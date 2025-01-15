@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,10 @@
 #include "esp_intr_alloc.h"
 #include "esp_err.h"
 #include "esp_attr.h"
+
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+#include "secure_service_num.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -452,9 +456,9 @@ FORCE_INLINE_ATTR void esp_cpu_intr_edge_ack(int intr_num)
 #ifdef __XTENSA__
     xthal_set_intclear((unsigned) (1 << intr_num));
 #else
-#if CONFIG_SECURE_ENABLE_TEE && !ESP_TEE_BUILD
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
     extern esprv_int_mgmt_t esp_tee_intr_sec_srv_cb;
-    esp_tee_intr_sec_srv_cb(2, TEE_INTR_EDGE_ACK_SRV_ID, intr_num);
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_INTR_EDGE_ACK, intr_num);
 #else
     rv_utils_intr_edge_ack((unsigned) intr_num);
 #endif

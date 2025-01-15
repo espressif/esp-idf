@@ -88,7 +88,7 @@ set(secure_service_tbl_parser_py
 
 set(secure_service_gen_headers
     ${CONFIG_DIR}/secure_service_num.h ${CONFIG_DIR}/secure_service_dec.h
-    ${CONFIG_DIR}/secure_service.h
+    ${CONFIG_DIR}/secure_service_int.h ${CONFIG_DIR}/secure_service_ext.h
 )
 
 if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)

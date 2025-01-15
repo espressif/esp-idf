@@ -13,29 +13,21 @@
 
 static const char *TAG = "esp_tee_sec_disp";
 
-extern const secure_service_entry_t tee_secure_service_table[];
+extern const secure_service_entry_t tee_sec_srv_tbl_int_mem[];
+extern const secure_service_entry_t tee_sec_srv_tbl_ext_mem[];
 
 /* ---------------------------------------------- Secure Service Dispatcher ------------------------------------------------- */
 
-const secure_service_entry_t *find_service_by_id(uint32_t id)
+static const secure_service_entry_t *find_service_by_id(uint32_t id)
 {
     if (id >= MAX_SECURE_SERVICES_ID) {
         return NULL;
     }
 
-    size_t left = 0;
-    size_t right = SECURE_SERVICES_NUM;
-
-    while (left < right) {
-        size_t mid = left + (right - left) / 2;
-
-        if (tee_secure_service_table[mid].id == id) {
-            return &tee_secure_service_table[mid];
-        } else if (tee_secure_service_table[mid].id < id) {
-            left = mid + 1;
-        } else {
-            right = mid;
-        }
+    if (id < SECURE_SERVICES_SPLIT_ID) {
+        return &tee_sec_srv_tbl_int_mem[id];
+    } else {
+        return &tee_sec_srv_tbl_ext_mem[id];
     }
 
     return NULL;

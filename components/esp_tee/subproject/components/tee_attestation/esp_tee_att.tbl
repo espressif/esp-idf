@@ -1,2 +1,2 @@
 # SS no.    API type    Function                                    Args
-101         custom      esp_tee_att_generate_token                  6
+250         custom      esp_tee_att_generate_token                  6
