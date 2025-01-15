@@ -488,23 +488,26 @@ Under **Component Config** > **mbedTLS**, there are multiple mbedTLS features en
 
 These include:
 
-- :ref:`CONFIG_MBEDTLS_HAVE_TIME`
-- :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
-- :ref:`CONFIG_MBEDTLS_SHA512_C`
-- :ref:`CONFIG_MBEDTLS_SHA3_C`
-- :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
-- :ref:`CONFIG_MBEDTLS_SSL_ALPN`
-- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-- :ref:`CONFIG_MBEDTLS_CCM_C`
-- :ref:`CONFIG_MBEDTLS_GCM_C`
-- :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
-- :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
-- :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-- Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed
-- Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`)
-- Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is pulling in mbedTLS error strings because of :cpp:func:`mbedtls_strerror` usage
+.. list::
+
+    - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
+    - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
+    - :ref:`CONFIG_MBEDTLS_SHA512_C`
+    - :ref:`CONFIG_MBEDTLS_SHA3_C`
+    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
+    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
+    - :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
+    - :ref:`CONFIG_MBEDTLS_CCM_C`
+    - :ref:`CONFIG_MBEDTLS_GCM_C`
+    - :ref:`CONFIG_MBEDTLS_ECP_C` (Alternatively: Leave this option enabled but disable some of the elliptic curves listed in the sub-menu.)
+    - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+    - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
+    - Change :ref:`CONFIG_MBEDTLS_TLS_MODE` if both server & client functionalities are not needed.
+    - Consider disabling some cipher suites listed in the ``TLS Key Exchange Methods`` sub-menu (i.e., :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`).
+    - Consider disabling :ref:`CONFIG_MBEDTLS_ERROR_STRINGS` if the application is already pulling in mbedTLS error strings through using :cpp:func:`mbedtls_strerror`.
+    :esp32h2: - For {IDF_TARGET_NAME} v1.2 and above, consider disabling :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` and :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM` as the software countermeasures for the ECDSA sign operation are not required.
 
 The help text for each option has some more information for reference.
 

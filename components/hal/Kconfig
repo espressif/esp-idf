@@ -111,5 +111,7 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
             Enable this option to apply the countermeasure for ECDSA signature operation
             This countermeasure masks the real ECDSA sign operation
             under dummy sign operations to add randomness in the generated power signature.
+            This countermeasure is only necessary for ESP32-H2 < v1.2.
+
 
 endmenu
