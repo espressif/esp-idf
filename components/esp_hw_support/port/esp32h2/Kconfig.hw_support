@@ -39,9 +39,14 @@ config ESP_REV_MIN_FULL
 
 config ESP32H2_REV_MAX_FULL
     int
-    default 99
+    default 199 if ESP32H2_REV100_DEVELOPMENT
+    default 99 if !ESP32H2_REV100_DEVELOPMENT
     # keep in sync the "Maximum Supported Revision" description with this value
 
 config ESP_REV_MAX_FULL
     int
     default ESP32H2_REV_MAX_FULL
+
+config ESP32H2_REV100_DEVELOPMENT
+    bool "Develop on ESP32-H2 v1.0 and above (Preview)"
+    default y if IDF_CI_BUILD
