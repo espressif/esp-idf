@@ -13,6 +13,34 @@
 
 static const char *TAG = "esp_tee_sec_disp";
 
+extern const secure_service_entry_t tee_secure_service_table[];
+
+/* ---------------------------------------------- Secure Service Dispatcher ------------------------------------------------- */
+
+const secure_service_entry_t *find_service_by_id(uint32_t id)
+{
+    if (id >= MAX_SECURE_SERVICES_ID) {
+        return NULL;
+    }
+
+    size_t left = 0;
+    size_t right = SECURE_SERVICES_NUM;
+
+    while (left < right) {
+        size_t mid = left + (right - left) / 2;
+
+        if (tee_secure_service_table[mid].id == id) {
+            return &tee_secure_service_table[mid];
+        } else if (tee_secure_service_table[mid].id < id) {
+            left = mid + 1;
+        } else {
+            right = mid;
+        }
+    }
+
+    return NULL;
+}
+
 /**
  * @brief Entry point to the TEE binary during secure service call. It decipher the call and dispatch it
  *        to corresponding Secure Service API in secure world.
@@ -30,19 +58,25 @@ int esp_tee_service_dispatcher(int argc, va_list ap)
     }
 
     int ret = -1;
-    void *fp_secure_service;
     uint32_t argv[ESP_TEE_MAX_INPUT_ARG], *argp;
 
     uint32_t sid = va_arg(ap, uint32_t);
     argc--;
 
-    if (sid >= MAX_SECURE_SERVICES) {
-        ESP_LOGE(TAG, "Invalid Service ID!");
+    const secure_service_entry_t *service = find_service_by_id(sid);
+    if (service == NULL) {
+        ESP_LOGE(TAG, "Invalid service ID!");
         va_end(ap);
-        return -1;
+        return ret;
     }
 
-    fp_secure_service = (void *)tee_secure_service_table[sid];
+    if (argc != service->nargs) {
+        ESP_LOGE(TAG, "Invalid number of arguments for service %d!", sid);
+        va_end(ap);
+        return ret;
+    }
+
+    void *fp_secure_service = (void *)service->func;
 
     for (int i = 0; i < argc; i++) {
         argv[i] = va_arg(ap, uint32_t);
@@ -107,4 +141,5 @@ int esp_tee_service_dispatcher(int argc, va_list ap)
 
     return ret;
 }
+
 #pragma GCC pop_options
