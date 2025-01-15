@@ -78,6 +78,9 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
 /**
  * @brief Enable / Disable the clock gate of the clock source
  *
+ * @note  The clock enable status is maintained by reference counter and
+ *        its status is not reset after software restart.
+ *
  * @param[in] clk_src Clock source available to modules, in soc_module_clk_t
  * @param[in] enable  Enable / Disable the clock gate
  *
@@ -91,6 +94,13 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
  *      - ESP_ERR_INVALID_ARG  Parameter error
  */
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable);
+
+#if SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
+/**
+ * @brief Set the clock source not in use  on the clock tree to the gated state.
+ */
+void esp_clk_tree_initialize(void);
+#endif
 
 #ifdef __cplusplus
 }

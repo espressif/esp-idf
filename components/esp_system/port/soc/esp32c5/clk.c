@@ -239,12 +239,14 @@ __attribute__((weak)) void esp_perip_clk_init(void)
      * oscillator (40 MHz) to provide the clock during the sleep process in some
      * scenarios), the module needs to switch to the required clock source by
      * itself. */
+#if CONFIG_ESP_WIFI_ENABLED
     soc_rtc_slow_clk_src_t rtc_slow_clk_src = rtc_clk_slow_src_get();
     modem_clock_lpclk_src_t modem_lpclk_src = (modem_clock_lpclk_src_t)(
                                                   (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_XTAL32K)  ? MODEM_CLOCK_LPCLK_SRC_XTAL32K
                                                   : (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) ? MODEM_CLOCK_LPCLK_SRC_EXT32K
                                                   : MODEM_CLOCK_LPCLK_SRC_RC_SLOW);
     modem_clock_select_lp_clock_source(PERIPH_WIFI_MODULE, modem_lpclk_src, 0);
+#endif
 
     /* On ESP32-C5 ECO1, clearing BIT(31) of PCR_FPGA_DEBUG_REG is used to fix
      * the issue where the modem module fails to transmit and receive packets
@@ -329,19 +331,6 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         usb_serial_jtag_ll_enable_mem_clock(false);
         usb_serial_jtag_ll_set_mem_pd(true);
 #endif
-
-        if (clk_ll_cpu_get_src() != SOC_CPU_CLK_SRC_PLL_F240M) {
-            _clk_gate_ll_ref_240m_clk_en(false);
-        }
-        if (clk_ll_cpu_get_src() != SOC_CPU_CLK_SRC_PLL_F160M) {
-            _clk_gate_ll_ref_160m_clk_en(false);
-        }
-        _clk_gate_ll_ref_120m_clk_en(false);
-        _clk_gate_ll_ref_80m_clk_en(false);
-        _clk_gate_ll_ref_60m_clk_en(false);
-        _clk_gate_ll_ref_40m_clk_en(false);
-        _clk_gate_ll_ref_20m_clk_en(false);
-        _clk_gate_ll_ref_12m_clk_en(false);
     }
 
     if ((rst_reason == RESET_REASON_CHIP_POWER_ON) || (rst_reason == RESET_REASON_CHIP_BROWN_OUT)       \
