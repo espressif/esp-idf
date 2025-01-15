@@ -217,6 +217,10 @@ if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
         list(APPEND srcs "brownout_hal.c")
     endif()
 
+    if(CONFIG_SOC_VBAT_SUPPORTED)
+        list(APPEND srcs "vbat_hal.c")
+    endif()
+
     if(CONFIG_SOC_JPEG_CODEC_SUPPORTED)
         list(APPEND srcs "jpeg_hal.c")
     endif()

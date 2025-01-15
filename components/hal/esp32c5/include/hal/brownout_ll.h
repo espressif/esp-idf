@@ -121,7 +121,7 @@ static inline void brownout_ll_ana_reset_enable(bool enable)
 __attribute__((always_inline))
 static inline void brownout_ll_intr_clear(void)
 {
-    LP_ANA_PERI.int_clr.bod_mode0_int_clr = 1;
+    LP_ANA_PERI.int_clr.val = BROWNOUT_DETECTOR_LL_INTERRUPT_MASK;
 }
 
 /**
