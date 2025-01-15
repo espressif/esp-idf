@@ -102,6 +102,8 @@ static inline void brownout_ll_set_intr_wait_cycles(uint8_t cycle)
  * @brief Enable brown out interrupt
  *
  * @param enable true: enable, false: disable
+ *
+ * @note Avoid concurrency risky with vbat_ll_enable_intr_mask
  */
 static inline void brownout_ll_intr_enable(bool enable)
 {
@@ -127,7 +129,7 @@ static inline void brownout_ll_ana_reset_enable(bool enable)
 __attribute__((always_inline))
 static inline void brownout_ll_intr_clear(void)
 {
-    LP_ANA_PERI.int_clr.bod_mode0_int_clr = 1;
+    LP_ANA_PERI.int_clr.val = BROWNOUT_DETECTOR_LL_INTERRUPT_MASK;
 }
 
 /**
