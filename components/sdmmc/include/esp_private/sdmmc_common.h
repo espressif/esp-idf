@@ -28,7 +28,6 @@
 #include "sys/param.h"
 #include "soc/soc_memory_layout.h"
 #include "soc/soc_caps.h"
-#include "esp_dma_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -186,6 +185,12 @@ esp_err_t sdmmc_wait_for_idle(sdmmc_card_t* card, uint32_t status);
 //Currently only SDIO support using this buffer. And only 512 block size is supported.
 #define SDMMC_IO_BLOCK_SIZE     512
 esp_err_t sdmmc_allocate_aligned_buf(sdmmc_card_t* card);
+
+/**
+ * For newly added host driver function pointers,
+ * use this function to check if they are correctly initialised.
+ */
+esp_err_t sdmmc_check_host_function_ptr_integrity(sdmmc_card_t *card);
 
 #ifdef __cplusplus
 }

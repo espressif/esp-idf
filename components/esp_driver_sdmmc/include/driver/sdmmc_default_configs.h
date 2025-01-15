@@ -49,7 +49,8 @@ extern "C" {
     .set_input_delay = &sdmmc_host_set_input_delay, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
-    .get_dma_info = &sdmmc_host_get_dma_info, \
+    .get_dma_info = NULL, \
+    .check_buffer_alignment = &sdmmc_host_check_buffer_alignment, \
     .is_slot_set_to_uhs1 = &sdmmc_host_is_slot_set_to_uhs1, \
 }
 

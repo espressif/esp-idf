@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,9 +20,11 @@
 #include "driver/sdmmc_host.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_cache_private.h"
 #include "sdmmc_internal.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
+#include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "soc/sdmmc_periph.h"
 #include "soc/soc_caps.h"
@@ -1159,6 +1161,38 @@ esp_err_t sdmmc_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
     dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
     dma_mem_info->dma_alignment_bytes = 4;
     return ESP_OK;
+}
+
+bool sdmmc_host_check_buffer_alignment(int slot, const void *buf, size_t size)
+{
+    //for future-proof
+    (void)slot;
+
+    if (!buf || !size) {
+        return ESP_FAIL;
+    }
+
+    esp_err_t ret = ESP_FAIL;
+    int cache_flags = 0;
+    size_t cache_alignment_bytes = 0;
+    if (esp_ptr_external_ram(buf)) {
+        cache_flags |= MALLOC_CAP_SPIRAM;
+    }
+    ret = esp_cache_get_alignment(cache_flags, &cache_alignment_bytes);
+    assert(ret == ESP_OK);
+
+    bool is_aligned = false;
+    size_t alignment = 0;
+
+    if (cache_alignment_bytes != 0) {
+        alignment = cache_alignment_bytes;
+    } else {
+        alignment = 4;
+    }
+
+    is_aligned = ((intptr_t)buf % alignment == 0) && (size % alignment == 0);
+
+    return is_aligned;
 }
 
 esp_err_t sdmmc_host_get_state(sdmmc_host_state_t* state)
