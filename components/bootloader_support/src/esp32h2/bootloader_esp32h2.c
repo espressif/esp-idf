@@ -43,7 +43,6 @@
 #include "hal/cache_hal.h"
 #include "hal/lpwdt_ll.h"
 #include "soc/lp_wdt_reg.h"
-#include "soc/lpperi_struct.h"
 #include "hal/efuse_hal.h"
 #include "modem/modem_lpcon_reg.h"
 
@@ -105,9 +104,6 @@ static inline void bootloader_ana_reset_config(void)
 esp_err_t bootloader_init(void)
 {
     esp_err_t ret = ESP_OK;
-
-    // Assign the compatible LPPERI register address in case it is used in the bootloader
-    lpperi_compatible_reg_addr_init();
 
     bootloader_hardware_init();
     bootloader_ana_reset_config();
