@@ -32,12 +32,6 @@ struct ble_hs_cfg;
 struct ble_gatt_register_ctxt;
 
 /** GATT server. */
-#define GATT_SVR_SVC_ALERT_UUID               0x1811
-#define GATT_SVR_CHR_SUP_NEW_ALERT_CAT_UUID   0x2A47
-#define GATT_SVR_CHR_NEW_ALERT                0x2A46
-#define GATT_SVR_CHR_SUP_UNR_ALERT_CAT_UUID   0x2A48
-#define GATT_SVR_CHR_UNR_ALERT_STAT_UUID      0x2A45
-#define GATT_SVR_CHR_ALERT_NOT_CTRL_PT        0x2A44
 
 #define BLE_UUID_RANGING_SERVICE_VAL (0x185B)
 
@@ -58,6 +52,9 @@ struct ble_gatt_register_ctxt;
 
 /** @brief UUID of the Ranging Data Overwritten Characteristic. **/
 #define BLE_UUID_RAS_RD_OVERWRITTEN_VAL (0x2C19)
+
+
+extern uint16_t hrs_hrm_handle;
 
 
 void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
