@@ -1,0 +1,570 @@
+In archive build/esp-idf/soc/libsoc.a:
+
+lldesc.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.lldesc_setup_link_constrained 0000010c  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .text.lldesc_get_received_len 00000026  00000000  00000000  00000140  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  5 .debug_info   00000299  00000000  00000000  00000166  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_abbrev 0000019d  00000000  00000000  000003ff  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_loc    0000016c  00000000  00000000  0000059c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_aranges 00000028  00000000  00000000  00000708  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  9 .debug_ranges 00000030  00000000  00000000  00000730  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_line   000003fb  00000000  00000000  00000760  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 11 .debug_str    000002c8  00000000  00000000  00000b5b  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 12 .comment      00000030  00000000  00000000  00000e23  2**0
+                  CONTENTS, READONLY
+ 13 .note.GNU-stack 00000000  00000000  00000000  00000e53  2**0
+                  CONTENTS, READONLY
+ 14 .debug_frame  00000030  00000000  00000000  00000e54  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 15 .riscv.attributes 00000044  00000000  00000000  00000e84  2**0
+                  CONTENTS, READONLY
+
+dport_access_common.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .text.esp_dport_access_read_buffer 0000001a  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, CODE
+  4 .debug_info   000000f1  00000000  00000000  0000004e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 00000089  00000000  00000000  0000013f  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_loc    0000001f  00000000  00000000  000001c8  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_aranges 00000020  00000000  00000000  000001e7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_ranges 00000010  00000000  00000000  00000207  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  9 .debug_line   000001eb  00000000  00000000  00000217  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 10 .debug_str    00000245  00000000  00000000  00000402  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .comment      00000030  00000000  00000000  00000647  2**0
+                  CONTENTS, READONLY
+ 12 .note.GNU-stack 00000000  00000000  00000000  00000677  2**0
+                  CONTENTS, READONLY
+ 13 .debug_frame  00000020  00000000  00000000  00000678  2**2
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+ 14 .riscv.attributes 00000044  00000000  00000000  00000698  2**0
+                  CONTENTS, READONLY
+
+interrupts.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.str1.4 000002e4  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .rodata.esp_isr_names 000000f8  00000000  00000000  00000318  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  5 .debug_info   00000245  00000000  00000000  00000410  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_abbrev 00000086  00000000  00000000  00000655  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_aranges 00000018  00000000  00000000  000006db  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_line   000000ae  00000000  00000000  000006f3  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_str    000008a5  00000000  00000000  000007a1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .comment      00000030  00000000  00000000  00001046  2**0
+                  CONTENTS, READONLY
+ 11 .note.GNU-stack 00000000  00000000  00000000  00001076  2**0
+                  CONTENTS, READONLY
+ 12 .riscv.attributes 00000044  00000000  00000000  00001076  2**0
+                  CONTENTS, READONLY
+
+gpio_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.GPIO_HOLD_MASK 00000058  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .rodata.GPIO_PIN_MUX_REG 00000058  00000000  00000000  0000008c  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  5 .debug_info   000000d8  00000000  00000000  000000e4  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_abbrev 00000070  00000000  00000000  000001bc  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_aranges 00000018  00000000  00000000  0000022c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_line   000001ab  00000000  00000000  00000244  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_str    0000022d  00000000  00000000  000003ef  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .comment      00000030  00000000  00000000  0000061c  2**0
+                  CONTENTS, READONLY
+ 11 .note.GNU-stack 00000000  00000000  00000000  0000064c  2**0
+                  CONTENTS, READONLY
+ 12 .riscv.attributes 00000044  00000000  00000000  0000064c  2**0
+                  CONTENTS, READONLY
+
+uart_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.uart_periph_signal 00000028  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   0000032e  00000000  00000000  0000005c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000d4  00000000  00000000  0000038a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  0000045e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000001f9  00000000  00000000  00000476  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    0000093e  00000000  00000000  0000066f  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000fad  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000fdd  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000fdd  2**0
+                  CONTENTS, READONLY
+
+adc_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.adc_channel_io_map 00000028  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000000ac  00000000  00000000  0000005c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 00000061  00000000  00000000  00000108  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  00000169  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000000a6  00000000  00000000  00000181  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    0000020b  00000000  00000000  00000227  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000432  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000462  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000462  2**0
+                  CONTENTS, READONLY
+
+dedic_gpio_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.dedic_gpio_periph_signals 00000044  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000002aa  00000000  00000000  00000078  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000bd  00000000  00000000  00000322  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000003df  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   00000102  00000000  00000000  000003f7  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    0000090a  00000000  00000000  000004f9  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000e03  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000e33  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000e33  2**0
+                  CONTENTS, READONLY
+
+gdma_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.gdma_periph_signals 0000001c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   00000389  00000000  00000000  00000050  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000ac  00000000  00000000  000003d9  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  00000485  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   00000107  00000000  00000000  0000049d  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000b57  00000000  00000000  000005a4  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  000010fb  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  0000112b  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  0000112b  2**0
+                  CONTENTS, READONLY
+
+spi_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.spi_periph_signal 00000048  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, RELOC, READONLY, DATA
+  4 .debug_info   0000179e  00000000  00000000  0000007c  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000001bd  00000000  00000000  0000181a  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000019d7  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   00000246  00000000  00000000  000019ef  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    0000121f  00000000  00000000  00001c35  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00002e54  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00002e84  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00002e84  2**0
+                  CONTENTS, READONLY
+
+ledc_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .srodata.ledc_periph_signal 00000001  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000000e6  00000000  00000000  00000035  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 00000090  00000000  00000000  0000011b  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000001ab  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000001ab  00000000  00000000  000001c3  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    0000023e  00000000  00000000  0000036e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  000005ac  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  000005dc  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  000005dc  2**0
+                  CONTENTS, READONLY
+
+rmt_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.rmt_periph_signals 00000024  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000002cc  00000000  00000000  00000058  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000d8  00000000  00000000  00000324  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000003fc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000000f4  00000000  00000000  00000414  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    000008e6  00000000  00000000  00000508  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000dee  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000e1e  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000e1e  2**0
+                  CONTENTS, READONLY
+
+sdm_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.sigma_delta_periph_signals 00000010  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   0000009a  00000000  00000000  00000044  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 00000090  00000000  00000000  000000de  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  0000016e  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000000a6  00000000  00000000  00000186  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    000001b5  00000000  00000000  0000022c  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  000003e1  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000411  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000411  2**0
+                  CONTENTS, READONLY
+
+i2s_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.i2s_periph_signal 0000000e  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   0000037d  00000000  00000000  00000042  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000e7  00000000  00000000  000003bf  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000004a6  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000001f7  00000000  00000000  000004be  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000988  00000000  00000000  000006b5  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  0000103d  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  0000106d  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  0000106d  2**0
+                  CONTENTS, READONLY
+
+i2c_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .srodata.i2c_periph_signal 00000006  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000002c2  00000000  00000000  0000003a  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000bd  00000000  00000000  000002fc  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  000003b9  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000001f7  00000000  00000000  000003d1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000912  00000000  00000000  000005c8  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000eda  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00000f0a  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00000f0a  2**0
+                  CONTENTS, READONLY
+
+temperature_sensor_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.temperature_sensor_attributes 00000064  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   000000fd  00000000  00000000  00000098  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 00000090  00000000  00000000  00000195  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  00000225  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   000000c4  00000000  00000000  0000023d  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000271  00000000  00000000  00000301  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00000572  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  000005a2  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  000005a2  2**0
+                  CONTENTS, READONLY
+
+timer_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.timer_group_periph_signals 00000010  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   00000371  00000000  00000000  00000044  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000ac  00000000  00000000  000003b5  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  00000461  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   00000109  00000000  00000000  00000479  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000b65  00000000  00000000  00000582  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  000010e7  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00001117  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00001117  2**0
+                  CONTENTS, READONLY
+
+mpi_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.MPI_OPERATIONS_REG 0000000c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .rodata.MPI_BLOCK_BASES 00000010  00000000  00000000  00000040  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  5 .debug_info   000000ed  00000000  00000000  00000050  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_abbrev 00000070  00000000  00000000  0000013d  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_aranges 00000018  00000000  00000000  000001ad  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  8 .debug_line   000001a9  00000000  00000000  000001c5  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_str    0000022f  00000000  00000000  0000036e  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .comment      00000030  00000000  00000000  0000059d  2**0
+                  CONTENTS, READONLY
+ 11 .note.GNU-stack 00000000  00000000  00000000  000005cd  2**0
+                  CONTENTS, READONLY
+ 12 .riscv.attributes 00000044  00000000  00000000  000005cd  2**0
+                  CONTENTS, READONLY
+
+twai_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .rodata.twai_controller_periph_signals 0000001c  00000000  00000000  00000034  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, DATA
+  4 .debug_info   00000396  00000000  00000000  00000050  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  5 .debug_abbrev 000000ac  00000000  00000000  000003e6  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  6 .debug_aranges 00000018  00000000  00000000  00000492  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  7 .debug_line   00000107  00000000  00000000  000004aa  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_str    00000b92  00000000  00000000  000005b1  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .comment      00000030  00000000  00000000  00001143  2**0
+                  CONTENTS, READONLY
+ 10 .note.GNU-stack 00000000  00000000  00000000  00001173  2**0
+                  CONTENTS, READONLY
+ 11 .riscv.attributes 00000044  00000000  00000000  00001173  2**0
+                  CONTENTS, READONLY
+
+wdt_periph.c.obj:     file format elf32-littleriscv
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00000000  00000000  00000000  00000034  2**1
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .data         00000000  00000000  00000000  00000034  2**0
+                  CONTENTS, ALLOC, LOAD, DATA
+  2 .bss          00000000  00000000  00000000  00000034  2**0
+                  ALLOC
+  3 .debug_info   00000072  00000000  00000000  00000034  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  4 .debug_abbrev 00000026  00000000  00000000  000000a6  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  5 .debug_aranges 00000018  00000000  00000000  000000cc  2**0
+                  CONTENTS, RELOC, READONLY, DEBUGGING, OCTETS
+  6 .debug_line   00000060  00000000  00000000  000000e4  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_str    000001f8  00000000  00000000  00000144  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .comment      00000030  00000000  00000000  0000033c  2**0
+                  CONTENTS, READONLY
+  9 .note.GNU-stack 00000000  00000000  00000000  0000036c  2**0
+                  CONTENTS, READONLY
+ 10 .riscv.attributes 00000044  00000000  00000000  0000036c  2**0
+                  CONTENTS, READONLY
