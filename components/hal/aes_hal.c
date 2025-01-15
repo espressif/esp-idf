@@ -43,7 +43,9 @@ void aes_hal_transform_block(const void *input_block, void *output_block)
 #ifdef SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
 void aes_hal_enable_pseudo_rounds(bool enable, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
 {
-    aes_ll_enable_pseudo_rounds(enable, base, increment, key_rng_cnt);
+    if (aes_ll_is_pseudo_rounds_function_supported()) {
+        aes_ll_enable_pseudo_rounds(enable, base, increment, key_rng_cnt);
+    }
 }
 #endif // SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
 

@@ -264,6 +264,14 @@ static inline void aes_ll_enable_pseudo_rounds(bool enable, uint8_t base, uint8_
     }
 }
 
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool aes_ll_is_pseudo_rounds_function_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

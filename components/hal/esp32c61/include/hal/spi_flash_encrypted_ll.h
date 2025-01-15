@@ -169,6 +169,14 @@ static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(uint8_t mode, uint8
     }
 }
 
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool spi_flash_encrypt_ll_is_pseudo_rounds_function_supported(void)
+{
+    return true;
+}
+
 #ifdef __cplusplus
 }
 #endif

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,11 +20,14 @@
 #include "soc/soc_caps.h"
 #include "hal/assert.h"
 
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// Choose type of chip you want to encrypt manully
+/// Choose type of chip you want to encrypt manually
 typedef enum
 {
     FLASH_ENCRYPTION_MANU = 0, ///!< Manually encrypt the flash chip.
@@ -51,7 +54,7 @@ static inline void spi_flash_encrypt_ll_disable(void)
 }
 
 /**
- * Choose type of chip you want to encrypt manully
+ * Choose type of chip you want to encrypt manually
  *
  * @param type The type of chip to be encrypted
  *
@@ -144,6 +147,39 @@ static inline void spi_flash_encrypt_ll_destroy(void)
 static inline bool spi_flash_encrypt_ll_check(uint32_t address, uint32_t length)
 {
     return ((address % length) == 0) ? true : false;
+}
+
+/**
+ * @brief Enable the pseudo-round function during XTS-AES operations
+ *
+ * @param mode set the mode for pseudo rounds, zero to disable, with increasing security upto three.
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(uint8_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_MODE_PSEUDO, mode);
+
+    if (mode) {
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_BASE, base);
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_INC, increment);
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_RNG_CNT, key_rng_cnt);
+    } else {
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_BASE, 0);
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_INC, 0);
+        REG_SET_FIELD(XTS_AES_PSEUDO_ROUND_CONF_REG(0), XTS_AES_PSEUDO_RNG_CNT, 0);
+    }
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ * The XTS-AES pseudo round function is only avliable in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool spi_flash_encrypt_ll_is_pseudo_rounds_function_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
 }
 
 #ifdef __cplusplus
