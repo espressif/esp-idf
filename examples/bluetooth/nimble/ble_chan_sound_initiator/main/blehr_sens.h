@@ -17,27 +17,24 @@
  * under the License.
  */
 
-#ifndef H_BLEPRPH_
-#define H_BLEPRPH_
+#ifndef H_BLEHR_SENSOR_
+#define H_BLEHR_SENSOR_
 
-#include <stdbool.h>
 #include "nimble/ble.h"
 #include "modlog/modlog.h"
-#include "esp_peripheral.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct ble_hs_cfg;
-struct ble_gatt_register_ctxt;
+/* Heart-rate configuration */
+#define GATT_HRS_UUID                           0x180D
+#define GATT_HRS_MEASUREMENT_UUID               0x2A37
+#define GATT_HRS_BODY_SENSOR_LOC_UUID           0x2A38
+#define GATT_DEVICE_INFO_UUID                   0x180A
+#define GATT_MANUFACTURER_NAME_UUID             0x2A29
+#define GATT_MODEL_NUMBER_UUID                  0x2A24
 
-/** GATT server. */
-#define GATT_SVR_SVC_ALERT_UUID               0x1811
-#define GATT_SVR_CHR_SUP_NEW_ALERT_CAT_UUID   0x2A47
-#define GATT_SVR_CHR_NEW_ALERT                0x2A46
-#define GATT_SVR_CHR_SUP_UNR_ALERT_CAT_UUID   0x2A48
-#define GATT_SVR_CHR_UNR_ALERT_STAT_UUID      0x2A45
-#define GATT_SVR_CHR_ALERT_NOT_CTRL_PT        0x2A44
 
 #define BLE_UUID_RANGING_SERVICE_VAL (0x185B)
 
@@ -59,6 +56,11 @@ struct ble_gatt_register_ctxt;
 /** @brief UUID of the Ranging Data Overwritten Characteristic. **/
 #define BLE_UUID_RAS_RD_OVERWRITTEN_VAL (0x2C19)
 
+
+extern uint16_t hrs_hrm_handle;
+
+struct ble_hs_cfg;
+struct ble_gatt_register_ctxt;
 
 void gatt_svr_register_cb(struct ble_gatt_register_ctxt *ctxt, void *arg);
 int gatt_svr_init(void);

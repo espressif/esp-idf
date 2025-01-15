@@ -137,7 +137,7 @@ ext_bleprph_advertise(void)
 
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
-    assert (rc == 0);
+  //  assert (rc == 0);
 }
 #else
 /**
@@ -507,7 +507,7 @@ static void
 bleprph_on_sync(void)
 {
     int rc;
-
+    rc = ble_gap_set_host_feat(47,0x01);
 #if CONFIG_EXAMPLE_RANDOM_ADDR
     /* Generate a non-resolvable private address. */
     ble_app_set_addr();
