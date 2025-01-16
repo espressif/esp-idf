@@ -129,6 +129,15 @@ typedef enum {
     HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Digest authentication */
 } esp_http_client_auth_type_t;
 
+/*
+* @brief HTTP Address type
+*/
+typedef enum {
+    HTTP_ADDR_TYPE_UNSPEC = AF_UNSPEC,      /**< Unspecified address family. */
+    HTTP_ADDR_TYPE_INET = AF_INET,          /**< IPv4 address family. */
+    HTTP_ADDR_TYPE_INET6 = AF_INET6,        /**< IPv6 address family. */
+} esp_http_client_addr_type_t;
+
 /**
  * @brief HTTP configuration
  */
@@ -194,6 +203,7 @@ typedef struct {
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
     struct esp_transport_item_t *transport;
 #endif
+    esp_http_client_addr_type_t addr_type;  /*!< Address type used in http client configurations */
 } esp_http_client_config_t;
 
 /**
