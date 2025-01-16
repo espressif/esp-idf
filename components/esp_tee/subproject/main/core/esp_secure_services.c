@@ -24,6 +24,7 @@
 #include "sha/sha_dma.h"
 
 #include "esp_tee.h"
+#include "esp_tee_memory_utils.h"
 #include "esp_tee_intr.h"
 #include "esp_tee_aes_intr.h"
 #include "esp_tee_rv_utils.h"
@@ -32,20 +33,6 @@
 #include "esp_tee_sec_storage.h"
 #include "esp_tee_ota_ops.h"
 #include "esp_attestation.h"
-
-FORCE_INLINE_ATTR bool is_valid_ree_address(const void *ree_addr)
-{
-    return ((((size_t)ree_addr >= SOC_NS_IDRAM_START) &&
-             ((size_t)ree_addr < SOC_NS_IDRAM_END)
-            ) ||
-            ((ree_addr >= esp_tee_app_config.ns_drom_start) &&
-             ((size_t)ree_addr < SOC_S_MMU_MMAP_RESV_START_VADDR)
-            ) ||
-            (((size_t)ree_addr >= SOC_RTC_DATA_LOW) &&
-             ((size_t)ree_addr < SOC_RTC_DATA_HIGH)
-            )
-           );
-}
 
 void _ss_invalid_secure_service(void)
 {
@@ -113,13 +100,12 @@ bool _ss_efuse_hal_get_disable_wafer_version_major(void)
 
 void _ss_efuse_hal_get_mac(uint8_t *mac)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)mac)) &
-                       (is_valid_ree_address((void *)(mac + 6))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)mac)) &
+                       (esp_tee_ptr_in_ree((void *)(mac + 6))));
 
     if (!valid_addr) {
         return;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     efuse_hal_get_mac(mac);
@@ -184,13 +170,12 @@ int _ss_esp_aes_crypt_cbc(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + length)) && is_valid_ree_address((void *)(output + length))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_cbc(ctx, mode, length, iv, input, output);
@@ -204,13 +189,12 @@ int _ss_esp_aes_crypt_cfb128(esp_aes_context *ctx,
                              const unsigned char *input,
                              unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + length)) && is_valid_ree_address((void *)(output + length))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_cfb128(ctx, mode, length, iv_off, iv, input, output);
@@ -223,13 +207,12 @@ int _ss_esp_aes_crypt_cfb8(esp_aes_context *ctx,
                            const unsigned char *input,
                            unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + length)) && is_valid_ree_address((void *)(output + length))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_cfb8(ctx, mode, length, iv, input, output);
@@ -243,13 +226,12 @@ int _ss_esp_aes_crypt_ctr(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + length)) && is_valid_ree_address((void *)(output + length))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_ctr(ctx, length, nc_off, nonce_counter, stream_block, input, output);
@@ -260,13 +242,12 @@ int _ss_esp_aes_crypt_ecb(esp_aes_context *ctx,
                           const unsigned char input[16],
                           unsigned char output[16])
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + 16)) && is_valid_ree_address((void *)(output + 16))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + 16)) && esp_tee_ptr_in_ree((void *)(output + 16))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_ecb(ctx, mode, input, output);
@@ -279,13 +260,12 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + length)) && is_valid_ree_address((void *)(output + length))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_aes_crypt_ofb(ctx, length, iv_off, iv, input, output);
@@ -295,13 +275,12 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
 
 void _ss_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)input) && is_valid_ree_address((void *)output)) &
-                       (is_valid_ree_address((void *)(input + ilen))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+                       (esp_tee_ptr_in_ree((void *)(input + ilen))));
 
     if (!valid_addr) {
         return;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     esp_sha(sha_type, input, ilen, output);
@@ -310,13 +289,11 @@ void _ss_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen,
 int _ss_esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
                     const void *buf, uint32_t buf_len, bool is_first_block)
 {
-    bool valid_addr = (is_valid_ree_address((void *)input) &&
-                       is_valid_ree_address((void *)((char *)input + ilen))
-                      );
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)input) &&
+                       esp_tee_ptr_in_ree((void *)((char *)input + ilen)));
     if (buf_len) {
-        valid_addr &= (is_valid_ree_address((void *)buf) &&
-                       is_valid_ree_address((void *)((char *)buf + buf_len))
-                      );
+        valid_addr &= (esp_tee_ptr_in_ree((void *)buf) &&
+                       esp_tee_ptr_in_ree((void *)((char *)buf + buf_len)));
     }
 
     if (!valid_addr) {
@@ -346,13 +323,12 @@ int _ss_esp_tee_ota_begin(void)
 
 int _ss_esp_tee_ota_write(uint32_t rel_offset, void *data, size_t size)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)data)) &
-                       (is_valid_ree_address((void *)((char *)data + size))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)data)) &
+                       (esp_tee_ptr_in_ree((void *)((char *)data + size))));
 
     if (!valid_addr) {
         return -1;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_tee_ota_write(rel_offset, data, size);
@@ -377,14 +353,13 @@ esp_err_t _ss_esp_tee_sec_storage_gen_key(uint16_t slot_id, uint8_t key_type)
 
 esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)hash) && is_valid_ree_address((void *)out_sign)) &
-                       (is_valid_ree_address((void *)(hash + hlen)) &&
-                        is_valid_ree_address((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_sign_t)))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &
+                       (esp_tee_ptr_in_ree((void *)(hash + hlen)) &&
+                        esp_tee_ptr_in_ree((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_sign_t)))));
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_tee_sec_storage_get_signature(slot_id, hash, hlen, out_sign);
@@ -392,13 +367,12 @@ esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash,
 
 esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey)
 {
-    bool valid_addr = ((is_valid_ree_address((void *)pubkey)) &
-                       (is_valid_ree_address((void *)((char *)pubkey + sizeof(esp_tee_sec_storage_pubkey_t)))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)pubkey)) &
+                       (esp_tee_ptr_in_ree((void *)((char *)pubkey + sizeof(esp_tee_sec_storage_pubkey_t)))));
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_tee_sec_storage_get_pubkey(slot_id, pubkey);
@@ -407,21 +381,21 @@ esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_stora
 esp_err_t _ss_esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
                                           uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (is_valid_ree_address((void *)input) && is_valid_ree_address((void *)tag) &&
-                       is_valid_ree_address((void *)output));
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)input) &&
+                       esp_tee_ptr_in_ree((void *)tag) &&
+                       esp_tee_ptr_in_ree((void *)output));
 
-    valid_addr &= (is_valid_ree_address((void *)(input + len)) && is_valid_ree_address((void *)(tag + tag_len)) &&
-                   is_valid_ree_address((void *)(output + len))
-                  );
+    valid_addr &= (esp_tee_ptr_in_ree((void *)(input + len)) &&
+                   esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
+                   esp_tee_ptr_in_ree((void *)(output + len)));
 
     if (aad) {
-        valid_addr &= (is_valid_ree_address((void *)aad) && is_valid_ree_address((void *)(aad + aad_len)));
+        valid_addr &= (esp_tee_ptr_in_ree((void *)aad) && esp_tee_ptr_in_ree((void *)(aad + aad_len)));
     }
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_tee_sec_storage_encrypt(slot_id, input, len, aad, aad_len, tag, tag_len, output);
@@ -430,21 +404,21 @@ esp_err_t _ss_esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint
 esp_err_t _ss_esp_tee_sec_storage_decrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
                                           uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (is_valid_ree_address((void *)input) && is_valid_ree_address((void *)tag) &&
-                       is_valid_ree_address((void *)output));
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)input) &&
+                       esp_tee_ptr_in_ree((void *)tag) &&
+                       esp_tee_ptr_in_ree((void *)output));
 
-    valid_addr &= (is_valid_ree_address((void *)(input + len)) && is_valid_ree_address((void *)(tag + tag_len)) &&
-                   is_valid_ree_address((void *)(output + len))
-                  );
+    valid_addr &= (esp_tee_ptr_in_ree((void *)(input + len)) &&
+                   esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
+                   esp_tee_ptr_in_ree((void *)(output + len)));
 
     if (aad) {
-        valid_addr &= (is_valid_ree_address((void *)aad) && is_valid_ree_address((void *)(aad + aad_len)));
+        valid_addr &= (esp_tee_ptr_in_ree((void *)aad) && esp_tee_ptr_in_ree((void *)(aad + aad_len)));
     }
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
-
     ESP_FAULT_ASSERT(valid_addr);
 
     return esp_tee_sec_storage_decrypt(slot_id, input, len, aad, aad_len, tag, tag_len, output);
