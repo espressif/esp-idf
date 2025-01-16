@@ -81,29 +81,6 @@ char *http_utils_append_string(char **str, const char *new_str, int len);
 void http_utils_trim_whitespace(char **str);
 
 /**
- * @brief      Gets the string between 2 string.
- *             It will allocate a new memory space for this string, so you need to free it when no longer use
- *
- * @param[in]  str    The source string
- * @param[in]  begin  The begin string
- * @param[in]  end    The end string
- *
- * @return     The string between begin and end
- */
-char *http_utils_get_string_between(const char *str, const char *begin, const char *end) __attribute__((deprecated("Use http_utils_get_substring_between instead.")));;
-
-/**
- * @brief      Returns a string that contains the part after the search string till the end of the source string.
- *             It will allocate a new memory space for this string, so you need to free it when no longer used
- *
- * @param[in]  str    The source string
- * @param[in]  begin  The search string
- *
- * @return     The string between begin and the end of str
- */
-char *http_utils_get_string_after(const char *str, const char *begin) __attribute__((deprecated("Use http_utils_get_substring_after instead.")));;
-
-/**
  * @brief      Extracts the substring between two specified delimiters.
  *             Allocates memory for the extracted substring and stores it in `out`.
  *             The caller must free the allocated memory when no longer needed.
@@ -117,7 +94,7 @@ char *http_utils_get_string_after(const char *str, const char *begin) __attribut
  * - ESP_OK: Operation succeeded (even if no substring is found).
  * - ESP_ERR_NO_MEM: Memory allocation failed.
  */
-esp_err_t http_utils_get_substring_between(const char *str, const char *begin, const char *end, char **out);
+esp_err_t http_utils_get_string_between(const char *str, const char *begin, const char *end, char **out);
 
 /**
  * @brief      Extracts the substring starting after a specified delimiter until the end of the source string.
@@ -132,7 +109,7 @@ esp_err_t http_utils_get_substring_between(const char *str, const char *begin, c
  * - ESP_OK: Operation succeeded (even if no substring is found).
  * - ESP_ERR_NO_MEM: Memory allocation failed.
  */
-esp_err_t http_utils_get_substring_after(const char *str, const char *begin, char **out);
+esp_err_t http_utils_get_string_after(const char *str, const char *begin, char **out);
 
 /**
  * @brief      Join 2 strings to one
