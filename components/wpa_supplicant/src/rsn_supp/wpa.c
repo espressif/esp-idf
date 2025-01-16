@@ -2731,8 +2731,6 @@ struct wpa_sm * get_wpa_sm(void)
 int wpa_sm_set_ap_rsnxe(const u8 *ie, size_t len)
 {
     struct wpa_sm *sm = &gWpaSm;
-    if (!sm)
-        return -1;
 
     os_free(sm->ap_rsnxe);
     if (!ie || len == 0) {
