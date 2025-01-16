@@ -236,10 +236,14 @@ esp_err_t example_ethernet_connect(void)
     eth_start();
     ESP_LOGI(TAG, "Waiting for IP(s).");
 #if CONFIG_EXAMPLE_CONNECT_IPV4
-    xSemaphoreTake(s_semph_get_ip_addrs, portMAX_DELAY);
+    if (xSemaphoreTake(s_semph_get_ip_addrs, pdMS_TO_TICKS(10000)) == pdFALSE) {
+        ESP_LOGW(TAG, "Gave up waiting for IPv4 address.");
+    }
 #endif
 #if CONFIG_EXAMPLE_CONNECT_IPV6
-    xSemaphoreTake(s_semph_get_ip6_addrs, portMAX_DELAY);
+    if (xSemaphoreTake(s_semph_get_ip6_addrs, pdMS_TO_TICKS(10000)) == pdFALSE) {
+        ESP_LOGW(TAG, "Gave up waiting for (preferred) IPv6 address.");
+    }
 #endif
     return ESP_OK;
 }
