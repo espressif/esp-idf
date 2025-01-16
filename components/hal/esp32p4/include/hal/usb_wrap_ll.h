@@ -238,7 +238,7 @@ FORCE_INLINE_ATTR void usb_wrap_ll_phy_test_mode_set_signals(usb_wrap_dev_t *hw,
  * Enable the bus clock for USB Wrap module and USB_DWC_FS controller
  * @param clk_en True if enable the clock of USB Wrap module
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
+FORCE_INLINE_ATTR void _usb_wrap_ll_enable_bus_clock(bool clk_en)
 {
     // Enable/disable system clock for USB_WRAP and USB_DWC_FS
     HP_SYS_CLKRST.soc_clk_ctrl1.reg_usb_otg11_sys_clk_en = clk_en;
@@ -247,12 +247,12 @@ FORCE_INLINE_ATTR void usb_wrap_ll_enable_bus_clock(bool clk_en)
 }
 
 // HP_SYS_CLKRST.soc_clk_ctrlx and LP_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
+#define usb_wrap_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the USB Wrap module and USB_DWC_FS controller
  */
-FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
+FORCE_INLINE_ATTR void _usb_wrap_ll_reset_register(void)
 {
     // Reset the USB_WRAP and USB_DWC_FS
     LP_AON_CLKRST.hp_usb_clkrst_ctrl1.rst_en_usb_otg11 = 1;
@@ -260,7 +260,7 @@ FORCE_INLINE_ATTR void usb_wrap_ll_reset_register(void)
 }
 
 // P_AON_CLKRST.hp_usb_clkrst_ctrlx are shared registers, so this function must be used in an atomic way
-#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; usb_wrap_ll_reset_register(__VA_ARGS__)
+#define usb_wrap_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_ll_reset_register(__VA_ARGS__)
 
 #ifdef __cplusplus
 }
