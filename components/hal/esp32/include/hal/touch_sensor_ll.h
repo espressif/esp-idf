@@ -681,8 +681,8 @@ static inline void touch_ll_stop_fsm(void)
  */
 static inline void touch_ll_start_sw_meas(void)
 {
-    SENS.sar_touch_ctrl2.touch_start_en = 0;
     SENS.sar_touch_ctrl2.touch_start_en = 1;
+    SENS.sar_touch_ctrl2.touch_start_en = 0;
 }
 
 /**
