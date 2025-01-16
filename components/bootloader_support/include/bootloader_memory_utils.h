@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,12 @@ extern "C" {
  */
 __attribute__((always_inline))
 inline static bool esp_dram_match_iram(void) {
-    return (SOC_DRAM_LOW == SOC_IRAM_LOW && SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+    bool dram_match_iram = (SOC_DRAM_LOW == SOC_IRAM_LOW) &&
+                             (SOC_DRAM_HIGH == SOC_IRAM_HIGH);
+#if SOC_RTC_FAST_MEM_SUPPORTED
+        dram_match_iram &= (SOC_RTC_IRAM_LOW == SOC_RTC_DRAM_LOW);
+#endif
+    return dram_match_iram;
 }
 
 /**
@@ -81,6 +86,7 @@ __attribute__((always_inline))
 inline static bool esp_ptr_in_diram_iram(const void *p) {
 // TODO: IDF-5980 esp32c6 D/I RAM share the same address
 #if SOC_DIRAM_IRAM_LOW == SOC_DIRAM_DRAM_LOW
+    (void)p;
     return false;
 #else
     return ((intptr_t)p >= SOC_DIRAM_IRAM_LOW && (intptr_t)p < SOC_DIRAM_IRAM_HIGH);
@@ -96,9 +102,10 @@ inline static bool esp_ptr_in_diram_iram(const void *p) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_rtc_iram_fast(const void *p) {
-#if SOC_RTC_FAST_MEM_SUPPORTED
+#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -115,6 +122,7 @@ inline static bool esp_ptr_in_rtc_dram_fast(const void *p) {
 #if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_DRAM_LOW && (intptr_t)p < SOC_RTC_DRAM_HIGH);
 #else
+    (void)p;
     return false;
 #endif
 }
@@ -147,6 +155,21 @@ inline static void * esp_ptr_diram_dram_to_iram(const void *p) {
     return (void *) ( SOC_DIRAM_IRAM_LOW + (SOC_DIRAM_DRAM_HIGH - (intptr_t)p) - 4);
 #else
     return (void *) ( SOC_DIRAM_IRAM_LOW + ((intptr_t)p - SOC_DIRAM_DRAM_LOW) );
+#endif
+}
+
+/* Convert a RTC DRAM pointer to equivalent word address in RTC IRAM
+
+   - Address must be word aligned
+   - Address must pass esp_ptr_in_rtc_dram_fast() test, or result will be invalid pointer
+*/
+__attribute__((always_inline))
+inline static void * esp_ptr_rtc_dram_to_iram(const void *p) {
+    intptr_t ptr = (intptr_t)p;
+#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
+    return (void *) ( SOC_RTC_IRAM_LOW + (ptr - SOC_RTC_DRAM_LOW) );
+#else
+    return (void *) ptr;
 #endif
 }
 
