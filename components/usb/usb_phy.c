@@ -15,6 +15,7 @@
 #include "hal/usb_wrap_hal.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
+#include "hal/gpio_ll.h"
 #include "soc/soc_caps.h"
 
 #if !SOC_RCC_IS_INDEPENDENT
@@ -55,7 +56,7 @@ static esp_err_t phy_configure_pin_input(int gpio_pin, int signal_idx)
                             ESP_ERR_INVALID_ARG, USBPHY_TAG, "io_num argument is invalid");
         esp_rom_gpio_pad_select_gpio(gpio_pin);
         esp_rom_gpio_connect_in_signal(gpio_pin, signal_idx, false);
-        gpio_input_enable(gpio_pin);
+        gpio_ll_input_enable(&GPIO, gpio_pin);
         esp_rom_gpio_pad_unhold(gpio_pin);
     }
     return ESP_OK;
@@ -263,7 +264,7 @@ static esp_err_t usb_phy_install(void)
     }
     // Enable USB peripheral and reset the register
     portEXIT_CRITICAL(&phy_spinlock);
-    USB_WRAP_RCC_ATOMIC() {
+    USB_PHY_RCC_ATOMIC() {
         usb_wrap_ll_enable_bus_clock(true);
         usb_wrap_ll_reset_register();
     }
