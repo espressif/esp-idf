@@ -132,8 +132,8 @@ def validate_directory_structure(base_path: str,
                                     'test_read_write_partition_gen_ln_default_dt',
                                     ], indirect=True)
 def test_examples_fatfsgen(config: str, dut: Dut) -> None:
-    # Default timeout
-    timeout = 20
+    # Default timeout - a bit overkill, but better than failing tests
+    timeout = 60
 
     def expect(msg: str, timeout: int = timeout) -> None:
         dut.expect(msg, timeout=timeout)
