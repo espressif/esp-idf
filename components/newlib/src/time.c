@@ -207,10 +207,17 @@ int usleep(useconds_t us)
     if (us < us_per_tick) {
         esp_rom_delay_us((uint32_t) us);
     } else {
-        /* since vTaskDelay(1) blocks for anywhere between 0 and portTICK_PERIOD_MS,
-         * round up to compensate.
-         */
-        vTaskDelay((us + us_per_tick - 1) / us_per_tick);
+        /* Tick-based sleep may return up to (n-1) tick periods due to tick ISR
+           being asynchronous to vTaskDelay() call. Specification states we must
+           sleep at least the specified time, or longer. 
+        */
+        uint64_t start_us = esp_timer_get_time();
+        uint64_t now_us = start_us;
+        uint64_t target_us = start_us + us;
+        do {
+            vTaskDelay((TickType_t)((target_us - now_us) / us_per_tick)+1);
+            now_us = esp_timer_get_time();
+        } while (now_us < target_us);
     }
     return 0;
 }
