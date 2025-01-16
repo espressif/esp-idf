@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,43 @@
 #ifndef _HTTP_UTILS_H_
 #define _HTTP_UTILS_H_
 #include <sys/time.h>
+
+/**
+ * Macro which can be used to check the error code. If the code is not ESP_OK, it prints the message and returns.
+ * It logs the message in debug mode.
+ */
+#define HTTP_RET_ON_ERR_DBG(x, log_tag, format, ...) do {                                       \
+        esp_err_t err_rc_ = (x);                                                                \
+        if (unlikely(err_rc_ != ESP_OK)) {                                                      \
+            ESP_LOGD(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+            return err_rc_;                                                                     \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * Macro which can be used to check the condition. If the condition is not 'true', it prints the message
+ * and returns with the supplied 'err_code'.
+ * It logs the message in debug mode.
+ */
+#define HTTP_RET_ON_FALSE_DBG(a, err_code, log_tag, format, ...) do {                           \
+        if (unlikely(!(a))) {                                                                   \
+            ESP_LOGD(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+            return err_code;                                                                    \
+        }                                                                                       \
+    } while(0)
+
+/**
+ * Macro which can be used to check the condition. If the condition is not 'true', it prints the message,
+ * sets the local variable 'ret' to the supplied 'err_code', and then exits by jumping to 'goto_tag'.
+ * It logs the message in debug mode.
+ */
+#define HTTP_GOTO_ON_FALSE_DBG(a, err_code, goto_tag, log_tag, format, ...) do {                \
+        if (unlikely(!(a))) {                                                                   \
+            ESP_LOGD(log_tag, "%s(%d): " format, __FUNCTION__, __LINE__, ##__VA_ARGS__);        \
+            ret = err_code;                                                                     \
+            goto goto_tag;                                                                      \
+        }                                                                                       \
+    } while (0)
 
 /**
  * @brief      Assign new_str to *str pointer, and realloc *str if it not NULL
