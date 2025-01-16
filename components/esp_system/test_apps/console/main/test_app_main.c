@@ -4,6 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
+#include <assert.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "sdkconfig.h"
 
 #include "esp_rom_uart.h"
@@ -45,6 +49,24 @@ static void console_none_print(void)
 }
 #endif
 
+#if CONFIG_VFS_SUPPORT_IO
+static void console_open_close_check(void)
+{
+    printf("Opening /dev/console\n");
+    int fd = open("/dev/console", O_RDWR);
+    assert(fd >= 0 && "Could not open file");
+
+    const char *msg = "This should be printed to stdout\n";
+
+    write(fd, msg, strlen(msg));
+
+    printf("Closing /dev/console\n");
+    close(fd);
+
+    printf("This should be printed to stdout\n");
+}
+#endif // CONFIG_VFS_SUPPORT_IO
+
 void app_main(void)
 {
     printf("Hello World\n");
@@ -52,4 +74,9 @@ void app_main(void)
 #if CONFIG_ESP_CONSOLE_NONE
     console_none_print();
 #endif // CONFIG_ESP_CONSOLE_NONE
+
+#if CONFIG_VFS_SUPPORT_IO
+    console_open_close_check();
+#endif // CONFIG_VFS_SUPPORT_IO
+
 }
