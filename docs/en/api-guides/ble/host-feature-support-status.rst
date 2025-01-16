@@ -72,7 +72,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |developing202512|
+      - |unsupported|
       - |unsupported|
     * -
       - GATT Caching
@@ -88,23 +88,23 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |developing202512|
-      - |developing202512|
+      - |unsupported|
+      - |unsupported|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
       - |experimental|
     * -
       - LE Power Control
-      - |developing202512|
+      - |unsupported|
       - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
-      - |developing202412|
+      - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - |developing202512|
+      - |unsupported|
       - |supported|
     * -
       - LE Channel Classification
@@ -112,11 +112,11 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |developing202512|
+      - |unsupported|
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |developing202512|
+      - |unsupported|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
@@ -124,7 +124,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |experimental|
     * -
       - Periodic Advertising with Responses
-      - |developing202512|
+      - |unsupported|
       - |experimental|
 
 .. [1]
