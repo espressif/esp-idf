@@ -195,7 +195,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - Enhanced Attribute Protocol
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - .. only:: esp32 or esp32c2
@@ -290,7 +290,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - LE GATT Security Levels Characteristic
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
       - |unsupported|
@@ -313,7 +313,7 @@ You are encouraged to consult with our `customer support team <https://www.espre
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
    :width: 65px
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
    :width: 120px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
