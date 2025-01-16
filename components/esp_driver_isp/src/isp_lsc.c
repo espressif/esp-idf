@@ -70,6 +70,7 @@ esp_err_t esp_isp_lsc_configure(isp_proc_handle_t isp_proc, const esp_isp_lsc_co
     ESP_RETURN_ON_FALSE(num_grids_x <= num_grids_x_max && num_grids_y <= num_grids_y_max, ESP_ERR_INVALID_ARG, TAG, "invalid h_res or v_res");
     ESP_RETURN_ON_FALSE(config->gain_array->gain_r && config->gain_array->gain_gr && config->gain_array->gain_gb && config->gain_array->gain_b, ESP_ERR_INVALID_ARG, TAG, "null pointer to gain arrays");
 
+    isp_ll_lsc_set_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     isp_ll_lsc_set_xtablesize(isp_proc->hal.hw, num_grids_x);
 
     for (int y = 0; y < num_grids_y; y++) {
@@ -90,7 +91,6 @@ esp_err_t esp_isp_lsc_enable(isp_proc_handle_t isp_proc)
     ESP_RETURN_ON_FALSE(isp_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "lsc is enabled already");
 
-    isp_ll_lsc_clk_enable(isp_proc->hal.hw, true);
     isp_ll_lsc_enable(isp_proc->hal.hw, true);
     isp_proc->lsc_fsm = ISP_FSM_ENABLE;
 
@@ -103,7 +103,6 @@ esp_err_t esp_isp_lsc_disable(isp_proc_handle_t isp_proc)
     ESP_RETURN_ON_FALSE(isp_proc->lsc_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "lsc isn't enabled yet");
 
     isp_ll_lsc_enable(isp_proc->hal.hw, false);
-    isp_ll_lsc_clk_enable(isp_proc->hal.hw, false);
     isp_proc->lsc_fsm = ISP_FSM_INIT;
 
     return ESP_OK;
