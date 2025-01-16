@@ -925,6 +925,7 @@ typedef enum {
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
     WIFI_EVENT_HOME_CHANNEL_CHANGE,      /**< WiFi home channel change，doesn't occur when scanning */
 
+    WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -1024,6 +1025,11 @@ typedef struct {
     uint8_t            new_chan;   /**< new home channel of the device */
     wifi_second_chan_t new_snd;    /**< new second channel of the device */
 } wifi_event_home_channel_change_t;
+
+/** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
+} wifi_event_ap_wrong_password_t;
 
 /**
   * @brief FTM operation status types
