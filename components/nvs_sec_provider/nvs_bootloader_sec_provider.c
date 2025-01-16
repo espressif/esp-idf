@@ -96,7 +96,7 @@ esp_err_t nvs_sec_provider_register_flash_enc(const nvs_sec_config_flash_enc_t *
 
 static nvs_sec_config_hmac_t nvs_sec_config_hmac_scheme_data;
 
-#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID > 5
+#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID < 0
 #error "NVS Encryption (HMAC): Configured eFuse block (CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID) out of range!"
 #endif
 

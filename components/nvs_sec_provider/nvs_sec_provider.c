@@ -107,7 +107,7 @@ ESP_SYSTEM_INIT_FN(nvs_sec_provider_register_flash_enc_scheme, SECONDARY, BIT(0)
 
 #if SOC_HMAC_SUPPORTED
 
-#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID > 5
+#if CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID < 0
 #error "NVS Encryption (HMAC): Configured eFuse block (CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID) out of range!"
 #endif
 
