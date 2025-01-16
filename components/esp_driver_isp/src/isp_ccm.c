@@ -23,6 +23,7 @@ esp_err_t esp_isp_ccm_configure(isp_proc_handle_t proc, const esp_isp_ccm_config
 
     bool ret = true;
     portENTER_CRITICAL(&proc->spinlock);
+    isp_ll_ccm_set_clk_ctrl_mode(proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     ret = isp_hal_ccm_set_matrix(&proc->hal, ccm_cfg->saturation, ccm_cfg->matrix);
     portEXIT_CRITICAL(&proc->spinlock);
     ESP_RETURN_ON_FALSE(ret, ESP_ERR_INVALID_ARG, TAG, "invalid argument: ccm matrix contain NaN or out of range");
@@ -35,7 +36,6 @@ esp_err_t esp_isp_ccm_enable(isp_proc_handle_t proc)
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
 
     portENTER_CRITICAL(&proc->spinlock);
-    isp_ll_ccm_clk_enable(proc->hal.hw, true);
     isp_ll_ccm_enable(proc->hal.hw, true);
     portEXIT_CRITICAL(&proc->spinlock);
 
@@ -48,7 +48,6 @@ esp_err_t esp_isp_ccm_disable(isp_proc_handle_t proc)
 
     portENTER_CRITICAL(&proc->spinlock);
     isp_ll_ccm_enable(proc->hal.hw, false);
-    isp_ll_ccm_clk_enable(proc->hal.hw, false);
     portEXIT_CRITICAL(&proc->spinlock);
 
     return ESP_OK;
