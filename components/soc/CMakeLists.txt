@@ -19,10 +19,6 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target}/dport_access.c")
 endif()
 
-if(target STREQUAL "esp32h2")
-    list(APPEND srcs "${target_folder}/ecdsa_reg_addr.c")
-endif()
-
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target}/adc_periph.c")
 endif()
