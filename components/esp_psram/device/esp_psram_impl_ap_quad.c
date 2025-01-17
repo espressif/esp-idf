@@ -31,7 +31,7 @@ uint8_t esp_psram_impl_get_cs_io(void)
     return s_psram_cs_io;
 }
 
-void psram_exec_cmd(int spi_num, psram_hal_cmd_mode_t mode,
+void psram_exec_cmd(int spi_num, psram_cmd_mode_t mode,
                     uint32_t cmd, int cmd_bit_len,
                     uint32_t addr, int addr_bit_len,
                     int dummy_bits,
@@ -72,7 +72,7 @@ static void psram_disable_qio_mode(int spi_num)
 //TODO IDF-4307
 //switch psram burst length(32 bytes or 1024 bytes)
 //datasheet says it should be 1024 bytes by default
-static void psram_set_wrap_burst_length(int spi_num, psram_hal_cmd_mode_t mode)
+static void psram_set_wrap_burst_length(int spi_num, psram_cmd_mode_t mode)
 {
     psram_exec_cmd(spi_num, mode,
                    PSRAM_QUAD_SET_BURST_LEN, 8,           /* command and command bit len*/
@@ -170,7 +170,49 @@ static void psram_set_cs_timing(void)
 {
     psram_ctrlr_ll_set_cs_hold(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_CS_HOLD_VAL);
     psram_ctrlr_ll_set_cs_setup(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_CS_SETUP_VAL);
+#if CONFIG_SPIRAM_ECC_ENABLE
+    psram_ctrlr_ll_set_ecc_cs_hold(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_CS_ECC_HOLD_TIME_VAL);
+#endif
 }
+
+#if CONFIG_SPIRAM_ECC_ENABLE
+static void s_mspi_ecc_show_info(void)
+{
+    for (int i = 0; i < PSRAM_CTRLR_LL_PMS_REGION_NUMS; i++) {
+        ESP_EARLY_LOGV(TAG, "region[%d] addr: 0x%08x", i, psram_ctrlr_ll_get_pms_region_start_addr(PSRAM_CTRLR_LL_MSPI_ID_0, i));
+        ESP_EARLY_LOGV(TAG, "region[%d] size: 0x%08x", i, psram_ctrlr_ll_get_pms_region_size(PSRAM_CTRLR_LL_MSPI_ID_0, i));
+    }
+
+    uint32_t page_size = psram_ctrlr_ll_get_page_size(PSRAM_CTRLR_LL_MSPI_ID_0);
+    ESP_EARLY_LOGV(TAG, "ECC page size: %d", page_size);
+}
+
+/**
+ * Enable error correcting code feature
+ *
+ * Can add an input parameter for selecting ECC mode if needed
+ */
+static void s_configure_psram_ecc(void)
+{
+    psram_ctrlr_ll_set_ecc_mode(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_LL_ECC_MODE_16TO18);
+    psram_ctrlr_ll_enable_skip_page_corner(PSRAM_CTRLR_LL_MSPI_ID_0, true);
+    psram_ctrlr_ll_enable_split_trans(PSRAM_CTRLR_LL_MSPI_ID_0, true);
+    psram_ctrlr_ll_set_page_size(PSRAM_CTRLR_LL_MSPI_ID_0, PSRAM_QUAD_PAGE_SIZE);
+    psram_ctrlr_ll_enable_ecc_addr_conversion(PSRAM_CTRLR_LL_MSPI_ID_0, true);
+
+    /**
+     * Enable ECC region 0 (ACE0)
+     * Default: ACE0 range: 0 ~ 256MB
+     * For current Quad PSRAM, ACE0 is enough
+     */
+    psram_ctrlr_ll_set_pms_region_start_addr(PSRAM_CTRLR_LL_MSPI_ID_0, 0, 0);
+    psram_ctrlr_ll_set_pms_region_size(PSRAM_CTRLR_LL_MSPI_ID_0, 0, 4096);
+    psram_ctrlr_ll_set_pms_region_attr(PSRAM_CTRLR_LL_MSPI_ID_0, 0, PSRAM_CTRLR_LL_PMS_ATTR_WRITABLE | PSRAM_CTRLR_LL_PMS_ATTR_READABLE);
+    psram_ctrlr_ll_enable_pms_region_ecc(PSRAM_CTRLR_LL_MSPI_ID_0, 0, true);
+    ESP_EARLY_LOGI(TAG, "ECC is enabled");
+    s_mspi_ecc_show_info();
+}
+#endif
 
 static void psram_gpio_config(void)
 {
@@ -240,6 +282,9 @@ esp_err_t esp_psram_impl_enable(void)
 {
     psram_gpio_config();
     psram_set_cs_timing();
+#if CONFIG_SPIRAM_ECC_ENABLE
+    s_configure_psram_ecc();
+#endif
 
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     //enter MSPI slow mode to init PSRAM device registers
@@ -330,9 +375,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes)
 
 /**
  * This function is to get the available physical psram size in bytes.
- *
- * When ECC is enabled, the available size will be reduced.
- * On S3 Quad PSRAM, ECC is not enabled for now.
+ * If ECC is enabled, available PSRAM size will be 7/8 times its physical size.
  */
 esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
 {
@@ -340,6 +383,10 @@ esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes)
         return ESP_ERR_INVALID_ARG;
     }
 
+#if CONFIG_SPIRAM_ECC_ENABLE
+    *out_size_bytes = s_psram_size * 7 / 8;
+#else
     *out_size_bytes = s_psram_size;
+#endif
     return (s_psram_size ? ESP_OK : ESP_ERR_INVALID_STATE);
 }

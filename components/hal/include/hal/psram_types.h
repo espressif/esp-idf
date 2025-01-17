@@ -18,7 +18,7 @@ extern "C" {
 typedef enum {
     PSRAM_HAL_CMD_QPI,     /*!< Quad command for psram command */
     PSRAM_HAL_CMD_SPI,     /*!< SPI command for psram command */
-} psram_hal_cmd_mode_t;
+} psram_cmd_mode_t;
 
 #ifdef __cplusplus
 }
