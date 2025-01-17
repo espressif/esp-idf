@@ -62,4 +62,154 @@ menu "Power Supplier"
 
     endmenu
 
+
+    menu "RTC Backup Battery"
+
+        config ESP_VBAT_INIT_AUTO
+            bool "Enable VBAT power supply for RTC battery"
+            default n
+            depends on SOC_VBAT_SUPPORTED
+            help
+                Enable this option to allow the use of a button cell battery to power the RTC (Real-Time Clock) domain.
+                When this option is enabled, the hardware will configure VBAT as the power supply source for the RTC.
+
+                - Ensure a compatible battery (2.5V ~ 3.6V) is connected to the VBAT pin.
+                - The VBAT battery provides power to retain RTC state and keep low-power peripherals active
+                    during deep sleep.
+                - When this option is disabled, the RTC battery input (VBAT) must not be left floating.
+
+        config ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            bool "The battery for RTC battery is a rechargeable battery"
+            default n
+            depends on ESP_VBAT_INIT_AUTO
+            help
+                Select this option if the RTC backup battery used in your design is a rechargeable battery.
+
+                When enabled, the system will configure the RTC battery management circuitry to operate
+                in a mode suitable for charging a rechargeable battery. This includes enabling
+                charging current regulation via resistor and voltage monitoring to ensure safe and efficient charging.
+
+                Use this option carefully to avoid damage to non-rechargeable batteries.
+
+        choice ESP_VBAT_DET_LVL_LOW_SEL
+            prompt "VBAT start charging voltage level"
+            default ESP_VBAT_DET_LVL_LOW_SEL_2
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            help
+                The brownout detector will start charging when the supply voltage drops below the selected threshold.
+                This ensures that the power supply is maintained at a stable level.
+
+            config ESP_VBAT_DET_LVL_LOW_SEL_7
+                bool "2.94V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_6
+                bool "2.88V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_5
+                bool "2.83V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_4
+                bool "2.78V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_3
+                bool "2.73V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_2
+                bool "2.67V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_1
+                bool "2.62V"
+            config ESP_VBAT_DET_LVL_LOW_SEL_0
+                bool "2.57V"
+        endchoice
+
+        choice ESP_VBAT_DET_LVL_HIGH_SEL
+            prompt "VBAT stop charging voltage level"
+            default ESP_VBAT_DET_LVL_HIGH_SEL_7
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            help
+                The brownout detector will stop charging when the supply voltage arrives the selected threshold.
+
+            config ESP_VBAT_DET_LVL_HIGH_SEL_7
+                bool "2.94V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_6
+                bool "2.88V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_5
+                bool "2.83V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_4
+                bool "2.78V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_3
+                bool "2.73V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_2
+                bool "2.67V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_1
+                bool "2.62V"
+            config ESP_VBAT_DET_LVL_HIGH_SEL_0
+                bool "2.57V"
+        endchoice
+
+        choice ESP_VBAT_BROWNOUT_DET_LVL_SEL
+            prompt "VBAT brownout voltage level"
+            default ESP_VBAT_BROWNOUT_DET_LVL_SEL_0
+            depends on ESP_VBAT_INIT_AUTO
+            help
+                The brownout detector will git a brownout signal when vbat brownout detected.
+
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_7
+                bool "2.94V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_6
+                bool "2.88V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_5
+                bool "2.83V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_4
+                bool "2.78V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_3
+                bool "2.73V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_2
+                bool "2.67V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_1
+                bool "2.62V"
+            config ESP_VBAT_BROWNOUT_DET_LVL_SEL_0
+                bool "2.57V"
+        endchoice
+
+        config ESP_VBAT_DET_LVL_LOW
+            int
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default 0 if ESP_VBAT_DET_LVL_LOW_SEL_0
+            default 1 if ESP_VBAT_DET_LVL_LOW_SEL_1
+            default 2 if ESP_VBAT_DET_LVL_LOW_SEL_2
+            default 3 if ESP_VBAT_DET_LVL_LOW_SEL_3
+            default 4 if ESP_VBAT_DET_LVL_LOW_SEL_4
+            default 5 if ESP_VBAT_DET_LVL_LOW_SEL_5
+            default 6 if ESP_VBAT_DET_LVL_LOW_SEL_6
+            default 7 if ESP_VBAT_DET_LVL_LOW_SEL_7
+
+        config ESP_VBAT_DET_LVL_HIGH
+            int
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default 0 if ESP_VBAT_DET_LVL_HIGH_SEL_0
+            default 1 if ESP_VBAT_DET_LVL_HIGH_SEL_1
+            default 2 if ESP_VBAT_DET_LVL_HIGH_SEL_2
+            default 3 if ESP_VBAT_DET_LVL_HIGH_SEL_3
+            default 4 if ESP_VBAT_DET_LVL_HIGH_SEL_4
+            default 5 if ESP_VBAT_DET_LVL_HIGH_SEL_5
+            default 6 if ESP_VBAT_DET_LVL_HIGH_SEL_6
+            default 7 if ESP_VBAT_DET_LVL_HIGH_SEL_7
+
+        config ESP_VBAT_BROWNOUT_DET_LVL
+            int
+            default 0 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_0
+            default 1 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_1
+            default 2 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_2
+            default 3 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_3
+            default 4 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_4
+            default 5 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_5
+            default 6 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_6
+            default 7 if ESP_VBAT_BROWNOUT_DET_LVL_SEL_7
+
+        config ESP_VBAT_CHARGER_CIRCUIT_RESISTOR_VAL
+            int "vbat charger circuit resistor value (ohms), should be multiple of 500"
+            depends on ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            range 1000 8500
+            default 1000
+            help
+                The resistor value of charger circuit.
+
+    endmenu
+
 endmenu

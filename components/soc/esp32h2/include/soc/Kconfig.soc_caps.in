@@ -179,6 +179,10 @@ config SOC_BOD_SUPPORTED
     bool
     default y
 
+config SOC_VBAT_SUPPORTED
+    bool
+    default y
+
 config SOC_APM_SUPPORTED
     bool
     default y
