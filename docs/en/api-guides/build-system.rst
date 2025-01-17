@@ -25,19 +25,19 @@ ESP-IDF makes these components explicit and configurable. To do that, when a pro
 Concepts
 --------
 
-- A "project" is a directory that contains all the files and configuration to build a single "app" (executable), as well as additional supporting elements such as a partition table, data/filesystem partitions, and a bootloader.
+- A ``project`` is a directory that contains all the files and configuration to build a single ``app`` (executable), as well as additional supporting elements such as a partition table, data partitions or filesystem partitions, and a bootloader.
 
-- "Project configuration" is held in a single file called ``sdkconfig`` in the root directory of the project. This configuration file is modified via ``idf.py menuconfig`` to customize the configuration of the project. A single project contains exactly one project configuration.
+- ``Project configuration`` is held in a single file called ``sdkconfig`` in the root directory of the project. This configuration file is modified via ``idf.py menuconfig`` to customize the configuration of the project. A single project contains exactly one project configuration.
 
-- An "app" is an executable that is built by ESP-IDF. A single project will usually build two apps - a "project app" (the main executable, ie your custom firmware) and a "bootloader app" (the initial bootloader program which launches the project app).
+- An ``app`` is an executable that is built by ESP-IDF. A single project will usually build two apps - a "project app" (the main executable, ie your custom firmware) and a "bootloader app" (the initial bootloader program which launches the project app).
 
-- "components" are modular pieces of standalone code that are compiled into static libraries (.a files) and linked to an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
+- ``Components`` are modular pieces of standalone code that are compiled into static libraries (.a files) and linked to an app. Some are provided by ESP-IDF itself, others may be sourced from other places.
 
-- "Target" is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
+- ``Target`` is the hardware for which an application is built. A full list of supported targets in your version of ESP-IDF can be seen by running `idf.py --list-targets`.
 
 Some things are not part of the project:
 
-- "ESP-IDF" is not part of the project. Instead, it is standalone, and linked to the project via the ``IDF_PATH`` environment variable which holds the path of the ``esp-idf`` directory. This allows the ESP-IDF framework to be decoupled from your project.
+- ``ESP-IDF`` is not part of the project. Instead, it is standalone, and linked to the project via the ``IDF_PATH`` environment variable which holds the path of the ``esp-idf`` directory. This allows the ESP-IDF framework to be decoupled from your project.
 
 - The toolchain for compilation is not part of the project. The toolchain should be installed in the system command line PATH.
 
@@ -47,8 +47,8 @@ Using the Build System
 
 .. _idf.py:
 
-``idf.py``
-----------
+idf.py
+------
 
 The ``idf.py`` command-line tool provides a front-end for easily managing your project builds. It manages the following tools:
 
@@ -56,13 +56,13 @@ The ``idf.py`` command-line tool provides a front-end for easily managing your p
 - Ninja_ which builds the project
 - `esptool.py`_ for flashing the target.
 
-You can read more about configuring the build system using ``idf.py`` :doc:`here <tools/idf-py>`.
+For more details about configuring the build system using ``idf.py``, please refer to :doc:`IDF Frontend <tools/idf-py>`.
 
 
 Using CMake Directly
 --------------------
 
-:ref:`idf.py` is a wrapper around CMake_ for convenience. However, you can also invoke CMake directly if you prefer.
+:ref:`idf.py` is a wrapper around CMake_ for convenience. However, you can also invoke CMake directly.
 
 .. highlight:: bash
 
@@ -124,7 +124,6 @@ You can also use an IDE with CMake integration. The IDE will want to know the pa
 When adding custom non-build steps like "flash" to the IDE, it is recommended to execute ``idf.py`` for these "special" commands.
 
 For more detailed information about integrating ESP-IDF with CMake into an IDE, see `Build System Metadata`_.
-
 
 .. _setting-python-interpreter:
 
@@ -621,6 +620,7 @@ Including Components in the Build
 - The ``MINIMAL_BUILD`` :ref:`build property <cmake-build-properties>` can be set to ``ON``, which acts as a shortcut to configure the ``COMPONENTS`` variable to include only the ``main`` component. This means that the build will include only the :ref:`common components <component-common-requirements>`, the ``main`` component, and all dependencies associated with it, both direct and indirect. If the ``COMPONENTS`` variable is defined while the ``MINIMAL_BUILD`` property is enabled, ``COMPONENTS`` will take precedence.
 
 .. note::
+
    Certain features and configurations, such as those provided by esp_psram or espcoredump components, may not be available to your project by default if the minimal list of components is used. When using the ``COMPONENTS`` variable, ensure that all necessary components are included. Similarly, when using the ``MINIMAL_BUILD`` build property, ensure that all required components are specified in the ``REQUIRES`` or ``PRIV_REQUIRES`` argument during component registration.
 
 .. _component-circular-dependencies:
