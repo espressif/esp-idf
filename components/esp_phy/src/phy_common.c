@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdint.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_private/esp_gpio_reserve.h"
@@ -16,6 +17,10 @@
 #include "esp_private/phy.h"
 #include "esp_phy.h"
 #include "esp_attr.h"
+
+#if SOC_TEMP_SENSOR_SUPPORTED && CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+#include "hal/temperature_sensor_ll.h"
+#endif
 
 static const char* TAG = "phy_comm";
 
@@ -347,4 +352,13 @@ uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on)
 
     return phy_ana_i2c_master_burst_config(cmd, size, on ? PHY_I2C_MST_CMD_TYPE_RF_ON : PHY_I2C_MST_CMD_TYPE_RF_OFF);
 }
+
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+void phy_wakeup_from_modem_state_extra_init(void)
+{
+#if SOC_TEMP_SENSOR_SUPPORTED
+    temperature_sensor_ll_enable(true);
+#endif
+}
+#endif
 #endif
