@@ -590,7 +590,6 @@ components/freertos/FreeRTOS-Kernel-SMP/timers.c
 components/hal/ds_hal.c
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
-components/hal/esp32/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32/include/hal/touch_sensor_hal.h
 components/hal/esp32/include/hal/trace_ll.h
 components/hal/esp32c3/hmac_hal.c
@@ -599,19 +598,16 @@ components/hal/esp32c3/include/hal/hmac_hal.h
 components/hal/esp32c3/include/hal/hmac_ll.h
 components/hal/esp32c3/include/hal/mpu_ll.h
 components/hal/esp32c3/include/hal/sha_ll.h
-components/hal/esp32c3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32c3/include/hal/uhci_ll.h
 components/hal/esp32c3/rtc_cntl_hal.c
 components/hal/esp32s2/include/hal/crypto_dma_ll.h
 components/hal/esp32s2/include/hal/dedic_gpio_ll.h
 components/hal/esp32s2/include/hal/mpu_ll.h
 components/hal/esp32s2/include/hal/sha_ll.h
-components/hal/esp32s2/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s2/include/hal/trace_ll.h
 components/hal/esp32s2/include/hal/usb_ll.h
 components/hal/esp32s3/include/hal/mpu_ll.h
 components/hal/esp32s3/include/hal/sha_ll.h
-components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
 components/hal/include/hal/aes_types.h
