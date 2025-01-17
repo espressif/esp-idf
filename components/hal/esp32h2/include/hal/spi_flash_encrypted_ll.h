@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 // The Lowlevel layer for SPI Flash Encryption.
+#pragma once
 
 #include <stdbool.h>
 #include <string.h>
