@@ -587,7 +587,6 @@ components/freertos/FreeRTOS-Kernel-SMP/queue.c
 components/freertos/FreeRTOS-Kernel-SMP/stream_buffer.c
 components/freertos/FreeRTOS-Kernel-SMP/tasks.c
 components/freertos/FreeRTOS-Kernel-SMP/timers.c
-components/hal/aes_hal.c
 components/hal/ds_hal.c
 components/hal/esp32/include/hal/aes_ll.h
 components/hal/esp32/include/hal/mpu_ll.h
@@ -615,7 +614,6 @@ components/hal/esp32s3/include/hal/sha_ll.h
 components/hal/esp32s3/include/hal/spi_flash_encrypted_ll.h
 components/hal/esp32s3/include/hal/uhci_ll.h
 components/hal/esp32s3/include/hal/usb_ll.h
-components/hal/include/hal/aes_hal.h
 components/hal/include/hal/aes_types.h
 components/hal/include/hal/dac_types.h
 components/hal/include/hal/ds_hal.h

@@ -27,6 +27,7 @@
 #include "aes/esp_aes.h"
 #include "aes/esp_aes_gcm.h"
 #include <stdbool.h>
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,6 +35,19 @@ extern "C" {
 
 bool valid_key_length(const esp_aes_context *ctx);
 
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+/**
+ * @brief Default pseudo rounds configs of the AES accelerator
+ */
+typedef enum {
+    ESP_AES_PSEUDO_ROUNDS_DISABLE = 0,
+    ESP_AES_PSEUDO_ROUNDS_LOW,
+    ESP_AES_PSEUDO_ROUNDS_MEDIUM,
+    ESP_AES_PSEUDO_ROUNDS_HIGH,
+} esp_aes_psuedo_rounds_state_t;
+
+void esp_aes_enable_pseudo_rounds(esp_aes_psuedo_rounds_state_t state);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
 
 /**
  * @brief           Run a AES-GCM conversion using DMA
