@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,10 @@
 #if CONFIG_ESP_SYSTEM_USE_EH_FRAME
 #include "esp_private/eh_frame_parser.h"
 #include "esp_private/cache_utils.h"
+#endif
+
+#if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+#include "esp_private/fp_unwind.h"
 #endif
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
@@ -305,6 +309,7 @@ void panic_arch_fill_info(void *frame, panic_info_t *info)
     info->addr = (void *) regs->mepc;
 }
 
+#if !CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
 static void panic_print_basic_backtrace(const void *frame, int core)
 {
     // Basic backtrace
@@ -322,6 +327,7 @@ static void panic_print_basic_backtrace(const void *frame, int core)
         }
     }
 }
+#endif
 
 void panic_print_backtrace(const void *frame, int core)
 {
@@ -333,6 +339,8 @@ void panic_print_backtrace(const void *frame, int core)
     } else {
         esp_eh_frame_print_backtrace(frame);
     }
+#elif CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+    esp_fp_print_backtrace(frame);
 #else
     panic_print_basic_backtrace(frame, core);
 #endif

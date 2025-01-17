@@ -12,6 +12,7 @@ if(CONFIG_IEEE802154_ENABLED)
     list(APPEND srcs "esp_ieee802154.c"
         "driver/esp_ieee802154_ack.c"
         "driver/esp_ieee802154_dev.c"
+        "driver/esp_ieee802154_event.c"
         "driver/esp_ieee802154_frame.c"
         "driver/esp_ieee802154_pib.c"
         "driver/esp_ieee802154_util.c"
@@ -35,5 +36,6 @@ idf_component_register(
     INCLUDE_DIRS "${include}"
     PRIV_INCLUDE_DIRS "${private_include}"
     LDFRAGMENTS linker.lf
-    PRIV_REQUIRES esp_phy esp_timer esp_coex soc hal esp_pm
+    REQUIRES esp_coex
+    PRIV_REQUIRES esp_phy esp_timer soc hal esp_pm
 )

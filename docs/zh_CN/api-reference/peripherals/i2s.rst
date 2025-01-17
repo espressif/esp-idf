@@ -295,7 +295,7 @@ I2S 驱动中的资源可分为三个级别：
 
 电源管理启用（即开启 :ref:`CONFIG_PM_ENABLE`）时，系统将在进入 Light-sleep 前调整或停止 I2S 时钟源，这可能会影响 I2S 信号，从而导致传输或接收的数据无效。
 
-I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。电源锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
+I2S 驱动可以获取电源管理锁，从而防止系统设置更改或时钟源被禁用。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL（若支持）时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。用户通过 I2S 读写时（即调用 :cpp:func:`i2s_channel_read` 或 :cpp:func:`i2s_channel_write`），驱动程序将获取电源管理锁，并在读写完成后释放锁。
 
 .. only:: SOC_I2S_SUPPORT_SLEEP_RETENTION
 

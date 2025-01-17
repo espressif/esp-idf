@@ -32,7 +32,30 @@ typedef struct {
  *
  * @param hal USB WRAP HAL context
  */
-void usb_wrap_hal_init(usb_wrap_hal_context_t *hal);
+void _usb_wrap_hal_init(usb_wrap_hal_context_t *hal);
+
+#if SOC_RCC_IS_INDEPENDENT
+#define usb_wrap_hal_init(...)   _usb_wrap_hal_init(__VA_ARGS__)
+#else
+// Use a macro to wrap the function, force the caller to use it in a critical section
+// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define usb_wrap_hal_init(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_hal_init(__VA_ARGS__);} while(0)
+#endif
+
+/**
+ * @brief Disable USB WRAP
+ *
+ * Disable clock to the peripheral
+ */
+void _usb_wrap_hal_disable(void);
+
+#if SOC_RCC_IS_INDEPENDENT
+#define usb_wrap_hal_disable(...)   _usb_wrap_hal_disable(__VA_ARGS__)
+#else
+// Use a macro to wrap the function, force the caller to use it in a critical section
+// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
+#define usb_wrap_hal_disable(...) do {(void)__DECLARE_RCC_ATOMIC_ENV; _usb_wrap_hal_disable(__VA_ARGS__);} while(0)
+#endif
 
 /* ---------------------------- USB PHY Control  ---------------------------- */
 

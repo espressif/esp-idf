@@ -33,3 +33,35 @@ examples/security/nvs_encryption_hmac:
 examples/security/security_features_app:
   disable:
     - if: IDF_TARGET not in ["esp32c3"]
+
+examples/security/tee/tee_attestation:
+  disable:
+    - if: IDF_TARGET not in ["esp32c6"]
+  depends_components:
+    - esp_tee
+  depends_filepatterns:
+    - examples/security/tee/tee_attestation/**/*
+
+examples/security/tee/tee_basic:
+  disable:
+    - if: IDF_TARGET not in ["esp32c6"]
+  depends_components:
+    - esp_tee
+  depends_filepatterns:
+    - examples/security/tee/tee_basic/**/*
+
+examples/security/tee/tee_secure_ota:
+  disable:
+    - if: IDF_TARGET not in ["esp32c6"]
+  depends_components:
+    - esp_tee
+  depends_filepatterns:
+    - examples/security/tee/tee_secure_ota/**/*
+
+examples/security/tee/tee_secure_storage:
+  disable:
+    - if: IDF_TARGET not in ["esp32c6"]
+  depends_components:
+    - esp_tee
+  depends_filepatterns:
+    - examples/security/tee/tee_secure_storage/**/*

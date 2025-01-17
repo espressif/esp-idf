@@ -331,7 +331,7 @@ typedef struct {
 
 #define PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags) {               \
     .syscntl = {                                                        \
-        .dig_pad_slp_sel = (pd_flags & PMU_SLEEP_PD_TOP) ? 0 : 1,       \
+        .dig_pad_slp_sel = 0,                                           \
         .lp_pad_hold_all = (pd_flags & PMU_SLEEP_PD_LP_PERIPH) ? 1 : 0, \
     }                                                                   \
 }
@@ -508,7 +508,7 @@ typedef struct pmu_sleep_machine_constant {
         .regdma_rf_on_work_time_us      = 70,   \
         .regdma_rf_off_work_time_us     = 23,   \
         .xtal_wait_stable_time_us       = 250,  \
-        .pll_wait_stable_time_us        = 1     \
+        .pll_wait_stable_time_us        = 300   \
     }                                           \
 }
 

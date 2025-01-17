@@ -29,7 +29,6 @@ api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
 api-reference/peripherals/spi_features.rst
 api-reference/peripherals/touch_pad.rst
-api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/sdmmc_host.rst

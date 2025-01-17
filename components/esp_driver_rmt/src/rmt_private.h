@@ -34,14 +34,14 @@
 extern "C" {
 #endif
 
-#if CONFIG_RMT_ISR_IRAM_SAFE || CONFIG_RMT_RECV_FUNC_IN_IRAM
+#if CONFIG_RMT_OBJ_CACHE_SAFE
 #define RMT_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define RMT_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
 // RMT driver object is per-channel, the interrupt source is shared between channels
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_ISR_CACHE_SAFE
 #define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
 #else
 #define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)

@@ -182,8 +182,18 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         } else {
             erase_size = ALIGN_UP(image_size, partition->erase_size);
         }
-        return esp_partition_erase_range(partition, 0, erase_size);
+        esp_err_t err = esp_partition_erase_range(partition, 0, erase_size);
+        if (err != ESP_OK) {
+            return err;
+        }
     }
+
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    if (is_ota_partition(partition)) {
+        esp_ota_invalidate_inactive_ota_data_slot();
+    }
+#endif
+
     return ESP_OK;
 }
 
@@ -955,7 +965,7 @@ esp_err_t esp_ota_get_state_partition(const esp_partition_t *partition, esp_ota_
     return ESP_OK;
 }
 
-esp_err_t esp_ota_erase_last_boot_app_partition(void)
+static esp_err_t erase_last_boot_app_partition(bool skip_app_part_erase)
 {
     esp_ota_select_entry_t otadata[2];
     const esp_partition_t* ota_data_partition = read_otadata(otadata);
@@ -987,18 +997,30 @@ esp_err_t esp_ota_erase_last_boot_app_partition(void)
         return ESP_FAIL;
     }
 
-    esp_err_t err = esp_partition_erase_range(last_boot_app_partition_from_otadata, 0, last_boot_app_partition_from_otadata->size);
-    if (err != ESP_OK) {
-        return err;
+    if (!skip_app_part_erase) {
+        esp_err_t err = esp_partition_erase_range(last_boot_app_partition_from_otadata, 0, last_boot_app_partition_from_otadata->size);
+        if (err != ESP_OK) {
+            return err;
+        }
     }
 
     int sec_id = inactive_otadata;
-    err = esp_partition_erase_range(ota_data_partition, sec_id * ota_data_partition->erase_size, ota_data_partition->erase_size);
+    esp_err_t err = esp_partition_erase_range(ota_data_partition, sec_id * ota_data_partition->erase_size, ota_data_partition->erase_size);
     if (err != ESP_OK) {
         return err;
     }
 
     return ESP_OK;
+}
+
+esp_err_t esp_ota_erase_last_boot_app_partition(void)
+{
+    return erase_last_boot_app_partition(false);
+}
+
+esp_err_t esp_ota_invalidate_inactive_ota_data_slot(void)
+{
+    return erase_last_boot_app_partition(true);
 }
 
 #if SOC_SUPPORT_SECURE_BOOT_REVOKE_KEY && CONFIG_SECURE_BOOT_V2_ENABLED

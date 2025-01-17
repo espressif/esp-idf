@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -104,6 +104,16 @@ static inline void dma2d_ll_reset_register(int group_id)
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define dma2d_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; dma2d_ll_reset_register(__VA_ARGS__)
+
+/**
+ * @brief Check if the bus clock is enabled for the DMA module
+ */
+__attribute__((always_inline))
+static inline bool dma2d_ll_is_bus_clock_enabled(int group_id)
+{
+    (void) group_id;
+    return HP_SYS_CLKRST.soc_clk_ctrl1.reg_dma2d_sys_clk_en;
+}
 
 /**
  * @brief Enable 2D-DMA module
@@ -278,7 +288,7 @@ static inline bool dma2d_ll_rx_is_reset_avail(dma2d_dev_t *dev, uint32_t channel
  * @brief Disable 2D-DMA RX channel via a command
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_rx_disable_cmd(dma2d_dev_t *dev, uint32_t channel, bool disable)
+static inline void dma2d_ll_rx_abort(dma2d_dev_t *dev, uint32_t channel, bool disable)
 {
     volatile dma2d_in_conf0_chn_reg_t *reg = (volatile dma2d_in_conf0_chn_reg_t *)DMA2D_LL_IN_CHANNEL_GET_REG_ADDR(dev, channel, in_conf0);
     reg->in_cmd_disable_chn = disable;
@@ -811,7 +821,7 @@ static inline bool dma2d_ll_tx_is_reset_avail(dma2d_dev_t *dev, uint32_t channel
  * @brief Disable 2D-DMA TX channel via a command
  */
 __attribute__((always_inline))
-static inline void dma2d_ll_tx_disable_cmd(dma2d_dev_t *dev, uint32_t channel, bool disable)
+static inline void dma2d_ll_tx_abort(dma2d_dev_t *dev, uint32_t channel, bool disable)
 {
     dev->out_channel[channel].out_conf0.out_cmd_disable_chn = disable;
 }

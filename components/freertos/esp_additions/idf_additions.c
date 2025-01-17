@@ -47,7 +47,7 @@
 
         /* Allocate memory for the task's stack using the provided memory caps
          * */
-        pxStack = heap_caps_malloc( usStackDepth, ( uint32_t ) uxMemoryCaps );
+        pxStack = heap_caps_malloc( ( ( size_t ) usStackDepth ) * sizeof( StackType_t ), ( uint32_t ) uxMemoryCaps );
 
         if( ( pxTaskBuffer == NULL ) || ( pxStack == NULL ) )
         {

@@ -12,7 +12,7 @@
 
 /* -------------------------------- Private --------------------------------- */
 
-static const usb_utmi_otg_signal_conn_t dwc_fs_otg_signals = {
+static const usb_otg_signal_conn_t dwc_fs_otg_signals = {
     // Inputs
     .iddig          = USB_OTG11_IDDIG_PAD_IN_IDX,
     .avalid         = USB_OTG11_AVALID_PAD_IN_IDX,

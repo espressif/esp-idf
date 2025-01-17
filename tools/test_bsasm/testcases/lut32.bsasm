@@ -1,0 +1,5 @@
+
+cfg lut_width_bits 32
+
+lut 0, -2147483648, 2147483647, 4294967295
+lut 1 #to make it an odd amount of words

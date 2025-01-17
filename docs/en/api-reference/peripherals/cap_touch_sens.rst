@@ -3,7 +3,7 @@ Capacitive Touch Sensor
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
+{IDF_TARGET_TOUCH_SENSOR_VERSION:default="NOT_UPDATED", esp32="v1", esp32s2="v2", esp32s3="v2", esp32p4="v3"}
 
 Introduction
 ---------------
@@ -19,18 +19,45 @@ In-depth design details of touch sensors and firmware development guidelines for
 Overview of Capacitive Touch Sensor Versions
 -----------------------------------------------
 
-+------------------+--------------+------------------------------------------------------------------------+
-| Hardware Version |     Chip     |                        Main Features                                   |
-+==================+==============+========================================================================+
-|        V1        |  ESP32       | Version 1, the channel value decreases when it is touched              |
-+------------------+--------------+------------------------------------------------------------------------+
-|        V2        |  ESP32-S2    | Version 2, the channel value increases when it is touched              |
-|                  |              | Supports waterproof, proximity sensing and sleep wake-up               |
-|                  +--------------+------------------------------------------------------------------------+
-|                  |  ESP32-S3    | Version 2, support proximity measurement done interrupt                |
-+------------------+--------------+------------------------------------------------------------------------+
-|        V3        |  ESP32-P4    | Version 3, support frequency hopping                                   |
-+------------------+--------------+------------------------------------------------------------------------+
++------------------+-----------+---------------------------------------------------------------------------------------+
+| Hardware Version | Chip      | Main Features                                                                         |
++==================+===========+=======================================================================================+
+| V1               | ESP32     | Version 1, the channel value decreases when it is touched                             |
++------------------+-----------+---------------------------------------------------------------------------------------+
+| V2               | ESP32-S2  | Version 2, the channel value increases when it is touched                             |
+|                  |           | Supports hardware filter, benchmark, waterproof, proximity sensing and sleep wake-up  |
+|                  +-----------+---------------------------------------------------------------------------------------+
+|                  | ESP32-S3  | Version 2, support proximity measurement done interrupt                               |
++------------------+-----------+---------------------------------------------------------------------------------------+
+| V3               | ESP32-P4  | Version 3, support frequency hopping                                                  |
++------------------+-----------+---------------------------------------------------------------------------------------+
+
+Measurement Principle
+---------------------
+
+The touch sensor will charge and discharge the touch channel by the internal current or voltage bias. Due to the internal capacitance and the stray capacitance in the circuit, the signals on the touch pins will present as a sawtooth wave. When the finger is approaching or touched on the touch pad, the capacitance of the touch channel increases, which leads to a slower charge and discharge, and a longer sawtooth period.
+
+.. only:: esp32
+
+    The touch sensor charges and discharges the touch channel within a fixed time and counts the number of charge-discharge cycles, and the count result serves as the raw data. The duration of a single charge-discharge measurement can be specified by :cpp:member:`touch_sensor_sample_config_t::charge_times`, and the interval between two measurements can be specified by :cpp:member:`touch_sensor_config_t::meas_interval_us`.
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters.jpg
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        Touch Sensor Working Principle
+
+.. only:: not esp32
+
+    The touch sensor counts the number of clock cycles spent for a fixed number of charge-discharge cycles, and the count result serves as the raw data. The number of charge-discharge cycles for a single measurement can be specified by :cpp:member:`touch_sensor_sample_config_t::charge_duration_ms`, and the interval between two measurements can be specified by :cpp:member:`touch_sensor_config_t::meas_interval_us`.
+
+    .. figure:: ../../../_static/touch_pad-measurement-parameters-version2.png
+        :align: center
+        :alt: Touch Pad - relationship between measurement parameters
+        :figclass: align-center
+
+        Touch Sensor Working Principle
 
 Overview of Touch Sensor Channels
 ------------------------------------
@@ -93,8 +120,8 @@ Categorized by functionality, the APIs of Capacitive Touch Sensor mainly include
   - `Enable and Disable <#touch-enable>`__
   - `Continuous Scan <#touch-conti-scan>`__
   - `Oneshot Scan <#touch-oneshot-scan>`__
-  - `Benchmark Configuration <#touch-benchmark>`__
   - `Read Measurement Data <#touch-read>`__
+  :SOC_TOUCH_SUPPORT_BENCHMARK: - `Benchmark Configuration <#touch-benchmark>`__
   :SOC_TOUCH_SUPPORT_WATERPROOF: - `Waterproof Configuration <#touch-waterproof>`__
   :SOC_TOUCH_SUPPORT_PROX_SENSING: - `Proximity Sensing Configuration <#touch-prox-sensing>`__
   :SOC_TOUCH_SUPPORT_SLEEP_WAKEUP: - `Sleep Wake-up Configuration <#touch-sleep-wakeup>`__
@@ -182,6 +209,14 @@ The filter can help to increase the stability in different use cases. The filter
 
 To deregister the filter, you can call :cpp:func:`touch_sensor_config_filter` again, and set the second parameter (i.e. :cpp:type:`touch_sensor_filter_config_t` pointer) to ``NULL``.
 
+.. only:: esp32
+
+    The touch sensor version {IDF_TARGET_TOUCH_SENSOR_VERSION} does not natively support the hardware filter, but the driver can set up a periodically triggered software filter based on ``esp_timer``. The interval for the software filter can be specified by :cpp:member:`touch_sensor_filter_config_t::interval_ms`. Additionally, the :cpp:member:`touch_sensor_filter_config_t::data_filter_fn` supports to specify a custom filtering function. If there are no special filter requirements, this interface can be set to ``NULL`` to use the default filter in the driver.
+
+.. only:: not esp32
+
+    The touch sensor version {IDF_TARGET_TOUCH_SENSOR_VERSION} supports the hardware filter. The filtering and updating strategy for the benchmark can be configured by :cpp:member:`touch_sensor_filter_config_t::benchmark`, while the filtering of read values can be configured by :cpp:member:`touch_sensor_filter_config_t::data`.
+
 .. code-block:: c
 
     // ...
@@ -268,21 +303,6 @@ With the touch controller enabled, :cpp:func:`touch_sensor_trigger_oneshot_scann
     // Trigger an oneshot scan with timeout 1000 ms
     ESP_ERROR_CHECK(touch_sensor_trigger_oneshot_scanning(sens_handle, 1000));
 
-.. _touch-benchmark:
-
-Benchmark Configuration
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Normally, you don't have to set the benchmark manually, but you can force reset the benchmark to the current smooth value by calling  :cpp:func:`touch_channel_config_benchmark` when necessary.
-
-.. code-block:: c
-
-    touch_chan_benchmark_config_t benchmark_cfg = {
-        // Benchmark operations
-        // ...
-    };
-    ESP_ERROR_CHECK(touch_channel_config_benchmark(chan_handle, &benchmark_cfg));
-
 .. _touch-read:
 
 Read Measurement Data
@@ -300,6 +320,23 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
     uint32_t smooth_data[SAMPLE_NUM] = {};
     // Read the smooth data
     ESP_ERROR_CHECK(touch_channel_read_data(chan_handle, TOUCH_CHAN_DATA_TYPE_SMOOTH, smooth_data));
+
+.. _touch-benchmark:
+
+.. only:: SOC_TOUCH_SUPPORT_BENCHMARK
+
+    Benchmark Configuration
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    Normally, you don't have to set the benchmark manually, but you can force reset the benchmark to the current smooth value by calling  :cpp:func:`touch_channel_config_benchmark` when necessary.
+
+    .. code-block:: c
+
+        touch_chan_benchmark_config_t benchmark_cfg = {
+            // Benchmark operations
+            // ...
+        };
+        ESP_ERROR_CHECK(touch_channel_config_benchmark(chan_handle, &benchmark_cfg));
 
 .. _touch-waterproof:
 
@@ -377,27 +414,32 @@ Call :cpp:func:`touch_channel_read_data` to read the data with different types. 
 
         If you want to read or configure the touch sensor during the sleep, you can turn to the driver ``components/ulp/ulp_riscv/ulp_core/include/ulp_riscv_touch_ulp_core.h`` which based on the :doc:`Ultra Low Power (ULP) Coprocessor <../system/ulp>`.
 
-    - Light sleep wake-up: you need to set :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` to enable the light sleep wake-up by touch sensor. Note that any registered touch channel can wake-up the chip from light sleep.
-    - Deep sleep wake-up: beside setting :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`, you need to specify :cpp:member:`deep_slp_chan` additionally. In order to reduce the power consumption, only the specified channel can wake-up the chip from the deep sleep when RTC_PREI power domain off. And also, the driver supports to store another set of configurations for the deep sleep via :cpp:member:`deep_slp_sens_cfg`, this set of configurations only takes effect during the deep sleep, you can customize the configurations to save more power. The configurations will be reset to the previous set after waking-up from the deep sleep. Please be aware that, not only deep sleep wake-up, but also light sleep wake-up will be enabled when the :cpp:member:`slp_wakeup_lvl` is :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`.
+    .. list::
+
+        - Light sleep wake-up: you need to set :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_LIGHT_SLEEP_WAKEUP` to enable the light sleep wake-up by touch sensor. Note that any registered touch channel can wake-up the chip from light sleep.
+        :esp32: - Deep sleep wake-up: you need to set :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP` to enable the deep sleep wake-up by touch sensor. Note that in version {IDF_TARGET_TOUCH_SENSOR_VERSION}, enabling Deep-sleep wake-up will keep the RTC domain power on during the deep-sleep to maintain the operation of the touch sensor. At this time, any registered touch sensor channels can continue sampling and support waking up from Deep-sleep.
+        :not esp32: - Deep sleep wake-up: beside setting :cpp:member:`slp_wakeup_lvl` to :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`, you need to specify :cpp:member:`deep_slp_chan` additionally. In order to reduce the power consumption, only the specified channel can wake-up the chip from the deep sleep when RTC_PREI power domain off. And also, the driver supports to store another set of configurations for the deep sleep via :cpp:member:`deep_slp_sens_cfg`, this set of configurations only takes effect during the deep sleep, you can customize the configurations to save more power. The configurations will be reset to the previous set after waking-up from the deep sleep. Please be aware that, not only deep sleep wake-up, but also light sleep wake-up will be enabled when the :cpp:member:`slp_wakeup_lvl` is :cpp:enumerator:`TOUCH_DEEP_SLEEP_WAKEUP`.
+
+    .. only:: not esp32
+
+        You can decide whether allow to power down RTC_PERIPH domain during the Deep-sleep by :cpp:member:`touch_sleep_config_t::deep_slp_allow_pd`. If allowed, the RTC_PERIPH domain will be powered down after the chip enters Deep-sleep, and only the specified :cpp:member:`touch_sleep_config_t::deep_slp_chan` can wake-up the chip from Deep-sleep. If not allowed, all enabled touch channels can wake-up the chip from Deep-sleep.
 
     To deregister the sleep wake-up function, you can call :cpp:func:`touch_sensor_config_sleep_wakeup` again, and set the second parameter (i.e. :cpp:type:`touch_sleep_config_t` pointer) to ``NULL``.
 
     .. code-block:: c
 
-        touch_sleep_config_t light_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,
-        };
+        touch_sleep_config_t light_slp_cfg = TOUCH_SENSOR_DEFAULT_LSLP_CONFIG();
         // Register the light sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &light_slp_cfg));
         // ...
         // Deregister the light sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, NULL));
-        touch_sleep_config_t deep_slp_cfg = {
-            .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,
-            .deep_slp_chan = dslp_chan_handle,
-            // Other deep sleep configurations
-            // ...
-        };
+        // Default Deep-sleep wake-up configurations: RTC_PERIPH will keep power on during the Deep-sleep,
+        // All enabled touch channel can wake-up the chip from Deep-sleep
+        touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_CONFIG();
+        // Default Deep-sleep wake-up power down configurations: RTC_PERIPH will be powered down during the Deep-sleep,
+        // only the specified sleep pad can wake-up the chip from Deep-sleep
+        // touch_sleep_config_t deep_slp_cfg = TOUCH_SENSOR_DEFAULT_DSLP_PD_CONFIG(sleep_channel, slp_chan_thresh1, ...);
         // Register the deep sleep wake-up
         ESP_ERROR_CHECK(touch_sensor_config_sleep_wakeup(sens_handle, &deep_slp_cfg));
 
@@ -435,11 +477,28 @@ Application Examples
 
     - :example:`peripherals/touch_sensor/touch_sens_basic` demonstrates how to register touch channels and read the data, including hardware requirements and project configuration instructions.
 
+Application Notes
+-----------------
+
+Touch Sensor Power Consumption Issues
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Due to the capacitive charging and discharging operation in the touch sensor measurements, it is a relatively high power-consuming peripheral. In applications with high power consumption requirements, the following methods can be helpful to reduce the power consumption.
+
+.. list::
+
+    - Reduce the number of touch channels: Multiple functions (such as single-press, double-press, long press, etc.) can be multiplexed on the same channel, thereby reducing the number of touch sensors.
+    - Increase the measurement interval: By increasing the measurement interval :cpp:member:`touch_sensor_config_t::meas_interval_us`, the measurement frequency will be reduced, thereby lowering down the power consumption.
+    :esp32: - Reduce single measurement duration: By decreasing the single measurement duration :cpp:member:`touch_sensor_sample_config_t::charge_duration_ms`, the number of charging and discharging cycles is reduced, resulting in lower power consumption.
+    :not esp32: - Reduce single measurement charging and discharging cycles: By lowering down the single measurement charging and discharging cycles :cpp:member:`touch_sensor_sample_config_t::charge_times`, power consumption will be decreased.
+    :esp32s2 or esp32s3: - Set the current bias type to self-bias: By configuring :cpp:member:`touch_sensor_sample_config_t::bias_type` to :cpp:enumerator:`touch_bias_type_t::TOUCH_BIAS_TYPE_SELF` to use self-bias, which is more power-saving but less stable.
+    :esp32 or esp32s2 or esp32s3: - Lower down the charging and discharging amplitudes: :cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_l` and :cpp:member:`touch_sensor_sample_config_t::charge_volt_lim_h` can specify the lower voltage limit during the discharging and the upper voltage limit during the charging. Reducing both voltage limitations and the voltage error between them can also decrease the power consumption.
+    :esp32 or esp32s2 or esp32s3: - Reduce the current bias intensity: Lowering down :cpp:member:`touch_channel_config_t::charge_speed` (i.e., the current magnitude of the current bias) can help to reduce the power consumption.
+    :esp32p4: - Lower down the LDO voltage biasing intensity: Decreasing :cpp:member:`touch_channel_config_t::bias_volt` can reduce the power consumption.
+
 API Reference
 -------------
 
-.. only:: esp32p4 or esp32s2 or esp32s3
-
-    .. include-build-file:: inc/touch_sens.inc
-    .. include-build-file:: inc/touch_sens_types.inc
-    .. include-build-file:: inc/touch_version_types.inc
+.. include-build-file:: inc/touch_sens.inc
+.. include-build-file:: inc/touch_sens_types.inc
+.. include-build-file:: inc/touch_version_types.inc

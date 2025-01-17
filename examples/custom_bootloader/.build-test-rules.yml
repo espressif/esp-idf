@@ -1,0 +1,6 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/custom_bootloader/bootloader_multiboot:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32s3", "esp32c3"]
+      reason: Testing on two diff architectures is sufficient

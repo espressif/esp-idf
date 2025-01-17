@@ -983,7 +983,12 @@ int crypto_pk_write_formatted_pubkey_der(mbedtls_pk_context *key, unsigned char 
 
     c = buf + size;
 
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_pk_write_pubkey_formatted(&c, buf, key, format));
+    ret = mbedtls_pk_write_pubkey_formatted(&c, buf, key, format);
+
+    if (ret < 0) {
+        return ret;
+    }
+    MBEDTLS_ASN1_CHK_ADD(len, ret);
 
     if (c - buf < 1) {
         return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);

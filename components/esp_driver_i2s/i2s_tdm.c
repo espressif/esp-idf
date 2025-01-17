@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,6 +107,10 @@ static esp_err_t i2s_tdm_set_slot(i2s_chan_handle_t handle, const i2s_tdm_slot_c
     handle->total_slot = slot_cfg->total_slot < max_slot_num ? max_slot_num : slot_cfg->total_slot;
     // At least two slots in a frame if not using PCM short format
     handle->total_slot = ((handle->total_slot < 2) && (slot_cfg->ws_width != 1)) ? 2 : handle->total_slot;
+    uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
+    ESP_RETURN_ON_FALSE(handle->total_slot * slot_bits <= I2S_LL_SLOT_FRAME_BIT_MAX, ESP_ERR_INVALID_ARG, TAG,
+                        "total slots(%"PRIu32") * slot_bit_width(%"PRIu32") exceeds the maximum %d",
+                        handle->total_slot, slot_bits, (int)I2S_LL_SLOT_FRAME_BIT_MAX);
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
@@ -247,6 +251,13 @@ esp_err_t i2s_channel_init_tdm_mode(i2s_chan_handle_t handle, const i2s_tdm_conf
 #endif
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
+#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
+    if (tdm_cfg->clk_cfg.clk_src == I2S_CLK_SRC_APLL) {
+        /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
+         * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
+        pm_type = ESP_PM_NO_LIGHT_SLEEP;
+    }
+#endif // SOC_I2S_SUPPORTS_APLL
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_type, 0, "i2s_driver", &handle->pm_lock), TAG, "I2S pm lock create failed");
 #endif
 
@@ -295,8 +306,10 @@ esp_err_t i2s_channel_reconfig_tdm_clock(i2s_chan_handle_t handle, const i2s_tdm
     if (tdm_cfg->clk_cfg.clk_src != clk_cfg->clk_src) {
         ESP_GOTO_ON_ERROR(esp_pm_lock_delete(handle->pm_lock), err, TAG, "I2S delete old pm lock failed");
         esp_pm_lock_type_t pm_type = ESP_PM_APB_FREQ_MAX;
-#if SOC_I2S_SUPPORTS_APLL
+#if SOC_I2S_SUPPORTS_APLL && SOC_I2S_HW_VERSION_2
         if (clk_cfg->clk_src == I2S_CLK_SRC_APLL) {
+            /* Only I2S HW 2 supports to adjust APB frequency while using APLL clock source
+             * HW 1 will have timing issue because the DMA and I2S are under different clock domains */
             pm_type = ESP_PM_NO_LIGHT_SLEEP;
         }
 #endif // SOC_I2S_SUPPORTS_APLL

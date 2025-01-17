@@ -17,7 +17,7 @@ examples/ethernet/basic:
 
 examples/ethernet/iperf:
   disable_test:
-    - if: IDF_TARGET not in ["esp32"]
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
       temporary: true
       reason: lack of runners
   depends_components:
@@ -31,6 +31,7 @@ examples/ethernet/iperf:
     - cmd_system
     - ethernet_init
     - protocol_examples_common
+
 examples/ethernet/ptp:
   enable:
     - if: SOC_EMAC_IEEE1588V2_SUPPORTED == 1

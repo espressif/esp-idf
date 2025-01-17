@@ -15,9 +15,8 @@
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
 #include "esp_intr_alloc.h"
-#include "driver/rtc_io.h"
 #include "esp_private/rtc_ctrl.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/touch_sensor_legacy_types.h"
 #include "hal/touch_sensor_hal.h"
 
@@ -121,11 +120,7 @@ esp_err_t touch_pad_io_init(touch_pad_t touch_num)
 {
     TOUCH_CHANNEL_CHECK(touch_num);
     gpio_num_t gpio_num = TOUCH_GET_IO_NUM(touch_num);
-    rtc_gpio_init(gpio_num);
-    rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
-    rtc_gpio_pulldown_dis(gpio_num);
-    rtc_gpio_pullup_dis(gpio_num);
-    return ESP_OK;
+    return gpio_config_as_analog(gpio_num);
 }
 
 esp_err_t touch_pad_fsm_start(void)

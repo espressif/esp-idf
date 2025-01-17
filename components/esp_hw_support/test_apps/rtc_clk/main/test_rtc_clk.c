@@ -29,22 +29,9 @@
 #include "esp_system.h"
 #include "esp_private/esp_clk.h"
 
-#if CONFIG_IDF_TARGET_ESP32
-#include "esp32/rtc.h"
-#include "esp32/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rtc.h"
-#include "esp32s2/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rtc.h"
-#include "esp32s3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rtc.h"
-#include "esp32c3/rom/rtc.h"
-#elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rtc.h"
-#include "esp32c2/rom/rtc.h"
-#endif
+#include "esp_rtc_time.h"
+#include "rom/rtc.h"
+
 
 // ESP32C2 does not support SLOW_CLK_32K_XTAL, so no need to test related test cases
 // Please notice this when enabling the rtc_clk test for ESP32C2!

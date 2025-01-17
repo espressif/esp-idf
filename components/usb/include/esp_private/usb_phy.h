@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,12 +54,16 @@ typedef enum {
  * @brief USB external PHY IO pins configuration structure
  */
 typedef struct {
+    // Inputs
     int vp_io_num;             /**< GPIO pin to USB_EXTPHY_VP_IDX */
     int vm_io_num;             /**< GPIO pin to USB_EXTPHY_VM_IDX */
     int rcv_io_num;            /**< GPIO pin to USB_EXTPHY_RCV_IDX */
+    // Outputs
+    int suspend_n_io_num;      /**< GPIO pin to USB_EXTPHY_SUSPND_IDX */
     int oen_io_num;            /**< GPIO pin to USB_EXTPHY_OEN_IDX */
     int vpo_io_num;            /**< GPIO pin to USB_EXTPHY_VPO_IDX */
     int vmo_io_num;            /**< GPIO pin to USB_EXTPHY_VMO_IDX */
+    int fs_edge_sel_io_num;    /**< GPIO pin to USB_EXTPHY_SPEED_IDX */
 } usb_phy_ext_io_conf_t;
 
 /**
@@ -101,14 +105,15 @@ typedef struct phy_context_t *usb_phy_handle_t;    /**< USB PHY context handle *
  *
  * This function will enable the OTG Controller
  *
- * @param[in] config USB PHY configurtion struct
+ * @param[in]  config     USB PHY configuration struct
  * @param[out] handle_ret USB PHY context handle
  *
  * @return
- *     - ESP_OK Success
- *     - ESP_FAIL USB PHY init error.
- *     - ESP_ERR_INVALID_STATE USB PHY not installed.
- *     - ESP_ERR_NO_MEM USB_OTG installation failed due to no mem.
+ *     - ESP_OK                 Success
+ *     - ESP_ERR_INVALID_STATE  USB PHY already initialized.
+ *     - ESP_ERR_NO_MEM USB_OTG Installation failed due to no mem.
+ *     - ESP_ERR_NOT_SUPPORTED  Selected PHY is not supported on this target.
+ *     - ESP_ERR_INVALID_ARG    Invalid input argument.
  */
 esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_ret);
 

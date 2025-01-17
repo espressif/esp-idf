@@ -58,6 +58,18 @@ void esp_cache_err_get_panic_info(esp_cache_err_info_t *err_info);
  */
 bool esp_cache_err_has_active_err(void);
 
+#if SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
+/**
+ * @brief Saves and clears active access errors
+ *
+ * @note Some access errors needs to be cleared to allow the cache to operate again,
+ *       otherwise accessing e.g rodata from flash might give invalid data
+ *
+ */
+void esp_cache_err_acs_save_and_clr(void);
+
+#endif //SOC_CACHE_ACS_INVALID_STATE_ON_PANIC
+
 #ifdef __cplusplus
 }
 #endif

@@ -130,9 +130,6 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit);
 /**
  * @brief Set glitch filter for PCNT unit
  *
- * @note The glitch filter module is clocked from APB, and APB frequency can be changed during DFS, which in return make the filter out of action.
- *       So this function will lazy-install a PM lock internally when the power management is enabled. With this lock, the APB frequency won't be changed.
- *       The PM lock can be uninstalled in `pcnt_del_unit()`.
  * @note This function should be called when the PCNT unit is in the init state (i.e. before calling `pcnt_unit_enable()`)
  *
  * @param[in] unit PCNT unit handle created by `pcnt_new_unit()`

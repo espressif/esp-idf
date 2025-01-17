@@ -377,6 +377,18 @@ static inline void parlio_ll_rx_update_config(parl_io_dev_t *dev)
     while (dev->reg_update.rx_reg_update);
 }
 
+/**
+ * @brief Get the RX fifo cycle count
+ *
+ * @param dev Parallel IO register base address
+ * @return
+ *        - RX fifo cycle count
+ */
+static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
+{
+    return dev->rx_st0.rx_cnt;
+}
+
 ///////////////////////////////////TX Unit///////////////////////////////////////
 
 /**
@@ -488,8 +500,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)

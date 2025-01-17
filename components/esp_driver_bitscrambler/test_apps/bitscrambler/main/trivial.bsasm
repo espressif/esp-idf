@@ -1,0 +1,11 @@
+# Example bitscrambler program. Does nothing but forward all bytes.
+
+cfg trailing_bytes 12			# Let M0/M1 empty when EOF on input is found
+cfg prefetch true				# We expect M0/M1 to be filled
+cfg lut_width_bits 8			# Not really applicable here
+
+loop:
+	set 0..31 0..31,
+	write 32,
+	read 32,
+	jmp loop

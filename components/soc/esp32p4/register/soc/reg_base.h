@@ -178,7 +178,7 @@
 #define DR_REG_TIMERGROUP1_BASE                 DR_REG_TIMG1_BASE
 #define DR_REG_I2S_BASE                         DR_REG_I2S0_BASE
 #define DR_REG_USB_SERIAL_JTAG_BASE             DR_REG_USB2JTAG_BASE
-#define DR_REG_INTERRUPT_MATRIX_BASE            DR_REG_INTR_BASE
+#define DR_REG_INTMTX_BASE                      DR_REG_INTR_BASE
 #define DR_REG_SOC_ETM_BASE                     DR_REG_ETM_BASE
 #define DR_REG_MCPWM_BASE                       DR_REG_MCPWM0_BASE
 #define DR_REG_PARL_IO_BASE                     DR_REG_PARIO_BASE

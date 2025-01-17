@@ -63,6 +63,7 @@ TEST_CASE("LDO channel acquire and release (adjustable)", "[LDO]")
 
     // can change voltage for an adjustable channel
     TEST_ESP_OK(esp_ldo_channel_adjust_voltage(success_ldo_chan, 2500));
+    TEST_ESP_OK(esp_ldo_channel_adjust_voltage(success_ldo_chan, 3300));
     TEST_ESP_OK(esp_ldo_release_channel(success_ldo_chan));
 }
 

@@ -545,6 +545,15 @@ void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num,
 #endif
 #endif  // SOC_GPIO_SUPPORT_PIN_HYS_FILTER
 
+/**
+ * @brief Helper function to disconnect internal circuits from an GPIO in sleep mode.
+ *        This function disables input, output, pullup, pulldown for an GPIO in sleep mode.
+ *
+ * @param hal Context of the HAL layer
+ * @param gpio_num GPIO number
+ */
+void gpio_hal_isolate_in_sleep(gpio_hal_context_t *hal, uint32_t gpio_num);
+
 #ifdef __cplusplus
 }
 #endif

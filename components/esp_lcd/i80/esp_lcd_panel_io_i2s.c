@@ -666,7 +666,7 @@ static esp_err_t i2s_lcd_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     // create pm lock based on different clock source
     // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
 #endif
     return ESP_OK;
 }

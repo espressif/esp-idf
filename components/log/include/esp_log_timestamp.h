@@ -7,10 +7,21 @@
 #pragma once
 
 #include <stdint.h>
+#include "esp_log_config.h"
+#include "sdkconfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** @cond */
+// Determines whether esp_log() includes code to handle timestamp.
+#if (!BOOTLOADER_BUILD && CONFIG_LOG_TIMESTAMP_SUPPORT) || (BOOTLOADER_BUILD && CONFIG_BOOTLOADER_LOG_TIMESTAMP_SUPPORT)
+#define ESP_LOG_SUPPORT_TIMESTAMP                    (1)
+#else
+#define ESP_LOG_SUPPORT_TIMESTAMP                    (0)
+#endif
+/** @endcond */
 
 /**
  * @brief Function which returns timestamp to be used in log output

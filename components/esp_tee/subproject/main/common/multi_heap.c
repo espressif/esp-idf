@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <stdio.h>
 #include "tlsf.h"
 #include "tlsf_block_functions.h"
 #include "multi_heap.h"

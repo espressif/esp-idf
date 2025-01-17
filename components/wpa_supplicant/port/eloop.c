@@ -17,6 +17,7 @@
 #include "list.h"
 #include "eloop.h"
 #include "esp_wifi_driver.h"
+#include "rom/ets_sys.h"
 
 struct eloop_timeout {
     struct dl_list list;

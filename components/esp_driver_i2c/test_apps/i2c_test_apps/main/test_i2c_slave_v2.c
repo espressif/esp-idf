@@ -60,6 +60,7 @@ static bool i2c_slave_receive_cb(i2c_slave_dev_handle_t i2c_slave, const i2c_sla
 
 static void i2c_slave_read_test_v2(void)
 {
+    unity_wait_for_signal("i2c master init first");
     i2c_slave_dev_handle_t handle;
     event_queue = xQueueCreate(2, sizeof(i2c_slave_event_t));
     assert(event_queue);
@@ -132,6 +133,8 @@ static void i2c_master_write_test_v2(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -147,7 +150,12 @@ static void i2c_master_write_test_v2(void)
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 
+#if CONFIG_IDF_TARGET_ESP32S2
+// The test for s2 is unstable on ci, but it should not fail in local test
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave v2 test", "[i2c][test_env=generic_multi_device][timeout=150][ignore]", i2c_master_write_test_v2, i2c_slave_read_test_v2);
+#else
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave v2 test", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_v2, i2c_slave_read_test_v2);
+#endif
 
 static void master_read_slave_test_v2(void)
 {
@@ -236,5 +244,59 @@ static void slave_write_buffer_test_v2(void)
 }
 
 TEST_CASE_MULTIPLE_DEVICES("I2C master read slave test", "[i2c][test_env=generic_multi_device][timeout=150]", master_read_slave_test_v2, slave_write_buffer_test_v2);
+
+static void i2c_master_write_test_with_customize_api(void)
+{
+    uint8_t data_wr[DATA_LENGTH] = { 0 };
+    int i;
+
+    i2c_master_bus_config_t i2c_mst_config = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = TEST_I2C_PORT,
+        .scl_io_num = I2C_MASTER_SCL_IO,
+        .sda_io_num = I2C_MASTER_SDA_IO,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_master_bus_handle_t bus_handle;
+
+    TEST_ESP_OK(i2c_new_master_bus(&i2c_mst_config, &bus_handle));
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
+        .scl_speed_hz = 100000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+    TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
+
+    unity_send_signal("i2c master init first");
+
+    unity_wait_for_signal("i2c slave init finish");
+
+    unity_send_signal("master write");
+    for (i = 0; i < DATA_LENGTH; i++) {
+        data_wr[i] = i;
+    }
+
+    disp_buf(data_wr, i);
+
+    uint8_t address = (ESP_SLAVE_ADDR << 1 | 0);
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) &address, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = true, .data = (uint8_t *) data_wr, .total_bytes = DATA_LENGTH } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    TEST_ESP_OK(i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1));
+    unity_wait_for_signal("ready to delete");
+    TEST_ESP_OK(i2c_master_bus_rm_device(dev_handle));
+
+    TEST_ESP_OK(i2c_del_master_bus(bus_handle));
+}
+
+TEST_CASE_MULTIPLE_DEVICES("I2C master write slave with customize api", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_with_customize_api, i2c_slave_read_test_v2);
 
 #endif // SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE

@@ -849,3 +849,84 @@ TEST_CASE("Test bootloader_common_get_sha256_of_partition returns ESP_ERR_IMAGE_
     TEST_ESP_ERR(ESP_ERR_IMAGE_INVALID, bootloader_common_get_sha256_of_partition(other_app->address, other_app->size, other_app->type, sha_256_other_app));
     TEST_ASSERT_EQUAL_MEMORY_MESSAGE(sha_256_cur_app, sha_256_other_app, sizeof(sha_256_cur_app), "must be the same");
 }
+
+static void test_rollback3(void)
+{
+    uint8_t boot_count = get_boot_count_from_nvs();
+    boot_count++;
+    set_boot_count_in_nvs(boot_count);
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    const esp_partition_t* update_partition = NULL;
+    switch (boot_count) {
+        case 2:
+            ESP_LOGI(TAG, "Factory");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_FACTORY, cur_app->subtype);
+            update_partition = app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 3:
+            ESP_LOGI(TAG, "OTA0");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_0, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            update_partition = app_update();
+            reboot_as_deep_sleep();
+            break;
+        case 4:
+            ESP_LOGI(TAG, "OTA1");
+            TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+            TEST_ESP_OK(esp_ota_mark_app_valid_cancel_rollback());
+
+            update_partition = esp_ota_get_next_update_partition(NULL);
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+            // two partitions are valid
+            TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+            esp_ota_img_states_t ota_state;
+            TEST_ESP_OK(esp_ota_get_state_partition(update_partition, &ota_state));
+            TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+#endif
+
+            esp_ota_handle_t update_handle = 0;
+            TEST_ESP_OK(esp_ota_begin(update_partition, OTA_SIZE_UNKNOWN, &update_handle));
+
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+            // After esp_ota_begin, the only one partition is valid
+            // ota data slots do not have an entry about the update_partition.
+            TEST_ESP_ERR(ESP_ERR_NOT_FOUND, esp_ota_get_state_partition(update_partition, &ota_state));
+#endif
+            copy_app_partition(update_handle, get_running_firmware());
+            TEST_ESP_OK(esp_ota_end(update_handle));
+            // esp_ota_set_boot_partition is not called, so the running app will not be changed after reboot
+            reboot_as_deep_sleep();
+            break;
+        default:
+            erase_ota_data();
+            TEST_FAIL_MESSAGE("Unexpected stage");
+            break;
+    }
+}
+
+static void test_rollback3_1(void)
+{
+    set_boot_count_in_nvs(5);
+    uint8_t boot_count = get_boot_count_from_nvs();
+    esp_ota_img_states_t ota_state = 0x5555AAAA;
+    ESP_LOGI(TAG, "boot count %d", boot_count);
+    const esp_partition_t *cur_app = get_running_firmware();
+    ESP_LOGI(TAG, "OTA1");
+    TEST_ASSERT_EQUAL(ESP_PARTITION_SUBTYPE_APP_OTA_1, cur_app->subtype);
+    TEST_ESP_OK(esp_ota_get_state_partition(cur_app, &ota_state));
+    TEST_ASSERT_EQUAL(ESP_OTA_IMG_VALID, ota_state);
+
+    TEST_ASSERT_NULL(esp_ota_get_last_invalid_partition());
+    const esp_partition_t* next_update_partition = esp_ota_get_next_update_partition(NULL);
+    TEST_ASSERT_NOT_NULL(next_update_partition);
+#ifdef CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE
+    // ota data slots do not have an entry about the next_update_partition.
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, esp_ota_get_state_partition(next_update_partition, &ota_state));
+#endif
+    erase_ota_data();
+}
+
+TEST_CASE_MULTIPLE_STAGES("Test rollback. Updated partition invalidated after esp_ota_begin", "[app_update][timeout=90][reset=DEEPSLEEP_RESET, DEEPSLEEP_RESET, DEEPSLEEP_RESET, SW_CPU_RESET]", start_test, test_rollback3, test_rollback3, test_rollback3, test_rollback3_1);

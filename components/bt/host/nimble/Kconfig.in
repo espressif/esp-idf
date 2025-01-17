@@ -177,7 +177,7 @@ config BT_NIMBLE_SMP_ID_RESET
     default n
     help
         There are tracking risks associated with using a fixed or static IRK.
-        If enabled this option, Bluedroid will assign a new randomly-generated IRK
+        If enabled this option, NimBLE will assign a new randomly-generated IRK
         when all pairing and bonding records are deleted. This would decrease the ability
         of a previously paired peer to be used to determine whether a device
         with which it previously shared an IRK is within range.
@@ -1072,6 +1072,15 @@ config BT_NIMBLE_HOST_QUEUE_CONG_CHECK
         When scanning and scan duplicate is not enabled, if there are a lot of adv packets around
         or application layer handling adv packets is slow, it will cause the controller memory
         to run out. if enabled, adv packets will be lost when host queue is congested.
+
+config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
+    bool "Gatt-proc preemption protect check"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        When BLE and Wireless protocol/IEEE 802.15.4 operate in coexistence, BLE preemption
+        can disrupt the GATT context,causing the service discovery callback to not be invoked.
+        A temporary list is maintained to preserve the GATT context and use it in case of preemption.
 
 menu "Host-controller Transport"
     config BT_NIMBLE_TRANSPORT_UART

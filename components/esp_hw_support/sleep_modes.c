@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,7 @@
 #include "soc/spi_pins.h"
 #include "soc/chip_revision.h"
 #include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "hal/efuse_hal.h"
 #include "hal/rtc_io_hal.h"
 #include "hal/clk_tree_hal.h"
@@ -56,24 +57,24 @@
 #include "soc/rtc.h"
 #include "regi2c_ctrl.h"    //For `REGI2C_ANA_CALI_PD_WORKAROUND`, temp
 
-#include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/wdt_hal.h"
 #include "hal/uart_hal.h"
 #if SOC_TOUCH_SENSOR_SUPPORTED
-#include "hal/touch_sensor_hal.h"
 #include "hal/touch_sens_hal.h"
 #endif
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
+#include "esp_private/cache_utils.h"
 #include "esp_private/brownout.h"
 #include "esp_private/sleep_console.h"
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/sleep_modem.h"
+#include "esp_private/sleep_usb.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
@@ -302,7 +303,7 @@ static void ext0_wakeup_prepare(void);
 static void ext1_wakeup_prepare(void);
 #endif
 static esp_err_t timer_wakeup_prepare(int64_t sleep_duration);
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void);
 #endif
 #if SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP && SOC_DEEP_SLEEP_SUPPORTED
@@ -493,7 +494,7 @@ static int s_cache_suspend_cnt = 0;
 static void IRAM_ATTR suspend_cache(void) {
     s_cache_suspend_cnt++;
     if (s_cache_suspend_cnt == 1) {
-        cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+        spi_flash_disable_cache(esp_cpu_get_core_id(), NULL);
     }
 }
 
@@ -502,7 +503,7 @@ static void IRAM_ATTR resume_cache(void) {
     s_cache_suspend_cnt--;
     assert(s_cache_suspend_cnt >= 0 && DRAM_STR("cache resume doesn't match suspend ops"));
     if (s_cache_suspend_cnt == 0) {
-        cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+        spi_flash_restore_cache(esp_cpu_get_core_id(), 0);
     }
 }
 
@@ -667,6 +668,11 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t pd_flags, bool deep_s
         // Only avoid USJ pad leakage here, USB OTG pad leakage is prevented through USB Host driver.
         sleep_console_usj_pad_backup_and_disable();
 #endif
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+        if (!(pd_flags & PMU_SLEEP_PD_CNNT)) {
+            sleep_usb_otg_phy_backup_and_disable();
+        }
+#endif
 #if CONFIG_MAC_BB_PD
         mac_bb_power_down_cb_execute();
 #endif
@@ -715,6 +721,11 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
 
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
+#endif
+#if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD
+    if (!(pd_flags & PMU_SLEEP_PD_CNNT)) {
+        sleep_usb_otg_phy_restore();
+    }
 #endif
     sar_periph_ctrl_power_enable();
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
@@ -865,7 +876,8 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
 
     misc_modules_sleep_prepare(pd_flags, deep_sleep);
 
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
+    bool keep_rtc_power_on = false;
     if (deep_sleep) {
         if (s_config.wakeup_triggers & RTC_TOUCH_TRIG_EN) {
             touch_wakeup_prepare();
@@ -873,22 +885,24 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags, esp_sleep_mode_t m
             /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
              * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely.
              */
-            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
+            keep_rtc_power_on = true;
+#elif CONFIG_IDF_TARGET_ESP32P4
+            /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
+             * triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version.
+             */
+            if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+                keep_rtc_power_on = true;
+            }
 #endif
         }
     } else {
         /* In light sleep, the RTC_PERIPH power domain should be in the power-on state (Power on the touch circuit in light sleep),
          * otherwise the touch sensor FSM will be cleared, causing touch sensor false triggering.
          */
-        bool keep_rtc_power_on = touch_ll_is_fsm_repeated_timer_enabled();
-        if (keep_rtc_power_on) { // Check if the touch sensor is working properly.
-            pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
-        }
+        keep_rtc_power_on |= touch_ll_is_fsm_repeated_timer_enabled();
     }
-#elif CONFIG_IDF_TARGET_ESP32P4
-    /* Due to esp32p4 eco0 hardware bug, if LP peripheral power domain is powerdowned in sleep, there will be a possibility of
-       triggering the EFUSE_CRC reset, so disable the power-down of this power domain on lightsleep for ECO0 version. */
-    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+    /* Whether need to keep RTC_PERIPH power on eventually */
+    if (keep_rtc_power_on) {
         pd_flags &= ~RTC_SLEEP_PD_RTC_PERIPH;
     }
 #endif
@@ -1718,14 +1732,11 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
     return ESP_OK;
 }
 
-#if SOC_TOUCH_SENSOR_VERSION >= 2
+#if SOC_TOUCH_SENSOR_SUPPORTED
 static void touch_wakeup_prepare(void)
 {
     touch_hal_prepare_deep_sleep();
 }
-#endif
-
-#if SOC_TOUCH_SENSOR_SUPPORTED
 
 esp_err_t esp_sleep_enable_touchpad_wakeup(void)
 {
@@ -1744,18 +1755,18 @@ esp_err_t esp_sleep_enable_touchpad_wakeup(void)
     return ESP_OK;
 }
 
-touch_pad_t esp_sleep_get_touchpad_wakeup_status(void)
+int esp_sleep_get_touchpad_wakeup_status(void)
 {
     if (esp_sleep_get_wakeup_cause() != ESP_SLEEP_WAKEUP_TOUCHPAD) {
-        return TOUCH_PAD_MAX;
+        return -1;
     }
-    touch_pad_t pad_num;
-#if SOC_TOUCH_SENSOR_VERSION == 3
-    touch_ll_sleep_get_channel_num((uint32_t *)(&pad_num));
+    uint32_t chan_num;
+#if SOC_TOUCH_SENSOR_VERSION == 1
+    touch_ll_get_active_channel_mask(&chan_num);
 #else
-    touch_hal_get_wakeup_status(&pad_num);
+    touch_ll_sleep_get_channel_num(&chan_num);
 #endif
-    return pad_num;
+    return (int)chan_num;
 }
 
 #endif // SOC_TOUCH_SENSOR_SUPPORTED
@@ -1924,7 +1935,7 @@ static void ext1_wakeup_prepare(void)
 {
     // Configure all RTC IOs selected as ext1 wakeup inputs
     uint32_t rtc_gpio_mask = s_config.ext1_rtc_gpio_mask;
-    for (int gpio = 0; gpio < GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
+    for (int gpio = 0; gpio < SOC_GPIO_PIN_COUNT && rtc_gpio_mask != 0; ++gpio) {
         int rtc_pin = rtc_io_number_get(gpio);
         if ((rtc_gpio_mask & BIT(rtc_pin)) == 0) {
             continue;
@@ -1973,7 +1984,7 @@ uint64_t esp_sleep_get_ext1_wakeup_status(void)
     uint32_t status = rtc_hal_ext1_get_wakeup_status();
     // Translate bit map of RTC IO numbers into the bit map of GPIO numbers
     uint64_t gpio_mask = 0;
-    for (int gpio = 0; gpio < GPIO_PIN_COUNT; ++gpio) {
+    for (int gpio = 0; gpio < SOC_GPIO_PIN_COUNT; ++gpio) {
         if (!esp_sleep_is_valid_wakeup_gpio(gpio)) {
             continue;
         }

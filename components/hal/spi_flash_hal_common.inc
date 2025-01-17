@@ -126,10 +126,15 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
      * - DIO is similar.
      */
     if (conf_required) {
+#if !SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
         int line_width = (io_mode == SPI_FLASH_DIO? 2: 4);
         dummy_cyclelen_base -= SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS / line_width;
         addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
+#endif
         spi_flash_ll_set_extra_address(dev, 0);
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+        spi_flash_ll_wb_mode_enable(dev, true);
+#endif
     }
 #endif
 #else
@@ -204,6 +209,9 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     if (trans->miso_len > 0) {
         spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
     }
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    spi_flash_ll_wb_mode_enable(dev, false);
+#endif
     return ESP_OK;
 }
 

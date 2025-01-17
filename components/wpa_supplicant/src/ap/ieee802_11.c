@@ -180,13 +180,16 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
     if (sta->remove_pending) {
         reply_res = -1;
     } else {
-        reply_res = esp_send_sae_auth_reply(hapd, sta->addr, bssid, WLAN_AUTH_SAE, 2,
-                                       WLAN_STATUS_SUCCESS, wpabuf_head(data),
-                                       wpabuf_len(data));
+        if (sta->sae_data)
+            wpabuf_free(sta->sae_data);
+        sta->sae_data = data;
+        reply_res = 0;
+        /* confirm is sent in later stage when all the required processing for a sta is done*/
     }
+#else
+    wpabuf_free(data);
 #endif /* ESP_SUPPLICANT */
 
-    wpabuf_free(data);
     return reply_res;
 }
 
@@ -625,6 +628,10 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
 
        if (sae_check_confirm(sta->sae, buf, len) < 0) {
            resp = WLAN_STATUS_CHALLENGE_FAIL;
+           wifi_event_ap_wrong_password_t evt = {0};
+           os_memcpy(evt.mac, bssid, ETH_ALEN);
+           esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WRONG_PASSWORD, &evt,
+                    sizeof(evt), 0);
            goto reply;
        }
        sta->sae->rc = peer_send_confirm;
@@ -672,7 +679,7 @@ int auth_sae_queue(struct hostapd_data *hapd,
     unsigned int queue_len;
 
     queue_len = dl_list_len(&hapd->sae_commit_queue);
-    if (queue_len >= 5) {
+    if (queue_len >= hapd->conf->max_num_sta) {
         wpa_printf(MSG_DEBUG,
                    "SAE: No more room in message queue - drop the new frame from "
                    MACSTR, MAC2STR(bssid));

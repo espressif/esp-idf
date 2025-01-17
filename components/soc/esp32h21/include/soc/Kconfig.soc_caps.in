@@ -27,10 +27,6 @@ config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
 
-config SOC_PMU_SUPPORTED
-    bool
-    default y
-
 config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
@@ -199,10 +195,6 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
-config SOC_AHB_GDMA_VERSION
-    int
-    default 1
-
 config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
@@ -246,18 +238,6 @@ config SOC_GPIO_OUT_RANGE_MAX
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
     default 0x000000000FFF807F
-
-config SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
-    bool
-    default y
-
-config SOC_CLOCKOUT_HAS_SOURCE_GATE
-    bool
-    default y
-
-config SOC_GPIO_CLOCKOUT_CHANNEL_NUM
-    int
-    default 3
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
@@ -516,10 +496,6 @@ config SOC_EFUSE_DIS_ICACHE
     default y
 
 config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
-    bool
-    default y
-
-config SOC_EFUSE_ECDSA_USE_HARDWARE_K
     bool
     default y
 

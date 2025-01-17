@@ -93,6 +93,8 @@ MM_SYNC_DOCS = ['api-reference/system/mm_sync.rst']
 
 CAMERA_DOCS = ['api-reference/peripherals/camera_driver.rst']
 
+BITSCRAMBLER_DOCS = ['api-reference/peripherals/bitscrambler.rst']
+
 CLK_TREE_DOCS = ['api-reference/peripherals/clk_tree.rst']
 
 UART_DOCS = ['api-reference/peripherals/uart.rst']
@@ -119,6 +121,8 @@ ETM_DOCS = ['api-reference/peripherals/etm.rst']
 LDO_DOCS = ['api-reference/peripherals/ldo_regulator.rst']
 
 TEMP_SENSOR_DOCS = ['api-reference/peripherals/temp_sensor.rst']
+
+TOUCH_SENSOR_DOCS = ['api-reference/peripherals/cap_touch_sens.rst']
 
 SPIRAM_DOCS = ['api-guides/external-ram.rst']
 
@@ -197,13 +201,19 @@ PPA_DOCS = ['api-reference/peripherals/ppa.rst']
 
 QEMU_DOCS = ['api-guides/tools/qemu.rst']
 
+ESP_TEE_DOCS = ['security/tee/index.rst',
+                'security/tee/tee.rst',
+                'security/tee/tee-advanced.rst',
+                'security/tee/tee-attestation.rst',
+                'security/tee/tee-ota.rst',
+                'security/tee/tee-sec-storage.rst']
+
 ESP32_DOCS = ['api-reference/system/himem.rst',
               'api-guides/romconsole.rst',
               'api-reference/system/ipc.rst',
               'security/secure-boot-v1.rst',
               'api-reference/peripherals/dac.rst',
               'api-reference/peripherals/sd_pullup_requirements.rst',
-              'api-reference/peripherals/touch_pad.rst',
               'hw-reference/esp32/**',
               'api-guides/RF_calibration.rst',
               'api-guides/phy.rst'] + FTDI_JTAG_DOCS + QEMU_DOCS
@@ -213,7 +223,6 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
                 'api-reference/peripherals/ds.rst',
                 'api-reference/peripherals/temp_sensor.rst',
                 'api-reference/system/async_memcpy.rst',
-                'api-reference/peripherals/cap_touch_sens.rst',
                 'api-reference/peripherals/touch_element.rst',
                 'api-guides/RF_calibration.rst',
                 'api-guides/phy.rst'] + FTDI_JTAG_DOCS + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS
@@ -221,7 +230,6 @@ ESP32S2_DOCS = ['hw-reference/esp32s2/**',
 ESP32S3_DOCS = ['hw-reference/esp32s3/**',
                 'api-reference/system/ipc.rst',
                 'api-guides/flash_psram_config.rst',
-                'api-reference/peripherals/cap_touch_sens.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
                 'api-guides/RF_calibration.rst',
                 'api-guides/phy.rst'] + USB_OTG_DFU_DOCS + USB_OTG_CONSOLE_DOCS + QEMU_DOCS
@@ -240,7 +248,7 @@ ESP32C61_DOCS = ['api-guides/phy.rst']
 
 ESP32C6_DOCS = ['api-guides/RF_calibration.rst',
                 'api-reference/peripherals/sd_pullup_requirements.rst',
-                'api-guides/phy.rst']
+                'api-guides/phy.rst'] + ESP_TEE_DOCS
 
 ESP32H2_DOCS = ['api-guides/RF_calibration.rst',
                 'api-guides/phy.rst']
@@ -288,6 +296,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_XTENSA':XTENSA_DOCS,
                             'CONFIG_IDF_TARGET_ARCH_RISCV':RISCV_DOCS,
                             'SOC_TEMP_SENSOR_SUPPORTED':TEMP_SENSOR_DOCS,
+                            'SOC_TOUCH_SENSOR_SUPPORTED':TOUCH_SENSOR_DOCS,
                             'SOC_TWAI_SUPPORTED':TWAI_DOCS,
                             'SOC_I2C_SUPPORTED':I2C_DOCS,
                             'SOC_GPSPI_SUPPORTED':SPI_DOCS,
@@ -302,6 +311,7 @@ conditional_include_dict = {'SOC_BT_SUPPORTED':BT_DOCS,
                             'SOC_SDM_SUPPORTED':SDM_DOCS,
                             'SOC_WIFI_MESH_SUPPORT':WIFI_MESH_DOCS,
                             'SOC_MIPI_CSI_SUPPORTED':CAMERA_DOCS,
+                            'SOC_BITSCRAMBLER_SUPPORTED':BITSCRAMBLER_DOCS,
                             'SOC_SPI_SUPPORT_SLAVE_HD_VER2':SPI_SLAVE_HD_DOCS,
                             'SOC_WIFI_NAN_SUPPORT':NAN_DOCS,
                             'SOC_JPEG_CODEC_SUPPORTED':JPEG_DOCS,

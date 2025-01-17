@@ -1,0 +1,18 @@
+description: ESP-IDF python and virtual environment information
+tags: [python, base, project]
+output: python
+steps:
+  - name: 'Python Version'
+    cmds:
+      - exec:
+        cmd: 'python --version'
+        output: python.ver
+
+  - name: 'Python Virtual Environment Packages'
+    cmds:
+      - exec:
+        cmd: 'python -m pip freeze'
+        output: pip.freeze
+      - exec:
+        cmd: 'python -m pip list'
+        output: pip.list

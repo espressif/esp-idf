@@ -31,15 +31,14 @@ menu "Heap memory debugging"
             bool "Disabled"
         config HEAP_TRACING_STANDALONE
             bool "Standalone"
-            select HEAP_TRACING
         config HEAP_TRACING_TOHOST
             bool "Host-based"
-            select HEAP_TRACING
     endchoice
 
     config HEAP_TRACING
         bool
-        default F
+        default n if HEAP_TRACING_OFF
+        default y if !HEAP_TRACING_OFF
         help
             Enables/disables heap tracing API.
 
@@ -76,8 +75,8 @@ menu "Heap memory debugging"
 
     config HEAP_TRACING_STACK_DEPTH
         int "Heap tracing stack depth"
-        range 0 0 if IDF_TARGET_ARCH_RISCV # Disabled for RISC-V due to `__builtin_return_address` limitation
-        default 0 if IDF_TARGET_ARCH_RISCV
+        range 0 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
+        default 0 if IDF_TARGET_ARCH_RISCV && !ESP_SYSTEM_USE_FRAME_POINTER
         range 0 32
         default 2
         depends on HEAP_TRACING

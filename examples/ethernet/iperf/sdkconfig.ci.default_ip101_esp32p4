@@ -1,0 +1,49 @@
+CONFIG_IDF_TARGET="esp32p4"
+
+# Increase main task stack size
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=7168
+
+# Enable filesystem for console commands history storage
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
+
+# Enable FreeRTOS stats formatting functions, needed for 'tasks' command
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
+
+# --------------------------------
+# Performance optimization options
+# --------------------------------
+# The lwIP and iperf tasks have a serial dependency (i.e., iperf must wait for lwIP to process packets),
+# meaning that running in multi-core mode does not significantly improve performance. Additionally,
+# IRAM optimizations have a more noticeable effect in single-core mode.
+# However, while a single-core configuration can enhance iperf performance in controlled or isolated
+# testing scenarios, it may not be optimal for real-world applications where the system also needs to
+# handle additional, non-network-related tasks. In such cases, multi-core configurations might be better
+# suited for balancing workloads and ensuring overall system responsiveness.
+
+# Run FreeRTOS only on the first core
+CONFIG_FREERTOS_UNICORE=y
+
+# Disable watch dog
+CONFIG_ESP_INT_WDT=n
+CONFIG_ESP_TASK_WDT_EN=n
+
+# Enable lwIP IRAM optimization
+CONFIG_LWIP_IRAM_OPTIMIZATION=y
+
+# Enable Ethernet IRAM optimization
+CONFIG_ETH_IRAM_OPTIMIZATION=y
+
+CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET=y
+CONFIG_EXAMPLE_ETH_PHY_IP101=y
+CONFIG_EXAMPLE_ETH_MDC_GPIO=31
+CONFIG_EXAMPLE_ETH_MDIO_GPIO=52
+CONFIG_EXAMPLE_ETH_PHY_RST_GPIO=51
+CONFIG_EXAMPLE_ETH_PHY_ADDR=1
+
+CONFIG_ETH_ENABLED=y
+CONFIG_ETH_USE_ESP32_EMAC=y
+CONFIG_ETH_PHY_INTERFACE_RMII=y

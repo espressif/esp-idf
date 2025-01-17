@@ -27,6 +27,10 @@ if(target STREQUAL "esp32")
     list(APPEND srcs "${target_folder}/dport_access.c")
 endif()
 
+if(target STREQUAL "esp32h2")
+    list(APPEND srcs "${target_folder}/lpperi_struct.c")
+endif()
+
 if(CONFIG_SOC_ADC_SUPPORTED)
     list(APPEND srcs "${target_folder}/adc_periph.c")
 endif()
@@ -167,6 +171,10 @@ endif()
 
 if(CONFIG_SOC_LCDCAM_CAM_SUPPORTED)
     list(APPEND srcs "${target_folder}/cam_periph.c")
+endif()
+
+if(CONFIG_SOC_BOD_SUPPORTED)
+    list(APPEND srcs "${target_folder}/power_supply_periph.c")
 endif()
 
 idf_component_register(SRCS ${srcs}

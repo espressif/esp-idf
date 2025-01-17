@@ -1,6 +1,12 @@
 [mapping:rmt_driver]
 archive: libesp_driver_rmt.a
 entries:
+    if RMT_ISR_HANDLER_IN_IRAM = y:
+        rmt_tx: rmt_tx_default_isr (noflash)
+        rmt_rx: rmt_rx_default_isr (noflash)
+        if SOC_RMT_SUPPORT_DMA = y:
+            rmt_tx: rmt_dma_tx_eof_cb (noflash)
+            rmt_rx: rmt_dma_rx_one_block_cb (noflash)
     if RMT_RECV_FUNC_IN_IRAM = y:
         rmt_rx: rmt_receive (noflash)
         if SOC_RMT_SUPPORT_DMA = y:

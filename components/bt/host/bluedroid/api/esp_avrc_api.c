@@ -232,6 +232,31 @@ esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (tl > ESP_AVRC_TRANS_LABEL_MAX) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_AVRC_CT;
+    msg.act = BTC_AVRC_STATUS_API_SND_GET_PLAY_STATUS_EVT;
+
+    btc_avrc_args_t arg;
+    memset(&arg, 0, sizeof(btc_avrc_args_t));
+
+    arg.get_play_status_cmd.tl = tl;
+
+    /* Switch to BTC context */
+    bt_status_t stat = btc_transfer_context(&msg, &arg, sizeof(btc_avrc_args_t), NULL, NULL);
+    return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
+}
+
 #if BTC_AV_CA_INCLUDED
 
 esp_err_t esp_avrc_ct_cover_art_connect(uint16_t mtu)

@@ -1043,7 +1043,6 @@ int bt_mesh_proxy_server_prov_enable(void)
         }
     }
 
-
     return 0;
 }
 
@@ -1749,6 +1748,7 @@ static int32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
         && sub->private_node_id == BLE_MESH_PRIVATE_NODE_IDENTITY_STOPPED
 #endif
         ) {
+        /* advertising node identity forever */
         if (bt_mesh_gatt_proxy_get() == BLE_MESH_GATT_PROXY_ENABLED) {
             net_id_adv(sub);
         }
@@ -1864,13 +1864,14 @@ static int32_t solic_adv_private_net_id(void)
 
 int32_t bt_mesh_proxy_server_adv_start(void)
 {
+    BT_DBG("proxy server start");
+
     if (gatt_svc == MESH_GATT_NONE) {
         return K_FOREVER;
     }
 
 #if CONFIG_BLE_MESH_USE_BLE_50
     if (proxy_adv_inst == BLE_MESH_ADV_INS_UNUSED) {
-        BT_ERR("Proxy adv inst is not initialized!");
         return K_FOREVER;
     }
 #endif
@@ -1931,23 +1932,22 @@ int32_t bt_mesh_proxy_server_adv_start(void)
     }
 #endif /* GATT_PROXY */
 
+    /* used to indicate proxy advertising could be stopped */
     return K_FOREVER;
 }
 
-void bt_mesh_proxy_server_adv_stop(void)
+int bt_mesh_proxy_server_adv_stop(void)
 {
     int err = 0;
 
-    BT_DBG("adv_enabled %u", proxy_adv_enabled);
-
     if (!proxy_adv_enabled) {
-        return;
+        return -EALREADY;
     }
 
 #if CONFIG_BLE_MESH_USE_BLE_50
     if (proxy_adv_inst == BLE_MESH_ADV_INS_UNUSED) {
         BT_ERR("Proxy adv inst is not initialized!");
-        return;
+        return -EINVAL;
    }
 
     err = bt_le_ext_adv_stop(proxy_adv_inst);
@@ -1956,9 +1956,11 @@ void bt_mesh_proxy_server_adv_stop(void)
 #endif
     if (err) {
         BT_ERR("Failed to stop advertising (err %d)", err);
-    } else {
-        proxy_adv_enabled = false;
+        return -EINVAL;
     }
+
+    proxy_adv_enabled = false;
+    return 0;
 }
 
 static struct bt_mesh_conn_cb conn_callbacks = {
@@ -1971,7 +1973,11 @@ int bt_mesh_proxy_server_init(void)
     int i;
 
 #if CONFIG_BLE_MESH_USE_BLE_50
-    proxy_adv_inst = bt_mesh_get_proxy_inst();
+#if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+    proxy_adv_inst = CONFIG_BLE_MESH_PROXY_ADV_INST_ID;
+#else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+    proxy_adv_inst = CONFIG_BLE_MESH_ADV_INST_ID;
+#endif
 #endif
 
 #if CONFIG_BLE_MESH_GATT_PROXY_SERVER

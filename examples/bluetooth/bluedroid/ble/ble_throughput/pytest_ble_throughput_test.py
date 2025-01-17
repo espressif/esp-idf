@@ -8,7 +8,7 @@ import pytest
 from pytest_embedded_idf.dut import IdfDut
 
 
-# Case 1: gatt write throughput test
+# Case 1: gatt write throughput test(EXAMPLE_CI_ID = 2)
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
@@ -18,7 +18,7 @@ from pytest_embedded_idf.dut import IdfDut
 @pytest.mark.esp32s3
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config, erase_all', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
          'write', 'y'),
@@ -48,12 +48,12 @@ def test_gatt_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> Non
         assert throughput > 50000 or throughput < 95000
 
 
-# Case 2: gatt write throughput test for ESP32C2 26mhz xtal
+# Case 2: gatt write throughput test for ESP32C2 26mhz xtal(EXAMPLE_CI_ID = 2)
 @pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config, erase_all', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
          'esp32c2_xtal26m_write', 'y'),
@@ -83,7 +83,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
         assert throughput > 50000 or throughput < 95000
 
 
-# Case 3: gatt notify throughput test
+# Case 3: gatt notify throughput test(EXAMPLE_CI_ID = 1)
 @pytest.mark.esp32
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
@@ -93,7 +93,7 @@ def test_c2_26mhz_xtal_write_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut
 @pytest.mark.esp32s3
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
-    'count, app_path, config, erase_all', [
+    'count, app_path, config, erase_nvs', [
         (2,
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
          'notify', 'y'),
@@ -125,12 +125,12 @@ def test_gatt_notify_throughput(app_path: str, dut: Tuple[IdfDut, IdfDut]) -> No
         assert throughput > 50000 or throughput < 95000
 
 
-# Case 4: gatt notify throughput test for ESP32C2 26mhz xtal
+# Case 4: gatt notify throughput test for ESP32C2 26mhz xtal(EXAMPLE_CI_ID = 1)
 @pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'count, target, baud, app_path, config, erase_all', [
+    'count, target, baud, app_path, config, erase_nvs', [
         (2, 'esp32c2|esp32c2', '74880',
          f'{os.path.join(os.path.dirname(__file__), "throughput_server")}|{os.path.join(os.path.dirname(__file__), "throughput_client")}',
          'esp32c2_xtal26m_notify', 'y'),

@@ -39,6 +39,10 @@ DEFAULT:
     # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
     # SPDX-License-Identifier: {license}
 
+  new_notice_bsasm: |  # notice for new bsasm files
+    # SPDX-FileCopyrightText: {years} Espressif Systems (Shanghai) CO LTD
+    # SPDX-License-Identifier: {license}
+
   # comment lines matching:
   # SPDX-FileCopyrightText: year[-year] Espressif Systems
   # or

@@ -269,79 +269,6 @@ The following code snippet demonstrates how application code would typically ini
 
 The output from the heap trace has a similar format to the following example:
 
-.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
-
-  .. code-block:: none
-
-    ====== Heap Trace: 8 records (8 capacity) ======
-        6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    freed by 0x403839e4:0x42008096
-    0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
-    0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
-
-        6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
-    0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
-    0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
-
-    ====== Heap Trace Summary ======
-    Mode: Heap Trace All
-    6 bytes alive in trace (1/8 allocations)
-    records: 8 (8 capacity, 8 high water mark)
-    total allocations: 9
-    total frees: 8
-    ================================
-
 .. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
   .. code-block:: none
@@ -362,6 +289,79 @@ The output from the heap trace has a similar format to the following example:
     total allocations: 8
     total frees: 8
     ================================
+
+  Or the following example, when the ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` option is enabled and the stack depth is configured properly:
+
+.. code-block:: none
+
+  ====== Heap Trace: 8 records (8 capacity) ======
+      6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      9 bytes (@ 0x3fc9f630, Internal) allocated CPU 0 ccount 0x1a31b618 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      12 bytes (@ 0x3fc9f640, Internal) allocated CPU 0 ccount 0x1a31bfac caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      15 bytes (@ 0x3fc9f650, Internal) allocated CPU 0 ccount 0x1a31c940 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      18 bytes (@ 0x3fc9f664, Internal) allocated CPU 0 ccount 0x1a31d2d4 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      21 bytes (@ 0x3fc9f67c, Internal) allocated CPU 0 ccount 0x1a31dc68 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      24 bytes (@ 0x3fc9f698, Internal) allocated CPU 0 ccount 0x1a31e600 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  freed by 0x403839e4:0x42008096
+  0x403839e4: free at /path/to/idf/examples/components/newlib/heap.c:40
+  0x42008096: test_func_74 at /path/to/idf/examples/components/heap/test_apps/heap_tests/main/test_heap_trace.c:104 (discriminator 3)
+
+      6 bytes (@ 0x3fc9f6b4, Internal) allocated CPU 0 ccount 0x1a320698 caller 0x40376321:0x40376379
+  0x40376321: heap_caps_malloc at /path/to/idf/examples/components/heap/heap_caps.c:84
+  0x40376379: heap_caps_malloc_default at /path/to/idf/examples/components/heap/heap_caps.c:110
+
+  ====== Heap Trace Summary ======
+  Mode: Heap Trace All
+  6 bytes alive in trace (1/8 allocations)
+  records: 8 (8 capacity, 8 high water mark)
+  total allocations: 9
+  total frees: 8
+  ================================
 
 .. note::
 
@@ -395,6 +395,10 @@ In ``HEAP_TRACE_ALL``:
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     The depth of the call stack recorded for each trace entry can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    By default, the depth of the call stack recorded for each trace entry is 0, which means that only the direct caller of the memory allocation function can be retrieve. However, when the ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` option is enabled, this call stack depth can be configured in the project configuration menu, under ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`. Up to 32 stack frames can be recorded for each allocation (the default is 2). Each additional stack frame increases the memory usage of each ``heap_trace_record_t`` record by eight bytes.
 
 Finally, the total number of the 'leaked' bytes (bytes allocated but not freed while the trace is running) is printed together with the total number of allocations it represents.
 
