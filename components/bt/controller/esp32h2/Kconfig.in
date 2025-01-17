@@ -698,3 +698,11 @@ config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
         Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
         This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
         If disabled, only basic checks are applied, improving compatibility.
+
+config BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Reduce BLE IRAM usage (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Move most IRAM into flash. This will increase the usage of flash and reduce ble performance.
+        Because the code is moved to the flash, the execution speed of the code is reduced.
+        To have a small impact on performance, you need to enable flash suspend (SPI_FLASH_AUTO_SUSPEND).
