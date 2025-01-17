@@ -17,7 +17,8 @@ Configurations
 --------------
 
 .. note::
-    The ``Core dump`` configuration options are available only if the ``espcoredump`` component is included in the build.
+
+    The ``Core dump`` configuration options are available only if the ``espcoredump`` component is included in the build. To include ``Core dump`` into your project, add the ``espcoredump`` component as a dependency in either ``REQUIRES`` or ``PRIV_REQUIRES`` when registering your component with ``idf_component_register``.
 
 Destination
 ^^^^^^^^^^^
