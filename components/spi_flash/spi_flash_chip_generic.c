@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -517,6 +517,11 @@ esp_err_t spi_flash_chip_generic_write_encrypted(esp_flash_t *chip, const void *
 
     const uint8_t *data_bytes = (const uint8_t *)buffer;
     esp_flash_encryption->flash_encryption_enable();
+
+#if SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+    spi_flash_encryption_hal_enable_pseudo_rounds(ESP_XTS_AES_PSEUDO_ROUNDS_LOW, XTS_AES_PSEUDO_ROUNDS_BASE, XTS_AES_PSEUDO_ROUNDS_INC, XTS_AES_PSEUDO_ROUNDS_RNG_CNT);
+#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND */
+
     while (length > 0) {
         int block_size;
         /* Write the largest block if possible */
