@@ -395,25 +395,18 @@ TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
 typedef struct {
     SemaphoreHandle_t done_sem;
     dma_buffer_split_array_t *align_array;
-    size_t split_alignment;
-    bool need_invalidate;
 } test_gdma_context_t;
 
-static bool test_gdma_m2m_unalgined_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool test_gdma_m2m_unaligned_rx_eof_callback(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     BaseType_t task_woken = pdFALSE;
     test_gdma_context_t *user_ctx = (test_gdma_context_t*)user_data;
-    for (int i = 0; i < 3; i++) {
-        if (user_ctx->align_array->aligned_buffer[i].aligned_buffer && user_ctx->need_invalidate) {
-            TEST_ESP_OK(esp_cache_msync(user_ctx->align_array->aligned_buffer[i].aligned_buffer, ALIGN_UP(user_ctx->align_array->aligned_buffer[i].length, user_ctx->split_alignment), ESP_CACHE_MSYNC_FLAG_DIR_M2C));
-        }
-    }
-    TEST_ESP_OK(esp_dma_merge_aligned_buffers(user_ctx->align_array));
+    TEST_ESP_OK(esp_dma_merge_aligned_rx_buffers(user_ctx->align_array));
     xSemaphoreGiveFromISR(user_ctx->done_sem, &task_woken);
     return task_woken == pdTRUE;
 }
 
-static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_data, size_t data_length, size_t offset_len, size_t split_alignment)
+static void test_gdma_m2m_unaligned_buffer_test(uint8_t *dst_data, uint8_t *src_data, size_t data_length, size_t offset_len)
 {
     TEST_ASSERT_NOT_NULL(src_data);
     TEST_ASSERT_NOT_NULL(dst_data);
@@ -458,13 +451,10 @@ static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_
     };
     TEST_ESP_OK(gdma_link_mount_buffers(tx_link_list, 0, tx_buf_mount_config, sizeof(tx_buf_mount_config) / sizeof(gdma_buffer_mount_config_t), NULL));
 
-    // allocate stash_buffer, should be freed by the user
-    void *stash_buffer = heap_caps_aligned_calloc(split_alignment, 2, split_alignment, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    size_t stash_buffer_len = 2 * split_alignment;
     dma_buffer_split_array_t align_array = {0};
     gdma_buffer_mount_config_t rx_aligned_buf_mount_config[3] = {0};
-
-    TEST_ESP_OK(esp_dma_split_buffer_to_aligned(dst_data + offset_len, data_length, stash_buffer, stash_buffer_len, split_alignment, &align_array));
+    uint8_t* stash_buffer = NULL;
+    TEST_ESP_OK(esp_dma_split_rx_buffer_to_cache_aligned(dst_data + offset_len, data_length, &align_array, &stash_buffer));
     for (int i = 0; i < 3; i++) {
         rx_aligned_buf_mount_config[i].buffer = align_array.aligned_buffer[i].aligned_buffer;
         rx_aligned_buf_mount_config[i].length = align_array.aligned_buffer[i].length;
@@ -472,15 +462,13 @@ static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_
     TEST_ESP_OK(gdma_link_mount_buffers(rx_link_list, 0, rx_aligned_buf_mount_config, 3, NULL));
 
     gdma_rx_event_callbacks_t rx_cbs = {
-        .on_recv_eof = test_gdma_m2m_unalgined_rx_eof_callback,
+        .on_recv_eof = test_gdma_m2m_unaligned_rx_eof_callback,
     };
     SemaphoreHandle_t done_sem = xSemaphoreCreateBinary();
     TEST_ASSERT_NOT_NULL(done_sem);
     test_gdma_context_t user_ctx = {
         .done_sem = done_sem,
         .align_array = &align_array,
-        .split_alignment = split_alignment,
-        .need_invalidate = sram_alignment ? true : false,
     };
     TEST_ESP_OK(gdma_register_rx_event_callbacks(rx_chan, &rx_cbs, &user_ctx));
 
@@ -494,12 +482,12 @@ static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_
         TEST_ASSERT_EQUAL(i % 256, dst_data[i + offset_len]);
     }
 
-    free(stash_buffer);
     TEST_ESP_OK(gdma_del_link_list(tx_link_list));
     TEST_ESP_OK(gdma_del_link_list(rx_link_list));
     TEST_ESP_OK(gdma_del_channel(tx_chan));
     TEST_ESP_OK(gdma_del_channel(rx_chan));
     vSemaphoreDelete(done_sem);
+    free(stash_buffer);
 }
 
 TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
@@ -507,29 +495,28 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
     uint8_t *sbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *dbuf = heap_caps_aligned_calloc(64, 1, 10240, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
 
-    size_t split_alignment = 64;
     // case buffer len less than buffer alignment
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 0, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 4, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 60, 2, split_alignment);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 60, 0);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 60, 4);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 60, 2);
 
     // case buffer head aligned
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 246, 0, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8182, 0, split_alignment);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 246, 0);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 8182, 0);
 
     // case buffer tail aligned
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 246, 10, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8182, 10, split_alignment);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 246, 10);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 8182, 10);
 
     // case buffer unaligned
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 100, 10, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 10, 60, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 256, 10, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8192, 10, split_alignment);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 100, 10);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 10, 60);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 256, 10);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 8192, 10);
 
     // case buffer full aligned
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 256, 0, split_alignment);
-    test_gdma_m2m_unalgined_buffer_test(dbuf, sbuf, 8192, 0, split_alignment);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 256, 0);
+    test_gdma_m2m_unaligned_buffer_test(dbuf, sbuf, 8192, 0);
 
     free(sbuf);
     free(dbuf);
