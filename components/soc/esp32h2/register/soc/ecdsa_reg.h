@@ -7,6 +7,8 @@
 
 #include <stdint.h>
 #include "soc/soc.h"
+#include "soc/chip_rev.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -448,33 +450,32 @@ extern "C" {
 /** ECDSA_R_MEM register
  *  The memory that stores r.
  */
-extern uint32_t ECDSA_R_MEM;
+#define ECDSA_R_MEM (DR_REG_ECDSA_BASE + REG_COMPATIBLE_ADDR(102, 0xa00, 0x340))
 #define ECDSA_R_MEM_SIZE_BYTES 32
 
 /** ECDSA_S_MEM register
  *  The memory that stores s.
  */
-extern uint32_t ECDSA_S_MEM;
+#define ECDSA_S_MEM (DR_REG_ECDSA_BASE + REG_COMPATIBLE_ADDR(102, 0xa20, 0x360))
 #define ECDSA_S_MEM_SIZE_BYTES 32
 
 /** ECDSA_Z_MEM register
  *  The memory that stores software written z.
  */
-extern uint32_t ECDSA_Z_MEM;
+#define ECDSA_Z_MEM (DR_REG_ECDSA_BASE + REG_COMPATIBLE_ADDR(102, 0xa40, 0x380))
 #define ECDSA_Z_MEM_SIZE_BYTES 32
 
 /** ECDSA_QAX_MEM register
  *  The memory that stores x coordinates of QA or software written k.
  */
-extern uint32_t ECDSA_QAX_MEM;
+#define ECDSA_QAX_MEM (DR_REG_ECDSA_BASE + REG_COMPATIBLE_ADDR(102, 0xa60, 0x3a0))
 #define ECDSA_QAX_MEM_SIZE_BYTES 32
 
 /** ECDSA_QAY_MEM register
  *  The memory that stores y coordinates of QA.
  */
-extern uint32_t ECDSA_QAY_MEM;
+#define ECDSA_QAY_MEM (DR_REG_ECDSA_BASE + REG_COMPATIBLE_ADDR(102, 0xa80, 0x3c0))
 #define ECDSA_QAY_MEM_SIZE_BYTES 32
-
 
 #ifdef __cplusplus
 }
