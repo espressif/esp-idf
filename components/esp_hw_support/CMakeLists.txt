@@ -29,6 +29,7 @@ if(NOT BOOTLOADER_BUILD)
                      "sleep_modem.c"
                      "sleep_modes.c"
                      "sleep_console.c"
+                     "sleep_usb.c"
                      "sleep_gpio.c"
                      "sleep_event.c"
                      "regi2c_ctrl.c"
