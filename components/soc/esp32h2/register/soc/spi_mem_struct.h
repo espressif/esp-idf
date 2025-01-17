@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1039,7 +1039,7 @@ typedef volatile struct spi_mem_dev_s {
             uint32_t reg_pseudo_rng_cnt             :    3;  /*xts aes peseudo function base round that must be performed.*/
             uint32_t reg_pseudo_base                :    4;  /*xts aes peseudo function base round that must be performed.*/
             uint32_t reg_pseudo_inc                 :    2;  /*xts aes peseudo function increment round that will be performed randomly between 0 & 2**(inc+1).*/
-            uint32_t reserved11                     :    27;  /*reserved*/
+            uint32_t reserved11                     :    21;  /*reserved*/
         };
         uint32_t val;
     } xts_pseudo_round_conf;
@@ -1080,6 +1080,11 @@ typedef volatile struct spi_mem_dev_s {
 } spi_mem_dev_t;
 extern spi_mem_dev_t SPIMEM0;
 extern spi_mem_dev_t SPIMEM1;
+
+#ifndef __cplusplus
+_Static_assert(sizeof(spi_mem_dev_t) == 0x400, "Invalid size of spi_mem_dev_t structure");
+#endif
+
 #ifdef __cplusplus
 }
 #endif
