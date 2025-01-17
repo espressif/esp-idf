@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@ s. Please do not use this field..*/
 
 #define XTS_AES_DESTINATION_REG(i)          (REG_SPI_MEM_BASE(i) + 0x344)
 /* XTS_AES_DESTINATION : R/W ;bitpos:[0] ;default: 1'b0 ; */
-/*description: This bit stores the destination parameter which will be used in manual encryptio
+/*description: This bit stores the destination parameter which will be used in manual encryption
 n calculation. 0: flash(default), 1: psram(reserved). Only default value can be
 used..*/
 #define XTS_AES_DESTINATION    (BIT(0))
@@ -54,7 +54,7 @@ size parameter..*/
 /* XTS_AES_TRIGGER : WT ;bitpos:[0] ;default: 1'b0 ; */
 /*description: Set this bit to trigger the process of manual encryption calculation. This actio
 n should only be asserted when manual encryption status is 0. After this action,
- manual encryption status becomes 1. After calculation is done, manual encryptio
+ manual encryption status becomes 1. After calculation is done, manual encryption
 n status becomes 2..*/
 #define XTS_AES_TRIGGER    (BIT(0))
 #define XTS_AES_TRIGGER_M  (BIT(0))
@@ -116,13 +116,49 @@ ing key 1..*/
 #define XTS_AES_CRYPT_CALC_D_DPA_EN_V  0x1
 #define XTS_AES_CRYPT_CALC_D_DPA_EN_S  3
 /* XTS_AES_CRYPT_SECURITY_LEVEL : R/W ;bitpos:[2:0] ;default: 3'd7 ; */
-/*description: Set the security level of spi mem cryption. 0: Shut off cryption DPA funtion. 1-
+/*description: Set the security level of spi mem cryption. 0: Shut off cryption DPA function. 1-
 7: The bigger the number is, the more secure the cryption is. (Note that the per
 formance of cryption will decrease together with this number increasing).*/
 #define XTS_AES_CRYPT_SECURITY_LEVEL    0x00000007
 #define XTS_AES_CRYPT_SECURITY_LEVEL_M  ((XTS_AES_CRYPT_SECURITY_LEVEL_V)<<(XTS_AES_CRYPT_SECURITY_LEVEL_S))
 #define XTS_AES_CRYPT_SECURITY_LEVEL_V  0x7
 #define XTS_AES_CRYPT_SECURITY_LEVEL_S  0
+
+/** XTS_AES_PSEUDO_ROUND_CONF_REG register
+ *  SPI memory encryption PSEUDO register
+ */
+#define XTS_AES_PSEUDO_ROUND_CONF_REG(i) (REG_SPI_MEM_BASE(i) + 0x38c)
+/** XTS_AES_MODE_PSEUDO : R/W; bitpos: [1:0]; default: 0;
+ *  Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo
+ *  and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo.
+ *  2'b11: crypto with pseudo.
+ */
+#define XTS_AES_MODE_PSEUDO    0x00000003U
+#define XTS_AES_MODE_PSEUDO_M  (XTS_AES_MODE_PSEUDO_V << XTS_AES_MODE_PSEUDO_S)
+#define XTS_AES_MODE_PSEUDO_V  0x00000003U
+#define XTS_AES_MODE_PSEUDO_S  0
+/** XTS_AES_PSEUDO_RNG_CNT : R/W; bitpos: [4:2]; default: 7;
+ *  xts aes peseudo function base round that must be performed.
+ */
+#define XTS_AES_PSEUDO_RNG_CNT    0x00000007U
+#define XTS_AES_PSEUDO_RNG_CNT_M  (XTS_AES_PSEUDO_RNG_CNT_V << XTS_AES_PSEUDO_RNG_CNT_S)
+#define XTS_AES_PSEUDO_RNG_CNT_V  0x00000007U
+#define XTS_AES_PSEUDO_RNG_CNT_S  2
+/** XTS_AES_PSEUDO_BASE : R/W; bitpos: [8:5]; default: 2;
+ *  xts aes peseudo function base round that must be performed.
+ */
+#define XTS_AES_PSEUDO_BASE    0x0000000FU
+#define XTS_AES_PSEUDO_BASE_M  (XTS_AES_PSEUDO_BASE_V << XTS_AES_PSEUDO_BASE_S)
+#define XTS_AES_PSEUDO_BASE_V  0x0000000FU
+#define XTS_AES_PSEUDO_BASE_S  5
+/** XTS_AES_PSEUDO_INC : R/W; bitpos: [10:9]; default: 2;
+ *  xts aes peseudo function increment round that will be performed randomly between 0 &
+ *  2**(inc+1).
+ */
+#define XTS_AES_PSEUDO_INC    0x00000003U
+#define XTS_AES_PSEUDO_INC_M  (XTS_AES_PSEUDO_INC_V << XTS_AES_PSEUDO_INC_S)
+#define XTS_AES_PSEUDO_INC_V  0x00000003U
+#define XTS_AES_PSEUDO_INC_S  9
 
 #ifdef __cplusplus
 }

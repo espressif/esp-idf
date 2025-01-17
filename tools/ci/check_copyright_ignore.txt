@@ -623,13 +623,11 @@ components/hal/include/hal/mpu_types.h
 components/hal/include/hal/rtc_io_types.h
 components/hal/include/hal/sdio_slave_ll.h
 components/hal/include/hal/sha_hal.h
-components/hal/include/hal/spi_flash_encrypt_hal.h
 components/hal/include/hal/uhci_types.h
 components/hal/include/hal/usb_hal.h
 components/hal/include/hal/usb_types_private.h
 components/hal/mpu_hal.c
 components/hal/sha_hal.c
-components/hal/spi_flash_encrypt_hal_iram.c
 components/hal/spi_flash_hal_gpspi.c
 components/hal/spi_slave_hal.c
 components/hal/spi_slave_hal_iram.c

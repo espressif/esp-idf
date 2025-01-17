@@ -1,20 +1,13 @@
-// Copyright 2021 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // This part is put in iram.
 
 #include "hal/spi_flash_encrypted_ll.h"
+#include "soc/soc_caps.h"
 
 void spi_flash_encryption_hal_enable(void)
 {
@@ -57,3 +50,12 @@ bool spi_flash_encryption_hal_check(uint32_t address, uint32_t length)
 {
     return spi_flash_encrypt_ll_check(address, length);
 }
+
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+void spi_flash_encryption_hal_enable_pseudo_rounds(uint8_t mode, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {
+        spi_flash_encrypt_ll_enable_pseudo_rounds(mode, base, increment, key_rng_cnt);
+    }
+}
+#endif /* SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND */
