@@ -268,8 +268,8 @@ esp_err_t sdmmc_init_mmc_check_ext_csd(sdmmc_card_t* card)
         ESP_LOGE(TAG, "%s: send_status returned 0x%x", __func__, err);
         goto out;
     }
-    status = ((status & MMC_R1_CURRENT_STATE_MASK) >> MMC_R1_CURRENT_STATE_POS);
-    if (status != MMC_R1_CURRENT_STATE_TRAN) {
+
+    if (MMC_R1_CURRENT_STATE_STATUS(status) != MMC_R1_CURRENT_STATE_TRAN) {
         ESP_LOGE(TAG, "%s: card not in transfer state", __func__);
         err = ESP_ERR_INVALID_STATE;
         goto out;
