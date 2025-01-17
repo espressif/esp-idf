@@ -316,9 +316,6 @@ typedef struct {
     volatile lpperi_date_reg_t date;
 } lpperi_rev1_2_dev_t;
 
-/* Please don't use the following instance, use the compatible instance LPPERI in `lpperi_struct.h` instead. */
-extern lpperi_rev1_2_dev_t LPPERI_REV1_2;
-
 #ifndef __cplusplus
 _Static_assert(sizeof(lpperi_rev1_2_dev_t) == 0x400, "Invalid size of lpperi_rev1_2_dev_t structure");
 #endif

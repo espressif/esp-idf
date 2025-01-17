@@ -38,8 +38,8 @@ typedef enum {
  */
 static inline void _rtcio_ll_enable_io_clock(bool enable)
 {
-    LPPERI.clk_en->lp_io_ck_en = enable;
-    while (LPPERI.clk_en->lp_io_ck_en != enable) {
+    LPPERI_REG_SET(clk_en.lp_io_ck_en, enable);
+    while (LPPERI_REG_GET(clk_en.lp_io_ck_en) != enable) {
         ;
     }
 }
