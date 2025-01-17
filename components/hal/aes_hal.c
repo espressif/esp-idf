@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,8 +39,17 @@ void aes_hal_transform_block(const void *input_block, void *output_block)
     aes_ll_read_block(output_block);
 }
 
-#if SOC_AES_SUPPORT_DMA
 
+#ifdef SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+void aes_hal_enable_pseudo_rounds(bool enable, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    if (aes_ll_is_pseudo_rounds_function_supported()) {
+        aes_ll_enable_pseudo_rounds(enable, base, increment, key_rng_cnt);
+    }
+}
+#endif // SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+
+#if SOC_AES_SUPPORT_DMA
 
 void aes_hal_transform_dma_start(size_t num_blocks)
 {
@@ -61,7 +70,7 @@ void aes_hal_transform_dma_finish(void)
 
 void aes_hal_mode_init(esp_aes_mode_t mode)
 {
-    /* Set the algorith mode CBC, CFB ... */
+    /* Set the algorithm mode CBC, CFB ... */
     aes_ll_set_block_mode(mode);
     /* Presently hard-coding the INC function to 32 bit */
     if (mode == ESP_AES_BLOCK_MODE_CTR) {
@@ -83,8 +92,6 @@ void aes_hal_wait_done()
 {
     while (aes_ll_get_state() != ESP_AES_STATE_DONE) {}
 }
-
-
 #endif //SOC_AES_SUPPORT_DMA
 
 #if SOC_AES_SUPPORT_GCM

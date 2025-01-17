@@ -401,6 +401,42 @@ menu "mbedTLS"
             priority level and any level from 1 to 3 can be selected (based on the availability).
             Note: Higher value indicates high interrupt priority.
 
+    config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+        bool "Enable AES hardware's pseudo round function"
+        default n
+        depends on SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+        help
+            Enables the pseudo round function of the AES peripheral.
+            Enabling this would impact the performance of the AES operations.
+            For more info regarding the performance impact, please checkout the pseudo round function section of the
+            security guide.
+
+    choice MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
+        prompt "Strength of the pseudo rounds function"
+        depends on MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+        default MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+        help
+            The strength of the pseudo rounds functions can be configured to low, medium and high.
+            You can configure the strength of the pseudo rounds functions according to your use cases,
+            for example, increasing the strength would provide higher security but would slow down the
+            hardware AES encryption/decryption operations.
+
+        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+            bool "Low"
+
+        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+            bool "Medium"
+
+        config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+            bool "High"
+    endchoice
+
+    config MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH
+        int
+        default 1 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_LOW
+        default 2 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_MEDIUM
+        default 3 if MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH_HIGH
+
     config MBEDTLS_HARDWARE_GCM
         bool "Enable partially hardware accelerated GCM"
         depends on SOC_AES_SUPPORT_GCM && MBEDTLS_HARDWARE_AES
