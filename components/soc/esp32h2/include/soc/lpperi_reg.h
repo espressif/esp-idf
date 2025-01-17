@@ -1,7 +1,7 @@
-/**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+/*
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 
@@ -10,6 +10,34 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/** LPPERI_DATE_REG register
+ *  need_des
+ */
+#define LPPERI_DATE_REG (DR_REG_LPPERI_BASE + 0x3fc)
+/** LPPERI_LPPERI_DATE : R/W; bitpos: [30:0]; default: 36732976 (0x2308030);
+ *  need_des
+ */
+#define LPPERI_LPPERI_DATE    0x7FFFFFFFU
+#define LPPERI_LPPERI_DATE_M  (LPPERI_LPPERI_DATE_V << LPPERI_LPPERI_DATE_S)
+#define LPPERI_LPPERI_DATE_V  0x7FFFFFFFU
+#define LPPERI_LPPERI_DATE_S  0
+/** LPPERI_CLK_EN : R/W; bitpos: [31]; default: 0;
+ *  need_des
+ */
+#define LPPERI_CLK_EN    (BIT(31))
+#define LPPERI_CLK_EN_M  (LPPERI_CLK_EN_V << LPPERI_CLK_EN_S)
+#define LPPERI_CLK_EN_V  0x00000001U
+#define LPPERI_CLK_EN_S  31
+
+/**
+ * @brief Get the register offset according to the register version
+ * @note  H2 ECO5 inserted a new register LPPERI_RNG_CFG_REG,
+ *        so the addressed of the rest registers are shifted 4 bytes
+ *        This macro can help to get the correct register offset according to the register version
+ */
+#define LPPERI_REG_OFFSET(offset) (REG_GET_FIELD(LPPERI_DATE_REG, LPPERI_LPPERI_DATE) >= 0x2308030 ? (offset) : (offset) - 4)
+
 
 /** LPPERI_CLK_EN_REG register
  *  need_des
@@ -140,22 +168,40 @@ extern "C" {
 #define LPPERI_LP_CPU_RESET_EN_V  0x00000001U
 #define LPPERI_LP_CPU_RESET_EN_S  31
 
-/** LPPERI_RNG_DATA_REG register
+/** LPPERI_RNG_CFG_REG register
  *  need_des
  */
-#define LPPERI_RNG_DATA_REG (DR_REG_LPPERI_BASE + 0x8)
+#define LPPERI_RNG_CFG_REG (DR_REG_LPPERI_BASE + 0x8)
+/** LPPERI_RNG_CFG_ENABLE : R/W; bitpos: [1:0]; default: 0;
+ *  need_des
+ *  Note: this register only exist on the chips that LPPERI_LPPERI_DATE >= 0x2308030,
+ *        i.e., ESP32-H2 chip_revision >= 1.2
+ */
+#define LPPERI_RNG_CFG_ENABLE    0x00000003U
+#define LPPERI_RNG_CFG_ENABLE_M  (LPPERI_RNG_CFG_ENABLE_V << LPPERI_RNG_CFG_ENABLE_S)
+#define LPPERI_RNG_CFG_ENABLE_V  0x00000003U
+#define LPPERI_RNG_CFG_ENABLE_S  0
+
+/** LPPERI_RNG_DATA_REG register
+ *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
+ */
+#define LPPERI_RNG_DATA_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0xc))
 /** LPPERI_RNG_DATA : RO; bitpos: [31:0]; default: 0;
  *  need_des
  */
-#define LPPERI_RNG_DATA    0xFFFFFFFFU
-#define LPPERI_RNG_DATA_M  (LPPERI_RNG_DATA_V << LPPERI_RNG_DATA_S)
-#define LPPERI_RNG_DATA_V  0xFFFFFFFFU
-#define LPPERI_RNG_DATA_S  0
+#define LPPERI_RND_DATA    0xFFFFFFFFU
+#define LPPERI_RND_DATA_M  (LPPERI_RND_DATA_V << LPPERI_RND_DATA_S)
+#define LPPERI_RND_DATA_V  0xFFFFFFFFU
+#define LPPERI_RND_DATA_S  0
 
 /** LPPERI_CPU_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_CPU_REG (DR_REG_LPPERI_BASE + 0xc)
+#define LPPERI_CPU_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x10))
 /** LPPERI_LPCORE_DBGM_UNAVALIABLE : R/W; bitpos: [31]; default: 1;
  *  need_des
  */
@@ -166,8 +212,10 @@ extern "C" {
 
 /** LPPERI_BUS_TIMEOUT_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_BUS_TIMEOUT_REG (DR_REG_LPPERI_BASE + 0x10)
+#define LPPERI_BUS_TIMEOUT_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x14))
 /** LPPERI_LP_PERI_TIMEOUT_THRES : R/W; bitpos: [29:14]; default: 65535;
  *  need_des
  */
@@ -192,8 +240,10 @@ extern "C" {
 
 /** LPPERI_BUS_TIMEOUT_ADDR_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_BUS_TIMEOUT_ADDR_REG (DR_REG_LPPERI_BASE + 0x14)
+#define LPPERI_BUS_TIMEOUT_ADDR_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x18))
 /** LPPERI_LP_PERI_TIMEOUT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  need_des
  */
@@ -204,8 +254,10 @@ extern "C" {
 
 /** LPPERI_BUS_TIMEOUT_UID_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_BUS_TIMEOUT_UID_REG (DR_REG_LPPERI_BASE + 0x18)
+#define LPPERI_BUS_TIMEOUT_UID_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x1c))
 /** LPPERI_LP_PERI_TIMEOUT_UID : RO; bitpos: [6:0]; default: 0;
  *  need_des
  */
@@ -216,8 +268,10 @@ extern "C" {
 
 /** LPPERI_MEM_CTRL_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_MEM_CTRL_REG (DR_REG_LPPERI_BASE + 0x1c)
+#define LPPERI_MEM_CTRL_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x20))
 /** LPPERI_UART_WAKEUP_FLAG_CLR : WT; bitpos: [0]; default: 0;
  *  need_des
  */
@@ -256,8 +310,10 @@ extern "C" {
 
 /** LPPERI_INTERRUPT_SOURCE_REG register
  *  need_des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_INTERRUPT_SOURCE_REG (DR_REG_LPPERI_BASE + 0x20)
+#define LPPERI_INTERRUPT_SOURCE_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x24))
 /** LPPERI_LP_INTERRUPT_SOURCE : RO; bitpos: [5:0]; default: 0;
  *  BIT5~BIT0: pmu_lp_int, modem_lp_int, lp_timer_lp_int, lp_uart_int, lp_i2c_int,
  *  lp_io_int
@@ -269,8 +325,10 @@ extern "C" {
 
 /** LPPERI_DEBUG_SEL0_REG register
  *  need des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_DEBUG_SEL0_REG (DR_REG_LPPERI_BASE + 0x24)
+#define LPPERI_DEBUG_SEL0_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x28))
 /** LPPERI_DEBUG_SEL0 : R/W; bitpos: [6:0]; default: 0;
  *  need des
  */
@@ -302,8 +360,10 @@ extern "C" {
 
 /** LPPERI_DEBUG_SEL1_REG register
  *  need des
+ *  Note: this register address is different on different H2 revisions,
+ *        here uses LPPERI_REG_OFFSET to get the compatible offset.
  */
-#define LPPERI_DEBUG_SEL1_REG (DR_REG_LPPERI_BASE + 0x28)
+#define LPPERI_DEBUG_SEL1_REG (DR_REG_LPPERI_BASE + LPPERI_REG_OFFSET(0x2c))
 /** LPPERI_DEBUG_SEL4 : R/W; bitpos: [6:0]; default: 0;
  *  need des
  */
@@ -311,25 +371,6 @@ extern "C" {
 #define LPPERI_DEBUG_SEL4_M  (LPPERI_DEBUG_SEL4_V << LPPERI_DEBUG_SEL4_S)
 #define LPPERI_DEBUG_SEL4_V  0x0000007FU
 #define LPPERI_DEBUG_SEL4_S  0
-
-/** LPPERI_DATE_REG register
- *  need_des
- */
-#define LPPERI_DATE_REG (DR_REG_LPPERI_BASE + 0x3fc)
-/** LPPERI_LPPERI_DATE : R/W; bitpos: [30:0]; default: 35676464;
- *  need_des
- */
-#define LPPERI_LPPERI_DATE    0x7FFFFFFFU
-#define LPPERI_LPPERI_DATE_M  (LPPERI_LPPERI_DATE_V << LPPERI_LPPERI_DATE_S)
-#define LPPERI_LPPERI_DATE_V  0x7FFFFFFFU
-#define LPPERI_LPPERI_DATE_S  0
-/** LPPERI_CLK_EN : R/W; bitpos: [31]; default: 0;
- *  need_des
- */
-#define LPPERI_CLK_EN    (BIT(31))
-#define LPPERI_CLK_EN_M  (LPPERI_CLK_EN_V << LPPERI_CLK_EN_S)
-#define LPPERI_CLK_EN_V  0x00000001U
-#define LPPERI_CLK_EN_S  31
 
 #ifdef __cplusplus
 }
