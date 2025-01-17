@@ -241,7 +241,7 @@ static esp_err_t esp_core_dump_get_regs_from_stack(void* stack_addr,
         for (int i = 0; i < XT_SOL_AR_NUM; i++) {
             regs->ar[i] = stack_arr[XT_SOL_AR_START + i];
         }
-        regs->pc = (regs->pc & 0x3fffffff);
+
         if (regs->pc & 0x80000000) {
             regs->pc = (regs->pc & 0x3fffffff);
         }
