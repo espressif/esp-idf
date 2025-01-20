@@ -36,7 +36,8 @@ if(NOT non_os_build)
                      "port/esp_clk_tree_common.c"
                      "dma/esp_dma_utils.c"
                      "dma/gdma_link.c"
-                     "spi_bus_lock.c")
+                     "spi_bus_lock.c"
+                     "clk_utils.c")
     if(CONFIG_SOC_GPSPI_SUPPORTED)
         list(APPEND srcs "spi_share_hw_ctrl.c")
     endif()

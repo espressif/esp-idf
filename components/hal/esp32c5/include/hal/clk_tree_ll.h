@@ -222,6 +222,8 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_xtal_get_freq_mhz(v
     return PCR.sysclk_conf.clk_xtal_freq;
 }
 
+#define clk_ll_xtal_load_freq_mhz() clk_ll_xtal_get_freq_mhz()
+
 /**
  * @brief Get SPLL_CLK frequency
  *

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,9 +47,7 @@
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/sleep_modem.h"
 #include "esp_private/uart_share_hw_ctrl.h"
-#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
-#include "esp_private/mspi_timing_tuning.h"
-#endif
+#include "esp_private/esp_clk_utils.h"
 #include "esp_sleep.h"
 #include "esp_memory_utils.h"
 
@@ -669,16 +667,12 @@ static void IRAM_ATTR do_switch(pm_mode_t new_mode)
         if (switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
         }
-#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
-        if (new_config.source_freq_mhz > clk_ll_xtal_load_freq_mhz()) {
-            rtc_clk_cpu_freq_set_config_fast(&new_config);
-            mspi_timing_change_speed_mode_cache_safe(false);
-        } else {
-            mspi_timing_change_speed_mode_cache_safe(true);
-            rtc_clk_cpu_freq_set_config_fast(&new_config);
-        }
-#else
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+        esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
+#endif
         rtc_clk_cpu_freq_set_config_fast(&new_config);
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+        esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(new_config.source_freq_mhz, new_config.freq_mhz);
 #endif
         if (!switch_down) {
             on_freq_update(old_ticks_per_us, new_ticks_per_us);
