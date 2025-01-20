@@ -32,7 +32,7 @@
 #include "utils/link_metrics.h"
 #include "utils/mac_frame.h"
 
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 #include "esp_coex_i154.h"
 #endif
 
@@ -803,7 +803,7 @@ void otPlatRadioSetRxOnWhenIdle(otInstance *aInstance, bool aEnable)
 }
 #endif
 
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 void esp_openthread_set_coex_config(esp_ieee802154_coex_config_t config)
 {
     esp_ieee802154_set_coex_config(config);
