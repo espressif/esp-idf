@@ -1,17 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
-#include <stdint.h>
-#include <stdbool.h>
-#include "soc/soc_pins.h"
 #include "soc/soc_caps.h"
-#include "soc/periph_defs.h"
-#include "soc/gpio_sig_map.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -66,14 +61,28 @@ typedef struct {
 } usb_otg_signal_conn_t;
 
 /**
+ * @brief Internal USB PHY IO
+ *
+ * Structure to store the IO numbers for a particular internal USB PHY
+ */
+typedef struct {
+    int dp;
+    int dm;
+} usb_internal_phy_io_t;
+
+/**
  * @brief USB Controller Information
  *
  * Structure to store information for all USB-DWC instances
+ *
+ * For targets with multiple USB controllers, we support only fixed mapping of the PHYs.
+ * This is a software limitation; the hardware supports swapping Controllers and PHYs.
  */
 typedef struct {
     struct {
         const usb_fsls_serial_signal_conn_t * const fsls_signals;   // Must be set if external PHY is supported by controller
         const usb_otg_signal_conn_t * const otg_signals;
+        const usb_internal_phy_io_t * const internal_phy_io;        // Must be set for internal FSLS PHY(s)
         const int irq;
         const int irq_2nd_cpu;  // The USB-DWC can provide 2nd interrupt so each CPU can have its own interrupt line. Set to -1 if not supported
     } controllers [SOC_USB_OTG_PERIPH_NUM];
@@ -85,6 +94,8 @@ extern const usb_dwc_info_t usb_dwc_info;
 
 /* ------------------------------- Deprecated ------------------------------- */
 /* Todo: Remove in ESP-IDF v6.0 (IDF-9052) */
+#include <stdint.h>
+#include "soc/periph_defs.h"
 
 #if SOC_USB_OTG_SUPPORTED
 
