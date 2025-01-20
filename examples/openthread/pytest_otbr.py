@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 import copy
@@ -446,7 +446,10 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         command = 'dns browse _testxxx._udp.default.service.arpa'
         tmp = ocf.get_ouput_string(cli, command, 5)
         assert 'Port:12347' not in str(tmp)
-        ocf.host_publish_service()
+        ocf.restart_avahi()
+        command = 'avahi-publish-service testxxx _testxxx._udp 12347 test=1235 dn="for_ci_br_test"'
+        sp = subprocess.Popen(command, shell=True)
+        time.sleep(2)
         ocf.wait(cli, 5)
 
         command = 'dns browse _testxxx._udp.default.service.arpa'
@@ -454,14 +457,13 @@ def test_service_discovery_of_WiFi_device(Init_interface:bool, Init_avahi:bool, 
         assert 'response for _testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
 
-        command = 'dns browse _testxxx._udp.default.service.arpa'
+        command = 'dns service testxxx _testxxx._udp.default.service.arpa.'
         tmp = ocf.get_ouput_string(cli, command, 5)
-        ocf.execute_command(cli, 'dns service testxxx _testxxx._udp.default.service.arpa.')
-        tmp = cli.expect(pexpect.TIMEOUT, timeout=5)
         assert 'response for testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
     finally:
         ocf.host_close_service()
+        sp.terminate()
         ocf.execute_command(br, 'factoryreset')
         ocf.execute_command(cli, 'factoryreset')
         time.sleep(3)

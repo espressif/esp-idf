@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 # !/usr/bin/env python3
 # this file defines some functions for testing cli and br under pytest framework
@@ -389,20 +389,21 @@ def get_host_ipv4_address() -> str:
     return host_ipv4_address
 
 
-def start_avahi() -> None:
-    time.sleep(1)
-    command = '/etc/init.d/dbus start'
+def restart_avahi() -> None:
+    command = 'avahi-daemon -k'
     subprocess.Popen(command, shell=True)
-    time.sleep(5)
+    time.sleep(2)
     command = 'avahi-daemon'
     subprocess.Popen(command, shell=True)
     time.sleep(5)
 
 
-def host_publish_service() -> None:
-    command = 'avahi-publish-service testxxx _testxxx._udp 12347 test=1235 dn="for_ci_br_test"'
+def start_avahi() -> None:
+    time.sleep(1)
+    command = '/etc/init.d/dbus start'
     subprocess.Popen(command, shell=True)
-    time.sleep(2)
+    time.sleep(5)
+    restart_avahi()
 
 
 def host_close_service() -> None:
