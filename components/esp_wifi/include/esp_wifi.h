@@ -583,7 +583,7 @@ esp_err_t esp_wifi_scan_stop(void);
 esp_err_t esp_wifi_scan_get_ap_num(uint16_t *number);
 
 /**
-  * @brief     Get AP list found in last scan.
+  * @brief     Retrieve the list of APs found during the last scan. The returned AP list is sorted in descending order based on RSSI.
   *
   * @attention  This API will free all memory occupied by scanned AP list.
   *
