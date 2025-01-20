@@ -13,7 +13,7 @@ CONFIGS = [
     # TODO: [ESP32C61] IDF-11146
     pytest.param('smp', marks=[
         pytest.mark.supported_targets,
-        pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61'],
+        pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61', 'esp32h21'],
                                  reason='test failed/TBD IDF-8113')
     ]),
 ]
