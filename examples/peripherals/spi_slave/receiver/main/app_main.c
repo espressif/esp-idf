@@ -100,11 +100,10 @@ void app_main(void)
     ret = spi_slave_initialize(RCV_HOST, &buscfg, &slvcfg, SPI_DMA_CH_AUTO);
     assert(ret == ESP_OK);
 
-    WORD_ALIGNED_ATTR char sendbuf[129] = "";
-    WORD_ALIGNED_ATTR char recvbuf[129] = "";
-    memset(recvbuf, 0, 33);
-    spi_slave_transaction_t t;
-    memset(&t, 0, sizeof(t));
+    char *sendbuf = heap_caps_malloc(129, MALLOC_CAP_DMA);
+    char *recvbuf = heap_caps_malloc(129, MALLOC_CAP_DMA);
+    assert(sendbuf && recvbuf);
+    spi_slave_transaction_t t = {0};
 
     while (1) {
         //Clear receive buffer, set send buffer to something sane
@@ -128,5 +127,4 @@ void app_main(void)
         printf("Received: %s\n", recvbuf);
         n++;
     }
-
 }
