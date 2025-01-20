@@ -480,7 +480,7 @@ esp_err_t adc_digi_start(void)
 
     adc_hal_digi_init(&s_adc_digi_ctx->hal);
 #if !CONFIG_IDF_TARGET_ESP32
-    esp_clk_tree_enable_src((soc_module_clk_t)(s_adc_digi_ctx->hal_digi_ctrlr_cfg.clk_src), true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(s_adc_digi_ctx->hal_digi_ctrlr_cfg.clk_src), true));
 #endif
     adc_hal_digi_controller_config(&s_adc_digi_ctx->hal, &s_adc_digi_ctx->hal_digi_ctrlr_cfg);
 
@@ -524,6 +524,7 @@ esp_err_t adc_digi_stop(void)
     if (s_adc_digi_ctx->use_adc1) {
         adc_lock_release(ADC_UNIT_1);
     }
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)(s_adc_digi_ctx->hal_digi_ctrlr_cfg.clk_src), false));
     sar_periph_ctrl_adc_continuous_power_release();
 
     return ESP_OK;

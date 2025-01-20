@@ -171,7 +171,7 @@ modem_clock_context_t * __attribute__((weak)) IRAM_ATTR MODEM_CLOCK_instance(voi
         modem_clock_hal.syscon_dev = &MODEM_SYSCON;
         modem_clock_hal.lpcon_dev = &MODEM_LPCON;
 #if SOC_CLOCK_TREE_MANAGEMENT_SUPPORTED
-        esp_clk_tree_enable_src(SOC_MOD_CLK_MODEM_APB, true);
+        ESP_ERROR_CHECK(esp_clk_tree_enable_src(SOC_MOD_CLK_MODEM_APB, true));
 #endif
     }
     return &modem_clock_context;

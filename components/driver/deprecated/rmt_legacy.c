@@ -440,7 +440,7 @@ esp_err_t rmt_set_source_clk(rmt_channel_t channel, rmt_source_clk_t base_clk)
 {
     ESP_RETURN_ON_FALSE(channel < RMT_CHANNEL_MAX, ESP_ERR_INVALID_ARG, TAG, RMT_CHANNEL_ERROR_STR);
     RMT_ENTER_CRITICAL();
-    esp_clk_tree_enable_src((soc_module_clk_t)base_clk, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)base_clk, true));
     // `rmt_clock_source_t` and `rmt_source_clk_t` are binary compatible, as the underlying enum entries come from the same `soc_module_clk_t`
     RMT_CLOCK_SRC_ATOMIC() {
         rmt_ll_set_group_clock_src(rmt_contex.hal.regs, channel, (rmt_clock_source_t)base_clk, 1, 0, 0);
@@ -606,7 +606,7 @@ static esp_err_t rmt_internal_config(rmt_dev_t *dev, const rmt_config_t *rmt_par
 #endif
     }
     esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &rmt_source_clk_hz);
-    esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true));
     RMT_CLOCK_SRC_ATOMIC() {
         rmt_ll_set_group_clock_src(dev, channel, clk_src, 1, 0, 0);
         rmt_ll_enable_group_clock(dev, true);

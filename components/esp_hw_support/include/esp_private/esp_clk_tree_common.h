@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -83,11 +83,6 @@ uint32_t esp_clk_tree_lp_fast_get_freq_hz(esp_clk_tree_src_freq_precision_t prec
  *
  * @param[in] clk_src Clock source available to modules, in soc_module_clk_t
  * @param[in] enable  Enable / Disable the clock gate
- *
- * @note !!! WARNING !!!
- *       There's no reference counter to protect the clock source status, the caller should use the interface
- *       with CAUTION to disable the clock source to avoid damaging other peripherals that are dependent on
- *       the clock source.
  *
  * @return
  *      - ESP_OK               Success

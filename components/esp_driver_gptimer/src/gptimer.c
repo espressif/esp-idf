@@ -108,6 +108,9 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 
 static esp_err_t gptimer_destroy(gptimer_t *timer)
 {
+    if (timer->clk_src) {
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)(timer->clk_src), false), TAG, "clock source disable failed");
+    }
 #if CONFIG_PM_ENABLE
     if (timer->pm_lock) {
         ESP_RETURN_ON_ERROR(esp_pm_lock_delete(timer->pm_lock), TAG, "delete pm_lock failed");
@@ -157,6 +160,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     // initialize HAL layer
     timer_hal_init(&timer->hal, group_id, timer_id);
     // select clock source, set clock resolution
+    ESP_GOTO_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)config->clk_src, true), err, TAG, "clock source enable failed");
     ESP_GOTO_ON_ERROR(gptimer_select_periph_clock(timer, config->clk_src, config->resolution_hz), err, TAG, "set periph clock failed");
     // initialize counter value to zero
     timer_hal_set_counter_value(&timer->hal, 0);

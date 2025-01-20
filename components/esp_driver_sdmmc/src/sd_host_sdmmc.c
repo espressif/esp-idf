@@ -987,7 +987,7 @@ static esp_err_t sd_host_reset(sd_host_sdmmc_ctlr_t *ctlr)
  */
 static void sd_host_set_clk_div(sd_host_sdmmc_ctlr_t *ctlr, soc_periph_sdmmc_clk_src_t src, int div)
 {
-    esp_clk_tree_enable_src((soc_module_clk_t)src, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)src, true));
     SD_HOST_SDMMC_CLK_SRC_ATOMIC() {
         sdmmc_ll_set_clock_div(ctlr->hal.dev, div);
         sdmmc_ll_select_clk_source(ctlr->hal.dev, src);

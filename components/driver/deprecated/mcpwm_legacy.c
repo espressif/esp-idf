@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -470,7 +470,7 @@ esp_err_t mcpwm_init(mcpwm_unit_t mcpwm_num, mcpwm_timer_t timer_num, const mcpw
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
     uint32_t timer_pre_scale = group_resolution / timer_resolution;
 
-    esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true));
     MCPWM_CLOCK_SRC_ATOMIC() {
         mcpwm_ll_group_set_clock_source(mcpwm_num, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(mcpwm_num, group_pre_scale);
@@ -868,7 +868,7 @@ esp_err_t mcpwm_capture_enable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_cha
     uint32_t group_resolution = mcpwm_group_get_resolution(mcpwm_num);
     uint32_t group_pre_scale = clk_src_hz / group_resolution;
 
-    esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, true));
     MCPWM_CLOCK_SRC_ATOMIC() {
         mcpwm_ll_group_set_clock_source(mcpwm_num, (soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT);
         mcpwm_ll_group_set_clock_prescale(mcpwm_num, group_pre_scale);
@@ -910,6 +910,7 @@ esp_err_t mcpwm_capture_disable_channel(mcpwm_unit_t mcpwm_num, mcpwm_capture_ch
     mcpwm_ll_capture_enable_channel(hal->dev, cap_channel, false);
     mcpwm_ll_intr_enable(hal->dev, MCPWM_LL_EVENT_CAPTURE(cap_channel), false);
     mcpwm_critical_exit(mcpwm_num);
+    ESP_ERROR_CHECK(esp_clk_tree_enable_src((soc_module_clk_t)MCPWM_CAPTURE_CLK_SRC_DEFAULT, false));
 
     mcpwm_mutex_lock(mcpwm_num);
     context[mcpwm_num].cap_isr_func[cap_channel].fn = NULL;

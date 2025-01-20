@@ -201,7 +201,7 @@ esp_err_t mcpwm_select_periph_clock(mcpwm_group_t *group, soc_module_clk_t clk_s
         ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
-        esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true);
+        ESP_RETURN_ON_ERROR(esp_clk_tree_enable_src((soc_module_clk_t)clk_src, true), TAG, "clock source enable failed");
         MCPWM_CLOCK_SRC_ATOMIC() {
             mcpwm_ll_group_set_clock_source(group_id, clk_src);
         }
