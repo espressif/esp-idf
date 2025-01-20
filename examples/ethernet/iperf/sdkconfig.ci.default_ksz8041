@@ -14,9 +14,13 @@ CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
 # --------------------------------
 # Performance optimization options
 # --------------------------------
-# `lwIP` and `iperf` tasks have serial dependency to each other (i.e. `iperf` must wait for `lwIP`
-# to process the packets). Therefore, you don't gain much performance improvement when running
-# multi core mode. On the other hand, IRAM optimizations have greater effect for single core mode.
+# The lwIP and iperf tasks have a serial dependency (i.e., iperf must wait for lwIP to process packets),
+# meaning that running in multi-core mode does not significantly improve performance. Additionally,
+# IRAM optimizations have a more noticeable effect in single-core mode.
+# However, while a single-core configuration can enhance iperf performance in controlled or isolated
+# testing scenarios, it may not be optimal for real-world applications where the system also needs to
+# handle additional, non-network-related tasks. In such cases, multi-core configurations might be better
+# suited for balancing workloads and ensuring overall system responsiveness.
 
 # Run FreeRTOS only on the first core
 CONFIG_FREERTOS_UNICORE=y

@@ -86,7 +86,9 @@ static bool g_gatts_svcs_add = false;
 #endif
 #endif /* CONFIG_BLE_MESH_NODE */
 
-#if CONFIG_BLE_MESH_USE_BLE_50 && CONFIG_BLE_MESH_SUPPORT_BLE_ADV
+#if CONFIG_BLE_MESH_USE_BLE_50      && \
+    CONFIG_BLE_MESH_SUPPORT_BLE_ADV && \
+    (!CONFIG_BLE_MESH_SUPPORT_MULTI_ADV)
 static inline void bt_mesh_set_ble_adv_running();
 
 static inline void bt_mesh_unset_ble_adv_running();
@@ -930,10 +932,14 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         BT_DBG("advertise complete; reason=%d",
                event->adv_complete.reason);
-        /* Limit Reached (0x43) and Advertising Timeout (0x3C) will cause BLE_HS_ETIMEOUT to be set. */
 #if CONFIG_BLE_MESH_USE_BLE_50
+#if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+#else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+        assert(CONFIG_BLE_MESH_ADV_INST_ID == event->adv_complete.instance);
+        /* Limit Reached (0x43) and Advertising Timeout (0x3C) will cause BLE_HS_ETIMEOUT to be set. */
         if (event->adv_complete.reason == BLE_HS_ETIMEOUT) {
-            ble_mesh_adv_task_wakeup(event->adv_complete.instance);
+            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -956,9 +962,10 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             * could lead to resource contention issues.
             */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(event->adv_complete.instance);
+            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+#endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
         return 0;
 
@@ -1053,9 +1060,13 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_ADV_COMPLETE:
         BT_DBG("Provisioner advertise complete; reason=%d",
                event->adv_complete.reason);
+#if CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+        ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(event->adv_complete.instance));
+#else /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
+        assert(CONFIG_BLE_MESH_ADV_INST_ID == event->adv_complete.instance);
         /* Limit Reached (0x43) and Advertising Timeout (0x3C) will cause BLE_HS_ETIMEOUT to be set. */
         if (event->adv_complete.reason == BLE_HS_ETIMEOUT) {
-            ble_mesh_adv_task_wakeup(event->adv_complete.instance);
+            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
         }
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
         /**
@@ -1078,9 +1089,10 @@ static int gap_event_cb(struct ble_gap_event *event, void *arg)
             * could lead to resource contention issues.
             */
             bt_mesh_unset_ble_adv_running();
-            ble_mesh_adv_task_wakeup(event->adv_complete.instance);
+            ble_mesh_adv_task_wakeup(ADV_TASK_ADV_INST_EVT(CONFIG_BLE_MESH_ADV_INST_ID));
         }
 #endif /* CONFIG_BLE_MESH_SUPPORT_BLE_ADV */
+#endif /* CONFIG_BLE_MESH_SUPPORT_MULTI_ADV */
         break;
     }
 #endif /* CONFIG_BLE_MESH_USE_BLE_50 */
@@ -1210,8 +1222,6 @@ int bt_le_ext_adv_start(const uint8_t inst_id,
     if (adv_params.legacy_pdu && interval >= 16) {
         interval >>= 1;
         interval += (bt_mesh_get_rand() % (interval + 1));
-
-        adv_params->high_duty_directed = true;
 
         BT_INFO("%u->%u", param->interval_min, interval);
     }
@@ -1376,7 +1386,14 @@ again:
 
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 #if CONFIG_BLE_MESH_USE_BLE_50
-
+#if !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
+/**
+ * The current flag is only used to distinguish between BLE ADV
+ * and proxy ADV in the same adv instance to handle the adv
+ * completed events.
+ *
+ * This flag is not needed in the case of multiple adv instances.
+ */
 static bool _ble_adv_running_flag;
 
 static inline void bt_mesh_set_ble_adv_running()
@@ -1393,6 +1410,7 @@ static inline bool bt_mesh_is_ble_adv_running()
 {
     return _ble_adv_running_flag == true;
 }
+#endif /* BLE_MESH_SUPPORT_MULTI_ADV */
 
 int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
                               const struct bt_mesh_ble_adv_param *param,
@@ -1507,7 +1525,9 @@ int bt_mesh_ble_ext_adv_start(const uint8_t inst_id,
         return err;
     }
 
+#if !CONFIG_BLE_MESH_SUPPORT_MULTI_ADV
     bt_mesh_set_ble_adv_running();
+#endif
 
     return 0;
 }

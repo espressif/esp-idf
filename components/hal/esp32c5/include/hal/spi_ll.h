@@ -697,6 +697,25 @@ static inline void spi_ll_master_keep_cs(spi_dev_t *hw, int keep_active)
  * Configs: parameters
  *----------------------------------------------------------------------------*/
 /**
+ * Set the standard clock mode for master.
+ *
+ * @param hw  Beginning address of the peripheral registers.
+ * @param enable_std True for std timing, False for half cycle delay sampling.
+ */
+static inline void spi_ll_master_set_rx_timing_mode(spi_dev_t *hw, spi_sampling_point_t sample_point)
+{
+    //This is not supported
+}
+
+/**
+ * Get if standard clock mode is supported.
+ */
+static inline bool spi_ll_master_is_rx_std_sample_supported(void)
+{
+    return false;
+}
+
+/**
  * Set the clock for master by stored value.
  *
  * @param hw  Beginning address of the peripheral registers.
@@ -733,7 +752,7 @@ static inline int spi_ll_freq_for_pre_n(int fapb, int pre, int n)
  */
 static inline int spi_ll_master_cal_clock(int fapb, int hz, int duty_cycle, spi_ll_clock_val_t *out_reg)
 {
-    typeof(GPSPI2.clock) reg;
+    typeof(GPSPI2.clock) reg = {.val = 0};
     int eff_clk;
 
     //In hw, n, h and l are 1-64, pre is 1-8K. Value written to register is one lower than used value.

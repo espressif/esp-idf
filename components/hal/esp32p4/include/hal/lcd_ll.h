@@ -63,7 +63,7 @@ static inline void lcd_ll_enable_bus_clock(int group_id, bool enable)
  *
  * @param group_id Group ID
  */
-static inline void lcd_ll_reset_register(int group_id)
+static inline void _lcd_ll_reset_register(int group_id)
 {
     (void)group_id;
     HP_SYS_CLKRST.hp_rst_en2.reg_rst_en_lcdcam = 1;
@@ -72,7 +72,7 @@ static inline void lcd_ll_reset_register(int group_id)
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_RC_ATOMIC_ENV variable in advance
-#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; lcd_ll_reset_register(__VA_ARGS__)
+#define lcd_ll_reset_register(...) (void)__DECLARE_RCC_RC_ATOMIC_ENV; _lcd_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable clock gating
@@ -130,12 +130,8 @@ __attribute__((always_inline))
 static inline void lcd_ll_set_group_clock_coeff(lcd_cam_dev_t *dev, int div_num, int div_a, int div_b)
 {
     // lcd_clk = module_clock_src / (div_num + div_b / div_a)
-    HAL_ASSERT(div_num >= 2 && div_num <= LCD_LL_CLK_FRAC_DIV_N_MAX);
-    // dic_num == 0 means LCD_LL_CLK_FRAC_DIV_N_MAX divider in hardware
-    if (div_num >= LCD_LL_CLK_FRAC_DIV_N_MAX) {
-        div_num = 0;
-    }
-    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_num, div_num);
+    HAL_ASSERT(div_num > 0 && div_num <= LCD_LL_CLK_FRAC_DIV_N_MAX);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_num, div_num - 1);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_denominator, div_a);
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl110, reg_lcd_clk_div_numerator, div_b);
 }
@@ -177,7 +173,7 @@ static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_o
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
-    HAL_ASSERT(prescale <= LCD_LL_PCLK_DIV_MAX);
+    HAL_ASSERT(prescale > 0 && prescale <= LCD_LL_PCLK_DIV_MAX);
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
     // clkcnt_n can't be zero
     uint32_t scale = 1;

@@ -25,7 +25,7 @@ while (1)
     extern void bt_hci_log_hci_adv_show(void);
     bt_hci_log_hci_data_show();  // Display HCI data logs
     bt_hci_log_hci_adv_show();   // Display HCI advertisement logs
-    vTaskDelay(1000 / portNUM_PROCESSORS);
+    vTaskDelay(1000 / portTICK_PERIOD_MS);
 }
 ```
 

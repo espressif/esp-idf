@@ -18,9 +18,6 @@ components/driver/test_apps/legacy_adc_driver:
   disable:
     - if: SOC_ADC_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET == "esp32p4"
-      temporary: true
-      reason: lack of runners, TODO IDF-9573
     - if: IDF_TARGET == "esp32c61"
       temporary: true
       reason: lack of runners
@@ -34,13 +31,10 @@ components/driver/test_apps/legacy_adc_driver:
 components/driver/test_apps/legacy_i2c_driver:
   disable:
     - if: SOC_I2C_SUPPORTED != 1
-  depends_filepatterns:
-    - components/driver/i2c/**
-    # Following dependency is needed because they might increase lazy installed memory
-    # that can cause sleep retention memory leak check failed.
-    - components/ieee802154/**
-    - components/esp_coex/**
-    - components/esp_phy/**
+  disable_test:
+    - if: IDF_TARGET != "none"
+      temporary: false
+      reason: disable target test for legacy i2c driver.
 
 components/driver/test_apps/legacy_mcpwm_driver:
   disable:

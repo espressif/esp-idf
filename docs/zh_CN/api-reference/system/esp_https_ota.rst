@@ -147,8 +147,6 @@ ESP HTTPS OTA 过程中可能发生各种系统事件。当特定事件发生时
 应用示例
 ----------------
 
-- :example:`system/ota/pre_encrypted_ota` 演示了如何使用 `esp_encrypted_img` 组件的 API 和工具进行带预加密二进制文件的 OTA 更新，确保固件在网络通道上的机密性，但不保证其真实性。要进行带预加密固件的 OTA 升级，请在组件 `menuconfig` 中启用 :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB`。
-
 - :example:`system/ota/advanced_https_ota` 演示了如何在 {IDF_TARGET_NAME} 上使用 `esp_https_ota` 组件的 API 来使用 HTTPS OTA 更新功能。关于该示例适用的芯片，请参考 :example_file:`system/ota/advanced_https_ota/README.md`。
 
 - :example:`system/ota/partitions_ota` 演示了如何使用 `esp_https_ota` 组件的 API 对多个分区（应用、引导加载程序、分区表、存储）进行 OTA 更新。

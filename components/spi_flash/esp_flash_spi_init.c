@@ -386,6 +386,10 @@ esp_err_t esp_flash_init_default_chip(void)
     cfg.tsus_val = TSUS_VAL_SUSPEND;
     #endif // CONFIG_SPI_FLASH_AUTO_SUSPEND
 
+    #if CONFIG_SPI_FLASH_AUTO_CHECK_SUSPEND_STATUS
+    cfg.auto_waiti_pes = true;
+    #endif
+
     //the host is already initialized, only do init for the data and load it to the host
     esp_err_t err = memspi_host_init_pointers(&esp_flash_default_host, &cfg);
     if (err != ESP_OK) {

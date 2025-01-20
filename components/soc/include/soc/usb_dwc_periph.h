@@ -63,7 +63,7 @@ typedef struct {
     int drvvbus;
     int chrgvbus;
     int dischrgvbus;
-} usb_utmi_otg_signal_conn_t;
+} usb_otg_signal_conn_t;
 
 /**
  * @brief USB Controller Information
@@ -73,7 +73,7 @@ typedef struct {
 typedef struct {
     struct {
         const usb_fsls_serial_signal_conn_t * const fsls_signals;   // Must be set if external PHY is supported by controller
-        const usb_utmi_otg_signal_conn_t * const otg_signals;
+        const usb_otg_signal_conn_t * const otg_signals;
         const int irq;
         const int irq_2nd_cpu;  // The USB-DWC can provide 2nd interrupt so each CPU can have its own interrupt line. Set to -1 if not supported
     } controllers [SOC_USB_OTG_PERIPH_NUM];

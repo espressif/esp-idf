@@ -1,13 +1,10 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 import time
 
 import pytest
 from pytest_embedded import Dut
-
-touch_wake_up_support = ['esp32', 'esp32s2']
-
 
 CONFIGS = [
     pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
@@ -33,18 +30,12 @@ CONFIGS = [
 @pytest.mark.generic
 def test_deep_sleep(dut: Dut) -> None:
     def expect_enable_deep_sleep_touch() -> None:
-        # different targets configure different wake pin(s)
-        wake_pads = {
-            'esp32': [8, 9],
-            'esp32s2': [9],
-        }[dut.target]
-
-        logging.info('Expecting to see wakeup configured on pad(s): {}'.format(wake_pads))
-
         expect_items = ['Enabling timer wakeup, 20s']
-        for pad in wake_pads:
-            expect_items += [r'Touch pad #{} average: \d+, wakeup threshold set to \d+.'.format(pad)]
-        expect_items += ['Enabling touch pad wakeup']
+        expect_items += ['Enabling touch wakeup']
+        expect_items += [r'Touch \[CH [0-9]+\] enabled on GPIO[0-9]+']
+        if dut.target != 'esp32':
+            expect_items += [r'Touch channel [0-9]+ \(GPIO[0-9]+\) is selected as deep sleep wakeup channel']
+        expect_items += ['touch wakeup source is ready']
 
         for exp in expect_items:
             dut.expect(exp, timeout=10)
@@ -52,7 +43,7 @@ def test_deep_sleep(dut: Dut) -> None:
     def expect_enable_deep_sleep_no_touch() -> None:
         dut.expect_exact('Enabling timer wakeup, 20s', timeout=10)
 
-    if dut.target in touch_wake_up_support:
+    if dut.app.sdkconfig.get('SOC_TOUCH_SUPPORT_SLEEP_WAKEUP'):
         expect_enable_deep_sleep = expect_enable_deep_sleep_touch
     else:
         expect_enable_deep_sleep = expect_enable_deep_sleep_no_touch

@@ -11,7 +11,7 @@ from pytest_embedded_idf import IdfDut
 
 
 def run_gdb_test(dut: IdfDut) -> None:
-    with open(os.path.join(dut.logdir, 'ocd.txt'), 'w') as ocd_log, \
+    with open(os.path.join(dut.logdir, 'ocd.txt'), 'w', encoding='utf-8') as ocd_log, \
         pexpect.spawn(f'openocd -f board/esp32c6-builtin.cfg',
                       timeout=60,
                       logfile=ocd_log,

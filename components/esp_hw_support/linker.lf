@@ -26,6 +26,8 @@ entries:
         pmu_param (noflash)
     if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
+    if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD = y:
+        sleep_usb (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:

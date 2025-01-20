@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,6 @@
 #include "freertos/FreeRTOS.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "esp_heap_caps.h"
 #include "soc/soc_caps.h"
 #include "hal/ldo_ll.h"
 #include "esp_ldo_regulator.h"
@@ -24,7 +23,6 @@ typedef struct ldo_regulator_channel_t {
     int ref_cnt;
     struct {
         uint32_t adjustable : 1;
-        uint32_t bypass : 1;
     } flags;
 } ldo_regulator_channel_t;
 
@@ -32,6 +30,8 @@ static portMUX_TYPE s_spinlock = portMUX_INITIALIZER_UNLOCKED;
 
 static const uint32_t s_ldo_channel_adjustable_mask = LDO_LL_ADJUSTABLE_CHAN_MASK; // each bit represents if the LDO channel is adjustable in hardware
 
+// Allocate LDO channel memory statically
+// LDO is a fundamental module and should be usable even without a heap allocator
 static ldo_regulator_channel_t s_ldo_channels[LDO_LL_NUM_UNITS] = {
     [0 ... LDO_LL_NUM_UNITS - 1] = {
         .chan_id = -1,
@@ -45,8 +45,11 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
 {
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(ldo_ll_is_valid_ldo_channel(config->chan_id), ESP_ERR_INVALID_ARG, TAG, "invalid ldo channel ID");
-    ESP_RETURN_ON_FALSE(config->voltage_mv <= LDO_LL_MAX_VOLTAGE_MV,
-                        ESP_ERR_INVALID_ARG, TAG, "invalid voltage value: %d", config->voltage_mv);
+    // check if the target voltage is within the recommended range
+    if (!((config->voltage_mv == LDO_LL_RAIL_VOLTAGE_MV) ||
+            (config->voltage_mv >= LDO_LL_RECOMMEND_MIN_VOLTAGE_MV && config->voltage_mv <= LDO_LL_RECOMMEND_MAX_VOLTAGE_MV))) {
+        ESP_LOGW(TAG, "The voltage value %d is out of the recommended range [%d, %d]", config->voltage_mv, LDO_LL_RECOMMEND_MIN_VOLTAGE_MV, LDO_LL_RECOMMEND_MAX_VOLTAGE_MV);
+    }
     int unit_id = LDO_ID2UNIT(config->chan_id);
     ldo_regulator_channel_t *channel = &s_ldo_channels[unit_id];
 
@@ -82,9 +85,10 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
             // if the channel is not in use, we need to set the initial voltage and enable it
             uint8_t dref = 0;
             uint8_t mul = 0;
+            bool use_rail_voltage = false;
             // calculate the dref and mul
-            ldo_ll_voltage_to_dref_mul(unit_id, config->voltage_mv, &dref, &mul);
-            ldo_ll_adjust_voltage(unit_id, dref, mul, config->flags.bypass);
+            ldo_ll_voltage_to_dref_mul(unit_id, config->voltage_mv, &dref, &mul, &use_rail_voltage);
+            ldo_ll_adjust_voltage(unit_id, dref, mul, use_rail_voltage);
             // set the ldo unit owner ship
             ldo_ll_set_owner(unit_id, config->flags.owned_by_hw ? LDO_LL_UNIT_OWNER_HW : LDO_LL_UNIT_OWNER_SW);
             // suppress voltage ripple
@@ -95,7 +99,6 @@ esp_err_t esp_ldo_acquire_channel(const esp_ldo_channel_config_t *config, esp_ld
         channel->ref_cnt++;
         channel->voltage_mv = config->voltage_mv;
         channel->flags.adjustable = config->flags.adjustable;
-        channel->flags.bypass = config->flags.bypass;
         channel->chan_id = config->chan_id;
     }
     portEXIT_CRITICAL(&s_spinlock);
@@ -143,9 +146,11 @@ esp_err_t esp_ldo_channel_adjust_voltage(esp_ldo_channel_handle_t chan, int volt
 {
     ESP_RETURN_ON_FALSE(chan, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(chan->flags.adjustable, ESP_ERR_NOT_SUPPORTED, TAG, "LDO is not adjustable");
-    // check if the voltage is within the valid range
-    ESP_RETURN_ON_FALSE(voltage_mv >= LDO_LL_MIN_VOLTAGE_MV && voltage_mv <= LDO_LL_MAX_VOLTAGE_MV,
-                        ESP_ERR_INVALID_ARG, TAG, "invalid voltage value: %d", voltage_mv);
+    // check if the target voltage is within the recommended range
+    if (!((voltage_mv == LDO_LL_RAIL_VOLTAGE_MV) ||
+            (voltage_mv >= LDO_LL_RECOMMEND_MIN_VOLTAGE_MV && voltage_mv <= LDO_LL_RECOMMEND_MAX_VOLTAGE_MV))) {
+        ESP_LOGW(TAG, "The voltage value %d is out of the recommended range [%d, %d]", voltage_mv, LDO_LL_RECOMMEND_MIN_VOLTAGE_MV, LDO_LL_RECOMMEND_MAX_VOLTAGE_MV);
+    }
 
     // About Thread Safety:
     // because there won't be more than 1 consumer for the same adjustable LDO channel (guaranteed by esp_ldo_acquire_channel)
@@ -155,9 +160,10 @@ esp_err_t esp_ldo_channel_adjust_voltage(esp_ldo_channel_handle_t chan, int volt
     int unit_id = LDO_ID2UNIT(chan->chan_id);
     uint8_t dref = 0;
     uint8_t mul = 0;
+    bool use_rail_voltage = false;
     // calculate the dref and mul
-    ldo_ll_voltage_to_dref_mul(unit_id, voltage_mv, &dref, &mul);
-    ldo_ll_adjust_voltage(unit_id, dref, mul, chan->flags.bypass);
+    ldo_ll_voltage_to_dref_mul(unit_id, voltage_mv, &dref, &mul, &use_rail_voltage);
+    ldo_ll_adjust_voltage(unit_id, dref, mul, use_rail_voltage);
 
     return ESP_OK;
 }

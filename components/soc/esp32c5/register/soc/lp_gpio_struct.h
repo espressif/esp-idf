@@ -33,7 +33,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** out_w1ts : WT; bitpos: [7:0]; default: 0;
+        /** out_data_w1ts : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to enable the output register LP_IO_OUT_REG of GPIO0 ~
          *  GPIO7.\\
          *
@@ -42,7 +42,7 @@ typedef union {
          *  will be set to 1.
          *  - Recommended operation: use this register to set LP_IO_OUT_REG.
          */
-        uint32_t out_w1ts:8;
+        uint32_t out_data_w1ts:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -53,7 +53,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** out_w1tc : WT; bitpos: [7:0]; default: 0;
+        /** out_data_w1tc : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to clear the output register LP_IO_OUT_REG of GPIO0 ~
          *  GPIO7.\\
          *
@@ -62,7 +62,7 @@ typedef union {
          *  will be cleared.
          *  - Recommended operation: use this register to clear LP_IO_OUT_REG.
          */
-        uint32_t out_w1tc:8;
+        uint32_t out_data_w1tc:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -90,7 +90,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** enable_w1ts : WT; bitpos: [7:0]; default: 0;
+        /** out_enable_w1ts : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to set the output enable register LP_IO_ENABLE_REG of
          *  GPIO0 ~ GPIO7.\\
          *
@@ -99,7 +99,7 @@ typedef union {
          *  LP_IO_ENABLE_REG will be set to 1.
          *  - Recommended operation: use this register to set LP_IO_ENABLE_REG.
          */
-        uint32_t enable_w1ts:8;
+        uint32_t out_enable_w1ts:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -110,7 +110,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** enable_w1tc : WT; bitpos: [7:0]; default: 0;
+        /** out_enable_w1tc : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to clear the output enable register LP_IO_ENABLE_REG of
          *  GPIO0 ~ GPIO7.\\
          *
@@ -119,7 +119,7 @@ typedef union {
          *  LP_IO_ENABLE_REG will be cleared.
          *  - Recommended operation: use this register to clear LP_IO_ENABLE_REG.
          */
-        uint32_t enable_w1tc:8;
+        uint32_t out_enable_w1tc:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -165,7 +165,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** status_w1ts : WT; bitpos: [7:0]; default: 0;
+        /** status_intr_w1ts : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to set the interrupt status register LP_IO_STATUS_INT of
          *  GPIO0 ~ GPIO7.\\
          *
@@ -174,7 +174,7 @@ typedef union {
          *  LP_IO_STATUS_INT will be set to 1.
          *  - Recommended operation: use this register to set LP_IO_STATUS_INT.
          */
-        uint32_t status_w1ts:8;
+        uint32_t status_intr_w1ts:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;
@@ -185,7 +185,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** status_w1tc : WT; bitpos: [7:0]; default: 0;
+        /** status_intr_w1tc : WT; bitpos: [7:0]; default: 0;
          *  Configures whether or not to clear the interrupt status register LP_IO_STATUS_INT
          *  of GPIO0 ~ GPIO7. \\
          *
@@ -194,7 +194,7 @@ typedef union {
          *  LP_IO_STATUS_INT will be cleared
          *  - ecommended operation: use this register to clear LP_IO_STATUS_INT.
          */
-        uint32_t status_w1tc:8;
+        uint32_t status_intr_w1tc:8;
         uint32_t reserved_8:24;
     };
     uint32_t val;

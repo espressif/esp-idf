@@ -147,8 +147,6 @@ Expected data type for different ESP HTTPS OTA events in the system event loop:
 Application Examples
 --------------------
 
-- :example:`system/ota/pre_encrypted_ota` demonstrates how to perform OTA updates with pre-encrypted binary using the `esp_encrypted_img` component's APIs and tool, ensuring the confidentiality of the firmware on the network channel, but not its authenticity. To perform OTA upgrades with pre-encrypted firmware, please enable :ref:`CONFIG_ESP_HTTPS_OTA_DECRYPT_CB` in component `menuconfig`.
-
 - :example:`system/ota/advanced_https_ota` demonstrates how to use the Advanced HTTPS OTA update functionality on {IDF_TARGET_NAME} using the `esp_https_ota` component's APIs. For the applicable SoCs, please refer to :example_file:`system/ota/advanced_https_ota/README.md`.
 
 - :example:`system/ota/partitions_ota` demonstrates how to perform OTA updates for various partitions (app, bootloader, partition table, storage) using the `esp_https_ota` component's APIs.

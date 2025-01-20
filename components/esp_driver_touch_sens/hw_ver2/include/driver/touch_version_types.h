@@ -117,7 +117,7 @@ typedef struct {
  *
  */
 typedef struct {
-    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];      /*!< The active threshold of each sample configuration,
+    uint32_t                        active_thresh[TOUCH_SAMPLE_CFG_NUM];      /*!< The relative active threshold of each sample configuration,
                                                                                *   while the touch channel smooth value minus benchmark value exceed this threshold,
                                                                                *   will be regarded as activated
                                                                                */
@@ -172,14 +172,53 @@ typedef struct {
 typedef touch_sensor_config_t touch_sensor_config_dslp_t;
 
 /**
+ * @brief Helper macro to the default light sleep wake-up configurations
+ * @note  RTC_PERIPH will keep power on during the light sleep.
+ *        Any enabled touch channel can wake-up the chip from light sleep.
+ */
+#define TOUCH_SENSOR_DEFAULT_LSLP_CONFIG() {  \
+    .slp_wakeup_lvl = TOUCH_LIGHT_SLEEP_WAKEUP,  \
+}
+
+/**
+ * @brief Helper macro to the default deep sleep wake-up configurations
+ * @note  RTC_PERIPH will keep power on during the deep sleep.
+ *        Any enabled touch channel can wake-up the chip from deep sleep.
+ */
+#define TOUCH_SENSOR_DEFAULT_DSLP_CONFIG() {  \
+    .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,  \
+}
+
+/**
+ * @brief Helper macro to the default deep sleep wake-up configurations
+ *        (allow RTC_PERIPH power down in deep sleep)
+ * @note  RTC_PERIPH might be powered down during the deep sleep.
+ *        If the RTC_PERIPH is powered down, only the specified sleep channel can wake-up the chip from deep sleep.
+ * @param[in] dslp_chan  The specified sleep channel that can wake-up the chip from deep sleep while RTC_PERIPH is powered down.
+ * @param[in] ...        The threshold of each sample configuration of the specified sleep channel.
+ */
+#define TOUCH_SENSOR_DEFAULT_DSLP_PD_CONFIG(dslp_chan, ...) {  \
+    .slp_wakeup_lvl = TOUCH_DEEP_SLEEP_WAKEUP,  \
+    .deep_slp_allow_pd = true,  \
+    .deep_slp_chan = dslp_chan,  \
+    .deep_slp_thresh = {__VA_ARGS__},  \
+}
+
+/**
  * @brief Configuration of the touch sensor sleep function
  *
  */
 typedef struct {
     touch_sleep_wakeup_level_t      slp_wakeup_lvl;     /*!< The sleep level that can be woke up by touch sensor. */
-    touch_channel_handle_t          deep_slp_chan;      /*!< The touch channel handle that supposed to work in the deep sleep. It can wake up the chip
-                                                         *   from deep sleep when this channel is activated.
+    bool                            deep_slp_allow_pd;  /*!< Whether allow RTC power down during the deep sleep.
+                                                         *   Only effective when the `touch_sleep_config_t::slp_wakeup_lvl` is `TOUCH_DEEP_SLEEP_WAKEUP`.
+                                                         *     - If true, the RTC power domain will be powered down during the deep sleep.
+                                                         *     - If false, the RTC power domain will keep power on during the deep sleep.
+                                                         */
+    touch_channel_handle_t          deep_slp_chan;      /*!< The touch channel handle that supposed to work in the deep sleep even RTC domain is powered down.
                                                          *   Only effective when the `touch_sleep_config_t::slp_wakeup_lvl` is `TOUCH_DEEP_SLEEP_WAKEUP`
+                                                         *      - Not NULL: Only this channel can wake up the chip from deep sleep.
+                                                         *      - NULL: `deep_slp_allow_pd` must be false, and any enabled channels can wake up the chip from deep sleep.
                                                          */
     uint32_t                        deep_slp_thresh[TOUCH_SAMPLE_CFG_NUM];    /*!< The active threshold of the deep sleep channel during deep sleep,
                                                          *   while the sleep channel exceed this threshold, it will be regarded as activated

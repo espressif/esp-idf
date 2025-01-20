@@ -22,7 +22,7 @@
 #include "mspi_timing_by_flash_delay.h"
 #include "mspi_timing_tuning_configs.h"
 #include "esp_private/mspi_timing_config.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "rom/spi_flash.h"
 
 const static char *TAG = "Flash Delay";

@@ -170,7 +170,8 @@ static u8 * eap_ttls_avp_hdr(u8 *avphdr, u32 avp_code, u32 vendor_id,
 	}
 
 	avp->avp_code = host_to_be32(avp_code);
-	avp->avp_length = host_to_be32((flags << 24) | (u32) (hdrlen + len));
+	avp->avp_length = host_to_be32(((u32) (flags << 24)) |
+				       (u32) (hdrlen + len));
 
 	return avphdr + hdrlen;
 }

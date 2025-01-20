@@ -1682,7 +1682,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
     if (bt_mesh_get_stored_relay_count() >= BLE_MESH_MAX_STORED_RELAY_COUNT) {
         xmit = BLE_MESH_TRANSMIT(0, 20);
     }
-    buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_DATA, K_NO_WAIT);
+    buf = bt_mesh_relay_adv_create(BLE_MESH_ADV_RELAY_DATA, K_NO_WAIT);
 #endif
 
     if (!buf) {

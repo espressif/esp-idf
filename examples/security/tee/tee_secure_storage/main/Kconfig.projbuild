@@ -1,0 +1,12 @@
+menu "Example Configuration"
+
+    config EXAMPLE_TEE_SEC_STG_SLOT_ID
+        int "TEE: Secure Storage keypair slot ID"
+        default 0
+        range 0 15
+        help
+            This configuration sets the slot ID from the TEE secure storage
+            storing the ECDSA keypair for executing sign/verify operations
+            from the TEE side
+
+endmenu

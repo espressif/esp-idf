@@ -21,7 +21,7 @@ def generate_token_data(hmac_key_file: str, output_file: Optional[str] = None) -
                 with open(output_file, 'wb') as out_file:
                     out_file.write(token_data)
             elif output_file.endswith('.hex'):
-                with open(output_file, 'w') as out_file:
+                with open(output_file, 'w', encoding='utf-8') as out_file:
                     out_file.write(token_hex)
             else:
                 print(f'Unsupported file format for output file: {output_file}')

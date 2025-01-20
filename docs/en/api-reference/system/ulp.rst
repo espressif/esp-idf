@@ -51,6 +51,22 @@ To compile the ULP FSM code as part of the component, the following steps must b
 
 The first argument to ``ulp_embed_binary`` specifies the ULP FSM binary name. The name specified here will also be used by other generated artifacts such as the ELF file, map file, header file and linker export file. The second argument specifies the ULP FSM assembly source files. Finally, the third argument specifies the list of component source files which include the header file to be generated. This list is needed to build the dependencies correctly and ensure that the generated header file will be created before any of these files are compiled. See the section below for the concept of generated header files for ULP applications.
 
+Variables in the ULP code will be prefixed with ``ulp_`` (default value) in this generated header file.
+
+If you need to embed multiple ULP programs, you may add a custom prefix in order to avoid conflicting variable names like this:
+
+.. code-block:: cmake
+
+    idf_component_register()
+
+    set(ulp_app_name ulp_${COMPONENT_NAME})
+    set(ulp_sources "ulp/ulp_c_source_file.c" "ulp/ulp_assembly_source_file.S")
+    set(ulp_exp_dep_srcs "ulp_c_source_file.c")
+
+    ulp_embed_binary(${ulp_app_name} "${ulp_sources}" "${ulp_exp_dep_srcs}" PREFIX "ULP::")
+
+The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++ style prefix (like ``ULP::``).
+
 3. Build the application as usual (e.g., ``idf.py app``).
 
    Inside, the build system will take the following steps to build ULP FSM program:

@@ -6,6 +6,7 @@
 
 #pragma once
 
+#include "esp_log_config.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
@@ -13,6 +14,13 @@ extern "C" {
 #endif
 
 /** @cond */
+// Determines whether esp_log() includes code to handle color codes.
+#if (!BOOTLOADER_BUILD && CONFIG_LOG_COLORS_SUPPORT) || (BOOTLOADER_BUILD && CONFIG_BOOTLOADER_LOG_COLORS_SUPPORT)
+#define ESP_LOG_SUPPORT_COLOR                    (1)
+#else
+#define ESP_LOG_SUPPORT_COLOR                    (0)
+#endif
+
 // ANSI Color Codes:
 // Macros for defining foreground colors (text).
 #define LOG_ANSI_COLOR_BLACK                                        "30"
@@ -39,10 +47,12 @@ extern "C" {
 #define LOG_ANSI_COLOR_STYLE_BOLD                                   "1"
 #define LOG_ANSI_COLOR_STYLE_ITALIC                                 "3"
 #define LOG_ANSI_COLOR_STYLE_UNDERLINE                              "4"
+#define LOG_ANSI_COLOR_STYLE_REVERSE                                "7"
 // Macros that form the starting sequence for setting the text color, background color, and reset all.
 #define LOG_ANSI_COLOR(TEXT_COLOR)                                  "\033[" TEXT_COLOR "m"
 #define LOG_ANSI_COLOR_BG(BG_COLOR)                                 "\033[" BG_COLOR "m"
 #define LOG_ANSI_COLOR_RESET                                        "\033[" LOG_ANSI_COLOR_STYLE_RESET "m"
+#define LOG_ANSI_COLOR_REVERSE                                      "\033[" LOG_ANSI_COLOR_STYLE_REVERSE "m"
 // Macros that form the starting sequence for text color + style + background colors
 #define LOG_ANSI_COLOR_REGULAR(COLOR)                               LOG_ANSI_COLOR(LOG_ANSI_COLOR_STYLE_RESET ";" COLOR)
 #define LOG_ANSI_COLOR_BOLD(COLOR)                                  LOG_ANSI_COLOR(LOG_ANSI_COLOR_STYLE_BOLD ";" COLOR)
@@ -54,6 +64,9 @@ extern "C" {
 #define LOG_ANSI_COLOR_ITALIC_BACKGROUND(TEXT_COLOR, BG_COLOR)      LOG_ANSI_COLOR_ITALIC(TEXT_COLOR ";" BG_COLOR)
 #define LOG_ANSI_COLOR_UNDERLINE_BACKGROUND(TEXT_COLOR, BG_COLOR)   LOG_ANSI_COLOR_UNDERLINE(TEXT_COLOR ";" BG_COLOR)
 #define LOG_ANSI_COLOR_FORMAT(TEXT_STYLE, TEXT_COLOR, BG_COLOR)     LOG_ANSI_COLOR(TEXT_STYLE ";" TEXT_COLOR ";" BG_COLOR)
+// Miscellaneous macros for screen and cursor manipulation
+#define LOG_ANSI_CLEAR_SCREEN                                       "\033[2J"
+#define LOG_ANSI_SET_CURSOR_HOME                                    "\033[H"
 
 /**
  * Usage example of ANSI color for logs:
@@ -72,7 +85,7 @@ extern "C" {
  * printf(LOG_ANSI_COLOR_FORMAT(LOG_ANSI_COLOR_STYLE_BOLD, LOG_ANSI_COLOR_WHITE, LOG_ANSI_COLOR_BG_BLUE) "%s" LOG_ANSI_COLOR_RESET "\n", text_str);
  */
 
-#if (!BOOTLOADER_BUILD && CONFIG_LOG_COLORS) || (BOOTLOADER_BUILD && CONFIG_BOOTLOADER_LOG_COLORS)
+#if !ESP_LOG_COLOR_DISABLED
 #define LOG_COLOR_BLACK       LOG_ANSI_COLOR_BLACK
 #define LOG_COLOR_RED         LOG_ANSI_COLOR_RED
 #define LOG_COLOR_GREEN       LOG_ANSI_COLOR_GREEN

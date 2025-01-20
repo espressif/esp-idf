@@ -21,3 +21,8 @@ endif()
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity esp_driver_gpio
                        WHOLE_ARCHIVE)
+
+message(STATUS "Checking gpio_ext registers are not read-write by half-word")
+include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
+check_register_rw_half_word(SOC_MODULES "gpio_ext"
+                            HAL_MODULES "gpio_etm" "gpio_glitch_filter")

@@ -180,10 +180,10 @@ ble_prox_prph_gap_event(struct ble_gap_event *event, void *arg)
     case BLE_GAP_EVENT_LINK_ESTAB:
         /* A new connection was established or a connection attempt failed */
         MODLOG_DFLT(INFO, "connection %s; status=%d\n",
-                    event->connect.status == 0 ? "established" : "failed",
-                    event->connect.status);
+                    event->link_estab.status == 0 ? "established" : "failed",
+                    event->link_estab.status);
 
-        if (event->connect.status != 0) {
+        if (event->link_estab.status != 0) {
         /* Connection failed, resume advertising */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
             ext_ble_prox_prph_advertise();

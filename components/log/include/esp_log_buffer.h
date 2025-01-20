@@ -13,8 +13,6 @@
 extern "C" {
 #endif
 
-#if !NON_OS_BUILD || __DOXYGEN__
-
 /**
  * @brief Logs a buffer of hexadecimal bytes at the specified log level.
  *
@@ -172,8 +170,6 @@ static inline void esp_log_buffer_char(const char *tag, const void *buffer, uint
     ESP_LOG_BUFFER_CHAR(tag, buffer, buff_len);
 }
 /** @endcond */
-
-#endif // !NON_OS_BUILD || __DOXYGEN__
 
 #ifdef __cplusplus
 }

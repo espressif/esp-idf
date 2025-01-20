@@ -1,0 +1,94 @@
+description: ESP-IDF project information and artifacts
+tags: [project]
+output: project
+steps:
+  - name: 'Project Description'
+    cmds:
+      - file:
+        path: '${BUILD_DIR}/project_description.json'
+
+  - name: 'Compile Commands'
+    cmds:
+      - file:
+        path: '${BUILD_DIR}/compile_commands.json'
+
+  - name: 'Linker Scripts'
+    cmds:
+      - file:
+        path: '${BUILD_DIR}/esp-idf/esp_system/ld/memory.ld'
+      - file:
+        path: '${BUILD_DIR}/esp-idf/esp_system/ld/sections.ld'
+
+  - name: 'Flash Arguments'
+    cmds:
+      - file:
+        path: '${BUILD_DIR}/flash_app_args'
+      - file:
+        path: '${BUILD_DIR}/flash_args'
+      - file:
+        path: '${BUILD_DIR}/bootloader-flash_args'
+      - file:
+        path: '${BUILD_DIR}/flash_bootloader_args'
+      - file:
+        path: '${BUILD_DIR}/flasher_args.json'
+      - file:
+        path: '${BUILD_DIR}/flash_project_args'
+      - file:
+        path: '${BUILD_DIR}/partition-table-flash_args'
+
+  - name: 'Sdkconfig'
+    cmds:
+      - file:
+        path: '${PROJECT_DIR}/sdkconfig'
+
+  - name: 'Logs'
+    output: 'logs'
+    cmds:
+      # Build logs
+      - glob:
+        pattern: 'idf_py_stdout_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: ninja all$'
+        output: 'build/'
+        mtime: True
+      - glob:
+        pattern: 'idf_py_stderr_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: ninja all$'
+        output: 'build/'
+        mtime: True
+
+      # Flash logs
+      - glob:
+        pattern: 'idf_py_stdout_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: ninja flash$'
+        output: 'flash/'
+        mtime: True
+      - glob:
+        pattern: 'idf_py_stderr_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: ninja flash$'
+        output: 'flash/'
+        mtime: True
+
+      # Monitor logs
+      - glob:
+        pattern: 'idf_py_stdout_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: .*idf_monitor.py.*$'
+        output: 'monitor/'
+        mtime: True
+      - glob:
+        pattern: 'idf_py_stderr_output*'
+        path: '${BUILD_DIR}/log'
+        regex: '^Command: .*idf_monitor.py.*$'
+        output: 'monitor/'
+        mtime: True
+
+
+  - name: 'Link Map File'
+    cmds:
+      - glob:
+        pattern: '*.map'
+        path: '${BUILD_DIR}'

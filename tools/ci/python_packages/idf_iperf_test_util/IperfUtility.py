@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -355,14 +355,14 @@ class IperfTestUtility(object):
                     else:
                         process.terminate()
                 else:
-                    self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
-                    # wait until DUT TCP server created
-                    try:
-                        self.dut.expect('Socket bound', timeout=5)
-                    except pexpect.TIMEOUT:
-                        # compatible with old iperf example binary
-                        logging.info('create iperf udp server fail')
                     if bw_limit > 0:
+                        self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME))
+                        # wait until DUT TCP server created
+                        try:
+                            self.dut.expect('Socket bound', timeout=5)
+                        except pexpect.TIMEOUT:
+                            # compatible with old iperf example binary
+                            logging.info('create iperf udp server fail')
                         process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bw_limit) + 'm',
                                                     '-t', str(TEST_TIME), '-f', 'm'], stdout=f, stderr=f)
                         for _ in range(TEST_TIMEOUT):
@@ -372,9 +372,20 @@ class IperfTestUtility(object):
                         else:
                             process.terminate()
                     else:
-                        for bandwidth in range(50, 101, 5):
+                        start_bw = 50
+                        stop_bw = 100
+                        n = 10
+                        step = int((stop_bw - start_bw) / n)
+                        self.dut.write('iperf -s -u -i 1 -t {}'.format(TEST_TIME + 4 * (n + 1)))  # 4 sec for each bw step instance start/stop
+                        # wait until DUT TCP server created
+                        try:
+                            self.dut.expect('Socket bound', timeout=5)
+                        except pexpect.TIMEOUT:
+                            # compatible with old iperf example binary
+                            logging.info('create iperf udp server fail')
+                        for bandwidth in range(start_bw, stop_bw, step):
                             process = subprocess.Popen(['iperf', '-c', dut_ip, '-u', '-b', str(bandwidth) + 'm',
-                                                        '-t', str(TEST_TIME / 11), '-f', 'm'], stdout=f, stderr=f)
+                                                        '-t', str(TEST_TIME / (n + 1)), '-f', 'm'], stdout=f, stderr=f)
                             for _ in range(TEST_TIMEOUT):
                                 if process.poll() is not None:
                                     break
@@ -382,7 +393,7 @@ class IperfTestUtility(object):
                             else:
                                 process.terminate()
 
-            server_raw_data = self.dut.expect(pexpect.TIMEOUT, timeout=0).decode('utf-8')
+            server_raw_data = self.dut.expect(pexpect.TIMEOUT, timeout=5).decode('utf-8')
             with open(PC_IPERF_TEMP_LOG_FILE, 'r') as f:
                 pc_raw_data = f.read()
 

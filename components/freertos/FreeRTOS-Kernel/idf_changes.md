@@ -203,6 +203,7 @@ List of changes made to Vanilla FreeRTOS V10.5.1 header files to allow for build
 ### tasks.c
 
 - Backported a change where the IDLE tasks are created with the core ID as a suffix in the task name.
+- Backported a change where the IDLE task name copy length is restricted to avoid out-of-bounds copy errors.
 
 ### timers.c
 

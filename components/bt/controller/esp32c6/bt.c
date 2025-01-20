@@ -390,9 +390,19 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
-
 #define BLE_RTC_DELAY_US_LIGHT_SLEEP        (2500)
 #define BLE_RTC_DELAY_US_MODEM_SLEEP        (500)
+
+#define BLE_CONTROLLER_MALLOC_CAPS          (MALLOC_CAP_INTERNAL|MALLOC_CAP_8BIT|MALLOC_CAP_DMA)
+void *malloc_ble_controller_mem(size_t size)
+{
+    return heap_caps_malloc(size, BLE_CONTROLLER_MALLOC_CAPS);
+}
+
+uint32_t get_ble_controller_free_heap_size(void)
+{
+    return heap_caps_get_free_size(BLE_CONTROLLER_MALLOC_CAPS);
+}
 
 static const struct osi_coex_funcs_t s_osi_coex_funcs_ro = {
     ._magic = OSI_COEX_MAGIC_VALUE,
@@ -506,12 +516,16 @@ void esp_bt_rtc_slow_clk_select(uint8_t slow_clk_src)
     switch (slow_clk_src) {
         case MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using main XTAL as clock source");
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
             uint32_t chip_version = efuse_hal_chip_revision();
             if (chip_version == 0) {
                 modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (400 - 1));
             } else{
                 modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (5 - 1));
             }
+#else
+            modem_clock_select_lp_clock_source(PERIPH_BT_MODULE, slow_clk_src, (400 - 1));
+#endif // SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
             break;
         case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, can only run legacy ADV or SCAN due to low clock accuracy!");

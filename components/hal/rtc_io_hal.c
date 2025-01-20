@@ -77,15 +77,12 @@ void rtcio_hal_set_direction_in_sleep(int rtcio_num, rtc_gpio_mode_t mode)
     }
 }
 
-#if SOC_RTCIO_HOLD_SUPPORTED
 void rtcio_hal_isolate(int rtcio_num)
 {
     rtcio_ll_pullup_disable(rtcio_num);
     rtcio_ll_pulldown_disable(rtcio_num);
     rtcio_ll_output_disable(rtcio_num);
     rtcio_ll_input_disable(rtcio_num);
-    rtcio_ll_force_hold_enable(rtcio_num);
 }
-#endif
 
 #endif //SOC_RTCIO_INPUT_OUTPUT_SUPPORTED

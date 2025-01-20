@@ -597,6 +597,10 @@ ISP 色彩控制器
 
 调用 :cpp:func:`esp_isp_color_disable` 函数会执行相反的操作，即将驱动程序恢复到 **init** 状态。
 
+.. note::
+
+    当 ISP DVP 外设在使用且输出颜色格式设置为 RGB 色彩空间时，摄像头驱动程序会自动启用 :ref:`isp-color` 以确保数据输出正确。在这种情况下，禁止调用 :cpp:func:`esp_isp_color_disable` 函数，否则可能导致摄像头数据混乱。
+
 .. _isp-ccm-config:
 
 配置 CCM

@@ -675,8 +675,15 @@ esp_err_t esp_http_client_set_auth_data(esp_http_client_handle_t client, const c
  *             to flush off body data after calling this API.
  *
  * @param[in]  client   The esp_http_client handle
+ *
+ * @return
+ *             - ESP_OK: Successfully added the authentication information.
+ *             - ESP_ERR_INVALID_ARG: Invalid client handle passed.
+ *             - ESP_ERR_NO_MEM: Memory allocation failed for the required fields.
+ *             - ESP_ERR_NOT_SUPPORTED: Unsupported authentication type in the header.
+ *             - ESP_FAIL: Failed to add authentication information due to other reasons.
  */
-void esp_http_client_add_auth(esp_http_client_handle_t client);
+esp_err_t esp_http_client_add_auth(esp_http_client_handle_t client);
 
 /**
  * @brief      Checks if entire data in the response has been read without any error.

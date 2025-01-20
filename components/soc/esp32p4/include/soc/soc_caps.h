@@ -99,6 +99,7 @@
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
+#define SOC_BITSCRAMBLER_SUPPORTED      1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -144,7 +145,9 @@
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 /*!< Calibration */
-#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (0) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_SELF_HW_CALI_SUPPORTED          (1) /*!< support HW offset self calibration */
+#define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED    (1) /*!< support channel compensation to the HW offset calibration */
 
 /*!< ADC power control is shared by PWDET, TempSensor */
 #define SOC_ADC_SHARED_POWER                    1
@@ -275,6 +278,7 @@
                                                  */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
+#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -629,6 +633,7 @@
 
 /* Touch Sensor Features */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP              (1)     /*!< Touch sensor supports sleep awake */
+#define SOC_TOUCH_SUPPORT_BENCHMARK                 (1)     /*!< Touch sensor supports benchmark configuration */
 #define SOC_TOUCH_SUPPORT_WATERPROOF                (1)     /*!< Touch sensor supports waterproof */
 #define SOC_TOUCH_SUPPORT_PROX_SENSING              (1)     /*!< Touch sensor supports proximity sensing */
 #define SOC_TOUCH_PROXIMITY_CHANNEL_NUM             (3)     /*!< Support touch proximity channel number. */

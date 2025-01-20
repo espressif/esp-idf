@@ -21,6 +21,7 @@ void spi_hal_setup_device(spi_hal_context_t *hal, const spi_hal_dev_config_t *de
 #endif
     spi_ll_master_set_pos_cs(hw, dev->cs_pin_id, dev->positive_cs);
     spi_ll_master_set_clock_by_reg(hw, &dev->timing_conf.clock_reg);
+    spi_ll_master_set_rx_timing_mode(hw, dev->timing_conf.rx_sample_point);
     //Configure bit order
     spi_ll_set_rx_lsbfirst(hw, dev->rx_lsbfirst);
     spi_ll_set_tx_lsbfirst(hw, dev->tx_lsbfirst);

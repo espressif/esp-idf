@@ -333,8 +333,8 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 #endif
     // select the clock source
     ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&tx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution
-    uint32_t real_div = group->resolution_hz / config->resolution_hz;
+    // set channel clock resolution, find the divider to get the closest resolution
+    uint32_t real_div = (group->resolution_hz + config->resolution_hz / 2) / config->resolution_hz;
     rmt_ll_tx_set_channel_clock_div(hal->regs, channel_id, real_div);
     // resolution lost due to division, calculate the real resolution
     tx_channel->base.resolution_hz = group->resolution_hz / real_div;
@@ -528,7 +528,7 @@ esp_err_t rmt_tx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
 
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_ISR_CACHE_SAFE
     if (cbs->on_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_trans_done callback not in IRAM");
     }
@@ -549,7 +549,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
     ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_ISR_CACHE_SAFE
     // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #endif
@@ -1071,7 +1071,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
 }
 #endif // SOC_RMT_SUPPORT_TX_LOOP_COUNT
 
-static void IRAM_ATTR rmt_tx_default_isr(void *args)
+static void rmt_tx_default_isr(void *args)
 {
     rmt_tx_channel_t *tx_chan = (rmt_tx_channel_t *)args;
     rmt_channel_t *channel = &tx_chan->base;
@@ -1112,7 +1112,7 @@ static void IRAM_ATTR rmt_tx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static bool IRAM_ATTR rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     rmt_tx_channel_t *tx_chan = (rmt_tx_channel_t *)user_data;
     // tx_eof_desc_addr must be non-zero, guaranteed by the hardware

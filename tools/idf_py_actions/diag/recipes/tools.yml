@@ -1,0 +1,12 @@
+description: ESP-IDF tools information
+tags: [tools, base, project]
+output: tools
+steps:
+  - name: 'ESP-IDF Tools Info'
+    cmds:
+      - exec:
+        cmd: 'python ${IDF_PATH}/tools/idf_tools.py check'
+        output: tools.check
+      - exec:
+        cmd: 'python ${IDF_PATH}/tools/idf_tools.py list'
+        output: tools.list

@@ -131,6 +131,10 @@ config SOC_CLK_TREE_SUPPORTED
     bool
     default y
 
+config SOC_ASSIST_DEBUG_SUPPORTED
+    bool
+    default y
+
 config SOC_WDT_SUPPORTED
     bool
     default y
@@ -463,6 +467,10 @@ config SOC_RTCIO_WAKE_SUPPORTED
     bool
     default y
 
+config SOC_RTCIO_EDGE_WAKE_SUPPORTED
+    bool
+    default y
+
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int
     default 8
@@ -591,6 +599,10 @@ config SOC_I2S_SUPPORTS_PDM2PCM
     bool
     default y
 
+config SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+    bool
+    default y
+
 config SOC_I2S_SUPPORTS_TX_SYNC_CNT
     bool
     default y
@@ -604,6 +616,10 @@ config SOC_I2S_PDM_MAX_RX_LINES
     default 1
 
 config SOC_I2S_SUPPORTS_TDM
+    bool
+    default y
+
+config SOC_I2S_TDM_FULL_DATA_WIDTH
     bool
     default y
 

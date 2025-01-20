@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include "soc/ana_cmpr_periph.h"
 #include "hal/ana_cmpr_ll.h"
 #include "driver/ana_cmpr.h"
-#include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "esp_private/io_mux.h"
 #include "esp_private/esp_clk.h"
 
@@ -96,18 +96,11 @@ static void IRAM_ATTR s_ana_cmpr_default_intr_handler(void *usr_data)
 
 static esp_err_t s_ana_cmpr_init_gpio(ana_cmpr_handle_t cmpr, bool is_external_ref)
 {
-    uint64_t pin_mask = BIT64(ana_cmpr_periph[cmpr->unit].src_gpio);
-    if (is_external_ref) {
-        pin_mask |= BIT64(ana_cmpr_periph[cmpr->unit].ext_ref_gpio);
+    esp_err_t err = gpio_config_as_analog(ana_cmpr_periph[cmpr->unit].src_gpio);
+    if (err == ESP_OK && is_external_ref) {
+        err = gpio_config_as_analog(ana_cmpr_periph[cmpr->unit].ext_ref_gpio);
     }
-    gpio_config_t ana_cmpr_gpio_cfg = {
-        .pin_bit_mask = pin_mask,
-        .mode = GPIO_MODE_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    return gpio_config(&ana_cmpr_gpio_cfg);
+    return err;
 }
 
 esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *ret_cmpr)

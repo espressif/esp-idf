@@ -48,7 +48,12 @@ TEST_CASE("test master logging level performance", "[log]")
 
 #ifdef CONFIG_LOG_MASTER_LEVEL
     esp_log_set_level_master(ESP_LOG_NONE);
-    TEST_ASSERT_INT_WITHIN(100, 150, calc_time_of_logging(ITERATIONS));
+#if ESP_LOG_VERSION == 1
+    const int typical_value = 150;
+#else // ESP_LOG_VERSION == 2
+    const int typical_value = 250;
+#endif // ESP_LOG_VERSION == 2
+    TEST_ASSERT_INT_WITHIN(100, typical_value, calc_time_of_logging(ITERATIONS));
 #else
     esp_log_level_set("*", ESP_LOG_NONE);
     TEST_ASSERT_INT_WITHIN(DELTA_US, EXPECTED_US, calc_time_of_logging(ITERATIONS) / ITERATIONS);

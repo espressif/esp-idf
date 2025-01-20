@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -63,7 +63,10 @@ void IRAM_ATTR touch_priv_default_intr_handler(void *arg)
     touch_ll_interrupt_clear(status);
     touch_base_event_data_t data;
     touch_ll_get_active_channel_mask(&data.status_mask);
-    data.chan = g_touch->ch[touch_ll_get_current_meas_channel()];
+    uint32_t curr_chan = touch_ll_get_current_meas_channel();
+    /* It actually won't be out of range in the real environment, but limit the range to pass the coverity check */
+    curr_chan = curr_chan >= SOC_TOUCH_SENSOR_NUM ? SOC_TOUCH_SENSOR_NUM - 1 : curr_chan;
+    data.chan = g_touch->ch[curr_chan];
     /* If the channel is not registered, return directly */
     if (!data.chan) {
         return;
@@ -158,6 +161,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
         /* Touch sensor actually uses dynamic fast clock LP_DYN_FAST_CLK, but it will only switch to the slow clock during sleep,
         * This driver only designed for wakeup case (sleep case should use ULP driver), so we only need to consider RTC_FAST here */
         esp_clk_tree_src_get_freq_hz(SOC_MOD_CLK_RTC_FAST, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &sens_handle->src_freq_hz);
+        ESP_RETURN_ON_FALSE(sens_handle->src_freq_hz, ESP_FAIL, TAG, "Failed to get RTC_FAST clock frequency");
         ESP_LOGD(TAG, "touch rtc clock source: RTC_FAST, frequency: %"PRIu32" Hz", sens_handle->src_freq_hz);
     }
 
@@ -168,7 +172,7 @@ static esp_err_t s_touch_convert_to_hal_config(touch_sensor_handle_t sens_handle
     hal_cfg->meas_interval_ticks = (uint32_t)(sens_cfg->meas_interval_us * src_freq_mhz);
     hal_cfg->timeout_ticks = (uint32_t)sens_cfg->max_meas_time_us * src_freq_mhz;
     ESP_RETURN_ON_FALSE(hal_cfg->timeout_ticks <= TOUCH_LL_TIMEOUT_MAX, ESP_ERR_INVALID_ARG, TAG,
-                        "max_meas_time_ms should within %"PRIu32, TOUCH_LL_TIMEOUT_MAX / src_freq_mhz);
+                        "max_meas_time_ms should within %"PRIu32" ms", TOUCH_LL_TIMEOUT_MAX / (sens_handle->src_freq_hz / 1000));
     hal_cfg->sample_cfg_num = sens_cfg->sample_cfg_num;  // Only one sample cfg
     hal_cfg->sample_cfg = (touch_hal_sample_config_t *)sens_cfg->sample_cfg;
     return ESP_OK;
@@ -203,6 +207,9 @@ esp_err_t touch_priv_config_channel(touch_channel_handle_t chan_handle, const to
     touch_ll_set_charge_speed(chan_handle->id, chan_cfg->charge_speed);
     touch_ll_set_init_charge_voltage(chan_handle->id, chan_cfg->init_charge_volt);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+    touch_chan_benchmark_config_t bm_cfg = {.do_reset = true};
+    /* Reset the benchmark to overwrite the legacy benchmark during the deep sleep */
+    touch_channel_config_benchmark(chan_handle, &bm_cfg);
     return ESP_OK;
 }
 
@@ -251,13 +258,6 @@ esp_err_t touch_priv_channel_read_data(touch_channel_handle_t chan_handle, touch
     return ESP_OK;
 }
 
-void touch_priv_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
-{
-    if (benchmark_cfg->do_reset) {
-        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
-    }
-}
-
 /******************************************************************************
  *                              Scope: public APIs                            *
  ******************************************************************************/
@@ -295,6 +295,16 @@ esp_err_t touch_sensor_config_filter(touch_sensor_handle_t sens_handle, const to
     return ret;
 }
 
+esp_err_t touch_channel_config_benchmark(touch_channel_handle_t chan_handle, const touch_chan_benchmark_config_t *benchmark_cfg)
+{
+    TOUCH_NULL_POINTER_CHECK_ISR(chan_handle);
+    TOUCH_NULL_POINTER_CHECK_ISR(benchmark_cfg);
+    if (benchmark_cfg->do_reset) {
+        touch_ll_reset_chan_benchmark(BIT(chan_handle->id));
+    }
+    return ESP_OK;
+}
+
 esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, const touch_sleep_config_t *sleep_cfg)
 {
     TOUCH_NULL_POINTER_CHECK(sens_handle);
@@ -303,6 +313,7 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
     int dp_slp_chan_id = -1;
     touch_hal_config_t hal_cfg = {};
     touch_hal_config_t *hal_cfg_ptr = NULL;
+    esp_sleep_pd_option_t slp_opt = ESP_PD_OPTION_AUTO;
 
     xSemaphoreTakeRecursive(sens_handle->mutex, portMAX_DELAY);
     ESP_GOTO_ON_FALSE(!sens_handle->is_enabled, ESP_ERR_INVALID_STATE, err, TAG, "Please disable the touch sensor first");
@@ -311,17 +322,24 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
         ESP_GOTO_ON_FALSE(sleep_cfg->slp_wakeup_lvl == TOUCH_LIGHT_SLEEP_WAKEUP || sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP,
                           ESP_ERR_INVALID_ARG, err, TAG, "Invalid sleep level");
         /* Enabled touch sensor as wake-up source */
-        esp_sleep_enable_touchpad_wakeup();
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        // Keep ESP_PD_DOMAIN_RTC_PERIPH power domain on during the light/deep sleep, so that to keep the touch sensor working
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_ON);
-#endif  // SOC_PM_SUPPORT_RC_FAST_PD
-
+        ESP_GOTO_ON_ERROR(esp_sleep_enable_touchpad_wakeup(), err, TAG, "Failed to enable touch sensor wakeup");
         /* If set the deep sleep channel (i.e., enable deep sleep wake-up),
            configure the deep sleep related settings. */
         if (sleep_cfg->slp_wakeup_lvl == TOUCH_DEEP_SLEEP_WAKEUP) {
-            ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG, "deep sleep waken channel can't be NULL");
-            dp_slp_chan_id = sleep_cfg->deep_slp_chan->id;
+            if (sleep_cfg->deep_slp_allow_pd) {
+                ESP_GOTO_ON_FALSE(sleep_cfg->deep_slp_chan, ESP_ERR_INVALID_ARG, err, TAG,
+                                  "deep sleep waken channel can't be NULL when allow RTC power down");
+#if CONFIG_IDF_TARGET_ESP32S2
+                /* Workaround: In deep sleep, for ESP32S2, Power down the RTC_PERIPH will change the slope configuration of Touch sensor sleep pad.
+                 * The configuration change will change the reading of the sleep pad, which will cause the touch wake-up sensor to trigger falsely. */
+                slp_opt = ESP_PD_OPTION_ON;
+                ESP_LOGW(TAG, "Keep the RTC_PERIPH power on in case the false trigger");
+#endif
+            } else {
+                /* Keep the RTC_PERIPH power domain on in deep sleep */
+                slp_opt = ESP_PD_OPTION_ON;
+            }
+            sens_handle->allow_pd = sleep_cfg->deep_slp_allow_pd;
 
             /* Check and convert the configuration to hal configurations */
             if (sleep_cfg->deep_slp_sens_cfg) {
@@ -329,26 +347,42 @@ esp_err_t touch_sensor_config_sleep_wakeup(touch_sensor_handle_t sens_handle, co
                 ESP_GOTO_ON_ERROR(s_touch_convert_to_hal_config(sens_handle, sleep_cfg->deep_slp_sens_cfg, hal_cfg_ptr),
                                   err, TAG, "parse the configuration failed due to the invalid configuration");
             }
-            sens_handle->sleep_en = true;
             sens_handle->deep_slp_chan = sleep_cfg->deep_slp_chan;
+            if (sleep_cfg->deep_slp_chan) {
+                dp_slp_chan_id = sleep_cfg->deep_slp_chan->id;
+            }
             TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
             touch_ll_sleep_set_threshold(sleep_cfg->deep_slp_thresh[0]);
             TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
+        } else {
+            /* Keep the RTC_PERIPH power domain on in light sleep */
+            sens_handle->allow_pd = false;
+            slp_opt = ESP_PD_OPTION_ON;
         }
-
+        sens_handle->sleep_en = true;
     } else {
         /* Disable the touch sensor as wake-up source */
         esp_sleep_disable_wakeup_source(ESP_SLEEP_WAKEUP_TOUCHPAD);
-#if SOC_PM_SUPPORT_RTC_PERIPH_PD
-        esp_sleep_pd_config(ESP_PD_DOMAIN_RTC_PERIPH, ESP_PD_OPTION_AUTO);
-#endif  // SOC_PM_SUPPORT_RC_FAST_PD
+        if (sens_handle->sleep_en && !sens_handle->allow_pd) {
+            /* No longer hold the RTC_PERIPH power by touch sensor */
+            slp_opt = ESP_PD_OPTION_OFF;
+        }
+        sens_handle->allow_pd = false;
         sens_handle->deep_slp_chan = NULL;
         sens_handle->sleep_en = false;
     }
 
+#if SOC_PM_SUPPORT_RTC_PERIPH_PD
+    esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_RTC_PERIPH;
+#else
+#warning "RTC_PERIPH power domain is not supported"
+    esp_sleep_pd_domain_t pd_domain = ESP_PD_DOMAIN_MAX;
+#endif  // SOC_PM_SUPPORT_RTC_PERIPH_PD
+    ESP_GOTO_ON_ERROR(esp_sleep_pd_config(pd_domain, slp_opt), err, TAG, "Failed to set RTC_PERIPH power domain");
+
     /* Save or update the sleep config */
     TOUCH_ENTER_CRITICAL(TOUCH_PERIPH_LOCK);
-    touch_hal_save_sleep_config(dp_slp_chan_id, hal_cfg_ptr);
+    touch_hal_save_sleep_config(dp_slp_chan_id, hal_cfg_ptr, sens_handle->allow_pd);
     TOUCH_EXIT_CRITICAL(TOUCH_PERIPH_LOCK);
 
 err:

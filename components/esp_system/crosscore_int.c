@@ -20,6 +20,10 @@
 #include "esp_gdbstub.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32H21
+#define ETS_FROM_CPU_INTR0_SOURCE        ETS_CPU_INTR_FROM_CPU_0_SOURCE
+#endif
+
 #define REASON_YIELD            BIT(0)
 #define REASON_FREQ_SWITCH      BIT(1)
 #define REASON_PRINT_BACKTRACE  BIT(2)

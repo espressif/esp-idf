@@ -491,7 +491,7 @@ UINT16 OBEX_AppendHeaderRaw(BT_HDR *pkt, UINT8 header_id, const UINT8 *data, UIN
         return OBEX_INVALID_PARAM;
     }
 
-    if ((data == NULL) ^ (data_len == 0)) {
+    if ((data == NULL && data_len != 0) || (data != NULL && data_len == 0)) {
         return OBEX_INVALID_PARAM;
     }
 

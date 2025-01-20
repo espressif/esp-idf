@@ -11,6 +11,7 @@ extra_default_build_targets:
   - esp32c61
 
 bypass_check_test_targets:
+  - esp32h21
 
 #
 # These lines would

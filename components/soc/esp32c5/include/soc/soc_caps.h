@@ -68,7 +68,7 @@
 #define SOC_LP_I2C_SUPPORTED            1
 #define SOC_ULP_LP_UART_SUPPORTED       1
 #define SOC_CLK_TREE_SUPPORTED          1
-// #define SOC_ASSIST_DEBUG_SUPPORTED      1  // TODO: [ESP32C5] IDF-8662
+#define SOC_ASSIST_DEBUG_SUPPORTED      1
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1     // TODO: [ESP32C5] IDF-8715
 // #define SOC_BITSCRAMBLER_SUPPORTED      1  // TODO: [ESP32C5] IDF-8711
@@ -130,9 +130,8 @@
 #define SOC_ADC_RTC_MAX_BITWIDTH                (12)
 
 /*!< Calibration */
-// #define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
-// #define SOC_ADC_SELF_HW_CALI_SUPPORTED          (1) /*!< support HW offset self calibration */
-// #define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED (1) /*!< support channel compensation to the HW offset calibration */
+#define SOC_ADC_CALIBRATION_V1_SUPPORTED        (1) /*!< support HW offset calibration version 1*/
+#define SOC_ADC_CALIB_CHAN_COMPENS_SUPPORTED    (1) /*!< support channel compensation to the HW offset calibration */
 
 /*!< Interrupt */
 #define SOC_ADC_TEMPERATURE_SHARE_INTR          (1)
@@ -246,6 +245,7 @@
                                                 */
 #define SOC_RTCIO_HOLD_SUPPORTED            1
 #define SOC_RTCIO_WAKE_SUPPORTED            1
+#define SOC_RTCIO_EDGE_WAKE_SUPPORTED       1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
@@ -463,6 +463,8 @@
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
 #define SOC_SPI_MEM_SUPPORT_CHECK_SUS                     (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)
+#define SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL   (1)
+#define SOC_SPI_MEM_SUPPORT_CACHE_32BIT_ADDR_MAP          (1)
 
 #define SOC_MEMSPI_SRC_FREQ_80M_SUPPORTED         1
 #define SOC_MEMSPI_SRC_FREQ_40M_SUPPORTED         1

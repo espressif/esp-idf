@@ -278,8 +278,8 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
 
     // select the clock source
     ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution
-    uint32_t real_div = group->resolution_hz / config->resolution_hz;
+    // set channel clock resolution, find the divider to get the closest resolution
+    uint32_t real_div = (group->resolution_hz + config->resolution_hz / 2) / config->resolution_hz;
     rmt_ll_rx_set_channel_clock_div(hal->regs, channel_id, real_div);
     // resolution loss due to division, calculate the real resolution
     rx_channel->base.resolution_hz = group->resolution_hz / real_div;
@@ -364,7 +364,7 @@ esp_err_t rmt_rx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
 
-#if CONFIG_RMT_ISR_IRAM_SAFE
+#if CONFIG_RMT_ISR_CACHE_SAFE
     if (cbs->on_recv_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG, TAG, "on_recv_done callback not in IRAM");
     }
@@ -742,7 +742,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 }
 #endif // SOC_RMT_SUPPORT_RX_PINGPONG
 
-static void IRAM_ATTR rmt_rx_default_isr(void *args)
+static void rmt_rx_default_isr(void *args)
 {
     rmt_rx_channel_t *rx_chan = (rmt_rx_channel_t *)args;
     rmt_channel_t *channel = &rx_chan->base;
@@ -797,7 +797,7 @@ static size_t IRAM_ATTR rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static bool IRAM_ATTR rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     bool need_yield = false;
     rmt_rx_channel_t *rx_chan = (rmt_rx_channel_t *)user_data;

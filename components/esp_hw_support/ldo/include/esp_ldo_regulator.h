@@ -31,7 +31,7 @@ typedef struct {
     struct ldo_extra_flags {
         uint32_t adjustable : 1; /*!< Whether the LDO channel is adjustable, and the voltage can be updated by `esp_ldo_channel_adjust_voltage` */
         uint32_t owned_by_hw: 1; /*!< If the LDO channel is owned by hardware, then software configurations can be overridden by hardware (e.g. eFuse) */
-        uint32_t bypass: 1;      /*!< Whether to bypass the regulator, i.e., the input voltage is sourced directly to the output */
+        uint32_t bypass: 1 __attribute__((deprecated)); /*!< Whether to bypass the regulator, i.e., the input voltage is sourced directly to the output */
     } flags; /*!< Flags for the LDO channel */
 } esp_ldo_channel_config_t;
 

@@ -1,8 +1,8 @@
 menu "Example 'GATT SECURITY CLIENT' Config"
 
     config EXAMPLE_CI_ID
-        int
-        default 80
+        int "example id for CI test"
+        default 0
         help
             This config the example id for CI test. Only for internal used.
 

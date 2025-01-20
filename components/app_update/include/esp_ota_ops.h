@@ -83,6 +83,7 @@ int esp_ota_get_app_elf_sha256(char* dst, size_t size) __attribute__((deprecated
  * use esp_ota_mark_app_valid_cancel_rollback() function for it (this should be done as early as possible when you first download a new application).
  *
  * Note: Rollback is applicable only for app type partitions.
+ * Note: For Rollback - The OTA data slot corresponding to the last boot application partition will be invalidated.
  *
  * @param partition  Pointer to info for partition which will receive the OTA update. Required.
  *                   This is considered as the staging partition (where OTA is downloaded), be default this also considered as the final partition which supposed to be updated.
@@ -301,6 +302,20 @@ esp_err_t esp_ota_get_partition_description(const esp_partition_t *partition, es
  *  - or one of error codes from lower-level flash driver.
  */
 esp_err_t esp_ota_get_bootloader_description(const esp_partition_t *bootloader_partition, esp_bootloader_desc_t *desc);
+
+/**
+ * @brief Invalidate the OTA data slot associated with the last boot application partition.
+ *
+ * This function erases the OTA data slot corresponding to the last boot application partition,
+ * making the partition invalid for booting in future. The application partition itself
+ * is not erased, preserving its contents.
+ *
+ * @return
+ *      - ESP_OK: Successfully invalidated the OTA data slot.
+ *      - ESP_FAIL: Failed to invalidate the OTA data slot (e.g., invalid parameters, no OTA data partition, or other errors).
+ *      - Other error codes from `esp_partition_erase_range`.
+ */
+esp_err_t esp_ota_invalidate_inactive_ota_data_slot(void);
 
 /**
  * @brief Returns number of ota partitions provided in partition table.

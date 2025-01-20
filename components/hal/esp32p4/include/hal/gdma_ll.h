@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,6 +107,19 @@ static inline void _gdma_ll_enable_bus_clock(int group_id, bool enable)
 /// use a macro to wrap the function, force the caller to use it in a critical section
 /// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
 #define gdma_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _gdma_ll_enable_bus_clock(__VA_ARGS__)
+
+/**
+ * @brief Check if the bus clock is enabled for the DMA module
+ */
+__attribute__((always_inline))
+static inline bool gdma_ll_is_bus_clock_enabled(int group_id)
+{
+    if (group_id == 0) {
+        return HP_SYS_CLKRST.soc_clk_ctrl1.reg_ahb_pdma_sys_clk_en;
+    } else {
+        return HP_SYS_CLKRST.soc_clk_ctrl1.reg_axi_pdma_sys_clk_en;
+    }
+}
 
 /**
  * @brief Reset the DMA module

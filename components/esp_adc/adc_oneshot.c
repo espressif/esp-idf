@@ -17,8 +17,7 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
-#include "driver/gpio.h"
-#include "driver/rtc_io.h"
+#include "esp_private/gpio.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_clk_tree.h"
 #include "esp_private/adc_private.h"
@@ -126,6 +125,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     };
     adc_oneshot_hal_init(&(unit->hal), &config);
 
+#if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     //To enable the APB_SARADC periph if needed
     _lock_acquire(&s_ctx.mutex);
     s_ctx.apb_periph_ref_cnts++;
@@ -133,6 +133,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
         adc_apb_periph_claim();
     }
     _lock_release(&s_ctx.mutex);
+#endif
 
     if (init_config->ulp_mode == ADC_ULP_MODE_DISABLE) {
         sar_periph_ctrl_adc_oneshot_power_acquire();
@@ -243,6 +244,10 @@ esp_err_t adc_oneshot_del_unit(adc_oneshot_unit_handle_t handle)
     bool success_free = s_adc_unit_free(handle->unit_id);
     ESP_RETURN_ON_FALSE(success_free, ESP_ERR_NOT_FOUND, TAG, "adc%"PRId32" isn't in use", handle->unit_id + 1);
 
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+    adc_ll_set_power_manage(handle->unit_id, ADC_LL_POWER_SW_OFF);
+#endif
+
     _lock_acquire(&s_ctx.mutex);
     s_ctx.units[handle->unit_id] = NULL;
     _lock_release(&s_ctx.mutex);
@@ -287,27 +292,7 @@ esp_err_t adc_oneshot_get_calibrated_result(adc_oneshot_unit_handle_t handle, ad
 static esp_err_t s_adc_io_init(adc_unit_t unit, adc_channel_t channel)
 {
     ESP_RETURN_ON_FALSE(channel < SOC_ADC_CHANNEL_NUM(unit), ESP_ERR_INVALID_ARG, TAG, "invalid channel");
-
-#if !ADC_LL_RTC_GPIO_SUPPORTED
-
-    uint32_t io_num = ADC_GET_IO_NUM(unit, channel);
-    gpio_config_t cfg = {
-        .pin_bit_mask = BIT64(io_num),
-        .mode = GPIO_MODE_DISABLE,
-        .pull_up_en = GPIO_PULLUP_DISABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    ESP_RETURN_ON_ERROR(gpio_config(&cfg), TAG, "IO config fail");
-#else
-    gpio_num_t io_num = ADC_GET_IO_NUM(unit, channel);
-    ESP_RETURN_ON_ERROR(rtc_gpio_init(io_num), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_set_direction(io_num, RTC_GPIO_MODE_DISABLED), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pulldown_dis(io_num), TAG, "IO config fail");
-    ESP_RETURN_ON_ERROR(rtc_gpio_pullup_dis(io_num), TAG, "IO config fail");
-#endif
-
-    return ESP_OK;
+    return gpio_config_as_analog(ADC_GET_IO_NUM(unit, channel));
 }
 
 static bool s_adc_unit_claim(adc_unit_t unit)

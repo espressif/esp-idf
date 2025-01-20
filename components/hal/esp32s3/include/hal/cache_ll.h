@@ -778,6 +778,23 @@ static inline uint32_t cache_ll_l1_get_illegal_error_intr_status(uint32_t cache_
     return GET_PERI_REG_MASK(EXTMEM_CACHE_ILG_INT_ST_REG, mask);
 }
 
+/**
+ * @brief Read vaddr that caused acs dbus reject error
+ *
+ * @param cache_id cache id to get vaddr from
+ *
+ * @return vaddr that cause the acs dbus reject error
+ */
+__attribute__((always_inline))
+static inline uint32_t cache_ll_get_acs_dbus_reject_vaddr(uint32_t cache_id)
+{
+    if (cache_id == 0) {
+        return REG_READ(EXTMEM_CORE0_DBUS_REJECT_VADDR_REG);
+    } else {
+        return REG_READ(EXTMEM_CORE1_DBUS_REJECT_VADDR_REG);
+    }
+}
+
 #ifdef __cplusplus
 }
 #endif

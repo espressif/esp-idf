@@ -19,10 +19,10 @@
 /* See esp_tee_u2m_switch.S */
 extern uint32_t _u2m_switch(int argc, va_list ap);
 
-static SemaphoreHandle_t s_tee_mutex;
-static StaticSemaphore_t s_tee_mutex_buf;
+static DRAM_ATTR SemaphoreHandle_t s_tee_mutex;
+static DRAM_ATTR StaticSemaphore_t s_tee_mutex_buf;
 
-static void init_mutex(void)
+static IRAM_ATTR void init_mutex(void)
 {
     static bool is_first_call = true;
     if (is_first_call) {
@@ -35,7 +35,7 @@ static void init_mutex(void)
  * TEE interface API used by untrusted side application
  * to call secure service in trusted side
  */
-uint32_t esp_tee_service_call(int argc, ...)
+uint32_t IRAM_ATTR esp_tee_service_call(int argc, ...)
 {
     init_mutex();
 
@@ -56,7 +56,7 @@ uint32_t esp_tee_service_call(int argc, ...)
     return val;
 }
 
-IRAM_ATTR uint32_t esp_tee_service_call_with_noniram_intr_disabled(int argc, ...)
+uint32_t IRAM_ATTR esp_tee_service_call_with_noniram_intr_disabled(int argc, ...)
 {
     uint32_t val = UINT32_MAX;
     va_list ap;

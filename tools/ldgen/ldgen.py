@@ -165,7 +165,7 @@ def main():
                     if exc.errno != errno.EEXIST:
                         raise
 
-            with open(output_path, 'w') as f:  # only create output file after generation has suceeded
+            with open(output_path, 'w', encoding='utf-8') as f:  # only create output file after generation has succeeded
                 f.write(output.read())
     except LdGenFailure as e:
         print('linker script generation failed for %s\nERROR: %s' % (input_file.name, e))

@@ -18,7 +18,7 @@
 #include <sys/param.h> // For MIN/MAX
 #include <stdbool.h>
 #include <string.h>
-
+#include "hal/misc.h"
 #include "soc/spi_periph.h"
 #include "hal/spi_types.h"
 #include "hal/spi_flash_types.h"
@@ -144,7 +144,7 @@ static inline void spimem_flash_ll_auto_resume_init(spi_mem_dev_t *dev, bool aut
  */
 static inline void spimem_flash_ll_suspend_cmd_setup(spi_mem_dev_t *dev, uint32_t sus_cmd)
 {
-    dev->flash_sus_cmd.flash_pes_command = sus_cmd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_cmd, flash_pes_command, sus_cmd);
 }
 
 /**
@@ -156,7 +156,7 @@ static inline void spimem_flash_ll_suspend_cmd_setup(spi_mem_dev_t *dev, uint32_
  */
 static inline void spimem_flash_ll_resume_cmd_setup(spi_mem_dev_t *dev, uint32_t res_cmd)
 {
-    dev->flash_sus_cmd.flash_per_command = res_cmd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_cmd, flash_per_command, res_cmd);
 }
 
 /**
@@ -168,7 +168,7 @@ static inline void spimem_flash_ll_resume_cmd_setup(spi_mem_dev_t *dev, uint32_t
  */
 static inline void spimem_flash_ll_rd_sus_cmd_setup(spi_mem_dev_t *dev, uint32_t pesr_cmd)
 {
-    dev->flash_sus_cmd.wait_pesr_command = pesr_cmd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_cmd, wait_pesr_command, pesr_cmd);
 }
 
 /**
@@ -205,7 +205,7 @@ static inline void spimem_flash_ll_res_check_sus_setup(spi_mem_dev_t *dev, bool 
 static inline void spimem_flash_ll_set_read_sus_status(spi_mem_dev_t *dev, uint32_t sus_conf)
 {
     dev->flash_sus_ctrl.frd_sus_2b = 0;
-    dev->flash_sus_ctrl.pesr_end_msk = sus_conf;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_sus_ctrl, pesr_end_msk, sus_conf);
 }
 
 /**
@@ -236,13 +236,14 @@ static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t c
  * Initialize auto wait idle mode
  *
  * @param dev Beginning address of the peripheral registers.
- * @param auto_waiti Enable/disable auto wait-idle function
+ * @param per_waiti Enable wait-idle with time delay function after resume.
+ * @param pes_waiti Enable wait-idle with time delay function after suspend.
  */
-static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool auto_waiti)
+static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool per_waiti, bool pes_waiti)
 {
-    dev->flash_waiti_ctrl.waiti_cmd = 0x05;
-    dev->flash_sus_ctrl.flash_per_wait_en = auto_waiti;
-    dev->flash_sus_ctrl.flash_pes_wait_en = auto_waiti;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05);
+    dev->flash_sus_ctrl.flash_per_wait_en = per_waiti;
+    dev->flash_sus_ctrl.flash_pes_wait_en = pes_waiti;
 }
 
 /**
@@ -518,11 +519,8 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
-    typeof(dev->user2) user2 = {
-        .usr_command_value = command,
-        .usr_command_bitlen = (bitlen - 1),
-    };
-    dev->user2.val = user2.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_value, command);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_bitlen, (bitlen - 1));
 }
 
 /**

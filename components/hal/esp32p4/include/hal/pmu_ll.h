@@ -348,6 +348,17 @@ FORCE_INLINE_ATTR void pmu_ll_imm_set_lp_rootclk_sel(pmu_dev_t *hw, bool rootclk
     }
 }
 
+FORCE_INLINE_ATTR void pmu_ll_imm_set_pad_slp_sel(pmu_dev_t *hw, bool sleep_sel)
+{
+    if (sleep_sel) {
+        // Switch the pad configuration from active state to sleep state
+        hw->imm.pad_hold_all.tie_high_pad_slp_sel = 1;
+    } else {
+        // Switch the pad configuration from sleep state to active state
+        hw->imm.pad_hold_all.tie_low_pad_slp_sel = 1;
+    }
+}
+
 FORCE_INLINE_ATTR void pmu_ll_imm_set_hp_pad_hold_all(pmu_dev_t *hw, bool hold_all)
 {
     if (hold_all) {

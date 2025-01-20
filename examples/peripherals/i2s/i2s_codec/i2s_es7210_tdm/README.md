@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-I2S on `ESP32S3` and `ESP32C3` supports [TDM mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html#tdm-mode), in which multiple slots can be transmitted by standard I2S connection.
+The targets that listed on the top support [TDM mode](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/api-reference/peripherals/i2s.html#tdm-mode), in which multiple slots can be transmitted by standard I2S connection.
 
 This example demonstrates how to use I2S TDM mode to record 4 MICs connected to [ES7210](http://www.everest-semi.com/pdf/ES7210%20PB.pdf) codec. ES7210 has 4 TDM modes, which are `ES7210_I2S_FMT_I2S` `ES7210_I2S_FMT_LJ` `ES7210_I2S_FMT_DSP_A` and `ES7210_I2S_FMT_DSP_B`, and they are all supported by I2S TDM driver. Relation between ES7210 TDM modes and I2S Driver TDM modes is shown in the following table.
 
@@ -90,6 +90,63 @@ I (10401) example: Recording done! Flushing file buffer
 I (10431) gpio: GPIO[4]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0
 I (10431) example: You can now safely remove the card, recorded file is /RECORD.WAV
 ```
+
+## Application Notes
+
+TDM mode is widely used in multi-channel scenario. Some ADC/DAC (e.g., ES7210 and ES7243) that supports TDM can be cascaded to sample more channels synchronously.
+
+Take ES7210 for example, it is a 4-channel audio ADC that supports TDM. And we can chain upto four ES7210 to form a 16-channel recorder, meanwhile it only needs one I2S port.
+
+You can refer to the connection as follow:
+
+```
+┌───────────────┐
+│      ESP      │
+│               │
+│          MCLK ├───────────┬──────────────────────────────┬──────────────────────────────┬──────────────────────────────┐
+│               │           │                              │                              │                              │
+│          BCLK ├────────┬──┼───────────────────────────┬──┼───────────────────────────┬──┼───────────────────────────┐  │
+│               │        │  │                           │  │                           │  │                           │  │
+│            WS ├─────┬──┼──┼────────────────────────┬──┼──┼────────────────────────┬──┼──┼────────────────────────┐  │  │
+│               │     │  │  │                        │  │  │                        │  │  │                        │  │  │
+│          DOUT │     │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐   │  │  │    ┌───────────────┐
+│               │     │  │  │    │   ES7210_0    │   │  │  │    │   ES7210_1    │   │  │  │    │   ES7210_2    │   │  │  │    │   ES7210_3    │
+│           DIN │◄─┐  │  │  │    │               │   │  │  │    │               │   │  │  │    │               │   │  │  │    │               │
+└───────────────┘  │  │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │   │  │  └───►│ MCLK          │
+                   │  │  │       │               │   │  │       │               │   │  │       │               │   │  │       │               │
+                   │  │  └──────►│ SCLK          │   │  └──────►│ SCLK          │   │  └──────►│ SCLK          │   │  └──────►│ SCLK          │
+                   │  │          │               │   │          │               │   │          │               │   │          │               │
+                   │  └─────────►│ LRCK          │   └─────────►│ LRCK          │   └─────────►│ LRCK          │   └─────────►│ LRCK          │
+                   │             │               │              │               │              │               │              │               │
+                   └─────────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │   ┌──────────┤ TDMOUT        │
+                                 │               │   │          │               │   │          │               │   │          │               │
+                            ┌───►│ TDMIN         │   │     ┌───►│ TDMIN         │   │     ┌───►│ TDMIN         │   │          │ TDMIN         │
+                            │    │               │   │     │    │               │   │     │    │               │   │          │               │
+                            │    └───────────────┘   │     │    └───────────────┘   │     │    └───────────────┘   │          └───────────────┘
+                            │                        │     │                        │     │                        │
+                            └────────────────────────┘     └────────────────────────┘     └────────────────────────┘
+```
+
+### How A Frame Formed in This Cascaded Case
+
+Generally, all the ES7210 will send the data that sampled by itself at the beginning of a frame, and then catenate the backward ES7210 data behind. In another word, ES7210_0 will send the data in the order ES7210_0 -> ES7210_1 -> ES7210_2 -> ES7210_3.
+
+See the detailed steps as follows:
+
+1. First 4 channels of the 16 channels:
+    - ES7210_3 send data that sampled by itself to ES7210_2;
+    - ES7210_2 send data that sampled by itself to ES7210_1, store the data sent from ES7210_3;
+    - ES7210_1 send data that sampled by itself to ES7210_0, store the data sent from ES7210_2;
+    - ES7210_0 send data that sampled by itself to ESP, store the data sent from ES7210_1;
+2. Second 4 channels of the 16 channels:
+    - ES7210_2 send the stored data (i.e., sampled by ES7210_3) to ES7210_1;
+    - ES7210_1 send the stored data (i.e., sampled by ES7210_2) to ES7210_0, and store the data from ES7210_2 (i.e., sampled by ES7210_3);
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_1) to ESP, and store the data sent from ES7210_1 (i.e., sampled by ES7210_2);
+3. Third 4 channels of the 16 channels:
+    - ES7210_1 send the stored data (i.e., sampled by ES7210_3) to ES7210_0;
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_2) to ESP, and store the data from ES7210_1 (i.e., sampled by ES7210_3);
+4. Last 4 channels of the 16 channels:
+    - ES7210_0 send the stored data (i.e., sampled by ES7210_3) to ESP;
 
 ## Troubleshooting
 

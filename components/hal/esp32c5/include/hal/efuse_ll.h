@@ -98,6 +98,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int
     EFUSE.conf.cfg_ecdsa_blk = efuse_blk;
 }
 
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
+{
+    return EFUSE.rd_sys_part1_data4.ocode;
+}
+
 /******************* eFuse control functions *************************/
 
 __attribute__((always_inline)) static inline bool efuse_ll_get_read_cmd(void)

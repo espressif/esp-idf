@@ -332,8 +332,8 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (1U)     /*!<Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (10)
-
-#define SOC_TOUCH_SAMPLE_CFG_NUM               (1U)    /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
+#define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP      (1)
+#define SOC_TOUCH_SAMPLE_CFG_NUM            (1U)    /*!< The sample configuration number in total, each sampler can be used to sample on one frequency */
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 #define SOC_TWAI_CONTROLLER_NUM         1UL

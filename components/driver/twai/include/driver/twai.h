@@ -33,7 +33,7 @@ extern "C" {
                                                                     .clkout_io = TWAI_IO_UNUSED, .bus_off_io = TWAI_IO_UNUSED,      \
                                                                     .tx_queue_len = 5, .rx_queue_len = 5,                           \
                                                                     .alerts_enabled = TWAI_ALERT_NONE,  .clkout_divider = 0,        \
-                                                                    .intr_flags = ESP_INTR_FLAG_LEVEL1}
+                                                                    .intr_flags = ESP_INTR_FLAG_LEVEL1, .general_flags = {0}}
 
 /**
  * @brief Initializer macro for general configuration structure.
@@ -119,6 +119,7 @@ typedef struct {
                                          By this approach, the system can power off TWAI's power domain.
                                          This can save power, but at the expense of more RAM being consumed. */
     } general_flags;                /**< General flags */
+    // Ensure TWAI_GENERAL_CONFIG_DEFAULT_V2 is updated and in order if new fields are added
 } twai_general_config_t;
 
 /**

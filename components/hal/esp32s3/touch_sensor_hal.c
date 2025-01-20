@@ -152,7 +152,7 @@ void touch_hal_sleep_channel_enable(touch_pad_t pad_num, bool enable)
 
 void touch_hal_sleep_channel_get_config(touch_pad_sleep_channel_t *slp_config)
 {
-    touch_ll_sleep_get_channel_num(&slp_config->touch_num);
+    touch_ll_sleep_get_channel_num((uint32_t *)&slp_config->touch_num);
     slp_config->en_proximity = touch_ll_sleep_is_proximity_enabled();
 }
 

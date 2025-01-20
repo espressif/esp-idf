@@ -38,6 +38,12 @@ examples/peripherals/analog_comparator:
     - esp_driver_gpio
     - esp_driver_ana_cmpr
 
+examples/peripherals/bitscrambler:
+  disable:
+    - if: SOC_BITSCRAMBLER_SUPPORTED != 1
+  depends_components:
+    - esp_driver_bitscrambler
+
 examples/peripherals/camera/dvp_isp_dsi:
   disable:
     - if: SOC_ISP_DVP_SUPPORTED != 1 or SOC_MIPI_DSI_SUPPORTED != 1
@@ -455,15 +461,8 @@ examples/peripherals/touch_sensor/touch_element:
 examples/peripherals/touch_sensor/touch_sens_basic:
   disable:
     - if: SOC_TOUCH_SENSOR_SUPPORTED != 1
-    - if: SOC_TOUCH_SENSOR_VERSION == 1
-      temporary: true
-      reason: not supported yet
   depends_components:
     - esp_driver_touch_sens
-
-examples/peripherals/touch_sensor/touch_sensor_v1:
-  disable:
-    - if: SOC_TOUCH_SENSOR_VERSION != 1
 
 examples/peripherals/twai/twai_alert_and_recovery:
   disable:

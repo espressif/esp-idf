@@ -608,7 +608,7 @@ esp_err_t touch_pad_sleep_get_channel_num(touch_pad_t *pad_num)
 {
     TOUCH_NULL_POINTER_CHECK(pad_num, "pad_num");
     TOUCH_ENTER_CRITICAL();
-    touch_hal_sleep_get_channel_num(pad_num);
+    touch_hal_sleep_get_channel_num((uint32_t *)pad_num);
     TOUCH_EXIT_CRITICAL();
     return ESP_OK;
 }

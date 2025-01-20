@@ -100,7 +100,7 @@ static void deep_sleep_task(void *args)
 
 #ifdef CONFIG_EXAMPLE_TOUCH_WAKEUP
         case ESP_SLEEP_WAKEUP_TOUCHPAD: {
-            printf("Wake up from touch on pad %d\n", esp_sleep_get_touchpad_wakeup_status());
+            printf("Wake up from touch\n");
             break;
         }
 #endif // CONFIG_EXAMPLE_TOUCH_WAKEUP

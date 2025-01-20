@@ -24,3 +24,5 @@ entries:
         spi_flash_hal_gpspi (noflash)
     if SOC_PMU_SUPPORTED = y:
         pmu_hal (noflash)
+    if SOC_GPIO_PORT != 0:
+        gpio_hal: gpio_hal_isolate_in_sleep (noflash)

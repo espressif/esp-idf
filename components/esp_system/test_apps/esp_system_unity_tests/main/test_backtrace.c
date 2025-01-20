@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,16 +11,16 @@
 #include <stdlib.h>
 #include "unity.h"
 #include "test_utils.h"
+#include "esp_rom_sys.h"
+#include "esp_rom_uart.h"
 
-#if __XTENSA__
+#if CONFIG_IDF_TARGET_ARCH_XTENSA
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "xtensa_api.h" // Replace with interrupt allocator API (IDF-3891)
 #include "esp_debug_helpers.h"
 #include "esp_intr_alloc.h"
-#include "esp_rom_sys.h"
-#include "esp_rom_uart.h"
 #include "hal/misc.h"
 
 #define SW_ISR_LEVEL_1          7
@@ -143,6 +143,57 @@ TEST_CASE("Test esp_backtrace_print_all_tasks()", "[esp_system]")
     for (int i = 0; i < NUM_TEST_FUNCS; i++) {
         vTaskDelete(task_handles[i]);
     }
+}
+
+#endif // CONFIG_IDF_TARGET_ARCH_XTENSA
+
+#if CONFIG_ESP_SYSTEM_USE_FRAME_POINTER
+
+void my_putc(char c)
+{
+    static bool first_exec = 1;
+    esp_rom_output_putc(c);
+
+    if (first_exec) {
+        first_exec = false;
+        *((int*) 1) = 0;
+    }
+}
+
+// TEST_CASE("Test backtrace detects corrupted frames", "[esp_system]")
+TEST_CASE("Backtrace detects ROM functions", "[esp_system]")
+{
+    esp_rom_install_channel_putc(1, my_putc);
+    esp_rom_printf("foo");
+}
+
+static void __attribute__((naked)) non_framed_function(void)
+{
+    asm volatile(
+        "add sp, sp, -16\n"
+        /* Save anything on the top of the stack, not the frame pointer nor RA */
+        "sw zero, 12(sp)\n"
+        "sw s0, 8(sp)\n"
+        /* Set s0 to a constant that cannot be interpreted as an address */
+        "li s0, 0x42\n"
+        /* Fail to trigger an exception */
+        "sw s0, (s0)\n"
+        "ret\n"
+        ::
+    );
+}
+
+/**
+ * Test that backtracing detects when the frame is it unwinding encounters a function (or routine)
+ * that was not compiles with frame pointer option. This does NOT guarantee that all the call stack
+ * will be valid (some data pointers may be interpreted as frames), but it guarantees that no
+ * exception will be triggered.
+ */
+TEST_CASE("Backtrace detects corrupted frames", "[esp_system]")
+{
+    /* Add some prints to make sure the compiler doesn't optimize it with a tail call */
+    non_framed_function();
+    printf("ERROR: must not reach this point\n");
 }
 
 #endif

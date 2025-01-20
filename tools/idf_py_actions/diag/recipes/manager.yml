@@ -1,0 +1,20 @@
+description: IDF Component Manager information
+tags: [manager, base, project]
+output: manager
+steps:
+  - name: 'IDF Component Manager'
+    cmds:
+      - exec:
+        cmd: 'python -m idf_component_manager version'
+        output: manager.ver
+      - file:
+        path: '${PROJECT_DIR}/dependencies.lock'
+      - glob:
+        # Gather all idf_component.yml files from the project directory and
+        # save them in directories relative to the project directory within
+        # the idf_component directory.
+        pattern: 'idf_component.yml'
+        recursive: true
+        relative: true
+        path: '${PROJECT_DIR}'
+        output: 'idf_component/'

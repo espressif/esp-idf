@@ -48,6 +48,7 @@ examples/system/ota/otatool/otatool_example.sh
 install.fish
 install.sh
 tools/activate.py
+tools/bsasm.py
 tools/check_python_dependencies.py
 tools/ci/build_template_app.sh
 tools/ci/check_api_violation.sh
@@ -63,6 +64,7 @@ tools/ci/check_kconfigs.py
 tools/ci/check_readme_links.py
 tools/ci/check_requirement_files.py
 tools/ci/check_rules_components_patterns.py
+tools/ci/check_soc_headers_leak.py
 tools/ci/check_soc_struct_headers.py
 tools/ci/check_tools_files_patterns.py
 tools/ci/check_type_comments.py
@@ -108,6 +110,7 @@ tools/mkuf2.py
 tools/python_version_checker.py
 tools/set-submodules-to-github.sh
 tools/test_apps/system/no_embedded_paths/check_for_file_paths.py
+tools/test_bsasm/test_bsasm.py
 tools/test_idf_py/test_hints.py
 tools/test_idf_py/test_idf_py.py
 tools/test_idf_py/test_idf_qemu.py

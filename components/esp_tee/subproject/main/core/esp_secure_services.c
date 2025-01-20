@@ -3,27 +3,31 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 #include <stdarg.h>
+
 #include "esp_cpu.h"
 #include "esp_efuse.h"
-#include "hal/efuse_hal.h"
-#include "hal/wdt_hal.h"
-
-#include "esp_rom_efuse.h"
+#include "esp_flash.h"
 #include "esp_flash_encrypt.h"
+#include "esp_rom_efuse.h"
+#include "esp_fault.h"
+
+#include "hal/efuse_hal.h"
+#include "hal/mmu_types.h"
+#include "hal/mmu_hal.h"
+#include "hal/wdt_hal.h"
 #include "hal/sha_hal.h"
+
 #include "soc/soc_caps.h"
+#include "aes/esp_aes.h"
+#include "sha/sha_dma.h"
 
 #include "esp_tee.h"
 #include "secure_service_num.h"
-
 #include "esp_tee_intr.h"
 #include "esp_tee_aes_intr.h"
 #include "esp_tee_rv_utils.h"
 
-#include "aes/esp_aes.h"
-#include "sha/sha_dma.h"
 #include "esp_tee_flash.h"
 #include "esp_tee_sec_storage.h"
 #include "esp_tee_ota_ops.h"
@@ -308,6 +312,52 @@ esp_err_t _ss_esp_tee_att_generate_token(const uint32_t nonce, const uint32_t cl
                                          uint8_t *token_buf, const size_t token_buf_size, uint32_t *token_len)
 {
     return esp_att_generate_token(nonce, client_id, psa_cert_ref, token_buf, token_buf_size, token_len);
+}
+
+/* ---------------------------------------------- MMU HAL ------------------------------------------------- */
+
+void _ss_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr,
+                            uint32_t paddr, uint32_t len, uint32_t *out_len)
+{
+    bool vaddr_chk = esp_tee_flash_check_vaddr_in_tee_region(vaddr);
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(paddr);
+    if (vaddr_chk || paddr_chk) {
+        return;
+    }
+    ESP_FAULT_ASSERT(!vaddr_chk && !vaddr_chk);
+
+    mmu_hal_map_region(mmu_id, mem_type, vaddr, paddr, len, out_len);
+}
+
+void _ss_mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
+{
+    bool vaddr_chk = esp_tee_flash_check_vaddr_in_tee_region(vaddr);
+    if (vaddr_chk) {
+        return;
+    }
+    ESP_FAULT_ASSERT(!vaddr_chk);
+
+    mmu_hal_unmap_region(mmu_id, vaddr, len);
+}
+
+bool _ss_mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
+{
+    bool vaddr_chk = esp_tee_flash_check_vaddr_in_tee_region(vaddr);
+    if (vaddr_chk) {
+        return false;
+    }
+    ESP_FAULT_ASSERT(!vaddr_chk);
+    return mmu_hal_vaddr_to_paddr(mmu_id, vaddr, out_paddr, out_target);
+}
+
+bool _ss_mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(paddr);
+    if (paddr_chk) {
+        return false;
+    }
+    ESP_FAULT_ASSERT(!paddr_chk);
+    return mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
 }
 
 /* ---------------------------------------------- Secure Service Dispatcher ------------------------------------------------- */

@@ -64,8 +64,6 @@ void test_assert_cache_disabled(void);
 
 void test_assert_cache_write_back_error_can_print_backtrace(void);
 
-void test_assert_cache_write_back_error_can_print_backtrace2(void);
-
 void test_illegal_access(void);
 
 void test_capture_dram(void);
@@ -76,6 +74,8 @@ void test_tcb_corrupted(void);
 void test_setup_coredump_summary(void);
 void test_coredump_summary(void);
 #endif
+
+void test_panic_print_backtrace(void);
 
 #ifdef __cplusplus
 }

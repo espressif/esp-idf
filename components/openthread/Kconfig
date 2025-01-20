@@ -360,6 +360,14 @@ menu "OpenThread"
                     default 120
             endmenu
 
+            config OPENTHREAD_PREFERRED_CHANNEL_MASK
+                hex "Preferred channel mask"
+                default 0x7fff800
+
+            config OPENTHREAD_SUPPORTED_CHANNEL_MASK
+                hex "Supported channel mask"
+                default 0x7fff800
+
             config OPENTHREAD_NUM_MESSAGE_BUFFERS
                 int "The number of openthread message buffers"
                 default 65

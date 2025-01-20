@@ -11,6 +11,7 @@ CONFIGS_NVS_ENCR_FLASH_ENC = [
 
 @pytest.mark.esp32
 @pytest.mark.esp32c3
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['default'], indirect=True)
 def test_nvs_flash(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='!nvs_encr_hmac', timeout=120)

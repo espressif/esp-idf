@@ -25,7 +25,7 @@ Configuration Set ID: 11
 #define OTG20_MULTI_PROC_INTRPT   1
 
 /* 3.2 USB Physical Layer Interface Parameters */
-#define OTG20_HSPHY_INTERFACE         3
+#define OTG20_HSPHY_INTERFACE         3 // Although we support both UTMI+ and ULPI, the ULPI is not wired out of the USB-DWC. Hence only UTMI+ can be used
 #define OTG20_HSPHY_DWIDTH            2
 #define OTG20_FSPHY_INTERFACE         2
 #define OTG20_ENABLE_IC_USB           0

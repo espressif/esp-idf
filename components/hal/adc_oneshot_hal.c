@@ -58,6 +58,10 @@ void adc_oneshot_hal_setup(adc_oneshot_hal_ctx_t *hal, adc_channel_t chan)
     s_disable_dac(hal, chan);
 #endif
 
+#if ADC_LL_POWER_MANAGE_SUPPORTED
+    adc_ll_set_power_manage(unit, ADC_LL_POWER_SW_ON);
+#endif
+
 #if SOC_ADC_DIG_CTRL_SUPPORTED && !SOC_ADC_RTC_CTRL_SUPPORTED
     adc_ll_digi_clk_sel(hal->clk_src);
     adc_ll_digi_controller_clk_div(ADC_LL_CLKM_DIV_NUM_DEFAULT, ADC_LL_CLKM_DIV_A_DEFAULT, ADC_LL_CLKM_DIV_B_DEFAULT);

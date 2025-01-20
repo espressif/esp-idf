@@ -44,10 +44,8 @@ extern "C" {
 #define SOC_S_MMU_MMAP_RESV_START_VADDR    (SOC_MMU_END_VADDR - SOC_S_MMU_MMAP_RESV_PAGE_NUM * SOC_MMU_PAGE_SIZE)
 
 #ifndef __ASSEMBLER__
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include "esp_rom_sys.h"
 
 /**
  * @brief TEE initialization function called by the bootloader at boot time.

@@ -123,7 +123,13 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
 参考 :cpp:type:`esp_partition_subtype_t`，以了解 ESP-IDF 定义的全部子类型列表，包括：
 
-* 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或者 ``test`` (0x20)。
+.. only:: not esp32c6
+
+    * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、``ota_0`` (0x10) … ``ota_15`` (0x1F) 或 ``test`` (0x20)。
+
+.. only:: esp32c6
+
+    * 当 Type 定义为 ``app`` 时，SubType 字段可以指定为 ``factory`` (0x00)、 ``ota_0`` (0x10) … ``ota_15`` (0x1F) 或 ``test`` (0x20)。此外，如果启用了 :doc:`ESP-TEE <../security/tee/tee>` 功能，则可以使用两个 TEE 特定子类型：``tee_0`` (0x30) 和 ``tee_1`` (0x31)。
 
     -  ``factory`` (0x00) 是默认的 app 分区。引导加载程序将默认加载该应用程序。但如果存在类型为 data/ota 的分区，则引导加载程序将加载 data/ota 分区中的数据，进而判断启动哪个 OTA 镜像文件。
 
@@ -132,6 +138,10 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
     -  ``ota_0`` (0x10) … ``ota_15`` (0x1F) 为 OTA 应用程序分区，引导加载程序将根据 OTA 数据分区中的数据来决定加载哪个 OTA 应用程序分区中的程序。在使用 OTA 功能时，应用程序应至少拥有 2 个 OTA 应用程序分区（``ota_0`` 和 ``ota_1``）。更多详细信息，请参考 :doc:`OTA 文档 </api-reference/system/ota>`。
     -  ``test`` (0x20) 为预留的子类型，用于工厂测试流程。如果没有其他有效 app 分区，test 将作为备选启动分区使用。也可以配置引导加载程序在每次启动时读取 GPIO，如果 GPIO 被拉低则启动该分区。详细信息请查阅 :ref:`bootloader_boot_from_test_firmware`。
+
+    .. only:: esp32c6
+
+        - ``tee_0`` (0x30) 和 ``tee_1`` (0x31) 是 TEE 应用分区。使用 :doc:`TEE OTA <../security/tee/tee-ota>` 时，分区表应包含 ``tee_0`` 和 ``tee_1``，通过 TEE OTA 数据分区，可以配置引导加载程序应启动的 TEE 应用分区。详情请参阅 :doc:`TEE OTA <../security/tee/tee-ota>`。
 
 * 当 Type 定义为 ``bootloader`` 时，可以将 SubType 字段指定为：
 
@@ -170,6 +180,11 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 
         -  用于存储加密密钥（如果启用了 `NVS 加密` 功能）。
         -  此分区应至少设定为 4096 字节。
+
+.. only:: esp32c6
+
+    - ``tee-ota`` (0x90) 是 :ref:`TEE OTA 数据分区 <tee-ota-data-partition>`，用于存储所选 TEE OTA 应用分区的信息。此分区大小应为 0x2000 字节。详情请参阅 :doc:`TEE OTA <../security/tee/tee-ota>`。
+    - ``tee_sec_stg`` (0x91) 是 TEE 安全存储分区，用于存储仅能被 TEE 应用程序访问的加密数据。:doc:`TEE 安全存储 <../security/tee/tee-sec-storage>` 将使用此分区存储包括加密密钥在内的敏感数据。此分区大小取决于具体的应用需求。
 
     - ESP-IDF 还支持其他用于数据存储的预定义子类型，包括：
 

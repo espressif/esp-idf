@@ -11,14 +11,12 @@
 extern "C" {
 #endif
 
-// TODO: [ESP32C5] IDF-8702
-
 //This is the ADC calibration value version burnt in efuse
 #define ESP_EFUSE_ADC_CALIB_VER1     1
-#define ESP_EFUSE_ADC_CALIB_VER2     2
 #define ESP_EFUSE_ADC_CALIB_VER_MIN  ESP_EFUSE_ADC_CALIB_VER1
-#define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER2
+#define ESP_EFUSE_ADC_CALIB_VER_MAX  ESP_EFUSE_ADC_CALIB_VER1
 #define VER2IDX(ver)    ((ver) - 1)    // Version number to index number of the array
+
 /**
  * @brief Get the RTC calibration efuse version
  *

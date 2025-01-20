@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,9 @@ extern "C" {
 #define LDO_LL_NUM_UNITS            4    // Number of LDO units
 #define LDO_LL_ADJUSTABLE_CHAN_MASK 0x0F // all the 4 channels are adjustable by setting "mul" and "dref" registers
 
-#define LDO_LL_MAX_VOLTAGE_MV 3300
-#define LDO_LL_MIN_VOLTAGE_MV 500
+#define LDO_LL_RECOMMEND_MAX_VOLTAGE_MV 2700
+#define LDO_LL_RECOMMEND_MIN_VOLTAGE_MV 500
+#define LDO_LL_RAIL_VOLTAGE_MV          3300
 
 /**
  * @brief In the analog design, the LDO output "channel" is index from 1, i.e., VO1, VO2, VO3, VO4.
@@ -62,9 +63,10 @@ static inline bool ldo_ll_is_valid_ldo_channel(int ldo_chan)
  * @param voltage_mv  Voltage in mV
  * @param dref        Returned dref value
  * @param mul         Returned mul value
+ * @param use_rail_voltage Returned value to indicate if the rail voltage should be used
  */
 __attribute__((always_inline))
-static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint8_t *dref, uint8_t *mul)
+static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint8_t *dref, uint8_t *mul, bool *use_rail_voltage)
 {
     uint8_t efuse_k = 0;
     uint8_t efuse_vos = 0;
@@ -136,6 +138,8 @@ static inline void ldo_ll_voltage_to_dref_mul(int ldo_unit, int voltage_mv, uint
 
     *dref = matched_dref;
     *mul = matched_mul;
+    // if the expected voltage is 3.3V, use the rail voltage directly
+    *use_rail_voltage = (voltage_mv == LDO_LL_RAIL_VOLTAGE_MV);
 }
 
 /**
@@ -175,10 +179,10 @@ static inline void ldo_ll_set_owner(int ldo_unit, ldo_ll_unit_owner_t owner)
  * @param ldo_unit LDO unit
  * @param dref A parameter which controls the internal reference voltage
  * @param mul Multiply factor
- * @param bypass True: bypass; False: not bypass.
+ * @param use_rail_voltage Use rail voltage directly (i.e. bypass the LDO)
  */
 __attribute__((always_inline))
-static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul, bool bypass)
+static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul, bool use_rail_voltage)
 {
     uint8_t index_array[LDO_LL_NUM_UNITS] = {0, 3, 1, 4};
     /**
@@ -186,7 +190,7 @@ static inline void ldo_ll_adjust_voltage(int ldo_unit, uint8_t dref, uint8_t mul
      *  - 0: Vref * Mul
      *  - 1: 3.3V
      */
-    PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo.tieh = bypass;
+    PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo.tieh = use_rail_voltage;
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo_ana.dref = dref;
     PMU.ext_ldo[index_array[ldo_unit]].pmu_ext_ldo_ana.mul = mul;
 }

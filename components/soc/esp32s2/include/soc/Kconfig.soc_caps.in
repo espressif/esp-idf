@@ -819,6 +819,10 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 15
 
+config SOC_TOUCH_SUPPORT_BENCHMARK
+    bool
+    default y
+
 config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
     default y

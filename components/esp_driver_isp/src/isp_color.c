@@ -49,7 +49,6 @@ esp_err_t esp_isp_color_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc->color_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "color is enabled already");
-    ESP_RETURN_ON_ERROR(esp_isp_enable_yuv_submodules(proc, true), TAG, "failed to enable YUV submodules");
 
     isp_ll_color_clk_enable(proc->hal.hw, true);
     isp_ll_color_enable(proc->hal.hw, true);
@@ -62,7 +61,6 @@ esp_err_t esp_isp_color_disable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc->color_fsm == ISP_FSM_ENABLE, ESP_ERR_INVALID_STATE, TAG, "color isn't enabled yet");
-    ESP_RETURN_ON_ERROR(esp_isp_enable_yuv_submodules(proc, false), TAG, "failed to disable YUV submodules");
 
     isp_ll_color_enable(proc->hal.hw, false);
     isp_ll_color_clk_enable(proc->hal.hw, false);

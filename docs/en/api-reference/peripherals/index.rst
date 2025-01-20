@@ -10,6 +10,7 @@ Peripherals API
     :SOC_ADC_DMA_SUPPORTED: adc_continuous
     :SOC_ADC_SUPPORTED: adc_calibration
     :SOC_ANA_CMPR_SUPPORTED: ana_cmpr
+    :SOC_BITSCRAMBLER_SUPPORTED: bitscrambler
     :SOC_MIPI_CSI_SUPPORTED: camera_driver
     :SOC_CLK_TREE_SUPPORTED: clk_tree
     :SOC_DAC_SUPPORTED: dac
@@ -44,8 +45,7 @@ Peripherals API
     :SOC_LP_I2S_SUPPORTED: lp_i2s
     :SOC_LP_VAD_SUPPORTED: vad
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
-    :esp32: touch_pad
-    :SOC_TOUCH_SENSOR_SUPPORTED and not esp32: cap_touch_sens
+    :SOC_TOUCH_SENSOR_SUPPORTED: cap_touch_sens
     :esp32s2: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart

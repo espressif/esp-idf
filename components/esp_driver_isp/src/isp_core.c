@@ -145,6 +145,10 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
         isp_ll_yuv_set_range(proc->hal.hw, proc_config->yuv_range);
     }
 
+    if (out_color_format.color_space == COLOR_SPACE_RGB && proc_config->input_data_source == ISP_INPUT_DATA_SOURCE_DVP) {
+        isp_ll_color_enable(proc->hal.hw, true); // workaround for DIG-474
+    }
+
     proc->in_color_format = in_color_format;
     proc->out_color_format = out_color_format;
     proc->h_res = proc_config->h_res;
@@ -387,32 +391,6 @@ esp_err_t esp_isp_deregister_isr(isp_proc_handle_t proc, isp_submodule_t submodu
             return ret;
         }
     }
-
-    return ESP_OK;
-}
-
-esp_err_t esp_isp_enable_yuv_submodules(isp_proc_handle_t proc, bool en)
-{
-    ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
-
-    bool rgb2yuv = false;
-    bool yuv2rgb = false;
-
-    if (proc->out_color_format.color_space == COLOR_SPACE_RGB) {
-        rgb2yuv = true;
-        yuv2rgb = true;
-    } else if (proc->out_color_format.color_space == COLOR_SPACE_YUV) {
-        rgb2yuv = true;
-    }
-
-    portENTER_CRITICAL(&proc->spinlock);
-    if (rgb2yuv) {
-        isp_ll_enable_rgb2yuv(proc->hal.hw, en);
-    }
-    if (yuv2rgb) {
-        isp_ll_enable_yuv2rgb(proc->hal.hw, en);
-    }
-    portEXIT_CRITICAL(&proc->spinlock);
 
     return ESP_OK;
 }

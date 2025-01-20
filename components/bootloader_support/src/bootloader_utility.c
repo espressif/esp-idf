@@ -570,7 +570,7 @@ void bootloader_utility_load_tee_image(const bootloader_state_t *bs)
         ESP_LOGE(TAG, "Failed to load TEE app");
         bootloader_reset();
     }
-    tee_boot_part = tee_part_idx;
+    tee_boot_part = tee_active_part;
 
     ESP_LOGI(TAG, "Loaded TEE app from partition at offset 0x%"PRIx32, tee_active_part_pos->offset);
 }

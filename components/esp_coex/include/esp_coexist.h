@@ -164,7 +164,7 @@ esp_err_t esp_enable_extern_coex_gpio_pin(external_coex_wire_t wire_type,
  * @brief Disable external coex.
  * @return : ESP_OK - success, other - failed
  */
-esp_err_t esp_disable_extern_coex_gpio_pin();
+esp_err_t esp_disable_extern_coex_gpio_pin(void);
 
 #if SOC_EXTERNAL_COEX_ADVANCE
 /**

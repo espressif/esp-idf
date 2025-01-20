@@ -84,7 +84,7 @@ uint32_t gpio_input_get(void);
   */
 void gpio_pin_wakeup_enable(uint32_t i, GPIO_INT_TYPE intr_state);
 
-/**c
+/**
   * @brief disable GPIOs to wakeup the ESP32.
   *        Please do not call this function in SDK.
   *

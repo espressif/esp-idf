@@ -100,7 +100,7 @@ TEST_CASE("rmt channel install & uninstall", "[rmt]")
 #endif // SOC_RMT_SUPPORT_DMA
 }
 
-TEST_CASE("RMT interrupt priority", "[rmt]")
+TEST_CASE("rmt interrupt priority", "[rmt]")
 {
     rmt_tx_channel_config_t tx_channel_cfg = {
         .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,

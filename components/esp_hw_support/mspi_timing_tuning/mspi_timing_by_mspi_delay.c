@@ -19,7 +19,7 @@
 #include "esp_types.h"
 #include "esp_log.h"
 #include "soc/rtc.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
 #include "esp_private/mspi_timing_config.h"

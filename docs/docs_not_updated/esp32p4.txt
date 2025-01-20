@@ -1,5 +1,4 @@
 api-guides/partition-tables.rst
 api-guides/usb-otg-console.rst
-api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/sd_pullup_requirements.rst

@@ -13,6 +13,16 @@ extern "C" {
 #endif
 
 /**
+ * @brief Checks if a log message with the given log level and tag should be logged.
+ *
+ * @param level     The log level of the message.
+ * @param tag       The tag associated with the message.
+ * @return true     if the log message can be logged,
+ *         false    otherwise.
+ */
+bool esp_log_is_tag_loggable(esp_log_level_t level, const char *tag);
+
+/**
  * @brief Set the default log level.
  *
  * This function sets the default log level used by the ESP-IDF log library.

@@ -95,7 +95,7 @@ void bt_mesh_proxy_server_beacon_send(struct bt_mesh_subnet *sub);
 struct net_buf_simple *bt_mesh_proxy_server_get_buf(void);
 
 int32_t bt_mesh_proxy_server_adv_start(void);
-void bt_mesh_proxy_server_adv_stop(void);
+int bt_mesh_proxy_server_adv_stop(void);
 
 void bt_mesh_proxy_server_update_net_id_rand(void);
 void bt_mesh_proxy_server_update_net_id_rand_stop(void);

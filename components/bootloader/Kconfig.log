@@ -1,5 +1,26 @@
 menu "Log"
 
+    choice BOOTLOADER_LOG_VERSION
+        prompt "Log version"
+        help
+            Select the log version to be used by the ESP log component.
+            The app log version (CONFIG_LOG_VERSION) controls the version used in the bootloader,
+            preventing the selection of different versions.
+            For description of V1 and V2 see CONFIG_LOG_VERSION.
+
+        config BOOTLOADER_LOG_VERSION_1
+            bool "V1" if LOG_VERSION_1
+        config BOOTLOADER_LOG_VERSION_2
+            bool "V2" if LOG_VERSION_2
+    endchoice
+
+    config BOOTLOADER_LOG_VERSION
+        int
+        default 1 if BOOTLOADER_LOG_VERSION_1
+        default 2 if BOOTLOADER_LOG_VERSION_2
+        help
+            This configuration sets the log version number based on the chosen log version.
+
     choice BOOTLOADER_LOG_LEVEL
         bool "Bootloader log verbosity"
         default BOOTLOADER_LOG_LEVEL_INFO

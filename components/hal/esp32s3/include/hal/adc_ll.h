@@ -44,7 +44,6 @@ extern "C" {
 #define ADC_LL_DATA_INVERT_DEFAULT(PERIPH_NUM)         (0)
 #define ADC_LL_SAR_CLK_DIV_DEFAULT(PERIPH_NUM)         (1)
 #define ADC_LL_DELAY_CYCLE_AFTER_DONE_SIGNAL           (0)
-#define ADC_LL_RTC_GPIO_SUPPORTED                      (1)
 
 /*---------------------------------------------------------------
                     DMA

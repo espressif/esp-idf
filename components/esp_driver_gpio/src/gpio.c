@@ -433,6 +433,26 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
     return ESP_OK;
 }
 
+esp_err_t gpio_config_as_analog(gpio_num_t gpio_num)
+{
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    // To be used for analog function, the pin needs to be left floating
+    gpio_input_disable(gpio_num);
+    gpio_output_disable(gpio_num);
+    gpio_pullup_dis(gpio_num);
+    gpio_pulldown_dis(gpio_num);
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO);
+#if SOC_RTCIO_INPUT_OUTPUT_SUPPORTED
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+        rtc_gpio_deinit(gpio_num);
+        rtc_gpio_set_direction(gpio_num, RTC_GPIO_MODE_DISABLED);
+        rtc_gpio_pullup_dis(gpio_num);
+        rtc_gpio_pulldown_dis(gpio_num);
+    }
+#endif
+    return ESP_OK;
+}
+
 esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 {
     assert(GPIO_IS_VALID_GPIO(gpio_num));
@@ -584,10 +604,12 @@ esp_err_t gpio_isr_register(void (*fn)(void *), void *arg, int intr_alloc_flags,
 {
     GPIO_CHECK(fn, "GPIO ISR null", ESP_ERR_INVALID_ARG);
     gpio_isr_alloc_t p;
-#if !CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7995
-    p.source = ETS_GPIO_INTR_SOURCE;
-#else
+#if CONFIG_IDF_TARGET_ESP32P4  //TODO: IDF-7995
     p.source = ETS_GPIO_INTR0_SOURCE;
+#elif CONFIG_IDF_TARGET_ESP32H21 // TODO: IDF-11611
+    p.source = ETS_GPIO_INTERRUPT_PRO_SOURCE;
+#else
+    p.source = ETS_GPIO_INTR_SOURCE;
 #endif
     p.intr_alloc_flags = intr_alloc_flags;
 #if SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO

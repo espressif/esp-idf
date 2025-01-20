@@ -55,8 +55,7 @@ void putc_to_buffer(char c)
 
 static int print_to_buffer(const char *format, va_list args)
 {
-    int ret = vsnprintf(s_print_buffer, BUFFER_SIZE, format, args);
-    printf(s_print_buffer);
+    int ret = vsnprintf(&s_print_buffer[s_counter], BUFFER_SIZE, format, args);
     s_counter += ret;
     assert(s_counter < BUFFER_SIZE);
     return ret;

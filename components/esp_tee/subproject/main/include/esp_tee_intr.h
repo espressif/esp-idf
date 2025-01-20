@@ -7,6 +7,7 @@
 
 #ifndef __ASSEMBLER__
 
+#include <stdbool.h>
 #include <stdlib.h>
 #include <stdint.h>
 

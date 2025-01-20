@@ -653,6 +653,26 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
 
 注意，ISR 在 flash 操作期间默认处于禁用状态。要在 flash 操作期间继续发送传输事务，请启用 :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM`，并在 :cpp:member:`spi_bus_config_t::intr_flags` 中设置 :c:macro:`ESP_INTR_FLAG_IRAM`。此时，flash 操作前列队的传输事务将由 ISR 并行处理。此外，每个设备的回调和它们的 ``callee`` 函数都应该在 IRAM 中，避免回调因缓存丢失而崩溃。详情请参阅 :ref:`iram-safe-interrupt-handlers`。
 
+.. only:: esp32h2
+
+    时序调整
+    --------
+
+    .. only:: esp32h2
+
+        该功能只在芯片版本 v1.2 及以上中支持。
+
+    为了适应不同从设备的时序要求，以及提高信号稳定性， GP-SPI 控制器在接收数据时支持两种采样模式：采样模式 0 和采样模式 1 ，可通过 :cpp:member:`spi_device_interface_config_t::sample_point` 进行配置。
+
+    采样模式 0 （ SPI mode 0 ）：
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_delay.json
+
+    采样模式 1 （ SPI mode 0 ）：
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_std.json
+
+    默认情况下，驱动使用采样模式 0 ，当从设备遵守 SPI 标准时序时，采样模式 0 可以在高时钟频率时更稳定的接收数据。
 
 .. only:: esp32
 
@@ -661,7 +681,7 @@ GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg
     时序影响因素
     ---------------------
 
-    如图所示，SCLK 发射沿之后、信号被内部寄存器锁存之前，MISO 线存在延迟。因此，MISO 管脚的设置时间是 SPI 时钟速度的限制因素。当延迟过长时，设置松弛度 < 0，违反了设置时序要求，读取可能有误。
+    如图所示， SCLK 发射沿之后、信号被内部寄存器锁存之前， MISO 线存在延迟。因此， MISO 管脚的设置时间是 SPI 时钟速度的限制因素。当延迟过长时，设置松弛度 < 0 ，违反了设置时序要求，读取可能有误。
 
     .. image:: /../_static/spi_miso.png
         :scale: 40 %

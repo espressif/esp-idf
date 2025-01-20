@@ -8,6 +8,8 @@
 #include "soc/efuse_reg.h"
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/lp_wdt_reg.h"
+#include "soc/spi_mem_reg.h"
+#include "soc/ext_mem_defs.h"
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -42,6 +44,15 @@ TEST_CASE("Test APM violation interrupt: eFuse", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
     val = REG_READ(TEST_APM_EFUSE_PROT_REG);
+    TEST_ASSERT_EQUAL(0, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: MMU", "[apm_violation]")
+{
+    uint32_t val = UINT32_MAX;
+    REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), SOC_MMU_ENTRY_NUM - 2);
+    val = REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0));
     TEST_ASSERT_EQUAL(0, val);
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
 }

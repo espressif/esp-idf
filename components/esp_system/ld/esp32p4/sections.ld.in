@@ -488,6 +488,7 @@ SECTIONS
   .ext_ram.bss (NOLOAD) :
   {
     _ext_ram_bss_start = ABSOLUTE(.);
+    arrays[extern_ram]
     mapping[extern_ram]
     ALIGNED_SYMBOL(4, _ext_ram_bss_end)
   } > ext_ram_seg

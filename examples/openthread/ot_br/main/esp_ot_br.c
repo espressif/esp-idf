@@ -27,7 +27,9 @@
 #include "esp_openthread_lock.h"
 #include "esp_openthread_netif_glue.h"
 #include "esp_openthread_types.h"
+#if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 #include "esp_ot_cli_extension.h"
+#endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
 #include "esp_ot_config.h"
 #include "esp_ot_wifi_cmd.h"
 #include "esp_vfs_dev.h"
@@ -85,10 +87,17 @@ static void ot_task_worker(void *aContext)
     ESP_ERROR_CHECK(esp_openthread_init(&config));
     ESP_ERROR_CHECK(esp_netif_attach(openthread_netif, esp_openthread_netif_glue_init(&config)));
     esp_openthread_lock_acquire(portMAX_DELAY);
+#if CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
+    // The OpenThread log level directly matches ESP log level
     (void)otLoggingSetLevel(CONFIG_LOG_DEFAULT_LEVEL);
+#endif // CONFIG_OPENTHREAD_LOG_LEVEL_DYNAMIC
+#if CONFIG_OPENTHREAD_CLI
     esp_openthread_cli_init();
+#if CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_cli_custom_command_init();
+#endif // CONFIG_OPENTHREAD_CLI_ESP_EXTENSION
     esp_openthread_cli_create_task();
+#endif // CONFIG_OPENTHREAD_CLI
     esp_openthread_lock_release();
 
     // Run the main loop

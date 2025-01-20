@@ -4,13 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "esp_netif.h"
+#include "esp_netif_types.h"
+#include "esp_openthread_lock.h"
 #include <esp_check.h>
 #include <esp_event.h>
 #include <esp_log.h>
 #include <esp_openthread_dns64.h>
 #include <esp_openthread_netif_glue_priv.h>
+#include <esp_openthread_radio.h>
 #include <esp_openthread_state.h>
-#include <lwip/dns.h>
 
 #include <openthread/thread.h>
 
@@ -34,14 +37,22 @@ static void handle_ot_netif_state_change(otInstance* instance)
 static void handle_ot_netdata_change(void)
 {
 #if CONFIG_OPENTHREAD_DNS64_CLIENT
-    ip_addr_t dns_server_addr = *IP_ADDR_ANY;
-    if (esp_openthread_get_nat64_prefix(&dns_server_addr.u_addr.ip6) == ESP_OK) {
-        dns_server_addr.type = IPADDR_TYPE_V6;
-        dns_server_addr.u_addr.ip6.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
-        const ip_addr_t* dnsserver = dns_getserver(OPENTHREAD_DNS_SERVER_INDEX);
-        if (memcmp(dnsserver, &dns_server_addr, sizeof(ip_addr_t)) != 0) {
-            ESP_LOGI(TAG, "Set dns server address: %s", ipaddr_ntoa(&dns_server_addr));
-            dns_setserver(OPENTHREAD_DNS_SERVER_INDEX, &dns_server_addr);
+    ip6_addr_t dns_server_addr = *IP6_ADDR_ANY6;
+    if (esp_openthread_get_nat64_prefix(&dns_server_addr) == ESP_OK) {
+        dns_server_addr.addr[3] = ipaddr_addr(CONFIG_OPENTHREAD_DNS_SERVER_ADDR);
+        ip6_addr_t current_dns_server_addr = *IP6_ADDR_ANY6;
+        esp_openthread_task_switching_lock_release();
+        esp_openthread_get_dnsserver_addr(&current_dns_server_addr);
+        esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+        if (memcmp(&current_dns_server_addr, &dns_server_addr, sizeof(ip6_addr_t)) != 0) {
+            ESP_LOGI(TAG, "Set dns server address: %s", ip6addr_ntoa(&dns_server_addr));
+            esp_openthread_task_switching_lock_release();
+            if (esp_openthread_set_dnsserver_addr(dns_server_addr) != ESP_OK) {
+                ESP_LOGE(TAG, "Failed to set dns info for openthread netif");
+                esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+                return;
+            }
+            esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
             if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_SET_DNS_SERVER, NULL, 0, 0) != ESP_OK) {
                 ESP_LOGE(TAG, "Failed to post OpenThread set DNS server event");
             }
@@ -52,6 +63,12 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
+        esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
+        config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;
+        esp_openthread_set_coex_config(config);
+#endif
     static otDeviceRole s_previous_role = OT_DEVICE_ROLE_DISABLED;
     otDeviceRole role = otThreadGetDeviceRole(instance);
     esp_err_t ret = ESP_OK;

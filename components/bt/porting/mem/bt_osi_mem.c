@@ -25,8 +25,8 @@ IRAM_ATTR void *bt_osi_mem_malloc(size_t size)
 #endif
     if (!mem) {
         log_count ++;
-        if ((log_count % 40) == 0) {
-            esp_rom_printf("malloc failed (size %zu)",size);
+        if ((log_count % 100) == 0) {
+            ESP_EARLY_LOGI("ESP_LOG_INFO","malloc failed (size %zu)",size);
             log_count = 0;
         }
        assert(mem != NULL);

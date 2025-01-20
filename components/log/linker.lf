@@ -7,3 +7,9 @@ entries:
     log_timestamp:esp_log_timestamp (noflash)
     log_timestamp:esp_log_early_timestamp (noflash)
     log_lock (noflash)
+    util (noflash)
+    log_timestamp_common (noflash)
+    log_print (noflash)
+    log (noflash)
+    if LOG_MASTER_LEVEL = y:
+        log_level: esp_log_get_level_master (noflash)

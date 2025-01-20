@@ -12,7 +12,9 @@
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_system.h"
+#include "esp_private/log_util.h"
 #include "esp_log.h"
+#include "esp_private/cache_utils.h"
 #include "spi_flash_mmap.h"
 #include "esp_flash_internal.h"
 #if CONFIG_NEWLIB_ENABLED
@@ -107,6 +109,8 @@ ESP_SYSTEM_INIT_FN(init_flash, CORE, BIT(0), 130)
 #if CONFIG_SPI_FLASH_BROWNOUT_RESET
     spi_flash_needs_reset_check();
 #endif // CONFIG_SPI_FLASH_BROWNOUT_RESET
+    // The log library will call the registered callback function to check if the cache is disabled.
+    esp_log_util_set_cache_enabled_cb(spi_flash_cache_enabled);
     return ESP_OK;
 }
 #endif // !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP

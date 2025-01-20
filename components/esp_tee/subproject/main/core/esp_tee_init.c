@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_macros.h"
+#include "esp_fault.h"
 #include "esp_log.h"
 #include "esp_rom_sys.h"
 #include "riscv/rv_utils.h"
@@ -100,16 +101,16 @@ static void tee_mark_app_and_valid_cancel_rollback(void)
             return;
         }
         ESP_LOGE(TAG, "Failed to cancel rollback (0x%08x)", err);
-        esp_rom_software_reset_system();
+        abort();
     }
 
-    ESP_LOGW(TAG, "Rollback succeeded, erasing the passive TEE partition...");
+    ESP_LOGD(TAG, "Rollback succeeded, erasing the passive TEE partition...");
     uint8_t tee_next_part = bootloader_utility_tee_get_next_update_partition(&tee_ota_pos);
     esp_partition_info_t tee_next_part_info;
 
-    int ret = esp_tee_flash_find_partition(PART_TYPE_APP, tee_next_part, NULL, &tee_next_part_info);
-    ret |= esp_tee_flash_erase_range(tee_next_part_info.pos.offset, tee_next_part_info.pos.size);
-    if (ret != 0) {
+    err = esp_tee_flash_find_partition(PART_TYPE_APP, tee_next_part, NULL, &tee_next_part_info);
+    err |= esp_tee_flash_erase_range(tee_next_part_info.pos.offset, tee_next_part_info.pos.size);
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to find/erase the passive TEE partition!");
         return;
     }
@@ -148,7 +149,12 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
              ((void *)&_tee_heap_start), TEE_HEAP_SIZE, TEE_HEAP_SIZE / 1024, "RAM");
 
     /* Setting up the permissible flash operation address range */
-    assert(esp_tee_flash_setup_prot_ctx(tee_boot_part) == ESP_OK);
+    esp_err_t err = esp_tee_flash_setup_prot_ctx(tee_boot_part);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to setup the TEE flash memory protection!");
+        abort();
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
 
     /* Setting up the running non-secure app partition as per the address provided by the bootloader */
     assert(esp_tee_flash_set_running_ree_partition(ree_drom_addr) == ESP_OK);

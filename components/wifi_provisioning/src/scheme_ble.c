@@ -227,6 +227,7 @@ static esp_err_t set_config_endpoint(void *config, const char *endpoint_name, ui
                                                   realloc(ble_config->nu_lookup, (ble_config->nu_lookup_count + 1) * sizeof(protocomm_ble_name_uuid_t)));
     if (!lookup_table) {
         ESP_LOGE(TAG, "Error allocating memory for EP-UUID lookup table");
+        free(copy_ep_name);
         return ESP_ERR_NO_MEM;
     }
 

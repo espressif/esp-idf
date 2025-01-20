@@ -9,7 +9,6 @@
 #include <sys/param.h>
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
-#include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -17,6 +16,8 @@
 #include "hal/uart_types.h"
 #include "hal/uart_ll.h"
 #include "driver/uart.h"
+#include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "soc/rtc.h"            // for wakeup trigger defines
 #include "soc/rtc_periph.h"     // for read rtc registers directly (cause)
 #include "soc/soc.h"            // for direct register read macros

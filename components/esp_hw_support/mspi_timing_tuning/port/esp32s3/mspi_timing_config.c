@@ -13,7 +13,7 @@
 #include "soc/soc_caps.h"
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_tuning_configs.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 
 #define FLASH_LOW_SPEED_CORE_CLOCK_MHZ     MSPI_TIMING_LL_CORE_CLOCK_MHZ_DEFAULT
 #define FLASH_HIGH_SPEED_CORE_CLOCK_MHZ    MSPI_TIMING_CORE_CLOCK_MHZ

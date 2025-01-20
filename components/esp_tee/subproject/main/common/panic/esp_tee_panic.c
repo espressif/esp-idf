@@ -5,17 +5,22 @@
  */
 #include <string.h>
 
+#include "esp_cpu.h"
 #include "esp_attr.h"
 #include "esp_macros.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_uart.h"
-#include "hal/apm_hal.h"
+#include "rom/cache.h"
 
+#include "riscv/rv_utils.h"
 #include "riscv/rvruntime-frames.h"
 
+#include "hal/apm_hal.h"
+
 #include "esp_tee.h"
-#include "panic_helper.h"
 #include "esp_tee_apm_intr.h"
+#include "esp_tee_rv_utils.h"
+#include "panic_helper.h"
 
 #define RV_FUNC_STK_SZ    (32)
 
@@ -23,12 +28,22 @@
 
 static void tee_panic_end(void)
 {
-    // make sure all the panic handler output is sent from UART FIFO
+    // Disable interrupts
+    rv_utils_tee_intr_global_disable();
+
+    // Disable the cache
+    Cache_Disable_ICache();
+
+    // Clear the interrupt controller configurations
+    memset((void *)DR_REG_PLIC_MX_BASE, 0x00, (PLIC_MXINT_CLAIM_REG + 4 - DR_REG_PLIC_MX_BASE));
+    memset((void *)DR_REG_PLIC_UX_BASE, 0x00, (PLIC_UXINT_CLAIM_REG + 4 - DR_REG_PLIC_UX_BASE));
+
+    // Make sure all the panic handler output is sent from UART FIFO
     if (CONFIG_ESP_CONSOLE_UART_NUM >= 0) {
         esp_rom_output_tx_wait_idle(CONFIG_ESP_CONSOLE_UART_NUM);
     }
 
-    // generate core reset
+    // Generate system reset
     esp_rom_software_reset_system();
 }
 

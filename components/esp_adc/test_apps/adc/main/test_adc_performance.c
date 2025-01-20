@@ -219,6 +219,7 @@ static float test_adc_continuous_std(adc_atten_t atten, bool filter_en, int filt
     s_reset_array((1 << SOC_ADC_DIGI_MAX_BITWIDTH));
     TEST_ESP_OK(adc_continuous_start(handle));
 
+    ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
     int remain_count = ADC_TEST_CNT;
     while (remain_count) {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);

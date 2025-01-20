@@ -31,6 +31,7 @@
 #define OCT_PSRAM_WR_CMD_BITLEN         16
 #define OCT_PSRAM_ADDR_BITLEN           32
 #define OCT_PSRAM_RD_DUMMY_BITLEN       (2*(10-1))
+#define OCT_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define OCT_PSRAM_CS1_IO                MSPI_IOMUX_PIN_NUM_CS1
 #define OCT_PSRAM_VENDOR_ID             0xD
@@ -115,7 +116,7 @@ static void s_init_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *mode_reg_co
     int cmd_len = 16;
     uint32_t addr = 0x0;    //0x0 is the MR0 register
     int addr_bit_len = 32;
-    int dummy = OCT_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = OCT_PSRAM_RD_REG_DUMMY_BITLEN;
     opi_psram_mode_reg_t mode_reg = {0};
     int data_bit_len = 16;
 
@@ -178,7 +179,7 @@ static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
     esp_rom_spiflash_read_mode_t mode = ESP_ROM_SPIFLASH_OPI_DTR_MODE;
     int cmd_len = 16;
     int addr_bit_len = 32;
-    int dummy = OCT_PSRAM_RD_DUMMY_BITLEN;
+    int dummy = OCT_PSRAM_RD_REG_DUMMY_BITLEN;
     int data_bit_len = 16;
 
     //Read MR0~1 register

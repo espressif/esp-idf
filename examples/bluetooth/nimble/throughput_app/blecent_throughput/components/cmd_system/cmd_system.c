@@ -13,6 +13,7 @@
 #include "esp_sleep.h"
 #include "esp_flash.h"
 #include "driver/rtc_io.h"
+#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "argtable3/argtable3.h"
 #include "freertos/FreeRTOS.h"

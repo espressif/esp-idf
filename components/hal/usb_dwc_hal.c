@@ -312,7 +312,6 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
     usb_dwc_ll_haintmsk_en_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     usb_dwc_ll_hcintmsk_set_intr_mask(chan_obj->regs, CHAN_INTRS_EN_MSK);  //Unmask interrupts for this channel
     usb_dwc_ll_hctsiz_set_pid(chan_obj->regs, 0);        //Set the initial PID to zero
-    usb_dwc_ll_hctsiz_init(chan_obj->regs);       //Set the non changing parts of the HCTSIZ registers (e.g., do_ping and sched info)
     return true;
 }
 
@@ -383,8 +382,10 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             hal->periodic_frame_list[index] |= 1 << chan_obj->flags.chan_idx;
         }
         // For HS endpoints we must write to sched_info field of HCTSIZ register to schedule microframes
+        // For FS endpoints sched_info is always 0xFF
+        // LS endpoints do not support periodic transfers
+        unsigned int tokens_per_frame = 0;
         if (ep_char->periodic.is_hs) {
-            unsigned int tokens_per_frame;
             if (ep_char->periodic.interval >= 8) {
                 tokens_per_frame = 1; // 1 token every 8 microframes
             } else if (ep_char->periodic.interval >= 4) {
@@ -394,8 +395,8 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             } else {
                 tokens_per_frame = 8; // 1 token every microframe
             }
-            usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
         }
+        usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
     }
 }
 
@@ -403,12 +404,14 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
 
 void usb_dwc_hal_chan_activate(usb_dwc_hal_chan_t *chan_obj, void *xfer_desc_list, int desc_list_len, int start_idx)
 {
-    //Cannot activate a channel that has already been enabled or is pending error handling
+    // Cannot activate a channel that has already been enabled or is pending error handling
     HAL_ASSERT(!chan_obj->flags.active);
-    //Set start address of the QTD list and starting QTD index
+    // Make sure that PING is not enabled from previous transaction
+    usb_dwc_ll_hctsiz_set_dopng(chan_obj->regs, false);
+    // Set start address of the QTD list and starting QTD index
     usb_dwc_ll_hcdma_set_qtd_list_addr(chan_obj->regs, xfer_desc_list, start_idx);
     usb_dwc_ll_hctsiz_set_qtd_list_len(chan_obj->regs, desc_list_len);
-    usb_dwc_ll_hcchar_enable_chan(chan_obj->regs); //Start the channel
+    usb_dwc_ll_hcchar_enable_chan(chan_obj->regs); // Start the channel
     chan_obj->flags.active = 1;
 }
 

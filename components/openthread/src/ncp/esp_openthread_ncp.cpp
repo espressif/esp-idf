@@ -9,6 +9,10 @@
 #include "esp_openthread_ncp.h"
 #include "ncp_base.hpp"
 
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#include "esp_coex_i154.h"
+#endif
+
 #if CONFIG_OPENTHREAD_RCP_UART
 #include "utils/uart.h"
 #endif
@@ -65,6 +69,16 @@ otError NcpBase::VendorGetPropertyHandler(spinel_prop_key_t aPropKey)
 
     switch (aPropKey)
     {
+    case SPINEL_PROP_VENDOR_ESP_COEX_EVENT: {
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        esp_ieee802154_coex_config_t config = esp_ieee802154_get_coex_config();
+        const uint8_t *args = reinterpret_cast<const uint8_t *>(&config);
+        error = mEncoder.WriteDataWithLen(args, sizeof(esp_ieee802154_coex_config_t));
+#else
+        error = OT_ERROR_NOT_IMPLEMENTED;
+#endif
+        break;
+    }
 
     default:
         error = OT_ERROR_NOT_FOUND;
@@ -93,6 +107,23 @@ otError NcpBase::VendorSetPropertyHandler(spinel_prop_key_t aPropKey)
         int32_t pending_mode = 0;
         mDecoder.ReadInt32(pending_mode);
         esp_ieee802154_set_pending_mode(static_cast<esp_ieee802154_pending_mode_t>(pending_mode));
+        break;
+    }
+    case SPINEL_PROP_VENDOR_ESP_COEX_EVENT: {
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+        const uint8_t *args = nullptr;
+        uint16_t len = 0;
+        mDecoder.ReadDataWithLen(args, len);
+        if (len == sizeof(esp_ieee802154_coex_config_t)) {
+            esp_ieee802154_coex_config_t config;
+            memcpy(&config, args, len);
+            esp_ieee802154_set_coex_config(config);
+        } else {
+            error = OT_ERROR_INVALID_ARGS;
+        }
+#else
+        error = OT_ERROR_NOT_IMPLEMENTED;
+#endif
         break;
     }
 

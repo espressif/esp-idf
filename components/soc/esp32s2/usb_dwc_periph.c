@@ -24,7 +24,7 @@ static const usb_fsls_serial_signal_conn_t fsls_signals = {
     .fs_edge_sel    = USB_EXTPHY_SPEED_IDX,
 };
 
-static const usb_utmi_otg_signal_conn_t otg_signals = {
+static const usb_otg_signal_conn_t otg_signals = {
     // Inputs
     .iddig          = USB_OTG_IDDIG_IN_IDX,
     .avalid         = USB_OTG_AVALID_IN_IDX,

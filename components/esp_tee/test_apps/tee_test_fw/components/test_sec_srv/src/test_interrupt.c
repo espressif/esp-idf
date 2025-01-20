@@ -4,18 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "soc/timer_group_reg.h"
-#include "esp_tee.h"
+#include "esp_cpu.h"
 #include "esp_log.h"
-#include "esp_tee_test.h"
-
 #include "riscv/csr.h"
-#include "soc/interrupt_matrix_reg.h"
 
-#include "esp_tee_intr.h"
 #include "hal/timer_ll.h"
 #include "hal/clk_gate_ll.h"
+
 #include "soc/timer_group_reg.h"
+#include "soc/interrupt_matrix_reg.h"
+
+#include "esp_tee.h"
+#include "esp_tee_intr.h"
+#include "esp_tee_test.h"
 
 #define TIMER_DIVIDER         80        //  Hardware timer clock divider
 #define TIMER_RESOLUTION_HZ   1000000  // 1MHz resolution

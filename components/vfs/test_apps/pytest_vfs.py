@@ -8,6 +8,7 @@ from pytest_embedded import Dut
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'default', 'iram',
 ], indirect=True)
@@ -16,6 +17,7 @@ def test_vfs_default(dut: Dut) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.generic
 @pytest.mark.parametrize('config', [
     'ccomp',
 ], indirect=True)

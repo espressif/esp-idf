@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,8 @@
 extern "C" {
 #endif
 
-#define TOUCH_TOTAL_CHAN_NUM        SOC_TOUCH_SENSOR_NUM        /*!< The total channel number of the touch sensor */
-#define TOUCH_SAMPLE_CFG_NUM        SOC_TOUCH_SAMPLE_CFG_NUM    /*!< The supported max sample configuration number */
+#define TOUCH_TOTAL_CHAN_NUM        SOC_TOUCH_SENSOR_NUM                /*!< The total channel number of the touch sensor */
+#define TOUCH_SAMPLE_CFG_NUM        SOC_TOUCH_SAMPLE_CFG_NUM            /*!< The supported max sample configuration number */
 #if SOC_TOUCH_SUPPORT_PROX_SENSING
 #define TOUCH_PROXIMITY_CHAN_NUM    SOC_TOUCH_PROXIMITY_CHANNEL_NUM     /*!< The supported proximity channel number in proximity sensing mode */
 #endif
@@ -31,8 +31,8 @@ typedef enum {
     TOUCH_DEEP_SLEEP_WAKEUP,                 /*!< Enable the touch sensor to wake up the chip from deep sleep or light sleep */
 } touch_sleep_wakeup_level_t;
 
-typedef struct touch_sensor_s       *touch_sensor_handle_t;     /*!< The handle of touch sensor controller */
-typedef struct touch_channel_s      *touch_channel_handle_t;    /*!< The handle of touch channel */
+typedef struct touch_sensor_s       *touch_sensor_handle_t;             /*!< The handle of touch sensor controller */
+typedef struct touch_channel_s      *touch_channel_handle_t;            /*!< The handle of touch channel */
 
 #ifdef __cplusplus
 }

@@ -128,11 +128,17 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/opi_flash.h"
+#elif CONFIG_IDF_TARGET_ESP32C5
+#include "esp32c5/rom/opi_flash.h"
 #endif
+#include "spi_flash/spi_flash_defs.h"
 
 #if ESP_TEE_BUILD
+#include "esp_fault.h"
 #include "esp_flash_partitions.h"
 #include "esp32c6/rom/spi_flash.h"
+
+extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
 #endif
 
 static const char *TAG = "bootloader_flash";
@@ -512,6 +518,19 @@ esp_err_t bootloader_flash_read(size_t src_addr, void *dest, size_t size, bool a
 
 esp_err_t bootloader_flash_write(size_t dest_addr, void *src, size_t size, bool write_encrypted)
 {
+    /* NOTE: [ESP-TEE] Flash operation address validation with anti-FI check
+     *
+     * Ensure that flash operations cannot be executed within forbidden memory ranges
+     * by validating the address before proceeding.
+     */
+#if ESP_TEE_BUILD
+    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(dest_addr);
+    if (addr_chk) {
+        ESP_EARLY_LOGE(TAG, "bootloader_flash_write invalid dest_addr");
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(!addr_chk);
+#endif
     size_t alignment = write_encrypted ? 32 : 4;
     if ((dest_addr % alignment) != 0) {
         ESP_EARLY_LOGE(TAG, "bootloader_flash_write dest_addr 0x%x not %d-byte aligned", dest_addr, alignment);
@@ -558,6 +577,13 @@ esp_err_t bootloader_flash_erase_sector(size_t sector)
 
 esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 {
+#if ESP_TEE_BUILD
+    bool addr_chk = esp_tee_flash_check_paddr_in_active_tee_part(start_addr);
+    if (addr_chk) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(!addr_chk);
+#endif
     if (start_addr % FLASH_SECTOR_SIZE != 0) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -592,37 +618,37 @@ void bootloader_flash_32bits_address_map_enable(esp_rom_spiflash_read_mode_t fla
     switch (flash_mode) {
     case ESP_ROM_SPIFLASH_DOUT_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_DOUT_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_DUAL_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_DIO_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 4;
+        cache_rd.dummy_bit_len = SPI_FLASH_DIO_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_DIO_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_QOUT_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_QOUT_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_QUAD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_QIO_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 6;
+        cache_rd.dummy_bit_len = SPI_FLASH_QIO_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_QIO_4B;
         cache_rd.cmd_bit_len = 8;
         break;
     case ESP_ROM_SPIFLASH_FASTRD_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 8;
+        cache_rd.dummy_bit_len = SPI_FLASH_FASTRD_DUMMY_BITLEN;
         cache_rd.cmd = CMD_FASTRD_4B;
         cache_rd.cmd_bit_len = 8;
         break;
      case ESP_ROM_SPIFLASH_SLOWRD_MODE:
         cache_rd.addr_bit_len = 32;
-        cache_rd.dummy_bit_len = 0;
+        cache_rd.dummy_bit_len = SPI_FLASH_SLOWRD_DUMMY_BITLEN;
         cache_rd.cmd = CMD_SLOWRD_4B;
         cache_rd.cmd_bit_len = 8;
         break;

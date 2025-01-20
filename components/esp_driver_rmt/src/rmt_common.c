@@ -226,6 +226,13 @@ esp_err_t rmt_get_channel_id(rmt_channel_handle_t channel, int *ret_id)
     return ESP_OK;
 }
 
+esp_err_t rmt_get_channel_resolution(rmt_channel_handle_t channel, uint32_t *ret_resolution_hz)
+{
+    ESP_RETURN_ON_FALSE(channel && ret_resolution_hz, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    *ret_resolution_hz = channel->resolution_hz;
+    return ESP_OK;
+}
+
 esp_err_t rmt_apply_carrier(rmt_channel_handle_t channel, const rmt_carrier_config_t *config)
 {
     // specially, we allow config to be NULL, means to disable the carrier submodule

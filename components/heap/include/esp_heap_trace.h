@@ -15,10 +15,6 @@
 extern "C" {
 #endif
 
-#if !defined(CONFIG_HEAP_TRACING) && !defined(HEAP_TRACE_SRCFILE)
-#warning "esp_heap_trace.h is included but heap tracing is disabled in menuconfig, functions are no-ops"
-#endif
-
 #ifndef CONFIG_HEAP_TRACING_STACK_DEPTH
 #define CONFIG_HEAP_TRACING_STACK_DEPTH 0
 #endif

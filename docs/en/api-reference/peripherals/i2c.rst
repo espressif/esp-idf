@@ -439,6 +439,76 @@ Simple example for probing an I2C device:
     ESP_ERROR_CHECK(i2c_del_master_bus(bus_handle));
 
 
+I2C Master Execute Customized Transactions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Not all I2C devices strictly adhere to the standard I2C protocol, as different manufacturers may implement custom variations. For example, some devices require the address to be shifted, while others do not. Similarly, certain devices mandate acknowledgment (ACK) checks for specific operations, whereas others might not. To accommodate these variations, :cpp:func:`i2c_master_execute_defined_operations` function allow developers to define and execute fully customized I2C transactions. This flexibility ensures seamless communication with non-standard devices by tailoring the transaction sequence, addressing, and acknowledgment behavior to the device's specific requirements.
+
+.. note::
+
+    If you want to define your address in :cpp:type:`i2c_operation_job_t`, please set :cpp:member:`i2c_device_config_t::device_address` as I2C_DEVICE_ADDRESS_NOT_USED to skip internal address configuration in driver.
+
+For address configuration of using defined transactions, given that a device address is 0x20, there are two situations, see following example:
+
+.. code:: c
+
+    i2c_device_config_t i2c_device = {
+        .device_address = I2C_DEVICE_ADDRESS_NOT_USED,
+        .scl_speed_hz = 100 * 1000,
+        .scl_wait_us = 20000,
+    };
+
+    i2c_master_dev_handle_t dev_handle;
+
+    i2c_master_bus_add_device(bus_handle, &i2c_device, &dev_handle);
+
+    // Situation one: The device does not allow device address shift
+    uint8_t address1 = 0x20;
+    i2c_operation_job_t i2c_ops1[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address1, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    // Situation one: The device should left shift one byte with carrying a write or read bit (official protocol)
+    uint8_t address2 = (0x20 << 1 | 0); // (0x20 << 1 | 1)
+    i2c_operation_job_t i2c_ops2[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address2, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+There are also some devices does not need an address, you can directly do transaction with data:
+
+.. code:: c
+
+    uint8_t data[8] = {0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *)data, .total_bytes = 8 } },
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
+As for read direction, the theory is same but please always be aware the last byte of read before stop should always be nack. Example is as follows:
+
+.. code:: c
+
+    uint8_t address = (0x20 << 1 | 1);
+    uint8_t rcv_data[10] = {};
+
+    i2c_operation_job_t i2c_ops[] = {
+        { .command = I2C_MASTER_CMD_START },
+        { .command = I2C_MASTER_CMD_WRITE, .write = { .ack_check = false, .data = (uint8_t *) &address, .total_bytes = 1 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_ACK_VAL, .data = (uint8_t *)rcv_data, .total_bytes = 9 } },
+        { .command = I2C_MASTER_CMD_READ, .read = { .ack_value = I2C_NACK_VAL, .data = (uint8_t *)(rcv_data + 9), .total_bytes = 1 } }, // This must be nack.
+        { .command = I2C_MASTER_CMD_STOP },
+    };
+
+    i2c_master_execute_defined_operations(dev_handle, i2c_ops, sizeof(i2c_ops) / sizeof(i2c_operation_job_t), -1);
+
 I2C Slave Controller
 ^^^^^^^^^^^^^^^^^^^^
 

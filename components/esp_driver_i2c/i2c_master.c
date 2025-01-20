@@ -285,7 +285,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_master->contains_read = true;
 #if !SOC_I2C_STOP_INDEPENDENT
     if (remaining_bytes < I2C_FIFO_LEN(i2c_master->base->port_num) - 1) {
-        if (i2c_operation->hw_cmd.ack_val == ACK_VAL) {
+        if (i2c_operation->hw_cmd.ack_val == I2C_ACK_VAL) {
             if (remaining_bytes != 0) {
                 i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
                 i2c_master->read_len_static = i2c_master->rx_cnt;
@@ -321,7 +321,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     portENTER_CRITICAL_SAFE(&handle->spinlock);
     // If the read command work with ack_val, but no bytes to read, we skip
     // this command, and run next command directly.
-    if (hw_cmd.ack_val == ACK_VAL) {
+    if (hw_cmd.ack_val == I2C_ACK_VAL) {
         if (i2c_operation->total_bytes == 0) {
             i2c_master->trans_idx++;
             hw_cmd = i2c_master->i2c_trans.ops[i2c_master->trans_idx].hw_cmd;
@@ -365,17 +365,23 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
     uint8_t cmd_address = i2c_master->i2c_trans.device_address;
     uint8_t addr_byte = 1;
 #endif
+    if (i2c_master->i2c_trans.device_address == I2C_DEVICE_ADDRESS_NOT_USED) {
+        // Bypass the address.
+        addr_byte = 0;
+    }
     uint8_t addr_write[addr_byte];
     uint8_t addr_read[addr_byte];
 
-    addr_write[0] = I2C_ADDRESS_TRANS_WRITE(cmd_address);
-    addr_read[0] = I2C_ADDRESS_TRANS_READ(cmd_address);
+    if (addr_byte != 0) {
+        addr_write[0] = I2C_ADDRESS_TRANS_WRITE(cmd_address);
+        addr_read[0] = I2C_ADDRESS_TRANS_READ(cmd_address);
 #if SOC_I2C_SUPPORT_10BIT_ADDR
-    if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
-        addr_write[1] = i2c_master->i2c_trans.device_address & 0xff;
-        addr_read[1] = i2c_master->i2c_trans.device_address & 0xff;
-    }
+        if (i2c_master->addr_10bits_bus == I2C_ADDR_BIT_LEN_10) {
+            addr_write[1] = i2c_master->i2c_trans.device_address & 0xff;
+            addr_read[1] = i2c_master->i2c_trans.device_address & 0xff;
+        }
 #endif
+    }
 
     portENTER_CRITICAL_SAFE(&i2c_master->base->spinlock);
     i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
@@ -1205,8 +1211,8 @@ esp_err_t i2c_master_transmit_receive(i2c_master_dev_handle_t i2c_dev, const uin
         {.hw_cmd = I2C_TRANS_START_COMMAND},
         {.hw_cmd = I2C_TRANS_WRITE_COMMAND(i2c_dev->ack_check_disable ? false : true), .data = (uint8_t *)write_buffer, .total_bytes = write_size},
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
@@ -1225,8 +1231,8 @@ esp_err_t i2c_master_receive(i2c_master_dev_handle_t i2c_dev, uint8_t *read_buff
 
     i2c_operation_t i2c_ops[] = {
         {.hw_cmd = I2C_TRANS_START_COMMAND},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
-        {.hw_cmd = I2C_TRANS_READ_COMMAND(NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_ACK_VAL), .data = read_buffer, .total_bytes = read_size - 1},
+        {.hw_cmd = I2C_TRANS_READ_COMMAND(I2C_NACK_VAL), .data = (read_buffer + read_size - 1), .total_bytes = 1},
         {.hw_cmd = I2C_TRANS_STOP_COMMAND},
     };
 
@@ -1288,6 +1294,82 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     xSemaphoreGive(bus_handle->bus_lock_mux);
     return ret;
+}
+
+esp_err_t i2c_master_device_change_address(i2c_master_dev_handle_t i2c_dev, uint16_t new_device_address, int timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+
+    TickType_t ticks_to_wait = (timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms);
+    if (xSemaphoreTake(i2c_dev->master_bus->bus_lock_mux, ticks_to_wait) != pdTRUE) {
+        ESP_LOGE(TAG, "change address take semaphore timeout");
+        return ESP_ERR_TIMEOUT;
+    }
+
+    if (i2c_dev->addr_10bits == I2C_ADDR_BIT_LEN_7) {
+        if (new_device_address > 0x7f) {
+            ESP_LOGE(TAG, "The address is now 7 bit address mode, new address is larger than 7 bits");
+            return ESP_ERR_INVALID_ARG;
+        }
+    } else {
+        if (new_device_address <= 0x7f) {
+            ESP_LOGE(TAG, "The address is now 10 bit address mode, new address is smaller than 10 bits");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    i2c_dev->device_address = new_device_address;
+
+    xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
+    return ESP_OK;
+}
+
+esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev, i2c_operation_job_t *i2c_operation, size_t operation_list_num, int xfer_timeout_ms)
+{
+    ESP_RETURN_ON_FALSE(i2c_dev != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c handle not initialized");
+    ESP_RETURN_ON_FALSE(i2c_operation != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c operation pointer is invalid");
+    ESP_RETURN_ON_FALSE(operation_list_num <= (SOC_I2C_CMD_REG_NUM), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
+
+    i2c_operation_t i2c_ops[operation_list_num] = {};
+    for (int i = 0; i < operation_list_num; i++) {
+        switch (i2c_operation[i].command) {
+        case I2C_MASTER_CMD_START:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_RESTART;
+            break;
+        case I2C_MASTER_CMD_WRITE:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_WRITE;
+            i2c_ops[i].hw_cmd.ack_en = i2c_operation[i].write.ack_check;
+            i2c_ops[i].data = i2c_operation[i].write.data;
+            i2c_ops[i].total_bytes = i2c_operation[i].write.total_bytes;
+            break;
+        case I2C_MASTER_CMD_READ:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_READ;
+            i2c_ops[i].hw_cmd.ack_val = i2c_operation[i].read.ack_value;
+            i2c_ops[i].data = i2c_operation[i].read.data;
+            i2c_ops[i].total_bytes = i2c_operation[i].read.total_bytes;
+            // Add check: If current command is READ and the next command is STOP, ack_value must be NACK
+            if (i + 1 < operation_list_num && i2c_operation[i + 1].command == I2C_MASTER_CMD_STOP) {
+                if (i2c_operation[i].read.ack_value != I2C_NACK_VAL) {
+                    ESP_LOGE(TAG, "ack_value must be NACK (1) when the next command of READ is STOP.");
+                    return ESP_ERR_INVALID_ARG;
+                }
+            }
+            break;
+        case I2C_MASTER_CMD_STOP:
+            i2c_ops[i].hw_cmd.op_code = I2C_LL_CMD_STOP;
+            break;
+        default:
+            ESP_LOGE(TAG, "Invalid command.");
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    if (i2c_dev->master_bus->async_trans == false) {
+        ESP_RETURN_ON_ERROR(s_i2c_synchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+    } else {
+        ESP_RETURN_ON_ERROR(s_i2c_asynchronous_transaction(i2c_dev, i2c_ops, operation_list_num, xfer_timeout_ms), TAG, "I2C transaction failed");
+    }
+    return ESP_OK;
 }
 
 esp_err_t i2c_master_register_event_callbacks(i2c_master_dev_handle_t i2c_dev, const i2c_master_event_callbacks_t *cbs, void *user_data)

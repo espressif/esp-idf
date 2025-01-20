@@ -741,6 +741,7 @@ static int eap_peer_sm_init(void)
 
     wpa_printf(MSG_INFO, "wifi_task prio:%d, stack:%d", WPA2_TASK_PRIORITY, WPA2_TASK_STACK_SIZE);
 #endif
+    sm->workaround = 1;
     return ESP_OK;
 
 _err:

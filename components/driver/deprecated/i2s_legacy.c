@@ -1493,6 +1493,11 @@ static esp_err_t i2s_init_legacy(i2s_port_t i2s_num, int intr_alloc_flag)
     /* Create power management lock */
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_type_t pm_lock = ESP_PM_APB_FREQ_MAX;
+#if SOC_I2S_SUPPORTS_APLL
+    if (p_i2s[i2s_num]->use_apll) {
+        pm_lock = ESP_PM_NO_LIGHT_SLEEP;
+    }
+#endif // SOC_I2S_SUPPORTS_APLL
     ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock, 0, "i2s_driver", &p_i2s[i2s_num]->pm_lock), TAG, "I2S pm lock error");
 #endif //CONFIG_PM_ENABLE
 

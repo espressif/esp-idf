@@ -54,7 +54,7 @@
 // #define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32H21] IDF-11500
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
-#define SOC_PMU_SUPPORTED               1       //TODO: [ESP32H21] IDf-11522
+// #define SOC_PMU_SUPPORTED               1    //TODO: [ESP32H21] IDf-11522
 // #define SOC_LP_TIMER_SUPPORTED          1    //TODO: [ESP32H21] IDF-11512
 // #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
@@ -76,7 +76,7 @@
 // #define SOC_SDIO_SLAVE_SUPPORTED        1
 // #define SOC_PAU_SUPPORTED               1
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
-// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11514
+// #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11515
 // #define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_PM_SUPPORTED                1
 
@@ -176,7 +176,7 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-#define SOC_AHB_GDMA_VERSION                1U
+// #define SOC_AHB_GDMA_VERSION                1U
 #define SOC_GDMA_NUM_GROUPS_MAX             1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
 // #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
@@ -221,9 +221,9 @@
 // #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 // The Clock Out signal is route to the pin by GPIO matrix
-#define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
-#define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
-#define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
+// #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
+// #define SOC_CLOCKOUT_HAS_SOURCE_GATE        (1)
+// #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated LP_IOMUX subsystem on ESP32-H2. LP functions are still supported
@@ -458,7 +458,7 @@
 #define SOC_EFUSE_SOFT_DIS_JTAG 1
 #define SOC_EFUSE_DIS_ICACHE 1
 #define SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK 1  // XTS-AES and ECDSA key purposes not supported for this block
-#define SOC_EFUSE_ECDSA_USE_HARDWARE_K 1 // Force use hardware TRNG supplied K for ECDSA
+// #define SOC_EFUSE_ECDSA_USE_HARDWARE_K 1 // Force use hardware TRNG supplied K for ECDSA
 #define SOC_EFUSE_ECDSA_KEY 1
 
 /*-------------------------- Secure Boot CAPS----------------------------*/

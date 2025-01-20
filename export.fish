@@ -25,5 +25,5 @@ end
 
 source "$idf_path"/tools/detect_python.fish
 
-eval ("$idf_path"/tools/activate.py --export)
+eval ("$ESP_PYTHON" "$idf_path"/tools/activate.py --export)
 set -e idf_path

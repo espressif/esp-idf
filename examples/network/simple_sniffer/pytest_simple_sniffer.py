@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import pytest
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
@@ -38,7 +37,12 @@ def _sniffer_packets_check(dut: Dut, channel: int, packet_num: int) -> None:
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32c2
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
+@pytest.mark.esp32c6
+@pytest.mark.esp32c61
+@pytest.mark.esp32s2
 @pytest.mark.esp32s3
 @pytest.mark.wifi_ap
 @pytest.mark.parametrize('config', [

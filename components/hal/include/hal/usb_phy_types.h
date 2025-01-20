@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,7 +22,8 @@ extern "C"
  * @brief USB PHY target
  */
 typedef enum {
-    USB_PHY_TARGET_INT,              /**< USB target is internal PHY */
+    USB_PHY_TARGET_INT,              /**< USB target is internal FSLS PHY */
+    USB_PHY_TARGET_UTMI,             /**< USB target is internal UTMI PHY */
     USB_PHY_TARGET_EXT,              /**< USB target is external PHY */
     USB_PHY_TARGET_MAX,
 } usb_phy_target_t;

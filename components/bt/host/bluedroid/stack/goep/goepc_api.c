@@ -359,7 +359,7 @@ UINT16 GOEPC_RequestAddHeader(UINT16 handle, UINT8 header_id, const UINT8 *data,
             break;
         }
 
-        if ((data == NULL) ^ (data_len == 0)) {
+        if ((data == NULL && data_len != 0) || (data != NULL && data_len == 0)) {
             ret = GOEP_INVALID_PARAM;
             break;
         }

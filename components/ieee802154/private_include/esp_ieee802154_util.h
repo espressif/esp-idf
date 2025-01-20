@@ -19,6 +19,14 @@ extern "C" {
 
 #define IEEE802154_TAG "ieee802154"
 
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MIN 11
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MAX 26
+
+static inline bool ieee802154_is_valid_channel(uint8_t channel)
+{
+    return ((channel <= IEEE802154_OQPSK_2P4G_CHANNEL_MAX) && (channel >= IEEE802154_OQPSK_2P4G_CHANNEL_MIN));
+}
+
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
 #define IEEE802154_RF_DISABLE() ieee802154_rf_disable()
@@ -359,6 +367,26 @@ void ieee802154_etm_set_event_task(uint32_t channel, uint32_t event, uint32_t ta
  *
  */
 void ieee802154_etm_channel_clear(uint32_t channel);
+
+#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+
+/**
+ * @brief  Set the IEEE802.15.4 coexist config.
+ *
+ * @param[in]  config     The config of IEEE802.15.4 coexist.
+ *
+ */
+void ieee802154_set_coex_config(esp_ieee802154_coex_config_t config);
+
+/**
+ * @brief  Get the IEEE802.15.4 coexist config.
+ *
+ * @return
+ *        - The config of IEEE802.15.4 coexist.
+ *
+ */
+esp_ieee802154_coex_config_t ieee802154_get_coex_config(void);
+#endif
 
 #ifdef __cplusplus
 }

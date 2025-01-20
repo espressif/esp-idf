@@ -161,7 +161,7 @@ static inline void lcd_ll_set_pixel_clock_edge(lcd_cam_dev_t *dev, bool active_o
 __attribute__((always_inline))
 static inline void lcd_ll_set_pixel_clock_prescale(lcd_cam_dev_t *dev, uint32_t prescale)
 {
-    HAL_ASSERT(prescale <= LCD_LL_PCLK_DIV_MAX);
+    HAL_ASSERT(prescale > 0 && prescale <= LCD_LL_PCLK_DIV_MAX);
     // Formula: pixel_clk = lcd_clk / (1 + clkcnt_n)
     // clkcnt_n can't be zero
     uint32_t scale = 1;

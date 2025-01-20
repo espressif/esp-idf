@@ -96,7 +96,7 @@ class KconfigWriter():
     def update_file(self, kconfig_path, always_write):  # type: (Path, bool) -> bool
 
         try:
-            with open(kconfig_path, 'r') as f:
+            with open(kconfig_path, 'r', encoding='utf-8') as f:
                 old_content = f.readlines()
         except FileNotFoundError:
             old_content = ['']
@@ -115,7 +115,7 @@ class KconfigWriter():
 
         if file_needs_update:
             print('\n' + 'Updating file: {}'.format(kconfig_path))
-            with open(kconfig_path, 'w') as f:
+            with open(kconfig_path, 'w', encoding='utf-8') as f:
                 f.writelines(new_content)
 
         return file_needs_update
@@ -218,7 +218,7 @@ def generate_defines(soc_caps_dir, filename, always_write):  # type: (Path, str,
 def get_defines(header_path):  # type: (Path) -> list[str]
     defines = []
     logging.info('Reading macros from {}...'.format(header_path))
-    with open(header_path, 'r') as f:
+    with open(header_path, 'r', encoding='utf-8') as f:
         output = f.read()
 
     for line in output.split('\n'):

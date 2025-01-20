@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,14 +76,24 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     channel_config.sibling_chan = NULL;
     TEST_ESP_OK(gdma_new_ahb_channel(&channel_config, &rx_channels[0]));
 
-    TEST_ESP_OK(gdma_connect(tx_channels[0], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0)));
+    gdma_trigger_t fake_ahb_trigger1 = {
+        .periph = 1,
+        .bus_id = SOC_GDMA_BUS_AHB,
+        .instance_id = 0,
+    };
+    gdma_trigger_t fake_ahb_trigger2 = {
+        .periph = 2,
+        .bus_id = SOC_GDMA_BUS_AHB,
+        .instance_id = 1,
+    };
+    TEST_ESP_OK(gdma_connect(tx_channels[0], fake_ahb_trigger1));
     // can't connect multiple channels to the same peripheral
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gdma_connect(tx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0)));
-    TEST_ESP_OK(gdma_connect(tx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gdma_connect(tx_channels[1], fake_ahb_trigger1));
+    TEST_ESP_OK(gdma_connect(tx_channels[1], fake_ahb_trigger2));
 
-    TEST_ESP_OK(gdma_connect(rx_channels[0], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_UHCI, 0)));
     // but rx and tx can connect to the same peripheral
-    TEST_ESP_OK(gdma_connect(rx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+    TEST_ESP_OK(gdma_connect(rx_channels[0], fake_ahb_trigger1));
+    TEST_ESP_OK(gdma_connect(rx_channels[1], fake_ahb_trigger2));
     for (int i = 0; i < 2; i++) {
         TEST_ESP_OK(gdma_disconnect(tx_channels[i]));
         TEST_ESP_OK(gdma_disconnect(rx_channels[i]));
@@ -135,14 +145,24 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
     channel_config.sibling_chan = NULL;
     TEST_ESP_OK(gdma_new_axi_channel(&channel_config, &rx_channels[0]));
 
-    TEST_ESP_OK(gdma_connect(tx_channels[0], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2)));
+    gdma_trigger_t fake_axi_trigger1 = {
+        .periph = 1,
+        .bus_id = SOC_GDMA_BUS_AXI,
+        .instance_id = 0,
+    };
+    gdma_trigger_t fake_axi_trigger2 = {
+        .periph = 2,
+        .bus_id = SOC_GDMA_BUS_AXI,
+        .instance_id = 1,
+    };
+    TEST_ESP_OK(gdma_connect(tx_channels[0], fake_axi_trigger1));
     // can't connect multiple channels to the same peripheral
-    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gdma_connect(tx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2)));
-    TEST_ESP_OK(gdma_connect(tx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, gdma_connect(tx_channels[1], fake_axi_trigger1));
+    TEST_ESP_OK(gdma_connect(tx_channels[1], fake_axi_trigger2));
 
-    TEST_ESP_OK(gdma_connect(rx_channels[0], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_SPI, 2)));
     // but rx and tx can connect to the same peripheral
-    TEST_ESP_OK(gdma_connect(rx_channels[1], GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_M2M, 0)));
+    TEST_ESP_OK(gdma_connect(rx_channels[0], fake_axi_trigger1));
+    TEST_ESP_OK(gdma_connect(rx_channels[1], fake_axi_trigger2));
     for (int i = 0; i < 2; i++) {
         TEST_ESP_OK(gdma_disconnect(tx_channels[i]));
         TEST_ESP_OK(gdma_disconnect(rx_channels[i]));
@@ -153,7 +173,7 @@ TEST_CASE("GDMA channel allocation", "[GDMA]")
 }
 
 static void test_gdma_config_link_list(gdma_channel_handle_t tx_chan, gdma_channel_handle_t rx_chan,
-                                     gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, size_t sram_alignment, bool dma_link_in_ext_mem)
+                                       gdma_link_list_handle_t *tx_link_list, gdma_link_list_handle_t *rx_link_list, size_t sram_alignment, bool dma_link_in_ext_mem)
 {
 
     gdma_strategy_config_t strategy = {
@@ -366,7 +386,7 @@ static void test_gdma_m2m_mode(bool trig_retention_backup)
 TEST_CASE("GDMA M2M Mode", "[GDMA][M2M]")
 {
     test_gdma_m2m_mode(false);
-#if SOC_GDMA_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_GDMA_SUPPORT_SLEEP_RETENTION
     // test again with retention
     test_gdma_m2m_mode(true);
 #endif
@@ -384,7 +404,7 @@ static bool test_gdma_m2m_unalgined_rx_eof_callback(gdma_channel_handle_t dma_ch
     BaseType_t task_woken = pdFALSE;
     test_gdma_context_t *user_ctx = (test_gdma_context_t*)user_data;
     for (int i = 0; i < 3; i++) {
-        if(user_ctx->align_array->aligned_buffer[i].aligned_buffer && user_ctx->need_invalidate) {
+        if (user_ctx->align_array->aligned_buffer[i].aligned_buffer && user_ctx->need_invalidate) {
             TEST_ESP_OK(esp_cache_msync(user_ctx->align_array->aligned_buffer[i].aligned_buffer, ALIGN_UP(user_ctx->align_array->aligned_buffer[i].length, user_ctx->split_alignment), ESP_CACHE_MSYNC_FLAG_DIR_M2C));
         }
     }
@@ -471,7 +491,7 @@ static void test_gdma_m2m_unalgined_buffer_test(uint8_t *dst_data, uint8_t *src_
 
     // validate the destination data
     for (int i = 0; i < data_length; i++) {
-        TEST_ASSERT_EQUAL(i % 256 , dst_data[i + offset_len]);
+        TEST_ASSERT_EQUAL(i % 256, dst_data[i + offset_len]);
     }
 
     free(stash_buffer);

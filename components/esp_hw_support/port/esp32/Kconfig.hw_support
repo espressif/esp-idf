@@ -12,7 +12,7 @@ choice ESP32_REV_MIN
     config ESP32_REV_MIN_0
         bool "Rev v0.0 (ECO0)"
         # Brownout on Rev 0 is bugged, must use interrupt
-        select ESP_SYSTEM_BROWNOUT_INTR
+        select ESP_BROWNOUT_USE_INTR
     config ESP32_REV_MIN_1
         bool "Rev v1.0 (ECO1)"
     config ESP32_REV_MIN_1_1

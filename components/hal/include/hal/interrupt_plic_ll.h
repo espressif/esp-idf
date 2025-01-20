@@ -27,7 +27,7 @@ extern "C" {
  */
 FORCE_INLINE_ATTR void interrupt_plic_ll_route(int intr_src, int intr_num)
 {
-    REG_WRITE(DR_REG_INTERRUPT_MATRIX_BASE + 4 * intr_src, intr_num);
+    REG_WRITE(DR_REG_INTMTX_BASE + 4 * intr_src, intr_num);
 }
 
 

@@ -555,20 +555,38 @@ menu "Wi-Fi"
             default n
             help
                 Select this option to enable 802.11k 802.11v APIs(RRM and BTM support).
+
+        config ESP_WIFI_RRM_SUPPORT
+            bool "Enable 802.11k APIs Support"
+            depends on ESP_WIFI_11KV_SUPPORT
+            default n
+            help
+                Select this option to enable 802.11k APIs(RRM support).
                 Only APIs which are helpful for network assisted roaming
                 are supported for now.
-                Enable this option with BTM and RRM enabled in sta config
+                Enable this option with RRM enabled in sta config
                 to make device ready for network assisted roaming.
-                BTM: BSS transition management enables an AP to request a station to transition
-                to a specific AP, or to indicate to a station a set of preferred APs.
                 RRM: Radio measurements enable STAs to understand the radio environment,
                 it enables STAs to observe and gather data on radio link performance
                 and on the radio environment. Current implementation adds beacon report,
                 link measurement, neighbor report.
 
+        config ESP_WIFI_WNM_SUPPORT
+            bool "Enable 802.11v APIs Support"
+            depends on ESP_WIFI_11KV_SUPPORT
+            default n
+            help
+                Select this option to enable 802.11v APIs(BTM support).
+                Only APIs which are helpful for network assisted roaming
+                are supported for now.
+                Enable this option with BTM enabled in sta config
+                to make device ready for network assisted roaming.
+                BTM: BSS transition management enables an AP to request a station to transition
+                to a specific AP, or to indicate to a station a set of preferred APs.
+
         config ESP_WIFI_SCAN_CACHE
             bool "Keep scan results in cache"
-            depends on ESP_WIFI_11KV_SUPPORT
+            depends on ESP_WIFI_RRM_SUPPORT
             default n
             help
                 Keep scan results in cache, if not enabled, those
@@ -578,6 +596,8 @@ menu "Wi-Fi"
             bool "Enable Multi Band Operation Certification Support"
             default n
             select ESP_WIFI_11KV_SUPPORT
+            select ESP_WIFI_RRM_SUPPORT
+            select ESP_WIFI_WNM_SUPPORT
             select ESP_WIFI_SCAN_CACHE
             help
                 Select this option to enable WiFi Multiband operation certification support.

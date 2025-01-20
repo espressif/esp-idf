@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <string.h>
+#include <sys/param.h>
 #include <sys/queue.h>
 
 #include "esp_err.h"
@@ -20,7 +21,10 @@ static const char *TAG = "esp_tee_flash";
 
 // Structure containing the valid flash address range for flash operations through TEE
 typedef struct {
-    uint32_t reserved;
+    uint32_t flash_reg_start_paddr;
+    uint32_t flash_reg_end_paddr;
+    uint32_t active_part_start_paddr;
+    uint32_t active_part_end_paddr;
 } tee_flash_protect_info_t;
 
 static tee_flash_protect_info_t tee_prot_ctx;
@@ -35,20 +39,6 @@ typedef struct _partition_list {
 } partition_list_t;
 
 SLIST_HEAD(partition_list, _partition_list) partition_table_list;
-
-esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
-{
-    static bool is_first_call = true;
-
-    if (is_first_call) {
-        // TODO: To-be-implemented for C6
-        (void)tee_boot_part;
-        tee_prot_ctx.reserved = UINT32_MAX;
-        is_first_call = false;
-    }
-
-    return ESP_OK;
-}
 
 static partition_list_t *create_partition_entry(const esp_partition_info_t* partition_info)
 {
@@ -148,4 +138,66 @@ esp_err_t esp_tee_flash_set_running_ree_partition(uint32_t paddr)
 esp_partition_info_t *esp_tee_flash_get_running_ree_partition(void)
 {
     return &ree_running;
+}
+
+esp_err_t esp_tee_flash_setup_prot_ctx(uint8_t tee_boot_part)
+{
+    static bool is_first_call = true;
+    if (!is_first_call) {
+        return ESP_OK;
+    }
+
+    /* NOTE: Fetch the partition table and record TEE partitions range. */
+    esp_err_t err = get_partition_table();
+    if (err != ESP_OK) {
+        return err;
+    }
+
+    tee_prot_ctx.flash_reg_start_paddr = UINT32_MAX;
+
+    partition_list_t *partition_entry;
+    SLIST_FOREACH(partition_entry, &partition_table_list, next) {
+        const uint32_t start_addr = partition_entry->partition.pos.offset;
+        const uint32_t end_addr = start_addr + partition_entry->partition.pos.size;
+        const uint8_t type = partition_entry->partition.type;
+        const uint8_t subtype = partition_entry->partition.subtype;
+
+        bool needs_protection = false;
+        if (type == PART_TYPE_APP) {
+            needs_protection = (subtype == PART_SUBTYPE_TEE_0 || subtype == PART_SUBTYPE_TEE_1);
+        } else if (type == PART_TYPE_DATA) {
+            needs_protection = (subtype == PART_SUBTYPE_DATA_TEE_OTA || subtype == PART_SUBTYPE_DATA_TEE_SEC_STORAGE);
+        }
+
+        if (needs_protection) {
+            tee_prot_ctx.flash_reg_start_paddr = MIN(tee_prot_ctx.flash_reg_start_paddr, start_addr);
+            tee_prot_ctx.flash_reg_end_paddr = MAX(tee_prot_ctx.flash_reg_end_paddr, end_addr);
+        }
+
+        if (type == PART_TYPE_APP && subtype == tee_boot_part) {
+            tee_prot_ctx.active_part_start_paddr = start_addr;
+            tee_prot_ctx.active_part_end_paddr = end_addr;
+        }
+    }
+
+    is_first_call = false;
+    return ESP_OK;
+}
+
+bool esp_tee_flash_check_vaddr_in_tee_region(const size_t vaddr)
+{
+    bool prot_reg1_chk = (vaddr >= SOC_S_DROM_LOW) && (vaddr < SOC_S_IROM_HIGH);
+    bool prot_reg2_chk = (vaddr >= SOC_S_MMU_MMAP_RESV_START_VADDR) && (vaddr < SOC_MMU_END_VADDR);
+
+    return (prot_reg1_chk || prot_reg2_chk);
+}
+
+bool esp_tee_flash_check_paddr_in_tee_region(const size_t paddr)
+{
+    return ((paddr >= tee_prot_ctx.flash_reg_start_paddr) && (paddr < tee_prot_ctx.flash_reg_end_paddr));
+}
+
+bool esp_tee_flash_check_paddr_in_active_tee_part(const size_t paddr)
+{
+    return ((paddr >= tee_prot_ctx.active_part_start_paddr) && (paddr < tee_prot_ctx.active_part_end_paddr));
 }

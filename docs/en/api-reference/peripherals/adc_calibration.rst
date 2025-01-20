@@ -82,7 +82,7 @@ If you use your custom ADC calibration schemes, you could either modify this fun
         ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
 
 
-.. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2
+.. only:: esp32c3 or esp32s3 or esp32c6 or esp32h2 or esp32c5 or esp32p4
 
     ADC Calibration Curve Fitting Scheme
     ````````````````````````````````````
@@ -97,7 +97,7 @@ If you use your custom ADC calibration schemes, you could either modify this fun
         -  :cpp:member:`adc_cali_curve_fitting_config_t::atten`, ADC attenuation that your ADC raw results use.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::bitwidth`, bit width of ADC raw result.
 
-    .. only:: esp32c6 or esp32h2
+    .. only:: esp32c6 or esp32h2 or esp32c5 or esp32p4
 
         -  :cpp:member:`adc_cali_curve_fitting_config_t::unit_id`, the ADC that your ADC raw results are from.
         -  :cpp:member:`adc_cali_curve_fitting_config_t::chan`, the ADC channel that your ADC raw results are from. The calibration scheme not only differs by attenuation but is also related to the channels.

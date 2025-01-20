@@ -4,20 +4,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdarg.h>
-#include "secure_service_num.h"
-#include "hal/sha_types.h"
-#include "hal/sha_hal.h"
-#include "hal/wdt_hal.h"
-#include "esp_tee.h"
+
 #include "esp_err.h"
-#include "esp_hmac.h"
 #include "esp_efuse.h"
 #include "esp_random.h"
+
+#include "hal/sha_types.h"
+#include "hal/sha_hal.h"
+#include "hal/mmu_types.h"
+#include "hal/wdt_hal.h"
+
 #include "soc/soc_caps.h"
+
+#include "esp_tee.h"
+#include "secure_service_num.h"
 
 /* ---------------------------------------------- Interrupts ------------------------------------------------- */
 
-IRAM_ATTR void __wrap_esp_rom_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num)
+void IRAM_ATTR __wrap_esp_rom_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num)
 {
     esp_tee_service_call(4, SS_ESP_ROM_ROUTE_INTR_MATRIX, cpu_no, model_num, intr_num);
 }
@@ -215,4 +219,26 @@ void __wrap_esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 void __wrap_esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
     esp_tee_service_call(3, SS_ESP_SHA_WRITE_DIGEST_STATE, sha_type, digest_state);
+}
+
+/* ---------------------------------------------- MMU HAL ------------------------------------------------- */
+
+void IRAM_ATTR __wrap_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len)
+{
+    esp_tee_service_call(7, SS_MMU_HAL_MAP_REGION, mmu_id, mem_type, vaddr, paddr, len, out_len);
+}
+
+void IRAM_ATTR __wrap_mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
+{
+    esp_tee_service_call(4, SS_MMU_HAL_UNMAP_REGION, mmu_id, vaddr, len);
+}
+
+bool IRAM_ATTR __wrap_mmu_hal_vaddr_to_paddr(uint32_t mmu_id, uint32_t vaddr, uint32_t *out_paddr, mmu_target_t *out_target)
+{
+    return esp_tee_service_call(5, SS_MMU_HAL_VADDR_TO_PADDR, mmu_id, vaddr, out_paddr, out_target);
+}
+
+bool IRAM_ATTR __wrap_mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t target, mmu_vaddr_t type, uint32_t *out_vaddr)
+{
+    return esp_tee_service_call(6, SS_MMU_HAL_PADDR_TO_VADDR, mmu_id, paddr, target, type, out_vaddr);
 }

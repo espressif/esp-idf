@@ -312,6 +312,8 @@ void esp_phy_enable(esp_phy_modem_t modem)
                 } else {
                     phy_wakeup_init();
                 }
+            } else {
+                phy_wakeup_from_modem_state_extra_init();
             }
 #else
             phy_wakeup_init();
@@ -335,10 +337,10 @@ void esp_phy_enable(esp_phy_modem_t modem)
         phy_track_pll_init();
 #endif
 
-    if (phy_ant_need_update()) {
-        phy_ant_update();
-        phy_ant_clr_update_flag();
-    }
+        if (phy_ant_need_update()) {
+            phy_ant_update();
+            phy_ant_clr_update_flag();
+        }
 
     }
     phy_set_modem_flag(modem);

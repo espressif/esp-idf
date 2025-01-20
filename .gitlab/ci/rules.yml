@@ -92,6 +92,8 @@
   - "tools/idf_size.py"
   - "tools/test_idf_size/**/*"
 
+  - "tools/test_idf_diag/**/*"
+
   - "tools/tools.json"
   - "tools/tools_schema.json"
   - "tools/idf_tools.py"
@@ -123,6 +125,9 @@
   - "tools/split_paths_by_spaces.py"
 
   - "tools/check_python_dependencies.py"
+
+  - "tools/bsasm.py"
+  - "tools/test_bsasm/**/*"
 
 .patterns-docker: &patterns-docker
   - "tools/docker/**/*"

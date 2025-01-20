@@ -92,7 +92,7 @@ class ParttoolTarget():
                     partition_table = gen.PartitionTable.from_binary(f.read())
 
             if partition_table is None:
-                with open(partition_table_file, 'r') as f:
+                with open(partition_table_file, 'r', encoding='utf-8') as f:
                     f.seek(0)
                     partition_table = gen.PartitionTable.from_csv(f.read())
         else:

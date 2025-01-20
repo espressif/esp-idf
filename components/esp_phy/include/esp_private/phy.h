@@ -6,6 +6,7 @@
 
 #pragma once
 #include <sys/lock.h>
+#include "sdkconfig.h"
 #include "esp_phy_init.h"
 
 #ifdef __cplusplus
@@ -230,6 +231,16 @@ uint32_t phy_ana_i2c_master_burst_bbpll_config(void);
  * @return  the RF on or off configure value of i2c master burst mode
  */
 uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
+#endif
+
+#if CONFIG_ESP_WIFI_ENHANCED_LIGHT_SLEEP
+/**
+ * @brief On sleep->modem->active wakeup process, since RF has been turned on by hardware in
+ *        modem state, `sleep_modem_wifi_do_phy_retention` and `phy_wakeup_init` will be skipped
+ *        in `esp_phy_enable`, but there are still some configurations that need to be restored
+ *        by software, which are packed in this function.
+ */
+void phy_wakeup_from_modem_state_extra_init(void);
 #endif
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,14 +10,15 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 
-#define BLE_PAWR_NUM_SUBEVTS                  (5)
-#define BLE_PAWR_SUB_INTERVAL                 (12)  /*!< Interval between subevents (N * 1.25 ms)   */
-#define BLE_PAWR_RSP_SLOT_DELAY               (1)   /*!< The first response slot delay (N * 1.25 ms)*/
-#define BLE_PAWR_RSP_SLOT_SPACING             (32)  /*!< Time between response slots (N * 0.125 ms) */
-#define BLE_PAWR_NUM_RSP_SLOTS                (3)   /*!< Number of subevent response slots          */
-#define BLE_PAWR_SUB_DATA_LEN                 (10)
+#define BLE_PAWR_EVENT_INTERVAL               (520)
+#define BLE_PAWR_NUM_SUBEVTS                  (10)
+#define BLE_PAWR_SUB_INTERVAL                 (52)  /*!< Interval between subevents (N * 1.25 ms)   */
+#define BLE_PAWR_RSP_SLOT_DELAY               (5)   /*!< The first response slot delay (N * 1.25 ms)*/
+#define BLE_PAWR_RSP_SLOT_SPACING             (10)  /*!< Time between response slots (N * 0.125 ms) */
+#define BLE_PAWR_NUM_RSP_SLOTS                (25)   /*!< Number of subevent response slots          */
+#define BLE_PAWR_SUB_DATA_LEN                 (20)
 
-#define TAG  "NimBLE_BLE_PAwR"
+#define TAG  "NimBLE_BLE_PAwR_CONN"
 
 static struct ble_gap_set_periodic_adv_subev_data_params sub_data_params[BLE_PAWR_NUM_SUBEVTS];
 static uint8_t sub_data_pattern[BLE_PAWR_SUB_DATA_LEN] = {0};
@@ -71,18 +72,28 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
     uint8_t phy_mask;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_CONNECT:
-         printf("\n");
-         ESP_LOGI(TAG, "Connection established, conn_handle = 0x%02x, Adv handle = 0x%0x, status = 0x%0x\n",event->connect.conn_handle,event->connect.adv_handle, event->connect.status);
-         rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
-         if(rc == 0){
-            print_conn_desc(&desc);
-         }
-         else{
-            ESP_LOGE(TAG,"Failed to find Conn Information");
-         }
 
-         return 0;
+    case BLE_GAP_EVENT_LINK_ESTAB:
+        if (event->link_estab.status == 0) {
+            ESP_LOGI(TAG, "[Connection established], conn_handle = 0x%02x, Adv handle = 0x%0x, status = 0x%0x\n",event->link_estab.conn_handle, event->link_estab.adv_handle, event->link_estab.status);
+            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            if (rc == 0) {
+                print_conn_desc(&desc);
+            }
+            else{
+                ESP_LOGE(TAG,"Failed to find Conn Information");
+            }
+        } else {
+            ESP_LOGW(TAG, "[Connection Failed], conn_handle = 0x%02x, Adv handle = 0x%0x, status = 0x%0x\n",event->link_estab.conn_handle, event->link_estab.adv_handle, event->link_estab.status);
+            conn = 0;
+        }
+
+        return 0;
+   case BLE_GAP_EVENT_DISCONNECT:
+        ESP_LOGI(TAG, "[Disconnected], conn_handle = 0x%02x, status = 0x%0x\n",event->disconnect.conn.conn_handle,event->disconnect.reason);
+        conn = 0;
+        return 0;
+
     case BLE_GAP_EVENT_PER_SUBEV_DATA_REQ:
         ESP_LOGI(TAG, "[Request] data: %x, subevt start:%d, subevt count:%d",
                   sub_data_pattern[0],
@@ -115,20 +126,17 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_PER_SUBEV_RESP:
 
-        if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_INCOMPLETE) {
-           // ESP_LOGI(TAG,"Incomplete response report received, discarding \n");
-        }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_RX_FAILED) {
-          //  ESP_LOGI(TAG,"Controller failed to received the AUX_SYNC_SUBEVENT_RSP\n");
-        }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_COMPLETE) {
-            ESP_LOGI(TAG, "[Response] subevent:%d, response_slot:%d, data_length:%d, data:%x",
+        if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_COMPLETE) {
+            ESP_LOGI(TAG, "[Response] subevent:%d, response_slot:%d, data_length:%d",
             event->periodic_adv_response.subevent,
             event->periodic_adv_response.response_slot,
-            event->periodic_adv_response.data_length,
-            event->periodic_adv_response.data[0]);
+            event->periodic_adv_response.data_length);
+            const uint8_t *data = event->periodic_adv_response.data;
+            ESP_LOGI(TAG, "data: 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x",
+                    data[0], data[1], data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9]);
+
             peer_addr.type=0;
-            memcpy(peer_addr.val,&event->periodic_adv_response.data[1],6);
+            memcpy(peer_addr.val,&event->periodic_adv_response.data[2],6);
 
             adv_handle = event->periodic_adv_response.adv_handle;
             subevent = event->periodic_adv_response.subevent;
@@ -138,15 +146,16 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
                 rc = ble_gap_connect_with_synced(0,adv_handle,subevent,&peer_addr,30000,phy_mask,NULL,NULL,NULL,gap_event_cb,NULL);
                 if (rc != 0 ) {
                     ESP_LOGI(TAG,"Error: Failed to connect to device , rc = %d\n",rc);
+                }else {
+                    ESP_LOGI(TAG,"Connection create sent, adv handle = %d, subevent = %d", adv_handle, subevent);
                 }
                 conn = 1;
             }
-        }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_TRUNCATED) {
-          //  ESP_LOGI(TAG,"Truncated response report received, discarding\n");
-        }
-        else {
-           ESP_LOGE(TAG,"Invalid data status\n");
+        } else {
+            ESP_LOGE(TAG, "[Response] subevent:%d, response_slot:%d, rsp_data status:%d",
+            event->periodic_adv_response.subevent,
+            event->periodic_adv_response.response_slot,
+            event->periodic_adv_response.data_status);
         }
 
         return 0;
@@ -185,14 +194,14 @@ start_periodic_adv(void)
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
-    params.itvl_min = BLE_GAP_ADV_ITVL_MS(100);
-    params.itvl_max = BLE_GAP_ADV_ITVL_MS(100);
+    params.itvl_min = BLE_GAP_ADV_ITVL_MS(50);
+    params.itvl_max = BLE_GAP_ADV_ITVL_MS(50);
 
     rc = ble_gap_ext_adv_configure(instance, &params, NULL, gap_event_cb, NULL);
     assert (rc == 0);
 
     memset(&adv_fields, 0, sizeof(adv_fields));
-    adv_fields.name = (const uint8_t *)"Nimble_PAwR";
+    adv_fields.name = (const uint8_t *)"Nimble_PAwR_CONN";
     adv_fields.name_len = strlen((char *)adv_fields.name);
 
     /* mbuf chain will be increased if needed */
@@ -212,9 +221,9 @@ start_periodic_adv(void)
     pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
     /* Configure the parameters of PAwR. */
     pparams.num_subevents           = BLE_PAWR_NUM_SUBEVTS;
-    pparams.subevent_interval       = BLE_GAP_PERIODIC_ITVL_MS(300);
-    pparams.response_slot_delay     = BLE_GAP_PERIODIC_ITVL_MS(80);
-    pparams.response_slot_spacing   = 0xFF;
+    pparams.subevent_interval       = BLE_PAWR_SUB_INTERVAL;
+    pparams.response_slot_delay     = BLE_PAWR_RSP_SLOT_DELAY;
+    pparams.response_slot_spacing   = BLE_PAWR_RSP_SLOT_SPACING;
     pparams.num_response_slots      = BLE_PAWR_NUM_RSP_SLOTS;
 
     rc = ble_gap_periodic_adv_configure(instance, &pparams);

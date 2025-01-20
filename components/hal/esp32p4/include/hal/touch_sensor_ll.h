@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,6 +52,7 @@ extern "C" {
 #define TOUCH_LL_ACTIVE_THRESH_MAX         (0xFFFF)    // Max channel active threshold
 #define TOUCH_LL_CLK_DIV_MAX               (0x08)      // Max clock divider value
 #define TOUCH_LL_TIMEOUT_MAX               (0xFFFF)    // Max timeout value
+#define TOUCH_LL_SLP_MEASURE_WAIT_MAX      (0x1FF)     // Max wait ticks to wait PMU entering HP SLEEP status during the sleep.
 
 /**
  * Enable/disable clock gate of touch sensor.
@@ -280,6 +281,24 @@ static inline void touch_ll_set_chan_active_threshold(uint32_t touch_num, uint8_
     HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
     // Channel shift workaround
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold, thresh);  // codespell:ignore
+}
+
+/**
+ * Get touch sensor threshold of charge cycles that triggers pad active state.
+ * The threshold determines the sensitivity of the touch sensor.
+ * The threshold is the original value of the trigger state minus the benchmark value.
+ *
+ * @note  If set "TOUCH_PAD_THRESHOLD_MAX", the touch is never be triggered.
+ * @param touch_num The touch pad id
+ * @param sample_cfg_id The sample configuration index
+ * @return
+ *      - The threshold of charge cycles
+ */
+static inline uint32_t touch_ll_get_chan_active_threshold(uint32_t touch_num, uint8_t sample_cfg_id)
+{
+    HAL_ASSERT(sample_cfg_id < SOC_TOUCH_SAMPLE_CFG_NUM);
+    // Channel shift workaround
+    return HAL_FORCE_READ_U32_REG_FIELD(LP_ANA_PERI.touch_padx_thn[touch_num + 1].thresh[sample_cfg_id], threshold);  // codespell:ignore
 }
 
 /**
@@ -942,6 +961,21 @@ static inline void touch_ll_sleep_set_threshold(uint8_t sample_cfg_id, uint32_t 
             // invalid sample_cfg_id
             abort();
     }
+}
+
+/**
+ * Set the touch sensor wait ticks after PMU is woken up by touch timer during the sleep.
+ * @note The PMU will be woken up after the measure interval timer time-up,
+ *       PMU needs some time to prepare the clock and power for the touch sensor,
+ *       If the wait ticks is too short, the touch sensor can't work properly and fail to wakeup the chip from sleep.
+ *
+ * @param wait_ticks    The wait ticks after PMU is woken up by touch FSM during the sleep.
+ *                      Typically recommended to set it to the max value,
+ *                      the PMU will start the touch sensor FSM immediately after the PMU enters HP SLEEP state.
+ */
+static inline void touch_ll_sleep_set_measure_wait_ticks(uint32_t wait_ticks)
+{
+    PMU.touch_pwr_cntl.wait_cycles = wait_ticks;
 }
 
 /**

@@ -23,7 +23,7 @@ menu "IEEE 802.15.4"
         config IEEE802154_CCA_CARRIER
             bool "Carrier sense only"
             help
-                configure the CCA mode to Energy above threshold
+                configure the CCA mode to Carrier sense only
 
         config IEEE802154_CCA_ED
             bool "Energy above threshold"

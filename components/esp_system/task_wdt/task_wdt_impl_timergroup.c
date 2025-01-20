@@ -29,8 +29,11 @@
 #define TWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define TWDT_PERIPH_MODULE      PERIPH_TIMG0_MODULE
 #define TWDT_TIMER_GROUP        0
+#if CONFIG_IDF_TARGET_ESP32H21
+#define TWDT_INTR_SOURCE        ETS_TG0_WDT_INTR_SOURCE
+#else
 #define TWDT_INTR_SOURCE        ETS_TG0_WDT_LEVEL_INTR_SOURCE
-
+#endif
 /**
  * Context for the software implementation of the Task WatchDog Timer.
  * This will be passed as a parameter to public functions below. */

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@
 #define PARLIO_LL_EVENT_TX_FIFO_EMPTY    (1 << 0)
 #define PARLIO_LL_EVENT_RX_FIFO_FULL     (1 << 1)
 #define PARLIO_LL_EVENT_TX_EOF           (1 << 2)
-#define PARLIO_LL_EVENT_TX_MASK          (PARLIO_LL_EVENT_TX_FIFO_EMPTY | PARLIO_LL_EVENT_TX_EOF)
+#define PARLIO_LL_EVENT_TX_MASK          (PARLIO_LL_EVENT_TX_EOF)  // On C6, TX FIFO EMPTY event always comes with TX EOF event. We don't enable it
 #define PARLIO_LL_EVENT_RX_MASK          (PARLIO_LL_EVENT_RX_FIFO_FULL)
 
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 15 // TXD[15] can be used a valid signal
@@ -450,7 +450,7 @@ static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t b
 }
 
 /**
- * @brief Wether to enable the TX clock gating
+ * @brief Whether to enable the TX clock gating
  *
  * @note The TXD[7] will be taken as the gating enable signal
  *
@@ -465,8 +465,11 @@ static inline void parlio_ll_tx_enable_clock_gating(parl_io_dev_t *dev, bool en)
 /**
  * @brief Start TX unit to transmit data
  *
+ * @note The hardware monitors the rising edge of tx_start as the trigger signal.
+ *       Once the transmission starts, it cannot be stopped by clearing tx_start.
+ *
  * @param dev Parallel IO register base address
- * @param en True to start, False to stop
+ * @param en True to start, False to reset the reg state (not meaning the TX unit will be stopped)
  */
 __attribute__((always_inline))
 static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)

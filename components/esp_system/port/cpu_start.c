@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,16 +25,13 @@
 
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
-#include "esp32/rtc.h"
 #include "esp32/rom/cache.h"
 #include "esp32/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rtc.h"
 #include "esp32s2/rom/cache.h"
 #include "esp32s2/rom/secure_boot.h"
 #include "esp32s2/memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rtc.h"
 #include "esp32s3/rom/cache.h"
 #include "esp32s3/rom/secure_boot.h"
 #include "esp_memprot.h"
@@ -42,36 +39,34 @@
 #include "soc/system_reg.h"
 #include "esp32s3/rom/opi_flash.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rtc.h"
 #include "esp32c3/rom/cache.h"
 #include "esp32c3/rom/secure_boot.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rtc.h"
 #include "esp32c6/rom/cache.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C61
-#include "esp32c61/rtc.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rtc.h"
 #include "esp32c5/rom/cache.h"
 #include "esp_memprot.h"
 #elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rtc.h"
 #include "esp32h2/rom/cache.h"
 #include "esp_memprot.h"
+#include "soc/lpperi_struct.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
-#include "esp32c2/rtc.h"
 #include "esp32c2/rom/cache.h"
-#include "esp32c2/rom/rtc.h"
 #include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rtc.h"
 #include "soc/hp_sys_clkrst_reg.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp_memprot.h"
 #endif
 
+#include "esp_private/cache_utils.h"
 #include "esp_private/rtc_clk.h"
+#include "esp_rtc_time.h"
+#include "rom/rtc.h"
 
 #if SOC_INT_CLIC_SUPPORTED
 #include "hal/interrupt_clic_ll.h"
@@ -458,6 +453,13 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32H2
+    // Some modules' register layout are not binary compatible among the different chip revisions,
+    // they will be wrapped into a new compatible instance which will point to the correct register address according to the revision.
+    // To ensure the compatible instance is initialized before used, the initialization is done after BBS is cleared
+    lpperi_compatible_reg_addr_init();
+#endif
+
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP && !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE && !SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
     // It helps to fix missed cache settings for other cores. It happens when bootloader is unicore.
     do_multicore_settings();
@@ -693,7 +695,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_ESP32S2_DATA_CACHE_WRAP || CONFIG_ESP32S3_DATA_CACHE_WRAP
     dcache_wrap_enable = 1;
 #endif
-    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable, uint32_t dcache_wrap_enable);
     esp_enable_cache_wrap(icache_wrap_enable, dcache_wrap_enable);
 #endif
 
@@ -705,7 +706,6 @@ void IRAM_ATTR call_start_cpu0(void)
 #if CONFIG_IDF_TARGET_ESP32C2
 // TODO : IDF-5020
 #if CONFIG_ESP32C2_INSTRUCTION_CACHE_WRAP
-    extern void esp_enable_cache_wrap(uint32_t icache_wrap_enable);
     esp_enable_cache_wrap(1);
 #endif
 #endif

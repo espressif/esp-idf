@@ -1,9 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 #include "esp_efuse.h"
 #include "esp_efuse_utility.h"
 #include "soc/efuse_periph.h"
@@ -318,7 +320,9 @@ esp_err_t esp_efuse_write_key(esp_efuse_block_t block, esp_efuse_purpose_t purpo
 #if SOC_EFUSE_ECDSA_USE_HARDWARE_K
         if (purpose == ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY) {
             // Permanently enable the hardware TRNG supplied k mode (most secure mode)
-            ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K));
+            if (!CONFIG_IDF_TARGET_ESP32H2 || (CONFIG_IDF_TARGET_ESP32H2 && !ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102))) {
+                ESP_EFUSE_CHK(esp_efuse_write_field_bit(ESP_EFUSE_ECDSA_FORCE_USE_HARDWARE_K));
+            }
         }
 #endif
         ESP_EFUSE_CHK(esp_efuse_set_key_purpose(block, purpose));

@@ -16,7 +16,7 @@
 #if SOC_MEMSPI_TIMING_TUNING_BY_DQS
 #include "mspi_timing_types.h"
 #include "mspi_timing_tuning_configs.h"
-#include "hal/mspi_timing_tuning_ll.h"
+#include "hal/mspi_ll.h"
 #endif
 
 #ifdef __cplusplus

@@ -6,6 +6,7 @@
 
 #include "esp_private/sleep_clock.h"
 #include "soc/pcr_reg.h"
+#include "soc/pmu_reg.h"
 #include "soc/rtc.h"
 #include "modem/modem_syscon_reg.h"
 #include "modem/modem_lpcon_reg.h"
@@ -18,18 +19,19 @@ static const char *TAG = "sleep_clock";
 esp_err_t sleep_clock_system_retention_init(void *arg)
 {
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(0), PCR_AHB_FREQ_CONF_REG,  0,               PCR_AHB_DIV_NUM,      1, 0),                                     .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(1), PCR_BUS_CLK_UPDATE_REG, 1,               PCR_BUS_CLOCK_UPDATE, 1, 0),                                     .owner = ENTRY(0) | ENTRY(1) },
+        [0] = { .config = REGDMA_LINK_WAIT_INIT    (REGDMA_PCR_LINK(0), PMU_CLK_STATE0_REG,     PMU_STABLE_XPD_BBPLL_STATE, PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0),  .owner = ENTRY(0)},             /* Wait PMU_WAIT_XTL_STABLE done */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(1), PCR_AHB_FREQ_CONF_REG,  0,                          PCR_AHB_DIV_NUM,                1, 0),  .owner = ENTRY(0) | ENTRY(1) }, /* Set AHB bus frequency to XTAL frequency */
+        [2] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(2), PCR_BUS_CLK_UPDATE_REG, 1,                          PCR_BUS_CLOCK_UPDATE,           1, 0),  .owner = ENTRY(0) | ENTRY(1) },
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
-        [2] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(2), DR_REG_PCR_BASE,        DR_REG_PCR_BASE, 75,                   0, 0, 0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
+        [3] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(3), DR_REG_PCR_BASE,        DR_REG_PCR_BASE,            75,            0, 0, 0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
     };
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
 
     const static sleep_retention_entries_config_t modem_ahb_config[] = {
-        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(3), PCR_AHB_FREQ_CONF_REG,  3, PCR_AHB_DIV_NUM,      1, 0), .owner = ENTRY(1) }, /* Set AHB bus frequency to 40 MHz under PMU MODEM state */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(4), PCR_BUS_CLK_UPDATE_REG, 1, PCR_BUS_CLOCK_UPDATE, 1, 0), .owner = ENTRY(1) },
+        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(4), PCR_AHB_FREQ_CONF_REG,  3, PCR_AHB_DIV_NUM,      1, 0), .owner = ENTRY(1) }, /* Set AHB bus frequency to 40 MHz under PMU MODEM state */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(5), PCR_BUS_CLK_UPDATE_REG, 1, PCR_BUS_CLOCK_UPDATE, 1, 0), .owner = ENTRY(1) },
     };
     err = sleep_retention_entries_create(modem_ahb_config, ARRAY_SIZE(modem_ahb_config), REGDMA_LINK_PRI_4, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention, 4 level priority");
@@ -41,10 +43,10 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
          * the PHY_I2C_MST_CMD_TYPE_BBPLL_CFG command from PHY i2c master
          * command memory */
         sleep_retention_entries_config_t bbpll_config[] = {
-            [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(5), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN, MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = ENTRY(1) }, /* I2C MST enable */
-            [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(6), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                          0xffffffff,                   1, 0), .owner = ENTRY(1) },
-            [2] = { .config = REGDMA_LINK_WAIT_INIT    (REGDMA_PCR_LINK(7), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,     0x1,                          1, 0), .owner = ENTRY(1) },
-            [3] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(8), MODEM_LPCON_CLK_CONF_REG,         0,                          MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = ENTRY(1) }, /* I2C MST disable */
+            [0] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(6), MODEM_LPCON_CLK_CONF_REG,         MODEM_LPCON_CLK_I2C_MST_EN, MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = ENTRY(1) }, /* I2C MST enable */
+            [1] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(7), I2C_ANA_MST_I2C_BURST_CONF_REG,   0,                          0xffffffff,                   1, 0), .owner = ENTRY(1) },
+            [2] = { .config = REGDMA_LINK_WAIT_INIT    (REGDMA_PCR_LINK(8), I2C_ANA_MST_I2C_BURST_STATUS_REG, I2C_ANA_MST_BURST_DONE,     0x1,                          1, 0), .owner = ENTRY(1) },
+            [3] = { .config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(9), MODEM_LPCON_CLK_CONF_REG,         0,                          MODEM_LPCON_CLK_I2C_MST_EN_M, 1, 0), .owner = ENTRY(1) }, /* I2C MST disable */
         };
         extern uint32_t phy_ana_i2c_master_burst_bbpll_config(void);
         bbpll_config[1].config.write_wait.value = phy_ana_i2c_master_burst_bbpll_config();

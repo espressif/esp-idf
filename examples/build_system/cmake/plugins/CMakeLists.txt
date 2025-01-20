@@ -3,4 +3,6 @@
 cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+# "Trim" the build. Include the minimal set of components, main, and plugins.
+set(COMPONENTS main plugin_hello plugin_nihao)
 project(plugins)

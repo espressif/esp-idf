@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,12 +10,13 @@
 #include "nimble/nimble_port_freertos.h"
 #include "host/ble_hs.h"
 
-#define BLE_PAWR_NUM_SUBEVTS                  (5)
-#define BLE_PAWR_SUB_INTERVAL                 (12)  /*!< Interval between subevents (N * 1.25 ms)   */
-#define BLE_PAWR_RSP_SLOT_DELAY               (1)   /*!< The first response slot delay (N * 1.25 ms)*/
+#define BLE_PAWR_EVENT_INTERVAL               (600)
+#define BLE_PAWR_NUM_SUBEVTS                  (10)
+#define BLE_PAWR_SUB_INTERVAL                 (44)  /*!< Interval between subevents (N * 1.25 ms)   */
+#define BLE_PAWR_RSP_SLOT_DELAY               (20)   /*!< The first response slot delay (N * 1.25 ms)*/
 #define BLE_PAWR_RSP_SLOT_SPACING             (32)  /*!< Time between response slots (N * 0.125 ms) */
-#define BLE_PAWR_NUM_RSP_SLOTS                (3)   /*!< Number of subevent response slots          */
-#define BLE_PAWR_SUB_DATA_LEN                 (10)
+#define BLE_PAWR_NUM_RSP_SLOTS                (5)   /*!< Number of subevent response slots          */
+#define BLE_PAWR_SUB_DATA_LEN                 (20)
 
 #define TAG  "NimBLE_BLE_PAwR"
 
@@ -63,29 +64,20 @@ gap_event_cb(struct ble_gap_event *event, void *arg)
         return 0;
 
     case BLE_GAP_EVENT_PER_SUBEV_RESP:
-
-        if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_INCOMPLETE) {
-           // ESP_LOGI(TAG,"Incomplete response report received, discarding \n");
+        if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_COMPLETE) {
+            ESP_LOGI(TAG, "[Response] subevent:%d, response_slot:%d, data_length:%d",
+                        event->periodic_adv_response.subevent,
+                        event->periodic_adv_response.response_slot,
+                        event->periodic_adv_response.data_length);
+            const uint8_t *data = event->periodic_adv_response.data;
+            ESP_LOGI(TAG, "data: 0x%0x, 0x%0x", data[0], data[1]);
+        } else {
+            ESP_LOGE(TAG, "[Response] subevent:%d, response_slot:%d, rsp_data status:%d",
+                        event->periodic_adv_response.subevent,
+                        event->periodic_adv_response.response_slot,
+                        event->periodic_adv_response.data_status);
         }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_RX_FAILED) {
-          //  ESP_LOGI(TAG,"Controller failed to received the AUX_SYNC_SUBEVENT_RSP\n");
-        }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_COMPLETE) {
-            ESP_LOGI(TAG, "[Response] subevent:%d, response_slot:%d, data_length:%d, data:%x",
-            event->periodic_adv_response.subevent,
-            event->periodic_adv_response.response_slot,
-            event->periodic_adv_response.data_length,
-            event->periodic_adv_response.data[0]);
-        }
-        else if (event->periodic_adv_response.data_status == BLE_GAP_PER_ADV_DATA_STATUS_TRUNCATED) {
-          //  ESP_LOGI(TAG,"Truncated response report received, discarding\n");
-        }
-        else {
-           ESP_LOGE(TAG,"Invalid data status\n");
-        }
-
         return 0;
-
     default:
         return 0;
     }
@@ -120,8 +112,8 @@ start_periodic_adv(void)
     params.primary_phy = BLE_HCI_LE_PHY_CODED;
     params.secondary_phy = BLE_HCI_LE_PHY_1M;
     params.sid = 0;
-    params.itvl_min = BLE_GAP_ADV_ITVL_MS(100);
-    params.itvl_max = BLE_GAP_ADV_ITVL_MS(100);
+    params.itvl_min = BLE_PAWR_EVENT_INTERVAL;
+    params.itvl_max = BLE_PAWR_EVENT_INTERVAL;
 
     rc = ble_gap_ext_adv_configure(instance, &params, NULL, gap_event_cb, NULL);
     assert (rc == 0);
@@ -147,9 +139,9 @@ start_periodic_adv(void)
     pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(3000);
     /* Configure the parameters of PAwR. */
     pparams.num_subevents           = BLE_PAWR_NUM_SUBEVTS;
-    pparams.subevent_interval       = BLE_GAP_PERIODIC_ITVL_MS(300);
-    pparams.response_slot_delay     = BLE_GAP_PERIODIC_ITVL_MS(80);
-    pparams.response_slot_spacing   = 0xFF;
+    pparams.subevent_interval       = BLE_PAWR_SUB_INTERVAL;
+    pparams.response_slot_delay     = BLE_PAWR_RSP_SLOT_DELAY;
+    pparams.response_slot_spacing   = BLE_PAWR_RSP_SLOT_SPACING;
     pparams.num_response_slots      = BLE_PAWR_NUM_RSP_SLOTS;
 
     rc = ble_gap_periodic_adv_configure(instance, &pparams);

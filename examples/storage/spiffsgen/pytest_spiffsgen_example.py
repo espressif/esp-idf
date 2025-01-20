@@ -14,7 +14,7 @@ def test_spiffsgen_example(dut: Dut) -> None:
     base_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'spiffs_image')
 
     # Expect hello.txt is read successfully
-    with open(os.path.join(base_dir, 'hello.txt'), 'r') as hello_txt:
+    with open(os.path.join(base_dir, 'hello.txt'), 'r', encoding='utf-8') as hello_txt:
         dut.expect('Read from hello.txt: ' + hello_txt.read().rstrip())
 
     # Expect alice.txt MD5 hash is computed accurately

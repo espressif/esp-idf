@@ -21,9 +21,6 @@
 extern "C" {
 #endif
 
-#define SET_BIT(t, n)  (t |= (1UL << (n)))
-#define CLR_BIT(t, n)  (t &= ~(1UL << (n)))
-
 FORCE_INLINE_ATTR void rv_utils_tee_intr_global_enable(void)
 {
     /*
@@ -48,6 +45,13 @@ FORCE_INLINE_ATTR void rv_utils_tee_intr_global_enable(void)
     RV_SET_CSR(ustatus, USTATUS_UIE);
     RV_SET_CSR(mstatus, MSTATUS_UIE);
     RV_SET_CSR(mstatus, MSTATUS_MIE);
+}
+
+FORCE_INLINE_ATTR void rv_utils_tee_intr_global_disable(void)
+{
+    RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    RV_CLEAR_CSR(mstatus, MSTATUS_UIE);
+    RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
 }
 
 FORCE_INLINE_ATTR void rv_utils_tee_intr_enable(uint32_t intr_mask)

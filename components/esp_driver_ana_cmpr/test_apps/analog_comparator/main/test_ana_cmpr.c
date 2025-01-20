@@ -50,8 +50,6 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
 
 TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
 {
-    int src_chan = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID);
-
     uint32_t cnt = 0;
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
@@ -62,6 +60,7 @@ TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
         .flags.io_loop_back = 1,
     };
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
+    int src_chan = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID);
     ana_cmpr_internal_ref_config_t ref_cfg = {
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
     };

@@ -532,6 +532,11 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
             goto done;
         }
         if (ret == WLAN_STATUS_SUCCESS) {
+            if (sta->sae_data && esp_send_sae_auth_reply(hapd, sta->addr, frm->bssid, WLAN_AUTH_SAE, 2,
+                                                         WLAN_STATUS_SUCCESS, wpabuf_head(sta->sae_data), wpabuf_len(sta->sae_data)) != ESP_OK) {
+                ap_free_sta(hapd, sta);
+                goto done;
+            }
             if (esp_wifi_ap_notify_node_sae_auth_done(frm->bssid) != true) {
                 ap_free_sta(hapd, sta);
                 goto done;
@@ -543,6 +548,11 @@ static void wpa3_process_rx_confirm(wpa3_hostap_auth_event_t *evt)
             esp_wifi_ap_get_sta_aid(frm->bssid, &aid);
             if (aid == 0) {
                 esp_wifi_ap_deauth_internal(frm->bssid, ret);
+            } else {
+                if (sta && sta->sae_data) {
+                    wpabuf_free(sta->sae_data);
+                    sta->sae_data = NULL;
+                }
             }
         }
     }

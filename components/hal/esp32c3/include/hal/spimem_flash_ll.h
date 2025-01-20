@@ -238,13 +238,14 @@ static inline void spimem_flash_set_cs_hold_delay(spi_mem_dev_t *dev, uint32_t c
  * Initialize auto wait idle mode
  *
  * @param dev Beginning address of the peripheral registers.
- * @param auto_waiti Enable/disable auto wait-idle function
+ * @param per_waiti Enable wait-idle with time delay function after resume.
+ * @param pes_waiti Enable wait-idle with time delay function after suspend.
  */
-static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool auto_waiti)
+static inline void spimem_flash_ll_auto_wait_idle_init(spi_mem_dev_t *dev, bool per_waiti, bool pes_waiti)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->flash_waiti_ctrl, waiti_cmd, 0x05);
-    dev->flash_sus_ctrl.flash_per_wait_en = auto_waiti;
-    dev->flash_sus_ctrl.flash_pes_wait_en = auto_waiti;
+    dev->flash_sus_ctrl.flash_per_wait_en = per_waiti;
+    dev->flash_sus_ctrl.flash_pes_wait_en = pes_waiti;
 }
 
 /**
@@ -520,11 +521,8 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
-    typeof(dev->user2) user2 = {
-        .usr_command_value = command,
-        .usr_command_bitlen = (bitlen - 1),
-    };
-    dev->user2.val = user2.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_value, command);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_bitlen, (bitlen - 1));
 }
 
 /**

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,9 @@
 #ifndef CONFIG_BT_LE_HCI_INTERFACE_USE_UART
 #error "Please Enable Uart for HCI"
 #endif
-
+#if (CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND)
+#include "dtm_configuration_command.h"
+#endif // CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND
 #define TAG "BLE_HCI"
 
 void
@@ -27,8 +29,10 @@ app_main(void)
     }
     ESP_ERROR_CHECK(ret);
 
+#if (CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND)
+    dtm_configuration_command_enable();
+#endif // CONFIG_ENABLE_DTM_CONFIGURATION_COMMAND
     esp_bt_controller_config_t config_opts = BT_CONTROLLER_INIT_CONFIG_DEFAULT();
-
     /*
      *  Initialize Bluetooth Controller parameters.
      */

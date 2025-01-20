@@ -34,6 +34,63 @@ if BLE_MESH
         help
             This option to enable BLE Mesh using some BLE 5.0 APIs.
 
+    config BLE_MESH_ADV_INST_ID
+        depends on BLE_MESH_USE_BLE_50
+        int "Extended adv instance for Mesh normal packets"
+        default 0
+        range 0 3
+        help
+            Extended ADV instance used by Mesh normal advertising packets.
+
+    menuconfig BLE_MESH_SUPPORT_MULTI_ADV
+        bool "Support using multiple adv instance for BLE Mesh"
+        depends on BLE_MESH_USE_BLE_50
+        default n
+        help
+            Enable this option to support using multiple adv instance while running BLE Mesh.
+
+    config BLE_MESH_PROXY_ADV_INST_ID
+        int "Extended adv instance for Mesh proxy packets"
+        depends on BLE_MESH_PROXY
+        depends on (BLE_MESH_PB_GATT || BLE_MESH_GATT_PROXY_SERVER)
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        default 1
+        range 0 3
+        help
+            Extended ADV instance used by Mesh proxy advertising packets.
+
+    menuconfig BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
+        bool "Use separate extended adv instance for Mesh relay packets"
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        depends on BLE_MESH_RELAY_ADV_BUF
+        default n
+        help
+            Enable this option to support using a separate extended ADV instance for Mesh relay packets.
+
+    config BLE_MESH_RELAY_ADV_INST_ID
+        int "Extended adv instance for Mesh relay packets"
+        depends on BLE_MESH_SEPARATE_RELAY_ADV_INSTANCE
+        default 2
+        range 0 3
+        help
+            Extended ADV instance used by Mesh relay advertising packets.
+
+    menuconfig BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+        bool "Use separate extended adv instance for BLE normal packets"
+        depends on BLE_MESH_SUPPORT_MULTI_ADV
+        depends on BLE_MESH_SUPPORT_BLE_ADV
+        default n
+        help
+            Enable this option to support using a separate extended ADV instance for normal BLE advertising packets.
+
+    config BLE_MESH_BLE_ADV_INST_ID
+        int "Extended adv instance for normal BLE packets"
+        depends on BLE_MESH_SEPARATE_BLE_ADV_INSTANCE
+        default 3
+        range 0 3
+        help
+            Extended ADV instance used by normal BLE advertising packets.
+
     config BLE_MESH_USE_DUPLICATE_SCAN
         bool "Support Duplicate Scan in BLE Mesh"
         select BTDM_BLE_SCAN_DUPL if IDF_TARGET_ESP32

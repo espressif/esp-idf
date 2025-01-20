@@ -324,6 +324,15 @@ typedef union {
     } meta_rsp;                                  /*!< metadata attributes response */
 
     /**
+     * @brief ESP_AVRC_CT_PLAY_STATUS_RSP_EVT
+     */
+    struct avrc_ct_get_play_status_rsp_param {
+        uint32_t song_length;                    /*!< total length of the playing song in milliseconds */
+        uint32_t song_position;                  /*!< current position of the playing song in milliseconds elapsed */
+        esp_avrc_playback_stat_t play_status;    /*!< current status of playing */
+    } play_status_rsp;                           /*!< get play status command response */
+
+    /**
      * @brief ESP_AVRC_CT_CHANGE_NOTIFY_EVT
      */
     struct avrc_ct_change_notify_param {
@@ -586,6 +595,18 @@ esp_err_t esp_avrc_ct_send_metadata_cmd(uint8_t tl, uint8_t attr_mask);
  */
 esp_err_t esp_avrc_ct_send_passthrough_cmd(uint8_t tl, uint8_t key_code, uint8_t key_state);
 
+/**
+ * @brief           Send get play status command to AVRCP target. This function should be called after
+ *                  ESP_AVRC_CT_CONNECTION_STATE_EVT is received and AVRCP connection is established.
+ *
+ * @param[in]       tl : transaction label, 0 to 15, consecutive commands should use different values.
+ *
+ * @return
+ *                  - ESP_OK: success
+ *                  - ESP_ERR_INVALID_STATE: if bluetooth stack is not yet enabled
+ *                  - ESP_FAIL: others
+ */
+esp_err_t esp_avrc_ct_send_get_play_status_cmd(uint8_t tl);
 
 /**
  * @brief           Register application callbacks to AVRCP target module. This function should be

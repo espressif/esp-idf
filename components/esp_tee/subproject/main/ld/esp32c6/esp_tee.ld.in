@@ -105,6 +105,7 @@ SECTIONS
     *libtee_flash_mgr.a:*(.rodata .srodata .rodata.* .srodata.*)
     *libbootloader_support.a:bootloader_flash.*(.rodata .srodata .rodata.* .srodata.*)
     *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_tee_apm_intr.c.*(.rodata .srodata .rodata.* .srodata.*)
     _rodata_end = ABSOLUTE(.);
     _tee_dram_end = ABSOLUTE(.);
   } > dram_tee_seg

@@ -10,15 +10,18 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "dev_msc.h"
+#include "test_usb_host_common.h"
 #include "usb/usb_host.h"
 
 void setUp(void)
 {
     unity_utils_record_free_mem();
     dev_msc_init();
+    // Install PHY separately
+    test_usb_host_setup_phy();
     // Install USB Host
     usb_host_config_t host_config = {
-        .skip_phy_setup = false,
+        .skip_phy_setup = true,
         .root_port_unpowered = false,
         .intr_flags = ESP_INTR_FLAG_LEVEL1,
     };
@@ -33,6 +36,7 @@ void tearDown(void)
     // Clean up USB Host
     printf("USB Host uninstall\n");
     ESP_ERROR_CHECK(usb_host_uninstall());
+    test_usb_host_delete_phy();
     // Short delay to allow task to be cleaned up after client uninstall
     vTaskDelay(10);
     unity_utils_evaluate_leaks();

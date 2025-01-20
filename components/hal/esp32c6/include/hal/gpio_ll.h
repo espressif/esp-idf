@@ -20,13 +20,13 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
-#include "soc/lp_io_struct.h"
 #include "soc/pmu_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,7 +81,7 @@ static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
         *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
     }
     if (sig_out) {
-        *sig_out = hw->func_out_sel_cfg[gpio_num].out_sel;
+        *sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
     }
     if (slp_sel) {
         *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
@@ -333,10 +333,7 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, uint32_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    gpio_func_out_sel_cfg_reg_t reg = {
-      .out_sel = SIG_GPIO_OUT_IDX,
-    };
-    hw->func_out_sel_cfg[gpio_num].val = reg.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel, SIG_GPIO_OUT_IDX);
 }
 
 /**
@@ -600,6 +597,7 @@ static inline void gpio_ll_force_unhold_all(void)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_SEL_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -612,6 +610,7 @@ static inline void gpio_ll_sleep_sel_en(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_SEL_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -623,6 +622,7 @@ static inline void gpio_ll_sleep_sel_dis(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_PULLUP_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -634,6 +634,7 @@ static inline void gpio_ll_sleep_pullup_dis(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_PULLUP_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -645,6 +646,7 @@ static inline void gpio_ll_sleep_pullup_en(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_PULLDOWN_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -656,6 +658,7 @@ static inline void gpio_ll_sleep_pulldown_en(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_PULLDOWN_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -667,6 +670,7 @@ static inline void gpio_ll_sleep_pulldown_dis(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_INPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -678,6 +682,7 @@ static inline void gpio_ll_sleep_input_disable(gpio_dev_t *hw, uint32_t gpio_num
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -689,6 +694,7 @@ static inline void gpio_ll_sleep_input_enable(gpio_dev_t *hw, uint32_t gpio_num)
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_OUTPUT_DISABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));
@@ -700,6 +706,7 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number
   */
+__attribute__((always_inline))
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_OUTPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio_num * 4));

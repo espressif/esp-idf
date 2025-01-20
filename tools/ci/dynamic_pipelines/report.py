@@ -31,6 +31,7 @@ from .utils import format_permalink
 from .utils import get_artifacts_url
 from .utils import get_repository_file_url
 from .utils import is_url
+from .utils import known_failure_issue_jira_fast_link
 from .utils import load_known_failure_cases
 
 
@@ -542,6 +543,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Failure Reason',
                 f'Failures on your branch (40 latest testcases)',
                 'Dut Log URL',
+                'Create Known Failure Case Jira',
                 'Job URL',
                 'Grafana URL',
             ],
@@ -550,6 +552,10 @@ class TargetTestReportGenerator(ReportGenerator):
                 (
                     'Failures on your branch (40 latest testcases)',
                     lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
+                ),
+                (
+                    'Create Known Failure Case Jira',
+                    known_failure_issue_jira_fast_link
                 )
             ],
         )
@@ -562,6 +568,7 @@ class TargetTestReportGenerator(ReportGenerator):
                 'Failure Reason',
                 'Cases that failed in other branches as well (40 latest testcases)',
                 'Dut Log URL',
+                'Create Known Failure Case Jira',
                 'Job URL',
                 'Grafana URL',
             ],
@@ -570,6 +577,10 @@ class TargetTestReportGenerator(ReportGenerator):
                 (
                     'Cases that failed in other branches as well (40 latest testcases)',
                     lambda item: f"{getattr(item, 'latest_failed_count', '')} / {getattr(item, 'latest_total_count', '')}",
+                ),
+                (
+                    'Create Known Failure Case Jira',
+                    known_failure_issue_jira_fast_link
                 )
             ],
         )

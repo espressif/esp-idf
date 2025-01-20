@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 // The HAL layer for GPIO (common part)
 
 #include "soc/soc.h"
+#include "esp_attr.h"
 #include "soc/gpio_periph.h"
 #include "hal/gpio_hal.h"
 
@@ -44,3 +45,12 @@ void gpio_hal_hysteresis_soft_enable(gpio_hal_context_t *hal, uint32_t gpio_num,
     }
 }
 #endif //SOC_GPIO_SUPPORT_PIN_HYS_FILTER
+
+void gpio_hal_isolate_in_sleep(gpio_hal_context_t *hal, uint32_t gpio_num)
+{
+    gpio_ll_sleep_input_disable(hal->dev, gpio_num);
+    gpio_ll_sleep_output_disable(hal->dev, gpio_num);
+    gpio_ll_sleep_pullup_dis(hal->dev, gpio_num);
+    gpio_ll_sleep_pulldown_dis(hal->dev, gpio_num);
+    gpio_ll_sleep_sel_en(hal->dev, gpio_num);
+}

@@ -59,6 +59,11 @@ CONFIGS = [
     pytest.param('panic', marks=TARGETS_ALL),
 ]
 
+CONFIGS_BACKTRACE = [
+    # One single-core target and one dual-core target is enough
+    pytest.param('framepointer', marks=[pytest.mark.esp32c3, pytest.mark.esp32p4]),
+]
+
 CONFIGS_DUAL_CORE = [
     pytest.param('coredump_flash_bin_crc', marks=TARGETS_DUAL_CORE),
     pytest.param('coredump_flash_elf_sha', marks=TARGETS_DUAL_CORE),
@@ -573,16 +578,13 @@ def test_assert_cache_disabled(
 def cache_error_log_check(dut: PanicTestDut) -> None:
     if dut.is_xtensa:
         if dut.target == 'esp32s3':
-            dut.expect_exact("Guru Meditation Error: Core  / panic'ed (Cache error)")
-            dut.expect_exact('Write back error occurred while dcache tries to write back to flash')
-            dut.expect_exact('The following backtrace may not indicate the code that caused Cache invalid access')
+            dut.expect_exact("Guru Meditation Error: Core  0 panic'ed (Cache error)")
+            dut.expect_exact('Dbus write to cache rejected, error address')
         else:
             dut.expect_exact("Guru Meditation Error: Core  0 panic'ed (LoadStoreError)")
     else:
         dut.expect_exact("Guru Meditation Error: Core  0 panic'ed (Store access fault)")
     dut.expect_reg_dump(0)
-    if dut.target == 'esp32s3':
-        dut.expect_reg_dump(1)
     dut.expect_cpu_reset()
 
 
@@ -590,16 +592,6 @@ def cache_error_log_check(dut: PanicTestDut) -> None:
 @pytest.mark.supported_targets
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 def test_assert_cache_write_back_error_can_print_backtrace(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
-    dut.run_test_func(test_func_name)
-    cache_error_log_check(dut)
-
-
-@pytest.mark.generic
-@pytest.mark.supported_targets
-@pytest.mark.parametrize('config', ['panic'], indirect=True)
-def test_assert_cache_write_back_error_can_print_backtrace2(
     dut: PanicTestDut, config: str, test_func_name: str
 ) -> None:
     dut.run_test_func(test_func_name)
@@ -981,7 +973,6 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     assert end_addr > start_addr
 
 
-@pytest.mark.temp_skip_ci(targets=['esp32c5', 'esp32c61'], reason='TODO: IDF-8662 and IDF-9269')
 @pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
@@ -1103,4 +1094,23 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
         config,
         expected_backtrace=None,
         expected_coredump=coredump_pattern
+    )
+
+
+@pytest.mark.parametrize('config', CONFIGS_BACKTRACE, indirect=True)
+@pytest.mark.generic
+def test_panic_print_backtrace(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+    regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
+    dut.expect(regex_pattern)
+    dut.expect_backtrace()
+    dut.expect_elf_sha256()
+    dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
+
+    coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
+    common_test(
+        dut,
+        config,
+        expected_backtrace=None,
+        expected_coredump=[coredump_pattern]
     )

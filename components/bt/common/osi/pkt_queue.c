@@ -25,6 +25,7 @@ struct pkt_queue *pkt_queue_create(void)
     }
     if (osi_mutex_new(&queue->lock) != 0) {
         osi_free(queue);
+        return NULL;
     }
     struct pkt_queue_header *p = &queue->header;
     STAILQ_INIT(p);

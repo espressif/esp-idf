@@ -316,7 +316,7 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 #ifdef CONFIG_EXAMPLE_RUN_LOCAL_BROKER
-    xTaskCreate(broker_task, "broker", 4096, NULL, 4, NULL);
+    xTaskCreate(broker_task, "broker", 8192, NULL, 4, NULL);
 #endif
     ESP_ERROR_CHECK(example_connect());
     esp_console_repl_t *repl = NULL;

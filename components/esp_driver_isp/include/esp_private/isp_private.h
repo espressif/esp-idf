@@ -111,7 +111,6 @@ bool esp_isp_ae_isr(isp_proc_handle_t proc, uint32_t ae_events);
 bool esp_isp_awb_isr(isp_proc_handle_t proc, uint32_t awb_events);
 bool esp_isp_sharpen_isr(isp_proc_handle_t proc, uint32_t sharp_events);
 bool esp_isp_hist_isr(isp_proc_handle_t proc, uint32_t hist_events);
-esp_err_t esp_isp_enable_yuv_submodules(isp_proc_handle_t proc, bool en);
 
 #ifdef __cplusplus
 }

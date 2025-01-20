@@ -1,0 +1,6 @@
+# field_name, efuse_block, bit_start, bit_count, comment
+
+# eFuses that only exist on ESP32-H2 v0.0 - v1.1.
+
+WR_DIS_ECDSA_FORCE_USE_HARDWARE_K,               EFUSE_BLK0,  17,   1, [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K
+ECDSA_FORCE_USE_HARDWARE_K,                      EFUSE_BLK0, 114,   1, [] Represents whether hardware random number k is forced used in ESDCA. 1: force used. 0: not force used

@@ -207,6 +207,13 @@ if(CONFIG_ESP_SYSTEM_USE_EH_FRAME)
   list(APPEND link_options "-Wl,--eh-frame-hdr")
 endif()
 
+if(CONFIG_ESP_SYSTEM_USE_FRAME_POINTER)
+    list(APPEND compile_options "-fno-omit-frame-pointer")
+    if(CMAKE_C_COMPILER_ID MATCHES "GNU")
+        list(APPEND compile_options "-mno-omit-leaf-frame-pointer")
+    endif()
+endif()
+
 list(APPEND link_options "-fno-lto")
 
 if(CONFIG_IDF_TARGET_LINUX AND CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")

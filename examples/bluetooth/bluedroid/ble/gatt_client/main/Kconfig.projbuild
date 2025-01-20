@@ -5,8 +5,8 @@ menu "Example Configuration"
         default n
 
     config EXAMPLE_CI_ID
-        int
-        default 70
+        int "example id for CI test"
+        default 0
         help
             This config the example id for CI test. Only for internal used.
 
@@ -16,4 +16,9 @@ menu "Example Configuration"
         help
             This config the pipeline id for CI test. Only for internal used.
 
+    config EXAMPLE_INIT_DEINIT_LOOP
+        bool "Perform init deinit of bluedroid host in a loop"
+        default n
+        help
+            This config perform host init deinit loop for CI test. Only for internal used
 endmenu

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -196,6 +196,15 @@ static inline void axi_dma_ll_rx_stop(axi_dma_dev_t *dev, uint32_t channel)
 }
 
 /**
+ * @brief Abort the RX channel, stop the undergoing transfer immediately
+ */
+__attribute__((always_inline))
+static inline void axi_dma_ll_rx_abort(axi_dma_dev_t *dev, uint32_t channel, bool abort)
+{
+    dev->in[channel].conf.in_conf0.in_cmd_disable_chn = abort;
+}
+
+/**
  * @brief Restart a new inlink right after the last descriptor
  */
 __attribute__((always_inline))
@@ -289,6 +298,15 @@ static inline void axi_dma_ll_rx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
 static inline void axi_dma_ll_rx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->in[channel].conf.in_conf0.in_ecc_aes_en_chn = enable;
+}
+
+/**
+ * @brief Return if the channel is ready to be reset
+ */
+__attribute__((always_inline))
+static inline bool axi_dma_ll_rx_is_reset_avail(axi_dma_dev_t *dev, uint32_t channel)
+{
+    return dev->in_reset_avail_chn[channel].in_reset_avail_chn;
 }
 
 ///////////////////////////////////// TX /////////////////////////////////////////
@@ -430,6 +448,15 @@ static inline void axi_dma_ll_tx_stop(axi_dma_dev_t *dev, uint32_t channel)
 }
 
 /**
+ * @brief Abort the TX channel, stop the undergoing transfer immediately
+ */
+__attribute__((always_inline))
+static inline void axi_dma_ll_tx_abort(axi_dma_dev_t *dev, uint32_t channel, bool abort)
+{
+    dev->out[channel].conf.out_conf0.out_cmd_disable_chn = abort;
+}
+
+/**
  * @brief Restart a new outlink right after the last descriptor
  */
 __attribute__((always_inline))
@@ -505,6 +532,15 @@ static inline void axi_dma_ll_tx_enable_etm_task(axi_dma_dev_t *dev, uint32_t ch
 static inline void axi_dma_ll_tx_enable_ext_mem_ecc_aes_access(axi_dma_dev_t *dev, uint32_t channel, bool enable)
 {
     dev->out[channel].conf.out_conf0.out_ecc_aes_en_chn = enable;
+}
+
+/**
+ * @brief Return if the channel is ready to be reset
+ */
+__attribute__((always_inline))
+static inline bool axi_dma_ll_tx_is_reset_avail(axi_dma_dev_t *dev, uint32_t channel)
+{
+    return dev->out_reset_avail_chn[channel].out_reset_avail_chn;
 }
 
 ///////////////////////////////////// CRC-TX /////////////////////////////////////////

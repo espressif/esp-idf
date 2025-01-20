@@ -5,6 +5,8 @@ import os
 import re
 import typing as t
 import xml.etree.ElementTree as ET
+from urllib.parse import quote
+from urllib.parse import urlencode
 from urllib.parse import urlparse
 
 import requests
@@ -216,3 +218,34 @@ def get_repository_file_url(file_path: str) -> str:
     :return: The modified URL pointing to the file's path in the repository.
     """
     return f'{CI_PROJECT_URL}/-/raw/{CI_MERGE_REQUEST_SOURCE_BRANCH_SHA}/{file_path}'
+
+
+def known_failure_issue_jira_fast_link(_item: TestCase) -> str:
+    """
+       Generate a JIRA fast link for known issues with relevant test case details.
+    """
+    jira_url = os.getenv('JIRA_SERVER')
+    jira_pid = os.getenv('JIRA_KNOWN_FAILURE_PID', '10514')
+    jira_issuetype = os.getenv('JIRA_KNOWN_FAILURE_ISSUETYPE', '10004')
+    jira_component = os.getenv('JIRA_KNOWN_FAILURE_COMPONENT', '11909')
+    jira_assignee = os.getenv('JIRA_KNOWN_FAILURE_ASSIGNEE', 'zhangjianwen')
+    jira_affected_versions = os.getenv('JIRA_KNOWN_FAILURE_VERSIONS', '17602')
+    jira_priority = os.getenv('JIRA_KNOWN_FAILURE_PRIORITY', '3')
+
+    base_url = f'{jira_url}/secure/CreateIssueDetails!init.jspa?'
+    params = {
+        'pid': jira_pid,
+        'issuetype': jira_issuetype,
+        'summary': f'[Test Case]{_item.name}',
+        'description': (
+            f"job_url: {quote(_item.ci_job_url, safe=':/')}\n\n"
+            f"dut_log_url: {quote(_item.dut_log_url, safe=':/')}\n\n"
+            f'ci_dashboard_url: {_item.ci_dashboard_url}\n\n'
+        ),
+        'components': jira_component,
+        'priority': jira_priority,
+        'assignee': jira_assignee,
+        'versions': jira_affected_versions
+    }
+    query_string = urlencode(params)
+    return f'<a href="{base_url}{query_string}">Create</a>'

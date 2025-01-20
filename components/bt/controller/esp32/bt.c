@@ -248,6 +248,7 @@ extern uint32_t _bt_controller_data_end;
 extern void config_bt_funcs_reset(void);
 extern void config_ble_funcs_reset(void);
 extern void config_btdm_funcs_reset(void);
+extern void config_ble_vs_qa_funcs_reset(void);
 
 /* Local Function Declare
  *********************************************************************
@@ -1553,6 +1554,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     btdm_controller_mem_init();
 
     periph_module_enable(PERIPH_BT_MODULE);
+    periph_module_reset(PERIPH_BT_MODULE);
 
 #ifdef CONFIG_PM_ENABLE
     s_btdm_allow_light_sleep = false;
@@ -1745,6 +1747,10 @@ static void patch_apply(void)
 
 #ifndef CONFIG_BTDM_CTRL_MODE_BR_EDR_ONLY
     config_ble_funcs_reset();
+#endif
+
+#ifdef CONFIG_BTDM_BLE_VS_QA_SUPPORT
+    config_ble_vs_qa_funcs_reset();
 #endif
 }
 

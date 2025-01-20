@@ -1,0 +1,23 @@
+description: Shell environment information
+tags: [environment, base, project]
+output: environment
+steps:
+  - name: 'Enviromental Variables'
+    cmds:
+      - env:
+        vars:
+          - IDF_PATH
+          - IDF_PYTHON_ENV_PATH
+          - IDF_TOOLS_PATH
+          - PATH
+          - OPENOCD_SCRIPTS
+          - PYTHONPATH
+          - MSYSTEM
+        regex: '.*IDF.*|.*ESP.*'
+        output: environment.var
+
+  - name: 'Python Environmental Variables'
+    cmds:
+      - env:
+        regex: '.*PYTHON.*'
+        output: python.var

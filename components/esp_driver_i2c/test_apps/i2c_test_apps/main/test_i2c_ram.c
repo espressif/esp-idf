@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -63,6 +63,8 @@ static void i2c_master_write_to_ram_test(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     unity_send_signal("master write");
@@ -81,6 +83,7 @@ static void i2c_master_write_to_ram_test(void)
 
 static void i2c_slave_read_from_ram_test(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_rd[DATA_LENGTH_RAM] = {0};
 
     i2c_slave_config_t i2c_slv_config = {
@@ -135,6 +138,8 @@ static void master_read_slave_from_ram_test(void)
     i2c_master_dev_handle_t dev_handle;
     TEST_ESP_OK(i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle));
 
+    unity_send_signal("i2c master init first");
+
     unity_wait_for_signal("i2c slave init finish");
 
     printf("Slave please write data to buffer\n");
@@ -158,6 +163,7 @@ static void master_read_slave_from_ram_test(void)
 
 static void slave_write_buffer_to_ram_test(void)
 {
+    unity_wait_for_signal("i2c master init first");
     uint8_t data_wr[DATA_LENGTH_RAM] = {0};
 
     i2c_slave_config_t i2c_slv_config = {

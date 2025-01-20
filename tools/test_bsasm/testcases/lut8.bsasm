@@ -1,0 +1,5 @@
+
+cfg lut_width_bits 8
+
+lut 0, -128, 127, 255
+lut 1 #make it an odd amount of words
