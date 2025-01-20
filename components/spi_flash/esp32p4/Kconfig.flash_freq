@@ -10,3 +10,10 @@ choice ESPTOOLPY_FLASHFREQ
     config ESPTOOLPY_FLASHFREQ_20M
         bool "20 MHz"
 endchoice
+
+config ESPTOOLPY_FLASHFREQ_VAL
+    int
+    default 20 if ESPTOOLPY_FLASHFREQ_20M
+    default 40 if ESPTOOLPY_FLASHFREQ_40M
+    default 80 if ESPTOOLPY_FLASHFREQ_80M
+    default 120 if ESPTOOLPY_FLASHFREQ_120M
