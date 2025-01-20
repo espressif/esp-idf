@@ -395,6 +395,8 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             } else {
                 tokens_per_frame = 8; // 1 token every microframe
             }
+        } else {
+            tokens_per_frame = 8;
         }
         usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
     }
