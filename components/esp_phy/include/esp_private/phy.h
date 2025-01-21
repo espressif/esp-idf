@@ -8,6 +8,7 @@
 #include <sys/lock.h>
 #include "sdkconfig.h"
 #include "esp_phy_init.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,6 +242,18 @@ uint32_t phy_ana_i2c_master_burst_rf_onoff(bool on);
  *        by software, which are packed in this function.
  */
 void phy_wakeup_from_modem_state_extra_init(void);
+#endif
+
+#if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_MAC_BB_PD
+/**
+ * @brief PHY module sleep data (includes AGC, TX, NRX, BB, FE, etc..) initialize.
+ */
+void esp_phy_sleep_data_init(void);
+
+/**
+ * @brief PHY module sleep data de-initialize.
+ */
+void esp_phy_sleep_data_deinit(void);
 #endif
 
 #ifdef __cplusplus
