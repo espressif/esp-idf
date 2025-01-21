@@ -44,7 +44,7 @@ function(__component_get_target var name_or_alias)
 
     idf_build_get_property(component_targets __COMPONENT_TARGETS)
 
-    # Assume first that the paramters is an alias.
+    # Assume first that the parameters is an alias.
     string(REPLACE "::" "_" name_or_alias "${name_or_alias}")
     set(component_target ___${name_or_alias})
 
@@ -138,7 +138,7 @@ endfunction()
 # Add a component to process in the build. The components are keeped tracked of in property
 # __COMPONENT_TARGETS in component target form.
 #
-function(__component_add component_dir prefix)
+function(__component_add component_dir prefix component_source)
     # For each component, two entities are created: a component target and a component library. The
     # component library is created during component registration (the actual static/interface library).
     # On the other hand, component targets are created early in the build
@@ -186,6 +186,9 @@ function(__component_add component_dir prefix)
     __component_set_property(${component_target} COMPONENT_NAME ${component_name})
     __component_set_property(${component_target} COMPONENT_DIR ${component_dir})
     __component_set_property(${component_target} COMPONENT_ALIAS ${component_alias})
+    if(component_source)
+        __component_set_property(${component_target} COMPONENT_SOURCE ${component_source})
+    endif()
 
     __component_set_property(${component_target} __PREFIX ${prefix})
 
