@@ -1870,20 +1870,20 @@ esp_err_t esp_http_client_add_auth(esp_http_client_handle_t client)
         client->auth_data->method = strdup(HTTP_METHOD_MAPPING[client->connection_info.method]);
 
         client->auth_data->nc = 1;
-        HTTP_RET_ON_ERR_DBG(http_utils_get_substring_between(auth_header, "realm=\"", "\"", &client->auth_data->realm), TAG, "Unable to extract substring between specified strings");
-        HTTP_RET_ON_ERR_DBG(http_utils_get_substring_between(auth_header, "algorithm=", ",", &client->auth_data->algorithm), TAG, "Unable to extract substring between specified strings");
+        HTTP_RET_ON_ERR_DBG(http_utils_get_string_between(auth_header, "realm=\"", "\"", &client->auth_data->realm), TAG, "Unable to extract substring between specified strings");
+        HTTP_RET_ON_ERR_DBG(http_utils_get_string_between(auth_header, "algorithm=", ",", &client->auth_data->algorithm), TAG, "Unable to extract substring between specified strings");
 
         if (client->auth_data->algorithm == NULL) {
-            HTTP_RET_ON_ERR_DBG(http_utils_get_substring_after(auth_header, "algorithm=", &client->auth_data->algorithm), TAG, "Unable to extract substring after specified string");
+            HTTP_RET_ON_ERR_DBG(http_utils_get_string_after(auth_header, "algorithm=", &client->auth_data->algorithm), TAG, "Unable to extract substring after specified string");
         }
 
         if (client->auth_data->algorithm == NULL) {
             client->auth_data->algorithm = strdup("MD5");
         }
 
-        HTTP_RET_ON_ERR_DBG(http_utils_get_substring_between(auth_header, "qop=\"", "\"", &client->auth_data->qop), TAG, "Unable to extract substring between specified strings");
-        HTTP_RET_ON_ERR_DBG(http_utils_get_substring_between(auth_header, "nonce=\"", "\"", &client->auth_data->nonce), TAG, "Unable to extract substring between specified strings");
-        HTTP_RET_ON_ERR_DBG(http_utils_get_substring_between(auth_header, "opaque=\"", "\"", &client->auth_data->opaque), TAG, "Unable to extract substring between specified strings");
+        HTTP_RET_ON_ERR_DBG(http_utils_get_string_between(auth_header, "qop=\"", "\"", &client->auth_data->qop), TAG, "Unable to extract substring between specified strings");
+        HTTP_RET_ON_ERR_DBG(http_utils_get_string_between(auth_header, "nonce=\"", "\"", &client->auth_data->nonce), TAG, "Unable to extract substring between specified strings");
+        HTTP_RET_ON_ERR_DBG(http_utils_get_string_between(auth_header, "opaque=\"", "\"", &client->auth_data->opaque), TAG, "Unable to extract substring between specified strings");
         client->process_again = 1;
 
         return ESP_OK;
