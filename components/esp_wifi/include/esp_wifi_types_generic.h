@@ -1312,8 +1312,9 @@ typedef struct {
   * @brief Argument structure for WIFI_EVENT_STA_NEIGHBOR_REP event
   */
 typedef struct {
-    uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP*/
+    uint8_t report[ESP_WIFI_MAX_NEIGHBOR_REP_LEN];  /**< Neighbor Report received from the AP (will be deprecated in next major release, use n_report instead)*/
     uint16_t report_len;                            /**< Length of the report*/
+    uint8_t n_report[];                             /**< Neighbor Report received from the AP*/
 } wifi_event_neighbor_report_t;
 
 /** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
