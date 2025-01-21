@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1134,6 +1134,13 @@ esp_err_t i2c_master_bus_rm_device(i2c_master_dev_handle_t handle)
 esp_err_t i2c_del_master_bus(i2c_master_bus_handle_t bus_handle)
 {
     ESP_LOGD(TAG, "del i2c bus(%d)", bus_handle->base->port_num);
+
+    // Check if the device list is empty
+    if (!SLIST_EMPTY(&bus_handle->device_list)) {
+        ESP_LOGE(TAG, "Cannot delete I2C bus(%d): devices are still attached, please remove all devices and then delete bus", bus_handle->base->port_num);
+        return ESP_ERR_INVALID_STATE;
+    }
+
     ESP_RETURN_ON_ERROR(i2c_master_bus_destroy(bus_handle), TAG, "destroy i2c bus failed");
     return ESP_OK;
 }
