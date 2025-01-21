@@ -270,7 +270,7 @@ static inline void touch_ll_set_measure_interval_ticks(uint16_t interval_ticks)
  */
 static inline void touch_ll_set_charge_speed(uint32_t touch_num, touch_charge_speed_t charge_speed)
 {
-    RTCIO.touch_pad[touch_num].dac = charge_speed;
+    RTCIO.touch_pad[touch_num].slope = charge_speed;
 }
 
 /**
@@ -586,7 +586,7 @@ static inline void touch_ll_get_voltage_attenuation(touch_volt_atten_t *atten)
  */
 static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t slope)
 {
-    RTCIO.touch_pad[touch_num].dac = slope;
+    RTCIO.touch_pad[touch_num].slope = slope;
 }
 
 /**
@@ -601,7 +601,7 @@ static inline void touch_ll_set_slope(touch_pad_t touch_num, touch_cnt_slope_t s
  */
 static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *slope)
 {
-    *slope = (touch_cnt_slope_t)RTCIO.touch_pad[touch_num].dac;
+    *slope = (touch_cnt_slope_t)RTCIO.touch_pad[touch_num].slope;
 }
 
 /**

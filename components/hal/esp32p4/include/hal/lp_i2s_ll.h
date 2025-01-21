@@ -114,7 +114,7 @@ static inline void lp_i2s_ll_enable_mem(int id, bool en)
 
 static inline void lp_i2s_ll_set_rx_mem_threshold(lp_i2s_dev_t *hw, uint32_t words)
 {
-    LP_I2S.rx_mem_conf.rx_mem_threshold = words;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_mem_conf, rx_mem_threshold, words);
 }
 
 /*---------------------------------------------------------------
@@ -785,7 +785,7 @@ static inline void lp_vad_ll_set_speak_activity_thresh(lp_i2s_dev_t *hw, int thr
  */
 static inline void lp_vad_ll_set_non_speak_activity_thresh(lp_i2s_dev_t *hw, int thresh)
 {
-    hw->vad_param1.param_hangover_silent = thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->vad_param1, param_hangover_silent, thresh);
 }
 
 /**
