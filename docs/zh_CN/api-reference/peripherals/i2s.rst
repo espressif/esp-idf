@@ -320,6 +320,14 @@ I2S 的数据传输（包括数据发送和接收）由 DMA 实现。在传输�
 
 用户可以通过调用相应函数（即 :func:`i2s_channel_init_std_mode`、 :func:`i2s_channel_init_pdm_rx_mode`、 :func:`i2s_channel_init_pdm_tx_mode` 或 :func:`i2s_channel_init_tdm_mode`）将通道初始化为特定模式。如果初始化后需要更新配置，必须先调用 :cpp:func:`i2s_channel_disable` 以确保通道已经停止运行，然后再调用相应的 'reconfig' 函数，例如 :cpp:func:`i2s_channel_reconfig_std_slot`、 :cpp:func:`i2s_channel_reconfig_std_clock` 和 :cpp:func:`i2s_channel_reconfig_std_gpio`。
 
+进阶 API
+^^^^^^^^^^^^^^
+
+为满足高质量音频需求，驱动提供了以下进阶 API：
+
+- :cpp:func:`i2s_channel_preload_data`: 用于预加载音频数据到 I2S 内部缓存，使得 TX 通道使能后能够立即发送数据，以此降低音频初始输出延迟。
+- :cpp:func:`i2s_channel_tune_rate`: 用于在运行时动态微调音频速率，以匹配音频数据生产者和消费者的速度，从而防止因速率不匹配导致的中间缓存数据累积或不足。
+
 IRAM 安全
 ^^^^^^^^^
 

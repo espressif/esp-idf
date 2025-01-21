@@ -25,6 +25,7 @@
 #include "soc/soc_caps.h"
 #include "hal/gpio_hal.h"
 #include "hal/i2s_hal.h"
+#include "hal/hal_utils.h"
 #include "hal/dma_types.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "hal/cache_hal.h"
@@ -1372,6 +1373,95 @@ esp_err_t i2s_channel_read(i2s_chan_handle_t handle, void *dest, size_t size, si
     xSemaphoreGive(handle->binary);
 
     return ret;
+}
+
+esp_err_t i2s_channel_tune_rate(i2s_chan_handle_t handle, const i2s_tuning_config_t *tune_cfg, i2s_tuning_info_t *tune_info)
+{
+    /** We tune the sample rate via the MCLK clock.
+     *  Because the sample rate is decided by MCLK eventually,
+     *  and MCLK has a higher resolution which can be tuned more precisely.
+     */
+
+    ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, TAG, "NULL pointer");
+    ESP_RETURN_ON_FALSE(!handle->is_external, ESP_ERR_NOT_SUPPORTED, TAG, "Not support to tune rate for external mclk");
+
+    /* If no tuning configuration given, just return the current information */
+    if (tune_cfg == NULL) {
+        xSemaphoreTake(handle->mutex, portMAX_DELAY);
+        goto result;
+    }
+    ESP_RETURN_ON_FALSE(tune_cfg->max_delta_mclk >= tune_cfg->min_delta_mclk, ESP_ERR_INVALID_ARG, TAG, "invalid range");
+
+    uint32_t new_mclk = 0;
+
+    /* Get the new MCLK according to the tuning operation */
+    switch (tune_cfg->tune_mode) {
+    case I2S_TUNING_MODE_ADDSUB:
+        new_mclk = handle->curr_mclk_hz + tune_cfg->tune_mclk_val;
+        break;
+    case I2S_TUNING_MODE_SET:
+        new_mclk = tune_cfg->tune_mclk_val;
+        break;
+    case I2S_TUNING_MODE_RESET:
+        new_mclk = handle->origin_mclk_hz;
+        break;
+    default:
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* Check if the tuned mclk is within the supposed range */
+    if ((int32_t)new_mclk - (int32_t)handle->origin_mclk_hz > tune_cfg->max_delta_mclk) {
+        new_mclk = handle->origin_mclk_hz + tune_cfg->max_delta_mclk;
+    } else if ((int32_t)new_mclk - (int32_t)handle->origin_mclk_hz < tune_cfg->min_delta_mclk) {
+        new_mclk = handle->origin_mclk_hz + tune_cfg->min_delta_mclk;
+    }
+    xSemaphoreTake(handle->mutex, portMAX_DELAY);
+#if SOC_CLK_APLL_SUPPORTED
+    if (handle->clk_src == I2S_CLK_SRC_APLL) {
+        periph_rtc_apll_release();
+        handle->sclk_hz = i2s_set_get_apll_freq(new_mclk);
+        periph_rtc_apll_acquire();
+    }
+#endif
+    /* Calculate the new divider */
+    hal_utils_clk_div_t mclk_div = {};
+    i2s_hal_calc_mclk_precise_division(handle->sclk_hz, new_mclk, &mclk_div);
+    /* mclk_div = sclk / mclk >= 2 */
+    if (mclk_div.integer < 2) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    /* Set the new divider for MCLK */
+    I2S_CLOCK_SRC_ATOMIC() {
+        if (handle->dir == I2S_DIR_TX) {
+            i2s_ll_tx_set_mclk(handle->controller->hal.dev, &mclk_div);
+#if SOC_I2S_HW_VERSION_2
+            i2s_ll_tx_update(handle->controller->hal.dev);
+#endif
+        } else {
+            i2s_ll_rx_set_mclk(handle->controller->hal.dev, &mclk_div);
+#if SOC_I2S_HW_VERSION_2
+            i2s_ll_rx_update(handle->controller->hal.dev);
+#endif
+        }
+    }
+    /* Save the current mclk frequency */
+    handle->curr_mclk_hz = (uint32_t)(((uint64_t)handle->sclk_hz * mclk_div.denominator) /
+                                      (mclk_div.integer * mclk_div.denominator + mclk_div.numerator));
+result:
+    /* Assign the information if needed */
+    if (tune_info) {
+        tune_info->curr_mclk_hz = handle->curr_mclk_hz;
+        tune_info->delta_mclk_hz = (int32_t)handle->curr_mclk_hz - (int32_t)handle->origin_mclk_hz;
+        uint32_t tot_size = handle->dma.buf_size * handle->dma.desc_num;
+        uint32_t used_size = 0;
+        if (handle->dir == I2S_DIR_TX) {
+            used_size = uxQueueSpacesAvailable(handle->msg_queue) * handle->dma.buf_size + handle->dma.rw_pos;
+        } else {
+            used_size = uxQueueMessagesWaiting(handle->msg_queue) * handle->dma.buf_size + handle->dma.buf_size - handle->dma.rw_pos;
+        }
+        tune_info->water_mark = used_size * 100 / tot_size;
+    }
+    xSemaphoreGive(handle->mutex);
+    return ESP_OK;
 }
 
 #if SOC_I2S_SUPPORTS_TX_SYNC_CNT

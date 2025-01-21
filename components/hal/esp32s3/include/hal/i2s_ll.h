@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -394,6 +394,27 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
     i2s_ll_rx_set_raw_clk_div(hw, mclk_div->integer, div_x, div_y, div_z, div_yn1);
 }
 
+/**
+ * @brief Update the TX configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_tx_update(i2s_dev_t *hw)
+{
+    hw->tx_conf.tx_update = 1;
+    while (hw->tx_conf.tx_update);
+}
+
+/**
+ * @brief Update the RX configuration
+ *
+ * @param hw Peripheral I2S hardware instance address.
+ */
+static inline void i2s_ll_rx_update(i2s_dev_t *hw)
+{
+    hw->rx_conf.rx_update = 1;
+    while (hw->rx_conf.rx_update);
+}
 
 /**
  * @brief Start I2S TX
@@ -403,8 +424,7 @@ static inline void i2s_ll_rx_set_mclk(i2s_dev_t *hw, const hal_utils_clk_div_t *
 static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 {
     // Have to update registers before start
-    hw->tx_conf.tx_update = 1;
-    while (hw->tx_conf.tx_update);
+    i2s_ll_tx_update(hw);
     hw->tx_conf.tx_start = 1;
 }
 
@@ -416,8 +436,7 @@ static inline void i2s_ll_tx_start(i2s_dev_t *hw)
 static inline void i2s_ll_rx_start(i2s_dev_t *hw)
 {
     // Have to update registers before start
-    hw->rx_conf.rx_update = 1;
-    while (hw->rx_conf.rx_update);
+    i2s_ll_rx_update(hw);
     hw->rx_conf.rx_start = 1;
 }
 

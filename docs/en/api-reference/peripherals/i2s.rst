@@ -320,6 +320,14 @@ Configuration
 
 Users can initialize a channel by calling corresponding functions (i.e., :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode`, or :func:`i2s_channel_init_tdm_mode`) to a specific mode. If the configurations need to be updated after initialization, users have to first call :cpp:func:`i2s_channel_disable` to ensure that the channel has stopped, and then call corresponding ``reconfig`` functions, like :cpp:func:`i2s_channel_reconfig_std_slot`, :cpp:func:`i2s_channel_reconfig_std_clock`, and :cpp:func:`i2s_channel_reconfig_std_gpio`.
 
+Advanced API
+^^^^^^^^^^^^
+
+To satisfy the high quality audio requiment, following advanced APIs are provided:
+
+- :cpp:func:`i2s_channel_preload_data`: Preloading audio data into the I2S internal cache, enabling the TX channel to immediately send data upon activation, thereby reducing the initial audio output delay.
+- :cpp:func:`i2s_channel_tune_rate`: Dynamically fine-tune the audio rate at runtime to match the speed of the audio data producer and consumer, thereby preventing the accumulation or shortage of intermediate buffered data caused by rate mismatches.
+
 IRAM Safe
 ^^^^^^^^^
 
