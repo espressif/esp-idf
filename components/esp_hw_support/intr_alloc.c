@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,11 @@
 #include "esp_cpu.h"
 #include "esp_private/rtc_ctrl.h"
 #include "soc/interrupts.h"
+#if CONFIG_IDF_TARGET_ESP32
+#include "soc/dport_reg.h"
+#else
+#include "soc/interrupt_reg.h"
+#endif
 #include "soc/soc_caps.h"
 #include "sdkconfig.h"
 
@@ -576,6 +581,13 @@ esp_err_t esp_intr_alloc_intrstatus(int source, int flags, uint32_t intrstatusre
             return ESP_ERR_NO_MEM;
         }
         memset(sh_vec, 0, sizeof(shared_vector_desc_t));
+        //If the shared interrupt does not have a register set for judgment, the corresponding source interrupt status is checked by default.
+        if(intrstatusreg == 0){
+            uint32_t offset = source / 32;
+            uint32_t source_bit = source % 32;
+            intrstatusreg = INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu) + (offset * 4);
+            intrstatusmask = 1 << source_bit;
+        }
         sh_vec->statusreg = (uint32_t*)intrstatusreg;
         sh_vec->statusmask = intrstatusmask;
         sh_vec->isr = handler;

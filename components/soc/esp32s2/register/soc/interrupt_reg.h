@@ -809,6 +809,8 @@ extern "C" {
 #define INTERRUPT_DATE_V  0xFFFFFFF
 #define INTERRUPT_DATE_S  0
 
+#define INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu)   DPORT_PRO_INTR_STATUS_0_REG
+
 #ifdef __cplusplus
 }
 #endif

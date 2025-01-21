@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "soc/interrupt_matrix_reg.h"
 #include "soc/clic_reg.h"
 #include "soc/soc_caps.h"
 
@@ -18,6 +19,8 @@ extern "C" {
 
 /* We only have a single core on the C5, CORE0 */
 #define INTERRUPT_CORE0_CPU_INT_THRESH_REG      INTERRUPT_CURRENT_CORE_INT_THRESH_REG
+
+#define INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu)   INTERRUPT_CORE0_INT_STATUS_0_REG
 
 #ifdef __cplusplus
 }
