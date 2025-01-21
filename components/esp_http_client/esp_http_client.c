@@ -1209,7 +1209,8 @@ int esp_http_client_get_errno(esp_http_client_handle_t client)
     return esp_transport_get_errno(client->transport);
 }
 
-esp_err_t esp_http_client_get_and_clear_last_tls_error(esp_http_client_handle_t client, int *tls_code, int *tls_flags){
+esp_err_t esp_http_client_get_and_clear_last_tls_error(esp_http_client_handle_t client, int *tls_code, int *tls_flags)
+{
     if (!client) {
         ESP_LOGE(TAG, "Invalid client handle");
         return ESP_FAIL;
