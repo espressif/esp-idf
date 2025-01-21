@@ -1,5 +1,5 @@
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import collections
@@ -83,11 +83,22 @@ class Placement:
         #
         # Placement can also be a basis if it has flags
         # (self.flags) or its basis has flags (self.basis.flags)
-        return (not self.basis or
-                self.target != self.basis.target or
-                (self.flags and not self.basis.flags) or
-                (not self.flags and self.basis.flags) or
-                self.force)
+        significant = (not self.basis or
+                       self.target != self.basis.target or
+                       (self.flags and not self.basis.flags) or
+                       (not self.flags and self.basis.flags) or
+                       self.force)
+
+        if significant and not self.explicit and not self.sections:
+            # The placement is significant, but it is an intermediate placement
+            # for an expanded object with no input sections. In this situation,
+            # report the placement as not significant, so its command is not
+            # emitted in the linker script. Otherwise, only the entity without
+            # input sections would be emitted, and the linker would include
+            # all input sections that have not yet been mapped.
+            significant = False
+
+        return significant
 
     def force_significant(self):
         if not self.is_significant():
