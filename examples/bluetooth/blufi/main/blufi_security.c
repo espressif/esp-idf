@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -65,6 +65,12 @@ extern void btc_blufi_report_error(esp_blufi_error_state_t state);
 
 void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_data, int *output_len, bool *need_free)
 {
+    if (data == NULL || len < 3) {
+        BLUFI_ERROR("BLUFI Invalid data format");
+        btc_blufi_report_error(ESP_BLUFI_DATA_FORMAT_ERROR);
+        return;
+    }
+
     int ret;
     uint8_t type = data[0];
 
@@ -94,6 +100,13 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
             btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
             return;
         }
+
+        if (len < (blufi_sec->dh_param_len + 1)) {
+            BLUFI_ERROR("%s, invalid dh param len\n", __func__);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+            return;
+        }
+
         uint8_t *param = blufi_sec->dh_param;
         memcpy(blufi_sec->dh_param, &data[1], blufi_sec->dh_param_len);
         ret = mbedtls_dhm_read_params(&blufi_sec->dhm, &param, &param[blufi_sec->dh_param_len]);
@@ -106,6 +119,12 @@ void blufi_dh_negotiate_data_handler(uint8_t *data, int len, uint8_t **output_da
         blufi_sec->dh_param = NULL;
 
         const int dhm_len = mbedtls_dhm_get_len(&blufi_sec->dhm);
+
+        if (dhm_len > DH_SELF_PUB_KEY_LEN) {
+            BLUFI_ERROR("%s dhm len not support %d\n", __func__, dhm_len);
+            btc_blufi_report_error(ESP_BLUFI_DH_PARAM_ERROR);
+        }
+
         ret = mbedtls_dhm_make_public(&blufi_sec->dhm, dhm_len, blufi_sec->self_public_key, dhm_len, myrand, NULL);
         if (ret) {
             BLUFI_ERROR("%s make public failed %d\n", __func__, ret);
