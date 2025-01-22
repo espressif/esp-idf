@@ -52,6 +52,7 @@ const usb_dwc_info_t usb_dwc_info = {
             .fsls_signals = &fsls_signals,
             .otg_signals = &otg_signals,
             .internal_phy_io = &internal_phy_io,
+            .supported_phys = USB_PHY_INST_FSLS_INTERN_0,
             .irq = ETS_USB_INTR_SOURCE,
             .irq_2nd_cpu = -1,
         },
