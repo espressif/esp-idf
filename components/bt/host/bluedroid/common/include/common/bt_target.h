@@ -88,9 +88,13 @@
 #define BTC_AV_INCLUDED             TRUE
 #define BTA_AV_SINK_INCLUDED        TRUE
 #define BTC_AV_SINK_INCLUDED        TRUE
-#define SBC_DEC_INCLUDED            TRUE
 #define BTC_AV_SRC_INCLUDED         TRUE
+#if (UC_BT_A2DP_USE_EXTERNAL_CODEC == TRUE)
+#define BTC_AV_EXT_CODEC            TRUE
+#else
+#define SBC_DEC_INCLUDED            TRUE
 #define SBC_ENC_INCLUDED            TRUE
+#endif
 #if UC_BT_AVRCP_CT_COVER_ART_ENABLED
 #define BTA_AV_CA_INCLUDED          TRUE
 #define BTC_AV_CA_INCLUDED          TRUE
@@ -122,14 +126,22 @@
 #ifndef BTM_SCO_INCLUDED
 #define BTM_SCO_INCLUDED            TRUE
 #endif
+#if (UC_BT_HFP_AUDIO_DATA_PATH_HCI == TRUE)
+#if (UC_BT_HFP_USE_EXTERNAL_CODEC == TRUE)
+#define BTC_HFP_EXT_CODEC           TRUE
+#define BTA_HFP_EXT_CODEC           TRUE
+#define PLC_INCLUDED                FALSE
+#else
 #ifndef SBC_DEC_INCLUDED
 #define SBC_DEC_INCLUDED            TRUE
 #endif
 #ifndef SBC_ENC_INCLUDED
 #define SBC_ENC_INCLUDED            TRUE
 #endif
-#ifndef PLC_INCLUDED
 #define PLC_INCLUDED                TRUE
+#endif /* (UC_BT_HFP_USE_EXTERNAL_CODEC == TRUE) */
+#else
+#define PLC_INCLUDED                FALSE
 #endif
 
 #if (UC_BT_HFP_AG_ENABLED == TRUE)
@@ -593,6 +605,10 @@
 #define SBC_ENC_INCLUDED FALSE
 #endif
 
+#ifndef BTC_HFP_EXT_CODEC
+#define BTC_HFP_EXT_CODEC FALSE
+#endif
+
 /******************************************************************************
 **
 ** BTA-layer components
@@ -642,6 +658,10 @@
 #define BTA_AV_CA_INCLUDED FALSE
 #endif
 
+#ifndef BTC_AV_EXT_CODEC
+#define BTC_AV_EXT_CODEC FALSE
+#endif
+
 #ifndef BTA_AV_SINK_INCLUDED
 #define BTA_AV_SINK_INCLUDED FALSE
 #endif
@@ -652,6 +672,10 @@
 
 #ifndef BTA_SDP_INCLUDED
 #define BTA_SDP_INCLUDED FALSE
+#endif
+
+#ifndef BTA_HFP_EXT_CODEC
+#define BTA_HFP_EXT_CODEC FALSE
 #endif
 
 /* This is set to enable use of GAP L2CAP connections. */

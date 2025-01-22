@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -130,6 +130,26 @@ void btc_hf_client_reg_data_cb(esp_hf_client_incoming_data_cb_t recv,
 {
     hf_client_local_param.btc_hf_client_incoming_data_cb = recv;
     hf_client_local_param.btc_hf_client_outgoing_data_cb = send;
+}
+
+static void btc_hf_client_reg_audio_data_cb(esp_hf_client_audio_data_cb_t callback)
+{
+    hf_client_local_param.btc_hf_client_audio_data_cb = callback;
+}
+
+void btc_hf_client_audio_data_cb_to_app(uint8_t *buf, uint8_t *data, uint16_t len, bool is_bad_frame)
+{
+    if (hf_client_local_param.btc_hf_client_audio_data_cb) {
+        /* we always have sizeof(BT_HDR) bytes free space before data, it is enough for esp_hf_audio_buff_t */
+        esp_hf_audio_buff_t *audio_buff = (esp_hf_audio_buff_t *)buf;
+        audio_buff->buff_size = len;
+        audio_buff->data_len = len;
+        audio_buff->data = data;
+        hf_client_local_param.btc_hf_client_audio_data_cb(hf_client_local_param.btc_hf_client_cb.sync_conn_hdl, audio_buff, is_bad_frame);
+    }
+    else {
+        osi_free(buf);
+    }
 }
 
 void btc_hf_client_incoming_data_cb_to_app(const uint8_t *data, uint32_t len)
@@ -1076,7 +1096,9 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = p_data->hdr.sync_conn_handle;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = p_data->audio_stat.preferred_frame_size;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1085,7 +1107,9 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = p_data->hdr.sync_conn_handle;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = p_data->audio_stat.preferred_frame_size;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1094,7 +1118,9 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
+                hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = 0;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
+                param.audio_stat.preferred_frame_size = 0;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
             } while (0);
             break;
@@ -1182,6 +1208,9 @@ void btc_hf_client_call_handler(btc_msg_t *msg)
         break;
     case BTC_HF_CLIENT_REGISTER_DATA_CALLBACK_EVT:
         btc_hf_client_reg_data_cb(arg->reg_data_cb.recv, arg->reg_data_cb.send);
+        break;
+    case BTC_HF_CLIENT_REGISTER_AUDIO_DATA_CALLBACK_EVT:
+        btc_hf_client_reg_audio_data_cb(arg->reg_audio_data_cb.callback);
         break;
     case BTC_HF_CLIENT_SEND_NREC_EVT:
         btc_hf_client_send_nrec();
