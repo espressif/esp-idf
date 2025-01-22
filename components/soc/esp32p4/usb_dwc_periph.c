@@ -42,6 +42,7 @@ const usb_dwc_info_t usb_dwc_info = {
             .fsls_signals = NULL,
             .otg_signals = NULL,
             .internal_phy_io = NULL, // HS PHY is not mapped to any GPIO
+            .supported_phys = USB_PHY_INST_UTMI_0,
             .irq = ETS_USB_OTG_INTR_SOURCE,
             .irq_2nd_cpu = ETS_USB_OTG_ENDP_MULTI_PROC_INTR_SOURCE,
         },
@@ -50,6 +51,7 @@ const usb_dwc_info_t usb_dwc_info = {
             .fsls_signals = NULL,
             .otg_signals = &dwc_fs_otg_signals,
             .internal_phy_io = &internal_phy_io,
+            .supported_phys = USB_PHY_INST_FSLS_INTERN_0,
             .irq = ETS_USB_OTG11_CH0_INTR_SOURCE,
             .irq_2nd_cpu = -1,
         },
