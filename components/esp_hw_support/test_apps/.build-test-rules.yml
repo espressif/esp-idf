@@ -32,9 +32,9 @@ components/esp_hw_support/test_apps/rtc_8md256:
 
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61", "esp32h21"]
       temporary: true
-      reason: Unsupported on C6 for now. TODO IDF-5645, TODO IDF-7514, TODO C5 IDF-8667, TODO C61 IDF-9274
+      reason: Unsupported on C6 for now. #TODO IDF-5645, TODO IDF-7514, TODO C5 IDF-8667, TODO C61 IDF-9274, TODO H21 IDF-11548
 
 components/esp_hw_support/test_apps/rtc_power_modes:
   enable:
@@ -53,4 +53,4 @@ components/esp_hw_support/test_apps/vad_wakeup:
 
 components/esp_hw_support/test_apps/wakeup_tests:
   disable:
-    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c5", "esp32p4", "linux", "esp32c61", "esp32h21"]   # TODO: PM-337

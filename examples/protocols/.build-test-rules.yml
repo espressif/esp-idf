@@ -1,6 +1,6 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-.default_dependencies: &default_dependencies
+.default_rules: &default_rules
   depends_components:
     - lwip
     - esp_netif
@@ -9,16 +9,22 @@
     - esp_eth
     - mbedtls
     - protocol_examples_common
+  disable:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32H21] IDF-11581
 
 .mqtt_dependencies: &mqtt_dependencies
-  <<: *default_dependencies
+  <<: *default_rules
   depends_filepatterns:
     - components/mqtt/**/*
   depends_components+:
     - mqtt
 
+examples/protocols/dns_over_https:
+  <<: *default_rules
 examples/protocols/esp_http_client:
-  <<: *default_dependencies
+  <<: *default_rules
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable_test:
@@ -27,8 +33,8 @@ examples/protocols/esp_http_client:
     - esp_http_client
 
 examples/protocols/esp_local_ctrl:
-  <<: *default_dependencies
-  disable:
+  <<: *default_rules
+  disable+:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported yet
@@ -41,13 +47,13 @@ examples/protocols/esp_local_ctrl:
     - protocomm
 
 examples/protocols/http_request:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
 
 examples/protocols/http_server:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
@@ -55,8 +61,8 @@ examples/protocols/http_server:
     - esp_http_server
 
 examples/protocols/http_server/captive_portal:
-  <<: *default_dependencies
-  disable:
+  <<: *default_rules
+  disable+:
     - if: SOC_WIFI_SUPPORTED != 1
       reason: WiFi is required
   disable_test:
@@ -66,8 +72,8 @@ examples/protocols/http_server/captive_portal:
     - esp_http_server
 
 examples/protocols/http_server/restful_server:
-  <<: *default_dependencies
-  disable:
+  <<: *default_rules
+  disable+:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported yet
@@ -75,7 +81,7 @@ examples/protocols/http_server/restful_server:
     - esp_http_server
 
 examples/protocols/http_server/simple:
-  <<: *default_dependencies
+  <<: *default_rules
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable_test:
@@ -85,7 +91,7 @@ examples/protocols/http_server/simple:
     - esp_http_server
 
 examples/protocols/http_server/ws_echo_server:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -93,7 +99,7 @@ examples/protocols/http_server/ws_echo_server:
     - esp_http_server
 
 examples/protocols/https_mbedtls:
-  <<: *default_dependencies
+  <<: *default_rules
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET == "linux"
   disable_test:
@@ -101,8 +107,8 @@ examples/protocols/https_mbedtls:
       reason: only test on esp32
 
 examples/protocols/https_request:
-  <<: *default_dependencies
-  disable:
+  <<: *default_rules
+  disable+:
     - if: IDF_TARGET in ["esp32h2"]
       temporary: true
       reason: not supported on h2
@@ -111,7 +117,7 @@ examples/protocols/https_request:
       reason: only test on these target
 
 examples/protocols/https_server/simple:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       reason: only test on these targets
@@ -120,7 +126,7 @@ examples/protocols/https_server/simple:
     - esp-tls
 
 examples/protocols/https_server/wss_server:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -128,7 +134,7 @@ examples/protocols/https_server/wss_server:
     - esp_https_server
 
 examples/protocols/https_x509_bundle:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
@@ -136,18 +142,18 @@ examples/protocols/https_x509_bundle:
     - esp-tls
 
 examples/protocols/icmp_echo:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/l2tap:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: only test on esp32
 
 examples/protocols/modbus:
-  <<: *default_dependencies
+  <<: *default_rules
   depends_filepatterns:
     - examples/common_components/protocol_examples_common/**/*
     - examples/protocols/modbus/mb_example_common/**/*
@@ -163,13 +169,18 @@ examples/protocols/mqtt/ssl:
 
 examples/protocols/mqtt/ssl_ds:
   <<: *mqtt_dependencies
-  disable:
+  disable+:
     - if: SOC_DIG_SIGN_SUPPORTED != 1
       temporary: false
       reason: DS not present
   depends_filepatterns+:
     - examples/protocols/mqtt/ssl_ds/**/*
 
+examples/protocols/mqtt/ssl_mutual_auth:
+  <<: *mqtt_dependencies
+
+examples/protocols/mqtt/ssl_psk:
+  <<: *mqtt_dependencies
 examples/protocols/mqtt/tcp:
   <<: *mqtt_dependencies
   disable_test:
@@ -194,6 +205,7 @@ examples/protocols/mqtt/wss:
   depends_filepatterns+:
     - examples/protocols/mqtt/wss/**/*
 
+
 examples/protocols/mqtt5:
   <<: *mqtt_dependencies
   disable_test:
@@ -203,35 +215,35 @@ examples/protocols/mqtt5:
     - examples/protocols/mqtt5/**/*
 
 examples/protocols/smtp_client:
-  <<: *default_dependencies
+  <<: *default_rules
 
 examples/protocols/sntp:
-  <<: *default_dependencies
+  <<: *default_rules
   enable:
     - if: IDF_TARGET == "esp32"
       temporary: true
       reason: the other targets are not tested yet
 
 examples/protocols/sockets:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
 
 examples/protocols/sockets/non_blocking:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
       reason: lack of runners
 
 examples/protocols/sockets/tcp_client:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: SOC_WIFI_SUPPORTED != 1
   # linux target won't work with CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN=y
 
 examples/protocols/static_ip:
-  <<: *default_dependencies
+  <<: *default_rules
   disable_test:
     - if: IDF_TARGET != "esp32"
       temporary: true
