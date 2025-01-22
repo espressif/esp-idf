@@ -622,12 +622,12 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 
                 // even user process the partial received data, the remain buffer may still be insufficient
                 if (mem_want > mem_have) {
-                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
                     copy_size = mem_have;
                 }
             }
         } else {
-            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
             copy_size = mem_have;
         }
     }
@@ -648,7 +648,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
         portEXIT_CRITICAL_ISR(&channel->spinlock);
         // this clear operation can only take effect after we copy out the received data and reset the pointer
         rmt_ll_clear_interrupt_status(hal->regs, RMT_LL_EVENT_RX_ERROR(channel_id));
-        ESP_DRAM_LOGE(TAG, "hw buffer too small, received symbols truncated");
+        ESP_DRAM_LOGD(TAG, "hw buffer too small, received symbols truncated");
     }
 #endif // !SOC_RMT_SUPPORT_RX_PINGPONG
 
@@ -707,12 +707,12 @@ static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 
                 // even user process the partial received data, the remain buffer size still insufficient
                 if (mem_want > mem_have) {
-                    ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+                    ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
                     copy_size = mem_have;
                 }
             }
         } else {
-            ESP_DRAM_LOGE(TAG, "user buffer too small, received symbols truncated");
+            ESP_DRAM_LOGD(TAG, "user buffer too small, received symbols truncated");
             copy_size = mem_have;
         }
     }
