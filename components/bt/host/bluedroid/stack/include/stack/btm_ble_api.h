@@ -394,7 +394,9 @@ typedef UINT8 tBTM_BLE_ADV_TX_POWER;
 
 /* adv tx power in dBm */
 typedef struct {
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     UINT8 adv_inst_max;         /* max adv instance supported in controller */
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     UINT8 rpa_offloading;
     UINT16 tot_scan_results_strg;
     UINT8 max_irk_list_sz;
@@ -498,6 +500,7 @@ typedef struct {
     tBTM_BLE_ADV_TX_POWER tx_power;
 } tBTM_BLE_ADV_PARAMS;
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 typedef struct {
     UINT8   *p_sub_code; /* dynamic array to store sub code */
     UINT8   *p_inst_id;  /* dynamic array to store instance id */
@@ -529,6 +532,7 @@ typedef struct {
     tBTM_BLE_MULTI_ADV_INST *p_adv_inst; /* dynamic array to store adv instance */
     tBTM_BLE_MULTI_ADV_OPQ  op_q;
 } tBTM_BLE_MULTI_ADV_CB;
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 typedef UINT8 tGATT_IF;
 
@@ -943,6 +947,7 @@ typedef UINT8   tBTM_BLE_CONN_TYPE;
 #define ADV_INFO_PRESENT        0x00
 #define NO_ADV_INFO_PRESENT     0x01
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 typedef btgatt_track_adv_info_t tBTM_BLE_TRACK_ADV_DATA;
 
 typedef void (tBTM_BLE_TRACK_ADV_CBACK)(tBTM_BLE_TRACK_ADV_DATA *p_track_adv_data);
@@ -960,6 +965,7 @@ enum {
 };
 
 typedef UINT8 tBTM_BLE_TRACK_ADV_ACTION;
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #define BTM_BLE_MULTI_ADV_INVALID   0
 
@@ -1544,6 +1550,7 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
 //extern
 void BTM_BleObtainVendorCapabilities(tBTM_BLE_VSC_CB *p_cmn_vsc_cb);
 
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleSetScanParams
@@ -1564,7 +1571,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval,
                           UINT32 scan_window, tBLE_SCAN_MODE scan_type,
                           tBLE_SCAN_PARAM_SETUP_CBACK scan_setup_status_cback);
 
-
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 
 /*******************************************************************************
 **
@@ -1663,6 +1670,7 @@ tBTM_STATUS BTM_BleEnableBatchScan(tBTM_BLE_BATCH_SCAN_MODE scan_mode,
 //extern
 tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value);
 
+#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleReadScanReports
@@ -1678,7 +1686,9 @@ tBTM_STATUS BTM_BleDisableBatchScan(tBTM_BLE_REF_VALUE ref_value);
 //extern
 tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
                                    tBTM_BLE_REF_VALUE ref_value);
+#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleTrackAdvertiser
@@ -1694,6 +1704,7 @@ tBTM_STATUS BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
 //extern
 tBTM_STATUS BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK *p_track_cback,
                                    tBTM_BLE_REF_VALUE ref_value);
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2264,6 +2275,7 @@ BOOLEAN BTM_BleLocalPrivacyEnabled(void);
 //extern
 void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function          BTM_BleMaxMultiAdvInstanceCount
@@ -2275,6 +2287,7 @@ void BTM_BleEnableMixedPrivacyMode(BOOLEAN mixed_on);
 *******************************************************************************/
 //extern
 UINT8  BTM_BleMaxMultiAdvInstanceCount(void);
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2455,6 +2468,7 @@ BOOLEAN BTM_BleSecurityProcedureIsRunning (BD_ADDR bd_addr);
 //extern
 UINT8 BTM_BleGetSupportedKeySize (BD_ADDR bd_addr);
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************/
 /*                          Multi ADV API                                      */
 /*******************************************************************************
@@ -2526,6 +2540,8 @@ tBTM_STATUS BTM_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
 *******************************************************************************/
 //extern
 tBTM_STATUS BTM_BleDisableAdvInstance (UINT8 inst_id);
+
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **

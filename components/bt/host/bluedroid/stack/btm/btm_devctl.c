@@ -170,7 +170,9 @@ static void reset_complete(void)
     btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_NONE;
     btm_cb.ble_ctr_cb.p_select_cback = NULL;
     gatt_reset_bgdev_list();
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     btm_ble_multi_adv_init();
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #endif
 
     btm_pm_reset();
@@ -1071,6 +1073,7 @@ tBTM_STATUS BTM_WriteVoiceSettings(UINT16 settings)
     return (BTM_NO_RESOURCES);
 }
 
+#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_EnableTestMode
@@ -1127,6 +1130,7 @@ tBTM_STATUS BTM_EnableTestMode(void)
         return (BTM_NO_RESOURCES);
     }
 }
+#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 
 /*******************************************************************************
 **

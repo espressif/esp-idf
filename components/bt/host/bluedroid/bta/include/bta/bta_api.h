@@ -539,7 +539,9 @@ enum {
 };
 typedef tBTM_BLE_BATCH_SCAN_EVT tBTA_BLE_BATCH_SCAN_EVT;
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 typedef tBTM_BLE_TRACK_ADV_ACTION tBTA_BLE_TRACK_ADV_ACTION;
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 // #endif
 
 /* BLE customer specific feature function type definitions */
@@ -1047,6 +1049,7 @@ typedef union {
 /* Security callback */
 typedef void (tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC *p_data);
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #define BTA_BLE_MULTI_ADV_ILLEGAL 0
 
 /* multi adv callback event */
@@ -1060,6 +1063,8 @@ typedef UINT8 tBTA_BLE_MULTI_ADV_EVT;
 /* multi adv callback */
 typedef void (tBTA_BLE_MULTI_ADV_CBACK)(tBTA_BLE_MULTI_ADV_EVT event,
                                         UINT8 inst_id, void *p_ref, tBTA_STATUS status);
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
+
 typedef UINT32 tBTA_DM_BLE_REF_VALUE;
 
 #define BTA_DM_BLE_PF_ENABLE_EVT       BTM_BLE_PF_ENABLE
@@ -1252,8 +1257,9 @@ typedef UINT8 tBTA_DM_BLE_ADV_STATE;
 typedef UINT8 tBTA_DM_BLE_ADV_INFO_PRESENT;
 typedef UINT8 tBTA_DM_BLE_RSSI_VALUE;
 typedef UINT16 tBTA_DM_BLE_ADV_INFO_TIMESTAMP;
-
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 typedef tBTM_BLE_TRACK_ADV_DATA tBTA_DM_BLE_TRACK_ADV_DATA;
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 typedef void (tBTA_BLE_SCAN_THRESHOLD_CBACK)(tBTA_DM_BLE_REF_VALUE ref_value);
 
@@ -1271,18 +1277,22 @@ typedef void (tBTA_START_STOP_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
 typedef void (tBTA_CLEAR_ADV_CMPL_CBACK) (tBTA_STATUS status);
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 typedef void (tBTA_BLE_TRACK_ADV_CMPL_CBACK)(int action, tBTA_STATUS status,
         tBTA_DM_BLE_PF_AVBL_SPACE avbl_space,
         tBTA_DM_BLE_REF_VALUE ref_value);
 
 typedef void (tBTA_BLE_TRACK_ADV_CBACK)(tBTA_DM_BLE_TRACK_ADV_DATA *p_adv_data);
+#endif  // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
+#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 typedef void (tBTA_BLE_ENERGY_INFO_CBACK)(tBTA_DM_BLE_TX_TIME_MS tx_time,
         tBTA_DM_BLE_RX_TIME_MS rx_time,
         tBTA_DM_BLE_IDLE_TIME_MS idle_time,
         tBTA_DM_BLE_ENERGY_USED  energy_used,
         tBTA_DM_CONTRL_STATE ctrl_state,
         tBTA_STATUS status);
+#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 #else
 typedef UINT8                       tBTA_DM_BLE_SEC_ACT;
@@ -2634,7 +2644,9 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
                              tBTA_DM_SEARCH_CBACK *p_results_cb,
                              tBTA_START_STOP_SCAN_CMPL_CBACK *p_start_stop_scan_cb);
 
+#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 extern void BTA_DmBleStopAdvertising(void);
+#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 
 extern void BTA_DmSetRandAddress(BD_ADDR rand_addr, tBTA_SET_RAND_ADDR_CBACK *p_set_rand_addr_cback);
 extern void BTA_DmClearRandAddress(void);
@@ -2796,7 +2808,7 @@ extern void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type,
 *******************************************************************************/
 extern void BTA_DmBleBroadcast (BOOLEAN start, tBTA_START_STOP_ADV_CMPL_CBACK *p_start_stop_adv_cb);
 
-
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_BleEnableAdvInstance
@@ -2855,6 +2867,7 @@ extern void BTA_BleCfgAdvInstData (UINT8 inst_id, BOOLEAN is_scan_rsp,
 **
 *******************************************************************************/
 extern void BTA_BleDisableAdvInstance(UINT8 inst_id);
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -3046,7 +3059,7 @@ extern void BTA_DmBleCfgFilterCondition(tBTA_DM_BLE_SCAN_COND_OP action,
                                         tBTA_DM_BLE_PF_CFG_CBACK *p_cmpl_cback,
                                         tBTA_DM_BLE_REF_VALUE ref_value);
 
-
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleTrackAdvertiser
@@ -3061,7 +3074,9 @@ extern void BTA_DmBleCfgFilterCondition(tBTA_DM_BLE_SCAN_COND_OP action,
 *******************************************************************************/
 extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
                                      tBTA_BLE_TRACK_ADV_CBACK *p_track_adv_cback);
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
+#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleGetEnergyInfo
@@ -3074,6 +3089,7 @@ extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
 **
 *******************************************************************************/
 extern void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK *p_cmpl_cback);
+#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 /*******************************************************************************
 **

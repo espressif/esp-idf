@@ -553,6 +553,7 @@ void BTM_BleSecureConnectionCreateOobData(void)
 #endif
 }
 
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 /******************************************************************************
 **
 ** Function         BTM_BleSetConnScanParams
@@ -591,6 +592,7 @@ void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window)
     }
 #endif
 }
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 
 /********************************************************
 **
