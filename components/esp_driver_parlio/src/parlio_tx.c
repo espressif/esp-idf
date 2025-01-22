@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,7 @@ typedef struct parlio_tx_unit_t {
 #endif
     portMUX_TYPE spinlock;     // prevent resource accessing by user and interrupt concurrently
     uint32_t out_clk_freq_hz;  // output clock frequency
+    parlio_clock_source_t clk_src;  // Parallel IO internal clock source
     size_t max_transfer_bits;  // maximum transfer size in bits
     size_t queue_depth;        // size of transaction queue
     size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
@@ -262,6 +263,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     if (tx_unit->out_clk_freq_hz != config->output_clk_freq_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, tx_unit->out_clk_freq_hz);
     }
+    tx_unit->clk_src = clk_src;
 
     return ESP_OK;
 }
@@ -422,6 +424,18 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
 
     tx_unit->cur_trans = t;
 
+    // If the external clock is a non-free-running clock, it needs to be switched to the internal free-running clock first.
+    // And then switched back to the actual clock after the reset is completed.
+    bool switch_clk = tx_unit->clk_src == PARLIO_CLK_SRC_EXTERNAL ? true : false;
+    if (switch_clk) {
+        PARLIO_CLOCK_SRC_ATOMIC() {
+            parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_XTAL);
+        }
+    }
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_tx_reset_clock(hal->regs);
+    }
+
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)t->payload,
@@ -431,14 +445,21 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
             .mark_final = true, // singly link list, mark final descriptor
         }
     };
+    // Since the threshold of the clock divider counter is not updated simultaneously with the clock source switching.
+    // The update of the threshold relies on the moment when the counter reaches the threshold each time.
+    // We place gdma_link_mount_buffers between reset clock and disable clock to ensure enough time for updating the threshold of the clock divider counter.
     gdma_link_mount_buffers(tx_unit->dma_link, 0, &mount_config, 1, NULL);
-    parlio_ll_tx_reset_fifo(hal->regs);
-    PARLIO_RCC_ATOMIC() {
-        parlio_ll_tx_reset_clock(hal->regs);
+
+    if (switch_clk) {
+        PARLIO_CLOCK_SRC_ATOMIC() {
+            parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_EXTERNAL);
+        }
     }
     PARLIO_CLOCK_SRC_ATOMIC() {
         parlio_ll_tx_enable_clock(hal->regs, false);
     }
+    // reset tx fifo after disabling tx core clk to avoid unexpected rempty interrupt
+    parlio_ll_tx_reset_fifo(hal->regs);
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
 
