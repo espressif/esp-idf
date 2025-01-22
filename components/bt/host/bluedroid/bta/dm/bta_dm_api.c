@@ -110,7 +110,7 @@ tBTA_STATUS BTA_DisableBluetooth(void)
 
     return BTA_SUCCESS;
 }
-
+#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_EnableTestMode
@@ -156,6 +156,7 @@ void BTA_DisableTestMode(void)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -462,6 +463,7 @@ void BTA_DmClearWhiteList(tBTA_UPDATE_WHITELIST_CBACK *update_wl_cb)
     }
 }
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
 {
     tBTA_DM_API_READ_ADV_TX_POWER *p_msg;
@@ -471,6 +473,8 @@ void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // BLE_HOST_READ_TX_POWER_EN
+
 #endif  ///BLE_INCLUDED == TRUE
 
 void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb)
@@ -485,6 +489,7 @@ void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB 
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetVisibility
@@ -514,6 +519,7 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode, UINT8 p
 
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1124,6 +1130,8 @@ tBTA_STATUS BTA_DmRemoveLocalDiRecord(UINT32 handle)
     return status;
 }
 #endif  ///SDP_INCLUDED == TRUE
+
+#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dmexecutecallback
@@ -1146,6 +1154,7 @@ void bta_dmexecutecallback (tBTA_DM_EXEC_CBACK *p_callback, void *p_param)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -1356,6 +1365,7 @@ void BTA_DmSetBlePrefConnParams(BD_ADDR bd_addr,
 #endif
 }
 
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleConnScanParams
@@ -1380,7 +1390,9 @@ void BTA_DmSetBleConnScanParams(UINT32 scan_interval, UINT32 scan_window)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmSetBleScanParams
@@ -1414,6 +1426,7 @@ void BTA_DmSetBleScanParams(tGATT_IF client_if, UINT32 scan_interval,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
@@ -1648,7 +1661,7 @@ void BTA_DmUpdateDuplicateExceptionalList(UINT8 subcode, UINT32 type, BD_ADDR de
         bta_sys_sendmsg(p_msg);
     }
 }
-
+#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetStorageParams
@@ -1689,7 +1702,9 @@ extern void BTA_DmBleSetStorageParams(UINT8 batch_scan_full_max,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
+#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleEnableBatchScan
@@ -1748,7 +1763,9 @@ extern void BTA_DmBleDisableBatchScan(tBTA_DM_BLE_REF_VALUE ref_value)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
+#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleReadScanReports
@@ -1774,7 +1791,9 @@ extern void BTA_DmBleReadScanReports(tBTA_BLE_BATCH_SCAN_MODE scan_type,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleTrackAdvertiser
@@ -1800,6 +1819,7 @@ extern void BTA_DmBleTrackAdvertiser(tBTA_DM_BLE_REF_VALUE ref_value,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 #endif
 
@@ -2136,6 +2156,7 @@ void BTA_DmBleConfigLocalIcon(uint16_t icon)
     }
 }
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_BleEnableAdvInstance
@@ -2269,6 +2290,7 @@ void BTA_BleDisableAdvInstance (UINT8  inst_id)     //this function just used fo
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2451,6 +2473,7 @@ void BTA_DmBleScanFilterSetup(UINT8 action, tBTA_DM_BLE_PF_FILT_INDEX filt_index
 #endif
 }
 
+#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleGetEnergyInfo
@@ -2476,6 +2499,7 @@ void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK *p_cmpl_cback)
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -2705,6 +2729,7 @@ void BTA_DmSetEncryption(BD_ADDR bd_addr, tBTA_TRANSPORT transport, tBTA_DM_ENCR
 }
 #endif  ///SMP_INCLUDED == TRUE
 
+#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmCloseACL
@@ -2736,8 +2761,10 @@ void BTA_DmCloseACL(BD_ADDR bd_addr, BOOLEAN remove_dev, tBTA_TRANSPORT transpor
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 
 #if BLE_INCLUDED == TRUE
+#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleObserve
@@ -2778,6 +2805,8 @@ extern void BTA_DmBleObserve(BOOLEAN start, UINT32 duration,
         bta_sys_sendmsg(p_msg);
     }
 }
+#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
+
 #if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
@@ -2821,6 +2850,7 @@ extern void BTA_DmBleScan(BOOLEAN start, UINT32 duration,
 }
 #endif // #if (BLE_42_SCAN_EN == TRUE)
 
+#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTA_DmBleStopAdvertising
@@ -2845,7 +2875,7 @@ extern void BTA_DmBleStopAdvertising(void)
         bta_sys_sendmsg(p_msg);
     }
 }
-
+#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 
 /*******************************************************************************
 **

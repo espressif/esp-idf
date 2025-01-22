@@ -76,8 +76,10 @@ tBTM_CallbackFunc conn_callback_func;
 *******************************************************************************/
 static void btm_ble_update_adv_flag(UINT8 flag);
 static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt_type, UINT8 *p);
+
 UINT8 *btm_ble_build_adv_data(tBTM_BLE_AD_MASK *p_data_mask, UINT8 **p_dst,
                               tBTM_BLE_ADV_DATA *p_data);
+
 static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
         BD_ADDR_PTR p_peer_addr_ptr,
         tBLE_ADDR_TYPE *p_peer_addr_type,
@@ -752,11 +754,11 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback (tBTM_VSC_CMPL *p_vcs_cplt_
                     __func__, status, btm_cb.cmn_ble_vsc_cb.max_irk_list_sz,
                     btm_cb.cmn_ble_vsc_cb.adv_inst_max, btm_cb.cmn_ble_vsc_cb.rpa_offloading,
                     btm_cb.cmn_ble_vsc_cb.energy_support, btm_cb.cmn_ble_vsc_cb.extended_scan_support);
-
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
         btm_ble_multi_adv_init();
     }
-
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) {
         btm_ble_adv_filter_init();
     }
@@ -934,9 +936,11 @@ BOOLEAN BTM_BleConfigPrivacy(BOOLEAN privacy_mode, tBTM_SET_LOCAL_PRIVACY_CBACK 
         btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
 #endif
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
         if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
             btm_ble_multi_adv_enb_privacy(privacy_mode);
         }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
         /* 4.2 controller only allow privacy 1.2 or mixed mode, resolvable private address in controller */
         if (controller_get_interface()->supports_ble_privacy()) {
@@ -1174,6 +1178,7 @@ void BTM_BleConfigConnParams(uint16_t int_min, uint16_t int_max, uint16_t latenc
 #endif
 }
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function          BTM_BleMaxMultiAdvInstanceCount
@@ -1188,6 +1193,7 @@ extern UINT8  BTM_BleMaxMultiAdvInstanceCount(void)
     return btm_cb.cmn_ble_vsc_cb.adv_inst_max < BTM_BLE_MULTI_ADV_MAX ?
            btm_cb.cmn_ble_vsc_cb.adv_inst_max : BTM_BLE_MULTI_ADV_MAX;
 }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
 #if BLE_PRIVACY_SPT == TRUE
 /*******************************************************************************
@@ -1599,6 +1605,7 @@ void BTM_BleReadAdvParams (UINT16 *adv_int_min, UINT16 *adv_int_max,
     }
 }
 
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleSetScanParams
@@ -1657,6 +1664,7 @@ void BTM_BleSetScanParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_
     }
 
 }
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 
 #if (BLE_42_SCAN_EN == TRUE)
 tBTM_STATUS BTM_BleSetScanFilterParams(tGATT_IF client_if, UINT32 scan_interval, UINT32 scan_window,
@@ -2144,6 +2152,26 @@ BOOLEAN BTM_GetCurrentConnParams(BD_ADDR bda, uint16_t *interval, uint16_t *late
     }
 
     return FALSE;
+}
+
+/*******************************************************************************
+**
+** Function         btm_ble_map_adv_tx_power
+**
+** Description      return the actual power in dBm based on the mapping in config file
+**
+** Parameters       advertise parameters used for this instance.
+**
+** Returns          tx power in dBm
+**
+*******************************************************************************/
+static const int btm_ble_tx_power[BTM_BLE_ADV_TX_POWER_MAX + 1] = BTM_BLE_ADV_TX_POWER;
+char btm_ble_map_adv_tx_power(int tx_power_index)
+{
+    if (0 <= tx_power_index && tx_power_index <= BTM_BLE_ADV_TX_POWER_MAX) {
+        return (char)btm_ble_tx_power[tx_power_index];
+    }
+    return 0;
 }
 
 /*******************************************************************************
@@ -4270,9 +4298,11 @@ void btm_ble_timeout(TIMER_LIST_ENT *p_tle)
                 btm_gen_resolvable_private_addr((void *)btm_gen_resolve_paddr_low);
 #endif
             } else {
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
                 if (BTM_BleMaxMultiAdvInstanceCount() > 0) {
                     btm_ble_multi_adv_configure_rpa((tBTM_BLE_MULTI_ADV_INST *)p_tle->param);
                 }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
             }
         }
         break;
@@ -4554,7 +4584,9 @@ void btm_ble_init (void)
     osi_event_bind(p_cb->adv_rpt_ready, btu_get_current_thread(), 0);
 
 #if BLE_VND_INCLUDED == FALSE
+#if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     btm_ble_adv_filter_init();
+#endif // #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
 #endif
 }
 
