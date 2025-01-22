@@ -1644,6 +1644,7 @@ static void test_master_hd_no_dma(void)
                     uint32_t test_trans_len = SOC_SPI_MAXIMUM_BUFFER_SIZE;
                     unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(essl_spi_rddma(dev0, master_receive, test_trans_len, -1, 0));
+                    unity_wait_for_signal("Slave ready");
                     TEST_ESP_OK(essl_spi_wrdma(dev0, master_send, test_trans_len, -1, 0));
 
                     ESP_LOG_BUFFER_HEX("master tx", master_send, test_trans_len);
@@ -1691,11 +1692,12 @@ static void test_slave_hd_no_dma(void)
                         .len = test_trans_len,
                         .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
                     };
-                    unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &slave_trans, portMAX_DELAY));
+                    unity_send_signal("Slave ready");
+                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
                     slave_trans.data = slave_receive;
                     TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &slave_trans, portMAX_DELAY));
-                    TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
+                    unity_send_signal("Slave ready");
                     TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SPI_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
 
                     ESP_LOG_BUFFER_HEX("slave tx", slave_send, test_trans_len);
