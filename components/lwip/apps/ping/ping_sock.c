@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,28 +27,26 @@
 #include "esp_check.h"
 
 #ifndef CONFIG_LWIP_NETIF_API
-
-#include "lwip/priv/tcpip_priv.h"
 // If POSIX NETIF_API not enabled, we need to supply the implementation of if_indextoname()
-// using tcpip_callback()
+// using tcpip_api_call()
+#include "lwip/priv/tcpip_priv.h"
 
 struct tcpip_netif_name {
     struct tcpip_api_call_data call;
     u8_t ifindex;
     char *ifname;
-    err_t err;
 };
 
-static void do_netif_index_to_name(void *ctx)
+static err_t do_netif_index_to_name(struct tcpip_api_call_data *msg)
 {
-    struct tcpip_netif_name *params = ctx;
-    params->err = netif_index_to_name(params->ifindex, params->ifname) ? ERR_OK : ERR_IF;
+    struct tcpip_netif_name *params = __containerof(msg, struct tcpip_netif_name, call);
+    return netif_index_to_name(params->ifindex, params->ifname) ? ERR_OK : ERR_IF;
 }
 
 char *if_indextoname(unsigned int ifindex, char *ifname)
 {
     struct tcpip_netif_name params = { .ifindex = ifindex, .ifname = ifname };
-    if (tcpip_callback(do_netif_index_to_name, &params) != ERR_OK || params.err != ERR_OK) {
+    if (tcpip_api_call(do_netif_index_to_name, &params.call) != ERR_OK) {
         return NULL;
     }
     return ifname;
