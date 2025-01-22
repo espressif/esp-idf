@@ -3022,7 +3022,7 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 //extern
 tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
-
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadTxPower
@@ -3043,6 +3043,7 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda,
                              tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
