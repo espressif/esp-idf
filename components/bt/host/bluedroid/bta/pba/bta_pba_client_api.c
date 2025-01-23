@@ -80,6 +80,7 @@ void BTA_PbaClientOpen(BD_ADDR bd_addr, tBTA_SEC sec_mask, UINT32 supported_feat
     if ((p_buf = (tBTA_PBA_CLIENT_API_OPEN *)osi_malloc(sizeof(tBTA_PBA_CLIENT_API_OPEN))) != NULL) {
         p_buf->hdr.event = BTA_PBA_CLIENT_API_OPEN_EVT;
         p_buf->sec_mask = sec_mask;
+        p_buf->supported_feat = supported_feat;
         p_buf->mtu = mtu;
         bdcpy(p_buf->bd_addr, bd_addr);
         bta_sys_sendmsg(p_buf);
