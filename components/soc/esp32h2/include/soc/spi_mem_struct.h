@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,7 +70,7 @@ typedef volatile struct spi_mem_dev_s {
     } ctrl;
     union {
         struct {
-            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is alwasy on.*/
+            uint32_t clk_mode                      :    2;  /*SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3: SPI clock is always on.*/
             uint32_t cs_hold_dly_res               :    10;  /*After RES/DP/HPM command is sent, SPI1 waits (SPI_MEM_CS_HOLD_DELAY_RES[9:0] * 512) SPI_CLK cycles.*/
             uint32_t reserved2                     :    9;  /*reserved*/
             uint32_t reg_ar_size0_1_support_en     :    1;  /*1: MSPI supports ARSIZE 0~3. When ARSIZE =0~2, MSPI read address is 4*n and reply the real AXI read data back. 0: When ARSIZE 0~1, MSPI reply SLV_ERR.*/
@@ -272,7 +272,7 @@ typedef volatile struct spi_mem_dev_s {
             uint32_t sclkcnt_h                     :    8;  /*For SPI0 external RAM  interface, it must be floor((spi_mem_clkcnt_N+1)/2-1).*/
             uint32_t sclkcnt_n                     :    8;  /*For SPI0 external RAM  interface, it is the divider of spi_mem_clk. So spi_mem_clk frequency is system/(spi_mem_clkcnt_N+1)*/
             uint32_t reserved24                    :    7;  /*reserved*/
-            uint32_t sclk_equ_sysclk               :    1;  /*For SPI0 external RAM  interface, 1: spi_mem_clk is eqaul to system 0: spi_mem_clk is divided from system clock.*/
+            uint32_t sclk_equ_sysclk               :    1;  /*For SPI0 external RAM  interface, 1: spi_mem_clk is equal to system 0: spi_mem_clk is divided from system clock.*/
         };
         uint32_t val;
     } sram_clk;
@@ -389,7 +389,7 @@ typedef volatile struct spi_mem_dev_s {
             uint32_t axi_raddr_err                 :    1;  /*The raw bit for SPI_MEM_AXI_RADDR_ERR_INT interrupt. 1: Triggered when AXI read address is invalid by compared to MMU configuration. 0: Others.*/
             uint32_t axi_wr_flash_err              :    1;  /*The raw bit for SPI_MEM_AXI_WR_FALSH_ERR_INT interrupt. 1: Triggered when AXI write flash request is received. 0: Others.*/
             uint32_t axi_waddr_err                 :    1;  /*The raw bit for SPI_MEM_AXI_WADDR_ERR_INT interrupt. 1: Triggered when AXI write address is invalid by compared to MMU configuration. 0: Others.*/
-            uint32_t brown_out                     :    1;  /*The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that chip is loosing power and RTC module sends out brown out close flash request to SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered and MSPI returns to idle state. 0: Others.*/
+            uint32_t brown_out                     :    1;  /*The raw bit for SPI_MEM_BROWN_OUT_INT interrupt. 1: Triggered condition is that chip is losing power and RTC module sends out brown out close flash request to SPI1. After SPI1 sends out suspend command to flash, this interrupt is triggered and MSPI returns to idle state. 0: Others.*/
             uint32_t reserved11                    :    21;  /*reserved*/
         };
         uint32_t val;
@@ -1026,14 +1026,23 @@ typedef volatile struct spi_mem_dev_s {
     } mmu_power_ctrl;
     union {
         struct {
-            uint32_t reg_crypt_security_level      :    3;  /*Set the security level of spi mem cryption. 0: Shut off cryption DPA funtion. 1-7: The bigger the number is, the more secure the cryption is. (Note that the performance of cryption will decrease together with this number increasing)*/
+            uint32_t reg_crypt_security_level      :    3;  /*Set the security level of spi mem cryption. 0: Shut off cryption DPA function. 1-7: The bigger the number is, the more secure the cryption is. (Note that the performance of cryption will decrease together with this number increasing)*/
             uint32_t reg_crypt_calc_d_dpa_en       :    1;  /*Only available when SPI_CRYPT_SECURITY_LEVEL is not 0. 1: Enable DPA in the calculation that using key 1 or key 2. 0: Enable DPA only in the calculation that using key 1.*/
             uint32_t reg_crypt_dpa_selectister     :    1;  /*1: MSPI XTS DPA clock gate is controlled by SPI_CRYPT_CALC_D_DPA_EN and SPI_CRYPT_SECURITY_LEVEL. 0: Controlled by efuse bits.*/
             uint32_t reserved5                     :    27;  /*reserved*/
         };
         uint32_t val;
     } dpa_ctrl;
-    uint32_t reserved_38c;
+    union {
+        struct {
+            uint32_t reg_mode_pseudo                :    2;  /*Set the mode of pseudo. 2'b00: crypto without pseudo. 2'b01: state T with pseudo and state D without pseudo. 2'b10: state T with pseudo and state D with few pseudo. 2'b11: crypto with pseudo.*/
+            uint32_t reg_pseudo_rng_cnt             :    3;  /*xts aes peseudo function base round that must be performed.*/
+            uint32_t reg_pseudo_base                :    4;  /*xts aes peseudo function base round that must be performed.*/
+            uint32_t reg_pseudo_inc                 :    2;  /*xts aes peseudo function increment round that will be performed randomly between 0 & 2**(inc+1).*/
+            uint32_t reserved11                     :    21;  /*reserved*/
+        };
+        uint32_t val;
+    } xts_pseudo_round_conf;
     uint32_t reserved_390;
     uint32_t reserved_394;
     uint32_t reserved_398;

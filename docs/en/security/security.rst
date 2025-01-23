@@ -100,15 +100,48 @@ Flash Encryption Best Practices
 
     .. note:: This feature can help to prevent the possibility of remote code injection due to the existing vulnerabilities in the software.
 
-.. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
+.. only:: SOC_CRYPTO_DPA_PROTECTION_SUPPORTED or SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+
+    Protection Against Side-Channel Attacks
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     DPA (Differential Power Analysis) Protection
-    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
     {IDF_TARGET_NAME} has support for protection mechanisms against the Differential Power Analysis related security attacks. DPA protection dynamically adjusts the clock frequency of the crypto peripherals, thereby blurring the power consumption trajectory during its operation. Based on the configured DPA security level, the clock variation range changes. Please refer to the TRM for more details on this topic.
     :ref:`CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL` can help to select the DPA level. Higher level means better security, but it can also have an associated performance impact. By default, the lowest DPA level is kept enabled but it can be modified based on the security requirement.
 
     .. note:: Please note that hardware :doc:`RNG <../api-reference/system/random>` must be enabled for DPA protection to work correctly.
+
+    .. only:: SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+
+        AES Peripheral's Pseudo-Round Function
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+        {IDF_TARGET_NAME} incorporates a pseudo-round function in the AES peripheral, thus enabling the peripheral to randomly insert pseudo-rounds before and after the original operation rounds and also generate a pseudo key to perform these dummy operations.
+        These operations do not alter the original result, but they increase the complexity to perform side channel analysis attacks by randomizing the power profile.
+
+        :ref:`CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH` can be used to select the strength of the pseudo-round function. Increasing the strength improves the security provided, but would slow down the encrryption/decryption operations.
+
+
+        .. list-table:: Performance impact on AES operations per strength level
+            :widths: 10 10
+            :header-rows: 1
+            :align: center
+
+            * - **Strength**
+              - **Performance Impact** [#]_
+            * - Low
+              - 20.9 %
+            * - Medium
+              - 47.6 %
+            * - High
+              - 72.4 %
+
+        .. [#] The above performance numbers have been calculated using the AES performance test of the mbedtls test application :component_file:`test_aes_perf.c <mbedtls/test_apps/main/test_aes_perf.c>`.
+
+        Considering the above performance impact, ESP-IDF by-default does not enable the pseudo-round function to avoid any performance-related degrade. But it is recommended to enable the pseudo-round function for better security.
+
 
 Debug Interfaces
 ~~~~~~~~~~~~~~~~
