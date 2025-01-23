@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_debug_helpers.h"
 #include "soc/periph_defs.h"
+#include "soc/system_intr.h"
 #include "hal/crosscore_int_ll.h"
 
 #include "freertos/FreeRTOS.h"
@@ -18,10 +19,6 @@
 
 #if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #include "esp_gdbstub.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32H21
-#define ETS_FROM_CPU_INTR0_SOURCE        ETS_CPU_INTR_FROM_CPU_0_SOURCE
 #endif
 
 #define REASON_YIELD            BIT(0)
@@ -98,12 +95,12 @@ void esp_crosscore_int_init(void)
     esp_err_t err __attribute__((unused)) = ESP_OK;
 #if CONFIG_FREERTOS_NUMBER_OF_CORES > 1
     if (esp_cpu_get_core_id() == 0) {
-        err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
+        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
     } else {
-        err = esp_intr_alloc(ETS_FROM_CPU_INTR1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
+        err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_1_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[1], NULL);
     }
 #else
-    err = esp_intr_alloc(ETS_FROM_CPU_INTR0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
+    err = esp_intr_alloc(SYS_CPU_INTR_FROM_CPU_0_SOURCE, ESP_INTR_FLAG_IRAM, esp_crosscore_isr, (void*)&reason[0], NULL);
 #endif
     ESP_ERROR_CHECK(err);
 }
