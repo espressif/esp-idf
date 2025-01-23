@@ -110,6 +110,15 @@ examples/peripherals/i2c/i2c_tools:
   depends_filepatterns:
     - examples/system/console/advanced/components/**/*
 
+examples/peripherals/i2s/i2s_advance/i2s_usb:
+  disable:
+    - if: SOC_I2S_SUPPORTED != 1
+    - if: SOC_I2C_SUPPORTED != 1
+    - if: SOC_USB_OTG_SUPPORTED != 1
+  depends_components:
+    - esp_driver_i2s
+    - esp_driver_i2c
+
 examples/peripherals/i2s/i2s_basic/i2s_pdm:
   disable:
     - if: SOC_I2S_SUPPORTS_PDM != 1

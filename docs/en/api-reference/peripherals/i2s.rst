@@ -323,10 +323,10 @@ Users can initialize a channel by calling corresponding functions (i.e., :func:`
 Advanced API
 ^^^^^^^^^^^^
 
-To satisfy the high quality audio requiment, following advanced APIs are provided:
+To satisfy the high quality audio requirement, following advanced APIs are provided:
 
 - :cpp:func:`i2s_channel_preload_data`: Preloading audio data into the I2S internal cache, enabling the TX channel to immediately send data upon activation, thereby reducing the initial audio output delay.
-- :cpp:func:`i2s_channel_tune_rate`: Dynamically fine-tune the audio rate at runtime to match the speed of the audio data producer and consumer, thereby preventing the accumulation or shortage of intermediate buffered data caused by rate mismatches.
+- :cpp:func:`i2s_channel_tune_rate`: Dynamically fine-tuning the audio rate at runtime to match the speed of the audio data producer and consumer, thereby preventing the accumulation or shortage of intermediate buffered data that caused by rate mismatches.
 
 IRAM Safe
 ^^^^^^^^^
