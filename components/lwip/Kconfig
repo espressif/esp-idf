@@ -1178,10 +1178,9 @@ menu "LWIP"
 
         choice LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE
             prompt "Netconn external resolve Hook"
-            default LWIP_HOOK_NETCONN_EXT_RESOLVE_DEFAULT if OPENTHREAD_DNS64_CLIENT
-            default LWIP_HOOK_NETCONN_EXT_RESOLVE_NONE if !OPENTHREAD_DNS64_CLIENT
+            default LWIP_HOOK_NETCONN_EXT_RESOLVE_NONE
             help
-                Enables custom DNS resolve hook.
+                Enables custom DNS resolve hook (without callback).
                 Setting this to "default" provides weak implementation
                 stub that could be overwritten in application code.
                 Setting this to "custom" provides hook's declaration
@@ -1196,11 +1195,20 @@ menu "LWIP"
 
         endchoice
 
+        config LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
+            bool
+            default n
+            help
+                This hidden option helps configure the DNS external resolve
+                hook for external components like OpenThread. It ensures that
+                `LWIP_HOOK_DNS_EXT_RESOLVE_CUSTOM` is selected without directly
+                adding a dependency in the choice construct.
+
         choice LWIP_HOOK_DNS_EXTERNAL_RESOLVE
             prompt "DNS external resolve Hook"
-            default LWIP_HOOK_DNS_EXT_RESOLVE_NONE
+            default LWIP_HOOK_DNS_EXT_RESOLVE_CUSTOM if LWIP_HOOK_DNS_EXTERNAL_RESOLVE_SELECT_CUSTOM
             help
-                Enables custom DNS resolve hook.
+                Enables custom DNS resolve hook (with callback).
                 Setting this to "custom" provides hook's declaration
                 only and expects the application to implement it.
 
