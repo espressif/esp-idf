@@ -44,4 +44,13 @@ menu "Example Configuration"
         help
             This options specifies HTTP request size. Number of bytes specified
             in this option will be downloaded in single HTTP request.
+
+    config EXAMPLE_ENABLE_OTA_RESUMPTION
+        bool "Enable OTA resumption"
+        default n
+        help
+            This enables the OTA resumption feature.
+            This option allows one to configure the OTA process to resume downloading the OTA image
+            from where it left off in case of an error or reboot.
+
 endmenu
