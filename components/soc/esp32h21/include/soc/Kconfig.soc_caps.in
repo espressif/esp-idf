@@ -23,6 +23,10 @@ config SOC_SYSTIMER_SUPPORTED
     bool
     default y
 
+config SOC_MPI_SUPPORTED
+    bool
+    default y
+
 config SOC_ECC_SUPPORTED
     bool
     default y
