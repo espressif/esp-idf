@@ -94,6 +94,9 @@ static esp_err_t i2s_tdm_set_clock(i2s_chan_handle_t handle, const i2s_tdm_clk_c
 
     /* Update the mode info: clock configuration */
     memcpy(&(tdm_cfg->clk_cfg), clk_cfg, sizeof(i2s_tdm_clk_config_t));
+    /* Update the slot bit width to the actual slot bit width */
+    tdm_cfg->slot_cfg.slot_bit_width = (int)tdm_cfg->slot_cfg.slot_bit_width < (int)tdm_cfg->slot_cfg.data_bit_width ?
+                                       tdm_cfg->slot_cfg.data_bit_width : tdm_cfg->slot_cfg.slot_bit_width;
 
     return ret;
 }
@@ -339,7 +342,7 @@ esp_err_t i2s_channel_reconfig_tdm_slot(i2s_chan_handle_t handle, const i2s_tdm_
 
     /* If the slot bit width changed, then need to update the clock */
     uint32_t slot_bits = slot_cfg->slot_bit_width == I2S_SLOT_BIT_WIDTH_AUTO ? slot_cfg->data_bit_width : slot_cfg->slot_bit_width;
-    if (tdm_cfg->slot_cfg.slot_bit_width == slot_bits) {
+    if (tdm_cfg->slot_cfg.slot_bit_width != slot_bits) {
         ESP_GOTO_ON_ERROR(i2s_tdm_set_clock(handle, &tdm_cfg->clk_cfg), err, TAG, "update clock failed");
     }
 
