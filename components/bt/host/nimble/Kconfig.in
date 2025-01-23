@@ -778,7 +778,6 @@ config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
 
 config BT_NIMBLE_ENC_ADV_DATA
     bool "Encrypted Advertising Data"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
     help
         This option is used to enable encrypted advertising data.
 
