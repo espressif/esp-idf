@@ -82,7 +82,7 @@ typedef enum {
     ETS_ECC_INTR_SOURCE,
     ETS_ECDSA_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

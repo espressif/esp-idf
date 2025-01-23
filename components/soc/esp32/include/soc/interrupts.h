@@ -84,7 +84,7 @@ typedef enum {
     ETS_MPU_IA_INTR_SOURCE,                  /**< interrupt of MPU Invalid Access, LEVEL*/
     ETS_CACHE_IA_INTR_SOURCE,                /**< interrupt of Cache Invalied Access, LEVEL*/
     ETS_MAX_INTR_SOURCE,                     /**< total number of interrupt sources*/
-} periph_interrput_t;
+} periph_interrupt_t;
 
 #define ETS_CAN_INTR_SOURCE ETS_TWAI_INTR_SOURCE
 
