@@ -108,6 +108,9 @@ static esp_err_t _http_handle_response_code(esp_https_ota_t *https_ota_handle, i
     } else if (status_code == HttpStatus_NotModified) {
         ESP_LOGI(TAG, "OTA image not modified since last request (status code: %d)", status_code);
         return ESP_ERR_HTTP_NOT_MODIFIED;
+    } else if (status_code == HttpStatus_RangeNotSatisfiable) {
+        ESP_LOGI(TAG, "Requested range is incorrect (status code: %d)", status_code);
+        return ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE;
     } else if (status_code == HttpStatus_Unauthorized) {
         if (https_ota_handle->max_authorization_retries == 0) {
             ESP_LOGE(TAG, "Reached max_authorization_retries (%d)", status_code);
@@ -402,6 +405,28 @@ esp_err_t esp_https_ota_begin(const esp_https_ota_config_t *ota_config, esp_http
     }
 
     err = _http_connect(https_ota_handle);
+    if (err == ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE && https_ota_handle->binary_file_len > 0) {
+        ESP_LOGE(TAG, "OTA resumption failed with err: %d", err);
+        ESP_LOGI(TAG, "Restarting download from beginning");
+        https_ota_handle->binary_file_len = 0;
+
+        // If range in request header is not satisfiable, restart download from beginning
+        esp_http_client_delete_header(https_ota_handle->http_client, "Range");
+
+        if (https_ota_handle->partial_http_download && https_ota_handle->image_length > https_ota_handle->max_http_request_size) {
+            char *header_val = NULL;
+            asprintf(&header_val, "bytes=0-%d", https_ota_handle->max_http_request_size - 1);
+            if (header_val == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for HTTP header");
+                err = ESP_ERR_NO_MEM;
+                goto http_cleanup;
+            }
+            esp_http_client_set_header(https_ota_handle->http_client, "Range", header_val);
+            free(header_val);
+        }
+        err = _http_connect(https_ota_handle);
+    }
+
     if (err != ESP_OK) {
         if (err != ESP_ERR_HTTP_NOT_MODIFIED) {
             ESP_LOGE(TAG, "Failed to establish HTTP connection");
