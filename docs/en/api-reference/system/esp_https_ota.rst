@@ -47,6 +47,14 @@ This option is useful while fetching image from a service like AWS S3, where mbe
 
 Default value of mbedTLS Rx buffer size is set to 16 KB. By using ``partial_http_download`` with ``max_http_request_size`` of 4 KB, size of mbedTLS Rx buffer can be reduced to 4 KB. With this configuration, memory saving of around 12 KB is expected.
 
+OTA Resumption
+--------------
+
+To use the OTA resumption feature, enable the ``ota_resumption`` configuration in the :cpp:struct:`esp_https_ota_config_t`. When OTA resumption is enabled, an OTA image download which has failed previously can be resumed from its intermediate state instead of restarting the whole OTA process from the beginning. This is implemented using the HTTP partial range request feature.
+
+To specify the point from where the image download should resume, you need to set the ``ota_image_bytes_written`` field in :cpp:struct:`esp_https_ota_config_t`. This value indicates the number of bytes already written to the OTA partition in the previous OTA attempt.
+
+For reference, you can check the :example:`system/ota/advanced_https_ota`, which demonstrates OTA resumption. In this example, the intermediate OTA state is saved in NVS, allowing the OTA process to resume seamlessly from the last saved state and continue the download.
 
 Signature Verification
 ----------------------

@@ -47,6 +47,14 @@ ESP HTTPS OTA 升级
 
 mbedTLS Rx buffer 的默认大小为 16 KB，但如果将 ``partial_http_download`` 的 ``max_http_request_size`` 设置为 4 KB，便能将 mbedTLS Rx 的 buffer 减小到 4 KB。使用这一配置方式预计可以节省约 12 KB 内存。
 
+OTA 恢复
+--------
+
+在 :cpp:struct:`esp_https_ota_config_t` 中启用 ``ota_resumption`` 配置，即可使用 OTA 恢复功能。启用此功能后，先前失败的 OTA 镜像下载便可以从中断处继续，无需重新开始整个 OTA 过程。此功能是基于 HTTP 的部分范围请求功能实现的。
+
+要指定镜像下载的续传位置，需要在 :cpp:struct:`esp_https_ota_config_t` 中设置 ``ota_image_bytes_written`` 字段。此字段的值表示在上一次尝试过程中已写入到 OTA 分区的字节数。
+
+如需了解更多，请参阅示例：:example:`system/ota/advanced_https_ota`，该示例演示了 OTA 恢复功能。在此示例中， OTA 的中断状态保存在 NVS 中，从而使 OTA 过程能够从上次保存的状态中无缝恢复，并继续下载。
 
 签名验证
 -----------------
