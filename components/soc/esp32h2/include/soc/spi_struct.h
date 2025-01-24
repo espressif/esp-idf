@@ -511,7 +511,7 @@ typedef union {
         /** clk_mode : R/W; bitpos: [1:0]; default: 0;
          *  SPI clock mode bits. 0: SPI clock is off when CS inactive 1: SPI clock is delayed
          *  one cycle after CS inactive 2: SPI clock is delayed two cycles after CS inactive 3:
-         *  SPI clock is alwasy on. Can be configured in CONF state.
+         *  SPI clock is always on. Can be configured in CONF state.
          */
         uint32_t clk_mode:2;
         /** clk_mode_13 : R/W; bitpos: [2]; default: 0;
@@ -622,9 +622,17 @@ typedef union {
          *  In the master mode it is pre-divider of spi_clk.  Can be configured in CONF state.
          */
         uint32_t clkdiv_pre:4;
-        uint32_t reserved_22:9;
+        uint32_t reserved_22:8;
+        /** clk_edge_sel : R/W; bitpos: [30]; default: 0;
+         *  Configures use standard clock sampling edge or delay the sampling edge by half a
+         *  cycle in master transfer.
+         *  0: clock sampling edge is delayed by half a cycle.
+         *  1: clock sampling edge is standard.
+         *  Can be configured in CONF state. Only support on chip version >= 1.2
+         */
+        uint32_t clk_edge_sel:1;
         /** clk_equ_sysclk : R/W; bitpos: [31]; default: 1;
-         *  In the master mode 1: spi_clk is eqaul to system 0: spi_clk is divided from system
+         *  In the master mode 1: spi_clk is equal to system 0: spi_clk is divided from system
          *  clock. Can be configured in CONF state.
          */
         uint32_t clk_equ_sysclk:1;
