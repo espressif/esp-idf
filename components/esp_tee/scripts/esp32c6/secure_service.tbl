@@ -35,6 +35,7 @@
 128         IDF         esp_sha_dma                                   6
 129         IDF         esp_sha_read_digest_state                     2
 130         IDF         esp_sha_write_digest_state                    2
+131         IDF         esp_sha_block                                 3
 # ID: 168-183 (16) - eFuse
 168         IDF         esp_efuse_check_secure_version                1
 169         IDF         esp_efuse_read_field_blob                     3

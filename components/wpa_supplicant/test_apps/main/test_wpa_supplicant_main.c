@@ -12,10 +12,8 @@
 #include "soc/soc_caps.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
-#elif SOC_SHA_SUPPORT_DMA
-#include "sha/sha_dma.h"
 #else
-#include "sha/sha_block.h"
+#include "sha/sha_core.h"
 #endif
 
 #define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT 0

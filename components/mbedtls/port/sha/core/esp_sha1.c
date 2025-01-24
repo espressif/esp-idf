@@ -5,7 +5,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2016-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2016-2025 Espressif Systems (Shanghai) CO LTD
  */
 /*
  *  The SHA-1 standard was published by NIST in 1993.
@@ -20,6 +20,7 @@
 #include "mbedtls/sha1.h"
 
 #include <string.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -31,7 +32,8 @@
 #endif /* MBEDTLS_PLATFORM_C */
 #endif /* MBEDTLS_SELF_TEST */
 
-#include "sha/sha_block.h"
+#include "esp_sha_internal.h"
+#include "sha/sha_core.h"
 
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n )
@@ -58,8 +60,6 @@ static void mbedtls_zeroize( void *v, size_t n )
 
 void mbedtls_sha1_init( mbedtls_sha1_context *ctx )
 {
-    assert(ctx != NULL);
-
     memset( ctx, 0, sizeof( mbedtls_sha1_context ) );
 }
 
@@ -114,7 +114,20 @@ int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned cha
 {
     esp_sha_acquire_hardware();
     esp_internal_sha_update_state(ctx);
-    esp_sha_block(ctx->mode, data, ctx->first_block);
+
+#if SOC_SHA_SUPPORT_DMA
+    if (sha_operation_mode(64) == SHA_DMA_MODE) {
+        int ret = esp_sha_dma(SHA1, data, 64, NULL, 0, ctx->first_block);
+        if (ret != 0) {
+            esp_sha_release_hardware();
+            return ret;
+        }
+    } else
+#endif /* SOC_SHA_SUPPORT_DMA */
+    {
+        esp_sha_block(ctx->mode, data, ctx->first_block);
+    }
+
     esp_sha_read_digest_state(ctx->mode, ctx->state);
     esp_sha_release_hardware();
     return 0;
@@ -123,7 +136,7 @@ int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned cha
 int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
     size_t fill;
-    uint32_t left, local_len = 0;
+    uint32_t left, len, local_len = 0;
 
     if ( !ilen || (input == NULL)) {
         return 0;
@@ -147,22 +160,34 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
         local_len = 64;
     }
 
-    if ( (ilen >= 64) || local_len) {
+    len = (ilen / 64) * 64;
+
+    if ( len || local_len) {
 
         esp_sha_acquire_hardware();
 
         esp_internal_sha_update_state(ctx);
 
-        /* First process buffered block, if any */
-        if ( local_len ) {
-            esp_internal_sha1_block_process(ctx, ctx->buffer);
-        }
+#if SOC_SHA_SUPPORT_DMA
+        if (sha_operation_mode(len) == SHA_DMA_MODE) {
+            int ret = esp_sha_dma(SHA1, input, len, ctx->buffer, local_len, ctx->first_block);
+            if (ret != 0) {
+                esp_sha_release_hardware();
+                return ret;
+            }
+        } else
+#endif /* SOC_SHA_SUPPORT_DMA */
+        {
+            /* First process buffered block, if any */
+            if ( local_len ) {
+                esp_internal_sha1_block_process(ctx, ctx->buffer);
+            }
 
-        while ( ilen >= 64 ) {
-            esp_internal_sha1_block_process(ctx, input);
-
-            input += 64;
-            ilen  -= 64;
+            uint32_t length_processed = 0;
+            while ( len - length_processed > 0 ) {
+                esp_internal_sha1_block_process(ctx, input + length_processed);
+                length_processed += 64;
+            }
         }
 
         esp_sha_read_digest_state(SHA1, ctx->state);
@@ -172,7 +197,7 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
     }
 
     if ( ilen > 0 ) {
-        memcpy( (void *) (ctx->buffer + left), input, ilen);
+        memcpy( (void *) (ctx->buffer + left), input + len, ilen - len );
     }
     return 0;
 }

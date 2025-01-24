@@ -15,13 +15,13 @@ list(APPEND srcs "${hal_dir}/aes_hal.c"
 
 list(APPEND include_dirs "${COMPONENT_DIR}/port/aes/include"
                          "${COMPONENT_DIR}/port/aes/dma/include"
-                         "${COMPONENT_DIR}/port/sha/dma/include")
+                         "${COMPONENT_DIR}/port/sha/core/include")
 
 list(APPEND srcs "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
                  "${COMPONENT_DIR}/port/aes/dma/esp_aes.c"
                  "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
 
-list(APPEND srcs "${COMPONENT_DIR}/port/sha/dma/sha.c"
+list(APPEND srcs "${COMPONENT_DIR}/port/sha/core/sha.c"
                  "${COMPONENT_DIR}/port/sha/esp_sha.c")
 
 # Supporting headers
@@ -54,8 +54,8 @@ endforeach()
 target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})
 
 if(CONFIG_MBEDTLS_HARDWARE_SHA)
-    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/sha/dma/esp_sha1.c"
-                                       "${COMPONENT_DIR}/port/sha/dma/esp_sha256.c"
-                                       "${COMPONENT_DIR}/port/sha/dma/esp_sha512.c"
+    target_sources(mbedcrypto PRIVATE  "${COMPONENT_DIR}/port/sha/core/esp_sha1.c"
+                                       "${COMPONENT_DIR}/port/sha/core/esp_sha256.c"
+                                       "${COMPONENT_DIR}/port/sha/core/esp_sha512.c"
     )
 endif()
