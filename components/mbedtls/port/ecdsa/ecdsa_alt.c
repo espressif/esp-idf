@@ -23,6 +23,8 @@
 
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
 #include "esp_timer.h"
+#include "soc/chip_revision.h"
+#include "hal/efuse_hal.h"
 
 #if CONFIG_ESP_CRYPTO_DPA_PROTECTION_LEVEL_HIGH
 /*
@@ -176,9 +178,11 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 #endif
         ecdsa_hal_gen_signature(&conf, sha_le, r_le, s_le, len);
 #if CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
-        sig_time = esp_timer_get_time() - sig_time;
-        if (sig_time < ECDSA_CM_FIXED_SIG_TIME) {
-            esp_rom_delay_us(ECDSA_CM_FIXED_SIG_TIME - sig_time);
+        if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+            sig_time = esp_timer_get_time() - sig_time;
+            if (sig_time < ECDSA_CM_FIXED_SIG_TIME) {
+                esp_rom_delay_us(ECDSA_CM_FIXED_SIG_TIME - sig_time);
+            }
         }
 #endif
         process_again = !ecdsa_hal_get_operation_result()

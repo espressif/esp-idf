@@ -1067,6 +1067,14 @@ config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
 
+config SOC_ECC_CONSTANT_TIME_POINT_MUL
+    bool
+    default y
+
+config SOC_ECDSA_USES_MPI
+    bool
+    default y
+
 config SOC_UART_NUM
     int
     default 2
