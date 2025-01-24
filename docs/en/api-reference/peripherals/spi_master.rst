@@ -568,6 +568,26 @@ When a transaction length is short, the cost of transaction interval is high. If
 
 Please note that the ISR is disabled during flash operation by default. To keep sending transactions during flash operations, enable :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` and set :c:macro:`ESP_INTR_FLAG_IRAM` in the member :cpp:member:`spi_bus_config_t::intr_flags`. In this case, all the transactions queued before starting flash operations will be handled by the ISR in parallel. Also note that the callback of each Device and their callee functions should be in IRAM, or your callback will crash due to cache miss. For more details, see :ref:`iram-safe-interrupt-handlers`.
 
+.. only:: esp32h2
+
+    Timing Tuning
+    -------------
+
+    .. only:: esp32h2
+
+        This feature is supported only on chip revision v1.2 or later.
+
+    To accommodate the timing requirements of different slave devices and improve signal stability, GP-SPI controllers support two sampling modes when receiving data: Sample Phase 0 and Sample Phase 1. These can be configured via :cpp:member:`spi_device_interface_config_t::sample_point`.
+
+    Sample Phase 0 (SPI mode 0):
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_delay.json
+
+    Sample Phase 1 (SPI mode 0):
+
+    .. wavedrom:: /../_static/diagrams/spi/spi_mode0_std.json
+
+    By default, the driver uses sample phase 0, when the slave device adheres to standard SPI timing specifications, sample phase 0 provides more stable data reception at high clock frequencies.
 
 .. only:: esp32
 

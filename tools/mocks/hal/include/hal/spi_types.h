@@ -32,3 +32,11 @@ typedef enum {
     SPI_CLK_SRC_XTAL,        /*!< Select XTAL as SPI source clock */
     SPI_CLK_SRC_RC_FAST,     /*!< Select RC_FAST as SPI source clock */
 } spi_clock_source_t;
+
+/**
+ * @brief SPI master RX sample point mode configuration
+ */
+typedef enum {
+    SPI_SAMPLING_POINT_PHASE_0,      ///< Data sampling point at 50% cycle delayed then standard timing, (default).
+    SPI_SAMPLING_POINT_PHASE_1,      ///< Data sampling point follows standard SPI timing in master mode
+} spi_sampling_point_t;
