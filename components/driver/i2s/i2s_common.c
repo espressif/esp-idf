@@ -353,7 +353,11 @@ err:
 uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uint32_t dma_frame_num)
 {
     uint32_t active_chan = handle->active_slot;
+#if CONFIG_IDF_TARGET_ESP32
     uint32_t bytes_per_sample = ((data_bit_width + 15) / 16) * 2;
+#else
+    uint32_t bytes_per_sample = (data_bit_width + 7) / 8;
+#endif  // CONFIG_IDF_TARGET_ESP32
     uint32_t bytes_per_frame = bytes_per_sample * active_chan;
     uint32_t bufsize = dma_frame_num * bytes_per_frame;
     /* Limit DMA buffer size if it is out of range (DMA buffer limitation is 4092 bytes) */
