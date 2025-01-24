@@ -1,0 +1,9 @@
+# This config checks the bridge example with eth-wifi configuration
+# (only for one target to save CI time)
+CONFIG_IDF_TARGET="esp32c3"
+CONFIG_ESP_NETIF_TCPIP_LWIP=y
+CONFIG_ESP_NETIF_BRIDGE_EN=y
+CONFIG_EXAMPLE_BR_DHCPS=y
+CONFIG_EXAMPLE_BR_WIFI=y
+CONFIG_EXAMPLE_USE_SPI_ETHERNET=y
+CONFIG_LWIP_NUM_NETIF_CLIENT_DATA=1
