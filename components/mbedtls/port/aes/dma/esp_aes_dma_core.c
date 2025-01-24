@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -595,6 +595,10 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         aes_hal_interrupt_enable(false);
     }
 
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+    esp_aes_enable_pseudo_rounds(CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
+
     if (esp_aes_dma_start(input_desc, output_desc) != ESP_OK) {
         ESP_LOGE(TAG, "esp_aes_dma_start failed, no DMA channel available");
         ret = -1;
@@ -813,6 +817,10 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     {
         aes_hal_interrupt_enable(false);
     }
+
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+    esp_aes_enable_pseudo_rounds(CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
 
     /* Start AES operation */
     if (esp_aes_dma_start(in_desc_head, output_desc) != ESP_OK) {
@@ -1069,6 +1077,10 @@ int esp_aes_process_dma(esp_aes_context *ctx, const unsigned char *input, unsign
         aes_hal_interrupt_enable(false);
     }
 
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+    esp_aes_enable_pseudo_rounds(CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
+
     if (esp_aes_dma_start(in_desc_head, out_desc_head) != ESP_OK) {
         ESP_LOGE(TAG, "esp_aes_dma_start failed, no DMA channel available");
         ret = -1;
@@ -1246,6 +1258,10 @@ int esp_aes_process_dma_gcm(esp_aes_context *ctx, const unsigned char *input, un
     {
         aes_hal_interrupt_enable(false);
     }
+
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+    esp_aes_enable_pseudo_rounds(CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
 
     /* Start AES operation */
     if (esp_aes_dma_start(in_desc_head, out_desc_head) != ESP_OK) {

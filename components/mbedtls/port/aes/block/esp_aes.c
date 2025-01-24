@@ -35,6 +35,7 @@
 #include "hal/aes_hal.h"
 #include "hal/aes_ll.h"
 #include "esp_aes_internal.h"
+#include "sdkconfig.h"
 
 #include <freertos/FreeRTOS.h>
 
@@ -104,6 +105,10 @@ static int esp_aes_block(esp_aes_context *ctx, const void *input, void *output)
     i1 = input_words[1];
     i2 = input_words[2];
     i3 = input_words[3];
+
+#ifdef CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC
+    esp_aes_enable_pseudo_rounds(CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC_STRENGTH);
+#endif /* CONFIG_MBEDTLS_AES_USE_PSEUDO_ROUND_FUNC */
 
     aes_hal_transform_block(input, output);
 
