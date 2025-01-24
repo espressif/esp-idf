@@ -129,6 +129,15 @@ typedef enum {
     HTTP_AUTH_TYPE_DIGEST,      /*!< HTTP Digest authentication */
 } esp_http_client_auth_type_t;
 
+/*
+* @brief HTTP Address type
+*/
+typedef enum {
+    HTTP_ADDR_TYPE_UNSPEC = AF_UNSPEC,      /**< Unspecified address family. */
+    HTTP_ADDR_TYPE_INET = AF_INET,          /**< IPv4 address family. */
+    HTTP_ADDR_TYPE_INET6 = AF_INET6,        /**< IPv6 address family. */
+} esp_http_client_addr_type_t;
+
 /**
  * @brief HTTP configuration
  */
@@ -194,6 +203,7 @@ typedef struct {
 #if CONFIG_ESP_HTTP_CLIENT_ENABLE_CUSTOM_TRANSPORT
     struct esp_transport_item_t *transport;
 #endif
+    esp_http_client_addr_type_t addr_type;  /*!< Address type used in http client configurations */
 } esp_http_client_config_t;
 
 /**
@@ -456,6 +466,23 @@ esp_err_t esp_http_client_set_user_data(esp_http_client_handle_t client, void *d
  *         - errno
  */
 int esp_http_client_get_errno(esp_http_client_handle_t client);
+
+/**
+ * @brief      Returns last error in esp_tls with detailed mbedtls related error codes.
+ *             The error information is cleared internally upon return
+ *
+ * @param[in]  client               The esp_http_client handle
+ * @param[out] esp_tls_error_code   last error code returned from mbedtls api (set to zero if none)
+ *                                  This pointer could be NULL if caller does not care about esp_tls_code
+ * @param[out] esp_tls_flags        last certification verification flags (set to zero if none)
+ *                                  This pointer could be NULL if caller does not care about esp_tls_code
+ *
+ * @return
+ *         - ESP_FAIL if invalid parameters
+ *         - ESP_OK (0) if no error occurred
+ *         - specific error code (based on ESP_ERR_ESP_TLS_BASE) otherwise
+ */
+esp_err_t esp_http_client_get_and_clear_last_tls_error(esp_http_client_handle_t client, int *esp_tls_error_code, int *esp_tls_flags);
 
 /**
  * @brief      Set http request method

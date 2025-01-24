@@ -1,4 +1,6 @@
-# ESP-IDF Project Roadmap 2024
+# ESP-IDF Project Roadmap 2025 
+
+* [中文版](./ROADMAP_CN.md)
 
 This document outlines the goals of ESP-IDF project and is shared for the convenience of our customers. It is important to clarify that this document is not a binding commitment to our customers. Instead, its primary purpose is to offer a clear roadmap and direction for the project's development. By openly sharing this information, we aim to enhance our customers' understanding, promote transparency and ensure alignment with the overarching objectives of the ESP-IDF project.
 
@@ -10,32 +12,24 @@ In both minor and major releases, we integrate new chip support to enhance our p
 
 Furthermore, we prioritize bugfix releases for active branches, focusing on improving the stability and performance of products already in production. By addressing bugs promptly, we aim to enhance the overall user experience and provide tangible benefits to customers relying on our solutions. This proactive maintenance strategy reflects our commitment to delivering reliable, high-quality products to our valued customer base.
 
-Below are the main objectives that ESP-IDF project/teams would like to implement in 2024.
+Below are the main objectives that ESP-IDF project/teams would like to implement in 2025.
 
 -   New Chip Support
 
-    -   Add support for ESP32-P4
     -   Add support for ESP32-C5
     -   Add support for ESP32-C61
 
--   More Minor Releases
+-   More Minor/Major Releases
 
-    -   Release IDF v5.3 in 2024
-    -   Release IDF v5.4 at the start of 2025
+    -   Release IDF v5.5 in the middle of 2025
+    -   Release IDF v6.0 at the end of 2025
 
 -   More Bugfix Releases
 
-    -   Release v4.4.8 for IDF v4.4 before ESP-IDF v4.4 goes End of Life in July 2024
-    -   Do more bugfix releases for IDF v5.1 before release/5.1 enters maintenance period in June 2024
-    -   Do more bug fixes releases for release/5.2 and release/5.3, and push the two releases to be more stable and production-ready
-
--   Updates of Libraries
-
-    -   Update GDB to 14.2
-    -   Update LLVM to 18.1.2
-    -   Update MbedTLS to 3.6 (LTS)
-    -   Update LWIP to 2.2.0
-    -   Change minimal Python requirement to 3.9
+    -   Release v5.0.8 and v5.0.9 before ESP-IDF v5.0 goes End of Life in May 2025
+    -   Release v5.1.6 and v5.1.7 before ESP-IDF v5.1 goes End of Life in December 2025
+    -   Do more bugfix releases for IDF v5.2 and IDF v5.3 before release/5.2 and release/5.3 enter maintenance period
+    -   Do more bug fixes releases for release/5.4 and release/5.5, and push the two releases to be more stable and production-ready
 
 Please note that support status of previous silicones could be found on [ESP-IDF Release and SoC Compatibility](https://github.com/espressif/esp-idf#esp-idf-release-and-soc-compatibility).
 
@@ -49,75 +43,86 @@ Below are the main roadmap details for functional areas inside ESP-IDF.
 
 -   New Chip Support
 
-    -   Add full support for ESP32-P4 in ESP-IDF v5.3, refer to [ESP32-P4 Support Status](https://github.com/espressif/esp-idf/issues/12996)
-    -   Add preview support for ESP32-C5 in ESP-IDF v5.3 and full support for ESP32-C5 in ESP-IDF v5.4, refer to [ESP32-C5 Support Status](https://github.com/espressif/esp-idf/issues/14021)
-    -   Add preview support for the early samples of ESP32-C61 in ESP-IDF v5.4 and full support for mass production version in ESP-IDF v5.4.x. Refer to [ESP32-C61 Support Status](https://developer.espressif.com/pages/chip-support-status/esp32c61/#esp-idf)
+    -   Add the initial support for the mass production version of ESP32-C5 in ESP-IDF v5.5, refer to [ESP32-C5 Support Status](https://github.com/espressif/esp-idf/issues/14021)
+    -   Add the initial support for the mass production version of ESP32-C61 in ESP-IDF v5.5, refer to [ESP32-C61 Support Status](https://developer.espressif.com/pages/chip-support-status/esp32c61/#esp-idf)
 
 -   Bugfix releases
 
-    -   Do bugfix release IDF v4.4.8 and stop maintaining ESP-IDF v4.4 in July 2024
-    -   Release bugfix IDF v5.0.6 and IDF v5.0.7 in 2024 (maintenance period)
-    -   Release bugfix IDF v5.1.3 and IDF v5.1.4 in H1 of 2024, and release IDF v5.1.5 in H2 of 2024
-    -   Push release/5.1 to maintenance period from June 2024
-    -   Do more bug fixes releases for release/5.2 (IDF v5.2.1, IDF v5.2.2, IDF v5.2.3) and release/5.3 (IDF v5.3.1, IDF v5.3.2), and push releases to be more stable and more production-ready
+    -   Do bugfix releases v5.0.8 and v5.0.9 and stop maintaining ESP-IDF v5.0 in May 2025
+    -   Do bugfix releases v5.1.6 and v5.1.7 and stop maintaining ESP-IDF v5.1 in December 2025
+    -   Release bugfix IDF v5.2.4 and IDF v5.2.5 in 2025, and push release/5.2 to maintenance period from February 2025
+    -   Release bugfix IDF v5.3.3 and IDF v5.3.4 in 2025, and push release/5.3 to maintenance period from July 2025
+    -   Do more bug fixes releases for release/5.4 (IDF v5.4.1, IDF v5.4.2, IDF v5.4.3) and release/5.5 (IDF v5.5.1, IDF v5.5.2), and push releases to be more stable and more production-ready
 
 ## ESP-IDF Planning information
 
 For the full list of ESP-IDF releases, please visit https://github.com/espressif/esp-idf/releases
 
+All the information provided here is subject to change without notice, due to business reasons and other factors.
+
 ### ESP-IDF Major Releases
 
-No Major Releases planned
+```mermaid
+timeline
 
+        title ESP-IDF Major Releases
+        section 2025 Q1 <br> Major Release Planning
+          No version planned : N/A             
+        section 2025 Q2 <br> Major Release Planning
+          No version planned : N/A   
+        section 2025 Q3 <br> Major Release Planning
+          No version planned : N/A    
+        section 2025 Q4 <br> Major Release Planning
+          v6.0-beta1 : 2025/11/13
+          v6.0-beta2 : 2025/12/05
+          v6.0-RC1 : 2026/01/14   
+          v6.0-RC2 : 2026/02/06  
+          v6.0 : 2026/02/13   
+```
+
+> [!NOTE]
+> However for the December release, we are also considering another minor version v5.6. We would consolidate the planning in the middle of 2025 and replace v6.0 with v5.6 if v5.6 version planning is decided.
+  
 ### ESP-IDF Minor Releases
 
-#### Quarter One
+```mermaid
+timeline
 
--   v5.2-RC1, estimate release date: 2024/02/02
--   v5.2 final release, estimate release date: 2024/02/08
-
-#### Quarter Two
-
--   v5.3-beta1, estimate release date:: 2024/05/13
--   v5.3-beta2, estimate release date:: 2024/05/31
--   v5.3-RC1, estimate release date:: 2024/07/08
-
-#### Quarter Three
-
--   v5.3-RC2, estimate release date:: 2024/07/26
--   v5.3 final release, estimate release date:: 2024/08/02
-
-#### Quarter Four
-
--   v5.4-beta1, estimate release date:: 2024/11/08
--   v5.4-beta2, estimate release date:: 2024/11/29
--   v5.4-RC1, estimate release date:: 2025/01/09
--   v5.4-RC2, estimate release date:: 2025/01/29
--   v5.4 final release, estimate release date: 2025/02/05
+        title ESP-IDF Minor Releases
+        section 2025 Q1 <br> Minor Release Planning
+          No version planned : N/A               
+        section 2025 Q2 <br> Minor Release Planning
+          v5.5-beta1 : 2025/05/14
+          v5.5-beta2 : 2025/06/04    
+        section 2025 Q3 <br> Minor Release Planning
+          v5.5-RC1 : 2025/07/07  
+          v5.5-RC2 : 2025/07/28  
+          v5.5 : 2025/08/04       
+        section 2025 Q4 <br> Minor Release Planning
+          No version planned : N/A    
+```
 
 ### ESP-IDF Bugfix Releases
 
-#### Quarter One
+```mermaid
+timeline
 
--   v5.1.3, estimate release date: 2024/02/08
--   v5.0.6, estimate release date: 2024/02/18
--   v4.4.7, estimate release date:: 2024/03/19
--   v5.2.1, estimate release date:: 2024/03/31
-
-#### Quarter Two
-
--   v5.1.4, estimate release date:: 2024/05/06
--   v5.2.2, estimate release date:: 2024/06/17
--   v4.4.8, estimate release date:: 2024/07/19
-
-#### Quarter Three
-
--   v5.0.7, estimate release date: 2024/08/22
--   v5.3.1, estimate release date: 2024/09/16
--   v5.2.3, estimate release date: 2024/10/10
-
-#### Quarter Four
-
--   v5.1.5, estimate release date: 2024/11/04  (Maintenance period since June 2024)
--   v5.3.2, estimate release date: 2024/12/31
--   v5.2.4, estimate release date: 2025/02/20 (Service period ends Feb. 2025)
+        title ESP-IDF Bugfix Releases
+        section 2025 Q1 <br> Bugfix Release Planning
+          v5.0.8 : 2025/01/14
+          v5.1.6 : 2025/02/18
+          v5.2.4 : 2025/02/23        
+          v5.4.1 : 2025/03/27
+          v5.3.3 : 2025/04/04                
+        section 2025 Q2 <br> Bugfix Release Planning
+          v5.0.9 : 2025/05/16
+          v5.4.2 : 2025/06/30 
+        section 2025 Q3 <br> Bugfix Release Planning
+          v5.3.4 : 2025/08/03
+          v5.2.5 : 2025/09/04
+          v5.5.1 : 2025/09/11   
+          v5.4.3 : 2025/10/08
+        section 2025 Q4 <br> Bugfix Release Planning
+          v5.5.2 : 2025/11/12
+          v5.1.7 : 2026/01/06   
+```

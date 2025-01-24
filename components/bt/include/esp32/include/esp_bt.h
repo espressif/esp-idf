@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -394,6 +394,15 @@ typedef enum {
 } esp_sco_data_path_t;
 
 /**
+ * @brief Bluetooth sleep clock
+ */
+typedef enum {
+    ESP_BT_SLEEP_CLOCK_NONE            = 0,   /*!< Sleep clock not configured */
+    ESP_BT_SLEEP_CLOCK_MAIN_XTAL       = 1,   /*!< SoC main crystal */
+    ESP_BT_SLEEP_CLOCK_EXT_32K_XTAL    = 2,   /*!< External 32.768kHz crystal/oscillator */
+} esp_bt_sleep_clock_t;
+
+/**
  * @brief       Initialize the Bluetooth Controller to allocate tasks and other resources
  *
  * @note        This function should be called only once, before any other Bluetooth functions.
@@ -690,6 +699,30 @@ void esp_vhci_host_send_packet(uint8_t *data, uint16_t len);
  *      - ESP_FAIL: Failure
  */
 esp_err_t esp_vhci_host_register_callback(const esp_vhci_host_callback_t *callback);
+
+/**
+ * @brief Get the Bluetooth module sleep clock source.
+ *
+ * @note This function should be called after `esp_bt_controller_init()`
+ *
+ * @return
+ *      - Clock source used in Bluetooth low power mode
+ */
+esp_bt_sleep_clock_t esp_bt_get_lpclk_src(void);
+
+/**
+ * @brief Set the Bluetooth module sleep clock source.
+ *
+ * @note This function should be called before `esp_bt_controller_init()`
+ *
+ * @param[in] lpclk Bluetooth sleep clock source
+ *
+ * @return
+ *       - ESP_OK: Success
+ *       - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t esp_bt_set_lpclk_src(esp_bt_sleep_clock_t lpclk);
+
 #ifdef __cplusplus
 }
 #endif

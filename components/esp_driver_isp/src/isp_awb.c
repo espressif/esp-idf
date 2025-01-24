@@ -109,6 +109,7 @@ esp_err_t esp_isp_new_awb_controller(isp_proc_handle_t isp_proc, const esp_isp_a
 
     // Configure the hardware
     isp_ll_awb_enable(isp_proc->hal.hw, false);
+    isp_ll_awb_set_clk_ctrl_mode(isp_proc->hal.hw, ISP_LL_PIPELINE_CLK_CTRL_AUTO);
     isp_ll_awb_enable_algorithm_mode(isp_proc->hal.hw, true);
     ESP_GOTO_ON_ERROR(s_esp_isp_awb_config_hardware(isp_proc, awb_cfg), err2, TAG, "configure awb hardware failed");
 
@@ -155,7 +156,6 @@ esp_err_t esp_isp_awb_controller_enable(isp_awb_ctlr_t awb_ctlr)
                         ESP_ERR_INVALID_STATE, TAG, "controller not in init state");
 
     esp_err_t ret = ESP_OK;
-    isp_ll_awb_clk_enable(awb_ctlr->isp_proc->hal.hw, true);
     isp_ll_enable_intr(awb_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AWB_MASK, true);
 
     return ret;
@@ -169,7 +169,6 @@ esp_err_t esp_isp_awb_controller_disable(isp_awb_ctlr_t awb_ctlr)
                         ESP_ERR_INVALID_STATE, TAG, "controller not in enable state");
 
     isp_ll_enable_intr(awb_ctlr->isp_proc->hal.hw, ISP_LL_EVENT_AWB_MASK, false);
-    isp_ll_awb_clk_enable(awb_ctlr->isp_proc->hal.hw, false);
     esp_intr_disable(awb_ctlr->intr_handle);
 
     return ESP_OK;

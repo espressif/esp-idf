@@ -247,7 +247,7 @@ menu "Hardware Settings"
 
     orsource "./port/$IDF_TARGET/Kconfig.ldo"
 
-    orsource "./power_supply/port/$IDF_TARGET/Kconfig.bod"
+    orsource "./power_supply/port/$IDF_TARGET/Kconfig.power"
 
     # Invisible bringup bypass options for esp_hw_support component
     config ESP_BRINGUP_BYPASS_CPU_CLK_SETTING

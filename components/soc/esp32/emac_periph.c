@@ -25,7 +25,9 @@ const emac_io_info_t emac_io_idx = {
     .mii_col_i_idx = SIG_GPIO_OUT_IDX,
     .mii_crs_i_idx = SIG_GPIO_OUT_IDX,
     .mii_tx_er_o_idx = SIG_GPIO_OUT_IDX,
-    .mii_rx_er_i_idx = SIG_GPIO_OUT_IDX
+    .mii_rx_er_i_idx = SIG_GPIO_OUT_IDX,
+    .rmii_refclk_i_idx = SIG_GPIO_OUT_IDX,
+    .rmii_refclk_o_idx = SIG_GPIO_OUT_IDX
 };
 
 static const emac_iomux_info_t emac_rmii_iomux_clki[] = {

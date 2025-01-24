@@ -1,0 +1,146 @@
+{
+  "tools/test_apps/system/panic_coredump_flash_capture_dram_esp32s3": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "panic",
+    "config_name": "coredump_flash_capture_dram",
+    "target": "esp32s3",
+    "metrics": {
+      "binary_size": {
+        "source_value": 156936,
+        "target_value": 162936,
+        "difference": 6000,
+        "difference_percentage": 3.82
+      }
+    },
+    "app_path": "tools/test_apps/system/panic_coredump"
+  },
+  "tools/test_apps/system/ram_loadable_app_defaults_esp32": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "ram_loadable_app",
+    "config_name": "defaults",
+    "target": "esp32",
+    "metrics": {
+      "binary_size": {
+        "source_value": 171448,
+        "target_value": 173000,
+        "difference": 1552,
+        "difference_percentage": 0.91
+      }
+    },
+    "app_path": "tools/test_apps/system/ram_loadable_app"
+  },
+  "tools/test_apps/system/ram_loadable_app_pure_ram_esp32": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "ram_loadable_app",
+    "config_name": "pure_ram",
+    "target": "esp32",
+    "metrics": {
+      "binary_size": {
+        "source_value": 156632,
+        "target_value": 158200,
+        "difference": 1568,
+        "difference_percentage": 1.0
+      }
+    },
+    "app_path": "tools/test_apps/system/ram_loadable_app"
+  },
+  "tools/test_apps/system/startup_flash_80m_qio_esp32": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "startup",
+    "config_name": "flash_80m_qio",
+    "target": "esp32",
+    "metrics": {
+      "binary_size": {
+        "source_value": 225692,
+        "target_value": 230000,
+        "difference": 4308,
+        "difference_percentage": 1.91
+      }
+    },
+    "app_path": "tools/test_apps/system/startup"
+  },
+  "tools/test_apps/system/startup_stack_check_verbose_log_esp32s3": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "startup",
+    "config_name": "stack_check_verbose_log",
+    "target": "esp32s3",
+    "metrics": {
+      "binary_size": {
+        "source_value": 156936,
+        "target_value": 160000,
+        "difference": 3064,
+        "difference_percentage": 1.95
+      }
+    },
+    "app_path": "tools/test_apps/system/startup"
+  },
+  "tools/test_apps/system/test_watchpoint_default_esp32": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "test_watchpoint",
+    "config_name": "default",
+    "target": "esp32",
+    "metrics": {
+      "binary_size": {
+        "source_value": 147896,
+        "target_value": 150000,
+        "difference": 2104,
+        "difference_percentage": 1.42
+      }
+    },
+    "app_path": "tools/test_apps/system/test_watchpoint"
+  },
+  "tools/test_apps/system/test_watchpoint_default_esp32c3": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "test_watchpoint",
+    "config_name": "default",
+    "target": "esp32c3",
+    "metrics": {
+      "binary_size": {
+        "source_value": 189456,
+        "target_value": 190456,
+        "difference": 1000,
+        "difference_percentage": 0.53
+      }
+    },
+    "app_path": "tools/test_apps/system/test_watchpoint"
+  },
+  "tools/test_apps/system/unicore_bootloader_multicore_esp32": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "unicore_bootloader",
+    "config_name": "multicore",
+    "target": "esp32",
+    "metrics": {
+      "binary_size": {
+        "source_value": 216784,
+        "target_value": 220000,
+        "difference": 3216,
+        "difference_percentage": 1.48
+      }
+    },
+    "app_path": "tools/test_apps/system/unicore_bootloader"
+  },
+  "tools/test_apps/system/unicore_bootloader_unicore_psram_esp32s3": {
+    "source_commit_id": "bacfa4aa59a37b70b800f1758106fa5f5af99f16",
+    "target_commit_id": "36d5d8c31c7d3332b43bd5fe4d40b515c6a71097",
+    "app_name": "unicore_bootloader",
+    "config_name": "unicore_psram",
+    "target": "esp32s3",
+    "metrics": {
+      "binary_size": {
+        "source_value": 189456,
+        "target_value": 191456,
+        "difference": 2000,
+        "difference_percentage": 1.06
+      }
+    },
+    "app_path": "tools/test_apps/system/unicore_bootloader"
+  }
+}

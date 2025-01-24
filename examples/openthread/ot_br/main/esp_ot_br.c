@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  *
@@ -38,6 +38,7 @@
 #include "mdns.h"
 #include "nvs_flash.h"
 #include "protocol_examples_common.h"
+#include "driver/gpio.h"
 #include "driver/uart.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -61,6 +62,26 @@
 #endif
 
 #define TAG "esp_ot_br"
+
+#if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
+#define PIN_TO_RCP_RESET CONFIG_OPENTHREAD_HW_RESET_RCP_PIN
+static void rcp_failure_hardware_reset_handler(void)
+{
+    gpio_config_t reset_pin_config;
+    memset(&reset_pin_config, 0, sizeof(reset_pin_config));
+    reset_pin_config.intr_type = GPIO_INTR_DISABLE;
+    reset_pin_config.pin_bit_mask = BIT(PIN_TO_RCP_RESET);
+    reset_pin_config.mode = GPIO_MODE_OUTPUT;
+    reset_pin_config.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    reset_pin_config.pull_up_en = GPIO_PULLUP_DISABLE;
+    gpio_config(&reset_pin_config);
+    gpio_set_level(PIN_TO_RCP_RESET, 0);
+    vTaskDelay(pdMS_TO_TICKS(10));
+    gpio_set_level(PIN_TO_RCP_RESET, 1);
+    vTaskDelay(pdMS_TO_TICKS(30));
+    gpio_reset_pin(PIN_TO_RCP_RESET);
+}
+#endif
 
 #if CONFIG_EXTERNAL_COEX_ENABLE
 static void ot_br_external_coexist_init(void)
@@ -192,6 +213,9 @@ void app_main(void)
     ESP_ERROR_CHECK(nvs_flash_init());
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
+#if CONFIG_OPENTHREAD_SUPPORT_HW_RESET_RCP
+    esp_openthread_register_rcp_failure_handler(rcp_failure_hardware_reset_handler);
+#endif
     xTaskCreate(ot_task_worker, "ot_br_main", 8192, xTaskGetCurrentTaskHandle(), 5, NULL);
     xTaskCreate(ot_br_init, "ot_br_init", 6144, NULL, 4, NULL);
 }

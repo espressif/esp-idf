@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <sys/time.h>
-#include "esp_dma_utils.h"
 #include "esp_heap_caps.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
@@ -53,13 +52,9 @@ static void do_single_rw_perf_test(sdmmc_card_t* card, size_t start_block,
     const char* alloc_str = (extra_alloc_caps & MALLOC_CAP_SPIRAM) ? "spiram" : " sram ";
     printf(" %8d |  %3d  |   %d   | %s |    %4.1f  ", start_block, block_count, alignment, alloc_str, total_size / 1024.0f);
 
-    size_t actual_size = 0;
     uint32_t *buffer = NULL;
-    esp_dma_mem_info_t dma_mem_info = {
-        .extra_heap_caps = extra_alloc_caps,
-        .dma_alignment_bytes = 64,
-    };
-    TEST_ESP_OK(esp_dma_capable_malloc(total_size + 4, &dma_mem_info, (void**) &buffer, &actual_size));
+    buffer = heap_caps_malloc(total_size + 4, MALLOC_CAP_DMA);
+    TEST_ASSERT(buffer);
 
     size_t offset = alignment % 4;
     uint8_t* c_buffer = (uint8_t*) buffer + offset;
@@ -107,12 +102,10 @@ void sdmmc_test_rw_unaligned_buffer(sdmmc_card_t* card)
     const size_t block_count = buffer_size / 512;
     const size_t extra = 4;
     const size_t total_size = buffer_size + extra;
-    size_t actual_size = 0;
     uint8_t *buffer = NULL;
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 64,
-    };
-    TEST_ESP_OK(esp_dma_capable_malloc(total_size + 4, &dma_mem_info, (void**) &buffer, &actual_size));
+
+    buffer = heap_caps_malloc(total_size + 4, MALLOC_CAP_DMA);
+    TEST_ASSERT(buffer);
 
     // Check read behavior: do aligned write, then unaligned read
     const uint32_t seed = 0x89abcdef;

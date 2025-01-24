@@ -437,7 +437,7 @@ static IRAM_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     bool rx_sent = false;
     if (!host->tx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->tx_trans_queue, &host->tx_curr_trans, &awoken);
-        if (ret == pdTRUE) {
+        if ((ret == pdTRUE) && host->tx_curr_trans.trans) {
             spicommon_dma_desc_setup_link(hal->dmadesc_tx->desc, host->tx_curr_trans.aligned_buffer, host->tx_curr_trans.trans->len, false);
             spi_dma_reset(host->dma_ctx->tx_dma_chan);
             spi_slave_hd_hal_txdma(hal);
@@ -456,7 +456,7 @@ static IRAM_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     }
     if (!host->rx_curr_trans.trans) {
         ret = xQueueReceiveFromISR(host->rx_trans_queue, &host->rx_curr_trans, &awoken);
-        if (ret == pdTRUE) {
+        if ((ret == pdTRUE) && host->rx_curr_trans.trans) {
             spicommon_dma_desc_setup_link(hal->dmadesc_rx->desc, host->rx_curr_trans.aligned_buffer, host->rx_curr_trans.trans->len, true);
             spi_dma_reset(host->dma_ctx->rx_dma_chan);
             spi_slave_hd_hal_rxdma(hal);

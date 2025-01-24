@@ -25,7 +25,7 @@ typedef struct {
     int error_max;
 } temperature_sensor_attribute_t;
 
-extern const temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM];
+extern temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM];
 
 #if SOC_TEMPERATURE_SENSOR_SUPPORT_SLEEP_RETENTION
 typedef struct {

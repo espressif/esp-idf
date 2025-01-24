@@ -6,6 +6,7 @@
 
 #include <esp_types.h>
 #include <string.h>
+#include "sdkconfig.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_private/periph_ctrl.h"
@@ -13,6 +14,7 @@
 #include "esp_private/critical_section.h"
 #include "soc/usb_dwc_periph.h"
 #include "hal/usb_wrap_hal.h"
+#include "hal/usb_utmi_hal.h"
 #include "esp_rom_gpio.h"
 #include "driver/gpio.h"
 #include "soc/soc_caps.h"
@@ -40,12 +42,19 @@ struct phy_context_t {
 };
 
 typedef struct {
-    phy_context_t *internal_phy;                  /**< internal PHY context */
+    phy_context_t *fsls_phy;                      /**< internal FSLS PHY context */
+    phy_context_t *utmi_phy;                      /**< internal UTMI PHY context */
     phy_context_t *external_phy;                  /**< external PHY context */
     uint32_t ref_count;                           /**< reference count used to protect p_phy_ctrl_obj */
 } phy_ctrl_obj_t;
 
 static phy_ctrl_obj_t *p_phy_ctrl_obj = NULL;
+// Mapping of OTG1.1 peripheral in usb_dwc_info struct
+#if CONFIG_IDF_TARGET_ESP32P4
+static const int otg11_index = 1;
+#else
+static const int otg11_index = 0;
+#endif
 
 DEFINE_CRIT_SECTION_LOCK_STATIC(phy_spinlock);
 #define PHY_ENTER_CRITICAL()           esp_os_enter_critical(&phy_spinlock)
@@ -126,13 +135,21 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode)
     ESP_RETURN_ON_FALSE(handle->controller == USB_PHY_CTRL_OTG, ESP_FAIL, USBPHY_TAG, "phy source is not USB_OTG");
 
     handle->otg_mode = mode;
-    const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[0].otg_signals;
+    // On targets with multiple internal PHYs (FSLS and UTMI)
+    // we support only fixed PHY to USB-DWC mapping:
+    // USB-DWC2.0 <-> UTMI PHY
+    // USB-DWC1.1 <-> FSLS PHY
+    if (handle->target == USB_PHY_TARGET_UTMI) {
+        return ESP_OK; // No need to configure anything for UTMI PHY
+    }
+
+    const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;
     assert(otg_sig);
     if (mode == USB_OTG_MODE_HOST) {
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, otg_sig->iddig, false);     // connected connector is A side
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, otg_sig->bvalid, false);
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->vbusvalid, false);  // receiving a valid Vbus from host
-        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->avalid, false);
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT,  otg_sig->avalid, false);     // HIGH to force USB host mode
         if (handle->target == USB_PHY_TARGET_INT) {
             // Configure pull resistors for host
             usb_wrap_pull_override_vals_t vals = {
@@ -158,10 +175,15 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
     ESP_RETURN_ON_FALSE(speed < USB_PHY_SPEED_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "speed argument is invalid");
     ESP_RETURN_ON_FALSE(handle->controller == USB_PHY_CTRL_OTG, ESP_FAIL, USBPHY_TAG, "phy source is not USB_OTG");
-    ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_INT && handle->otg_mode == USB_OTG_MODE_DEVICE), ESP_FAIL,
+    ESP_RETURN_ON_FALSE((handle->target != USB_PHY_TARGET_EXT && handle->otg_mode == USB_OTG_MODE_DEVICE), ESP_FAIL,
                         USBPHY_TAG, "set speed not supported");
+    ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_UTMI) == (speed == USB_PHY_SPEED_HIGH), ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI can be HighSpeed only"); // This is our software limitation
 
     handle->otg_speed = speed;
+    if (handle->target == USB_PHY_TARGET_UTMI) {
+        return ESP_OK; // No need to configure anything for UTMI PHY
+    }
+
     // Configure pull resistors for device
     usb_wrap_pull_override_vals_t vals = {
         .dp_pd = false,
@@ -181,13 +203,14 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
 esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action)
 {
     ESP_RETURN_ON_FALSE(handle, ESP_ERR_INVALID_ARG, USBPHY_TAG, "handle argument is invalid");
+    ESP_RETURN_ON_FALSE(handle->target != USB_PHY_TARGET_UTMI, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "Operation not supported on UTMI PHY");
     ESP_RETURN_ON_FALSE(action < USB_PHY_ACTION_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "action argument is invalid");
     ESP_RETURN_ON_FALSE((action == USB_PHY_ACTION_HOST_ALLOW_CONN && handle->controller == USB_PHY_CTRL_OTG) ||
                         (action == USB_PHY_ACTION_HOST_FORCE_DISCONN && handle->controller == USB_PHY_CTRL_OTG),
                         ESP_ERR_INVALID_ARG, USBPHY_TAG, "wrong target for the action");
 
     esp_err_t ret = ESP_OK;
-    const usb_fsls_serial_signal_conn_t *fsls_sig = usb_dwc_info.controllers[0].fsls_signals;
+    const usb_fsls_serial_signal_conn_t *fsls_sig = usb_dwc_info.controllers[otg11_index].fsls_signals;
     assert(fsls_sig);
 
     switch (action) {
@@ -274,15 +297,31 @@ cleanup:
 
 esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_ret)
 {
+    usb_phy_target_t phy_target = config->target;
+
+    // Backward compatibility code:
+    // Initial P4 device support was for USB-DWC HS and UTMI PHY.
+    // To maintain backward compatibility on ESP32-P4 in USB Device mode, we select UTMI PHY
+    // In case otg_speed is UNDEFINED or HIGH
+#if CONFIG_IDF_TARGET_ESP32P4
+    if (config->otg_mode == USB_OTG_MODE_DEVICE &&
+            (config->otg_speed == USB_PHY_SPEED_UNDEFINED || config->otg_speed == USB_PHY_SPEED_HIGH)) {
+        if (phy_target != USB_PHY_TARGET_UTMI) {
+            ESP_LOGW(USBPHY_TAG, "Using UTMI PHY instead of requested %s PHY", (phy_target == USB_PHY_TARGET_INT) ? "internal" : "external");
+            phy_target = USB_PHY_TARGET_UTMI;
+        }
+    }
+#endif
+
     ESP_RETURN_ON_FALSE(config, ESP_ERR_INVALID_ARG, USBPHY_TAG, "config argument is invalid");
-    ESP_RETURN_ON_FALSE(config->target < USB_PHY_TARGET_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "specified PHY argument is invalid");
+    ESP_RETURN_ON_FALSE(phy_target < USB_PHY_TARGET_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "specified PHY argument is invalid");
     ESP_RETURN_ON_FALSE(config->controller < USB_PHY_CTRL_MAX, ESP_ERR_INVALID_ARG, USBPHY_TAG, "specified source argument is invalid");
-    ESP_RETURN_ON_FALSE(config->target != USB_PHY_TARGET_EXT || config->ext_io_conf, ESP_ERR_INVALID_ARG, USBPHY_TAG, "ext_io_conf must be provided for ext PHY");
+    ESP_RETURN_ON_FALSE(phy_target != USB_PHY_TARGET_EXT || config->ext_io_conf, ESP_ERR_INVALID_ARG, USBPHY_TAG, "ext_io_conf must be provided for ext PHY");
 #if !USB_WRAP_LL_EXT_PHY_SUPPORTED
-    ESP_RETURN_ON_FALSE(config->target != USB_PHY_TARGET_EXT, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "Ext PHY not supported on this target");
+    ESP_RETURN_ON_FALSE(phy_target != USB_PHY_TARGET_EXT, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "Ext PHY not supported on this target");
 #endif
 #if !SOC_USB_UTMI_PHY_NUM
-    ESP_RETURN_ON_FALSE(config->target != USB_PHY_TARGET_UTMI, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI PHY not supported on this target");
+    ESP_RETURN_ON_FALSE(phy_target != USB_PHY_TARGET_UTMI, ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI PHY not supported on this target");
 #endif
 
     ESP_RETURN_ON_ERROR(usb_phy_install(), USBPHY_TAG, "usb_phy driver installation failed");
@@ -292,43 +331,57 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     ESP_GOTO_ON_FALSE(phy_context, ESP_ERR_NO_MEM, cleanup, USBPHY_TAG, "no mem for phy context");
 
     PHY_ENTER_CRITICAL();
-    usb_phy_get_phy_status(config->target, &phy_context->status);
+    usb_phy_get_phy_status(phy_target, &phy_context->status);
     if (phy_context->status == USB_PHY_STATUS_FREE) {
         new_phy = true;
         p_phy_ctrl_obj->ref_count++;
-        if (config->target == USB_PHY_TARGET_EXT) {
+        if (phy_target == USB_PHY_TARGET_EXT) {
             p_phy_ctrl_obj->external_phy = phy_context;
-        } else {
-            p_phy_ctrl_obj->internal_phy = phy_context;
+        } else if (phy_target == USB_PHY_TARGET_INT) {
+            p_phy_ctrl_obj->fsls_phy = phy_context;
+        } else { // USB_PHY_TARGET_UTMI
+            p_phy_ctrl_obj->utmi_phy = phy_context;
         }
     }
     PHY_EXIT_CRITICAL();
     ESP_GOTO_ON_FALSE(new_phy, ESP_ERR_INVALID_STATE, cleanup, USBPHY_TAG, "selected PHY is in use");
 
-    phy_context->target = config->target;
+    phy_context->target = phy_target;
     phy_context->controller = config->controller;
     phy_context->status = USB_PHY_STATUS_IN_USE;
 
-    USB_PHY_RCC_ATOMIC() {
-        usb_wrap_hal_init(&phy_context->wrap_hal);
+    if (phy_target != USB_PHY_TARGET_UTMI) {
+        USB_PHY_RCC_ATOMIC() {
+            usb_wrap_hal_init(&phy_context->wrap_hal);
+        }
+    } else {
+#if (SOC_USB_UTMI_PHY_NUM > 0)
+        usb_utmi_hal_context_t utmi_hal_context; // Unused for now
+        USB_PHY_RCC_ATOMIC() {
+            usb_utmi_hal_init(&utmi_hal_context);
+        }
+#endif
     }
     if (config->controller == USB_PHY_CTRL_OTG) {
 #if USB_WRAP_LL_EXT_PHY_SUPPORTED
-        usb_wrap_hal_phy_set_external(&phy_context->wrap_hal, (config->target == USB_PHY_TARGET_EXT));
+        usb_wrap_hal_phy_set_external(&phy_context->wrap_hal, (phy_target == USB_PHY_TARGET_EXT));
 #endif
     }
 
-    if (config->target == USB_PHY_TARGET_INT) {
+    // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
+#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: We must set drive capability for FSLS PHY for P4 too, to pass Full Speed eye diagram test
+    if (phy_target == USB_PHY_TARGET_INT) {
         gpio_set_drive_capability(USBPHY_DM_NUM, GPIO_DRIVE_CAP_3);
         gpio_set_drive_capability(USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
     }
+#endif
 
     *handle_ret = (usb_phy_handle_t) phy_context;
-    if (config->ext_io_conf && config->target == USB_PHY_TARGET_EXT) {
+    if (phy_target == USB_PHY_TARGET_EXT) {
         phy_context->iopins = (usb_phy_ext_io_conf_t *) calloc(1, sizeof(usb_phy_ext_io_conf_t));
         ESP_GOTO_ON_FALSE(phy_context->iopins, ESP_ERR_NO_MEM, cleanup, USBPHY_TAG, "no mem for storing I/O pins");
         memcpy(phy_context->iopins, config->ext_io_conf, sizeof(usb_phy_ext_io_conf_t));
-        const usb_fsls_serial_signal_conn_t *fsls_sig = usb_dwc_info.controllers[0].fsls_signals;
+        const usb_fsls_serial_signal_conn_t *fsls_sig = usb_dwc_info.controllers[otg11_index].fsls_signals;
         ESP_ERROR_CHECK(phy_external_iopins_configure(phy_context->iopins, fsls_sig));
     }
     if (config->otg_mode != USB_PHY_MODE_DEFAULT) {
@@ -338,7 +391,7 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
         ESP_ERROR_CHECK(usb_phy_otg_dev_set_speed(*handle_ret, config->otg_speed));
     }
     if (config->otg_io_conf && (phy_context->controller == USB_PHY_CTRL_OTG)) {
-        const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[0].otg_signals;
+        const usb_otg_signal_conn_t *otg_sig = usb_dwc_info.controllers[otg11_index].otg_signals;
         ESP_ERROR_CHECK(phy_otg_iopins_configure(config->otg_io_conf, otg_sig));
     }
     return ESP_OK;
@@ -365,6 +418,9 @@ static void phy_uninstall(void)
         USB_PHY_RCC_ATOMIC() {
             // Disable USB peripheral without reset the module
             usb_wrap_hal_disable();
+#if (SOC_USB_UTMI_PHY_NUM > 0)
+            usb_utmi_hal_disable();
+#endif
         }
     }
     PHY_EXIT_CRITICAL();
@@ -379,10 +435,12 @@ esp_err_t usb_del_phy(usb_phy_handle_t handle)
     p_phy_ctrl_obj->ref_count--;
     if (handle->target == USB_PHY_TARGET_EXT) {
         p_phy_ctrl_obj->external_phy = NULL;
-    } else {
+    } else if (handle->target == USB_PHY_TARGET_INT) {
         // Clear pullup and pulldown loads on D+ / D-, and disable the pads
         usb_wrap_hal_phy_disable_pull_override(&handle->wrap_hal);
-        p_phy_ctrl_obj->internal_phy = NULL;
+        p_phy_ctrl_obj->fsls_phy = NULL;
+    } else { // USB_PHY_TARGET_UTMI
+        p_phy_ctrl_obj->utmi_phy = NULL;
     }
     PHY_EXIT_CRITICAL();
     free(handle->iopins);
@@ -398,8 +456,10 @@ esp_err_t usb_phy_get_phy_status(usb_phy_target_t target, usb_phy_status_t *stat
 
     if (target == USB_PHY_TARGET_EXT && p_phy_ctrl_obj->external_phy) {
         *status = p_phy_ctrl_obj->external_phy->status;
-    } else if (target == USB_PHY_TARGET_INT && p_phy_ctrl_obj->internal_phy) {
-        *status = p_phy_ctrl_obj->internal_phy->status;
+    } else if (target == USB_PHY_TARGET_INT && p_phy_ctrl_obj->fsls_phy) {
+        *status = p_phy_ctrl_obj->fsls_phy->status;
+    } else if (target == USB_PHY_TARGET_UTMI && p_phy_ctrl_obj->utmi_phy) {
+        *status = p_phy_ctrl_obj->utmi_phy->status;
     } else {
         *status = USB_PHY_STATUS_FREE;
     }

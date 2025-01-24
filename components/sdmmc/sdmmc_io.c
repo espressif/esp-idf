@@ -319,9 +319,8 @@ esp_err_t sdmmc_io_rw_extended(sdmmc_card_t* card, int func,
         .blklen = SDMMC_IO_BLOCK_SIZE /* TODO: read max block size from CIS */
     };
 
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(datalen > 0 && !esp_dma_is_buffer_alignment_satisfied(datap, buflen, dma_mem_info))) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, datap, buflen);
+    if (unlikely(datalen > 0 && !is_aligned)) {
         if (datalen > SDMMC_IO_BLOCK_SIZE || card->host.dma_aligned_buffer == NULL) {
             // User gives unaligned buffer while `SDMMC_HOST_FLAG_ALLOC_ALIGNED_BUF` not set.
             return ESP_ERR_INVALID_ARG;
@@ -463,9 +462,8 @@ esp_err_t sdmmc_io_read_blocks(sdmmc_card_t* card, uint32_t function,
         addr &= ~SDMMC_IO_FIXED_ADDR;
     }
 
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(dst, size, dma_mem_info))) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, dst, size);
+    if (unlikely(!is_aligned)) {
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr, arg, dst, size);
@@ -481,9 +479,8 @@ esp_err_t sdmmc_io_write_blocks(sdmmc_card_t* card, uint32_t function,
         addr &= ~SDMMC_IO_FIXED_ADDR;
     }
 
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (unlikely(!esp_dma_is_buffer_alignment_satisfied(src, size, dma_mem_info))) {
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, src, size);
+    if (unlikely(!is_aligned)) {
         return ESP_ERR_INVALID_ARG;
     }
     return sdmmc_io_rw_extended(card, function, addr, arg, (void*) src, size);

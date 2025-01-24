@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import abc
 import copy
@@ -9,21 +9,24 @@ import re
 import typing as t
 from textwrap import dedent
 
-import yaml
 from artifacts_handler import ArtifactType
 from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
 from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
+from idf_ci.app import AppWithMetricsInfo
 from idf_ci.uploader import AppUploader
 from prettytable import PrettyTable
 
+from .constants import BINARY_SIZE_METRIC_NAME
 from .constants import COMMENT_START_MARKER
 from .constants import REPORT_TEMPLATE_FILEPATH
 from .constants import RETRY_JOB_PICTURE_LINK
 from .constants import RETRY_JOB_PICTURE_PATH
 from .constants import RETRY_JOB_TITLE
+from .constants import SIZE_DIFFERENCE_BYTES_THRESHOLD
 from .constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+from .constants import TOP_N_APPS_BY_SIZE_DIFF
 from .models import GitlabJob
 from .models import TestCase
 from .utils import fetch_failed_testcases_failure_ratio
@@ -59,7 +62,8 @@ class ReportGenerator:
 
         return ''
 
-    def write_report_to_file(self, report_str: str, job_id: int, output_filepath: str) -> t.Optional[str]:
+    @staticmethod
+    def write_report_to_file(report_str: str, job_id: int, output_filepath: str) -> t.Optional[str]:
         """
         Writes the report to a file and constructs a modified URL based on environment settings.
 
@@ -203,51 +207,44 @@ class ReportGenerator:
 
     @staticmethod
     def _sort_items(
-        items: t.List[t.Union[TestCase, GitlabJob]],
-        key: t.Union[str, t.Callable[[t.Union[TestCase, GitlabJob]], t.Any]],
+        items: t.List[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]],
+        key: t.Union[str, t.Callable[[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]], t.Any]],
         order: str = 'asc',
-    ) -> t.List[t.Union[TestCase, GitlabJob]]:
+        sort_function: t.Optional[t.Callable[[t.Any], t.Any]] = None
+    ) -> t.List[t.Union[TestCase, GitlabJob, AppWithMetricsInfo]]:
         """
-        Sort items based on a given key and order.
+        Sort items based on a given key, order, and optional custom sorting function.
 
         :param items: List of items to sort.
         :param key: A string representing the attribute name or a function to extract the sorting key.
         :param order: Order of sorting ('asc' for ascending, 'desc' for descending).
+        :param sort_function: A custom function to control sorting logic (e.g., prioritizing positive/negative/zero values).
         :return: List of sorted instances.
         """
         key_func = None
         if isinstance(key, str):
-
             def key_func(item: t.Any) -> t.Any:
                 return getattr(item, key)
 
-        if key_func is not None:
-            try:
-                items = sorted(items, key=key_func, reverse=(order == 'desc'))
-            except TypeError:
-                print(f'Comparison for the key {key} is not supported')
+        sorting_key = sort_function if sort_function is not None else key_func
+        try:
+            items = sorted(items, key=sorting_key, reverse=(order == 'desc'))
+        except TypeError:
+            print(f'Comparison for the key {key} is not supported')
+
         return items
 
     @abc.abstractmethod
     def _get_report_str(self) -> str:
         raise NotImplementedError
 
-    def _generate_comment(self, print_report_path: bool) -> str:
+    def _generate_comment(self) -> str:
         # Report in HTML format to avoid exceeding length limits
         comment = f'#### {self.title}\n'
         report_str = self._get_report_str()
+        comment += f'{self.additional_info}\n'
+        self.write_report_to_file(report_str, self.job_id, self.output_filepath)
 
-        if self.additional_info:
-            comment += f'{self.additional_info}\n'
-
-        report_url_path = self.write_report_to_file(report_str, self.job_id, self.output_filepath)
-        if print_report_path and report_url_path:
-            comment += dedent(
-                f"""
-            Full {self.title} here: {report_url_path} (with commit {self.commit_id[:8]})
-
-            """
-            )
         return comment
 
     def _update_mr_comment(self, comment: str, print_retry_jobs_message: bool) -> None:
@@ -285,8 +282,8 @@ class ReportGenerator:
             updated_str = f'{existing_comment.strip()}\n\n{new_comment}'
         return updated_str
 
-    def post_report(self, print_report_path: bool = True, print_retry_jobs_message: bool = False) -> None:
-        comment = self._generate_comment(print_report_path)
+    def post_report(self, print_retry_jobs_message: bool = False) -> None:
+        comment = self._generate_comment()
 
         print(comment)
 
@@ -311,123 +308,358 @@ class BuildReportGenerator(ReportGenerator):
     ):
         super().__init__(project_id, mr_iid, pipeline_id, job_id, commit_id, title=title)
         self.apps = apps
-
+        self._uploader = AppUploader(self.pipeline_id)
         self.apps_presigned_url_filepath = TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
+        self.report_titles_map = {
+            'failed_apps': 'Failed Apps',
+            'built_test_related_apps': 'Built Apps - Test Related',
+            'built_non_test_related_apps': 'Built Apps - Non Test Related',
+            'new_test_related_apps': 'New Apps - Test Related',
+            'new_non_test_related_apps': 'New Apps - Non Test Related',
+            'skipped_apps': 'Skipped Apps',
+        }
+        self.failed_apps_report_file = 'failed_apps.html'
+        self.built_apps_report_file = 'built_apps.html'
+        self.skipped_apps_report_file = 'skipped_apps.html'
+
+    @staticmethod
+    def custom_sort(item: AppWithMetricsInfo) -> t.Tuple[int, t.Any]:
+        """
+        Custom sort function to:
+        1. Push items with zero binary sizes to the end.
+        2. Sort other items by absolute size_difference_percentage.
+        """
+        # Priority: 0 for zero binaries, 1 for non-zero binaries
+        zero_binary_priority = 1 if item.metrics[BINARY_SIZE_METRIC_NAME].source_value != 0 or item.metrics[BINARY_SIZE_METRIC_NAME].target_value != 0 else 0
+        # Secondary sort: Negative absolute size_difference_percentage for descending order
+        size_difference_sort = abs(item.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)
+        return zero_binary_priority, size_difference_sort
+
+    def _generate_top_n_apps_by_size_table(self) -> str:
+        """
+        Generate a markdown table for the top N apps by size difference.
+        Only includes apps with size differences greater than 500 bytes.
+        """
+        filtered_apps = [app for app in self.apps if abs(app.metrics[BINARY_SIZE_METRIC_NAME].difference) > SIZE_DIFFERENCE_BYTES_THRESHOLD]
+
+        top_apps = sorted(
+            filtered_apps,
+            key=lambda app: abs(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage),
+            reverse=True
+        )[:TOP_N_APPS_BY_SIZE_DIFF]
+
+        if not top_apps:
+            return ''
+
+        table = (f'\n⚠️⚠️⚠️ Top {len(top_apps)} Apps with Binary Size Sorted by Size Difference\n'
+                 f'Note: Apps with changes of less than {SIZE_DIFFERENCE_BYTES_THRESHOLD} bytes are not shown.\n')
+        table += '| App Dir | Build Dir | Size Diff (bytes) | Size Diff (%) |\n'
+        table += '|---------|-----------|-------------------|---------------|\n'
+        for app in top_apps:
+            table += dedent(
+                f'| {app.app_dir} | {app.build_dir} | '
+                f'{app.metrics[BINARY_SIZE_METRIC_NAME].difference} | '
+                f'{app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage}% |\n'
+            )
+        table += ('\n**For more details, please click on the numbers in the summary above '
+                  'to view the corresponding report files.** ⬆️⬆️⬆️\n\n')
+
+        return table
+
+    @staticmethod
+    def split_new_and_existing_apps(apps: t.Iterable[AppWithMetricsInfo]) -> t.Tuple[t.List[AppWithMetricsInfo], t.List[AppWithMetricsInfo]]:
+        """
+        Splits apps into new apps and existing apps.
+
+        :param apps: Iterable of apps to process.
+        :return: A tuple (new_apps, existing_apps).
+        """
+        new_apps = [app for app in apps if app.is_new_app]
+        existing_apps = [app for app in apps if not app.is_new_app]
+        return new_apps, existing_apps
+
+    def filter_apps_by_criteria(self, build_status: str, preserve: bool) -> t.List[AppWithMetricsInfo]:
+        """
+        Filters apps based on build status and preserve criteria.
+
+        :param build_status: Build status to filter by.
+        :param preserve: Whether to filter preserved apps.
+        :return: Filtered list of apps.
+        """
+        return [
+            app for app in self.apps
+            if app.build_status == build_status and app.preserve == preserve
+        ]
+
+    def get_built_apps_report_parts(self) -> t.List[str]:
+        """
+        Generates report parts for new and existing apps.
+
+        :return: List of report parts.
+        """
+        new_test_related_apps, built_test_related_apps = self.split_new_and_existing_apps(
+            self.filter_apps_by_criteria(BuildStatus.SUCCESS, True)
+        )
+
+        new_non_test_related_apps, built_non_test_related_apps = self.split_new_and_existing_apps(
+            self.filter_apps_by_criteria(BuildStatus.SUCCESS, False)
+        )
+
+        sections = []
+
+        if new_test_related_apps:
+            new_test_related_apps_table_section = self.create_table_section(
+                title=self.report_titles_map['new_test_related_apps'],
+                items=new_test_related_apps,
+                headers=[
+                    'App Dir',
+                    'Build Dir',
+                    'Bin Files with Build Log (without map and elf)',
+                    'Map and Elf Files',
+                    'Your Branch App Size',
+                ],
+                row_attrs=[
+                    'app_dir',
+                    'build_dir',
+                ],
+                value_functions=[
+                    (
+                        'Your Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)
+                    ),
+                    (
+                        'Bin Files with Build Log (without map and elf)',
+                        lambda app: self.get_download_link_for_url(
+                            self._uploader.get_app_presigned_url(app, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+                        ),
+                    ),
+                    (
+                        'Map and Elf Files',
+                        lambda app: self.get_download_link_for_url(
+                            self._uploader.get_app_presigned_url(app, ArtifactType.MAP_AND_ELF_FILES)
+                        ),
+                    ),
+                ],
+            )
+            sections.extend(new_test_related_apps_table_section)
+
+        if built_test_related_apps:
+            built_test_related_apps = self._sort_items(
+                built_test_related_apps,
+                key='metrics.binary_size.difference_percentage',
+                order='desc',
+                sort_function=self.custom_sort,
+            )
+
+            built_test_related_apps_table_section = self.create_table_section(
+                title=self.report_titles_map['built_test_related_apps'],
+                items=built_test_related_apps,
+                headers=[
+                    'App Dir',
+                    'Build Dir',
+                    'Bin Files with Build Log (without map and elf)',
+                    'Map and Elf Files',
+                    'Your Branch App Size',
+                    'Target Branch App Size',
+                    'Size Diff',
+                    'Size Diff, %',
+                ],
+                row_attrs=[
+                    'app_dir',
+                    'build_dir',
+                ],
+                value_functions=[
+                    (
+                        'Your Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)
+                    ),
+                    (
+                        'Target Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].target_value)
+                    ),
+                    (
+                        'Size Diff',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)
+                    ),
+                    (
+                        'Size Diff, %',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)
+                    ),
+                    (
+                        'Bin Files with Build Log (without map and elf)',
+                        lambda app: self.get_download_link_for_url(
+                            self._uploader.get_app_presigned_url(app, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+                        ),
+                    ),
+                    (
+                        'Map and Elf Files',
+                        lambda app: self.get_download_link_for_url(
+                            self._uploader.get_app_presigned_url(app, ArtifactType.MAP_AND_ELF_FILES)
+                        ),
+                    ),
+                ],
+            )
+            sections.extend(built_test_related_apps_table_section)
+
+        if new_non_test_related_apps:
+            new_non_test_related_apps_table_section = self.create_table_section(
+                title=self.report_titles_map['new_non_test_related_apps'],
+                items=new_non_test_related_apps,
+                headers=[
+                    'App Dir',
+                    'Build Dir',
+                    'Build Log',
+                    'Your Branch App Size',
+                ],
+                row_attrs=[
+                    'app_dir',
+                    'build_dir',
+                ],
+                value_functions=[
+                    (
+                        'Your Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)
+                    ),
+                    ('Build Log', lambda app: self.get_download_link_for_url(
+                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS))),
+                ],
+            )
+            sections.extend(new_non_test_related_apps_table_section)
+
+        if built_non_test_related_apps:
+            built_non_test_related_apps = self._sort_items(
+                built_non_test_related_apps,
+                key='metrics.binary_size.difference_percentage',
+                order='desc',
+                sort_function=self.custom_sort,
+            )
+            built_non_test_related_apps_table_section = self.create_table_section(
+                title=self.report_titles_map['built_non_test_related_apps'],
+                items=built_non_test_related_apps,
+                headers=[
+                    'App Dir',
+                    'Build Dir',
+                    'Build Log',
+                    'Your Branch App Size',
+                    'Target Branch App Size',
+                    'Size Diff',
+                    'Size Diff, %',
+                ],
+                row_attrs=[
+                    'app_dir',
+                    'build_dir',
+                ],
+                value_functions=[
+                    (
+                        'Your Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].source_value)
+                    ),
+                    (
+                        'Target Branch App Size',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].target_value)
+                    ),
+                    (
+                        'Size Diff',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference)
+                    ),
+                    (
+                        'Size Diff, %',
+                        lambda app: str(app.metrics[BINARY_SIZE_METRIC_NAME].difference_percentage)
+                    ),
+                    ('Build Log', lambda app: self.get_download_link_for_url(
+                        self._uploader.get_app_presigned_url(app, ArtifactType.LOGS))),
+                ],
+            )
+            sections.extend(built_non_test_related_apps_table_section)
+
+        built_apps_report_url = self.write_report_to_file(
+            self.generate_html_report(''.join(sections)),
+            self.job_id,
+            self.built_apps_report_file,
+        )
+
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['built_test_related_apps'],
+            len(built_test_related_apps),
+            built_apps_report_url,
+        )
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['built_non_test_related_apps'],
+            len(built_non_test_related_apps),
+            built_apps_report_url,
+        )
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['new_test_related_apps'],
+            len(new_test_related_apps),
+            built_apps_report_url,
+        )
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['new_non_test_related_apps'],
+            len(new_non_test_related_apps),
+            built_apps_report_url,
+        )
+
+        self.additional_info += self._generate_top_n_apps_by_size_table()
+
+        return sections
+
+    def get_failed_apps_report_parts(self) -> t.List[str]:
+        failed_apps = [app for app in self.apps if app.build_status == BuildStatus.FAILED]
+        if not failed_apps:
+            return []
+
+        failed_apps_table_section = self.create_table_section(
+            title=self.report_titles_map['failed_apps'],
+            items=failed_apps,
+            headers=['App Dir', 'Build Dir', 'Failed Reason', 'Build Log'],
+            row_attrs=['app_dir', 'build_dir', 'build_comment'],
+            value_functions=[
+                ('Build Log', lambda app: self.get_download_link_for_url(self._uploader.get_app_presigned_url(app, ArtifactType.LOGS))),
+            ],
+        )
+        failed_apps_report_url = self.write_report_to_file(
+            self.generate_html_report(''.join(failed_apps_table_section)),
+            self.job_id,
+            self.failed_apps_report_file,
+        )
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['failed_apps'], len(failed_apps), failed_apps_report_url
+        )
+        return failed_apps_table_section
+
+    def get_skipped_apps_report_parts(self) -> t.List[str]:
+        skipped_apps = [app for app in self.apps if app.build_status == BuildStatus.SKIPPED]
+        if not skipped_apps:
+            return []
+
+        skipped_apps_table_section = self.create_table_section(
+            title=self.report_titles_map['skipped_apps'],
+            items=skipped_apps,
+            headers=['App Dir', 'Build Dir', 'Skipped Reason', 'Build Log'],
+            row_attrs=['app_dir', 'build_dir', 'build_comment'],
+            value_functions=[
+                ('Build Log', lambda app: self.get_download_link_for_url(self._uploader.get_app_presigned_url(app, ArtifactType.LOGS))),
+            ],
+        )
+        skipped_apps_report_url = self.write_report_to_file(
+            self.generate_html_report(''.join(skipped_apps_table_section)),
+            self.job_id,
+            self.skipped_apps_report_file,
+        )
+        self.additional_info += self.generate_additional_info_section(
+            self.report_titles_map['skipped_apps'], len(skipped_apps), skipped_apps_report_url
+        )
+        return skipped_apps_table_section
 
     def _get_report_str(self) -> str:
-        if not self.apps:
-            print('No apps found, skip generating build report')
-            return 'No Apps Built'
+        self.additional_info = f'**Build Summary (with commit {self.commit_id[:8]}):**\n'
+        failed_apps_report_parts = self.get_failed_apps_report_parts()
+        skipped_apps_report_parts = self.get_skipped_apps_report_parts()
+        built_apps_report_parts = self.get_built_apps_report_parts()
 
-        uploader = AppUploader(self.pipeline_id)
-
-        table_str = ''
-
-        failed_apps = [app for app in self.apps if app.build_status == BuildStatus.FAILED]
-        if failed_apps:
-            table_str += '<h2>Failed Apps</h2>'
-
-            failed_apps_table = PrettyTable()
-            failed_apps_table.field_names = [
-                'App Dir',
-                'Build Dir',
-                'Failed Reason',
-                'Build Log',
-            ]
-            for app in failed_apps:
-                failed_apps_table.add_row(
-                    [
-                        app.app_dir,
-                        app.build_dir,
-                        app.build_comment or '',
-                        self.get_download_link_for_url(uploader.get_app_presigned_url(app, ArtifactType.LOGS)),
-                    ]
-                )
-
-            table_str += self.table_to_html_str(failed_apps_table)
-
-        built_test_related_apps = [app for app in self.apps if app.build_status == BuildStatus.SUCCESS and app.preserve]
-        if built_test_related_apps:
-            table_str += '<h2>Built Apps (Test Related)</h2>'
-
-            built_apps_table = PrettyTable()
-            built_apps_table.field_names = [
-                'App Dir',
-                'Build Dir',
-                'Bin Files with Build Log (without map and elf)',
-                'Map and Elf Files',
-            ]
-            app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = {}
-            for app in built_test_related_apps:
-                _d = {
-                    ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value: uploader.get_app_presigned_url(
-                        app, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES
-                    ),
-                    ArtifactType.MAP_AND_ELF_FILES.value: uploader.get_app_presigned_url(
-                        app, ArtifactType.MAP_AND_ELF_FILES
-                    ),
-                }
-
-                built_apps_table.add_row(
-                    [
-                        app.app_dir,
-                        app.build_dir,
-                        self.get_download_link_for_url(_d[ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES]),
-                        self.get_download_link_for_url(_d[ArtifactType.MAP_AND_ELF_FILES]),
-                    ]
-                )
-
-                app_presigned_urls_dict[app.build_path] = _d
-
-            # also generate a yaml file that includes the apps and the presigned urls
-            # for helping debugging locally
-            with open(self.apps_presigned_url_filepath, 'w') as fw:
-                yaml.dump(app_presigned_urls_dict, fw)
-
-            table_str += self.table_to_html_str(built_apps_table)
-
-        built_non_test_related_apps = [
-            app for app in self.apps if app.build_status == BuildStatus.SUCCESS and not app.preserve
-        ]
-        if built_non_test_related_apps:
-            table_str += '<h2>Built Apps (Non Test Related)</h2>'
-
-            built_apps_table = PrettyTable()
-            built_apps_table.field_names = [
-                'App Dir',
-                'Build Dir',
-                'Build Log',
-            ]
-            for app in built_non_test_related_apps:
-                built_apps_table.add_row(
-                    [
-                        app.app_dir,
-                        app.build_dir,
-                        self.get_download_link_for_url(uploader.get_app_presigned_url(app, ArtifactType.LOGS)),
-                    ]
-                )
-
-            table_str += self.table_to_html_str(built_apps_table)
-
-        skipped_apps = [app for app in self.apps if app.build_status == BuildStatus.SKIPPED]
-        if skipped_apps:
-            table_str += '<h2>Skipped Apps</h2>'
-
-            skipped_apps_table = PrettyTable()
-            skipped_apps_table.field_names = ['App Dir', 'Build Dir', 'Skipped Reason', 'Build Log']
-            for app in skipped_apps:
-                skipped_apps_table.add_row(
-                    [
-                        app.app_dir,
-                        app.build_dir,
-                        app.build_comment or '',
-                        self.get_download_link_for_url(uploader.get_app_presigned_url(app, ArtifactType.LOGS)),
-                    ]
-                )
-
-            table_str += self.table_to_html_str(skipped_apps_table)
-
-        return self.generate_html_report(table_str)
+        return self.generate_html_report(
+            ''.join(failed_apps_report_parts + built_apps_report_parts + skipped_apps_report_parts)
+        )
 
 
 class TargetTestReportGenerator(ReportGenerator):

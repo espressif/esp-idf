@@ -141,8 +141,9 @@ TEST_CASE("I2C device add & remove check", "[i2c]")
 
     i2c_master_bus_rm_device(dev_1);
     i2c_master_bus_rm_device(dev_2);
-    i2c_master_bus_rm_device(dev_3);
 
+    TEST_ESP_ERR(ESP_ERR_INVALID_STATE, i2c_del_master_bus(bus_handle));
+    i2c_master_bus_rm_device(dev_3);
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
 

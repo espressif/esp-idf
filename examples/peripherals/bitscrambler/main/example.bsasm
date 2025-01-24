@@ -1,10 +1,13 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
 # Example bitscrambler program. Reads in 8 bytes and spits out 8 bytes are
 # the 'rotated' version of the input bytes. Specifically, output byte 0
 # consists of bit 0 of input byte 0, bit 0 of input byte 1, bit 0 of input
 # byte 2 etc. Output byte 1 consists of bit 1 of input byte 0, bit 1 of
 # input byte 1, bit 1 of input byte 2, etc.
 
-cfg trailing_bytes 64			#If we have an EOF on the input, we still
+cfg trailing_bytes 8			#If we have an EOF on the input, we still
 								#need to process the 64 bits in M0/M1
 cfg prefetch true				#We expect M0/M1 to be filled
 cfg lut_width_bits 8			#Not really applicable here

@@ -215,6 +215,8 @@ Uninstall I2C master bus and device
 
 If a previously installed I2C bus or device is no longer needed, it's recommended to recycle the resource by calling :cpp:func:`i2c_master_bus_rm_device` or :cpp:func:`i2c_del_master_bus`, so as to release the underlying hardware.
 
+Please note that removing all devices attached to bus before delete the master bus.
+
 Install I2C slave device
 ~~~~~~~~~~~~~~~~~~~~~~~~
 

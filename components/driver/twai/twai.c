@@ -293,6 +293,7 @@ static void twai_intr_handler_main(void *arg)
 static void twai_configure_gpio(twai_obj_t *p_obj)
 {
     uint8_t controller_id = p_obj->controller_id;
+    assert(GPIO_IS_VALID_OUTPUT_GPIO(p_obj->tx_io));    //coverity check
     uint64_t gpio_mask = BIT64(p_obj->tx_io);
 
     //Set RX pin
@@ -330,6 +331,7 @@ static void twai_configure_gpio(twai_obj_t *p_obj)
 static void twai_release_gpio(twai_obj_t *p_obj)
 {
     assert(p_obj);
+    assert(GPIO_IS_VALID_OUTPUT_GPIO(p_obj->tx_io));    //coverity check
     uint64_t gpio_mask = BIT64(p_obj->tx_io);
 
     esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ONE_INPUT, twai_controller_periph_signals.controllers[p_obj->controller_id].rx_sig, false);

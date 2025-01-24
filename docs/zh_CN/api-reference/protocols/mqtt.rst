@@ -205,3 +205,4 @@ API 参考
 -------------
 
 .. include-build-file:: inc/mqtt_client.inc
+.. include-build-file:: inc/mqtt5_client.inc

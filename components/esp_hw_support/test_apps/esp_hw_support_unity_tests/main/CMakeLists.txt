@@ -22,7 +22,7 @@ if(CONFIG_SOC_ETM_SUPPORTED)
 endif()
 
 if(CONFIG_SOC_GPTIMER_SUPPORTED)
-    list(APPEND SRC "test_intr_alloc.c")
+    list(APPEND srcs "test_intr_alloc.c")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,

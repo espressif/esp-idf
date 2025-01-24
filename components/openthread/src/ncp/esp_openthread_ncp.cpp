@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "esp_openthread_ncp.h"
 #include "ncp_base.hpp"
 
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
 #include "esp_coex_i154.h"
 #endif
 
@@ -70,7 +70,7 @@ otError NcpBase::VendorGetPropertyHandler(spinel_prop_key_t aPropKey)
     switch (aPropKey)
     {
     case SPINEL_PROP_VENDOR_ESP_COEX_EVENT: {
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
         esp_ieee802154_coex_config_t config = esp_ieee802154_get_coex_config();
         const uint8_t *args = reinterpret_cast<const uint8_t *>(&config);
         error = mEncoder.WriteDataWithLen(args, sizeof(esp_ieee802154_coex_config_t));
@@ -110,7 +110,7 @@ otError NcpBase::VendorSetPropertyHandler(spinel_prop_key_t aPropKey)
         break;
     }
     case SPINEL_PROP_VENDOR_ESP_COEX_EVENT: {
-#if !CONFIG_IEEE802154_TEST && (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
+#if (CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE)
         const uint8_t *args = nullptr;
         uint16_t len = 0;
         mDecoder.ReadDataWithLen(args, len);

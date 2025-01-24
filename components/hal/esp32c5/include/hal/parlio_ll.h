@@ -397,6 +397,7 @@ static inline uint32_t parlio_ll_rx_get_fifo_cycle_cnt(parl_io_dev_t *dev)
  * @param dev Parallel IO register base address
  * @param src Clock source
  */
+__attribute__((always_inline))
 static inline void parlio_ll_tx_set_clock_source(parl_io_dev_t *dev, parlio_clock_source_t src)
 {
     (void)dev;

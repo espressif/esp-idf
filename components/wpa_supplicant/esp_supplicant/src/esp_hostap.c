@@ -168,7 +168,10 @@ void *hostap_init(void)
         wpa_printf(MSG_DEBUG, "overriding transition_disable config with 0 as authmode is not WPA3");
     }
 
+#ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
+#endif /* CONFIG_SAE */
+
     //TODO change it when AP support GCMP-PSK
     auth_conf->group_mgmt_cipher = WPA_CIPHER_AES_128_CMAC;
 
@@ -316,8 +319,7 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
     reply = os_zalloc(sizeof(wifi_mgmt_frm_req_t) + sizeof(uint16_t));
     if (!reply) {
         wpa_printf(MSG_ERROR, "failed to allocate memory for assoc response");
-        res = WLAN_STATUS_UNSPECIFIED_FAILURE;
-        goto done;
+        return WLAN_STATUS_UNSPECIFIED_FAILURE;
     }
     reply->ifx = WIFI_IF_AP;
     reply->subtype = subtype;
@@ -330,7 +332,6 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
         wpa_printf(MSG_INFO, "esp_send_assoc_resp_failed: send failed");
     }
 #undef ASSOC_RESP_LENGTH
-done:
     os_free(reply);
     return res;
 }

@@ -38,6 +38,8 @@ typedef struct {
     uint32_t mii_crs_i_idx;
     uint32_t mii_rx_er_i_idx;
     uint32_t mii_tx_er_o_idx;
+    uint32_t rmii_refclk_i_idx;
+    uint32_t rmii_refclk_o_idx;
 } emac_io_info_t;
 
 typedef struct {

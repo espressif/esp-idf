@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -87,9 +87,7 @@ static void ecc_point_mul(const uint8_t *k_le, const uint8_t *x_le, const uint8_
     } else {
         ecc_hal_set_mode(ECC_MODE_POINT_MUL);
     }
-#ifdef SOC_ECC_CONSTANT_TIME_POINT_MUL
     ecc_hal_enable_constant_time_point_mul(true);
-#endif /* SOC_ECC_CONSTANT_TIME_POINT_MUL */
     ecc_hal_start_calc();
 
     while (!ecc_hal_is_calc_finished()) {
@@ -167,6 +165,12 @@ TEST(ecc, ecc_point_multiplication_on_SECP192R1_and_SECP256R1)
 
 static void test_ecc_point_mul_inner_constant_time(void)
 {
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        TEST_IGNORE_MESSAGE("Skipping test, not supported on ESP32-H2 <v1.2\n");
+        return;
+    }
+#endif
     uint8_t scalar_le[32];
     uint8_t x_le[32];
     uint8_t y_le[32];

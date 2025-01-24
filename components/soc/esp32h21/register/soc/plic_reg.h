@@ -10,7 +10,6 @@
 extern "C" {
 #endif
 
-//TODO: [ESP32H21] IDF-11859
 
 #define DR_REG_PLIC_MX_BASE       ( 0x20001000 )
 #define DR_REG_PLIC_UX_BASE       ( 0x20001400 )

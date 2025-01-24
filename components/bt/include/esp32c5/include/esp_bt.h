@@ -159,7 +159,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20240422
+#define CONFIG_VERSION  0x20241121
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -213,6 +213,8 @@ typedef struct {
     uint8_t ignore_wl_for_direct_adv;                /*!< Ignore the whitelist for direct advertising */
     uint8_t enable_pcl;                              /*!< Enable power control */
     uint8_t csa2_select;                             /*!< Select CSA#2*/
+    uint8_t enable_csr;                              /*!< Enable CSR */
+    uint8_t ble_aa_check;                            /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
     uint32_t config_magic;                           /*!< Magic number for configuration validation */
 } esp_bt_controller_config_t;
 
