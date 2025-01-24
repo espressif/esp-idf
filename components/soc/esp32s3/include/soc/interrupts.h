@@ -116,7 +116,7 @@ typedef enum {
     ETS_PERI_BACKUP_INTR_SOURCE,
     ETS_DMA_EXTMEM_REJECT_SOURCE,
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-} periph_interrput_t;
+} periph_interrupt_t;
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

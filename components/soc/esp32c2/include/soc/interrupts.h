@@ -62,7 +62,7 @@ typedef enum {
     ETS_CORE0_PIF_PMS_SIZE_INTR_SOURCE,
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 
