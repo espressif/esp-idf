@@ -33,6 +33,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gpio.h"
 #include "esp_psram.h"
@@ -1003,9 +1004,10 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
     int restart_skip_bytes = LCD_FIFO_PRESERVE_SIZE_PX * (rgb_panel->fb_bits_per_pixel / 8);
     if (rgb_panel->bb_size) {
         // DMA is used to convey the bounce buffer
-        size_t num_dma_nodes_per_bounce_buffer = (rgb_panel->bb_size + LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
+        size_t buffer_alignment = rgb_panel->int_mem_align;
+        size_t num_dma_nodes_per_bounce_buffer = esp_dma_calculate_node_count(rgb_panel->bb_size, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
         gdma_link_list_config_t link_cfg = {
-            .buffer_alignment = rgb_panel->int_mem_align,
+            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = num_dma_nodes_per_bounce_buffer * RGB_LCD_PANEL_BOUNCE_BUF_NUM,
             .flags = {
@@ -1024,7 +1026,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
                             TAG, "mount DMA bounce buffers failed");
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
-            .buffer_alignment = rgb_panel->int_mem_align,
+            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = 1, // the restart link only contains one node
             .flags = {
@@ -1043,9 +1045,10 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         gdma_link_concat(rgb_panel->dma_restart_link, 0, rgb_panel->dma_bb_link, 1);
     } else {
         // DMA is used to convey the frame buffer
-        size_t num_dma_nodes = (rgb_panel->fb_size + LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE - 1) / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE;
+        size_t buffer_alignment = rgb_panel->flags.fb_in_psram ? rgb_panel->ext_mem_align : rgb_panel->int_mem_align;
+        uint32_t num_dma_nodes = esp_dma_calculate_node_count(rgb_panel->fb_size, buffer_alignment, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
         gdma_link_list_config_t link_cfg = {
-            .buffer_alignment = rgb_panel->flags.fb_in_psram ? rgb_panel->ext_mem_align : rgb_panel->int_mem_align,
+            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = num_dma_nodes,
             .flags = {
@@ -1068,7 +1071,7 @@ static esp_err_t lcd_rgb_panel_init_trans_link(esp_rgb_panel_t *rgb_panel)
         }
         // create restart link
         gdma_link_list_config_t restart_link_cfg = {
-            .buffer_alignment = rgb_panel->flags.fb_in_psram ? rgb_panel->ext_mem_align : rgb_panel->int_mem_align,
+            .buffer_alignment = buffer_alignment,
             .item_alignment = LCD_GDMA_DESCRIPTOR_ALIGN,
             .num_items = 1, // the restart link only contains one node
             .flags = {
