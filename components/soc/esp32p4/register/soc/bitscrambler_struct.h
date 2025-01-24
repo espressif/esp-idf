@@ -593,7 +593,7 @@ typedef struct {
         bitscrambler_lut_cfg0_reg_t cfg0;
         bitscrambler_lut_cfg1_reg_t cfg1;
     } lut_cfg[2];
-    volatile bitscrambler_tailing_bits_reg_t tailing_bits[2];
+    volatile bitscrambler_tailing_bits_reg_t tail_bits[2];
     volatile bitscrambler_ctrl_reg_t ctrl[2];
     volatile bitscrambler_state_reg_t state[2];
     uint32_t reserved_038[48];

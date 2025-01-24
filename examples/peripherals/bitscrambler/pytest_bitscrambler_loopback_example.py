@@ -5,6 +5,7 @@ from pytest_embedded import Dut
 
 
 @pytest.mark.esp32p4
+@pytest.mark.esp32c5
 @pytest.mark.generic
 def test_bitscrambler_loopback_example(dut: Dut) -> None:
     dut.expect_exact('BitScrambler example main', timeout=5)

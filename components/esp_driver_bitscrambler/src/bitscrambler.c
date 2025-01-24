@@ -100,6 +100,7 @@ static void enable_clocks(bitscrambler_t *bs)
         if (ref_count == 0) { //we're the first to enable the BitScrambler module
             bitscrambler_ll_set_bus_clock_sys_enable(1);
             bitscrambler_ll_reset_sys();
+            bitscrambler_ll_mem_power_by_pmu();
         }
         if (bs->cfg.dir == BITSCRAMBLER_DIR_RX || bs->loopback) {
             bitscrambler_ll_set_bus_clock_rx_enable(1);
@@ -123,6 +124,7 @@ static void disable_clocks(bitscrambler_t *bs)
         }
         if (ref_count == 0) { //we're the last to disable the BitScrambler module
             bitscrambler_ll_set_bus_clock_sys_enable(0);
+            bitscrambler_ll_mem_force_power_off();
         }
     }
 }
@@ -221,7 +223,7 @@ esp_err_t bitscrambler_load_program(bitscrambler_handle_t bs, const void *progra
 
     //Set options from header
     bitscrambler_ll_set_lut_width(bs->hw, bs->cfg.dir, hdr.lut_width);
-    bitscrambler_ll_set_prefetch_mode(bs->hw, bs->cfg.dir, hdr.prefetch ? BITSCRAMBLER_PREFETCH_ENABLED : BITSCRAMBLER_PREFETCH_DISABLED);
+    bitscrambler_ll_enable_prefetch_on_reset(bs->hw, bs->cfg.dir, hdr.prefetch);
     bitscrambler_ll_set_eof_mode(bs->hw, bs->cfg.dir, hdr.eof_on);
     bitscrambler_ll_set_tailing_bits(bs->hw, bs->cfg.dir, hdr.trailing_bits);
     //fixed options
@@ -298,7 +300,7 @@ esp_err_t bitscrambler_reset(bitscrambler_handle_t handle)
     //If the halt bit is set, the Bitscrambler should (eventually) go to idle state. If it
     //does not, something got stuck.
     int timeout = BITSCRAMBLER_RESET_ITERATIONS;
-    while ((bitscrambler_ll_current_state(handle->hw, handle->cfg.dir) != BITSCRAMBLER_STATE_IDLE) && timeout != 0) {
+    while ((bitscrambler_ll_get_current_state(handle->hw, handle->cfg.dir) != BITSCRAMBLER_STATE_IDLE) && timeout != 0) {
         timeout--;
     }
     if (timeout == 0) {

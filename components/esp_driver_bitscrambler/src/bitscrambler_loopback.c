@@ -11,6 +11,8 @@
 #include "esp_private/gdma_link.h"
 #include "esp_private/bitscrambler.h"
 #include "hal/dma_types.h"
+#include "hal/cache_hal.h"
+#include "hal/cache_ll.h"
 #include "bitscrambler_private.h"
 #include "bitscrambler_soc_specific.h"
 #include "esp_err.h"
@@ -18,6 +20,7 @@
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
 #include "esp_dma_utils.h"
+#include "esp_memory_utils.h"
 
 const static char *TAG = "bs_loop";
 
@@ -97,7 +100,11 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     bs->max_transfer_sz_bytes = max_transfer_sz_bytes;
     int desc_ct = (max_transfer_sz_bytes + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
     int bus = g_bitscrambler_periph_desc[attach_to].bus;
+#ifdef SOC_GDMA_BUS_AXI
     size_t align = (bus == SOC_GDMA_BUS_AXI) ? 8 : 4;
+#else
+    size_t align = 4;
+#endif
 
     // create DMA link list for TX and RX
     gdma_link_list_config_t dma_link_cfg = {
@@ -239,10 +246,16 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);
 
-    //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
-    //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
-    //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
-    esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    int int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    int ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+
+    bool need_cache_sync = esp_ptr_internal(buffer_in) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
+        //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
+        //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
+        esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
+    }
 
     gdma_start(bsl->rx_channel, gdma_link_get_head_addr(bsl->rx_link_list));
     gdma_start(bsl->tx_channel, gdma_link_get_head_addr(bsl->tx_link_list));
@@ -258,7 +271,10 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         ret = ESP_ERR_TIMEOUT;
     }
 
-    esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    need_cache_sync = esp_ptr_internal(buffer_out) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+    }
 
     if (bytes_written) {
         *bytes_written = gdma_link_count_buffer_size_till_eof(bsl->rx_link_list, 0);
