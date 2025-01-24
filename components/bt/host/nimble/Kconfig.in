@@ -176,7 +176,7 @@ config BT_NIMBLE_SMP_ID_RESET
     default n
     help
         There are tracking risks associated with using a fixed or static IRK.
-        If enabled this option, Bluedroid will assign a new randomly-generated IRK
+        If enabled this option, NimBLE will assign a new randomly-generated IRK
         when all pairing and bonding records are deleted. This would decrease the ability
         of a previously paired peer to be used to determine whether a device
         with which it previously shared an IRK is within range.
@@ -767,9 +767,17 @@ config BT_NIMBLE_VS_SUPPORT
         This option is used to enable support for sending Vendor Specific HCI commands and handling
         Vendor Specific HCI Events.
 
+config BT_NIMBLE_GATTC_PROC_PREEMPTION_PROTECT
+    bool "Gatt-proc preemption protect check"
+    depends on BT_NIMBLE_ENABLED
+    default n
+    help
+        When BLE and Wireless protocol/IEEE 802.15.4 operate in coexistence, BLE preemption
+        can disrupt the GATT context,causing the service discovery callback to not be invoked.
+        A temporary list is maintained to preserve the GATT context and use it in case of preemption.
+
 config BT_NIMBLE_ENC_ADV_DATA
     bool "Encrypted Advertising Data"
-    depends on BT_NIMBLE_50_FEATURE_SUPPORT
     help
         This option is used to enable encrypted advertising data.
 
