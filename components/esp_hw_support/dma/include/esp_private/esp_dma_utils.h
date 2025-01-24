@@ -83,6 +83,16 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
  */
 esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_buf_array);
 
+/**
+ * @brief Calculate the number of DMA linked list nodes required for a given buffer size
+ *
+ * @param[in] buffer_size Total size of the buffer
+ * @param[in] buffer_alignment Alignment requirement for the buffer
+ * @param[in] max_buffer_size_per_node Maximum buffer size that each node can handle
+ * @return Number of DMA linked list nodes required
+ */
+size_t esp_dma_calculate_node_count(size_t buffer_size, size_t buffer_alignment, size_t max_buffer_size_per_node);
+
 #ifdef __cplusplus
 }
 #endif

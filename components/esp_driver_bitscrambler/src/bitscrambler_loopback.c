@@ -9,6 +9,7 @@
 #include "driver/bitscrambler.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_private/bitscrambler.h"
 #include "hal/dma_types.h"
 #include "hal/cache_hal.h"
@@ -98,7 +99,7 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     }
 
     bs->max_transfer_sz_bytes = max_transfer_sz_bytes;
-    int desc_ct = (max_transfer_sz_bytes + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    size_t desc_ct = esp_dma_calculate_node_count(max_transfer_sz_bytes, 4, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     int bus = g_bitscrambler_periph_desc[attach_to].bus;
 #ifdef SOC_GDMA_BUS_AXI
     size_t align = (bus == SOC_GDMA_BUS_AXI) ? 8 : 4;
