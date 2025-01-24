@@ -63,7 +63,7 @@ static void handle_ot_netdata_change(void)
 
 static void handle_ot_role_change(otInstance* instance)
 {
-#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE && OPENTHREAD_RADIO_NATIVE) || CONFIG_EXTERNAL_COEX_ENABLE)
+#if ((CONFIG_ESP_COEX_SW_COEXIST_ENABLE || CONFIG_EXTERNAL_COEX_ENABLE) && OPENTHREAD_RADIO_NATIVE)
         otLinkModeConfig linkmode = otThreadGetLinkMode(instance);
         esp_ieee802154_coex_config_t config = esp_openthread_get_coex_config();
         config.txrx = (linkmode.mRxOnWhenIdle) ? IEEE802154_LOW : IEEE802154_MIDDLE;
