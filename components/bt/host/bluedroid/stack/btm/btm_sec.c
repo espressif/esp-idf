@@ -1720,7 +1720,7 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, BD_ADDR bd_addr, BT_OCTET16 c, BT_O
         btsnd_hcic_rem_oob_reply (bd_addr, c, r);
     }
 }
-
+#if 0
 /*******************************************************************************
 **
 ** Function         BTM_BuildOobData
@@ -1745,8 +1745,10 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
     UINT8   *p = p_data;
     UINT16  len = 0;
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
     UINT16  name_size;
     UINT8   name_type = BTM_EIR_SHORTENED_LOCAL_NAME_TYPE;
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
 
     if (p_data && max_len >= BTM_OOB_MANDATORY_SIZE) {
@@ -1789,6 +1791,7 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
             max_len -= delta;
         }
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
         name_size = name_len;
         if (name_size > strlen(btm_cb.cfg.bredr_bd_name)) {
             name_type = BTM_EIR_COMPLETE_LOCAL_NAME_TYPE;
@@ -1802,6 +1805,7 @@ UINT16 BTM_BuildOobData(UINT8 *p_data, UINT16 max_len, BT_OCTET16 c,
             len     += delta;
             max_len -= delta;
         }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
         /* update len */
         p = p_data;
@@ -1871,6 +1875,7 @@ UINT8 *BTM_ReadOobData(UINT8 *p_data, UINT8 eir_tag, UINT8 *p_len)
 
     return p_ret;
 }
+#endif
 #endif  ///BTM_OOB_INCLUDED == TRUE && SMP_INCLUDED == TRUE
 
 #if (CLASSIC_BT_INCLUDED == TRUE)

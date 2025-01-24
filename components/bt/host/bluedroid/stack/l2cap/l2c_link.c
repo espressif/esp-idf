@@ -368,9 +368,11 @@ BOOLEAN l2c_link_hci_disc_comp (UINT16 handle, UINT8 reason)
             BTM_Recovery_Pre_State();
         }
         #if (BLE_50_FEATURE_SUPPORT == TRUE)
+        #if (BLE_50_EXTEND_ADV_EN == TRUE)
         if(btm_ble_inter_get() && reason == HCI_ERR_CONN_FAILED_ESTABLISHMENT) {
             BTM_BleStartExtAdvRestart(handle);
         }
+        #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
         #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif  ///BLE_INCLUDED == TRUE
         status = FALSE;

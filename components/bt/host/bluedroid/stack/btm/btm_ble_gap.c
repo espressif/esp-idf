@@ -86,7 +86,9 @@ static UINT8 btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB *p_cb,
         tBLE_ADDR_TYPE *p_own_addr_type);
 static void btm_ble_stop_observe(void);
 static void btm_ble_stop_discover(void);
+#if (BLE_42_SCAN_EN == TRUE)
 static void btm_adv_pkt_handler(void *arg);
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 uint32_t BTM_BleUpdateOwnType(uint8_t *own_bda_type, tBTM_START_ADV_CMPL_CBACK *cb);
 
 #define BTM_BLE_INQ_RESULT          0x01
@@ -1332,7 +1334,9 @@ void BTM_BleClearBgConnDev(void)
 {
     btm_ble_start_auto_conn(FALSE);
     btm_ble_clear_white_list(NULL);
+#if (tGATT_BG_CONN_DEV == TRUE)
     gatt_reset_bgdev_list();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
 }
 
 /*******************************************************************************
@@ -1355,7 +1359,7 @@ BOOLEAN BTM_BleUpdateBgConnDev(BOOLEAN add_remove, BD_ADDR   remote_bda)
     BTM_TRACE_EVENT("%s() add=%d", __func__, add_remove);
     return btm_update_dev_to_white_list(add_remove, remote_bda, 0, NULL);
 }
-
+#if 0
 /*******************************************************************************
 **
 ** Function         BTM_BleSetConnectableMode
@@ -1383,7 +1387,7 @@ tBTM_STATUS BTM_BleSetConnectableMode(tBTM_BLE_CONN_MODE connectable_mode)
     p_cb->directed_conn = connectable_mode;
     return btm_ble_set_connectability( p_cb->connectable_mode);
 }
-
+#endif
 /*******************************************************************************
 **
 ** Function         btm_set_conn_mode_adv_init_addr
@@ -2029,6 +2033,7 @@ BOOLEAN BTM_BleGetCurrentAddress(BD_ADDR addr, uint8_t *addr_type)
     return TRUE;
 }
 
+#if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTM_CheckAdvData
@@ -2074,7 +2079,7 @@ UINT8 *BTM_CheckAdvData( UINT8 *p_adv, UINT16 adv_data_len, UINT8 type, UINT8 *p
     *p_length = 0;
     return NULL;
 }
-
+#endif // #if ((BLE_42_SCAN_EN == TRUE) || (BLE_50_EXTEND_SCAN_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTM__BLEReadDiscoverability
@@ -2535,6 +2540,7 @@ void btm_ble_set_adv_flag(UINT16 connect_mode, UINT16 disc_mode)
         btm_ble_update_adv_flag(flag);
     }
 }
+#if 0
 /*******************************************************************************
 **
 ** Function         btm_ble_set_discoverability
@@ -2637,7 +2643,7 @@ tBTM_STATUS btm_ble_set_discoverability(UINT16 combined_mode)
     }
     return status;
 }
-
+#endif
 /*******************************************************************************
 **
 ** Function         btm_ble_set_connectability
@@ -3485,6 +3491,7 @@ void btm_send_sel_conn_callback(BD_ADDR remote_bda, UINT8 evt_type, UINT8 *p_dat
     }
 }
 
+#if (BLE_42_SCAN_EN == TRUE)
 static void btm_adv_pkt_handler(void *arg)
 {
     UINT8   hci_evt_code, hci_evt_len;
@@ -3527,6 +3534,7 @@ static void btm_adv_pkt_handler(void *arg)
     UNUSED(hci_evt_code);
     UNUSED(hci_evt_len);
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -3813,6 +3821,7 @@ static void btm_ble_process_adv_pkt_cont(BD_ADDR bda, UINT8 addr_type, UINT8 evt
 
 void btm_ble_process_adv_discard_evt(UINT8 *p)
 {
+#if (BLE_42_SCAN_EN == TRUE)
 #if (BLE_ADV_REPORT_FLOW_CONTROL == TRUE)
     uint32_t num_dis = 0;
     STREAM_TO_UINT32 (num_dis, p);
@@ -3821,6 +3830,7 @@ void btm_ble_process_adv_discard_evt(UINT8 *p)
         (p_obs_discard_cb)(num_dis);
     }
 #endif
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 }
 
 void btm_ble_process_direct_adv_pkt(UINT8 *p)
@@ -4524,7 +4534,9 @@ BOOLEAN btm_ble_update_mode_operation(UINT8 link_role, BD_ADDR bd_addr, UINT8 st
        now in order */
     if (btm_ble_get_conn_st() == BLE_CONN_IDLE && status != HCI_ERR_HOST_REJECT_RESOURCES &&
             !btm_send_pending_direct_conn()) {
+#if (tGATT_BG_CONN_DEV == TRUE)
         bg_con = btm_ble_resume_bg_conn();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     }
 
     return bg_con;
@@ -4575,14 +4587,14 @@ void btm_ble_init (void)
     p_cb->scan_int = p_cb->scan_win = BTM_BLE_SCAN_PARAM_UNDEF;
 
     p_cb->inq_var.evt_type = BTM_BLE_NON_CONNECT_EVT;
-
+#if (BLE_42_SCAN_EN == TRUE)
     p_cb->adv_rpt_queue = pkt_queue_create();
     assert(p_cb->adv_rpt_queue != NULL);
 
     p_cb->adv_rpt_ready = osi_event_create(btm_adv_pkt_handler, NULL);
     assert(p_cb->adv_rpt_ready != NULL);
     osi_event_bind(p_cb->adv_rpt_ready, btu_get_current_thread(), 0);
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #if BLE_VND_INCLUDED == FALSE
 #if BLE_ANDROID_CONTROLLER_SCAN_FILTER == TRUE
     btm_ble_adv_filter_init();
@@ -4606,13 +4618,13 @@ void btm_ble_free (void)
     BTM_TRACE_DEBUG("%s", __func__);
 
     fixed_queue_free(p_cb->conn_pending_q, osi_free_func);
-
+#if (BLE_42_SCAN_EN == TRUE)
     pkt_queue_destroy(p_cb->adv_rpt_queue, NULL);
     p_cb->adv_rpt_queue = NULL;
 
     osi_event_delete(p_cb->adv_rpt_ready);
     p_cb->adv_rpt_ready = NULL;
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #if BTM_DYNAMIC_MEMORY == TRUE
     osi_free(cmn_ble_gap_vsc_cb_ptr);
     cmn_ble_gap_vsc_cb_ptr = NULL;
@@ -4781,6 +4793,7 @@ BOOLEAN BTM_BleSetCsaSupport(UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *
     return TRUE;
 }
 
+#if (BLE_42_SCAN_EN == TRUE)
 bool btm_ble_adv_pkt_ready(void)
 {
     tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
@@ -4799,4 +4812,6 @@ bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt)
     pkt_queue_enqueue(p_cb->adv_rpt_queue, pkt);
     return true;
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
+
 #endif  /* BLE_INCLUDED */
