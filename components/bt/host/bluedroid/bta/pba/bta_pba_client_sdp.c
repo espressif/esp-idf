@@ -214,8 +214,8 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
 {
     tSDP_UUID       uuid_list[1];
     UINT16          num_uuid = 1;
-    UINT16          attr_list[4];
-    UINT8           num_attr;
+    UINT16          attr_list[6];
+    UINT8           num_attr = 6;
     BOOLEAN         db_inited = FALSE;
 
     /* get proto list and features */
@@ -225,7 +225,6 @@ BOOLEAN bta_pba_client_do_disc(tBTA_PBA_CLIENT_CCB *p_ccb)
     attr_list[3] = ATTR_ID_GOEP_L2CAP_PSM;
     attr_list[4] = ATTR_ID_SUPPORTED_REPOSITORIES;
     attr_list[5] = ATTR_ID_PBAP_SUPPORTED_FEATURES;
-    num_attr = 6;
     uuid_list[0].uu.uuid16 = UUID_SERVCLASS_PBAP_PSE;
     uuid_list[0].len = LEN_UUID_16;
 
