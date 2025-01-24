@@ -64,6 +64,8 @@ typedef struct {
     bool partial_http_download;                    /*!< Enable Firmware image to be downloaded over multiple HTTP requests */
     int max_http_request_size;                     /*!< Maximum request size for partial HTTP download */
     uint32_t buffer_caps;                          /*!< The memory capability to use when allocating the buffer for OTA update. Default capability is MALLOC_CAP_DEFAULT */
+    bool ota_resumption;                           /*!< Enable resumption in downloading of OTA image between reboots */
+    size_t ota_image_bytes_written;                /*!< Number of OTA image bytes written to flash so far, updated by the application when OTA data is written successfully in the target OTA partition. */
 #if CONFIG_ESP_HTTPS_OTA_DECRYPT_CB || __DOXYGEN__
     decrypt_cb_t decrypt_cb;                       /*!< Callback for external decryption layer */
     void *decrypt_user_ctx;                        /*!< User context for external decryption layer */
