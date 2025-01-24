@@ -114,7 +114,9 @@ typedef enum {
     ETS_DCACHE_SYNC_INTR_SOURCE,                /**< interrupt of data cache sync done, LEVEL*/
     ETS_ICACHE_SYNC_INTR_SOURCE,                /**< interrupt of instruction cache sync done, LEVEL*/
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-} periph_interrput_t;
+} periph_interrupt_t;
+
+typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 
