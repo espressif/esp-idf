@@ -1403,6 +1403,10 @@
 #define BLE_HOST_BATCH_SCAN_EN              FALSE
 #endif
 
+#ifndef BLE_HOST_BG_CONNECT_EN
+#define BLE_HOST_BG_CONNECT_EN              FALSE
+#endif
+
 #ifndef LOCAL_BLE_CONTROLLER_ID
 #define LOCAL_BLE_CONTROLLER_ID         (1)
 #endif

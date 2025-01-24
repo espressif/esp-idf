@@ -583,10 +583,11 @@ void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window)
             p_ble_cb->scan_win = scan_window;
             new_param = TRUE;
         }
-
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (new_param && p_ble_cb->conn_state == BLE_BG_CONN) {
             btm_ble_suspend_bg_conn();
         }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     } else {
         BTM_TRACE_ERROR("Illegal Connection Scan Parameters");
     }

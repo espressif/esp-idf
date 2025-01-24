@@ -229,11 +229,13 @@ bool btu_task_post(uint32_t sig, void *param, uint32_t timeout)
             break;
         case SIG_BTU_HCI_ADV_RPT_MSG:
 #if BLE_INCLUDED == TRUE
+#if (BLE_42_SCAN_EN == TRUE)
             if (param != NULL) {
                 btm_ble_adv_pkt_post(param);
             }
             btm_ble_adv_pkt_ready();
             status = true;
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 #else
             osi_free(param);
             status = false;

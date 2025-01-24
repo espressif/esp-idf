@@ -1042,6 +1042,8 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.period_adv_stop.instance = params->per_adv_stop.instance;
             break;
         }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_CREATE_SYNC_COMPLETE_EVT;
             param.period_adv_create_sync.status = btc_btm_status_to_esp_status(params->per_adv_sync_create.status);
@@ -1072,7 +1074,7 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.period_adv_clear_dev.status = btc_btm_status_to_esp_status(params->per_adv_clear_dev.status);
             break;
         }
-#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
         case BTA_DM_BLE_5_GAP_SET_EXT_SCAN_PARAMS_COMPLETE_EVT: {
@@ -1889,6 +1891,7 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
 	break;
     }
 #endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     case BTC_GAP_BLE_EXT_ADV_START: {
         esp_ble_gap_ext_adv_t *value = ((btc_ble_5_gap_args_t *)msg->arg)->ext_adv_start.ext_adv;
         if (value) {
@@ -1903,6 +1906,7 @@ void btc_gap_ble_arg_deep_free(btc_msg_t *msg)
         }
 	break;
     }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     case BTC_GAP_BLE_ACT_VENDOR_HCI_CMD_EVT: {
         uint8_t *p_param_buf = ((btc_ble_gap_args_t *)msg->arg)->vendor_cmd_send.p_param_buf;
