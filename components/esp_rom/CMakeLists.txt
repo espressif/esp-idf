@@ -19,7 +19,8 @@ else()
                         "patches/esp_rom_uart.c"
                         "patches/esp_rom_spiflash.c"
                         "patches/esp_rom_regi2c.c"
-                        "patches/esp_rom_efuse.c")
+                        "patches/esp_rom_efuse.c"
+                        "patches/esp_rom_gpio.c")
 
     if(CONFIG_HEAP_TLSF_USE_ROM_IMPL AND (CONFIG_ESP_ROM_TLSF_CHECK_PATCH OR CONFIG_HEAP_TLSF_CHECK_PATCH))
         # This file shall be included in the build if TLSF in ROM is activated

@@ -564,7 +564,6 @@ components/esp_rom/include/esp32s3/rom/sha.h
 components/esp_rom/include/esp32s3/rom/tjpgd.h
 components/esp_rom/include/esp32s3/rom/uart.h
 components/esp_rom/include/esp_rom_crc.h
-components/esp_rom/include/esp_rom_gpio.h
 components/esp_rom/include/esp_rom_uart.h
 components/esp_rom/include/linux/soc/reset_reasons.h
 components/esp_rom/linux/esp_rom_crc.c
