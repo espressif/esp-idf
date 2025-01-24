@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import atexit
 import difflib
@@ -583,9 +583,10 @@ def cmd_exec(args: Dict, step: Dict, recipe: Dict) -> None:
 
     if p.returncode:
         warn(f'Exec command "{cmd}" failed with exit code {p.returncode}')
-        return
+        if p.stderr:
+            dbg(f'stderr: "{p.stderr}"')
 
-    if stdout:
+    if stdout and p.stdout:
         try:
             stdout_path.parent.mkdir(parents=True, exist_ok=True)
             with open(stdout_path, 'a' if append else 'w') as f:
@@ -593,7 +594,7 @@ def cmd_exec(args: Dict, step: Dict, recipe: Dict) -> None:
         except Exception:
             warn(f'Cannot write exec command "{cmd}" stdout to "{stdout}"')
 
-    if stderr:
+    if stderr and p.stderr:
         try:
             stderr_path.parent.mkdir(parents=True, exist_ok=True)
             with open(stderr_path, 'a' if append else 'w') as f:
