@@ -39,7 +39,9 @@ tBTM_CB  *btm_cb_ptr;
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 extern void btm_ble_extendadvcb_init(void);
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 extern void btm_ble_advrecod_init(void);
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #endif
 
 
@@ -89,7 +91,9 @@ void btm_init (void)
     btm_sec_dev_init();
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     btm_ble_extendadvcb_init();
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     btm_ble_advrecod_init();
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 #endif
 
 }

@@ -648,6 +648,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_suspend_bg_conn
@@ -672,6 +673,8 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 
     return FALSE;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_suspend_wl_activity
@@ -706,7 +709,9 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 *******************************************************************************/
 void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
+#if (tGATT_BG_CONN_DEV == TRUE)
     btm_ble_resume_bg_conn();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
 #if (BLE_42_ADV_EN == TRUE)
         btm_ble_start_adv();
@@ -733,6 +738,7 @@ static void btm_wl_update_to_controller(void)
     btm_execute_wl_dev_operation();
 
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_resume_bg_conn
@@ -762,6 +768,8 @@ BOOLEAN btm_ble_resume_bg_conn(void)
 
     return ret;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_get_conn_st
