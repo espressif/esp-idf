@@ -1061,8 +1061,8 @@ static inline bool touch_ll_get_fsm_state(void)
  */
 static inline void touch_ll_start_sw_meas(void)
 {
-    RTCCNTL.touch_ctrl2.touch_start_en = 0;
     RTCCNTL.touch_ctrl2.touch_start_en = 1;
+    RTCCNTL.touch_ctrl2.touch_start_en = 0;
 }
 
 /**
