@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,8 @@ typedef struct {
 
 /**
  * @brief DMA buffer aligned array
+ * The array contains three parts: head, body and tail.
+ * Length of each part will be >=0, especially, length=0 means that there is no such part.
  */
 typedef struct {
     union {
@@ -37,22 +39,21 @@ typedef struct {
 } dma_buffer_split_array_t;
 
 /**
- * @brief Split unaligned DMA buffer to aligned DMA buffer or aligned DMA buffer array
+ * @brief Split DMA RX buffer to cache aligned buffers
  *
- * @note Returned align array contains three parts: head, body and tail. Length of each buffer will be >=0, length 0 means that there is no such part
+ * @note After the original RX buffer is split into an array, caller should mount the buffer array to the DMA controller in scatter-gather mode.
+ *       Don't read/write the aligned buffers before the DMA finished using them.
  *
- * @param[in]   buffer           Origin DMA buffer address
- * @param[in]   buffer_len       Origin DMA buffer length
- * @param[in]   stash_buffer     Needed extra buffer to stash aligned buffer, should be allocated with DMA capable memory and aligned to split_alignment
- * @param[in]   stash_buffer_len stash_buffer length
- * @param[in]   split_alignment  Alignment of each buffer required by the DMA
- * @param[out]  align_array      Aligned DMA buffer array
+ * @param[in]   rx_buffer        The origin DMA buffer used for receiving data
+ * @param[in]   buffer_len       rx_buffer length
+ * @param[out]  align_buf_array  Aligned DMA buffer array
+ * @param[out]  ret_stash_buffer Allocated stash buffer (caller should free it after use)
  * @return
  *      - ESP_OK: Split to aligned buffer successfully
  *      - ESP_ERR_INVALID_ARG: Split to aligned buffer failed because of invalid argument
  *
  *  brief sketch:
- *                  buffer alignment delimiter    buffer alignment delimiter
+ *                  cache alignment delimiter    cache alignment delimiter
  *                              │                             │
  *     Origin Buffer            │        Origin Buffer        │
  *           │                  │              │              │
@@ -68,17 +69,19 @@ typedef struct {
  *                                 ▼                  ▼
  *                              |xxxxx......|     |xxxxx......|
  */
-esp_err_t esp_dma_split_buffer_to_aligned(void *buffer, size_t buffer_len, void *stash_buffer, size_t stash_buffer_len, size_t split_alignment, dma_buffer_split_array_t *align_array);
+esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffer_len, dma_buffer_split_array_t *align_buf_array, uint8_t** ret_stash_buffer);
 
 /**
- * @brief Merge aligned buffer array to origin buffer
+ * @brief Merge aligned RX buffer array to origin buffer
  *
- * @param[in]   align_array       Aligned DMA buffer array
+ * @note This function can be used in the ISR context.
+ *
+ * @param[in] align_buf_array Aligned DMA buffer array
  * @return
  *      - ESP_OK: Merge aligned buffer to origin buffer successfully
  *      - ESP_ERR_INVALID_ARG: Merge aligned buffer to origin buffer failed because of invalid argument
  */
-esp_err_t esp_dma_merge_aligned_buffers(dma_buffer_split_array_t *align_array);
+esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_buf_array);
 
 #ifdef __cplusplus
 }
