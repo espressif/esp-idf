@@ -55,10 +55,6 @@ typedef struct {
     void* destroy_arg;
     spi_bus_attr_t bus_attr;
     spi_dma_ctx_t *dma_ctx;
-#if SOC_GDMA_SUPPORTED
-    gdma_channel_handle_t tx_channel;
-    gdma_channel_handle_t rx_channel;
-#endif
 } spicommon_bus_context_t;
 
 static spicommon_bus_context_t s_mainbus = SPI_MAIN_BUS_DEFAULT();
