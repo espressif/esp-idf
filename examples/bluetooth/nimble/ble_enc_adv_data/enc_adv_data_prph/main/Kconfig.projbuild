@@ -56,7 +56,6 @@ menu "Example Configuration"
     config EXAMPLE_ENC_ADV_DATA
         bool
         prompt "Enable encrypted advertising data feature support"
-        depends on BT_NIMBLE_50_FEATURE_SUPPORT
         default y
         select BT_NIMBLE_ENC_ADV_DATA
         help
