@@ -479,6 +479,49 @@ uint16_t uart_hal_get_max_rx_timeout_thrd(uart_hal_context_t *hal);
  */
 #define uart_hal_get_rxfifo_len(hal) uart_ll_get_rxfifo_len((hal)->dev)
 
+/**
+ * @brief  Enable or disable the auto baudrate detection
+ *
+ * @param  hal Context of the HAL layer
+ * @param  enable Boolean marking whether the auto baudrate should be enabled or not
+ */
+#define uart_hal_set_autobaud_en(hal, enable) uart_ll_set_autobaud_en((hal)->dev, enable)
+
+/**
+ * @brief Get the positive pulse minimum count
+ *
+ * @param hal Context of the HAL layer
+ */
+#define uart_hal_get_pos_pulse_cnt(hal) uart_ll_get_pos_pulse_cnt((hal)->dev)
+
+/**
+ * @brief Get the negative pulse minimum count
+ *
+ * @param hal Context of the HAL layer
+ */
+#define uart_hal_get_neg_pulse_cnt(hal) uart_ll_get_neg_pulse_cnt((hal)->dev)
+
+/**
+ * @brief Get the high pulse minimum count
+ *
+ * @param hal Context of the HAL layer
+ */
+#define uart_hal_get_high_pulse_cnt(hal) uart_ll_get_high_pulse_cnt((hal)->dev)
+
+/**
+ * @brief Get the low pulse minimum count
+ *
+ * @param hal Context of the HAL layer
+ */
+#define uart_hal_get_low_pulse_cnt(hal) uart_ll_get_low_pulse_cnt((hal)->dev)
+
+/**
+ * @brief Get the RXD edge count
+ *
+ * @param hal Context of the HAL layer
+ */
+#define uart_hal_get_rxd_edge_cnt(hal) uart_ll_get_rxd_edge_cnt((hal)->dev)
+
 #ifdef __cplusplus
 }
 #endif

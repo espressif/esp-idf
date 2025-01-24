@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "test_ledc_utils.h"
-#include "soc/soc_caps.h"
+#include "driver/uart.h"
 
 ledc_channel_config_t initialize_channel_config(void)
 {
@@ -37,48 +37,16 @@ ledc_timer_config_t create_default_timer_config(void)
     return ledc_time_config;
 }
 
-// use PCNT to test the waveform of LEDC
-#if SOC_PCNT_SUPPORTED
-#include "driver/pulse_cnt.h"
-
-#define HIGHEST_LIMIT 10000
-#define LOWEST_LIMIT -10000
-
-static pcnt_unit_handle_t pcnt_unit;
-static pcnt_channel_handle_t pcnt_chan;
-
-void setup_testbench(void)
-{
-    pcnt_unit_config_t unit_config = {
-        .high_limit = HIGHEST_LIMIT,
-        .low_limit = LOWEST_LIMIT,
-    };
-    TEST_ESP_OK(pcnt_new_unit(&unit_config, &pcnt_unit));
-    pcnt_chan_config_t chan_config = {
-        .edge_gpio_num = PULSE_IO,
-        .level_gpio_num = -1,
-    };
-    TEST_ESP_OK(pcnt_new_channel(pcnt_unit, &chan_config, &pcnt_chan));
-    TEST_ESP_OK(pcnt_channel_set_level_action(pcnt_chan, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_KEEP));
-    TEST_ESP_OK(pcnt_channel_set_edge_action(pcnt_chan, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_HOLD));
-    TEST_ESP_OK(pcnt_unit_enable(pcnt_unit));
-}
-
-void tear_testbench(void)
-{
-    TEST_ESP_OK(pcnt_unit_disable(pcnt_unit));
-    TEST_ESP_OK(pcnt_del_channel(pcnt_chan));
-    TEST_ESP_OK(pcnt_del_unit(pcnt_unit));
-}
-
+// use UART auto baud rate detection feature to test the waveform of LEDC
 int wave_count(int last_time)
 {
-    int test_counter = 0;
-    TEST_ESP_OK(pcnt_unit_clear_count(pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_start(pcnt_unit));
+    uart_bitrate_detect_config_t conf = {
+        .rx_io_num = PULSE_IO,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+    uart_bitrate_res_t res = {};
+    uart_detect_bitrate_start(UART_NUM_1, &conf);
     vTaskDelay(pdMS_TO_TICKS(last_time));
-    TEST_ESP_OK(pcnt_unit_stop(pcnt_unit));
-    TEST_ESP_OK(pcnt_unit_get_count(pcnt_unit, &test_counter));
-    return test_counter;
+    uart_detect_bitrate_stop(UART_NUM_1, true, &res);
+    return (res.edge_cnt + 1) / 2; // edge count -> pulse count, round up
 }
-#endif

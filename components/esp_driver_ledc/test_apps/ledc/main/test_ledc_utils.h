@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -40,22 +40,10 @@ ledc_channel_config_t initialize_channel_config(void);
  */
 ledc_timer_config_t create_default_timer_config(void);
 
-#if SOC_PCNT_SUPPORTED
 /**
- * Setup PCNT test bench
- */
-void setup_testbench(void);
-
-/**
- * Tear down PCNT test bench
- */
-void tear_testbench(void);
-
-/**
- * Use PCNT to count pulse
+ * Use UART auto baud rate detection feature to count pulse
  *
  * @param last_time Duration time in ms
  * @return Pulse count
  */
 int wave_count(int last_time);
-#endif

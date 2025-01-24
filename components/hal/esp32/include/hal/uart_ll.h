@@ -30,9 +30,12 @@ extern "C" {
 // The timeout calibration factor when using ref_tick
 #define UART_LL_TOUT_REF_FACTOR_DEFAULT (8)
 
-#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
+#define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
+
+#define UART_LL_WAKEUP_EDGE_THRED_MIN       (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw)   UART_ACTIVE_THRESHOLD_V
+
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
-#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
 
 
 // Define UART interrupts

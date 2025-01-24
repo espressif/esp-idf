@@ -28,9 +28,12 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
 
-#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
+#define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
+
+#define UART_LL_WAKEUP_EDGE_THRED_MIN       (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw)   UART_ACTIVE_THRESHOLD_V
+
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
-#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
 
 // Define UART interrupts
 typedef enum {
