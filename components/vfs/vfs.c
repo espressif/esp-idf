@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -395,20 +395,30 @@ fail:
     return ESP_ERR_NO_MEM;
 }
 
-static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, const esp_vfs_fs_ops_t* vfs, int flags, void* ctx, int *vfs_index)
+static esp_err_t esp_vfs_register_fs_common(
+    const char *base_path,
+    size_t base_path_len,
+    const esp_vfs_fs_ops_t *vfs,
+    int flags,
+    void *ctx,
+    int *vfs_index)
 {
+    if (s_vfs_count >= VFS_MAX_COUNT) {
+        return  ESP_ERR_NO_MEM;
+    }
+
     if (vfs == NULL) {
         ESP_LOGE(TAG, "VFS is NULL");
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (len != LEN_PATH_PREFIX_IGNORED) {
+    if (base_path_len != LEN_PATH_PREFIX_IGNORED) {
         /* empty prefix is allowed, "/" is not allowed */
-        if ((len == 1) || (len > ESP_VFS_PATH_MAX)) {
+        if ((base_path_len == 1) || (base_path_len > ESP_VFS_PATH_MAX)) {
             return ESP_ERR_INVALID_ARG;
         }
         /* prefix has to start with "/" and not end with "/" */
-        if (len >= 2 && ((base_path[0] != '/') || (base_path[len - 1] == '/'))) {
+        if (base_path_len >= 2 && ((base_path[0] != '/') || (base_path[base_path_len - 1] == '/'))) {
             return ESP_ERR_INVALID_ARG;
         }
     }
@@ -426,22 +436,25 @@ static esp_err_t esp_vfs_register_fs_common(const char* base_path, size_t len, c
         s_vfs_count++;
     }
 
-    vfs_entry_t *entry = (vfs_entry_t*) heap_caps_malloc(sizeof(vfs_entry_t), VFS_MALLOC_FLAGS);
+    size_t alloc_size = sizeof(vfs_entry_t)
+        + (base_path_len == LEN_PATH_PREFIX_IGNORED ? 0 : base_path_len + 1);
+
+    vfs_entry_t *entry = (vfs_entry_t*) heap_caps_malloc(alloc_size, VFS_MALLOC_FLAGS);
     if (entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
     s_vfs[index] = entry;
-    if (len != LEN_PATH_PREFIX_IGNORED) {
-        strcpy(entry->path_prefix, base_path); // we have already verified argument length
-    } else {
-        bzero(entry->path_prefix, sizeof(entry->path_prefix));
-    }
-    entry->path_prefix_len = len;
+
+    entry->path_prefix_len = base_path_len;
     entry->vfs = vfs;
     entry->ctx = ctx;
     entry->offset = index;
     entry->flags = flags;
+
+    if (base_path_len != LEN_PATH_PREFIX_IGNORED) {
+        memcpy((char *)(entry->path_prefix), base_path, base_path_len + 1);
+    }
 
     if (vfs_index) {
         *vfs_index = index;
