@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,6 +193,7 @@ extern "C" {
         I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(bits_per_sample, mono_or_stereo)  // Alias
 /** @endcond */
 
+#if SOC_I2S_HW_VERSION_1
 /**
  * @brief I2S default standard clock configuration
  * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while using 24 bits data width
@@ -204,6 +205,20 @@ extern "C" {
     .clk_src = I2S_CLK_SRC_DEFAULT, \
     .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
+#else
+/**
+ * @brief I2S default standard clock configuration
+ * @note Please set the mclk_multiple to I2S_MCLK_MULTIPLE_384 while using 24 bits data width
+ *       Otherwise the sample rate might be imprecise since the BCLK division is not a integer
+ * @param rate sample rate
+ */
+#define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
+    .sample_rate_hz = rate, \
+    .clk_src = I2S_CLK_SRC_DEFAULT, \
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
+    .ext_clk_freq_hz = 0, \
+}
+#endif
 
 /**
  * @brief I2S slot configuration for standard mode
