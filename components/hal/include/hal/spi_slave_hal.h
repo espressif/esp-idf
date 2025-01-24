@@ -134,7 +134,7 @@ void spi_slave_hal_store_result(spi_slave_hal_context_t *hal);
  * Get the length of last transaction, in bits. Should be called after ``spi_slave_hal_store_result``.
  *
  * Note that if last transaction is longer than configured before, the return
- * value will be truncated to the configured length.
+ * value still the actual length.
  *
  * @param hal Context of the HAL layer.
  *
