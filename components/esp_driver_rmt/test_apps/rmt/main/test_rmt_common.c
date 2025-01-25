@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,3 +155,34 @@ TEST_CASE("rmt interrupt priority", "[rmt]")
     TEST_ESP_OK(rmt_del_channel(rx_channel));
     TEST_ESP_OK(rmt_del_channel(another_rx_channel));
 }
+
+#if !SOC_RMT_CHANNEL_CLK_INDEPENDENT
+TEST_CASE("rmt multiple channels with different resolution", "[rmt]")
+{
+    rmt_tx_channel_config_t tx_channel_cfg = {
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .gpio_num = TEST_RMT_GPIO_NUM_A,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 20 * 1000, // 20KHz
+        .trans_queue_depth = 1,
+    };
+    rmt_channel_handle_t tx_channel = NULL;
+    rmt_rx_channel_config_t rx_channel_cfg = {
+        .mem_block_symbols = SOC_RMT_MEM_WORDS_PER_CHANNEL,
+        .gpio_num = TEST_RMT_GPIO_NUM_B,
+        .clk_src = RMT_CLK_SRC_DEFAULT,
+        .resolution_hz = 40 * 1000 * 1000, // 40MHz
+    };
+    rmt_channel_handle_t rx_channel = NULL;
+
+    TEST_ESP_OK(rmt_new_tx_channel(&tx_channel_cfg, &tx_channel));
+
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+    rx_channel_cfg.resolution_hz = 1 * 1000 * 1000; // 1MHz
+
+    TEST_ESP_OK(rmt_new_rx_channel(&rx_channel_cfg, &rx_channel));
+
+    TEST_ESP_OK(rmt_del_channel(tx_channel));
+    TEST_ESP_OK(rmt_del_channel(rx_channel));
+}
+#endif //SOC_RMT_CHANNEL_CLK_INDEPENDENT

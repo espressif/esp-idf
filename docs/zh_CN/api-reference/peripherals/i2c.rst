@@ -216,6 +216,8 @@ I2C 主机设备需要 :cpp:type:`i2c_device_config_t` 指定的配置：
 
 如果不再需要之前安装的 I2C 总线或设备，建议调用 :cpp:func:`i2c_master_bus_rm_device` 或 :cpp:func:`i2c_del_master_bus` 来回收资源，以释放底层硬件。
 
+请注意在删除 I2C master 总线之前应当删除该总线上所有的设备。
+
 安装 I2C 从机设备
 ~~~~~~~~~~~~~~~~~~~
 

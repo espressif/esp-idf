@@ -9,6 +9,8 @@
 #include <inttypes.h>
 #include "esp_eth_mac_spi.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
+#include "soc/io_mux_reg.h"
 #include "driver/spi_master.h"
 #include "esp_attr.h"
 #include "esp_log.h"
@@ -16,7 +18,6 @@
 #include "esp_system.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_gpio.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
@@ -812,9 +813,9 @@ static esp_err_t emac_w5500_init(esp_eth_mac_t *mac)
     emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     if (emac->int_gpio_num >= 0) {
-        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
+        gpio_func_sel(emac->int_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(emac->int_gpio_num);
+        gpio_pullup_en(emac->int_gpio_num);
         gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // active low
         gpio_intr_enable(emac->int_gpio_num);
         gpio_isr_handler_add(emac->int_gpio_num, w5500_isr_handler, emac);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,6 +31,14 @@ _Static_assert(sizeof(unsigned int) == 4, "atomics require a 4-bytes type");
 ATOMIC_FUNCTIONS(1, unsigned char)
 ATOMIC_FUNCTIONS(2, short unsigned int)
 ATOMIC_FUNCTIONS(4, unsigned int)
+
+#ifndef __clang__
+/* LLVM automatically replaces __atomic_test_and_set -> __atomic_exchange_1 call when compiling */
+bool __atomic_test_and_set(volatile void *ptr, int memorder)
+{
+    return __atomic_exchange_1(ptr, true, memorder);
+}
+#endif
 
 #elif __riscv_atomic == 1
 

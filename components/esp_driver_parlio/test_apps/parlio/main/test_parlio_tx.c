@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,9 +11,11 @@
 #include "unity.h"
 #include "driver/parlio_tx.h"
 #include "driver/gpio.h"
+#include "hal/parlio_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "test_board.h"
+#include "soc/parl_io_struct.h"
 
 TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
 {
@@ -338,3 +340,109 @@ TEST_CASE("parlio can transmit PSRAM buffer", "[parlio_tx]")
     free(buffer);
 }
 #endif // SOC_PSRAM_DMA_CAPABLE
+
+static void test_gpio_simulate_rising_edge(int gpio_sig, size_t times)
+{
+    while (times--) {
+        gpio_set_level(gpio_sig, 0);
+        gpio_set_level(gpio_sig, 1);
+        gpio_set_level(gpio_sig, 0);
+    }
+}
+
+static uint8_t test_gpio_get_output_data(gpio_num_t* gpio, size_t gpio_num)
+{
+    uint8_t result = 0;
+    for (size_t i = 0; i < gpio_num; i++) {
+        int level = gpio_get_level(gpio[i]);
+        result |= level << i;
+    }
+    return result;
+}
+
+static void test_use_external_non_free_running_clock(parlio_tx_unit_handle_t tx_unit, parlio_tx_unit_config_t config, int test_round)
+{
+    uint32_t clock_div = config.input_clk_src_freq_hz / config.output_clk_freq_hz;
+    TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+    TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
+    // let core clock running for a while to update the clock divider threshold
+    esp_rom_delay_us(100);
+    parlio_transmit_config_t transmit_config = {
+        .idle_value = 0xAA,
+    };
+    __attribute__((aligned(64))) uint8_t payload[256] = {0};
+    for (int i = 0; i < 256; i++) {
+        payload[i] = i;
+    }
+
+    for (int round = 0; round < test_round; round++) {
+        TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, 256 * sizeof(uint8_t) * 8, &transmit_config));
+        for (int i = 0; i < 256; i++) {
+            // After "clock_div" times external pulses pass through the internal frequency divider, the parlio core clock generates a single pulse.
+            test_gpio_simulate_rising_edge(TEST_EXT_CLK_GPIO, clock_div);
+            TEST_ASSERT_EQUAL(i, test_gpio_get_output_data(config.data_gpio_nums, config.data_width));
+        }
+        // In order to update the idle value, an additional rising edge is required
+        test_gpio_simulate_rising_edge(TEST_EXT_CLK_GPIO, clock_div);
+        TEST_ASSERT_EQUAL(transmit_config.idle_value, test_gpio_get_output_data(config.data_gpio_nums, config.data_width));
+        TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, 100));
+    }
+    TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
+    TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+}
+
+TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
+{
+    printf("use gpio as external clock source\r\n");
+    // configure the data gpio for loopback test
+    gpio_config_t gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT64(TEST_DATA0_GPIO) | BIT64(TEST_DATA1_GPIO) | BIT64(TEST_DATA2_GPIO) | BIT64(TEST_DATA3_GPIO) |
+        BIT64(TEST_DATA4_GPIO) | BIT64(TEST_DATA5_GPIO) | BIT64(TEST_DATA6_GPIO) | BIT64(TEST_DATA7_GPIO),
+    };
+    TEST_ESP_OK(gpio_config(&gpio_conf));
+    // configure the external clock output gpio
+    gpio_conf.mode = GPIO_MODE_OUTPUT;
+    gpio_conf.pin_bit_mask = BIT64(TEST_EXT_CLK_GPIO);
+    TEST_ESP_OK(gpio_config(&gpio_conf));
+
+    printf("install parlio tx unit\r\n");
+    parlio_tx_unit_handle_t tx_unit = NULL;
+    parlio_tx_unit_config_t config = {
+        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .data_width = 8,
+        .clk_in_gpio_num = TEST_EXT_CLK_GPIO,
+        .input_clk_src_freq_hz = 80 * 1000 * 1000, // Note that this is not the real input frequency, we just use it to calculate the clock divider
+        .valid_gpio_num = -1,   // don't generate valid signal
+        .clk_out_gpio_num = TEST_CLK_GPIO,
+        .data_gpio_nums = {
+            TEST_DATA0_GPIO,
+            TEST_DATA1_GPIO,
+            TEST_DATA2_GPIO,
+            TEST_DATA3_GPIO,
+            TEST_DATA4_GPIO,
+            TEST_DATA5_GPIO,
+            TEST_DATA6_GPIO,
+            TEST_DATA7_GPIO,
+        },
+        .output_clk_freq_hz = 1 * 1000 * 1000, // For the same reason, this is not the real output frequency
+        .trans_queue_depth = 8,
+        .max_transfer_size = 256,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+    };
+
+    uint8_t test_round = 50;
+    printf("test input clk freq is greater than output clk freq\r\n");
+    test_use_external_non_free_running_clock(tx_unit, config, test_round);
+
+    // changes input clk freq
+    config.input_clk_src_freq_hz = 1 * 1000 * 1000;
+    printf("test special condition, input clk freq equals to output clk freq\r\n");
+    test_use_external_non_free_running_clock(tx_unit, config, test_round);
+
+    TEST_ESP_OK(gpio_reset_pin(TEST_EXT_CLK_GPIO));
+    for (int i = 0; i < 8; i++) {
+        TEST_ESP_OK(gpio_reset_pin(config.data_gpio_nums[i]));
+    }
+};

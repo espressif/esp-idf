@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,8 +23,6 @@
 #endif
 
 #define SPI_IDX   1
-
-#if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
 
 #if CONFIG_IDF_TARGET_ESP32
 
@@ -110,6 +108,12 @@ __attribute__((__unused__)) esp_rom_spiflash_result_t esp_rom_spiflash_clear_bp(
     return ret;
 }
 esp_rom_spiflash_result_t esp_rom_spiflash_unlock(void) __attribute__((alias("esp_rom_spiflash_clear_bp")));
+
+#endif // CONFIG_IDF_TARGET_ESP32
+
+#if CONFIG_SPI_FLASH_ROM_DRIVER_PATCH
+
+#if CONFIG_IDF_TARGET_ESP32
 
 static esp_rom_spiflash_result_t esp_rom_spiflash_enable_write(esp_rom_spiflash_chip_t *spi);
 

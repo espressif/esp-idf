@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <stdbool.h>
 #include "esp_err.h"
 #include "sd_protocol_types.h"
 #include "driver/gpio.h"
@@ -61,7 +62,8 @@ typedef int sdspi_dev_handle_t;
     .set_input_delay = NULL, \
     .dma_aligned_buffer = NULL, \
     .pwr_ctrl_handle = NULL, \
-    .get_dma_info = &sdspi_host_get_dma_info, \
+    .get_dma_info = NULL, \
+    .check_buffer_alignment = sdspi_host_check_buffer_alignment, \
     .is_slot_set_to_uhs1 = NULL, \
 }
 
@@ -223,13 +225,27 @@ esp_err_t sdspi_host_io_int_wait(sdspi_dev_handle_t handle, TickType_t timeout_t
 /**
  * @brief Get the DMA memory information for the host driver
  *
+ * @deprecated This API is deprecated
+ *
  * @param[in]  slot          Not used
  * @param[out] dma_mem_info  DMA memory information structure
  * @return
  *        - ESP_OK:                ON success.
  *        - ESP_ERR_INVALID_ARG:   Invalid argument.
  */
-esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info);
+esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info) __attribute__((deprecated("This API is deprecated")));
+
+/**
+ * @brief Check if the buffer meets the alignment requirements
+ *
+ * @param[in]  slot slot number (SDMMC_HOST_SLOT_0 or SDMMC_HOST_SLOT_1)
+ * @param[in]  buf  buffer pointer
+ * @param[in]  size buffer size
+ *
+ * @return
+ *        True for aligned buffer, false for not aligned buffer
+ */
+bool sdspi_host_check_buffer_alignment(int slot, const void *buf, size_t size);
 
 #ifdef __cplusplus
 }

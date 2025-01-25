@@ -25,6 +25,8 @@ def test_esp_flash(dut: Dut) -> None:
 @pytest.mark.esp32c2
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
+@pytest.mark.esp32c5
+@pytest.mark.esp32c61
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',

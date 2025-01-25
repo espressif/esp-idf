@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -235,10 +235,14 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             nan_cfg.warm_up_sec = nan_args.warmup_time->ival[0];
         }
 
-        g_nan_netif = esp_netif_create_default_wifi_nan();
+        if (!g_nan_netif) {
+            g_nan_netif = esp_netif_create_default_wifi_nan();
+        }
+
         if ((esp_wifi_nan_start(&nan_cfg)) != ESP_OK) {
             ESP_LOGI(TAG, "Failed to start NAN");
             esp_netif_destroy_default_wifi(g_nan_netif);
+            g_nan_netif = NULL;
             return 1;
         }
         return 0;
@@ -252,6 +256,7 @@ static int wifi_cmd_nan_disc(int argc, char **argv)
             return 1;
         }
         esp_netif_destroy_default_wifi(g_nan_netif);
+        g_nan_netif = NULL;
     }
 
     return 0;
@@ -443,7 +448,7 @@ void register_nan(void)
     nan_args.init = arg_lit0("S", "start", "NAN Start");
     nan_args.deinit = arg_lit0("T", "stop", "NAN Stop");
     nan_args.master_pref = arg_int0("p", "mast_pref", "<1-254>", "NAN Master Preference");
-    nan_args.op_channel = arg_int0("c", "op_chan", "<1-11>", "NAN Operating Channe");
+    nan_args.op_channel = arg_int0("c", "op_chan", "<1-11>", "NAN Operating Channel");
     nan_args.warmup_time = arg_int0("w", "warmup", "<5-120>", "NAN Warmup Time in Sec");
     nan_args.end = arg_end(1);
 

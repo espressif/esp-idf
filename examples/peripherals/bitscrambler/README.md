@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-P4 |
-| ----------------- | -------- |
+| Supported Targets | ESP32-C5 | ESP32-P4 |
+| ----------------- | -------- | -------- |
 
 # BitScrambler Loopback Example
 
@@ -23,6 +23,15 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
+```text
+I (305) bs_example: BitScrambler example main
+BitScrambler program complete. Input 40, output 40 bytes:
+FF 00 00 00 00 00 00 00
+80 80 80 80 80 80 80 80
+01 02 04 08 10 20 40 80
+00 FF 00 FF 00 FF 00 FF
+FF 00 FF 00 FF 00 FF 00
+```
 
 ## Troubleshooting
 

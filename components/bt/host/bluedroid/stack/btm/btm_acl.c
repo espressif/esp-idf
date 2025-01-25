@@ -335,7 +335,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
 #if (CLASSIC_BT_INCLUDED == TRUE)
                         const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #endif  ///CLASSIC_BT_INCLUDED == TRUE
-                        /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+                        /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
 #if (SMP_INCLUDED == TRUE)
                         btm_sec_set_peer_sec_caps(p, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
@@ -350,7 +350,7 @@ void btm_acl_created (BD_ADDR bda, DEV_CLASS dc, UINT8 bdn[BTM_MAX_REM_BD_NAME_L
                         return;
                     }
                 } else {
-                    /* If remote features indicated secure connection (SC) mode, check the remote feautres again*/
+                    /* If remote features indicated secure connection (SC) mode, check the remote features again*/
                     /* this is to prevent from BIAS attack where attacker can downgrade SC mode*/
                     btm_read_remote_features (p->hci_handle);
                 }
@@ -474,7 +474,7 @@ void btm_acl_removed (BD_ADDR bda, tBT_TRANSPORT transport)
                     BTM_TRACE_DEBUG("Bonded\n");
                 }
             } else {
-                BTM_TRACE_DEBUG("Bletooth link down\n");
+                BTM_TRACE_DEBUG("Bluetooth link down\n");
                 p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED
                                           | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
             }
@@ -1016,7 +1016,7 @@ void btm_process_remote_ext_features (tACL_CONN *p_acl_cb, UINT8 num_read_pages)
 
     const UINT8 req_pend = (p_dev_rec->sm4 & BTM_SM4_REQ_PEND);
 #if (SMP_INCLUDED == TRUE)
-    /* Store the Peer Security Capabilites (in SM4 and rmt_sec_caps) */
+    /* Store the Peer Security Capabilities (in SM4 and rmt_sec_caps) */
     btm_sec_set_peer_sec_caps(p_acl_cb, p_dev_rec);
 #endif  ///SMP_INCLUDED == TRUE
     BTM_TRACE_API("%s: pend:%d\n", __FUNCTION__, req_pend);
@@ -1455,7 +1455,7 @@ void btm_process_clk_off_comp_evt (UINT16 hci_handle, UINT16 clock_offset)
 **
 ** Function         btm_acl_role_changed
 **
-** Description      This function is called whan a link's master/slave role change
+** Description      This function is called when a link's master/slave role change
 **                  event or command status event (with error) is received.
 **                  It updates the link control block, and calls
 **                  the registered callback with status and role (if registered).
@@ -2705,7 +2705,7 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
         l2c_link_hci_conn_comp(status, handle, bda);
     }
 #if BTM_SCO_INCLUDED == TRUE
-    else {
+    else if (link_type == HCI_LINK_TYPE_SCO) {
         memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
         esco_data.link_type = HCI_LINK_TYPE_SCO;
         memcpy (esco_data.bd_addr, bda, BD_ADDR_LEN);

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import glob
 import os
@@ -166,6 +166,37 @@ def fetch_failed_testcases_failure_ratio(failed_testcases: t.List[TestCase], bra
         testcase.latest_failed_count = failure_rates.get(testcase.name, {}).get('failed_count', 0)
 
     return failed_testcases
+
+
+def fetch_app_metrics(
+    source_commit_sha: str,
+    target_commit_sha: str,
+) -> t.Dict:
+    """
+    Fetches the app metrics for the given source commit SHA and target branch SHA.
+    :param source_commit_sha: The source commit SHA.
+    :param target_branch_sha: The commit SHA of the branch to compare app sizes against.
+    :return: A dict of sizes of built binaries.
+    """
+    build_info_map = dict()
+    response = requests.post(
+        f'{CI_DASHBOARD_API}/apps/metrics',
+        headers={'CI-Job-Token': CI_JOB_TOKEN},
+        json={
+            'source_commit_sha': source_commit_sha,
+            'target_commit_sha': target_commit_sha,
+        }
+    )
+    if response.status_code != 200:
+        print(f'Failed to fetch build info: {response.status_code} - {response.text}')
+    else:
+        response_data = response.json()
+        build_info_map = {
+            f"{info['app_path']}_{info['config_name']}_{info['target']}": info
+            for info in response_data.get('data', [])
+        }
+
+    return build_info_map
 
 
 def load_file(file_path: str) -> str:

@@ -39,6 +39,16 @@ entries:
         sleep_modem:modem_domain_pd_allowed (noflash)
         sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
         sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
+        if SOC_TEMP_SENSOR_SUPPORTED = y:
+            sar_periph_ctrl_common:temperature_sensor_power_acquire (noflash)
+            sar_periph_ctrl_common:temperature_sensor_power_release (noflash)
+            sar_periph_ctrl_common:temperature_sensor_get_raw_value (noflash)
+            sar_periph_ctrl_common:temp_sensor_get_raw_value (noflash)
+        regi2c_ctrl:regi2c_saradc_enable (noflash)
+        regi2c_ctrl:regi2c_saradc_disable (noflash)
+        if SOC_ADC_SUPPORTED = y:
+            adc_share_hw_ctrl:adc_apb_periph_claim (noflash)
+            adc_share_hw_ctrl:adc_apb_periph_free (noflash)
 
 [mapping:esp_system_pm]
 archive: libesp_system.a

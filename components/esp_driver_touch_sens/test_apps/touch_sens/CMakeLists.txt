@@ -20,3 +20,9 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
                       DEPENDS ${elf}
                       )
 endif()
+
+message(STATUS "Checking touch sensor registers are not read-write by half-word")
+include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
+check_register_rw_half_word(SOC_MODULES "rtc_cntl" "sens" "rtc_io" "lp_analog_peri"
+                                        "lp_clkrst" "lp_system" "lpperi" "touch" "pmu"
+                            HAL_MODULES "touch_sensor")

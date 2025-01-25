@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,8 +9,10 @@
 #include <string.h>
 #include "hal/assert.h"
 #include "soc/ecdsa_reg.h"
+#include "soc/ecdsa_struct.h"
 #include "soc/pcr_struct.h"
 #include "hal/ecdsa_types.h"
+#include "hal/ecc_ll.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,7 +33,7 @@ typedef enum {
  * @brief Interrupt types in ECDSA
  */
 typedef enum {
-    ECDSA_INT_CALC_DONE,
+    ECDSA_INT_PREP_DONE,
     ECDSA_INT_SHA_RELEASE,
 } ecdsa_ll_intr_type_t;
 
@@ -97,8 +99,8 @@ static inline void ecdsa_ll_reset_register(void)
 static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 1);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 1);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 1);
@@ -117,8 +119,8 @@ static inline void ecdsa_ll_enable_intr(ecdsa_ll_intr_type_t type)
 static inline void ecdsa_ll_disable_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_CALC_DONE_INT_ENA, 0);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_PREP_DONE_INT_ENA, 0);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_ENA_REG, ECDSA_SHA_RELEASE_INT_ENA, 0);
@@ -137,8 +139,8 @@ static inline void ecdsa_ll_disable_intr(ecdsa_ll_intr_type_t type)
 static inline void ecdsa_ll_clear_intr(ecdsa_ll_intr_type_t type)
 {
     switch (type) {
-        case ECDSA_INT_CALC_DONE:
-            REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_CALC_DONE_INT_CLR, 1);
+        case ECDSA_INT_PREP_DONE:
+            REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_PREP_DONE_INT_CLR, 1);
             break;
         case ECDSA_INT_SHA_RELEASE:
             REG_SET_FIELD(ECDSA_INT_CLR_REG, ECDSA_SHA_RELEASE_INT_CLR, 1);

@@ -11,7 +11,8 @@
 #include "esp_heap_caps.h"
 #include "esp_log.h"
 #include "driver/gpio.h"
-#include "esp_rom_gpio.h"
+#include "esp_private/gpio.h"
+#include "soc/io_mux_reg.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "ksz8851.h"
@@ -100,9 +101,9 @@ static esp_err_t phy_ksz8851_reset_hw(esp_eth_phy_t *phy)
     // NOTE(v.chistyakov): set reset_gpio_num to a negative value can skip hardware reset phy chip
     if (ksz8851->reset_gpio_num >= 0) {
         ESP_LOGD(TAG, "hard reset");
-        esp_rom_gpio_pad_select_gpio(ksz8851->reset_gpio_num);
-        gpio_set_direction(ksz8851->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(ksz8851->reset_gpio_num, PIN_FUNC_GPIO);
         gpio_set_level(ksz8851->reset_gpio_num, 0);
+        gpio_output_enable(ksz8851->reset_gpio_num);
         esp_rom_delay_us(ksz8851->reset_timeout_ms * 1000);
         gpio_set_level(ksz8851->reset_gpio_num, 1);
     }

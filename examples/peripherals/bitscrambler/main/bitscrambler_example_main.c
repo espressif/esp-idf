@@ -1,22 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
 #include <stdio.h>
 #include <string.h>
-#include <sys/unistd.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_check.h"
-#include <stdio.h>
-#include "driver/bitscrambler_loopback.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_err.h"
+#include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "driver/bitscrambler_loopback.h"
 
 //Assign a symbol to the example bitscrambler program. Note that the actual
 //assembly and including in the binary happens in the CMakeLists.txt file.

@@ -8,31 +8,31 @@
 
 .. only:: esp32 or esp32s3
 
-  {IDF_TARGET_NAME} 有两个核，每个核有 32 个中断。每个中断都有一个确定的优先级别，大多数中断（但不是全部）都连接到中断矩阵。
+    {IDF_TARGET_NAME} 有两个核，每个核有 32 个中断。每个中断都有一个确定的优先级别，大多数中断（但不是全部）都连接到中断矩阵。
 
 .. only:: esp32s2
 
-  {IDF_TARGET_NAME} 有一个核，32 个中断。每个中断都有一个确定的优先级别，大多数中断（但不是全部）都连接到中断矩阵。
+    {IDF_TARGET_NAME} 有一个核，32 个中断。每个中断都有一个确定的优先级别，大多数中断（但不是全部）都连接到中断矩阵。
 
 .. only:: esp32c2 or esp32c3
 
-  {IDF_TARGET_NAME} 有一个核，31 个中断。每个中断的优先级别都可独立地通过编程设置。
+    {IDF_TARGET_NAME} 有一个核，31 个中断。每个中断的优先级别都可独立地通过编程设置。
 
 .. only:: esp32c6 or esp32h2
 
-  {IDF_TARGET_NAME} 有一个核，28 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 4 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+    {IDF_TARGET_NAME} 有一个核，28 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 4 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
 .. only:: esp32p4
 
-  {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+    {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
 .. only:: esp32c5 or esp32c61
 
-  {IDF_TARGET_NAME} 有一个核，32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** > **高性能处理器** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
+    {IDF_TARGET_NAME} 有一个核，32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** > **高性能处理器** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
 由于中断源数量多于中断，有时多个驱动程序可以共用一个中断。:cpp:func:`esp_intr_alloc` 抽象隐藏了这些实现细节。
 
-驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`，或 :cpp:func:`esp_intr_alloc_intrstatus` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。
+驱动程序可以通过调用 :cpp:func:`esp_intr_alloc`、:cpp:func:`esp_intr_alloc_bind`、 :cpp:func:`esp_intr_alloc_intrstatus` 或 :cpp:func:`esp_intr_alloc_intrstatus_bind` 为某个外设分配中断。通过向此函数传递 flag，可以指定中断类型、优先级和触发方式。然后，中断分配代码会找到适用的中断，使用中断矩阵将其连接到外设，并为其安装给定的中断处理程序和 ISR。
 
 中断分配器提供两种不同的中断类型：共享中断和非共享中断，这两种中断需要不同处理方式。非共享中断在每次调用 :cpp:func:`esp_intr_alloc` 时，都会分配一个单独的中断，该中断仅用于与其相连的外设，只调用一个 ISR。共享中断则可以由多个外设触发，当其中一个外设发出中断信号时，会调用多个 ISR。因此，针对共享中断的 ISR 应检查对应外设的中断状态，以确定是否需要采取任何操作。
 
@@ -138,9 +138,7 @@ IRAM 安全中断处理程序
 
 关联到非共享中断的源不支持此功能。
 
-.. only:: not SOC_CPU_HAS_FLEXIBLE_INTC
-
-    默认情况下，指定 ``ESP_INTR_FLAG_SHARED`` flag 时，中断分配器仅分配优先级为 1 的中断。可以使用 ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` 允许分配优先级为 2 和 3 的共享中断。
+默认情况下，指定 ``ESP_INTR_FLAG_SHARED`` flag 时，中断分配器仅分配优先级为 1 的中断。可以使用 ``ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED`` 允许分配优先级为 2 和 3 的共享中断。
 
 尽管支持此功能，使用时也必须 **非常小心**。通常存在两种办法可以阻止中断触发： **禁用源** 或 **屏蔽外设中断状态**。ESP-IDF 仅处理源本身的启用和禁用，中断源的状态位和屏蔽位须由用户操作。
 
@@ -149,6 +147,8 @@ IRAM 安全中断处理程序
 .. note::
 
     如果不屏蔽状态位而让其处于未处理状态，同时禁用这些状态位的处理程序，就会导致无限次触发中断，引起系统崩溃。
+
+调用 :cpp:func:`esp_intr_alloc` 或 :cpp:func:`esp_intr_alloc_intrstatus` 时，中断分配器会选择第一个满足电平要求的中断为指定的源映射中断，而不会考虑已经映射到共享中断线上的其他源。然而，通过使用 :cpp:func:`esp_intr_alloc_bind` 或 :cpp:func:`esp_intr_alloc_intrstatus_bind` 函数，可以显式地指定中断处理程序与给定的中断源共享。
 
 
 排除中断分配故障

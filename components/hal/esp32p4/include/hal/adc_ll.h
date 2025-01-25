@@ -205,8 +205,8 @@ static inline void adc_ll_digi_set_convert_mode(adc_ll_digi_convert_mode_t mode)
 static inline void adc_ll_digi_controller_clk_div(uint32_t div_num, uint32_t div_b, uint32_t div_a)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_num, div_num);
-    HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_div_numerator = div_a;
-    HP_SYS_CLKRST.peri_clk_ctrl23.reg_adc_clk_div_denominator = div_b;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_numerator, div_a);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl23, reg_adc_clk_div_denominator, div_b);
 }
 
 /**

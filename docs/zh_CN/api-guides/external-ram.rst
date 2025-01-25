@@ -47,7 +47,8 @@
 ========================
 
 .. note::
-    只有在构建中包含 ``esp_psram`` 组件时，``SPI RAM`` 配置选项才可用。
+
+    只有在构建中包含 ``esp_psram`` 组件时，``SPI RAM`` 配置选项才可用。要在项目中包含 ``SPI RAM`` 功能，使用 ``idf_component_register`` 注册组件时，将 ``esp_psram`` 组件添加为 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 的依赖项。
 
 ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并完成片外 RAM 初始化后，可以将 ESP-IDF 配置为用多种方式处理片外 RAM：
 
@@ -55,7 +56,7 @@ ESP-IDF 完全支持将片外 RAM 集成到你的应用程序中。在启动并�
 
     * :ref:`external_ram_config_memory_map`
     * :ref:`external_ram_config_capability_allocator`
-    * :ref:`external_ram_config_malloc` (default)
+    * :ref:`external_ram_config_malloc` （默认方式）
     * :ref:`external_ram_config_bss`
     * :ref:`external_ram_config_noinit`
     :SOC_SPIRAM_XIP_SUPPORTED: * :ref:`external_ram_config_xip`

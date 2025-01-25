@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,6 +166,14 @@ typedef enum {
     ISP_LL_LUT_LSC,    ///< LUT for LSC
     ISP_LL_LUT_DPC,    ///< LUT for DPC
 } isp_ll_lut_t;
+
+/**
+ * @brief ISP pipeline clock control mode
+ */
+typedef enum {
+    ISP_LL_PIPELINE_CLK_CTRL_AUTO,         ///< HW control, off when in frame interval
+    ISP_LL_PIPELINE_CLK_CTRL_ALWAYS_ON,    ///< Always on
+} isp_ll_pipeline_clk_ctrl_t;
 
 
 /*---------------------------------------------------------------
@@ -495,14 +503,14 @@ static inline void isp_ll_set_bayer_mode(isp_dev_t *hw, color_raw_element_order_
                       AF
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable AF clock
+ * @brief Set AF clock control mode
  *
  * @param[in] hw
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_af_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_af_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_af_force_on = enable;
+    hw->clk_en.clk_af_force_on = mode;
 }
 
 /**
@@ -547,7 +555,7 @@ static inline void isp_ll_af_manual_update(isp_dev_t *hw)
 static inline void isp_ll_af_set_edge_thresh_mode(isp_dev_t *hw, isp_ll_af_edge_detector_mode_t mode)
 {
     if (mode == ISP_LL_AF_EDGE_DETECTOR_MODE_AUTO) {
-        hw->af_threshold.af_threshold = 0;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->af_threshold, af_threshold, 0);
     }
 }
 
@@ -561,7 +569,7 @@ static inline void isp_ll_af_set_edge_thresh(isp_dev_t *hw, uint32_t thresh)
 {
     HAL_ASSERT(thresh != 0);
 
-    hw->af_threshold.af_threshold = thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->af_threshold, af_threshold, thresh);
 }
 
 /**
@@ -572,7 +580,7 @@ static inline void isp_ll_af_set_edge_thresh(isp_dev_t *hw, uint32_t thresh)
  */
 static inline void isp_ll_af_set_auto_edge_thresh_pixel_num(isp_dev_t *hw, uint32_t pixel_num)
 {
-    HAL_ASSERT(hw->af_threshold.af_threshold == 0);
+    HAL_ASSERT(HAL_FORCE_READ_U32_REG_FIELD(hw->af_threshold, af_threshold) == 0);
 
     hw->af_ctrl1.af_thpixnum = pixel_num;
 }
@@ -678,7 +686,7 @@ static inline uint32_t isp_ll_af_get_window_lum(isp_dev_t *hw, uint32_t window_i
  */
 static inline void isp_ll_af_env_detector_set_period(isp_dev_t *hw, uint32_t period)
 {
-    hw->af_ctrl0.af_env_period = period;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->af_ctrl0, af_env_period, period);
 }
 
 /**
@@ -730,14 +738,14 @@ static inline void isp_ll_af_env_detector_set_ratio(isp_dev_t *hw, uint32_t rati
                       BF
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable BF clock
+ * @brief Set BF clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_bf_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_bf_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_bf_force_on = enable;
+    hw->clk_en.clk_bf_force_on = mode;
 }
 
 /**
@@ -781,7 +789,7 @@ static inline void isp_ll_bf_set_padding_mode(isp_dev_t *hw, isp_bf_edge_padding
  */
 static inline void isp_ll_bf_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
 {
-    hw->bf_matrix_ctrl.bf_padding_data = padding_data;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->bf_matrix_ctrl, bf_padding_data, padding_data);
 }
 
 /**
@@ -792,7 +800,7 @@ static inline void isp_ll_bf_set_padding_data(isp_dev_t *hw, uint32_t padding_da
  */
 static inline void isp_ll_bf_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
 {
-    hw->bf_matrix_ctrl.bf_tail_pixen_pulse_tl = start_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->bf_matrix_ctrl, bf_tail_pixen_pulse_tl, start_pixel);
 }
 
 /**
@@ -803,7 +811,7 @@ static inline void isp_ll_bf_set_padding_line_tail_valid_start_pixel(isp_dev_t *
  */
 static inline void isp_ll_bf_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
 {
-    hw->bf_matrix_ctrl.bf_tail_pixen_pulse_th = end_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->bf_matrix_ctrl, bf_tail_pixen_pulse_th, end_pixel);
 }
 
 /**
@@ -832,14 +840,14 @@ static inline void isp_ll_bf_set_template(isp_dev_t *hw, uint8_t template_arr[SO
                       CCM
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable CCM clock
+ * @brief Set CCM clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_ccm_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_ccm_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_ccm_force_on = enable;
+    hw->clk_en.clk_ccm_force_on = mode;
 }
 
 /**
@@ -876,14 +884,14 @@ static inline void isp_ll_ccm_set_matrix(isp_dev_t *hw, isp_ll_ccm_gain_t fixed_
                       Color
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable Color clock
+ * @brief Set Color clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_color_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_color_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_color_force_on = enable;
+    hw->clk_en.clk_color_force_on = mode;
 }
 
 /**
@@ -1071,14 +1079,14 @@ static inline void isp_ll_cam_enable(isp_dev_t *hw, bool enable)
 ---------------------------------------------------------------*/
 
 /**
- * @brief Enable / Disable AE clock
+ * @brief Set AE clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_ae_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_ae_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_ae_force_on = enable;
+    hw->clk_en.clk_ae_force_on = mode;
 }
 
 /**
@@ -1166,8 +1174,8 @@ static inline void isp_ll_ae_set_subwin_pixnum_recip(isp_dev_t *hw, int subwin_p
  */
 static inline void isp_ll_ae_env_detector_set_thresh(isp_dev_t *hw, uint32_t low_thresh, uint32_t high_thresh)
 {
-    hw->ae_monitor.ae_monitor_tl = low_thresh;
-    hw->ae_monitor.ae_monitor_th = high_thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->ae_monitor, ae_monitor_tl, low_thresh);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->ae_monitor, ae_monitor_th, high_thresh);
 }
 
 /**
@@ -1185,14 +1193,14 @@ static inline void isp_ll_ae_env_detector_set_period(isp_dev_t *hw, uint32_t per
                       LSC
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable LSC clock
+ * @brief Set LSC clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_lsc_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_lsc_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_lsc_force_on = enable;
+    hw->clk_en.clk_lsc_force_on = mode;
 }
 
 /**
@@ -1337,14 +1345,14 @@ static inline void isp_ll_clear_intr(isp_dev_t *hw, uint32_t mask)
                       AWB
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable AWB clock
+ * @brief Set AWB clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_awb_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_awb_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_awb_force_on = enable;
+    hw->clk_en.clk_awb_force_on = mode;
 }
 
 /**
@@ -1495,14 +1503,14 @@ static inline uint32_t isp_ll_awb_get_accumulated_b_value(isp_dev_t *hw)
                       Demosaic
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable demosaic clock
+ * @brief Set demosaic clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_demosaic_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_demosaic_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_demosaic_force_on = enable;
+    hw->clk_en.clk_demosaic_force_on = mode;
 }
 
 /**
@@ -1549,7 +1557,7 @@ static inline void isp_ll_demosaic_set_padding_mode(isp_dev_t *hw, isp_demosaic_
 __attribute__((always_inline))
 static inline void isp_ll_demosaic_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
 {
-    hw->demosaic_matrix_ctrl.demosaic_padding_data = padding_data;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->demosaic_matrix_ctrl, demosaic_padding_data, padding_data);
 }
 
 /**
@@ -1561,7 +1569,7 @@ static inline void isp_ll_demosaic_set_padding_data(isp_dev_t *hw, uint32_t padd
 __attribute__((always_inline))
 static inline void isp_ll_demosaic_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
 {
-    hw->demosaic_matrix_ctrl.demosaic_tail_pixen_pulse_tl = start_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->demosaic_matrix_ctrl, demosaic_tail_pixen_pulse_tl, start_pixel);
 }
 
 /**
@@ -1573,21 +1581,21 @@ static inline void isp_ll_demosaic_set_padding_line_tail_valid_start_pixel(isp_d
 __attribute__((always_inline))
 static inline void isp_ll_demosaic_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
 {
-    hw->demosaic_matrix_ctrl.demosaic_tail_pixen_pulse_th = end_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->demosaic_matrix_ctrl, demosaic_tail_pixen_pulse_th, end_pixel);
 }
 
 /*---------------------------------------------------------------
                       Sharpen
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable sharpen clock
+ * @brief Set sharpen clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  Enable / Disable
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_sharp_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_sharp_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_sharp_force_on = enable;
+    hw->clk_en.clk_sharp_force_on = mode;
 }
 
 /**
@@ -1610,7 +1618,7 @@ static inline void isp_ll_sharp_enable(isp_dev_t *hw, bool enable)
 __attribute__((always_inline))
 static inline void isp_ll_sharp_set_low_thresh(isp_dev_t *hw, uint8_t thresh)
 {
-    hw->sharp_ctrl0.sharp_threshold_low = thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_ctrl0, sharp_threshold_low, thresh);
 }
 
 /**
@@ -1622,7 +1630,7 @@ static inline void isp_ll_sharp_set_low_thresh(isp_dev_t *hw, uint8_t thresh)
 __attribute__((always_inline))
 static inline void isp_ll_sharp_set_high_thresh(isp_dev_t *hw, uint8_t thresh)
 {
-    hw->sharp_ctrl0.sharp_threshold_high = thresh;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_ctrl0, sharp_threshold_high, thresh);
 }
 
 /**
@@ -1635,7 +1643,7 @@ __attribute__((always_inline))
 static inline void isp_ll_sharp_set_medium_freq_coeff(isp_dev_t *hw, isp_sharpen_m_freq_coeff coeff)
 {
     //val between `sharp_amount_low` and `sharp_threshold_high` will be multiplied by `sharp_amount_low`
-    hw->sharp_ctrl0.sharp_amount_low = coeff.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_ctrl0, sharp_amount_low, coeff.val);
 }
 
 /**
@@ -1648,7 +1656,7 @@ __attribute__((always_inline))
 static inline void isp_ll_sharp_set_high_freq_coeff(isp_dev_t *hw, isp_sharpen_h_freq_coeff_t coeff)
 {
     //val higher than `sharp_threshold_high` will be multiplied by `sharp_amount_high`
-    hw->sharp_ctrl0.sharp_amount_high = coeff.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_ctrl0, sharp_amount_high, coeff.val);
 }
 
 /**
@@ -1672,7 +1680,7 @@ static inline void isp_ll_sharp_set_padding_mode(isp_dev_t *hw, isp_sharpen_edge
 __attribute__((always_inline))
 static inline void isp_ll_sharp_set_padding_data(isp_dev_t *hw, uint32_t padding_data)
 {
-    hw->sharp_matrix_ctrl.sharp_padding_data = padding_data;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_matrix_ctrl, sharp_padding_data, padding_data);
 }
 
 /**
@@ -1684,7 +1692,7 @@ static inline void isp_ll_sharp_set_padding_data(isp_dev_t *hw, uint32_t padding
 __attribute__((always_inline))
 static inline void isp_ll_sharp_set_padding_line_tail_valid_start_pixel(isp_dev_t *hw, uint32_t start_pixel)
 {
-    hw->sharp_matrix_ctrl.sharp_tail_pixen_pulse_tl = start_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_matrix_ctrl, sharp_tail_pixen_pulse_tl, start_pixel);
 }
 
 /**
@@ -1696,7 +1704,7 @@ static inline void isp_ll_sharp_set_padding_line_tail_valid_start_pixel(isp_dev_
 __attribute__((always_inline))
 static inline void isp_ll_sharp_set_padding_line_tail_valid_end_pixel(isp_dev_t *hw, uint32_t end_pixel)
 {
-    hw->sharp_matrix_ctrl.sharp_tail_pixen_pulse_th = end_pixel;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sharp_matrix_ctrl, sharp_tail_pixen_pulse_th, end_pixel);
 }
 
 /**
@@ -1733,32 +1741,32 @@ static inline void isp_ll_sharp_set_template(isp_dev_t *hw, uint8_t template_arr
 __attribute__((always_inline))
 static inline uint8_t isp_ll_sharp_get_high_freq_pixel_max(isp_dev_t *hw)
 {
-    return hw->sharp_ctrl1.sharp_gradient_max;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->sharp_ctrl1, sharp_gradient_max);
 }
 
 /*---------------------------------------------------------------
                       RGB/YUV
 ---------------------------------------------------------------*/
 /**
- * @brief Enable / Disable rgb2yuv clock
+ * @brief Set rgb2yuv clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  0: hw control; 1: always on
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_rgb2yuv_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_rgb2yuv_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_rgb2yuv_force_on = enable;
+    hw->clk_en.clk_rgb2yuv_force_on = mode;
 }
 
 /**
- * @brief Enable / Disable yuv2rgb clock
+ * @brief Set yuv2rgb clock control mode
  *
  * @param[in] hw      Hardware instance address
- * @param[in] enable  0: hw control; 1: always on
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
  */
-static inline void isp_ll_yuv2rgb_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_yuv2rgb_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_yuv2rgb_force_on = enable;
+    hw->clk_en.clk_yuv2rgb_force_on = mode;
 }
 
 /**
@@ -1868,14 +1876,14 @@ static inline void isp_ll_gamma_set_correction_curve(isp_dev_t *hw, color_compon
                       HIST
 ---------------------------------------------------------------*/
 /**
- * @brief enable histogram clock
+ * @brief Set histogram clock control mode
  *
  * @param[in] hw Hardware instance address
- * @param[in] enable true: enable the clock. false: disable the clock
+ * @param[in] mode    'isp_ll_pipeline_clk_ctrl_t`
 */
-static inline void isp_ll_hist_clk_enable(isp_dev_t *hw, bool enable)
+static inline void isp_ll_hist_set_clk_ctrl_mode(isp_dev_t *hw, isp_ll_pipeline_clk_ctrl_t mode)
 {
-    hw->clk_en.clk_hist_force_on = enable;
+    hw->clk_en.clk_hist_force_on = mode;
 }
 
 /**

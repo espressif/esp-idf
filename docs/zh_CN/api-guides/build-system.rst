@@ -25,7 +25,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 概念
 ----
 
-- ``项目`` 特指一个目录，其中包含了构建可执行应用程序所需的全部文件和配置，以及其他支持型文件，例如分区表、数据/文件系统分区和引导加载程序。
+- ``项目`` 特指一个目录，其中包含了构建 ``应用程序`` （即可执行文件）所需的全部文件和配置，还包含了其他支持型文件，例如分区表、数据分区或文件系统分区，以及引导加载程序。
 
 - ``项目配置`` 保存在项目根目录下名为 ``sdkconfig`` 的文件中，可以通过 ``idf.py menuconfig`` 进行修改，且一个项目只能包含一个项目配置。
 
@@ -48,7 +48,7 @@ ESP-IDF 可以显式地指定和配置每个组件。在构建项目的时候，
 .. _idf.py:
 
 idf.py
---------
+------
 
 ``idf.py`` 命令行工具提供了一个前端，可以帮助你轻松管理项目的构建过程，它管理了以下工具：
 
@@ -56,17 +56,17 @@ idf.py
 - Ninja_，用于构建项目
 - `esptool.py`_，烧录目标硬件设备
 
-可通过 ``idf.py`` 配置构建系统，具体可参考 :doc:`相关文档 <tools/idf-py>`。
+可通过 ``idf.py`` 配置构建系统，具体可参考 :doc:`IDF 前端工具 <tools/idf-py>`。
 
 
 直接使用 CMake
 --------------
 
-为了方便，:ref:`idf.py` 已经封装了 CMake_ 命令，但是你愿意，也可以直接调用 CMake。
+为了方便，:ref:`idf.py` 已经封装了 CMake_ 命令。你也可以直接调用 CMake。
 
 .. highlight:: bash
 
-当 ``idf.py`` 在执行某些操作时，它会打印出其运行的每条命令以便参考。例如运行 ``idf.py build`` 命令与在 bash shell（或者 Windows Command Prompt）中运行以下命令是相同的::
+当 ``idf.py`` 在执行某些操作时，它会打印运行的每条命令以便参考。例如，运行 ``idf.py build`` 命令等同于在 bash shell 中运行以下命令（或在 Windows 命令提示符中运行类似的命令）::
 
     mkdir -p build
     cd build
@@ -79,7 +79,7 @@ idf.py
 
 若在 CMake 中使用 ``ninja`` 或 ``make``，则多数 ``idf.py`` 子命令也会有其对应的目标，例如在构建目录下运行 ``make menuconfig`` 或 ``ninja menuconfig`` 与运行 ``idf.py menuconfig`` 是相同的。
 
-.. Note::
+.. note::
 
     如果你已经熟悉了 CMake_，那么可能会发现 ESP-IDF 的 CMake 构建系统不同寻常，为了减少样板文件，该系统封装了 CMake 的许多功能。请参考 :ref:`write-pure-component` 以编写更多 “CMake 风格”的组件。
 
@@ -103,7 +103,7 @@ idf.py
 
     ESPPORT=/dev/ttyUSB0 ninja flash
 
-.. Note::
+.. note::
 
   在命令的开头为环境变量赋值属于 Bash shell 的语法，可在 Linux 、macOS 和 Windows 的类 Bash shell 中运行，但在 Windows Command Prompt 中无法运行。
 
@@ -111,7 +111,7 @@ idf.py
 
     make -j3 app-flash ESPPORT=COM4 ESPBAUD=2000000
 
-.. Note::
+.. note::
 
   在命令末尾为变量赋值属于 ``make`` 的语法，适用于所有平台的 ``make``。
 
@@ -126,7 +126,6 @@ idf.py
 有关将 ESP-IDF 同 CMake 集成到 IDE 中的详细信息，请参阅 :ref:`build_system_metadata`。
 
 .. _setting-python-interpreter:
-
 
 设置 Python 解释器
 ------------------
@@ -602,7 +601,7 @@ Spark Plug 组件
 通用组件依赖项
 --------------
 
-为避免重复性工作，各组件都用自动依赖一些“通用”IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
+为避免重复性工作，各组件都用自动依赖一些“通用” IDF 组件，即使它们没有被明确提及。这些组件的头文件会一直包含在构建系统中。
 
 通用组件包括：cxx、newlib、freertos、esp_hw_support、heap、log、soc、hal、esp_rom、esp_common、esp_system。
 
@@ -615,15 +614,14 @@ Spark Plug 组件
 
   * ``COMPONENTS`` 中明确提及的组件。
   * 这些组件的依赖项（以及递归运算后的组件）。
-  * 每个组件都依赖的通用组件。
+  * 每个组件都依赖的 :ref:`通用组件 <component-common-requirements>`。
 
 - 将 ``COMPONENTS`` 设置为所需组件的最小列表，可以显著减少项目的构建时间。
-- 可以将 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>` 设为 ``ON``，从而快捷配置 ``COMPONENTS`` 变量，使其仅包含 ``main`` 组件。如果在启用 ``MINIMAL_BUILD`` 属性的同时定义了 ``COMPONENTS`` 变量，则 ``COMPONENTS`` 会优先生效。
+- 可以将 ``MINIMAL_BUILD`` :ref:`构建属性 <cmake-build-properties>` 设为 ``ON``，从而快捷配置 ``COMPONENTS`` 变量，使其仅包含 ``main`` 组件。构建过程将仅包括 :ref:`通用组件 <component-common-requirements>`、``main`` 组件和所有相关依赖项（包括直接和间接依赖）。如果在启用 ``MINIMAL_BUILD`` 属性的同时定义了 ``COMPONENTS`` 变量，则 ``COMPONENTS`` 会优先生效。
 
 .. note::
 
-   使用 ``COMPONENTS`` 变量或 ``MINIMAL_BUILD`` 构建属性指定组件时，一些功能和配置（如 esp_psram 或 espcoredump 组件提供的功能和配置）可能不会被默认包含。如需使用这些功能，须将相关组件添加到 ``COMPONENTS`` 变量中，或在组件注册时将其列入 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 参数。
-
+   如果使用最小组件列表，某些功能和配置（如 esp_psram 或 espcoredump 组件提供的功能和配置）可能默认无法在项目中使用。使用 ``COMPONENTS`` 变量时，请确保包含所有必要的组件。同样地，使用 ``MINIMAL_BUILD`` 构建属性时，请确保在组件注册时通过 ``REQUIRES`` 或 ``PRIV_REQUIRES`` 参数指定所有所需组件。
 
 .. _component-circular-dependencies:
 

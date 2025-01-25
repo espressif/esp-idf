@@ -10,6 +10,7 @@ from typing import Callable
 
 import pexpect
 import pytest
+from common_test_methods import get_env_config_variable
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
 from RangeHTTPServer import RangeRequestHandler
@@ -168,6 +169,98 @@ def test_examples_protocol_https_request(dut: Dut) -> None:
     logging.info('Starting https_request simple test app')
 
     dut.expect('Loaded app from partition at offset', timeout=30)
+    try:
+        ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
+        print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+    except pexpect.exceptions.TIMEOUT:
+        raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+    # Check for connection using crt bundle
+    logging.info("Testing for \"https_request using crt bundle\"")
+    try:
+        dut.expect('https_request using crt bundle', timeout=30)
+        dut.expect(['Certificate validated',
+                    'Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Failed the test for \"https_request using crt bundle\"")
+        raise
+    logging.info("Passed the test for \"https_request using crt bundle\"")
+
+    # Check for connection using cacert_buf
+    logging.info("Testing for \"https_request using cacert_buf\"")
+    try:
+        dut.expect('https_request using cacert_buf', timeout=20)
+        dut.expect(['Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Passed the test for \"https_request using cacert_buf\"")
+        raise
+    logging.info("Passed the test for \"https_request using cacert_buf\"")
+
+    # Check for connection using global ca_store
+    logging.info("Testing for \"https_request using global ca_store\"")
+    try:
+        dut.expect('https_request using global ca_store', timeout=20)
+        dut.expect(['Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Failed the test for \"https_request using global ca_store\"")
+        raise
+    logging.info("Passed the test for \"https_request using global ca_store\"")
+
+    # Check for connection using specified server supported ciphersuites
+    logging.info("Testing for \"https_request using server supported ciphersuites\"")
+    try:
+        dut.expect('https_request using server supported ciphersuites', timeout=20)
+        dut.expect(['Connection established...',
+                    'Reading HTTP response...',
+                    'HTTP/1.1 200 OK',
+                    'connection closed'], expect_all=True)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server supported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server supported ciphersuites\"")
+
+    # Check for connection using specified server unsupported ciphersuites
+    logging.info("Testing for \"https_request using server unsupported ciphersuites\"")
+    try:
+        dut.expect('https_request using server unsupported ciphersuites', timeout=20)
+        dut.expect('Connection failed...', timeout=30)
+    except Exception:
+        logging.info("Failed the test for \"https_request using server unsupported ciphersuites\"")
+        raise
+    logging.info("Passed the test for \"https_request using server unsupported ciphersuites\"")
+
+
+@pytest.mark.esp32c2
+@pytest.mark.wifi_ap
+@pytest.mark.xtal_26mhz
+@pytest.mark.parametrize(
+    'config, baud', [
+        ('esp32c2_rom_mbedtls', '74880'),
+    ], indirect=True
+)
+def test_examples_protocol_https_request_rom_impl(dut: Dut) -> None:
+    # Connect to AP
+    if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+        dut.expect('Please input ssid password:')
+        env_name = 'wifi_ap'
+        ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+        ap_password = get_env_config_variable(env_name, 'ap_password')
+        dut.write(f'{ap_ssid} {ap_password}')
+    # check and log bin size
+    binary_file = os.path.join(dut.app.binary_path, 'https_request.bin')
+    bin_size = os.path.getsize(binary_file)
+    logging.info('https_request_bin_size : {}KB'.format(bin_size // 1024))
+    logging.info('Starting https_request simple test app')
+
     try:
         ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=60)[1].decode()
         print('Connected to AP/Ethernet with IP: {}'.format(ip_address))

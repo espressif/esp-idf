@@ -202,23 +202,26 @@ MbedTLS 功能
 
 这些功能包括：
 
-- :ref:`CONFIG_MBEDTLS_HAVE_TIME`
-- :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
-- :ref:`CONFIG_MBEDTLS_SHA512_C`
-- :ref:`CONFIG_MBEDTLS_SHA3_C`
-- :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
-- :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
-- :ref:`CONFIG_MBEDTLS_SSL_ALPN`
-- :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
-- :ref:`CONFIG_MBEDTLS_CCM_C`
-- :ref:`CONFIG_MBEDTLS_GCM_C`
-- :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
-- :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
-- :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
-- 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`。
-- 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
-- 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
+.. list::
+
+    - :ref:`CONFIG_MBEDTLS_HAVE_TIME`
+    - :ref:`CONFIG_MBEDTLS_ECDSA_DETERMINISTIC`
+    - :ref:`CONFIG_MBEDTLS_SHA512_C`
+    - :ref:`CONFIG_MBEDTLS_SHA3_C`
+    - :ref:`CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SERVER_SSL_SESSION_TICKETS`
+    - :ref:`CONFIG_MBEDTLS_SSL_CONTEXT_SERIALIZATION`
+    - :ref:`CONFIG_MBEDTLS_SSL_ALPN`
+    - :ref:`CONFIG_MBEDTLS_SSL_RENEGOTIATION`
+    - :ref:`CONFIG_MBEDTLS_CCM_C`
+    - :ref:`CONFIG_MBEDTLS_GCM_C`
+    - :ref:`CONFIG_MBEDTLS_ECP_C` （或者：启用此选项，但在子菜单中禁用部分椭圆曲线）
+    - :ref:`CONFIG_MBEDTLS_ECP_NIST_OPTIM`
+    - :ref:`CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM`
+    - 如果不需要 mbedTLS 的服务器和客户端功能，可以修改 :ref:`CONFIG_MBEDTLS_TLS_MODE`。
+    - 可以考虑禁用在 ``TLS Key Exchange Methods`` 子菜单中列出的一些密码套件（例如 :ref:`CONFIG_MBEDTLS_KEY_EXCHANGE_RSA`），以减小代码大小。
+    - 如果应用程序已经通过使用 :cpp:func:`mbedtls_strerror` 拉取 mbedTLS 错误字符串，则可以考虑禁用 :ref:`CONFIG_MBEDTLS_ERROR_STRINGS`。
+    :esp32h2: - 对于 {IDF_TARGET_NAME} v1.2 及以上版本，可以考虑禁用 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM` 和 :ref:`CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM`，因为无需再使用 ECDSA 签名的软件防护措施。
 
 每个选项的帮助文本中都有更多信息可供参考。
 

@@ -408,7 +408,7 @@ static inline void touch_ll_read_chan_data(uint32_t touch_num, uint8_t sample_cf
     LP_ANA_PERI.touch_mux0.touch_freq_sel = sample_cfg_id;
     LP_ANA_PERI.touch_mux0.touch_data_sel = type;
     // Channel shift workaround
-    *data = LP_TOUCH.chn_data[touch_num + 1].pad_data;
+    *data = HAL_FORCE_READ_U32_REG_FIELD(LP_TOUCH.chn_data[touch_num + 1], pad_data);
 }
 
 /**
@@ -564,7 +564,7 @@ static inline uint32_t touch_ll_get_intr_status_mask(void)
 static inline void touch_ll_set_timeout(uint32_t timeout_cycles)
 {
     if (timeout_cycles) {
-        LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_num = timeout_cycles;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_scan_ctrl2, touch_timeout_num, timeout_cycles);
         LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 1;
     } else {
         LP_ANA_PERI.touch_scan_ctrl2.touch_timeout_en = 0;
@@ -847,7 +847,7 @@ static inline void touch_ll_set_proximity_sensing_channel(uint8_t prox_chan, uin
  */
 static inline void touch_ll_proximity_set_total_scan_times(uint32_t scan_times)
 {
-    LP_ANA_PERI.touch_filter1.touch_approach_limit = scan_times;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_ANA_PERI.touch_filter1, touch_approach_limit, scan_times);
 }
 
 /**

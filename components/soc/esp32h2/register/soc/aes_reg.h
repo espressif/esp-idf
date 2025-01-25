@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -411,6 +411,63 @@ extern "C" {
 #define AES_DMA_EXIT_M  (AES_DMA_EXIT_V << AES_DMA_EXIT_S)
 #define AES_DMA_EXIT_V  0x00000001U
 #define AES_DMA_EXIT_S  0
+
+/** AES_RX_RESET_REG register
+ *  AES-DMA reset rx-fifo register
+ */
+#define AES_RX_RESET_REG (DR_REG_AES_BASE + 0xc0)
+/** AES_RX_RESET : WT; bitpos: [0]; default: 0;
+ *  Set this bit to reset rx_fifo under dma_aes working mode.
+ */
+#define AES_RX_RESET    (BIT(0))
+#define AES_RX_RESET_M  (AES_RX_RESET_V << AES_RX_RESET_S)
+#define AES_RX_RESET_V  0x00000001U
+#define AES_RX_RESET_S  0
+
+/** AES_TX_RESET_REG register
+ *  AES-DMA reset tx-fifo register
+ */
+#define AES_TX_RESET_REG (DR_REG_AES_BASE + 0xc4)
+/** AES_TX_RESET : WT; bitpos: [0]; default: 0;
+ *  Set this bit to reset tx_fifo under dma_aes working mode.
+ */
+#define AES_TX_RESET    (BIT(0))
+#define AES_TX_RESET_M  (AES_TX_RESET_V << AES_TX_RESET_S)
+#define AES_TX_RESET_V  0x00000001U
+#define AES_TX_RESET_S  0
+
+/** AES_PSEUDO_REG register
+ *  AES PSEUDO function configure register
+ */
+#define AES_PSEUDO_REG (DR_REG_AES_BASE + 0xd0)
+/** AES_PSEUDO_EN : R/W; bitpos: [0]; default: 0;
+ *  This bit decides whether the pseudo round function is enable or not.
+ */
+#define AES_PSEUDO_EN    (BIT(0))
+#define AES_PSEUDO_EN_M  (AES_PSEUDO_EN_V << AES_PSEUDO_EN_S)
+#define AES_PSEUDO_EN_V  0x00000001U
+#define AES_PSEUDO_EN_S  0
+/** AES_PSEUDO_BASE : R/W; bitpos: [4:1]; default: 2;
+ *  Those bits decides the basic number of pseudo round number.
+ */
+#define AES_PSEUDO_BASE    0x0000000FU
+#define AES_PSEUDO_BASE_M  (AES_PSEUDO_BASE_V << AES_PSEUDO_BASE_S)
+#define AES_PSEUDO_BASE_V  0x0000000FU
+#define AES_PSEUDO_BASE_S  1
+/** AES_PSEUDO_INC : R/W; bitpos: [6:5]; default: 2;
+ *  Those bits decides the increment number of pseudo round number
+ */
+#define AES_PSEUDO_INC    0x00000003U
+#define AES_PSEUDO_INC_M  (AES_PSEUDO_INC_V << AES_PSEUDO_INC_S)
+#define AES_PSEUDO_INC_V  0x00000003U
+#define AES_PSEUDO_INC_S  5
+/** AES_PSEUDO_RNG_CNT : R/W; bitpos: [9:7]; default: 7;
+ *  Those bits decides the update frequency of the pseudo-key.
+ */
+#define AES_PSEUDO_RNG_CNT    0x00000007U
+#define AES_PSEUDO_RNG_CNT_M  (AES_PSEUDO_RNG_CNT_V << AES_PSEUDO_RNG_CNT_S)
+#define AES_PSEUDO_RNG_CNT_V  0x00000007U
+#define AES_PSEUDO_RNG_CNT_S  7
 
 #ifdef __cplusplus
 }

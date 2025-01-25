@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,19 +49,21 @@ enum {
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
 #endif
 
+// The memory used for SIMD instructions requires the bus of its memory regions be able to transfer the data in 128-bit
+
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
- * if no memory caps matched or the allocation is failed, it will go to columns Medium Priorty Matching and Low Priority Matching
+ * if no memory caps matched or the allocation is failed, it will go to columns Medium Priority Matching and Low Priority Matching
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-/*                           Mem Type Name | High Priority Matching  | Medium Priorty Matching                                        | Low Priority Matching */
-    [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS,   0,                                                               0 }},
-    [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                        ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA,  0 }},
-    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_CAP_EXEC,          MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                          0 }},
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,        ESP32S3_MEM_COMMON_CAPS,                                         0 }},
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,        0,                                                               MALLOC_RTCRAM_BASE_CAPS }},
+/*                           Mem Type Name | High Priority Matching                    | Medium Priority Matching                                                         | Low Priority Matching */
+    [SOC_MEMORY_TYPE_DIRAM]  = { "RAM",    { MALLOC_DIRAM_BASE_CAPS | MALLOC_CAP_SIMD,   0,                                                                                 0 }},
+    [SOC_MEMORY_TYPE_DRAM]   = { "DRAM",   { 0,                                          ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA | MALLOC_CAP_SIMD,  0 }},
+    [SOC_MEMORY_TYPE_IRAM]   = { "IRAM",   { MALLOC_CAP_EXEC,                            MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL,                                            0 }},
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM", { MALLOC_CAP_SPIRAM,                          0,                                                                                 ESP32S3_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
+    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM", { MALLOC_CAP_RTCRAM,                          0,                                                                                 MALLOC_RTCRAM_BASE_CAPS }},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);

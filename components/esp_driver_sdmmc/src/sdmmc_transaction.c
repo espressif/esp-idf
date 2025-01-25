@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,12 +147,9 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
             ret = ESP_ERR_INVALID_SIZE;
             goto out;
         }
-        esp_dma_mem_info_t dma_mem_info;
-        sdmmc_host_get_dma_info(slot, &dma_mem_info);
-#ifdef SOC_SDMMC_PSRAM_DMA_CAPABLE
-        dma_mem_info.extra_heap_caps |= MALLOC_CAP_SPIRAM;
-#endif
-        if (!esp_dma_is_buffer_alignment_satisfied(cmdinfo->data, cmdinfo->buflen, dma_mem_info)) {
+
+        bool is_aligned = sdmmc_host_check_buffer_alignment(slot, cmdinfo->data, cmdinfo->buflen);
+        if (!is_aligned) {
             ESP_LOGE(TAG, "%s: buffer %p can not be used for DMA", __func__, cmdinfo->data);
             ret = ESP_ERR_INVALID_ARG;
             goto out;

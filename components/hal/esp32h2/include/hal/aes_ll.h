@@ -12,6 +12,9 @@
 #include "soc/pcr_struct.h"
 #include "hal/aes_types.h"
 
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -241,6 +244,38 @@ static inline void aes_ll_interrupt_clear(void)
     REG_WRITE(AES_INT_CLEAR_REG, 1);
 }
 
+/**
+ * @brief Enable the pseudo-round function during AES operations
+ *
+ * @param enable true to enable, false to disable
+ * @param base basic number of pseudo rounds, zero if disable
+ * @param increment increment number of pseudo rounds, zero if disable
+ * @param key_rng_cnt update frequency of the pseudo-key, zero if disable
+ */
+static inline void aes_ll_enable_pseudo_rounds(bool enable, uint8_t base, uint8_t increment, uint8_t key_rng_cnt)
+{
+    REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_EN, enable);
+
+    if (enable) {
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_BASE, base);
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_INC, increment);
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_RNG_CNT, key_rng_cnt);
+    } else {
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_BASE, 0);
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_INC, 0);
+        REG_SET_FIELD(AES_PSEUDO_REG, AES_PSEUDO_RNG_CNT, 0);
+    }
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ * The AES pseudo round function is only avliable in chip version
+ * above 1.2 in ESP32-H2
+ */
+static inline bool aes_ll_is_pseudo_rounds_function_supported(void)
+{
+    return ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102);
+}
 
 #ifdef __cplusplus
 }

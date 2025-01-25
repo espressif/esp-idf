@@ -471,7 +471,7 @@ esp_err_t SPI_SLAVE_ATTR spi_slave_queue_reset(spi_host_device_t host)
 
     spi_slave_trans_priv_t trans;
     while (uxQueueMessagesWaiting(spihost[host]->trans_queue)) {
-        xQueueReceive(spihost[host]->trans_queue, &trans, 0);
+        SPI_CHECK(pdTRUE == xQueueReceive(spihost[host]->trans_queue, &trans, 0), "can't reset queue", ESP_ERR_INVALID_STATE);
         spi_slave_uninstall_priv_trans(host, &trans);
     }
     spihost[host]->cur_trans.trans = NULL;
@@ -524,15 +524,20 @@ esp_err_t SPI_SLAVE_ISR_ATTR spi_slave_queue_reset_isr(spi_host_device_t host)
     ESP_RETURN_ON_FALSE_ISR(is_valid_host(host), ESP_ERR_INVALID_ARG, SPI_TAG, "invalid host");
     ESP_RETURN_ON_FALSE_ISR(spihost[host], ESP_ERR_INVALID_ARG, SPI_TAG, "host not slave");
 
+    esp_err_t err = ESP_OK;
     spi_slave_trans_priv_t trans;
     BaseType_t do_yield = pdFALSE;
     while (pdFALSE == xQueueIsQueueEmptyFromISR(spihost[host]->trans_queue)) {
-        xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield);
+        if (pdTRUE != xQueueReceiveFromISR(spihost[host]->trans_queue, &trans, &do_yield)) {
+            err = ESP_ERR_INVALID_STATE;
+            break;
+        }
         spi_slave_uninstall_priv_trans(host, &trans);
     }
     if (do_yield) {
         portYIELD_FROM_ISR();
     }
+    ESP_RETURN_ON_ERROR_ISR(err, SPI_TAG, "can't reset queue");
 
     spihost[host]->cur_trans.trans = NULL;
     return ESP_OK;

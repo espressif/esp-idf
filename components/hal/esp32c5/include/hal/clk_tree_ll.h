@@ -9,16 +9,19 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
+#include "soc/pcr_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
 #include "soc/pmu_struct.h"
+#include "soc/chip_revision.h"
 #include "hal/regi2c_ctrl.h"
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
 #include "esp32c5/rom/rtc.h"
 #include "hal/misc.h"
+#include "hal/efuse_hal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -418,6 +421,22 @@ static inline __attribute__((always_inline)) void clk_ll_apb_set_divider(uint32_
 static inline __attribute__((always_inline)) uint32_t clk_ll_apb_get_divider(void)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(PCR.apb_freq_conf, apb_div_num) + 1;
+}
+
+/**
+ * @brief Enable or disable the soc root clock auto gating logic
+ *
+ * @param ena true to enable, false to disable
+ */
+static inline __attribute__((always_inline)) void clk_ll_soc_root_clk_auto_gating_bypass(bool ena)
+{
+    if (ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 1)) {
+        if (ena) {
+            REG_CLR_BIT(PCR_FPGA_DEBUG_REG, BIT(31));
+        } else {
+            REG_SET_BIT(PCR_FPGA_DEBUG_REG, BIT(31));
+        }
+    }
 }
 
 /**

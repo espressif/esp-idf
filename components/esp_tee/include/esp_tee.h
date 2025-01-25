@@ -52,6 +52,7 @@ typedef struct {
     void *ns_int_handler;
     void *ns_iram_end;
     void *ns_irom_end;
+    void *ns_drom_start;
     void *ns_drom_end;
 } __attribute__((aligned(4))) __attribute__((__packed__)) esp_tee_config_t;
 

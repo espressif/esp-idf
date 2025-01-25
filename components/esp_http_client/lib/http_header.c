@@ -81,9 +81,9 @@ static esp_err_t http_header_new_item(http_header_handle_t header, const char *k
 
     item = calloc(1, sizeof(http_header_item_t));
     ESP_RETURN_ON_FALSE(item, ESP_ERR_NO_MEM, TAG, "Memory exhausted");
-    ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&item->key, key, -1), ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Failed to assign string");
+    HTTP_GOTO_ON_FALSE_DBG(http_utils_assign_string(&item->key, key, -1), ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Failed to assign string");
     http_utils_trim_whitespace(&item->key);
-    ESP_GOTO_ON_FALSE_DEBUG(http_utils_assign_string(&item->value, value, -1), ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Failed to assign string");
+    HTTP_GOTO_ON_FALSE_DBG(http_utils_assign_string(&item->value, value, -1), ESP_ERR_NO_MEM, _header_new_item_exit, TAG, "Failed to assign string");
     http_utils_trim_whitespace(&item->value);
     STAILQ_INSERT_TAIL(header, item, next);
     return ret;

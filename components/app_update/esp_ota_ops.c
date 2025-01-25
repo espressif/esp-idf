@@ -867,8 +867,7 @@ static esp_err_t esp_ota_current_ota_is_workable(bool valid)
             if (err != ESP_OK) {
                 return err;
             }
-            ESP_LOGI(TAG, "Rollback to previously worked partition. Restart.");
-            esp_restart();
+            ESP_LOGI(TAG, "Rollback to previously worked partition.");
         }
     } else {
         ESP_LOGE(TAG, "Running firmware is factory");
@@ -882,9 +881,18 @@ esp_err_t esp_ota_mark_app_valid_cancel_rollback(void)
     return esp_ota_current_ota_is_workable(true);
 }
 
-esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void)
+esp_err_t esp_ota_mark_app_invalid_rollback(void)
 {
     return esp_ota_current_ota_is_workable(false);
+}
+
+esp_err_t esp_ota_mark_app_invalid_rollback_and_reboot(void)
+{
+    esp_err_t ret = esp_ota_mark_app_invalid_rollback();
+    if (ret == ESP_OK) {
+        esp_restart();
+    }
+    return ret;
 }
 
 static bool check_invalid_otadata (const esp_ota_select_entry_t *s) {

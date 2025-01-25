@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 // The Lowlevel layer for SPI Flash Encryption.
+#pragma once
 
 #include "soc/dport_reg.h"
 #include "soc/flash_encryption_reg.h"

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,41 +110,7 @@ void http_utils_trim_whitespace(char **str)
     memmove(*str, start, strlen(start) + 1);
 }
 
-char *http_utils_get_string_between(const char *str, const char *begin, const char *end)
-{
-    char *found = strcasestr(str, begin);
-    char *ret = NULL;
-    if (found) {
-        found += strlen(begin);
-        char *found_end = strcasestr(found, end);
-        if (found_end) {
-            ret = calloc(1, found_end - found + 1);
-            mem_check(ret);
-            memcpy(ret, found, found_end - found);
-            return ret;
-        }
-    }
-    return NULL;
-}
-
-char *http_utils_get_string_after(const char *str, const char *begin)
-{
-    char *found = strcasestr(str, begin);
-    char *ret = NULL;
-    if (found) {
-        found += strlen(begin);
-        char *found_end = (char *)str + strlen(str);
-        if (found_end) {
-            ret = calloc(1, found_end - found + 1);
-            mem_check(ret);
-            memcpy(ret, found, found_end - found);
-            return ret;
-        }
-    }
-    return NULL;
-}
-
-esp_err_t http_utils_get_substring_between(const char *str, const char *begin, const char *end, char **out)
+esp_err_t http_utils_get_string_between(const char *str, const char *begin, const char *end, char **out)
 {
     *out = NULL;
     char *found = strcasestr(str, begin);
@@ -160,7 +126,7 @@ esp_err_t http_utils_get_substring_between(const char *str, const char *begin, c
     return ESP_OK;
 }
 
-esp_err_t http_utils_get_substring_after(const char *str, const char *begin, char **out)
+esp_err_t http_utils_get_string_after(const char *str, const char *begin, char **out)
 {
     *out = NULL;
     char *found = strcasestr(str, begin);

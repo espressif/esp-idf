@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,6 @@ typedef enum {
     BITSCRAMBLER_COND_MODE_LESSTHAN = 0, /*!< Use "<=" to generate the condition */
     BITSCRAMBLER_COND_MODE_NOTEQUAL = 1, /*!< Use "!=" to generate the condition */
 } bitscrambler_cond_mode_t;
-
-/**
- * @brief Prefetch mode of bitscrambler
- */
-typedef enum {
-    BITSCRAMBLER_PREFETCH_ENABLED = 0,  /*!< Hardware prefetch is enabled */
-    BITSCRAMBLER_PREFETCH_DISABLED = 1, /*!< Hardware prefetch is disabled, but the bitscrambler instructions can still do the prefetch */
-} bitscrambler_prefetch_mode_t;
 
 /**
  * @brief Halt mode of bitscrambler

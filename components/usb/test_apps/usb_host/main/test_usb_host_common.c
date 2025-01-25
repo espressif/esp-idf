@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,11 @@ void test_usb_host_setup_phy(void)
     // Initialize the internal USB PHY to connect to the USB OTG peripheral
     usb_phy_config_t phy_config = {
         .controller = USB_PHY_CTRL_OTG,
+#if CONFIG_IDF_TARGET_ESP32P4 // ESP32-P4 has 2 USB-DWC peripherals, each with its dedicated PHY. We support HS+UTMI only ATM.
+        .target = USB_PHY_TARGET_UTMI,
+#else
         .target = USB_PHY_TARGET_INT,
+#endif
         .otg_mode = USB_OTG_MODE_HOST,
         .otg_speed = USB_PHY_SPEED_UNDEFINED,   // In Host mode, the speed is determined by the connected device
         .ext_io_conf = NULL,

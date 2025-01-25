@@ -496,7 +496,7 @@ static inline void i2s_ll_rx_set_ws_width(i2s_dev_t *hw, int width)
  */
 static inline void i2s_ll_rx_set_eof_num(i2s_dev_t *hw, int eof_num)
 {
-    hw->rx_eof_num.rx_eof_num = eof_num;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->rx_eof_num, rx_eof_num, eof_num);
 }
 
 /**

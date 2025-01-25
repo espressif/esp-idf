@@ -1,4 +1,6 @@
-# ESP-IDF 项目路线图 2024 (v1.0)
+# ESP-IDF 项目路线图 2025
+
+* [English Version](./ROADMAP.md)
 
 本文档概述了 ESP-IDF 项目的年度计划，方便客户据此规划自己的项目周期。需要说明的是该文档并不是我们对客户的约束性承诺。相反，其主要目的是为客户提供 ESP-IDF 项目开发的路线图和方向。通过公开这些信息，我们希望增进客户对 ESP-IDF 项目的理解，提高透明度，并确保与 ESP-IDF 项目的总体目标保持一致。
 
@@ -10,32 +12,24 @@
 
 此外，ESP-IDF 各活跃分支的 Bugfix 版本发布也是我们项目的重中之重，着力提升已量产产品的稳定性和性能。通过及时解决问题，我们期待提升用户的整体体验，切实惠及使用乐鑫解决方案的客户。通过积极维护 ESP-IDF 的各活跃分支，我们践行了对宝贵的客户群提供可靠、高质量产品的承诺。
 
-以下是 ESP-IDF 项目在 2024 年计划实现的主要目标。
+以下是 ESP-IDF 项目在 2025 年计划实现的主要目标。
 
 * 新芯片支持
 
-	* 增加对 ESP32-P4 芯片的支持
 	* 增加对 ESP32-C5 芯片的支持
 	* 增加对 ESP32-C61 芯片的支持
 
-* 发布更多的次要版本
+* 发布更多的次要和主要版本
 
-	* 在 2024 年发布 IDF v5.3 
-	* 在 2025 年初发布 IDF v5.4
+	* 在 2025 年中发布 IDF v5.5 
+	* 在 2025 年底发布 IDF v6.0
 
-* 发布更多 Bugfix 版本
+* 发布更多 bugfix 版本
 
-	* 在 2024 年 7 月底 IDF v4.4 停止维护之前，发布 IDF v4.4.8
-	* 在 2024 年 6 月底，release/5.1 分支进入维护周期之前，发布更多 Bugfix 版本
-	* release/5.2 分支和 release/5.3 分支发布更多 Bugfix 版本，使这两个分支更加稳定和产品化
-
-* 上游库与工具链的更新
-
-	* 将 GDB 升级至 14.2
-	* 将 LLVM 升级至 18.1.2
-	* 更新 MbedTLS 至 3.6（LTS）
-	* 更新 LWIP 至 2.2.0
-	* 将最低 Python 要求更改为 3.9
+	* 在 2025 年 5 月底 IDF v5.0 停止维护之前，发布 IDF v5.0.8 和 IDF v5.0.9
+	* 在 2025 年 12 月底 IDF v5.1 停止维护之前，发布 IDF v5.1.6 和 IDF v5.1.7
+	* 在 release/5.2 分支和 release/5.3 分支进入维护周期之前，发布更多 bugfix 版本
+	* release/5.4 分支和 release/5.5 分支发布更多 bugfix 版本，使这两个分支更加稳定和产品化
 
 请注意，获取之前芯片的支持状态，请参阅 [ESP-IDF 发布和 SoC 兼容性](https://github.com/espressif/esp-idf/blob/master/README_CN.md#esp-idf-与乐鑫芯片)。
 
@@ -49,75 +43,86 @@ ESP-IDF 项目重视持续维护和更新，确保我们的客户始终处于技
 
 * 新芯片支持
 
-	* 在 ESP-IDF v5.3 中为 ESP32-P4 提供完整支持，参考 [ESP32-P4 支持状态](https://github.com/espressif/esp-idf/issues/12996)
-	* 在 ESP-IDF v5.3 中为 ESP32-C5 提供预览支持，并在 ESP-IDF v5.4 中为 ESP32-C5 提供完整支持，参考 [ESP32-C5 支持状态](https://github.com/espressif/esp-idf/issues/14021)
-	* 在 ESP-IDF v5.4 中增加对 ESP32-C61 早期样品的预览支持，并在 IDF v5.4.x 中增加对 ESP32-C61 量产版本的完整支持，参考 [ESP32-C61 支持状态](https://developer.espressif.com/pages/chip-support-status/esp32c61/#esp-idf)
+	* 在 ESP-IDF v5.4 中为 ESP32-C5 提供预览支持，并在 ESP-IDF v5.5 中为 ESP32-C5 提供完整支持，参考 [ESP32-C5 支持状态](https://github.com/espressif/esp-idf/issues/14021)
+	* 在 ESP-IDF v5.4 中增加对 ESP32-C61 早期样品的预览支持，并在 IDF v5.5 中增加对 ESP32-C61 量产版本的完整支持，参考 [ESP32-C61 支持状态](https://developer.espressif.com/pages/chip-support-status/esp32c61/#esp-idf)
 
 * Bugfix 版本发布
 
-	* 发布 Bugfix 版本 IDF v4.4.8，并在 2024 年 7 月底停止维护 ESP-IDF v4.4
-	* 2024 年，release/5.0 分支已处于维护周期，发布 IDF v5.0.6 和 IDF v5.0.7
-	* 2024 年上半年发布 Bugfix 版本 IDF v5.1.3 和 IDF v5.1.4，并在 2024 年下半年发布 IDF v5.1.5
-	* 自 2024 年 6 月起，release/5.1 分支进入到维护周期
-	* release/5.2 分支发布更多 Bugfix 版本，包括 IDF v5.2.1、IDF v5.2.2、IDF v5.2.3；release/5.3 分支发布更多 Bugfix 版本，包括 IDF v5.3.1、IDF v5.3.2。通过发布这些 Bugfix 版本，使 release/5.2 分支和 release/5.3 分支更加稳定和产品化。
+	* 发布 Bugfix 版本 IDF v5.0.8 和 IDF v5.0.9，并在 2025 年 5 月底停止维护 ESP-IDF v5.0
+	* 发布 Bugfix 版本 IDF v5.1.6 和 IDF v5.1.7，并在 2025 年 12 月底停止维护 ESP-IDF v5.1
+	* 发布 Bugfix 版本 IDF v5.2.4 和 IDF v5.2.5，release/5.2 分支自 2025 年 2 月进入维护周期
+	* 发布 Bugfix 版本 IDF v5.3.3 和 IDF v5.3.4，release/5.3 分支自 2025 年 7 月进入维护周期
+	* release/5.4 分支发布更多 bugfix 版本，包括 IDF v5.4.1、IDF v5.4.2、IDF v5.4.3；release/5.5 分支发布更多 bugfix 版本，包括 IDF v5.5.1、IDF v5.5.2。通过发布这些 Bugfix 版本，使 release/5.4 分支和 release/5.5 分支更加稳定和产品化。
 
 ## ESP-IDF 发布计划
 
 获取 ESP-IDF 的完整发布列表，请访问 https://github.com/espressif/esp-idf/releases
 
+此处提供的所有信息均可因业务原因及其他因素而在没有通知的情况下进行更改。
+
 ### ESP-IDF 主要版本发布
 
-2024 年，无主要版本发布计划
+```mermaid
+timeline
 
+        title ESP-IDF Major Releases
+        section 2025 Q1 <br> Major Release Planning
+          No version planned : N/A             
+        section 2025 Q2 <br> Major Release Planning
+          No version planned : N/A     
+        section 2025 Q3 <br> Major Release Planning
+          No version planned : N/A   
+        section 2025 Q4 <br> Major Release Planning
+          v6.0-beta1 : 2025/11/13
+          v6.0-beta2 : 2025/12/05
+          v6.0-RC1 : 2026/01/14   
+          v6.0-RC2 : 2026/02/06  
+          v6.0 : 2026/02/13   
+```
+
+> [!NOTE]
+> 但对于 12 月份的发布，我们也在考虑发布另外一个次要版本。我们将在 2025 年中期确定 v5.6 的计划，如一经确定，我们将把 12 月份的 v6.0 发布变更为 v5.6 发布。
+  
 ### ESP-IDF 次要版本发布
 
-#### 第一季度
+```mermaid
+timeline
 
-* v5.2-RC1，预计发布日期：2024/02/02
-* v5.2 正式发布，预计发布日期：2024/02/08
-
-#### 第二季度
-
-* v5.3-beta1，预计发布日期：2024/05/13
-* v5.3-beta2，预计发布日期：2024/05/31
-* v5.3-RC1，预计发布日期：2024/07/08
-
-#### 第三季度
-
-* v5.3-RC2，预计发布日期：2024/07/26
-* v5.3 正式发布，预计发布日期：2024/08/02
-
-#### 第四季度
-
-* v5.4-beta1，预计发布日期：2024/11/08
-* v5.4-beta2，预计发布日期：2024/11/29
-* v5.4-RC1，预计发布日期：2025/01/09
-* v5.4-RC2，预计发布日期：2025/01/29
-* v5.4 正式发布，预计发布日期：2025/02/05
+        title ESP-IDF Minor Releases
+        section 2025 Q1 <br> Minor Release Planning
+          No version planned : N/A                
+        section 2025 Q2 <br> Minor Release Planning
+          v5.5-beta1 : 2025/05/14
+          v5.5-beta2 : 2025/06/04    
+        section 2025 Q3 <br> Minor Release Planning
+          v5.5-RC1 : 2025/07/07  
+          v5.5-RC2 : 2025/07/28  
+          v5.5 : 2025/08/04       
+        section 2025 Q4 <br> Minor Release Planning
+          No version planned : N/A   
+```
 
 ### ESP-IDF Bugfix 版本发布
 
-#### 第一季度
+```mermaid
+timeline
 
-* v5.1.3，预计发布日期：2024/02/08
-* v5.0.6，预计发布日期：2024/02/18
-* v4.4.7，预计发布日期：2024/03/19
-* v5.2.1，预计发布日期：2024/03/31
-
-#### 第二季度
-
-* v5.1.4，预计发布日期：2024/05/06
-* v5.2.2，预计发布日期：2024/06/17
-* v4.4.8，预计发布日期：2024/07/19
-
-#### 第三季度
-
-* v5.0.7，预计发布日期：2024/08/22
-* v5.3.1，预计发布日期：2024/09/16
-* v5.2.3，预计发布日期：2024/10/10
-
-#### 第四季度
-
-* v5.1.5，预计发布日期：2024/11/04（自 2024 年 6 月进入维护周期）
-* v5.3.2，预计发布日期：2024/12/31
-* v5.2.4，预计发布日期：2025/02/20（服务周期截止至 2025 年 2 月）
+        title ESP-IDF Bugfix Releases
+        section 2025 Q1 <br> Bugfix Release Planning
+          v5.0.8 : 2025/01/14
+          v5.1.6 : 2025/02/18
+          v5.2.4 : 2025/02/23        
+          v5.4.1 : 2025/03/27
+          v5.3.3 : 2025/04/04                
+        section 2025 Q2 <br> Bugfix Release Planning
+          v5.0.9 : 2025/05/16
+          v5.4.2 : 2025/06/30 
+        section 2025 Q3 <br> Bugfix Release Planning
+          v5.3.4 : 2025/08/03
+          v5.2.5 : 2025/09/04
+          v5.5.1 : 2025/09/11   
+          v5.4.3 : 2025/10/08
+        section 2025 Q4 <br> Bugfix Release Planning
+          v5.5.2 : 2025/11/12
+          v5.1.7 : 2026/01/06   
+```

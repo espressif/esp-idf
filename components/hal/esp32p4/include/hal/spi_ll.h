@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -215,11 +215,11 @@ __attribute__((always_inline))
 static inline void spi_ll_clk_source_pre_div(spi_dev_t *hw, uint8_t hs_div, uint8_t mst_div)
 {
     if (hw == &GPSPI2) {
-        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_hs_clk_div_num = hs_div - 1;
-        HP_SYS_CLKRST.peri_clk_ctrl116.reg_gpspi2_mst_clk_div_num = mst_div - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl116, reg_gpspi2_hs_clk_div_num, hs_div - 1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl116, reg_gpspi2_mst_clk_div_num, mst_div - 1);
     } else if (hw == &GPSPI3) {
-        HP_SYS_CLKRST.peri_clk_ctrl117.reg_gpspi3_hs_clk_div_num = hs_div - 1;
-        HP_SYS_CLKRST.peri_clk_ctrl117.reg_gpspi3_mst_clk_div_num = mst_div - 1;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl117, reg_gpspi3_hs_clk_div_num, hs_div - 1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(HP_SYS_CLKRST.peri_clk_ctrl117, reg_gpspi3_mst_clk_div_num, mst_div - 1);
     }
 }
 

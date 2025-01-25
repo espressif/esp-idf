@@ -438,7 +438,7 @@ typedef struct pmu_sleep_machine_constant {
     } lp;
     struct {
         uint16_t    min_slp_time_us;            /* Minimum sleep protection time (unit: microsecond) */
-        uint16_t    clock_domain_sync_time_us;  /* The Slow OSC clock domain synchronizes time with the Fast OSC domain, at least 4 slow clock cycles (unit: microsecond) */
+        uint16_t    clock_domain_sync_time_us;  /* Synchronizing the rtc clock timer to modem system requires at least 1 us (unit: microsecond) */
         uint16_t    system_dfs_up_work_time_us; /* System DFS up scaling work time (unit: microsecond) */
         uint16_t    analog_wait_time_us;        /* HP LDO power up wait time (unit: microsecond) */
         uint8_t     isolate_wait_time_us;       /* Waiting for all isolate signals to be ready (unit: microsecond) */
@@ -471,19 +471,19 @@ typedef struct pmu_sleep_machine_constant {
     },                                          \
     .hp = {                                     \
         .min_slp_time_us                = 450,  \
-        .clock_domain_sync_time_us      = 150,  \
+        .clock_domain_sync_time_us      = 2,    \
         .system_dfs_up_work_time_us     = 124,  \
         .analog_wait_time_us            = 154,  \
         .isolate_wait_time_us           = 1,    \
         .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
-        .regdma_s2m_work_time_us        = 172,  \
-        .regdma_s2a_work_time_us        = 480,  \
-        .regdma_m2a_work_time_us        = 278,  \
-        .regdma_a2s_work_time_us        = 382,  \
-        .regdma_rf_on_work_time_us      = 70,   \
-        .regdma_rf_off_work_time_us     = 23,   \
+        .regdma_s2m_work_time_us        = 275,  \
+        .regdma_s2a_work_time_us        = 587,  \
+        .regdma_m2a_work_time_us        = 320,  \
+        .regdma_a2s_work_time_us        = 494,  \
+        .regdma_rf_on_work_time_us      = 60,   \
+        .regdma_rf_off_work_time_us     = 25,   \
         .xtal_wait_stable_time_us       = 250,  \
         .pll_wait_stable_time_us        = 300   \
     }                                           \

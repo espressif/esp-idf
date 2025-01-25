@@ -21,3 +21,9 @@ if(CONFIG_COMPILER_DUMP_RTL_FILES)
                       DEPENDS ${elf}
                       )
 endif()
+
+message(STATUS "Checking adc registers are not read-write by half-word")
+include($ENV{IDF_PATH}/tools/ci/check_register_rw_half_word.cmake)
+check_register_rw_half_word(SOC_MODULES "rtc_io" "sens" "syscon" "rtc_cntl" "apb_saradc"
+                                        "system" "pmu" "pcr" "hp_sys_clkrst" "lpperi" "lp_adc"
+                            HAL_MODULES "adc")

@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 // The Lowlevel layer for SPI Flash Encryption.
+#pragma once
 
 #include <stdbool.h>
 #include <string.h>
@@ -167,6 +168,14 @@ static inline void spi_flash_encrypt_ll_enable_pseudo_rounds(uint8_t mode, uint8
         REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_BASE, 0);
         REG_SET_FIELD(SPI_MEM_XTS_PSEUDO_ROUND_CONF_REG(0), SPI_MEM_PSEUDO_INC, 0);
     }
+}
+
+/**
+ * @brief Check if the pseudo round function is supported
+ */
+static inline bool spi_flash_encrypt_ll_is_pseudo_rounds_function_supported(void)
+{
+    return true;
 }
 
 #ifdef __cplusplus

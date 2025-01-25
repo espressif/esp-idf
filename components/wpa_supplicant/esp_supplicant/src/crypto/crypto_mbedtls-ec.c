@@ -1168,6 +1168,10 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
     int secret_key = 0;
 
     mbedtls_ecdh_context *ctx = (mbedtls_ecdh_context *)ecdh;
+    if (!ctx) {
+        wpa_printf(MSG_ERROR, "ECDH Context is NULL");
+        return 0;
+    }
 
     mbedtls_ctr_drbg_context ctr_drbg;
     mbedtls_entropy_context entropy;
@@ -1221,7 +1225,7 @@ struct wpabuf * crypto_ecdh_set_peerkey(struct crypto_ecdh *ecdh, int inc_y,
 
     /* Setup ECDH context from EC key */
     /* Call to mbedtls_ecdh_get_params() will initialize the context when not LEGACY context */
-    if (ctx != NULL && peer != NULL) {
+    if (peer != NULL) {
         mbedtls_ecp_copy(ACCESS_ECDH(&ctx, Qp), &(mbedtls_pk_ec(*peer))->MBEDTLS_PRIVATE(Q));
 #ifndef CONFIG_MBEDTLS_ECDH_LEGACY_CONTEXT
         ctx->MBEDTLS_PRIVATE(var) = MBEDTLS_ECDH_VARIANT_MBEDTLS_2_0;

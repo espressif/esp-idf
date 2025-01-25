@@ -34,6 +34,9 @@ TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME = 'test_related_apps_download_urls.yml'
 REPORT_TEMPLATE_FILEPATH = os.path.join(
     IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'report.template.html'
 )
+TOP_N_APPS_BY_SIZE_DIFF = 10
+SIZE_DIFFERENCE_BYTES_THRESHOLD = 500
+BINARY_SIZE_METRIC_NAME = 'binary_size'
 
 RETRY_JOB_PICTURE_PATH = 'tools/ci/dynamic_pipelines/templates/retry-jobs.png'
 RETRY_JOB_TITLE = '\n\nRetry failed jobs with with help of "retry_failed_jobs" stage of the pipeline:'

@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -398,6 +398,61 @@ typedef union {
     uint32_t val;
 } aes_dma_exit_reg_t;
 
+/** Type of rx_reset register
+ *  AES-DMA reset rx-fifo register
+ */
+typedef union {
+    struct {
+        /** rx_reset : WT; bitpos: [0]; default: 0;
+         *  Set this bit to reset rx_fifo under dma_aes working mode.
+         */
+        uint32_t rx_reset:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} aes_rx_reset_reg_t;
+
+/** Type of tx_reset register
+ *  AES-DMA reset tx-fifo register
+ */
+typedef union {
+    struct {
+        /** tx_reset : WT; bitpos: [0]; default: 0;
+         *  Set this bit to reset tx_fifo under dma_aes working mode.
+         */
+        uint32_t tx_reset:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} aes_tx_reset_reg_t;
+
+
+/** Group: Configuration register */
+/** Type of pseudo register
+ *  AES PSEUDO function configure register
+ */
+typedef union {
+    struct {
+        /** pseudo_en : R/W; bitpos: [0]; default: 0;
+         *  This bit decides whether the pseudo round function is enable or not.
+         */
+        uint32_t pseudo_en:1;
+        /** pseudo_base : R/W; bitpos: [4:1]; default: 2;
+         *  Those bits decides the basic number of pseudo round number.
+         */
+        uint32_t pseudo_base:4;
+        /** pseudo_inc : R/W; bitpos: [6:5]; default: 2;
+         *  Those bits decides the increment number of pseudo round number
+         */
+        uint32_t pseudo_inc:2;
+        /** pseudo_rng_cnt : R/W; bitpos: [9:7]; default: 7;
+         *  Those bits decides the update frequency of the pseudo-key.
+         */
+        uint32_t pseudo_rng_cnt:3;
+        uint32_t reserved_10:22;
+    };
+    uint32_t val;
+} aes_pseudo_reg_t;
 
 /** Group: memory type */
 
@@ -483,12 +538,17 @@ typedef struct {
     volatile aes_int_ena_reg_t int_ena;
     volatile aes_date_reg_t date;
     volatile aes_dma_exit_reg_t dma_exit;
+    uint32_t reserved_0bc;
+    volatile aes_rx_reset_reg_t rx_reset;
+    volatile aes_tx_reset_reg_t tx_reset;
+    uint32_t reserved_0c8[2];
+    volatile aes_pseudo_reg_t pseudo;
 } aes_dev_t;
 
 extern aes_dev_t AES;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(aes_dev_t) == 0xbc, "Invalid size of aes_dev_t structure");
+_Static_assert(sizeof(aes_dev_t) == 0xd4, "Invalid size of aes_dev_t structure");
 #endif
 
 #ifdef __cplusplus

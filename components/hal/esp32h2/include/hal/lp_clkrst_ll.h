@@ -63,7 +63,7 @@ static inline void lp_clkrst_ll_select_modem_32k_clock_source(lp_clkrst_dev_t *h
 __attribute__((always_inline))
 static inline void _lp_clkrst_ll_enable_rng_clock(bool en)
 {
-    LPPERI.clk_en->rng_ck_en = en;
+    LPPERI_REG_SET(clk_en.rng_ck_en, en);
 }
 
 /// LPPERI.clk_en is a shared register, so this function must be used in an atomic way

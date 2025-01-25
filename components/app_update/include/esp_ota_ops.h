@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -334,11 +334,23 @@ uint8_t esp_ota_get_app_partition_count(void);
 esp_err_t esp_ota_mark_app_valid_cancel_rollback(void);
 
 /**
- * @brief This function is called to roll back to the previously workable app with reboot.
+ * @brief This function is called to roll back to the previously workable app without reboot.
  *
- * If rollback is successful then device will reset else API will return with error code.
  * Checks applications on a flash drive that can be booted in case of rollback.
  * If the flash does not have at least one app (except the running app) then rollback is not possible.
+ * @return
+ *  - ESP_OK: if successful.
+ *  - ESP_FAIL: if not successful.
+ *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible because the available OTA partitions
+ *    on the flash do not contain a valid application.
+ */
+esp_err_t esp_ota_mark_app_invalid_rollback(void);
+
+/**
+ * @brief This function is called to roll back to the previously workable app with reboot.
+ *
+ * Equivalent to calling esp_ota_mark_app_invalid_rollback(), and, if successful, followed by esp_restart().
+ *
  * @return
  *  - ESP_FAIL: if not successful.
  *  - ESP_ERR_OTA_ROLLBACK_FAILED: The rollback is not possible due to flash does not have any apps.

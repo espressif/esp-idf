@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "hal/rmt_hal.h"
 #include "hal/dma_types.h"
 #include "hal/cache_ll.h"
+#include "hal/hal_utils.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
@@ -113,7 +114,7 @@ struct rmt_group_t {
     portMUX_TYPE spinlock;      // to protect per-group register level concurrent access
     rmt_hal_context_t hal;      // hal layer for each group
     rmt_clock_source_t clk_src; // record the group clock source, group clock is shared by all channels
-    uint32_t resolution_hz;     // resolution of group clock
+    uint32_t resolution_hz;     // resolution of group clock. clk_src_hz / prescale = resolution_hz
     uint32_t occupy_mask;       // a set bit in the mask indicates the channel is not available
     rmt_tx_channel_t *tx_channels[SOC_RMT_TX_CANDIDATES_PER_GROUP]; // array of RMT TX channels
     rmt_rx_channel_t *rx_channels[SOC_RMT_RX_CANDIDATES_PER_GROUP]; // array of RMT RX channels
@@ -219,17 +220,18 @@ rmt_group_t *rmt_acquire_group_handle(int group_id);
 void rmt_release_group_handle(rmt_group_t *group);
 
 /**
- * @brief Set clock source for RMT peripheral
+ * @brief Set clock source and resolution for RMT peripheral
  *
  * @param chan RMT channel handle
  * @param clk_src Clock source
+ * @param expect_channel_resolution Expected channel resolution
  * @return
  *      - ESP_OK: Set clock source successfully
  *      - ESP_ERR_NOT_SUPPORTED: Set clock source failed because the clk_src is not supported
  *      - ESP_ERR_INVALID_STATE: Set clock source failed because the clk_src is different from other RMT channel
  *      - ESP_FAIL: Set clock source failed because of other error
  */
-esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src);
+esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src, uint32_t expect_channel_resolution);
 
 /**
  * @brief Set interrupt priority to RMT group

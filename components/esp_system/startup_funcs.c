@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/brownout.h"
+#include "esp_private/vbat.h"
 
 #include "esp_rom_caps.h"
 #include "esp_rom_sys.h"
@@ -78,6 +79,7 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
 {
     // [refactor-todo] leads to call chain rtc_is_register (driver) -> esp_intr_alloc (esp32/esp32s2) ->
     // malloc (newlib) -> heap_caps_malloc (heap), so heap must be at least initialized
+    esp_err_t ret = ESP_OK;
 #if CONFIG_ESP_BROWNOUT_DET
     esp_brownout_init();
 #else
@@ -85,7 +87,12 @@ ESP_SYSTEM_INIT_FN(init_brownout, CORE, BIT(0), 104)
     brownout_ll_ana_reset_enable(false);
 #endif // SOC_CAPS_NO_RESET_BY_ANA_BOD
 #endif // CONFIG_ESP_BROWNOUT_DET
-    return ESP_OK;
+
+#if CONFIG_ESP_VBAT_INIT_AUTO
+    ret = esp_vbat_init();
+#endif
+
+    return ret;
 }
 #endif
 

@@ -109,7 +109,7 @@ static inline void psram_ctrlr_ll_set_rd_dummy(uint32_t mspi_id, uint32_t dummy_
  * @param mspi_id      mspi_id
  * @param read_mode    read mode
  */
-static inline void psram_ctrlr_ll_set_read_mode(uint32_t mspi_id, psram_hal_cmd_mode_t read_mode)
+static inline void psram_ctrlr_ll_set_read_mode(uint32_t mspi_id, psram_cmd_mode_t read_mode)
 {
     typeof (SPIMEM0.cache_sctrl) cache_sctrl;
     cache_sctrl.val = SPIMEM0.cache_sctrl.val;

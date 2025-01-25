@@ -236,7 +236,7 @@ typedef volatile struct rtc_io_dev_s {
             uint32_t xpd:     1;             /*touch sensor power on.*/
             uint32_t tie_opt: 1;             /*default touch sensor tie option. 0: tie low  1: tie high.*/
             uint32_t start:   1;             /*start touch sensor.*/
-            uint32_t dac:     3;             /*touch sensor slope control. 3-bit for each touch panel  default 100.*/
+            uint32_t slope:   3;             /*touch sensor slope control. 3-bit for each touch panel  default 100.*/
             uint32_t reserved26:         1;
             uint32_t rue:     1;             /*the pull up enable of the pad*/
             uint32_t rde:     1;             /*the pull down enable of the pad*/

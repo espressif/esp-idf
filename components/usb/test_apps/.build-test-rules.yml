@@ -21,10 +21,6 @@ components/usb/test_apps:
 components/usb/test_apps/phy:
   enable:
     - if: SOC_USB_OTG_SUPPORTED == 1
-  disable_test:
-    - if: IDF_TARGET in ["esp32p4"]
-      temporary: true
-      reason: ESP32-P4 PHY driver not yet migrated
   depends_components:
     - usb
   depends_filepatterns:

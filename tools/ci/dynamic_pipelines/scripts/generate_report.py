@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import glob
@@ -9,8 +9,10 @@ import __init__  # noqa: F401 # inject the system path
 from dynamic_pipelines.report import BuildReportGenerator
 from dynamic_pipelines.report import JobReportGenerator
 from dynamic_pipelines.report import TargetTestReportGenerator
+from dynamic_pipelines.utils import fetch_app_metrics
 from dynamic_pipelines.utils import fetch_failed_jobs
 from dynamic_pipelines.utils import parse_testcases_from_filepattern
+from idf_ci.app import enrich_apps_with_metrics_info
 from idf_ci.app import import_apps_from_txt
 
 
@@ -73,6 +75,11 @@ def generate_build_report(args: argparse.Namespace) -> None:
     apps: t.List[t.Any] = [
         app for file_name in glob.glob(args.app_list_filepattern) for app in import_apps_from_txt(file_name)
     ]
+    app_metrics = fetch_app_metrics(
+        source_commit_sha=os.environ.get('CI_COMMIT_SHA'),
+        target_commit_sha=os.environ.get('CI_MERGE_REQUEST_TARGET_BRANCH_SHA'),
+    )
+    apps = enrich_apps_with_metrics_info(app_metrics, apps)
     report_generator = BuildReportGenerator(
         args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, apps=apps
     )
@@ -84,7 +91,7 @@ def generate_target_test_report(args: argparse.Namespace) -> None:
     report_generator = TargetTestReportGenerator(
         args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, test_cases=test_cases
     )
-    report_generator.post_report(print_report_path=False)
+    report_generator.post_report()
 
 
 def generate_jobs_report(args: argparse.Namespace) -> None:
@@ -93,8 +100,10 @@ def generate_jobs_report(args: argparse.Namespace) -> None:
     if not jobs:
         return
 
-    report_generator = JobReportGenerator(args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, jobs=jobs)
-    report_generator.post_report(print_report_path=False, print_retry_jobs_message=any(job.is_failed for job in jobs))
+    report_generator = JobReportGenerator(
+        args.project_id, args.mr_iid, args.pipeline_id, args.job_id, args.commit_id, jobs=jobs
+    )
+    report_generator.post_report(print_retry_jobs_message=any(job.is_failed for job in jobs))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -340,14 +340,13 @@ esp_err_t sdmmc_send_cmd_send_scr(sdmmc_card_t* card, sdmmc_scr_t *out_scr)
 {
     size_t datalen = 8;
     esp_err_t err = ESP_FAIL;
-    void *buf = NULL;
-    size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    err = esp_dma_capable_malloc(datalen, &dma_mem_info, &buf, &actual_size);
-    if (err != ESP_OK) {
-        return err;
+
+    void *buf = heap_caps_malloc(datalen, MALLOC_CAP_DMA);
+    if (!buf) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
+    size_t actual_size = heap_caps_get_allocated_size(buf);
 
     sdmmc_command_t cmd = {
             .data = buf,
@@ -412,14 +411,13 @@ esp_err_t sdmmc_send_cmd_num_of_written_blocks(sdmmc_card_t* card, size_t* out_n
 {
     size_t datalen = sizeof(uint32_t);
     esp_err_t err = ESP_OK;
-    void* buf = NULL;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    size_t actual_size = 0;
-    err = esp_dma_capable_malloc(datalen, &dma_mem_info, &buf, &actual_size);
-    if (err != ESP_OK) {
-        return err;
+
+    void *buf = heap_caps_malloc(datalen, MALLOC_CAP_DMA);
+    if (!buf) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
+    size_t actual_size = heap_caps_get_allocated_size(buf);
 
     sdmmc_command_t cmd = {
         .data = buf,
@@ -454,12 +452,9 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-#ifdef SOC_SDMMC_PSRAM_DMA_CAPABLE
-    dma_mem_info.extra_heap_caps |= MALLOC_CAP_SPIRAM;
-#endif
-    if (esp_dma_is_buffer_alignment_satisfied(src, block_size * block_count, dma_mem_info)
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, src, block_size * block_count);
+
+    if (is_aligned
         #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
             && !esp_ptr_external_ram(src)
         #endif
@@ -471,13 +466,14 @@ esp_err_t sdmmc_write_sectors(sdmmc_card_t* card, const void* src,
         // DMA-capable buffer.
         void *tmp_buf = NULL;
         size_t actual_size = 0;
-        // Clear the SPIRAM flag. We don't want to force the allocation into SPIRAM, the allocator
+        // We don't want to force the allocation into SPIRAM, the allocator
         // will decide based on the buffer size and memory availability.
-        dma_mem_info.extra_heap_caps &= ~MALLOC_CAP_SPIRAM;
-        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
-        if (err != ESP_OK) {
-            return err;
+        tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        if (!tmp_buf) {
+            ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+            return ESP_ERR_NO_MEM;
         }
+        actual_size = heap_caps_get_allocated_size(tmp_buf);
 
         const uint8_t* cur_src = (const uint8_t*) src;
         for (size_t i = 0; i < block_count; ++i) {
@@ -594,9 +590,9 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
 
     esp_err_t err = ESP_OK;
     size_t block_size = card->csd.sector_size;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    if (esp_dma_is_buffer_alignment_satisfied(dst, block_size * block_count, dma_mem_info)
+    bool is_aligned = card->host.check_buffer_alignment(card->host.slot, dst, block_size * block_count);
+
+    if (is_aligned
         #if !SOC_SDMMC_PSRAM_DMA_CAPABLE
             && !esp_ptr_external_ram(dst)
         #endif
@@ -608,10 +604,13 @@ esp_err_t sdmmc_read_sectors(sdmmc_card_t* card, void* dst,
         // DMA-capable buffer.
         void *tmp_buf = NULL;
         size_t actual_size = 0;
-        err = esp_dma_capable_malloc(block_size, &dma_mem_info, &tmp_buf, &actual_size);
-        if (err != ESP_OK) {
-            return err;
+        tmp_buf = heap_caps_malloc(block_size, MALLOC_CAP_DMA);
+        if (!tmp_buf) {
+            ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+            return ESP_ERR_NO_MEM;
         }
+        actual_size = heap_caps_get_allocated_size(tmp_buf);
+
         uint8_t* cur_dst = (uint8_t*) dst;
         for (size_t i = 0; i < block_count; ++i) {
             err = sdmmc_read_sectors_dma(card, tmp_buf, start_block + i, 1, actual_size);

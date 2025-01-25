@@ -68,6 +68,9 @@ esp_err_t sdmmc_card_init(const sdmmc_host_t* config, sdmmc_card_t* card)
     /* Check if host flags are compatible with slot configuration. */
     SDMMC_INIT_STEP(!is_spi, sdmmc_fix_host_flags);
 
+    /* Check if host function pointers are correctly initialised */
+    SDMMC_INIT_STEP(always, sdmmc_check_host_function_ptr_integrity);
+
     /* Reset SDIO (CMD52, RES) before re-initializing IO (CMD5). */
     SDMMC_INIT_STEP(io_supported, sdmmc_io_reset);
 

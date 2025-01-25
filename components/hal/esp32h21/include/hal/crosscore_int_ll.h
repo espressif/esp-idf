@@ -8,8 +8,6 @@
 #include "esp_attr.h"
 #include "soc/intpri_reg.h"
 
-//TODO: [ESP32H21] IDF-11537, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif

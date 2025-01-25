@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,8 +198,16 @@ typedef struct {
     esp_openthread_port_config_t            port_config;  /*!< The port configuration */
 } esp_openthread_platform_config_t;
 
+/**
+ * @brief The OpenThread rcp failure handler
+ *
+ */
 typedef void (*esp_openthread_rcp_failure_handler)(void);
 
+/**
+ * @brief The OpenThread compatibility error callback
+ *
+ */
 typedef void (*esp_openthread_compatibility_error_callback)(void);
 
 #ifdef __cplusplus

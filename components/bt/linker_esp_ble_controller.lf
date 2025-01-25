@@ -1,8 +1,21 @@
+[sections:bt_iram_text]
+entries:
+    .iram1+
+
+[sections:high_perf_iram_text]
+entries:
+    .high_perf_code_iram1+
+
 [scheme:bt_default]
 entries:
     bt_bss -> dram0_bss
     bt_common -> dram0_bss
     data -> dram0_data
+    high_perf_iram_text -> iram0_text
+    if BT_CTRL_RUN_IN_FLASH_ONLY = y:
+        bt_iram_text -> flash_text
+    else:
+        bt_iram_text -> iram0_text
 
 # For the following fragments, order matters for
 # 'ALIGN(4) ALIGN(4, post) SURROUND(sym)', which generates:
@@ -26,7 +39,6 @@ entries:
             bt_bss -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_bss),
             bt_common -> dram0_bss ALIGN(4) ALIGN(4, post) SURROUND(bt_common),
             data -> dram0_data  ALIGN(4) ALIGN(4, post) SURROUND(bt_data)
-
 
 [mapping:ble_app]
 archive: libble_app.a

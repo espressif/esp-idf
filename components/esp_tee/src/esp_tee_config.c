@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,8 @@ extern uint32_t _u2m_switch(int argc, va_list ap);
 extern uint32_t _iram_end;
 /* REE IROM end */
 extern uint32_t _instruction_reserved_end;
+/* REE DROM start */
+extern uint32_t _rodata_reserved_start;
 /* REE DROM end */
 extern uint32_t _rodata_reserved_end;
 
@@ -31,5 +33,6 @@ esp_tee_config_t esp_tee_app_config __attribute__((section(".esp_tee_app_cfg")))
     .ns_entry_addr = &_u2m_switch,
     .ns_iram_end = &_iram_end,
     .ns_irom_end = &_instruction_reserved_end,
+    .ns_drom_start = &_rodata_reserved_start,
     .ns_drom_end = &_rodata_reserved_end,
 };

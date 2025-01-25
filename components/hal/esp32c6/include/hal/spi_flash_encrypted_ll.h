@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 // The Lowlevel layer for SPI Flash Encryption.
+#pragma once
 
 #include <stdbool.h>
 #include <string.h>
@@ -24,7 +25,7 @@
 extern "C" {
 #endif
 
-/// Choose type of chip you want to encrypt manully
+/// Choose type of chip you want to encrypt manually
 typedef enum
 {
     FLASH_ENCRYPTION_MANU = 0, ///!< Manually encrypt the flash chip.
@@ -51,7 +52,7 @@ static inline void spi_flash_encrypt_ll_disable(void)
 }
 
 /**
- * Choose type of chip you want to encrypt manully
+ * Choose type of chip you want to encrypt manually
  *
  * @param type The type of chip to be encrypted
  *

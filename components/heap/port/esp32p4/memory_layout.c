@@ -44,6 +44,9 @@ enum {
 #define MALLOC_RTCRAM_BASE_CAPS     ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL | MALLOC_CAP_EXEC
 #endif
 
+// The memory used for SIMD instructions requires the bus of its memory regions be able to transfer the data in 128-bit
+// TCM and RTCRAM memory regions cannot satisfy 128-bit data access
+
 /**
  * Defined the attributes and allocation priority of each memory on the chip,
  * The heap allocator will traverse all types of memory types in column High Priority Matching and match the specified caps at first,
@@ -51,11 +54,11 @@ enum {
  * in turn to continue matching.
  */
 const soc_memory_type_desc_t soc_memory_types[SOC_MEMORY_TYPE_NUM] = {
-    /*                       Mem Type Name  | High Priority Matching   | Medium Priority Matching                      | Low Priority Matching */
-    [SOC_MEMORY_TYPE_L2MEM]  = { "RAM",     { MALLOC_L2MEM_BASE_CAPS,    0,                                             0 }},
-    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",  { MALLOC_CAP_SPIRAM,         ESP32P4_MEM_COMMON_CAPS,                       0 }},
-    [SOC_MEMORY_TYPE_TCM]    = { "TCM",     { MALLOC_CAP_TCM,            ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
-    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",  { MALLOC_CAP_RTCRAM,         0,                                             MALLOC_RTCRAM_BASE_CAPS}},
+    /*                       Mem Type Name  | High Priority Matching                     | Medium Priority Matching                     | Low Priority Matching */
+    [SOC_MEMORY_TYPE_L2MEM]  = { "RAM",     { MALLOC_L2MEM_BASE_CAPS | MALLOC_CAP_SIMD,    0,                                             0 }},
+    [SOC_MEMORY_TYPE_SPIRAM] = { "SPIRAM",  { MALLOC_CAP_SPIRAM,                           0,                                             ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_SIMD }},
+    [SOC_MEMORY_TYPE_TCM]    = { "TCM",     { MALLOC_CAP_TCM,                              ESP32P4_MEM_COMMON_CAPS | MALLOC_CAP_INTERNAL, 0 }},
+    [SOC_MEMORY_TYPE_RTCRAM] = { "RTCRAM",  { MALLOC_CAP_RTCRAM,                           0,                                             MALLOC_RTCRAM_BASE_CAPS}},
 };
 
 const size_t soc_memory_type_count = sizeof(soc_memory_types) / sizeof(soc_memory_type_desc_t);

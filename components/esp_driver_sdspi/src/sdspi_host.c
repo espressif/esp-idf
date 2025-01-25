@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "soc/soc_memory_layout.h"
+#include "esp_private/esp_cache_private.h"
 
 /// Max number of transactions in flight (used in start_command_write_blocks)
 #define SDSPI_TRANSACTION_COUNT 4
@@ -1008,4 +1009,19 @@ esp_err_t sdspi_host_get_dma_info(int slot, esp_dma_mem_info_t *dma_mem_info)
     dma_mem_info->extra_heap_caps = MALLOC_CAP_DMA;
     dma_mem_info->dma_alignment_bytes = 4;
     return ESP_OK;
+}
+
+bool sdspi_host_check_buffer_alignment(int slot, const void *buf, size_t size)
+{
+    //for future-proof
+    (void)slot;
+
+    if (!buf || !size) {
+        return ESP_FAIL;
+    }
+
+    //spi master driver will deal with the buffer alignment
+    bool is_aligned = ((intptr_t)buf % 4 == 0) && (size % 4 == 0);
+
+    return is_aligned;
 }

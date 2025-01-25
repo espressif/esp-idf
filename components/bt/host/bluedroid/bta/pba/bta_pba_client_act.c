@@ -334,7 +334,7 @@ static void goep_event_callback(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
     switch (event)
     {
     case GOEPC_OPENED_EVT:
-        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_GOEP_CONNECT));
+        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
         assert(p_data != NULL);
         p_data->goep_connect.hdr.event = BTA_PBA_CLIENT_GOEP_CONNECT_EVT;
         p_data->goep_connect.hdr.layer_specific = handle;
@@ -342,14 +342,14 @@ static void goep_event_callback(UINT16 handle, UINT8 event, tGOEPC_MSG *p_msg)
         p_data->goep_connect.peer_mtu = p_msg->opened.peer_mtu;
         break;
     case GOEPC_CLOSED_EVT:
-        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_GOEP_DISCONNECT));
+        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
         assert(p_data != NULL);
         p_data->goep_disconnect.hdr.event = BTA_PBA_CLIENT_GOEP_DISCONNECT_EVT;
         p_data->goep_disconnect.hdr.layer_specific = handle;
         p_data->goep_disconnect.reason = p_msg->closed.reason;
         break;
     case GOEPC_RESPONSE_EVT:
-        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_GOEP_RESPONSE));
+        p_data = (tBTA_PBA_CLIENT_DATA *)osi_malloc(sizeof(tBTA_PBA_CLIENT_DATA));
         assert(p_data != NULL);
         p_data->goep_response.hdr.layer_specific = handle;
         p_data->goep_response.pkt = p_msg->response.pkt;

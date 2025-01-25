@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>Build Report</title>
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <link
+            href="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.css"
+            rel="stylesheet"
+        />
+        <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.css"
+        />
+        <link
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+            rel="stylesheet"
+        />
+        <style>
+            .text-toggle,
+            .full-text {
+                cursor: pointer;
+            }
+            th:nth-child(1),
+            td:nth-child(1) {
+                width: 5%;
+            }
+            th:nth-child(2),
+            td:nth-child(2),
+            th:nth-child(3),
+            td:nth-child(3) {
+                width: 30%;
+            }
+            th,
+            td {
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            h2 {
+                margin-top: 10px;
+            }
+            .copy-link-icon {
+                font-size: 20px;
+                margin-left: 10px;
+                color: #8f8f97;
+                cursor: pointer;
+            }
+            .copy-link-icon:hover {
+                color: #282b2c;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container-fluid"><h2 id="failed-apps">Failed Apps<i class="fas fa-link copy-link-icon"
+        onclick="copyPermalink('#failed-apps')"></i></h2><table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">
+    <thead>
+        <tr>
+            <th>App Dir</th>
+            <th>Build Dir</th>
+            <th>Failed Reason</th>
+            <th>Build Log</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>tools/test_apps/system/panic</td>
+            <td>build_esp32s3_coredump_flash_capture_dram</td>
+            <td>Compilation error</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/unicore_bootloader</td>
+            <td>build_esp32_multicore</td>
+            <td>Compilation error</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+        </tr>
+    </tbody>
+</table><h2 id="built-apps---test-related">Built Apps - Test Related<i class="fas fa-link copy-link-icon"
+        onclick="copyPermalink('#built-apps---test-related')"></i></h2><table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">
+    <thead>
+        <tr>
+            <th>App Dir</th>
+            <th>Build Dir</th>
+            <th>Bin Files with Build Log (without map and elf)</th>
+            <th>Map and Elf Files</th>
+            <th>Your Branch App Size</th>
+            <th>Target Branch App Size</th>
+            <th>Size Diff</th>
+            <th>Size Diff, %</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>tools/test_apps/system/startup</td>
+            <td>build_esp32s3_stack_check_verbose_log</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td>156936</td>
+            <td>160000</td>
+            <td>3064</td>
+            <td>1.95</td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/startup</td>
+            <td>build_esp32_flash_80m_qio</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td>225692</td>
+            <td>230000</td>
+            <td>4308</td>
+            <td>1.91</td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/unicore_bootloader</td>
+            <td>build_esp32s3_unicore_psram</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td>189456</td>
+            <td>191456</td>
+            <td>2000</td>
+            <td>1.06</td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/ram_loadable_app</td>
+            <td>build_esp32_pure_ram</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td>156632</td>
+            <td>158200</td>
+            <td>1568</td>
+            <td>1.0</td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/ram_loadable_app</td>
+            <td>build_esp32_defaults</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+            <td>171448</td>
+            <td>173000</td>
+            <td>1552</td>
+            <td>0.91</td>
+        </tr>
+    </tbody>
+</table><h2 id="skipped-apps">Skipped Apps<i class="fas fa-link copy-link-icon"
+        onclick="copyPermalink('#skipped-apps')"></i></h2><table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">
+    <thead>
+        <tr>
+            <th>App Dir</th>
+            <th>Build Dir</th>
+            <th>Skipped Reason</th>
+            <th>Build Log</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>tools/test_apps/system/test_watchpoint</td>
+            <td>build_esp32_default</td>
+            <td>Skipped due to unmet dependencies</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+        </tr>
+        <tr>
+            <td>tools/test_apps/system/test_watchpoint</td>
+            <td>build_esp32c3_default</td>
+            <td>Skipped due to unmet dependencies</td>
+            <td><a href="https://example.com/presigned-url">Download</a></td>
+        </tr>
+    </tbody>
+</table></div>
+        <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+        <script>
+            $(window).on("load", function () {
+                var hash = window.location.hash;
+                if (hash) {
+                    setTimeout(function () {
+                        $("html, body").animate(
+                            { scrollTop: $(hash).offset().top },
+                            100
+                        );
+                    }, 100);
+                }
+            });
+        </script>
+        <script>
+            $(document).ready(function () {
+                scrollToHashLocation();
+                setupTextToggles();
+                setupEventHandlers();
+            });
+
+            function setupEventHandlers() {
+                $(window).on("load", scrollToHashLocation);
+                $("body").on("click", ".toggle-link", toggleText);
+            }
+
+            function scrollToHashLocation() {
+                const hash = window.location.hash;
+                if (hash) {
+                    setTimeout(() => {
+                        $("html, body").animate(
+                            { scrollTop: $(hash).offset().top },
+                            100
+                        );
+                    }, 100);
+                }
+            }
+
+            function copyPermalink(anchorId) {
+                const fullUrl = `${window.location.origin}${window.location.pathname}${anchorId}`;
+                history.pushState(null, null, anchorId);
+                navigator.clipboard.writeText(fullUrl);
+                scrollToHashLocation();
+            }
+
+            function toggleText(e) {
+                e.preventDefault();
+                const link = $(this),
+                    textSpan = link.siblings(".full-text"),
+                    toggleSpan = link.siblings(".text-toggle");
+                const visible = textSpan.is(":visible");
+                link.text(visible ? "Show More" : "Show Less");
+                textSpan.toggle();
+                toggleSpan.toggle();
+            }
+
+            function setupTextToggles() {
+                $("table.table td").each(function () {
+                    var cell = $(this);
+                    if (cell.text().length > 100) {
+                        var originalText = cell.text();
+                        var displayText =
+                            originalText.substring(0, 100) + "...";
+                        cell.html(
+                            `<span class="text-toggle">${displayText}</span><span class="full-text" style="display: none;">${originalText}</span><a href="#" class="toggle-link">Show More</a>`
+                        );
+                    }
+                });
+            }
+        </script>
+    </body>
+</html>

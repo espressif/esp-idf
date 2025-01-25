@@ -13,7 +13,8 @@
 #include "esp_check.h"
 #include "esp_cpu.h"
 #include "driver/gpio.h"
-#include "esp_rom_gpio.h"
+#include "esp_private/gpio.h"
+#include "soc/io_mux_reg.h"
 #include "driver/spi_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
@@ -328,9 +329,9 @@ static esp_err_t emac_ksz8851_init(esp_eth_mac_t *mac)
     emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
     esp_eth_mediator_t *eth = emac->eth;
     if (emac->int_gpio_num >= 0) {
-        esp_rom_gpio_pad_select_gpio(emac->int_gpio_num);
-        gpio_set_direction(emac->int_gpio_num, GPIO_MODE_INPUT);
-        gpio_set_pull_mode(emac->int_gpio_num, GPIO_PULLUP_ONLY);
+        gpio_func_sel(emac->int_gpio_num, PIN_FUNC_GPIO);
+        gpio_input_enable(emac->int_gpio_num);
+        gpio_pullup_en(emac->int_gpio_num);
         gpio_set_intr_type(emac->int_gpio_num, GPIO_INTR_NEGEDGE); // NOTE(v.chistyakov): active low
         gpio_intr_enable(emac->int_gpio_num);
         gpio_isr_handler_add(emac->int_gpio_num, ksz8851_isr_handler, emac);
@@ -352,7 +353,6 @@ err:
     ESP_LOGD(TAG, "MAC initialization failed");
     if (emac->int_gpio_num >= 0) {
         gpio_isr_handler_remove(emac->int_gpio_num);
-        gpio_reset_pin(emac->int_gpio_num);
     }
     eth->on_state_changed(eth, ETH_STATE_DEINIT, NULL);
     return ret;
@@ -365,7 +365,6 @@ static esp_err_t emac_ksz8851_deinit(esp_eth_mac_t *mac)
     mac->stop(mac);
     if (emac->int_gpio_num >= 0) {
         gpio_isr_handler_remove(emac->int_gpio_num);
-        gpio_reset_pin(emac->int_gpio_num);
     }
     if (emac->poll_timer && esp_timer_is_active(emac->poll_timer)) {
         esp_timer_stop(emac->poll_timer);

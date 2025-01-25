@@ -310,6 +310,24 @@ config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     help
             Only operate in dump mode
 
+config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    bool "Store ble controller logs to flash(Experimental)"
+    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+            Store ble controller logs to flash memory.
+
+config BT_LE_CONTROLLER_LOG_PARTITION_SIZE
+    int "size of ble controller log partition(Multiples of 4K)"
+    depends on BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    default 65536
+    help
+            The size of ble controller log partition shall be a multiples of 4K.
+            The name of log partition shall be "bt_ctrl_log".
+            The partition type shall be ESP_PARTITION_TYPE_DATA.
+            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
 config BT_LE_LOG_CTRL_BUF1_SIZE
     int "size of the first BLE controller LOG buffer"
     depends on BT_LE_CONTROLLER_LOG_ENABLED
@@ -575,3 +593,89 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
 config BT_LE_MSYS_INIT_IN_CONTROLLER
     bool "Msys Mbuf Init in Controller"
     default y
+
+config BT_LE_TX_CCA_ENABLED
+    bool "Enable TX CCA feature"
+    default n
+    help
+        Enable CCA feature to cancel sending the packet if the signal power is stronger than CCA threshold.
+
+config BT_LE_CCA_RSSI_THRESH
+    int "CCA RSSI threshold value"
+    depends on BT_LE_TX_CCA_ENABLED
+    range 20 100
+    default 20
+    help
+        Power threshold of CCA in unit of -1 dBm.
+
+choice BT_LE_DFT_TX_POWER_LEVEL_DBM
+    prompt "BLE default Tx power level(dBm)"
+    default BT_LE_DFT_TX_POWER_LEVEL_P9
+    help
+        Specify default Tx power level(dBm).
+    config BT_LE_DFT_TX_POWER_LEVEL_N24
+        bool "-24dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N21
+        bool "-21dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N18
+        bool "-18dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N15
+        bool "-15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N12
+        bool "-12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N9
+        bool "-9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N6
+        bool "-6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N3
+        bool "-3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_N0
+        bool "0dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P3
+        bool "+3dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P6
+        bool "+6dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P9
+        bool "+9dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P12
+        bool "+12dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P15
+        bool "+15dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P18
+        bool "+18dBm"
+    config BT_LE_DFT_TX_POWER_LEVEL_P20
+        bool "+20dBm"
+endchoice
+
+config BT_LE_DFT_TX_POWER_LEVEL_DBM_EFF
+    int
+    default -15 if BT_LE_DFT_TX_POWER_LEVEL_N15
+    default -12 if BT_LE_DFT_TX_POWER_LEVEL_N12
+    default -9 if BT_LE_DFT_TX_POWER_LEVEL_N9
+    default -6 if BT_LE_DFT_TX_POWER_LEVEL_N6
+    default -3 if BT_LE_DFT_TX_POWER_LEVEL_N3
+    default 0 if BT_LE_DFT_TX_POWER_LEVEL_N0
+    default 3 if BT_LE_DFT_TX_POWER_LEVEL_P3
+    default 6 if BT_LE_DFT_TX_POWER_LEVEL_P6
+    default 9 if BT_LE_DFT_TX_POWER_LEVEL_P9
+    default 12 if BT_LE_DFT_TX_POWER_LEVEL_P12
+    default 15 if BT_LE_DFT_TX_POWER_LEVEL_P15
+    default 18 if BT_LE_DFT_TX_POWER_LEVEL_P18
+    default 20 if BT_LE_DFT_TX_POWER_LEVEL_P20
+    default 0
+
+config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
+    bool "Enable enhanced Access Address check in CONNECT_IND"
+    default n
+    help
+        Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
+        This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
+        If disabled, only basic checks are applied, improving compatibility.
+
+config BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Reduce BLE IRAM usage (READ DOCS FIRST) (EXPERIMENTAL)"
+    default n
+    help
+        Move most IRAM into flash. This will increase the usage of flash and reduce ble performance.
+        Because the code is moved to the flash, the execution speed of the code is reduced.
+        To have a small impact on performance, you need to enable flash suspend (SPI_FLASH_AUTO_SUSPEND).

@@ -9,10 +9,11 @@
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_eth.h"
+#include "esp_private/gpio.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/gpio.h"
-#include "esp_rom_gpio.h"
+#include "soc/io_mux_reg.h"
 #include "esp_rom_sys.h"
 #include "esp_eth_phy_802_3.h"
 
@@ -440,9 +441,9 @@ esp_err_t esp_eth_phy_802_3_del(phy_802_3_t *phy_802_3)
 esp_err_t esp_eth_phy_802_3_reset_hw(phy_802_3_t *phy_802_3, uint32_t reset_assert_us)
 {
     if (phy_802_3->reset_gpio_num >= 0) {
-        esp_rom_gpio_pad_select_gpio(phy_802_3->reset_gpio_num);
-        gpio_set_direction(phy_802_3->reset_gpio_num, GPIO_MODE_OUTPUT);
+        gpio_func_sel(phy_802_3->reset_gpio_num, PIN_FUNC_GPIO);
         gpio_set_level(phy_802_3->reset_gpio_num, 0);
+        gpio_output_enable(phy_802_3->reset_gpio_num);
         if (reset_assert_us < 10000) {
             esp_rom_delay_us(reset_assert_us);
         } else {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/time.h>
+#include <net/if.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "lwip/opt.h"
@@ -24,6 +25,33 @@
 #include "esp_log.h"
 #include "ping/ping_sock.h"
 #include "esp_check.h"
+
+#ifndef CONFIG_LWIP_NETIF_API
+// If POSIX NETIF_API not enabled, we need to supply the implementation of if_indextoname()
+// using tcpip_api_call()
+#include "lwip/priv/tcpip_priv.h"
+
+struct tcpip_netif_name {
+    struct tcpip_api_call_data call;
+    u8_t ifindex;
+    char *ifname;
+};
+
+static err_t do_netif_index_to_name(struct tcpip_api_call_data *msg)
+{
+    struct tcpip_netif_name *params = __containerof(msg, struct tcpip_netif_name, call);
+    return netif_index_to_name(params->ifindex, params->ifname) ? ERR_OK : ERR_IF;
+}
+
+char *if_indextoname(unsigned int ifindex, char *ifname)
+{
+    struct tcpip_netif_name params = { .ifindex = ifindex, .ifname = ifname };
+    if (tcpip_api_call(do_netif_index_to_name, &params.call) != ERR_OK) {
+        return NULL;
+    }
+    return ifname;
+}
+#endif  // CONFIG_LWIP_NETIF_API == 0
 
 const static char *TAG = "ping_sock";
 
@@ -267,7 +295,7 @@ esp_err_t esp_ping_new_session(const esp_ping_config_t *config, const esp_ping_c
     /* set if index */
     if(config->interface) {
         struct ifreq iface;
-        if(netif_index_to_name(config->interface, iface.ifr_name) == NULL) {
+        if (if_indextoname(config->interface, iface.ifr_name) == NULL) {
             ESP_LOGE(TAG, "fail to find interface name with netif index %" PRIu32, config->interface);
             goto err;
         }

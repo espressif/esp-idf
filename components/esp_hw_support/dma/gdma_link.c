@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,13 +141,14 @@ esp_err_t gdma_del_link_list(gdma_link_list_handle_t list)
     return ESP_OK;
 }
 
-esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_item_index, const gdma_buffer_mount_config_t *buf_config_array, size_t num_buf, uint32_t *end_item_index)
+esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_index, const gdma_buffer_mount_config_t *buf_config_array, size_t num_buf, int *end_item_index)
 {
     ESP_RETURN_ON_FALSE(list && buf_config_array && num_buf, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE(start_item_index < list->num_items, ESP_ERR_INVALID_ARG, TAG, "invalid start item index");
     size_t buffer_alignment = list->buffer_alignment;
     size_t item_size = list->item_size;
     uint32_t list_item_capacity = list->num_items;
+    // ensure the start_item_index is between 0 and `list_item_capacity - 1`
+    start_item_index = (start_item_index % list_item_capacity + list_item_capacity) % list_item_capacity;
     size_t max_buffer_mount_length = ALIGN_DOWN(GDMA_MAX_BUFFER_SIZE_PER_LINK_ITEM, buffer_alignment);
     uint32_t begin_item_idx = start_item_index;
     gdma_link_list_item_t *lli_nc = NULL;
@@ -155,7 +156,7 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_i
     uint32_t num_items_avail = 0;
     // if the link list is responsible for checking the ownership, we need to skip the items that are owned by the DMA
     if (list->flags.check_owner) {
-        for (uint32_t i = 0; i < list_item_capacity; i++) {
+        for (int i = 0; i < list_item_capacity; i++) {
             lli_nc = (gdma_link_list_item_t *)(list->items_nc + (i + start_item_index) % list_item_capacity * item_size);
             if (lli_nc->dw0.owner == GDMA_LLI_OWNER_CPU) {
                 num_items_avail++;
@@ -166,8 +167,8 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_i
     }
 
     // check alignment and length for each buffer
-    for (size_t i = 0; i < num_buf; i++) {
-        const gdma_buffer_mount_config_t *config = &buf_config_array[i];
+    for (size_t bi = 0; bi < num_buf; bi++) {
+        const gdma_buffer_mount_config_t *config = &buf_config_array[bi];
         uint8_t *buf = (uint8_t *)config->buffer;
         size_t len = config->length;
         // check the buffer alignment
@@ -183,8 +184,8 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_i
     lli_nc->next = (gdma_link_list_item_t *)(list->items + start_item_index * item_size);
 
     begin_item_idx = start_item_index;
-    for (size_t i = 0; i < num_buf; i++) {
-        const gdma_buffer_mount_config_t *config = &buf_config_array[i];
+    for (size_t bi = 0; bi < num_buf; bi++) {
+        const gdma_buffer_mount_config_t *config = &buf_config_array[bi];
         uint8_t *buf = (uint8_t *)config->buffer;
         size_t len = config->length;
         // skip zero-length buffer
@@ -193,7 +194,7 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, uint32_t start_i
         }
         uint32_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // mount the buffer to the link list
-        for (uint32_t i = 0; i < num_items_need; i++) {
+        for (int i = 0; i < num_items_need; i++) {
             lli_nc = (gdma_link_list_item_t *)(list->items_nc + (i + begin_item_idx) % list_item_capacity * item_size);
             lli_nc->buffer = buf;
             lli_nc->dw0.length = len > max_buffer_mount_length ? max_buffer_mount_length : len;
@@ -232,16 +233,25 @@ esp_err_t gdma_link_concat(gdma_link_list_handle_t first_link, int first_link_it
 {
     ESP_RETURN_ON_FALSE(first_link && second_link, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     gdma_link_list_item_t *lli_nc = NULL;
-    lli_nc = (gdma_link_list_item_t *)(first_link->items_nc + (first_link->num_items + first_link_item_index) % first_link->num_items * first_link->item_size);
-    lli_nc->next = (gdma_link_list_item_t *)(second_link->items + (second_link->num_items + second_link_item_index) % second_link->num_items * second_link->item_size);
+    // ensure the first_link_item_index is between 0 and `num_items - 1`
+    int num_items = first_link->num_items;
+    first_link_item_index = (first_link_item_index % num_items + num_items) % num_items;
+    lli_nc = (gdma_link_list_item_t *)(first_link->items_nc + first_link_item_index * first_link->item_size);
+    // ensure the second_link_item_index is between 0 and `num_items - 1`
+    num_items = second_link->num_items;
+    second_link_item_index = (second_link_item_index % num_items + num_items) % num_items;
+    // concatenate the two link lists
+    lli_nc->next = (gdma_link_list_item_t *)(second_link->items + second_link_item_index * second_link->item_size);
     return ESP_OK;
 }
 
 esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma_lli_owner_t owner)
 {
     ESP_RETURN_ON_FALSE_ISR(list, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE_ISR(item_index < list->num_items, ESP_ERR_INVALID_ARG, TAG, "invalid item index");
-    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + (list->num_items + item_index) % list->num_items * list->item_size);
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
     lli->dw0.owner = owner;
     return ESP_OK;
 }
@@ -249,8 +259,31 @@ esp_err_t gdma_link_set_owner(gdma_link_list_handle_t list, int item_index, gdma
 esp_err_t gdma_link_get_owner(gdma_link_list_handle_t list, int item_index, gdma_lli_owner_t *owner)
 {
     ESP_RETURN_ON_FALSE_ISR(list && owner, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
-    ESP_RETURN_ON_FALSE_ISR(item_index < list->num_items, ESP_ERR_INVALID_ARG, TAG, "invalid item index");
-    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + (list->num_items + item_index) % list->num_items * list->item_size);
+    int num_items = list->num_items;
+    // ensure the item_index is between 0 and `num_items - 1`
+    item_index = (item_index % num_items + num_items) % num_items;
+    gdma_link_list_item_t *lli = (gdma_link_list_item_t *)(list->items_nc + item_index * list->item_size);
     *owner = lli->dw0.owner;
     return ESP_OK;
+}
+
+size_t gdma_link_count_buffer_size_till_eof(gdma_link_list_handle_t list, int start_item_index)
+{
+    if (!list) {
+        return 0;
+    }
+    int num_items = list->num_items;
+    // ensure the start_item_index is between 0 and `num_items - 1`
+    start_item_index = (start_item_index % num_items + num_items) % num_items;
+    size_t buf_size = 0;
+    gdma_link_list_item_t *lli_nc = NULL;
+    for (int i = 0; i < num_items; i++) {
+        lli_nc = (gdma_link_list_item_t *)(list->items_nc + (start_item_index + i) % num_items * list->item_size);
+        buf_size += lli_nc->dw0.length;
+        // break if the current item is the last one or the EOF item
+        if (lli_nc->dw0.suc_eof || lli_nc->next == NULL) {
+            break;
+        }
+    }
+    return buf_size;
 }

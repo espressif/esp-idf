@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
 import collections
@@ -32,6 +32,7 @@ ROOT = Entity('*')
 FREERTOS = Entity('libfreertos.a')
 CROUTINE = Entity('libfreertos.a', 'croutine')
 TIMERS = Entity('libfreertos.a', 'timers')
+TEMPERATURE_SENSOR_PERIPH = Entity('libsoc.a', 'temperature_sensor_periph')
 
 FREERTOS2 = Entity('libfreertos2.a')
 
@@ -66,6 +67,9 @@ class GenerationTest(unittest.TestCase):
         self.entities = EntityDB()
 
         with open('data/libfreertos.a.txt') as objdump:
+            self.entities.add_sections_info(objdump)
+
+        with open('data/libsoc.a.txt') as objdump:
             self.entities.add_sections_info(objdump)
 
         with open('data/linker_script.ld') as linker_script:
@@ -336,6 +340,48 @@ entries:
 
         self.compare_rules(expected, actual)
 
+    def test_nondefault_mapping_all_symbols(self):
+        # Test mapping entry different from default for all .rodata.* symbols in the temperature_sensor_periph
+        # object file. There should be exclusion in the default commands for flash_rodata, but
+        # no implicit intermediate object command(X), because there are no .rodata+
+        # symbols left to be placed in dram0_data.
+        #
+        # The X line with entity only(without any input sections) should not be emitted, because
+        # linker would include all not yet placed input sections from the temperature_sensor_periph
+        # object file, including .debug, .comment and other input section.
+        #
+        # flash.rodata
+        #   *((EXCLUDE_FILE(*libsoc.a:temperature_sensor_periph.*)) .rodata.* ...)                                          A
+        #   # *libsoc.a:temperature_sensor_periph.*                                                                         X
+        #
+        # Commands placing the entire library in iram should be generated:
+        #
+        # dram0_data
+        #   *libsoc.a:temperature_sensor_periph.*(.rodata.temperature_sensor_attribute)                                     B
+        mapping = u"""
+[mapping:test]
+archive: libsoc.a
+entries:
+    temperature_sensor_periph:temperature_sensor_attributes (noflash) # 1
+"""
+
+        self.add_fragments(mapping)
+        actual = self.generation.generate(self.entities, False)
+        expected = self.generate_default_rules()
+
+        flash_rodata = expected['flash_rodata']
+        dram0_data = expected['dram0_data']
+
+        # Generate exclusion in flash_text                                               A
+        flash_rodata[0].exclusions.add(TEMPERATURE_SENSOR_PERIPH)
+
+        # Input section commands in dram0_data for #1                                    B
+        dram0_data.append(InputSectionDesc(TEMPERATURE_SENSOR_PERIPH,
+                                           set(['.rodata.temperature_sensor_attributes']),
+                                           []))
+
+        self.compare_rules(expected, actual)
+
     def test_default_symbol_nondefault_lib(self):
         # Test default symbol mapping with different lib mapping. This should create an implicit intermediate object command.
         # The significant targets are flash_text, flash_rodata, iram0_text, dram0_data.
@@ -571,7 +617,7 @@ entries:
 
     def test_multiple_symbols_excluded_from_intermediate_command(self):
         # Test mapping multiple symbols from the same object.
-        # All these symbols must be succesfully excluded from
+        # All these symbols must be successfully excluded from
         # the intermediate command.
         #
         # flash_text

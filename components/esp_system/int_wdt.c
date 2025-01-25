@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "hal/wdt_hal.h"
 #include "hal/mwdt_ll.h"
 #include "hal/timer_ll.h"
+#include "soc/system_intr.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_cpu.h"
 #include "esp_check.h"
@@ -28,15 +29,10 @@
 #include "esp_private/sleep_retention.h"
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32H21
-#define ETS_TG0_WDT_LEVEL_INTR_SOURCE        ETS_TG0_WDT_INTR_SOURCE
-#define ETS_TG1_WDT_LEVEL_INTR_SOURCE        ETS_TG1_WDT_INTR_SOURCE
-#endif
-
 #if SOC_TIMER_GROUPS > 1
 
 /* If we have two hardware timer groups, use the second one for interrupt watchdog. */
-#define WDT_LEVEL_INTR_SOURCE   ETS_TG1_WDT_LEVEL_INTR_SOURCE
+#define WDT_LEVEL_INTR_SOURCE   SYS_TG1_WDT_INTR_SOURCE
 #define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT1
@@ -46,7 +42,7 @@
 
 #else
 
-#define WDT_LEVEL_INTR_SOURCE   ETS_TG0_WDT_LEVEL_INTR_SOURCE
+#define WDT_LEVEL_INTR_SOURCE   SYS_TG0_WDT_INTR_SOURCE
 #define IWDT_PRESCALER          MWDT_LL_DEFAULT_CLK_PRESCALER   // Tick period of 500us if WDT source clock is 80MHz
 #define IWDT_TICKS_PER_US       500
 #define IWDT_INSTANCE           WDT_MWDT0

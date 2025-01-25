@@ -7,6 +7,9 @@ generate_pytest_build_report:
   when: always
   artifacts:
     paths:
+      - failed_apps.html
+      - built_apps.html
+      - skipped_apps.html
       - build_report.html
       - test_related_apps_download_urls.yml
     expire_in: 1 week

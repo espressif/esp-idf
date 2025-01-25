@@ -1,6 +1,6 @@
 # EMAC Test
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-P4 |
+| ----------------- | ----- | -------- |
 
 This test app is used to test Ethernet MAC behavior with different chips.
 

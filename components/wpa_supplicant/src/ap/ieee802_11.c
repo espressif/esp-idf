@@ -179,6 +179,7 @@ static int auth_sae_send_confirm(struct hostapd_data *hapd,
 #ifdef ESP_SUPPLICANT
     if (sta->remove_pending) {
         reply_res = -1;
+        wpabuf_free(data);
     } else {
         if (sta->sae_data)
             wpabuf_free(sta->sae_data);

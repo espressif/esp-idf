@@ -92,13 +92,13 @@ esp_err_t sdmmc_init_sd_ssr(sdmmc_card_t* card)
      */
     uint32_t* sd_ssr = NULL;
     size_t actual_size = 0;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    err = esp_dma_capable_calloc(1, SD_SSR_SIZE, &dma_mem_info, (void *)&sd_ssr, &actual_size);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "%s: could not allocate sd_ssr", __func__);
-        return err;
+
+    sd_ssr = heap_caps_calloc(1, SD_SSR_SIZE, MALLOC_CAP_DMA);
+    if (!sd_ssr) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
+    actual_size = heap_caps_get_allocated_size(sd_ssr);
 
     sdmmc_command_t cmd = {
         .data = sd_ssr,
@@ -240,14 +240,12 @@ esp_err_t sdmmc_enter_higher_speed_mode(sdmmc_card_t* card)
             return ESP_ERR_NOT_SUPPORTED;
     }
 
-    size_t actual_size = 0;
     sdmmc_switch_func_rsp_t *response = NULL;
-    esp_dma_mem_info_t dma_mem_info;
-    card->host.get_dma_info(card->host.slot, &dma_mem_info);
-    esp_err_t err = esp_dma_capable_malloc(sizeof(*response), &dma_mem_info, (void *)&response, &actual_size);
-    assert(actual_size == sizeof(*response));
-    if (err != ESP_OK) {
-        return err;
+    esp_err_t err = ESP_FAIL;
+    response = heap_caps_malloc(sizeof(*response), MALLOC_CAP_DMA);
+    if (!response) {
+        ESP_LOGE(TAG, "%s: not enough mem, err=0x%x", __func__, ESP_ERR_NO_MEM);
+        return ESP_ERR_NO_MEM;
     }
 
     err = sdmmc_send_cmd_switch_func(card, 0, SD_ACCESS_MODE, 0, response);

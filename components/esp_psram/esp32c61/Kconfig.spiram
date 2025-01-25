@@ -68,5 +68,13 @@ menu "SPI RAM config"
             This is a helper indicating this condition:
             `CONFIG_SPIRAM_XIP_FROM_PSRAM && CONFIG_IDF_TARGET_ESP32C61`
 
+    config SPIRAM_ECC_ENABLE
+        bool "Enable PSRAM ECC"
+        default n
+        help
+            Enable MSPI Error-Correcting Code function when accessing PSRAM.
+
+            If enabled, 1/8 of the PSRAM total size will be reserved for error-correcting code.
+
     source "$IDF_PATH/components/esp_psram/Kconfig.spiram.common"    # insert non-chip-specific items here
 endmenu

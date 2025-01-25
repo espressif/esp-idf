@@ -37,6 +37,9 @@ extern "C" {
 #define SOC_S_IROM_HIGH                    (SOC_IROM_LOW + SOC_S_IDROM_SIZE)
 #define SOC_S_DROM_LOW                     (SOC_DROM_LOW)
 #define SOC_S_DROM_HIGH                    (SOC_DROM_LOW + SOC_S_IDROM_SIZE)
+/* REE I/DRAM */
+#define SOC_NS_IDRAM_START    (SOC_S_DRAM_END)
+#define SOC_NS_IDRAM_END      (SOC_DIRAM_DRAM_HIGH)
 
 #define SOC_MMU_TOTAL_SIZE                 (SOC_DRAM0_CACHE_ADDRESS_HIGH - SOC_DRAM0_CACHE_ADDRESS_LOW)
 #define SOC_MMU_END_VADDR                  (SOC_DROM_LOW + SOC_MMU_TOTAL_SIZE)
@@ -46,6 +49,10 @@ extern "C" {
 #ifndef __ASSEMBLER__
 #include <stdint.h>
 #include <stdarg.h>
+
+/* Secure Service table */
+typedef void (*secure_service_t)(void);
+extern const secure_service_t tee_secure_service_table[];
 
 /**
  * @brief TEE initialization function called by the bootloader at boot time.

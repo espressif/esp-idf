@@ -185,6 +185,7 @@ TEST_CASE("FreeRTOS Event Groups do not cause priority inversion when higher pri
 
 /*-----------------Test case for event group trace facilities-----------------*/
 #ifdef  CONFIG_FREERTOS_USE_TRACE_FACILITY
+#if SOC_GPTIMER_SUPPORTED
 /*
  * Test event group Trace Facility functions such as
  * xEventGroupClearBitsFromISR(), xEventGroupSetBitsFromISR()
@@ -261,4 +262,5 @@ TEST_CASE("FreeRTOS Event Group ISR", "[freertos]")
     vSemaphoreDelete(done_sem);
     vTaskDelay(10);     //Give time for idle task to clear up deleted tasks
 }
+#endif //SOC_GPTIMER_SUPPORTED
 #endif      //CONFIG_FREERTOS_USE_TRACE_FACILITY

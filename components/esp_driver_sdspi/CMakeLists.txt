@@ -15,7 +15,7 @@ if(${target} STREQUAL "linux")
     set(priv_requires esp_timer)
 else()
     set(requires sdmmc esp_driver_spi esp_driver_gpio)
-    set(priv_requires esp_timer)
+    set(priv_requires esp_timer esp_mm)
 endif()
 
 idf_component_register(SRCS ${srcs}

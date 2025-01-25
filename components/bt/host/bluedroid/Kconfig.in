@@ -43,7 +43,8 @@ config BT_BLUEDROID_MEM_DEBUG
 config BT_BLUEDROID_ESP_COEX_VSC
     bool "Enable Espressif Vendor-specific HCI commands for coexist status configuration"
     depends on BT_BLUEDROID_ENABLED
-    default y
+    default y if (ESP_COEX_SW_COEXIST_ENABLE || BT_CONTROLLER_DISABLED)
+    default n
     help
         Enable Espressif Vendor-specific HCI commands for coexist status configuration
 

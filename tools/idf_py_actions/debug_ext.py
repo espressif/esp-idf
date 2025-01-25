@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
@@ -464,8 +464,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
         {
             'names': ['--chip-rev'],
             'help': 'Specify the chip revision (e.g., 0.1). If provided, the corresponding ROM ELF file will be used '
-                    'for decoding the core dump, improving stack traces. This is only needed for core dumps from IDF '
-                    '<v5.1. Newer versions already contain chip revision information.',
+                    'for decoding the core dump, improving stack traces. This is only needed for core dumps from '
+                    'ESP-IDF older than v5.2. Newer versions already contain chip revision information.',
+            'hidden': True,
         },
         {
             'names': ['--save-core', '-s'],
