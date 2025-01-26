@@ -181,6 +181,44 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
+TEST_CASE("test_device_dynamic_freq_update", "[spi]")
+{
+    spi_device_handle_t dev0;
+    int master_send;
+
+    spi_bus_config_t buscfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    devcfg.flags |= SPI_DEVICE_HALFDUPLEX;
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &buscfg, SPI_DMA_CH_AUTO));
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &devcfg, &dev0));
+
+    spi_transaction_t trans_cfg = {
+        .tx_buffer = &master_send,
+        .length = sizeof(master_send) * 8,
+    };
+
+    trans_cfg.override_freq_hz = IDF_PERFORMANCE_MAX_SPI_CLK_FREQ;
+    for (int i = 1; i < 15; i++) {
+        TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
+        spi_device_get_actual_freq(dev0, &master_send);
+        printf("override %5ld k real freq %5d k\n", trans_cfg.override_freq_hz / 1000, master_send);
+        if (trans_cfg.override_freq_hz) {
+            TEST_ASSERT_EQUAL_UINT32(trans_cfg.override_freq_hz / 1000, master_send);
+        }
+        if (i > 10) {
+            //test without override freq
+            trans_cfg.override_freq_hz = 0;
+            continue;
+        }
+        if (!(i % 2)) {
+            //test override freq every 2 trans
+            trans_cfg.override_freq_hz /= 2;
+        }
+    }
+    TEST_ESP_OK(spi_bus_remove_device(dev0));
+    TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
+}
+
 static spi_device_handle_t setup_spi_bus_loopback(int clkspeed, bool dma)
 {
     spi_bus_config_t buscfg = {

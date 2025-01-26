@@ -487,6 +487,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     SPI_CHECK(ret == ESP_OK, "assigned clock speed not supported", ret);
     temp_timing_conf.clock_source = clk_src;
     temp_timing_conf.source_pre_div = clock_source_div;
+    temp_timing_conf.source_real_freq = clock_source_hz;
     temp_timing_conf.rx_sample_point = dev_config->sample_point;
     if (temp_timing_conf.rx_sample_point == SPI_SAMPLING_POINT_PHASE_1) {
         SPI_CHECK(spi_ll_master_is_rx_std_sample_supported(), "SPI_SAMPLING_POINT_PHASE_1 is not supported on this chip", ESP_ERR_NOT_SUPPORTED);
@@ -626,14 +627,33 @@ int spi_get_actual_clock(int fapb, int hz, int duty_cycle)
 
 // Setup the device-specified configuration registers. Called every time a new
 // transaction is to be sent, but only apply new configurations when the device
-// changes.
-static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev)
+// changes or timing change is required.
+static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_priv_t *trans_buf)
 {
     spi_bus_lock_dev_handle_t dev_lock = dev->dev_lock;
     spi_hal_context_t *hal = &dev->host->hal;
     spi_hal_dev_config_t *hal_dev = &(dev->hal_dev);
 
-    if (spi_bus_lock_touch(dev_lock)) {
+    bool clock_changed = false;
+    // check if timing config update is required
+    if (trans_buf && (trans_buf->trans->override_freq_hz > 0) && (hal_dev->timing_conf.expect_freq != trans_buf->trans->override_freq_hz)) {
+        spi_hal_timing_param_t timing_param = {
+            .expected_freq = trans_buf->trans->override_freq_hz,
+            .clk_src_hz = dev->hal_dev.timing_conf.source_real_freq,
+            .duty_cycle = dev->cfg.duty_cycle_pos,
+            .input_delay_ns = dev->cfg.input_delay_ns,
+            .half_duplex = dev->hal_dev.half_duplex,
+            .use_gpio = !(dev->host->bus_attr->flags | SPICOMMON_BUSFLAG_IOMUX_PINS),
+        };
+
+        if (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf)) {
+            clock_changed = true;
+        } else {
+            ESP_EARLY_LOGW(SPI_TAG, "assigned clock speed %d not supported", trans_buf->trans->override_freq_hz);
+        }
+    }
+
+    if (spi_bus_lock_touch(dev_lock) || clock_changed) {
         /* Configuration has not been applied yet. */
         spi_hal_setup_device(hal, hal_dev);
         SPI_MASTER_PERI_CLOCK_ATOMIC() {
@@ -781,7 +801,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_trans(spi_device_t *dev, spi_trans_priv_
     dev->host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
-    spi_setup_device(dev);
+    spi_setup_device(dev, trans_buf);
 
     //set the transaction specific configuration each time before a transaction setup
     spi_hal_trans_config_t hal_trans = {};
@@ -856,7 +876,7 @@ static void SPI_MASTER_ISR_ATTR spi_new_sct_trans(spi_device_t *dev, spi_sct_tra
     dev->host->cur_cs = dev->id;
 
     //Reconfigure according to device settings, the function only has effect when the dev_id is changed.
-    spi_setup_device(dev);
+    spi_setup_device(dev, NULL);
 
 #if !CONFIG_IDF_TARGET_ESP32S2
     // s2 update this seg_gap_clock_len by dma from conf_buffer
@@ -1310,7 +1330,7 @@ esp_err_t SPI_MASTER_ISR_ATTR spi_device_acquire_bus(spi_device_t *device, TickT
     esp_pm_lock_acquire(host->bus_attr->pm_lock);
 #endif
     //configure the device ahead so that we don't need to do it again in the following transactions
-    spi_setup_device(host->device[device->id]);
+    spi_setup_device(host->device[device->id], NULL);
     //the DMA is also occupied by the device, all the slave devices that using DMA should wait until bus released.
 
 #if CONFIG_IDF_TARGET_ESP32

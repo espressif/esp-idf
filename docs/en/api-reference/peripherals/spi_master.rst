@@ -557,11 +557,13 @@ Note that these data are tested with :ref:`CONFIG_SPI_MASTER_ISR_IN_IRAM` enable
 SPI Clock Frequency
 ^^^^^^^^^^^^^^^^^^^
 
-The clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_handle_t::cfg::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
+The clock source of the GPSPI peripherals can be selected by setting :cpp:member:`spi_device_interface_config_t::clock_source`. You can refer to :cpp:type:`spi_clock_source_t` to know the supported clock sources.
 
-By default driver sets :cpp:member:`spi_device_handle_t::cfg::clock_source` to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI clock sources. Its value is different among chips.
+By default driver sets clock source to ``SPI_CLK_SRC_DEFAULT``. This usually stands for the highest frequency among GPSPI supported clock sources. Its value is different among chips.
 
-The actual clock frequency of a Device may not be exactly equal to the number you set, it is re-calculated by the driver to the nearest hardware-compatible number, and not larger than the clock frequency of the clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
+The actual clock frequency of a device may not be exactly equal to the number you set, it is re-calculated by the driver to the nearest hardware-compatible number, and no more than the frequency of selected clock source. You can call :cpp:func:`spi_device_get_actual_freq` to know the actual frequency computed by the driver.
+
+The clock frequency of the device can be changed during transmission by setting :cpp:member:`spi_transaction_t::override_freq_hz`. This operation will use new clock frequency for the device's current and later transmissions. If the expected clock frequency cannot be achieved, the driver will print an warning and continue to use the previous clock frequency for transmission.
 
 The theoretical maximum transfer speed of the Write or Read phase can be calculated according to the table below:
 
