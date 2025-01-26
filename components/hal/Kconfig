@@ -91,18 +91,6 @@ menu "Hardware Abstraction Layer (HAL) and Low Level (LL)"
             features will be added and bugs will be fixed in the IDF source
             but cannot be synced to ROM.
 
-    config HAL_SPI_MASTER_FUNC_IN_IRAM
-        bool
-        depends on SPI_MASTER_ISR_IN_IRAM
-        help
-            Enable this option to place SPI master hal layer functions into IRAM.
-
-    config HAL_SPI_SLAVE_FUNC_IN_IRAM
-        bool
-        depends on SPI_SLAVE_ISR_IN_IRAM
-        help
-            Enable this option to place SPI slave hal layer functions into IRAM.
-
     config HAL_ECDSA_GEN_SIG_CM
         bool "Enable countermeasure for ECDSA signature generation"
         depends on IDF_TARGET_ESP32H2
