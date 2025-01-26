@@ -91,9 +91,13 @@ DRESULT ff_raw_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 
 DRESULT ff_raw_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 {
-    const esp_partition_t* part = s_ff_raw_handles[pdrv];
-    ESP_LOGV(TAG, "ff_raw_ioctl: cmd=%in", cmd);
-    assert(part);
+    {
+        const esp_partition_t* part = s_ff_raw_handles[pdrv];
+        ESP_LOGV(TAG, "ff_raw_ioctl: cmd=%in", cmd);
+        (void)part;
+        assert(part);
+    }
+
     switch (cmd) {
         case CTRL_SYNC:
             return RES_OK;
