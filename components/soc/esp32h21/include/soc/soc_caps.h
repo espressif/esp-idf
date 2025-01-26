@@ -279,7 +279,7 @@
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 // #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 // #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
-// #define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_CHANNEL_NUM                (6) // Check, todo IDF-11568
 // #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
 // #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
 // #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
@@ -384,7 +384,7 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+// #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1 // TODO IDF-11587
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
 #define SOC_SPI_SUPPORT_CLK_PLL_F48M        1
 #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
