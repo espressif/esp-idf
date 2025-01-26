@@ -24,7 +24,7 @@ Usually, modules will also output some vendor specific statements which common n
 
 ### Hardware Required
 
-To run this example, you need a dev board that is based on Espressif SoC (e.g. ESP32-WROVER Kit). For test purpose, you also need a GPS module. Here we take the [ATGM332D-5N](http://www.icofchina.com/pro/mokuai/2016-08-01/5.html) as an example to show how to parse the NMEA statements and output common information such as UTC time, latitude, longitude, altitude, speed and so on.
+To run this example, you need a dev board that is based on Espressif SoC (e.g. ESP32-WROVER Kit). For test purpose, you also need a GPS module. Here we take the `ATGM332D-5N` as an example to show how to parse the NMEA statements and output common information such as UTC time, latitude, longitude, altitude, speed and so on.
 
 #### Pin Assignment:
 
