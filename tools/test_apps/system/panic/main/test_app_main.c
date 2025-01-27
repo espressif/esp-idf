@@ -89,6 +89,8 @@ void app_main(void)
 #endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
+    HANDLE_TEST(test_name, test_panic_handler_stuck1);
+    HANDLE_TEST(test_name, test_panic_handler_crash1);
 #endif
     HANDLE_TEST(test_name, test_storeprohibited);
     HANDLE_TEST(test_name, test_cache_error);
@@ -101,6 +103,8 @@ void app_main(void)
     HANDLE_TEST(test_name, test_assert_cache_disabled);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace);
     HANDLE_TEST(test_name, test_assert_cache_write_back_error_can_print_backtrace2);
+    HANDLE_TEST(test_name, test_panic_handler_stuck0);
+    HANDLE_TEST(test_name, test_panic_handler_crash0);
 
 #if CONFIG_TEST_MEMPROT
 
