@@ -1,14 +1,15 @@
 以太网
 =========
 
-{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32, GPIO44 and GPIO50"}
-{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0, GPIO16 and GPIO17", esp32p4="GPIO23 and GPIO39"}
-{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33, GPIO40 and GPIO49"}
-{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 and GPIO41"}
-{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 and GPIO42"}
-{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28, GPIO45 and GPIO51"}
-{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29, GPIO46 and GPIO52"}
-{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30, GPIO47 and GPIO53"}
+{IDF_TARGET_SOC_DMA_DESC_SIZE:default="", esp32="32 字节", esp32p4=" 32 字节（由于需要适当的内存对齐，实际占用 64 字节）"}
+{IDF_TARGET_SOC_REF_CLK_IN_GPIO:default="", esp32="GPIO0", esp32p4="GPIO32，GPIO44 和 GPIO50"}
+{IDF_TARGET_SOC_REF_CLK_OUT_GPIO:default="", esp32="GPIO0，GPIO16 和 GPIO17", esp32p4="GPIO23 和 GPIO39"}
+{IDF_TARGET_SOC_RMII_TX_EN:default="", esp32="GPIO21", esp32p4="GPIO33，GPIO40 和 GPIO49"}
+{IDF_TARGET_SOC_RMII_TXD0:default="", esp32="GPIO19", esp32p4="GPIO34 和 GPIO41"}
+{IDF_TARGET_SOC_RMII_TXD1:default="", esp32="GPIO22", esp32p4="GPIO35 和 GPIO42"}
+{IDF_TARGET_SOC_RMII_CRS_DV:default="", esp32="GPIO27", esp32p4="GPIO28，GPIO45 和 GPIO51"}
+{IDF_TARGET_SOC_RMII_RXD0:default="", esp32="GPIO25", esp32p4="GPIO29，GPIO46 和 GPIO52"}
+{IDF_TARGET_SOC_RMII_RXD1:default="", esp32="GPIO26", esp32p4="GPIO30，GPIO47 和 GPIO53"}
 
 
 :link_to_translation:`en:[English]`
@@ -256,6 +257,19 @@ MAC 的相关配置可以在 :cpp:class:`eth_mac_config_t` 中找到，具体包
         :SOC_EMAC_USE_MULTI_IO_MUX: * :cpp:member:`eth_esp32_emac_config_t::emac_dataif_gpio`：EMAC MII/RMII 数据平面 GPIO 编号配置。
 
         :not SOC_EMAC_RMII_CLK_OUT_INTERNAL_LOOPBACK: * :cpp:member:`eth_esp32_emac_config_t::clock_config_out_in`：当 ``REF_CLK`` 信号在内部生成并从外部回环到 EMAC 时，配置 EMAC 输入接口时钟。必须始终将 EMAC 的模式配置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_EXT_IN`。此选项仅在 :cpp:member:`eth_esp32_emac_config_t::clock_config` 的配置设置为 :cpp:enumerator:`emac_rmii_clock_mode_t::EMAC_CLK_OUT` 时有效。
+
+    使用内部 MAC 时的内存注意事项
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+    内部 MAC 子系统通过 DMA 使用描述符链表在 CPU 域之间传输数据。描述符有发送和接收两种类型，分别保存接收或已发送帧的状态信息，或提供传输控制。每个描述符还包含指向当前数据缓冲区和下一个描述符的指针。因此，在支持 DMA 的内存中，单个 EMAC DMA 描述符的大小为 {IDF_TARGET_SOC_DMA_DESC_SIZE}。
+
+    默认配置应涵盖大多数用例。然而，某些情况可能需要对以太网 DMA 内存的使用进行配置，以满足特定需求。典型问题可能发生于下列情形：
+
+    .. list::
+
+        * **网络流量由短且频繁的帧主导时**：如果你的网络流量主要由短且频繁发送（或接收）的帧组成，可能会遇到吞吐量低于预期（尽管额定为 100 Mbps），以及接收过程中丢帧等问题。在发送时，套接字发送 API 可能会返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别）。这些问题的主要原因是，默认的内存配置针对较大帧进行了优化。默认情况下 :ref:`CONFIG_ETH_DMA_BUFFER_SIZE` 设置为 512 字节，以确保 *数据缓冲区* 与 *描述符* 大小的开销比。要解决此问题，可以增加缓冲区数量， :ref:`CONFIG_ETH_DMA_RX_BUFFER_NUM` 或 :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`。此外，还可以减小 :ref:`CONFIG_ETH_DMA_BUFFER_SIZE`，使其与网络中典型帧的大小相匹配，从而合理控制以太网驱动的内存占用。
+
+        * **高吞吐量导致缓冲区耗尽时**：如果套接字发送 API 间歇性返回 ``errno`` 为 ``ENOMEM``，并显示 `TX 缓冲区大小不足`（如果启用了调试日志级别），且吞吐量接近额定的 100 Mbps，这通常表明接近硬件限制。在这种情况下，硬件无法跟上传输请求。解决方案是，增加 :ref:`CONFIG_ETH_DMA_TX_BUFFER_NUM`，以缓存更多的帧，并缓解传输请求的短时峰值。然而，如果请求的流量持续超过额定吞吐量，此方法将失效，需通过应用层通过软件限制带宽。
 
 PHY 的相关配置可以在 :cpp:class:`eth_phy_config_t` 中找到，具体包括：
 
