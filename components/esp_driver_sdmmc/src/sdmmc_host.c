@@ -411,8 +411,8 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     // Change the host settings to the appropriate slot before starting the transaction
     // If the slot is not initialized (slot_host_div not set) or already active, do nothing
     if (s_host_ctx.active_slot_num != slot) {
-        s_host_ctx.active_slot_num = slot;
         if (sdmmc_host_slot_initialized(slot)) {
+            s_host_ctx.active_slot_num = slot;
             sdmmc_host_change_to_slot(slot);
         } else {
             ESP_LOGD(TAG, "Slot %d is not initialized yet, skipping sdmmc_host_change_to_slot", slot);
