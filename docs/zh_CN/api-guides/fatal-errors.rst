@@ -29,10 +29,12 @@
 
 本指南会介绍 ESP-IDF 中这类错误的处理流程，并给出对应的解决建议。
 
+.. _Panic-Handler:
+
 紧急处理程序
 ------------
 
-:ref:`Overview` 中列举的所有错误都会由 *紧急处理程序 (Panic Handler)* 负责处理。
+:ref:`Overview` 中列举的所有出错原因都会由 *紧急处理程序 (Panic Handler)* 处理。
 
 紧急处理程序首先会将出错原因打印到控制台，例如 CPU 异常的错误信息通常会类似于
 
@@ -46,7 +48,7 @@
 
     Guru Meditation Error: Core 0 panic'ed (|CACHE_ERR_MSG|). Exception was unhandled.
 
-不管哪种情况，错误原因都会被打印在括号中。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
+不管哪种情况，出错原因都会以括号形式打印出来。请参阅 :ref:`Guru-Meditation-Errors` 以查看所有可能的出错原因。
 
 紧急处理程序接下来的行为将取决于 :ref:`CONFIG_ESP_SYSTEM_PANIC` 的设置，支持的选项包括：
 
@@ -296,6 +298,8 @@ RTC 看门狗在启动代码中用于跟踪执行时间，也有助于防止由�
 
 
 RTC 看门狗涵盖了从一级 (ROM) 引导加载程序到应用程序启动的执行时间，最初在一级 (ROM) 引导加载程序中设置，而后在引导加载程序中使用 :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` 选项进行配置（默认 9000 ms）。在应用初始化阶段，由于慢速时钟源可能已更改，RTC 看门狗将被重新配置，最后在调用 ``app_main()`` 之前被禁用。可以使用选项 :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` 以保证 RTC 看门狗在调用 ``app_main`` 之前不被禁用，而是保持运行状态，用户需要在应用代码中定期“喂狗”。
+
+:ref:`紧急处理程序 <Panic-Handler>` 通过 RTC 看门狗保护机制，确保系统在遇到严重错误时不会陷入死循环。紧急处理程序会重新配置 RTC 看门狗的超时时间为 10 秒。如果 10 秒内紧急处理程序没有完成，RTC 看门狗将会强制复位系统。
 
 .. _Guru-Meditation-Errors:
 

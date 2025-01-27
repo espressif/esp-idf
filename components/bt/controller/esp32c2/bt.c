@@ -130,7 +130,7 @@ extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int ble_log_deinit_async(void);
 extern void ble_log_async_output_dump_all(bool output);
-extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
+extern void esp_panic_handler_feed_wdts(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int ble_controller_deinit(void);
 extern int ble_controller_enable(uint8_t mode);
@@ -391,7 +391,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
 
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
-    esp_panic_handler_reconfigure_wdts(5000);
+    esp_panic_handler_feed_wdts();
     ble_log_async_output_dump_all(true);
     stop_write = true;
     esp_bt_ontroller_log_deinit();
@@ -449,7 +449,7 @@ void esp_ble_controller_log_dump_all(bool output)
     } else {
         portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL_SAFE(&spinlock);
-        esp_panic_handler_reconfigure_wdts(5000);
+        esp_panic_handler_feed_wdts();
         BT_ASSERT_PRINT("\r\n[DUMP_START:");
         ble_log_async_output_dump_all(output);
         BT_ASSERT_PRINT(":DUMP_END]\r\n");
