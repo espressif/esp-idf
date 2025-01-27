@@ -26,3 +26,5 @@ foreach(component main espcoredump esp_system spi_flash
     idf_component_get_property(lib ${component} COMPONENT_LIB)
     target_compile_options(${lib} PRIVATE ${ubsan_options})
 endforeach()
+
+target_link_libraries(${project_elf} PRIVATE "-Wl,--wrap=esp_panic_handler")
