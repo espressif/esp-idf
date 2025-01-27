@@ -1,46 +1,56 @@
 # SS no.    API type    Function                                      Args
 0           custom      invalid_secure_service                        0
-1           IDF         esp_rom_route_intr_matrix                     3
-2           IDF         rv_utils_intr_enable                          1
-3           IDF         rv_utils_intr_disable                         1
-4           IDF         rv_utils_intr_set_priority                    2
-5           IDF         rv_utils_intr_set_type                        2
-6           IDF         rv_utils_intr_set_threshold                   1
-7           IDF         rv_utils_intr_edge_ack                        1
-8           IDF         rv_utils_intr_global_enable                   0
-9           IDF         efuse_hal_chip_revision                       0
-10          IDF         efuse_hal_get_chip_ver_pkg                    1
-11          IDF         efuse_hal_get_disable_wafer_version_major     0
-12          IDF         efuse_hal_get_mac                             1
-13          IDF         esp_efuse_check_secure_version                1
-14          IDF         esp_efuse_read_field_blob                     3
-15          IDF         esp_flash_encryption_enabled                  0
-16          IDF         wdt_hal_init                                  4
-17          IDF         wdt_hal_deinit                                1
-18          IDF         esp_aes_intr_alloc                            0
-19          IDF         esp_aes_crypt_cbc                             6
-20          IDF         esp_aes_crypt_cfb8                            6
-21          IDF         esp_aes_crypt_cfb128                          7
-22          IDF         esp_aes_crypt_ctr                             7
-23          IDF         esp_aes_crypt_ecb                             4
-24          IDF         esp_aes_crypt_ofb                             6
-25          IDF         esp_sha                                       4
-26          IDF         esp_sha_dma                                   6
-27          IDF         esp_sha_read_digest_state                     2
-28          IDF         esp_sha_write_digest_state                    2
-29          IDF         mmu_hal_map_region                            6
-30          IDF         mmu_hal_unmap_region                          3
-31          IDF         mmu_hal_vaddr_to_paddr                        4
-32          IDF         mmu_hal_paddr_to_vaddr                        5
-33          custom      esp_tee_ota_begin                             0
-34          custom      esp_tee_ota_write                             3
-35          custom      esp_tee_ota_end                               0
-36          custom      esp_tee_sec_storage_init                      0
-37          custom      esp_tee_sec_storage_gen_key                   1
-38          custom      esp_tee_sec_storage_get_signature             4
-39          custom      esp_tee_sec_storage_get_pubkey                2
-40          custom      esp_tee_sec_storage_encrypt                   8
-41          custom      esp_tee_sec_storage_decrypt                   8
-42          custom      esp_tee_sec_storage_is_slot_empty             1
-43          custom      esp_tee_sec_storage_clear_slot                1
-44          custom      esp_tee_att_generate_token                    6
+# ID: 1-47 (47) - External memory (Flash) protection
+1           IDF         mmu_hal_map_region                            6
+2           IDF         mmu_hal_unmap_region                          3
+3           IDF         mmu_hal_vaddr_to_paddr                        4
+4           IDF         mmu_hal_paddr_to_vaddr                        5
+# Services before the ID 48 will be placed in the internal memory table,
+# while the rest will be placed in the external memory table.
+# ID: 48-71 (24) - Interrupt Handling
+48          IDF         esp_rom_route_intr_matrix                     3
+49          IDF         rv_utils_intr_enable                          1
+50          IDF         rv_utils_intr_disable                         1
+51          IDF         rv_utils_intr_set_priority                    2
+52          IDF         rv_utils_intr_set_type                        2
+53          IDF         rv_utils_intr_set_threshold                   1
+54          IDF         rv_utils_intr_edge_ack                        1
+55          IDF         rv_utils_intr_global_enable                   0
+# ID: 72-119 (48) - HAL
+72          IDF         efuse_hal_chip_revision                       0
+73          IDF         efuse_hal_get_chip_ver_pkg                    1
+74          IDF         efuse_hal_get_disable_wafer_version_major     0
+75          IDF         efuse_hal_get_mac                             1
+76          IDF         wdt_hal_init                                  4
+77          IDF         wdt_hal_deinit                                1
+# ID: 120-167 (48) - Crypto
+120         IDF         esp_aes_intr_alloc                            0
+121         IDF         esp_aes_crypt_cbc                             6
+122         IDF         esp_aes_crypt_cfb8                            6
+123         IDF         esp_aes_crypt_cfb128                          7
+124         IDF         esp_aes_crypt_ctr                             7
+125         IDF         esp_aes_crypt_ecb                             4
+126         IDF         esp_aes_crypt_ofb                             6
+127         IDF         esp_sha                                       4
+128         IDF         esp_sha_dma                                   6
+129         IDF         esp_sha_read_digest_state                     2
+130         IDF         esp_sha_write_digest_state                    2
+# ID: 168-183 (16) - eFuse
+168         IDF         esp_efuse_check_secure_version                1
+169         IDF         esp_efuse_read_field_blob                     3
+170         IDF         esp_flash_encryption_enabled                  0
+# ID: 184-249 (66) - Reserved for future use
+# ID: 270-293 (24) - Secure Storage
+270         custom      esp_tee_sec_storage_init                      0
+271         custom      esp_tee_sec_storage_gen_key                   2
+272         custom      esp_tee_sec_storage_get_signature             4
+273         custom      esp_tee_sec_storage_get_pubkey                2
+274         custom      esp_tee_sec_storage_encrypt                   8
+275         custom      esp_tee_sec_storage_decrypt                   8
+276         custom      esp_tee_sec_storage_is_slot_empty             1
+277         custom      esp_tee_sec_storage_clear_slot                1
+# ID: 294-299 (6) - OTA
+294         custom      esp_tee_ota_begin                             0
+295         custom      esp_tee_ota_write                             3
+296         custom      esp_tee_ota_end                               0
+# ID: 300+ - User-defined

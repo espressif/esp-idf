@@ -82,57 +82,38 @@ else()
     endif()
 endif()
 
-set(secure_service_hdr_py
-    ${COMPONENT_DIR}/scripts/secure_service_hdr.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
+set(secure_service_tbl_parser_py
+    ${COMPONENT_DIR}/scripts/secure_service_tbl_parser.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
+)
 
-set(secure_service_tbl_py
-    ${COMPONENT_DIR}/scripts/secure_service_tbl.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
+set(secure_service_gen_headers
+    ${CONFIG_DIR}/secure_service_num.h ${CONFIG_DIR}/secure_service_dec.h
+    ${CONFIG_DIR}/secure_service_int.h ${CONFIG_DIR}/secure_service_ext.h
+)
 
-set(secure_service_wrap_py
-    ${COMPONENT_DIR}/scripts/secure_service_wrap.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
-    )
-
-set(secure_service_num_h
-    ${CONFIG_DIR}/secure_service_num.h
-    )
-set(secure_service_dec_h
-    ${CONFIG_DIR}/secure_service_dec.h)
-
-set(secure_service_h
-    ${CONFIG_DIR}/secure_service.h
-    )
-
-if(CONFIG_SECURE_ENABLE_TEE)
-    execute_process(COMMAND cat ${COMPONENT_DIR}/scripts/${target}/secure_service.tbl ${custom_secure_service_tbl}
+if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
+    execute_process(
+        COMMAND cat ${COMPONENT_DIR}/scripts/${target}/secure_service.tbl ${custom_secure_service_tbl}
         OUTPUT_FILE secure_service.tbl
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
+    )
 
-    execute_process(COMMAND python ${secure_service_hdr_py} ${secure_service_num_h} ${secure_service_dec_h}
+    execute_process(
+        COMMAND python ${secure_service_tbl_parser_py} ${secure_service_gen_headers}
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
+    )
 
-    execute_process(COMMAND python ${secure_service_tbl_py} ${secure_service_h}
+    set_property(DIRECTORY ${COMPONENT_DIR} APPEND PROPERTY
+        ADDITIONAL_MAKE_CLEAN_FILES ${secure_service_gen_headers}
+    )
+
+    execute_process(
+        COMMAND python ${secure_service_tbl_parser_py} "--wrap"
+        OUTPUT_VARIABLE wrap_list
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-        )
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
 
-    set_property(DIRECTORY "${COMPONENT_DIR}" APPEND PROPERTY
-        ADDITIONAL_MAKE_CLEAN_FILES ${secure_service_num_h} ${secure_service_dec_h} ${secure_service_h})
-
-    # For TEE implementation, we don't wrap the APIs since the TEE would also internally use the same API and
-    # it shouldn't route to secure service API.
-    # Instead of wrapping, we append _ss_* to the API name and then it must be defined in esp_secure_services.c
-    if(NOT esp_tee_build)
-        execute_process(COMMAND python ${secure_service_wrap_py}
-            OUTPUT_VARIABLE wrap_list
-            WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-            OUTPUT_STRIP_TRAILING_WHITESPACE
-            )
-
-        string(STRIP ${wrap_list} wrap_list)
-
-        target_link_libraries(${COMPONENT_LIB} INTERFACE "${wrap_list}")
-    endif()
+    string(STRIP "${wrap_list}" wrap_list)
+    target_link_libraries(${COMPONENT_LIB} INTERFACE "${wrap_list}")
 endif()

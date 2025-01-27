@@ -8,4 +8,8 @@ cmake_minimum_required(VERSION 3.16)
 list(APPEND EXTRA_COMPONENT_DIRS $ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
+
+# Including the attestation service calls
+include($ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake)
+
 project(tee_attestation)

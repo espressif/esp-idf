@@ -4,6 +4,7 @@ cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
+# Including the example service calls
 include(${CMAKE_CURRENT_LIST_DIR}/components/example_secure_service/tee_project.cmake)
 
 project(tee_basic)
