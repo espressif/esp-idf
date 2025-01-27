@@ -32,7 +32,7 @@ class PanicTestDut(IdfDut):
     COREDUMP_UART_END = r'================= CORE DUMP END ================='
     COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
     REBOOT = r'.*Rebooting\.\.\.'
-    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)\b'
+    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS)\b'
 
     app: IdfApp
     serial: IdfSerial

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -24,6 +24,9 @@
 
 #include "hal/mpu_hal.h"
 #include "rom/cache.h"
+
+volatile uint32_t g_panic_handler_stuck = 0;
+volatile uint32_t g_panic_handler_crash = 0;
 
 /* Test utility function */
 
@@ -132,6 +135,34 @@ void test_panic_extram_stack_bss(void)
 #endif // ESP_COREDUMP_ENABLE_TO_FLASH && FREERTOS_TASK_CREATE_ALLOW_EXT_MEM
 
 
+void __attribute__((no_sanitize_undefined)) test_panic_handler_stuck(void *arg)
+{
+    g_panic_handler_stuck = 1;
+
+    /* Cause a panic */
+#ifdef __XTENSA__
+    asm("ill");     // should be an invalid operation on xtensa targets
+#elif __riscv
+    asm("unimp");   // should be an invalid operation on RISC-V targets
+#endif
+
+    vTaskDelete(NULL);
+}
+
+void __attribute__((no_sanitize_undefined)) test_panic_handler_crash(void *arg)
+{
+    g_panic_handler_crash = 1;
+
+    /* Cause a panic */
+#ifdef __XTENSA__
+    asm("ill");
+#elif __riscv
+    asm("unimp");
+#endif
+
+    vTaskDelete(NULL);
+}
+
 #if !CONFIG_FREERTOS_UNICORE
 static void infinite_loop(void* arg) {
     (void) arg;
@@ -148,7 +179,46 @@ void test_task_wdt_cpu1(void)
     }
 }
 
+void test_panic_handler_stuck1(void)
+{
+    /* Cause the panic on core 1 */
+    xTaskCreatePinnedToCore(test_panic_handler_stuck, "panic_handler_stuck", 2048, NULL, 1, NULL, 1);
+
+    while(1) {
+        vTaskDelay(10);
+    }
+}
+
+void test_panic_handler_crash1(void)
+{
+    /* Cause the panic on core 1 */
+    xTaskCreatePinnedToCore(test_panic_handler_crash, "panic_handler_crash", 2048, NULL, 1, NULL, 1);
+
+    while(1) {
+        vTaskDelay(10);
+    }
+}
 #endif
+
+void test_panic_handler_stuck0(void)
+{
+    /* Cause the panic on core 0 */
+    xTaskCreatePinnedToCore(test_panic_handler_stuck, "panic_handler_stuck", 2048, NULL, 1, NULL, 0);
+
+    while(1) {
+        vTaskDelay(10);
+    }
+}
+
+void test_panic_handler_crash0(void)
+{
+    /* Cause the panic on core 0 */
+    xTaskCreatePinnedToCore(test_panic_handler_crash, "panic_handler_crash", 2048, NULL, 1, NULL, 0);
+
+    while(1) {
+        vTaskDelay(10);
+    }
+}
 
 void __attribute__((no_sanitize_undefined)) test_storeprohibited(void)
 {
