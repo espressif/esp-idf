@@ -3,6 +3,7 @@
 import atexit
 import difflib
 import os
+import platform
 import re
 import shutil
 import sys
@@ -292,7 +293,7 @@ def validate_recipe(recipe: Dict) -> None:
     dependencies and to provide more informative error messages.
     """
     recipe_keys = ['description', 'tags', 'output', 'steps']
-    step_keys = ['name', 'cmds', 'output']
+    step_keys = ['name', 'cmds', 'output', 'system']
     recipe_description = recipe.get('description')
     recipe_tags = recipe.get('tags')
     recipe_output = recipe.get('output')
@@ -333,6 +334,7 @@ def validate_recipe(recipe: Dict) -> None:
         step_name = step.get('name')
         step_output = step.get('output')
         step_cmds = step.get('cmds')
+        step_system = step.get('system')
 
         if not step_name:
             raise RuntimeError(f'Recipe step is missing "name" key')
@@ -345,6 +347,12 @@ def validate_recipe(recipe: Dict) -> None:
         if step_output:
             if type(step_output) is not str:
                 raise RuntimeError(f'Step "output" key is not of type "str"')
+        if step_system:
+            if type(step_system) is not str:
+                raise RuntimeError(f'Step "system" key is not of type "str"')
+            if step_system not in ['Linux', 'Windows', 'Darwin']:
+                raise RuntimeError((f'Unknown "system" key value "{step_system}", '
+                                    f'expecting "Linux", "Windows" or "Darwin"'))
 
         for cmd in step_cmds:
             if 'exec' in cmd:
@@ -731,6 +739,12 @@ def process_recipe(recipe: Dict) -> None:
     """execute commands for every stage in a recipe"""
     for step in recipe['steps']:
         step_name = step['name']
+        step_system = step.get('system')
+
+        if step_system and step_system != platform.system():
+            dbg(f'Skipping step "{step_name}" for "{step_system}"')
+            continue
+
         dbg(f'Processing step "{step_name}"')
         print(f'* {step_name}')
         for cmd in step['cmds']:
@@ -975,6 +989,7 @@ def create(action: str,
     dbg(f'Recipe variables: {recipe_variables}')
     dbg(f'Project directory: {project_dir}')
     dbg(f'Build directory: {build_dir}')
+    dbg(f'System: {platform.system()}')
 
     if list_recipes:
         # List recipes command

@@ -90,6 +90,11 @@ variable, format it as `${NAME}`, such as `${IDF_PATH}`.
     Brief description of the `step`, displayed in the `idf.py diag` progress
     beneath the `recipe` description.
 
+* system: string (optional)
+    Can be used to restrict the operating system on which the step will be
+    executed. It should be Linux, Darwin, or Windows. If specified, the step
+    will only run on the designated system.
+
 * output: string (optional)
 
     Global output directory for the `step`. This directory serves as the main
