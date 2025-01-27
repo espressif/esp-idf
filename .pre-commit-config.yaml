@@ -70,11 +70,6 @@ repos:
         language: python
         pass_filenames: false
         always_run: true
-      - id: check-deprecated-kconfigs-options
-        name: Check if any Kconfig Options Deprecated
-        entry: tools/ci/check_deprecated_kconfigs.py
-        language: python
-        files: 'sdkconfig\.ci$|sdkconfig\.rename$|sdkconfig.*$'
       - id: cmake-lint
         name: Check CMake Files Format
         entry: cmakelint --linelength=120 --spaces=4 --filter=-whitespace/indent
@@ -241,6 +236,7 @@ repos:
         name: Lint rST files in docs folder using Sphinx Lint
         files: ^(docs/en|docs/zh_CN)/.*\.(rst|inc)$
   - repo: https://github.com/espressif/esp-idf-kconfig.git
-    rev: v2.4.1
+    rev: v2.5.0
     hooks:
       - id: check-kconfig-files
+      - id: check-deprecated-kconfig-options
