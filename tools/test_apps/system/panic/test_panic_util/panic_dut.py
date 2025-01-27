@@ -102,6 +102,10 @@ class PanicTestDut(IdfDut):
         """Expect method for the register dump"""
         self.expect(r'Core\s+%d register dump:' % core)
 
+    def expect_cpu_reset(self) -> None:
+        # no digital system reset for panic handling restarts (see IDF-7255)
+        self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS|RTC_SW_SYS_RST)')
+
     def expect_elf_sha256(self) -> None:
         """Expect method for ELF SHA256 line"""
         elf_sha256 = sha256(self.app.elf_file)

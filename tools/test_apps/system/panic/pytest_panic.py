@@ -490,6 +490,72 @@ def test_panic_delay(dut: PanicTestDut) -> None:
     dut.expect_exact('rst:0xc (SW_CPU_RESET)')
 
 
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.supported_targets
+@pytest.mark.generic
+def test_panic_handler_stuck0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+
+    # Expect a panic handler stuck message
+    dut.expect_exact('Panic handler stuck')
+
+    # Expect a reboot
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.esp32s3
+@pytest.mark.generic
+def test_panic_handler_stuck1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+
+    # Expect a panic handler stuck message
+    dut.expect_exact('Panic handler stuck')
+
+    # Expect a reboot
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.supported_targets
+@pytest.mark.generic
+def test_panic_handler_crash0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+
+    # Expect a panic handler crash message
+    dut.expect_exact('Panic handler crashed 1 times')
+
+    # Expect a the second panic handler crash message
+    dut.expect_exact('Panic handler crashed 2 times')
+
+    # Expect bailout message
+    dut.expect_exact('Panic handler entered multiple times. Abort panic handling. Rebooting ...')
+
+    # Expect a reboot
+    dut.expect_cpu_reset()
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.esp32s3
+@pytest.mark.generic
+def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.run_test_func(test_func_name)
+
+    # Expect a panic handler crash message
+    dut.expect_exact('Panic handler crashed 1 times')
+
+    # Expect a the second panic handler crash message
+    dut.expect_exact('Panic handler crashed 2 times')
+
+    # Expect bailout message
+    dut.expect_exact('Panic handler entered multiple times. Abort panic handling. Rebooting ...')
+
+    # Expect a reboot
+    dut.expect_cpu_reset()
+
+
 #########################
 # for memprot test only #
 #########################
