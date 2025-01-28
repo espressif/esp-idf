@@ -114,6 +114,7 @@ static esp_err_t cb_url(http_parser *parser,
     parser_data_t *parser_data = (parser_data_t *) parser->data;
     httpd_req_t          *req   = parser_data->req;
     struct httpd_req_aux *raux  = req->aux;
+
     if (parser_data->status == PARSING_IDLE) {
         ESP_LOGD(TAG, LOG_FMT("message begin"));
 
@@ -131,9 +132,9 @@ static esp_err_t cb_url(http_parser *parser,
     ESP_LOGD(TAG, LOG_FMT("processing url = %.*s"), (int)length, at);
 
     /* Update length of URL string */
-    if ((parser_data->last.length += length) > raux->uri_buf_size_limit) {
+    if ((parser_data->last.length += length) > raux->max_uri_len) {
         ESP_LOGW(TAG, LOG_FMT("URI length (%"NEWLIB_NANO_COMPAT_FORMAT") greater than supported (%d)"),
-                 NEWLIB_NANO_COMPAT_CAST(parser_data->last.length), raux->uri_buf_size_limit);
+                 NEWLIB_NANO_COMPAT_CAST(parser_data->last.length), raux->max_uri_len);
         parser_data->error = HTTPD_414_URI_TOO_LONG;
         parser_data->status = PARSING_FAILED;
         return ESP_FAIL;
@@ -216,7 +217,8 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = ra->scratch;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_FIELD;
-        ra->scratch_size_limit = ra->hdr_buf_size_limit;
+        ra->scratch_size_limit   = ra->max_req_hdr_len;
+
         /* Stop parsing for now and give control to process */
         if (pause_parsing(parser, at) != ESP_OK) {
             parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
@@ -233,7 +235,7 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = at;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_FIELD;
-        ra->scratch_size_limit = ra->hdr_buf_size_limit;
+        ra->scratch_size_limit   = ra->max_req_hdr_len;
 
         /* Increment header count */
         ra->req_hdrs_count++;
@@ -415,6 +417,7 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 static esp_err_t cb_on_body(http_parser *parser, const char *at, size_t length)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
+
     /* Check previous status */
     if (parser_data->status != PARSING_BODY) {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
@@ -446,6 +449,7 @@ static esp_err_t cb_on_body(http_parser *parser, const char *at, size_t length)
 static esp_err_t cb_no_body(http_parser *parser)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
+
     /* Check previous status */
     if (parser_data->status == PARSING_URL) {
         ESP_LOGD(TAG, LOG_FMT("no headers"));
@@ -480,26 +484,32 @@ static esp_err_t cb_no_body(http_parser *parser)
     return ESP_OK;
 }
 
-static int read_block(httpd_req_t *req, size_t offset, size_t length)
+static int read_block(httpd_req_t *req, http_parser *parser, size_t offset, size_t length)
 {
     struct httpd_req_aux *raux  = req->aux;
+    parser_data_t *parser_data = (parser_data_t *) parser->data;
 
     /* Limits the read to scratch buffer size */
     ssize_t buf_len = MIN(length, (raux->scratch_size_limit - offset));
     if (buf_len <= 0) {
         return 0;
     }
-    if (raux->scratch == NULL && buf_len < raux->scratch_size_limit) {
-        raux->scratch = (char*) malloc(buf_len);
-    }
-    else if (raux->scratch != NULL && buf_len < raux->scratch_size_limit) {
-        raux->scratch = (char*) realloc(raux->scratch, raux->scratch_cur_size + buf_len);
-    }
+    /* Calculate the offset of the current position from the start of the buffer,
+     * as after reallocating the buffer, the base address of the buffer may change.
+     */
+    size_t at_offset = parser_data->last.at - raux->scratch;
+    /* Allocate the buffer according to offset and buf_len. Offset is
+       from where the reading will start and buf_len is till what length
+       the buffer will be read.
+    */
+    raux->scratch = (char*) realloc(raux->scratch, offset + buf_len);
     if (raux->scratch == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate the scratch buffer");
         return 0;
     }
-    raux->scratch_cur_size += buf_len;
-    ESP_LOGD(TAG, "scratch size = %d", raux->scratch_cur_size);
+    parser_data->last.at = raux->scratch + at_offset;
+    raux->scratch_cur_size = offset + buf_len;
+    ESP_LOGD(TAG, "scratch buf qsize = %d", raux->scratch_cur_size);
     /* Receive data into buffer. If data is pending (from unrecv) then return
      * immediately after receiving pending data, as pending data may just complete
      * this request packet. */
@@ -537,7 +547,7 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
     httpd_req_t          *req   = data->req;
     struct httpd_req_aux *raux  = req->aux;
     size_t nparsed = 0;
-    data->last.at = raux->scratch;
+
     if (!length) {
         /* Parsing is still happening but nothing to
          * parse means no more space left on buffer,
@@ -643,7 +653,7 @@ static esp_err_t httpd_parse_req(struct httpd_data *hd)
     offset = 0;
     do {
         /* Read block into scratch buffer */
-        if ((blk_len = read_block(r, offset, PARSER_BLOCK_SIZE)) < 0) {
+        if ((blk_len = read_block(r, &parser, offset, PARSER_BLOCK_SIZE)) < 0) {
             if (blk_len == HTTPD_SOCK_ERR_TIMEOUT) {
                 /* Retry read in case of non-fatal timeout error.
                  * read_block() ensures that the timeout error is
@@ -660,6 +670,7 @@ static esp_err_t httpd_parse_req(struct httpd_data *hd)
         /* This is used by the callbacks to track
          * data usage of the buffer */
         parser_data.raw_datalen = blk_len + offset;
+
         /* Parse data block from buffer */
         if ((offset = parse_block(&parser, offset, blk_len)) < 0) {
             /* HTTP error occurred.
@@ -697,9 +708,9 @@ static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
     ra->resp_hdrs_count = 0;
     ra->scratch = NULL;
     ra->scratch_cur_size = 0;
-    ra->hdr_buf_size_limit = config->hdr_buf_size_limit;
-    ra->uri_buf_size_limit = config->uri_buf_size_limit;
-    ra->scratch_size_limit = ra->uri_buf_size_limit;
+    ra->max_req_hdr_len = (config->max_req_hdr_len > 0) ? config->max_req_hdr_len : CONFIG_HTTPD_MAX_REQ_HDR_LEN;
+    ra->max_uri_len = (config->max_uri_len > 0) ? config->max_uri_len : CONFIG_HTTPD_MAX_URI_LEN;
+    ra->scratch_size_limit = ra->max_uri_len;
 #if CONFIG_HTTPD_WS_SUPPORT
     ra->ws_handshake_detect = false;
 #endif
@@ -732,8 +743,8 @@ static void httpd_req_cleanup(httpd_req_t *r)
     ra->sd = NULL;
     free(ra->scratch);
     ra->scratch = NULL;
-    ra->scratch_cur_size = 0;
     ra->scratch_size_limit = 0;
+    ra->scratch_cur_size = 0;
     r->handle = NULL;
     r->aux = NULL;
     r->user_ctx = NULL;

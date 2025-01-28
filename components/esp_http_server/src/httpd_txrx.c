@@ -132,6 +132,7 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
         }
         return ret;
     }
+
     ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((ret + pending_len)));
     return ret + pending_len;
 }
@@ -242,29 +243,30 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     if (buf_len == HTTPD_RESP_USE_STRLEN) {
         buf_len = strlen(buf);
     }
-    size_t required_size = snprintf(NULL, 0, httpd_hdr_str, ra->status, ra->content_type, buf_len) + 1;
-    if (required_size >= HTTPD_MAX_REQ_HDR_LEN) {
-        return ESP_ERR_HTTPD_RESP_HDR;
-    }
-    if (ra->scratch == NULL)
-        ra->scratch = malloc(required_size);
-    else {
-        ra->scratch = realloc(ra->scratch, required_size);
-    }
-    if (ra->scratch == NULL) {
-        ESP_LOGE(TAG, "Unable to allocate scratch buffer");
-        return ESP_ERR_HTTPD_ALLOC_MEM;
-    }
-    ra->scratch_cur_size = required_size;
-    ESP_LOGD(TAG, "scratch size = %d", ra->scratch_cur_size);
+
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
 
-    /* Size of essential headers is limited by scratch buffer size */
-    snprintf(ra->scratch, ra->scratch_cur_size, httpd_hdr_str, ra->status, ra->content_type, buf_len);
-    ESP_LOG_BUFFER_HEXDUMP(TAG, ra->scratch, strlen(ra->scratch), ESP_LOG_INFO);
-    /* Sending essential headers */
-    if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {
+    /* Calculate the size of the headers. +1 for the null terminator */
+    size_t required_size = snprintf(NULL, 0, httpd_hdr_str, ra->status, ra->content_type, buf_len) + 1;
+    if (required_size > ra->max_req_hdr_len) {
+        return ESP_ERR_HTTPD_RESP_HDR;
+    }
+    char *res_buf = malloc(required_size); /* Temporary buffer to store the headers */
+    if (res_buf == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate httpd send buffer");
+        return ESP_ERR_HTTPD_ALLOC_MEM;
+    }
+    ESP_LOGD(TAG, "httpd send buffer size = %d", strlen(res_buf));
+
+    esp_err_t ret = snprintf(res_buf, required_size, httpd_hdr_str, ra->status, ra->content_type, buf_len);
+    if (ret < 0 || ret >= required_size) {
+        free(res_buf);
+        return ESP_ERR_HTTPD_RESP_HDR;
+    }
+    ret = httpd_send_all(r, res_buf, strlen(res_buf));
+    free(res_buf);
+    if (ret != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
     }
 
@@ -329,27 +331,28 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
 
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
+
+    /* Calculate the size of the headers. +1 for the null terminator */
     size_t required_size = snprintf(NULL, 0, httpd_chunked_hdr_str, ra->status, ra->content_type) + 1;
-    if (required_size >= HTTPD_MAX_REQ_HDR_LEN) {
+    if (required_size > ra->max_req_hdr_len) {
         return ESP_ERR_HTTPD_RESP_HDR;
     }
-    if (ra->scratch == NULL)
-        ra->scratch = malloc(required_size);
-    else {
-        ra->scratch = realloc(ra->scratch, required_size);
-    }
-    if (ra->scratch == NULL) {
-        ESP_LOGE(TAG, "Unable to allocate scratch buffer");
+    char *res_buf = malloc(required_size); /* Temporary buffer to store the headers */
+    if (res_buf == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate httpd send chunk buffer");
         return ESP_ERR_HTTPD_ALLOC_MEM;
     }
-    ra->scratch_cur_size = required_size;
-    ESP_LOGD(TAG, "scratch size = %d", ra->scratch_cur_size);
+    ESP_LOGD(TAG, "httpd send chunk buffer size = %d", strlen(res_buf));
     if (!ra->first_chunk_sent) {
+        esp_err_t ret = snprintf(res_buf, required_size, httpd_chunked_hdr_str, ra->status, ra->content_type);
+        if (ret < 0 || ret >= required_size) {
+            free(res_buf);
+            return ESP_ERR_HTTPD_RESP_HDR;
+        }
         /* Size of essential headers is limited by scratch buffer size */
-        snprintf(ra->scratch, ra->scratch_cur_size, httpd_chunked_hdr_str, ra->status, ra->content_type);
-
-        /* Sending essential headers */
-        if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {
+        ret = httpd_send_all(r, res_buf, strlen(res_buf));
+        free(res_buf);
+        if (ret != ESP_OK) {
             return ESP_ERR_HTTPD_RESP_SEND;
         }
 
@@ -671,7 +674,10 @@ esp_err_t httpd_req_async_handler_complete(httpd_req_t *r)
 
     struct httpd_req_aux *ra = r->aux;
     ra->sd->for_async_req = false;
-
+    free(ra->scratch);
+    ra->scratch = NULL;
+    ra->scratch_cur_size = 0;
+    ra->scratch_size_limit = 0;
     free(ra->resp_hdrs);
     free(r->aux);
     free(r);

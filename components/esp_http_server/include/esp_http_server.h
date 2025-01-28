@@ -53,10 +53,10 @@ initializer that should be kept in sync
 #define HTTPD_DEFAULT_CONFIG() {                        \
         .task_priority      = tskIDLE_PRIORITY+5,       \
         .stack_size         = 4096,                     \
-        .hdr_buf_size_limit = HTTPD_MAX_REQ_HDR_LEN,    \
-        .uri_buf_size_limit = HTTPD_MAX_URI_LEN,        \
         .core_id            = tskNO_AFFINITY,           \
         .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
+        .max_req_hdr_len    = CONFIG_HTTPD_MAX_REQ_HDR_LEN,    \
+        .max_uri_len        = CONFIG_HTTPD_MAX_URI_LEN,        \
         .server_port        = 80,                       \
         .ctrl_port          = ESP_HTTPD_DEF_CTRL_PORT,  \
         .max_open_sockets   = 7,                        \
@@ -176,11 +176,12 @@ typedef struct httpd_config {
     uint32_t    task_caps;          /*!< The memory capabilities to use when allocating the HTTP server task's stack */
 
     /**
-     * Size limits for the header and URI buffers respectively. These are just limits, actually allocation would be depend upon actual size of URI/header.
-     * These are set to the values defined in the Kconfig file.
+     * Size limits for the header and URI buffers respectively.
+     * These are just limits, allocation would depend upon actual size of URI/header.
      */
-    uint16_t hdr_buf_size_limit;    /*!< Size limit for the header buffer */
-    uint16_t uri_buf_size_limit;    /*!< Size limit for the URI buffer */
+    size_t max_req_hdr_len;    /*!< Size limit for the header buffer (By default this value is set to CONFIG_HTTPD_MAX_REQ_HDR_LEN, overwrite is possible) */
+    size_t max_uri_len;    /*!< Size limit for the URI buffer By default this value is set to CONFIG_HTTPD_MAX_URI_LEN, overwrite is possible) */
+
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
      */
@@ -366,19 +367,13 @@ esp_err_t httpd_stop(httpd_handle_t handle);
  * @{
  */
 
-/* Max supported HTTP request header length */
-#define HTTPD_MAX_REQ_HDR_LEN CONFIG_HTTPD_MAX_REQ_HDR_LEN
-
-/* Max supported HTTP request URI length */
-#define HTTPD_MAX_URI_LEN CONFIG_HTTPD_MAX_URI_LEN
-
 /**
  * @brief HTTP Request Data Structure
  */
 typedef struct httpd_req {
     httpd_handle_t  handle;                     /*!< Handle to server instance */
     int             method;                     /*!< The type of HTTP request, -1 if unsupported method, HTTP_ANY for wildcard method to support every method */
-    const char      uri[HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
+    const char      uri[CONFIG_HTTPD_MAX_URI_LEN + 1]; /*!< The URI of this request (1 byte extra for null termination) */
     size_t          content_len;                /*!< Length of the request body */
     void           *aux;                        /*!< Internally used members */
 
@@ -619,10 +614,10 @@ typedef enum {
     /* Incoming payload is too large */
     HTTPD_413_CONTENT_TOO_LARGE,
 
-    /* URI length greater than CONFIG_HTTPD_MAX_URI_LEN */
+    /* URI length greater than CONFIG_CONFIG_HTTPD_MAX_URI_LEN */
     HTTPD_414_URI_TOO_LONG,
 
-    /* Headers section larger than CONFIG_HTTPD_MAX_REQ_HDR_LEN */
+    /* Headers section larger than CONFIG_CONFIG_HTTPD_MAX_REQ_HDR_LEN */
     HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE,
 
     /* Used internally for retrieving the total count of errors */

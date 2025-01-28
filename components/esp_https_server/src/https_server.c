@@ -377,7 +377,7 @@ exit:
 }
 
 /** Start the server */
-esp_err_t  httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *config)
+esp_err_t httpd_ssl_start(httpd_handle_t *pHandle, struct httpd_ssl_config *config)
 {
     assert(config != NULL);
     assert(pHandle != NULL);
