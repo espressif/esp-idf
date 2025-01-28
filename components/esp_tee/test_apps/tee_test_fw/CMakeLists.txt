@@ -5,6 +5,5 @@ include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
 # For registering the test-specific and attestation secure services
 include(${CMAKE_CURRENT_LIST_DIR}/components/test_sec_srv/test_tee_project.cmake)
-include($ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake)
 
 project(esp_tee_test)

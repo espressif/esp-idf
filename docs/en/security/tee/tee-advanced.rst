@@ -286,31 +286,43 @@ To extend the ESP-TEE framework with custom service calls, follow the steps outl
 1. Create a Custom Service Call Table
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Define a component for defining custom service calls and create a ``.tbl`` file within the component.
+Define a component for defining custom service calls and create a ``.yml`` file within the component.
 
 .. code-block:: bash
 
-   touch <path/to/tbl/file>/custom_srvcall.tbl
+   touch <path/to/yml/file>/custom_srvcall.yml
 
-Add your custom service call entries to the ``.tbl`` file in the following format:
+Add your custom service call entries to the ``.yml`` file in the following format:
 
-.. code-block:: none
+.. code-block:: yaml
 
-  <service_call_number>    custom    <function_name>    <arguments_count>
+  secure_services:
+  - family: <api_family>
+    entries:
+      - id: <service_call_number>
+        type: custom
+        function: <function_name>
+        args: <arguments_count>
 
 **Example Entry**
 
-.. code-block:: none
+.. code-block:: yaml
 
-  # SS no.    API type    Function              Args
-  201         custom      custom_sec_srv_op    1
+  secure_services:
+    - family: example
+      entries:
+        - id: 300
+          type: custom
+          function: example_sec_serv_aes_op
+          args: 5
 
-- ``201``: Unique service call number
+
+- ``300``: Unique service call number
 - ``custom``: Custom service call type
-- ``custom_sec_srv_op``: Function name
-- ``1``: Number of arguments
+- ``example_sec_serv_aes_op``: Function name
+- ``5``: Number of arguments
 
-Ensure that the custom service call numbers does not conflict with the :component_file:`default service call table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/secure_service.tbl>`. The ESP-TEE framework parses the custom service call table along with the default table to generate relevant header files used in applications.
+Ensure that the custom service call numbers does not conflict with the :component_file:`default service call table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/sec_srv_tbl_default.yml>`. The ESP-TEE framework parses the custom service call table along with the default table to generate relevant header files used in applications.
 
 2. Define the Service Call Implementation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -327,7 +339,7 @@ Define the function corresponding to the custom service call in the TEE. This fu
        return 0;
    }
 
-The function name should have the prefix ``_ss_`` before the name and must match the name specified in the ``.tbl`` file.
+The function name should have the prefix ``_ss_`` before the name and must match the name specified in the ``.yml`` file.
 
 For reference, all default service call functions are defined in the :component_file:`file<esp_tee/subproject/main/core/esp_secure_services.c>`.
 
@@ -342,7 +354,7 @@ Define a CMake file (e.g., ``custom_sec_srv.cmake``) in the component that defin
 
    .. code-block:: cmake
 
-     idf_build_set_property(CUSTOM_SECURE_SERVICE_TBL ${CMAKE_CURRENT_LIST_DIR}/custom_srvcall.tbl APPEND)
+     idf_build_set_property(CUSTOM_SECURE_SERVICE_YAML ${CMAKE_CURRENT_LIST_DIR}/custom_srvcall.yml APPEND)
 
 #. Set the custom component directory and name so that the ``esp_tee`` subproject can use it
 

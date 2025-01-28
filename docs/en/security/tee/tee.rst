@@ -120,7 +120,7 @@ All features that the TEE exposes to the REE are implemented as secure services.
 
   Since multitasking is not currently supported in the TEE, secure service calls are serialized, and subsequent calls remain pending until the current service completes.
 
-For {IDF_TARGET_NAME}, a list of secure services can be found at this :component_file:`table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/secure_service.tbl>`. Following are the types of secure services.
+For {IDF_TARGET_NAME}, a list of secure services can be found at this :component_file:`table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/sec_srv_tbl_default.yml>`. Following are the types of secure services.
 
 - **Core secure services**: Built-in services within the TEE firmware that provide routine functionalities to the REE, such as interrupt configuration and eFuse access.
 

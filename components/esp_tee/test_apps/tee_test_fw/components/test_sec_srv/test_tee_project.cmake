@@ -5,7 +5,7 @@ get_filename_component(directory "${CMAKE_CURRENT_LIST_DIR}/.." ABSOLUTE DIRECTO
 get_filename_component(name ${CMAKE_CURRENT_LIST_DIR} NAME)
 
 # Append secure service table consisting of secure services
-idf_build_set_property(CUSTOM_SECURE_SERVICE_TBL ${CMAKE_CURRENT_LIST_DIR}/test.tbl APPEND)
+idf_build_set_property(CUSTOM_SECURE_SERVICE_YAML ${CMAKE_CURRENT_LIST_DIR}/sec_srv_tbl_test.yml APPEND)
 
 # Append the directory of this component which is used by esp_tee component as
 # EXTRA_COMPONENT_DIRS

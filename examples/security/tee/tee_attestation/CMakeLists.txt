@@ -4,9 +4,6 @@ cmake_minimum_required(VERSION 3.16)
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
 
-# For registering the attestation secure service
-include($ENV{IDF_PATH}/components/esp_tee/subproject/components/tee_attestation/esp_tee_att.cmake)
-
 # "Trim" the build. Include the minimal set of components, main, and anything it depends on.
 idf_build_set_property(MINIMAL_BUILD ON)
 project(tee_attestation)
