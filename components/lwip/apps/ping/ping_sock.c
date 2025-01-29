@@ -26,33 +26,6 @@
 #include "ping/ping_sock.h"
 #include "esp_check.h"
 
-#ifndef CONFIG_LWIP_NETIF_API
-// If POSIX NETIF_API not enabled, we need to supply the implementation of if_indextoname()
-// using tcpip_api_call()
-#include "lwip/priv/tcpip_priv.h"
-
-struct tcpip_netif_name {
-    struct tcpip_api_call_data call;
-    u8_t ifindex;
-    char *ifname;
-};
-
-static err_t do_netif_index_to_name(struct tcpip_api_call_data *msg)
-{
-    struct tcpip_netif_name *params = __containerof(msg, struct tcpip_netif_name, call);
-    return netif_index_to_name(params->ifindex, params->ifname) ? ERR_OK : ERR_IF;
-}
-
-char *if_indextoname(unsigned int ifindex, char *ifname)
-{
-    struct tcpip_netif_name params = { .ifindex = ifindex, .ifname = ifname };
-    if (tcpip_api_call(do_netif_index_to_name, &params.call) != ERR_OK) {
-        return NULL;
-    }
-    return ifname;
-}
-#endif  // CONFIG_LWIP_NETIF_API == 0
-
 const static char *TAG = "ping_sock";
 
 #define PING_TIME_DIFF_MS(_end, _start) ((uint32_t)(((_end).tv_sec - (_start).tv_sec) * 1000 + \
