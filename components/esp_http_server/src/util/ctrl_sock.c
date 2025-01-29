@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,18 +41,21 @@ int cs_create_ctrl_sock(int port)
 
     int ret;
     struct sockaddr_storage addr = {};
+    socklen_t addr_len = 0;
 #if IPV4_ENABLED
     struct sockaddr_in *addr4 = (struct sockaddr_in *)&addr;
     addr4->sin_family = AF_INET;
     addr4->sin_port = htons(port);
     inet_aton("127.0.0.1", &addr4->sin_addr);
+    addr_len = sizeof(struct sockaddr_in);
 #else
     struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&addr;
     addr6->sin6_family = AF_INET6;
     addr6->sin6_port = htons(port);
     inet6_aton("::1", &addr6->sin6_addr);
+    addr_len = sizeof(struct sockaddr_in6);
 #endif
-    ret = bind(fd, (struct sockaddr *)&addr, sizeof(addr));
+    ret = bind(fd, (struct sockaddr *)&addr, addr_len);
     if (ret < 0) {
         close(fd);
         return -1;
@@ -69,18 +72,21 @@ int cs_send_to_ctrl_sock(int send_fd, int port, void *data, unsigned int data_le
 {
     int ret;
     struct sockaddr_storage to_addr = {};
+    socklen_t addr_len = 0;
 #if IPV4_ENABLED
     struct sockaddr_in *addr4 = (struct sockaddr_in *)&to_addr;
     addr4->sin_family = AF_INET;
     addr4->sin_port = htons(port);
     inet_aton("127.0.0.1", &addr4->sin_addr);
+    addr_len = sizeof(struct sockaddr_in);
 #else
     struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&to_addr;
     addr6->sin6_family = AF_INET6;
     addr6->sin6_port = htons(port);
     inet6_aton("::1", &addr6->sin6_addr);
+    addr_len = sizeof(struct sockaddr_in6);
 #endif
-    ret = sendto(send_fd, data, data_len, 0, (struct sockaddr *)&to_addr, sizeof(to_addr));
+    ret = sendto(send_fd, data, data_len, 0, (struct sockaddr *)&to_addr, addr_len);
 
     if (ret < 0) {
         return -1;
