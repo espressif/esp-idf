@@ -191,66 +191,87 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 	return nei_pos - nei_rep;
 }
 
-#ifdef CONFIG_SAE_PK
-static int ieee802_11_parse_vendor_specific(struct wpa_supplicant *wpa_s, const struct element *elem, const u8* pos)
+#ifdef CONFIG_WPA3_SAE
+static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
+					    struct ieee802_11_elems *elems,
+					    int show_errors)
 {
 	u32 oui;
+
+	/* first 3 bytes in vendor specific information element are the IEEE
+	 * OUI of the vendor. The following byte is used a vendor specific
+	 * sub-type. */
+	if (elen < 4) {
+		if (show_errors) {
+			wpa_printf(MSG_MSGDUMP, "short vendor specific "
+				   "information element ignored (len=%lu)",
+				   (unsigned long) elen);
+		}
+		return -1;
+	}
+
 	oui = WPA_GET_BE24(pos);
 	switch (oui) {
 	case OUI_WFA:
 		switch (pos[3]) {
+#ifdef CONFIG_SAE_PK
 		case SAE_PK_OUI_TYPE:
-			wpa_s->sae_pk_elems.sae_pk_len = elem->datalen - 4;
-			wpa_s->sae_pk_elems.sae_pk = (u8*)os_zalloc(sizeof(u8)*(elem->datalen-4));
-			if (!wpa_s->sae_pk_elems.sae_pk) {
-			    wpa_printf(MSG_EXCESSIVE, "Can not allocate memory for sae_pk");
-			    return -1;
-			}
-			os_memcpy(wpa_s->sae_pk_elems.sae_pk, pos+4, elem->datalen-4);
+			elems->sae_pk = pos + 4;
+			elems->sae_pk_len = elen - 4;
 			break;
+#endif /* CONFIG_SAE_PK */
 		default:
 			wpa_printf(MSG_EXCESSIVE, "Unknown WFA "
 				"information element ignored "
 				"(type=%d len=%lu)",
-				pos[3], (unsigned long) elem->datalen);
+				pos[3], (unsigned long) elen);
 			return -1;
 		}
 		break;
 	default:
-		 wpa_printf(MSG_EXCESSIVE, "unknown vendor specific "
+		wpa_printf(MSG_EXCESSIVE, "unknown vendor specific "
 			"information element ignored (vendor OUI "
 			"%02x:%02x:%02x len=%lu)",
-			pos[0], pos[1], pos[2], (unsigned long) elem->datalen);
+			pos[0], pos[1], pos[2], (unsigned long) elen);
 		return -1;
 	}
 
 	return 0;
 }
+#endif /* CONFIG_WPA3_SAE */
 
-static int ieee802_11_parse_extension(struct wpa_supplicant *wpa_s, const struct element *elem, const u8* pos){
-	// do not consider extension_id element len in datalen
-	if (elem->datalen < 1) {
+#ifdef CONFIG_SAE_PK
+static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
+				      struct ieee802_11_elems *elems,
+				      const u8 *start, size_t len,
+				      int show_errors)
+{
+	u8 ext_id;
+
+	if (elen < 1) {
 		wpa_printf(MSG_DEBUG,
 			"short information element (Ext)");
 		return -1;
 	}
-	u8 ext_id;
+
 	ext_id = *pos++;
+	elen--;
+
 	switch (ext_id) {
 	case WLAN_EID_EXT_FILS_KEY_CONFIRM:
-		wpa_s->sae_pk_elems.fils_key_confirm_len = elem->datalen - 1;
-		wpa_s->sae_pk_elems.fils_key_confirm = (u8*)os_zalloc(sizeof(u8)*(elem->datalen - 1));
-		os_memcpy(wpa_s->sae_pk_elems.fils_key_confirm, pos, elem->datalen - 1);
+		elems->fils_key_confirm = pos;
+		elems->fils_key_confirm_len = elen;
 		break;
 	case WLAN_EID_EXT_FILS_PUBLIC_KEY:
-		wpa_s->sae_pk_elems.fils_pk_len = elem->datalen - 1;
-		wpa_s->sae_pk_elems.fils_pk = (u8*)os_zalloc(sizeof(u8)*(elem->datalen - 1));
-		os_memcpy(wpa_s->sae_pk_elems.fils_pk, pos, elem->datalen - 1);
+		if (elen < 1)
+			break;
+		elems->fils_pk = pos;
+		elems->fils_pk_len = elen;
 		break;
 	default:
 		wpa_printf(MSG_EXCESSIVE,
 			"IEEE 802.11 element parsing ignored unknown element extension (ext_id=%u elen=%u)",
-		   ext_id, (unsigned int) elem->datalen-1);
+		   ext_id, (unsigned int) elen);
 		return -1;
 	}
 
@@ -258,49 +279,49 @@ static int ieee802_11_parse_extension(struct wpa_supplicant *wpa_s, const struct
 }
 #endif /* CONFIG_SAE_PK */
 
-/**
- * ieee802_11_parse_elems - Parse information elements in management frames
- * @start: Pointer to the start of IEs
- * @len: Length of IE buffer in octets
- * @elems: Data structure for parsed elements
- * @show_errors: Whether to show parsing errors in debug log
- * Returns: Parsing result
- */
-int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t len)
+static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
+					 struct ieee802_11_elems *elems,
+					 int show_errors)
 {
-#if defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined(CONFIG_SAE_PK)
+#if defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined(CONFIG_WPA3_SAE) || defined(CONFIG_SAE_PK)
 	const struct element *elem;
 	u8 unknown = 0;
 
 	if (!start)
-		return 0;
+		return ParseOK;
 
 	for_each_element(elem, start, len) {
-		u8 id = elem->id;
+		u8 id = elem->id, elen = elem->datalen;
 		const u8 *pos = elem->data;
 		switch (id) {
 #ifdef CONFIG_RRM
 		case WLAN_EID_RRM_ENABLED_CAPABILITIES:
-			os_memcpy(wpa_s->rrm_ie, pos, 5);
-			wpa_s->rrm.rrm_used = true;
+			elems->rrm_enabled = pos;
+			elems->rrm_enabled_len = elen;
 			break;
 #endif
 #ifdef CONFIG_SAE_PK
 		case WLAN_EID_EXTENSION:
-			if(ieee802_11_parse_extension(wpa_s, elem, pos) != 0){
-				unknown++;
-			}
-			break;
-		case WLAN_EID_VENDOR_SPECIFIC:
-			if(ieee802_11_parse_vendor_specific(wpa_s, elem, pos) != 0){
+			if (ieee802_11_parse_extension(pos, elen, elems, start,
+						       len, show_errors) != 0) {
 				unknown++;
 			}
 			break;
 #endif /*CONFIG_SAE_PK*/
+#ifdef CONFIG_WPA3_SAE
+		case WLAN_EID_VENDOR_SPECIFIC:
+			if (ieee802_11_parse_vendor_specific(pos, elen,
+							     elems,
+							     show_errors) != 0) {
+				unknown++;
+			}
+			break;
+#endif /* CONFIG_WPA3_SAE */
 #ifdef CONFIG_WNM
 		case WLAN_EID_EXT_CAPAB:
 			/* extended caps can go beyond 8 octacts but we aren't using them now */
-			os_memcpy(wpa_s->extend_caps, pos, 5);
+			elems->ext_capab = pos;
+			elems->ext_capab_len = elen;
 			break;
 #endif
 		default:
@@ -309,10 +330,24 @@ int ieee802_11_parse_elems(struct wpa_supplicant *wpa_s, const u8 *start, size_t
 		}
 	}
 	if (unknown)
-		return -1;
+		return ParseFailed;
 
-#endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined(CONFIG_SAE_PK) */
-	return 0;
+#endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) || defined (CONFIG_WPA3_SAE) ||defined(CONFIG_SAE_PK) */
+	return ParseOK;
+}
+/**
+ * ieee802_11_parse_elems - Parse information elements in management frames
+ * @start: Pointer to the start of IEs
+ * @len: Length of IE buffer in octets
+ * @elems: Data structure for parsed elements
+ * @show_errors: Whether to show parsing errors in debug log
+ * Returns: Parsing result
+ */
+ParseRes ieee802_11_parse_elems(const u8 *start, size_t len, struct ieee802_11_elems *elems, int show_errors)
+{
+	os_memset(elems, 0, sizeof(*elems));
+
+	return __ieee802_11_parse_elems(start, len, elems, show_errors);
 }
 
 struct wpabuf * ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,

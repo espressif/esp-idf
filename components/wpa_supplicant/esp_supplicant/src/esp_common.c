@@ -322,6 +322,8 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     u8 *ie;
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
     struct wpa_bss *bss = wpa_bss_get_bssid(wpa_s, bssid);
+    struct ieee802_11_elems elems;
+
     if (!bss) {
         wpa_printf(MSG_INFO, "connected bss entry not present in scan cache");
         return;
@@ -329,7 +331,11 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     wpa_s->current_bss = bss;
     ie = (u8 *)bss;
     ie += sizeof(struct wpa_bss);
-    ieee802_11_parse_elems(wpa_s, ie, bss->ie_len);
+    ieee802_11_parse_elems(ie, bss->ie_len, &elems, 0);
+    if (elems.rrm_enabled_len > 0 && elems.rrm_enabled != NULL) {
+        os_memcpy(wpa_s->rrm_ie, elems.rrm_enabled, 5); //TODO ask kapil about 5
+        wpa_s->rrm.rrm_used = true;
+    }
     wpa_bss_flush(wpa_s);
     /* Register for mgmt frames */
     register_mgmt_frames(wpa_s);
