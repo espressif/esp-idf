@@ -362,7 +362,7 @@ extern "C" {
  */
 #define LWIP_HOOK_DHCP_POST_INIT(netif, result) \
     (dhcp_ip_addr_restore(netif) ? ( dhcp_set_state(dhcp, DHCP_STATE_BOUND), \
-                                     dhcp_network_changed(netif), \
+                                     dhcp_network_changed_link_up(netif), \
                                      (result) = ERR_OK , \
         true ) : \
         false)
