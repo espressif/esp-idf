@@ -6,7 +6,6 @@ steps:
     cmds:
       - exec:
         cmd: 'idf.py --version'
-        timeout: 10
         output: esp_idf.ver
 
   - name: 'ESP-IDF Git Version'
@@ -14,16 +13,3 @@ steps:
       - exec:
         cmd: 'git -C ${IDF_PATH} describe'
         output: esp_idf_git.ver
-
-  - name: 'Platform Information'
-    cmds:
-      - exec:
-        cmd:
-          - python
-          - -c
-          - |
-            import platform
-            print(f'system: {platform.system()}')
-            print(f'release: {platform.release()}')
-            print(f'machine: {platform.machine()}')
-        output: platform.inf

@@ -1,0 +1,49 @@
+description: System information
+tags: [system, base, project]
+steps:
+  - name: 'Platform Information'
+    cmds:
+      - exec:
+        cmd:
+          - python
+          - -c
+          - |
+            import platform
+            print(f'system: {platform.system()}')
+            print(f'release: {platform.release()}')
+            print(f'machine: {platform.machine()}')
+        output: platform.inf
+
+  - name: 'Linux System Information'
+    system: Linux
+    output: linux
+    cmds:
+      - file:
+        path: '/proc/cpuinfo'
+      - file:
+        path: '/etc/os-release'
+      - exec:
+        cmd: 'uname -a'
+        output: uname
+
+  - name: 'Darwin Information'
+    system: Darwin
+    output: darwin
+    cmds:
+      - exec:
+        cmd: 'sysctl machdep.cpu'
+        output: machdep.cpu
+      - exec:
+        cmd: 'sw_vers'
+        output: sw_vers
+      - exec:
+        cmd: 'uname -a'
+        output: uname
+
+  - name: 'Windows Information'
+    system: Windows
+    output: windows
+    cmds:
+      - exec:
+        cmd: 'systeminfo'
+        output: systeminfo
