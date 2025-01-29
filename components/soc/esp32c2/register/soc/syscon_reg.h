@@ -503,6 +503,8 @@ en only when have access the rom have clock.*/
 #define SYSCON_RND_DATA_V  0xFFFFFFFF
 #define SYSCON_RND_DATA_S  0
 
+#define RNG_DATA_REG SYSCON_RND_DATA_REG
+
 #define SYSCON_PERI_BACKUP_CONFIG_REG          (DR_REG_SYSCON_BASE + 0xB4)
 /* SYSCON_PERI_BACKUP_ENA : R/W ;bitpos:[31] ;default: 1'b0 ; */
 /*description: reg_peri_backup_ena.*/
