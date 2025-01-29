@@ -1,14 +1,23 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import subprocess
 import sys
-from typing import Any, Dict, List, Optional, TextIO, Union
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
+from typing import TextIO
+from typing import Union
 
 import pexpect
-from panic_utils import NoGdbProcessError, attach_logger, quote_string, sha256, verify_valid_gdb_subprocess
+from panic_utils import attach_logger
+from panic_utils import NoGdbProcessError
+from panic_utils import quote_string
+from panic_utils import sha256
+from panic_utils import verify_valid_gdb_subprocess
 from pygdbmi.gdbcontroller import GdbController
 from pytest_embedded_idf.app import IdfApp
 from pytest_embedded_idf.dut import IdfDut
@@ -19,8 +28,11 @@ class PanicTestDut(IdfDut):
     BOOT_CMD_ADDR = 0x9000
     BOOT_CMD_SIZE = 0x1000
     DEFAULT_EXPECT_TIMEOUT = 10
-    COREDUMP_UART_START = '================= CORE DUMP START ================='
-    COREDUMP_UART_END = '================= CORE DUMP END ================='
+    COREDUMP_UART_START = r'================= CORE DUMP START ================='
+    COREDUMP_UART_END = r'================= CORE DUMP END ================='
+    COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
+    REBOOT = r'.*Rebooting\.\.\.'
+    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)\b'
 
     app: IdfApp
     serial: IdfSerial
@@ -95,7 +107,7 @@ class PanicTestDut(IdfDut):
 
     def expect_cpu_reset(self) -> None:
         # no digital system reset for panic handling restarts (see IDF-7255)
-        self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)')
+        self.expect(self.CPU_RESET)
 
     def expect_elf_sha256(self) -> None:
         """Expect method for ELF SHA256 line"""
@@ -145,11 +157,9 @@ class PanicTestDut(IdfDut):
         self.coredump_output.flush()
         self.coredump_output.seek(0)
 
-    def process_coredump_uart(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> None:
-        """Extract the core dump from UART output of the test, run espcoredump on it"""
-        self.expect(self.COREDUMP_UART_START)
-        res = self.expect('(.+)' + self.COREDUMP_UART_END)
-        coredump_base64 = res.group(1).decode('utf8')
+    def process_coredump_uart(
+        self, coredump_base64: Any, expected: Optional[List[Union[str, re.Pattern]]] = None,
+    ) -> None:
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
