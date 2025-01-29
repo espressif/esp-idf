@@ -54,6 +54,10 @@ list(APPEND srcs "${hal_dir}/apm_hal.c"
                  "${hal_dir}/brownout_hal.c"
                  "${hal_dir}/wdt_hal_iram.c")
 
+if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+    list(APPEND srcs "${hal_dir}/spi_flash_hal.c")
+endif()
+
 # TLSF implementation for heap
 list(APPEND include "${heap_dir}/include"
                     "${heap_dir}/tlsf"

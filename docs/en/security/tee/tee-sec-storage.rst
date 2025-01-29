@@ -69,10 +69,6 @@ All the assets pertaining to the TEE secure storage are protected by the APM per
 
 .. note::
 
-    Flash memory protection is currently not implemented - it will be added soon in the next revision of the ESP-TEE framework.
-
-.. note::
-
   - Currently, the TEE secure storage supports the storage of two types of cryptographic keys:
 
     #. ``ecdsa_secp256r1`` curve key-pairs, including the private and public key components

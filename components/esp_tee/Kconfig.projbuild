@@ -110,6 +110,35 @@ menu "ESP-TEE (Trusted Execution Environment)"
 
     endmenu
 
+    config SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+        bool "Memprot: Isolate TEE flash regions over SPI1"
+        depends on SECURE_ENABLE_TEE
+        default n
+        help
+            This configuration restricts access to TEE-reserved regions in external flash
+            by making them inaccessible to the REE via the SPI1 interface (physical addresses).
+
+            With this enabled, all SPI flash read, write, or erase operations over SPI1 will
+            be routed through service calls to the TEE, introducing additional performance
+            overhead.
+
+            When Flash Encryption (SECURE_FLASH_ENC_ENABLED) is enabled, the REE can still
+            access TEE-related flash partitions over SPI1, but read operations will return
+            encrypted data contents. This prevents attackers from inferring the TEE contents
+            with direct reads.
+
+            Additionally, with Secure Boot enabled (SECURE_BOOT_V2_ENABLED), any unauthorized
+            modifications to the TEE firmware will be detected during boot, causing signature
+            verification to fail. Thus, these options provide a level of protection suitable for
+            most applications. However, while the TEE firmware integrity is protected, other TEE
+            partitions (Secure Storage, TEE OTA data) can be manipulated through direct writes.
+
+            Enable this option only when complete isolation of all TEE flash regions is required,
+            even with the associated performance tradeoffs.
+
+            Note: All accesses to the TEE partitions over SPI0 (i.e. the MMU) are blocked
+            unconditionally.
+
     config SECURE_TEE_DEBUG_MODE
         bool "Enable Debug Mode"
         default y

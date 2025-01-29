@@ -94,6 +94,10 @@ if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
     # Default secure service API families: flash_protection_spi0, flash_protection_spi1,
     # interrupt_handling, hal, crypto, efuse, secure_storage, ota, attestation
     set(exclude_srv)
+    if(NOT CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+        list(APPEND exclude_srv "flash_protection_spi1")
+    endif()
+
     if(NOT CONFIG_SECURE_TEE_ATTESTATION)
         list(APPEND exclude_srv "attestation")
     endif()

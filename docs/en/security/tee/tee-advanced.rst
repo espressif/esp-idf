@@ -100,10 +100,6 @@ External Memory (Flash)
 
 Designated partitions in the external flash are reserved for the TEE, serving various purposes, including TEE code execution via XIP, secure storage, and OTA data. The PMS safeguards these partitions from unauthorized access, with the APM module protecting the MMU and SPI1 controller registers, and the PMP securing the cache.
 
-.. note::
-
-    Flash memory protection is under development and will be introduced in the next revision of ESP-TEE.
-
 .. figure:: ../../../_static/esp_tee/{IDF_TARGET_PATH_NAME}/esp_tee_flash_layout.png
     :align: center
     :scale: 80%
@@ -111,6 +107,53 @@ Designated partitions in the external flash are reserved for the TEE, serving va
     :figclass: align-center
 
     ESP-TEE: Flash Memory Map for {IDF_TARGET_NAME}
+
+.. _tee-flash-prot-scope:
+
+**Flash Protection - Virtual and Physical Access**
+
+The key interfaces for flash memory protection are the cache connected to SPI0, which provides virtual access to flash memory, and the SPI1 controller, which provides physical access. By default, the cache and the MMU registers are secured by the PMS, preventing virtual access to the TEE-related flash partitions from the REE.
+
+When :doc:`Flash Encryption <../flash-encryption>` is enabled, the REE can still access TEE flash regions via SPI1, but read operations will return encrypted data. Since neither the REE nor TEE has direct access to the flash encryption key, this prevents attackers from inferring TEE contents through direct reads.
+
+Additionally with :ref:`Secure Boot <secure_boot-guide>` enabled, any unauthorized modifications to the TEE firmware will be detected during boot, causing signature verification to fail. Thus, the combination of Flash Encryption and Secure Boot provides a robust level of protection suitable for most applications.
+However, do note that while the TEE firmware integrity is protected, other TEE partitions (e.g., :doc:`Secure Storage <tee-sec-storage>`, :ref:`TEE OTA data <tee-ota-data-partition>`) can be modified through direct writes.
+
+For stronger isolation, you can enable :ref:`CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1`, which completely blocks access to all TEE flash regions via SPI1 for the REE. With this setting, all SPI flash read, write, and erase operations are routed through service calls to the TEE. While this option provides enhanced security, it introduces some performance overhead.
+
+The table below shows the rough time taken to read and write to a 1MB partition in 256B chunks with :doc:`../../api-reference/storage/partition`, highlighting the impact of ESP-TEE and the :ref:`CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1` configuration.
+
+.. list-table:: Flash Protection: Performance Impact
+   :header-rows: 1
+
+   * - Case
+     - Read (ms)
+     - Read Δ (ms)
+     - Read Δ (%)
+     - Write (ms)
+     - Write Δ (ms)
+     - Write Δ (%)
+   * - ESP-TEE disabled
+     - 262.01
+     - -
+     - -
+     - 3394.23
+     - -
+     - -
+   * - ESP-TEE enabled
+     - 279.86
+     - +17.85
+     - +6.81%
+     - 3415.64
+     - +21.41
+     - +0.63%
+   * - ESP-TEE + SPI1 protected
+     - 359.73
+     - +97.72
+     - +37.33%
+     - 3778.65
+     - +384.42
+     - +11.32%
 
 Peripherals
 ~~~~~~~~~~~

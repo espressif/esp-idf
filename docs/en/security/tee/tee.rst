@@ -71,10 +71,6 @@ Memory Allocation
 
 ESP-TEE divides the memory into separate regions for the TEE and REE, allocating part of the internal SRAM and external flash memory to the TEE. This separation safeguards sensitive data and operations within the TEE, preventing unauthorized access from the REE.
 
-.. note::
-
-    Flash memory protection is under development and will be introduced in the next revision of ESP-TEE.
-
 .. _tee-internal-memory:
 
 Internal Memory (SRAM)
@@ -105,9 +101,13 @@ Example partition table is given below: ::
   nvs,            data, nvs,         0x150000, 24K,
   phy_init,       data, phy,         0x156000, 4K,
 
-.. note::
+.. important::
 
   The partition following the last TEE-related partition must be aligned to the configured MMU page size. This alignment is required to prevent secure boot verification failures when validating the user application (REE) image.
+
+.. note::
+
+  For more details on the default policy and scope of flash memory protection with ESP-TEE, refer to the :ref:`Flash Protection - Virtual and Physical Access <tee-flash-prot-scope>` section from the advanced guide.
 
 .. _tee-secure-services:
 

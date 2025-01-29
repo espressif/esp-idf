@@ -24,6 +24,77 @@ secure_services:
         type: IDF
         function: mmu_hal_paddr_to_vaddr
         args: 5
+  # ID: 5-21 (17) - External memory (Flash) protection [SPI1]
+  - family: flash_protection_spi1
+    entries:
+      - id: 5
+        type: IDF
+        function: spi_flash_hal_check_status
+        args: 1
+      - id: 6
+        type: IDF
+        function: spi_flash_hal_common_command
+        args: 2
+      - id: 7
+        type: IDF
+        function: spi_flash_hal_device_config
+        args: 1
+      - id: 8
+        type: IDF
+        function: spi_flash_hal_erase_block
+        args: 2
+      - id: 9
+        type: IDF
+        function: spi_flash_hal_erase_chip
+        args: 1
+      - id: 10
+        type: IDF
+        function: spi_flash_hal_erase_sector
+        args: 2
+      - id: 11
+        type: IDF
+        function: spi_flash_hal_program_page
+        args: 4
+      - id: 12
+        type: IDF
+        function: spi_flash_hal_read
+        args: 4
+      - id: 13
+        type: IDF
+        function: spi_flash_hal_resume
+        args: 1
+      - id: 14
+        type: IDF
+        function: spi_flash_hal_set_write_protect
+        args: 2
+      - id: 15
+        type: IDF
+        function: spi_flash_hal_setup_read_suspend
+        args: 2
+      - id: 16
+        type: IDF
+        function: spi_flash_hal_supports_direct_read
+        args: 2
+      - id: 17
+        type: IDF
+        function: spi_flash_hal_supports_direct_write
+        args: 2
+      - id: 18
+        type: IDF
+        function: spi_flash_hal_suspend
+        args: 1
+      - id: 19
+        type: IDF
+        function: bootloader_flash_execute_command_common
+        args: 7
+      - id: 20
+        type: IDF
+        function: memspi_host_flush_cache
+        args: 3
+      - id: 21
+        type: IDF
+        function: spi_flash_chip_generic_config_host_io_mode
+        args: 2
   # ID: 30-53 (24) - Interrupt Handling
   - family: interrupt_handling
     entries:
