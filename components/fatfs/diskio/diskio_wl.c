@@ -33,7 +33,7 @@ DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_read - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     esp_err_t err = wl_read(wl_handle, sector * wl_sector_size(wl_handle), buff, count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_read failed (0x%x)", err);
@@ -46,7 +46,7 @@ DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_write - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     esp_err_t err = wl_erase_range(wl_handle, sector * wl_sector_size(wl_handle), count * wl_sector_size(wl_handle));
     if (unlikely(err != ESP_OK)) {
         ESP_LOGE(TAG, "wl_erase_range failed (0x%x)", err);
@@ -64,7 +64,7 @@ DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 {
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
     ESP_LOGV(TAG, "ff_wl_ioctl: cmd=%i", cmd);
-    assert(wl_handle + 1);
+    assert(wl_handle != WL_INVALID_HANDLE);
     switch (cmd) {
     case CTRL_SYNC:
         return RES_OK;
