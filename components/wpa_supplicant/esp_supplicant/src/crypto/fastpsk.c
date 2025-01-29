@@ -55,8 +55,14 @@
 #include "fastpsk.h"
 
 #include <string.h>
-#include <sha/sha_dma.h>
-#include <hal/sha_hal.h>
+#include "soc/soc_caps.h"
+
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+#include "sha/sha_parallel_engine.h"
+#else
+#include "sha/sha_core.h"
+#endif
+#include "esp_log.h"
 
 #ifndef PUT_UINT32_BE
 #define PUT_UINT32_BE(n, b, i)                          \
@@ -96,13 +102,21 @@ struct fast_psk_context {
 /* Acquire SHA1 hardware for exclusive use */
 static inline void sha1_setup(void)
 {
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+    esp_sha_lock_engine(SHA1);
+#else
     esp_sha_acquire_hardware();
+#endif
 }
 
 /* Release SHA1 hardware */
 static inline void sha1_teardown(void)
 {
+#if SOC_SHA_SUPPORT_PARALLEL_ENG
+    esp_sha_unlock_engine(SHA1);
+#else
     esp_sha_release_hardware();
+#endif
 }
 
 /*
@@ -130,14 +144,34 @@ static void pad_blocks(union hmac_block *ctx, size_t len)
  * Performs SHA1 hash operation on two consecutive blocks.
  * Input: blocks array (two blocks of 64 bytes each), output (20-byte digest).
  */
+#if CONFIG_IDF_TARGET_ESP32
+static inline void write32_be(uint32_t n, uint8_t out[4])
+{
+#if defined(__GNUC__) && __GNUC__ >= 4 && __BYTE_ORDER == __LITTLE_ENDIAN
+    *(uint32_t *)(out) = __builtin_bswap32(n);
+#else
+    out[0] = (n >> 24) & 0xff;
+    out[1] = (n >> 16) & 0xff;
+    out[2] = (n >> 8) & 0xff;
+    out[3] = n & 0xff;
+#endif
+}
+#endif /* CONFIG_IDF_TARGET_ESP32 */
+
 void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
 {
     /* First block */
-    sha_hal_hash_block(SHA1, blocks, SHA1_BLOCK_SZ_WORDS, true);
+    esp_sha_block(SHA1, blocks, true);
     /* Second block */
-    sha_hal_hash_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], SHA1_BLOCK_SZ_WORDS, false);
+    esp_sha_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], false);
     /* Read the final digest */
-    sha_hal_read_digest(SHA1, output);
+    esp_sha_read_digest_state(SHA1, output);
+
+#if CONFIG_IDF_TARGET_ESP32
+    for (int i = 0; i < SHA1_OUTPUT_SZ_WORDS; i++) {
+        write32_be(output[i], ((uint8_t*) output) + i * 4);
+    }
+#endif /* CONFIG_IDF_TARGET_ESP32 */
 }
 
 /*
