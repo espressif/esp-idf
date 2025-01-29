@@ -116,8 +116,6 @@ def log(level: int, msg: str, prefix: str) -> None:
     else:
         log_prefix = ''
 
-    msg = textwrap.indent(msg, prefix=log_prefix)
-
     if LOG_FILE:
         try:
             log_msg = textwrap.indent(msg, prefix=f'{prefix} ')
@@ -130,6 +128,8 @@ def log(level: int, msg: str, prefix: str) -> None:
 
     if level > LOG_LEVEL:
         return
+
+    msg = textwrap.indent(msg, prefix=log_prefix)
 
     if not LOG_COLORS or level not in (LOG_FATAL, LOG_ERROR, LOG_WARNING):
         print(msg, file=sys.stderr)
@@ -257,11 +257,8 @@ def diff_dirs(dir1: Path, dir2: Path) -> None:
                 dbg(line.strip())
 
 
-def redact_files(dir1: Path, dir2: Path) -> None:
+def redact_files(dir1: Path, dir2: Path, purge: list) -> None:
     """Show differences in files between two directories."""
-    purge_path = Path(__file__).parent / 'diag' / 'purge.yml'
-    with open(purge_path, 'r') as f:
-        purge = yaml.safe_load(f.read())
 
     regexes: List = []
     for entry in purge:
@@ -486,6 +483,47 @@ def validate_recipe(recipe: Dict) -> None:
 
             else:
                 raise RuntimeError(f'Unknown command "{cmd}" in step "{step_name}"')
+
+
+def validate_purge(purge: Any) -> None:
+    """Validate the loaded purge file. This is done manually to avoid any
+    dependencies and to provide more informative error messages.
+    """
+
+    if type(purge) is not list:
+        raise RuntimeError(f'Purge is not of type "list"')
+
+    regex_keys = ['regex', 'repl']
+
+    for entry in purge:
+        if type(entry) is not dict:
+            raise RuntimeError(f'Purge entry "{entry}" is not of type "dict"')
+
+        if 'regex' in entry:
+            for key in entry:
+                if key not in regex_keys:
+                    raise RuntimeError((f'Unknown purge key "{key}" in "{entry}", '
+                                        f'expecting "{regex_keys}"'))
+
+            regex = entry.get('regex')
+            repl = entry.get('repl')
+
+            # Required arguments
+            if type(regex) is not str:
+                raise RuntimeError(f'Argument "regex" for purge entry "{entry}" is not of type "str"')
+            try:
+                re.compile(regex)
+            except re.error as e:
+                raise RuntimeError((f'Argument "regex" for purge entry "{entry}" is not '
+                                    f'a valid regular expression: {e}'))
+
+            if not repl:
+                raise RuntimeError(f'Purge entry "{entry}" is missing "repl" argument')
+            if type(repl) is not str:
+                raise RuntimeError(f'Argument "repl" for purge entry "{entry}" is not of type "str"')
+
+        else:
+            raise RuntimeError(f'Unknown purge entry "{entry}"')
 
 
 def get_output_path(src: Optional[str],
@@ -934,6 +972,7 @@ def create(action: str,
            check_recipes: bool,
            cmdl_recipes: Tuple,
            cmdl_tags: Tuple,
+           purge_file: str,
            append: bool,
            output: Optional[str]) -> None:
 
@@ -1032,11 +1071,25 @@ def create(action: str,
     except Exception:
         die(f'File "{recipe_file}" is not a valid diagnostic file')
 
+    # Load purge file
+    dbg(f'Purge file: {purge_file}')
+    try:
+        with open(purge_file, 'r') as f:
+            purge = yaml.safe_load(f.read())
+    except Exception:
+        die(f'Cannot load purge file "{purge_file}"')
+
+    # Validate purge file
+    try:
+        validate_purge(purge)
+    except Exception:
+        die(f'File "{purge_file}" is not a valid purge file')
+
     # Cook recipes
     try:
         for recipe_file, recipe in recipes.items():
             desc = recipe.get('description')
-            dbg(f'Processing recipe "{desc} "file "{recipe_file}"')
+            dbg(f'Processing recipe "{desc}" file "{recipe_file}"')
             print(f'{desc}')
             process_recipe(recipe)
     except Exception:
@@ -1050,9 +1103,9 @@ def create(action: str,
         LOG_FILE = None
 
     try:
-        redact_files(TMP_DIR_REPORT_PATH, TMP_DIR_REPORT_REDACTED_PATH)
+        redact_files(TMP_DIR_REPORT_PATH, TMP_DIR_REPORT_REDACTED_PATH, purge)
     except Exception:
-        err(f'The redaction was unsuccessful.')
+        err(f'The redaction was unsuccessful')
 
     try:
         shutil.move(TMP_DIR_REPORT_REDACTED_PATH, output_dir_path)
@@ -1141,6 +1194,15 @@ def action_extensions(base_actions: Dict, project_path: str) -> Any:
                                  'If not specified, the report-UUID is used as the report directory, '
                                  'and the report directory specified with the --zip option with a zip '
                                  'extension is used for the zip file archive.')
+                    },
+                    {
+                        'names': ['-p', '--purge', 'purge_file'],
+                        'metavar': 'PATH',
+                        'type': str,
+                        'default': str(Path(__file__).parent / 'diag' / 'purge' / 'purge.yml'),
+                        'help': ('Purge file PATH containing a description of what information '
+                                 'should be redacted from the resulting report. '
+                                 'Default is "tools/idf_py_actions/diag/purge/purge.yml"')
                     },
                 ],
             },
