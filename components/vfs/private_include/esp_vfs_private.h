@@ -21,11 +21,11 @@ extern "C" {
 
 typedef struct vfs_entry_ {
     int flags;                   /*!< ESP_VFS_FLAG_CONTEXT_PTR and/or ESP_VFS_FLAG_READONLY_FS or ESP_VFS_FLAG_DEFAULT */
-    const esp_vfs_fs_ops_t *vfs; // contains pointers to VFS functions
-    void *ctx;                   // optional pointer which can be passed to VFS
-    int offset;                  // index of this structure in s_vfs array
-    size_t path_prefix_len;      // micro-optimization to avoid doing extra strlen
-    const char path_prefix[] __attribute__ ((counted_by (path_prefix_len)));    // path prefix mapped to this VFS
+    const esp_vfs_fs_ops_t *vfs; /*!< contains pointers to VFS functions */
+    void *ctx;                   /*!< optional pointer which can be passed to VFS */
+    int offset;                  /*!< index of this structure in s_vfs array */
+    size_t path_prefix_len;      /*!< micro-optimization to avoid doing extra strlen, contains length of the string, not the size of path_prefix array */
+    const char path_prefix[]; /*!< path prefix mapped to this VFS */
 } vfs_entry_t;
 
 /**
