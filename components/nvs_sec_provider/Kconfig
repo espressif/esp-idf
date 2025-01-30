@@ -32,8 +32,8 @@ menu "NVS Security Provider"
     config NVS_SEC_HMAC_EFUSE_KEY_ID
         int "eFuse key ID storing the HMAC key"
         depends on NVS_SEC_KEY_PROTECT_USING_HMAC
-        range 0 6
-        default 6
+        range -1 5
+        default -1
         help
             eFuse block key ID storing the HMAC key for deriving the NVS encryption keys
 

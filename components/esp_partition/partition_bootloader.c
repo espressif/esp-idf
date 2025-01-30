@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -46,9 +46,9 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_p
 
         // if everything matches, populate the internal_partition
         if (partition->type == type
-                && partition->subtype == subtype
-                && strncmp((char*) partition->label, label, sizeof(partition->label) - 1) == 0) {
-
+            && partition->subtype == subtype
+            && (!label || (label && (strncmp((char*) partition->label, label, sizeof(partition->label) - 1) == 0)))
+        ) {
             ESP_LOGV(TAG, "Matched", partition->type, partition->subtype, partition->label);
             internal_partition.flash_chip = NULL; //esp_flash_default_chip;
             internal_partition.type = partition->type;
@@ -74,6 +74,18 @@ const esp_partition_t* esp_partition_find_first(esp_partition_type_t type, esp_p
 esp_err_t esp_partition_read(const esp_partition_t *partition,
                              size_t src_offset, void *dst, size_t size)
 {
+    assert(partition != NULL);
+    if (src_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (size > partition->size - src_offset) {
+        return ESP_ERR_INVALID_SIZE;
+    }
+
+    if (!partition->encrypted) {
+        return bootloader_flash_read(partition->address + src_offset, dst, size, false);
+    }
+
     const void *buf;
 
     // log call to mmap

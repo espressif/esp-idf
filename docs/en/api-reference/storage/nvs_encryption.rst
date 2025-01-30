@@ -121,7 +121,7 @@ It is possible for an application to use different keys for different NVS partit
 
     .. note::
 
-        The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``6`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY_MAX`), which have to be configured before building the user application.
+        The valid range for the config :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` is from ``0`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY0`) to ``5`` (:cpp:enumerator:`hmac_key_id_t::HMAC_KEY5`). By default, the config is set to ``-1``, which have to be configured before building the user application.
 
     - If no key is found, a key is generated internally and stored at the eFuse block specified at :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID`.
     - If a key is found with the purpose :cpp:enumerator:`esp_efuse_purpose_t::ESP_EFUSE_KEY_PURPOSE_HMAC_UP`, the same is used for the derivation of the XTS encryption keys.

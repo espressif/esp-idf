@@ -1,10 +1,14 @@
 if(BOOTLOADER_BUILD)
     # bootloader build simplified version
-    set(srcs "src/nvs_bootloader.c")
+    set(srcs "src/nvs_bootloader.c"
+             "src/nvs_bootloader_aes.c"
+             "src/nvs_bootloader_xts_aes.c")
+
     set(requires "esp_partition")
 
     idf_component_register(SRCS "${srcs}"
                         REQUIRES "${requires}"
+                        PRIV_REQUIRES "mbedtls"
                         INCLUDE_DIRS "include"
                         PRIV_INCLUDE_DIRS "private_include"
     )
@@ -52,7 +56,9 @@ else()
         target_compile_options(${COMPONENT_LIB} PUBLIC --coverage)
         target_link_libraries(${COMPONENT_LIB} PUBLIC --coverage)
     else()
-        target_sources(${COMPONENT_LIB} PRIVATE "src/nvs_encrypted_partition.cpp")
+        target_sources(${COMPONENT_LIB} PRIVATE "src/nvs_encrypted_partition.cpp"
+                                                "src/nvs_bootloader_aes.c"
+                                                "src/nvs_bootloader_xts_aes.c")
         target_link_libraries(${COMPONENT_LIB} PRIVATE idf::mbedtls)
     endif()
 

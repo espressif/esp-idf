@@ -1212,6 +1212,17 @@ menu "mbedTLS"
             Disabling this config can save some code/rodata size as the error
             string conversion implementation is replaced with an empty stub.
 
+    config MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER
+        bool "Use ROM implementation of the crypto algorithm in the bootloader"
+        depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
+        default "n"
+        select MBEDTLS_AES_C
+        help
+            Enable this flag to use mbedtls crypto algorithm from ROM instead of ESP-IDF
+            in case of a bootloader build.
+            Similar to the MBEDTLS_USE_CRYPTO_ROM_IMPL config but enables usage of the
+            mbedtls crypto algorithm from ROM for the bootloader build.
+
     config MBEDTLS_USE_CRYPTO_ROM_IMPL
         bool "Use ROM implementation of the crypto algorithm"
         depends on ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB
