@@ -112,7 +112,8 @@ static esp_err_t cb_url(http_parser *parser,
                         const char *at, size_t length)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
-
+    httpd_req_t          *req   = parser_data->req;
+    struct httpd_req_aux *raux  = req->aux;
     if (parser_data->status == PARSING_IDLE) {
         ESP_LOGD(TAG, LOG_FMT("message begin"));
 
@@ -130,9 +131,9 @@ static esp_err_t cb_url(http_parser *parser,
     ESP_LOGD(TAG, LOG_FMT("processing url = %.*s"), (int)length, at);
 
     /* Update length of URL string */
-    if ((parser_data->last.length += length) > HTTPD_MAX_URI_LEN) {
+    if ((parser_data->last.length += length) > raux->uri_buf_size_limit) {
         ESP_LOGW(TAG, LOG_FMT("URI length (%"NEWLIB_NANO_COMPAT_FORMAT") greater than supported (%d)"),
-                 NEWLIB_NANO_COMPAT_CAST(parser_data->last.length), HTTPD_MAX_URI_LEN);
+                 NEWLIB_NANO_COMPAT_CAST(parser_data->last.length), raux->uri_buf_size_limit);
         parser_data->error = HTTPD_414_URI_TOO_LONG;
         parser_data->status = PARSING_FAILED;
         return ESP_FAIL;
@@ -215,7 +216,7 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = ra->scratch;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_FIELD;
-
+        ra->scratch_size_limit = ra->hdr_buf_size_limit;
         /* Stop parsing for now and give control to process */
         if (pause_parsing(parser, at) != ESP_OK) {
             parser_data->error = HTTPD_500_INTERNAL_SERVER_ERROR;
@@ -232,6 +233,7 @@ static esp_err_t cb_header_field(http_parser *parser, const char *at, size_t len
         parser_data->last.at     = at;
         parser_data->last.length = 0;
         parser_data->status      = PARSING_HDR_FIELD;
+        ra->scratch_size_limit = ra->hdr_buf_size_limit;
 
         /* Increment header count */
         ra->req_hdrs_count++;
@@ -413,7 +415,6 @@ static esp_err_t cb_headers_complete(http_parser *parser)
 static esp_err_t cb_on_body(http_parser *parser, const char *at, size_t length)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
-
     /* Check previous status */
     if (parser_data->status != PARSING_BODY) {
         ESP_LOGE(TAG, LOG_FMT("unexpected state transition"));
@@ -445,7 +446,6 @@ static esp_err_t cb_on_body(http_parser *parser, const char *at, size_t length)
 static esp_err_t cb_no_body(http_parser *parser)
 {
     parser_data_t *parser_data = (parser_data_t *) parser->data;
-
     /* Check previous status */
     if (parser_data->status == PARSING_URL) {
         ESP_LOGD(TAG, LOG_FMT("no headers"));
@@ -485,11 +485,21 @@ static int read_block(httpd_req_t *req, size_t offset, size_t length)
     struct httpd_req_aux *raux  = req->aux;
 
     /* Limits the read to scratch buffer size */
-    ssize_t buf_len = MIN(length, (sizeof(raux->scratch) - offset));
+    ssize_t buf_len = MIN(length, (raux->scratch_size_limit - offset));
     if (buf_len <= 0) {
         return 0;
     }
-
+    if (raux->scratch == NULL && buf_len < raux->scratch_size_limit) {
+        raux->scratch = (char*) malloc(buf_len);
+    }
+    else if (raux->scratch != NULL && buf_len < raux->scratch_size_limit) {
+        raux->scratch = (char*) realloc(raux->scratch, raux->scratch_cur_size + buf_len);
+    }
+    if (raux->scratch == NULL) {
+        return 0;
+    }
+    raux->scratch_cur_size += buf_len;
+    ESP_LOGD(TAG, "scratch size = %d", raux->scratch_cur_size);
     /* Receive data into buffer. If data is pending (from unrecv) then return
      * immediately after receiving pending data, as pending data may just complete
      * this request packet. */
@@ -527,19 +537,20 @@ static int parse_block(http_parser *parser, size_t offset, size_t length)
     httpd_req_t          *req   = data->req;
     struct httpd_req_aux *raux  = req->aux;
     size_t nparsed = 0;
-
+    data->last.at = raux->scratch;
     if (!length) {
         /* Parsing is still happening but nothing to
          * parse means no more space left on buffer,
          * therefore it can be inferred that the
          * request URI/header must be too long */
-        ESP_LOGW(TAG, LOG_FMT("request URI/header too long"));
         switch (data->status) {
             case PARSING_URL:
+                ESP_LOGW(TAG, LOG_FMT("request URI too long"));
                 data->error = HTTPD_414_URI_TOO_LONG;
                 break;
             case PARSING_HDR_FIELD:
             case PARSING_HDR_VALUE:
+                ESP_LOGW(TAG, LOG_FMT("request header too long"));
                 data->error = HTTPD_431_REQ_HDR_FIELDS_TOO_LARGE;
                 break;
             default:
@@ -649,7 +660,6 @@ static esp_err_t httpd_parse_req(struct httpd_data *hd)
         /* This is used by the callbacks to track
          * data usage of the buffer */
         parser_data.raw_datalen = blk_len + offset;
-
         /* Parse data block from buffer */
         if ((offset = parse_block(&parser, offset, blk_len)) < 0) {
             /* HTTP error occurred.
@@ -679,13 +689,17 @@ static void init_req(httpd_req_t *r, httpd_config_t *config)
 static void init_req_aux(struct httpd_req_aux *ra, httpd_config_t *config)
 {
     ra->sd = 0;
-    memset(ra->scratch, 0, sizeof(ra->scratch));
     ra->remaining_len = 0;
     ra->status = 0;
     ra->content_type = 0;
     ra->first_chunk_sent = 0;
     ra->req_hdrs_count = 0;
     ra->resp_hdrs_count = 0;
+    ra->scratch = NULL;
+    ra->scratch_cur_size = 0;
+    ra->hdr_buf_size_limit = config->hdr_buf_size_limit;
+    ra->uri_buf_size_limit = config->uri_buf_size_limit;
+    ra->scratch_size_limit = ra->uri_buf_size_limit;
 #if CONFIG_HTTPD_WS_SUPPORT
     ra->ws_handshake_detect = false;
 #endif
@@ -716,6 +730,10 @@ static void httpd_req_cleanup(httpd_req_t *r)
 
     /* Clear out the request and request_aux structures */
     ra->sd = NULL;
+    free(ra->scratch);
+    ra->scratch = NULL;
+    ra->scratch_cur_size = 0;
+    ra->scratch_size_limit = 0;
     r->handle = NULL;
     r->aux = NULL;
     r->user_ctx = NULL;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,9 +34,6 @@ extern "C" {
  * that is received and parsed in one turn of the parsing process. This should not
  * exceed the scratch buffer size and should at least be 8 bytes */
 #define PARSER_BLOCK_SIZE  128
-
-/* Calculate the maximum size needed for the scratch buffer */
-#define HTTPD_SCRATCH_BUF  MAX(HTTPD_MAX_REQ_HDR_LEN, HTTPD_MAX_URI_LEN)
 
 /* Formats a log string to prepend context function name */
 #define LOG_FMT(x)      "%s: " x, __func__
@@ -88,7 +85,11 @@ struct sock_db {
  */
 struct httpd_req_aux {
     struct sock_db *sd;                             /*!< Pointer to socket database */
-    char            scratch[HTTPD_SCRATCH_BUF + 1]; /*!< Temporary buffer for our operations (1 byte extra for null termination) */
+    char           *scratch;                        /*!< Temporary buffer for our operations (1 byte extra for null termination) */
+    uint16_t        scratch_size_limit;             /*!< Scratch buffer size limit */
+    uint16_t        scratch_cur_size;               /*!< Scratch buffer cur size */
+    uint16_t        hdr_buf_size_limit;             /*!< Header buffer size limit */
+    uint16_t        uri_buf_size_limit;             /*!< URI buffer size limit */
     size_t          remaining_len;                  /*!< Amount of data remaining to be fetched */
     char           *status;                         /*!< HTTP response's status code */
     char           *content_type;                   /*!< HTTP response's content type */

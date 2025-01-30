@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -132,7 +132,6 @@ int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_aft
         }
         return ret;
     }
-
     ESP_LOGD(TAG, LOG_FMT("received length = %"NEWLIB_NANO_COMPAT_FORMAT), NEWLIB_NANO_COMPAT_CAST((ret + pending_len)));
     return ret + pending_len;
 }
@@ -243,16 +242,27 @@ esp_err_t httpd_resp_send(httpd_req_t *r, const char *buf, ssize_t buf_len)
     if (buf_len == HTTPD_RESP_USE_STRLEN) {
         buf_len = strlen(buf);
     }
-
+    size_t required_size = snprintf(NULL, 0, httpd_hdr_str, ra->status, ra->content_type, buf_len) + 1;
+    if (required_size >= HTTPD_MAX_REQ_HDR_LEN) {
+        return ESP_ERR_HTTPD_RESP_HDR;
+    }
+    if (ra->scratch == NULL)
+        ra->scratch = malloc(required_size);
+    else {
+        ra->scratch = realloc(ra->scratch, required_size);
+    }
+    if (ra->scratch == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate scratch buffer");
+        return ESP_ERR_HTTPD_ALLOC_MEM;
+    }
+    ra->scratch_cur_size = required_size;
+    ESP_LOGD(TAG, "scratch size = %d", ra->scratch_cur_size);
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
 
     /* Size of essential headers is limited by scratch buffer size */
-    if (snprintf(ra->scratch, sizeof(ra->scratch), httpd_hdr_str,
-                 ra->status, ra->content_type, buf_len) >= sizeof(ra->scratch)) {
-        return ESP_ERR_HTTPD_RESP_HDR;
-    }
-
+    snprintf(ra->scratch, ra->scratch_cur_size, httpd_hdr_str, ra->status, ra->content_type, buf_len);
+    ESP_LOG_BUFFER_HEXDUMP(TAG, ra->scratch, strlen(ra->scratch), ESP_LOG_INFO);
     /* Sending essential headers */
     if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {
         return ESP_ERR_HTTPD_RESP_SEND;
@@ -319,13 +329,24 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
 
     /* Request headers are no longer available */
     ra->req_hdrs_count = 0;
-
+    size_t required_size = snprintf(NULL, 0, httpd_chunked_hdr_str, ra->status, ra->content_type) + 1;
+    if (required_size >= HTTPD_MAX_REQ_HDR_LEN) {
+        return ESP_ERR_HTTPD_RESP_HDR;
+    }
+    if (ra->scratch == NULL)
+        ra->scratch = malloc(required_size);
+    else {
+        ra->scratch = realloc(ra->scratch, required_size);
+    }
+    if (ra->scratch == NULL) {
+        ESP_LOGE(TAG, "Unable to allocate scratch buffer");
+        return ESP_ERR_HTTPD_ALLOC_MEM;
+    }
+    ra->scratch_cur_size = required_size;
+    ESP_LOGD(TAG, "scratch size = %d", ra->scratch_cur_size);
     if (!ra->first_chunk_sent) {
         /* Size of essential headers is limited by scratch buffer size */
-        if (snprintf(ra->scratch, sizeof(ra->scratch), httpd_chunked_hdr_str,
-                     ra->status, ra->content_type) >= sizeof(ra->scratch)) {
-            return ESP_ERR_HTTPD_RESP_HDR;
-        }
+        snprintf(ra->scratch, ra->scratch_cur_size, httpd_chunked_hdr_str, ra->status, ra->content_type);
 
         /* Sending essential headers */
         if (httpd_send_all(r, ra->scratch, strlen(ra->scratch)) != ESP_OK) {

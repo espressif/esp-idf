@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,8 @@ initializer that should be kept in sync
 #define HTTPD_DEFAULT_CONFIG() {                        \
         .task_priority      = tskIDLE_PRIORITY+5,       \
         .stack_size         = 4096,                     \
+        .hdr_buf_size_limit = HTTPD_MAX_REQ_HDR_LEN,    \
+        .uri_buf_size_limit = HTTPD_MAX_URI_LEN,        \
         .core_id            = tskNO_AFFINITY,           \
         .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
         .server_port        = 80,                       \
@@ -173,6 +175,12 @@ typedef struct httpd_config {
     BaseType_t  core_id;            /*!< The core the HTTP server task will run on */
     uint32_t    task_caps;          /*!< The memory capabilities to use when allocating the HTTP server task's stack */
 
+    /**
+     * Size limits for the header and URI buffers respectively. These are just limits, actually allocation would be depend upon actual size of URI/header.
+     * These are set to the values defined in the Kconfig file.
+     */
+    uint16_t hdr_buf_size_limit;    /*!< Size limit for the header buffer */
+    uint16_t uri_buf_size_limit;    /*!< Size limit for the URI buffer */
     /**
      * TCP Port number for receiving and transmitting HTTP traffic
      */
