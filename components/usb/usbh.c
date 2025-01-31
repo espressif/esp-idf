@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -781,6 +781,14 @@ esp_err_t usbh_process(void)
 // -----------------------------------------------------------------------------
 // ------------------------- Device Pool Functions -----------------------------
 // -----------------------------------------------------------------------------
+bool usbh_devs_is_uid_in_use(uint32_t uid)
+{
+    bool uid_in_use;
+    USBH_ENTER_CRITICAL();
+    uid_in_use = (_find_dev_from_uid(uid) != NULL); // Check if UID exists
+    USBH_EXIT_CRITICAL();
+    return uid_in_use;
+}
 
 esp_err_t usbh_devs_num(int *num_devs_ret)
 {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,7 +28,6 @@ implement the bare minimum to control the root HCD port.
 */
 
 #define HUB_ROOT_PORT_NUM                           1  // HCD only supports one port
-#define HUB_ROOT_DEV_UID                            1  // Unique device ID
 
 #ifdef CONFIG_USB_HOST_HW_BUFFER_BIAS_IN
 #define HUB_ROOT_HCD_PORT_FIFO_BIAS                 HCD_PORT_FIFO_BIAS_RX
@@ -93,7 +92,6 @@ typedef struct {
 
     struct {
         TAILQ_HEAD(tailhead_devs, dev_tree_node_s) dev_nodes_tailq;     /**< Tailq of attached devices */
-        unsigned int next_uid;                      /**< Unique ID for next upcoming device */
     } single_thread;                                /**< Single thread members don't require a critical section so long as they are never accessed from multiple threads */
 
     struct {
@@ -153,53 +151,52 @@ static bool root_port_callback(hcd_port_handle_t port_hdl, hcd_port_event_t port
  *
  * @return esp_err_t
  */
-static esp_err_t new_dev_tree_node(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, usb_speed_t speed)
+static esp_err_t dev_tree_node_new(usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, usb_speed_t speed)
 {
     esp_err_t ret;
-    unsigned int node_uid = p_hub_driver_obj->single_thread.next_uid;
-
+    // Allocate memory for a new device tree node
     dev_tree_node_t *dev_tree_node = heap_caps_calloc(1, sizeof(dev_tree_node_t), MALLOC_CAP_DEFAULT);
     if (dev_tree_node == NULL) {
         return ESP_ERR_NO_MEM;
     }
+    // Assign initial UID based on the current number of registered devices
+    int device_num = 0;
+    ESP_ERROR_CHECK(usbh_devs_num(&device_num));
+    dev_tree_node->uid = device_num + 1;
+    // Ensure the UID is unique
+    while (usbh_devs_is_uid_in_use(dev_tree_node->uid)) {
+        dev_tree_node->uid++;
+        assert(dev_tree_node->uid != 0); // No overflow possible
+    }
 
-    // Allocate a new USBH device
+    dev_tree_node->parent_dev_hdl = parent_dev_hdl;
+    dev_tree_node->parent_port_num = parent_port_num;
+
+    // Initialize and register a new USBH Device with the assigned UID
     usbh_dev_params_t params = {
-        .uid = node_uid,
+        .uid = dev_tree_node->uid,
         .speed = speed,
         .root_port_hdl = p_hub_driver_obj->constant.root_port_hdl, // Always the same for all devices
-        // TODO: IDF-10023 Move responsibility of parent-child tree building to Hub Driver instead of USBH
+        // TODO: IDF-10023 Move parent-child tree management responsibility to Hub Driver
         .parent_dev_hdl = parent_dev_hdl,
         .parent_port_num = parent_port_num,
     };
 
     ret = usbh_devs_add(&params);
     if (ret != ESP_OK) {
-        // USBH devs add could failed due to lack of free hcd channels
-        // TODO: IDF-10044 Hub should recover after running out of hcd channels
+        // Device registration may fail if there are no available HCD channels.
+        // TODO: IDF-10044 Implement hub recovery mechanism for running out of HCD channels.
         goto fail;
     }
 
-    dev_tree_node->uid = node_uid;
-    dev_tree_node->parent_dev_hdl = parent_dev_hdl;
-    dev_tree_node->parent_port_num = parent_port_num;
     TAILQ_INSERT_TAIL(&p_hub_driver_obj->single_thread.dev_nodes_tailq, dev_tree_node, tailq_entry);
 
-    p_hub_driver_obj->single_thread.next_uid++;
-    if (p_hub_driver_obj->single_thread.next_uid == 0) {
-        ESP_LOGW(HUB_DRIVER_TAG, "Counter overflowed, possibility of uid collisions");
-        p_hub_driver_obj->single_thread.next_uid = HUB_ROOT_DEV_UID;
-    }
-    // Verify presence of a device with newly prepared uid in USBH
-    // TODO: IDF-10022 Provide a mechanism to request presence status of a device with uid in USBH device object list
-    // Return if device uid is not in USBH device object list, repeat until uid will be founded
-
-    ESP_LOGD(HUB_DRIVER_TAG, "Device tree node (uid=%d): new", node_uid);
+    ESP_LOGD(HUB_DRIVER_TAG, "Device tree node (uid=%d): new", dev_tree_node->uid);
 
     hub_event_data_t event_data = {
         .event = HUB_EVENT_CONNECTED,
         .connected = {
-            .uid = node_uid,
+            .uid = dev_tree_node->uid,
         },
     };
     p_hub_driver_obj->constant.event_cb(&event_data, p_hub_driver_obj->constant.event_cb_arg);
@@ -364,7 +361,7 @@ static void ext_port_event_callback(ext_port_event_data_t *event_data, void *arg
         }
 #endif // CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS
 
-        if (new_dev_tree_node(event_data->connected.parent_dev_hdl, event_data->connected.parent_port_num, port_speed) != ESP_OK) {
+        if (dev_tree_node_new(event_data->connected.parent_dev_hdl, event_data->connected.parent_port_num, port_speed) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to add new downstream device");
             goto new_ds_dev_err;
         }
@@ -406,7 +403,7 @@ static void root_port_handle_events(hcd_port_handle_t root_port_hdl)
             goto new_dev_err;
         }
 
-        if (new_dev_tree_node(NULL, 0, speed) != ESP_OK) {
+        if (dev_tree_node_new(NULL, 0, speed) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to add new device");
             goto new_dev_err;
         }
@@ -589,7 +586,6 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     hub_driver_obj->constant.proc_req_cb_arg = hub_config->proc_req_cb_arg;
     hub_driver_obj->constant.event_cb = hub_config->event_cb;
     hub_driver_obj->constant.event_cb_arg = hub_config->event_cb_arg;
-    hub_driver_obj->single_thread.next_uid = HUB_ROOT_DEV_UID;
     TAILQ_INIT(&hub_driver_obj->single_thread.dev_nodes_tailq);
     // Driver is not installed, we can modify dynamic section outside of the critical section
     hub_driver_obj->dynamic.root_port_state = ROOT_PORT_STATE_NOT_POWERED;
