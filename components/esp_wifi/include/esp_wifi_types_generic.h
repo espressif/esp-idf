@@ -833,6 +833,10 @@ typedef struct {
     wifi_action_rx_cb_t rx_cb;         /**< Rx Callback to receive any response */
     uint8_t op_id;                     /**< ID of this specific ROC operation provided by wifi driver */
     wifi_action_roc_done_cb_t done_cb; /**< Callback to function that will be called upon ROC done. If assigned, WIFI_EVENT_ROC_DONE event will not be posted */
+    bool allow_broadcast;              /**< If set to true, broadcast/multicast action frames will be received
+                                            in the ROC Rx callback, enabling peer discovery.
+                                            If false (default), broadcast/multicast action frames will be filtered out
+                                            and not passed to the Rx callback, reducing CPU usage. */
 } wifi_roc_req_t;
 
 /**
