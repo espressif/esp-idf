@@ -135,7 +135,7 @@ static void handler_execute(esp_event_loop_instance_t* loop, esp_event_handler_n
 
     (*(handler->handler_ctx->handler))(handler->handler_ctx->arg, post.base, post.id, data_ptr);
 #else
-    (*(handler->handler_ctx->handler))(handler->handler_ctx->arg, post.base, post.id, post.data);
+    (*(handler->handler_ctx->handler))(handler->handler_ctx->arg, post.base, post.id, post.data.ptr);
 #endif
 
 #ifdef CONFIG_ESP_EVENT_LOOP_PROFILING
@@ -429,14 +429,11 @@ static void loop_node_remove_all_handler(esp_event_loop_node_t* loop_node)
 static void inline __attribute__((always_inline)) post_instance_delete(esp_event_post_instance_t* post)
 {
 #if CONFIG_ESP_EVENT_POST_FROM_ISR
-    if (post->data_allocated && post->data.ptr) {
+    if (post->data_allocated)
+#endif
+    {
         free(post->data.ptr);
     }
-#else
-    if (post->data) {
-        free(post->data);
-    }
-#endif
     memset(post, 0, sizeof(*post));
 }
 
@@ -935,12 +932,10 @@ esp_err_t esp_event_post_to(esp_event_loop_handle_t event_loop, esp_event_base_t
         }
 
         memcpy(event_data_copy, event_data, event_data_size);
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
         post.data.ptr = event_data_copy;
+#if CONFIG_ESP_EVENT_POST_FROM_ISR
         post.data_allocated = true;
         post.data_set = true;
-#else
-        post.data = event_data_copy;
 #endif
     }
     post.base = event_base;
