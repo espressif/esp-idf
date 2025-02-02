@@ -85,6 +85,19 @@ extern "C" {
 #define ESP_HID_CCC_NOTIFICATIONS_ENABLED   0x01      // Notifications enabled
 #define ESP_HID_CCC_INDICATIONS_ENABLED     0x02      // Indications enabled
 
+/* HID Task Size configuration */
+#ifdef  CONFIG_ESPHID_TASK_SIZE_BTC
+#define BT_HID_DEVICE_TASK_SIZE_BTC         CONFIG_ESPHID_TASK_SIZE_BTC
+#else 
+#define BT_HID_DEVICE_TASK_SIZE_BTC         2048
+#endif
+
+#ifdef  CONFIG_ESPHID_TASK_SIZE_BLE
+#define BT_HID_DEVICE_TASK_SIZE_BLE         CONFIG_ESPHID_TASK_SIZE_BLE
+#else 
+#define BT_HID_DEVICE_TASK_SIZE_BLE         2048
+#endif
+
 /* HID Transports */
 typedef enum {
     ESP_HID_TRANSPORT_BT,

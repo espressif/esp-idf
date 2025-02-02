@@ -809,7 +809,7 @@ esp_err_t esp_bt_hidd_dev_init(esp_hidd_dev_t *dev_p, const esp_hid_device_confi
         .queue_size = 5,
         .task_name = "bt_hidd_events",
         .task_priority = uxTaskPriorityGet(NULL),
-        .task_stack_size = 2048,
+        .task_stack_size = BT_HID_DEVICE_TASK_SIZE_BTC,
         .task_core_id = tskNO_AFFINITY
     };
     ret = esp_event_loop_create(&event_task_args, &s_hidd_param.dev->event_loop_handle);
