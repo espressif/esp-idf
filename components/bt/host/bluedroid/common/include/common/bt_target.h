@@ -1518,12 +1518,17 @@
 #endif /* defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE) */
 #endif
 
-#ifndef SDP_MAX_PAD_LEN
+/* The maximum length, in bytes, of all SDP attributes combined. */
+#if defined(UC_SDP_MAX_PAD_LEN)
+#define SDP_MAX_PAD_LEN             UC_SDP_MAX_PAD_LEN
+#elif !defined(SDP_MAX_PAD_LEN)
 #define SDP_MAX_PAD_LEN             300
 #endif
 
 /* The maximum length, in bytes, of an attribute. */
-#ifndef SDP_MAX_ATTR_LEN
+#if defined(UC_SDP_MAX_ATTR_LEN)
+#define SDP_MAX_ATTR_LEN            UC_SDP_MAX_ATTR_LEN
+#elif !defined(SDP_MAX_ATTR_LEN)
 #define SDP_MAX_ATTR_LEN            400
 #endif
 

@@ -53,6 +53,20 @@
 #define UC_BT_L2CAP_ENABLED                 FALSE
 #endif
 
+// SDP Pad Length
+#ifdef CONFIG_BT_SDP_PAD_LEN
+#define UC_SDP_MAX_PAD_LEN                  CONFIG_BT_SDP_PAD_LEN
+#else
+#define UC_SDP_MAX_PAD_LEN                  300
+#endif
+
+// SDP Max Attribute Length
+#ifdef CONFIG_BT_SDP_ATTR_LEN
+#define UC_SDP_MAX_ATTR_LEN                 CONFIG_BT_SDP_ATTR_LEN
+#else
+#define UC_SDP_MAX_ATTR_LEN                 400
+#endif
+
 //HFP(AG)
 #ifdef CONFIG_BT_HFP_AG_ENABLE
 #define UC_BT_HFP_AG_ENABLED                CONFIG_BT_HFP_AG_ENABLE
