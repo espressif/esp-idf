@@ -328,6 +328,12 @@ static void btc_hd_register_app(esp_hidd_app_param_t *p_app_param, esp_hidd_qos_
         btc_hd_cb.app_info.subclass = p_app_param->subclass;
         btc_hd_cb.app_info.descriptor.dl_len = p_app_param->desc_list_len;
 
+        // Copy SDP record information for DID (Device Identification Profile)
+        btc_hd_cb.app_info.vendor_id = p_app_param->vendor_id;
+        btc_hd_cb.app_info.product_id = p_app_param->product_id;
+        btc_hd_cb.app_info.version = p_app_param->version;
+        btc_hd_cb.app_info.vendor_id_source = p_app_param->vendor_id_source;
+
         btc_hd_cb.in_qos.service_type = p_in_qos->service_type;
         btc_hd_cb.in_qos.token_rate = p_in_qos->token_rate;
         btc_hd_cb.in_qos.token_bucket_size = p_in_qos->token_bucket_size;

@@ -69,6 +69,10 @@ typedef struct {
     char *p_description;
     char *p_provider;
     uint8_t subclass;
+    uint16_t vendor_id;         // 0x0201
+    uint16_t product_id;        // 0x0202
+    uint16_t version;           // 0x0203
+    uint8_t vendor_id_source;   // 0x0205
     tBTA_HD_DEV_DESCR descriptor;
 } tBTA_HD_APP_INFO;
 

@@ -225,10 +225,10 @@ static esp_err_t create_info_db(esp_ble_hidd_dev_t *dev)
 
     if (dev->config.product_id || dev->config.vendor_id || dev->config.version) {
         uint8_t pnp_val[7] = {
-            0x02, //0x1=BT, 0x2=USB
+            dev->config.vendor_id_source & 0xFF, //0x1=BT, 0x2=USB
             dev->config.vendor_id & 0xFF, (dev->config.vendor_id >> 8) & 0xFF, //VID
-                       dev->config.product_id & 0xFF, (dev->config.product_id >> 8) & 0xFF, //PID
-                       dev->config.version & 0xFF, (dev->config.version >> 8) & 0xFF  //VERSION
+            dev->config.product_id & 0xFF, (dev->config.product_id >> 8) & 0xFF, //PID
+            dev->config.version & 0xFF, (dev->config.version >> 8) & 0xFF  //VERSION
         };
         memcpy(dev->pnp, pnp_val, 7);
         add_db_record(_last_db, index++, (uint8_t *)&s_character_declaration_uuid, ESP_GATT_PERM_READ, 1, 1, (uint8_t *)&s_char_prop_read);

@@ -75,6 +75,10 @@ typedef struct {
     uint8_t subclass;
     uint16_t d_len;
     uint8_t d_data[BTA_HD_APP_DESCRIPTOR_LEN];
+    uint16_t vendor_id;
+    uint16_t product_id;
+    uint16_t version;
+    uint8_t vendor_id_source;
     tBTA_HD_QOS_INFO in_qos;
     tBTA_HD_QOS_INFO out_qos;
 } tBTA_HD_REGISTER_APP;

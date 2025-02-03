@@ -281,6 +281,12 @@ static void bt_hidd_init_app(void)
     s_hidd_param.app_param.subclass = get_subclass_by_appearance(s_hidd_param.dev->appearance);
     s_hidd_param.app_param.desc_list = (uint8_t *)s_hidd_param.dev->devices[0].reports_map.data;
     s_hidd_param.app_param.desc_list_len = s_hidd_param.dev->devices[0].reports_map.len;
+
+    // Information SDP record data
+    s_hidd_param.app_param.vendor_id = p_config->vendor_id;
+    s_hidd_param.app_param.product_id = p_config->product_id;
+    s_hidd_param.app_param.version = p_config->version;
+    s_hidd_param.app_param.vendor_id_source = s_hidd_param.app_param.vendor_id_source;
 }
 
 static void bt_hidd_init_qos(void)
