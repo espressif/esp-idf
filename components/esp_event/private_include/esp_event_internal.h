@@ -91,14 +91,10 @@ typedef struct esp_event_remove_handler_context_t {
     bool legacy;                                                    /**< Set to true when the handler unregistration request was made from legacy code */
 } esp_event_remove_handler_context_t;
 
-#if CONFIG_ESP_EVENT_POST_FROM_ISR
 typedef union esp_event_post_data {
     uint32_t val;
     void *ptr;
 } esp_event_post_data_t;
-#else
-typedef void* esp_event_post_data_t;
-#endif
 
 /// Event posted to the event queue
 typedef struct esp_event_post_instance {
