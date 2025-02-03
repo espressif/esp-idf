@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import re
 from typing import Any
@@ -125,14 +125,37 @@ def expect_coredump_flash_write_logs(dut: PanicTestDut, config: str) -> None:
         dut.expect_exact('Backing up stack @')
         dut.expect_exact('Restoring stack')
     dut.expect_exact('Core dump has been saved to flash.')
-    dut.expect('Rebooting...')
+    dut.expect(dut.REBOOT)
+
+
+def expect_coredump_uart_write_logs(dut: PanicTestDut, check_cpu_reset: Optional[bool] = True) -> Any:
+    # ================= CORE DUMP START =================
+    # B8AAAMAEgAGAAAAXAEAAAAAAABkAAAA
+    # ...
+    # ================= CORE DUMP END =================
+    # Coredump checksum='9730d7ff'
+    # Rebooting...
+    # ..
+    # rst:0xc (SW_CPU_RESET),boot:
+
+    # Read all uart logs until the end of the reset reason
+    uart_str = dut.expect(',boot:', return_what_before_match=True).decode('utf-8', errors='ignore')
+    coredump_base64 = uart_str.split(dut.COREDUMP_UART_START)[1].split(dut.COREDUMP_UART_END)[0].strip()
+    uart_str = uart_str.split(dut.COREDUMP_UART_END)[1]
+    assert re.search(dut.COREDUMP_CHECKSUM, uart_str)
+    assert re.search(dut.REBOOT, uart_str)
+    if check_cpu_reset:
+        assert re.search(dut.CPU_RESET, uart_str)
+    return coredump_base64
 
 
 def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
                 expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None) -> None:
     if 'gdbstub' in config:
         if 'coredump' in config:
-            dut.process_coredump_uart(expected_coredump, False)
+            uart_str = dut.expect(dut.COREDUMP_CHECKSUM, return_what_before_match=True).decode('utf-8')
+            coredump_base64 = uart_str.split(dut.COREDUMP_UART_START)[1].split(dut.COREDUMP_UART_END)[0].strip()
+            dut.process_coredump_uart(coredump_base64, expected_coredump)
         dut.expect_exact('Entering gdb stub now.')
         dut.start_gdb_for_gdbstub()
         frames = dut.gdb_backtrace()
@@ -146,12 +169,14 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
         expected_coredump = None
 
     if 'uart' in config:
-        dut.process_coredump_uart(expected_coredump)
+        coredump_base64 = expect_coredump_uart_write_logs(dut, check_cpu_reset)
+        dut.process_coredump_uart(coredump_base64, expected_coredump)
+        check_cpu_reset = False  # CPU reset is already checked in expect_coredump_uart_write_logs
     elif 'flash' in config:
         expect_coredump_flash_write_logs(dut, config)
         dut.process_coredump_flash(expected_coredump)
     elif 'panic' in config:
-        dut.expect('Rebooting...', timeout=60)
+        dut.expect(dut.REBOOT, timeout=60)
 
     if check_cpu_reset:
         dut.expect_cpu_reset()
