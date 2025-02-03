@@ -169,6 +169,7 @@ typedef struct {
     uint16_t vendor_id;                     /*!< HID Vendor ID */
     uint16_t product_id;                    /*!< HID Product ID */
     uint16_t version;                       /*!< HID Product Version */
+    uint8_t  vendor_id_source;              /*!< HID Vendor ID Source (0x1 BT, 0x2 USB) */
     const char *device_name;                /*!< HID Device Name */
     const char *manufacturer_name;          /*!< HID Manufacturer */
     const char *serial_number;              /*!< HID Serial Number */
