@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -28,8 +28,11 @@ class PanicTestDut(IdfDut):
     BOOT_CMD_ADDR = 0x9000
     BOOT_CMD_SIZE = 0x1000
     DEFAULT_EXPECT_TIMEOUT = 10
-    COREDUMP_UART_START = '================= CORE DUMP START ================='
-    COREDUMP_UART_END = '================= CORE DUMP END ================='
+    COREDUMP_UART_START = r'================= CORE DUMP START ================='
+    COREDUMP_UART_END = r'================= CORE DUMP END ================='
+    COREDUMP_CHECKSUM = r"Coredump checksum='([a-fA-F0-9]+)'"
+    REBOOT = r'.*Rebooting\.\.\.'
+    CPU_RESET = r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)\b'
 
     app: IdfApp
     serial: IdfSerial
@@ -106,7 +109,7 @@ class PanicTestDut(IdfDut):
 
     def expect_cpu_reset(self) -> None:
         # no digital system reset for panic handling restarts (see IDF-7255)
-        self.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU)')
+        self.expect(self.CPU_RESET)
 
     def expect_elf_sha256(self, caption: str = 'ELF file SHA256: ') -> None:
         """Expect method for ELF SHA256 line"""
@@ -162,15 +165,8 @@ class PanicTestDut(IdfDut):
             self.coredump_output.seek(0)
 
     def process_coredump_uart(
-        self, expected: Optional[List[Union[str, re.Pattern]]] = None, wait_reboot: bool = True
+        self, coredump_base64: Any, expected: Optional[List[Union[str, re.Pattern]]] = None,
     ) -> None:
-        """Extract the core dump from UART output of the test, run espcoredump on it"""
-        self.expect(self.COREDUMP_UART_START)
-        uart_data = self.expect('(.+)' + self.COREDUMP_UART_END)
-        self.expect(re.compile(r"Coredump checksum='([a-fA-F0-9]+)'"))
-        if wait_reboot:
-            self.expect('Rebooting...')
-        coredump_base64 = uart_data.group(1).decode('utf8')
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
