@@ -181,19 +181,39 @@ static esp_err_t panel_st7789_init(esp_lcd_panel_t *panel)
 {
     st7789_panel_t *st7789 = __containerof(panel, st7789_panel_t, base);
     esp_lcd_panel_io_handle_t io = st7789->io;
-    // LCD goes into sleep mode and display will be turned off after power on reset, exit sleep mode first
+
+    // Exit sleep mode
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_SLPOUT, NULL, 0), TAG,
                         "io tx param failed");
     vTaskDelay(pdMS_TO_TICKS(100));
+
+    // Set MADCTL
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_MADCTL, (uint8_t[]) {
         st7789->madctl_val,
     }, 1), TAG, "io tx param failed");
+
+    // Set color mode
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_COLMOD, (uint8_t[]) {
         st7789->colmod_val,
     }, 1), TAG, "io tx param failed");
+
+    // Set RAM control
     ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, ST7789_CMD_RAMCTRL, (uint8_t[]) {
         st7789->ramctl_val_1, st7789->ramctl_val_2
     }, 2), TAG, "io tx param failed");
+
+    // Add display window initialization
+    // Set column address range (CASET)
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_CASET, (uint8_t[]) {
+        0x00, 0x00,     // Start column: 0
+        0x00, 0xEF      // End column: 239
+    }, 4), TAG, "io tx param failed");
+
+    // Set row address range (RASET)
+    ESP_RETURN_ON_ERROR(esp_lcd_panel_io_tx_param(io, LCD_CMD_RASET, (uint8_t[]) {
+        0x00, 0x00,     // Start row: 0
+        0x01, 0x3F      // End row: 319
+    }, 4), TAG, "io tx param failed");
 
     return ESP_OK;
 }
