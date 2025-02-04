@@ -5,7 +5,7 @@ menu "OpenThread Device Role Indicator"
     config OPENTHREAD_STATE_INDICATOR_ENABLE
         depends on SOC_RMT_SUPPORTED
         bool 'Enable the LED for openthread deivce'
-        default False
+        default n
         help
             If enabled, the LED of ESP Openthread Device will display different colors based on the current role.
 
