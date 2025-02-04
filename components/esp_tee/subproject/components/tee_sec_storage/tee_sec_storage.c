@@ -640,6 +640,7 @@ static esp_err_t tee_sec_storage_crypt_common(uint16_t slot_id, uint8_t *input, 
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in encrypting data: %d", ret);
             err = ESP_FAIL;
+            goto exit;
         }
     } else {
         ret = mbedtls_gcm_auth_decrypt(&gcm, len, keyctx.aes256_gcm.iv, AES256_GCM_IV_LEN,
@@ -647,6 +648,7 @@ static esp_err_t tee_sec_storage_crypt_common(uint16_t slot_id, uint8_t *input, 
         if (ret != 0) {
             ESP_LOGE(TAG, "Error in decrypting data: %d", ret);
             err = ESP_FAIL;
+            goto exit;
         }
     }
     err = ESP_OK;
