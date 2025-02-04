@@ -88,28 +88,34 @@ menu "SD/MMC Example Configuration"
 
     if !SOC_SDMMC_USE_GPIO_MATRIX
         config EXAMPLE_PIN_CMD
+            int
             depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
             default 15 if IDF_TARGET_ESP32
 
         config EXAMPLE_PIN_CLK
+            int
             depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
             default 14 if IDF_TARGET_ESP32
 
         config EXAMPLE_PIN_D0
+            int
             depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
             default 2 if IDF_TARGET_ESP32
 
         if EXAMPLE_SDMMC_BUS_WIDTH_4
 
             config EXAMPLE_PIN_D1
+                int
                 depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
                 default 4 if IDF_TARGET_ESP32
 
             config EXAMPLE_PIN_D2
+                int
                 depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
                 default 12 if IDF_TARGET_ESP32
 
             config EXAMPLE_PIN_D3
+                int
                 depends on EXAMPLE_DEBUG_PIN_CONNECTIONS
                 default 13 if IDF_TARGET_ESP32
 
