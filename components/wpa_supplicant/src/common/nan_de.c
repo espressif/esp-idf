@@ -243,8 +243,13 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 
 	/* Service Descriptor Extension attribute */
 	sdea_len = 1 + 2;
+#ifdef ESP_SUPPLICANT
+	if (ssi)
+		sdea_len += 2 + wpabuf_len(ssi);
+#else
 	if (ssi)
 		sdea_len += 2 + 4 + wpabuf_len(ssi);
+#endif /* ESP_SUPPLICANT */
 	len += NAN_ATTR_HDR_LEN + sdea_len;
 
 	/* Element Container attribute */
@@ -276,10 +281,15 @@ static void nan_de_tx_sdf(struct nan_de *de, struct nan_de_service *srv,
 		}
 		wpabuf_put_le16(buf, sdea_ctrl);
 		if (ssi) {
+#ifdef ESP_SUPPLICANT
+			wpabuf_put_le16(buf, wpabuf_len(ssi));
+			wpabuf_put_buf(buf, ssi);
+#else
 			wpabuf_put_le16(buf, 4 + wpabuf_len(ssi));
 			wpabuf_put_be24(buf, OUI_WFA);
 			wpabuf_put_u8(buf, srv->srv_proto_type);
 			wpabuf_put_buf(buf, ssi);
+#endif /* ESP_SUPPLICANT */
 		}
 	}
 
@@ -821,12 +831,19 @@ static void nan_de_get_sdea(const u8 *buf, size_t len, u8 instance_id,
 			if (srv_info_len > end - sdea)
 				continue;
 
+#ifdef ESP_SUPPLICANT
+			if (srv_info_len > 0) {
+				*ssi = sdea;
+				*ssi_len = srv_info_len;
+			}
+#else
 			if (srv_info_len >= 4 &&
 			    WPA_GET_BE24(sdea) == OUI_WFA) {
 				*srv_proto_type = sdea[3];
 				*ssi = sdea + 4;
 				*ssi_len = srv_info_len - 4;
 			}
+#endif /* ESP_SUPPLICANT */
 		}
 	}
 }
@@ -943,8 +960,14 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 
 	/* Service Descriptor Extension attribute */
 	sdea_len = 1 + 2;
+
+#ifdef ESP_SUPPLICANT
+	if (srv->ssi)
+		sdea_len += 2 + wpabuf_len(srv->ssi);
+#else
 	if (srv->ssi)
 		sdea_len += 2 + 4 + wpabuf_len(srv->ssi);
+#endif /* ESP_SUPPLICANT */
 	len += NAN_ATTR_HDR_LEN + sdea_len;
 
 	/* Element Container attribute */
@@ -977,10 +1000,15 @@ static void nan_de_rx_subscribe(struct nan_de *de, struct nan_de_service *srv,
 		}
 		wpabuf_put_le16(buf, sdea_ctrl);
 		if (srv->ssi) {
+#ifdef ESP_SUPPLICANT
+			wpabuf_put_le16(buf, wpabuf_len(srv->ssi));
+			wpabuf_put_buf(buf, srv->ssi);
+#else
 			wpabuf_put_le16(buf, 4 + wpabuf_len(srv->ssi));
 			wpabuf_put_be24(buf, OUI_WFA);
 			wpabuf_put_u8(buf, srv->srv_proto_type);
 			wpabuf_put_buf(buf, srv->ssi);
+#endif /* ESP_SUPPLICANT */
 		}
 	}
 
@@ -1126,6 +1154,13 @@ static void nan_de_rx_sda(struct nan_de *de, const u8 *peer_addr, const u8 *a3,
 		flen = *sda++;
 		if (end - sda < flen)
 			return;
+#ifdef ESP_SUPPLICANT
+		if (flen > 0) {
+			ssi = sda;
+			ssi_len = flen;
+			wpa_hexdump(MSG_MSGDUMP, "NAN: ssi", ssi, ssi_len);
+		}
+#else
 		if (flen >= 4 && WPA_GET_BE24(sda) == OUI_WFA) {
 			srv_proto_type = sda[3];
 			ssi = sda + 4;
@@ -1134,6 +1169,7 @@ static void nan_de_rx_sda(struct nan_de *de, const u8 *peer_addr, const u8 *a3,
 				   srv_proto_type);
 			wpa_hexdump(MSG_MSGDUMP, "NAN: ssi", ssi, ssi_len);
 		}
+#endif /* ESP_SUPPLICANT */
 		sda += flen;
 	}
 
