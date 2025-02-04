@@ -2,7 +2,7 @@ menu "OpenThread Border Router Example"
 
     config OPENTHREAD_BR_AUTO_START
         bool 'Enable the automatic start mode in Thread Border Router.'
-        default False
+        default n
         help
             If enabled, The Thread Border Router will connect to Wi-Fi with pre-configured
             SSID and PSK, and then form a Thread network automatically. Otherwise, user need
@@ -10,7 +10,7 @@ menu "OpenThread Border Router Example"
 
     config OPENTHREAD_SUPPORT_HW_RESET_RCP
         bool 'Enable hardware RCP resetting'
-        default False
+        default n
         help
             If enabled, the Thread Border Router will support hardware resetting the RCP
             when processing RCP failure.
