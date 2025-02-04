@@ -434,7 +434,10 @@ cleanup:
     TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
     TEST_ESP_OK(phy->del(phy));
     TEST_ESP_OK(mac->del(mac));
+#ifndef CONFIG_TARGET_ETH_PHY_DEVICE_W5500
+// only unregister events if the device != W5500, since w5500 doesn't support loopback and we don't register the event
     TEST_ESP_OK(esp_event_handler_unregister(ETH_EVENT, ESP_EVENT_ANY_ID, eth_event_handler));
+#endif
     TEST_ESP_OK(esp_event_loop_delete_default());
     extra_cleanup();
     vEventGroupDelete(eth_event_group);
