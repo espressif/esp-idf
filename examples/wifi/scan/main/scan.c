@@ -52,12 +52,6 @@ static void print_auth_mode(int authmode)
     case WIFI_AUTH_WPA2_WPA3_PSK:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_WPA3_PSK");
         break;
-    case WIFI_AUTH_WPA3_ENTERPRISE:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_ENTERPRISE");
-        break;
-    case WIFI_AUTH_WPA2_WPA3_ENTERPRISE:
-        ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA2_WPA3_ENTERPRISE");
-        break;
     case WIFI_AUTH_WPA3_ENT_192:
         ESP_LOGI(TAG, "Authmode \tWIFI_AUTH_WPA3_ENT_192");
         break;
