@@ -26,7 +26,6 @@ void test_task_wdt_cpu0(void);
 
 #if !CONFIG_FREERTOS_UNICORE
 void test_task_wdt_cpu1(void);
-void test_task_wdt_both_cpus(void);
 #endif
 
 void test_storeprohibited(void);
