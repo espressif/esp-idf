@@ -124,8 +124,8 @@ esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t 
         }
     }
 
-    // partition should have at least one free page
-    if (mFreePageList.empty()) {
+    // partition should have at least one free page if it is not read-only
+    if (!partition->get_readonly() && mFreePageList.empty()) {
         return ESP_ERR_NVS_NO_FREE_PAGES;
     }
 
