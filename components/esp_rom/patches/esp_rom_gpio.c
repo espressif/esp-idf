@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,10 @@ IRAM_ATTR __attribute__((optimize("-Os"))) void esp_rom_gpio_connect_out_signal(
     }
     REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4), value);
 
-    REG_WRITE(GPIO_ENABLE_W1TS_REG, (1 << gpio_num));
+    if (gpio_num < 32) {
+        REG_WRITE(GPIO_ENABLE_W1TS_REG, (1 << gpio_num));
+    } else {
+        REG_WRITE(GPIO_ENABLE1_W1TS_REG, (1 << (gpio_num - 32)));
+    }
 }
 #endif
