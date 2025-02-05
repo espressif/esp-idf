@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,11 @@ static const usb_otg_signal_conn_t dwc_fs_otg_signals = {
     .dischrgvbus    = USB_SRP_DISCHRGVBUS_PAD_OUT_IDX,
 };
 
+static const usb_internal_phy_io_t internal_phy_io = {
+    .dp = 27,
+    .dm = 26,
+};
+
 /* --------------------------------- Public --------------------------------- */
 
 const usb_dwc_info_t usb_dwc_info = {
@@ -36,6 +41,8 @@ const usb_dwc_info_t usb_dwc_info = {
         [0] = {
             .fsls_signals = NULL,
             .otg_signals = NULL,
+            .internal_phy_io = NULL, // HS PHY is not mapped to any GPIO
+            .supported_phys = USB_PHY_INST_UTMI_0,
             .irq = ETS_USB_OTG_INTR_SOURCE,
             .irq_2nd_cpu = ETS_USB_OTG_ENDP_MULTI_PROC_INTR_SOURCE,
         },
@@ -43,6 +50,8 @@ const usb_dwc_info_t usb_dwc_info = {
         [1] = {
             .fsls_signals = NULL,
             .otg_signals = &dwc_fs_otg_signals,
+            .internal_phy_io = &internal_phy_io,
+            .supported_phys = USB_PHY_INST_FSLS_INTERN_0,
             .irq = ETS_USB_OTG11_CH0_INTR_SOURCE,
             .irq_2nd_cpu = -1,
         },

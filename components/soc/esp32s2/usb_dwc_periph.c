@@ -1,11 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/gpio_sig_map.h"
-#include "soc/usb_periph.h"
 #include "soc/interrupts.h"
 #include "soc/usb_dwc_periph.h"
 
@@ -40,6 +39,11 @@ static const usb_otg_signal_conn_t otg_signals = {
     .dischrgvbus    = USB_SRP_DISCHRGVBUS_IDX,
 };
 
+static const usb_internal_phy_io_t internal_phy_io = {
+    .dp = 20,
+    .dm = 19,
+};
+
 /* --------------------------------- Public --------------------------------- */
 
 const usb_dwc_info_t usb_dwc_info = {
@@ -47,6 +51,8 @@ const usb_dwc_info_t usb_dwc_info = {
         [0] = {
             .fsls_signals = &fsls_signals,
             .otg_signals = &otg_signals,
+            .internal_phy_io = &internal_phy_io,
+            .supported_phys = USB_PHY_INST_FSLS_INTERN_0,
             .irq = ETS_USB_INTR_SOURCE,
             .irq_2nd_cpu = -1,
         },
@@ -55,6 +61,7 @@ const usb_dwc_info_t usb_dwc_info = {
 
 /* ------------------------------- Deprecated ------------------------------- */
 
+#include "soc/usb_periph.h"
 /*
 Note: These IO pins are deprecated. When connecting USB OTG to an external FSLS
 PHY, the FSLS Serial Interface signals can be routed to any GPIO via the GPIO
