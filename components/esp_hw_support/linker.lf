@@ -48,3 +48,5 @@ archive: libsoc.a
 entries:
     if PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND:
         gpio_periph: GPIO_HOLD_MASK (noflash)
+    if PM_SLP_IRAM_OPT = y && SOC_TEMP_SENSOR_SUPPORTED = y:
+        temperature_sensor_periph:temperature_sensor_attributes (noflash)
