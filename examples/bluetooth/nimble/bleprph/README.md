@@ -20,7 +20,6 @@ To test this demo, any BLE scanner app can be used.
 Note :
 
 * To install the dependency packages needed, please refer to the top level [README file](../../../README.md#running-test-python-script-pytest).
-* Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to Use Example
 
@@ -87,7 +86,7 @@ Subscribe to attribute (19) successful
 subscribe event; conn_handle=1 attr_handle=25 reason=1 prevn=0 curn=1 previ=0 curi=0
 Subscribe to attribute (25) successful
 GATT procedure initiated: notify; att_handle=25
-Notification sent succesfully
+Notification sent successfully
 ```
 
 ## Note
