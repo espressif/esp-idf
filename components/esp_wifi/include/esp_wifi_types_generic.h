@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,15 +41,15 @@ typedef enum {
     WIFI_IF_MAX                       /**< Maximum number of interfaces */
 } wifi_interface_t;
 
-enum {
+typedef enum {
     WIFI_OFFCHAN_TX_CANCEL,   /**< Cancel off-channel transmission */
     WIFI_OFFCHAN_TX_REQ,      /**< Request off-channel transmission */
-};
+} wifi_action_tx_t;
 
-enum {
+typedef enum {
     WIFI_ROC_CANCEL,    /**< Cancel remain on channel */
     WIFI_ROC_REQ,       /**< Request remain on channel */
-};
+} wifi_roc_t;
 /**
   * @brief Wi-Fi country policy
   */
@@ -774,8 +774,11 @@ typedef int (* wifi_action_rx_cb_t)(uint8_t *hdr, uint8_t *payload,
 typedef struct {
     wifi_interface_t ifx;       /**< Wi-Fi interface to send request to */
     uint8_t dest_mac[6];        /**< Destination MAC address */
+    wifi_action_tx_t type;      /**< ACTION TX operation type */
+    uint8_t channel;            /**< Channel on which to perform ACTION TX Operation */
+    uint32_t wait_time_ms;      /**< Duration to wait for on target channel */
     bool no_ack;                /**< Indicates no ack required */
-    wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive any response */
+    wifi_action_rx_cb_t rx_cb;  /**< Rx Callback to receive action frames */
     uint8_t op_id;              /**< Unique Identifier for operation provided by wifi driver */
     uint32_t data_len;          /**< Length of the appended Data */
     uint8_t data[0];            /**< Appended Data payload */
@@ -805,7 +808,7 @@ typedef void (* wifi_action_roc_done_cb_t)(uint32_t context, uint8_t op_id,
  */
 typedef struct {
     wifi_interface_t ifx;              /**< WiFi interface to send request to */
-    uint8_t type;                      /**< ROC operation type */
+    wifi_roc_t type;                   /**< ROC operation type */
     uint8_t channel;                   /**< Channel on which to perform ROC Operation */
     wifi_second_chan_t sec_channel;    /**< Secondary channel */
     uint32_t wait_time_ms;             /**< Duration to wait for on target channel */
@@ -1236,6 +1239,7 @@ typedef struct {
 #define WIFI_STATIS_ALL       (-1)      /**< All status */
 
 /** Status codes for WIFI_EVENT_ACTION_TX_STATUS evt */
+/** There will be back to back events in success case TX_DONE and TX_DURATION_COMPLETED */
 typedef enum {
     WIFI_ACTION_TX_DONE = 0,           /**< ACTION_TX operation was completed successfully */
     WIFI_ACTION_TX_FAILED,             /**< ACTION_TX operation failed during tx */

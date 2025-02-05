@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,9 +284,6 @@ bool esp_wifi_is_btm_enabled_internal(uint8_t if_index);
 esp_err_t esp_wifi_register_mgmt_frame_internal(uint32_t type, uint32_t subtype);
 esp_err_t esp_wifi_send_mgmt_frm_internal(const wifi_mgmt_frm_req_t *req);
 uint8_t esp_wifi_ap_get_prof_pairwise_cipher_internal(void);
-esp_err_t esp_wifi_action_tx_req(uint8_t type, uint8_t channel,
-                                 uint32_t wait_time_ms, wifi_action_tx_req_t *req);
-esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
 bool esp_wifi_is_mbo_enabled_internal(uint8_t if_index);
 void esp_wifi_get_pmf_config_internal(wifi_pmf_config_t *pmf_cfg, uint8_t ifx);
 bool esp_wifi_is_ft_enabled_internal(uint8_t if_index);
