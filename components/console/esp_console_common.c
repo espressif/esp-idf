@@ -10,7 +10,11 @@
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
+
 #include "esp_vfs_eventfd.h"
+#if CONFIG_IDF_TARGET_LINUX
+#include <unistd.h>
+#endif
 
 static const char *TAG = "console.common";
 
