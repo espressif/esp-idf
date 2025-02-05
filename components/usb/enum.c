@@ -198,8 +198,8 @@ static uint8_t get_next_free_dev_addr(void)
         if (usbh_devs_open(new_dev_addr, &dev_hdl) == ESP_ERR_NOT_FOUND) {
             break;
         }
-        // We have a device with the same address on a bus, close device and request new addr
-        usbh_dev_close(dev_hdl);
+        // We have a device with the same address on a bus, close device and request new addr, there should be no error with closing
+        ESP_ERROR_CHECK(usbh_dev_close(dev_hdl));
         new_dev_addr = get_next_dev_addr();
     }
     // Sanity check
