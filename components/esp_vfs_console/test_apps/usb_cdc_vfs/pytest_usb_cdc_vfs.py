@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -14,6 +14,13 @@ from pytest_embedded import Dut
     indirect=True,)
 @pytest.mark.parametrize('test_message', ['test123456789!@#%^&*'])
 def test_usb_cdc_vfs_default(dut: Dut, test_message: str) -> None:
+    # test run: test_usb_cdc_select
+    dut.expect_exact('test_usb_cdc_select', timeout=2)
     dut.expect_exact('select timed out', timeout=2)
     dut.write(test_message)
     dut.expect_exact(test_message, timeout=2)
+
+    # test run: test_usb_cdc_read_non_blocking
+    dut.expect_exact('test_usb_cdc_read_non_blocking', timeout=2)
+    dut.expect_exact('send_bytes', timeout=2)
+    dut.write('abcdefgh')
