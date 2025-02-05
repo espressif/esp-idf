@@ -184,3 +184,13 @@ esp_err_t jpeg_parse_sos_marker(jpeg_dec_header_info_t *header_info)
     header_info->buffer_left += 2;
     return ESP_OK;
 }
+
+esp_err_t jpeg_parse_inv_marker(jpeg_dec_header_info_t *header_info)
+{
+    // Got invalid 0xFFFF, (followed by a valid marker type)
+    // Go one byte back, to skip the first 0xFF
+    header_info->buffer_offset--;
+    header_info->header_size--;
+    header_info->buffer_left++;
+    return ESP_OK;
+}

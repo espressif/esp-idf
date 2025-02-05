@@ -714,6 +714,9 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
         case JPEG_M_SOS:
             ESP_RETURN_ON_ERROR(jpeg_parse_sos_marker(header_info), TAG, "deal sos marker failed");
             break;
+        case JPEG_M_INV:
+            ESP_RETURN_ON_ERROR(jpeg_parse_inv_marker(header_info), TAG, "deal invalid marker failed");
+            break;
         }
         if (marker == JPEG_M_SOS) {
             break;

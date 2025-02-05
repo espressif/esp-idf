@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,6 +70,7 @@ typedef enum {
     JPEG_M_JPG13 = 0xFFFD,      ///< Reserved for JPEG extension
     JPEG_M_COM = 0xFFFE,        ///< Comment
     JPEG_M_TEM = 0xFF01,        ///< Temporary use in arithmetic coding
+    JPEG_M_INV = 0xFFFF,        ///< Invalid marker
 } __attribute__((packed)) jpeg_marker_code_t;
 
 
