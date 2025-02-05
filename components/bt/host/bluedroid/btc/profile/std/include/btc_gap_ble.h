@@ -446,6 +446,9 @@ typedef union {
 void btc_gap_ble_call_handler(btc_msg_t *msg);
 void btc_gap_ble_cb_handler(btc_msg_t *msg);
 void btc_get_whitelist_size(uint16_t *length);
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void btc_get_periodic_list_size(uint8_t *length);
+#endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
 void btc_gap_ble_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_gap_ble_arg_deep_free(btc_msg_t *msg);
 void btc_gap_ble_cb_deep_free(btc_msg_t *msg);

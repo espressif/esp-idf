@@ -44,6 +44,7 @@ typedef struct {
     BT_HDR *(*make_ble_read_resolving_list_size)(void);
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BT_HDR *(*make_read_max_adv_data_len)(void);
+    BT_HDR *(*make_read_periodic_adv_list_size)(void);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BT_HDR *(*make_ble_read_suggested_default_data_length)(void);
     BT_HDR *(*make_ble_write_suggested_default_data_length)(uint16_t SuggestedMaxTxOctets, uint16_t SuggestedMaxTxTime);
