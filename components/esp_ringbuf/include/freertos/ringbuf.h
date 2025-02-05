@@ -420,10 +420,6 @@ size_t xRingbufferGetMaxItemSize(RingbufHandle_t xRingbuffer);
  * buffer. This represents the maximum size an item/data can have if it was
  * currently sent to the ring buffer.
  *
- * @warning This API is not thread safe. So, if multiple threads are accessing
- *          the same ring buffer, it is the application's responsibility to
- *          ensure atomic access to this API and the subsequent Send
- *
  * @note    An empty no-split buffer has a max current free size for an item
  *          that is limited to ((buffer_size/2)-header_size). See API reference
  *          for xRingbufferGetMaxItemSize().
