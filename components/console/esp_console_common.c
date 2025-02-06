@@ -129,6 +129,22 @@ _exit:
     return ret;
 }
 
+void esp_console_common_deinit(esp_console_repl_com_t *repl_com)
+{
+    /* Unregister the heap function to avoid memory leak, since it is created
+     * every time a console init is called. */
+    esp_err_t ret = esp_console_deregister_help_command();
+    assert(ret == ESP_OK);
+
+    /* unregister eventfd to avoid memory leaks, since it is created every time a
+     * console init is called */
+    (void)esp_vfs_eventfd_unregister();
+
+    /* free the history to avoid memory leak, since it is created
+     * every time a console init is called. */
+    linenoiseHistoryFree();
+}
+
 esp_err_t esp_console_start_repl(esp_console_repl_t *repl)
 {
     esp_err_t ret = ESP_OK;

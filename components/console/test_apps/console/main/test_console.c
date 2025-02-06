@@ -154,8 +154,11 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     vTaskDelay(pdMS_TO_TICKS(2000));
 }
 
+extern void set_leak_threshold(int threshold);
 TEST_CASE("esp console repl deinit", "[console][ignore]")
 {
+    set_leak_threshold(400);
+
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
@@ -165,14 +168,17 @@ TEST_CASE("esp console repl deinit", "[console][ignore]")
 
     /* wait to make sure the task reaches linenoiseEdit function
      * and gets stuck in the select */
-    vTaskDelay(pdMS_TO_TICKS(500));
+    vTaskDelay(pdMS_TO_TICKS(10));
 
     /* call the delete function, this returns only when the repl task terminated */
     const esp_err_t res = s_repl->del(s_repl);
 
+    /* wait to make sure the task reaches linenoiseEdit function
+     * and gets stuck in the select */
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     /* if this point is reached, the repl environment has been deleted successfully */
     TEST_ASSERT(res == ESP_OK);
-    printf("-------------- %p\n", s_repl);
 }
 
 static const esp_console_cmd_t cmd_a = {

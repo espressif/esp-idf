@@ -1265,6 +1265,7 @@ void linenoiseHistoryFree(void) {
         free(history);
     }
     history = NULL;
+    history_len = 0;
 }
 
 /* This is the API call to add a new entry in the linenoise history.

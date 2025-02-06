@@ -315,6 +315,8 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
     vSemaphoreDelete(repl_com->state_mux);
     repl_com->state_mux =  NULL;
 
+    esp_console_common_deinit(&uart_repl->repl_com);
+
     esp_console_deinit();
     uart_vfs_dev_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
@@ -356,6 +358,8 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
     vSemaphoreDelete(repl_com->state_mux);
     repl_com->state_mux =  NULL;
 
+    esp_console_common_deinit(&cdc_repl->repl_com);
+
     esp_console_deinit();
     free(cdc_repl);
 _exit:
@@ -394,6 +398,8 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
     // delete the semaphore for the repl state
     vSemaphoreDelete(repl_com->state_mux);
     repl_com->state_mux =  NULL;
+
+    esp_console_common_deinit(&usb_serial_jtag_repl->repl_com);
 
     esp_console_deinit();
     usb_serial_jtag_vfs_use_nonblocking();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -330,6 +330,15 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold);
  *      - ESP_ERR_INVALID_STATE, if esp_console_init wasn't called
  */
 esp_err_t esp_console_register_help_command(void);
+
+/**
+ * @brief Deregister a 'help' command
+ *
+ * @return esp_err_t
+ *      - ESP_OK on success
+ *      - other on failure
+ */
+esp_err_t esp_console_deregister_help_command(void);
 
 /**
  * @brief Set the verbose level for 'help' command
