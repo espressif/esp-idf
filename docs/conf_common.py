@@ -169,7 +169,8 @@ TWAI_DOCS = ['api-reference/peripherals/twai.rst']
 SDM_DOCS = ['api-reference/peripherals/sdm.rst']
 
 I2C_DOCS = ['api-reference/peripherals/i2c.rst',
-            'api-reference/peripherals/lcd/i2c_lcd.rst']
+            'api-reference/peripherals/lcd/i2c_lcd.rst',
+            'api-reference/peripherals/i2c_slave_v1.rst']
 
 SPI_DOCS = ['api-reference/peripherals/spi_master.rst',
             'api-reference/peripherals/spi_slave.rst',

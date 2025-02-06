@@ -271,6 +271,10 @@ config SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
     bool
     default y
 
+config SOC_LEDC_CHANNEL_NUM
+    int
+    default 6
+
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4
@@ -340,10 +344,6 @@ config SOC_SPI_SUPPORT_CD_SIG
     default y
 
 config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
-    bool
-    default y
-
-config SOC_SPI_SUPPORT_SLAVE_HD_VER2
     bool
     default y
 
