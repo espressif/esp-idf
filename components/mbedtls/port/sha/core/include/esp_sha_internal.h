@@ -56,6 +56,13 @@ static inline esp_sha_mode sha_operation_mode(size_t length)
     return SHA_BLOCK_MODE;
 }
 
+/**
+ * @brief Enable or disable the SHA peripheral clock
+ *
+ * @param enable true to enable, false to disable
+ */
+void esp_sha_enable_periph_clk(bool enable);
+
 #ifdef __cplusplus
 }
 #endif

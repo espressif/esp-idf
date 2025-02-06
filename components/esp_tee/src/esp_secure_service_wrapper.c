@@ -228,6 +228,11 @@ void __wrap_esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state
     esp_tee_service_call(3, SS_ESP_SHA_WRITE_DIGEST_STATE, sha_type, digest_state);
 }
 
+void __wrap_esp_sha_enable_periph_clk(bool enable)
+{
+    esp_tee_service_call(2, SS_ESP_SHA_ENABLE_PERIPH_CLK, enable);
+}
+
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
 
 void IRAM_ATTR __wrap_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len)
