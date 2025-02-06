@@ -180,23 +180,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
     ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_UTMI) == (speed == USB_PHY_SPEED_HIGH), ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI can be HighSpeed only"); // This is our software limitation
 
     handle->otg_speed = speed;
-    if (handle->target == USB_PHY_TARGET_UTMI) {
-        return ESP_OK; // No need to configure anything for UTMI PHY
-    }
-
-    // Configure pull resistors for device
-    usb_wrap_pull_override_vals_t vals = {
-        .dp_pd = false,
-        .dm_pd = false,
-    };
-    if (speed == USB_PHY_SPEED_LOW) {
-        vals.dp_pu = false;
-        vals.dm_pu = true;
-    } else {
-        vals.dp_pu = true;
-        vals.dm_pu = false;
-    }
-    usb_wrap_hal_phy_enable_pull_override(&handle->wrap_hal, &vals);
+    // No need to configure anything neither for UTMI PHY nor for Internal USB FSLS PHY
     return ESP_OK;
 }
 
