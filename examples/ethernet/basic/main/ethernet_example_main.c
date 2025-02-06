@@ -106,7 +106,7 @@ void app_main(void)
             esp_netif_config.if_desc = if_desc_str;
             esp_netif_config.route_prio -= i*5;
             eth_netifs[i] = esp_netif_new(&cfg_spi);
-            eth_netif_glues[i] = esp_eth_new_netif_glue(eth_handles[0]);
+            eth_netif_glues[i] = esp_eth_new_netif_glue(eth_handles[i]);
             // Attach Ethernet driver to TCP/IP stack
             ESP_ERROR_CHECK(esp_netif_attach(eth_netifs[i], eth_netif_glues[i]));
         }
