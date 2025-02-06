@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -177,15 +177,16 @@ _panic_handler:
     addi    sp, sp, -16
     sw      t0, 0(sp)
 
-    /* Check whether the exception is an M-mode ecall */
+    /* Read mcause */
     csrr    t0, mcause
-    xori    t0, t0, ECALL_M_MODE
-    beqz    t0, _machine_ecall
+
+    /* Check whether the exception is an M-mode ecall */
+    li      t1, ECALL_M_MODE
+    beq     t0, t1, _machine_ecall
 
     /* Check whether the exception is an U-mode ecall */
-    csrr    t0, mcause
-    xori    t0, t0, ECALL_U_MODE
-    beqz    t0, _user_ecall
+    li      t1, ECALL_U_MODE
+    beq     t0, t1, _user_ecall
 
     /* Restore t0 from the stack */
     lw      t0, 0(sp)
@@ -250,6 +251,10 @@ _return_from_exception:
 _ecall_handler:
     /* M-mode ecall handler */
 _machine_ecall:
+    /* Set the privilege mode to transition to after mret to U-mode  */
+    li      t0, MSTATUS_MPP
+    csrc    mstatus, t0
+
     /* Check whether this is the first M-mode ecall (see esp_tee_init) and skip context restoration */
     lui     t0, ESP_TEE_M2U_SWITCH_MAGIC
     beq     a1, t0, _skip_ctx_restore
@@ -267,14 +272,9 @@ _machine_ecall:
     restore_general_regs RV_STK_FRMSZ
     csrrw   a0, mscratch, zero
 
-    /* This point is reached only after the first M-mode ecall, never again (see esp_tee_init) */
 _skip_ctx_restore:
     /* Copy the ra register to mepc which contains the user app entry point (i.e. call_start_cpu0) */
     csrw    mepc, ra
-
-    /* Set the privilege mode to transition to after mret to U-mode  */
-    li      t3, MSTATUS_MPP
-    csrc    mstatus, t3
 
     /* Jump to the REE */
     mret
@@ -291,8 +291,8 @@ _user_ecall:
     lw      t0, 0(sp)
     addi    sp, sp, 16
 
-    /* This point is reached after a secure service call is issued from the REE */
-    /* Save register context and the mepc */
+    /* This point is reached when a service call is issued from the REE */
+    /* Save register context and mepc */
     save_general_regs RV_STK_FRMSZ
     save_mepc
 

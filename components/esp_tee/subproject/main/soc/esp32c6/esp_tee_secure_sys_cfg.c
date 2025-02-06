@@ -100,9 +100,6 @@ void esp_tee_soc_secure_sys_init(void)
 
 IRAM_ATTR inline void esp_tee_switch_to_ree(uint32_t ree_entry_addr)
 {
-    /* Switch HP_CPU to REE0 mode. */
-    apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, APM_LL_MASTER_HPCORE, APM_LL_SECURE_MODE_REE0);
-
     /* 2nd argument is used as magic value to detect very first M2U switch */
     /* TBD: clean this up and use proper temporary register instead of a1 */
     /* Switch to non-secure world and launch App. */
