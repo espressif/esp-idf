@@ -144,6 +144,13 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select IDF_ENV_FPGA
         select IDF_ENV_BRINGUP
 
+    config IDF_TARGET_ESP32H4
+        bool
+        default "y" if IDF_TARGET="esp32h4"
+        select IDF_TARGET_ARCH_RISCV
+        select IDF_ENV_FPGA
+        select IDF_ENV_BRINGUP
+
     config IDF_TARGET_LINUX
         bool
         default "y" if IDF_TARGET="linux"
@@ -161,6 +168,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         default 0x0017 if IDF_TARGET_ESP32C5
         default 0x0014 if IDF_TARGET_ESP32C61
         default 0x0019 if IDF_TARGET_ESP32H21
+        default 0x001C if IDF_TARGET_ESP32H4
         default 0xFFFF
 
 
