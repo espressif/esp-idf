@@ -19,3 +19,4 @@ INPUT += \
     $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_sec_storage/include/esp_tee_sec_storage.h \
     $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_attestation/esp_tee_attestation.h \
     $(PROJECT_PATH)/components/esp_tee/subproject/components/tee_ota_ops/include/esp_tee_ota_ops.h \
+    $(PROJECT_PATH)/components/ulp/lp_core/shared/include/ulp_lp_core_lp_uart_shared.h \

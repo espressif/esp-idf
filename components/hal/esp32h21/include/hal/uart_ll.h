@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,7 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
 
-#define UART_LL_MIN_WAKEUP_THRESH (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)
@@ -62,6 +62,9 @@ extern "C" {
 // UART sleep retention module
 #define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
                                                      (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : -1)
+
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
+#define UART_LL_WAKEUP_FIFO_THRED_MAX(hw) UART_RX_WAKE_UP_THRHD_V
 
 // Define UART interrupts
 typedef enum {
@@ -721,11 +724,115 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
  *
  * @return None.
  */
-FORCE_INLINE_ATTR void uart_ll_set_wakeup_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_edge_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
     // System would wakeup when the number of positive edges of RxD signal is larger than or equal to (UART_ACTIVE_THRESHOLD+3)
-    hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_MIN_WAKEUP_THRESH;
+    hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_WAKEUP_EDGE_THRED_MIN;
 }
+
+/**
+ * @brief  Set the number of received data bytes for the RX FIFO threshold wake-up mode.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  wakeup_thrd The wakeup threshold value in bytes to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_fifo_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
+{
+    // System would wakeup when reach the number of the received data number threshold.
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf2, rx_wake_up_thrhd, wakeup_thrd);
+}
+
+/**
+ * @brief  Set the UART wakeup mode.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  mode UART wakeup mode to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_t mode)
+{
+    switch(mode){
+        case UART_WK_MODE_ACTIVE_THRESH:
+            hw->sleep_conf2.wk_mode_sel = 0;
+            break;
+        case UART_WK_MODE_FIFO_THRESH:
+            hw->sleep_conf2.wk_mode_sel = 1;
+            break;
+        case UART_WK_MODE_START_BIT:
+            hw->sleep_conf2.wk_mode_sel = 2;
+            break;
+        case UART_WK_MODE_CHAR_SEQ:
+            hw->sleep_conf2.wk_mode_sel = 3;
+            break;
+        default:
+            abort();
+            break;
+    }
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup mode mask.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  mask UART wakeup char seq mask to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_char_seq_mask(uart_dev_t *hw, uint32_t mask)
+{
+    hw->sleep_conf2.wk_char_mask = mask;
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup phrase size.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  char_num UART wakeup char seq phrase size to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_char_seq_char_num(uart_dev_t *hw, uint32_t char_num)
+{
+    hw->sleep_conf2.wk_char_num = char_num;
+}
+
+/**
+ * @brief  Set the UART specific character sequence wakeup mode char.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  char_position UART wakeup char seq char position to be set.
+ * @param  value UART wakeup char seq char value to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_char_seq_wk_char(uart_dev_t *hw, uint32_t char_position, char value)
+{
+    switch (char_position) {
+        case 0:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf1, wk_char0, value);
+            break;
+        case 1:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char1, value);
+            break;
+        case 2:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char2, value);
+            break;
+        case 3:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char3, value);
+            break;
+        case 4:
+            HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf0, wk_char4, value);
+            break;
+        default:
+            abort();
+            break;
+    }
+
+}
+
 
 /**
  * @brief   Enable/disable the UART pad clock in sleep_state
@@ -887,9 +994,9 @@ FORCE_INLINE_ATTR void uart_ll_get_at_cmd_char(uart_dev_t *hw, uint8_t *cmd_char
  *
  * @return The UART wakeup threshold value.
  */
-FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_thrd(uart_dev_t *hw)
+FORCE_INLINE_ATTR uint32_t uart_ll_get_wakeup_edge_thrd(uart_dev_t *hw)
 {
-    return hw->sleep_conf2.active_threshold + UART_LL_MIN_WAKEUP_THRESH;
+    return hw->sleep_conf2.active_threshold + UART_LL_WAKEUP_EDGE_THRED_MIN;
 }
 
 /**

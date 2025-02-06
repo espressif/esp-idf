@@ -775,6 +775,10 @@ config SOC_UART_BITRATE_MAX
     int
     default 5000000
 
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
+
 config SOC_SPIRAM_SUPPORTED
     bool
     default y

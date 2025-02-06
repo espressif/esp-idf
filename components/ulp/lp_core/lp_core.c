@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -118,6 +118,12 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         lp_core_ll_hp_wake_lp();
     }
 
+#if SOC_ULP_LP_UART_SUPPORTED
+    if (cfg->wakeup_source & ULP_LP_CORE_WAKEUP_SOURCE_LP_UART) {
+        lp_core_ll_enable_lp_uart_wakeup(true);
+    }
+#endif
+
 #if SOC_LP_TIMER_SUPPORTED
     ulp_lp_core_memory_shared_cfg_t* shared_mem = ulp_lp_core_memory_shared_cfg_get();
 
@@ -132,11 +138,6 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         ulp_lp_core_lp_timer_set_wakeup_time(cfg->lp_timer_sleep_duration_us);
     }
 #endif
-
-    if (cfg->wakeup_source & (ULP_LP_CORE_WAKEUP_SOURCE_LP_UART)) {
-        ESP_LOGE(TAG, "Wake-up source not yet supported");
-        return ESP_ERR_INVALID_ARG;
-    }
 
     return ESP_OK;
 }
