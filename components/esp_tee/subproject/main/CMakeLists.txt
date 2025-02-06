@@ -66,7 +66,7 @@ list(APPEND include "${mbedtls_dir}/port/include"
                     "${mbedtls_dir}/port/aes/include"
                     "${mbedtls_dir}/port/aes/dma/include")
 # SHA
-list(APPEND include "${mbedtls_dir}/port/sha/dma/include")
+list(APPEND include "${mbedtls_dir}/port/sha/core/include")
 
 # esp_app_desc_t configuration structure for TEE
 list(APPEND srcs "common/esp_app_desc_tee.c")

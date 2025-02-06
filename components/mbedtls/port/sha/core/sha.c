@@ -1,39 +1,27 @@
 /*
- *  ESP hardware accelerated SHA1/256/512 implementation
- *  based on mbedTLS FIPS-197 compliant version.
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
- *  Additions Copyright (C) 2016-2020, Espressif Systems (Shanghai) PTE Ltd
- *  SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Apache-2.0
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may
- *  not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * ESP hardware accelerated SHA1/256/512 implementation
+ * based on mbedTLS FIPS-197 compliant version.
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- *  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
- *
- */
-/*
- *  The SHA-1 standard was published by NIST in 1993.
- *
- *  http://www.itl.nist.gov/fipspubs/fip180-1.htm
  */
 
 #include <string.h>
+#include <stddef.h>
 #include <stdio.h>
-#include <sys/lock.h>
 
-#include "esp_private/esp_crypto_lock_internal.h"
-
-#include "esp_log.h"
-#include "esp_memory_utils.h"
 #include "esp_crypto_lock.h"
+#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_log.h"
+#include "sha/sha_core.h"
+#include "hal/sha_hal.h"
+#include "hal/sha_ll.h"
+#include "soc/soc_caps.h"
+
+#if SOC_SHA_SUPPORT_DMA
+#include "esp_memory_utils.h"
 #include "esp_attr.h"
 #include "esp_crypto_dma.h"
 #include "esp_heap_caps.h"
@@ -51,10 +39,6 @@
 #include "esp_private/periph_ctrl.h"
 #include "sys/param.h"
 
-#include "sha/sha_dma.h"
-#include "hal/sha_hal.h"
-#include "hal/sha_ll.h"
-#include "soc/soc_caps.h"
 #include "esp_sha_dma_priv.h"
 #include "sdkconfig.h"
 
@@ -62,22 +46,10 @@
 #include "esp_flash_encrypt.h"
 #endif /* SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT */
 
-#if SOC_SHA_GDMA
-#if !ESP_TEE_BUILD
-#define SHA_LOCK() esp_crypto_sha_aes_lock_acquire()
-#define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
-#else
-#define SHA_RCC_ATOMIC()
-#define SHA_LOCK()
-#define SHA_RELEASE()
-#endif
-#elif SOC_SHA_CRYPTO_DMA
-#define SHA_LOCK() esp_crypto_dma_lock_acquire()
-#define SHA_RELEASE() esp_crypto_dma_lock_release()
+#if SOC_SHA_CRYPTO_DMA
 #include "hal/crypto_dma_ll.h"
 #endif
-
-const static char *TAG = "esp-sha";
+#endif /* SOC_SHA_SUPPORT_DMA */
 
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
@@ -114,26 +86,26 @@ inline static size_t block_length(esp_sha_type type)
     }
 }
 
-
 /* Enable SHA peripheral and then lock it */
-void esp_sha_acquire_hardware()
+void esp_sha_acquire_hardware(void)
 {
-    SHA_LOCK(); /* Released when releasing hw with esp_sha_release_hardware() */
+#if !ESP_TEE_BUILD
+    /* Released when releasing hw with esp_sha_release_hardware() */
+    esp_crypto_sha_aes_lock_acquire();
+#endif
 
     SHA_RCC_ATOMIC() {
         sha_ll_enable_bus_clock(true);
-#if SOC_AES_CRYPTO_DMA
-        crypto_dma_ll_enable_bus_clock(true);
-#endif
         sha_ll_reset_register();
 #if SOC_AES_CRYPTO_DMA
+        crypto_dma_ll_enable_bus_clock(true);
         crypto_dma_ll_reset_register();
 #endif
     }
 }
 
 /* Disable SHA peripheral block and then release it */
-void esp_sha_release_hardware()
+void esp_sha_release_hardware(void)
 {
     SHA_RCC_ATOMIC() {
         sha_ll_enable_bus_clock(false);
@@ -142,8 +114,19 @@ void esp_sha_release_hardware()
 #endif
     }
 
-    SHA_RELEASE();
+#if !ESP_TEE_BUILD
+    esp_crypto_sha_aes_lock_release();
+#endif
 }
+
+void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
+{
+    sha_hal_hash_block(sha_type, data_block, block_length(sha_type) / 4, is_first_block);
+}
+
+#if SOC_SHA_SUPPORT_DMA
+
+const static char *TAG = "esp-sha";
 
 static bool s_check_dma_capable(const void *p)
 {
@@ -157,26 +140,21 @@ static bool s_check_dma_capable(const void *p)
 }
 
 /* Hash the input block by block, using non-DMA mode */
-static void esp_sha_block_mode(esp_sha_type sha_type, const uint8_t *input, uint32_t ilen,
-                               const uint8_t *buf, uint32_t buf_len, bool is_first_block)
+static void esp_sha_block_mode_fallback(esp_sha_type sha_type, const uint8_t *input, uint32_t ilen,
+                                        const uint8_t *buf, uint32_t buf_len, bool is_first_block)
 {
-    size_t blk_len = 0;
-    size_t blk_word_len = 0;
-    int num_block = 0;
-
-    blk_len = block_length(sha_type);
+    size_t blk_len = block_length(sha_type);
     assert(blk_len != 0);
 
-    blk_word_len =  blk_len / 4;
-    num_block = ilen / blk_len;
+    int num_block = ilen / blk_len;
 
     if (buf_len != 0) {
-        sha_hal_hash_block(sha_type, buf, blk_word_len, is_first_block);
+        esp_sha_block(sha_type, buf, is_first_block);
         is_first_block = false;
     }
 
     for (int i = 0; i < num_block; i++) {
-        sha_hal_hash_block(sha_type, input + blk_len * i, blk_word_len, is_first_block);
+        esp_sha_block(sha_type, input + blk_len * i, is_first_block);
         is_first_block = false;
     }
 }
@@ -346,7 +324,7 @@ int esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
 
     /* DMA cannot access memory in flash, hash block by block instead of using DMA */
     if (!s_check_dma_capable(input) && (ilen != 0)) {
-        esp_sha_block_mode(sha_type, input, ilen, buf, buf_len, is_first_block);
+        esp_sha_block_mode_fallback(sha_type, input, ilen, buf, buf_len, is_first_block);
         return 0;
     }
 
@@ -407,3 +385,4 @@ cleanup:
     free(dma_cap_buf);
     return ret;
 }
+#endif /* SOC_SHA_SUPPORT_DMA */

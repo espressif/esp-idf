@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+#if SOC_SHA_SUPPORT_DMA
 /**
  * @brief Start the DMA engine
  *
@@ -23,7 +24,7 @@ extern "C" {
  *      - ESP_ERR_INVALID_STATE: No DMA channel available
  */
 esp_err_t esp_sha_dma_start(const crypto_dma_desc_t *input);
-
+#endif /* SOC_SHA_SUPPORT_DMA */
 
 #ifdef __cplusplus
 }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -209,6 +209,11 @@ int __wrap_esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
                        const void *buf, uint32_t buf_len, bool is_first_block)
 {
     return esp_tee_service_call(7, SS_ESP_SHA_DMA, sha_type, input, ilen, buf, buf_len, is_first_block);
+}
+
+int __wrap_esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
+{
+    return esp_tee_service_call(4, SS_ESP_SHA_BLOCK, sha_type, data_block, is_first_block);
 }
 
 void __wrap_esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)

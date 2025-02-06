@@ -3,14 +3,11 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
+#include "soc/soc_caps.h"
 
 #include "esp_sha_dma_priv.h"
-
-#include "soc/soc_caps.h"
 #include "soc/crypto_dma_reg.h"
 #include "hal/crypto_dma_ll.h"
-
 
 esp_err_t esp_sha_dma_start(const crypto_dma_desc_t *input)
 {

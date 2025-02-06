@@ -479,13 +479,11 @@ components/mbedtls/port/include/esp32/aes.h
 components/mbedtls/port/include/esp32/sha.h
 components/mbedtls/port/include/esp32s2/aes.h
 components/mbedtls/port/include/esp32s2/gcm.h
-components/mbedtls/port/include/esp32s2/sha.h
 components/mbedtls/port/include/mbedtls/esp_debug.h
 components/mbedtls/port/include/sha/sha_parallel_engine.h
 components/mbedtls/port/include/sha1_alt.h
 components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
-components/mbedtls/port/sha/dma/sha.c
 components/mbedtls/port/sha/parallel_engine/sha.c
 components/nvs_flash/include/nvs_handle.hpp
 components/nvs_flash/src/nvs_cxx_api.cpp

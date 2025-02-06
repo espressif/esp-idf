@@ -17,7 +17,7 @@
 #if SOC_SHA_SUPPORTED
 #if SOC_SHA_SUPPORT_DMA
 
-#include "sha/sha_dma.h"
+#include "sha/sha_core.h"
 #include "sha_dma.h"
 
 #if defined(SOC_SHA_SUPPORT_SHA1)

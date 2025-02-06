@@ -18,10 +18,8 @@
 
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
-#elif SOC_SHA_SUPPORT_DMA
-#include "sha/sha_dma.h"
 #else
-#include "sha/sha_block.h"
+#include "sha/sha_core.h"
 #endif
 
 static const char *TAG = "esp_sha";
