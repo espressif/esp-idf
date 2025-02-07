@@ -23,10 +23,12 @@
 #include "esp_newlib.h"
 #include "test_utils.h"
 #include "sdkconfig.h"
+#include "esp_clk_tree.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_timer.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/uart_share_hw_ctrl.h"
 #include "esp_random.h"
 #include "nvs_flash.h"
@@ -54,6 +56,10 @@ __attribute__((unused)) static struct timeval tv_start, tv_stop;
 #if SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("wake up from light sleep using timer", "[lightsleep]")
 {
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sleep_enable_timer_wakeup(UINT64_MAX));
+    uint64_t lp_timer_max_allowed_time_in_us = ((BIT64(SOC_LP_TIMER_BIT_WIDTH_LO + SOC_LP_TIMER_BIT_WIDTH_HI) - 1) / esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX)) * MHZ;
+    TEST_ASSERT_EQUAL(ESP_OK, esp_sleep_enable_timer_wakeup(lp_timer_max_allowed_time_in_us));
+    TEST_ASSERT_EQUAL(ESP_ERR_INVALID_ARG, esp_sleep_enable_timer_wakeup(lp_timer_max_allowed_time_in_us + 1));
     esp_sleep_enable_timer_wakeup(2000000);
     gettimeofday(&tv_start, NULL);
     esp_light_sleep_start();
