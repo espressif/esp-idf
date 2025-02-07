@@ -15,6 +15,7 @@
 #include "esp_macros.h"
 #include "esp_memory_utils.h"
 #include "esp_sleep.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/rtc_clk.h"
@@ -1680,6 +1681,10 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
+    if (time_in_us > ((BIT64(SOC_LP_TIMER_BIT_WIDTH_LO + SOC_LP_TIMER_BIT_WIDTH_HI) - 1) / esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX)) * MHZ ) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
     return ESP_OK;
