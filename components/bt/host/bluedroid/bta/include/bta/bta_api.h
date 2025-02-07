@@ -1724,6 +1724,27 @@ extern tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 #define BTA_DM_BLE_ISO_UNKNOWN_EVT                                 BTM_BLE_ISO_UNKNOWN_EVT
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define BTA_BLE_CTE_SET_TRANS_PARAMS_EVT                           BTM_BLE_CTE_SET_TRANS_PARAMS_EVT
+#define BTA_BLE_CTE_SET_TRANS_ENABLE_EVT                           BTM_BLE_CTE_SET_TRANS_ENABLE_EVT
+#define BTA_BLE_CTE_SET_IQ_SAMP_ENABLE_EVT                         BTM_BLE_CTE_SET_IQ_SAMP_ENABLE_EVT
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define BTA_BLE_CTE_SET_CONN_RECV_PARAMS_EVT                       BTM_BLE_CTE_SET_CONN_RECV_PARAMS_EVT
+#define BTA_BLE_CTE_SET_CONN_TRANS_PARAMS_EVT                      BTM_BLE_CTE_SET_CONN_TRANS_PARAMS_EVT
+#define BTA_BLE_CTE_SET_CONN_REQ_ENABLE_EVT                        BTM_BLE_CTE_SET_CONN_REQ_ENABLE_EVT
+#define BTA_BLE_CTE_SET_CONN_RSP_ENABLE_EVT                        BTM_BLE_CTE_SET_CONN_RSP_ENABLE_EVT
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define BTA_BLE_CTE_READ_ANT_INFOR_EVT                             BTM_BLE_CTE_READ_ANT_INFOR_EVT
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define BTA_BLE_CTE_CONNLESS_IQ_REPORT_EVT                         BTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define BTA_BLE_CTE_CONN_IQ_REPORT_EVT                             BTM_BLE_CTE_CONN_IQ_REPORT_EVT
+#define BTA_BLE_CTE_REQUEST_FAILED_EVT                             BTM_BLE_CTE_REQUEST_FAILED_EVT
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 typedef struct {
@@ -3337,6 +3358,28 @@ extern void BTA_DmBleIsoRejectCisReq(uint16_t cis_handle, uint8_t reason);
 extern void BTA_DmBleIsoDisconCis(uint16_t cis_handle, uint8_t reason);
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void BTA_DmBleCteSetConnectionlessTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type,
+                                                uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+void BTA_DmBleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t cte_en);
+void BTA_DmBleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                                    uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *ant_ids);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                            uint8_t switching_pattern_len, uint8_t *ant_ids);
+
+void BTA_DmBleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_types, uint8_t switching_pattern_len, uint8_t *ant_ids);
+void BTA_DmBleCteSetConnectionRequestEnable(uint16_t conn_handle, uint8_t enable, uint16_t cte_req_interval,
+                                            uint8_t req_cte_len, uint8_t req_cte_Type);
+void BTA_DmBleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enable);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteReadAntInfor(void);
+#endif // if (BLE_FEAT_CTE_EN == TRUE)
+
 #endif
 
 enum {

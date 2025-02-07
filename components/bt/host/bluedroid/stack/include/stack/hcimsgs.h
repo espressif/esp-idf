@@ -1185,4 +1185,34 @@ UINT8 btsnd_hcic_ble_iso_read_tx_sync(uint16_t iso_hdl);
 UINT8 btsnd_hcic_ble_iso_read_iso_link_quality(uint16_t iso_hdl);
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_PARAMS    5
+#define HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_ENABLE    2
+#define HCIC_PARAM_SIZE_SET_CONNLESS_IQ_SAMPLING_ENABLE  6
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define HCIC_PARAM_SIZE_SET_CONN_CTE_RECEIVE_PARAMS      5
+#define HCIC_PARAM_SIZE_SET_CONN_CTE_TRANS_PARAMS        4
+#define HCIC_PARAM_SIZE_CONN_CTE_REQ_ENABLE              7
+#define HCIC_PARAM_SIZE_CONN_CTE_RSP_ENABLE              3
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define HCIC_PARAM_SIZE_READ_ANT_INFO                    0
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+UINT8 btsnd_hcic_ble_set_connless_cte_trans_params(uint8_t adv_hdl, uint8_t cte_len, uint8_t cte_type,
+                                                uint8_t cte_cnt, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+UINT8 btsnd_hcic_ble_set_connless_cte_enable(uint8_t adv_hdl, uint8_t cte_en);
+UINT8 btsnd_hcic_ble_set_connless_iq_sampling_enable(uint16_t sync_hdl, uint8_t sampling_en, uint8_t slot_dur,
+                                                uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+UINT8 btsnd_hcic_ble_set_conn_cte_receive_params(uint16_t conn_hdl, uint8_t sampling_en, uint8_t slot_dur,
+                                                uint8_t switching_pattern_len, uint8_t *antenna_ids);
+UINT8 btsnd_hcic_ble_set_conn_cte_trans_params(uint16_t conn_hdl, uint8_t cte_type, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+UINT8 btsnd_hcic_ble_conn_cte_req_enable(uint16_t conn_hdl, uint8_t enable, uint16_t cte_req_int, uint8_t req_cte_len, uint8_t req_cte_type);
+UINT8 btsnd_hcic_ble_conn_cte_rsp_enable(uint16_t conn_hdl, uint8_t enable);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+UINT8 btsnd_hcic_ble_read_antenna_info(void);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 #endif
