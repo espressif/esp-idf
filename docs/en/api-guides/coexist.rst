@@ -6,7 +6,7 @@ RF Coexistence
 Overview
 ---------------
 
-ESP boards now support three modules: Bluetooth (BT & BLE), IEEE802.15.4, and Wi-Fi. Each type of board has only one 2.4 GHz ISM band RF module, shared by two or three modules. Consequently, a module cannot receive or transmit data while another module is engaged in data transmission or reception. In such scenarios, {IDF_TARGET_NAME} employs the time-division multiplexing method to manage the reception and transmission of packets.
+ESP boards now support three modules: Bluetooth (BT & BLE), IEEE 802.15.4 (Thread / Zigbee), and Wi-Fi. Each type of board has only one 2.4 GHz ISM band RF module, shared by two or three modules. Consequently, a module cannot receive or transmit data while another module is engaged in data transmission or reception. In such scenarios, {IDF_TARGET_NAME} employs the time-division multiplexing method to manage the reception and transmission of packets.
 
 
 Supported Coexistence Scenario for {IDF_TARGET_NAME}
@@ -69,31 +69,60 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
       |       |        |TX         |Y       |Y            |Y    |Y         |Y          |
       +-------+--------+-----------+--------+-------------+-----+----------+-----------+
 
-.. only:: SOC_IEEE802154_SUPPORTED
+.. only:: SOC_WIFI_SUPPORTED and SOC_IEEE802154_SUPPORTED
 
-  .. table:: Supported Features of Thread (IEEE802.15.4) and BLE Coexistence
+  .. table:: Supported Features of Wi-Fi and IEEE 802.15.4 (Thread / Zigbee) Coexistence
 
-      +--------+-----------------+-----+------------+-----------+----------+
-      |                          |BLE                                      |
-      +                          +-----+------------+-----------+----------+
-      |                          |Scan |Advertising |Connecting |Connected |
-      +--------+-----------------+-----+------------+-----------+----------+
-      | Thread |Scan             |X    |Y           |Y          |Y         |
-      +        +-----------------+-----+------------+-----------+----------+
-      |        |Connecting       |X    |Y           |Y          |Y         |
-      +        +-----------------+-----+------------+-----------+----------+
-      |        |Connected        |X    |Y           |Y          |Y         |
-      +        +-----------------+-----+------------+-----------+----------+
-      |        |Connected        |     |            |           |          |
-      |        |(high throughput)|X    |C1          |C1         |C1        |
-      +--------+-----------------+-----+------------+-----------+----------+
+      +-------+--------+-----------+--------+---------+-----------+
+      |                            |Thread / Zigbee               |
+      +                            +--------+---------+-----------+
+      |                            |Scan    |Router   |End Device |
+      +-------+--------+-----------+--------+---------+-----------+
+      | Wi-Fi |STA     |Scan       |C1      |C1       |Y          |
+      +       +        +-----------+--------+---------+-----------+
+      |       |        |Connecting |C1      |C1       |Y          |
+      +       +        +-----------+--------+---------+-----------+
+      |       |        |Connected  |C1      |C1       |Y          |
+      +       +--------+-----------+--------+---------+-----------+
+      |       |SOFTAP  |TX Beacon  |Y       |X        |Y          |
+      +       +        +-----------+--------+---------+-----------+
+      |       |        |Connecting |C1      |X        |C1         |
+      +       +        +-----------+--------+---------+-----------+
+      |       |        |Connected  |C1      |X        |C1         |
+      +       +--------+-----------+--------+---------+-----------+
+      |       |Sniffer |RX         |C1      |X        |C1         |
+      +-------+--------+-----------+--------+---------+-----------+
+
+.. only:: SOC_BLE_SUPPORTED and SOC_IEEE802154_SUPPORTED
+
+  .. table:: Supported Features of IEEE 802.15.4 (Thread / Zigbee) and BLE Coexistence
+
+      +-----------------+-------------+-----+------------+-----------+----------+
+      |                               |BLE                                      |
+      +                               +-----+------------+-----------+----------+
+      |                               |Scan |Advertising |Connecting |Connected |
+      +-----------------+-------------+-----+------------+-----------+----------+
+      | Thread / Zigbee |Scan         |X    |Y           |Y          |Y         |
+      +                 +-------------+-----+------------+-----------+----------+
+      |                 |Router       |X    |Y           |Y          |Y         |
+      +                 +-------------+-----+------------+-----------+----------+
+      |                 |End Device   |C1   |Y           |Y          |Y         |
+      +-----------------+-------------+-----+------------+-----------+----------+
 
 .. note::
 
-  Y: supported and performance is stable
-  C1: supported but the performance is unstable
-  X: not supported
-  S: supported and performance is stable in STA mode, otherwise not supported
+  - Y: supported and the performance is stable
+  - C1: supported but the performance is unstable
+  - X: not supported
+  - S: supported and the performance is stable in STA mode, otherwise not supported
+
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  .. note::
+
+    Routers in Thread and Zigbee networks maintain unsynchronized links with their neighbors, requiring continuous signal reception. With only a single RF path, increased Wi-Fi or BLE traffic may lead to higher packet loss rates for Thread and Zigbee communications.
+
+    To build a Wi-Fi based Thread Border Router or Zigbee Gateway product, we recommend using a dual-SoC solution (e.g., ESP32-S3 + ESP32-H2) with separate antennas. This setup enables simultaneous reception of Wi-Fi and 802.15.4 signals, ensuring optimal performance.
 
 
 Coexistence Mechanism and Policy
@@ -102,7 +131,7 @@ Coexistence Mechanism and Policy
 Coexistence Mechanism
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The RF resource allocation mechanism is based on priority. As shown below, both Bluetooth module and Wi-Fi module request RF resources from the coexistence module, and the coexistence module decides who will use the RF resource based on their priority.
+The RF resource allocation mechanism is based on priority. As shown below, Wi-Fi, Bluetooth and 802.15.4 modules request RF resources from the coexistence module, and the coexistence module decides who will use the RF resource based on their priority.
 
 .. blockdiag::
     :scale: 100%
@@ -120,15 +149,17 @@ The RF resource allocation mechanism is based on priority. As shown below, both 
       default_group_color = none;
 
       # node labels
-   	  Wi-Fi [shape = box];
-   	  Bluetooth [shape = box];
-   	  Coexistence [shape = box, label = 'Coexistence module'];
-   	  RF [shape = box, label = 'RF module'];
+       Wi-Fi [shape = box];
+       Bluetooth [shape = box];
+       802.15.4 [shape = box];
+       Coexistence [shape = box, label = 'Coexistence module'];
+       RF [shape = box, label = 'RF module'];
 
       # node connections
-   	  Wi-Fi -> Coexistence;
-   	  Bluetooth  -> Coexistence;
-   	  Coexistence -> RF;
+       Wi-Fi -> Coexistence;
+       Bluetooth  -> Coexistence;
+       802.15.4  -> Coexistence;
+       Coexistence -> RF;
     }
 
 
@@ -149,10 +180,6 @@ Coexistence Period and Time Slice
 
   Wi-Fi and BLE have their fixed time slice to use the RF. In the Wi-Fi time slice, Wi-Fi will send a higher priority request to the coexistence arbitration module. Similarly, BLE can enjoy higher priority at their own time slice. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
-.. only:: SOC_IEEE802154_SUPPORTED
-
-  Currently, the only supported strategy ensures that the priority of BLE always takes precedence over IEEE802.15.4.
-
 .. list::
 
   :esp32: 1) IDLE status: the coexistence of BT and BLE is controlled by Bluetooth module.
@@ -171,6 +198,9 @@ According to the coexistence logic, different coexistence periods and time slice
 
     Time Slice Under the Status of Wi-Fi CONNECTED and BLE CONNECTED
 
+.. only:: SOC_IEEE802154_SUPPORTED
+
+  The IEEE 802.15.4 module requests RF resources based on pre-assigned priorities. Normal receive operations are assigned the lowest priority, meaning Wi-Fi and BLE will take over the RF whenever needed, while 802.15.4 can only receive during the remaining time. Other 802.15.4 operations, such as transmitting or receiving ACKs and transmitting or receiving at given time, are assigned higher priorities. However, their access to RF ultimately depends on the priorities of Wi-Fi and BLE operations at that moment.
 
 Dynamic Priority
 """"""""""""""""""""""""""""
