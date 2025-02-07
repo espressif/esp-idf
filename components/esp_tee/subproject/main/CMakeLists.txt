@@ -20,8 +20,7 @@ set(srcs "core/esp_tee_init.c"
 
 # Arch specific implementation for TEE
 list(APPEND srcs "arch/${arch}/esp_tee_vectors.S"
-                 "arch/${arch}/esp_tee_vector_table.S"
-                 "arch/${arch}/esp_tee_secure_entry.S")
+                 "arch/${arch}/esp_tee_vector_table.S")
 
 # SoC specific implementation for TEE
 list(APPEND srcs "soc/${target}/esp_tee_secure_sys_cfg.c"
@@ -78,7 +77,9 @@ list(APPEND srcs "common/esp_app_desc_tee.c")
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include})
 
-set_source_files_properties("core/esp_secure_services.c" PROPERTIES COMPILE_FLAGS -Wno-deprecated)
+# TODO: Currently only -Og optimization level works correctly at runtime
+set_source_files_properties("core/esp_secure_dispatcher.c" PROPERTIES COMPILE_FLAGS "-Og")
+
 include(${CMAKE_CURRENT_LIST_DIR}/ld/esp_tee_ld.cmake)
 
 # esp_app_desc_t configuration structure for TEE: Linking symbol and trimming project version and name

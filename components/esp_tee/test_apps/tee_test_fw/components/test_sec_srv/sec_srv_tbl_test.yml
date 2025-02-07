@@ -64,7 +64,7 @@ secure_services:
       - id: 215
         type: custom
         function: dummy_secure_service
-        args: 0
+        args: 9
       - id: 216
         type: custom
         function: add_in_loop

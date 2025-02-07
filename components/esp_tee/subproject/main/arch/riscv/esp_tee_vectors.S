@@ -12,6 +12,7 @@
 
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
+#include "esp_private/vectors_const.h"
 
 #include "esp_tee.h"
 #include "sdkconfig.h"
@@ -25,9 +26,12 @@
     .equ ECALL_U_MODE, 0x8
     .equ ECALL_M_MODE, 0xb
     .equ TEE_APM_INTR_MASK_0, 0x00300000
-    .equ TEE_APM_INTR_MASK_1, 0x000000F8
+    .equ TEE_APM_INTR_MASK_1, 0x000000f8
+    .equ TEE_INTR_DELEG_MASK, 0xffffbfff
 
     .global esp_tee_global_interrupt_handler
+    .global   esp_tee_service_dispatcher
+
 
     .section .data
     .align 4
@@ -179,6 +183,8 @@ _panic_handler:
 
     /* Read mcause */
     csrr    t0, mcause
+    li      t1, VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK
+    and     t0, t0, t1
 
     /* Check whether the exception is an M-mode ecall */
     li      t1, ECALL_M_MODE
@@ -291,28 +297,34 @@ _user_ecall:
     lw      t0, 0(sp)
     addi    sp, sp, 16
 
-    /* This point is reached when a service call is issued from the REE */
+    /* This point is reached when a secure service call is issued from the REE */
     /* Save register context and mepc */
     save_general_regs RV_STK_FRMSZ
     save_mepc
 
-    /* Saving the U-mode (i.e. REE) stack pointer */
+    /* Save the U-mode (i.e. REE) stack pointer */
     la      t0, _ns_sp
     sw      sp, 0(t0)
 
-    /* Switching to the M-mode (i.e. TEE) stack */
+    /* Switch to the M-mode (i.e. TEE) stack */
     la      sp, _tee_stack
 
-    /* Load the TEE entry point (see sec_world_entry) in the mepc */
-    la      t2, esp_tee_app_config
-    lw      t2, ESP_TEE_CFG_OFFS_S_ENTRY_ADDR(t2)
-    csrw    mepc, t2
+    /* Disable the U-mode delegation of all interrupts */
+    csrwi   mideleg, 0
 
-    /* Set the privilege mode to transition to after mret to M-mode  */
-    li      t3, MSTATUS_MPP
-    csrs    mstatus, t3
+    /* Enable interrupts */
+    csrsi   mstatus, MSTATUS_MIE
 
-    mret
+    /* Jump to the secure service dispatcher */
+    jal     esp_tee_service_dispatcher
+
+    /* Enable the U-mode delegation of all interrupts (except the TEE secure interrupt) */
+    li      t0, TEE_INTR_DELEG_MASK
+    csrs    mideleg, t0
+
+    /* Fire an M-ecall */
+    mv      a1, zero
+    ecall
 
     /* This point is reached after servicing a U-mode interrupt occurred
      * while executing a secure service */
@@ -333,7 +345,7 @@ _rtn_from_ns_int:
 
     /* Restore register context and resume the secure service */
     restore_mepc
-    restore_general_regs
+    restore_general_regs RV_STK_FRMSZ
 
     mret
 
@@ -347,7 +359,7 @@ _rtn_from_ns_int:
 _tee_ns_intr_handler:
     /* Start by saving the general purpose registers and the PC value before
      * the interrupt happened. */
-    save_general_regs
+    save_general_regs RV_STK_FRMSZ
     save_mepc
 
     /* Though it is not necessary we save GP and SP here.
@@ -357,7 +369,7 @@ _tee_ns_intr_handler:
     /* As gp register is not saved by the macro, save it here */
     sw      gp, RV_STK_GP(sp)
     /* Same goes for the SP value before trapping */
-    addi    t0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
+    addi    t0, sp, RV_STK_FRMSZ /* restore sp with the value when interrupt happened */
     /* Save SP */
     sw      t0, RV_STK_SP(sp)
 
@@ -395,8 +407,8 @@ _tee_ns_intr_handler:
     csrw    mscratch, t0
 
     /* Enable the U-mode interrupt delegation (except for the TEE secure interrupt) */
-    li      t0, 0xffffbfff
-    csrw    mideleg, t0
+    li      t0, TEE_INTR_DELEG_MASK
+    csrs    mideleg, t0
 
     /* Place magic bytes in all the general registers */
     store_magic_general_regs
@@ -413,7 +425,7 @@ _tee_ns_intr_handler:
 _tee_s_intr_handler:
     /* Start by saving the general purpose registers and the PC value before
      * the interrupt happened. */
-    save_general_regs
+    save_general_regs RV_STK_FRMSZ
     save_mepc
 
     /* Though it is not necessary we save GP and SP here.
@@ -423,7 +435,7 @@ _tee_s_intr_handler:
     /* As gp register is not saved by the macro, save it here */
     sw      gp, RV_STK_GP(sp)
     /* Same goes for the SP value before trapping */
-    addi    t0, sp, CONTEXT_SIZE /* restore sp with the value when interrupt happened */
+    addi    t0, sp, RV_STK_FRMSZ /* restore sp with the value when interrupt happened */
     /* Save SP */
     sw      t0, RV_STK_SP(sp)
 
@@ -457,7 +469,7 @@ _save_reg_ctx:
 _continue:
     /* Before doing anything preserve the stack pointer */
     mv      s11, sp
-    /* Switching to the TEE interrupt stack */
+    /* Switch to the TEE interrupt stack */
     la      sp, _tee_intr_stack
     /* If this is a non-nested interrupt, SP now points to the interrupt stack */
 
@@ -527,7 +539,7 @@ _intr_hdlr_exec:
     mv      sp, s11
 
     restore_mepc
-    restore_general_regs
+    restore_general_regs RV_STK_FRMSZ
     /* exit, this will also re-enable the interrupts */
     mret
 

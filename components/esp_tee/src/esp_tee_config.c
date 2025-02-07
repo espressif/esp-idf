@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,9 +25,9 @@ esp_tee_config_t esp_tee_app_config __attribute__((section(".esp_tee_app_cfg")))
     .api_major_version = ESP_TEE_API_MAJOR_VER,
     .api_minor_version = ESP_TEE_API_MINOR_VER,
 
-    /* .s_entry_addr and .s_intr_handler are NULL in the
-       app binary, but will be written by the TEE before it loads the binary
-    */
+    /* s_intr_handler is NULL in the REE image, but will be written by
+     * the TEE before it loads the binary
+     */
 
     .ns_int_handler = &_tee_interrupt_handler,
     .ns_entry_addr = &_u2m_switch,
