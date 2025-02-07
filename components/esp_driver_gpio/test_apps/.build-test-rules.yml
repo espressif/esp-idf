@@ -3,6 +3,10 @@
 components/esp_driver_gpio/test_apps:
   depends_components:
     - esp_driver_gpio
+  disable:
+    - if: IDF_TARGET in ["esp32h21"]
+      temporary: true
+      reason: not support yet # TODO: [esp32h21] IDF-11611
 
 components/esp_driver_gpio/test_apps/gpio_extensions:
   enable:

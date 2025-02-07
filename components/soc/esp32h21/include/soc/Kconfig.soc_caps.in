@@ -387,10 +387,6 @@ config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
-    bool
-    default y
-
 config SOC_SPI_MEM_SUPPORT_AUTO_RESUME
     bool
     default y

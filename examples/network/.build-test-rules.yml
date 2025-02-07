@@ -1,6 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 examples/network/bridge:
+  disable:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not supported yet # TODO: [ESP32H21] IDF-12203
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Generic functionality, no need to be run on specific targets
