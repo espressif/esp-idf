@@ -465,6 +465,12 @@ if(CONFIG_BT_ENABLED)
                             "host/bluedroid/hci/ble_hci_iso.c")
         endif()
 
+        if(CONFIG_BT_BLE_FEAT_CTE_EN)
+            list(APPEND srcs "host/bluedroid/stack/btm/btm_ble_cte.c"
+                            "host/bluedroid/btc/profile/std/cte/btc_ble_cte.c"
+                            "host/bluedroid/api/esp_ble_cte_api.c")
+        endif()
+
     endif()
 
     if(CONFIG_BLE_MESH)

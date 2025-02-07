@@ -6235,6 +6235,57 @@ void bta_dm_ble_discon_cis(tBTA_DM_MSG *p_data)
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void bta_dm_ble_set_cte_trans_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetCteTransParams(p_data->set_cte_trans_params.adv_handle, p_data->set_cte_trans_params.cte_len, p_data->set_cte_trans_params.cte_type,
+                            p_data->set_cte_trans_params.cte_count, p_data->set_cte_trans_params.switching_pattern_len, p_data->set_cte_trans_params.antenna_ids);
+}
+
+void bta_dm_ble_set_cte_trans_enable(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionlessTransEnable(p_data->set_trans_en.adv_handle, p_data->set_trans_en.cte_enable);
+}
+
+void bta_dm_ble_set_iq_sampling_en(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionlessIqSamplingEnable(p_data->iq_samp_en.sync_handle, p_data->iq_samp_en.sampling_en, p_data->iq_samp_en.slot_dur,
+                                                    p_data->iq_samp_en.max_sampled_ctes, p_data->iq_samp_en.switching_pattern_len, p_data->iq_samp_en.antenna_ids);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void bta_dm_ble_set_conn_cte_recv_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionReceiveParams(p_data->recv_params.conn_handle, p_data->recv_params.sampling_en, p_data->recv_params.slot_dur,
+                                            p_data->recv_params.switching_pattern_len, p_data->recv_params.antenna_ids);
+}
+
+void bta_dm_ble_set_conn_trans_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionTransParams(p_data->conn_trans_params.conn_handle, p_data->conn_trans_params.cte_types,
+                                        p_data->conn_trans_params.switching_pattern_len, p_data->conn_trans_params.antenna_ids);
+}
+
+void bta_dm_ble_set_conn_cte_req_en(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionRequestEnable(p_data->conn_req_en.conn_handle, p_data->conn_req_en.enable, p_data->conn_req_en.cte_req_interval,
+                                            p_data->conn_req_en.req_cte_len, p_data->conn_req_en.req_cte_Type);
+}
+
+void bta_dm_ble_set_conn_cte_rsp_en(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteSetConnectionRspEnable(p_data->conn_rsp_en.conn_handle, p_data->conn_rsp_en.enable);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+void bta_dm_ble_read_cte_ant_infor(tBTA_DM_MSG *p_data)
+{
+    BTM_BleCteReadAntInfor();
+}
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **

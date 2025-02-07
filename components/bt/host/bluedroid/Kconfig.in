@@ -1440,6 +1440,27 @@ choice BT_BLE_ISO_FLOW_CONTROL
 
 endchoice
 
+menuconfig BT_BLE_FEAT_CTE_EN
+    bool "Enable BLE CTE feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_CTE_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE 5.1 CTE
+
+config BT_BLE_FEAT_CTE_CONNECTIONLESS_EN
+    bool "Enable BLE CTE connectionless feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE in periodic advertising
+
+config BT_BLE_FEAT_CTE_CONNECTION_EN
+    bool "Enable BLE CTE connection feature"
+    depends on BT_BLE_FEAT_CTE_EN
+    default y
+    help
+        Transmission of CTE by ACL connection
+
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_BLE_ENABLED

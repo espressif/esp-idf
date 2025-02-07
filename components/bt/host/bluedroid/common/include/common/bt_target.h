@@ -372,6 +372,24 @@
 #error "Only one of standard or non-standard can be enabled"
 #endif
 
+#if (UC_BT_BLE_FEAT_CTE_EN == TRUE)
+#define BLE_FEAT_CTE_EN     TRUE
+#else
+#define BLE_FEAT_CTE_EN     FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define BLE_FEAT_CTE_CONNECTIONLESS_EN     TRUE
+#else
+#define BLE_FEAT_CTE_CONNECTIONLESS_EN     FALSE
+#endif
+
+#if (UC_BT_BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define BLE_FEAT_CTE_CONNECTION_EN     TRUE
+#else
+#define BLE_FEAT_CTE_CONNECTION_EN     FALSE
+#endif
+
 #if (UC_BT_BLE_HIGH_DUTY_ADV_INTERVAL == TRUE)
 #define BLE_HIGH_DUTY_ADV_INTERVAL TRUE
 #else

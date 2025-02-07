@@ -2447,3 +2447,197 @@ UINT8 btsnd_hcic_ble_iso_read_iso_link_quality(uint16_t iso_handle)
 }
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+UINT8 btsnd_hcic_ble_set_connless_cte_trans_params(uint8_t adv_hdl, uint8_t cte_len, uint8_t cte_type,
+                                                uint8_t cte_cnt, uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connless cte trans: adv_hdl %d cte_len %d cte_type %d cte_cnt %d", adv_hdl, cte_len, cte_type, cte_cnt);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_PARAMS + switching_pattern_len);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONNLESS_CTE_TRANS_PARAMS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_PARAMS + switching_pattern_len);
+
+    UINT8_TO_STREAM(pp, adv_hdl);
+    UINT8_TO_STREAM(pp, cte_len);
+    UINT8_TO_STREAM(pp, cte_type);
+    UINT8_TO_STREAM(pp, cte_cnt);
+    UINT8_TO_STREAM(pp, switching_pattern_len);
+    for (uint8_t i = 0; i < switching_pattern_len; i++)
+    {
+        UINT8_TO_STREAM(pp, antenna_ids[i]);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_connless_cte_enable(uint8_t adv_hdl, uint8_t cte_en)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connect cte enable: adv_hdl %d cte_en %d", adv_hdl, cte_en);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_ENABLE);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONNLESS_CTE_TRANS_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CONNLESS_CTE_TRANS_ENABLE);
+
+    UINT8_TO_STREAM(pp, adv_hdl);
+    UINT8_TO_STREAM(pp, cte_en);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_connless_iq_sampling_enable(uint16_t sync_hdl, uint8_t sampling_en, uint8_t slot_dur,
+                                                uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci enable IQ sampling: sync_hdl %d sampling_en %d slot_dur %d", sync_hdl, sampling_en, slot_dur);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CONNLESS_IQ_SAMPLING_ENABLE + switching_pattern_len);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONNLESS_IQ_SAMPLING_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CONNLESS_IQ_SAMPLING_ENABLE + switching_pattern_len);
+
+    UINT16_TO_STREAM(pp, sync_hdl);
+    UINT8_TO_STREAM(pp, sampling_en);
+    UINT8_TO_STREAM(pp, slot_dur);
+    UINT8_TO_STREAM(pp, max_sampled_ctes);
+    UINT8_TO_STREAM(pp, switching_pattern_len);
+    for (uint8_t i = 0; i < switching_pattern_len; i++)
+    {
+        UINT8_TO_STREAM(pp, antenna_ids[i]);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+UINT8 btsnd_hcic_ble_set_conn_cte_receive_params(uint16_t conn_hdl, uint8_t sampling_en, uint8_t slot_dur,
+                                                uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connection cte receive params: conn_hdl %d sampling_en %d slot_dur %d", conn_hdl, sampling_en, slot_dur);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CONN_CTE_RECEIVE_PARAMS + switching_pattern_len);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONN_CTE_RECEIVE_PARAMS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CONN_CTE_RECEIVE_PARAMS + switching_pattern_len);
+
+    UINT16_TO_STREAM(pp, conn_hdl);
+    UINT8_TO_STREAM(pp, sampling_en);
+    UINT8_TO_STREAM(pp, slot_dur);
+    UINT8_TO_STREAM(pp, switching_pattern_len);
+    for (uint8_t i = 0; i < switching_pattern_len; i++)
+    {
+        UINT8_TO_STREAM(pp, antenna_ids[i]);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_conn_cte_trans_params(uint16_t conn_hdl, uint8_t cte_type, uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connection cte trans params: conn_hdl %d cte_type %d len %d", conn_hdl, cte_type, switching_pattern_len);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_CONN_CTE_TRANS_PARAMS + switching_pattern_len);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONN_CTE_TRANS_PARAMS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_CONN_CTE_TRANS_PARAMS + switching_pattern_len);
+
+    UINT16_TO_STREAM(pp, conn_hdl);
+    UINT8_TO_STREAM(pp, cte_type);
+    UINT8_TO_STREAM(pp, switching_pattern_len);
+    for (uint8_t i = 0; i < switching_pattern_len; i++)
+    {
+        UINT8_TO_STREAM(pp, antenna_ids[i]);
+    }
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_conn_cte_req_enable(uint16_t conn_hdl, uint8_t enable, uint16_t cte_req_int, uint8_t req_cte_len, uint8_t req_cte_type)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connect cte request enable: conn_hdl %d enable %d cte_req_int %d req_cte_len %d req_cte_type %d", conn_hdl, enable, cte_req_int, req_cte_len, req_cte_type);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_CONN_CTE_REQ_ENABLE);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONN_CTE_REQ_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CONN_CTE_REQ_ENABLE);
+
+    UINT16_TO_STREAM(pp, conn_hdl);
+    UINT8_TO_STREAM(pp, enable);
+    UINT16_TO_STREAM(pp, cte_req_int);
+    UINT8_TO_STREAM(pp, req_cte_len);
+    UINT8_TO_STREAM(pp, req_cte_type);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_conn_cte_rsp_enable(uint16_t conn_hdl, uint8_t enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set connect cte response enable: conn_hdl %d enable %d", conn_hdl, enable);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_CONN_CTE_RSP_ENABLE);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_CONN_CTE_RSP_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_CONN_CTE_RSP_ENABLE);
+
+    UINT16_TO_STREAM(pp, conn_hdl);
+    UINT8_TO_STREAM(pp, enable);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+UINT8 btsnd_hcic_ble_read_antenna_info(void)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci read antenna information");
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_ANT_INFO);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_ANT_INFOR);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_ANT_INFO);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)

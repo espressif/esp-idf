@@ -591,6 +591,13 @@ void btm_ble_biginfo_adv_report_evt(tBTM_BLE_BIGINFO_ADV_REPORT_EVT *params);
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 void btm_ble_iso_data_path_update_complete(UINT16 opcode, UINT8 hci_status, UINT16 conn_handle);
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+void btm_ble_cte_read_ant_infor_complete(UINT8 *p);
+void btm_ble_connless_iq_report_evt(tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT *params);
+void btm_ble_conn_iq_report_evt(tBTM_BLE_CTE_CONN_IQ_REPORT_EVT *params);
+void btm_ble_cte_req_failed_evt(tBTM_BLE_CTE_REQ_FAILED_EVT *params);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 /*
 #ifdef __cplusplus
 }
