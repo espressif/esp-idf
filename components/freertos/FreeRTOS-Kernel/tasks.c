@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -125,6 +125,29 @@
 #ifndef configIDLE_TASK_NAME
     #define configIDLE_TASK_NAME    "IDLE"
 #endif
+
+/* Reserve space for Core ID and null termination. */
+#if ( configNUMBER_OF_CORES > 9 )
+    /* More than 9 cores require 2 characters for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 3U )
+        #error Minimum required task name length is 3. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    3U
+
+#elif ( configNUMBER_OF_CORES > 1 )
+    /* Multi-core systems with up to 9 cores require 1 character for core ID and 1 for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 2U )
+        #error Minimum required task name length is 2. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    2U
+
+#else /* if ( configNUMBER_OF_CORES > 9 ) */
+    /* Reserve space for null termination. */
+    #if ( configMAX_TASK_NAME_LEN < 1U )
+        #error Minimum required task name length is 1. Please increase configMAX_TASK_NAME_LEN.
+    #endif
+    #define taskRESERVED_TASK_NAME_LENGTH    1U
+#endif /* if ( ( configNUMBER_OF_CORES > 1 ) */
 
 /*-----------------------------------------------------------*/
 
@@ -2254,21 +2277,7 @@ static BaseType_t prvCreateIdleTasks( void )
     BaseType_t xCoreID;
 
     #if ( configNUMBER_OF_CORES > 1 )
-
-    /* The code for limiting the idle task name copy length has been backported from the upstream
-     * FreeRTOS-Kernel source. The reference for the same is on the mainline
-     * at the commit id# f31787d35d5614620fc6fefa6c12df2583612fcf. */
     char cIdleName[ configMAX_TASK_NAME_LEN ] = { 0 };
-    BaseType_t xIdleNameLen;
-    BaseType_t xCopyLen;
-
-    configASSERT( ( configIDLE_TASK_NAME != NULL ) && ( configMAX_TASK_NAME_LEN > 3 ) );
-
-    /* The length of the idle task name is limited to the minimum of the length
-     * of configIDLE_TASK_NAME and configMAX_TASK_NAME_LEN - 2, keeping space
-     * for the core ID suffix and the null-terminator. */
-    xIdleNameLen = strlen( configIDLE_TASK_NAME );
-    xCopyLen = xIdleNameLen < ( configMAX_TASK_NAME_LEN - 2 ) ? xIdleNameLen : ( configMAX_TASK_NAME_LEN - 2 );
     #endif /* #if ( configNUMBER_OF_CORES > 1 ) */
 
     /* Add each idle task at the lowest priority. */
@@ -2289,9 +2298,24 @@ static BaseType_t prvCreateIdleTasks( void )
                 mtCOVERAGE_TEST_MARKER();
             }
 
-            for( xIdleTaskNameIndex = ( BaseType_t ) 0; xIdleTaskNameIndex < xCopyLen; xIdleTaskNameIndex++ )
+            /* MISRA Ref 14.3.1 [Configuration dependent invariant] */
+            /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-143. */
+            /* coverity[misra_c_2012_rule_14_3_violation] */
+            for( xIdleTaskNameIndex = 0U; xIdleTaskNameIndex < ( configMAX_TASK_NAME_LEN - taskRESERVED_TASK_NAME_LENGTH ); xIdleTaskNameIndex++ )
             {
+                /* MISRA Ref 18.1.1 [Configuration dependent bounds checking] */
+                /* More details at: https://github.com/FreeRTOS/FreeRTOS-Kernel/blob/main/MISRA.md#rule-181. */
+                /* coverity[misra_c_2012_rule_18_1_violation] */
                 cIdleName[ xIdleTaskNameIndex ] = configIDLE_TASK_NAME[ xIdleTaskNameIndex ];
+
+                if( cIdleName[ xIdleTaskNameIndex ] == ( char ) 0x00 )
+                {
+                    break;
+                }
+                else
+                {
+                    mtCOVERAGE_TEST_MARKER();
+                }
             }
 
             /* Append the idle task number to the end of the name. */
