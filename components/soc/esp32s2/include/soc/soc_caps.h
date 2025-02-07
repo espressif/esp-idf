@@ -340,6 +340,10 @@
 #define SOC_TIMER_GROUP_SUPPORT_APB       (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (4)
 
+/*-------------------------- LP_TIMER CAPS ----------------------------------*/
+#define SOC_LP_TIMER_BIT_WIDTH_LO           32 // Bit width of lp_timer low part
+#define SOC_LP_TIMER_BIT_WIDTH_HI           16 // Bit width of lp_timer high part
+
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (2)     /*!< Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*!< 15 Touch channels */

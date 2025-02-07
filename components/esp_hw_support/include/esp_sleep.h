@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,9 +174,13 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void);
 /**
  * @brief Enable wakeup by timer
  * @param time_in_us  time before wakeup, in microseconds
+ * @note  The valid `time_in_us` value depends on the bit width of the lp_timer/rtc_timer counter and the
+ *        current slow clock source selection (Refer RTC clock source configuration in menuconfig).
+ *        Valid values should be positive values less than RTC slow clock period * (2 ^ RTC timer bitwidth).
+ *
  * @return
  *      - ESP_OK on success
- *      - ESP_ERR_INVALID_ARG if value is out of range (TBD)
+ *      - ESP_ERR_INVALID_ARG if value is out of range.
  */
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us);
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,9 +145,9 @@ uint32_t rtc_clk_cal(rtc_cal_sel_t cal_clk, uint32_t slowclk_cycles)
 uint64_t rtc_time_us_to_slowclk(uint64_t time_in_us, uint32_t period)
 {
     assert(period);
-    /* Overflow will happen in this function if time_in_us >= 2^45, which is about 400 days.
-     * TODO: fix overflow.
-     */
+    if (time_in_us > (UINT64_MAX >> RTC_CLK_CAL_FRACT)) {
+        return ((time_in_us / period) << RTC_CLK_CAL_FRACT) + ((time_in_us % period) << RTC_CLK_CAL_FRACT) / period;
+    }
     return (time_in_us << RTC_CLK_CAL_FRACT) / period;
 }
 
