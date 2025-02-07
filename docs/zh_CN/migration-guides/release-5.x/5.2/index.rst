@@ -13,3 +13,4 @@
     storage
     system
     :SOC_WIFI_SUPPORTED: wifi
+    bluetooth-classic
