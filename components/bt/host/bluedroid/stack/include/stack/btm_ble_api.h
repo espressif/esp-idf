@@ -1013,6 +1013,7 @@ typedef void (tBTM_UPDATE_DUPLICATE_EXCEPTIONAL_LIST_CMPL_CBACK) (tBTM_STATUS st
 typedef void (tBTM_CLEAR_ADV_CMPL_CBACK) (UINT8 status);
 typedef void (tBTM_SET_PRIVACY_MODE_CMPL_CBACK) (tBTM_STATUS status);
 typedef void (tBTM_SET_CSA_SUPPORT_CMPL_CBACK) (tBTM_STATUS status);
+typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define    BTM_BLE_5_GAP_READ_PHY_COMPLETE_EVT                     1
@@ -2751,6 +2752,19 @@ BOOLEAN BTM_BleSetPrivacyMode(UINT8 addr_type,
 *******************************************************************************/
 BOOLEAN BTM_BleSetCsaSupport (UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
 
+/*******************************************************************************
+**
+** Function         BTM_BleSetVendorEventMask
+**
+** Description      This function is called to set the vendor HCI event mask
+**
+** Parameters       evt_mask - vendor HCI event mask.
+**                  p_callback - Callback function to be called when the operation is completed.
+**
+** Returns          TRUE if the operation was successful, otherwise FALSE.
+**
+*******************************************************************************/
+BOOLEAN BTM_BleSetVendorEventMask(UINT32 evt_mask, tBTM_SET_VENDOR_EVT_MASK_CBACK *p_callback);
 /*
 #ifdef __cplusplus
 }

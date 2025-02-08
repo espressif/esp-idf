@@ -3013,6 +3013,19 @@ void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTA_SET_CSA_SUPPORT_CMPL_CBA
     }
 }
 
+void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_CBACK *p_callback)
+{
+    tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT;
+        p_msg->evt_mask = evt_mask;
+        p_msg->p_cback = p_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit
