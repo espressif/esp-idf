@@ -26,7 +26,7 @@
 
 #if (BTC_AV_INCLUDED == TRUE)
 
-// global variable to inidcate avrc is initialized with a2dp
+// global variable to indicate avrc is initialized with a2dp
 extern bool g_av_with_rc;
 // global variable to indicate a2dp is initialized
 extern bool g_a2dp_on_init;
@@ -108,6 +108,8 @@ typedef union {
 void btc_a2dp_call_handler(btc_msg_t *msg);
 
 void btc_a2dp_cb_handler(btc_msg_t *msg);
+
+void btc_a2dp_get_profile_status(esp_a2d_profile_status_t *param);
 
 void btc_a2dp_sink_reg_data_cb(esp_a2d_sink_data_cb_t callback);
 
