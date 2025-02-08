@@ -1394,6 +1394,26 @@ static void btc_ble_set_vendor_evt_mask_callback(UINT8 status)
     }
 }
 
+static void btc_ble_vendor_hci_event_callback(UINT8 subevt_code, UINT8 param_len, UINT8 *params)
+{
+    esp_ble_gap_cb_param_t param = {0};
+    bt_status_t ret;
+    btc_msg_t msg = {0};
+
+    msg.sig = BTC_SIG_API_CB;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = ESP_GAP_BLE_VENDOR_HCI_EVT;
+
+    param.vendor_hci_evt.subevt_code = subevt_code;
+    param.vendor_hci_evt.param_len = param_len;
+    param.vendor_hci_evt.param_buf = params;
+    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy, btc_gap_ble_cb_deep_free);
+
+    if (ret != BT_STATUS_SUCCESS) {
+        BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
+    }
+}
+
 void btc_get_whitelist_size(uint16_t *length)
 {
     BTM_BleGetWhiteListSize(length);
@@ -1793,6 +1813,18 @@ void btc_gap_ble_cb_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
         }
         break;
     }
+    case ESP_GAP_BLE_VENDOR_HCI_EVT: {
+        if (src->vendor_hci_evt.param_len) {
+            dst->vendor_hci_evt.param_buf = osi_malloc(src->vendor_hci_evt.param_len);
+            if (dst->vendor_hci_evt.param_buf) {
+                memcpy(dst->vendor_hci_evt.param_buf, src->vendor_hci_evt.param_buf,
+                    src->vendor_hci_evt.param_len);
+            } else {
+                BTC_TRACE_ERROR("%s, malloc failed\n", __func__);
+            }
+        }
+        break;
+    }
     default:
        BTC_TRACE_ERROR("%s, Unhandled deep copy %d\n", __func__, msg->act);
        break;
@@ -1916,6 +1948,13 @@ void btc_gap_ble_cb_deep_free(btc_msg_t *msg)
         }
         case ESP_GAP_BLE_VENDOR_CMD_COMPLETE_EVT: {
             uint8_t *value = ((esp_ble_gap_cb_param_t *)msg->arg)->vendor_cmd_cmpl.p_param_buf;
+            if (value) {
+                osi_free(value);
+            }
+            break;
+        }
+        case ESP_GAP_BLE_VENDOR_HCI_EVT: {
+            void *value = ((esp_ble_gap_cb_param_t *)msg->arg)->vendor_hci_evt.param_buf;
             if (value) {
                 osi_free(value);
             }
@@ -2434,6 +2473,7 @@ void btc_gap_callback_init(void)
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTM_BleGapRegisterCallback(btc_ble_5_gap_callback);
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTM_BleRegisterVendorHciEventCallback(btc_ble_vendor_hci_event_callback);
 }
 
 bool btc_gap_ble_init(void)

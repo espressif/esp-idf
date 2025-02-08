@@ -1384,6 +1384,7 @@ extern "C" {
 *******************************************************************************/
 void BTM_BleRegiseterConnParamCallback(tBTM_UPDATE_CONN_PARAM_CBACK *update_conn_param_cb);
 void BTM_BleRegiseterPktLengthChangeCallback(tBTM_SET_PKT_DATA_LENGTH_CBACK *ptk_len_chane_cb);
+void BTM_BleRegisterVendorHciEventCallback(tBTM_BLE_VENDOR_HCI_EVT_CBACK *vendor_hci_evt_cb);
 
 /*******************************************************************************
 **
