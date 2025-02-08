@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,14 @@ typedef enum {
     ESP_SDP_NEED_DEINIT,      /*!< SDP module shall deinit first */
     ESP_SDP_NO_CREATE_RECORD, /*!< No record created */
 } esp_sdp_status_t;
+
+/**
+ * @brief SDP protocol status parameters
+ */
+typedef struct {
+    bool sdp_inited;                   /*!< SDP initialization */
+    uint8_t records_num;               /*!< Number of created records */
+} esp_sdp_protocol_status_t;
 
 /**
  * @brief SDP callback function events
@@ -304,6 +312,17 @@ esp_err_t esp_sdp_create_record(esp_bluetooth_sdp_record_t *record);
  *              - other: failed
  */
 esp_err_t esp_sdp_remove_record(int record_handle);
+
+/**
+ * @brief       This function is used to get the status of SDP
+ *
+ * @param[out]  status - sdp status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_sdp_get_protocol_status(esp_sdp_protocol_status_t *status);
 
 #ifdef __cplusplus
 }

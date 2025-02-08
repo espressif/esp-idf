@@ -174,4 +174,17 @@ esp_err_t esp_sdp_remove_record(int record_handle)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_sdp_get_protocol_status(esp_sdp_protocol_status_t *status)
+{
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+    if (status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(status, 0, sizeof(esp_sdp_protocol_status_t));
+    btc_sdp_get_protocol_status(status);
+
+    return ESP_OK;
+}
+
 #endif ///defined BTC_SDP_COMMON_INCLUDED && BTC_SDP_COMMON_INCLUDED == TRUE
