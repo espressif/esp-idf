@@ -4792,6 +4792,17 @@ BOOLEAN BTM_BleSetCsaSupport(UINT8 csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *
     return TRUE;
 }
 
+BOOLEAN BTM_BleSetVendorEventMask(UINT32 evt_mask, tBTM_SET_VENDOR_EVT_MASK_CBACK *p_callback)
+{
+    if (btsnd_hcic_ble_set_vendor_evt_mask(evt_mask) != TRUE) {
+        BTM_TRACE_ERROR("LE SetVendorEventMask evt_mask=%x: error", evt_mask);
+        return FALSE;
+    }
+
+    btm_cb.ble_ctr_cb.set_vendor_evt_mask_cmpl_cb = p_callback;
+    return TRUE;
+}
+
 #if (BLE_42_SCAN_EN == TRUE)
 bool btm_ble_adv_pkt_ready(void)
 {
