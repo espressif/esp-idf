@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -787,6 +787,13 @@ esp_err_t esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uin
     bool use_peri1 = required_mem_prot & MEMPROT_PERI1_RTCSLOW;
     bool use_peri2 = required_mem_prot & MEMPROT_PERI2_RTCSLOW_0 || required_mem_prot & MEMPROT_PERI2_RTCSLOW_1;
 
+    // make sure there is no pending interrupt, this may be the case if the target just rebooted
+    // after a memory protection fault.
+    memprot_ll_iram0_clear_intr();
+    memprot_ll_dram0_clear_intr();
+    memprot_ll_peri1_clear_intr();
+    memprot_ll_peri2_clear_intr();
+
     //disable protection
     if (use_iram0 && (ret = esp_memprot_intr_ena(MEMPROT_IRAM0_SRAM, false)) != ESP_OK) {
         return ret;
@@ -865,7 +872,7 @@ esp_err_t esp_memprot_set_prot(bool invoke_panic_handler, bool lock_feature, uin
             }
         }
 
-        //reenable protection (bus based)
+        //re-enable protection (bus based)
         if (use_iram0 && (ret = esp_memprot_intr_ena(MEMPROT_IRAM0_SRAM, true)) != ESP_OK) {
             return ret;
         }
