@@ -101,7 +101,12 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
     // invalidate the aligned buffer if necessary
     for (int i = 0; i < 3; i++) {
         if (need_cache_sync[i]) {
-            esp_err_t res = esp_cache_msync(align_buf_array->aligned_buffer[i].aligned_buffer, align_buf_array->aligned_buffer[i].length, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            size_t sync_size = align_buf_array->aligned_buffer[i].length;
+            if (sync_size < split_line_size) {
+                // If the buffer is smaller than the cache line size, we need to sync the whole buffer
+                sync_size = split_line_size;
+            }
+            esp_err_t res = esp_cache_msync(align_buf_array->aligned_buffer[i].aligned_buffer, sync_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
             ESP_GOTO_ON_ERROR(res, err, TAG, "failed to do cache sync");
         }
     }
