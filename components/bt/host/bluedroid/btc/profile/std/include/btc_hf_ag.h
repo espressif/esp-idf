@@ -255,6 +255,8 @@ void btc_hf_arg_deep_free(btc_msg_t *msg);
 
 bt_status_t btc_hf_ci_sco_data(void);
 
+void btc_hf_get_profile_status(esp_hf_profile_status_t *param);
+
 #endif  // BTC_HF_INCLUDED == TRUE
 
 #endif /* __BTC_HF_AG_H__ */
