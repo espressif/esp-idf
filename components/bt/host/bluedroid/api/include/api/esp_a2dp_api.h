@@ -228,6 +228,15 @@ typedef enum {
 } esp_a2d_set_delay_value_state_t;
 
 /**
+ * @brief A2DP profile status parameters
+ */
+typedef struct {
+    bool a2d_snk_inited;                   /*!< A2DP sink initialization */
+    bool a2d_src_inited;                   /*!< A2DP source initialization */
+    uint8_t conn_num;                      /*!< Number of connections */
+} esp_a2d_profile_status_t;
+
+/**
  * @brief A2DP callback events
  */
 typedef enum {
@@ -531,6 +540,18 @@ esp_err_t esp_a2d_sink_get_delay_value(void);
  *
  */
 esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
+
+/**
+ * @brief       This function is used to get the status of A2DP
+ *
+ * @param[out]  profile_status - A2DP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
+
 
 /**
  *

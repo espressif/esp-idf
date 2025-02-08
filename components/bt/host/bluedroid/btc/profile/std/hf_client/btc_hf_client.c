@@ -1229,4 +1229,21 @@ void btc_hf_client_call_handler(btc_msg_t *msg)
     }
 }
 
+void btc_hf_client_get_profile_status(esp_hf_client_profile_status_t *param)
+{
+    param->hf_client_inited = false; // Not initialized by default
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_client_local_param_ptr)
+#endif
+    {
+        if (hf_client_local_param.btc_hf_client_cb.initialized) {
+            param->hf_client_inited = true;
+            if (hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {
+                param->conn_num++;
+            }
+        }
+    }
+}
+
 #endif /* #if (BTC_HF_CLIENT_INCLUDED == TRUE) */

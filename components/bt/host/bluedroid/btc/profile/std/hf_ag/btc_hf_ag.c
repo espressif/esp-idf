@@ -1715,4 +1715,23 @@ void btc_hf_cb_handler(btc_msg_t *msg)
             break;
     }
 }
+
+void btc_hf_get_profile_status(esp_hf_profile_status_t *param)
+{
+    int idx = 0;
+
+    param->hfp_ag_inited = false; // Not initialized by default
+
+#if HFP_DYNAMIC_MEMORY == TRUE
+    if (hf_local_param)
+#endif
+    {
+        if (hf_local_param[idx].btc_hf_cb.initialized) {
+            param->hfp_ag_inited = true;
+            if (hf_local_param[idx].btc_hf_cb.connection_state == ESP_HF_CONNECTION_STATE_SLC_CONNECTED) {
+                param->conn_num++;
+            }
+        }
+    }
+}
 #endif // #if (BTC_HF_INCLUDED == TRUE)

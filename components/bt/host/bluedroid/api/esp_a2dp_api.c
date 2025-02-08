@@ -313,6 +313,21 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl)
     return (stat == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(profile_status, 0, sizeof(esp_a2d_profile_status_t));
+    btc_a2dp_get_profile_status(profile_status);
+
+    return ESP_OK;
+}
+
 #if BTC_AV_SRC_INCLUDED
 esp_err_t esp_a2d_source_init(void)
 {

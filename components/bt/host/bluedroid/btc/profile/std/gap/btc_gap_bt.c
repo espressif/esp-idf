@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,13 +24,26 @@
 #define BTC_STORAGE_FILL_PROPERTY(p_prop, t, l, p_v) \
          (p_prop)->type = t;(p_prop)->len = l; (p_prop)->val = (p_v);
 
+typedef struct {
+    esp_bt_gap_discovery_state_t disc_stat;
+    esp_bt_connection_mode_t conn_mode;
+    esp_bt_discovery_mode_t disc_mode;
+    uint8_t bredr_acl_link_num;
+    uint16_t handle[MAX_ACL_CONNECTIONS];
+} gap_bt_local_param_t;
+
+#if BTC_GAP_BT_DYNAMIC_MEMORY == FALSE
+static gap_bt_local_param_t gap_bt_local_param;
+#else
+static gap_bt_local_param_t *gap_bt_local_param_ptr;
+#define gap_bt_local_param (*gap_bt_local_param_ptr)
+#endif
+
 static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
 static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
 static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH *p_data);
 static void search_services_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src);
 static void search_service_record_copy_cb(btc_msg_t *msg, void *p_dest, void *p_src);
-
-static bool btc_gap_bt_inquiry_in_progress = false;
 
 static inline void btc_gap_bt_cb_to_app(esp_bt_gap_cb_event_t event, esp_bt_gap_cb_param_t *param)
 {
@@ -44,6 +57,9 @@ static void btc_bt_set_scan_mode(esp_bt_connection_mode_t c_mode, esp_bt_discove
 {
     tBTA_DM_DISC disc_mode;
     tBTA_DM_CONN conn_mode;
+
+    gap_bt_local_param.conn_mode = c_mode;
+    gap_bt_local_param.disc_mode = d_mode;
 
     switch (c_mode) {
     case ESP_BT_NON_CONNECTABLE:
@@ -93,7 +109,7 @@ static void btc_gap_bt_start_discovery(btc_gap_bt_args_t *arg)
     /* TODO: Filter device by BDA needs to be implemented here */
 
     /* Will be enabled to TRUE once inquiry busy level has been received */
-    btc_gap_bt_inquiry_in_progress = FALSE;
+    gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STOPPED;
     /* find nearby devices */
     BTA_DmSearch(&inq_params, services, bte_search_devices_evt);
 
@@ -374,7 +390,7 @@ static void btc_gap_bt_search_devices_evt(tBTA_DM_SEARCH_PARAM *p_data)
          * if inquiry is in progress, then we don't want to act on this cancel_cmpl_evt
          * but instead wait for the cancel_cmpl_evt_via the busy level
          */
-        if (btc_gap_bt_inquiry_in_progress == false) {
+        if (gap_bt_local_param.disc_stat == ESP_BT_GAP_DISCOVERY_STOPPED) {
             esp_bt_gap_cb_param_t param;
             param.disc_st_chg.state = ESP_BT_GAP_DISCOVERY_STOPPED;
             btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
@@ -1158,15 +1174,15 @@ void btc_gap_bt_busy_level_updated(uint8_t bl_flags)
     if (bl_flags == BTM_BL_INQUIRY_STARTED) {
         param.disc_st_chg.state = ESP_BT_GAP_DISCOVERY_STARTED;
         btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
-        btc_gap_bt_inquiry_in_progress = true;
+        gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STARTED;
     } else if (bl_flags == BTM_BL_INQUIRY_CANCELLED) {
         param.disc_st_chg.state = ESP_BT_GAP_DISCOVERY_STOPPED;
         btc_gap_bt_cb_to_app(ESP_BT_GAP_DISC_STATE_CHANGED_EVT, &param);
-        btc_gap_bt_inquiry_in_progress = false;
+        gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STOPPED;
     } else if (bl_flags == BTM_BL_INQUIRY_COMPLETE) {
         /* The Inquiry Complete event is not transported to app layer,
         since the app only cares about the Name Discovery Complete event */
-        btc_gap_bt_inquiry_in_progress = false;
+        gap_bt_local_param.disc_stat = ESP_BT_GAP_DISCOVERY_STOPPED;
     }
 }
 
@@ -1307,4 +1323,76 @@ void btc_gap_bt_cb_handler(btc_msg_t *msg)
     }
     btc_gap_bt_cb_deep_free(msg);
 }
+
+void btc_gap_bt_init(void)
+{
+#if BTC_GAP_BT_DYNAMIC_MEMORY == TRUE
+    if ((gap_bt_local_param_ptr = (gap_bt_local_param_t *)osi_malloc(sizeof(gap_bt_local_param_t))) == NULL) {
+        BTC_TRACE_ERROR("%s malloc failed\n", __func__);
+        return;
+    }
+    memset((void *)gap_bt_local_param_ptr, 0, sizeof(gap_bt_local_param_t));
+#else
+    memset(&gap_bt_local_param, 0, sizeof(gap_bt_local_param_t));
+#endif
+}
+
+void btc_gap_bt_deinit(void)
+{
+#if BTC_GAP_BT_DYNAMIC_MEMORY == TRUE
+    if (gap_bt_local_param_ptr) {
+        osi_free(gap_bt_local_param_ptr);
+        gap_bt_local_param_ptr = NULL;
+    }
+#endif
+}
+
+static void btc_gap_bt_acl_link_handle_store(uint16_t handle)
+{
+    for (int i = 0; i < MAX_ACL_CONNECTIONS; i++) {
+        if (gap_bt_local_param.handle[i] == 0) {
+            gap_bt_local_param.handle[i] = handle;
+            gap_bt_local_param.bredr_acl_link_num++;
+            break;
+        }
+    }
+
+    if (gap_bt_local_param.bredr_acl_link_num > MAX_ACL_CONNECTIONS) {
+        assert(0);
+    }
+}
+
+static void btc_gap_bt_acl_link_handle_remove(uint16_t handle)
+{
+    for (int i = 0; i < MAX_ACL_CONNECTIONS; i++) {
+        if (gap_bt_local_param.handle[i] == handle) {
+            gap_bt_local_param.handle[i] = 0;
+            gap_bt_local_param.bredr_acl_link_num--;
+            break;
+        }
+    }
+
+    if (gap_bt_local_param.bredr_acl_link_num > MAX_ACL_CONNECTIONS) {
+        assert(0);
+    }
+}
+
+void btc_gap_bt_acl_link_num_update(tBTA_DM_ACL_LINK_STAT *p_acl_link_stat)
+{
+    if (p_acl_link_stat->event == BTA_ACL_LINK_STAT_CONN_CMPL &&
+        p_acl_link_stat->link_act.conn_cmpl.status == HCI_SUCCESS) {
+        btc_gap_bt_acl_link_handle_store(p_acl_link_stat->link_act.conn_cmpl.handle);
+    } else if (p_acl_link_stat->event == BTA_ACL_LINK_STAT_DISCONN_CMPL) {
+        btc_gap_bt_acl_link_handle_remove(p_acl_link_stat->link_act.disconn_cmpl.handle);
+    }
+}
+
+void btc_gap_bt_status_get(esp_bt_gap_profile_status_t *param)
+{
+    param->disc_stat = gap_bt_local_param.disc_stat;
+    param->conn_mode = gap_bt_local_param.conn_mode;
+    param->disc_mode = gap_bt_local_param.disc_mode;
+    param->bredr_acl_link_num = gap_bt_local_param.bredr_acl_link_num;
+}
+
 #endif /* (BTC_GAP_BT_INCLUDED == TRUE) */

@@ -1773,6 +1773,35 @@ void btc_a2dp_cb_handler(btc_msg_t *msg)
     btc_av_event_free_data(msg);
 }
 
+void btc_a2dp_get_profile_status(esp_a2d_profile_status_t *param)
+{
+    // Not initialized by default
+    param->a2d_snk_inited = false;
+    param->a2d_src_inited = false;
+
+#if A2D_DYNAMIC_MEMORY == TRUE
+    if (btc_av_cb_ptr)
+#endif
+    {
+        if (btc_av_cb.sm_handle) {
+            if (btc_av_cb.service_id == BTA_A2DP_SINK_SERVICE_ID) {
+                param->a2d_src_inited = false;
+                param->a2d_snk_inited = true;
+            } else if (btc_av_cb.service_id == BTA_A2DP_SOURCE_SERVICE_ID) {
+                param->a2d_src_inited = true;
+                param->a2d_snk_inited = false;
+            } else {
+                param->a2d_snk_inited = false;
+                param->a2d_src_inited = false;
+                return;
+            }
+            if (btc_av_is_connected()) {
+                param->conn_num++;
+            }
+        }
+    }
+}
+
 #if BTC_AV_SINK_INCLUDED
 
 /*******************************************************************************

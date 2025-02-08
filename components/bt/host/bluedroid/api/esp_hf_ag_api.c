@@ -528,6 +528,21 @@ esp_err_t esp_hf_ag_out_call(esp_bd_addr_t remote_addr, int num_active, int num_
     return (status == BT_STATUS_SUCCESS) ? ESP_OK : ESP_FAIL;
 }
 
+esp_err_t esp_hf_ag_get_profile_status(esp_hf_profile_status_t *profile_status)
+{
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    memset(profile_status, 0, sizeof(esp_hf_profile_status_t));
+    btc_hf_get_profile_status(profile_status);
+
+    return ESP_OK;
+}
+
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
 
 esp_err_t esp_hf_ag_register_data_callback(esp_hf_incoming_data_cb_t recv, esp_hf_outgoing_data_cb_t send)

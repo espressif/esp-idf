@@ -267,6 +267,7 @@ bt_status_t btc_hf_ci_sco_data(void);
 
 bool btc_hf_ag_audio_data_send(uint16_t sync_conn_hdl, uint8_t *p_buff_start, uint8_t *p_data, uint8_t data_len);
 
+void btc_hf_get_profile_status(esp_hf_profile_status_t *param);
 #endif  // BTC_HF_INCLUDED == TRUE
 
 #endif /* __BTC_HF_AG_H__ */
