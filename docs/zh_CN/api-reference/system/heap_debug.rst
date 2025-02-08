@@ -32,8 +32,8 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 
 你可以使用堆内存分配和释放检测钩子，接收每次成功分配或释放堆内存操作的通知：
 
-- 定义 :cpp:func:`esp_heap_trace_alloc_hook` 获取堆内存分配操作成功的提示
-- 定义 :cpp:func:`esp_heap_trace_free_hook` 获取堆内存释放操作成功的提示
+- 定义 :cpp:func:`esp_heap_trace_alloc_hook` 获取堆内存分配操作成功的提示。
+- 定义 :cpp:func:`esp_heap_trace_free_hook` 获取堆内存释放操作成功的提示。
 
 要启用此功能，请设置 :ref:`CONFIG_HEAP_USE_HOOKS` 选项。:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 具有弱声明（即 ``__attribute__((weak))``），因此无需为这两个钩子提供声明。鉴于从 ISR 中分配和释放堆内存在技术上是可行的（**但强烈不建议**），:cpp:func:`esp_heap_trace_alloc_hook` 和 :cpp:func:`esp_heap_trace_free_hook` 可能会从 ISR 中调用。
 
@@ -267,11 +267,32 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
       ...
   }
 
-堆内存跟踪堆输出将类似以下格式的内容：
+堆内存跟踪会输出类似以下格式的内容：
 
-.. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
 
   .. code-block:: none
+
+    ====== Heap Trace: 8 records (8 capacity) ======
+        3 bytes (@ 0x3fcb26f8, Internal) allocated CPU 0 ccount 0x1e7af728 freed
+        6 bytes (@ 0x3fcb4ff0, Internal) allocated CPU 0 ccount 0x1e7afc38 freed
+        9 bytes (@ 0x3fcb5000, Internal) allocated CPU 0 ccount 0x1e7b01d4 freed
+        12 bytes (@ 0x3fcb5010, Internal) allocated CPU 0 ccount 0x1e7b0778 freed
+        15 bytes (@ 0x3fcb5020, Internal) allocated CPU 0 ccount 0x1e7b0d18 freed
+        18 bytes (@ 0x3fcb5034, Internal) allocated CPU 0 ccount 0x1e7b12b8 freed
+        21 bytes (@ 0x3fcb504c, Internal) allocated CPU 0 ccount 0x1e7b1858 freed
+        24 bytes (@ 0x3fcb5068, Internal) allocated CPU 0 ccount 0x1e7b1dfc freed
+    ====== Heap Trace Summary ======
+    Mode: Heap Trace All
+    0 bytes alive in trace (0/8 allocations)
+    records: 8 (8 capacity, 8 high water mark)
+    total allocations: 8
+    total frees: 8
+    ================================
+
+  或者，启用了 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项并且正确配置了栈深度，会输出以下内容：
+
+.. code-block:: none
 
     ====== Heap Trace: 8 records (8 capacity) ======
         6 bytes (@ 0x3fc9f620, Internal) allocated CPU 0 ccount 0x1a31ac84 caller 0x40376321:0x40376379
@@ -342,27 +363,6 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
     total frees: 8
     ================================
 
-.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
-
-  .. code-block:: none
-
-    ====== Heap Trace: 8 records (8 capacity) ======
-        3 bytes (@ 0x3fcb26f8, Internal) allocated CPU 0 ccount 0x1e7af728 freed
-        6 bytes (@ 0x3fcb4ff0, Internal) allocated CPU 0 ccount 0x1e7afc38 freed
-        9 bytes (@ 0x3fcb5000, Internal) allocated CPU 0 ccount 0x1e7b01d4 freed
-        12 bytes (@ 0x3fcb5010, Internal) allocated CPU 0 ccount 0x1e7b0778 freed
-        15 bytes (@ 0x3fcb5020, Internal) allocated CPU 0 ccount 0x1e7b0d18 freed
-        18 bytes (@ 0x3fcb5034, Internal) allocated CPU 0 ccount 0x1e7b12b8 freed
-        21 bytes (@ 0x3fcb504c, Internal) allocated CPU 0 ccount 0x1e7b1858 freed
-        24 bytes (@ 0x3fcb5068, Internal) allocated CPU 0 ccount 0x1e7b1dfc freed
-    ====== Heap Trace Summary ======
-    Mode: Heap Trace All
-    0 bytes alive in trace (0/8 allocations)
-    records: 8 (8 capacity, 8 high water mark)
-    total allocations: 8
-    total frees: 8
-    ================================
-
 .. note::
 
     以上示例输出使用 :doc:`IDF 监视器 </api-guides/tools/idf-monitor>`，自动将 PC 地址解码为其源文件和行号。
@@ -395,6 +395,10 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
     每个跟踪条目记录的调用栈深度可以在项目配置菜单下进行配置，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
+
+.. only:: CONFIG_IDF_TARGET_ARCH_RISCV
+
+    默认情况下，每个跟踪条目记录的调用栈深度为 0，所以只能检索到内存分配函数的直接调用者。但是，启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项后，可以在项目配置菜单下配置此调用栈深度，选择 ``Heap Memory Debugging`` > ``Enable heap tracing`` > :ref:`CONFIG_HEAP_TRACING_STACK_DEPTH`。每个内存分配最多可以记录 32 个栈帧（默认为 2），每增加一个栈帧，每个 ``heap_trace_record_t`` 记录的内存使用量将增加 8 个字节。
 
 最后，将打印“泄漏”的总字节数（即在跟踪期间分配但未释放的总字节数），以及它所代表的总分配次数。
 
