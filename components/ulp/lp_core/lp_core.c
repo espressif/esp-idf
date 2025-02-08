@@ -95,10 +95,10 @@ esp_err_t ulp_lp_core_run(ulp_lp_core_cfg_t* cfg)
         lp_core_ll_enable_bus_clock(true);
     }
 
-#if CONFIG_IDF_TARGET_ESP32C6
+#if SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH
     /* Disable fast LP mem access to allow LP core to access LP memory during sleep */
     lp_core_ll_fast_lp_mem_enable(false);
-#endif //CONFIG_IDF_TARGET_ESP32C6
+#endif
 
     /* Enable stall at sleep request*/
     lp_core_ll_stall_at_sleep_request(true);

@@ -1443,6 +1443,10 @@ config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
 
+config SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH
+    bool
+    default y
+
 config SOC_PM_SUPPORT_WIFI_WAKEUP
     bool
     default y
