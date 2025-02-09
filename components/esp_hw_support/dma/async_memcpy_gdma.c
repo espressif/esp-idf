@@ -342,11 +342,16 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
         trans->stash_buffer = NULL;
     }
 
+    size_t buffer_alignment = 0;
+    size_t num_dma_nodes = 0;
+
     // allocate gdma TX link
+    buffer_alignment = esp_ptr_internal(src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment;
+    num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t tx_link_cfg = {
-        .buffer_alignment = esp_ptr_internal(src) ? mcp_gdma->tx_int_mem_alignment : mcp_gdma->tx_ext_mem_alignment,
+        .buffer_alignment = buffer_alignment,
         .item_alignment = dma_link_item_alignment,
-        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1,
+        .num_items = num_dma_nodes,
         .flags = {
             .check_owner = true,
             .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we may need to allocate the link list items from external memory
@@ -381,10 +386,12 @@ static esp_err_t mcp_gdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *s
     }
 
     // allocate gdma RX link
+    buffer_alignment = esp_ptr_internal(dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment;
+    num_dma_nodes = esp_dma_calculate_node_count(n, buffer_alignment, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t rx_link_cfg = {
-        .buffer_alignment = esp_ptr_internal(dst) ? mcp_gdma->rx_int_mem_alignment : mcp_gdma->rx_ext_mem_alignment,
+        .buffer_alignment = buffer_alignment,
         .item_alignment = dma_link_item_alignment,
-        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 3,
+        .num_items = num_dma_nodes + 3, // add 3 extra items for the cache aligned buffers
         .flags = {
             .check_owner = true,
             .items_in_ext_mem = false, // TODO: if the memcopy size is too large, we may need to allocate the link list items from external memory

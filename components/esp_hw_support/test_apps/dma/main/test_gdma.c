@@ -557,7 +557,7 @@ TEST_CASE("GDMA M2M Unaligned RX Buffer Test", "[GDMA][M2M]")
 
     gdma_link_list_handle_t tx_link_list = NULL;
     gdma_link_list_handle_t rx_link_list = NULL;
-    // create DMA link list for TX channel (a singly link with 3 nodes)
+    // create DMA link list for TX channel
     gdma_link_list_config_t tx_link_list_config = {
         .buffer_alignment = 32,
         .item_alignment = 8, // 8-byte alignment required by the AXI-GDMA

@@ -27,6 +27,8 @@ static const char *TAG = "dma_utils";
 
 esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffer_len, dma_buffer_split_array_t *align_buf_array, uint8_t** ret_stash_buffer)
 {
+    esp_err_t ret = ESP_OK;
+    uint8_t* stash_buffer = NULL;
     ESP_RETURN_ON_FALSE(rx_buffer && buffer_len && align_buf_array, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
     // read the cache line size of internal and external memory, we also use this information to check if a given memory is behind the cache
@@ -43,7 +45,7 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
 
     // allocate the stash buffer from internal RAM
     // Note, the split_line_size can be 0, in this case, the stash_buffer is also NULL, which is fine
-    uint8_t* stash_buffer = heap_caps_calloc(2, split_line_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    stash_buffer = heap_caps_calloc(2, split_line_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(!(split_line_size && !stash_buffer), ESP_ERR_NO_MEM, TAG, "no mem for stash buffer");
 
     // clear align_array to avoid garbage data
@@ -99,12 +101,18 @@ esp_err_t esp_dma_split_rx_buffer_to_cache_aligned(void *rx_buffer, size_t buffe
     // invalidate the aligned buffer if necessary
     for (int i = 0; i < 3; i++) {
         if (need_cache_sync[i]) {
-            esp_cache_msync(align_buf_array->aligned_buffer[i].aligned_buffer, align_buf_array->aligned_buffer[i].length, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            esp_err_t res = esp_cache_msync(align_buf_array->aligned_buffer[i].aligned_buffer, align_buf_array->aligned_buffer[i].length, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+            ESP_GOTO_ON_ERROR(res, err, TAG, "failed to do cache sync");
         }
     }
 
     *ret_stash_buffer = stash_buffer;
     return ESP_OK;
+err:
+    if (stash_buffer) {
+        free(stash_buffer);
+    }
+    return ret;
 }
 
 esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_array)
@@ -119,6 +127,16 @@ esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_array
         memcpy(align_array->buf.tail.recovery_address, align_array->buf.tail.aligned_buffer, align_array->buf.tail.length);
     }
     return ESP_OK;
+}
+
+size_t esp_dma_calculate_node_count(size_t buffer_size, size_t buffer_alignment, size_t max_buffer_size_per_node)
+{
+    // buffer_alignment should be power of 2
+    ESP_RETURN_ON_FALSE(buffer_alignment && ((buffer_alignment & (buffer_alignment - 1)) == 0), 0, TAG, "invalid buffer alignment");
+    // align down the max_buffer_size_per_node
+    max_buffer_size_per_node = max_buffer_size_per_node & ~(buffer_alignment - 1);
+    // calculate the number of nodes
+    return (buffer_size + max_buffer_size_per_node - 1) / max_buffer_size_per_node;
 }
 
 esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size)
