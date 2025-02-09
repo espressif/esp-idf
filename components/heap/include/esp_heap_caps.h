@@ -46,6 +46,7 @@ extern "C" {
 #define MALLOC_CAP_DMA_DESC_AHB     (1<<17) ///< Memory must be capable of containing AHB DMA descriptors
 #define MALLOC_CAP_DMA_DESC_AXI     (1<<18) ///< Memory must be capable of containing AXI DMA descriptors
 #define MALLOC_CAP_CACHE_ALIGNED    (1<<19) ///< Memory must be aligned to the cache line size of any intermediate caches
+#define MALLOC_CAP_SIMD             (1<<20) ///< Memory must be capable of being used for SIMD instructions (i.e. allow for SIMD-specific-bit data accesses)
 
 #define MALLOC_CAP_INVALID          (1<<31) ///< Memory can't be used / list end marker
 
