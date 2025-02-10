@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+from importlib.metadata import version
 from io import BufferedRandom
 from io import BytesIO
 from pathlib import Path
@@ -21,6 +22,18 @@ from nvs_logger import NVS_Logger
 from nvs_parser import nvs_const
 from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Partition
+from packaging.version import Version
+
+
+NVS_PART_GEN_VERSION_SKIP = '0.1.8'
+
+
+# Temporary workaround for pytest skipping tests based on the version of the esp-idf-nvs-partition-gen package
+@pytest.fixture(scope='session', autouse=True)
+def before() -> None:
+    ver = version('esp-idf-nvs-partition-gen')
+    if Version(ver) < Version(NVS_PART_GEN_VERSION_SKIP):
+        pytest.skip('pass')
 
 
 class SilentLogger(NVS_Logger):
@@ -101,7 +114,7 @@ def create_entry_data_bytearray(namespace_index: int, entry_type: int, span: int
 
 @pytest.fixture
 def generate_nvs() -> Callable:
-    def _execute_nvs_setup(nvs_setup_func: Callable, size: int = 0x4000, output: Optional[Path] = None) -> NVS_Partition:
+    def _execute_nvs_setup(nvs_setup_func: Callable, output: Optional[Path] = None) -> NVS_Partition:
         nvs_file: Optional[Union[BytesIO, BufferedRandom]] = None
         if output is None:
             nvs_file = BytesIO()
@@ -110,15 +123,7 @@ def generate_nvs() -> Callable:
                 nvs_file = open(output, 'wb+')
             except OSError as e:
                 raise RuntimeError(f'Cannot open file {output}, error: {e}')
-        size_fixed = nvs_partition_gen.check_size(str(size))
-        nvs_obj = nvs_partition_gen.nvs_open(
-            result_obj=nvs_file,
-            input_size=size_fixed,
-            version=nvs_partition_gen.Page.VERSION2,
-            is_encrypt=False,
-            key=None
-        )
-        nvs_setup_func(nvs_obj)
+        nvs_obj = nvs_setup_func(nvs_file)
         nvs_partition_gen.nvs_close(nvs_obj)
         nvs_file.seek(0)
         nvs_parsed = NVS_Partition('test', bytearray(nvs_file.read()))
@@ -128,16 +133,36 @@ def generate_nvs() -> Callable:
 
 
 # Setup functions
-def setup_ok_primitive(nvs_obj: NVS) -> None:
+def setup_ok_primitive(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x4000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'int32_test', 'data', 'i32', str(42))
     nvs_partition_gen.write_entry(nvs_obj, 'uint32_test', 'data', 'u32', str(42))
     nvs_partition_gen.write_entry(nvs_obj, 'int8_test', 'data', 'i8', str(100))
 
+    return nvs_obj
 
-def setup_ok_variable_len(nvs_obj: NVS) -> None:
-    size_fixed = nvs_partition_gen.check_size(str('0x5000'))
-    nvs_obj.size = size_fixed
+
+def setup_ok_variable_len(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x5000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'short_string_key', 'data', 'string', 'Hello world!')
     nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
@@ -147,10 +172,20 @@ def setup_ok_variable_len(nvs_obj: NVS) -> None:
     nvs_partition_gen.write_entry(nvs_obj, 'multi_blob_key', 'file', 'binary',
                                   '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
 
+    return nvs_obj
 
-def setup_ok_mixed(nvs_obj: NVS) -> None:
-    size_fixed = nvs_partition_gen.check_size(str('0x6000'))
-    nvs_obj.size = size_fixed
+
+def setup_ok_mixed(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x6000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     prim_types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32']
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -173,10 +208,20 @@ def setup_ok_mixed(nvs_obj: NVS) -> None:
     nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
                                   '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
 
+    return nvs_obj
 
-def setup_bad_mixed_same_key_different_page(nvs_obj: NVS) -> None:
-    size_fixed = nvs_partition_gen.check_size(str('0x6000'))
-    nvs_obj.size = size_fixed
+
+def setup_bad_mixed_same_key_different_page(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x6000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     prim_types = ['i8', 'u8', 'i16', 'u16', 'i32', 'u32']
 
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
@@ -215,8 +260,20 @@ def setup_bad_mixed_same_key_different_page(nvs_obj: NVS) -> None:
     # the current used namespace index
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
 
+    return nvs_obj
 
-def setup_bad_same_key_primitive(nvs_obj: NVS) -> None:
+
+def setup_bad_same_key_primitive(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x4000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'unique_key', 'data', 'i16', str(1234))
     nvs_partition_gen.write_entry(nvs_obj, 'same_key', 'data', 'i32', str(42))
@@ -225,17 +282,39 @@ def setup_bad_same_key_primitive(nvs_obj: NVS) -> None:
     nvs_partition_gen.write_entry(nvs_obj, 'another_same_key', 'data', 'u16', str(321))
     nvs_partition_gen.write_entry(nvs_obj, 'another_same_key', 'data', 'u16', str(456))
 
+    return nvs_obj
 
-def setup_bad_same_key_variable_len(nvs_obj: NVS) -> None:
+
+def setup_bad_same_key_variable_len(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x4000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'same_string_key', 'data', 'string', 'Hello')
     nvs_partition_gen.write_entry(nvs_obj, 'same_string_key', 'data', 'string', 'world!')
     nvs_partition_gen.write_entry(nvs_obj, 'unique_string_key', 'data', 'string', 'I am unique!')
 
+    return nvs_obj
 
-def setup_bad_same_key_blob_index(nvs_obj: NVS) -> None:
-    size_fixed = nvs_partition_gen.check_size(str('0x6000'))
-    nvs_obj.size = size_fixed
+
+def setup_bad_same_key_blob_index(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x6000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
     nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
     nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
                                   '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
@@ -243,6 +322,28 @@ def setup_bad_same_key_blob_index(nvs_obj: NVS) -> None:
                                   '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
     nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
                                   '../nvs_partition_generator/testdata/sample_multipage_blob.bin')  # Duplicate key
+
+    return nvs_obj
+
+
+def setup_read_only(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x1000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
+    nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
+    nvs_partition_gen.write_entry(nvs_obj, 'int32_test', 'data', 'i32', str(42))
+    nvs_partition_gen.write_entry(nvs_obj, 'uint32_test', 'data', 'u32', str(42))
+    nvs_partition_gen.write_entry(nvs_obj, 'int8_test', 'data', 'i8', str(100))
+    nvs_partition_gen.write_entry(nvs_obj, 'short_string_key', 'data', 'string', 'Hello world!')
+
+    return nvs_obj
 
 
 # Helper functions
@@ -331,3 +432,12 @@ def test_check_duplicates_bad_same_key_blob_index(generate_nvs: Callable, setup_
     # however there are 2 duplicates of each blob_index and blob_data
     assert len(list(duplicates.values())[0]) == 6  # 6 entries with the blob_key (2x blob_index, 4x blob_data)
     nvs_check.integrity_check(nvs, logger)
+
+
+@pytest.mark.parametrize('setup_func', [setup_read_only])
+def test_check_read_only_partition(generate_nvs: Callable, setup_func: Callable) -> None:
+    nvs = generate_nvs(setup_func)
+    assert nvs.raw_data is not None
+    assert len(nvs.raw_data) == 0x1000
+    assert nvs_check.check_partition_size(nvs, logger, read_only=True)
+    assert not nvs_check.check_empty_page_present(nvs, logger)
