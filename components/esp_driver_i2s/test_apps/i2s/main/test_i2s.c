@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -986,3 +986,33 @@ TEST_CASE("I2S_asynchronous_read_write", "[i2s]")
 
     TEST_ASSERT(received);
 }
+
+#if SOC_I2S_SUPPORTS_PDM2PCM
+TEST_CASE("I2S_PDM2PCM_existence_test", "[i2s]")
+{
+    i2s_chan_handle_t rx_handle;
+    i2s_chan_config_t rx_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
+    TEST_ESP_OK(i2s_new_channel(&rx_chan_cfg, NULL, &rx_handle));
+
+    i2s_pdm_rx_config_t pdm_rx_cfg = {
+        .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(16000),
+        .slot_cfg = I2S_PDM_RX_SLOT_PCM_FMT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+        .gpio_cfg = {
+            .clk = MASTER_BCK_IO,
+            .din = DATA_IN_IO,
+            .invert_flags = {
+                .clk_inv = false,
+            },
+        },
+    };
+    TEST_ESP_OK(i2s_channel_init_pdm_rx_mode(rx_handle, &pdm_rx_cfg));
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+
+    uint8_t *r_buf[64] = {};
+    size_t r_bytes = 0;
+    // If PDM2PCM is not supported in the hardware, it will fail to read.
+    TEST_ESP_OK(i2s_channel_read(rx_handle, r_buf, 64, &r_bytes, 1000));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+}
+#endif

@@ -595,14 +595,6 @@ config SOC_I2S_SUPPORTS_PDM_RX
     bool
     default y
 
-config SOC_I2S_SUPPORTS_PDM2PCM
-    bool
-    default y
-
-config SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
-    bool
-    default y
-
 config SOC_I2S_SUPPORTS_TX_SYNC_CNT
     bool
     default y

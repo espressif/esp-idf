@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -941,88 +941,13 @@ static inline uint32_t i2s_ll_tx_get_pdm_fs(i2s_dev_t *hw)
  * @brief Enable RX PDM mode.
  *
  * @param hw Peripheral I2S hardware instance address.
- * @param pdm2pcm Set true to RX enable PDM mode
+ * @param pdm2pcm Set true to RX enable PDM mode (ignored)
  */
 static inline void i2s_ll_rx_enable_pdm(i2s_dev_t *hw, bool pdm2pcm)
 {
+    (void)pdm2pcm;
     hw->rx_conf.rx_pdm_en = 0;
     hw->rx_conf.rx_tdm_en = 1;
-    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = pdm2pcm;
-}
-
-/**
- * @brief Configure RX PDM downsample
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param dsr PDM downsample configuration parameter
- */
-static inline void i2s_ll_rx_set_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t dsr)
-{
-    hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en = dsr;
-}
-
-/**
- * @brief Get RX PDM downsample configuration
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param dsr Pointer to accept PDM downsample configuration
- */
-static inline void i2s_ll_rx_get_pdm_dsr(i2s_dev_t *hw, i2s_pdm_dsr_t *dsr)
-{
-    *dsr = (i2s_pdm_dsr_t)hw->rx_pdm2pcm_conf.rx_pdm_sinc_dsr_16_en;
-}
-
-/**
- * @brief Configure RX PDM amplify number
- * @note  This is the amplification number of the digital amplifier,
- *        which is added after the PDM to PCM conversion result and mainly used for
- *        amplify the small PDM signal under the VAD scenario
- *        pcm_result = pdm_input * amplify_num
- *        pcm_result = 0 if amplify_num = 0
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param amp_num PDM RX amplify number
- */
-static inline void i2s_ll_rx_set_pdm_amplify_num(i2s_dev_t *hw, uint32_t amp_num)
-{
-    hw->rx_pdm2pcm_conf.rx_pdm2pcm_amplify_num = amp_num;
-}
-
-/**
- * @brief Set I2S RX PDM high pass filter param0 (only for compatibility)
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param param no effect
- */
-static inline void i2s_ll_rx_set_pdm_hp_filter_param0(i2s_dev_t *hw, uint32_t param)
-{
-    // Can't configure HP filter param on this target
-    (void) hw;
-    (void) param;
-}
-
-/**
- * @brief Set I2S RX PDM high pass filter param5 (only for compatibility)
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param param no effect
- */
-static inline void i2s_ll_rx_set_pdm_hp_filter_param5(i2s_dev_t *hw, uint32_t param)
-{
-    // Can't configure HP filter param on this target
-    (void) hw;
-    (void) param;
-}
-
-/**
- * @brief Enable I2S RX PDM high pass filter
- *
- * @param hw Peripheral I2S hardware instance address.
- * @param enable Set true to enable I2S RX PDM high pass filter, set false to bypass it
- */
-static inline void i2s_ll_rx_enable_pdm_hp_filter(i2s_dev_t *hw, bool enable)
-{
-    hw->rx_pdm2pcm_conf.rx_pdm_hp_bypass = !enable;
 }
 
 /**
