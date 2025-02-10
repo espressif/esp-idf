@@ -8,7 +8,6 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_check.h"
-#include "esp_private/periph_ctrl.h"
 #include "esp_private/io_mux.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
@@ -49,7 +48,7 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_FUNC_DIGITAL);
 
 #if SOC_LP_IO_CLOCK_IS_INDEPENDENT
-    io_mux_enable_lp_io_clock(gpio_num, false);
+    io_mux_force_disable_lp_io_clock(gpio_num);
 #endif
     RTCIO_EXIT_CRITICAL();
 

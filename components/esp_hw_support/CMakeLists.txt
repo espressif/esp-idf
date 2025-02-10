@@ -21,6 +21,10 @@ if(NOT BOOTLOADER_BUILD)
                      "sar_periph_ctrl_common.c"
                      "adc_share_hw_ctrl.c")
 
+    if(CONFIG_SOC_LP_IO_CLOCK_IS_INDEPENDENT)
+        list(APPEND srcs "port/${target}/io_mux.c")
+    endif()
+
     if(NOT CONFIG_IDF_TARGET_ESP32 AND NOT CONFIG_IDF_TARGET_ESP32S2)
         list(APPEND srcs "sleep_retention.c")
     endif()

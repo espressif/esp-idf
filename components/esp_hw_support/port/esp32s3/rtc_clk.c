@@ -20,6 +20,7 @@
 #include "hal/usb_serial_jtag_ll.h"
 #include "hal/clk_tree_ll.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "hal/rtc_io_ll.h"
 #include "esp_private/regi2c_ctrl.h"
 #include "soc/regi2c_dig_reg.h"
 #include "soc/sens_reg.h"
@@ -55,7 +56,7 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     PIN_INPUT_ENABLE(IO_MUX_GPIO15_REG);
-    SET_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN);
+    rtcio_ll_enable_io_clock(true);
     SET_PERI_REG_MASK(RTC_CNTL_PAD_HOLD_REG, RTC_CNTL_X32P_HOLD);
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
 }
