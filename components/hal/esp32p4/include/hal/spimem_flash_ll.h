@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -792,6 +792,80 @@ static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_
     dev->user.val = user_reg;
     dev->user1.val = user1_reg;
     dev->user2.val = user2_reg;
+}
+
+// For flash test utils
+
+#define SPIMEM_FLASH_LL_SUSPEND_END_INTR  SPI1_MEM_C_PES_END_INT_ENA_M
+#define SPIMEM_FLASH_LL_INTERRUPT_SOURCE  ETS_MSPI_INTR_SOURCE
+
+/**
+ * @brief Get the address of the interrupt status register.
+ *
+ * This function returns a pointer to the interrupt status register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @return volatile void* Pointer to the interrupt status register.
+ */
+static inline volatile void *spimem_flash_ll_get_interrupt_status_reg(spi_mem_dev_t *dev)
+{
+    return &dev->int_st;
+}
+
+/**
+ * @brief Clear specific interrupt status bits.
+ *
+ * This function clears the specified interrupt bits in the interrupt clear register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to clear.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_clear_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_clr.val = mask;
+}
+
+/**
+ * @brief Enable specific interrupt bits.
+ *
+ * This function enables the specified interrupts in the interrupt enable register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to enable.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_enable_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_ena.val |= mask;
+}
+
+/**
+ * @brief Disable specific interrupt bits.
+ *
+ * This function disables the specified interrupts in the interrupt enable register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[in] mask Bitmask specifying which interrupt bits to disable.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_disable_intr_mask(spi_mem_dev_t *dev, uint32_t mask)
+{
+    dev->int_ena.val &= (~mask);
+}
+
+/**
+ * @brief Get the current interrupt status.
+ *
+ * This function retrieves the current interrupt status from the interrupt status register of the SPI memory device.
+ *
+ * @param[in] dev Pointer to the SPI memory device structure.
+ * @param[out] intr_status Pointer to a variable where the interrupt status will be stored.
+ */
+__attribute__((always_inline))
+static inline void spimem_flash_ll_get_intr_mask(spi_mem_dev_t *dev, uint32_t *intr_status)
+{
+    *intr_status = dev->int_st.val;
 }
 
 #ifdef __cplusplus
