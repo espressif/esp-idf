@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -743,7 +743,6 @@ static inline void i2s_ll_rx_enable_tdm(i2s_dev_t *hw)
 {
     hw->rx_conf.rx_pdm_en = false;
     hw->rx_conf.rx_tdm_en = true;
-    hw->rx_pdm2pcm_conf.rx_pdm2pcm_en = false;
 }
 
 /**
