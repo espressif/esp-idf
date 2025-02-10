@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ typedef struct {
 
 typedef struct {
     struct pbuf *p;
+    otSockAddr *source_addr;
 } ot_trel_recv_task_t;
 
 typedef struct {
@@ -90,7 +91,8 @@ static void trel_browse_notifier(mdns_result_t *result)
 
 static void trel_recv_task(void *ctx)
 {
-    struct pbuf *recv_buf = (struct pbuf *)ctx;
+    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)ctx;
+    struct pbuf *recv_buf = task_ctx->p;
     uint8_t *data_buf = (uint8_t *)recv_buf->payload;
     uint8_t *data_buf_to_free = NULL;
     uint16_t length = recv_buf->len;
@@ -106,21 +108,49 @@ static void trel_recv_task(void *ctx)
             ExitNow();
         }
     }
-    otPlatTrelHandleReceived(esp_openthread_get_instance(), data_buf, length);
+    otPlatTrelHandleReceived(esp_openthread_get_instance(), data_buf, length, task_ctx->source_addr);
 
 exit:
     if (data_buf_to_free) {
         free(data_buf_to_free);
     }
     pbuf_free(recv_buf);
+    if(task_ctx) {
+        free(task_ctx->source_addr);
+    }
+    free(task_ctx);
 }
 
 static void handle_trel_udp_recv(void *ctx, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, uint16_t port)
 {
     ESP_LOGD(OT_PLAT_LOG_TAG, "Receive from %s:%d", ip6addr_ntoa(&(addr->u_addr.ip6)), port);
-    if (esp_openthread_task_queue_post(trel_recv_task, p) != ESP_OK) {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
+
+    ot_trel_recv_task_t *task_ctx = (ot_trel_recv_task_t *)malloc(sizeof(ot_trel_recv_task_t));
+    if (task_ctx == NULL) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
+        ExitNow();
     }
+    task_ctx->p = p;
+    task_ctx->source_addr = (otSockAddr *)malloc(sizeof(otSockAddr));
+    if (task_ctx->source_addr == NULL) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to allocate buf for Thread TREL");
+        ExitNow();
+    }
+    memset(task_ctx->source_addr, 0, sizeof(otSockAddr));
+    task_ctx->source_addr->mPort = port;
+    memcpy(&task_ctx->source_addr->mAddress.mFields.m32, addr->u_addr.ip6.addr, sizeof(addr->u_addr.ip6.addr));
+
+    if (esp_openthread_task_queue_post(trel_recv_task, task_ctx) != ESP_OK) {
+        ESP_LOGE(OT_PLAT_LOG_TAG, "Failed to receive OpenThread TREL message");
+        ExitNow();
+    }
+    return;
+exit:
+    if(task_ctx) {
+        free(task_ctx->source_addr);
+    }
+    free(task_ctx);
+    pbuf_free(p);
 }
 
 static esp_err_t ot_new_trel(void *ctx)
@@ -196,6 +226,20 @@ void otPlatTrelSend(otInstance       *aInstance,
     esp_openthread_task_switching_lock_release();
     tcpip_callback(trel_send_task, task);
     esp_openthread_task_switching_lock_acquire(portMAX_DELAY);
+}
+
+void otPlatTrelNotifyPeerSocketAddressDifference(otInstance       *aInstance,
+                                                 const otSockAddr *aPeerSockAddr,
+                                                 const otSockAddr *aRxSockAddr)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    char peer_string[OT_IP6_SOCK_ADDR_STRING_SIZE];
+    char rx_string[OT_IP6_SOCK_ADDR_STRING_SIZE];
+    otIp6SockAddrToString(aPeerSockAddr, peer_string, sizeof(peer_string));
+    otIp6SockAddrToString(aRxSockAddr, rx_string, sizeof(rx_string));
+
+    ESP_LOGW(OT_PLAT_LOG_TAG, "TREL packet is received from a peer (%s) using a different socket address (%s)", peer_string, rx_string);
 }
 
 void otPlatTrelRegisterService(otInstance *aInstance, uint16_t aPort, const uint8_t *aTxtData, uint8_t aTxtLength)

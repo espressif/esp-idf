@@ -441,6 +441,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+ *
+ * Define to 1 to enable upstream forwarding support.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
+#define OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_BACKBONE_ROUTER_ENABLE
  *
  * Define to 1 to enable Backbone Router support.

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,7 +258,7 @@ static uint8_t get_netif_index(otNetifIdentifier netif_identifier)
     switch (netif_identifier) {
     case OT_NETIF_UNSPECIFIED:
         return NETIF_NO_INDEX;
-    case OT_NETIF_THREAD:
+    case OT_NETIF_THREAD_HOST:
         return esp_netif_get_netif_impl_index(esp_openthread_get_netif());
     case OT_NETIF_BACKBONE:
         return esp_netif_get_netif_impl_index(esp_openthread_get_backbone_netif());
@@ -351,7 +351,7 @@ static void udp_send_task(void *ctx)
     VerifyOrExit(send_buf != NULL);
     otMessageRead(task->message, 0, send_buf->payload, len);
 
-    if (task->netif_index == get_netif_index(OT_NETIF_THREAD)) {
+    if (task->netif_index == get_netif_index(OT_NETIF_THREAD_HOST)) {
         // If the input arguments indicated the netif is OT, directly send the message.
         err = udp_sendto_if_src(task->pcb, send_buf, &task->peer_addr, task->peer_port, netif_get_by_index(task->netif_index), &task->source_addr);
     } else {
@@ -402,12 +402,12 @@ otError otPlatUdpSend(otUdpSocket *udp_socket, otMessage *message, const otMessa
 #endif
 
     if (is_link_local(&message_info->mPeerAddr) || is_multicast(&message_info->mPeerAddr)) {
-        task->netif_index = get_netif_index(message_info->mIsHostInterface ? OT_NETIF_BACKBONE : OT_NETIF_THREAD);
+        task->netif_index = get_netif_index(message_info->mIsHostInterface ? OT_NETIF_BACKBONE : OT_NETIF_THREAD_HOST);
     }
 
     if (is_openthread_internal_mesh_local_addr(&message_info->mPeerAddr)) {
         // If the destination address is a openthread mesh local address, set the netif OT.
-        task->netif_index = get_netif_index(OT_NETIF_THREAD);
+        task->netif_index = get_netif_index(OT_NETIF_THREAD_HOST);
     }
     esp_openthread_task_switching_lock_release();
     tcpip_callback(udp_send_task, task);
