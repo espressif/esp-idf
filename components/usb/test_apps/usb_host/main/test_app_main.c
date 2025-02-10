@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "dev_msc.h"
-#include "test_usb_host_common.h"
+#include "phy_common.h"
 #include "usb/usb_host.h"
 
 void setUp(void)
@@ -18,7 +18,7 @@ void setUp(void)
     unity_utils_record_free_mem();
     dev_msc_init();
     // Install PHY separately
-    test_usb_host_setup_phy();
+    test_setup_usb_phy();
     // Install USB Host
     usb_host_config_t host_config = {
         .skip_phy_setup = true,
@@ -36,7 +36,7 @@ void tearDown(void)
     // Clean up USB Host
     printf("USB Host uninstall\n");
     ESP_ERROR_CHECK(usb_host_uninstall());
-    test_usb_host_delete_phy();
+    test_delete_usb_phy();
     // Short delay to allow task to be cleaned up after client uninstall
     vTaskDelay(10);
     unity_utils_evaluate_leaks();

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "esp_rom_sys.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 #define TEST_DEV_ADDR               0
 #define NUM_URBS                    3

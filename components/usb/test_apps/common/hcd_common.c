@@ -14,12 +14,12 @@
 #include "esp_err.h"
 #include "esp_attr.h"
 #include "esp_rom_gpio.h"
-#include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 #include "esp_private/usb_phy.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 #include "mock_msc.h"
+#include "phy_common.h"
 #include "unity.h"
 #include "sdkconfig.h"
 
@@ -27,11 +27,6 @@
 #define EVENT_QUEUE_LEN         5
 #define ENUM_ADDR               1   // Device address to use for tests that enumerate the device
 #define ENUM_CONFIG             1   // Device configuration number to use for tests that enumerate the device
-
-#ifdef CONFIG_USB_HCD_TEST_OTG_DRVVBUS_ENABLE
-#define OTG_DRVVBUS_ENABLE
-#define OTG_DRVVBUS_GPIO CONFIG_USB_HCD_TEST_OTG_DRVVBUS_GPIO
-#endif
 
 typedef struct {
     hcd_port_handle_t port_hdl;
@@ -44,7 +39,6 @@ typedef struct {
 } pipe_event_msg_t;
 
 hcd_port_handle_t port_hdl = NULL;
-static usb_phy_handle_t phy_hdl = NULL;
 
 // ---------------------------------------------------- Private --------------------------------------------------------
 
@@ -151,43 +145,8 @@ int test_hcd_get_num_pipe_events(hcd_pipe_handle_t pipe_hdl)
 
 hcd_port_handle_t test_hcd_setup(void)
 {
-    // Deinitialize PHY from previous failed test
-    if (phy_hdl != NULL) {
-        TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
-        phy_hdl = NULL;
-    }
-    // Initialize the internal USB PHY to connect to the USB OTG peripheral
-    usb_phy_config_t phy_config = {
-        .controller = USB_PHY_CTRL_OTG,
-#if CONFIG_IDF_TARGET_ESP32P4 // ESP32-P4 has 2 USB-DWC peripherals, each with its dedicated PHY. We support HS+UTMI only ATM.
-        .target = USB_PHY_TARGET_UTMI,
-#else
-        .target = USB_PHY_TARGET_INT,
-#endif
-        .otg_mode = USB_OTG_MODE_HOST,
-        .otg_speed = USB_PHY_SPEED_UNDEFINED,   // In Host mode, the speed is determined by the connected device
-        .ext_io_conf = NULL,
-        .otg_io_conf = NULL,
-    };
+    test_setup_usb_phy();
 
-#ifdef OTG_DRVVBUS_ENABLE
-    const usb_phy_otg_io_conf_t otg_io_conf = {
-        .iddig_io_num = -1,
-        .avalid_io_num = -1,
-        .vbusvalid_io_num = -1,
-        .idpullup_io_num = -1,
-        .dppulldown_io_num = -1,
-        .dmpulldown_io_num = -1,
-        .drvvbus_io_num = OTG_DRVVBUS_GPIO,
-        .bvalid_io_num = -1,
-        .sessend_io_num = -1,
-        .chrgvbus_io_num = -1,
-        .dischrgvbus_io_num = -1
-    };
-    phy_config.otg_io_conf = &otg_io_conf;
-#endif // OTG_DRVVBUS_ENABLE
-
-    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_new_phy(&phy_config, &phy_hdl), "Failed to init USB PHY");
     // Create a queue for port callback to queue up port events
     QueueHandle_t port_evt_queue = xQueueCreate(EVENT_QUEUE_LEN, sizeof(port_event_msg_t));
     TEST_ASSERT_NOT_NULL(port_evt_queue);
@@ -223,8 +182,7 @@ void test_hcd_teardown(hcd_port_handle_t port_hdl)
     TEST_ASSERT_EQUAL(ESP_OK, hcd_uninstall());
     vQueueDelete(port_evt_queue);
     // Deinitialize the internal USB PHY
-    TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
-    phy_hdl = NULL;
+    test_delete_usb_phy();
 }
 
 usb_speed_t test_hcd_wait_for_conn(hcd_port_handle_t port_hdl)

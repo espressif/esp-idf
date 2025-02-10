@@ -1,0 +1,26 @@
+menu "USB PHY Test"
+    depends on IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3
+
+    orsource "$IDF_PATH/examples/common_components/env_caps/$IDF_TARGET/Kconfig.env_caps"
+
+    config USB_PHY_TEST_OTG_DRVVBUS_ENABLE
+        bool "Enable driving VBUS by an internal DRVVBUS signal"
+        default n
+        help
+            USB-OTG peripheral features a DRVVBUS signal, which controls the VBUS voltage. The DRVVBUS signal can be
+            either internally connected to a PHY (if a PHY supports it), in such a case the PHY would be controlling
+            the VBUS voltage by itself. Or the DRVVBUS can be handled by an external logic (a transistor switch).
+            Our PHY does not support the DRVVBUS signal, thus we must use an external logic to control the VBUS
+            voltage. The DRVVBUS signal is controlled via HCD_PORT_CMD_POWER_OFF and HCD_PORT_CMD_POWER_ON
+
+    config USB_PHY_TEST_OTG_DRVVBUS_GPIO
+        depends on USB_PHY_TEST_OTG_DRVVBUS_ENABLE
+        int "Connect a GPIO to the internal DRVVBUS signal"
+        range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 1
+        help
+            GPIO number, that will be internally connected to the DRVVBUS signal.
+            USB Host CI target runners feature an external power switch controlled by this GPIO, to control the VBUS
+            voltage of USB devices during test.
+
+endmenu
