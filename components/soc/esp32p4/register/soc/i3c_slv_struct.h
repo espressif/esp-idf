@@ -539,6 +539,7 @@ typedef struct {
     volatile i3c_slv_vendorid_reg_t vendorid;
 } i3c_slv_dev_t;
 
+extern i3c_slv_dev_t I3C_SLV;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i3c_slv_dev_t) == 0x78, "Invalid size of i3c_slv_dev_t structure");
