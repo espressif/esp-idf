@@ -59,7 +59,7 @@ typedef struct {
   * @brief Wi-Fi authmode type
   * Strength of authmodes
   * Personal Networks   : OPEN < WEP < WPA_PSK < OWE < WPA2_PSK = WPA_WPA2_PSK < WAPI_PSK < WPA3_PSK = WPA2_WPA3_PSK
-  * Enterprise Networks : WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENTERPRISE = WIFI_AUTH_WPA2_WPA3_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
+  * Enterprise Networks : WIFI_AUTH_WPA2_ENTERPRISE < WIFI_AUTH_WPA3_ENT_192
   */
 typedef enum {
     WIFI_AUTH_OPEN = 0,         /**< authenticate mode : open */
@@ -74,11 +74,6 @@ typedef enum {
     WIFI_AUTH_WAPI_PSK,         /**< authenticate mode : WAPI_PSK */
     WIFI_AUTH_OWE,              /**< authenticate mode : OWE */
     WIFI_AUTH_WPA3_ENT_192,     /**< authenticate mode : WPA3_ENT_SUITE_B_192_BIT */
-    WIFI_AUTH_DUMMY_1,          /**< Dummy placeholder authenticate mode for WIFI_AUTH_WPA3_EXT_PSK */
-    WIFI_AUTH_DUMMY_2,          /**< Dummy placeholder authenticate mode for WIFI_AUTH_WPA3_EXT_PSK_MIXED_MODE */
-    WIFI_AUTH_DUMMY_3,          /**< Dummy placeholder authenticate mode for WIFI_AUTH_DPP */
-    WIFI_AUTH_WPA3_ENTERPRISE,  /**< authenticate mode : WPA3-Enterprise Only Mode */
-    WIFI_AUTH_WPA2_WPA3_ENTERPRISE, /**< authenticate mode : WPA3-Enterprise Transition Mode */
     WIFI_AUTH_MAX
 } wifi_auth_mode_t;
 
@@ -919,6 +914,8 @@ typedef enum {
     WIFI_EVENT_NDP_CONFIRM,              /**< NDP Confirm Indication */
     WIFI_EVENT_NDP_TERMINATED,           /**< NAN Datapath terminated indication */
 
+    WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
+
     WIFI_EVENT_MAX,                      /**< Invalid WiFi event ID */
 } wifi_event_t;
 
@@ -1150,6 +1147,11 @@ typedef struct {
                                                   ERSU is always used in long distance transmission, and its frame has lower rate compared with SU mode */
     bool dcm;                                /**< Using dcm rate to send frame */
 } wifi_tx_rate_config_t;
+
+/** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
+} wifi_event_ap_wrong_password_t;
 
 #ifdef __cplusplus
 }
