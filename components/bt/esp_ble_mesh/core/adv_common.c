@@ -625,6 +625,9 @@ void bt_mesh_adv_common_init(void)
     bt_mesh_adv_type_init(BLE_MESH_ADV_DATA, &adv_queue, &adv_buf_pool, adv_alloc);
     bt_mesh_adv_type_init(BLE_MESH_ADV_BEACON, &adv_queue, &adv_buf_pool, adv_alloc);
     bt_mesh_adv_type_init(BLE_MESH_ADV_URI, &adv_queue, &adv_buf_pool, adv_alloc);
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+    bt_mesh_adv_type_init(BLE_MESH_ADV_PROXY_SOLIC, &adv_queue, &adv_buf_pool, adv_alloc);
+#endif
 
 #if CONFIG_BLE_MESH_USE_BLE_50
     bt_mesh_adv_inst_init(BLE_MESH_ADV_INS, CONFIG_BLE_MESH_ADV_INST_ID);

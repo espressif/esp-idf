@@ -92,6 +92,9 @@ uint8_t __meshlib_var_BLE_MESH_ADV_RELAY_DATA = BLE_MESH_ADV_RELAY_DATA;
 #endif
 uint8_t __meshlib_var_BLE_MESH_ADV_BEACON = BLE_MESH_ADV_BEACON;
 uint8_t __meshlib_var_BLE_MESH_ADV_URI = BLE_MESH_ADV_URI;
+#if CONFIG_BLE_MESH_PROXY_SOLIC_PDU_TX
+uint8_t __meshlib_var_BLE_MESH_ADV_PROXY_SOLIC = BLE_MESH_ADV_PROXY_SOLIC;
+#endif
 #if CONFIG_BLE_MESH_SUPPORT_BLE_ADV
 uint8_t __meshlib_var_BLE_MESH_ADV_BLE = BLE_MESH_ADV_BLE;
 #endif
