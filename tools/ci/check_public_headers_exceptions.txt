@@ -40,7 +40,6 @@ components/spi_flash/include/spi_flash_chip_generic.h
 
 components/wpa_supplicant/include/
 components/wpa_supplicant/port/
-components/wpa_supplicant/esp_supplicant/include/
 
 components/mbedtls/mbedtls/
 components/mbedtls/port/include/
