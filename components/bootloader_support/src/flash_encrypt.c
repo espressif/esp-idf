@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,9 @@
 #include "esp_flash_encrypt.h"
 #include "esp_secure_boot.h"
 #include "hal/efuse_hal.h"
+#include "hal/spi_flash_encrypted_ll.h"
+#include "hal/spi_flash_encrypt_hal.h"
+#include "soc/soc_caps.h"
 
 #if CONFIG_IDF_TARGET_ESP32
 #define CRYPT_CNT ESP_EFUSE_FLASH_CRYPT_CNT
@@ -210,6 +213,13 @@ void esp_flash_encryption_set_release_mode(void)
     esp_efuse_write_field_bit(WR_DIS_CRYPT_CNT);
 #endif // CONFIG_SOC_FLASH_ENCRYPTION_XTS_AES_128_DERIVED
 #endif // !CONFIG_IDF_TARGET_ESP32
+
+#ifdef SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+    if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {
+        uint8_t xts_pseudo_level = ESP_XTS_AES_PSEUDO_ROUNDS_LOW;
+        esp_efuse_write_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+    }
+#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
     esp_efuse_write_field_bit(ESP_EFUSE_WR_DIS_DIS_CACHE);
@@ -456,6 +466,17 @@ bool esp_flash_encryption_cfg_verify_release_mode(void)
         }
     }
     result &= secure;
+
+#if SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
+    if (spi_flash_encrypt_ll_is_pseudo_rounds_function_supported()) {
+        uint8_t xts_pseudo_level = 0;
+        esp_efuse_read_field_blob(ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL, &xts_pseudo_level, ESP_EFUSE_XTS_DPA_PSEUDO_LEVEL[0]->bit_count);
+        if (!xts_pseudo_level) {
+            result &= false;
+            ESP_LOGW(TAG, "Not enabled XTS-AES pseudo rounds function (set XTS_DPA_PSEUDO_LEVEL->1 or more)");
+        }
+    }
+#endif
 
     return result;
 }

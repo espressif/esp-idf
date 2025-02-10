@@ -231,6 +231,10 @@ config SOC_AES_SUPPORT_AES_256
     bool
     default y
 
+config SOC_AES_SUPPORT_PSEUDO_ROUND_FUNCTION
+    bool
+    default y
+
 config SOC_ADC_DIG_CTRL_SUPPORTED
     bool
     default y
@@ -1124,6 +1128,10 @@ config SOC_FLASH_ENCRYPTION_XTS_AES
     default y
 
 config SOC_FLASH_ENCRYPTION_XTS_AES_128
+    bool
+    default y
+
+config SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND
     bool
     default y
 

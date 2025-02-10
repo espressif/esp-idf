@@ -11,6 +11,7 @@
  ******************************************************************************/
 
 // The Lowlevel layer for SPI Flash Encryption.
+#pragma once
 
 #include <stdbool.h>
 #include <string.h>
@@ -54,7 +55,7 @@ static inline void spi_flash_encrypt_ll_disable(void)
 }
 
 /**
- * Choose type of chip you want to encrypt manully
+ * Choose type of chip you want to encrypt manually
  *
  * @param type The type of chip to be encrypted
  *
