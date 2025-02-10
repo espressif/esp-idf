@@ -541,6 +541,9 @@
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
 #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
+/*-------------------------- RTC MEM CAPS ----------------------------*/
+#define SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH           1
+
 // TODO: IDF-5351 (Copy from esp32c3, need check)
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)

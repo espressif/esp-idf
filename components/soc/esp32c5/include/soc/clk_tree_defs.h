@@ -253,9 +253,7 @@ typedef enum {
 typedef enum {
     LP_UART_SCLK_RC_FAST = SOC_MOD_CLK_RC_FAST,         /*!< LP_UART source clock is RC_FAST */
     LP_UART_SCLK_XTAL_D2 = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock is XTAL_D2 */
-
-    //TODO: IDF-10034
-    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_XTAL_D2,         /*!< LP_UART source clock default choice is XTAL_D2 */
+    LP_UART_SCLK_DEFAULT = SOC_MOD_CLK_RC_FAST,         /*!< LP_UART source clock default choice is RC_FAST */
 } soc_periph_lp_uart_clk_src_t;
 
 //////////////////////////////////////////////////MCPWM/////////////////////////////////////////////////////////////////

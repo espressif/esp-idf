@@ -583,6 +583,9 @@
 /*--------------- WIFI LIGHT SLEEP CLOCK WIDTH CAPS --------------------------*/
 #define SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH  (12)
 
+/*-------------------------- RTC MEM CAPS ----------------------------*/
+#define SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH           1
+
 /*-------------------------- Power Management CAPS ----------------------------*/
 #define SOC_PM_SUPPORT_WIFI_WAKEUP      (1)
 #define SOC_PM_SUPPORT_BEACON_WAKEUP    (1)
