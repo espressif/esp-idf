@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,12 @@ extern "C" {
 #if SOC_LP_I2C_SUPPORTED
 #define LP_I2C_SRC_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
 #define LP_I2C_BUS_CLK_ATOMIC()    PERIPH_RCC_ATOMIC()
+#endif
+
+#ifdef CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM
+#define I2C_MASTER_ISR_ATTR IRAM_ATTR
+#else
+#define I2C_MASTER_ISR_ATTR
 #endif
 
 #if CONFIG_I2C_ISR_IRAM_SAFE
