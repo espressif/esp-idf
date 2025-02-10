@@ -10,7 +10,6 @@
 #include "esp_err.h"
 #include "hal/gpio_types.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/gpio_num.h"
 #include "soc/soc_caps.h"
 #include "soc/io_mux_reg.h"
 
@@ -43,6 +42,12 @@ typedef struct {
  * @param enable   true to enable the clock / false to disable the clock
  */
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable);
+
+/**
+ * Force disable one LP_IO to clock dependency
+ * @param gpio_num GPIO number
+ */
+void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num);
 #endif
 
 #ifdef __cplusplus
