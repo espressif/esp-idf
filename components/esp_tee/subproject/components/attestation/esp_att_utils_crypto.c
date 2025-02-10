@@ -261,9 +261,10 @@ esp_err_t esp_att_utils_ecdsa_get_pubkey(const esp_att_ecdsa_keypair_t *keypair,
     }
 
     *pubkey_hexstr = hexstr;
-    err = ESP_OK;
+    return ESP_OK;
 
 exit:
+    free(hexstr);
     return err;
 }
 
