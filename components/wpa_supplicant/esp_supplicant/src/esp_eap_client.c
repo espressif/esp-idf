@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -626,10 +626,10 @@ static int wpa2_start_eapol_internal(void)
         return ESP_FAIL;
     }
 
-    if (wpa_sta_cur_pmksa_matches_akm()) {
+    if (wpa_sta_cur_pmksa_matches_akm() && wpa_sta_is_cur_pmksa_set()) {
         wpa_printf(MSG_DEBUG,
                    "RSN: PMKSA caching - do not send EAPOL-Start");
-        return ESP_FAIL;
+        return ESP_OK;
     }
 
     ret = esp_wifi_get_assoc_bssid_internal(bssid);
@@ -815,11 +815,25 @@ static esp_err_t esp_client_enable_fn(void *arg)
     return ESP_OK;
 }
 
+void esp_wifi_set_okc_support(bool enable)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    if (enable) {
+        sm->okc = 1;
+    } else {
+        sm->okc = 0;
+    }
+    wpa_printf(MSG_DEBUG, "OKC set to %d", sm->okc);
+}
+
 esp_err_t esp_wifi_sta_enterprise_enable(void)
 {
     wifi_wpa2_param_t param;
     esp_err_t ret;
     struct wpa_sm *sm = &gWpaSm;
+
+    /* Enable opportunistic key caching support */
+    esp_wifi_set_okc_support(true);
 
     wpa2_api_lock();
 

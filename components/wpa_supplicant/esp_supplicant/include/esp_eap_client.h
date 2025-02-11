@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -318,6 +318,13 @@ esp_err_t esp_eap_client_set_fast_params(esp_eap_fast_config config);
  *    - ESP_OK: The option to use the default certificate bundle was set successfully.
  */
 esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle);
+
+/**
+ * @brief     Set Opportunistic key caching support for station.
+ *
+ * @param enable Boolean indicating whether to enable (true) or disable (false) OKC support.
+ */
+void esp_wifi_set_okc_support(bool enable);
 
 #ifdef __cplusplus
 }
