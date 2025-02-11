@@ -538,6 +538,7 @@ config BT_LE_USE_ESP_TIMER
     help
         Set this option to use Esp Timer which has higher priority timer
         instead of FreeRTOS timer
+
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
     default y
@@ -722,3 +723,48 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         Move most IRAM into flash. This will increase the usage of flash and reduce ble performance.
         Because the code is moved to the flash, the execution speed of the code is reduced.
         To have a small impact on performance, you need to enable flash suspend (SPI_FLASH_AUTO_SUSPEND).
+
+menu "BLE disconnects when Instant Passed (0x28) occurs"
+    config BT_LE_CTRL_LLCP_CONN_UPDATE
+        bool "BLE ACL connection update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs during connection update procedure.
+
+    config BT_LE_CTRL_LLCP_CHAN_MAP_UPDATE
+        bool "BLE ACL channel map update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in channel map update procedure.
+
+    config BT_LE_CTRL_LLCP_PHY_UPDATE
+        bool "BLE ACL PHY update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in PHY update procedure.
+endmenu
+
+config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    int "The value of upperlimitmax during scan backoff procedure"
+    range 1 256
+    default 32
+    help
+        The value of upperlimitmax needs to be a power of 2.
+
+config BT_LE_CTRL_CHAN_ASS_EN
+    bool "Enable channel assessment"
+    default n
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero"
+    default y
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.
