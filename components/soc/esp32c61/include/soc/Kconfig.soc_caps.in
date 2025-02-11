@@ -303,6 +303,10 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
+config SOC_CPU_SUPPORT_WFE
+    bool
+    default y
+
 config SOC_INT_PLIC_SUPPORTED
     bool
     default n
