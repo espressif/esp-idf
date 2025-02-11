@@ -763,8 +763,6 @@ static inline void spimem_flash_ll_set_common_command_register_info(spi_mem_dev_
     dev->user2.val = user2_reg;
 }
 
-// For flash test utils
-
 #define SPIMEM_FLASH_LL_SUSPEND_END_INTR  SPI_MEM_PES_END_INT_ENA_M
 #define SPIMEM_FLASH_LL_INTERRUPT_SOURCE  ETS_MSPI_INTR_SOURCE
 
