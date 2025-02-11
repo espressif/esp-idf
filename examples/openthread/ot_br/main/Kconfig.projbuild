@@ -8,6 +8,18 @@ menu "OpenThread Border Router Example"
             SSID and PSK, and then form a Thread network automatically. Otherwise, user need
             to configure Wi-Fi and Thread manually.
 
+    config OPENTHREAD_SUPPORT_HW_RESET_RCP
+        bool 'Enable hardware RCP resetting'
+        default False
+        help
+            If enabled, the Thread Border Router will support hardware resetting the RCP
+            when processing RCP failure.
+
+    config OPENTHREAD_HW_RESET_RCP_PIN
+        int 'Pin to RCP reset'
+        depends on OPENTHREAD_SUPPORT_HW_RESET_RCP
+        default 7
+
     menu "External coexist wire type and pin config"
         config EXTERNAL_COEX_WIRE_TYPE
             int "The wire_type of external coexist"
