@@ -10,6 +10,9 @@
 #pragma message("esp_wpa2.h is deprecated. Use esp_eap_client.h instead.")
 
 #include "esp_eap_client.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
   * @brief  Enable wpa2 enterprise authentication.
