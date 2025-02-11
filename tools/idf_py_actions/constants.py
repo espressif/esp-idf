@@ -34,4 +34,4 @@ if os.name != 'nt':
 URL_TO_DOC = 'https://docs.espressif.com/projects/esp-idf'
 
 SUPPORTED_TARGETS = ['esp32', 'esp32s2', 'esp32c3', 'esp32s3', 'esp32c2', 'esp32c6', 'esp32h2', 'esp32p4']
-PREVIEW_TARGETS = ['linux', 'esp32c5', 'esp32c61', 'esp32h21']
+PREVIEW_TARGETS = ['linux', 'esp32c5', 'esp32c61', 'esp32h21', 'esp32h4']
