@@ -359,7 +359,7 @@ IRAM_ATTR esp_err_t esp_mmu_paddr_find_caps(const esp_paddr_t paddr, mmu_mem_cap
             }
 
             //now we are only traversing the actual dynamically allocated blocks, dummy_head and dummy_tail are excluded already
-            if (mem_block->paddr_start == paddr) {
+            if (paddr >= mem_block->paddr_start && paddr < mem_block->paddr_end) {
                 found = true;
                 found_block = mem_block;
                 break;
