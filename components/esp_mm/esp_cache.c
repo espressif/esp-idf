@@ -108,8 +108,8 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
     }
     uint32_t cache_line_size = cache_hal_get_cache_line_size(cache_level, cache_type);
     if ((flags & ESP_CACHE_MSYNC_FLAG_UNALIGNED) == 0) {
-        bool aligned_addr = (((uint32_t)addr % cache_line_size) == 0);
-        ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%" PRIx32 " is not aligned with cache line size (0x%" PRIx32 ")B", (uint32_t)addr, cache_line_size);
+        bool aligned_addr = (((uint32_t)addr % cache_line_size) == 0) && ((size % cache_line_size) == 0);
+        ESP_RETURN_ON_FALSE_ISR(aligned_addr, ESP_ERR_INVALID_ARG, TAG, "start address: 0x%" PRIx32 ", or the size: 0x%" PRIx32 " is(are) not aligned with cache line size (0x%" PRIx32 ")B", (uint32_t)addr, (uint32_t)size, cache_line_size);
     }
 
     s_acquire_mutex_from_task_context();
