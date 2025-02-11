@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -78,8 +78,6 @@ void init_ethernet_and_netif(void)
 
 void app_main(void)
 {
-    init_ethernet_and_netif();
-
     esp_console_repl_t *repl = NULL;
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
@@ -90,6 +88,9 @@ void app_main(void)
     repl_config.prompt = "iperf>";
     // init console REPL environment
     ESP_ERROR_CHECK(esp_console_new_repl_uart(&uart_config, &repl_config, &repl));
+
+    // init Ethernet and netif
+    init_ethernet_and_netif();
 
     /* Register commands */
     register_system_common();
