@@ -625,6 +625,10 @@ int handle_auth_sae(struct hostapd_data *hapd, struct sta_info *sta,
 
        if (sae_check_confirm(sta->sae, buf, len) < 0) {
            resp = WLAN_STATUS_CHALLENGE_FAIL;
+           wifi_event_ap_wrong_password_t evt = {0};
+           os_memcpy(evt.mac, bssid, ETH_ALEN);
+           esp_event_post(WIFI_EVENT, WIFI_EVENT_AP_WRONG_PASSWORD, &evt,
+                    sizeof(evt), 0);
            goto reply;
        }
        sta->sae->rc = peer_send_confirm;

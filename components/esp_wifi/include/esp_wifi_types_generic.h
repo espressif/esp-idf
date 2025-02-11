@@ -910,6 +910,8 @@ typedef enum {
 
     WIFI_EVENT_STA_NEIGHBOR_REP,         /**< Received Neighbor Report response */
 
+    WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
+
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1210,6 +1212,11 @@ typedef enum {
     WIFI_BAND_5G = 2,                   /* Band is 5G */
     WIFI_BAND_2G_5G = 3,                /* Band is 2,4G + 5G */
 } wifi_band_t;
+
+/** Argument structure for WIFI_EVENT_AP_WRONG_PASSWORD event */
+typedef struct {
+    uint8_t mac[6];           /**< MAC address of the station trying to connect to Soft-AP */
+} wifi_event_ap_wrong_password_t;
 
 /**
   * @brief Argument structure for wifi_tx_rate_config
