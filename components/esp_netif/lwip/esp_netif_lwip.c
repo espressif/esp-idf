@@ -1395,6 +1395,11 @@ static void esp_netif_internal_dhcpc_cb(struct netif *netif)
     } else {
         if (!ip4_addr_cmp(&ip_info->ip, IP4_ADDR_ANY4)) {
             esp_netif_start_ip_lost_timer(esp_netif);
+            // synchronize lwip netif with esp_netif setting ip_info to 0,
+            // so the next time we get a valid IP we can raise the event
+            ip4_addr_set(&ip_info->ip, ip_2_ip4(&netif->ip_addr));
+            ip4_addr_set(&ip_info->netmask, ip_2_ip4(&netif->netmask));
+            ip4_addr_set(&ip_info->gw, ip_2_ip4(&netif->gw));
         }
     }
 }
@@ -1422,6 +1427,7 @@ static void esp_netif_ip_lost_timer(void *arg)
         esp_netif_update_default_netif(esp_netif, ESP_NETIF_LOST_IP);
         ESP_LOGD(TAG, "if%p ip lost tmr: raise ip lost event", esp_netif);
         memset(esp_netif->ip_info_old, 0, sizeof(esp_netif_ip_info_t));
+        memset(esp_netif->ip_info, 0, sizeof(esp_netif_ip_info_t));
         if (esp_netif->lost_ip_event) {
             ret = esp_event_post(IP_EVENT, esp_netif->lost_ip_event,
                                           &evt, sizeof(evt), 0);
