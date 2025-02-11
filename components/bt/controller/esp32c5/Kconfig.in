@@ -310,6 +310,49 @@ config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     help
             Only operate in dump mode
 
+config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    bool "Output ble controller logs to SPI bus (Experimental)"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    default n
+    help
+        Output ble controller logs to SPI bus
+
+config BT_LE_CONTROLLER_LOG_SPI_OUT_QUEUE_SIZE
+    int "Number of ble controller log async SPI output queues"
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default 4
+    help
+            The number of ble controller log async SPI output queues
+
+config BT_LE_CONTROLLER_LOG_SPI_OUT_TRANS_BUF_SIZE
+    int "Size of ble controller log async SPI output transaction buffer size"
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default 512
+    help
+            The size of ble controller log async SPI output transaction buffer size
+
+config BT_LE_CONTROLLER_LOG_SPI_OUT_MOSI_IO_NUM
+    int "GPIO number of SPI MOSI"
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default 25
+    help
+            GPIO number of SPI MOSI
+
+config BT_LE_CONTROLLER_LOG_SPI_OUT_SCLK_IO_NUM
+    int "GPIO number of SPI SCLK"
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default 26
+    help
+            GPIO number of SPI SCLK
+
+config BT_LE_CONTROLLER_LOG_SPI_OUT_CS_IO_NUM
+    int "GPIO number of SPI CS"
+    depends on BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    default 27
+    help
+            GPIO number of SPI CS
+
 config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     bool "Store ble controller logs to flash(Experimental)"
     depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
