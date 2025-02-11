@@ -575,16 +575,16 @@ menu "mbedTLS"
         config MBEDTLS_HARDWARE_ECDSA_SIGN_MASKING_CM
             bool "Mask original ECDSA sign operation under dummy sign operations"
             select HAL_ECDSA_GEN_SIG_CM
-            # ToDo: IDF-11051
             default y
             help
-                The ECDSA peripheral before ECO5 does not offer constant time ECDSA sign operation.
+                The ECDSA peripheral before ESP32-H2 v1.2 does not offer constant time ECDSA sign operation.
                 This time can be observed through power profiling of the device,
                 making the ECDSA private key vulnerable to side-channel timing attacks.
                 This countermeasure masks the real ECDSA sign operation
                 under dummy sign operations to add randomness in the generated power signature.
                 It is highly recommended to also enable Secure Boot for the device in addition to this countermeasure
                 so that only trusted software can execute on the device.
+                This countermeasure can be safely disabled for ESP32-H2 v1.2 and above.
 
         config MBEDTLS_HARDWARE_ECDSA_SIGN_CONSTANT_TIME_CM
             bool "Make ECDSA signature operation pseudo constant time for software"
@@ -597,6 +597,7 @@ menu "mbedTLS"
                 of an arbitrary message.
                 The signature time would appear to be constant to the external entity after enabling
                 this option.
+                This countermeasure can be safely disabled for ESP32-H2 v1.2 and above.
 
     endmenu
 
