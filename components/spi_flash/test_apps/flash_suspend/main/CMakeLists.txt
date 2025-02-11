@@ -1,8 +1,14 @@
 set(srcs "test_app_main.c"
          "test_flash_suspend.c")
 
+
+if(NOT CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM)
+    list(APPEND srcs "test_i2c_flash_text.c")
+endif()
+
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(SRCS ${srcs}
-                       PRIV_REQUIRES unity test_utils spi_flash driver esp_partition
+                       PRIV_REQUIRES unity test_utils spi_flash driver esp_partition esp_driver_i2c
                        WHOLE_ARCHIVE)
