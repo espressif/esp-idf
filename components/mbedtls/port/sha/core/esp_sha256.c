@@ -152,8 +152,8 @@ int mbedtls_internal_sha256_process( mbedtls_sha256_context *ctx, const unsigned
 int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
-    size_t fill;
-    uint32_t left, len, local_len = 0;
+    size_t fill, left, len;
+    uint32_t local_len = 0;
 
     if ( ilen == 0 ) {
         return 0;
@@ -179,7 +179,8 @@ int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *inp
         local_len = 64;
     }
 
-    len = (ilen / 64) * 64;
+    len = SHA_ALIGN_DOWN(ilen , 64);
+
     if ( len || local_len) {
 
         esp_sha_acquire_hardware();
@@ -202,7 +203,7 @@ int mbedtls_sha256_update( mbedtls_sha256_context *ctx, const unsigned char *inp
             }
 
             uint32_t length_processed = 0;
-            while ( len - length_processed > 0 ) {
+            while ( len - length_processed != 0 ) {
                 esp_internal_sha256_block_process(ctx, input + length_processed);
                 length_processed += 64;
             }

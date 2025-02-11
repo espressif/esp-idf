@@ -37,6 +37,8 @@ extern "C" {
 #endif
 #endif /* SOC_SHA_SUPPORT_DMA */
 
+#define SHA_ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
+
 typedef enum {
     SHA_BLOCK_MODE,
 #if SOC_SHA_SUPPORT_DMA

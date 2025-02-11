@@ -190,14 +190,14 @@ int mbedtls_internal_sha512_process( mbedtls_sha512_context *ctx, const unsigned
 int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *input,
                                size_t ilen )
 {
-    size_t fill;
-    unsigned int left, len, local_len = 0;
+    size_t fill, left, len;
+    uint32_t local_len = 0;
 
     if ( ilen == 0 ) {
         return 0;
     }
 
-    left = (unsigned int) (ctx->total[0] & 0x7F);
+    left = (size_t) (ctx->total[0] & 0x7F);
     fill = 128 - left;
 
     ctx->total[0] += (uint64_t) ilen;
@@ -215,7 +215,8 @@ int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *inp
         local_len = 128;
     }
 
-    len = (ilen / 128) * 128;
+    len = SHA_ALIGN_DOWN(ilen , 128);
+
     if ( len || local_len) {
 
         esp_sha_acquire_hardware();
@@ -243,7 +244,7 @@ int mbedtls_sha512_update( mbedtls_sha512_context *ctx, const unsigned char *inp
             }
 
             uint32_t length_processed = 0;
-            while ( len - length_processed > 0 ) {
+            while ( len - length_processed != 0 ) {
                 esp_internal_sha512_block_process(ctx, input + length_processed);
                 length_processed += 128;
             }

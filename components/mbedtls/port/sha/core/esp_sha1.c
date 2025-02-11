@@ -135,8 +135,8 @@ int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx, const unsigned cha
 
 int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
 {
-    size_t fill;
-    uint32_t left, len, local_len = 0;
+    size_t fill, left, len;
+    uint32_t local_len = 0;
 
     if ( !ilen || (input == NULL)) {
         return 0;
@@ -160,7 +160,7 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
         local_len = 64;
     }
 
-    len = (ilen / 64) * 64;
+    len = SHA_ALIGN_DOWN(ilen , 64);
 
     if ( len || local_len) {
 
@@ -184,7 +184,7 @@ int mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, 
             }
 
             uint32_t length_processed = 0;
-            while ( len - length_processed > 0 ) {
+            while ( len - length_processed != 0 ) {
                 esp_internal_sha1_block_process(ctx, input + length_processed);
                 length_processed += 64;
             }
