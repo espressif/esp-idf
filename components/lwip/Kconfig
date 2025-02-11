@@ -18,14 +18,6 @@ menu "LWIP"
             The default name this device will report to other devices on the network.
             Could be updated at runtime with esp_netif_set_hostname()
 
-    config LWIP_NETIF_API
-        bool "Enable usage of standard POSIX APIs in LWIP"
-        default n
-        help
-            If this feature is enabled, standard POSIX APIs: if_indextoname(), if_nametoindex()
-            could be used to convert network interface index to name
-            instead of IDF specific esp-netif APIs (such as esp_netif_get_netif_impl_name())
-
     config LWIP_TCPIP_TASK_PRIO
         int "LWIP TCP/IP Task Priority"
         default 18
