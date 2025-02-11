@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,7 +202,7 @@ r_ble_ll_conn_sm_get = 0x40000e3c;
 r_ble_ll_conn_tx_pkt_in = 0x40000e4c;
 r_ble_ll_conn_update_eff_data_len = 0x40000e50;
 r_ble_ll_ctrl_chanmap_req_make = 0x40000e54;
-r_ble_ll_ctrl_conn_param_pdu_make = 0x40000e5c;
+//r_ble_ll_ctrl_conn_param_pdu_make = 0x40000e5c;
 r_ble_ll_ctrl_conn_param_pdu_proc = 0x40000e60;
 r_ble_ll_ctrl_conn_param_reply = 0x40000e64;
 r_ble_ll_ctrl_datalen_upd_make = 0x40000e6c;
@@ -224,7 +224,7 @@ r_ble_ll_ctrl_proc_stop = 0x40000eb4;
 r_ble_ll_ctrl_proc_with_instant_initiated = 0x40000ebc;
 r_ble_ll_ctrl_rej_ext_ind_make = 0x40000ec0;
 r_ble_ll_ctrl_reject_ind_send = 0x40000ec4;
-r_ble_ll_ctrl_rx_chanmap_req = 0x40000ec8;
+//r_ble_ll_ctrl_rx_chanmap_req = 0x40000ec8;
 r_ble_ll_ctrl_rx_conn_param_req = 0x40000ecc;
 r_ble_ll_ctrl_rx_enc_req = 0x40000ed8;
 r_ble_ll_ctrl_rx_enc_rsp = 0x40000edc;
@@ -234,7 +234,7 @@ r_ble_ll_ctrl_rx_pause_enc_rsp = 0x40000eec;
 r_ble_ll_ctrl_rx_periodic_sync_ind = 0x40000ef4;
 r_ble_ll_ctrl_rx_phy_req = 0x40000ef8;
 r_ble_ll_ctrl_rx_phy_rsp = 0x40000efc;
-r_ble_ll_ctrl_rx_phy_update_ind = 0x40000f00;
+//r_ble_ll_ctrl_rx_phy_update_ind = 0x40000f00;
 r_ble_ll_ctrl_rx_ping_rsp = 0x40000f04;
 r_ble_ll_ctrl_rx_reject_ind = 0x40000f08;
 r_ble_ll_ctrl_rx_sca_req = 0x40000f0c;
@@ -636,7 +636,7 @@ r_ble_lll_scan_npl_restore = 0x400016d8;
 r_ble_lll_scan_npl_store = 0x400016dc;
 r_ble_lll_scan_period_timer_cb = 0x400016e0;
 r_ble_lll_scan_process_adv_in_isr = 0x400016e4;
-r_ble_lll_scan_req_backoff = 0x400016ec;
+//r_ble_lll_scan_req_backoff = 0x400016ec;
 r_ble_lll_scan_sched_next_aux = 0x40001700;
 r_ble_lll_scan_sched_remove = 0x40001704;
 r_ble_lll_scan_start = 0x40001708;
