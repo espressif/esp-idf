@@ -99,7 +99,7 @@
 #define SOC_LIGHT_SLEEP_SUPPORTED       1
 #define SOC_DEEP_SLEEP_SUPPORTED        1
 #define SOC_PM_SUPPORTED                1
-
+#define SOC_SIMD_INSTRUCTION_SUPPORTED  1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_40M            1
@@ -188,6 +188,8 @@
 #define SOC_CPU_PMP_REGION_GRANULARITY  128
 
 #define SOC_CPU_HAS_LOCKUP_RESET        1
+
+#define SOC_SIMD_PREFERRED_DATA_ALIGNMENT 16 // The preferred data alignment accepted by the SIMD instructions, in bytes
 
 /*-------------------------- DIGITAL SIGNATURE CAPS ----------------------------------------*/
 /** The maximum length of a Digital Signature in bits. */
