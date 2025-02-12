@@ -1128,7 +1128,7 @@ typedef union {
 } i3c_mst_rnd_eco_high_reg_t;
 
 
-typedef struct {
+typedef struct i3c_mst_dev_t {
     volatile i3c_mst_device_ctrl_reg_t device_ctrl;
     uint32_t reserved_004[6];
     volatile i3c_mst_buffer_thld_ctrl_reg_t buffer_thld_ctrl;
@@ -1172,6 +1172,7 @@ typedef struct {
     volatile i3c_mst_rnd_eco_high_reg_t rnd_eco_high;
 } i3c_mst_dev_t;
 
+extern i3c_mst_dev_t I3C_MST;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(i3c_mst_dev_t) == 0xbc, "Invalid size of i3c_mst_dev_t structure");
