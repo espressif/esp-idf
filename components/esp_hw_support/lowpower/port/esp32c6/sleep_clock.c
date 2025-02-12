@@ -7,6 +7,8 @@
 #include "esp_private/sleep_clock.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
+#include "soc/regi2c_defs.h"
+#include "modem/modem_lpcon_reg.h"
 #include "modem/modem_syscon_reg.h"
 
 static const char *TAG = "sleep_clock";
@@ -16,9 +18,19 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
     #define N_REGS_PCR()    (((PCR_SRAM_POWER_CONF_REG - DR_REG_PCR_BASE) / 4) + 1)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
-        [0] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(0),   PMU_CLK_STATE0_REG,         PMU_STABLE_XPD_BBPLL_STATE, PMU_STABLE_XPD_BBPLL_STATE_M,   1, 0), .owner = ENTRY(0) }, /* Wait PMU_WAIT_XTL_STABLE done */
-        [1] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(1),   DR_REG_PCR_BASE,            DR_REG_PCR_BASE,            N_REGS_PCR(),                   0, 0), .owner = ENTRY(0) | ENTRY(2) },
-        [2] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(2),   PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_REG, 1,                              0, 0), .owner = ENTRY(0) | ENTRY(2) },
+        /* Enable i2c master clock */
+        [0] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(0),   MODEM_LPCON_CLK_CONF_REG,   MODEM_LPCON_CLK_I2C_MST_EN,     MODEM_LPCON_CLK_I2C_MST_EN_M,   1, 0), .owner = ENTRY(0) },
+        /* Start BBPLL self-calibration */
+        [1] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(1),   I2C_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        [2] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(2),   I2C_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_LOW,   I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        /* Wait calibration done */
+        [3] = { .config = REGDMA_LINK_WAIT_INIT      (REGDMA_PCR_LINK(3),   I2C_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_CAL_DONE,         I2C_MST_BBPLL_CAL_DONE,         1, 0), .owner = ENTRY(0) },
+        /* Stop BBPLL self-calibration */
+        [4] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(4),   I2C_MST_ANA_CONF0_REG,      0,                              I2C_MST_BBPLL_STOP_FORCE_LOW,   1, 0), .owner = ENTRY(0) },
+        [5] = { .config = REGDMA_LINK_WRITE_INIT     (REGDMA_PCR_LINK(5),   I2C_MST_ANA_CONF0_REG,      I2C_MST_BBPLL_STOP_FORCE_HIGH,  I2C_MST_BBPLL_STOP_FORCE_HIGH,  1, 0), .owner = ENTRY(0) },
+        /* Clock configuration retention */
+        [6] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(6),   DR_REG_PCR_BASE,            DR_REG_PCR_BASE,            N_REGS_PCR(),                   0, 0), .owner = ENTRY(0) | ENTRY(2) },
+        [7] = { .config = REGDMA_LINK_CONTINUOUS_INIT(REGDMA_PCR_LINK(7),   PCR_RESET_EVENT_BYPASS_REG, PCR_RESET_EVENT_BYPASS_REG, 1,                              0, 0), .owner = ENTRY(0) | ENTRY(2) },
     };
 
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
