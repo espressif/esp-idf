@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 import json
 import os
+import re
+import shlex
 import struct
 import subprocess
 import tempfile
@@ -106,6 +108,8 @@ class TestAssembler(unittest.TestCase):
                     op['ctr_set'] = opcode & 0xFFFF
                 elif sub == 4:
                     op['op'] = 'LDCTI' + fl
+                elif sub == 5:
+                    op['op'] = 'ADDCTI' + fl
         ret['opcode'] = op
         ret['read_in'] = self.bits_from_inst(data, 250, 2)
         ret['wr_out'] = self.bits_from_inst(data, 252, 2)
@@ -160,22 +164,44 @@ class TestAssembler(unittest.TestCase):
                 testfiles.append(os.path.join(current_dir, 'testcases', f))
         for f in testfiles:
             print(f'Testing {f}...')
+            # Extract testing options in the form '#test: key = value'
+            cmdlineopts = []
+            should_fail = False
+            pattern = r'^\s*#\s*test:\s*([^\s=]+)\s*=\s*(.*)\s*$'
+            with open(f) as tf:
+                for line in tf:
+                    match = re.match(pattern, line)
+                    if match:
+                        if match.group(1) == 'should_fail':
+                            if match.group(2) in ['1', 'true', 'True', 'TRUE']:
+                                should_fail = True
+                        elif match.group(1) == 'cmdlineopts':
+                            cmdlineopts = shlex.split(match.group(2))
+                        else:
+                            self.fail(f'Unknown test option: {match.group(0)}')
+            # Generate temp filename and assemble
             with tempfile.NamedTemporaryFile(delete=False) as f_out:
                 self.addCleanup(os.unlink, f_out.name)
             args = [bsasm_path, f, f_out.name]
+            args.extend(cmdlineopts)
             p = subprocess.run(args, timeout=10)
-            self.assertEqual(p.returncode, 0)
-            b = self.unpack_binary(f_out.name)
+            if not should_fail:
+                self.assertEqual(p.returncode, 0)
+            else:
+                print('Note: THE TEST EXPECTED BSASM TO ERROR OUT. If there\'s error text above, that is expected.')
+                self.assertNotEqual(p.returncode, 0)
 
-            jsfn = f[:-6] + '.json'
-            try:
-                with open(jsfn) as out_desc_f:
-                    out_desc = json.load(out_desc_f)
-                # We were able to open the JSON file. See if the keys in it match up with the ones in the decoded fields.
-                self.compare(b, out_desc, '')
-            except FileNotFoundError:
-                print(f'File not found: {jsfn}. Printing out decoded contents instead.')
-                print(json.dumps(b, indent=4))
+            if not should_fail:
+                b = self.unpack_binary(f_out.name)
+                jsfn = f[:-6] + '.json'
+                try:
+                    with open(jsfn) as out_desc_f:
+                        out_desc = json.load(out_desc_f)
+                    # We were able to open the JSON file. See if the keys in it match up with the ones in the decoded fields.
+                    self.compare(b, out_desc, '')
+                except FileNotFoundError:
+                    print(f'File not found: {jsfn}. Printing out decoded contents instead.')
+                    print(json.dumps(b, indent=4))
 
 
 if __name__ == '__main__':

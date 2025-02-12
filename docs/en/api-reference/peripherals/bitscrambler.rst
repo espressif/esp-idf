@@ -77,13 +77,26 @@ Sub-instructions
 
 An opcode - The opcodes are fully documented in the Technical Reference manual; here's a summary.
 
-- ``LOOP(A|B) end_val ctr_add tgt`` - If the selected counter (A or B) ls smaller than end_val, add ``ctr_add`` to the selected counter (A or B) and jump to the label ``tgt``. If not, continue execution.
-- ``ADD(A|B)[H|L] val`` - Add ``val`` to the selected counter. If 'H' or 'L' is appended, only the high or low 8-bit, respectively, of the counter is written back.
-- ``IF[N] source_bit tgt`` - If the source bit `source_bit` is one (for IF) or zero (for IFN), jump to the label ``tgt``.
-- ``LDCTD(A|B)[H|L] val`` - Load ``val`` into the indicated counter. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
-- ``LDCTI(A|B)[H|L]`` - Load the indicated counter (A or B) with bits 16-31 sent to the output register. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
-- ``JMP tgt`` - Unconditional jump to label ``tgt``. This is equal to ``IF h tgt``.
-- ``NOP`` - No operation. This is equal to ``ADDA 0``.
+.. only:: esp32p4
+
+    - ``LOOP(A|B) end_val ctr_add tgt`` - If the selected counter (A or B) ls smaller than end_val, add ``ctr_add`` to the selected counter (A or B) and jump to the label ``tgt``. If not, continue execution.
+    - ``ADD(A|B)[H|L] val`` - Add ``val`` to the selected counter. If 'H' or 'L' is appended, only the high or low 8-bit, respectively, of the counter is written back.
+    - ``IF[N] source_bit tgt`` - If the source bit `source_bit` is one (for IF) or zero (for IFN), jump to the label ``tgt``.
+    - ``LDCTD(A|B)[H|L] val`` - Load ``val`` into the indicated counter. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
+    - ``LDCTI(A|B)[H|L]`` - Load the indicated counter (A or B) with bits 16-31 sent to the output register. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
+    - ``JMP tgt`` - Unconditional jump to label ``tgt``. This is equal to ``IF h tgt``.
+    - ``NOP`` - No operation. This is equal to ``ADDA 0``.
+
+.. only:: esp32c5
+
+    - ``LOOP(A|B) end_val ctr_add tgt`` - If the selected counter (A or B) ls smaller than end_val, add ``ctr_add`` to the selected counter (A or B) and jump to the label ``tgt``. If not, continue execution.
+    - ``ADD(A|B)[H|L] val`` - Add ``val`` to the selected counter. If 'H' or 'L' is appended, only the high or low 8-bit, respectively, of the counter is written back.
+    - ``IF[N] source_bit tgt`` - If the source bit `source_bit` is one (for IF) or zero (for IFN), jump to the label ``tgt``.
+    - ``LDCTD(A|B)[H|L] val`` - Load ``val`` into the indicated counter. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
+    - ``LDCTI(A|B)[H|L]`` - Load the indicated counter (A or B) with bits 16-31 sent to the output register. If H or L is appended, only the high or low 8-bit, respectively, will be updated.
+    - ``ADDCTI(A|B)[H|L]`` - Add bits 16-31 sent to the output register to the indicated counter (A or B) . If H or L is appended, only the high or low 8-bit, respectively, will be evaluated and updated.
+    - ``JMP tgt`` - Unconditional jump to label ``tgt``. This is equal to ``IF h tgt``.
+    - ``NOP`` - No operation. This is equal to ``ADDA 0``.
 
 Note that an instruction bundle can only contain one opcode, one ``read``, and one ``write``. It can contain multiple ``set`` instructions, although multiple ``set`` instruction cannot assign a value to the same output bits.
 
