@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -113,34 +113,26 @@ void panic_print_isrcause(const void *f, int core)
 {
     RvExcFrame *regs = (RvExcFrame *) f;
 
-    /* Please keep in sync with PANIC_RSN_* defines */
-    static const char *pseudo_reason[] = {
-        "Unknown reason",
-        "Interrupt wdt timeout on CPU0",
-        "Interrupt wdt timeout on CPU1",
-        "Cache error",
-    };
-
     const void *addr = (void *) regs->mepc;
-    const char *rsn = pseudo_reason[0];
+    const char *rsn = "Unknown reason";
 
     /* The mcause has been set by the CPU when the panic occurred.
      * All SoC-level panic will call this function, thus, this register
      * lets us know which error was triggered. */
-    if (regs->mcause == ETS_CACHEERR_INUM) {
-        /* Panic due to a cache error, multiple cache error are possible,
-         * assign function print_cache_err_details to our structure's
-         * details field. As its name states, it will give more details
-         * about why the error happened. */
-        rsn = pseudo_reason[PANIC_RSN_CACHEERR];
-    } else if (regs->mcause == ETS_INT_WDT_INUM) {
-        /* Watchdog interrupt occurred, get the core on which it happened
-         * and update the reason/message accordingly. */
-#if SOC_CPU_NUM > 1
-        _Static_assert(PANIC_RSN_INTWDT_CPU0 + 1 == PANIC_RSN_INTWDT_CPU1,
-                       "PANIC_RSN_INTWDT_CPU1 must be equal to PANIC_RSN_INTWDT_CPU0 + 1");
+    switch (regs->mcause) {
+    case ETS_CACHEERR_INUM:
+        rsn = "Cache error";
+        break;
+    case PANIC_RSN_INTWDT_CPU0:
+        rsn = "Interrupt wdt timeout on CPU0";
+        break;
+#if SOC_CPU_CORES_NUM > 1
+    case PANIC_RSN_INTWDT_CPU1:
+        rsn = "Interrupt wdt timeout on CPU1";
+        break;
 #endif
-        rsn = pseudo_reason[PANIC_RSN_INTWDT_CPU0 + core];
+    default:
+        break;
     }
 
     const char *desc = "Exception was unhandled.";
