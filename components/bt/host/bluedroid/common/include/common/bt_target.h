@@ -91,6 +91,7 @@
 #define BTC_AV_SRC_INCLUDED         TRUE
 #if (UC_BT_A2DP_USE_EXTERNAL_CODEC == TRUE)
 #define BTC_AV_EXT_CODEC            TRUE
+#define BTA_AV_EXT_CODEC            TRUE
 #else
 #define SBC_DEC_INCLUDED            TRUE
 #define SBC_ENC_INCLUDED            TRUE
@@ -581,6 +582,10 @@
 #define BTC_AV_SRC_INCLUDED FALSE
 #endif
 
+#ifndef BTC_AV_EXT_CODEC
+#define BTC_AV_EXT_CODEC FALSE
+#endif
+
 #ifndef BTC_SPP_INCLUDED
 #define BTC_SPP_INCLUDED FALSE
 #endif
@@ -658,8 +663,8 @@
 #define BTA_AV_CA_INCLUDED FALSE
 #endif
 
-#ifndef BTC_AV_EXT_CODEC
-#define BTC_AV_EXT_CODEC FALSE
+#ifndef BTA_AV_EXT_CODEC
+#define BTA_AV_EXT_CODEC FALSE
 #endif
 
 #ifndef BTA_AV_SINK_INCLUDED

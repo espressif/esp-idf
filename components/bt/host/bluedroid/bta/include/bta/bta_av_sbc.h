@@ -196,6 +196,18 @@ extern UINT8 bta_av_sbc_cfg_in_cap(UINT8 *p_cfg, tA2D_SBC_CIE *p_cap);
 
 /*******************************************************************************
 **
+** Function         bta_av_sbc_cfg_in_external_codec_cap
+**
+** Description      This function checks whether an SBC codec configuration
+**                  is allowable for the given external codec capabilities.
+**
+** Returns          0 if ok, nonzero if error.
+**
+*******************************************************************************/
+extern UINT8 bta_av_sbc_cfg_in_external_codec_cap(UINT8 *p_cfg, UINT8 *p_cap);
+
+/*******************************************************************************
+**
 ** Function         bta_av_sbc_cfg_matches_cap
 **
 ** Description      This function checks whether an SBC codec configuration

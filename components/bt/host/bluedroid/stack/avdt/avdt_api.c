@@ -266,6 +266,37 @@ UINT16 AVDT_CreateStream(UINT8 *p_handle, tAVDT_CS *p_cs)
 
 /*******************************************************************************
 **
+** Function         AVDT_UpdateCodecInfo
+**
+** Description      Update codec capability for a stream endpoint.
+**
+**
+** Returns          AVDT_SUCCESS if successful, otherwise error.
+**
+*******************************************************************************/
+UINT16 AVDT_UpdateCodecInfo(UINT8 handle, UINT8 num_codec, UINT8 *codec_info, UINT16 codec_info_len)
+{
+    UINT16      result = AVDT_SUCCESS;
+    tAVDT_SCB   *p_scb;
+
+    /* look up scb */
+    if ((p_scb = avdt_scb_by_hdl(handle)) == NULL) {
+        result = AVDT_BAD_HANDLE;
+    }
+    else if (num_codec != 1 || codec_info == NULL || codec_info_len != AVDT_CODEC_SIZE) {
+        /* currently, only allow one codec info */
+        result = AVDT_BAD_PARAMS;
+    }
+    else {
+        /* update codec info */
+        p_scb->cs.cfg.num_codec = num_codec;
+        memcpy(p_scb->cs.cfg.codec_info, codec_info, codec_info_len);
+    }
+    return result;
+}
+
+/*******************************************************************************
+**
 ** Function         AVDT_RemoveStream
 **
 ** Description      Remove a stream endpoint.  This function is called when
