@@ -38,11 +38,13 @@ class TestReportGeneration(unittest.TestCase):
             'CI_JOB_ID': '1',
             'JIRA_SERVER': 'https://jira.com',
         })
+        self.yaml_dump_patcher = patch('dynamic_pipelines.report.yaml.dump')
 
         self.MockGitlab = self.gitlab_patcher.start()
         self.MockUploader = self.uploader_patcher.start()
         self.test_cases_failure_rate = self.failure_rate_patcher.start()
         self.env_patcher.start()
+        self.yaml_dump_patcher.start()
 
         self.mock_project = MagicMock()
         self.mock_mr = MagicMock()
@@ -54,6 +56,7 @@ class TestReportGeneration(unittest.TestCase):
         self.addCleanup(self.uploader_patcher.stop)
         self.addCleanup(self.failure_rate_patcher.stop)
         self.addCleanup(self.env_patcher.stop)
+        self.addCleanup(self.yaml_dump_patcher.stop)
         self.addCleanup(self.cleanup_files)
 
     def cleanup_files(self) -> None:
@@ -64,6 +67,7 @@ class TestReportGeneration(unittest.TestCase):
             self.build_report_generator.failed_apps_report_file,
             self.build_report_generator.built_apps_report_file,
             self.build_report_generator.skipped_apps_report_file,
+            self.build_report_generator.apps_presigned_url_filepath,
         ]
         for file_path in files_to_delete:
             if os.path.exists(file_path):
