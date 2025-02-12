@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -20,6 +20,7 @@
 #include "test_utils.h"
 #include "unity.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "soc/io_mux_reg.h"
 #include "sdkconfig.h"
 
@@ -99,10 +100,10 @@ static void setup_bus(spi_host_device_t host_id)
         //Initialize the WP and HD pins, which are not automatically initialized on ESP32-S2.
         int wp_pin = spi_periph_signal[host_id].spiwp_iomux_pin;
         int hd_pin = spi_periph_signal[host_id].spihd_iomux_pin;
-        gpio_iomux_in(wp_pin, spi_periph_signal[host_id].spiwp_in);
-        gpio_iomux_out(wp_pin, spi_periph_signal[host_id].func, false);
-        gpio_iomux_in(hd_pin, spi_periph_signal[host_id].spihd_in);
-        gpio_iomux_out(hd_pin, spi_periph_signal[host_id].func, false);
+        gpio_iomux_input(wp_pin, spi_periph_signal[host_id].func, spi_periph_signal[host_id].spiwp_in);
+        gpio_iomux_output(wp_pin, spi_periph_signal[host_id].func, false);
+        gpio_iomux_input(hd_pin, spi_periph_signal[host_id].func, spi_periph_signal[host_id].spihd_in);
+        gpio_iomux_output(hd_pin, spi_periph_signal[host_id].func, false);
 #endif //CONFIG_ESPTOOLPY_FLASHMODE_QIO || CONFIG_ESPTOOLPY_FLASHMODE_QOUT
         //currently the SPI bus for main flash chip is initialized through GPIO matrix
     } else if (host_id == SPI2_HOST) {

@@ -1,11 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stdbool.h>
+#include <stdint.h>
 #include "soc/soc_caps.h"
 #include "soc/gpio_num.h"
 #include "esp_bit_defs.h"
@@ -139,6 +141,21 @@ typedef enum {
     GPIO_HYS_SOFT_ENABLE,           /*!< Pad input hysteresis enable by software */
 } gpio_hys_ctrl_mode_t;
 #endif
+
+/**
+ * @brief Structure that contains the configuration of an IO
+ */
+typedef struct {
+    uint32_t fun_sel;               /*!< Value of IOMUX function selection */
+    uint32_t sig_out;               /*!< Index of the outputting peripheral signal */
+    gpio_drive_cap_t drv;           /*!< Value of drive strength */
+    bool pu;                        /*!< Status of pull-up enabled or not */
+    bool pd;                        /*!< Status of pull-down enabled or not */
+    bool ie;                        /*!< Status of input enabled or not */
+    bool oe;                        /*!< Status of output enabled or not */
+    bool od;                        /*!< Status of open-drain enabled or not */
+    bool slp_sel;                   /*!< Status of pin sleep mode enabled or not */
+} gpio_io_config_t;
 
 #ifdef __cplusplus
 }
