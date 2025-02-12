@@ -19,6 +19,14 @@ extern "C" {
 
 #define IEEE802154_TAG "ieee802154"
 
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MIN 11
+#define IEEE802154_OQPSK_2P4G_CHANNEL_MAX 26
+
+static inline bool ieee802154_is_valid_channel(uint8_t channel)
+{
+    return ((channel <= IEEE802154_OQPSK_2P4G_CHANNEL_MAX) && (channel >= IEEE802154_OQPSK_2P4G_CHANNEL_MIN));
+}
+
 #if SOC_PM_MODEM_RETENTION_BY_REGDMA && CONFIG_FREERTOS_USE_TICKLESS_IDLE
 #define IEEE802154_RF_ENABLE() ieee802154_rf_enable()
 #define IEEE802154_RF_DISABLE() ieee802154_rf_disable()

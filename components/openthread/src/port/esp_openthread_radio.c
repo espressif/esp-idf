@@ -814,3 +814,15 @@ esp_ieee802154_coex_config_t esp_openthread_get_coex_config(void)
     return esp_ieee802154_get_coex_config();
 }
 #endif
+
+uint32_t otPlatRadioGetPreferredChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_PREFERRED_CHANNEL_MASK;
+}
+
+uint32_t otPlatRadioGetSupportedChannelMask(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+    return CONFIG_OPENTHREAD_SUPPORTED_CHANNEL_MASK;
+}
