@@ -36,7 +36,7 @@
 
 static const char *TAG = "test_esp_tee_att";
 
-extern int verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign);
+extern int verify_ecdsa_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign, bool is_crv_p192);
 
 static uint8_t hexchar_to_byte(char hex)
 {
@@ -277,7 +277,7 @@ TEST_CASE("Test TEE Attestation - Generate and verify the EAT", "[attestation]")
 
     ESP_LOGI(TAG, "Verifying the generated EAT...");
     // Verifying the generated token
-    TEST_ASSERT_EQUAL(0, verify_ecdsa_secp256r1_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx));
+    TEST_ASSERT_EQUAL(0, verify_ecdsa_sign(digest, sizeof(digest), &pubkey_ctx, &sign_ctx, false));
     free(token_buf);
 }
 

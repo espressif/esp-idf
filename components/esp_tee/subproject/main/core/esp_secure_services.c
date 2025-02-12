@@ -368,7 +368,7 @@ esp_err_t _ss_esp_tee_sec_storage_gen_key(uint16_t slot_id, uint8_t key_type)
     return esp_tee_sec_storage_gen_key(slot_id, key_type);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
+esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &
                        (esp_tee_ptr_in_ree((void *)(hash + hlen)) &&
@@ -379,10 +379,10 @@ esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash,
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_get_signature(slot_id, hash, hlen, out_sign);
+    return esp_tee_sec_storage_get_signature(slot_id, key_type, hash, hlen, out_sign);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey)
+esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey)
 {
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)pubkey)) &
                        (esp_tee_ptr_in_ree((void *)((char *)pubkey + sizeof(esp_tee_sec_storage_pubkey_t)))));
@@ -392,7 +392,7 @@ esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_stora
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_get_pubkey(slot_id, pubkey);
+    return esp_tee_sec_storage_get_pubkey(slot_id, key_type, pubkey);
 }
 
 esp_err_t _ss_esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,

@@ -91,6 +91,12 @@ menu "ESP-TEE (Trusted Execution Environment)"
             help
                 eFuse block ID storing the TEE secure storage encryption key
 
+        config SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+            bool "Secure Storage: Support signing with the ECDSA SECP192R1 curve"
+            default n
+            help
+                Enable ECDSA signing with the SECP192R1 curve using the TEE secure storage.
+
         config SECURE_TEE_ATTESTATION
             bool "Enable Attestation"
             default y

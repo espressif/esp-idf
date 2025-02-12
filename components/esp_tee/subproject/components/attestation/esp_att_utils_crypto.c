@@ -60,7 +60,7 @@ static esp_err_t gen_ecdsa_keypair_secp256r1(esp_att_ecdsa_keypair_t *keypair)
         }
     }
 
-    err = esp_tee_sec_storage_get_pubkey(slot_id, &pubkey);
+    err = esp_tee_sec_storage_get_pubkey(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch ECDSA pubkey (%d)", err);
         return err;
@@ -84,7 +84,7 @@ static esp_err_t get_ecdsa_sign_secp256r1(const esp_att_ecdsa_keypair_t *keypair
     }
 
     esp_tee_sec_storage_sign_t sign = {};
-    esp_err_t err = esp_tee_sec_storage_get_signature(ESP_ATT_TK_KEY_ID, (uint8_t *)digest, len, &sign);
+    esp_err_t err = esp_tee_sec_storage_get_signature(ESP_ATT_TK_KEY_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1, (uint8_t *)digest, len, &sign);
     if (err != ESP_OK) {
         return err;
     }

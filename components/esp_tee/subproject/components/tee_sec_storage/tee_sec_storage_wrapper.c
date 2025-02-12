@@ -18,14 +18,14 @@ esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type
     return esp_tee_service_call_with_noniram_intr_disabled(3, SS_ESP_TEE_SEC_STORAGE_GEN_KEY, slot_id, key_type);
 }
 
-esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *sign)
+esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *sign)
 {
-    return esp_tee_service_call_with_noniram_intr_disabled(5, SS_ESP_TEE_SEC_STORAGE_GET_SIGNATURE, slot_id, hash, hlen, sign);
+    return esp_tee_service_call_with_noniram_intr_disabled(6, SS_ESP_TEE_SEC_STORAGE_GET_SIGNATURE, slot_id, key_type, hash, hlen, sign);
 }
 
-esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey)
+esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey)
 {
-    return esp_tee_service_call_with_noniram_intr_disabled(3, SS_ESP_TEE_SEC_STORAGE_GET_PUBKEY, slot_id, pubkey);
+    return esp_tee_service_call_with_noniram_intr_disabled(4, SS_ESP_TEE_SEC_STORAGE_GET_PUBKEY, slot_id, key_type, pubkey);
 }
 
 bool esp_tee_sec_storage_is_slot_empty(uint16_t slot_id)
