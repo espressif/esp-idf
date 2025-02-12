@@ -293,6 +293,9 @@ static void btc_dm_ble_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
             status = BT_STATUS_AUTH_REJECTED;
             break;
         default:
+            BTC_TRACE_WARNING ("%s, remove bond in flash bd_addr: %08x%04x", __func__,
+                                (p_auth_cmpl->bd_addr[0] << 24) + (p_auth_cmpl->bd_addr[1] << 16) + (p_auth_cmpl->bd_addr[2] << 8) + p_auth_cmpl->bd_addr[3],
+                                (p_auth_cmpl->bd_addr[4] << 8) + p_auth_cmpl->bd_addr[5]);
             btc_dm_remove_ble_bonding_keys();
             status =  BT_STATUS_FAIL;
             break;
