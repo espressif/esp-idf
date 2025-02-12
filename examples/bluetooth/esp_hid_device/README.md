@@ -92,5 +92,5 @@ I (50557) HID_DEV_DEMO: Send the volume
 
 ## Troubleshooting
 
-1. When using NimBLE stack, some iOS devices do not show the volume pop up. To fix this, please set CONFIG_BT_NIMBLE_SM_LVL to value 2. iOS needs Authenticated Pairing with Encryption to show up the pop ups.
+1. When using NimBLE stack, some iOS devices do not show the volume pop up. To fix this, please set CONFIG_BT_NIMBLE_SM_SC_LVL to value 2. iOS needs Authenticated Pairing with Encryption to show up the pop ups.
 2. For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
