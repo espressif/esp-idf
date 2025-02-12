@@ -50,3 +50,23 @@ TEST_CASE("Can dump mapped block stats", "[mmu]")
     TEST_ESP_OK(esp_mmu_unmap(ptr1));
     TEST_ESP_OK(esp_mmu_unmap(ptr2));
 }
+
+TEST_CASE("Can find paddr caps by any paddr offset", "[mmu]")
+{
+    const esp_partition_t *part = s_get_partition();
+    ESP_LOGI(TAG, "found partition '%s' at offset 0x%"PRIx32" with size 0x%"PRIx32, part->label, part->address, part->size);
+
+    void *ptr0 = NULL;
+    TEST_ESP_OK(esp_mmu_map(part->address, TEST_BLOCK_SIZE, MMU_TARGET_FLASH0, MMU_MEM_CAP_READ, 0, &ptr0));
+
+    mmu_mem_caps_t caps = 0;
+    TEST_ESP_OK(esp_mmu_paddr_find_caps(part->address, &caps));
+    ESP_LOGI(TAG, "caps: 0x%x", caps);
+    TEST_ASSERT(caps == MMU_MEM_CAP_READ);
+
+    TEST_ESP_OK(esp_mmu_paddr_find_caps(part->address + 0x100, &caps));
+    ESP_LOGI(TAG, "caps: 0x%x", caps);
+    TEST_ASSERT(caps == MMU_MEM_CAP_READ);
+
+    TEST_ESP_OK(esp_mmu_unmap(ptr0));
+}
