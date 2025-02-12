@@ -409,38 +409,32 @@ SemaphoreHandle_t g_wpa3_hostap_auth_api_lock = NULL;
 
 int wpa3_hostap_post_evt(uint32_t evt_id, uint32_t data)
 {
-    wpa3_hostap_auth_event_t *evt = os_zalloc(sizeof(wpa3_hostap_auth_event_t));
-    if (evt == NULL) {
-        return ESP_FAIL;
-    }
-    evt->id = evt_id;
-    evt->data = data;
+    wpa3_hostap_auth_event_t evt;
+
+    evt.id = evt_id;
+    evt.data = data;
 
     if (g_wpa3_hostap_auth_api_lock) {
         WPA3_HOSTAP_AUTH_API_LOCK();
         if (g_wpa3_hostap_evt_queue == NULL) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
-            os_free(evt);
             wpa_printf(MSG_DEBUG, "hostap evt queue NULL");
             return ESP_FAIL;
         }
     } else {
-        os_free(evt);
         wpa_printf(MSG_DEBUG, "g_wpa3_hostap_auth_api_lock not found");
         return ESP_FAIL;
     }
-    if (evt->id == SIG_WPA3_RX_CONFIRM || evt->id == SIG_TASK_DEL) {
+    if (evt.id == SIG_WPA3_RX_CONFIRM || evt.id == SIG_TASK_DEL) {
         /* prioritising confirm for completing handshake for committed sta */
         if (os_queue_send_to_front(g_wpa3_hostap_evt_queue, &evt, 0) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
             wpa_printf(MSG_DEBUG, "failed to add msg to queue front");
-            os_free(evt);
             return ESP_FAIL;
         }
     } else {
         if (os_queue_send(g_wpa3_hostap_evt_queue, &evt, 0) != pdPASS) {
             WPA3_HOSTAP_AUTH_API_UNLOCK();
-            os_free(evt);
             wpa_printf(MSG_DEBUG, "failed to send msg to queue");
             return ESP_FAIL;
         }
@@ -549,18 +543,18 @@ done:
 
 static void esp_wpa3_hostap_task(void *pvParameters)
 {
-    wpa3_hostap_auth_event_t *evt;
+    wpa3_hostap_auth_event_t evt;
     bool task_del = false;
 
     while (1) {
         if (os_queue_recv(g_wpa3_hostap_evt_queue, &evt, portMAX_DELAY) == pdTRUE) {
-            switch (evt->id) {
+            switch (evt.id) {
             case SIG_WPA3_RX_COMMIT: {
-                wpa3_process_rx_commit(evt);
+                wpa3_process_rx_commit(&evt);
                 break;
             }
             case SIG_WPA3_RX_CONFIRM: {
-                wpa3_process_rx_confirm(evt);
+                wpa3_process_rx_confirm(&evt);
                 break;
             }
             case SIG_TASK_DEL:
@@ -569,7 +563,6 @@ static void esp_wpa3_hostap_task(void *pvParameters)
             default:
                 break;
             }
-            os_free(evt);
 
             if (task_del) {
                 break;
@@ -580,10 +573,9 @@ static void esp_wpa3_hostap_task(void *pvParameters)
     while(items_in_queue--) {
         /* Free events posted to queue */
         os_queue_recv(g_wpa3_hostap_evt_queue, &evt, portMAX_DELAY);
-        if (evt->id == SIG_WPA3_RX_CONFIRM) {
-            os_free((void *)evt->data);
+        if (evt.id == SIG_WPA3_RX_CONFIRM) {
+            os_free((void *)evt.data);
         }
-        os_free(evt);
     }
     os_queue_delete(g_wpa3_hostap_evt_queue);
     g_wpa3_hostap_evt_queue = NULL;
