@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,6 +20,10 @@ static bool esp_sdp_record_integrity_check(esp_bluetooth_sdp_record_t *record)
     bool ret = true;
 
     if (record != NULL) {
+        if (record->hdr.type < ESP_SDP_TYPE_RAW || record->hdr.type > ESP_SDP_TYPE_SAP_SERVER) {
+            LOG_ERROR("Invalid type!\n");
+            return false;
+        }
         switch (record->hdr.type) {
         case ESP_SDP_TYPE_MAP_MAS:
             if ((record->mas.mas_instance_id >> 8) || (record->mas.supported_message_types >> 8)) {
@@ -35,12 +39,12 @@ static bool esp_sdp_record_integrity_check(esp_bluetooth_sdp_record_t *record)
             break;
 
         default:
-            if (record->hdr.service_name_length > ESP_SDP_SERVER_NAME_MAX ||
-                strlen(record->hdr.service_name) + 1 != record->hdr.service_name_length) {
-                LOG_ERROR("Invalid server name!\n");
-                ret = false;
-            }
             break;
+        }
+        if (record->hdr.service_name_length > ESP_SDP_SERVER_NAME_MAX ||
+            strlen(record->hdr.service_name) + 1 != record->hdr.service_name_length) {
+            LOG_ERROR("Invalid server name!\n");
+            ret = false;
         }
     } else {
         LOG_ERROR("record is NULL!\n");
