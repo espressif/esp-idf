@@ -313,6 +313,10 @@ uint8_t test_hcd_enum_device(hcd_pipe_handle_t default_pipe)
     // Update address of default pipe
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_update_dev_addr(default_pipe, ENUM_ADDR));
 
+    // Some high-speed Hubs need some time before being able to process SetConfiguration request
+    // Full-speed devices doesn't require that time
+    vTaskDelay(pdMS_TO_TICKS(10));
+
     // Send a set configuration request
     USB_SETUP_PACKET_INIT_SET_CONFIG(setup_pkt, ENUM_CONFIG);
     urb->transfer.num_bytes = sizeof(usb_setup_packet_t);
