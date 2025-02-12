@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1816,6 +1816,11 @@
 #ifndef MYNEWT_VAL_BLE_SVC_GAP_GATT_SECURITY_LEVEL
 #define MYNEWT_VAL_BLE_SVC_GAP_GATT_SECURITY_LEVEL \
         CONFIG_BT_NIMBLE_SVC_GAP_GATT_SECURITY_LEVEL
+#endif
+
+#ifndef MYNEWT_VAL_BLE_SVC_GAP_RPA_ONLY
+#define MYNEWT_VAL_BLE_SVC_GAP_RPA_ONLY \
+        CONFIG_BT_NIMBLE_SVC_GAP_RPA_ONLY
 #endif
 
 /*** nimble/transport */
