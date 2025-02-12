@@ -72,4 +72,4 @@ def test_idf_diag() -> None:
     idf_component_path.unlink()
     with open(report_path / 'manager' / 'idf_component' / 'idf_component.yml', 'r') as f:
         data = f.read()
-        assert 'https://[REDACTED]@github.com/username/repository.git' in data
+        assert 'https://[XXX]@github.com/username/repository.git' in data

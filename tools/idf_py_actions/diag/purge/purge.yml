@@ -1,3 +1,0 @@
-# Remove user, password, token from URL
-- regex: '://[^@]+@'
-  repl: '://[REDACTED]@'
