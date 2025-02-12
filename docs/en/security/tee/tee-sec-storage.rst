@@ -69,10 +69,6 @@ All the assets pertaining to the TEE secure storage are protected by the APM per
 
 .. note::
 
-    Flash memory protection is currently not implemented - it will be added soon in the next revision of the ESP-TEE framework.
-
-.. note::
-
   - Currently, the TEE secure storage supports the storage of two types of cryptographic keys:
 
     #. ``ecdsa_secp256r1`` curve key-pairs, including the private and public key components
@@ -112,6 +108,6 @@ API Reference
 
 .. note::
 
-    To use the TEE Secure Storage APIs into your project, ensure the :component:`tee_sec_storage <esp_tee/subproject/components/tee_sec_storage>` component is included by setting ``EXTRA_COMPONENT_DIRS`` in your project's ``CMakeLists.txt`` file, as shown in the :example:`tee_secure_storage <security/tee/tee_secure_storage>` example. For more information, refer to the :ref:`optional_project_variable` section from the :doc:`Build System </api-guides/build-system>` documentation.
+    To use the TEE Secure Storage APIs in your project, ensure that the :component:`tee_sec_storage <esp_tee/subproject/components/tee_sec_storage>` component is listed as a local dependency in the component manager manifest file `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_. Refer to the :example:`tee_secure_storage <security/tee/tee_secure_storage>` example for guidance.
 
 .. include-build-file:: inc/esp_tee_sec_storage.inc

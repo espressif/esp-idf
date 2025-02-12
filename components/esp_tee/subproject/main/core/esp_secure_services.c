@@ -11,13 +11,17 @@
 #include "esp_flash.h"
 #include "esp_flash_encrypt.h"
 #include "esp_rom_efuse.h"
-#include "esp_fault.h"
 
 #include "hal/efuse_hal.h"
 #include "hal/mmu_types.h"
 #include "hal/mmu_hal.h"
 #include "hal/wdt_hal.h"
 #include "hal/sha_hal.h"
+
+#include "hal/spi_flash_hal.h"
+#include "hal/spi_flash_types.h"
+#include "spi_flash_chip_generic.h"
+#include "memspi_host_driver.h"
 
 #include "soc/soc_caps.h"
 #include "aes/esp_aes.h"
@@ -33,6 +37,8 @@
 #include "esp_tee_sec_storage.h"
 #include "esp_tee_ota_ops.h"
 #include "esp_attestation.h"
+
+static __attribute__((unused)) const char *TAG = "esp_tee_sec_srv";
 
 void _ss_invalid_secure_service(void)
 {
@@ -449,7 +455,7 @@ void _ss_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vad
     if (vaddr_chk || paddr_chk) {
         return;
     }
-    ESP_FAULT_ASSERT(!vaddr_chk && !vaddr_chk);
+    ESP_FAULT_ASSERT(!vaddr_chk && !paddr_chk);
 
     mmu_hal_map_region(mmu_id, mem_type, vaddr, paddr, len, out_len);
 }
@@ -484,3 +490,151 @@ bool _ss_mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t ta
     ESP_FAULT_ASSERT(!paddr_chk);
     return mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
 }
+
+#if CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+/* ---------------------------------------------- SPI Flash HAL ------------------------------------------------- */
+
+uint32_t _ss_spi_flash_hal_check_status(spi_flash_host_inst_t *host)
+{
+    return spi_flash_hal_check_status(host);
+}
+
+esp_err_t _ss_spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
+{
+    return spi_flash_hal_common_command(host, trans);
+}
+
+esp_err_t _ss_spi_flash_hal_device_config(spi_flash_host_inst_t *host)
+{
+    return spi_flash_hal_device_config(host);
+}
+
+void _ss_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(start_address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, start_address);
+        return;
+    }
+    ESP_FAULT_ASSERT(!paddr_chk);
+    spi_flash_hal_erase_block(host, start_address);
+}
+
+void _ss_spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
+{
+    spi_flash_hal_erase_chip(host);
+}
+
+void _ss_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(start_address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, start_address);
+        return;
+    }
+    ESP_FAULT_ASSERT(!paddr_chk);
+    spi_flash_hal_erase_sector(host, start_address);
+}
+
+void _ss_spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, address);
+        return;
+    }
+
+    bool buf_addr_chk = ((esp_tee_ptr_in_ree((void *)buffer) && esp_tee_ptr_in_ree((void *)(buffer + length))));
+    if (!buf_addr_chk) {
+        return;
+    }
+
+    ESP_FAULT_ASSERT(!paddr_chk && buf_addr_chk);
+    spi_flash_hal_program_page(host, buffer, address, length);
+}
+
+esp_err_t _ss_spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, address);
+        return ESP_FAIL;
+    }
+
+    bool buf_addr_chk = ((esp_tee_ptr_in_ree((void *)buffer) && esp_tee_ptr_in_ree((void *)(buffer + read_len))));
+    if (!buf_addr_chk) {
+        return ESP_FAIL;
+    }
+
+    ESP_FAULT_ASSERT(!paddr_chk && buf_addr_chk);
+    return spi_flash_hal_read(host, buffer, address, read_len);
+}
+
+void _ss_spi_flash_hal_resume(spi_flash_host_inst_t *host)
+{
+    spi_flash_hal_resume(host);
+}
+
+esp_err_t _ss_spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
+{
+    return spi_flash_hal_set_write_protect(host, wp);
+}
+
+esp_err_t _ss_spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
+{
+    return spi_flash_hal_setup_read_suspend(host, sus_conf);
+}
+
+bool _ss_spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
+{
+    return spi_flash_hal_supports_direct_read(host, p);
+}
+
+bool _ss_spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
+{
+    return spi_flash_hal_supports_direct_write(host, p);
+}
+
+void _ss_spi_flash_hal_suspend(spi_flash_host_inst_t *host)
+{
+    spi_flash_hal_suspend(host);
+}
+
+/* ---------------------------------------------- SPI Flash Extras ------------------------------------------------- */
+
+extern uint32_t bootloader_flash_execute_command_common(uint8_t command, uint32_t addr_len, uint32_t address,
+                                                        uint8_t dummy_len, uint8_t mosi_len, uint32_t mosi_data,
+                                                        uint8_t miso_len);
+
+uint32_t _ss_bootloader_flash_execute_command_common(
+    uint8_t command,
+    uint32_t addr_len, uint32_t address,
+    uint8_t dummy_len,
+    uint8_t mosi_len, uint32_t mosi_data,
+    uint8_t miso_len)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(address);
+    if (paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, address);
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(!paddr_chk);
+    return bootloader_flash_execute_command_common(command, addr_len, address, dummy_len,
+                                                   mosi_len, mosi_data, miso_len);
+}
+
+esp_err_t _ss_memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, uint32_t size)
+{
+    bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(addr);
+    if (paddr_chk) {
+        return ESP_FAIL;
+    }
+    ESP_FAULT_ASSERT(!paddr_chk);
+    return memspi_host_flush_cache(host, addr, size);
+}
+
+esp_err_t _ss_spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t flags)
+{
+    return spi_flash_chip_generic_config_host_io_mode(chip, flags);
+}
+#endif

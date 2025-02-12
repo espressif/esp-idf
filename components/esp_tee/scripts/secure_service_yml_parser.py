@@ -1,25 +1,37 @@
 # SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
-import re
 from typing import List
+from typing import Set
 from typing import Tuple
 
-SEC_SRV_TABLE_SPLIT_ID = 48
+import yaml
+
+SEC_SRV_TABLE_SPLIT_ID = 30
+OUTPUT_HEADERS = [
+    'secure_service_num.h',
+    'secure_service_dec.h',
+    'secure_service_int.h',
+    'secure_service_ext.h',
+]
 
 
-def parse_services(secure_service_tbl: str) -> List[Tuple[int, str, int]]:
+def parse_services(yml_files: List[str], excluded_fam: Set[str]) -> List[Tuple[int, str, int]]:
     services, service_ids = [], set()
-    pattern = re.compile(r'^([0-9A-Fa-fXx]+)\s+\S+\s+(\S+)\s+(\d+)')
 
-    with open(secure_service_tbl, 'r') as f:
-        for line in f:
-            if match := pattern.match(line):
-                service_id = int(match.group(1), 0)
-                if service_id in service_ids:
-                    raise ValueError(f'Duplicate service call ID found: 0x{service_id:X}')
-                service_ids.add(service_id)
-                services.append((service_id, match.group(2), int(match.group(3))))
+    for yml_file in yml_files:
+        with open(yml_file, 'r') as f:
+            data = yaml.safe_load(f)
+            for family in data.get('secure_services', []):
+                family_name = family.get('family', '')
+                if family_name in excluded_fam:
+                    continue
+                for entry in family.get('entries', []):
+                    service_id = entry['id']
+                    if service_id in service_ids:
+                        raise ValueError(f'Duplicate service call ID found: 0x{service_id:X}')
+                    service_ids.add(service_id)
+                    services.append((service_id, entry['function'], entry['args']))
 
     return sorted(services, key=lambda x: x[0])
 
@@ -83,30 +95,36 @@ def generate_table_split(services: List[Tuple[int, str, int]], output_file_1: st
         f2.write(header + body_2)
 
 
-def generate_wrap_list(secure_service_tbl: str) -> None:
-    pattern = re.compile(r'^[0-9A-Fa-fXx]+\s+IDF\s+(\S+)\s+\d+')
-    with open(secure_service_tbl, 'r') as f:
-        wrap_list = [f'-Wl,--wrap={match.group(1)}' for line in f if (match := pattern.match(line))]
+def generate_wrap_list(yml_files: List[str], excluded_fam: Set[str]) -> None:
+    wrap_list: list[str] = []
+    for yml_file in yml_files:
+        with open(yml_file, 'r') as f:
+            data = yaml.safe_load(f)
+            wrap_list.extend(
+                f'-Wl,--wrap={entry["function"]}'
+                for family in data.get('secure_services', [])
+                for entry in family.get('entries', [])
+                if entry['type'] == 'IDF' and family.get('family', '') not in excluded_fam
+            )
     print(' '.join(wrap_list), end='')
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description='Generate secure service outputs')
+    parser = argparse.ArgumentParser(description='Generate secure service outputs from YAML table')
     parser.add_argument('--wrap', action='store_true', help='Generate linker wrap options')
-    parser.add_argument('secure_service_tbl', type=str, help='Path to secure service table file')
-    parser.add_argument('output_files', nargs='*', help='Output files: [secure_service_num.h, secure_service_dec.h, secure_service_1.h, secure_service_2.h]')
+    parser.add_argument('-s', '--sec_srv', nargs='+', required=True, help='Secure service table(s) in YAML')
+    parser.add_argument('--exclude', nargs='*', default=[], help='List of API families to exclude from the output')
 
     args = parser.parse_args()
+    excluded_fam = set(args.exclude)
 
     if args.wrap:
-        generate_wrap_list(args.secure_service_tbl)
+        generate_wrap_list(args.sec_srv, excluded_fam)
     else:
-        if len(args.output_files) != 4:
-            parser.error('Missing output header files!')
-        services = parse_services(args.secure_service_tbl)
-        generate_num_header(services, args.output_files[0])
-        generate_dec_header(services, args.output_files[1])
-        generate_table_split(services, args.output_files[2], args.output_files[3])
+        services = parse_services(args.sec_srv, excluded_fam)
+        generate_num_header(services, OUTPUT_HEADERS[0])
+        generate_dec_header(services, OUTPUT_HEADERS[1])
+        generate_table_split(services, OUTPUT_HEADERS[2], OUTPUT_HEADERS[3])
 
 
 if __name__ == '__main__':

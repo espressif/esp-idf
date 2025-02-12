@@ -71,10 +71,6 @@ Memory Allocation
 
 ESP-TEE divides the memory into separate regions for the TEE and REE, allocating part of the internal SRAM and external flash memory to the TEE. This separation safeguards sensitive data and operations within the TEE, preventing unauthorized access from the REE.
 
-.. note::
-
-    Flash memory protection is under development and will be introduced in the next revision of ESP-TEE.
-
 .. _tee-internal-memory:
 
 Internal Memory (SRAM)
@@ -105,9 +101,13 @@ Example partition table is given below: ::
   nvs,            data, nvs,         0x150000, 24K,
   phy_init,       data, phy,         0x156000, 4K,
 
-.. note::
+.. important::
 
   The partition following the last TEE-related partition must be aligned to the configured MMU page size. This alignment is required to prevent secure boot verification failures when validating the user application (REE) image.
+
+.. note::
+
+  For more details on the default policy and scope of flash memory protection with ESP-TEE, refer to the :ref:`Flash Protection - Virtual and Physical Access <tee-flash-prot-scope>` section from the advanced guide.
 
 .. _tee-secure-services:
 
@@ -120,7 +120,7 @@ All features that the TEE exposes to the REE are implemented as secure services.
 
   Since multitasking is not currently supported in the TEE, secure service calls are serialized, and subsequent calls remain pending until the current service completes.
 
-For {IDF_TARGET_NAME}, a list of secure services can be found at this :component_file:`table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/secure_service.tbl>`. Following are the types of secure services.
+For {IDF_TARGET_NAME}, a list of secure services can be found at this :component_file:`table<esp_tee/scripts/{IDF_TARGET_PATH_NAME}/sec_srv_tbl_default.yml>`. Following are the types of secure services.
 
 - **Core secure services**: Built-in services within the TEE firmware that provide routine functionalities to the REE, such as interrupt configuration and eFuse access.
 

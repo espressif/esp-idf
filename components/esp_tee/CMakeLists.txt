@@ -1,5 +1,5 @@
 idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
-idf_build_get_property(custom_secure_service_tbl CUSTOM_SECURE_SERVICE_TBL)
+idf_build_get_property(custom_secure_service_yaml CUSTOM_SECURE_SERVICE_YAML)
 idf_build_get_property(custom_secure_service_dir CUSTOM_SECURE_SERVICE_COMPONENT_DIR)
 idf_build_get_property(custom_secure_service_component CUSTOM_SECURE_SERVICE_COMPONENT)
 idf_build_get_property(target IDF_TARGET)
@@ -82,33 +82,37 @@ else()
     endif()
 endif()
 
-set(secure_service_tbl_parser_py
-    ${COMPONENT_DIR}/scripts/secure_service_tbl_parser.py ${CMAKE_CURRENT_BINARY_DIR}/secure_service.tbl
+set(secure_service_yml
+    ${COMPONENT_DIR}/scripts/${IDF_TARGET}/sec_srv_tbl_default.yml ${custom_secure_service_yaml}
 )
 
-set(secure_service_gen_headers
-    ${CONFIG_DIR}/secure_service_num.h ${CONFIG_DIR}/secure_service_dec.h
-    ${CONFIG_DIR}/secure_service_int.h ${CONFIG_DIR}/secure_service_ext.h
+set(secure_service_yml_parser_py
+    ${COMPONENT_DIR}/scripts/secure_service_yml_parser.py
 )
 
 if(CONFIG_SECURE_ENABLE_TEE AND NOT esp_tee_build)
+    # Default secure service API families: flash_protection_spi0, flash_protection_spi1,
+    # interrupt_handling, hal, crypto, efuse, secure_storage, ota, attestation
+    set(exclude_srv)
+    if(NOT CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+        list(APPEND exclude_srv "flash_protection_spi1")
+    endif()
+
+    if(NOT CONFIG_SECURE_TEE_ATTESTATION)
+        list(APPEND exclude_srv "attestation")
+    endif()
+
     execute_process(
-        COMMAND cat ${COMPONENT_DIR}/scripts/${target}/secure_service.tbl ${custom_secure_service_tbl}
-        OUTPUT_FILE secure_service.tbl
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        COMMAND python ${secure_service_yml_parser_py}
+        "--sec_srv" ${secure_service_yml}
+        "--exclude" ${exclude_srv}
+        WORKING_DIRECTORY ${CONFIG_DIR}
     )
 
     execute_process(
-        COMMAND python ${secure_service_tbl_parser_py} ${secure_service_gen_headers}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-
-    set_property(DIRECTORY ${COMPONENT_DIR} APPEND PROPERTY
-        ADDITIONAL_MAKE_CLEAN_FILES ${secure_service_gen_headers}
-    )
-
-    execute_process(
-        COMMAND python ${secure_service_tbl_parser_py} "--wrap"
+        COMMAND python ${secure_service_yml_parser_py}
+        "--sec_srv" ${secure_service_yml}
+        "--exclude" ${exclude_srv} "--wrap"
         OUTPUT_VARIABLE wrap_list
         WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE
