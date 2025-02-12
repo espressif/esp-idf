@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -312,20 +312,20 @@ void pmu_sleep_increase_ldo_volt(void) {
 }
 
 void pmu_sleep_shutdown_dcdc(void) {
-    REG_SET_BIT(PMU_POWER_DCDC_SWITCH_REG, PMU_FORCE_DCDC_SWITCH_PD);
-    REG_SET_BIT(PMU_DCM_CTRL_REG, PMU_DCDC_OFF_REQ);
+    pmu_ll_set_dcdc_switch_force_power_down(&PMU, true);
+    pmu_ll_set_dcdc_en(&PMU, false);
     // Decrease hp_ldo voltage.
     pmu_ll_hp_set_regulator_dbias(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DBIAS_DEFAULT);
 }
 
 FORCE_INLINE_ATTR void pmu_sleep_enable_dcdc(void) {
-    REG_CLR_BIT(PMU_POWER_DCDC_SWITCH_REG, PMU_FORCE_DCDC_SWITCH_PD);
-    SET_PERI_REG_MASK(PMU_DCM_CTRL_REG, PMU_DCDC_ON_REQ);
-    REG_SET_FIELD(PMU_HP_ACTIVE_BIAS_REG, PMU_HP_ACTIVE_DCM_VSET, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
+    pmu_ll_set_dcdc_switch_force_power_down(&PMU, false);
+    pmu_ll_set_dcdc_en(&PMU, true);
+    pmu_ll_hp_set_dcm_vset(&PMU, PMU_MODE_HP_ACTIVE, HP_CALI_ACTIVE_DCM_VSET_DEFAULT);
 }
 
 FORCE_INLINE_ATTR void pmu_sleep_shutdown_ldo(void) {
-    CLEAR_PERI_REG_MASK(PMU_HP_ACTIVE_HP_REGULATOR0_REG, PMU_HP_ACTIVE_HP_REGULATOR_XPD);
+    pmu_ll_hp_set_regulator_xpd(&PMU, PMU_MODE_HP_ACTIVE, 0);
 }
 
 FORCE_INLINE_ATTR void pmu_sleep_cache_sync_items(uint32_t gid, uint32_t type, uint32_t map, uint32_t addr, uint32_t bytes)

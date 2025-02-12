@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -652,14 +652,25 @@ FORCE_INLINE_ATTR uint32_t pmu_ll_hp_get_digital_power_up_wait_cycle(pmu_dev_t *
     return hw->power.wait_timer0.powerup_timer;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_set_dcdc_force_power_up(pmu_dev_t *hw, bool fpu)
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_switch_force_power_up(pmu_dev_t *hw, bool fpu)
 {
+    hw->power.dcdc_switch.force_pd = 0;
     hw->power.dcdc_switch.force_pu = fpu;
 }
 
-FORCE_INLINE_ATTR void pmu_ll_set_dcdc_force_power_down(pmu_dev_t *hw, bool fpd)
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_switch_force_power_down(pmu_dev_t *hw, bool fpd)
 {
+    hw->power.dcdc_switch.force_pu = 0;
     hw->power.dcdc_switch.force_pd = fpd;
+}
+
+FORCE_INLINE_ATTR void pmu_ll_set_dcdc_en(pmu_dev_t *hw, bool en)
+{
+    if (en) {
+        hw->dcm_ctrl.on_req = 1;
+    } else {
+        hw->dcm_ctrl.off_req = 1;
+    }
 }
 
 /**
