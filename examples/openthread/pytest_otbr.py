@@ -62,6 +62,9 @@ from pytest_embedded_idf.dut import IdfDut
 # Case 15: Thread network formation and attaching with TREL
 #         A TREL device forms a Thread network, other TREL devices attach to it, then test ping connection between them.
 
+# Case 16: Thread network BR lib check
+#         Check BR library compatibility
+
 
 @pytest.fixture(scope='module', name='Init_avahi')
 def fixture_Init_avahi() -> bool:
@@ -927,4 +930,35 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
         ocf.execute_command(trel_s3, 'factoryreset')
         for trel in trel_list:
             ocf.execute_command(trel, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 16: Thread network BR lib check
+@pytest.mark.supported_targets
+@pytest.mark.openthread_br
+@pytest.mark.flaky(reruns=1, reruns_delay=1)
+@pytest.mark.parametrize(
+    'config, count, app_path, target, port',
+    [
+        pytest.param(
+            'rcp_uart|br_libcheck',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_rcp")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_br")}',
+            'esp32c6|esp32s3',
+            f'{ESPPORT3}|{ESPPORT2}',
+            id='c6-s3'
+        ),
+    ],
+    indirect=True,
+)
+def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
+    br = dut[1]
+    dut[0].serial.stop_redirect_thread()
+    try:
+        time.sleep(3)
+        ocf.execute_command(br, 'brlibcheck')
+        br.expect('The br library compatibility checking passed', timeout=10)
+    finally:
+        ocf.execute_command(br, 'factoryreset')
         time.sleep(3)
