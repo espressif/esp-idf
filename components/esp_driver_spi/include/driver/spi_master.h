@@ -137,6 +137,7 @@ struct spi_transaction_t {
                                       */
     size_t length;                  ///< Total data length, in bits
     size_t rxlength;                ///< Total data length received, should be not greater than ``length`` in full-duplex mode (0 defaults this to the value of ``length``).
+    uint32_t override_freq_hz;      ///< New freq speed value will override for current device, remain `0` to skip update. Need about 30us each time
     void *user;                     ///< User-defined variable. Can be used to store eg transaction ID.
     union {
         const void *tx_buffer;      ///< Pointer to transmit buffer, or NULL for no MOSI phase
@@ -205,7 +206,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle);
  * @note Normally a device cannot start (queue) polling and interrupt
  *      transactions simultaneously.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param trans_desc Description of transaction to execute
  * @param ticks_to_wait Ticks to wait until there's room in the queue; use portMAX_DELAY to
  *                      never time out.
@@ -228,7 +229,7 @@ esp_err_t spi_device_queue_trans(spi_device_handle_t handle, spi_transaction_t *
  * completed transaction so software can inspect the result and e.g. free the memory or
  * reuse the buffers.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param trans_desc Pointer to variable able to contain a pointer to the description of the transaction
         that is executed. The descriptor should not be modified until the descriptor is returned by
         spi_device_get_trans_result.
@@ -252,7 +253,7 @@ esp_err_t spi_device_get_trans_result(spi_device_handle_t handle, spi_transactio
  *      Normally a device cannot start (queue) polling and interrupt
  *      transactions simutanuously.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param trans_desc Description of transaction to execute
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
@@ -267,7 +268,7 @@ esp_err_t spi_device_transmit(spi_device_handle_t handle, spi_transaction_t *tra
  *      transactions simutanuously. Moreover, a device cannot start a new polling
  *      transaction if another polling transaction is not finished.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param trans_desc Description of transaction to execute
  * @param ticks_to_wait Ticks to wait until there's room in the queue;
  *              currently only portMAX_DELAY is supported.
@@ -290,7 +291,7 @@ esp_err_t spi_device_polling_start(spi_device_handle_t handle, spi_transaction_t
  * successfully completed. The task is not blocked, but actively busy-spins for
  * the transaction to be completed.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param ticks_to_wait Ticks to wait until there's a returned item; use portMAX_DELAY to never time
                         out.
  * @return
@@ -310,7 +311,7 @@ esp_err_t spi_device_polling_end(spi_device_handle_t handle, TickType_t ticks_to
  *      Normally a device cannot start (queue) polling and interrupt
  *      transactions simutanuously.
  *
- * @param handle Device handle obtained using spi_host_add_dev
+ * @param handle Device handle obtained using spi_bus_add_device()
  * @param trans_desc Description of transaction to execute
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
@@ -368,19 +369,19 @@ esp_err_t spi_device_get_actual_freq(spi_device_handle_t handle, int *freq_khz);
 int spi_get_actual_clock(int fapb, int hz, int duty_cycle) __attribute__((deprecated("Please use spi_device_get_actual_freq instead")));
 
 /**
-  * @brief Calculate the timing settings of specified frequency and settings.
-  *
-  * @param gpio_is_used True if using GPIO matrix, or False if iomux pins are used.
-  * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.
-  * @param eff_clk Effective clock frequency (in Hz) from `spi_get_actual_clock()`.
-  * @param dummy_o Address of dummy bits used output. Set to NULL if not needed.
-  * @param cycles_remain_o Address of cycles remaining (after dummy bits are used) output.
-  *         - -1 If too many cycles remaining, suggest to compensate half a clock.
-  *         - 0 If no remaining cycles or dummy bits are not used.
-  *         - positive value: cycles suggest to compensate.
-  *
-  * @note If **dummy_o* is not zero, it means dummy bits should be applied in half duplex mode, and full duplex mode may not work.
-  */
+ * @brief Calculate the timing settings of specified frequency and settings.
+ *
+ * @param gpio_is_used True if using GPIO matrix, or False if iomux pins are used.
+ * @param input_delay_ns Input delay from SCLK launch edge to MISO data valid.
+ * @param eff_clk Effective clock frequency (in Hz) from `spi_get_actual_clock()`.
+ * @param dummy_o Address of dummy bits used output. Set to NULL if not needed.
+ * @param cycles_remain_o Address of cycles remaining (after dummy bits are used) output.
+ *         - -1 If too many cycles remaining, suggest to compensate half a clock.
+ *         - 0 If no remaining cycles or dummy bits are not used.
+ *         - positive value: cycles suggest to compensate.
+ *
+ * @note If **dummy_o* is not zero, it means dummy bits should be applied in half duplex mode, and full duplex mode may not work.
+ */
 void spi_get_timing(bool gpio_is_used, int input_delay_ns, int eff_clk, int *dummy_o, int *cycles_remain_o);
 
 /**

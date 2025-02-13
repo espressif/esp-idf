@@ -557,11 +557,13 @@ GPIO 矩阵与 IO_MUX 管脚
 SPI 时钟频率
 ^^^^^^^^^^^^^^^^^^^
 
-GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_handle_t::cfg::clock_source` 选择，可用的时钟源请参阅 :cpp:type:`spi_clock_source_t`。
+GPSPI 外设的时钟源可以通过设置 :cpp:member:`spi_device_interface_config_t::clock_source` 选择，可用的时钟源请参阅 :cpp:type:`spi_clock_source_t`。
 
-默认情况下，驱动程序将把 :cpp:member:`spi_device_handle_t::cfg::clock_source` 设置为 ``SPI_CLK_SRC_DEFAULT``。这往往代表 GPSPI 时钟源中的最高频率，在不同的芯片中这一数值会有所不同。
+默认情况下，驱动程序将把时钟源设置为 ``SPI_CLK_SRC_DEFAULT``。这往往代表 GPSPI 可选时钟源中的最高频率，在不同的芯片上这一数值会有所不同。
 
 设备的实际时钟频率可能不完全等于所设置的数字，驱动会将其重新计算为与硬件兼容的最接近的数字，并且不超过时钟源的时钟频率。调用函数 :cpp:func:`spi_device_get_actual_freq` 以了解驱动计算的实际频率。
+
+设备的时钟频率可在传输过程中实时更改，可以通过设置 :cpp:member:`spi_transaction_t::override_freq_hz` 实现，此操作将为该设备的该次及以后的传输使用新的时钟频率。若某次期望设置的时钟频率无法实现，驱动将打印警告并继续使用之前的时钟频率进行传输。
 
 写入或读取阶段的理论最大传输速度可根据下表计算：
 
