@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -222,6 +222,15 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
         APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = tab;         // Write back
     }
+}
+
+/**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = 0xffffff;
+    APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = 0xffffff;
 }
 
 /**
@@ -659,15 +668,57 @@ static inline void adc_ll_calibration_finish(adc_unit_t adc_n)
  * @note  Different ADC units and different attenuation options use different calibration data (initial data).
  *
  * @param adc_n ADC index number.
+ * @param param calibration param
  */
 __attribute__((always_inline))
 static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param)
 {
-    HAL_ASSERT(adc_n == ADC_UNIT_1);
     uint8_t msb = param >> 8;
     uint8_t lsb = param & 0xFF;
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        //H2 doesn't support ADC2, here is for backward compatibility for RNG
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
+}
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_DTEST, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_ENT_SAR, param);
+}
+
+/**
+ * Enable the SAR TOUT bus
+ *
+ * @param adc_n ADC index number.
+ * @param en true for enable
+ */
+__attribute__((always_inline))
+static inline void adc_ll_enable_tout_bus(adc_unit_t adc_n, bool en)
+{
+    HAL_ASSERT(adc_n == ADC_UNIT_1);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, I2C_SARADC_EN_TOUT_SAR1_BUS, en);
 }
 
 /*---------------------------------------------------------------
