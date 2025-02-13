@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,6 +189,18 @@ int dhcp_set_vendor_class_identifier(uint8_t len, const char * str)
 }
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
 
+#if defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT)
+void __weak lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
+{
+    LWIP_UNUSED_ARG(dhcp);
+    LWIP_UNUSED_ARG(state);
+    LWIP_UNUSED_ARG(len);
+    LWIP_UNUSED_ARG(p);
+    LWIP_UNUSED_ARG(offset);
+    LWIP_DEBUGF(DHCP_DEBUG | LWIP_DBG_TRACE, ("lwip_dhcp_on_extra_option(): Received DHCP option %d\n", option));
+}
+#endif /* CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_DEFAULT */
+
 void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uint8_t len, struct pbuf* p, uint16_t offset)
 {
     LWIP_UNUSED_ARG(dhcp);
@@ -229,6 +241,10 @@ void dhcp_parse_extra_opts(struct dhcp *dhcp, uint8_t state, uint8_t option, uin
          pbuf_copy_partial(p, &dhcp_option_vsi, copy_len, offset) == copy_len, return;);
     } /* DHCP_OPTION_VSI */
 #endif /* LWIP_DHCP_ENABLE_VENDOR_SPEC_IDS */
+#if !defined(CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION_NONE)
+    lwip_dhcp_on_extra_option(dhcp, state, option, len, p, offset);
+#endif
+
 }
 
 void dhcp_append_extra_opts(struct netif *netif, uint8_t state, struct dhcp_msg *msg_out, uint16_t *options_out_len)

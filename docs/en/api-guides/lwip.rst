@@ -434,6 +434,52 @@ IPV4 network address port translation (NAPT) and port forwarding are supported. 
 - To use NAPT for forwarding packets between two interfaces, it needs to be enabled on the interface connecting to the target network. For example, to enable internet access for Ethernet traffic through the Wi-Fi interface, NAPT must be enabled on the Ethernet interface.
 - Usage of NAPT is demonstrated in :example:`network/vlan_support`.
 
+Default lwIP Hooks
+++++++++++++++++++
+
+ESP-IDF port layer provides a default hook file, which is included in the lwIP build process. This file is located at :component_file:`lwip/port/include/lwip_default_hooks.h` and defines several hooks that implement default ESP-IDF behavior of lwIP stack. These hooks could be further modified by choosing one of these options:
+
+- *None*: No hook is declared.
+- *Default*: Default IDF implementation is provided (declared as ``weak`` in most cases and can be overridden).
+- *Custom*: Only the hook declaration is provided, and the application must implement it.
+
+**DHCP Extra Option Hook**
+
+ESP-IDF allows applications to define a hook for handling extra DHCP options. This can be useful for implementing custom DHCP-based behaviors, such as retrieving specific vendor options. To enable this feature, configure :ref:`CONFIG_LWIP_HOOK_DHCP_EXTRA_OPTION` either to **Default** (``weak`` implementation is provided which could be replaced by custom implementation) or **Custom** (you will have to implement the hook and define its link dependency to lwip)
+
+**Example Usage**
+
+An application can define the following function to handle a specific DHCP option (e.g., captive portal URI):
+
+.. code-block::
+
+    #include "esp_netif.h"
+    #include "lwip/dhcp.h"
+
+    void lwip_dhcp_on_extra_option(struct dhcp *dhcp, uint8_t state,
+                                   uint8_t option, uint8_t len,
+                                   struct pbuf* p, uint16_t offset)
+    {
+        if (option == ESP_NETIF_CAPTIVEPORTAL_URI) {
+            char *uri = (char *)p->payload + offset;
+            ESP_LOGI(TAG, "Captive Portal URI: %s", uri);
+        }
+    }
+
+**Other Default Hooks**
+
+ESP-IDF provides additional lwIP hooks that can be overridden. These include:
+
+- TCP ISN Hook (:ref:`CONFIG_LWIP_HOOK_TCP_ISN`): Allows custom randomization of TCP Initial Sequence Numbers (ESP-IDF provided implementation is the default option, set to *Custom* to provide custom implementation or *None* to use lwIP implementation).
+- IPv6 Route Hook (:ref:`CONFIG_LWIP_HOOK_IP6_ROUTE`): Enables custom route selection for IPv6 packets (No hook by default, use *Default* or *Custom* to override).
+- IPv6 Get Gateway Hook (:ref:`CONFIG_LWIP_HOOK_ND6_GET_GW`): Enables defining a custom gateway selection logic (No hook by default, use *Default* or *Custom* to override).
+- IPv6 Source Address Selection Hook (:ref:`CONFIG_LWIP_HOOK_IP6_SELECT_SRC_ADDR`): Allows customization of source address selection (No hook by default, use *Default* or *Custom* to override).
+- Netconn External Resolve Hook (:ref:`CONFIG_LWIP_HOOK_NETCONN_EXTERNAL_RESOLVE`): Allows overriding the DNS resolution logic for network connections (No hook by default, use *Default* or *Custom* to override).
+- DNS External Resolve Hook (:ref:`CONFIG_LWIP_HOOK_DNS_EXTERNAL_RESOLVE`): Provides a hook for custom DNS resolution logic with callbacks (No hook by default, but could be selected by an external component to prefer the custom option; use *Default* or *Custom* to override).
+- IPv6 Packet Input Hook (:ref:`CONFIG_LWIP_HOOK_IP6_INPUT`): Provides filtering or modification of incoming IPv6 packets (ESP-IDF provided ``weak`` implementation is the default option; use *Custom* or provide a strong definition to override the *Default* option; choose *None* to disable IPv6 packet input filtering)
+
+Each of these hooks can be configured in menuconfig, allowing selection of default, custom, or no implementation.
+
 .. _lwip-custom-hooks:
 
 Customized lwIP Hooks
