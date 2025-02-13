@@ -102,7 +102,7 @@ inline static bool esp_ptr_in_diram_iram(const void *p) {
  */
 __attribute__((always_inline))
 inline static bool esp_ptr_in_rtc_iram_fast(const void *p) {
-#if SOC_RTC_FAST_MEM_SUPPORTED && (SOC_RTC_IRAM_LOW != SOC_RTC_DRAM_LOW)
+#if SOC_RTC_FAST_MEM_SUPPORTED
     return ((intptr_t)p >= SOC_RTC_IRAM_LOW && (intptr_t)p < SOC_RTC_IRAM_HIGH);
 #else
     (void)p;
