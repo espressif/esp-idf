@@ -1050,8 +1050,8 @@ static IRAM_ATTR void lcd_rgb_panel_try_restart_transmission(esp_rgb_panel_t *pa
         }
     }
 
-    gdma_reset(panel->dma_chan);
     lcd_ll_fifo_reset(panel->hal.dev);
+    gdma_reset(panel->dma_chan);
 #if RGB_LCD_NEEDS_SEPARATE_RESTART_LINK
     // restart the DMA by a special DMA node
     gdma_start(panel->dma_chan, gdma_link_get_head_addr(panel->dma_restart_link));
