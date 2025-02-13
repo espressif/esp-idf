@@ -101,11 +101,11 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_systimer_retention_ini
     return ESP_OK;
 }
 
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-esp_err_t sleep_sys_periph_l2_cache_retention_init(void)
+#if SOC_PM_CACHE_RETENTION_BY_PAU
+esp_err_t sleep_sys_periph_cache_retention_init(void)
 {
-    esp_err_t err = sleep_retention_entries_create(l2_cache_regs_retention, ARRAY_SIZE(l2_cache_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
-    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (L2 Cache) retention");
+    esp_err_t err = sleep_retention_entries_create(cache_regs_retention, ARRAY_SIZE(cache_regs_retention), REGDMA_LINK_PRI_SYS_PERIPH_HIGH, SLEEP_RETENTION_MODULE_SYS_PERIPH);
+    ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for digital peripherals (Cache) retention");
     ESP_LOGI(TAG, "L2 Cache sleep retention initialization");
     return ESP_OK;
 }
@@ -128,8 +128,8 @@ static __attribute__((unused)) esp_err_t sleep_sys_periph_retention_init(void *a
     if(err) goto error;
     err = sleep_sys_periph_hp_system_retention_init(arg);
     if(err) goto error;
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-    err = sleep_sys_periph_l2_cache_retention_init();
+#if SOC_PM_CACHE_RETENTION_BY_PAU
+    err = sleep_sys_periph_cache_retention_init();
     if(err) goto error;
 #endif
 #if SOC_APM_SUPPORTED

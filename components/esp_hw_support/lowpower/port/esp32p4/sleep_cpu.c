@@ -20,7 +20,6 @@
 #include "freertos/task.h"
 #include "esp_heap_caps.h"
 #include "riscv/csr.h"
-#include "soc/cache_reg.h"
 #include "soc/clic_reg.h"
 #include "soc/rtc_periph.h"
 #include "soc/soc_caps.h"
@@ -32,7 +31,6 @@
 
 #include "esp32p4/rom/ets_sys.h"
 #include "esp32p4/rom/rtc.h"
-#include "esp32p4/rom/cache.h"
 #include "rvsleep-frames.h"
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
@@ -76,7 +74,6 @@ typedef struct {
     struct {
         RvCoreCriticalSleepFrame *critical_frame[portNUM_PROCESSORS];
         RvCoreNonCriticalSleepFrame *non_critical_frame[portNUM_PROCESSORS];
-        cpu_domain_dev_sleep_frame_t *cache_config_frame;
         cpu_domain_dev_sleep_frame_t *clic_frame[portNUM_PROCESSORS];
     } retent;
 } sleep_cpu_retention_t;
@@ -105,15 +102,6 @@ static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_reg
         };
     }
     return frame;
-}
-
-static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
-{
-    const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CACHE_L1_ICACHE_CTRL_REG, .end = CACHE_L1_BYPASS_CACHE_CONF_REG + 4 },
-        { .start = CACHE_L2_CACHE_CTRL_REG, .end = CACHE_L2_CACHE_BLOCKSIZE_CONF_REG + 4 }
-    };
-    return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));
 }
 
 static inline void * cpu_domain_clic_sleep_frame_alloc_and_init(uint8_t core_id)
@@ -145,13 +133,6 @@ static esp_err_t esp_sleep_cpu_retention_init_impl(void)
             }
             s_cpu_retention.retent.non_critical_frame[core_id] = (RvCoreNonCriticalSleepFrame *)frame;
         }
-    }
-    if (s_cpu_retention.retent.cache_config_frame == NULL) {
-        void *frame = cpu_domain_cache_config_sleep_frame_alloc_and_init();
-        if (frame == NULL) {
-            goto err;
-        }
-        s_cpu_retention.retent.cache_config_frame = (cpu_domain_dev_sleep_frame_t *)frame;
     }
     for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
         if (s_cpu_retention.retent.clic_frame[core_id] == NULL) {
@@ -186,10 +167,6 @@ static esp_err_t esp_sleep_cpu_retention_deinit_impl(void)
             s_cpu_retention.retent.non_critical_frame[core_id] = NULL;
         }
     }
-    if (s_cpu_retention.retent.cache_config_frame) {
-        heap_caps_free((void *)s_cpu_retention.retent.cache_config_frame);
-        s_cpu_retention.retent.cache_config_frame = NULL;
-    }
     for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
         if (s_cpu_retention.retent.clic_frame[core_id]) {
             heap_caps_free((void *)s_cpu_retention.retent.clic_frame[core_id]);
@@ -215,6 +192,7 @@ static TCM_IRAM_ATTR RvCoreNonCriticalSleepFrame * rv_core_noncritical_regs_save
 
     frame->mscratch  = RV_READ_CSR(mscratch);
     frame->misa      = RV_READ_CSR(misa);
+    frame->mhcr      = RV_READ_CSR(MHCR);
     frame->tselect   = RV_READ_CSR(tselect);
     frame->tdata1    = RV_READ_CSR(tdata1);
     frame->tdata2    = RV_READ_CSR(tdata2);
@@ -283,6 +261,7 @@ static TCM_IRAM_ATTR void rv_core_noncritical_regs_restore(void)
 
     RV_WRITE_CSR(mscratch, frame->mscratch);
     RV_WRITE_CSR(misa,     frame->misa);
+    RV_WRITE_CSR(MHCR,     frame->mhcr);
     RV_WRITE_CSR(tselect,  frame->tselect);
     RV_WRITE_CSR(tdata1,   frame->tdata1);
     RV_WRITE_CSR(tdata2,   frame->tdata2);
@@ -403,6 +382,8 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     uint8_t core_id = esp_cpu_get_core_id();
+    /* mstatus is core privated CSR, do it near the core critical regs restore */
+    uint32_t mstatus = save_mstatus_and_disable_global_int();
     rv_core_critical_regs_save();
 
     RvCoreCriticalSleepFrame * frame = s_cpu_retention.retent.critical_frame[core_id];
@@ -428,7 +409,7 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
     }
 #endif
-
+    restore_mstatus(mstatus);
     return pmu_sleep_finish(dslp);
 }
 
@@ -436,13 +417,11 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
-    uint32_t mstatus = save_mstatus_and_disable_global_int();
     uint8_t core_id = esp_cpu_get_core_id();
 #if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
 #endif
     cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
-    cpu_domain_dev_regs_save(s_cpu_retention.retent.cache_config_frame);
     rv_core_noncritical_regs_save();
 
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
@@ -467,10 +446,8 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
 #endif
 
-    rv_core_noncritical_regs_restore();
-    cpu_domain_dev_regs_restore(s_cpu_retention.retent.cache_config_frame);
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
-    restore_mstatus(mstatus);
+    rv_core_noncritical_regs_restore();
 
 #if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
@@ -495,7 +472,6 @@ bool cpu_domain_pd_allowed(void)
         allowed &= (s_cpu_retention.retent.critical_frame[core_id] != NULL);
         allowed &= (s_cpu_retention.retent.non_critical_frame[core_id] != NULL);
     }
-    allowed &= (s_cpu_retention.retent.cache_config_frame != NULL);
     for (uint8_t core_id = 0; core_id < portNUM_PROCESSORS; ++core_id) {
         allowed &= (s_cpu_retention.retent.clic_frame[core_id] != NULL);
     }
@@ -544,6 +520,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
         rv_core_noncritical_regs_save();
         cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
+        uint32_t mstatus = save_mstatus_and_disable_global_int();
         rv_core_critical_regs_save();
         RvCoreCriticalSleepFrame *frame_critical = s_cpu_retention.retent.critical_frame[core_id];
         if ((frame_critical->pmufunc & 0x3) == 0x1) {
@@ -563,6 +540,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
                 REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
             }
             atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
+            restore_mstatus(mstatus);
             cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
             rv_core_noncritical_regs_restore();
             atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
