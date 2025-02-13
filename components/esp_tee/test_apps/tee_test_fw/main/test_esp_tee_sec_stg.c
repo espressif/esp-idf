@@ -12,6 +12,7 @@
 #include "mbedtls/ecp.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/sha256.h"
+#include "ecdsa/ecdsa_alt.h"
 
 #include "esp_tee.h"
 #include "esp_tee_sec_storage.h"
@@ -320,5 +321,79 @@ TEST_CASE("Test TEE Secure Storage - Corruption from non-secure world", "[secure
     ESP_LOG_BUFFER_HEXDUMP(TAG, buf_r, sizeof(buf_r), ESP_LOG_INFO);
 
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+#endif
+
+#if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
+static const uint8_t sha[] = {
+    0x0c, 0xaa, 0x08, 0xb4, 0xf0, 0x89, 0xd3, 0x45,
+    0xbb, 0x55, 0x98, 0xd9, 0xc2, 0xe9, 0x65, 0x5d,
+    0x7e, 0xa3, 0xa9, 0xc3, 0xcd, 0x69, 0xb1, 0xcf,
+    0x91, 0xbe, 0x58, 0x10, 0xfe, 0x80, 0x65, 0x6e
+};
+
+static void test_ecdsa_sign(mbedtls_ecp_group_id gid, const uint8_t *hash, int slot_id)
+{
+    TEST_ESP_OK(esp_tee_sec_storage_init());
+    TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
+
+    bool is_crv_p192 = false;
+    esp_tee_sec_storage_type_t key_type = ESP_SEC_STG_KEY_ECDSA_SECP256R1;
+    size_t key_len = ECDSA_SECP256R1_KEY_LEN;
+
+    if (gid == MBEDTLS_ECP_DP_SECP192R1) {
+        is_crv_p192 = true;
+        key_type = ESP_SEC_STG_KEY_ECDSA_SECP192R1;
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+    }
+
+    TEST_ESP_OK(esp_tee_sec_storage_gen_key(slot_id, key_type));
+
+    esp_tee_sec_storage_pubkey_t pubkey = {};
+    TEST_ESP_OK(esp_tee_sec_storage_get_pubkey(slot_id, key_type, &pubkey));
+
+    mbedtls_mpi r, s;
+    mbedtls_mpi_init(&r);
+    mbedtls_mpi_init(&s);
+
+    mbedtls_ecdsa_context ecdsa_context;
+    mbedtls_ecdsa_init(&ecdsa_context);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecp_group_load(&ecdsa_context.MBEDTLS_PRIVATE(grp), gid));
+
+    mbedtls_pk_context key_ctx;
+
+    esp_ecdsa_pk_conf_t conf = {
+        .grp_id = gid,
+        .tee_slot_id = slot_id,
+        .load_pubkey = true,
+        .use_tee_sec_stg_key = true,
+    };
+    TEST_ASSERT_EQUAL(0, esp_ecdsa_tee_set_pk_context(&key_ctx, &conf));
+
+    mbedtls_ecp_keypair *keypair = mbedtls_pk_ec(key_ctx);
+    mbedtls_mpi key_mpi = keypair->MBEDTLS_PRIVATE(d);
+
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_ecdsa_sign(&ecdsa_context.MBEDTLS_PRIVATE(grp), &r, &s, &key_mpi, sha, SHA256_DIGEST_SZ, NULL, NULL));
+
+    esp_tee_sec_storage_sign_t sign = {};
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&r, sign.sign_r, key_len));
+    TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&s, sign.sign_s, key_len));
+
+    ESP_LOGI(TAG, "Verifying generated signature...");
+    TEST_ESP_OK(verify_ecdsa_sign(sha, sizeof(sha), &pubkey, &sign, is_crv_p192));
+
+    mbedtls_pk_free(&key_ctx);
+    mbedtls_ecdsa_free(&ecdsa_context);
+    mbedtls_mpi_free(&r);
+    mbedtls_mpi_free(&s);
+}
+
+TEST_CASE("Test TEE Secure Storage - mbedtls ECDSA signing", "[mbedtls]")
+{
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP256R1, sha, MIN_SEC_STG_SLOT_ID);
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    test_ecdsa_sign(MBEDTLS_ECP_DP_SECP192R1, sha, MAX_SEC_STG_SLOT_ID);
+#endif
 }
 #endif
