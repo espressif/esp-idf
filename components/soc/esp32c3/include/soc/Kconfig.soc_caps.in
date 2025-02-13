@@ -879,6 +879,14 @@ config SOC_TIMER_GROUP_TOTAL_TIMERS
     int
     default 2
 
+config SOC_LP_TIMER_BIT_WIDTH_LO
+    int
+    default 32
+
+config SOC_LP_TIMER_BIT_WIDTH_HI
+    int
+    default 16
+
 config SOC_MWDT_SUPPORT_XTAL
     bool
     default y
