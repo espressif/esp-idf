@@ -4,9 +4,9 @@ import contextlib
 import logging
 import os
 import socket
-from multiprocessing import connection
 from multiprocessing import Pipe
 from multiprocessing import Process
+from multiprocessing import connection
 from typing import Iterator
 
 import pytest
@@ -169,14 +169,16 @@ def ethernet_l2_test(dut: IdfDut) -> None:
         r'DUT MAC: ([0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2})'
     )
     dut_mac = res.group(1).decode('utf-8')
-    # wait for POKE msg to be sure the switch already started forwarding the port's traffic
-    # (there might be slight delay due to the RSTP execution)
-    target_if.recv_resp_poke(mac=dut_mac)
-    target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
-    target_if.send_eth_packet(
-        '01:00:5e:00:00:00'
-    )  # IPv4 multicast frame (some SPI Eth modules filter multicast other than IP)
-    target_if.send_eth_packet(mac=dut_mac)  # unicast frame
+    for _ in range(5):
+        # wait for POKE msg to be sure the switch already started forwarding the port's traffic
+        # (there might be slight delay due to the RSTP execution)
+        # or wait for next POKE msg to be sure the DUT reconfigured the filter
+        target_if.recv_resp_poke(mac=dut_mac)
+        target_if.send_eth_packet('ff:ff:ff:ff:ff:ff')  # broadcast frame
+        target_if.send_eth_packet('01:00:5e:00:00:00')  # IPv4 multicast frame
+        target_if.send_eth_packet('33:33:00:00:00:00')  # IPv6 multicast frame
+        target_if.send_eth_packet(mac=dut_mac)  # unicast frame
+
     dut.expect_unity_test_output(extra_before=res.group(1))
 
     dut.expect_exact("Enter next test, or 'enter' to see menu")

@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2024-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 /****************************************************************************
@@ -82,6 +82,11 @@
 #include "esp_eth_time.h"
 
 #define ETH_TYPE_PTP 0x88F7
+
+#define SET_MAC_ADDR(addr, a, b, c, d, e, f) do { \
+    addr[0] = a; addr[1] = b; addr[2] = c; \
+    addr[3] = d; addr[4] = e; addr[5] = f; \
+} while(0)
 
 #define ERROR ESP_FAIL
 #define OK ESP_OK
@@ -651,6 +656,13 @@ static int ptp_initialize_state(FAR struct ptp_state_s *state,
   // get HW address
   esp_eth_ioctl(eth_handle, ETH_CMD_G_MAC_ADDR, &state->intf_hw_addr);
 
+  // Add well-known PTP multicast destination MAC addresses to the filter
+  uint8_t dest_addr[ETH_ADDR_LEN];
+  SET_MAC_ADDR(dest_addr, 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00);
+  esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, dest_addr);
+  SET_MAC_ADDR(dest_addr, 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E);
+  esp_eth_ioctl(eth_handle, ETH_CMD_ADD_MAC_FILTER, dest_addr);
+
   state->remote_time_ns_prev = 0;
   state->local_time_ns_prev = 0;
 
@@ -845,6 +857,19 @@ static int ptp_initialize_state(FAR struct ptp_state_s *state,
 static int ptp_destroy_state(FAR struct ptp_state_s *state)
 {
 #ifdef ESP_PTP
+  // Remove well-known PTP multicast destination MAC addresses from the filter
+  esp_eth_handle_t eth_handle;
+  if (ioctl(state->ptp_socket, L2TAP_G_DEVICE_DRV_HNDL, &eth_handle) < 0)
+  {
+    ptperr("failed to get socket eth_handle %d\n", errno);
+    return ERROR;
+  }
+  uint8_t dest_addr[ETH_ADDR_LEN];
+  SET_MAC_ADDR(dest_addr, 0x01, 0x1B, 0x19, 0x00, 0x00, 0x00);
+  esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, dest_addr);
+  SET_MAC_ADDR(dest_addr, 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E);
+  esp_eth_ioctl(eth_handle, ETH_CMD_DEL_MAC_FILTER, dest_addr);
+
   if (state->ptp_socket > 0)
   {
     close(state->ptp_socket);
