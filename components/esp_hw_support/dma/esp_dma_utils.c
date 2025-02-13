@@ -126,6 +126,16 @@ esp_err_t esp_dma_merge_aligned_rx_buffers(dma_buffer_split_array_t *align_array
     return ESP_OK;
 }
 
+size_t esp_dma_calculate_node_count(size_t buffer_size, size_t buffer_alignment, size_t max_buffer_size_per_node)
+{
+    // buffer_alignment should be power of 2
+    ESP_RETURN_ON_FALSE(buffer_alignment && ((buffer_alignment & (buffer_alignment - 1)) == 0), 0, TAG, "invalid buffer alignment");
+    // align down the max_buffer_size_per_node
+    max_buffer_size_per_node = max_buffer_size_per_node & ~(buffer_alignment - 1);
+    // calculate the number of nodes
+    return (buffer_size + max_buffer_size_per_node - 1) / max_buffer_size_per_node;
+}
+
 esp_err_t esp_dma_capable_malloc(size_t size, const esp_dma_mem_info_t *dma_mem_info, void **out_ptr, size_t *actual_size)
 {
     ESP_RETURN_ON_FALSE_ISR(dma_mem_info && out_ptr, ESP_ERR_INVALID_ARG, TAG, "null pointer");

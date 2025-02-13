@@ -20,6 +20,7 @@
 #include "esp_async_memcpy.h"
 #include "esp_async_memcpy_priv.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "hal/cp_dma_hal.h"
 #include "hal/cp_dma_ll.h"
 
@@ -211,11 +212,13 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
         trans->rx_link_list = NULL;
     }
 
+    size_t num_dma_nodes = esp_dma_calculate_node_count(n, 1, MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+
     // allocate gdma TX link
     gdma_link_list_config_t tx_link_cfg = {
         .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
-        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1,
+        .num_items = num_dma_nodes,
         .flags = {
             .check_owner = true,
             .items_in_ext_mem = false,
@@ -239,7 +242,7 @@ static esp_err_t mcp_cpdma_memcpy(async_memcpy_context_t *ctx, void *dst, void *
     gdma_link_list_config_t rx_link_cfg = {
         .buffer_alignment = 1, // CP_DMA doesn't have alignment requirement for internal memory
         .item_alignment = 4,   // CP_DMA requires 4 bytes alignment for each descriptor
-        .num_items = n / MCP_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1,
+        .num_items = num_dma_nodes,
         .flags = {
             .check_owner = true,
             .items_in_ext_mem = false,

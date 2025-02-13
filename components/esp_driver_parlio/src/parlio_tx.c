@@ -35,6 +35,7 @@
 #include "esp_clk_tree.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 
 static const char *TAG = "parlio-tx";
 
@@ -51,7 +52,6 @@ typedef struct parlio_tx_unit_t {
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
     gdma_link_list_handle_t dma_link; // DMA link list handle
-    size_t dma_nodes_num;           // number of DMA descriptor nodes
     size_t int_mem_align; // Alignment for internal memory
     size_t ext_mem_align; // Alignment for external memory
 #if CONFIG_PM_ENABLE
@@ -202,14 +202,12 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     gdma_get_alignment_constraints(tx_unit->dma_chan, &tx_unit->int_mem_align, &tx_unit->ext_mem_align);
 
     // create DMA link list
-    size_t dma_nodes_num = tx_unit->dma_nodes_num;
+    size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
+    size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
-        .buffer_alignment = 1,
+        .buffer_alignment = buffer_alignment,
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
-        .num_items = dma_nodes_num,
-        .flags = {
-            .check_owner = true,
-        },
+        .num_items = num_dma_nodes,
     };
 
     // throw the error to the caller
@@ -297,11 +295,6 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     uint32_t mem_caps = PARLIO_MEM_ALLOC_CAPS;
     unit = heap_caps_calloc(1, sizeof(parlio_tx_unit_t) + sizeof(parlio_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no memory for tx unit");
-
-    // create DMA descriptors
-    // DMA descriptors must be placed in internal SRAM
-    size_t dma_nodes_num = config->max_transfer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
-    unit->dma_nodes_num = dma_nodes_num;
 
     unit->max_transfer_bits = config->max_transfer_size * 8;
     unit->base.dir = PARLIO_DIR_TX;
