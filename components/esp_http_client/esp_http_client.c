@@ -703,6 +703,22 @@ static char *_get_host_header(char *host, int port)
 {
     int err = 0;
     char *host_name;
+    // Check if host is an IPv6 address literal without proper square brackets
+    if (host != NULL && host[0] != '[' && strchr(host, ':') != NULL) {
+        // Put the IPv6 address in square brackets in accordance with RFC3986.
+        if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
+            err = asprintf(&host_name, "[%s]:%d", host, port);
+        } else {
+            err = asprintf(&host_name, "[%s]", host);
+        }
+    } else {
+        if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
+            err = asprintf(&host_name, "%s:%d", host, port);
+        } else {
+            err = asprintf(&host_name, "%s", host);
+        }
+    }
+
     if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
         err = asprintf(&host_name, "%s:%d", host, port);
     } else {
