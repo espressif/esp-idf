@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,26 +8,20 @@
 #include <string.h>
 #include <inttypes.h>
 #include <sys/param.h>
+#include "unity.h"
+#include "soc/soc_caps.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_sys.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
-#include "unity.h"
 #include "ccomp_timer.h"
 #include "esp_async_memcpy.h"
-#include "soc/soc_caps.h"
-#include "hal/dma_types.h"
+#if SOC_GDMA_SUPPORTED
+#include "hal/gdma_ll.h"
+#endif
 
 #define IDF_LOG_PERFORMANCE(item, value_fmt, value, ...) \
     printf("[Performance][%s]: " value_fmt "\n", item, value, ##__VA_ARGS__)
-
-#define ALIGN_UP(addr, align) (((addr) + (align)-1) & ~((align)-1))
-#define ALIGN_DOWN(size, align)  ((size) & ~((align) - 1))
-
-#if CONFIG_IDF_TARGET_ESP32P4
-#define TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE 1
-#endif
 
 typedef struct {
     uint32_t seed;
@@ -37,8 +31,9 @@ typedef struct {
     uint8_t *dst_buf;
     uint8_t *from_addr;
     uint8_t *to_addr;
-    uint32_t align;
-    uint32_t offset;
+    uint32_t align; // alignment required by DMA engine
+    uint32_t src_offset;
+    uint32_t dst_offset;
     bool src_in_psram;
     bool dst_in_psram;
 } memcpy_testbench_context_t;
@@ -46,7 +41,6 @@ typedef struct {
 static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_context)
 {
     srand(test_context->seed);
-    printf("allocating memory buffer...\r\n");
     size_t buffer_size = test_context->buffer_size;
     size_t copy_size = buffer_size;
     uint8_t *src_buf = NULL;
@@ -63,13 +57,11 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     TEST_ASSERT_NOT_NULL(dst_buf);
 
     // adding extra offset
-    from_addr = src_buf + test_context->offset;
-    to_addr = dst_buf;
-    copy_size -= test_context->offset;
-    copy_size &= ~(test_context->align - 1);
+    from_addr = src_buf + test_context->src_offset;
+    to_addr = dst_buf + test_context->dst_offset;
+    copy_size -= MAX(test_context->src_offset, test_context->dst_offset);
 
-    printf("...to copy size %zu Bytes, from @%p, to @%p\r\n", copy_size, from_addr, to_addr);
-    printf("fill src buffer with random data\r\n");
+    printf("copy @%p --> @%p, %zu Bytes\r\n", from_addr, to_addr, copy_size);
     for (int i = 0; i < copy_size; i++) {
         from_addr[i] = rand() % 256;
     }
@@ -82,28 +74,23 @@ static void async_memcpy_setup_testbench(memcpy_testbench_context_t *test_contex
     test_context->to_addr = to_addr;
 }
 
-static void async_memcpy_verify_and_clear_testbench(uint32_t seed, uint32_t copy_size, uint8_t *src_buf, uint8_t *dst_buf, uint8_t *from_addr, uint8_t *to_addr)
+static void async_memcpy_verify_and_clear_testbench(uint32_t copy_size, uint8_t *src_buf, uint8_t *dst_buf, uint8_t *from_addr, uint8_t *to_addr)
 {
-    srand(seed);
     // check if source date has been copied to destination and source data not broken
     for (int i = 0; i < copy_size; i++) {
-        TEST_ASSERT_EQUAL_MESSAGE(rand() % 256, from_addr[i], "source data doesn't match generator data");
-    }
-    srand(seed);
-    for (int i = 0; i < copy_size; i++) {
-        TEST_ASSERT_EQUAL_MESSAGE(rand() % 256, to_addr[i], "destination data doesn't match source data");
+        if (from_addr[i] != to_addr[i]) {
+            printf("location[%d]:s=%d,d=%d\r\n", i, from_addr[i], to_addr[i]);
+            TEST_FAIL_MESSAGE("destination data doesn't match source data");
+        }
     }
     free(src_buf);
     free(dst_buf);
 }
 
-TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
+static void test_memory_copy_with_same_buffer(async_memcpy_handle_t driver)
 {
-    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
-    async_memcpy_handle_t driver = NULL;
-    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-    uint8_t *sbuf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    uint8_t *dbuf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *sbuf = heap_caps_calloc(1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint8_t *dbuf = heap_caps_calloc(1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(sbuf);
     TEST_ASSERT_NOT_NULL(dbuf);
 
@@ -119,77 +106,35 @@ TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
             }
         }
     }
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
     free(sbuf);
     free(dbuf);
 }
 
-static void test_memory_copy_one_by_one(async_memcpy_handle_t driver)
+TEST_CASE("memory copy the same buffer with different content", "[async mcp]")
 {
-    uint32_t aligned_test_buffer_size[] = {256, 512, 1024, 2048, 4096};
-    memcpy_testbench_context_t test_context = {
-        .align = 4,
-    };
-
-    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
-        test_context.buffer_size = aligned_test_buffer_size[i];
-        test_context.seed = i;
-        test_context.offset = 0;
-        async_memcpy_setup_testbench(&test_context);
-
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, NULL, NULL));
-        vTaskDelay(pdMS_TO_TICKS(10));
-        async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf,
-                                                test_context.dst_buf, test_context.from_addr, test_context.to_addr);
-    }
-
-#if !TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE
-    uint32_t unaligned_test_buffer_size[] = {255, 511, 1023, 2047, 4095, 5011};
-    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
-        // Test different align edge
-        for (int off = 0; off < 4; off++) {
-            test_context.buffer_size = unaligned_test_buffer_size[i];
-            test_context.seed = i;
-            test_context.offset = off;
-            async_memcpy_setup_testbench(&test_context);
-
-            TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, NULL, NULL));
-            vTaskDelay(pdMS_TO_TICKS(10));
-            async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf,
-                                                    test_context.dst_buf, test_context.from_addr, test_context.to_addr);
-        }
-    }
-#endif
-}
-
-TEST_CASE("memory copy by DMA one by one", "[async mcp]")
-{
-    async_memcpy_config_t config = {
-        .backlog = 4,
-    };
+    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
     async_memcpy_handle_t driver = NULL;
 
 #if SOC_AHB_GDMA_SUPPORTED
-    printf("Testing memory by AHB GDMA\r\n");
+    printf("Testing memcpy by AHB GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&config, &driver));
-    test_memory_copy_one_by_one(driver);
+    test_memory_copy_with_same_buffer(driver);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_AHB_GDMA_SUPPORTED
 
 #if SOC_AXI_GDMA_SUPPORTED
-    printf("Testing memory by AXI GDMA\r\n");
+    printf("Testing memcpy by AXI GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&config, &driver));
-    test_memory_copy_one_by_one(driver);
+    test_memory_copy_with_same_buffer(driver);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_AXI_GDMA_SUPPORTED
 
 #if SOC_CP_DMA_SUPPORTED
-    printf("Testing memory by CP DMA\r\n");
+    printf("Testing memcpy by CP DMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_cpdma(&config, &driver));
-    test_memory_copy_one_by_one(driver);
+    test_memory_copy_with_same_buffer(driver);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_CP_DMA_SUPPORTED
-
 }
 
 static bool test_async_memcpy_cb_v1(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
@@ -200,208 +145,235 @@ static bool test_async_memcpy_cb_v1(async_memcpy_handle_t mcp_hdl, async_memcpy_
     return high_task_wakeup == pdTRUE;
 }
 
-TEST_CASE("memory copy done callback", "[async mcp]")
+static void test_memory_copy_blocking(async_memcpy_handle_t driver)
 {
-    async_memcpy_config_t config = {
-        // all default
-    };
-    async_memcpy_handle_t driver = NULL;
-    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-
-    uint8_t *src_buf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    uint8_t *dst_buf = heap_caps_aligned_calloc(4, 1, 256, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
-    TEST_ASSERT_NOT_NULL(src_buf);
-    TEST_ASSERT_NOT_NULL(dst_buf);
-
     SemaphoreHandle_t sem = xSemaphoreCreateBinary();
-    TEST_ESP_OK(esp_async_memcpy(driver, dst_buf, src_buf, 256, test_async_memcpy_cb_v1, sem));
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
-    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
-    free(src_buf);
-    free(dst_buf);
+    const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5012};
+    memcpy_testbench_context_t test_context = {
+        .align = 4,
+    };
+    for (int i = 0; i < sizeof(test_buffer_size) / sizeof(test_buffer_size[0]); i++) {
+        // Test different align edge
+        for (int off = 0; off < 4; off++) {
+            test_context.buffer_size = test_buffer_size[i];
+            test_context.seed = i;
+            test_context.src_offset = off;
+            test_context.dst_offset = off;
+            async_memcpy_setup_testbench(&test_context);
+
+            TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_cb_v1, sem));
+            TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(10)));
+            async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
+                                                    test_context.from_addr, test_context.to_addr);
+        }
+    }
     vSemaphoreDelete(sem);
 }
 
-TEST_CASE("memory copy by DMA on the fly", "[async mcp]")
+TEST_CASE("memory copy by DMA (blocking)", "[async mcp]")
 {
-    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
-    async_memcpy_handle_t driver = NULL;
-    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
-
-    uint32_t aligned_test_buffer_size[] = {512, 1024, 2048, 4096, 4608};
-    memcpy_testbench_context_t test_context[5] = {
-        [0 ... 4] = {
-            .align = 4,
-        }
+    async_memcpy_config_t config = {
+        .backlog = 1,
+        .dma_burst_size = 0,
     };
+    async_memcpy_handle_t driver = NULL;
 
-    // Aligned case
-    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
-        test_context[i].seed = i;
-        test_context[i].buffer_size = aligned_test_buffer_size[i];
-        async_memcpy_setup_testbench(&test_context[i]);
-    }
-    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context[i].to_addr, test_context[i].from_addr, test_context[i].copy_size, NULL, NULL));
-    }
-    for (int i = 0; i < sizeof(aligned_test_buffer_size) / sizeof(aligned_test_buffer_size[0]); i++) {
-        async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
-    }
-
-#if !TEST_MEMCPY_BUFFER_SIZE_MUST_ALIGN_CACHE
-    uint32_t unaligned_test_buffer_size[] = {511, 1023, 2047, 4095, 5011};
-    // Non-aligned case
-    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
-        test_context[i].seed = i;
-        test_context[i].buffer_size = unaligned_test_buffer_size[i];
-        test_context[i].offset = 3;
-        async_memcpy_setup_testbench(&test_context[i]);
-    }
-    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context[i].to_addr, test_context[i].from_addr, test_context[i].copy_size, NULL, NULL));
-    }
-    for (int i = 0; i < sizeof(unaligned_test_buffer_size) / sizeof(unaligned_test_buffer_size[0]); i++) {
-        async_memcpy_verify_and_clear_testbench(i, test_context[i].copy_size, test_context[i].src_buf, test_context[i].dst_buf, test_context[i].from_addr, test_context[i].to_addr);
-    }
-#endif
-
+#if SOC_AHB_GDMA_SUPPORTED
+    printf("Testing memcpy by AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&config, &driver));
+    test_memory_copy_blocking(driver);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AHB_GDMA_SUPPORTED
+
+#if SOC_AXI_GDMA_SUPPORTED
+    printf("Testing memcpy by AXI GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&config, &driver));
+    test_memory_copy_blocking(driver);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_CP_DMA_SUPPORTED
+    printf("Testing memcpy by CP DMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_cpdma(&config, &driver));
+    test_memory_copy_blocking(driver);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_CP_DMA_SUPPORTED
 }
 
-#define TEST_ASYNC_MEMCPY_BENCH_COUNTS   (8)
-static int s_count = 0;
-
-static IRAM_ATTR bool test_async_memcpy_isr_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
+[[maybe_unused]] static void test_memcpy_with_dest_addr_unaligned(async_memcpy_handle_t driver, bool src_in_psram, bool dst_in_psram)
 {
-    SemaphoreHandle_t sem = (SemaphoreHandle_t)cb_args;
+    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
+    const uint32_t test_buffer_size[] = {256, 512, 1024, 2048, 4096, 5012};
+    memcpy_testbench_context_t test_context = {
+        .align = 4,
+        .src_in_psram = src_in_psram,
+        .dst_in_psram = dst_in_psram,
+    };
+    for (int i = 0; i < sizeof(test_buffer_size) / sizeof(test_buffer_size[0]); i++) {
+        // Test different alignment
+        for (int off = 0; off < 4; off++) {
+            test_context.buffer_size = test_buffer_size[i];
+            test_context.seed = i;
+            test_context.src_offset = off;
+            test_context.dst_offset = off + 1;
+            async_memcpy_setup_testbench(&test_context);
+
+            TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_cb_v1, sem));
+            TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(10)));
+            async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf,
+                                                    test_context.from_addr, test_context.to_addr);
+        }
+    }
+    vSemaphoreDelete(sem);
+}
+
+TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
+{
+    [[maybe_unused]] async_memcpy_config_t driver_config = {
+        .backlog = 4,
+        .dma_burst_size = 32,
+    };
+    [[maybe_unused]] async_memcpy_handle_t driver = NULL;
+
+
+#if SOC_CP_DMA_SUPPORTED
+    printf("Testing memcpy by CP DMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_cpdma(&driver_config, &driver));
+    test_memcpy_with_dest_addr_unaligned(driver, false, false);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_CP_DMA_SUPPORTED
+
+#if SOC_AHB_GDMA_SUPPORTED && !GDMA_LL_AHB_RX_BURST_NEEDS_ALIGNMENT
+    printf("Testing memcpy by AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
+    test_memcpy_with_dest_addr_unaligned(driver, false, false);
+#if SOC_AHB_GDMA_SUPPORT_PSRAM
+    test_memcpy_with_dest_addr_unaligned(driver, true, true);
+#endif // SOC_AHB_GDMA_SUPPORT_PSRAM
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AHB_GDMA_SUPPORTED
+
+#if SOC_AXI_GDMA_SUPPORTED
+    printf("Testing memcpy by AXI GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
+    test_memcpy_with_dest_addr_unaligned(driver, false, false);
+#if SOC_AXI_GDMA_SUPPORT_PSRAM
+    test_memcpy_with_dest_addr_unaligned(driver, true, true);
+#endif // SOC_AXI_GDMA_SUPPORT_PSRAM
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AXI_GDMA_SUPPORTED
+}
+
+#define TEST_ASYNC_MEMCPY_BENCH_COUNTS 16
+
+typedef struct {
+    int perf_count;
+    SemaphoreHandle_t sem;
+} mcp_perf_user_context_t;
+
+static IRAM_ATTR bool test_async_memcpy_perf_cb(async_memcpy_handle_t mcp_hdl, async_memcpy_event_t *event, void *cb_args)
+{
+    mcp_perf_user_context_t* user = (mcp_perf_user_context_t*)cb_args;
     BaseType_t high_task_wakeup = pdFALSE;
-    s_count++;
-    if (s_count == TEST_ASYNC_MEMCPY_BENCH_COUNTS) {
-        xSemaphoreGiveFromISR(sem, &high_task_wakeup);
+    user->perf_count++;
+    if (user->perf_count == TEST_ASYNC_MEMCPY_BENCH_COUNTS) {
+        xSemaphoreGiveFromISR(user->sem, &high_task_wakeup);
     }
     return high_task_wakeup == pdTRUE;
 }
 
-static void memcpy_performance_test(uint32_t buffer_size)
+static void test_memcpy_performance(async_memcpy_handle_t driver, uint32_t buffer_size, bool src_in_psram, bool dst_in_psram)
 {
-    SemaphoreHandle_t sem = xSemaphoreCreateBinary();
-
-    async_memcpy_config_t config = ASYNC_MEMCPY_DEFAULT_CONFIG();
-    config.backlog = (buffer_size / DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1) * TEST_ASYNC_MEMCPY_BENCH_COUNTS;
-    config.dma_burst_size = 32;   // set a big burst size for performance
-    async_memcpy_handle_t driver = NULL;
     int64_t elapse_us = 0;
     float throughput = 0.0;
-    TEST_ESP_OK(esp_async_memcpy_install(&config, &driver));
 
-    // 1. SRAM->SRAM
     memcpy_testbench_context_t test_context = {
-        .align = config.dma_burst_size,
+        .align = 32, // set alignment same as the burst size, to achieve the best performance
         .buffer_size = buffer_size,
-        .src_in_psram = false,
-        .dst_in_psram = false,
+        .src_in_psram = src_in_psram,
+        .dst_in_psram = dst_in_psram,
     };
     async_memcpy_setup_testbench(&test_context);
-    s_count = 0;
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_isr_cb, sem));
-    }
-    // wait for done semaphore
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("DMA_COPY", "%.2f MB/s, dir: SRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
+
+    // get CPU memcpy performance
     ccomp_timer_start();
     for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
         memcpy(test_context.to_addr, test_context.from_addr, test_context.buffer_size);
     }
     elapse_us = ccomp_timer_stop();
     throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: SRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
+    IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: %s->%s", throughput, src_in_psram ? "PSRAM" : "SRAM", dst_in_psram ? "PSRAM" : "SRAM");
 
-#if SOC_AHB_GDMA_SUPPORT_PSRAM
-    // 2. PSRAM->PSRAM
-    test_context.src_in_psram = true;
-    test_context.dst_in_psram = true;
-    async_memcpy_setup_testbench(&test_context);
-    s_count = 0;
+    // get DMA memcpy performance
     ccomp_timer_start();
+    mcp_perf_user_context_t user_context = {
+        .perf_count = 0,
+        .sem = xSemaphoreCreateBinary()
+    };
     for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_isr_cb, sem));
+        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_perf_cb, &user_context));
     }
     // wait for done semaphore
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
+    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(user_context.sem, pdMS_TO_TICKS(1000)));
     elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("DMA_COPY", "%.2f MB/s, dir: PSRAM->PSRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        memcpy(test_context.to_addr, test_context.from_addr, test_context.buffer_size);
-    }
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: PSRAM->PSRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
+    async_memcpy_verify_and_clear_testbench(test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
+    throughput = (float)buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
+    IDF_LOG_PERFORMANCE("DMA_COPY", "%.2f MB/s, dir: %s->%s", throughput, src_in_psram ? "PSRAM" : "SRAM", dst_in_psram ? "PSRAM" : "SRAM");
 
-    // 3. PSRAM->SRAM
-    test_context.src_in_psram = true;
-    test_context.dst_in_psram = false;
-    async_memcpy_setup_testbench(&test_context);
-    s_count = 0;
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_isr_cb, sem));
-    }
-    // wait for done semaphore
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("DMA_COPY", "%.2f MB/s, dir: PSRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        memcpy(test_context.to_addr, test_context.from_addr, test_context.buffer_size);
-    }
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: PSRAM->SRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
+    vSemaphoreDelete(user_context.sem);
+}
 
-    // 4. SRAM->PSRAM
-    test_context.src_in_psram = false;
-    test_context.dst_in_psram = true;
-    async_memcpy_setup_testbench(&test_context);
-    s_count = 0;
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        TEST_ESP_OK(esp_async_memcpy(driver, test_context.to_addr, test_context.from_addr, test_context.copy_size, test_async_memcpy_isr_cb, sem));
-    }
-    // wait for done semaphore
-    TEST_ASSERT_EQUAL(pdTRUE, xSemaphoreTake(sem, pdMS_TO_TICKS(1000)));
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("DMA_COPY", "%.2f MB/s, dir: SRAM->PSRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    ccomp_timer_start();
-    for (int i = 0; i < TEST_ASYNC_MEMCPY_BENCH_COUNTS; i++) {
-        memcpy(test_context.to_addr, test_context.from_addr, test_context.buffer_size);
-    }
-    elapse_us = ccomp_timer_stop();
-    throughput = (float)test_context.buffer_size * 1e6 * TEST_ASYNC_MEMCPY_BENCH_COUNTS / 1024 / 1024 / elapse_us;
-    IDF_LOG_PERFORMANCE("CPU_COPY", "%.2f MB/s, dir: SRAM->PSRAM, size: %zu Bytes", throughput, test_context.buffer_size);
-    async_memcpy_verify_and_clear_testbench(test_context.seed, test_context.copy_size, test_context.src_buf, test_context.dst_buf, test_context.from_addr, test_context.to_addr);
-#endif
+TEST_CASE("memory copy performance 40KB: SRAM->SRAM", "[async mcp]")
+{
+    async_memcpy_config_t driver_config = {
+        .backlog = TEST_ASYNC_MEMCPY_BENCH_COUNTS,
+        .dma_burst_size = 32,
+    };
+    async_memcpy_handle_t driver = NULL;
 
+#if SOC_AHB_GDMA_SUPPORTED
+    printf("Testing memcpy by AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, false, false);
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
-    vSemaphoreDelete(sem);
+#endif // SOC_AHB_GDMA_SUPPORTED
+
+#if SOC_AXI_GDMA_SUPPORTED
+    printf("Testing memcpy by AXI GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, false, false);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AXI_GDMA_SUPPORTED
+
+#if SOC_CP_DMA_SUPPORTED
+    printf("Testing memcpy by CP DMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_cpdma(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, false, false);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_CP_DMA_SUPPORTED
 }
 
-TEST_CASE("memory copy performance test 40KB", "[async mcp]")
+#if SOC_SPIRAM_SUPPORTED
+TEST_CASE("memory copy performance 40KB: PSRAM->PSRAM", "[async mcp]")
 {
-    memcpy_performance_test(40 * 1024);
-}
+    [[maybe_unused]] async_memcpy_config_t driver_config = {
+        .backlog = TEST_ASYNC_MEMCPY_BENCH_COUNTS,
+        .dma_burst_size = 32,
+    };
+    [[maybe_unused]] async_memcpy_handle_t driver = NULL;
 
-TEST_CASE("memory copy performance test 4KB", "[async mcp]")
-{
-    memcpy_performance_test(4 * 1024);
+#if SOC_AHB_GDMA_SUPPORTED && SOC_AHB_GDMA_SUPPORT_PSRAM
+    printf("Testing memcpy by AHB GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, true, true);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AHB_GDMA_SUPPORTED && SOC_AHB_GDMA_SUPPORT_PSRAM
+
+#if SOC_AXI_GDMA_SUPPORTED && SOC_AXI_GDMA_SUPPORT_PSRAM
+    printf("Testing memcpy by AXI GDMA\r\n");
+    TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
+    test_memcpy_performance(driver, 40 * 1024, true, true);
+    TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
+#endif // SOC_AXI_GDMA_SUPPORTED && SOC_AXI_GDMA_SUPPORT_PSRAM
 }
+#endif

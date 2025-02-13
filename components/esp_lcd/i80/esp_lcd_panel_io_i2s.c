@@ -39,6 +39,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/i2s_platform.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_private/gpio.h"
 #include "soc/lcd_periph.h"
 #include "hal/i2s_hal.h"
@@ -71,7 +72,7 @@ struct esp_lcd_i80_bus_t {
     int wr_gpio_num;       // GPIO used for WR line
     intr_handle_t intr;    // LCD peripheral interrupt handle
     esp_pm_lock_handle_t pm_lock; // lock APB frequency when necessary
-    size_t num_dma_nodes;  // Number of DMA descriptors
+    size_t max_transfer_bytes;    // Maximum number of bytes that can be transferred in one transaction
     gdma_link_list_handle_t dma_link; // DMA link list handle
     uint8_t *format_buffer;// The driver allocates an internal buffer for DMA to do data format transformer
     unsigned long resolution_hz;  // LCD_CLK resolution, determined by selected clock source
@@ -141,7 +142,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     // allocate i80 bus memory
     bus = heap_caps_calloc(1, sizeof(esp_lcd_i80_bus_t), LCD_I80_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(bus, ESP_ERR_NO_MEM, err, TAG, "no mem for i80 bus");
-    size_t num_dma_nodes = max_transfer_bytes / LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE + 1;
+    size_t num_dma_nodes = esp_dma_calculate_node_count(max_transfer_bytes, 1, LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     // create DMA link list
     gdma_link_list_config_t dma_link_config = {
         .buffer_alignment = 1, // no special buffer alignment for LCD TX buffer
@@ -153,7 +154,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     };
     ESP_GOTO_ON_ERROR(gdma_new_link_list(&dma_link_config, &bus->dma_link), err, TAG, "create DMA link list failed");
     bus->bus_id = -1;
-    bus->num_dma_nodes = num_dma_nodes;
+    bus->max_transfer_bytes = max_transfer_bytes;
 #if SOC_I2S_TRANS_SIZE_ALIGN_WORD
     // transform format for LCD commands, parameters and color data, so we need a big buffer
     bus->format_buffer = heap_caps_calloc(1, max_transfer_bytes, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA);
@@ -217,7 +218,7 @@ esp_err_t esp_lcd_new_i80_bus(const esp_lcd_i80_bus_config_t *bus_config, esp_lc
     bus->dc_gpio_num = bus_config->dc_gpio_num;
     bus->wr_gpio_num = bus_config->wr_gpio_num;
     *ret_bus = bus;
-    ESP_LOGD(TAG, "new i80 bus(%d) @%p, %zu dma nodes, resolution %luHz", bus->bus_id, bus, num_dma_nodes, bus->resolution_hz);
+    ESP_LOGD(TAG, "new i80 bus(%d) @%p, resolution %luHz", bus->bus_id, bus, bus->resolution_hz);
     return ESP_OK;
 
 err:
@@ -510,7 +511,7 @@ static esp_err_t panel_io_i80_tx_param(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(param_size <= (bus->num_dma_nodes * LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "parameter bytes too long, enlarge max_transfer_bytes");
+    assert(param_size <= bus->max_transfer_bytes && "parameter bytes too long, enlarge max_transfer_bytes");
     assert(param_size <= LCD_I80_IO_FORMAT_BUF_SIZE && "format buffer too small, increase LCD_I80_IO_FORMAT_BUF_SIZE");
     size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
@@ -587,7 +588,7 @@ static esp_err_t panel_io_i80_tx_color(esp_lcd_panel_io_t *io, int lcd_cmd, cons
     esp_lcd_i80_bus_t *bus = next_device->bus;
     lcd_panel_io_i80_t *cur_device = bus->cur_device;
     lcd_i80_trans_descriptor_t *trans_desc = NULL;
-    assert(color_size <= (bus->num_dma_nodes * LCD_DMA_DESCRIPTOR_BUFFER_MAX_SIZE) && "color bytes too long, enlarge max_transfer_bytes");
+    assert(color_size <= bus->max_transfer_bytes && "color bytes too long, enlarge max_transfer_bytes");
     size_t num_trans_inflight = next_device->num_trans_inflight;
     // before issue a polling transaction, need to wait queued transactions finished
     for (size_t i = 0; i < num_trans_inflight; i++) {
