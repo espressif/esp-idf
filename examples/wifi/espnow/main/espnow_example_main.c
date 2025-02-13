@@ -34,7 +34,7 @@
 
 static const char *TAG = "espnow_example";
 
-static QueueHandle_t s_example_espnow_queue;
+static QueueHandle_t s_example_espnow_queue = NULL;
 
 static uint8_t s_example_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 static uint16_t s_example_espnow_seq[EXAMPLE_ESPNOW_DATA_MAX] = { 0, 0 };
@@ -302,7 +302,7 @@ static esp_err_t example_espnow_init(void)
 
     s_example_espnow_queue = xQueueCreate(ESPNOW_QUEUE_SIZE, sizeof(example_espnow_event_t));
     if (s_example_espnow_queue == NULL) {
-        ESP_LOGE(TAG, "Create mutex fail");
+        ESP_LOGE(TAG, "Create queue fail");
         return ESP_FAIL;
     }
 
@@ -321,7 +321,8 @@ static esp_err_t example_espnow_init(void)
     esp_now_peer_info_t *peer = malloc(sizeof(esp_now_peer_info_t));
     if (peer == NULL) {
         ESP_LOGE(TAG, "Malloc peer information fail");
-        vSemaphoreDelete(s_example_espnow_queue);
+        vQueueDelete(s_example_espnow_queue);
+        s_example_espnow_queue = NULL;
         esp_now_deinit();
         return ESP_FAIL;
     }
@@ -337,7 +338,8 @@ static esp_err_t example_espnow_init(void)
     send_param = malloc(sizeof(example_espnow_send_param_t));
     if (send_param == NULL) {
         ESP_LOGE(TAG, "Malloc send parameter fail");
-        vSemaphoreDelete(s_example_espnow_queue);
+        vQueueDelete(s_example_espnow_queue);
+        s_example_espnow_queue = NULL;
         esp_now_deinit();
         return ESP_FAIL;
     }
@@ -353,7 +355,8 @@ static esp_err_t example_espnow_init(void)
     if (send_param->buffer == NULL) {
         ESP_LOGE(TAG, "Malloc send buffer fail");
         free(send_param);
-        vSemaphoreDelete(s_example_espnow_queue);
+        vQueueDelete(s_example_espnow_queue);
+        s_example_espnow_queue = NULL;
         esp_now_deinit();
         return ESP_FAIL;
     }
@@ -369,7 +372,8 @@ static void example_espnow_deinit(example_espnow_send_param_t *send_param)
 {
     free(send_param->buffer);
     free(send_param);
-    vSemaphoreDelete(s_example_espnow_queue);
+    vQueueDelete(s_example_espnow_queue);
+    s_example_espnow_queue = NULL;
     esp_now_deinit();
 }
 
