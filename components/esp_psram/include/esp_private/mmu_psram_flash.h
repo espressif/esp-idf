@@ -48,6 +48,23 @@ extern "C" {
 size_t mmu_psram_get_text_segment_length(void);
 
 /**
+ * @brief Get the start and size of the instruction segment alignment gap
+ *
+ * @param[out] gap_start Start of the gap
+ * @param[out] gap_size  Size of the gap
+ */
+void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_size);
+
+/**
+ * @brief Check if the pointer is in the instruction alignment gap
+ *
+ * @param[in] p Pointer to check
+ *
+ * @return true if the pointer is in the instruction alignment gap, false otherwise
+ */
+bool mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p);
+
+/**
  * @brief Copy Flash texts to PSRAM
  *
  * @param[in]  start_page    PSRAM physical start page
@@ -58,6 +75,14 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
+
+/**
+ * @brief Get the start and size of the rodata segment alignment gap
+ *
+ * @param[out] gap_start Start of the gap
+ * @param[out] gap_size  Size of the gap
+ */
+void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_size);
 
 /**
  * @brief Calculates the size of memory that would be used for copying flash rodata into PSRAM (in bytes)
@@ -74,6 +99,15 @@ size_t mmu_psram_get_rodata_segment_length(void);
  * @param[out] out_page      Used pages
  */
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page);
+
+/**
+ * @brief Check if the pointer is in the rodata alignment gap
+ *
+ * @param[in] p Pointer to check
+ *
+ * @return true if the pointer is in the rodata alignment gap, false otherwise
+ */
+bool mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p);
 #endif  //#if CONFIG_SPIRAM_RODATA
 
 /*----------------------------------------------------------------------------

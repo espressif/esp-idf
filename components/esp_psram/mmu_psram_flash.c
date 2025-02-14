@@ -16,6 +16,7 @@
  *    APIs in 2 will be refactored when MMU driver is ready
  */
 
+#include <stdbool.h>
 #include <sys/param.h>
 #include "sdkconfig.h"
 #include "esp_log.h"
@@ -31,6 +32,8 @@
 #include "esp32s3/rom/cache.h"
 #endif
 
+#define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
+
 /*----------------------------------------------------------------------------
                     Part 1 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/
@@ -44,6 +47,10 @@ static uint32_t page0_page = INVALID_PHY_PAGE;
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+extern char _instruction_reserved_end;
+#define INSTRUCTION_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4)
+#define INSTRUCTION_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
+
 size_t mmu_psram_get_text_segment_length(void)
 {
     uint32_t flash_pages = 0;
@@ -54,6 +61,22 @@ size_t mmu_psram_get_text_segment_length(void)
     flash_pages += Cache_Count_Flash_Pages(CACHE_IBUS, &page0_mapped);
 #endif
     return MMU_PAGE_TO_BYTES(flash_pages);
+}
+
+void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
+{
+    // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
+    // Or create a new region from (uint32_t)&_instruction_reserved_end to ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
+    *gap_start = INSTRUCTION_ALIGNMENT_GAP_START;
+    *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
+}
+
+bool IRAM_ATTR mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p)
+{
+    if ((intptr_t)p >= INSTRUCTION_ALIGNMENT_GAP_START && (intptr_t)p < INSTRUCTION_ALIGNMENT_GAP_END) {
+        return true;
+    }
+    return false;
 }
 
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
@@ -93,6 +116,10 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
+extern char _rodata_reserved_end;
+#define RODATA_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4)
+#define RODATA_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
+
 size_t mmu_psram_get_rodata_segment_length(void)
 {
     uint32_t flash_pages = 0;
@@ -105,6 +132,22 @@ size_t mmu_psram_get_rodata_segment_length(void)
     flash_pages += Cache_Count_Flash_Pages(CACHE_DBUS, &page0_mapped);
 #endif
     return MMU_PAGE_TO_BYTES(flash_pages);
+}
+
+void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
+{
+    // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
+    // Or create a new region from (uint32_t)&_rodata_reserved_end to ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
+    *gap_start = RODATA_ALIGNMENT_GAP_START;
+    *gap_end = RODATA_ALIGNMENT_GAP_END;
+}
+
+bool IRAM_ATTR mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p)
+{
+    if ((intptr_t)p >= RODATA_ALIGNMENT_GAP_START && (intptr_t)p < RODATA_ALIGNMENT_GAP_END) {
+        return true;
+    }
+    return false;
 }
 
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
