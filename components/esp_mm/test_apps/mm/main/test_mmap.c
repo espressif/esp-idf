@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -70,3 +70,26 @@ TEST_CASE("Can find paddr caps by any paddr offset", "[mmu]")
 
     TEST_ESP_OK(esp_mmu_unmap(ptr0));
 }
+
+#if CONFIG_SPIRAM
+#if !CONFIG_IDF_TARGET_ESP32  //ESP32 doesn't support using `esp_mmu_map` to map to PSRAM
+TEST_CASE("Can find paddr when mapping to psram", "[mmu]")
+{
+    esp_paddr_t paddr = 0;
+    mmu_target_t target = MMU_TARGET_FLASH0;
+
+    void *vaddr = NULL;
+    esp_err_t err = ESP_FAIL;
+
+    vaddr = heap_caps_malloc(10, MALLOC_CAP_SPIRAM);
+    err = esp_mmu_vaddr_to_paddr(vaddr, &paddr, &target);
+    if (err == ESP_OK) {
+        ESP_LOGI("MMU", "Virtual Address: %p, Physical Address: 0x%lx, Target: %d", vaddr, paddr, target);
+    } else {
+        ESP_LOGE("MMU", "Failed to convert virtual address to physical address: %s", esp_err_to_name(err));
+    }
+
+    TEST_ASSERT(target == MMU_TARGET_PSRAM0);
+}
+#endif  //#if !CONFIG_IDF_TARGET_ESP32
+#endif  //#if CONFIG_SPIRAM
