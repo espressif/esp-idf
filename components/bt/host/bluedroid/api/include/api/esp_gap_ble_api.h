@@ -232,6 +232,14 @@ typedef enum {
     ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT,                    /*!< When set CSA support complete, the event comes */
     ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT,                /*!< When set vendor event mask complete, the event comes */
     ESP_GAP_BLE_VENDOR_HCI_EVT,                                  /*!< When BLE vendor HCI event received, the event comes */
+    // BLE power control
+    ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT,                    /*!< When reading the current and maximum transmit power levels of the local Controller complete, the event comes */
+    ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT,                 /*!< When reading the transmit power level used by the remote Controller on the ACL connection complete, the event comes */
+    ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT,                 /*!< when set the path loss threshold reporting parameters complete, the event comes */
+    ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT,                 /*!< when enable or disable path loss reporting complete, the event comes */
+    ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT,                 /*!< when enable or disable the reporting to the local Host of transmit power level changes complete, the event comes */
+    ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT,                         /*!< when receive a path loss threshold crossing, the event comes */
+    ESP_GAP_BLE_TRANS_PWR_RPTING_EVT,                            /*!< when receive a transmit power level report, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1079,6 +1087,41 @@ typedef enum{
 } esp_ble_privacy_mode_t;
 
 /**
+* @brief path loss report parameters
+*/
+typedef struct {
+    uint16_t conn_handle;    /*!< Connection_Handle */
+	uint8_t high_threshold;  /*!< High threshold for the path loss (dB) */
+	uint8_t high_hysteresis; /*!< Hysteresis value for the high threshold (dB) */
+	uint8_t low_threshold;   /*!< Low threshold for the path loss (dB) */
+	uint8_t low_hysteresis;  /*!< Hysteresis value for the low threshold (dB) */
+	uint16_t min_time_spent; /*!< Minimum time in number of connection events to be observed
+                             once the path loss crosses the threshold before an event is generated */
+} esp_ble_path_loss_rpt_params_t;
+
+typedef enum {
+	/*!< No PHY is set, should not be used */
+	ESP_BLE_CONN_TX_POWER_PHY_NONE = 0,
+	/*!< LE 1M PHY */
+	ESP_BLE_CONN_TX_POWER_PHY_1M = 0x01,
+	/*!< LE 2M PHY */
+	ESP_BLE_CONN_TX_POWER_PHY_2M = 0x02,
+	/*!< LE Coded PHY using S=8 coding */
+	ESP_BLE_CONN_TX_POWER_PHY_CODED_S8 = 0x03,
+	/*!< LE Coded PHY using S=2 coding */
+	ESP_BLE_CONN_TX_POWER_PHY_CODED_S2 = 0x04,
+} esp_ble_tx_power_phy_t;
+
+typedef enum {
+	/*!< Low zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_LOW = 0x00,
+	/*!< Middle zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_MIDDLE = 0x01,
+	/*!< High zone entered */
+	ESP_BLE_CONN_PATH_LOSS_ZONE_ENTERED_HIGH = 0x02,
+} esp_ble_path_loss_zone_t;
+
+/**
  * @brief Gap callback parameters union
  */
 typedef union {
@@ -1597,6 +1640,82 @@ typedef union {
         uint8_t        param_len;                   /*!< The length of the event parameter buffer */
         uint8_t        *param_buf;                  /*!< The pointer of the event parameter buffer */
     } vendor_hci_evt;                               /*!< Event parameter buffer of ESP_GAP_BLE_VENDOR_HCI_EVT */
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT
+     */
+    struct ble_enh_read_trans_pwr_level_param {
+        esp_bt_status_t status;               /*!< Indicate enhance reading transmit power level complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;                 /*!< Connection_Handle */
+        uint8_t phy;                          /*!< 1M, 2M, Coded S2 or Coded S8 phy
+                                                   0x01: LE 1M PHY
+                                                   0x02: LE 2M PHY
+                                                   0x03: LE Coded PHY with S=8 data coding
+                                                   0x04: LE Coded PHY with S=2 data coding
+                                                */
+        int8_t cur_tx_pwr_level;              /*!< Current transmit power level, Range: -127 to 20, Units: dBm */
+        int8_t max_tx_pwr_level;              /*!< Maximum transmit power level, Range: -127 to 20, Units: dBm */
+    } enh_trans_pwr_level_cmpl;               /*!< Event parameter of ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT
+     */
+    struct ble_read_remote_trans_pwr_level_param {
+        esp_bt_status_t status;              /*!< Indicate reading remote transmit power level complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+    } read_remote_trans_pwr_level_cmpl;      /*!< Event parameter of ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT
+     */
+    struct ble_set_path_loss_rpting_param {
+        esp_bt_status_t status;            /*!< Indicate setting path loss reporting paramwters complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;              /*!< The ACL connection identifier */
+    } set_path_loss_rpting_params;         /*!< Event parameter of ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT
+     */
+    struct ble_set_path_loss_rpting_enable {
+        esp_bt_status_t status;           /*!< Indicate setting path loss reporting enable complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;             /*!< The ACL connection identifier */
+    } set_path_loss_rpting_enable;       /*!< Event parameter of ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT
+     */
+    struct ble_set_trans_pwr_rpting_enable {
+        esp_bt_status_t status;        /*!< Indicate setting transmit power reporting enable complete status, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;          /*!< The ACL connection identifier */
+    } set_trans_pwr_rpting_enable;     /*!< Event parameter of ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT
+     */
+    struct ble_path_loss_thres_evt {
+        uint16_t conn_handle;         /*!< The ACL connection identifier */
+        uint8_t cur_path_loss;        /*!< Current path loss (always zero or positive), Units: dB */
+        esp_ble_path_loss_zone_t zone_entered; /*!< which zone was entered. If cur_path_loss is set to 0xFF then zone_entered shall be ignored */
+    } path_loss_thres_evt;            /*!< Event parameter of ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT */
+    /**
+     * @brief ESP_GAP_BLE_TRANS_PWR_RPTING_EVT
+     */
+    struct ble_trans_power_report_evt {
+        esp_bt_status_t status;      /*!< Indicate esp_ble_gap_read_remote_transmit_power_level() command success, status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;        /*!< The ACL connection identifier */
+        uint8_t reason;              /*!< indicate why the event was sent and the device whose transmit power level is being reported
+                                          0x00: Local transmit power changed
+                                          0x01: Remote transmit power changed
+                                          0x02: esp_ble_gap_read_remote_transmit_power_level() command completed,
+                                          In this case, the phy, tx_power_level, tx_power_level_flag and delta parameters shall refer to the remote device */
+        esp_ble_tx_power_phy_t phy; /*!< 1M, 2M, Coded S2 or Coded S8 phy
+                                          0x01: LE 1M PHY
+                                          0x02: LE 2M PHY
+                                          0x03: LE Coded PHY with S=8 data coding
+                                          0x04: LE Coded PHY with S=2 data coding */
+        int8_t tx_power_level;      /*!< Transmit power level, range: -127 to 20, units: dBm
+                                          0x7E: Remote device is not managing power levels on this PHY
+                                          0x7F: Transmit power level is not available */
+        uint8_t tx_power_level_flag; /*!< whether the transmit power level that is being reported has reached its minimum and/or maximum level */
+        int8_t delta;                /*!< Change in transmit power level (positive indicates increased power, negative indicates decreased power, zero indicates unchanged) Units: dB.
+                                          0x7F: Change is not available or is out of range */
+    } trans_power_report_evt;        /*!< Event parameter of ESP_GAP_BLE_TRANS_PWR_RPTING_EVT */
+
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2809,6 +2928,74 @@ esp_err_t esp_ble_gap_set_csa_support(uint8_t csa_select);
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_set_vendor_event_mask(uint32_t event_mask);
+
+/**
+ * @brief           This function is used to read the current and maximum transmit power levels of the local Controller.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identified.
+ * @param[in]       phy: 1M, 2M, Coded S2 or Coded S8.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_enhanced_read_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy);
+
+/**
+ * @brief           This function is used to read the transmit power level used by the remote Controller on the ACL connection.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       phy: 1M, 2M, Coded S2 or Coded S8.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_read_remote_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy);
+
+/**
+ * @brief           This function is used to set the path loss threshold reporting parameters.
+ *
+ *
+ * @param[in]       path_loss_rpt_params: The path loss threshold reporting parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_path_loss_reporting_params(esp_ble_path_loss_rpt_params_t *path_loss_rpt_params);
+
+/**
+ * @brief           This function is used to enable or disable path loss reporting.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       enable: Reporting disabled or enabled.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_path_loss_reporting_enable(uint16_t conn_handle, bool enable);
+
+/**
+ * @brief           This function is used to enable or disable the reporting to the local Host of transmit power level changes in the local and remote Controllers.
+ *
+ *
+ * @param[in]       conn_handle: The ACL connection identifier.
+ * @param[in]       local_enable: Disable or enable local transmit power reports.
+ * @param[in]       remote_enable: Disable or enable remote transmit power reports.
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_transmit_power_reporting_enable(uint16_t conn_handle, bool local_enable, bool remote_enable);
+
 
 #ifdef __cplusplus
 }

@@ -1461,6 +1461,13 @@ config BT_BLE_FEAT_CTE_CONNECTION_EN
     help
         Transmission of CTE by ACL connection
 
+config BT_BLE_FEAT_POWER_CONTROL
+    bool "Enable BLE power control feature"
+    depends on (BT_BLE_50_FEATURES_SUPPORTED && ((BT_CONTROLLER_ENABLED && SOC_BLE_POWER_CONTROL_SUPPORTED) || BT_CONTROLLER_DISABLED)) # NOERROR
+    default n
+    help
+        Enable BLE power control feature
+
 config BT_BLE_HIGH_DUTY_ADV_INTERVAL
     bool "Enable BLE high duty advertising interval feature"
     depends on BT_BLE_ENABLED

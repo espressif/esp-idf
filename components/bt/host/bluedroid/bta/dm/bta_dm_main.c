@@ -330,6 +330,13 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
     bta_dm_ble_read_cte_ant_infor, /* BTA_DM_API_CTE_READ_ANTENNA_INFOR */
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    bta_dm_api_enh_read_trans_power_level, /* BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL */
+    bta_dm_api_read_rem_trans_power_level, /* BTA_DM_API_READ_REM_TRANS_POWER_LEVEL */
+    bta_dm_api_set_path_loss_report_params, /* BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS */
+    bta_dm_api_set_path_loss_reporting_en, /* BTA_DM_API_SET_PATH_LOSS_REPORTING_EN */
+    bta_dm_api_set_trans_power_reporting_en, /* BTA_DM_API_SET_TRANS_POWER_REPORTING_EN */
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 };
 
 

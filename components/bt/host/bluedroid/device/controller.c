@@ -31,11 +31,7 @@
 #include "osi/future.h"
 #include "config/stack_config.h"
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
-#if (BLE_FEAT_ISO_EN == TRUE)
-const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x02\xff\xff\xff\xff" };
-#else
-const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\xff\xff\xff" };
-#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x03\xff\xff\xff\xff" };
 #else
 const bt_event_mask_t BLE_EVENT_MASK = { "\x00\x00\x00\x00\x00\x00\x06\x7f" };
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

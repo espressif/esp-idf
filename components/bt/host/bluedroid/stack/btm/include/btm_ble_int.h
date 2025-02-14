@@ -598,6 +598,12 @@ void btm_ble_connless_iq_report_evt(tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT *params)
 void btm_ble_conn_iq_report_evt(tBTM_BLE_CTE_CONN_IQ_REPORT_EVT *params);
 void btm_ble_cte_req_failed_evt(tBTM_BLE_CTE_REQ_FAILED_EVT *params);
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void btm_ble_path_loss_threshold_evt(tBTM_BLE_PATH_LOSS_THRESHOLD_EVT *params);
+void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 /*
 #ifdef __cplusplus
 }

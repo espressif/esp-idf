@@ -1539,3 +1539,127 @@ void btm_ble_periodic_adv_sync_trans_recv_evt(tBTM_BLE_PERIOD_ADV_SYNC_TRANS_REC
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT, &cb_params);
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTM_BleEnhReadTransPowerLevel(uint16_t conn_handle, uint8_t phy)
+{
+    btsnd_hcic_ble_enh_read_trans_power_level(conn_handle, phy);
+}
+
+void BTM_BleReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy)
+{
+    btsnd_hcic_ble_read_remote_trans_power_level(conn_handle, phy);
+}
+
+void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_path_loss_rpt_params(conn_handle, high_threshold, high_hysteresis, low_threshold, low_hysteresis, min_time_spent)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.path_loss_rpting_params.status = status;
+    cb_params.path_loss_rpting_params.conn_handle = conn_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT, &cb_params);
+}
+
+void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_path_loss_rpt_enable(conn_handle, enable)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.path_loss_rpting_enable.status = status;
+    cb_params.path_loss_rpting_enable.conn_handle = conn_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT, &cb_params);
+}
+
+void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_trans_pwr_rpt_enable(conn_handle, local_enable, remote_enable)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.trans_pwr_rpting_enable.status = status;
+    cb_params.trans_pwr_rpting_enable.conn_handle = conn_handle;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT, &cb_params);
+}
+
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p)
+{
+    uint8_t hci_status;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    STREAM_TO_UINT8(hci_status, p);
+    STREAM_TO_UINT16(cb_params.enh_trans_pwr_level_cmpl.conn_handle, p);
+    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.phy, p);
+    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.cur_tx_pwr_level, p);
+    STREAM_TO_UINT8(cb_params.enh_trans_pwr_level_cmpl.max_tx_pwr_level, p);
+
+    if(hci_status != HCI_SUCCESS) {
+        hci_status = BTM_HCI_ERROR | hci_status;
+        BTM_TRACE_ERROR("%s error status %d", __func__, hci_status);
+    }
+    cb_params.enh_trans_pwr_level_cmpl.status = hci_status;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT, &cb_params);
+}
+
+void btm_read_remote_trans_pwr_level_cmpl(UINT8 status)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status != HCI_SUCCESS) {
+        status = (status | BTM_HCI_ERROR);
+    }
+
+    cb_params.remote_pwr_level_cmpl.status = status;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT, &cb_params);
+}
+
+void btm_ble_path_loss_threshold_evt(tBTM_BLE_PATH_LOSS_THRESHOLD_EVT *params)
+{
+    if (!params) {
+        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    // If the user has register the callback function, should callback it to the application.
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params)
+{
+    if (!params) {
+        BTM_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    if (params->status != HCI_SUCCESS) {
+        params->status = (params->status | BTM_HCI_ERROR);
+    }
+
+    // If the user has register the callback function, should callback it to the application.
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)

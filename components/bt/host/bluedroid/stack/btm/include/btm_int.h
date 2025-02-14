@@ -1121,6 +1121,11 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
 void btm_ble_periodic_adv_sync_trans_complete(UINT16 op_code, UINT8 hci_status, UINT16 conn_handle);
 #endif
 void btm_ble_big_sync_terminate_complete(UINT8 hci_status, UINT8 big_handle);
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p);
+void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 /* Internal functions provided by btm_sco.c
 ********************************************
 */

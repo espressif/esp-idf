@@ -3026,6 +3026,79 @@ void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_
     }
 }
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTA_DmBleGapEnhReadTransPwrLevel(uint16_t conn_handle, uint8_t phy)
+{
+    tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL *)osi_malloc(sizeof(tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL;
+        p_msg->conn_handle = conn_handle;
+        p_msg->phy = phy;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy)
+{
+    tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL *)osi_malloc(sizeof(tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_READ_REM_TRANS_POWER_LEVEL;
+        p_msg->conn_handle = conn_handle;
+        p_msg->phy = phy;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent)
+{
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS;
+        p_msg->conn_handle = conn_handle;
+        p_msg->high_threshold = high_threshold;
+        p_msg->high_hysteresis = high_hysteresis;
+        p_msg->low_threshold = low_threshold;
+        p_msg->low_hysteresis = low_hysteresis;
+        p_msg->min_time_spent = min_time_spent;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable)
+{
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_PATH_LOSS_REPORTING_EN;
+        p_msg->conn_handle = conn_handle;
+        p_msg->enable = enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable)
+{
+    tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_TRANS_POWER_REPORTING_EN;
+        p_msg->conn_handle = conn_handle;
+        p_msg->local_enable = local_enable;
+        p_msg->remote_enable = remote_enable;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

@@ -122,6 +122,13 @@ typedef enum {
     BTC_GAP_BLE_SET_PRIVACY_MODE,
     BTC_GAP_BLE_SET_CSA_SUPPORT,
     BTC_GAP_BLE_ACT_SET_VENDOR_EVT_MASK,
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    BTC_GAP_BLE_ENH_READ_TRANS_POWER_LEVEL,
+    BTC_GAP_BLE_READ_REM_TRANS_POWER_LEVEL,
+    BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS,
+    BTC_GAP_BLE_SET_PATH_LOSS_REPORTING_EN,
+    BTC_GAP_BLE_SET_TRANS_POWER_REPORTING_EN,
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -457,6 +464,38 @@ typedef union {
         uint8_t phy;
         uint8_t modulation_index;
     } dtm_enh_rx_start;
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    // BTC_GAP_BLE_ENH_READ_TRANS_POWER_LEVEL
+    struct enh_read_trans_pwr_level_args {
+        uint8_t conn_handle;
+        uint8_t phy;
+    } enh_read_trans_pwr_level;
+    // BTC_GAP_BLE_READ_REM_TRANS_POWER_LEVEL
+    struct read_rem_trans_pwr_level_args {
+        uint8_t conn_handle;
+        uint8_t phy;
+    } read_rem_trans_pwr_level;
+    // BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS
+    struct set_path_loss_rpt_params_args {
+        uint16_t conn_handle;
+        uint8_t high_threshold;
+	    uint8_t high_hysteresis;
+	    uint8_t low_threshold;
+	    uint8_t low_hysteresis;
+	    uint16_t min_time_spent;
+    } set_path_loss_rpt_params;
+    // BTC_GAP_BLE_SET_PATH_LOSS_REPORTING_EN
+    struct set_path_loss_rpt_en_args {
+        uint16_t conn_handle;
+        uint8_t enable;
+    } set_path_loss_rpt_en;
+    // BTC_GAP_BLE_SET_TRANS_POWER_REPORTING_EN
+    struct set_trans_pwr_rpting_en_args {
+        uint16_t conn_handle;
+        uint8_t local_enable;
+        uint8_t remote_enable;
+    } set_trans_pwr_rpting_en;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
