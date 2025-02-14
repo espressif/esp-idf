@@ -105,7 +105,7 @@ static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 cha
 #ifdef CONFIG_SUPPLICANT_TASK
 static void btm_rrm_task(void *pvParameters)
 {
-	supplicant_event_t *evt;
+	supplicant_event_t evt;
 	bool task_del = false;
 
 	while(1) {
@@ -113,15 +113,14 @@ static void btm_rrm_task(void *pvParameters)
 			continue;
 
 		/* event validation failed */
-		if (evt->id >= SIG_SUPPLICANT_MAX) {
-			os_free(evt);
+		if (evt.id >= SIG_SUPPLICANT_MAX) {
 			continue;
 		}
 
-		switch (evt->id) {
+		switch (evt.id) {
 		case SIG_SUPPLICANT_RX_ACTION:
 		{
-			struct ieee_mgmt_frame *frm = (struct ieee_mgmt_frame *)evt->data;
+			struct ieee_mgmt_frame *frm = (struct ieee_mgmt_frame *)evt.data;
 			mgmt_rx_action(frm->payload, frm->len, frm->sender, frm->rssi, frm->channel);
 			os_free(frm);
 			break;
@@ -136,8 +135,6 @@ static void btm_rrm_task(void *pvParameters)
 		default:
 			break;
 		}
-
-		os_free(evt);
 
 		if (task_del)
 			break;
@@ -798,13 +795,9 @@ cleanup:
 #ifdef CONFIG_SUPPLICANT_TASK
 int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 {
-	supplicant_event_t *evt = os_zalloc(sizeof(supplicant_event_t));
-	if (!evt) {
-		wpa_printf(MSG_ERROR, "Failed to allocated memory");
-		return -1;
-	}
-	evt->id = evt_id;
-	evt->data = data;
+	supplicant_event_t evt;
+	evt.id = evt_id;
+	evt.data = data;
 
 	/* Make sure lock exists before taking it */
 	SUPPLICANT_API_LOCK();
@@ -812,13 +805,11 @@ int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
 	/* Make sure no event can be sent when deletion event is sent or task not initialized */
 	if (!s_supplicant_task_init_done) {
 		SUPPLICANT_API_UNLOCK();
-		os_free(evt);
 		return -1;
 	}
 
 	if (os_queue_send(s_supplicant_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
 		SUPPLICANT_API_UNLOCK();
-		os_free(evt);
 		return -1;
 	}
 	if (evt_id == SIG_SUPPLICANT_DEL_TASK) {

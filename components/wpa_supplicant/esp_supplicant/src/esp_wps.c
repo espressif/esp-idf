@@ -131,7 +131,7 @@ static void wps_rxq_deinit(void)
 #ifdef USE_WPS_TASK
 void wps_task(void *pvParameters )
 {
-    ETSEvent *e;
+    ETSEvent e;
     wps_ioctl_param_t *param;
     bool del_task = false;
 
@@ -141,32 +141,32 @@ void wps_task(void *pvParameters )
     for (;;) {
         if ( TRUE == os_queue_recv(s_wps_queue, &e, OS_BLOCK) ) {
 
-            if ( (e->sig >= SIG_WPS_ENABLE) && (e->sig < SIG_WPS_NUM) ) {
+            if ((e.sig >= SIG_WPS_ENABLE) && (e.sig < SIG_WPS_NUM)) {
                 DATA_MUTEX_TAKE();
-                if (s_wps_sig_cnt[e->sig]) {
-                    s_wps_sig_cnt[e->sig]--;
+                if (s_wps_sig_cnt[e.sig]) {
+                    s_wps_sig_cnt[e.sig]--;
                 } else {
-                    wpa_printf(MSG_ERROR, "wpsT: invalid sig cnt, sig=%" PRId32 " cnt=%d", e->sig, s_wps_sig_cnt[e->sig]);
+                    wpa_printf(MSG_ERROR, "wpsT: invalid sig cnt, sig=%" PRId32 " cnt=%d", e.sig, s_wps_sig_cnt[e.sig]);
                 }
                 DATA_MUTEX_GIVE();
             }
 
-            wpa_printf(MSG_DEBUG, "wpsT: rx sig=%" PRId32 "", e->sig);
+            wpa_printf(MSG_DEBUG, "wpsT: rx sig=%" PRId32 "", e.sig);
 
-            switch (e->sig) {
+            switch (e.sig) {
             case SIG_WPS_ENABLE:
             case SIG_WPS_DISABLE:
             case SIG_WPS_START:
-                param = (wps_ioctl_param_t *)e->par;
+                param = (wps_ioctl_param_t *)e.par;
                 if (!param) {
-                    wpa_printf(MSG_ERROR, "wpsT: invalid param sig=%" PRId32 "", e->sig);
+                    wpa_printf(MSG_ERROR, "wpsT: invalid param sig=%" PRId32 "", e.sig);
                     os_semphr_give(s_wps_api_sem);
                     break;
                 }
 
-                if (e->sig == SIG_WPS_ENABLE) {
+                if (e.sig == SIG_WPS_ENABLE) {
                     param->ret = wifi_wps_enable_internal((esp_wps_config_t *)(param->arg));
-                } else if (e->sig == SIG_WPS_DISABLE) {
+                } else if (e.sig == SIG_WPS_DISABLE) {
                     DATA_MUTEX_TAKE();
                     param->ret = wifi_wps_disable_internal();
                     del_task = true;
@@ -210,10 +210,9 @@ void wps_task(void *pvParameters )
                 break;
 
             default:
-                wpa_printf(MSG_ERROR, "wpsT: invalid sig=%" PRId32 "", e->sig);
+                wpa_printf(MSG_ERROR, "wpsT: invalid sig=%" PRId32 "", e.sig);
                 break;
             }
-            os_free(e);
 
             if (del_task) {
                 wpa_printf(MSG_DEBUG, "wpsT: delete task");
@@ -230,39 +229,30 @@ void wps_task(void *pvParameters )
 int wps_post(uint32_t sig, uint32_t par)
 {
     wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " cnt=%d", sig, s_wps_sig_cnt[sig]);
-
-    DATA_MUTEX_TAKE();
+    ETSEvent evt;
 
     if (!s_wps_task_hdl) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " failed as wps task has been deinited", sig);
-        DATA_MUTEX_GIVE();
         return ESP_FAIL;
     }
+    DATA_MUTEX_TAKE();
     if (s_wps_sig_cnt[sig]) {
         wpa_printf(MSG_DEBUG, "wps post: sig=%" PRId32 " processing", sig);
         DATA_MUTEX_GIVE();
         return ESP_OK;
-    } else {
-        ETSEvent *evt = (ETSEvent *)os_malloc(sizeof(ETSEvent));
+    }
 
-        if (evt == NULL) {
-            wpa_printf(MSG_ERROR, "WPS: E N M");
-            DATA_MUTEX_GIVE();
-            return ESP_FAIL;
-        }
+    s_wps_sig_cnt[sig]++;
+    evt.sig = sig;
+    evt.par = par;
+    DATA_MUTEX_GIVE();
 
-        s_wps_sig_cnt[sig]++;
-        evt->sig = sig;
-        evt->par = par;
+    if (os_queue_send(s_wps_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
+        wpa_printf(MSG_ERROR, "WPS: Q S E");
+        DATA_MUTEX_TAKE();
+        s_wps_sig_cnt[sig]--;
         DATA_MUTEX_GIVE();
-
-        if (os_queue_send(s_wps_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
-            wpa_printf(MSG_ERROR, "WPS: Q S E");
-            DATA_MUTEX_TAKE();
-            s_wps_sig_cnt[sig]--;
-            DATA_MUTEX_GIVE();
-            return ESP_FAIL;
-        }
+        return ESP_FAIL;
     }
     return ESP_OK;
 }
