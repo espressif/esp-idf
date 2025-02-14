@@ -1,11 +1,16 @@
 menu "HTTP Server"
 
+
     config HTTPD_MAX_REQ_HDR_LEN
-        int "Max HTTP Request Header Length"
-        default 512
+        int "HTTP Request Header Length limit"
+        default 1024
+        range 128 65536
         help
-            This sets the maximum supported size of headers section in HTTP request packet to be processed by the
-            server
+            This sets the default limit for the HTTP request header length. The limit can be
+            configured at run time by setting max_req_hdr_len member of httpd_config_t structure.
+            The memory allocated will depend on the actual header length. Hence keeping a sufficiently
+            large max header length is recommended.
+
 
     config HTTPD_MAX_URI_LEN
         int "Max HTTP URI Length"

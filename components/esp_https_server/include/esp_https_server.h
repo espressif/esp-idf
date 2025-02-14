@@ -150,6 +150,8 @@ typedef struct httpd_ssl_config httpd_ssl_config_t;
         .stack_size         = 10240,              \
         .core_id            = tskNO_AFFINITY,     \
         .task_caps          = (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT),       \
+        .max_req_hdr_len    = CONFIG_HTTPD_MAX_REQ_HDR_LEN,    \
+        .max_uri_len        = CONFIG_HTTPD_MAX_URI_LEN,        \
         .server_port        = 0,                  \
         .ctrl_port   = ESP_HTTPD_DEF_CTRL_PORT+1, \
         .max_open_sockets   = 4,                  \

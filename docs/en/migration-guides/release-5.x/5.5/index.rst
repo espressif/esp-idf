@@ -8,3 +8,4 @@ Migration from 5.4 to 5.5
 
     system
     peripherals
+    protocols

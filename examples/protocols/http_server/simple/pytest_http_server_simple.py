@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -49,11 +49,6 @@ class http_client_thread(threading.Thread):
         threading.Thread.join(self)
         if self.exc:
             raise socket.timeout
-
-
-# When running on local machine execute the following before running this script
-# > make app bootloader
-# > make print_flash_cmd | tail -n 1 > build/download.config
 
 
 @pytest.mark.esp32
