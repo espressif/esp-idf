@@ -154,7 +154,7 @@ It is possible to set authentication parameters through the :cpp:class:`authenti
 
  * :cpp:member:`password <esp_mqtt_client_config_t::credentials_t::authentication_t::password>`: use a password by setting
  * :cpp:member:`certificate <esp_mqtt_client_config_t::credentials_t::authentication_t::certificate>` and :cpp:member:`key <esp_mqtt_client_config_t::credentials_t::authentication_t::key>`: mutual authentication with TLS, and both can be provided in PEM or DER format
- * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element (ATECC608A) interfaced to ESP32
+ * :cpp:member:`use_secure_element <esp_mqtt_client_config_t::credentials_t::authentication_t::use_secure_element>`: use secure element (ATECC608A) interfaced to ESP32 series
  * :cpp:member:`ds_data <esp_mqtt_client_config_t::credentials_t::authentication_t::ds_data>`: use Digital Signature Peripheral available in some Espressif devices
 
 Session

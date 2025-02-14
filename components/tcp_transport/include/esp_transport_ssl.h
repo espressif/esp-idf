@@ -166,7 +166,7 @@ void esp_transport_ssl_set_common_name(esp_transport_handle_t t, const char *com
 /**
  * @brief      Set the ssl context to use secure element (atecc608a) for client(device) private key and certificate
  *
- * @note       Recommended to be used with ESP32 interfaced to ATECC608A based secure element
+ * @note       Recommended to be used with ESP32 series interfaced to ATECC608A based secure element
  *
  * @param      t     ssl transport
  */
