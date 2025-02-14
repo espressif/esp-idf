@@ -86,6 +86,7 @@ typedef struct {
     uint8_t huffbits[2][2][JPEG_HUFFMAN_BITS_LEN_TABLE_LEN];    // Huffman bit distribution tables [id][dcac]
     uint8_t huffcode[2][2][JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];    // Huffman decoded data tables [id][dcac]
     uint32_t tmp_huff[JPEG_HUFFMAN_AC_VALUE_TABLE_LEN];         // temp buffer to store huffman code
+    bool dht_marker;                                            // If we have Huffman table present in header
     uint16_t ri;                                                // Restart interval
 } jpeg_dec_header_info_t;
 
