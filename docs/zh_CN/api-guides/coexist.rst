@@ -15,32 +15,32 @@ RF 共存
 
   .. table:: 表 1  Wi-Fi 和 BLE 共存支持功能
 
-      +-------+--------+-----------+-----+------------+-----------+----------+
-      |                            |BLE                                      |
-      +                            +-----+------------+-----------+----------+
-      |                            |Scan |Advertising |Connecting |Connected |
-      +-------+--------+-----------+-----+------------+-----------+----------+
-      | Wi-Fi |STA     |Scan       |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connecting |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connected  |Y    |Y           |Y          |Y         |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |SOFTAP  |TX Beacon  |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connecting |C1   |C1          |C1         |C1        |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connected  |C1   |C1          |C1         |C1        |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |Sniffer |RX         |C1   |C1          |C1         |C1        |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |ESP-NOW |RX         |S    |S           |S          |S         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |TX         |Y    |Y           |Y          |Y         |
-      +-------+--------+-----------+-----+------------+-----------+----------+
+      +-------+--------+-----------+-----+------------+----------+
+      |                            |BLE                          |
+      +                            +-----+------------+----------+
+      |                            |Scan |Advertising |Connected |
+      +-------+--------+-----------+-----+------------+----------+
+      | Wi-Fi |STA     |Scan       |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connecting |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connected  |Y    |Y           |Y         |
+      +       +--------+-----------+-----+------------+----------+
+      |       |SOFTAP  |TX Beacon  |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connecting |C1   |C1          |C1        |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connected  |C1   |C1          |C1        |
+      +       +--------+-----------+-----+------------+----------+
+      |       |Sniffer |RX         |C1   |C1          |C1        |
+      +       +--------+-----------+-----+------------+----------+
+      |       |ESP-NOW |RX         |S    |S           |S         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |TX         |Y    |Y           |Y         |
+      +-------+--------+-----------+-----+------------+----------+
 
 
-.. only:: esp32
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED
 
   .. table:: 表 2  Wi-Fi 和经典蓝牙 (BT) 共存支持功能
 
@@ -71,10 +71,12 @@ RF 共存
 
 .. note::
 
-  Y：支持且性能稳定。
-  C1：不能保证性能处于稳定状态。
-  X：不支持。
-  S：在STA模式下支持且性能稳定，否则不支持。
+  .. list::
+
+    - Y：支持且性能稳定。
+    - C1：不能保证性能处于稳定状态。
+    - X：不支持。
+    :SOC_WIFI_SUPPORTED: - S：在 STA 模式下支持且性能稳定，否则不支持。
 
 
 共存机制与策略
@@ -117,42 +119,45 @@ RF 共存
 共存策略
 ^^^^^^^^^^^^^^
 
-共存周期和时间片
-"""""""""""""""""""
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
-.. only:: esp32
+  共存周期和时间片
+  """""""""""""""""""
 
-  Wi-Fi、BT、BLE 三者对于 RF 的使用，主要是按照时间片来划分的。在一个共存周期内，按照 Wi-Fi、BT、BLE 的顺序划分时间片。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，同理，BT/BLE 在自己的时间片内会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
+  .. only:: SOC_BLE_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED
 
-
-.. only:: SOC_WIFI_SUPPORTED and SOC_BLE_SUPPORTED and not esp32
-
-  Wi-Fi、BLE 二者对于 RF 的使用，主要是按照时间片来划分的。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，在 Bluetooth 的时间片内，BLE 会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
+    Wi-Fi、BT、BLE 三者对于 RF 的使用，主要是按照时间片来划分的。在一个共存周期内，按照 Wi-Fi、BT、BLE 的顺序划分时间片。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，同理，BT/BLE 在自己的时间片内会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
 
-.. list::
+  .. only:: not SOC_BT_CLASSIC_SUPPORTED
 
-  :esp32: 1) IDLE 状态：BT 和 BLE 共存由 Bluetooth 模块控制。
-  :SOC_WIFI_SUPPORTED and SOC_BLE_SUPPORTED and not esp32: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
-  #) CONNECTED 状态：共存周期以目标信标传输时间 (Target Beacon Transmission Time, TBTT) 点为起始点，周期大于 100 ms。
-  #) SCAN 状态：Wi-Fi 时间片以及共存周期都比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
-  #) CONNECTING 状态：Wi-Fi 时间片比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
+    Wi-Fi、BLE 二者对于 RF 的使用，主要是按照时间片来划分的。在 Wi-Fi 的时间片内，Wi-Fi 会向共存仲裁模块发出较高优先级的请求，在 Bluetooth 的时间片内，BLE 会具有较高优先级。共存周期大小和各个时间片占比根据 Wi-Fi 的状态分成四类：
 
+  .. list::
 
-共存逻辑会根据当前 Wi-Fi 和 Bluetooth 的使用场景来选取不同的共存周期和共存时间片的划分策略。对应一个使用场景的共存策略，我们称之为“共存模板”。比如，Wi-Fi CONNECTED 与 BLE CONNECTED 的场景，就对应有一个共存模板。在这个共存模板中，一个共存周期内 Wi-Fi 和 BLE 的时间片各占 50%，时间分配如下图所示：
-
-.. figure:: ../../_static/coexist_wifi_connected_and_ble_connected_time_slice.png
-    :align: center
-    :alt: Wi-Fi CONNECTED 和 BLE CONNECTED 状态下时间片划分图
-    :figclass: align-center
-
-    Wi-Fi CONNECTED 和 BLE CONNECTED 共存状态下时间片划分图
+    :SOC_BLE_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED: 1) IDLE 状态：BT 和 BLE 共存由 Bluetooth 模块控制。
+    :not SOC_BT_CLASSIC_SUPPORTED: 1) IDLE 状态：RF 模块由 Bluetooth 模块控制。
+    #) CONNECTED 状态：共存周期以目标信标传输时间 (Target Beacon Transmission Time, TBTT) 点为起始点，周期大于 100 ms。
+    #) SCAN 状态：Wi-Fi 时间片以及共存周期都比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
+    #) CONNECTING 状态：Wi-Fi 时间片比在 CONNECTED 状态下的长。为了确保蓝牙的性能，蓝牙的时间片也会做相应的调整。
 
 
-动态优先级
-"""""""""""""""""""
+  共存逻辑会根据当前 Wi-Fi 和 Bluetooth 的使用场景来选取不同的共存周期和共存时间片的划分策略。对应一个使用场景的共存策略，我们称之为“共存模板”。比如，Wi-Fi CONNECTED 与 BLE CONNECTED 的场景，就对应有一个共存模板。在这个共存模板中，一个共存周期内 Wi-Fi 和 BLE 的时间片各占 50%，时间分配如下图所示：
 
-共存模块对 Wi-Fi 和 Bluetooth 不同的状态赋予其不同的优先级。每种状态下的优先级并不是一成不变的，例如每 N 个广播事件 (Advertising event) 中会有一个广播事件使用高优先级。如果高优先级的广播事件发生在 Wi-Fi 时间片内，RF 的使用权可能会被 BLE 抢占。
+  .. figure:: ../../_static/coexist_wifi_connected_and_ble_connected_time_slice.png
+      :align: center
+      :alt: Wi-Fi CONNECTED 和 BLE CONNECTED 状态下时间片划分图
+      :figclass: align-center
+
+      Wi-Fi CONNECTED 和 BLE CONNECTED 共存状态下时间片划分图
+
+
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
+
+  动态优先级
+  """""""""""""""""""
+
+  共存模块为每个模块的不同状态分配不同的优先级。每种状态下的优先级并不是一成不变的，例如对于 BLE，每 N 个广播事件 (Advertising event) 中会有一个广播事件使用高优先级。如果高优先级的广播事件发生在 Wi-Fi 时间片内，RF 的使用权可能会被 BLE 抢占。
 
 .. only:: SOC_WIFI_SUPPORTED
 
