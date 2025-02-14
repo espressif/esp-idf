@@ -674,12 +674,14 @@ void IRAM_ATTR call_start_cpu0(void)
 
     // Read the application binary image header. This will also decrypt the header if the image is encrypted.
     __attribute__((unused)) esp_image_header_t fhdr = {0};
-#if CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#if CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
     fhdr.spi_mode = ESP_IMAGE_SPI_MODE_DIO;
     fhdr.spi_speed = ESP_IMAGE_SPI_SPEED_DIV_2;
     fhdr.spi_size = ESP_IMAGE_FLASH_SIZE_4MB;
 
     bootloader_flash_unlock();
+#endif
 #else
     // We can access the image header through the cache by reading from the memory-mapped virtual DROM start offset
     uint32_t fhdr_src_addr = (uint32_t)(&_rodata_reserved_start) - sizeof(esp_image_header_t) - sizeof(esp_image_segment_header_t);
@@ -688,9 +690,7 @@ void IRAM_ATTR call_start_cpu0(void)
         ESP_EARLY_LOGE(TAG, "Invalid app image header");
         abort();
     }
-
-
-#endif // CONFIG_APP_BUILD_TYPE_RAM && !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+#endif // CONFIG_APP_BUILD_TYPE_RAM
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
 #if CONFIG_IDF_TARGET_ESP32
