@@ -162,6 +162,8 @@ esp_err_t jpeg_parse_dht_marker(jpeg_dec_header_info_t *header_info)
         num_left -= (1 + JPEG_HUFFMAN_BITS_LEN_TABLE_LEN + np);
     }
 
+    // Record, that Huffman table present in JPEG header
+    header_info->dht_marker = true;
     return ESP_OK;
 }
 
