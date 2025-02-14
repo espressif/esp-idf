@@ -10,6 +10,7 @@
  * The XIP PSRAM is done by CPU copy, v1(see mmu_psram_flash.c) is done by Cache copy
  */
 
+#include <stdbool.h>
 #include <sys/param.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -84,9 +85,30 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
 #endif //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+/* As heap memory is allocated in 4-byte aligned manner, we need to align the instruction to 4-byte boundary */
+#define INSTRUCTION_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4)
+/* The end of the instruction is aligned to CONFIG_MMU_PAGE_SIZE boundary as the flash instruction is mapped to PSRAM */
+#define INSTRUCTION_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE)
+
 size_t mmu_psram_get_text_segment_length(void)
 {
     return ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
+}
+
+void mmu_psram_get_instruction_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
+{
+    // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
+    // Or create a new region from (uint32_t)&_instruction_reserved_end to ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, 4) as only byte-accessible
+    *gap_start = INSTRUCTION_ALIGNMENT_GAP_START;
+    *gap_end = INSTRUCTION_ALIGNMENT_GAP_END;
+}
+
+bool IRAM_ATTR mmu_psram_check_ptr_addr_in_instruction_alignment_gap(const void *p)
+{
+    if ((intptr_t)p >= INSTRUCTION_ALIGNMENT_GAP_START && (intptr_t)p < INSTRUCTION_ALIGNMENT_GAP_END) {
+        return true;
+    }
+    return false;
 }
 
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
@@ -126,6 +148,27 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 size_t mmu_psram_get_rodata_segment_length(void)
 {
     return ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
+}
+
+/* As heap memory is allocated in 4-byte aligned manner, we need to align the rodata to 4-byte boundary */
+#define RODATA_ALIGNMENT_GAP_START ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4)
+/* The end of the rodata is aligned to CONFIG_MMU_PAGE_SIZE boundary as the flash rodata is mapped to PSRAM */
+#define RODATA_ALIGNMENT_GAP_END ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE)
+
+void mmu_psram_get_rodata_alignment_gap_info(uint32_t *gap_start, uint32_t *gap_end)
+{
+    // As we need the memory to start with word aligned address, max virtual space that could be wasted = 3 bytes
+    // Or create a new region from (uint32_t)&_rodata_reserved_end to ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, 4) as only byte-accessible
+    *gap_start = RODATA_ALIGNMENT_GAP_START;
+    *gap_end = RODATA_ALIGNMENT_GAP_END;
+}
+
+bool IRAM_ATTR mmu_psram_check_ptr_addr_in_rodata_alignment_gap(const void *p)
+{
+    if ((intptr_t)p >= RODATA_ALIGNMENT_GAP_START && (intptr_t)p < RODATA_ALIGNMENT_GAP_END) {
+        return true;
+    }
+    return false;
 }
 
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
