@@ -207,7 +207,7 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
-    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // Ensure no other output signal is routed via GPIO matrix to this pin
+    gpio_hal_set_output_enable_ctrl(gpio_context.gpio_hal, gpio_num, false, false); // so that output disable could take effect
     return ESP_OK;
 }
 
@@ -836,15 +836,16 @@ esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx)
 // Deprecated function
 void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
 {
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+    (void)out_en_inv; // out_en_inv only takes effect when signal goes through gpio matrix to the IO
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
 }
 
-esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func, bool out_en_inv)
+esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func)
 {
     GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
 
     portENTER_CRITICAL(&gpio_context.gpio_spinlock);
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, out_en_inv);
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
     portEXIT_CRITICAL(&gpio_context.gpio_spinlock);
 
     return ESP_OK;
@@ -1094,11 +1095,18 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         gpio_io_config_t io_config = {};
         gpio_get_io_config(gpio_num, &io_config);
 
+        // When the IO is used as a simple GPIO output, oe signal can only be controlled by the oe register
+        // When the IO is not used as a simple GPIO output, oe signal could be controlled by the peripheral
+        const char *oe_str = io_config.oe ? "1" : "0";
+        if (io_config.sig_out != SIG_GPIO_OUT_IDX && io_config.oe_ctrl_by_periph) {
+            oe_str = "[periph_sig_ctrl]";
+        }
+
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", io_config.pu, io_config.pd, (uint32_t)io_config.drv);
-        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", io_config.ie, io_config.oe, io_config.od);
+        fprintf(out_stream, "  InputEn: %d, OutputEn: %s%s, OpenDrain: %d\n", io_config.ie, oe_str, ((io_config.fun_sel == PIN_FUNC_GPIO) && (io_config.oe_inv)) ? " (inversed)" : "", io_config.od);
         fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", io_config.fun_sel, (io_config.fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
-        if (io_config.oe && io_config.fun_sel == PIN_FUNC_GPIO) {
+        if (io_config.fun_sel == PIN_FUNC_GPIO) {
             fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", io_config.sig_out, (io_config.sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
         }
         if (io_config.ie && io_config.fun_sel == PIN_FUNC_GPIO) {

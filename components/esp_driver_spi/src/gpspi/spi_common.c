@@ -445,7 +445,7 @@ static void bus_iomux_pins_set_oct(spi_host_device_t host, const spi_bus_config_
         if (io_nums[i] > 0) {
             // In Octal mode use function channel 2
             gpio_iomux_input(io_nums[i], SPI2_FUNC_NUM_OCT, io_signals[i]);
-            gpio_iomux_output(io_nums[i], SPI2_FUNC_NUM_OCT, false);
+            gpio_iomux_output(io_nums[i], SPI2_FUNC_NUM_OCT);
         }
     }
 }
@@ -455,23 +455,23 @@ static void bus_iomux_pins_set_quad(spi_host_device_t host, const spi_bus_config
 {
     if (bus_config->mosi_io_num >= 0) {
         gpio_iomux_input(bus_config->mosi_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spid_in);
-        gpio_iomux_output(bus_config->mosi_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->mosi_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->miso_io_num >= 0) {
         gpio_iomux_input(bus_config->miso_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiq_in);
-        gpio_iomux_output(bus_config->miso_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->miso_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->quadwp_io_num >= 0) {
         gpio_iomux_input(bus_config->quadwp_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiwp_in);
-        gpio_iomux_output(bus_config->quadwp_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->quadwp_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->quadhd_io_num >= 0) {
         gpio_iomux_input(bus_config->quadhd_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spihd_in);
-        gpio_iomux_output(bus_config->quadhd_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->quadhd_io_num, spi_periph_signal[host].func);
     }
     if (bus_config->sclk_io_num >= 0) {
         gpio_iomux_input(bus_config->sclk_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spiclk_in);
-        gpio_iomux_output(bus_config->sclk_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(bus_config->sclk_io_num, spi_periph_signal[host].func);
     }
 }
 
@@ -733,7 +733,7 @@ void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, 
     if (!force_gpio_matrix && cs_io_num == spi_periph_signal[host].spics0_iomux_pin && cs_num == 0) {
         //The cs0s for all SPI peripherals map to pin mux source 1, so we use that instead of a define.
         gpio_iomux_input(cs_io_num, spi_periph_signal[host].func, spi_periph_signal[host].spics_in);
-        gpio_iomux_output(cs_io_num, spi_periph_signal[host].func, false);
+        gpio_iomux_output(cs_io_num, spi_periph_signal[host].func);
     } else {
         //Use GPIO matrix
         if (GPIO_IS_VALID_OUTPUT_GPIO(cs_io_num)) {

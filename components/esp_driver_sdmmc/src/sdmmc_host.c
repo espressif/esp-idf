@@ -562,7 +562,7 @@ static void configure_pin_iomux(uint8_t gpio_num)
 
     gpio_pulldown_dis(gpio_num);
     gpio_input_enable(gpio_num);
-    gpio_iomux_output(gpio_num, SDMMC_LL_IOMUX_FUNC, false);
+    gpio_iomux_output(gpio_num, SDMMC_LL_IOMUX_FUNC);
     gpio_set_drive_capability(gpio_num, 3);
 }
 

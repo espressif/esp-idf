@@ -38,9 +38,9 @@ void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uin
     gpio_ll_func_sel(hal->dev, gpio_num, func);
 }
 
-void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func, bool oen_inv)
+void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func)
 {
-    gpio_ll_set_output_enable_ctrl(hal->dev, gpio_num, true, oen_inv);
+    gpio_ll_set_output_enable_ctrl(hal->dev, gpio_num, true, false);
     gpio_ll_func_sel(hal->dev, gpio_num, func);
 }
 

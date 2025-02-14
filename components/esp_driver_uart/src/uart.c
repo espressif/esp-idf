@@ -686,7 +686,7 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
         if (upin->input) {
             gpio_iomux_input(io_num, upin->iomux_func, upin->signal);
         } else {
-            gpio_iomux_output(io_num, upin->iomux_func, false);
+            gpio_iomux_output(io_num, upin->iomux_func);
         }
     }
 #if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)

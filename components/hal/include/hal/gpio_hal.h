@@ -161,6 +161,16 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
 #define gpio_hal_output_enable(hal, gpio_num) gpio_ll_output_enable((hal)->dev, gpio_num)
 
 /**
+  * @brief Configure the source of output enable signal for the GPIO pin.
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False
+  */
+#define gpio_hal_set_output_enable_ctrl(hal, gpio_num, ctrl_by_periph, oen_inv) gpio_ll_set_output_enable_ctrl((hal)->dev, gpio_num, ctrl_by_periph, oen_inv)
+
+/**
   * @brief Disable open-drain mode on GPIO.
   *
   * @param hal Context of the HAL layer
@@ -364,9 +374,8 @@ void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uin
   * @param gpio_num GPIO number of the pad.
   * @param func The index number of the IOMUX function to be selected for the pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
- void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func, bool oen_inv);
+ void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func);
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**
