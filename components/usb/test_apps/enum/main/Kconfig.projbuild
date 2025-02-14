@@ -1,0 +1,10 @@
+menu "ENUM:: test configuration"
+
+    config TINYUSB_DEBUG_LEVEL
+        int "TinyUSB log level (0-3)"
+        default 1
+        range 0 3
+        help
+            Specify verbosity of TinyUSB log output.
+
+endmenu
