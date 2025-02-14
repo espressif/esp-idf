@@ -64,7 +64,7 @@
 #ifdef CONFIG_BT_SDP_ATTR_LEN
 #define UC_SDP_MAX_ATTR_LEN                 CONFIG_BT_SDP_ATTR_LEN
 #else
-#define UC_SDP_MAX_ATTR_LEN                 400
+#define UC_SDP_MAX_ATTR_LEN                 300
 #endif
 
 //HFP(AG)
