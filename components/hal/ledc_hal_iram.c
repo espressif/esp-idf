@@ -39,7 +39,6 @@ void ledc_hal_get_duty(ledc_hal_context_t *hal, ledc_channel_t channel_num, uint
 void ledc_hal_set_fade_param(const ledc_hal_context_t *hal, ledc_channel_t channel_num, uint32_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
 #if SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
-    HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
     ledc_ll_set_fade_param_range(hal->dev, hal->speed_mode, channel_num, range, dir, cycle, scale, step);
 #else // !SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED
     HAL_ASSERT(range == 0);
