@@ -133,24 +133,24 @@ config BT_SDP_COMMON_ENABLED
         This enables common SDP operation, such as SDP record creation and deletion.
 
 config BT_SDP_PAD_LEN
-    int "BT SDP attributes allocated length (bytes)"
+    int "One or more BT SDP attributes total allocated length (bytes)"
+    depends on BT_CLASSIC_ENABLED
+    default 300
+    range   BT_SDP_ATTR_LEN 1024
+    help
+        This is the total size of all SDP attributes allowed.
+        Any attributes that exceed this size are truncated.
+        The default value is 300.
+
+config BT_SDP_ATTR_LEN
+    int "Single BT SDP attribute allocated length (bytes)"
     depends on BT_CLASSIC_ENABLED
     default 300
     range   300 1024
     help
-        This is the total size of all SDP attributes allowed. 
-        Any attributes that exceed this size are truncated. 
+        This is the maximum allowed size for a single SDP attribute.
+        Any attributes that exceed this size are truncated.
         The default value is 300.
-
-config BT_SDP_ATTR_LEN
-    int "BT SDP attribute allocated length (bytes)"
-    depends on BT_CLASSIC_ENABLED
-    default 400
-    range   400 1024
-    help
-        This is the maximum allowed size for a single SDP attribute. 
-        Any attributes that exceed this size are truncated. 
-        The default value is 400.
 
 menuconfig BT_HFP_ENABLE
     bool "Hands Free/Handset Profile"
