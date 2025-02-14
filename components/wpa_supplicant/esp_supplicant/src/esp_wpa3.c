@@ -16,8 +16,11 @@
 #include "endian.h"
 #include "esp_hostap.h"
 #include <inttypes.h>
+#include "common/defs.h"
 
+#ifdef CONFIG_SAE_H2E
 static struct sae_pt *g_sae_pt;
+#endif /* CONFIG_SAE_H2E */
 static struct sae_data g_sae_data;
 static struct wpabuf *g_sae_token = NULL;
 static struct wpabuf *g_sae_commit = NULL;
@@ -28,14 +31,15 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
 {
     int default_group = IANA_SECP256R1;
     u32 len = 0;
-    uint8_t use_pt = 0;
     u8 own_addr[ETH_ALEN];
     const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
-    struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
-    uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
     char sae_pwd_id[SAE_H2E_IDENTIFIER_LEN + 1] = {0};
     bool valid_pwd_id = false;
+#ifdef CONFIG_SAE_H2E
+    uint8_t sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_STA);
     const u8 *rsnxe;
+    uint8_t use_pt = 0;
+    struct wifi_ssid *ssid = esp_wifi_sta_get_prof_ssid_internal();
     u8 rsnxe_capa = 0;
 
     if (wpa_key_mgmt_sae_ext_key(gWpaSm.key_mgmt)) {
@@ -46,6 +50,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     if (rsnxe && rsnxe[1] >= 1) {
         rsnxe_capa = rsnxe[2];
     }
+#endif /* CONFIG_SAE_H2E */
 
 #ifdef CONFIG_SAE_PK
     bool use_pk = false;
@@ -63,6 +68,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         return ESP_FAIL;
     }
 #endif /* CONFIG_SAE_PK */
+#ifdef CONFIG_SAE_H2E
     if (use_pt || sae_pwe == SAE_PWE_HASH_TO_ELEMENT ||
             sae_pwe == SAE_PWE_BOTH) {
         use_pt = !!(rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
@@ -89,6 +95,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
     if (use_pt && !g_sae_pt) {
         g_sae_pt = sae_derive_pt(g_allowed_groups, ssid->ssid, ssid->len, pw, strlen((const char *)pw), valid_pwd_id ? sae_pwd_id : NULL);
     }
+#endif /* CONFIG_SAE_H2E */
 
     if (wpa_sta_cur_pmksa_matches_akm()) {
         wpa_printf(MSG_INFO, "wpa3: Skip SAE and use cached PMK instead");
@@ -120,16 +127,21 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         return ESP_FAIL;
     }
 
+#ifdef CONFIG_SAE_H2E
     if (use_pt &&
             sae_prepare_commit_pt(&g_sae_data, g_sae_pt,
                                   own_addr, bssid, NULL, NULL) < 0) {
         wpa_printf(MSG_ERROR, "wpa3: failed to prepare SAE commit!");
         return ESP_FAIL;
     }
-    if (!use_pt &&
-            sae_prepare_commit(own_addr, bssid, pw,
-                               strlen((const char *)pw),
-                               &g_sae_data) < 0) {
+#endif /* CONFIG_SAE_H2E */
+    if (
+#ifdef CONFIG_SAE_H2E
+        !use_pt &&
+#endif /* CONFIG_SAE_H2E */
+        sae_prepare_commit(own_addr, bssid, pw,
+                           strlen((const char *)pw),
+                           &g_sae_data) < 0) {
         wpa_printf(MSG_ERROR, "wpa3: failed to prepare SAE commit!");
         return ESP_FAIL;
     }
@@ -207,10 +219,12 @@ void esp_wpa3_free_sae_data(void)
         g_sae_confirm = NULL;
     }
     sae_clear_data(&g_sae_data);
+#ifdef CONFIG_SAE_H2E
     if (g_sae_pt) {
         sae_deinit_pt(g_sae_pt);
         g_sae_pt = NULL;
     }
+#endif /* CONFIG_SAE_H2E */
 }
 
 static u8 *wpa3_build_sae_msg(u8 *bssid, u32 sae_msg_type, size_t *sae_msg_len)

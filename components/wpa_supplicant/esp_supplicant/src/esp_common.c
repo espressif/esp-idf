@@ -845,3 +845,10 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 #else
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie) { }
 #endif  /* defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE) */
+
+#ifndef CONFIG_SAE_H2E
+int map_wifi_config_sae_pwe_to_supp(wifi_sae_pwe_method_t sae_pwe_config)
+{
+    return SAE_PWE_HUNT_AND_PECK;
+}
+#endif /* CONFIG_SAE_H2E */
