@@ -10,6 +10,7 @@
 #include "driver/uart.h"
 #include "esp_log.h"
 #include "esp_rom_gpio.h"
+#include "esp_private/gpio.h"
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
 #include "driver/lp_io.h"
 #include "driver/rtc_io.h"
@@ -463,6 +464,7 @@ TEST_CASE("uart int state restored after flush", "[uart]")
     /* Make sure UART's TX signal is connected to RX pin
      * This creates a loop that lets us receive anything we send on the UART */
     if (uart_num < SOC_UART_HP_NUM) {
+        gpio_func_sel(uart_rx, PIN_FUNC_GPIO);
         esp_rom_gpio_connect_out_signal(uart_rx, uart_tx_signal, false, false);
 #if SOC_UART_LP_NUM > 0
     } else {
