@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,28 @@ static inline mmu_target_t mmu_ll_vaddr_to_target(uint32_t vaddr)
     }
 
     return target;
+}
+
+/**
+ * Convert MMU virtual address to MMU ID
+ *
+ * @param vaddr    virtual address
+ *
+ * @return MMU ID
+ */
+__attribute__((always_inline))
+static inline uint32_t mmu_ll_vaddr_to_id(uint32_t vaddr)
+{
+    uint32_t id = 0;
+    if (vaddr >= SOC_DRAM_FLASH_ADDRESS_LOW && vaddr < SOC_DRAM_FLASH_ADDRESS_HIGH) {
+        id = MMU_LL_FLASH_MMU_ID;
+    } else if (vaddr >= SOC_DRAM_PSRAM_ADDRESS_LOW && vaddr < SOC_DRAM_PSRAM_ADDRESS_HIGH) {
+        id = MMU_LL_PSRAM_MMU_ID;
+    } else {
+        HAL_ASSERT(0);
+    }
+
+    return id;
 }
 
 __attribute__((always_inline)) static inline bool mmu_ll_cache_encryption_enabled(void)

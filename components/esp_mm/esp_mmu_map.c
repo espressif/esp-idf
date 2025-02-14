@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -184,13 +184,6 @@ static void s_reserve_drom_region(mem_region_t *hw_mem_regions, int region_nums)
     }
 }
 #endif  //#if CONFIG_APP_BUILD_USE_FLASH_SECTIONS
-
-#if SOC_MMU_PER_EXT_MEM_TARGET
-FORCE_INLINE_ATTR uint32_t s_get_mmu_id_from_target(mmu_target_t target)
-{
-    return (target == MMU_TARGET_FLASH0) ? MMU_LL_FLASH_MMU_ID : MMU_LL_PSRAM_MMU_ID;
-}
-#endif
 
 void esp_mmu_map_init(void)
 {
@@ -392,7 +385,7 @@ static void IRAM_ATTR NOINLINE_ATTR s_do_cache_invalidate(uint32_t vaddr_start, 
 FORCE_INLINE_ATTR uint32_t s_mapping_operation(mmu_target_t target, uint32_t vaddr_start, esp_paddr_t paddr_start, uint32_t size)
 {
     uint32_t actual_mapped_len = 0;
-    uint32_t mmu_id = s_get_mmu_id_from_target(target);
+    uint32_t mmu_id = mmu_hal_get_id_from_target(target);
     mmu_hal_map_region(mmu_id, target, vaddr_start, paddr_start, size, &actual_mapped_len);
 
     return actual_mapped_len;
@@ -598,7 +591,7 @@ err:
 FORCE_INLINE_ATTR void s_unmapping_operation(uint32_t vaddr_start, uint32_t size)
 {
     mmu_target_t target = mmu_ll_vaddr_to_target(vaddr_start);
-    uint32_t mmu_id = s_get_mmu_id_from_target(target);
+    uint32_t mmu_id = mmu_hal_get_id_from_target(target);
     mmu_hal_unmap_region(mmu_id, vaddr_start, size);
 }
 #else
@@ -750,10 +743,14 @@ esp_err_t IRAM_ATTR esp_mmu_map_dump_mapped_blocks_private(void)
 ---------------------------------------------------------------*/
 static bool NOINLINE_ATTR IRAM_ATTR s_vaddr_to_paddr(uint32_t vaddr, esp_paddr_t *out_paddr, mmu_target_t *out_target)
 {
+    uint32_t mmu_id = 0;
     //we call this for now, but this will be refactored to move out of `spi_flash`
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    bool is_mapped = mmu_hal_vaddr_to_paddr(0, vaddr, out_paddr, out_target);
 #if SOC_MMU_PER_EXT_MEM_TARGET
+    mmu_id = mmu_hal_get_id_from_vaddr(vaddr);
+#endif
+    bool is_mapped = mmu_hal_vaddr_to_paddr(mmu_id, vaddr, out_paddr, out_target);
+#if SPIRAM_FLASH_LOAD_TO_PSRAM
     if (!is_mapped) {
         is_mapped = mmu_hal_vaddr_to_paddr(1, vaddr, out_paddr, out_target);
     }
@@ -786,7 +783,7 @@ static bool NOINLINE_ATTR IRAM_ATTR s_paddr_to_vaddr(esp_paddr_t paddr, mmu_targ
     spi_flash_disable_interrupts_caches_and_other_cpu();
     uint32_t mmu_id = 0;
 #if SOC_MMU_PER_EXT_MEM_TARGET
-    mmu_id = s_get_mmu_id_from_target(target);
+    mmu_id = mmu_hal_get_id_from_target(target);
 #endif
     bool found = mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
     spi_flash_enable_interrupts_caches_and_other_cpu();
