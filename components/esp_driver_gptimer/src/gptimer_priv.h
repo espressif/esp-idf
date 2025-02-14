@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,25 @@
 #include <stdint.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for gptimer driver
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#endif
 #include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
+#include "esp_log.h"
+#include "esp_check.h"
+#include "esp_attr.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#include "clk_ctrl_os.h"
 #include "esp_pm.h"
 #include "soc/timer_periph.h"
 #include "hal/timer_types.h"
 #include "hal/timer_hal.h"
 #include "hal/timer_ll.h"
+#include "clk_ctrl_os.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -29,7 +37,7 @@ extern "C" {
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE || CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
+#if CONFIG_GPTIMER_OBJ_CACHE_SAFE
 #define GPTIMER_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define GPTIMER_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
@@ -53,6 +61,10 @@ extern "C" {
 #define GPTIMER_CLOCK_SRC_ATOMIC()
 #endif
 
+///!< Logging settings
+#define TAG "gptimer"
+
+///!< Forward declaration
 typedef struct gptimer_t gptimer_t;
 
 typedef struct gptimer_group_t {
