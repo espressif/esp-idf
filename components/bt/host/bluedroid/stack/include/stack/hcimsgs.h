@@ -1215,4 +1215,19 @@ UINT8 btsnd_hcic_ble_conn_cte_rsp_enable(uint16_t conn_hdl, uint8_t enable);
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 UINT8 btsnd_hcic_ble_read_antenna_info(void);
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#define HCIC_PARAM_SIZE_ENH_READ_TRANS_PWR_LEVEL                    3
+#define HCIC_PARAM_SIZE_READ_REMOTE_TRANS_PWR_LEVEL                 3
+#define HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_PARAMS              8
+#define HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_ENABLE              3
+#define HCIC_PARAM_SIZE_SET_TRANS_PWR_REPORTING_ENABLE              4
+
+UINT8 btsnd_hcic_ble_enh_read_trans_power_level(uint16_t conn_handle, uint8_t phy);
+UINT8 btsnd_hcic_ble_read_remote_trans_power_level(uint16_t conn_handle, uint8_t phy);
+UINT8 btsnd_hcic_ble_set_path_loss_rpt_params(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                            uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent);
+UINT8 btsnd_hcic_ble_set_path_loss_rpt_enable(uint16_t conn_handle, uint8_t enable);
+UINT8 btsnd_hcic_ble_set_trans_pwr_rpt_enable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 #endif

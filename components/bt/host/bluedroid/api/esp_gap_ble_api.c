@@ -1803,3 +1803,106 @@ esp_err_t esp_ble_gap_set_vendor_event_mask(uint32_t event_mask)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+esp_err_t esp_ble_gap_enhanced_read_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_ENH_READ_TRANS_POWER_LEVEL;
+    arg.enh_read_trans_pwr_level.conn_handle = conn_handle;
+    arg.enh_read_trans_pwr_level.phy = phy;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_read_remote_transmit_power_level(uint16_t conn_handle, esp_ble_tx_power_phy_t phy)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_READ_REM_TRANS_POWER_LEVEL;
+    arg.read_rem_trans_pwr_level.conn_handle = conn_handle;
+    arg.read_rem_trans_pwr_level.phy = phy;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_path_loss_reporting_params(esp_ble_path_loss_rpt_params_t *path_loss_rpt_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS;
+    arg.set_path_loss_rpt_params.conn_handle = path_loss_rpt_params->conn_handle;
+    arg.set_path_loss_rpt_params.high_threshold = path_loss_rpt_params->high_threshold;
+    arg.set_path_loss_rpt_params.high_hysteresis = path_loss_rpt_params->high_hysteresis;
+    arg.set_path_loss_rpt_params.low_threshold = path_loss_rpt_params->low_threshold;
+    arg.set_path_loss_rpt_params.low_hysteresis = path_loss_rpt_params->low_hysteresis;
+    arg.set_path_loss_rpt_params.min_time_spent = path_loss_rpt_params->min_time_spent;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_path_loss_reporting_enable(uint16_t conn_handle, bool enable)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_PATH_LOSS_REPORTING_EN;
+    arg.set_path_loss_rpt_en.conn_handle = conn_handle;
+    arg.set_path_loss_rpt_en.enable = enable;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_set_transmit_power_reporting_enable(uint16_t conn_handle, bool local_enable, bool remote_enable)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_TRANS_POWER_REPORTING_EN;
+    arg.set_trans_pwr_rpting_en.conn_handle = conn_handle;
+    arg.set_trans_pwr_rpting_en.local_enable = local_enable;
+    arg.set_trans_pwr_rpting_en.remote_enable = remote_enable;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)

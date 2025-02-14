@@ -219,6 +219,11 @@ static void btu_ble_cte_req_failed_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+static void btu_ble_path_loss_threshold_evt(UINT8 *p);
+static void btu_ble_transmit_power_report_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #if (BLE_42_ADV_EN == TRUE)
 extern osi_sem_t adv_enable_sem;
 extern osi_sem_t adv_data_sem;
@@ -564,6 +569,14 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+        case HCI_BLE_PATH_LOSS_THRESHOLD_EVT:
+            btu_ble_path_loss_threshold_evt(p);
+            break;
+        case HCI_BLE_TRANS_POWER_REPORTING_EVT:
+            btu_ble_transmit_power_report_evt(p);
+            break;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -1358,6 +1371,13 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
         btm_ble_cte_read_ant_infor_complete(p);
         break;
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    case HCI_BLE_ENH_READ_TRANS_POWER_LEVEL:
+        btm_enh_read_trans_pwr_level_cmpl_evt(p);
+        break;
+#endif //#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -1555,6 +1575,11 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         break;
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    case HCI_BLE_READ_REMOTE_TRANS_POWER_LEVEL:
+        btm_read_remote_trans_pwr_level_cmpl(status);
+        break;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     default:
         /* If command failed to start, we may need to tell BTM */
         if (status != HCI_SUCCESS) {
@@ -2984,6 +3009,42 @@ static void btu_ble_cte_req_failed_evt(UINT8 *p)
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
 
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+static void btu_ble_path_loss_threshold_evt(UINT8 *p)
+{
+    tBTM_BLE_PATH_LOSS_THRESHOLD_EVT path_loss_thres_evt = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(path_loss_thres_evt.conn_handle, p);
+    STREAM_TO_UINT8(path_loss_thres_evt.cur_path_loss, p);
+    STREAM_TO_UINT8(path_loss_thres_evt.zone_entered, p);
+
+    btm_ble_path_loss_threshold_evt(&path_loss_thres_evt);
+}
+
+static void btu_ble_transmit_power_report_evt(UINT8 *p)
+{
+    tBTM_BLE_TRANS_POWER_REPORT_EVT trans_pwr_report_evt = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(trans_pwr_report_evt.status, p);
+    STREAM_TO_UINT16(trans_pwr_report_evt.conn_handle, p);
+    STREAM_TO_UINT8(trans_pwr_report_evt.reason, p);
+    STREAM_TO_UINT8(trans_pwr_report_evt.phy, p);
+    STREAM_TO_UINT8(trans_pwr_report_evt.tx_power_level, p);
+    STREAM_TO_UINT8(trans_pwr_report_evt.tx_power_level_flag, p);
+    STREAM_TO_UINT8(trans_pwr_report_evt.delta, p);
+
+    btm_ble_transmit_power_report_evt(&trans_pwr_report_evt);
+}
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
 /**********************************************
 ** End of BLE Events Handler

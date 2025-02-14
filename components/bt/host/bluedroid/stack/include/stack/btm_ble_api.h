@@ -1072,6 +1072,15 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT            39
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define    BTM_BLE_GAP_SET_PRIVACY_MODE_COMPLETE_EVT               40
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#define    BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT              41
+#define    BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT           42
+#define    BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT          43
+#define    BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT          44
+#define    BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT        45
+#define    BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT                     46
+#define    BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT                 47
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 #define    BTM_BLE_5_GAP_UNKNOWN_EVT                               50
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
@@ -1378,6 +1387,52 @@ typedef struct {
     UINT8 adv_clk_accuracy;
 } tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV;
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 phy;
+    INT8 cur_tx_pwr_level;
+    INT8 max_tx_pwr_level;
+} __attribute__((packed)) tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL;
+
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 cur_path_loss;
+    UINT8 zone_entered;
+} __attribute__((packed)) tBTM_BLE_PATH_LOSS_THRESHOLD_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT8 reason;
+    UINT8 phy;
+    INT8 tx_power_level;
+    UINT8 tx_power_level_flag;
+    INT8 delta;
+} __attribute__((packed)) tBTM_BLE_TRANS_POWER_REPORT_EVT;
+
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -1733,6 +1788,15 @@ typedef union {
     tBTM_BLE_SET_PERIOD_ADV_SYNC_TRANS_PARAMS_CMPL set_past_params;
     tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV past_recv;
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    tBTM_BLE_ENH_TRANS_PWR_LEVEL_CMPL enh_trans_pwr_level_cmpl;
+    tBTM_BLE_REMOTE_TRANS_PWR_LEVEL_CMPL remote_pwr_level_cmpl;
+    tBTM_BLE_SET_PATH_LOSS_RPTING_PARAMS path_loss_rpting_params;
+    tBTM_BLE_SET_PATH_LOSS_RPTING_ENABLE path_loss_rpting_enable;
+    tBTM_BLE_SET_TRANS_POWER_RPTING_ENABLE trans_pwr_rpting_enable;
+    tBTM_BLE_PATH_LOSS_THRESHOLD_EVT      path_loss_thres_evt;
+    tBTM_BLE_TRANS_POWER_REPORT_EVT       trans_pwr_report_evt;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3256,4 +3320,14 @@ tBTM_STATUS BTM_BleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enabl
 tBTM_STATUS BTM_BleCteReadAntInfor(void);
 
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTM_BleEnhReadTransPowerLevel(uint16_t conn_handle, uint8_t phy);
+void BTM_BleReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy);
+void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent);
+void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable);
+void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #endif

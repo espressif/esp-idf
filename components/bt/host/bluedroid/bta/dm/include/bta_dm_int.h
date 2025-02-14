@@ -321,6 +321,13 @@ enum {
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
     BTA_DM_API_CTE_READ_ANTENNA_INFOR,
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL,
+    BTA_DM_API_READ_REM_TRANS_POWER_LEVEL,
+    BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS,
+    BTA_DM_API_SET_PATH_LOSS_REPORTING_EN,
+    BTA_DM_API_SET_TRANS_POWER_REPORTING_EN,
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1070,6 +1077,43 @@ typedef struct {
     tBTA_SET_VENDOR_EVT_MASK_CBACK      *p_cback;
 } tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK;
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+typedef struct {
+    BT_HDR                              hdr;
+    UINT16                              conn_handle;
+    UINT8                               phy;
+} tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL;
+
+typedef struct {
+    BT_HDR                              hdr;
+    UINT16                              conn_handle;
+    UINT8                               phy;
+} tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             high_threshold;
+	UINT8                             high_hysteresis;
+	UINT8                             low_threshold;
+	UINT8                             low_hysteresis;
+	UINT16                            min_time_spent;
+} tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             enable;
+} tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             local_enable;
+    UINT8                             remote_enable;
+} tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1781,6 +1825,13 @@ typedef union {
 #endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
     tBTA_DM_BLE_READ_ANT_INFOR         read_ant_infor;
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL      enh_read_trans_pwr_level;
+    tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL   remote_trans_pwr_level;
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS     path_loss_rpt_params;
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE     path_loss_rpt_en;
+    tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE     trans_pwr_rpt_en;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2433,5 +2484,13 @@ void bta_dm_ble_set_conn_cte_rsp_en(tBTA_DM_MSG *p_data);
 
 void bta_dm_ble_read_cte_ant_infor(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void bta_dm_api_enh_read_trans_power_level(tBTA_DM_MSG *p_data);
+void bta_dm_api_read_rem_trans_power_level(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_path_loss_report_params(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_path_loss_reporting_en(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
 #endif /* BTA_DM_INT_H */

@@ -1679,6 +1679,17 @@ typedef struct {
 #define BTA_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT                   BTM_BLE_GAP_SET_PAST_PARAMS_COMPLETE_EVT
 #define BTA_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT               BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#define BTA_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT                 BTM_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT
+#define BTA_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT              BTM_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT
+#define BTA_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT             BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT
+#define BTA_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT             BTM_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT
+#define BTA_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT           BTM_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT
+#define BTA_BLE_GAP_PATH_LOSS_THRESHOLD_EVT                        BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT
+#define BTA_BLE_GAP_TRANMIT_POWER_REPORTING_EVT                    BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
 
@@ -3052,6 +3063,15 @@ extern void BTA_DmBleSetPrivacyMode(uint8_t addr_type, BD_ADDR addr, uint8_t pri
 extern void BTA_DmBleGapSetCsaSupport(uint8_t csa_select, tBTM_SET_CSA_SUPPORT_CMPL_CBACK *p_callback);
 
 extern void BTA_DmBleGapSetVendorEventMask(uint32_t evt_mask, tBTA_SET_VENDOR_EVT_MASK_CBACK *p_callback);
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void BTA_DmBleGapEnhReadTransPwrLevel(uint16_t conn_handle, uint8_t phy);
+void BTA_DmBleGapReadRemoteTransPwrLevel(uint16_t conn_handle, uint8_t phy);
+void BTA_DmBleGapSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                        uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent);
+void BTA_DmBleGapSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable);
+void BTA_DmBleGapSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
 /*******************************************************************************
 **

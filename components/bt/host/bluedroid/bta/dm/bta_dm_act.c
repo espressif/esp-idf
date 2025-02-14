@@ -6286,6 +6286,34 @@ void bta_dm_ble_read_cte_ant_infor(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void bta_dm_api_enh_read_trans_power_level(tBTA_DM_MSG *p_data)
+{
+    BTM_BleEnhReadTransPowerLevel(p_data->enh_read_trans_pwr_level.conn_handle, p_data->enh_read_trans_pwr_level.phy);
+}
+
+void bta_dm_api_read_rem_trans_power_level(tBTA_DM_MSG *p_data)
+{
+    BTM_BleReadRemoteTransPwrLevel(p_data->remote_trans_pwr_level.conn_handle, p_data->remote_trans_pwr_level.phy);
+}
+
+void bta_dm_api_set_path_loss_report_params(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPathLossRptParams(p_data->path_loss_rpt_params.conn_handle, p_data->path_loss_rpt_params.high_threshold, p_data->path_loss_rpt_params.high_hysteresis,
+                                        p_data->path_loss_rpt_params.low_threshold, p_data->path_loss_rpt_params.low_hysteresis, p_data->path_loss_rpt_params.min_time_spent);
+}
+
+void bta_dm_api_set_path_loss_reporting_en(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetPathLossRptEnable(p_data->path_loss_rpt_en.conn_handle, p_data->path_loss_rpt_en.enable);
+}
+
+void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetTransPwrRptEnable(p_data->trans_pwr_rpt_en.conn_handle, p_data->trans_pwr_rpt_en.local_enable, p_data->trans_pwr_rpt_en.remote_enable);
+}
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **

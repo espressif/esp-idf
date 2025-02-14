@@ -2641,3 +2641,112 @@ UINT8 btsnd_hcic_ble_read_antenna_info(void)
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+UINT8 btsnd_hcic_ble_enh_read_trans_power_level(uint16_t conn_handle, uint8_t phy)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci enh read trans power level, conn_handle %d phy %d", conn_handle, phy);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_ENH_READ_TRANS_PWR_LEVEL);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_ENH_READ_TRANS_POWER_LEVEL);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ENH_READ_TRANS_PWR_LEVEL);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, phy);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_read_remote_trans_power_level(uint16_t conn_handle, uint8_t phy)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci read remote trans power level, conn_handle %d phy %d", conn_handle, phy);
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_READ_REMOTE_TRANS_PWR_LEVEL);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_READ_REMOTE_TRANS_POWER_LEVEL);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_READ_REMOTE_TRANS_PWR_LEVEL);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, phy);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+
+    return TRUE;
+}
+
+UINT8 btsnd_hcic_ble_set_path_loss_rpt_params(uint16_t conn_handle, uint8_t high_threshold, uint8_t high_hysteresis,
+                                            uint8_t low_threshold, uint8_t low_hysteresis, uint16_t min_time_spent)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set path loss rpt params, conn_handle %d high_threshold %d high_hysteresis %d low_threshold %d low_hysteresis %d min_time_spent %d",
+                    conn_handle, high_threshold, high_hysteresis, low_threshold,
+                    low_hysteresis, min_time_spent);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_PARAMS);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_PATH_LOSS_REPORTING_PARAMS);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_PARAMS);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, high_threshold);
+    UINT8_TO_STREAM(pp, high_hysteresis);
+    UINT8_TO_STREAM(pp, low_threshold);
+    UINT8_TO_STREAM(pp, low_hysteresis);
+    UINT16_TO_STREAM(pp, min_time_spent);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_path_loss_rpt_enable(uint16_t conn_handle, uint8_t enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set path loss rpt en, conn_handle %d enable %d", conn_handle, enable);
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_ENABLE);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_PATH_LOSS_REPORTING_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_PATH_LOSS_REPORTING_ENABLE);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, enable);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_set_trans_pwr_rpt_enable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set trans power rpt en, conn_handle %d local_enable %d remote_enable %d", conn_handle, local_enable, remote_enable);
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_TRANS_PWR_REPORTING_ENABLE);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_TRANS_POWER_REPORTING_ENABLE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_TRANS_PWR_REPORTING_ENABLE);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT8_TO_STREAM(pp, local_enable);
+    UINT8_TO_STREAM(pp, remote_enable);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
