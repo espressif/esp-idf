@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,7 @@
 
 #ifdef MULTI_HEAP_POISONING
 
-/* Alias MULTI_HEAP_POISONING_SLOW to SLOW for better readabilty */
+/* Alias MULTI_HEAP_POISONING_SLOW to SLOW for better readability */
 #ifdef SLOW
 #error "external header has defined SLOW"
 #endif
@@ -352,6 +352,13 @@ void *multi_heap_get_block_address(multi_heap_block_handle_t block)
 {
     char *head = multi_heap_get_block_address_impl(block);
     return head + sizeof(poison_head_t);
+}
+
+size_t multi_heap_get_full_block_size(multi_heap_handle_t heap, void *p)
+{
+    poison_head_t *head = verify_allocated_region(p, true);
+    assert(head != NULL);
+    return multi_heap_get_allocated_size_impl(heap, head);
 }
 
 multi_heap_handle_t multi_heap_register(void *start, size_t size)
