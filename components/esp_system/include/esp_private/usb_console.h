@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,6 +100,14 @@ esp_err_t esp_usb_console_set_cb(esp_usb_console_cb_t rx_cb, esp_usb_console_cb_
  *     - false USB console is not installed
  */
 bool esp_usb_console_is_installed(void);
+
+/**
+ * @brief Call the USB interrupt handler while any interrupts
+ * are pending, but not more than a few times. Non-static to
+ * allow placement into IRAM by ldgen.
+ *
+ */
+void esp_usb_console_poll_interrupts(void); // [refactor-todo] Remove when implementing IDF-12175
 
 #ifdef __cplusplus
 }

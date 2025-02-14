@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
 
+#include <stddef.h>
 #include "mbedtls/aes.h"
 #include "mbedtls/asn1.h"
 #include "mbedtls/asn1write.h"
@@ -43,6 +44,7 @@
 extern "C" {
 #endif
 
+#ifndef BOOTLOADER_BUILD
 #if (!defined(CONFIG_MBEDTLS_THREADING_C))
 #error CONFIG_MBEDTLS_THREADING_C
 #endif
@@ -51,6 +53,9 @@ typedef void (*_rom_mbedtls_threading_set_alt_t)(void (*mutex_init)(mbedtls_thre
                                           void (*mutex_free)(mbedtls_threading_mutex_t *),
                                           int (*mutex_lock)(mbedtls_threading_mutex_t *),
                                           int (*mutex_unlock)(mbedtls_threading_mutex_t *));
+#else /* BOOTLOADER_BUILD */
+typedef void mbedtls_threading_mutex_t;
+#endif /* BOOTLOADER_BUILD */
 
 typedef struct mbedtls_rom_funcs {
     void (*_rom_mbedtls_aes_init)( mbedtls_aes_context *ctx );
@@ -659,8 +664,8 @@ typedef struct mbedtls_rom_eco4_funcs {
 #define STRUCT_OFFSET_CHECK(x, y, z) _Static_assert((offsetof(x,y)==(z)), "The variables type of "#x" before "#y" should be "#z)
 #define STRUCT_SIZE_CHECK(x, y) _Static_assert((sizeof(x)==(y)), "The sizeof "#x" should be "#y)
 
-#if (!defined(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL))
-#error "CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL"
+#if (!defined(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL) && !defined(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER))
+#error "Please enable CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL or CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER"
 #endif
 
 /* platform_util.c */
@@ -668,6 +673,7 @@ typedef struct mbedtls_rom_eco4_funcs {
 #error "MBEDTLS_PLATFORM_ZEROIZE_ALT"
 #endif
 
+#ifndef BOOTLOADER_BUILD
 /* sha1.c */
 STRUCT_OFFSET_CHECK(mbedtls_sha1_context, total, 0);
 STRUCT_OFFSET_CHECK(mbedtls_sha1_context, state, 8);
@@ -788,6 +794,11 @@ STRUCT_OFFSET_CHECK(mbedtls_md5_context, MBEDTLS_PRIVATE(state), 8);
 STRUCT_OFFSET_CHECK(mbedtls_md5_context, MBEDTLS_PRIVATE(buffer), 24);
 STRUCT_SIZE_CHECK(mbedtls_md5_context, 88);
 #endif
+#endif /* BOOTLOADER_BUILD */
+
+#if BOOTLOADER_BUILD
+void mbedtls_rom_osi_functions_init_bootloader(void);
+#endif /* BOOTLOADER_BUILD */
 
 #ifdef __cplusplus
 }

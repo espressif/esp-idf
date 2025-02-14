@@ -54,7 +54,7 @@ typedef enum {
     ETS_USB_INTR_SOURCE,                        /**< interrupt of USB, level*/
     ETS_RTC_CORE_INTR_SOURCE,                   /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                        /**< interrupt of remote controller, level*/
-    ETS_PCNT_INTR_SOURCE,                       /**< interrupt of pluse count, level*/
+    ETS_PCNT_INTR_SOURCE,                       /**< interrupt of pulse count, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                   /**< interrupt of I2C controller1, level*/
     ETS_I2C_EXT1_INTR_SOURCE,                   /**< interrupt of I2C controller0, level*/
     ETS_SPI2_DMA_INTR_SOURCE,                   /**< interrupt of SPI2 DMA, level*/
@@ -69,7 +69,7 @@ typedef enum {
     ETS_TG1_T0_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER0, EDGE*/
     ETS_TG1_T1_LEVEL_INTR_SOURCE,               /**< interrupt of TIMER_GROUP1, TIMER1, EDGE*/
     ETS_TG1_WDT_LEVEL_INTR_SOURCE,              /**< interrupt of TIMER_GROUP1, WATCHDOG, EDGE*/
-    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalied Access, LEVEL*/
+    ETS_CACHE_IA_INTR_SOURCE,                   /**< interrupt of Cache Invalid Access, LEVEL*/
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
     ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
@@ -116,7 +116,9 @@ typedef enum {
     ETS_PERI_BACKUP_INTR_SOURCE,
     ETS_DMA_EXTMEM_REJECT_SOURCE,
     ETS_MAX_INTR_SOURCE,                        /**< number of interrupt sources */
-} periph_interrput_t;
+} periph_interrupt_t;
+
+typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

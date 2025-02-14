@@ -1,2 +1,10 @@
 dependencies:
   ccomp_timer: "^1.0.0"
+  tee_attestation:
+    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_attestation
+  tee_ota_ops:
+    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_ota_ops
+  tee_sec_storage:
+    path: ${IDF_PATH}/components/esp_tee/subproject/components/tee_sec_storage
+  test_utils:
+    path: ${IDF_PATH}/tools/unit-test-app/components/test_utils

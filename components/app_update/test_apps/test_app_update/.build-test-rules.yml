@@ -8,6 +8,6 @@ components/app_update/test_apps:
     # S2 doesn't have ROM for flash
     - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3", "esp32p4"]
   disable:
-    - if: IDF_TARGET in ["esp32c61"]
+    - if: IDF_TARGET in ["esp32c61", "esp32h21"]
       temporary: true
-      reason: target esp32c61 is not supported yet  # TODO: [ESP32C61] IDF-9245
+      reason: not supported yet  # TODO: [ESP32C61] IDF-9245, [ESP32H21] IDF-11515

@@ -9,6 +9,7 @@
 #include "driver/bitscrambler.h"
 #include "esp_private/gdma.h"
 #include "esp_private/gdma_link.h"
+#include "esp_private/esp_dma_utils.h"
 #include "esp_private/bitscrambler.h"
 #include "hal/dma_types.h"
 #include "hal/cache_hal.h"
@@ -19,7 +20,6 @@
 #include "esp_check.h"
 #include "esp_heap_caps.h"
 #include "esp_cache.h"
-#include "esp_dma_utils.h"
 #include "esp_memory_utils.h"
 
 const static char *TAG = "bs_loop";
@@ -98,7 +98,7 @@ esp_err_t bitscrambler_loopback_create(bitscrambler_handle_t *handle, int attach
     }
 
     bs->max_transfer_sz_bytes = max_transfer_sz_bytes;
-    int desc_ct = (max_transfer_sz_bytes + DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED - 1) / DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED;
+    size_t desc_ct = esp_dma_calculate_node_count(max_transfer_sz_bytes, 4, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     int bus = g_bitscrambler_periph_desc[attach_to].bus;
 #ifdef SOC_GDMA_BUS_AXI
     size_t align = (bus == SOC_GDMA_BUS_AXI) ? 8 : 4;
@@ -208,18 +208,21 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         return ESP_ERR_INVALID_SIZE;
     }
 
-    //Casual check to see if the buffer is aligned to cache requirements.
-    esp_dma_mem_info_t dma_mem_info = {
-        .dma_alignment_bytes = 4
-    };
-    //Note: we know the size of the data, but not of the buffer that contains it, so we set length=0.
-    if (!esp_dma_is_buffer_alignment_satisfied(buffer_in, 0, dma_mem_info)) {
-        ESP_LOGE(TAG, "buffer_in not aligned to DMA requirements");
-        return ESP_ERR_INVALID_ARG;
+    int int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
+    int ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
+
+    bool need_cache_sync = esp_ptr_internal(buffer_in) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
+        //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
+        //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
+        ESP_RETURN_ON_ERROR(esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED),
+                            TAG, "failed in cache sync for input buffer");
     }
-    if (!esp_dma_is_buffer_alignment_satisfied(buffer_out, 0, dma_mem_info)) {
-        ESP_LOGE(TAG, "buffer_out not aligned to DMA requirements");
-        return ESP_ERR_INVALID_ARG;
+    need_cache_sync = esp_ptr_internal(buffer_out) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
+    if (need_cache_sync) {
+        ESP_RETURN_ON_ERROR(esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C),
+                            TAG, "failed in cache sync for output buffer");
     }
 
     gdma_reset(bsl->rx_channel);
@@ -246,17 +249,6 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
     };
     gdma_link_mount_buffers(bsl->rx_link_list, 0, &out_buf_mount_config, 1, NULL);
 
-    int int_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA);
-    int ext_mem_cache_line_size = cache_hal_get_cache_line_size(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_DATA);
-
-    bool need_cache_sync = esp_ptr_internal(buffer_in) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
-    if (need_cache_sync) {
-        //Note: we add the ESP_CACHE_MSYNC_FLAG_UNALIGNED flag for now as otherwise esp_cache_msync will complain about
-        //the size not being aligned... we miss out on a check to see if the address is aligned this way. This needs to
-        //be improved, but potentially needs a fix in esp_cache_msync not to check the size.
-        esp_cache_msync(buffer_in, length_bytes_in, ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED);
-    }
-
     gdma_start(bsl->rx_channel, gdma_link_get_head_addr(bsl->rx_link_list));
     gdma_start(bsl->tx_channel, gdma_link_get_head_addr(bsl->tx_link_list));
     bitscrambler_start(bs);
@@ -269,11 +261,6 @@ esp_err_t bitscrambler_loopback_run(bitscrambler_handle_t bs, void *buffer_in, s
         bitscrambler_reset(bs);
         ESP_LOGE(TAG, "bitscrambler_loopback_run: timed out waiting for BitScrambler program to complete!");
         ret = ESP_ERR_TIMEOUT;
-    }
-
-    need_cache_sync = esp_ptr_internal(buffer_out) ? (int_mem_cache_line_size > 0) : (ext_mem_cache_line_size > 0);
-    if (need_cache_sync) {
-        esp_cache_msync(buffer_out, length_bytes_out, ESP_CACHE_MSYNC_FLAG_DIR_M2C);
     }
 
     if (bytes_written) {

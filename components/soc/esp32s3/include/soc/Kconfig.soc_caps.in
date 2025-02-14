@@ -1103,6 +1103,10 @@ config SOC_UART_SUPPORT_XTAL_CLK
     bool
     default y
 
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
+
 config SOC_USB_OTG_PERIPH_NUM
     int
     default 1

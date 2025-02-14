@@ -403,6 +403,10 @@ config SOC_CPU_HAS_FLEXIBLE_INTC
     bool
     default y
 
+config SOC_CPU_SUPPORT_WFE
+    bool
+    default y
+
 config SOC_INT_CLIC_SUPPORTED
     bool
     default y
@@ -476,6 +480,10 @@ config SOC_GDMA_SUPPORT_ETM
     default y
 
 config SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
+
+config SOC_AHB_GDMA_SUPPORT_PSRAM
     bool
     default y
 
@@ -1403,6 +1411,26 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
     bool
     default y
 
+config SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
+    int
+    default 5
+
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    bool
+    default y
+
 config SOC_COEX_HW_PTI
     bool
     default y
@@ -1418,6 +1446,10 @@ config SOC_EXTERNAL_COEX_LEADER_TX_LINE
 config SOC_WIFI_LIGHT_SLEEP_CLK_WIDTH
     int
     default 12
+
+config SOC_RTC_MEM_SUPPORT_SPEED_MODE_SWITCH
+    bool
+    default y
 
 config SOC_PM_SUPPORT_WIFI_WAKEUP
     bool

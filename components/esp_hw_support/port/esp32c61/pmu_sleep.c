@@ -51,17 +51,18 @@ void pmu_sleep_disable_regdma_backup(void)
     }
 }
 
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
 
     /* LP core hardware wait time, microsecond */
     const int lp_wakeup_wait_time_us        = rtc_time_slowclk_to_us(mc->lp.wakeup_wait_cycle, slowclk_period);
     const int lp_clk_switch_time_us         = rtc_time_slowclk_to_us(mc->lp.clk_switch_cycle, slowclk_period);
-    const int lp_clk_power_on_wait_time_us  = (pd_flags & PMU_SLEEP_PD_XTAL) ? mc->lp.xtal_wait_stable_time_us \
-                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
+    /* If XTAL is used as RTC_FAST clock source, it is started in LP_SLEEP -> LP_ACTIVE stage and the clock waiting time is counted into lp_hw_wait_time */
+    const int lp_clk_power_on_wait_time_us  = ((sleep_flags & PMU_SLEEP_PD_XTAL) && (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                            ? mc->lp.xtal_wait_stable_time_us \
+                                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
     const int lp_control_wait_time_us       = mc->lp.isolate_wait_time_us + mc->lp.reset_wait_time_us;
-
     const int lp_hw_wait_time_us = mc->lp.min_slp_time_us + mc->lp.analog_wait_time_us + lp_clk_power_on_wait_time_us \
                             + lp_wakeup_wait_time_us + lp_clk_switch_time_us + mc->lp.power_supply_wait_time_us \
                                 + mc->lp.power_up_wait_time_us + lp_control_wait_time_us;
@@ -69,11 +70,15 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
     const int hp_control_wait_time_us = mc->hp.isolate_wait_time_us + mc->hp.reset_wait_time_us;
-    const int hp_regdma_wait_time_us = MAX(mc->hp.regdma_s2m_work_time_us + mc->hp.regdma_m2a_work_time_us, mc->hp.regdma_s2a_work_time_us);
-    const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
-
-    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_clock_wait_time_us, \
-                            hp_digital_power_up_wait_time_us + hp_control_wait_time_us + mc->hp.pll_wait_stable_time_us + hp_regdma_wait_time_us);
+    const int hp_regdma_wait_time_us = s_pmu_sleep_regdma_backup_enabled \
+                                ? MAX(mc->hp.regdma_s2m_work_time_us + mc->hp.regdma_m2a_work_time_us, mc->hp.regdma_s2a_work_time_us) \
+                                : 0;
+    /* If XTAL is not used as RTC_FAST clock source, it is started in HP_SLEEP -> HP_ACTIVE stage and the clock waiting time is counted into hp_hw_wait_time */
+    const int hp_clock_wait_time_us = ((sleep_flags & PMU_SLEEP_PD_XTAL) && !(sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                    ? mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us \
+                                    : mc->hp.pll_wait_stable_time_us;
+    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + hp_digital_power_up_wait_time_us + hp_clock_wait_time_us \
+                                     + hp_regdma_wait_time_us + hp_control_wait_time_us;
 
     /* When the SOC wakeup (lp timer or GPIO wakeup) and Modem wakeup (Beacon wakeup) complete, the soc
      * wakeup will be delayed until the RF is turned on in Modem state.
@@ -107,7 +112,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_param_config_t *param,
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
-        const uint32_t pd_flags,
+        const uint32_t sleep_flags,
         const uint32_t adjustment,
         const uint32_t slowclk_period,
         const uint32_t fastclk_period
@@ -123,7 +128,7 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
     param->hp_sys.isolate_wait_cycle              = rtc_time_us_to_fastclk(mc->hp.isolate_wait_time_us, fastclk_period);
     param->hp_sys.reset_wait_cycle                = rtc_time_us_to_fastclk(mc->hp.reset_wait_time_us, fastclk_period);
 
-    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
+    const int hw_wait_time_us = pmu_sleep_calculate_hw_wait_time(sleep_flags, slowclk_period, fastclk_period);
     const int modem_state_skip_time_us = mc->hp.regdma_m2a_work_time_us + mc->hp.system_dfs_up_work_time_us + mc->lp.min_slp_time_us;
     const int modem_wakeup_wait_time_us = adjustment - hw_wait_time_us + modem_state_skip_time_us + mc->hp.regdma_rf_on_work_time_us;
     param->hp_sys.modem_wakeup_wait_cycle         = rtc_time_us_to_fastclk(modem_wakeup_wait_time_us, fastclk_period);
@@ -145,36 +150,30 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
 
 const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
-        uint32_t pd_flags,
+        uint32_t sleep_flags,
         uint32_t adjustment,
         uint32_t slowclk_period,
         uint32_t fastclk_period,
         bool dslp
     )
 {
-    pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(pd_flags);
-
-    uint32_t iram_pd_flags = 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G0) ? BIT(0) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G1) ? BIT(1) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G2) ? BIT(2) : 0;
-    iram_pd_flags |= (pd_flags & PMU_SLEEP_PD_MEM_G3) ? BIT(3) : 0;
+    pmu_sleep_power_config_t power_default = PMU_SLEEP_POWER_CONFIG_DEFAULT(sleep_flags);
     config->power = power_default;
 
-    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
+    pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(sleep_flags);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, sleep_flags, adjustment, slowclk_period, fastclk_period);
 
     if (dslp) {
         config->param.lp_sys.analog_wait_target_cycle  = rtc_time_us_to_slowclk(PMU_LP_ANALOG_WAIT_TARGET_TIME_DSLP_US, slowclk_period);
-        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(pd_flags);
+        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_DSLP_CONFIG_DEFAULT(sleep_flags);
         config->analog = analog_default;
     } else {
-        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(pd_flags);
+        pmu_sleep_digital_config_t digital_default = PMU_SLEEP_DIGITAL_LSLP_CONFIG_DEFAULT(sleep_flags);
         config->digital = digital_default;
 
-        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(pd_flags);
+        pmu_sleep_analog_config_t analog_default = PMU_SLEEP_ANALOG_LSLP_CONFIG_DEFAULT(sleep_flags);
 
-        if (!(pd_flags & PMU_SLEEP_PD_XTAL) || !(pd_flags & PMU_SLEEP_PD_RC_FAST)){
+        if (!(sleep_flags & PMU_SLEEP_PD_XTAL) || !(sleep_flags & PMU_SLEEP_PD_RC_FAST)){
             analog_default.hp_sys.analog.pd_cur = PMU_PD_CUR_SLEEP_ON;
             analog_default.hp_sys.analog.bias_sleep = PMU_BIASSLP_SLEEP_ON;
             analog_default.hp_sys.analog.dbias = HP_CALI_DBIAS_SLP_1V1;

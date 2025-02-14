@@ -3,7 +3,7 @@ idf_build_get_property(target IDF_TARGET)
 set(srcs)
 set(public_include "include")
 if(CONFIG_SOC_UART_SUPPORTED)
-    list(APPEND srcs "src/uart.c")
+    list(APPEND srcs "src/uart.c" "src/uart_wakeup.c")
 endif()
 
 if(${target} STREQUAL "linux")

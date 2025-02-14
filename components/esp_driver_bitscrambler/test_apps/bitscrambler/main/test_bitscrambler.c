@@ -16,7 +16,7 @@ BITSCRAMBLER_PROGRAM(bitscrambler_program_timeout, "timeout");
 
 TEST_CASE("Basic BitScrambler I/O", "[bs]")
 {
-    int len = 0x4010;
+    int len = 0x4000;
     uint8_t *data_in = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     uint8_t *data_out = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     TEST_ASSERT_NOT_NULL(data_in);

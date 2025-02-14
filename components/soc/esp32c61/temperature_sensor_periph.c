@@ -8,9 +8,8 @@
 #include "soc/regdma.h"
 #include "soc/temperature_sensor_periph.h"
 #include "soc/apb_saradc_reg.h"
-#include "esp_attr.h"
 
-DRAM_ATTR temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM] = {
+const temperature_sensor_attribute_t temperature_sensor_attributes[TEMPERATURE_SENSOR_ATTR_RANGE_NUM] = {
     /*Offset  reg_val  min  max  error */
     {-2,        5,     50,  125,   3},
     {-1,        7,     20,  100,   2},

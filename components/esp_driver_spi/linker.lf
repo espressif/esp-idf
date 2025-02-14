@@ -8,3 +8,11 @@ entries:
 
         if SOC_SPI_SUPPORT_SLAVE_HD_VER2 = y:
             spi_dma: spi_dma_get_eof_desc (noflash)
+
+[mapping:gpspi_hal]
+archive: libhal.a
+entries:
+    if SPI_MASTER_ISR_IN_IRAM = y:
+        spi_hal_iram (noflash)
+    if SPI_SLAVE_ISR_IN_IRAM = y:
+        spi_slave_hal_iram (noflash)

@@ -413,8 +413,8 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg)
     // Change the host settings to the appropriate slot before starting the transaction
     // If the slot is not initialized (slot_host_div not set) or already active, do nothing
     if (s_host_ctx.active_slot_num != slot) {
-        s_host_ctx.active_slot_num = slot;
         if (sdmmc_host_slot_initialized(slot)) {
+            s_host_ctx.active_slot_num = slot;
             sdmmc_host_change_to_slot(slot);
         } else {
             ESP_LOGD(TAG, "Slot %d is not initialized yet, skipping sdmmc_host_change_to_slot", slot);
@@ -851,16 +851,30 @@ static int sdmmc_host_decrease_init_slot_num(void)
 #endif
 }
 
+static void reset_pin_if_valid(gpio_num_t gpio_num)
+{
+    if (gpio_num != GPIO_NUM_NC && GPIO_IS_VALID_GPIO(gpio_num)) {
+        gpio_reset_pin(gpio_num);
+    }
+}
+
 static void sdmmc_host_deinit_slot_internal(int slot)
 {
-    int8_t gpio_pin_num;
     sdmmc_slot_io_info_t* gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
     // Disconnect signals and reset used GPIO pins
-    for (size_t i = 0; i < (sizeof(gpio->val) / (sizeof(gpio->val[0]))); i++) {
-        gpio_pin_num = gpio->val[i];
-        if (gpio_pin_num != GPIO_NUM_NC && GPIO_IS_VALID_GPIO(gpio_pin_num)) {
-            gpio_reset_pin(gpio_pin_num);
-        }
+    reset_pin_if_valid(gpio->clk);
+    reset_pin_if_valid(gpio->cmd);
+    reset_pin_if_valid(gpio->d0);
+    if (s_host_ctx.slot_ctx[slot].slot_width >= 4) {
+        reset_pin_if_valid(gpio->d1);
+        reset_pin_if_valid(gpio->d2);
+        reset_pin_if_valid(gpio->d3);
+    }
+    if (s_host_ctx.slot_ctx[slot].slot_width == 8) {
+        reset_pin_if_valid(gpio->d4);
+        reset_pin_if_valid(gpio->d5);
+        reset_pin_if_valid(gpio->d6);
+        reset_pin_if_valid(gpio->d7);
     }
     // Reset the slot context
     memset(&(s_host_ctx.slot_ctx[slot]), 0, sizeof(slot_ctx_t));

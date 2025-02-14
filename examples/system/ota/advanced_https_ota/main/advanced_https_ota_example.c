@@ -14,6 +14,7 @@
 #include "esp_system.h"
 #include "esp_event.h"
 #include "esp_log.h"
+#include "esp_check.h"
 #include "esp_ota_ops.h"
 #include "esp_http_client.h"
 #include "esp_https_ota.h"
@@ -38,6 +39,96 @@ extern const uint8_t server_cert_pem_start[] asm("_binary_ca_cert_pem_start");
 extern const uint8_t server_cert_pem_end[] asm("_binary_ca_cert_pem_end");
 
 #define OTA_URL_SIZE 256
+
+#ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
+
+#define NVS_NAMESPACE_OTA_RESUMPTION  "ota_resumption"
+#define NVS_KEY_OTA_WR_LENGTH  "nvs_ota_wr_len"
+#define NVS_KEY_SAVED_URL  "nvs_ota_url"
+
+static esp_err_t example_ota_res_get_ota_written_len_from_nvs(const nvs_handle_t nvs_ota_resumption_handle, const char *client_ota_url, uint32_t *nvs_ota_wr_len)
+{
+    esp_err_t err;
+    char saved_url[OTA_URL_SIZE] = {0};
+    size_t url_len = sizeof(saved_url);
+
+    *nvs_ota_wr_len = 0;
+
+    // Retrieve the saved URL from NVS
+    err = nvs_get_str(nvs_ota_resumption_handle, NVS_KEY_SAVED_URL, saved_url, &url_len);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGD(TAG, "Saved URL is not initialized yet!");
+        return err;
+    } else if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error reading saved URL (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    // Compare the current URL with the saved URL
+    if (strcmp(client_ota_url, saved_url) != 0) {
+        ESP_LOGD(TAG, "URLs do not match. Restarting OTA from beginning.");
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    // Fetch the saved write length only if URLs match
+    uint16_t saved_wr_len_kb = 0;
+    err = nvs_get_u16(nvs_ota_resumption_handle, NVS_KEY_OTA_WR_LENGTH, &saved_wr_len_kb);
+    if (err == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGD(TAG, "The write length is not initialized yet!");
+        *nvs_ota_wr_len = 0;
+        return err;
+    } else if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error reading OTA write length (%s)", esp_err_to_name(err));
+        return err;
+    }
+
+    // Convert the saved value back to bytes
+    *nvs_ota_wr_len = saved_wr_len_kb * 1024;
+
+    return ESP_OK;
+}
+
+static esp_err_t example_ota_res_save_ota_cfg_to_nvs(const nvs_handle_t nvs_ota_resumption_handle, int nvs_ota_wr_len,  const char *client_ota_url)
+{
+    // Convert the write length to kilobytes to optimize NVS space utilization
+    uint16_t wr_len_kb = nvs_ota_wr_len / 1024;
+
+    // Save the current OTA write length to NVS
+    ESP_RETURN_ON_ERROR(nvs_set_u16(nvs_ota_resumption_handle, NVS_KEY_OTA_WR_LENGTH, wr_len_kb), TAG, "Failed to set OTA write length");
+
+    // Save the URL only if the OTA write length is non-zero and the URL is not already saved
+    if (nvs_ota_wr_len) {
+        char saved_url[OTA_URL_SIZE] = {0};
+        size_t url_len = sizeof(saved_url);
+
+        esp_err_t err = nvs_get_str(nvs_ota_resumption_handle, NVS_KEY_SAVED_URL, saved_url, &url_len);
+        if (err == ESP_ERR_NVS_NOT_FOUND || strcmp(saved_url, client_ota_url) != 0) {
+            // URL not saved or changed; save it now
+            ESP_RETURN_ON_ERROR(nvs_set_str(nvs_ota_resumption_handle, NVS_KEY_SAVED_URL, client_ota_url), TAG, "Failed to set URL in NVS");
+        } else if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error reading OTA URL");
+            return err;
+        }
+    }
+
+    ESP_RETURN_ON_ERROR(nvs_commit(nvs_ota_resumption_handle), TAG, "Failed to commit NVS");
+    ESP_LOGD(TAG, "Saving state in NVS. Total image written so far : %d KB", wr_len_kb);
+    return ESP_OK;
+}
+
+static esp_err_t example_ota_res_cleanup_ota_cfg_from_nvs(nvs_handle_t handle) {
+    esp_err_t ret;
+
+    // Erase all keys in the NVS handle and commit changes
+    ESP_GOTO_ON_ERROR(nvs_erase_all(handle), err, TAG, "Error in erasing NVS");
+    ESP_GOTO_ON_ERROR(nvs_commit(handle), err, TAG, "Error in committing NVS");
+    ret = ESP_OK;
+err:
+    nvs_close(handle);
+    return ret;
+}
+
+#endif
 
 /* Event handler for catching system events */
 static void event_handler(void* arg, esp_event_base_t event_base,
@@ -123,6 +214,7 @@ void advanced_ota_example_task(void *pvParameter)
 {
     ESP_LOGI(TAG, "Starting Advanced OTA example");
 
+    esp_err_t err;
     esp_err_t ota_finish_err = ESP_OK;
     esp_http_client_config_t config = {
         .url = CONFIG_EXAMPLE_FIRMWARE_UPGRADE_URL,
@@ -152,6 +244,23 @@ void advanced_ota_example_task(void *pvParameter)
     config.skip_cert_common_name_check = true;
 #endif
 
+#ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
+    nvs_handle_t nvs_ota_resumption_handle;
+    err = nvs_open(NVS_NAMESPACE_OTA_RESUMPTION, NVS_READWRITE, &nvs_ota_resumption_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+        vTaskDelete(NULL);
+    }
+
+    uint32_t ota_wr_len = 0; // Variable to hold the written length
+    err = example_ota_res_get_ota_written_len_from_nvs(nvs_ota_resumption_handle, config.url, &ota_wr_len);
+    if (err != ESP_OK) {
+        ESP_LOGD(TAG, "Starting OTA from beginning");
+    } else {
+        ESP_LOGD(TAG, "OTA write length fetched successfully");
+    }
+#endif
+
     esp_https_ota_config_t ota_config = {
         .http_config = &config,
         .http_client_init_cb = _http_client_init_cb, // Register a callback to be invoked after esp_http_client is initialized
@@ -159,16 +268,20 @@ void advanced_ota_example_task(void *pvParameter)
         .partial_http_download = true,
         .max_http_request_size = CONFIG_EXAMPLE_HTTP_REQUEST_SIZE,
 #endif
+#ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
+        .ota_resumption = true,
+        .ota_image_bytes_written = ota_wr_len,
+#endif
     };
 
     esp_https_ota_handle_t https_ota_handle = NULL;
-    esp_err_t err = esp_https_ota_begin(&ota_config, &https_ota_handle);
+    err = esp_https_ota_begin(&ota_config, &https_ota_handle);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "ESP HTTPS OTA Begin failed");
         vTaskDelete(NULL);
     }
 
-    esp_app_desc_t app_desc;
+    esp_app_desc_t app_desc = {};
     err = esp_https_ota_get_img_desc(https_ota_handle, &app_desc);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "esp_https_ota_get_img_desc failed");
@@ -188,13 +301,26 @@ void advanced_ota_example_task(void *pvParameter)
         // esp_https_ota_perform returns after every read operation which gives user the ability to
         // monitor the status of OTA upgrade by calling esp_https_ota_get_image_len_read, which gives length of image
         // data read so far.
-        ESP_LOGD(TAG, "Image bytes read: %d", esp_https_ota_get_image_len_read(https_ota_handle));
+        const size_t len = esp_https_ota_get_image_len_read(https_ota_handle);
+        ESP_LOGD(TAG, "Image bytes read: %d", len);
+#ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
+        err = example_ota_res_save_ota_cfg_to_nvs(nvs_ota_resumption_handle, len, config.url);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to save OTA config to NVS (%s).", esp_err_to_name(err));
+        }
+#endif
     }
 
     if (esp_https_ota_is_complete_data_received(https_ota_handle) != true) {
         // the OTA image was not completely received and user can customise the response to this situation.
         ESP_LOGE(TAG, "Complete data was not received.");
     } else {
+#ifdef CONFIG_EXAMPLE_ENABLE_OTA_RESUMPTION
+        err = example_ota_res_cleanup_ota_cfg_from_nvs(nvs_ota_resumption_handle);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to clean up OTA config from NVS (%s).", esp_err_to_name(err));
+        }
+#endif
         ota_finish_err = esp_https_ota_finish(https_ota_handle);
         if ((err == ESP_OK) && (ota_finish_err == ESP_OK)) {
             ESP_LOGI(TAG, "ESP_HTTPS_OTA upgrade successful. Rebooting ...");

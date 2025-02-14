@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,17 +19,17 @@ wl_handle_t ff_wl_handles[FF_VOLUMES] = {
         [0 ... FF_VOLUMES - 1] = WL_INVALID_HANDLE
 };
 
-DSTATUS ff_wl_initialize (BYTE pdrv)
+static DSTATUS ff_wl_initialize (BYTE pdrv)
 {
     return 0;
 }
 
-DSTATUS ff_wl_status (BYTE pdrv)
+static DSTATUS ff_wl_status (BYTE pdrv)
 {
     return 0;
 }
 
-DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_read - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
@@ -42,7 +42,7 @@ DRESULT ff_wl_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
-DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_wl_write - pdrv=%i, sector=%i, count=%i", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
@@ -60,7 +60,7 @@ DRESULT ff_wl_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
     return RES_OK;
 }
 
-DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
+static DRESULT ff_wl_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 {
     wl_handle_t wl_handle = ff_wl_handles[pdrv];
     ESP_LOGV(TAG, "ff_wl_ioctl: cmd=%i", cmd);

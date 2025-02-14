@@ -67,14 +67,16 @@ void pmu_sleep_disable_regdma_backup(void)
     }
 }
 
-uint32_t pmu_sleep_calculate_lp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_lp_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     const pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
     /* LP core hardware wait time, microsecond */
     const int lp_wakeup_wait_time_us        = rtc_time_slowclk_to_us(mc->lp.wakeup_wait_cycle, slowclk_period);
     const int lp_clk_switch_time_us         = rtc_time_slowclk_to_us(mc->lp.clk_switch_cycle, slowclk_period);
-    const int lp_clk_power_on_wait_time_us  = (pd_flags & PMU_SLEEP_PD_XTAL) ? mc->lp.xtal_wait_stable_time_us \
-                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
+    /* If XTAL is used as RTC_FAST clock source, it is started in LP_SLEEP -> LP_ACTIVE stage and the clock waiting time is counted into lp_hw_wait_time */
+    const int lp_clk_power_on_wait_time_us  = ((sleep_flags & PMU_SLEEP_PD_XTAL) && (sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                            ? mc->lp.xtal_wait_stable_time_us \
+                                            : rtc_time_slowclk_to_us(mc->lp.clk_power_on_wait_cycle, slowclk_period);
 
     const int lp_hw_wait_time_us = mc->lp.min_slp_time_us + mc->lp.analog_wait_time_us + lp_clk_power_on_wait_time_us \
                             + lp_wakeup_wait_time_us + lp_clk_switch_time_us + mc->lp.power_supply_wait_time_us \
@@ -83,28 +85,31 @@ uint32_t pmu_sleep_calculate_lp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk
     return (uint32_t)lp_hw_wait_time_us;
 }
 
-uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     pmu_sleep_machine_constant_t *mc = (pmu_sleep_machine_constant_t *)PMU_instance()->mc;
     /* HP core hardware wait time, microsecond */
     const int hp_digital_power_up_wait_time_us = mc->hp.power_supply_wait_time_us + mc->hp.power_up_wait_time_us;
-    const int hp_regdma_wait_time_us = (pd_flags & PMU_SLEEP_PD_TOP) ?  mc->hp.regdma_s2a_work_time_us : 0;
-    const int hp_clock_wait_time_us = mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us;
+    const int hp_regdma_wait_time_us = s_pmu_sleep_regdma_backup_enabled ? mc->hp.regdma_s2a_work_time_us : 0;
+    /* If XTAL is not used as RTC_FAST clock source, it is started in HP_SLEEP -> HP_ACTIVE stage and the clock waiting time is counted into hp_hw_wait_time */
+    const int hp_clock_wait_time_us = ((sleep_flags & PMU_SLEEP_PD_XTAL) && !(sleep_flags & RTC_SLEEP_XTAL_AS_RTC_FAST)) \
+                                    ? mc->hp.xtal_wait_stable_time_us + mc->hp.pll_wait_stable_time_us \
+                                    : mc->hp.pll_wait_stable_time_us;
 
-    if (pd_flags & PMU_SLEEP_PD_TOP) {
+    if (sleep_flags & PMU_SLEEP_PD_TOP) {
         mc->hp.analog_wait_time_us = PMU_HP_ANA_WAIT_TIME_PD_TOP_US;
     } else {
         mc->hp.analog_wait_time_us = PMU_HP_ANA_WAIT_TIME_PU_TOP_US;
     }
 
-    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + MAX(hp_digital_power_up_wait_time_us + mc->hp.pll_wait_stable_time_us + hp_regdma_wait_time_us, hp_clock_wait_time_us);
+    const int hp_hw_wait_time_us = mc->hp.analog_wait_time_us + hp_digital_power_up_wait_time_us + hp_regdma_wait_time_us + hp_clock_wait_time_us;
     return (uint32_t)hp_hw_wait_time_us;
 }
 
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period)
 {
-    const uint32_t lp_hw_wait_time_us = pmu_sleep_calculate_lp_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
-    const uint32_t hp_hw_wait_time_us = pmu_sleep_calculate_hp_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
+    const uint32_t lp_hw_wait_time_us = pmu_sleep_calculate_lp_hw_wait_time(sleep_flags, slowclk_period, fastclk_period);
+    const uint32_t hp_hw_wait_time_us = pmu_sleep_calculate_hp_hw_wait_time(sleep_flags, slowclk_period, fastclk_period);
     const uint32_t total_hw_wait_time_us = lp_hw_wait_time_us + hp_hw_wait_time_us;
     return total_hw_wait_time_us;
 }
@@ -114,7 +119,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_param_config_t *param,
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
-        const uint32_t pd_flags,
+        const uint32_t sleep_flags,
         const uint32_t adjustment,
         const uint32_t slowclk_period,
         const uint32_t fastclk_period

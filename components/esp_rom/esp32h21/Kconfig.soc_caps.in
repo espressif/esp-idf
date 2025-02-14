@@ -39,6 +39,10 @@ config ESP_ROM_HAS_HEAP_TLSF
     bool
     default y
 
+config ESP_ROM_MULTI_HEAP_WALK_PATCH
+    bool
+    default y
+
 config ESP_ROM_HAS_LAYOUT_TABLE
     bool
     default y
@@ -76,10 +80,6 @@ config ESP_ROM_USB_OTG_NUM
     default -1
 
 config ESP_ROM_HAS_VERSION
-    bool
-    default y
-
-config ESP_ROM_SUPPORT_DEEP_SLEEP_WAKEUP_STUB
     bool
     default y
 

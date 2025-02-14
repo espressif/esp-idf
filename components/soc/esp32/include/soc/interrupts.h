@@ -62,7 +62,7 @@ typedef enum {
     ETS_TWAI_INTR_SOURCE,                    /**< interrupt of twai, level*/
     ETS_RTC_CORE_INTR_SOURCE,                /**< interrupt of rtc core, level, include rtc watchdog*/
     ETS_RMT_INTR_SOURCE,                     /**< interrupt of remote controller, level*/
-    ETS_PCNT_INTR_SOURCE,                    /**< interrupt of pluse count, level*/
+    ETS_PCNT_INTR_SOURCE,                    /**< interrupt of pulse count, level*/
     ETS_I2C_EXT0_INTR_SOURCE,                /**< interrupt of I2C controller1, level*/
     ETS_I2C_EXT1_INTR_SOURCE,                /**< interrupt of I2C controller0, level*/
     ETS_RSA_INTR_SOURCE,                     /**< interrupt of RSA accelerator, level*/
@@ -82,9 +82,11 @@ typedef enum {
     ETS_TG1_LACT_EDGE_INTR_SOURCE,           /**< interrupt of TIMER_GROUP0, LACT, EDGE*/
     ETS_MMU_IA_INTR_SOURCE,                  /**< interrupt of MMU Invalid Access, LEVEL*/
     ETS_MPU_IA_INTR_SOURCE,                  /**< interrupt of MPU Invalid Access, LEVEL*/
-    ETS_CACHE_IA_INTR_SOURCE,                /**< interrupt of Cache Invalied Access, LEVEL*/
+    ETS_CACHE_IA_INTR_SOURCE,                /**< interrupt of Cache Invalid Access, LEVEL*/
     ETS_MAX_INTR_SOURCE,                     /**< total number of interrupt sources*/
-} periph_interrput_t;
+} periph_interrupt_t;
+
+typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
 
 #define ETS_CAN_INTR_SOURCE ETS_TWAI_INTR_SOURCE
 

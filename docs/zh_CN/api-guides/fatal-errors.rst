@@ -130,7 +130,7 @@
 寄存器转储与回溯
 ----------------
 
-除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台
+除非启用了 ``CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT`` 否则紧急处理程序会将 CPU 寄存器和回溯打印到控制台。
 
 .. only:: CONFIG_IDF_TARGET_ARCH_XTENSA
 
@@ -234,7 +234,7 @@
         #5  0x00000000 in ?? ()
         Backtrace stopped: frame did not save the PC
 
-    虽然以上的回溯信息非常方便，但要求用户使用 :doc:`IDF 监视器 <tools/idf-monitor>`。因此，如果用户希望使用其它的串口监控软件也能显示堆栈回溯信息，则需要在 menuconfig 中启用 ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项。
+    虽然以上的回溯信息非常方便，但要求用户使用 :doc:`IDF 监视器 <tools/idf-monitor>`。因此，如果用户希望使用其它的串口监控软件也能显示堆栈回溯信息，则需要在 menuconfig 中的 “Backtracing method” 菜单下启用 ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项。
 
     该选项会让编译器为项目的每个函数生成 DWARF 信息。然后，当 CPU 异常发生时，紧急处理程序将解析这些数据并生成出错任务的堆栈回溯信息。输出结果如下：
 
@@ -245,7 +245,13 @@
     这些 ``PC:SP`` 对代表当前任务每一个栈帧的程序计数器值 (Program Counter) 和栈顶地址 (Stack Pointer)。
 
 
-    ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印（而不依靠 :doc:`tools/idf-monitor`）。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈不建议用户在量产/生产版本中启用该选项。
+    ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项的主要优点是，回溯信息可以由程序自己解析生成并打印（而不依靠 :doc:`tools/idf-monitor`）。但是该选项会导致编译后的二进制文件更大（增幅可达 20% 甚至 100%）。此外，该选项会将调试信息也保存在二进制文件里。因此，强烈建议不要在量产版本中启用该选项。
+
+    另一种在设备上生成此类回溯信息的是，在 menuconfig 中的 “Backtracing method” 菜单下启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项。
+
+    启用该选项后，编译器会保留一个 CPU 寄存器，用于跟踪程序中每个函数的栈帧。这样，异常处理程序能够在任何给定时间（尤其是在发生 CPU 异常时）展开调用栈。
+
+    启用 ``CONFIG_ESP_SYSTEM_USE_FRAME_POINTER`` 选项会导致编译后的二进制文件大小增加约 5-6%，性能下降约 1%。与 ``CONFIG_ESP_SYSTEM_USE_EH_FRAME`` 选项不同，编译器不会在生成的二进制文件中生成调试信息，因此可以在量产版本中使用此功能。
 
 若要查找发生严重错误的代码位置，请查看 "Backtrace" 的后面几行，发生严重错误的代码显示在顶行，后续几行显示的是调用堆栈。
 
@@ -391,7 +397,7 @@ Guru Meditation 错误
 
     应用程序尝试读取/写入的内存位置不符合加载/存储指令对字节对齐大小的要求，例如，32 位加载指令只能访问 4 字节对齐的内存地址，而 16 位加载指令只能访问 2 字节对齐的内存地址。
 
-Interrupt wdt timeout on CPU0 / CPU1
+Interrupt wdt timeout on CPU0/CPU1
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 这表示发生了中断看门狗超时，详细信息请查阅 :doc:`看门狗 <../api-reference/system/wdts>` 文档。

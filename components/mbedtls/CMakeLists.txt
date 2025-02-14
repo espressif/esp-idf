@@ -5,6 +5,18 @@ idf_build_get_property(esp_tee_build ESP_TEE_BUILD)
 if(esp_tee_build)
     include(${COMPONENT_DIR}/esp_tee/esp_tee_mbedtls.cmake)
     return()
+
+elseif(BOOTLOADER_BUILD)   # TODO: IDF-11673
+    if(CONFIG_MBEDTLS_USE_CRYPTO_ROM_IMPL_BOOTLOADER)
+        set(include_dirs "${COMPONENT_DIR}/mbedtls/include"
+                         "port/mbedtls_rom")
+        set(srcs "port/mbedtls_rom/mbedtls_rom_osi_bootloader.c")
+    endif()
+
+    idf_component_register(SRCS "${srcs}"
+                           INCLUDE_DIRS "${include_dirs}"
+                           PRIV_REQUIRES hal)
+    return()
 endif()
 
 if(NOT ${IDF_TARGET} STREQUAL "linux")
@@ -87,7 +99,6 @@ if(CONFIG_MBEDTLS_CERTIFICATE_BUNDLE)
         APPEND PROPERTY ADDITIONAL_CLEAN_FILES
         "${crt_bundle}")
 endif()
-
 
 # Only build mbedtls libraries
 set(ENABLE_TESTING CACHE BOOL OFF)
@@ -180,12 +191,10 @@ endif()
 # Choose peripheral type
 
 if(CONFIG_SOC_SHA_SUPPORTED)
-    if(CONFIG_SOC_SHA_SUPPORT_DMA)
-        set(SHA_PERIPHERAL_TYPE "dma")
-    elseif(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
+    if(CONFIG_SOC_SHA_SUPPORT_PARALLEL_ENG)
         set(SHA_PERIPHERAL_TYPE "parallel_engine")
     else()
-        set(SHA_PERIPHERAL_TYPE "block")
+        set(SHA_PERIPHERAL_TYPE "core")
     endif()
 endif()
 
@@ -197,15 +206,15 @@ if(CONFIG_SOC_AES_SUPPORTED)
     endif()
 endif()
 
-if(SHA_PERIPHERAL_TYPE STREQUAL "dma")
-    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/dma/include")
+if(SHA_PERIPHERAL_TYPE STREQUAL "core")
+    target_include_directories(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/include")
 
-    if(NOT CONFIG_SOC_SHA_GDMA)
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_crypto_dma_impl.c")
-    else()
-        set(SHA_DMA_SRCS "${COMPONENT_DIR}/port/sha/dma/esp_sha_gdma_impl.c")
+    if(CONFIG_SOC_SHA_GDMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_gdma_impl.c")
+    elseif(CONFIG_SOC_SHA_CRYPTO_DMA)
+        set(SHA_CORE_SRCS "${COMPONENT_DIR}/port/sha/core/esp_sha_crypto_dma_impl.c")
     endif()
-    target_sources(mbedcrypto PRIVATE  "${SHA_DMA_SRCS}")
+    target_sources(mbedcrypto PRIVATE  "${SHA_CORE_SRCS}")
 endif()
 
 if(AES_PERIPHERAL_TYPE STREQUAL "dma")
@@ -221,7 +230,7 @@ if(AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_sources(mbedcrypto PRIVATE  "${AES_DMA_SRCS}")
 endif()
 
-if(SHA_PERIPHERAL_TYPE STREQUAL "dma" OR AES_PERIPHERAL_TYPE STREQUAL "dma")
+if((SHA_PERIPHERAL_TYPE STREQUAL "core" AND CONFIG_SOC_SHA_SUPPORT_DMA) OR AES_PERIPHERAL_TYPE STREQUAL "dma")
     target_link_libraries(mbedcrypto PRIVATE idf::esp_mm)
     if(CONFIG_SOC_SHA_GDMA OR CONFIG_SOC_AES_GDMA)
         if(CONFIG_SOC_AXI_DMA_EXT_MEM_ENC_ALIGNMENT)

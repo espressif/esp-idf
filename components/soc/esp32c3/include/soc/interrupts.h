@@ -81,7 +81,9 @@ typedef enum {
     ETS_BAK_PMS_VIOLATE_INTR_SOURCE,
     ETS_CACHE_CORE0_ACS_INTR_SOURCE,
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
+
+typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

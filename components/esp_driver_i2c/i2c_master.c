@@ -646,7 +646,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
 
 ///////////////////////////////I2C DRIVERS//////////////////////////////////////////////////////////////
 
-IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
+I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
 
@@ -681,7 +681,7 @@ IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 #endif
 }
 
-static void IRAM_ATTR i2c_master_isr_handler_default(void *arg)
+static void i2c_master_isr_handler_default(void *arg)
 {
     i2c_master_bus_handle_t i2c_master = (i2c_master_bus_t*) arg;
 

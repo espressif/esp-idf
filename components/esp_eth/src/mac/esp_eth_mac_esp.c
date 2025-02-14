@@ -446,7 +446,6 @@ static void emac_esp32_rx_task(void *arg)
 #endif
         } while (emac->frames_remain);
     }
-    vTaskDelete(NULL);
 }
 
 static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)

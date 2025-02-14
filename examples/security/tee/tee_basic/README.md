@@ -13,7 +13,7 @@
 └── example_secure_service       # Component parent directory
     ├── CMakeLists.txt
     ├── example_service.c        # Custom secure service APIs
-    ├── example.tbl              # Custom secure service table, which is appended to the default one provided by TEE
+    ├── sec_srv_tbl_example.yml  # Custom secure service table, which is parsed alongwith the default one provided by TEE
     ├── include
     │   └── example_service.h
     └── tee_project.cmake        # To be manually included in the project's top level CMakeLists.txt before project(...)

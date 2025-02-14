@@ -19,7 +19,6 @@
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/sha256.h"
 
-#include "esp_tee.h"
 #include "esp_tee_sec_storage.h"
 #include "secure_service_num.h"
 

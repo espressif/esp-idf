@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -279,7 +279,7 @@
 /*-------------------------- LEDC CAPS ---------------------------------------*/
 // #define SOC_LEDC_SUPPORT_PLL_DIV_CLOCK      (1)
 // #define SOC_LEDC_SUPPORT_XTAL_CLOCK         (1)
-// #define SOC_LEDC_CHANNEL_NUM                (6)
+#define SOC_LEDC_CHANNEL_NUM                (6) // Check, todo IDF-11568
 // #define SOC_LEDC_TIMER_BIT_WIDTH            (20)
 // #define SOC_LEDC_SUPPORT_FADE_STOP          (1)
 // #define SOC_LEDC_GAMMA_CURVE_FADE_SUPPORTED (1)
@@ -387,7 +387,7 @@
 #define SOC_SPI_SLAVE_SUPPORT_SEG_TRANS     1
 #define SOC_SPI_SUPPORT_CD_SIG              1
 #define SOC_SPI_SUPPORT_CONTINUOUS_TRANS    1
-#define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1
+// #define SOC_SPI_SUPPORT_SLAVE_HD_VER2       1 // TODO IDF-11587
 #define SOC_SPI_SUPPORT_CLK_XTAL            1
 #define SOC_SPI_SUPPORT_CLK_PLL_F48M        1
 #define SOC_SPI_SUPPORT_CLK_RC_FAST         1
@@ -407,7 +407,7 @@
 
 /*-------------------------- SPI MEM CAPS ---------------------------------------*/
 #define SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE                (1)
-#define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
+// #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1) //TODO: [ESP32H21] IDF-11526
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_IDLE_INTR                     (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
@@ -500,6 +500,12 @@
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
 // #define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
+
+#define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
+#define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
+#define SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE   (1)
+#define SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE     (1)
+#define SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE      (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

@@ -10,6 +10,10 @@ Thus, the attestation service is employed by the device to communicate evidence 
 
 To ensure security, the EAT is cryptographically protected. The remote relying party can then verify the authenticity of the EAT and make decisions about engaging with the device based on its contents.
 
+.. note::
+
+  - Support for Attestation can be toggled using the option :ref:`CONFIG_SECURE_TEE_ATTESTATION` (enabled by default).
+
 Attestation Flow
 ----------------
 
@@ -251,6 +255,6 @@ API Reference
 
 .. note::
 
-    To use the TEE Attestation APIs into your project, ensure the :component:`tee_attestation <esp_tee/subproject/components/tee_attestation>` component is included by setting ``EXTRA_COMPONENT_DIRS`` in your project's ``CMakeLists.txt`` file, as shown in the :example:`tee_attestation <security/tee/tee_attestation>` example. For more information, refer to the :ref:`optional_project_variable` section from the :doc:`Build System </api-guides/build-system>` documentation.
+    To use the TEE Attestation APIs in your project, ensure that the :component:`tee_attestation <esp_tee/subproject/components/tee_attestation>` component is listed as a local dependency in the component manager manifest file `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_. Refer to the :example:`tee_attestation <security/tee/tee_attestation>` example for guidance.
 
 .. include-build-file:: inc/esp_tee_attestation.inc

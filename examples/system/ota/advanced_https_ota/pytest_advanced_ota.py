@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -18,8 +18,26 @@ from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
 from RangeHTTPServer import RangeRequestHandler
 
+NVS_PARTITION = 'nvs'
+
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_cert.pem')
 key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_key.pem')
+
+
+def restart_device_with_random_delay(dut: Dut, min_delay: int = 10, max_delay: int = 30) -> None:
+    """
+    Restarts the device after a random delay.
+
+    Parameters:
+    - dut: The device under test (DUT) instance.
+    - min_delay: Minimum delay in seconds before restarting.
+    - max_delay: Maximum delay in seconds before restarting.
+    """
+    delay = random.randint(min_delay, max_delay)
+    print(f'Waiting for {delay} seconds before restarting the device...')
+    time.sleep(delay)
+    dut.serial.hard_reset()  # Restart the ESP32 device
+    print('Device restarted after random delay.')
 
 
 def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
@@ -130,6 +148,89 @@ def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
             print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
             dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
             dut.expect('upgrade successful. Rebooting ...', timeout=150)
+    finally:
+        thread1.terminate()
+
+
+@pytest.mark.esp32
+@pytest.mark.wifi_router
+@pytest.mark.parametrize('config', ['ota_resumption'], indirect=True)
+def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -> None:
+    """
+    This is a positive test case, which stops the download midway and resumes downloading again.
+    steps: |
+      1. join AP/Ethernet
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    # Number of iterations to validate OTA
+    server_port = 8001
+    bin_name = 'advanced_https_ota.bin'
+
+    # Erase NVS partition
+    dut.serial.erase_partition(NVS_PARTITION)
+
+    # Start server
+    thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
+    thread1.daemon = True
+    thread1.start()
+    try:
+        # start test
+        dut.expect('Loaded app from partition at offset', timeout=30)
+
+        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+            dut.expect('Please input ssid password:')
+            env_name = 'wifi_router'
+            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+            ap_password = get_env_config_variable(env_name, 'ap_password')
+            dut.write(f'{ap_ssid} {ap_password}')
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        restart_device_with_random_delay(dut, 10, 30)
+        thread1.terminate()
+
+        # Start server
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
+        thread1.daemon = True
+        thread1.start()
+
+        # Validate that the device restarts correctly
+        dut.expect('Loaded app from partition at offset', timeout=180)
+
+        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+            dut.expect('Please input ssid password:')
+            env_name = 'wifi_router'
+            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+            ap_password = get_env_config_variable(env_name, 'ap_password')
+            dut.write(f'{ap_ssid} {ap_password}')
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
+
     finally:
         thread1.terminate()
 
@@ -540,6 +641,93 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) 
         # after reboot
         dut.expect('Loaded app from partition at offset', timeout=30)
         dut.expect('OTA example app_main start', timeout=20)
+    finally:
+        thread1.terminate()
+
+
+@pytest.mark.esp32
+@pytest.mark.wifi_router
+@pytest.mark.parametrize('config', ['ota_resumption_partial_download',], indirect=True)
+def test_examples_protocol_advanced_https_ota_example_ota_resumption_partial_download_request(dut: Dut) -> None:
+    """
+    This is a positive test case, to test OTA workflow with Range HTTP header.
+    steps: |
+      1. join AP/Ethernet
+      2. Fetch OTA image over HTTPS
+      3. Reboot with the new OTA image
+    """
+    server_port = 8001
+    # Size of partial HTTP request
+    request_size = int(dut.app.sdkconfig.get('EXAMPLE_HTTP_REQUEST_SIZE'))
+    # File to be downloaded. This file is generated after compilation
+    bin_name = 'advanced_https_ota.bin'
+    binary_file = os.path.join(dut.app.binary_path, bin_name)
+    bin_size = os.path.getsize(binary_file)
+    http_requests = int((bin_size / request_size) - 1)
+    assert http_requests > 1
+
+    # Erase NVS partition
+    dut.serial.erase_partition(NVS_PARTITION)
+
+    # Start server
+    thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
+    thread1.daemon = True
+    thread1.start()
+    try:
+        # start test
+        dut.expect('Loaded app from partition at offset', timeout=30)
+
+        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+            dut.expect('Please input ssid password:')
+            env_name = 'wifi_router'
+            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+            ap_password = get_env_config_variable(env_name, 'ap_password')
+            dut.write(f'{ap_ssid} {ap_password}')
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP')
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+
+        restart_device_with_random_delay(dut, 10, 30)
+        thread1.terminate()
+
+        # Start server
+        thread1 = multiprocessing.Process(target=start_https_server, args=(dut.app.binary_path, '0.0.0.0', server_port))
+        thread1.daemon = True
+        thread1.start()
+
+        # Validate that the device restarts correctly
+        dut.expect('Loaded app from partition at offset', timeout=180)
+
+        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
+            dut.expect('Please input ssid password:')
+            env_name = 'wifi_router'
+            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
+            ap_password = get_env_config_variable(env_name, 'ap_password')
+            dut.write(f'{ap_ssid} {ap_password}')
+
+        try:
+            ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
+            print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
+        except pexpect.exceptions.TIMEOUT:
+            raise ValueError('ENV_TEST_FAILURE: Cannot connect to AP/Ethernet')
+
+        dut.expect('Starting Advanced OTA example', timeout=30)
+        host_ip = get_host_ip4_by_dest_ip(ip_address)
+
+        print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
+        dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
+        dut.expect('Starting OTA...', timeout=60)
+
+        dut.expect('upgrade successful. Rebooting ...', timeout=150)
+
     finally:
         thread1.terminate()
 

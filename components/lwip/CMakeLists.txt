@@ -100,11 +100,8 @@ if(CONFIG_LWIP_ENABLE)
         "port/hooks/lwip_default_hooks.c"
         "port/debug/lwip_debug.c"
         "port/sockets_ext.c"
-        "port/freertos/sys_arch.c")
-
-    if(CONFIG_LWIP_NETIF_API)
-        list(APPEND srcs "port/if_index.c")
-    endif()
+        "port/freertos/sys_arch.c"
+        "port/if_index.c")
 
     if(CONFIG_LWIP_PPP_SUPPORT)
         list(APPEND srcs

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,14 @@ static const char *TAG = "esp_tee_apm_prot_cfg";
 #endif
 #endif
 
+/* NOTE: Flash protection over the SPI1 controller */
+#define HP_APM_SPI1_REG_START    DR_REG_SPI1_BASE
+#if CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+#define HP_APM_SPI1_REG_END      DR_REG_I2C_EXT_BASE
+#else
+#define HP_APM_SPI1_REG_END      HP_APM_SPI1_REG_START
+#endif
+
 /*----------------------- HP APM range and filter configuration -----------------------*/
 
 /* HP_APM: REE0 mode accessible regions */
@@ -56,52 +64,61 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 2: Peripherals [MMU - Interrupt Matrix] (RW) */
-    /* Protected: Interrupt Matrix */
+    /* Region 2: Peripherals [MMU - SPI1] (RW) */
+    /* Protected: SPI1 */
     {
         .regn_num = 2,
         .regn_start_addr = SPI_MEM_MMU_POWER_CTRL_REG(0),
+        .regn_end_addr   = (HP_APM_SPI1_REG_START - 0x4),
+        .regn_pms        = 0x6,
+        .filter_enable   = 1,
+    },
+    /* Region 3: Peripherals [SPI1 - Interrupt Matrix] (RW) */
+    /* Protected: Interrupt Matrix */
+    {
+        .regn_num = 3,
+        .regn_start_addr = HP_APM_SPI1_REG_END,
         .regn_end_addr   = (DR_REG_INTMTX_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 3: Peripherals [H/W Lock - AES] (RW) */
+    /* Region 4: Peripherals [H/W Lock - AES] (RW) */
     /* Protected: AES, SHA */
     {
-        .regn_num = 3,
+        .regn_num = 4,
         .regn_start_addr = DR_REG_ATOMIC_BASE,
         .regn_end_addr   = (DR_REG_AES_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 4: Peripherals [RSA - TEE Controller & APM] (RW) */
+    /* Region 5: Peripherals [RSA - TEE Controller & APM] (RW) */
     /* Protected: APM, TEE Controller */
     {
-        .regn_num = 4,
+        .regn_num = 5,
         .regn_start_addr = DR_REG_RSA_BASE,
         .regn_end_addr   = (DR_REG_TEE_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 5: Peripherals [Miscellaneous - PMU] (RW) */
+    /* Region 6: Peripherals [Miscellaneous - PMU] (RW) */
     {
-        .regn_num = 5,
+        .regn_num = 6,
         .regn_start_addr = DR_REG_MISC_BASE,
         .regn_end_addr   = (DR_REG_PMU_BASE - 0x04),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 6: Peripherals [DEBUG - PWDET] (RW) */
+    /* Region 7: Peripherals [DEBUG - PWDET] (RW) */
     {
-        .regn_num = 6,
+        .regn_num = 7,
         .regn_start_addr = DR_REG_OPT_DEBUG_BASE,
         .regn_end_addr   = 0x600D0000,
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 7: REE SRAM region (RW) */
+    /* Region 8: REE SRAM region (RW) */
     {
-        .regn_num = 7,
+        .regn_num = 8,
         .regn_start_addr = SOC_NS_IRAM_START,
         .regn_end_addr   = SOC_IRAM_HIGH,
         .regn_pms        = 0x6,
@@ -147,9 +164,9 @@ apm_ctrl_secure_mode_config_t hp_apm_sec_mode_data = {
 
 /* HP_APM: TEE mode accessible regions */
 apm_ctrl_region_config_data_t hp_apm_pms_data_tee[] = {
-    /* Region 8: Entire memory region (RWX)*/
+    /* Region 9: Entire memory region (RWX)*/
     {
-        .regn_num = 8,
+        .regn_num = 9,
         .regn_start_addr = 0x0,
         .regn_end_addr   = ~0x0,
         .regn_pms        = 0x7,

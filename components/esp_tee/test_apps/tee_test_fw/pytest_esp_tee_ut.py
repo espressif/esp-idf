@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from enum import Enum
 from typing import Any
@@ -12,6 +12,11 @@ CONFIGS_DEFAULT = [
 ]
 
 CONFIGS_OTA = [
+    pytest.param('ota', marks=[pytest.mark.esp32c6])
+]
+
+CONFIGS_ALL = [
+    pytest.param('default', marks=[pytest.mark.esp32c6]),
     pytest.param('ota', marks=[pytest.mark.esp32c6])
 ]
 
@@ -42,6 +47,8 @@ REE_ISOLATION_TEST_EXC_RSN: Dict[str, Any] = {
 
 TEE_APM_VIOLATION_EXC_CHK = ['AES', 'eFuse', 'MMU']
 
+TEST_PARTITION_LABEL = 'test'
+
 # ---------------- TEE default tests ----------------
 
 
@@ -52,14 +59,14 @@ def test_esp_tee(dut: IdfDut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', CONFIGS_DEFAULT, indirect=True)
+@pytest.mark.parametrize('config', CONFIGS_ALL, indirect=True)
 def test_esp_tee_crypto_aes(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='aes')
     dut.run_all_single_board_cases(group='aes-gcm')
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', CONFIGS_DEFAULT, indirect=True)
+@pytest.mark.parametrize('config', CONFIGS_ALL, indirect=True)
 def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='mbedtls')
     dut.run_all_single_board_cases(group='hw_crypto')
@@ -67,7 +74,7 @@ def test_esp_tee_crypto_sha(dut: IdfDut) -> None:
 
 # NOTE: Stress testing the AES performance case for interrupt-related edge-cases
 @pytest.mark.generic
-@pytest.mark.parametrize('config', CONFIGS_DEFAULT, indirect=True)
+@pytest.mark.parametrize('config', CONFIGS_ALL, indirect=True)
 def test_esp_tee_aes_perf(dut: IdfDut) -> None:
     # start test
     for i in range(24):
@@ -134,17 +141,56 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
             raise RuntimeError('Incorrect exception received!')
         dut.expect('Exception origin: U-mode')
 
+# ---------------- TEE Flash Protection Tests ----------------
 
-def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int) -> None:
+
+class TeeFlashAccessApi(Enum):
+    ESP_PARTITION_MMAP = 1
+    SPI_FLASH_MMAP = 2
+    ESP_PARTITION = 3
+    ESP_FLASH = 4
+    ESP_ROM_SPIFLASH = 5
+
+
+def check_panic_or_reset(dut: IdfDut) -> None:
+    try:
+        exc = dut.expect(r"Core ([01]) panic\'ed \(([^)]+)\)", timeout=5).group(2).decode()
+        if exc not in {'Cache error', 'Authority exception'}:
+            raise RuntimeError('Flash operation incorrect exception')
+    except Exception:
+        rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=5).group(2).decode()
+        # Fault assert check produces this reset reason
+        if rst_rsn != 'LP_SW_HPSYS':
+            raise RuntimeError('Flash operation incorrect reset reason')
+
+
+def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFlashAccessApi) -> None:
+    exp_seq = {
+        TeeFlashAccessApi.ESP_PARTITION: ['read', 'program_page', 'program_page', 'erase_sector'],
+        TeeFlashAccessApi.ESP_FLASH: ['program_page', 'read', 'erase_sector', 'program_page']
+    }
+
     for stage in range(1, stages + 1):
         dut.write(str(test_case_num))
         dut.expect(r'\s+\((\d+)\)\s+"([^"]+)"\r?\n', timeout=30)
         dut.write(str(stage))
 
         if 1 < stage <= stages:
-            rst_rsn = dut.expect(r"Core ([01]) panic\'ed \(([^)]+)\)", timeout=30).group(2).decode()
-            if rst_rsn != 'Cache error':
-                raise RuntimeError('Incorrect reset reason observed after TEE image failure!')
+            if api in exp_seq:
+                try:
+                    match = dut.expect(r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)', timeout=5)
+                    fault_api = match.group(1).decode()
+                    if fault_api != exp_seq[api][stage - 2]:
+                        raise RuntimeError('Flash operation address check failed')
+                except Exception:
+                    # NOTE: The esp_partition_read API handles both decrypted
+                    # and plaintext reads. When flash encryption is enabled,
+                    # it uses the MMU HAL instead of the SPI flash HAL.
+                    exc = dut.expect(r"Core ([01]) panic\'ed \(([^)]+)\)", timeout=5).group(2).decode()
+                    if exc != 'Cache error':
+                        raise RuntimeError('Flash operation incorrect exception')
+            else:
+                check_panic_or_reset(dut)
 
         if stage != stages:
             dut.expect_exact('Press ENTER to see the list of tests.')
@@ -160,8 +206,8 @@ def test_esp_tee_flash_prot_esp_partition_mmap(dut: IdfDut) -> None:
     # start test
     extra_data = dut.parse_test_menu()
     for test_case in extra_data:
-        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_partition_mmap)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases))
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (esp_partition_mmap)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION_MMAP)
         else:
             continue
 
@@ -177,7 +223,55 @@ def test_esp_tee_flash_prot_spi_flash_mmap(dut: IdfDut) -> None:
     extra_data = dut.parse_test_menu()
     for test_case in extra_data:
         if test_case.name == 'Test REE-TEE isolation: Flash - SPI0 (spi_flash_mmap)':
-            run_multiple_stages(dut, test_case.index, len(test_case.subcases))
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.SPI_FLASH_MMAP)
+        else:
+            continue
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_OTA, indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_esp_tee_flash_prot_esp_rom_spiflash(dut: IdfDut) -> None:
+    # Flash the bootloader, TEE and REE firmware
+    dut.serial.custom_flash()
+
+    # start test
+    extra_data = dut.parse_test_menu()
+    for test_case in extra_data:
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_rom_spiflash)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_ROM_SPIFLASH)
+        else:
+            continue
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_OTA, indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_esp_tee_flash_prot_esp_partition(dut: IdfDut) -> None:
+    # Flash the bootloader, TEE and REE firmware
+    dut.serial.custom_flash()
+
+    # start test
+    extra_data = dut.parse_test_menu()
+    for test_case in extra_data:
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_partition)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_PARTITION)
+        else:
+            continue
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', CONFIGS_OTA, indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+def test_esp_tee_flash_prot_esp_flash(dut: IdfDut) -> None:
+    # Flash the bootloader, TEE and REE firmware
+    dut.serial.custom_flash()
+
+    # start test
+    extra_data = dut.parse_test_menu()
+    for test_case in extra_data:
+        if test_case.name == 'Test REE-TEE isolation: Flash - SPI1 (esp_flash)':
+            run_multiple_stages(dut, test_case.index, len(test_case.subcases), TeeFlashAccessApi.ESP_FLASH)
         else:
             continue
 

@@ -709,18 +709,11 @@ static inline uint32_t timeout_from_offered(uint32_t lease, uint32_t min)
  * LWIP_DHCP_DISCOVER_ADD_HOSTNAME==1: include hostname opt in discover packets.
  * If the hostname is not set in the DISCOVER packet, then some servers might issue
  * an OFFER with hostname configured and consequently reject the REQUEST with any other hostname.
+ * LWIP_NETIF_API==1: Support netif APIs (if_nametoindex and if_indextoname)
  */
 #define LWIP_NETIF_HOSTNAME             1
 #define LWIP_DHCP_DISCOVER_ADD_HOSTNAME 1
-
-/**
-  * LWIP_NETIF_API==1: Support netif api (in netifapi.c)
- */
-#ifdef CONFIG_LWIP_NETIF_API
 #define LWIP_NETIF_API                  1
-#else
-#define LWIP_NETIF_API                  0
-#endif
 
 /**
  * LWIP_NETIF_STATUS_CALLBACK==1: Support a callback function whenever an interface

@@ -74,6 +74,6 @@ API Reference
 
 .. note::
 
-    To use the TEE OTA APIs into your project, ensure the :component:`tee_ota_ops <esp_tee/subproject/components/tee_ota_ops>` component is included by setting ``EXTRA_COMPONENT_DIRS`` in your project's ``CMakeLists.txt`` file, as shown in the :example:`tee_secure_ota <security/tee/tee_secure_ota>` example. For more information, refer to the :ref:`optional_project_variable` section from the :doc:`Build System </api-guides/build-system>` documentation.
+    To use the TEE OTA APIs in your project, ensure that the :component:`tee_ota_ops <esp_tee/subproject/components/tee_ota_ops>` component is listed as a local dependency in the component manager manifest file `idf_component.yml <https://docs.espressif.com/projects/idf-component-manager/en/latest/reference/manifest_file.html>`_. Refer to the :example:`tee_secure_ota <security/tee/tee_secure_ota>` example for guidance.
 
 .. include-build-file:: inc/esp_tee_ota_ops.inc

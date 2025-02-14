@@ -1,6 +1,10 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
 components/spi_flash/test_apps/esp_flash:
+  disable:
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not support yet # TODO: [esp32h21] IDF-11609
   depends_filepatterns:
     - components/bootloader_support/bootloader_flash/**/*
   depends_components:
@@ -18,7 +22,7 @@ components/spi_flash/test_apps/esp_flash_stress:
 
 components/spi_flash/test_apps/flash_encryption:
   disable_test:
-    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32c2", "esp32s2", "esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61", "esp32h21"]
       temporary: true
       reason: No runners # IDF-5634
 

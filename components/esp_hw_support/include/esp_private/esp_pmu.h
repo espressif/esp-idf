@@ -46,11 +46,11 @@ typedef enum {
 #define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
-#define RTC_SLEEP_DIG_USE_8M            BIT(16)
-#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(17)
-#define RTC_SLEEP_NO_ULTRA_LOW          BIT(18) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
-#define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(19)
-#define RTC_SLEEP_LP_PERIPH_USE_XTAL    BIT(20)
+#define RTC_SLEEP_DIG_USE_8M            BIT(27)
+#define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(28)
+#define RTC_SLEEP_NO_ULTRA_LOW          BIT(29) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
+#define RTC_SLEEP_XTAL_AS_RTC_FAST      BIT(30)
+#define RTC_SLEEP_LP_PERIPH_USE_XTAL    BIT(31)
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
 #define RTC_EXT0_TRIG_EN            PMU_EXT0_WAKEUP_EN      //!< EXT0 wakeup
@@ -205,40 +205,40 @@ bool pmu_sleep_pll_already_enabled(void);
 /**
  * @brief Calculate the LP system hardware time overhead during sleep
  *
- * @param pd_flags flags indicates the power domain that will be powered down
+ * @param sleep_flags flags indicates the power domain that will be powered down and the sleep submode
  * @param slowclk_period re-calibrated slow clock period
  * @param fastclk_period re-calibrated fast clock period
  *
  * @return hardware time overhead in us
  */
-uint32_t pmu_sleep_calculate_lp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period);
+uint32_t pmu_sleep_calculate_lp_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period);
 
 /**
  * @brief Calculate the HP system hardware time overhead during sleep
  *
- * @param pd_flags flags indicates the power domain that will be powered down
+ * @param sleep_flags flags indicates the power domain that will be powered down and the sleep submode
  * @param slowclk_period re-calibrated slow clock period
  * @param fastclk_period re-calibrated fast clock period
  *
  * @return hardware time overhead in us
  */
-uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period);
+uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period);
 
 /**
  * @brief Calculate the hardware time overhead during sleep to compensate for sleep time
  *
- * @param pd_flags flags indicates the power domain that will be powered down
+ * @param sleep_flags flags indicates the power domain that will be powered down and the sleep submode
  * @param slowclk_period re-calibrated slow clock period
  * @param fastclk_period re-calibrated fast clock period
  *
  * @return hardware time overhead in us
  */
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period);
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk_period, uint32_t fastclk_period);
 
 /**
  * @brief Get default sleep configuration
  * @param config pmu_sleep_config instance
- * @param pd_flags flags indicates the power domain that will be powered down
+ * @param sleep_flags flags indicates the power domain that will be powered down and the sleep submode
  * @param adjustment total software and hardware time overhead
  * @param slowclk_period re-calibrated slow clock period in microseconds,
  *                       Q13.19 fixed point format
@@ -248,7 +248,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_pe
 
  * @return hardware time overhead in us
  */
-const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t pd_flags, uint32_t adjustment, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
+const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t sleep_flags, uint32_t adjustment, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
 
 /**
  * @brief Prepare the chip to enter sleep mode

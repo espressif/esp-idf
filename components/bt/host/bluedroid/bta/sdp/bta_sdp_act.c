@@ -40,31 +40,6 @@
 
 #if (SDP_INCLUDED == TRUE)
 
-/*****************************************************************************
-**  Constants
-*****************************************************************************/
-
-static const uint8_t  UUID_OBEX_OBJECT_PUSH[] = {0x00, 0x00, 0x11, 0x05, 0x00, 0x00, 0x10, 0x00,
-                                                 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                                };
-static const uint8_t  UUID_PBAP_PSE[] = {0x00, 0x00, 0x11, 0x2F, 0x00, 0x00, 0x10, 0x00,
-                                         0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                        };
-static const uint8_t  UUID_PBAP_PCE[] = {0x00, 0x00, 0x11, 0x2E, 0x00, 0x00, 0x10, 0x00,
-                                         0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                        };
-static const uint8_t  UUID_MAP_MAS[] = {0x00, 0x00, 0x11, 0x32, 0x00, 0x00, 0x10, 0x00,
-                                        0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                       };
-static const uint8_t  UUID_MAP_MNS[] = {0x00, 0x00, 0x11, 0x33, 0x00, 0x00, 0x10, 0x00,
-                                        0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                       };
-static const uint8_t  UUID_SPP[] = {0x00, 0x00, 0x11, 0x01, 0x00, 0x00, 0x10, 0x00,
-                                    0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                   };
-static const uint8_t  UUID_SAP[] = {0x00, 0x00, 0x11, 0x2D, 0x00, 0x00, 0x10, 0x00,
-                                    0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB
-                                   };
 // TODO:
 // Both the fact that the UUIDs are declared in multiple places, plus the fact
 // that there is a mess of UUID comparison and shortening methods will have to
@@ -369,7 +344,7 @@ static void bta_create_sap_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     tSDP_PROTOCOL_ELEM pe;
     UINT16 pversion = -1;
 
-    record->sap.hdr.type = SDP_TYPE_MAP_MAS;
+    record->sap.hdr.type = SDP_TYPE_SAP_SERVER;
     record->sap.hdr.service_name_length = 0;
     record->sap.hdr.service_name = NULL;
     record->sap.hdr.rfcomm_channel_number = 0;
@@ -420,6 +395,15 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record *record, tSDP_DISC_RE
     record->raw.hdr.user1_ptr = p_bta_sdp_cfg->p_sdp_db->raw_data;
 }
 
+static bool check_if_uuid16_match(UINT16 uuid16, tBT_UUID *uuid)
+{
+    // Because it is converted to a short UUID, only uuid16 needs to be checked.
+    if (uuid->len == 2 && uuid->uu.uuid16 == uuid16) {
+        return TRUE;
+    } else {
+        return FALSE;
+    }
+}
 
 /*******************************************************************************
 **
@@ -456,25 +440,25 @@ static void bta_sdp_search_cback(UINT16 result, void *user_data)
             /* generate the matching record data pointer */
             if (p_rec != NULL) {
                 status = BTA_SDP_SUCCESS;
-                if (uuid->uu.uuid16 == UUID_SERVCLASS_PNP_INFORMATION) {
+                if (check_if_uuid16_match(UUID_SERVCLASS_PNP_INFORMATION, &su)) {
                     APPL_TRACE_DEBUG("%s() - found DIP uuid\n", __func__);
                     bta_create_dip_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_MAP_MAS, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_MESSAGE_ACCESS, &su)) {
                     APPL_TRACE_DEBUG("%s() - found MAP (MAS) uuid\n", __func__);
                     bta_create_mas_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_MAP_MNS, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_MESSAGE_NOTIFICATION, &su)) {
                     APPL_TRACE_DEBUG("%s() - found MAP (MNS) uuid\n", __func__);
                     bta_create_mns_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_PBAP_PSE, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_PBAP_PSE, &su)) {
                     APPL_TRACE_DEBUG("%s() - found PBAP (PSE) uuid\n", __func__);
                     bta_create_pse_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_PBAP_PCE, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_PBAP_PCE, &su)) {
                     APPL_TRACE_DEBUG("%s() - found PBAP (PCE) uuid\n", __func__);
                     bta_create_pce_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_OBEX_OBJECT_PUSH, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_OBEX_OBJECT_PUSH, &su)) {
                     APPL_TRACE_DEBUG("%s() - found Object Push Server (OPS) uuid\n", __func__);
                     bta_create_ops_sdp_record(&evt_data.records[count], p_rec);
-                } else if (IS_UUID(UUID_SAP, uuid->uu.uuid128)) {
+                } else if (check_if_uuid16_match(UUID_SERVCLASS_SAP, &su)) {
                     APPL_TRACE_DEBUG("%s() - found SAP uuid\n", __func__);
                     bta_create_sap_sdp_record(&evt_data.records[count], p_rec);
                 } else {

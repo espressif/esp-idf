@@ -271,6 +271,10 @@ config SOC_ANA_CMPR_INTR_SHARE_WITH_GPIO
     bool
     default y
 
+config SOC_LEDC_CHANNEL_NUM
+    int
+    default 6
+
 config SOC_MPI_MEM_BLOCKS_NUM
     int
     default 4
@@ -343,10 +347,6 @@ config SOC_SPI_SUPPORT_CONTINUOUS_TRANS
     bool
     default y
 
-config SOC_SPI_SUPPORT_SLAVE_HD_VER2
-    bool
-    default y
-
 config SOC_SPI_SUPPORT_CLK_XTAL
     bool
     default y
@@ -384,10 +384,6 @@ config SOC_SPI_MAX_PRE_DIVIDER
     default 16
 
 config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
-    bool
-    default y
-
-config SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
     bool
     default y
 
@@ -592,6 +588,26 @@ config SOC_UART_SUPPORT_WAKEUP_INT
     default y
 
 config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
+    bool
+    default y
+
+config SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
+    int
+    default 5
+
+config SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    bool
+    default y
+
+config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     bool
     default y
 

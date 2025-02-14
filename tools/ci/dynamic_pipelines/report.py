@@ -9,6 +9,7 @@ import re
 import typing as t
 from textwrap import dedent
 
+import yaml
 from artifacts_handler import ArtifactType
 from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
@@ -321,6 +322,7 @@ class BuildReportGenerator(ReportGenerator):
         self.failed_apps_report_file = 'failed_apps.html'
         self.built_apps_report_file = 'built_apps.html'
         self.skipped_apps_report_file = 'skipped_apps.html'
+        self.app_presigned_urls_dict: t.Dict[str, t.Dict[str, str]] = {}
 
     @staticmethod
     def custom_sort(item: AppWithMetricsInfo) -> t.Tuple[int, t.Any]:
@@ -408,6 +410,11 @@ class BuildReportGenerator(ReportGenerator):
         sections = []
 
         if new_test_related_apps:
+            for app in new_test_related_apps:
+                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
+                    url = self._uploader.get_app_presigned_url(app, artifact_type)
+                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
+
             new_test_related_apps_table_section = self.create_table_section(
                 title=self.report_titles_map['new_test_related_apps'],
                 items=new_test_related_apps,
@@ -430,13 +437,13 @@ class BuildReportGenerator(ReportGenerator):
                     (
                         'Bin Files with Build Log (without map and elf)',
                         lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+                            self.app_presigned_urls_dict[app.build_path][ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value]
                         ),
                     ),
                     (
                         'Map and Elf Files',
                         lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.MAP_AND_ELF_FILES)
+                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
                         ),
                     ),
                 ],
@@ -444,6 +451,11 @@ class BuildReportGenerator(ReportGenerator):
             sections.extend(new_test_related_apps_table_section)
 
         if built_test_related_apps:
+            for app in built_test_related_apps:
+                for artifact_type in [ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES, ArtifactType.MAP_AND_ELF_FILES]:
+                    url = self._uploader.get_app_presigned_url(app, artifact_type)
+                    self.app_presigned_urls_dict.setdefault(app.build_path, {})[artifact_type.value] = url
+
             built_test_related_apps = self._sort_items(
                 built_test_related_apps,
                 key='metrics.binary_size.difference_percentage',
@@ -488,13 +500,13 @@ class BuildReportGenerator(ReportGenerator):
                     (
                         'Bin Files with Build Log (without map and elf)',
                         lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES)
+                            self.app_presigned_urls_dict[app.build_path][ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES.value]
                         ),
                     ),
                     (
                         'Map and Elf Files',
                         lambda app: self.get_download_link_for_url(
-                            self._uploader.get_app_presigned_url(app, ArtifactType.MAP_AND_ELF_FILES)
+                            self.app_presigned_urls_dict[app.build_path][ArtifactType.MAP_AND_ELF_FILES.value]
                         ),
                     ),
                 ],
@@ -600,6 +612,11 @@ class BuildReportGenerator(ReportGenerator):
         )
 
         self.additional_info += self._generate_top_n_apps_by_size_table()
+
+        # also generate a yaml file that includes the apps and the presigned urls
+        # for helping debugging locally
+        with open(self.apps_presigned_url_filepath, 'w') as fw:
+            yaml.dump(self.app_presigned_urls_dict, fw)
 
         return sections
 

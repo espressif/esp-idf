@@ -10,7 +10,7 @@ Use `gpio_od_enable` to configure an output IO as open-drain mode if necessary.
 
 There is no need to enable the output for the IO explicitly, it is done internally in the following function calls.
 
-If the signal is routed through IO MUX to the pin, then only needs to call `gpio_iomux_out` to select the IO MUX function index.
+If the signal is routed through IO MUX to the pin, then only needs to call `gpio_iomux_output` to select the IO MUX function index. Output enable is controlled by the signal itself.
 
 If the signal is routed through GPIO Matrix to the pin, then first call `gpio_func_sel` to let the pin use `PIN_FUNC_GPIO` function, follow by calling `esp_rom_gpio_connect_out_signal` to connect the signal.
 
@@ -18,7 +18,7 @@ When a peripheral driver does de-initialization, to de-configure the pin as the 
 
 ## Configure an IO as a peripheral signal input
 
-If the signal is routed through IO MUX to the pin, then call `gpio_iomux_out` to select the IO MUX function index, and also call `gpio_iomux_in` to direct the signal to IO MUX. Input will be enabled for the IO internally.
+If the signal is routed through IO MUX to the pin, then only needs to call `gpio_iomux_input` to select the IO MUX function index and direct the signal to IO MUX. Input will be enabled for the IO internally.
 
 If the signal is routed through GPIO Matrix to the pin, then first call `gpio_func_sel` to let the pin use `PIN_FUNC_GPIO` function, follow by calling `gpio_input_enable` and `esp_rom_gpio_connect_in_signal` to enable the input and connect the signal to the pin.
 

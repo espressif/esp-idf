@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -473,17 +473,30 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @brief Configure peripheral signal input whether to bypass GPIO matrix.
+  *
+  * @param hw Peripheral GPIO hardware instance address.
+  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param from_gpio_matrix True if not to bypass GPIO matrix, otherwise False.
+  */
+__attribute__((always_inline))
+static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal_idx, bool from_gpio_matrix)
+{
+    hw->func_in_sel_cfg[signal_idx].sig_in_sel = from_gpio_matrix;
+}
+
+/**
+  * @brief Configure the source of output enable signal for the GPIO pin.
   *
   * @param hw Peripheral GPIO hardware instance address.
   * @param gpio_num GPIO number of the pad.
-  * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-__attribute__((always_inline))
-static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->func_in_sel_cfg[signal_idx].sig_in_sel = 0;
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
+    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
+    hw->func_out_sel_cfg[gpio_num].oen_sel = !ctrl_by_periph;
 }
 
 /**
@@ -513,22 +526,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
 {
     SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
-}
-
-/**
-  * @brief Set peripheral output to an GPIO pad through the IOMUX.
-  *
-  * @param hw Peripheral GPIO hardware instance address.
-  * @param gpio_num gpio_num GPIO number of the pad.
-  * @param func The function number of the peripheral pin to output pin.
-  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
-  */
-static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
-{
-    hw->func_out_sel_cfg[gpio_num].oen_sel = 0;
-    hw->func_out_sel_cfg[gpio_num].oen_inv_sel = oen_inv;
-    gpio_ll_func_sel(hw, gpio_num, func);
 }
 
 /**
@@ -744,49 +741,21 @@ static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t 
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
+ * @param[out] io_config Pointer to the structure that saves the specific IO configuration
  */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio_io_config_t *io_config)
 {
     uint32_t bit_mask = 1 << gpio_num;
     uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    if (pu) {
-        *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    }
-    if (pd) {
-        *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    }
-    if (ie) {
-        *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    }
-    if (oe) {
-        *oe = (hw->enable.val & bit_mask) >> gpio_num;
-    }
-    if (od) {
-        *od = hw->pin[gpio_num].pad_driver;
-    }
-    if (drv) {
-        gpio_ll_get_drive_capability(hw, gpio_num, (gpio_drive_cap_t *)drv); // specific workaround in the LL
-    }
-    if (fun_sel) {
-      *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    }
-    if (sig_out) {
-      *sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
-    }
-    if (slp_sel) {
-      *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
-    }
+    io_config->pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    io_config->pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    io_config->ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    io_config->oe = (hw->enable.val & bit_mask) >> gpio_num;
+    io_config->od = hw->pin[gpio_num].pad_driver;
+    gpio_ll_get_drive_capability(hw, gpio_num, &(io_config->drv)); // specific workaround in the LL
+    io_config->fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    io_config->sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
+    io_config->slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
 #ifdef __cplusplus

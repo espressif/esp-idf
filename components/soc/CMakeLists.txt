@@ -91,6 +91,10 @@ if(CONFIG_SOC_I2C_SUPPORTED)
     list(APPEND srcs "${target_folder}/i2c_periph.c")
 endif()
 
+if(CONFIG_SOC_I3C_MASTER_SUPPORTED)
+    list(APPEND srcs "${target_folder}/i3c_master_periph.c")
+endif()
+
 if(CONFIG_SOC_TEMP_SENSOR_SUPPORTED)
     list(APPEND srcs "${target_folder}/temperature_sensor_periph.c")
 endif()

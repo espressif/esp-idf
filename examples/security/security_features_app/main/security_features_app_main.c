@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -72,12 +72,7 @@ static esp_err_t example_custom_nvs_part_init(const char *name)
 #if CONFIG_NVS_ENCRYPTION
     esp_err_t ret = ESP_FAIL;
     nvs_sec_cfg_t cfg = {};
-    nvs_sec_scheme_t *sec_scheme_handle = NULL;
-    nvs_sec_config_hmac_t sec_scheme_cfg = NVS_SEC_PROVIDER_CFG_HMAC_DEFAULT();
-    ret = nvs_sec_provider_register_hmac(&sec_scheme_cfg, &sec_scheme_handle);
-    if (ret != ESP_OK) {
-        return ret;
-    }
+    nvs_sec_scheme_t *sec_scheme_handle = nvs_flash_get_default_security_scheme();
 
     ret = nvs_flash_read_security_cfg_v2(sec_scheme_handle, &cfg);
     if (ret != ESP_OK) {

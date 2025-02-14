@@ -85,7 +85,9 @@ typedef enum {
     ETS_ECC_INTR_SOURCE,                        /**< interrupt of ECC accelerator, level*/
     ETS_ECDSA_INTR_SOURCE,                      /**< interrupt of ECDSA accelerator, level*/
     ETS_MAX_INTR_SOURCE,
-} periph_interrput_t;
+} periph_interrupt_t;
+
+typedef periph_interrupt_t periph_interrput_t __attribute__((deprecated("in favor of periph_interrupt_t")));
 
 extern const char * const esp_isr_names[ETS_MAX_INTR_SOURCE];
 

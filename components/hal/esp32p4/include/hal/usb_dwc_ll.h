@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -763,6 +763,23 @@ static inline void usb_dwc_ll_hcintmsk_set_intr_mask(volatile usb_dwc_host_chan_
 }
 
 // ---------------------------- HCTSIZi Register -------------------------------
+
+static inline void usb_dwc_ll_hctsiz_init(volatile usb_dwc_host_chan_regs_t *chan)
+{
+    usb_dwc_hctsiz_reg_t hctsiz;
+    hctsiz.val = chan->hctsiz_reg.val;
+    hctsiz.dopng = 0;         // Don't do ping
+    hctsiz.pid = 0;           // Set PID to DATA0
+    /*
+     * Set SCHED_INFO which occupies xfersize[7:0]
+     *
+     * Although the hardware documentation suggests that SCHED_INFO is only used for periodic channels,
+     * empirical evidence shows that omitting this configuration on non-periodic channels can cause them to freeze.
+     * Therefore, we set this field for all channels to ensure reliable operation.
+     */
+    hctsiz.xfersize |= 0xFF;
+    chan->hctsiz_reg.val = hctsiz.val;
+}
 
 static inline void usb_dwc_ll_hctsiz_set_pid(volatile usb_dwc_host_chan_regs_t *chan, uint32_t data_pid)
 {

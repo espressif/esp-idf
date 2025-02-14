@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -311,7 +311,7 @@ bool usb_dwc_hal_chan_alloc(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t *chan
     usb_dwc_ll_hcint_read_and_clear_intrs(chan_obj->regs);            //Clear the interrupt bits for that channel
     usb_dwc_ll_haintmsk_en_chan_intr(hal->dev, 1 << chan_obj->flags.chan_idx);
     usb_dwc_ll_hcintmsk_set_intr_mask(chan_obj->regs, CHAN_INTRS_EN_MSK);  //Unmask interrupts for this channel
-    usb_dwc_ll_hctsiz_set_pid(chan_obj->regs, 0);        //Set the initial PID to zero
+    usb_dwc_ll_hctsiz_init(chan_obj->regs);
     return true;
 }
 
@@ -395,6 +395,8 @@ void usb_dwc_hal_chan_set_ep_char(usb_dwc_hal_context_t *hal, usb_dwc_hal_chan_t
             } else {
                 tokens_per_frame = 8; // 1 token every microframe
             }
+        } else {
+            tokens_per_frame = 8;
         }
         usb_dwc_ll_hctsiz_set_sched_info(chan_obj->regs, tokens_per_frame, ep_char->periodic.offset);
     }

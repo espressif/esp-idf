@@ -1,9 +1,11 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- |
 
 # NVS Bootloader
 
-The purpose of this example is to show how to use the simplified, read-only API of NVS flash that can be used as a part of bootloader
+The purpose of this example is to show how to use the simplified, read-only API of NVS flash that can be used as a part of bootloader.
+
+A very practical application of being able to access the NVS in the bootloader build would be faster device restoration, where-in the application stores the device's current state/configurations and post a reset it would read the NVS to restore the device's last state, without waiting for application to boot-up.
 
 ## Usage of this example:
 
@@ -123,3 +125,116 @@ Below is a short explanation of files in the project folder.
 The example creates request/response array `read_list[]`, populates it with identifiers of the data to be read.
 Function `nvs_bootloader_read()` tries to find respective data in the partition (here `"nvs"`) and if the data is found, it populates the request/response array with data. For nvs entries either not found or not matching are indicated in response array as well.
 Function `log_nvs_bootloader_read_list()`is used before and after reading from nvs to show request/response data to the console.
+
+# Encrypted NVS Bootloader
+
+This example is extended to support reading encrypted NVS partition when NVS encryption is enabled.
+
+## Usage of this example:
+
+Enable NVS encryption using your preferred scheme. Please find more details regarding the `flash encryption based NVS encryption scheme` and the `HMAC based NVS encryption scheme` in the [NVS encryption documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_encryption.html).
+
+(Note: In case you select the `HMAC based NVS encryption scheme`, make sure that you burn the below mentioned [HMAC key](./main/nvs_enc_hmac_key.bin) in the efuses.)
+
+For generating the encrypted NVS partitions, we shall use [NVS partition generator](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_partition_gen.html#nvs-partition-generator-utility).
+We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) script for the operations.
+
+Along with the above mentioned file structure, the project folder also contains pre-generated encrypted partitions and the partition corresponding to the selected NVS encryption scheme is flashed along with the build artefacts using the `main/CMakeLists.txt`.
+
+In case the data in `nvs_data.csv` is modified, these encrypted NVS partitions can be re-generated using the following commands:
+
+1. NVS Encryption using the flash encryption scheme
+
+```
+python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_encrypted.bin 0x6000 --inputkey $IDF_PATH/examples/storage/nvs_bootloader/main/encryption_keys.bin
+```
+
+2. NVS Encryption using the HMAC scheme
+
+```
+python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_encrypted_hmac.bin 0x6000 --keygen --key_protect_hmac --kp_hmac_inputkey $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_enc_hmac_key.bin
+```
+
+Build the application using configurations corresponding to the NVS encryption scheme that you have selected:
+
+```
+idf.py set-target <target>
+
+# For NVS encryption using flash encryption scheme
+cat sdkconfig.ci.nvs_enc_flash_enc >> sdkconfig
+
+OR
+
+# For NVS encryption using the HMAC scheme
+cat sdkconfig.ci.nvs_enc_hmac >> sdkconfig
+
+idf.py build
+```
+
+Then flash it and open the monitor with the following command:
+```
+idf.py flash monitor
+```
+
+If everything went well, the console output should contain the same three blocks of log messages that are mentioned above.
+
+### Running the example using QEMU
+
+You could quickly try out this example using QEMU. Refer this [link](https://github.com/espressif/esp-toolchain-docs/blob/main/qemu/README.md#choose-your-target) to know which targets are currently supported in QEMU.
+
+#### Using the NVS encryption's flash encryption scheme
+
+1. Configure the application with the corresponding configurations
+
+```
+idf.py set-target <qemu-supported-targets>
+
+cat sdkconfig.ci.nvs_enc_flash_enc >> sdkconfig
+
+# Disable the below config as it was enabled as a CI related configuration, thus enabling flash encryption during boot-up in QEMU
+echo "CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED=n" >> sdkconfig
+
+```
+
+2. Building the app
+
+```
+idf.py build
+```
+
+3. Running the app
+
+```
+idf.py qemu monitor
+```
+
+#### Using the NVS encryption's HMAC scheme
+
+1. Build the application using the corresponding configurations
+
+```
+idf.py set-target <qemu-supported-targets>
+
+cat sdkconfig.ci.nvs_enc_hmac >> sdkconfig
+
+# Disable the below config as it was enabled as a CI related configuration, thus enabling flash encryption during boot-up in QEMU
+echo "CONFIG_SECURE_FLASH_REQUIRE_ALREADY_ENABLED=n" >> sdkconfig
+```
+
+2. Building the app
+
+```
+idf.py build
+```
+
+3. Burn the related HMAC key in the efuses
+
+```
+idf.py qemu efuse-burn-key BLOCK_KEY0 main/nvs_enc_hmac_key.bin HMAC_UP
+```
+
+4. Running the app
+
+```
+idf.py qemu monitor
+```

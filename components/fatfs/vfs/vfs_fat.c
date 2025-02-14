@@ -48,7 +48,7 @@ typedef struct {
     char dir_path[FILENAME_MAX]; /* variable to store path of opened directory*/
     struct cached_data cached_fileinfo;
 #endif
-    FIL files[0];   /* array with max_files entries; must be the final member of the structure */
+    FIL files[];   /* array with max_files entries; must be the final member of the structure */
 } vfs_fat_ctx_t;
 
 typedef struct {

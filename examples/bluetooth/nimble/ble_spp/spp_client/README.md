@@ -77,7 +77,6 @@ It performs three GATT operations against the specified peer:
 Note :
 
 * To install the dependency packages needed, please refer to the top level [README file](../../../../README.md#running-test-python-script-pytest).
-* Currently this Python utility is only supported on Linux (BLE communication is via BLuez + DBus).
 
 ## How to use example
 

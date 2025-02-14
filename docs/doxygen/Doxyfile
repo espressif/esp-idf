@@ -330,6 +330,7 @@ INPUT = \
     $(PROJECT_PATH)/components/wifi_provisioning/include/wifi_provisioning/wifi_scan.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_dpp.h \
     $(PROJECT_PATH)/components/wpa_supplicant/esp_supplicant/include/esp_supplicant_utils.h \
+    $(PROJECT_PATH)/components/esp_driver_uart/include/driver/uart_wakeup.h \
 
 ## Target specific headers are in separate Doxyfile files
 @INCLUDE = $(PROJECT_PATH)/docs/doxygen/Doxyfile_$(IDF_TARGET)

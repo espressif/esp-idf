@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,6 +29,19 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num)
     } else {
         gpio_ll_clear_intr_status_high(hal->dev, BIT(gpio_num - 32));
     }
+}
+
+void gpio_hal_iomux_in(gpio_hal_context_t *hal, uint32_t gpio_num, int func, uint32_t signal_idx)
+{
+    gpio_ll_set_input_signal_from(hal->dev, signal_idx, false);
+    gpio_ll_input_enable(hal->dev, gpio_num);
+    gpio_ll_func_sel(hal->dev, gpio_num, func);
+}
+
+void gpio_hal_iomux_out(gpio_hal_context_t *hal, uint32_t gpio_num, int func, bool oen_inv)
+{
+    gpio_ll_set_output_enable_ctrl(hal->dev, gpio_num, true, oen_inv);
+    gpio_ll_func_sel(hal->dev, gpio_num, func);
 }
 
 #if SOC_GPIO_SUPPORT_PIN_HYS_FILTER

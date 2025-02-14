@@ -13,6 +13,8 @@
 #include "esp_phy_cert_test.h"
 #include "cmd_phy.h"
 
+#include "driver/gpio.h"
+
 #define TAG "cmd_phy"
 
 #define CERT_TASK_PRIO 2
@@ -30,6 +32,7 @@ static phy_ble_tx_t     phy_ble_tx_args;
 static phy_ble_rx_t     phy_ble_rx_args;
 static phy_bt_tx_tone_t phy_bt_tx_tone_args;
 #endif
+static phy_gpio_output_set_t phy_gpio_output_set_args;
 
 #if CONFIG_ESP_PHY_LEGACY_COMMANDS
 #define arg_int0(_a, _b, _c, _d) arg_int0(NULL, NULL, _c, _d)
@@ -396,6 +399,63 @@ static int esp_phy_bt_tx_tone_func(int argc, char **argv)
 }
 #endif
 
+void esp_phy_gpio_output_set(int number, int level) {
+    if (!GPIO_IS_VALID_OUTPUT_GPIO(number)) {
+        ESP_LOGE(TAG, "gpio number %d is invalid out gpio", number);
+        return;
+    }
+    if (level != 0 && level != 1) {
+        ESP_LOGE(TAG, "gpio level %d is invalid, should be 0 or 1", level);
+        return;
+    }
+
+    gpio_config_t io_conf = {};
+    //disable interrupt
+    io_conf.intr_type = GPIO_INTR_DISABLE;
+    //set as output mode
+    io_conf.mode = GPIO_MODE_OUTPUT;
+    //bit mask of the pin that you want to set,e.g.GPIO18/19
+    io_conf.pin_bit_mask = (1ULL<<number);
+    //disable pull-down mode
+    io_conf.pull_down_en = 0;
+    //disable pull-up mode
+    io_conf.pull_up_en = 0;
+    //configure GPIO with the given settings
+    gpio_config(&io_conf);
+
+    ESP_LOGI(TAG, "Set output gpio number %d level to %d", number, level);
+    gpio_set_level(number, level);
+}
+
+static int esp_phy_gpio_output_set_func(int argc, char **argv)
+{
+    uint8_t number;
+    uint8_t level;
+    int nerrors = arg_parse(argc, argv, (void **) &phy_gpio_output_set_args);
+    if (nerrors != 0) {
+        arg_print_errors(stderr, phy_gpio_output_set_args.end, argv[0]);
+        return 1;
+    }
+
+    if (phy_gpio_output_set_args.gpio_number->count == 1) {
+        number = phy_gpio_output_set_args.gpio_number->ival[0];
+    } else {
+        ESP_LOGE(TAG, "please input gpio number");
+        return 1;
+    }
+
+    if (phy_gpio_output_set_args.gpio_level->count == 1) {
+        level = phy_gpio_output_set_args.gpio_level->ival[0];
+    } else {
+        ESP_LOGE(TAG, "please input gpio level");
+        return 1;
+    }
+
+    esp_phy_gpio_output_set(number, level);
+
+    return 0;
+}
+
 void register_phy_cmd(void)
 {
     phy_args.enable  = arg_int0(NULL, NULL, "<enable>", "enable");
@@ -538,5 +598,17 @@ void register_phy_cmd(void)
     };
     ESP_ERROR_CHECK( esp_console_cmd_register(&bt_tx_tone_cmd) );
 #endif
+    phy_gpio_output_set_args.gpio_number       = arg_int0("n", "number"  , "<gpio_number>"  , "output gpio number");
+    phy_gpio_output_set_args.gpio_level     = arg_int0("l", "level", "<gpio_level>", "output gpio level");
+    phy_gpio_output_set_args.end         = arg_end(1);
+
+    const esp_console_cmd_t gpio_output_set_cmd = {
+        .command = "gpio_output_set",
+        .help = "gpio output set command",
+        .hint = NULL,
+        .func = &esp_phy_gpio_output_set_func,
+        .argtable = &phy_gpio_output_set_args
+    };
+    ESP_ERROR_CHECK( esp_console_cmd_register(&gpio_output_set_cmd) );
 }
 #endif

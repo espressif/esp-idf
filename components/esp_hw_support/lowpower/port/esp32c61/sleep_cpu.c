@@ -103,7 +103,6 @@ static void * cpu_domain_dev_sleep_frame_alloc_and_init(const cpu_domain_dev_reg
 static inline void * cpu_domain_cache_config_sleep_frame_alloc_and_init(void)
 {
     const static cpu_domain_dev_regs_region_t regions[] = {
-        { .start = CACHE_L1_CACHE_CTRL_REG, .end = CACHE_L1_CACHE_CTRL_REG + 4 },
         { .start = CACHE_L1_CACHE_AUTOLOAD_CTRL_REG, .end = CACHE_L1_CACHE_AUTOLOAD_SCT1_SIZE_REG + 4 },
     };
     return cpu_domain_dev_sleep_frame_alloc_and_init(regions, sizeof(regions) / sizeof(regions[0]));

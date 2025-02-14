@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #include "hal/sha_hal.h"
 #include "hal/mmu_types.h"
 #include "hal/wdt_hal.h"
+#include "hal/spi_flash_types.h"
+#include "esp_flash.h"
 
 #include "soc/soc_caps.h"
 
@@ -211,6 +213,11 @@ int __wrap_esp_sha_dma(esp_sha_type sha_type, const void *input, uint32_t ilen,
     return esp_tee_service_call(7, SS_ESP_SHA_DMA, sha_type, input, ilen, buf, buf_len, is_first_block);
 }
 
+int __wrap_esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
+{
+    return esp_tee_service_call(4, SS_ESP_SHA_BLOCK, sha_type, data_block, is_first_block);
+}
+
 void __wrap_esp_sha_read_digest_state(esp_sha_type sha_type, void *digest_state)
 {
     esp_tee_service_call(3, SS_ESP_SHA_READ_DIGEST_STATE, sha_type, digest_state);
@@ -242,3 +249,101 @@ bool IRAM_ATTR __wrap_mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mm
 {
     return esp_tee_service_call(6, SS_MMU_HAL_PADDR_TO_VADDR, mmu_id, paddr, target, type, out_vaddr);
 }
+
+#if CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
+/* ---------------------------------------------- SPI Flash HAL ------------------------------------------------- */
+
+uint32_t IRAM_ATTR __wrap_spi_flash_hal_check_status(spi_flash_host_inst_t *host)
+{
+    return esp_tee_service_call(2, SS_SPI_FLASH_HAL_CHECK_STATUS, host);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_trans_t *trans)
+{
+    return esp_tee_service_call(3, SS_SPI_FLASH_HAL_COMMON_COMMAND, host, trans);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_hal_device_config(spi_flash_host_inst_t *host)
+{
+    return esp_tee_service_call(2, SS_SPI_FLASH_HAL_DEVICE_CONFIG, host);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_erase_block(spi_flash_host_inst_t *host, uint32_t start_address)
+{
+    esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_BLOCK, host, start_address);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_erase_chip(spi_flash_host_inst_t *host)
+{
+    esp_tee_service_call(2, SS_SPI_FLASH_HAL_ERASE_CHIP, host);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_erase_sector(spi_flash_host_inst_t *host, uint32_t start_address)
+{
+    esp_tee_service_call(3, SS_SPI_FLASH_HAL_ERASE_SECTOR, host, start_address);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_program_page(spi_flash_host_inst_t *host, const void *buffer, uint32_t address, uint32_t length)
+{
+    esp_tee_service_call(5, SS_SPI_FLASH_HAL_PROGRAM_PAGE, host, buffer, address, length);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_hal_read(spi_flash_host_inst_t *host, void *buffer, uint32_t address, uint32_t read_len)
+{
+    return esp_tee_service_call(5, SS_SPI_FLASH_HAL_READ, host, buffer, address, read_len);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_resume(spi_flash_host_inst_t *host)
+{
+    esp_tee_service_call(2, SS_SPI_FLASH_HAL_RESUME, host);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_hal_set_write_protect(spi_flash_host_inst_t *host, bool wp)
+{
+    return esp_tee_service_call(3, SS_SPI_FLASH_HAL_SET_WRITE_PROTECT, host, wp);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_hal_setup_read_suspend(spi_flash_host_inst_t *host, const spi_flash_sus_cmd_conf *sus_conf)
+{
+    return esp_tee_service_call(6, SS_SPI_FLASH_HAL_SETUP_READ_SUSPEND, host, sus_conf);
+}
+
+bool IRAM_ATTR __wrap_spi_flash_hal_supports_direct_read(spi_flash_host_inst_t *host, const void *p)
+{
+    return esp_tee_service_call(3, SS_SPI_FLASH_HAL_SUPPORTS_DIRECT_READ, host, p);
+}
+
+bool IRAM_ATTR __wrap_spi_flash_hal_supports_direct_write(spi_flash_host_inst_t *host, const void *p)
+{
+    return esp_tee_service_call(3, SS_SPI_FLASH_HAL_SUPPORTS_DIRECT_WRITE, host, p);
+}
+
+void IRAM_ATTR __wrap_spi_flash_hal_suspend(spi_flash_host_inst_t *host)
+{
+    esp_tee_service_call(2, SS_SPI_FLASH_HAL_SUSPEND, host);
+}
+
+/* ---------------------------------------------- SPI Flash Extras ------------------------------------------------- */
+
+uint32_t IRAM_ATTR __wrap_bootloader_flash_execute_command_common(
+    uint8_t command,
+    uint32_t addr_len, uint32_t address,
+    uint8_t dummy_len,
+    uint8_t mosi_len, uint32_t mosi_data,
+    uint8_t miso_len)
+{
+    return esp_tee_service_call(8, SS_BOOTLOADER_FLASH_EXECUTE_COMMAND_COMMON,
+                                command, addr_len, address, dummy_len, mosi_len,
+                                mosi_data, miso_len);
+}
+
+esp_err_t IRAM_ATTR __wrap_memspi_host_flush_cache(spi_flash_host_inst_t *host, uint32_t addr, uint32_t size)
+{
+    return esp_tee_service_call(4, SS_MEMSPI_HOST_FLUSH_CACHE, host, addr, size);
+}
+
+esp_err_t IRAM_ATTR __wrap_spi_flash_chip_generic_config_host_io_mode(esp_flash_t *chip, uint32_t flags)
+{
+    return esp_tee_service_call(3, SS_SPI_FLASH_CHIP_GENERIC_CONFIG_HOST_IO_MODE, chip, flags);
+}
+#endif

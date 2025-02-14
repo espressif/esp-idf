@@ -1675,7 +1675,7 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
             sm->ignore_sel_reg = true;
         }
         eloop_cancel_timeout(wifi_wps_scan, NULL, NULL);
-        eloop_register_timeout(0, 100*1000, wifi_wps_scan, NULL, NULL);
+        eloop_register_timeout(2, 0, wifi_wps_scan, NULL, NULL);
     } else {
         return;
     }

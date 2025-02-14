@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -735,6 +735,19 @@ typedef enum {
     TEMPERATURE_SENSOR_CLK_SRC_LP_PERI = SOC_MOD_CLK_LP_PERI,     /*!< Select LP_PERI as the source clock */
     TEMPERATURE_SENSOR_CLK_SRC_DEFAULT = SOC_MOD_CLK_LP_PERI,    /*!< Select LP_PERI as the default choice */
 } soc_periph_temperature_sensor_clk_src_t;
+
+//////////////////////////////////////////////////I3C Master///////////////////////////////////////////////////////////
+
+/**
+ * @brief Array initializer for all supported clock sources of I3C master
+ */
+#define SOC_I3C_MASTER_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F160M}
+
+typedef enum {
+    I3C_MASTER_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,
+    I3C_MASTER_CLK_SRC_PLL_F160M = SOC_MOD_CLK_PLL_F160M,
+    I3C_MASTER_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,
+} soc_periph_i3c_master_clk_src_t;
 
 //////////////////////////////////////////////////EMAC PTP///////////////////////////////////////////////////////////////
 

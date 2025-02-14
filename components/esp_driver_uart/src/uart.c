@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 #include "freertos/idf_additions.h"
 #include "esp_private/critical_section.h"
 #include "hal/uart_hal.h"
-#include "hal/gpio_hal.h"
 #include "soc/uart_periph.h"
 #include "soc/soc_caps.h"
 #include "driver/uart.h"
@@ -70,7 +69,7 @@ static const char *UART_TAG = "uart";
 #define UART_CLKDIV_FRAG_BIT_WIDTH      (3)
 #define UART_TX_IDLE_NUM_DEFAULT        (0)
 #define UART_PATTERN_DET_QLEN_DEFAULT   (10)
-#define UART_MIN_WAKEUP_THRESH          (UART_LL_MIN_WAKEUP_THRESH)
+#define UART_MIN_WAKEUP_THRESH          (UART_LL_WAKEUP_EDGE_THRED_MIN)
 
 #if (SOC_UART_LP_NUM >= 1)
 #define UART_THRESHOLD_NUM(uart_num, field_name) ((uart_num < SOC_UART_HP_NUM) ? field_name : LP_##field_name)
@@ -684,12 +683,10 @@ static bool uart_try_set_iomux_pin(uart_port_t uart_num, int io_num, uint32_t id
     /* Assign the correct funct to the GPIO. */
     assert(upin->iomux_func != -1);
     if (uart_num < SOC_UART_HP_NUM) {
-        gpio_iomux_out(io_num, upin->iomux_func, false);
-
-        /* If the pin is input, we also have to redirect the signal,
-         * in order to bypasse the GPIO matrix. */
         if (upin->input) {
-            gpio_iomux_in(io_num, upin->signal);
+            gpio_iomux_input(io_num, upin->iomux_func, upin->signal);
+        } else {
+            gpio_iomux_output(io_num, upin->iomux_func, false);
         }
     }
 #if (SOC_UART_LP_NUM >= 1) && (SOC_RTCIO_PIN_COUNT >= 1)
@@ -1945,7 +1942,7 @@ esp_err_t uart_set_wakeup_threshold(uart_port_t uart_num, int wakeup_threshold)
     ESP_RETURN_ON_FALSE((wakeup_threshold <= UART_THRESHOLD_NUM(uart_num, UART_ACTIVE_THRESHOLD_V) && wakeup_threshold >= UART_MIN_WAKEUP_THRESH), ESP_ERR_INVALID_ARG, UART_TAG,
                         "wakeup_threshold out of bounds");
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_wakeup_thrd(&(uart_context[uart_num].hal), wakeup_threshold);
+    uart_hal_set_wakeup_edge_thrd(&(uart_context[uart_num].hal), wakeup_threshold);
     HP_UART_PAD_CLK_ATOMIC() {
         uart_ll_enable_pad_sleep_clock(uart_context[uart_num].hal.dev, true);
     }
@@ -1957,7 +1954,7 @@ esp_err_t uart_get_wakeup_threshold(uart_port_t uart_num, int *out_wakeup_thresh
 {
     ESP_RETURN_ON_FALSE((uart_num < UART_NUM_MAX), ESP_ERR_INVALID_ARG, UART_TAG, "uart_num error");
     ESP_RETURN_ON_FALSE((out_wakeup_threshold != NULL), ESP_ERR_INVALID_ARG, UART_TAG, "argument is NULL");
-    uart_hal_get_wakeup_thrd(&(uart_context[uart_num].hal), (uint32_t *)out_wakeup_threshold);
+    uart_hal_get_wakeup_edge_thrd(&(uart_context[uart_num].hal), (uint32_t *)out_wakeup_threshold);
     return ESP_OK;
 }
 

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,7 @@ typedef struct ota_ops_entry_ {
     bool need_erase;
     uint32_t wrote_size;
     uint8_t partial_bytes;
+    bool ota_resumption;
     WORD_ALIGNED_ATTR uint8_t partial_data[16];
     LIST_ENTRY(ota_ops_entry_) entries;
 } ota_ops_entry_t;
@@ -119,6 +120,24 @@ static esp_ota_img_states_t set_new_state_otadata(void)
 #endif
 }
 
+static ota_ops_entry_t* esp_ota_init_entry(const esp_partition_t *partition)
+{
+    ota_ops_entry_t *new_entry = (ota_ops_entry_t *) calloc(1, sizeof(ota_ops_entry_t));
+    if (new_entry == NULL) {
+        return NULL;
+    }
+
+    LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
+
+    new_entry->partition.staging = partition;
+    new_entry->partition.final = partition;
+    new_entry->partition.finalize_with_copy = false;
+    new_entry->handle = ++s_ota_ops_last_handle;
+
+    return new_entry;
+}
+
+
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
     ota_ops_entry_t *new_entry;
@@ -153,17 +172,10 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
 #endif
     }
 
-    new_entry = (ota_ops_entry_t *) calloc(1, sizeof(ota_ops_entry_t));
+    new_entry = esp_ota_init_entry(partition);
     if (new_entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
-
-    LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
-
-    new_entry->partition.staging = partition;
-    new_entry->partition.final = partition;
-    new_entry->partition.finalize_with_copy = false;
-    new_entry->handle = ++s_ota_ops_last_handle;
     new_entry->need_erase = (image_size == OTA_WITH_SEQUENTIAL_WRITES);
     *out_handle = new_entry->handle;
 
@@ -197,6 +209,54 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     return ESP_OK;
 }
 
+esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_size, const size_t image_offset, esp_ota_handle_t *out_handle)
+{
+    ota_ops_entry_t *new_entry;
+
+    if ((partition == NULL) || (out_handle == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (image_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    partition = esp_partition_verify(partition);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    if (partition->type == ESP_PARTITION_TYPE_APP) {
+        // The staging partition cannot be of type Factory, but the final partition can be.
+        if (!is_ota_partition(partition)) {
+            return ESP_ERR_INVALID_ARG;
+        }
+    }
+
+    const esp_partition_t* running_partition = esp_ota_get_running_partition();
+    if (partition == running_partition) {
+        return ESP_ERR_OTA_PARTITION_CONFLICT;
+    }
+
+    new_entry = esp_ota_init_entry(partition);
+    if (new_entry == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER) {
+        esp_image_bootloader_offset_set(partition->address);
+    }
+    if (partition->type == ESP_PARTITION_TYPE_BOOTLOADER || partition->type == ESP_PARTITION_TYPE_PARTITION_TABLE) {
+        esp_flash_set_dangerous_write_protection(esp_flash_default_chip, false);
+    }
+
+    new_entry->ota_resumption = true;
+    new_entry->wrote_size = image_offset;
+    new_entry->need_erase = (erase_size == OTA_WITH_SEQUENTIAL_WRITES);
+    *out_handle = new_entry->handle;
+    return ESP_OK;
+}
+
 esp_err_t esp_ota_set_final_partition(esp_ota_handle_t handle, const esp_partition_t *final, bool finalize_with_copy)
 {
     ota_ops_entry_t *it = get_ota_ops_entry(handle);
@@ -206,9 +266,14 @@ esp_err_t esp_ota_set_final_partition(esp_ota_handle_t handle, const esp_partiti
     if (it == NULL) {
         return ESP_ERR_NOT_FOUND;
     }
-    if (it->wrote_size != 0) {
+
+    // If OTA resumption is enabled, it->wrote_size may already contain the size of previously written data.
+    // Ensure that wrote_size is zero only when OTA resumption is disabled, as any non-zero value in this case
+    // indicates an invalid state.
+    if (!it->ota_resumption && it->wrote_size != 0) {
         return ESP_ERR_INVALID_STATE;
     }
+
     if (it->partition.staging != final) {
         const esp_partition_t* final_partition = esp_partition_verify(final);
         if (final_partition == NULL) {

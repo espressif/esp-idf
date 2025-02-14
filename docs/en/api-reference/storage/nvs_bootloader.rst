@@ -14,6 +14,25 @@ The API supports reading all NVS datatypes except for blobs. One call to the API
 
 To read string entries, the API requires the caller to provide a buffer and its size, due to the heap memory allocation restriction in the bootloader.
 
+Reading encrypted NVS partitions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The API also supports decrypting NVS data, if the NVS partition is encrypted using one of the schemes as mentioned in the :doc:`nvs_encryption` guide.
+
+Applications are expected to follow the steps below in order to enable decryption of a NVS partition using the NVS bootloader read API:
+
+    1. Populate the NVS security configuration structure :cpp:type:`nvs_sec_cfg_t` according to the selected NVS encryption scheme (Please refer to :doc:`nvs_encryption` for more details).
+    2. Read NVS security configuration set by the specified security scheme using the :cpp:func:`nvs_bootloader_read_security_cfg` API.
+    3. Initialise the NVS flash partition with the above read security configuration using the :cpp:func:`nvs_bootloader_secure_init` API.
+    4. Perform NVS read operations using the :cpp:func:`nvs_bootloader_read` API.
+    5. Deinitialise and clear the security configuration of the NVS flash partition using the :cpp:func:`nvs_bootloader_secure_deinit` API.
+
+.. only:: SOC_HMAC_SUPPORTED
+
+    .. note::
+        While using the HMAC-based scheme, the above workflow can be used without enabling any of the config options for NVS encryption - :ref:`CONFIG_NVS_ENCRYPTION`, :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` -> ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` and :ref:`CONFIG_NVS_SEC_HMAC_EFUSE_KEY_ID` to encrypt the default as well as custom NVS partitions with :cpp:func:`nvs_flash_secure_init` API.
+
+
 Application Example
 -------------------
 

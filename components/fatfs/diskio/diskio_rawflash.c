@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@ static uint8_t s_initialized[FF_VOLUMES];
 #define BPB_TotSec32 32
 
 
-DSTATUS ff_raw_initialize (BYTE pdrv)
+static DSTATUS ff_raw_initialize (BYTE pdrv)
 {
 
     uint16_t sector_size_tmp;
@@ -61,7 +61,7 @@ DSTATUS ff_raw_initialize (BYTE pdrv)
     return STA_PROTECT;
 }
 
-DSTATUS ff_raw_status (BYTE pdrv)
+static DSTATUS ff_raw_status (BYTE pdrv)
 {
     DSTATUS status = STA_PROTECT;
     if (!s_initialized[pdrv]) {
@@ -70,7 +70,7 @@ DSTATUS ff_raw_status (BYTE pdrv)
     return status;
 }
 
-DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 {
     ESP_LOGV(TAG, "ff_raw_read - pdrv=%i, sector=%i, count=%in", (unsigned int)pdrv, (unsigned int)sector, (unsigned int)count);
     const esp_partition_t* part = s_ff_raw_handles[pdrv];
@@ -84,16 +84,16 @@ DRESULT ff_raw_read (BYTE pdrv, BYTE *buff, DWORD sector, UINT count)
 }
 
 
-DRESULT ff_raw_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
+static DRESULT ff_raw_write (BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 {
     return RES_WRPRT;
 }
 
-DRESULT ff_raw_ioctl (BYTE pdrv, BYTE cmd, void *buff)
+static DRESULT ff_raw_ioctl (BYTE pdrv, BYTE cmd, void *buff)
 {
-    const esp_partition_t* part = s_ff_raw_handles[pdrv];
     ESP_LOGV(TAG, "ff_raw_ioctl: cmd=%in", cmd);
-    assert(part);
+    assert(s_ff_raw_handles[pdrv]);
+
     switch (cmd) {
         case CTRL_SYNC:
             return RES_OK;

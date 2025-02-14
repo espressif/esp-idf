@@ -133,9 +133,9 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -153,9 +153,9 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET != "esp32"
       reason: Only esp32 has ethernet runners
@@ -174,9 +174,9 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
       temporary: true
@@ -193,9 +193,9 @@ examples/system/ota/partitions_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
       temporary: true
-      reason: target esp32h2 is not supported yet
+      reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3", "esp32s3"]
@@ -331,6 +331,12 @@ examples/system/ulp/lp_core/lp_i2c:
 examples/system/ulp/lp_core/lp_spi:
   enable:
     - if: SOC_LP_SPI_SUPPORTED == 1 and SOC_DEEP_SLEEP_SUPPORTED == 1
+  depends_components:
+    - ulp
+
+examples/system/ulp/lp_core/lp_uart/lp_uart_char_seq_wakeup:
+  disable:
+    - if: (SOC_ULP_LP_UART_SUPPORTED != 1)
   depends_components:
     - ulp
 

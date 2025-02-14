@@ -180,23 +180,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
     ESP_RETURN_ON_FALSE((handle->target == USB_PHY_TARGET_UTMI) == (speed == USB_PHY_SPEED_HIGH), ESP_ERR_NOT_SUPPORTED, USBPHY_TAG, "UTMI can be HighSpeed only"); // This is our software limitation
 
     handle->otg_speed = speed;
-    if (handle->target == USB_PHY_TARGET_UTMI) {
-        return ESP_OK; // No need to configure anything for UTMI PHY
-    }
-
-    // Configure pull resistors for device
-    usb_wrap_pull_override_vals_t vals = {
-        .dp_pd = false,
-        .dm_pd = false,
-    };
-    if (speed == USB_PHY_SPEED_LOW) {
-        vals.dp_pu = false;
-        vals.dm_pu = true;
-    } else {
-        vals.dp_pu = true;
-        vals.dm_pu = false;
-    }
-    usb_wrap_hal_phy_enable_pull_override(&handle->wrap_hal, &vals);
+    // No need to configure anything neither for UTMI PHY nor for Internal USB FSLS PHY
     return ESP_OK;
 }
 
@@ -369,12 +353,11 @@ esp_err_t usb_new_phy(const usb_phy_config_t *config, usb_phy_handle_t *handle_r
     }
 
     // For FSLS PHY that shares pads with GPIO peripheral, we must set drive capability to 3 (40mA)
-#if !CONFIG_IDF_TARGET_ESP32P4 // TODO: We must set drive capability for FSLS PHY for P4 too, to pass Full Speed eye diagram test
     if (phy_target == USB_PHY_TARGET_INT) {
-        gpio_set_drive_capability(USBPHY_DM_NUM, GPIO_DRIVE_CAP_3);
-        gpio_set_drive_capability(USBPHY_DP_NUM, GPIO_DRIVE_CAP_3);
+        assert(usb_dwc_info.controllers[otg11_index].internal_phy_io);
+        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dm, GPIO_DRIVE_CAP_3);
+        gpio_set_drive_capability(usb_dwc_info.controllers[otg11_index].internal_phy_io->dp, GPIO_DRIVE_CAP_3);
     }
-#endif
 
     *handle_ret = (usb_phy_handle_t) phy_context;
     if (phy_target == USB_PHY_TARGET_EXT) {

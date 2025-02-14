@@ -660,6 +660,10 @@ static const esp_err_msg_t esp_err_msg_table[] = {
 #   ifdef      ESP_ERR_HTTP_NOT_MODIFIED
     ERR_TBL_IT(ESP_ERR_HTTP_NOT_MODIFIED),                      /* 28681 0x7009 HTTP 304 Not Modified, no update available */
 #   endif
+#   ifdef      ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE
+    ERR_TBL_IT(ESP_ERR_HTTP_RANGE_NOT_SATISFIABLE),             /* 28682 0x700a HTTP 416 Range Not Satisfiable,
+                                                                                requested range in header is incorrect */
+#   endif
     // components/esp-tls/esp_tls_errors.h
 #   ifdef      ESP_ERR_ESP_TLS_BASE
     ERR_TBL_IT(ESP_ERR_ESP_TLS_BASE),                           /* 32768 0x8000 Starting number of ESP-TLS error codes */
