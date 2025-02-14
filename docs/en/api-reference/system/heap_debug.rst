@@ -202,7 +202,7 @@ Heap Task Tracking
 
 Heap Task Tracking can be used to get per-task info for heap memory allocation. The application has to specify the heap capabilities for which the heap allocation is to be tracked.
 
-Example code is provided in :example:`system/heap_task_tracking`.
+Example applications are provided in :example:`system/heap_task_tracking/basic` and :example:`system/heap_task_tracking/advanced`.
 
 
 .. _heap-tracing:
@@ -629,7 +629,8 @@ One way to differentiate between "real" and "false positive" memory leaks is to 
 Application Examples
 --------------------
 
-- :example:`system/heap_task_tracking` demonstrates the use of the heap task tracking feature to track heap memory allocated on a per-task basis.
+- :example:`system/heap_task_tracking/basic` demonstrates the use of the overview feature of the heap task tracking, dumping per-task summary statistics on heap memory usage.
+- :example:`system/heap_task_tracking/advanced` demonstrates the use of the statistics getter functions of the heap task tracking, accessing per-task complete statistic on the heap memory usage.
 
 API Reference - Heap Tracing
 ----------------------------

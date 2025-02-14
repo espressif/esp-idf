@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+#include <inttypes.h>
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <multi_heap.h>
-#include <string.h>
 #include "multi_heap_internal.h"
 #include "heap_private.h"
 #include "esp_heap_task_info.h"
@@ -619,11 +620,15 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
     return ESP_OK;
 }
 
-static void heap_caps_print_task_info(task_info_t *task_info, bool is_last_task_info)
+static void heap_caps_print_task_info(FILE *stream, task_info_t *task_info, bool is_last_task_info)
 {
+    if (stream == NULL) {
+        stream = stdout;
+    }
+
     const char *task_info_visual = is_last_task_info ? " " : "│";
     const char *task_info_visual_start = is_last_task_info ? "└" : "├";
-    esp_rom_printf("%s %s: %s, CURRENT MEMORY USAGE %d, PEAK MEMORY USAGE %d, TOTAL HEAP USED %d:\n", task_info_visual_start,
+    fprintf(stream, "%s %s: %s, CURRENT MEMORY USAGE %d, PEAK MEMORY USAGE %d, TOTAL HEAP USED %d:\n", task_info_visual_start,
                                                                                                       task_info->task_stat.is_alive ? "ALIVE" : "DELETED",
                                                                                                       task_info->task_stat.name,
                                                                                                       task_info->task_stat.overall_current_usage,
@@ -634,7 +639,7 @@ static void heap_caps_print_task_info(task_info_t *task_info, bool is_last_task_
     STAILQ_FOREACH(heap_info, &task_info->heaps_stats, next_heap_stat) {
         char *next_heap_visual = !STAILQ_NEXT(heap_info, next_heap_stat) ? " " : "│";
         char *next_heap_visual_start = !STAILQ_NEXT(heap_info, next_heap_stat) ? "└" : "├";
-        esp_rom_printf("%s    %s HEAP: %s, CAPS: 0x%08lx, SIZE: %d, USAGE: CURRENT %d (%d%%), PEAK %d (%d%%), ALLOC COUNT: %d\n",
+        fprintf(stream, "%s    %s HEAP: %s, CAPS: 0x%08lx, SIZE: %d, USAGE: CURRENT %d (%d%%), PEAK %d (%d%%), ALLOC COUNT: %d\n",
                 task_info_visual,
                 next_heap_visual_start,
                 heap_info->heap_stat.name,
@@ -648,7 +653,7 @@ static void heap_caps_print_task_info(task_info_t *task_info, bool is_last_task_
 
         alloc_stats_t *alloc_stats = NULL;
         STAILQ_FOREACH(alloc_stats, &heap_info->allocs_stats, next_alloc_stat) {
-            esp_rom_printf("%s    %s    ├ ALLOC %p, SIZE %d\n", task_info_visual,
+            fprintf(stream, "%s    %s    ├ ALLOC %p, SIZE %" PRIu32 "\n", task_info_visual,
                                                                 next_heap_visual,
                                                                 alloc_stats->alloc_stat.address,
                                                                 alloc_stats->alloc_stat.size);
@@ -656,16 +661,20 @@ static void heap_caps_print_task_info(task_info_t *task_info, bool is_last_task_
     }
 }
 
-static void heap_caps_print_task_overview(task_info_t *task_info, bool is_first_task_info, bool is_last_task_info)
+static void heap_caps_print_task_overview(FILE *stream, task_info_t *task_info, bool is_first_task_info, bool is_last_task_info)
 {
+    if (stream == NULL) {
+        stream = stdout;
+    }
+
     if (is_first_task_info) {
-        esp_rom_printf("┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐\n");
-        esp_rom_printf("│ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │\n");
-        esp_rom_printf("├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤\n");
+        fprintf(stream, "┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐\n");
+        fprintf(stream, "│ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │\n");
+        fprintf(stream, "├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤\n");
     }
 
     task_stat_t task_stat = task_info->task_stat;
-    esp_rom_printf("│ %18s │ %7s │ %20d │ %17d │ %15d │\n",
+    fprintf(stream, "│ %18s │ %7s │ %20d │ %17d │ %15d │\n",
                     task_stat.name,
                     task_stat.is_alive ? "ALIVE  " : "DELETED",
                     task_stat.overall_current_usage,
@@ -673,11 +682,11 @@ static void heap_caps_print_task_overview(task_info_t *task_info, bool is_first_
                     task_stat.heap_count);
 
     if (is_last_task_info) {
-        esp_rom_printf("└────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘\n");
+        fprintf(stream, "└────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘\n");
     }
 }
 
-void heap_caps_print_single_task_stat(TaskHandle_t task_handle)
+void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle)
 {
     if (task_handle == NULL) {
         task_handle = xTaskGetCurrentTaskHandle();
@@ -697,7 +706,7 @@ void heap_caps_print_single_task_stat(TaskHandle_t task_handle)
     xSemaphoreGive(s_task_tracking_mutex);
 }
 
-void heap_caps_print_all_task_stat(void)
+void heap_caps_print_all_task_stat(FILE *stream)
 {
     task_info_t *task_info = NULL;
 
@@ -709,7 +718,7 @@ void heap_caps_print_all_task_stat(void)
     xSemaphoreGive(s_task_tracking_mutex);
 }
 
-void heap_caps_print_single_task_stat_overview(TaskHandle_t task_handle)
+void heap_caps_print_single_task_stat_overview(FILE *stream, TaskHandle_t task_handle)
 {
     if (task_handle == NULL) {
         task_handle = xTaskGetCurrentTaskHandle();
@@ -729,7 +738,7 @@ void heap_caps_print_single_task_stat_overview(TaskHandle_t task_handle)
     xSemaphoreGive(s_task_tracking_mutex);
 }
 
-void heap_caps_print_all_task_stat_overview(void)
+void heap_caps_print_all_task_stat_overview(FILE *stream)
 {
     task_info_t *task_info = NULL;
     bool is_first_task_info = true;

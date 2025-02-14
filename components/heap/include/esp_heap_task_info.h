@@ -10,6 +10,7 @@
 #ifdef CONFIG_HEAP_TASK_TRACKING
 
 #include <stdint.h>
+#include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -167,16 +168,20 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
  *
  * @note This function is an alternative to heap_caps_get_all_task_stat if the goal is just to print information
  * and not manipulate them.
+ *
+ * @param steam The stream to dump to, if NULL then stdout is used
  */
-void heap_caps_print_all_task_stat(void);
+void heap_caps_print_all_task_stat(FILE *stream);
 
 /**
  * @brief Print summary information of all tasks
  *
  * @note The information printed by this function is an array formatted log of task_stat_t content for each running
  * task (and deleted ones if HEAP_TRACK_DELETED_TASKS is enabled)
+ *
+ * @param steam The stream to dump to, if NULL then stdout is used
  */
-void heap_caps_print_all_task_stat_overview(void);
+void heap_caps_print_all_task_stat_overview(FILE *stream);
 
 /**
  * @brief Print heap memory usage and associated allocation information on each heap for a given task.
@@ -184,9 +189,10 @@ void heap_caps_print_all_task_stat_overview(void);
  * @note This function is an alternative to heap_caps_get_single_task_stat if the goal is just to print information
  * and not manipulate them.
  *
+ * @param steam The stream to dump to, if NULL then stdout is used
  * @param task_handle The task handle of the task to get memory usage and associated allocation information from.
  */
-void heap_caps_print_single_task_stat(TaskHandle_t task_handle);
+void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle);
 
 /**
  * @brief Print summary information of a given task
@@ -195,9 +201,10 @@ void heap_caps_print_single_task_stat(TaskHandle_t task_handle);
  * task. This function will not print the task summary information if the given task is deleted and
  * HEAP_TRACK_DELETED_TASKS is disabled.
  *
+ * @param steam The stream to dump to, if NULL then stdout is used
  * @param task_handle The task handle of the task to get memory usage and associated allocation information from.
  */
-void heap_caps_print_single_task_stat_overview(TaskHandle_t task_handle);
+void heap_caps_print_single_task_stat_overview(FILE *stream, TaskHandle_t task_handle);
 
 /**
  * @brief Allocate the memory used to store the heap and alloc statistics and fill task_stat
