@@ -707,6 +707,10 @@ config SOC_PM_PAU_LINK_NUM
     int
     default 4
 
+config SOC_PM_RETENTION_MODULE_NUM
+    int
+    default 32
+
 config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
     bool
     default y

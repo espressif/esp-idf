@@ -41,7 +41,7 @@ static void gptimer_create_retention_module(gptimer_t *timer)
     int group_id = timer->group->group_id;
     int timer_id = timer->timer_id;
     sleep_retention_module_t module = tg_timer_reg_retention_info[group_id][timer_id].module;
-    if ((sleep_retention_get_inited_modules() & BIT(module)) && !(sleep_retention_get_created_modules() & BIT(module))) {
+    if (sleep_retention_is_module_inited(module) && !sleep_retention_is_module_created(module)) {
         if (sleep_retention_module_allocate(module) != ESP_OK) {
             // even though the sleep retention module create failed, GPTimer driver should still work, so just warning here
             ESP_LOGW(TAG, "create retention link failed on TimerGroup%d Timer%d, power domain won't be turned off during sleep", group_id, timer_id);
@@ -86,7 +86,7 @@ static esp_err_t gptimer_register_to_group(gptimer_t *timer)
                 .arg = (void *)timer
             },
         },
-        .depends = BIT(SLEEP_RETENTION_MODULE_CLOCK_SYSTEM)
+        .depends = RETENTION_MODULE_BITMAP_INIT(CLOCK_SYSTEM)
     };
     if (sleep_retention_module_init(module, &init_param) != ESP_OK) {
         // even though the sleep retention module init failed, RMT driver should still work, so just warning here
@@ -107,7 +107,7 @@ static void gptimer_unregister_from_group(gptimer_t *timer)
 
 #if GPTIMER_USE_RETENTION_LINK
     sleep_retention_module_t module = tg_timer_reg_retention_info[group->group_id][timer_id].module;
-    if (sleep_retention_get_created_modules() & BIT(module)) {
+    if (sleep_retention_is_module_created(module)) {
         sleep_retention_module_free(module);
     }
     sleep_retention_module_deinit(module);
