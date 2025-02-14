@@ -42,15 +42,11 @@ struct action_rx_param {
 
 esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 {
-    dpp_event_t *evt = os_zalloc(sizeof(dpp_event_t));
+    dpp_event_t evt;
     esp_err_t ret = ESP_OK;
 
-    if (evt == NULL) {
-        ret = ESP_ERR_NO_MEM;
-        goto end;
-    }
-    evt->id = evt_id;
-    evt->data = data;
+    evt.id = evt_id;
+    evt.data = data;
     if (s_dpp_api_lock) {
         DPP_API_LOCK();
     } else {
@@ -69,9 +65,6 @@ esp_err_t esp_dpp_post_evt(uint32_t evt_id, uint32_t data)
 
     return ret;
 end:
-    if (evt) {
-        os_free(evt);
-    }
     wpa_printf(MSG_ERROR, "DPP: Failed to send event %d to DPP task", evt_id);
     return ret;
 }
@@ -517,17 +510,16 @@ static esp_err_t esp_dpp_rx_action(struct action_rx_param *rx_param)
 
 static void esp_dpp_task(void *pvParameters)
 {
-    dpp_event_t *evt;
+    dpp_event_t evt;
     bool task_del = false;
 
     for (;;) {
         if (os_queue_recv(s_dpp_evt_queue, &evt, OS_BLOCK) == TRUE) {
-            if (evt->id >= SIG_DPP_MAX) {
-                os_free(evt);
+            if (evt.id >= SIG_DPP_MAX) {
                 continue;
             }
 
-            switch (evt->id) {
+            switch (evt.id) {
             case SIG_DPP_DEL_TASK:
                 struct dpp_bootstrap_params_t *params = &s_dpp_ctx.bootstrap_params;
                 eloop_cancel_timeout(esp_dpp_auth_conf_wait_timeout, NULL, NULL);
@@ -548,7 +540,7 @@ static void esp_dpp_task(void *pvParameters)
                 break;
 
             case SIG_DPP_BOOTSTRAP_GEN: {
-                char *command = (char *)evt->data;
+                char *command = (char *)evt.data;
                 const char *uri;
 
                 s_dpp_ctx.id = dpp_bootstrap_gen(s_dpp_ctx.dpp_global, command);
@@ -560,7 +552,7 @@ static void esp_dpp_task(void *pvParameters)
             break;
 
             case SIG_DPP_RX_ACTION: {
-                esp_dpp_rx_action((struct action_rx_param *)evt->data);
+                esp_dpp_rx_action((struct action_rx_param *)evt.data);
             }
             break;
 
@@ -587,7 +579,7 @@ static void esp_dpp_task(void *pvParameters)
             break;
 
             case SIG_DPP_START_NET_INTRO: {
-                esp_dpp_start_net_intro_protocol((uint8_t*)evt->data);
+                esp_dpp_start_net_intro_protocol((uint8_t*)evt.data);
             }
             break;
 
@@ -603,8 +595,6 @@ static void esp_dpp_task(void *pvParameters)
             default:
                 break;
             }
-
-            os_free(evt);
 
             if (task_del) {
                 break;
