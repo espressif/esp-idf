@@ -266,6 +266,33 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->sae_pk_len = elen - 4;
 			break;
 #endif /* CONFIG_SAE_PK */
+//TODO think of way to ignore these
+		case P2P_OUI_TYPE:
+			/* Wi-Fi Alliance - P2P IE */
+			break;
+		case WFD_OUI_TYPE:
+			/* Wi-Fi Alliance - WFD IE */
+			break;
+		case HS20_INDICATION_OUI_TYPE:
+			/* Hotspot 2.0 */
+			break;
+		case HS20_OSEN_OUI_TYPE:
+			/* Hotspot 2.0 OSEN */
+			break;
+		case MBO_OUI_TYPE:
+			/* MBO-OCE */
+			break;
+		case HS20_ROAMING_CONS_SEL_OUI_TYPE:
+			/* Hotspot 2.0 Roaming Consortium Selection */
+			break;
+		case MULTI_AP_OUI_TYPE:
+			break;
+		case OWE_OUI_TYPE:
+			/* OWE Transition Mode element */
+			break;
+		case DPP_CC_OUI_TYPE:
+			/* DPP Configurator Connectivity element */
+			break;
 		case WFA_RSNE_OVERRIDE_OUI_TYPE:
 			elems->rsne_override = pos;
 			elems->rsne_override_len = elen;

@@ -396,12 +396,10 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *assoc_req_ie, uint32_t as
     if (elems.rsn_ie) {
 		elems.rsn_ie = elems.rsn_ie - 2;
 		elems.rsn_ie_len = elems.rsn_ie_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included RSN IE in (Re)AssocReq");
     }
     if (elems.rsnxe) {
 		elems.rsnxe = elems.rsnxe - 2;
 		elems.rsnxe_len = elems.rsnxe_len + 2;
-		wpa_printf(MSG_DEBUG, "STA included RSN IE in (Re)AssocReq");
     }
 
     if (*sta) {

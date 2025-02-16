@@ -111,6 +111,15 @@ void *hostap_init(void)
         }
     }
 #endif /* CONFIG_IEEE80211W */
+//TODO how to set values
+    if (true) {
+        hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
+        hapd->conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
+        hapd->conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
+        auth_conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
+        auth_conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
+        auth_conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
+    }
     /* TKIP is compulsory in WPA Mode */
     if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
         pairwise_cipher = WIFI_CIPHER_TYPE_TKIP_CCMP;
