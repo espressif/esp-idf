@@ -308,6 +308,12 @@
 #define RSNE_OVERRIDE_2_IE_VENDOR_TYPE 0x506f9a2a
 #define RSNXE_OVERRIDE_IE_VENDOR_TYPE 0x506f9a2b
 
+#define WMM_OUI_TYPE 2
+#define WMM_OUI_SUBTYPE_INFORMATION_ELEMENT 0
+#define WMM_OUI_SUBTYPE_PARAMETER_ELEMENT 1
+#define WMM_OUI_SUBTYPE_TSPEC_ELEMENT 2
+#define WMM_VERSION 1
+
 #ifdef _MSC_VER
 #pragma pack(push, 1)
 #endif /* _MSC_VER */
@@ -566,6 +572,8 @@ struct ieee80211_ht_operation {
 /* 2 - Reserved */
 #define WMM_TSPEC_DIRECTION_BI_DIRECTIONAL 3
 
+#define OUI_MICROSOFT 0x0050f2 /* Microsoft (also used in Wi-Fi specs)
+				* 00:50:F2 */
 #define MBO_IE_VENDOR_TYPE 0x506f9a16
 #define OSEN_IE_VENDOR_TYPE 0x506f9a12
 #define SAE_PK_IE_VENDOR_TYPE 0x506f9a1f

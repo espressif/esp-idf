@@ -10,6 +10,7 @@
 #include "utils/eloop.h"
 #include "crypto/sha1.h"
 #include "common/ieee802_11_defs.h"
+#include "common/ieee802_11_common.h"
 #include "common/eapol_common.h"
 #include "ap/wpa_auth.h"
 #include "ap/ap_config.h"
@@ -396,8 +397,7 @@ uint8_t wpa_status_to_reason_code(int status)
     }
 }
 
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
-                          uint8_t wpa_ie_len, uint8_t *rsnxe, uint16_t rsnxe_len,
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_11_elems elems,
                           bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
@@ -405,7 +405,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
     int status = WLAN_STATUS_SUCCESS;
     bool omit_rsnxe = false;
 
-    if (!sta || !bssid || !wpa_ie) {
+    if (!sta || !bssid || !elems.rsn_ie) {
         return false;
     }
     if (hapd) {
@@ -422,7 +422,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
                 goto send_resp;
             }
 
-            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, elems.rsn_ie, elems.rsn_ie_len, elems.rsnxe, elems.rsnxe_len);
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
                     sta->sae->state == SAE_ACCEPTED) {
@@ -434,7 +434,7 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
             status = wpa_res_to_status_code(res);
 
 send_resp:
-            if (!rsnxe) {
+            if (!elems.rsnxe) {
                 omit_rsnxe = true;
             }
 

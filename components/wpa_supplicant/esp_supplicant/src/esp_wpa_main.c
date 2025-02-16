@@ -345,7 +345,7 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
 #ifdef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 
 #ifdef CONFIG_WPS_REGISTRAR
-static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
+static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_info, const u8 *ies, u8 ies_len, bool *pmf_enable, int subtype)
 {
     struct wpabuf *wps_ie = ieee802_11_vendor_ie_concat(ies, ies_len, WPS_DEV_OUI_WFA);
     int wps_type = esp_wifi_get_wps_type_internal();
@@ -377,14 +377,31 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *assoc_req_ie, uint32_t assoc_ie_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
     uint8_t reason = WLAN_REASON_PREV_AUTH_NOT_VALID;
+    struct ieee802_11_elems elems;
 
     if (!hapd) {
         goto fail;
+    }
+
+    if (ieee802_11_parse_elems(assoc_req_ie, assoc_ie_len, &elems, 1) == ParseFailed) {
+		wpa_printf(MSG_INFO, "Failed to parse assoc req IEs");
+		return -1;
+	}
+
+    if (elems.rsn_ie) {
+		elems.rsn_ie = elems.rsn_ie - 2;
+		elems.rsn_ie_len = elems.rsn_ie_len + 2;
+		wpa_printf(MSG_DEBUG, "STA included RSN IE in (Re)AssocReq");
+    }
+    if (elems.rsnxe) {
+		elems.rsnxe = elems.rsnxe - 2;
+		elems.rsnxe_len = elems.rsnxe_len + 2;
+		wpa_printf(MSG_DEBUG, "STA included RSN IE in (Re)AssocReq");
     }
 
     if (*sta) {
@@ -392,7 +409,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
 #ifdef CONFIG_SAE
         if (old_sta->lock && os_semphr_take(old_sta->lock, 0) != TRUE) {
             wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
-            if (esp_send_assoc_resp(hapd, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
+            if (esp_send_assoc_resp(hapd, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, elems.rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
                 goto fail;
             }
             return false;
@@ -421,7 +438,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8
 #ifdef CONFIG_SAE
     if (sta_info->lock && os_semphr_take(sta_info->lock, 0) != TRUE) {
         wpa_printf(MSG_INFO, "Ignore assoc request as softap is busy with sae calculation for station "MACSTR, MAC2STR(bssid));
-        if (esp_send_assoc_resp(hapd, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
+        if (esp_send_assoc_resp(hapd, bssid, WLAN_STATUS_ASSOC_REJECTED_TEMPORARILY, elems.rsnxe ? false : true, subtype) != WLAN_STATUS_SUCCESS) {
             goto fail;
         }
         return false;
@@ -431,7 +448,7 @@ process_old_sta:
 #endif /* CONFIG_SAE */
 
 #ifdef CONFIG_WPS_REGISTRAR
-    if (check_n_add_wps_sta(hapd, sta_info, wpa_ie, wpa_ie_len, pmf_enable, subtype) == 0) {
+    if (check_n_add_wps_sta(hapd, sta_info, elems.rsn_ie, elems.rsn_ie_len, pmf_enable, subtype) == 0) {
         if (sta_info->eapol_sm) {
             goto done;
         }
@@ -439,7 +456,8 @@ process_old_sta:
         goto fail;
     }
 #endif
-    if (hostap_new_assoc_sta(sta_info, bssid, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len, pmf_enable, subtype, pairwise_cipher, &reason)) {
+
+    if (hostap_new_assoc_sta(sta_info, bssid, elems, pmf_enable, subtype, pairwise_cipher, &reason)) {
         goto done;
     } else {
         goto fail;

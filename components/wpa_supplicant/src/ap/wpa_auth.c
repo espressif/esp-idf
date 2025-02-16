@@ -22,6 +22,7 @@
 #include "ap/ap_config.h"
 #include "ap/sta_info.h"
 #include "common/wpa_common.h"
+#include "common/ieee802_11_common.h"
 #include "ap/pmksa_cache_auth.h"
 
 #include "crypto/aes.h"

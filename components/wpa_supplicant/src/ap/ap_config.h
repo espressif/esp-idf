@@ -11,6 +11,7 @@
 
 #include "common/defs.h"
 #include "common/wpa_common.h"
+#include "common/ieee802_11_common.h"
 
 #define MAX_STA_COUNT 10
 #define MAX_VLAN_ID 4094
@@ -382,8 +383,7 @@ const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
 			   const u8 *addr, const u8 *prev_psk);
 int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
 struct sta_info;
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, uint8_t *wpa_ie,
-		 uint8_t wpa_ie_len, uint8_t *rsnxe, uint16_t rsnxe_len,
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_11_elems elems,
 		 bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason);
 bool wpa_ap_remove(u8* bssid);
 
