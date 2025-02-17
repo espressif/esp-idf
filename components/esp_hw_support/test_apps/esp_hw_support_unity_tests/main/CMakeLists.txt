@@ -21,7 +21,7 @@ if(CONFIG_SOC_ETM_SUPPORTED)
     list(APPEND srcs "test_etm_core.c")
 endif()
 
-if(CONFIG_SOC_GPTIMER_SUPPORTED)
+if(CONFIG_SOC_GPTIMER_SUPPORTED AND CONFIG_SOC_GPSPI_SUPPORTED)
     list(APPEND srcs "test_intr_alloc.c")
 endif()
 

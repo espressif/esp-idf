@@ -21,7 +21,7 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_task_wdt_impl.h"
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #include "esp_private/sleep_retention.h"
 #endif
 
@@ -46,7 +46,7 @@ typedef struct {
  * init function. */
 static twdt_ctx_hard_t init_context;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 static const char* TAG = "task_wdt";
 static esp_err_t sleep_task_wdt_retention_init(void *arg)
 {
@@ -124,7 +124,7 @@ esp_err_t esp_task_wdt_impl_timer_allocate(const esp_task_wdt_config_t *config,
         /* Return the implementation context to the caller */
         *obj = (twdt_ctx_t) ctx;
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
         esp_task_wdt_retention_enable(TWDT_TIMER_GROUP);
 #endif
     }
@@ -171,7 +171,7 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
         /* Deregister interrupt */
         ESP_ERROR_CHECK(esp_intr_free(ctx->intr_handle));
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
         ESP_ERROR_CHECK(esp_task_wdt_retention_disable(TWDT_TIMER_GROUP));
 #endif
     }

@@ -7,6 +7,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_EFUSE_KEY_PURPOSE_FIELD
     bool
     default y
@@ -467,6 +471,10 @@ config SOC_TIMER_GROUP_TIMERS_PER_GROUP
     int
     default 1
 
+config SOC_TIMER_GROUP_TOTAL_TIMERS
+    int
+    default 2
+
 config SOC_TIMER_GROUP_COUNTER_BIT_WIDTH
     int
     default 54
@@ -479,9 +487,9 @@ config SOC_TIMER_GROUP_SUPPORT_RC_FAST
     bool
     default y
 
-config SOC_TIMER_GROUP_TOTAL_TIMERS
-    int
-    default 2
+config SOC_TIMER_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_MWDT_SUPPORT_XTAL
     bool

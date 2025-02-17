@@ -172,7 +172,6 @@ api-reference/peripherals/cap_touch_sens.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/rmt.rst
 api-reference/peripherals/ds.rst
-api-reference/peripherals/gptimer.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/bitscrambler.rst
 api-reference/peripherals/temp_sensor.rst
