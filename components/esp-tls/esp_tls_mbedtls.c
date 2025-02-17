@@ -47,6 +47,9 @@ static esp_err_t esp_set_atecc608a_pki_context(esp_tls_t *tls, const void *pki);
 static esp_err_t esp_mbedtls_init_pk_ctx_for_ds(const void *pki);
 #endif /* CONFIG_ESP_TLS_USE_DS_PERIPHERAL */
 
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+
 static const char *TAG = "esp-tls-mbedtls";
 static mbedtls_x509_crt *global_cacert = NULL;
 
@@ -118,30 +121,16 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
 
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
     psa_status_t status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d", (int) status);
         return esp_ret;
     }
-#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
-    mbedtls_ctr_drbg_init(&tls->ctr_drbg);
     mbedtls_ssl_config_init(&tls->conf);
-    mbedtls_entropy_init(&tls->entropy);
-
-    if ((ret = mbedtls_ctr_drbg_seed(&tls->ctr_drbg,
-                                     mbedtls_entropy_func, &tls->entropy, NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
-        mbedtls_print_error_msg(ret);
-        ESP_INT_EVENT_TRACKER_CAPTURE(tls->error_handle, ESP_TLS_ERR_TYPE_MBEDTLS, -ret);
-        esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
-        goto exit;
-    }
-
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if CONFIG_MBEDTLS_DYNAMIC_BUFFER
     tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
@@ -202,7 +191,6 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
 exit:
     esp_mbedtls_cleanup(tls);
     return esp_ret;
-
 }
 
 void *esp_mbedtls_get_ssl_context(esp_tls_t *tls)
@@ -527,9 +515,7 @@ void esp_mbedtls_cleanup(esp_tls_t *tls)
 #endif
 
     mbedtls_pk_free(&tls->clientkey);
-    mbedtls_entropy_free(&tls->entropy);
     mbedtls_ssl_config_free(&tls->conf);
-    mbedtls_ctr_drbg_free(&tls->ctr_drbg);
     mbedtls_ssl_free(&tls->ssl);
 #ifdef CONFIG_ESP_TLS_USE_SECURE_ELEMENT
     atcab_release();
@@ -615,7 +601,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
                                        pki->privkey_password, pki->privkey_password_len,
-                                       mbedtls_ctr_drbg_random, &tls->ctr_drbg);
+                                       mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
         } else {
             return ESP_ERR_INVALID_ARG;
         }
@@ -683,21 +669,11 @@ esp_err_t esp_mbedtls_server_session_ticket_ctx_init(esp_tls_server_session_tick
     if (!ctx) {
         return ESP_ERR_INVALID_ARG;
     }
-    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
-    mbedtls_entropy_init(&ctx->entropy);
     mbedtls_ssl_ticket_init(&ctx->ticket_ctx);
     int ret;
     esp_err_t esp_ret;
-    if ((ret = mbedtls_ctr_drbg_seed(&ctx->ctr_drbg,
-                    mbedtls_entropy_func, &ctx->entropy, NULL, 0)) != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04X", -ret);
-        mbedtls_print_error_msg(ret);
-        esp_ret = ESP_ERR_MBEDTLS_CTR_DRBG_SEED_FAILED;
-        goto exit;
-    }
-
-    if((ret = mbedtls_ssl_ticket_setup(&ctx->ticket_ctx,
-                    mbedtls_ctr_drbg_random, &ctx->ctr_drbg,
+    if ((ret = mbedtls_ssl_ticket_setup(&ctx->ticket_ctx,
+                    mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE,
                     MBEDTLS_CIPHER_AES_256_GCM,
                     CONFIG_ESP_TLS_SERVER_SESSION_TICKET_TIMEOUT)) != 0) {
         ESP_LOGE(TAG, "mbedtls_ssl_ticket_setup returned -0x%04X", -ret);
@@ -715,8 +691,6 @@ void esp_mbedtls_server_session_ticket_ctx_free(esp_tls_server_session_ticket_ct
 {
     if (ctx) {
         mbedtls_ssl_ticket_free(&ctx->ticket_ctx);
-        mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
-        mbedtls_entropy_free(&ctx->entropy);
     }
 }
 #endif
