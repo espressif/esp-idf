@@ -50,6 +50,7 @@ if(CONFIG_BT_ENABLED)
          common/btc/profile/esp/blufi/include
          common/btc/profile/esp/include
          common/hci_log/include
+         common/ble_log/include
         )
 
 
@@ -77,6 +78,10 @@ if(CONFIG_BT_ENABLED)
          "common/osi/semaphore.c"
          "porting/mem/bt_osi_mem.c"
          )
+
+    if(CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED)
+        list(APPEND srcs "common/ble_log/ble_log_spi_out.c")
+    endif()
 
     # Host Bluedroid
     if(CONFIG_BT_BLUEDROID_ENABLED)
