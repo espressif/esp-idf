@@ -440,6 +440,46 @@ static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
 };
 ```
 
+### 128-bit UUID
+
+To add characteristics with 128-bit UUIDs, a similar approach is used, but with minor differences.
+
+Let's suppose we have the following UUID: `12345678-a1b2-c3d4-e5f6-9fafd205e457` and we want to assign it to
+the `HRS_IDX_128_BIT_LEN_UUID_CHAR` characteristic we also have.
+
+Here is an example of how this can be done:
+
+- First, let's declare our UUID
+
+```c
+static const uint8_t our_128_bit_uuid_characteristic_uuid[ESP_UUID_LEN_128] = { // ESP_UUID_LEN_128 defined as 16
+        0x57, 0xe4, 0x05, 0xd2, 0xaf, 0x9f, 0xf6, 0xe5, 0xd4, 0xc3, 0xb2, 0xa1, 0x78, 0x56, 0x34, 0x12
+};
+```
+
+> ##### `0x57 0xe4 0x05 0xd2 0xaf 0x9f 0xf6 0xe5 0xd4 0xc3 0xb2 0xa1 0x78 0x56 0x34 0x12` - reversed version of the original UUID represented by uuid_byte_array.
+
+- Now, all we need is to set `uuid_length` to `ESP_UUID_LEN_128` in the *Characteristic Value* setup.
+
+> ##### Not to be confused with the *Characteristic Declaration*!
+
+```c
+static const esp_gatts_attr_db_t heart_rate_gatt_db[HRS_IDX_NB] =
+{
+<...>
+    // 128-bit UUID Characteristic Declaration
+    [HRS_IDX_128_BIT_LEN_UUID_CHAR]            =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&character_declaration_uuid, ESP_GATT_PERM_READ,
+      CHAR_DECLARATION_SIZE,CHAR_DECLARATION_SIZE, (uint8_t *)&char_prop_notify}},
+
+    // 128-bit UUID Characteristic Value
+    [HRS_IDX_128_BIT_LEN_UUID_VAL]             =
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&our_128_bit_uuid_characteristic_uuid, ESP_GATT_PERM_READ,
+      THIS_CHAR_VAL_MAX_LEN,0, NULL}},
+<...>
+};
+```
+
 ## Starting the Service
 When the attribute table is created, an ``ESP_GATTS_CREAT_ATTR_TAB_EVT`` event is triggered. This event has the following parameters:
 
@@ -492,6 +532,5 @@ struct gatts_profile_inst {
 
 ## Conclusion
 This document explains the work flow of the GATT Server Service Table example code that implements a Heart Rate Profile. This example begins by defining a table of attributes which include all the services and characteristics of the server, then it registers the Application Profile which triggers events that are used to configure GAP parameters and to create the service table. A service table is initialized with all the parameters required for each attribute and the service is started. This example shows a practical way of defining the server attributes by using a table instead of adding characteristic one by one.
-
 
 
