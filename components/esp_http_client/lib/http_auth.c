@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,14 @@
 #include "sys/socket.h"
 #include "esp_rom_md5.h"
 #include "esp_tls_crypto.h"
-#include "mbedtls/sha256.h"
 
 #include "esp_log.h"
 #include "esp_check.h"
 
 #include "http_utils.h"
 #include "http_auth.h"
+
+#include "psa/crypto.h"
 
 #define MD5_MAX_LEN (33)
 #define SHA256_LEN (32)
@@ -72,7 +73,6 @@ static int md5_printf(char *md, const char *fmt, ...)
  */
 static int sha256_sprintf(char *sha, const char *fmt, ...)
 {
-
     unsigned char *buf;
     unsigned char digest[SHA256_LEN];
     int len, i;
@@ -85,19 +85,31 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     }
 
     int ret = 0;
-    mbedtls_sha256_context sha256;
-    mbedtls_sha256_init(&sha256);
-    if (mbedtls_sha256_starts(&sha256, 0) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_update(&sha256, buf, len) != 0) {
-        goto exit;
-    }
-    if (mbedtls_sha256_finish(&sha256, digest) != 0) {
+    psa_status_t status;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+
+    status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
         goto exit;
     }
 
-    for (i = 0; i < 32; ++i) {
+    status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    status = psa_hash_update(&operation, buf, len);
+    if (status != PSA_SUCCESS) {
+        goto exit;
+    }
+
+    size_t hash_length;
+    status = psa_hash_finish(&operation, digest, sizeof(digest), &hash_length);
+    if (status != PSA_SUCCESS || hash_length != SHA256_LEN) {
+        goto exit;
+    }
+
+    for (i = 0; i < SHA256_LEN; ++i) {
         sprintf(&sha[i * 2], "%02x", (unsigned int)digest[i]);
     }
     sha[SHA256_HEX_LEN - 1] = '\0';
@@ -105,7 +117,7 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
 
 exit:
     free(buf);
-    mbedtls_sha256_free(&sha256);
+    psa_hash_abort(&operation);
     va_end(ap);
     return ret;
 }
