@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -159,14 +159,21 @@ struct i2s_channel_obj_t {
     /* Stored configurations */
     int                     intr_prio_flags;/*!< i2s interrupt priority flags */
     void                    *mode_info;     /*!< Slot, clock and gpio information of each mode */
-    bool                    is_etm_start;   /*!< Whether start by etm tasks */
-    bool                    is_etm_stop;    /*!< Whether stop by etm tasks */
+    struct {
+        bool                is_etm_start: 1;   /*!< Whether start by etm tasks */
+        bool                is_etm_stop: 1;    /*!< Whether stop by etm tasks */
+        bool                is_raw_pdm: 1;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
+        bool                is_external: 1;    /*!< Whether use external clock */
 #if SOC_I2S_SUPPORTS_APLL
-    bool                    apll_en;        /*!< Flag of whether APLL enabled */
+        bool                apll_en: 1;        /*!< Flag of whether APLL enabled */
 #endif
-    bool                    is_raw_pdm;     /*!< Flag of whether send/receive PDM in raw data, i.e., no PCM2PDM/PDM2PCM filter enabled */
+    };
     uint32_t                active_slot;    /*!< Active slot number */
     uint32_t                total_slot;     /*!< Total slot number */
+    i2s_clock_src_t         clk_src;        /*!< Clock source */
+    uint32_t                sclk_hz;        /*!< Source clock frequency */
+    uint32_t                origin_mclk_hz; /*!< Original mclk frequency */
+    uint32_t                curr_mclk_hz;   /*!< Current mclk frequency */
     /* Locks and queues */
     SemaphoreHandle_t       mutex;          /*!< Mutex semaphore for the channel operations */
     SemaphoreHandle_t       binary;         /*!< Binary semaphore for writing / reading / enabling / disabling */

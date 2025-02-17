@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1096,10 +1096,10 @@ static void i2s_set_clock_legacy(i2s_port_t i2s_num)
     i2s_calculate_clock(i2s_num, &clk_info);
     I2S_CLOCK_SRC_ATOMIC() {
         if (p_i2s[i2s_num]->dir & I2S_DIR_TX) {
-            i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+            i2s_hal_set_tx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src, NULL);
         }
         if (p_i2s[i2s_num]->dir & I2S_DIR_RX) {
-            i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src);
+            i2s_hal_set_rx_clock(&(p_i2s[i2s_num]->hal), &clk_info, clk_cfg->clk_src, NULL);
         }
     }
 }
@@ -1634,10 +1634,10 @@ esp_err_t i2s_driver_uninstall(i2s_port_t i2s_num)
         I2S_CLOCK_SRC_ATOMIC() {
             // switch back to PLL clock source
             if (obj->dir & I2S_DIR_TX) {
-                i2s_hal_set_tx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT);
+                i2s_hal_set_tx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT, NULL);
             }
             if (obj->dir & I2S_DIR_RX) {
-                i2s_hal_set_rx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT);
+                i2s_hal_set_rx_clock(&obj->hal, NULL, I2S_CLK_SRC_DEFAULT, NULL);
             }
         }
         periph_rtc_apll_release();

@@ -1016,3 +1016,78 @@ TEST_CASE("I2S_PDM2PCM_existence_test", "[i2s]")
     TEST_ESP_OK(i2s_del_channel(rx_handle));
 }
 #endif
+
+TEST_CASE("I2S_rate_tunning", "[i2s]")
+{
+    i2s_chan_handle_t tx_handle;
+    i2s_chan_handle_t rx_handle;
+
+    i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_0, I2S_ROLE_MASTER);
+    i2s_std_config_t std_cfg = {
+        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(SAMPLE_RATE),
+        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_STEREO),
+        .gpio_cfg = I2S_TEST_MASTER_DEFAULT_PIN,
+    };
+    std_cfg.gpio_cfg.din = std_cfg.gpio_cfg.dout;  // GPIO loopback
+#if SOC_CLK_APLL_SUPPORTED
+    std_cfg.clk_cfg.clk_src = I2S_CLK_SRC_APLL;
+#endif
+
+    TEST_ESP_OK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
+    TEST_ESP_OK(i2s_channel_init_std_mode(tx_handle, &std_cfg));
+    TEST_ESP_OK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
+
+    TEST_ESP_OK(i2s_channel_enable(rx_handle));
+    TEST_ESP_OK(i2s_channel_enable(tx_handle));
+
+    i2s_tuning_info_t tune_init_res = {};
+    TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, NULL, &tune_init_res));
+    i2s_tuning_info_t tune_info = {};
+
+    // Add/subtract case
+    int32_t tune_val = 400;
+    i2s_tuning_config_t tune_addsub_cfg = {
+        .tune_mode = I2S_TUNING_MODE_ADDSUB,
+        .tune_mclk_val = tune_val,
+        .max_delta_mclk = 1000,
+        .min_delta_mclk = -1000,
+    };
+    TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, &tune_addsub_cfg, &tune_info));
+    printf("# Addsub case: init mclk: %"PRIu32" tune val: %"PRId32" curr mclk: %"PRId32" delta mclk: %"PRId32"\n",
+           tune_init_res.curr_mclk_hz, tune_val, tune_info.curr_mclk_hz, tune_info.delta_mclk_hz);
+    TEST_ASSERT_UINT32_WITHIN(50, tune_init_res.curr_mclk_hz + tune_val, tune_info.curr_mclk_hz);
+
+    // Set case
+    tune_val = tune_init_res.curr_mclk_hz - 500;
+    i2s_tuning_config_t tune_set_cfg = {
+        .tune_mode = I2S_TUNING_MODE_SET,
+        .tune_mclk_val = tune_val,
+        .max_delta_mclk = 1000,
+        .min_delta_mclk = -1000,
+    };
+    TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, &tune_set_cfg, &tune_info));
+    printf("# Set case: init mclk: %"PRIu32" tune val: %"PRId32" curr mclk: %"PRId32" delta mclk: %"PRId32"\n",
+           tune_init_res.curr_mclk_hz, tune_val, tune_info.curr_mclk_hz, tune_info.delta_mclk_hz);
+    TEST_ASSERT_UINT32_WITHIN(50, tune_val, tune_info.curr_mclk_hz);
+
+    // Out of range case
+    tune_set_cfg.min_delta_mclk = -400;
+    TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, &tune_set_cfg, &tune_info));
+    printf("# Out of range case: init mclk: %"PRIu32" tune val: %"PRId32" curr mclk: %"PRId32" delta mclk: %"PRId32"\n",
+           tune_init_res.curr_mclk_hz, tune_val, tune_info.curr_mclk_hz, tune_info.delta_mclk_hz);
+    TEST_ASSERT_UINT32_WITHIN(50, tune_init_res.curr_mclk_hz + tune_set_cfg.min_delta_mclk, tune_info.curr_mclk_hz);
+
+    // Reset case
+    i2s_tuning_config_t tune_reset_cfg = {
+        .tune_mode = I2S_TUNING_MODE_RESET,
+    };
+    TEST_ESP_OK(i2s_channel_tune_rate(tx_handle, &tune_reset_cfg, &tune_info));
+    printf("# Reset case: init mclk: %"PRIu32" tune val: %"PRId32" curr mclk: %"PRId32" delta mclk: %"PRId32"\n",
+           tune_init_res.curr_mclk_hz, tune_val, tune_info.curr_mclk_hz, tune_info.delta_mclk_hz);
+    TEST_ASSERT_EQUAL_UINT32(tune_init_res.curr_mclk_hz, tune_info.curr_mclk_hz);
+
+    TEST_ESP_OK(i2s_channel_disable(tx_handle));
+    TEST_ESP_OK(i2s_channel_disable(rx_handle));
+    TEST_ESP_OK(i2s_del_channel(tx_handle));
+    TEST_ESP_OK(i2s_del_channel(rx_handle));
+}

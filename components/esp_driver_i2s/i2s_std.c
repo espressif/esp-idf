@@ -49,9 +49,10 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
         clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     }
 #if SOC_I2S_HW_VERSION_2
-    clk_info->sclk = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ?
-                     clk_cfg->ext_clk_freq_hz : i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
-    float min_mclk_div = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL ? 0.99 : 1.99;
+    handle->is_external = clk_cfg->clk_src == I2S_CLK_SRC_EXTERNAL;
+    clk_info->sclk = handle->is_external ? clk_cfg->ext_clk_freq_hz :
+                     i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
+    float min_mclk_div = handle->is_external ? 0.99 : 1.99;
 #else
     clk_info->sclk = i2s_get_source_clk_freq(clk_cfg->clk_src, clk_info->mclk);
     float min_mclk_div = 1.99;
@@ -77,22 +78,28 @@ static esp_err_t i2s_std_set_clock(i2s_chan_handle_t handle, const i2s_std_clk_c
     i2s_hal_clock_info_t clk_info;
     /* Calculate clock parameters */
     ESP_RETURN_ON_ERROR(i2s_std_calculate_clock(handle, clk_cfg, &clk_info), TAG, "clock calculate failed");
-    ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %d [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
-             clk_info.sclk, clk_info.mclk_div, clk_info.mclk, clk_info.bclk_div, clk_info.bclk);
 
+    hal_utils_clk_div_t ret_mclk_div = {};
     portENTER_CRITICAL(&g_i2s.spinlock);
     /* Set clock configurations in HAL*/
     I2S_CLOCK_SRC_ATOMIC() {
         if (handle->dir == I2S_DIR_TX) {
-            i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+            i2s_hal_set_tx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
         } else {
-            i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src);
+            i2s_hal_set_rx_clock(&handle->controller->hal, &clk_info, clk_cfg->clk_src, &ret_mclk_div);
         }
     }
     portEXIT_CRITICAL(&g_i2s.spinlock);
 
     /* Update the mode info: clock configuration */
     memcpy(&(std_cfg->clk_cfg), clk_cfg, sizeof(i2s_std_clk_config_t));
+    handle->clk_src = clk_cfg->clk_src;
+    handle->sclk_hz = clk_info.sclk;
+    handle->origin_mclk_hz = ((uint64_t)clk_info.sclk * ret_mclk_div.denominator) / (ret_mclk_div.integer * ret_mclk_div.denominator + ret_mclk_div.numerator);
+    handle->curr_mclk_hz = handle->origin_mclk_hz;
+
+    ESP_LOGD(TAG, "Clock division info: [sclk] %"PRIu32" Hz [mdiv] %"PRIu32" %"PRIu32"/%"PRIu32" [mclk] %"PRIu32" Hz [bdiv] %d [bclk] %"PRIu32" Hz",
+             clk_info.sclk, ret_mclk_div.integer, ret_mclk_div.numerator, ret_mclk_div.denominator, handle->origin_mclk_hz, clk_info.bclk_div, clk_info.bclk);
 
     return ret;
 }
