@@ -85,11 +85,7 @@ tools/test_apps/system/no_embedded_paths:
 
 tools/test_apps/system/panic:
   enable:
-    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61"] # preview targets
-  disable:
-    - if: IDF_TARGET == "esp32h21"
-      temporary: true
-      reason: not supported  # TODO: [ESP32h21] IDF-11543
+    - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32p4", "esp32c61", "esp32h21"] # preview targets
 
 tools/test_apps/system/rtc_mem_reserve:
   enable:
