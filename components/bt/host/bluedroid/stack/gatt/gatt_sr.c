@@ -200,7 +200,7 @@ static BOOLEAN process_read_multi_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS status,
             *p++ = GATT_RSP_READ_MULTI;
             p_buf->len = 1;
 
-            /* Now walk through the buffers puting the data into the response in order */
+            /* Now walk through the buffers putting the data into the response in order */
             list_t *list = NULL;
             const list_node_t *node = NULL;
             if (! fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
@@ -321,7 +321,7 @@ static BOOLEAN process_read_multi_var_rsp (tGATT_SR_CMD *p_cmd, tGATT_STATUS sta
             *p++ = GATT_RSP_READ_MULTI_VAR;
             p_buf->len = 1;
 
-            /* Now walk through the buffers puting the data into the response in order */
+            /* Now walk through the buffers putting the data into the response in order */
             list_t *list = NULL;
             const list_node_t *node = NULL;
             if (! fixed_queue_is_empty(p_cmd->multi_rsp_q)) {
@@ -735,7 +735,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp (BT_HDR *p_msg, tGATT_TCB *p_
                     handle_len = 4 + p_uuid->len;
                 }
 
-                /* get the length byte in the repsonse */
+                /* get the length byte in the response */
                 if (p_msg->offset == 0) {
                     *p ++ = op_code + 1;
                     p_msg->len ++;
@@ -788,7 +788,7 @@ static tGATT_STATUS gatt_build_primary_service_rsp (BT_HDR *p_msg, tGATT_TCB *p_
 **                  buffer.
 **
 ** Returns          TRUE: if data filled successfully.
-**                  FALSE: packet full, or format mismatch.
+**                  FALSE: packet full.
 **
 *******************************************************************************/
 static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg, UINT16 *p_len,
@@ -831,10 +831,9 @@ static tGATT_STATUS gatt_build_find_info_rsp(tGATT_SR_REG *p_rcb, BT_HDR *p_msg,
                     gatt_convert_uuid32_to_uuid128(p, ((tGATT_ATTR32 *) p_attr)->uuid);
                     p += LEN_UUID_128;
                 } else {
-                    GATT_TRACE_ERROR("format mismatch");
-                    status = GATT_NO_RESOURCES;
+                    // UUID format mismatch in sequential attributes
+                    // A new request will be sent with the starting handle of the next attribute
                     break;
-                    /* format mismatch */
                 }
                 p_msg->len += info_pair_len[p_msg->offset - 1];
                 len -= info_pair_len[p_msg->offset - 1];
@@ -889,7 +888,7 @@ static tGATT_STATUS gatts_validate_packet_format(UINT8 op_code, UINT16 *p_len,
                 /* parse uuid now */
                 if (gatt_parse_uuid_from_cmd (p_uuid_filter, uuid_len, &p) == FALSE ||
                         p_uuid_filter->len == 0) {
-                    GATT_TRACE_DEBUG("UUID filter does not exsit");
+                    GATT_TRACE_DEBUG("UUID filter does not exist");
                     reason = GATT_INVALID_PDU;
                 } else {
                     len -= p_uuid_filter->len;
@@ -1042,7 +1041,7 @@ static void gatts_process_find_info(tGATT_TCB *p_tcb, UINT8 op_code, UINT16 len,
 **
 ** Function         gatts_process_mtu_req
 **
-** Description      This function is called to process excahnge MTU request.
+** Description      This function is called to process exchange MTU request.
 **                  Only used on LE.
 **
 ** Returns          void
@@ -1055,7 +1054,7 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
     BT_HDR        *p_buf;
     UINT16   conn_id;
 
-    /* BR/EDR conenction, send error response */
+    /* BR/EDR connection, send error response */
     if (p_tcb->att_lcid != L2CAP_ATT_CID) {
         gatt_send_error_rsp (p_tcb, GATT_REQ_NOT_SUPPORTED, GATT_REQ_MTU, 0, FALSE);
     } else if (len < GATT_MTU_REQ_MIN_LEN) {
@@ -1081,7 +1080,7 @@ static void gatts_process_mtu_req (tGATT_TCB *p_tcb, UINT16 len, UINT8 *p_data)
             attp_send_sr_msg (p_tcb, p_buf);
 
             /* Notify all registered application with new MTU size. Us a transaction ID */
-            /* of 0, as no response is allowed from applcations                    */
+            /* of 0, as no response is allowed from applications                        */
 
             for (i = 0; i < GATT_MAX_APPS; i ++) {
                 if (gatt_cb.cl_rcb[i].in_use ) {
@@ -1448,7 +1447,7 @@ void gatt_attr_process_prepare_write (tGATT_TCB *p_tcb, UINT8 i_rcb, UINT16 hand
     }
 
     if ((prepare_record->error_code_app == GATT_SUCCESS)
-        // update prepare write status for excute write request
+        // update prepare write status for execute write request
         && (status == GATT_INVALID_OFFSET || status == GATT_INVALID_ATTR_LEN || status == GATT_REQ_NOT_SUPPORTED)) {
         prepare_record->error_code_app = status;
     }
@@ -1855,7 +1854,7 @@ void gatt_server_handle_client_req (tGATT_TCB *p_tcb, UINT8 op_code,
             gatts_process_primary_service_req (p_tcb, op_code, len, p_data);
             break;
 
-        case GATT_REQ_FIND_INFO:                /* discover char descrptor */
+        case GATT_REQ_FIND_INFO:                /* discover char descriptor */
             gatts_process_find_info(p_tcb, op_code, len, p_data);
             break;
 
