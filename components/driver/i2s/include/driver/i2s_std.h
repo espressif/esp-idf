@@ -215,8 +215,8 @@ extern "C" {
 #define I2S_STD_CLK_DEFAULT_CONFIG(rate) { \
     .sample_rate_hz = rate, \
     .clk_src = I2S_CLK_SRC_DEFAULT, \
-    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
     .ext_clk_freq_hz = 0, \
+    .mclk_multiple = I2S_MCLK_MULTIPLE_256, \
 }
 #endif
 
