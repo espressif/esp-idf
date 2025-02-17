@@ -193,7 +193,6 @@
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
 // #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
-#define SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE  1 // By default, hysteresis enable/disable is controlled by efuse
 
 // GPIO peripheral has the ETM extension
 // #define SOC_GPIO_SUPPORT_ETM          1

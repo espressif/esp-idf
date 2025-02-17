@@ -535,9 +535,6 @@ TEST_CASE("GPIO_set_output_level_get_input_level_test", "[gpio]")
     TEST_ASSERT_EQUAL_INT_MESSAGE(1, gpio_get_level(TEST_GPIO_EXT_IN_IO), "get level error! the level should be high!");
 }
 
-#if !CONFIG_IDF_ENV_FPGA
-// On FPGA do not support GPIO pull down
-
 // This test routes constant-high/low signal to pins, another way is to directly connect TEST_GPIO_EXT_IN_IO to
 // 3.3v or GND pin
 TEST_CASE("GPIO_get_level_from_fixed_voltage_test", "[gpio]")
@@ -563,6 +560,9 @@ TEST_CASE("GPIO_get_level_from_fixed_voltage_test", "[gpio]")
     printf("TEST_GPIO_EXT_IN_IO(GPIO%d)'s level is: %d\n", TEST_GPIO_EXT_IN_IO, level2);
     TEST_ASSERT_EQUAL_INT_MESSAGE(0, level2, "get level error! the level should be low!");
 }
+
+#if !CONFIG_IDF_ENV_FPGA
+// On FPGA do not support GPIO pull down
 
 TEST_CASE("GPIO_io_pull_up/down_function", "[gpio]")
 {
