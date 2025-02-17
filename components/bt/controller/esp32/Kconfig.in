@@ -490,6 +490,16 @@ config BTDM_BLE_VS_QA_SUPPORT
     help
         This enables BLE vendor HCI command and event for QA.
 
+config BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
+    visible if 0
+    bool "Enable Bluetooth controller debugging mode 1 (for internal use only)"
+    default n
+    depends on BT_ENABLED
+    help
+        Enables specific debugging features for the Bluetooth controller.
+        This option is strictly for internal debugging purposes and should not be enabled in production environments,
+        as it may impact performance and stability.
+
 config BTDM_RESERVE_DRAM
     hex
     default 0xdb5c if BT_ENABLED
