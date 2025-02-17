@@ -188,17 +188,17 @@
 
 /*-------------------------- GPIO CAPS ---------------------------------------*/
 // ESP32-H21 has 1 GPIO peripheral
-#define SOC_GPIO_PORT                        1U
-#define SOC_GPIO_PIN_COUNT                   28
-// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER   1
-// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM      8
-// #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER      1
-// #define SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE 1 // By default, hysteresis enable/disable is controlled by efuse
+#define SOC_GPIO_PORT                           1U
+#define SOC_GPIO_PIN_COUNT                      26
+// #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
+// #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
+// #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
+#define SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE  1 // By default, hysteresis enable/disable is controlled by efuse
 
 // GPIO peripheral has the ETM extension
 // #define SOC_GPIO_SUPPORT_ETM          1
 
-// Target has no full LP IO subsystem, GPIO7~14 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
+// Target has no full LP IO subsystem, GPIO5~11 remain LP function (powered by VDD3V3_LP, and can be used as ext1 wakeup pins)
 // Digital IOs have their own registers to control pullup/down/capability
 // However, there is no way to control pullup/down/capability for IOs under LP function since there is no LP_IOMUX registers
 #define SOC_GPIO_SUPPORT_RTC_INDEPENDENT    (1)
@@ -209,14 +209,14 @@
 #define SOC_GPIO_VALID_GPIO_MASK        ((1U << SOC_GPIO_PIN_COUNT) - 1)
 #define SOC_GPIO_VALID_OUTPUT_GPIO_MASK SOC_GPIO_VALID_GPIO_MASK
 
-#define SOC_GPIO_IN_RANGE_MAX           27
-#define SOC_GPIO_OUT_RANGE_MAX          27
+#define SOC_GPIO_IN_RANGE_MAX           25
+#define SOC_GPIO_OUT_RANGE_MAX          25
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~6. GPIO_NUM_15~27)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x000000000FFF807FULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_0~4. GPIO_NUM_12~25)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000003FFF81FULL
 
 // Support to force hold all IOs
-// #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+#define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
 // Support to hold a single digital I/O when the digital domain is powered off
 // #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 

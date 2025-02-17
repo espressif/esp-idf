@@ -233,7 +233,11 @@ config SOC_GPIO_PORT
 
 config SOC_GPIO_PIN_COUNT
     int
-    default 28
+    default 26
+
+config SOC_GPIO_SUPPORT_PIN_HYS_CTRL_BY_EFUSE
+    bool
+    default y
 
 config SOC_GPIO_SUPPORT_RTC_INDEPENDENT
     bool
@@ -245,15 +249,19 @@ config SOC_LP_IO_CLOCK_IS_INDEPENDENT
 
 config SOC_GPIO_IN_RANGE_MAX
     int
-    default 27
+    default 25
 
 config SOC_GPIO_OUT_RANGE_MAX
     int
-    default 27
+    default 25
 
 config SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK
     hex
-    default 0x000000000FFF807F
+    default 0x0000000003FFF81F
+
+config SOC_GPIO_SUPPORT_FORCE_HOLD
+    bool
+    default y
 
 config SOC_DEDIC_GPIO_OUT_CHANNELS_NUM
     int

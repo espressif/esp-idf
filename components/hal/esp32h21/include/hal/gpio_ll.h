@@ -28,8 +28,6 @@
 #include "hal/misc.h"
 #include "hal/assert.h"
 
-//TODO: [ESP32H21] IDF-11611, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -116,7 +114,6 @@ static inline void gpio_ll_pulldown_en(gpio_dev_t *hw, gpio_num_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_pulldown_dis(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-
     REG_CLR_BIT(IO_MUX_GPIO0_REG + (gpio_num * 4), FUN_PD);
 }
 
@@ -309,8 +306,6 @@ __attribute__((always_inline))
 static inline void gpio_ll_output_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
     hw->enable_w1tc.enable_w1tc = (0x1 << gpio_num);
-    // Ensure no other output signal is routed via GPIO matrix to this pin
-    REG_WRITE(GPIO_FUNC0_OUT_SEL_CFG_REG + (gpio_num * 4), SIG_GPIO_OUT_IDX);
 }
 
 /**
@@ -356,10 +351,10 @@ static inline void gpio_ll_od_enable(gpio_dev_t *hw, gpio_num_t gpio_num)
 __attribute__((always_inline))
 static inline void gpio_ll_matrix_out_default(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    // gpio_func_out_sel_cfg_reg_t reg = {
-    //   .out_sel = SIG_GPIO_OUT_IDX,
-    // };
-    // hw->func_out_sel_cfg[gpio_num].val = reg.val;
+    gpio_funcn_out_sel_cfg_reg_t reg = {
+      .funcn_out_sel = SIG_GPIO_OUT_IDX,
+    };
+    hw->funcn_out_sel_cfg[gpio_num].val = reg.val;
 }
 
 /**
@@ -531,19 +526,6 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
 }
 
 /**
- * @brief  Control the pin in the IOMUX
- *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
- */
-__attribute__((always_inline))
-static inline void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
-{
-    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
-}
-
-/**
  * @brief Set clock source of IO MUX module
  *
  * @param src IO MUX clock source (only a subset of soc_module_clk_t values are valid)
@@ -553,6 +535,9 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
     switch (src) {
     case SOC_MOD_CLK_XTAL:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 0;
+        break;
+    case SOC_MOD_CLK_RC_FAST:
+        PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
         break;
     case SOC_MOD_CLK_PLL_F48M:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 2;
