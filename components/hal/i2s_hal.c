@@ -10,6 +10,7 @@
 #include "soc/soc.h"
 #include "hal/assert.h"
 #include "hal/i2s_hal.h"
+#include "hal/log.h"
 
 #if SOC_I2S_HW_VERSION_2 && (SOC_I2S_SUPPORTS_PDM_TX || SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER)
 /* PDM tx high pass filter cut-off frequency and coefficients list
@@ -58,7 +59,7 @@ void i2s_hal_calc_mclk_precise_division(uint32_t sclk, uint32_t mclk, hal_utils_
         .min_integ = 1,
         .max_fract = I2S_LL_CLK_FRAC_DIV_AB_MAX,
     };
-    hal_utils_calc_clk_div_frac_accurate(&i2s_clk_info, mclk_div);
+    hal_utils_calc_clk_div_frac_fast(&i2s_clk_info, mclk_div);
 }
 
 void i2s_hal_init(i2s_hal_context_t *hal, int port_id)
@@ -114,6 +115,8 @@ void i2s_hal_set_tx_clock(i2s_hal_context_t *hal, const i2s_hal_clock_info_t *cl
         i2s_hal_calc_mclk_precise_division(clk_info->sclk, clk_info->mclk, &mclk_div);
         i2s_ll_tx_set_mclk(hal->dev, &mclk_div);
         i2s_ll_tx_set_bck_div_num(hal->dev, clk_info->bclk_div);
+        HAL_EARLY_LOGD("I2S_HAL","src_clk = %ld, div = %ld + %ld/%ld, bdiv = %d, Fs = %ld",clk_info->sclk, mclk_div.integer, mclk_div.numerator, mclk_div.denominator, clk_info->bclk_div,
+	    (int32_t)((((int64_t)clk_info->sclk*mclk_div.denominator) / ((mclk_div.integer*mclk_div.denominator + mclk_div.numerator)*clk_info->bclk_div)+64)/128) );
     } else {
         i2s_ll_tx_clk_set_src(hal->dev, clk_src);
     }
