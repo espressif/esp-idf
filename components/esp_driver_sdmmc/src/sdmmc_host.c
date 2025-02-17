@@ -860,6 +860,8 @@ static void sdmmc_host_deinit_slot_internal(int slot)
 {
     sdmmc_slot_io_info_t* gpio = &s_host_ctx.slot_ctx[slot].slot_gpio_num;
     // Disconnect signals and reset used GPIO pins
+    reset_pin_if_valid(gpio->cd);
+    reset_pin_if_valid(gpio->wp);
     reset_pin_if_valid(gpio->clk);
     reset_pin_if_valid(gpio->cmd);
     reset_pin_if_valid(gpio->d0);
