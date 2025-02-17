@@ -104,10 +104,12 @@ if(CONFIG_BT_ENABLED)
             set(ldscripts "linker_esp32c2.lf")
 
         elseif(CONFIG_IDF_TARGET_ESP32C6)
+            list(APPEND srcs "controller/esp32c6/ble.c")
             list(APPEND srcs "controller/esp32c6/bt.c")
             list(APPEND ldscripts "linker_esp_ble_controller.lf")
 
         elseif(CONFIG_IDF_TARGET_ESP32H2)
+            list(APPEND srcs "controller/esp32h2/ble.c")
             list(APPEND srcs "controller/esp32h2/bt.c")
             list(APPEND ldscripts "linker_esp_ble_controller.lf")
         endif()
