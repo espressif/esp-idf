@@ -724,10 +724,10 @@ static inline void adc_ll_enable_tout_bus(adc_unit_t adc_n, bool en)
 }
 
 /**
- * Prepare regi2c SARADC registers
+ * Init regi2c SARADC registers
  */
 __attribute__((always_inline))
-static inline void adc_ll_regi2c_adc_prepare(void)
+static inline void adc_ll_regi2c_adc_init(void)
 {
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(1);
@@ -735,10 +735,10 @@ static inline void adc_ll_regi2c_adc_prepare(void)
 }
 
 /**
- * Reset regi2c SARADC registers
+ * Deinit regi2c SARADC registers
  */
 __attribute__((always_inline))
-static inline void adc_ll_regi2c_adc_reset(void)
+static inline void adc_ll_regi2c_adc_deinit(void)
 {
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(0);
