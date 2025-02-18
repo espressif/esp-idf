@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -231,9 +231,7 @@ static void uart_write_task(void *param)
 {
     int uart_num = (int)param;
     uint8_t *tx_buf = (uint8_t *)malloc(1024);
-    if(tx_buf == NULL) {
-        TEST_FAIL_MESSAGE("tx buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(tx_buf);
     for(int i = 1; i < 1023; i++) {
         tx_buf[i] = (i & 0xff);
     }
@@ -261,9 +259,7 @@ TEST_CASE("uart read write test", "[uart]")
 {
     const int uart_num = UART_NUM1;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
-    if(rd_data == NULL) {
-        TEST_FAIL_MESSAGE("rx buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(rd_data);
     uart_config_t uart_config = {
         .baud_rate = 2000000,
         .data_bits = UART_DATA_8_BITS,
@@ -329,10 +325,9 @@ TEST_CASE("uart tx with ringbuffer test", "[uart]")
 {
     const int uart_num = UART_NUM1;
     uint8_t *rd_data = (uint8_t *)malloc(1024);
+    TEST_ASSERT_NOT_NULL(rd_data);
     uint8_t *wr_data = (uint8_t *)malloc(1024);
-    if(rd_data == NULL || wr_data == NULL) {
-        TEST_FAIL_MESSAGE("buffer malloc fail");
-    }
+    TEST_ASSERT_NOT_NULL(wr_data);
     uart_config_t uart_config = {
         .baud_rate = 2000000,
         .data_bits = UART_DATA_8_BITS,
@@ -443,4 +438,43 @@ TEST_CASE("uart int state restored after flush", "[uart]")
 
     TEST_ESP_OK(uart_driver_delete(uart_echo));
     free(data);
+}
+
+TEST_CASE("uart in one-wire mode", "[uart]")
+{
+    const uart_port_t uart_num = UART_NUM_1;
+    // let tx and rx use the same pin
+    const int uart_tx = UART1_RX_PIN;
+    const int uart_rx = UART1_RX_PIN;
+    uart_config_t uart_config = {
+        .baud_rate = 115200,
+        .data_bits = UART_DATA_8_BITS,
+        .parity    = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_DEFAULT,
+    };
+
+    TEST_ESP_OK(uart_driver_install(uart_num, BUF_SIZE * 2, 0, 20, NULL, 0));
+    TEST_ESP_OK(uart_param_config(uart_num, &uart_config));
+    TEST_ESP_OK(uart_set_pin(uart_num, uart_tx, uart_rx, UART_PIN_NO_CHANGE, UART_PIN_NO_CHANGE));
+
+    // If configured successfully in one-wire mode
+    TEST_ESP_OK(uart_wait_tx_done(uart_num, portMAX_DELAY));
+    vTaskDelay(pdMS_TO_TICKS(20)); // make sure last byte has flushed from TX FIFO
+    TEST_ESP_OK(uart_flush_input(uart_num));
+
+    const char *wr_data = "ECHO!";
+    const int len = strlen(wr_data);
+    uint8_t *rd_data = (uint8_t *)calloc(1, 1024);
+    TEST_ASSERT_NOT_NULL(rd_data);
+
+    uart_write_bytes(uart_num, wr_data, len);
+    int bytes_received = uart_read_bytes(uart_num, rd_data, BUF_SIZE, pdMS_TO_TICKS(20));
+    TEST_ASSERT_EQUAL(len, bytes_received);
+    TEST_ASSERT_EQUAL_STRING_LEN(wr_data, rd_data, bytes_received);
+
+    free(rd_data);
+
+    TEST_ESP_OK(uart_driver_delete(uart_num));
 }
