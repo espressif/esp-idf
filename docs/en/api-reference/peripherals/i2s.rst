@@ -3,7 +3,8 @@ Inter-IC Sound (I2S)
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_I2S_NUM:default="one", esp32="two", esp32s3="two"}
+{IDF_TARGET_I2S_NUM:default="one", esp32="two", esp32s3="two", esp32p4="three"}
+{IDF_TARGET_I2S_STD_TDM:default="standard and TDM", esp32="standard", esp32s2="standard"}
 
 Introduction
 ------------
@@ -18,7 +19,7 @@ I2S (Inter-IC Sound) is a synchronous serial communication protocol usually used
 
 {IDF_TARGET_NAME} contains {IDF_TARGET_I2S_NUM} I2S peripheral(s). These peripherals can be configured to input and output sample data via the I2S driver.
 
-An I2S bus that communicates in standard or TDM mode consists of the following lines:
+An I2S bus that communicates in {IDF_TARGET_I2S_STD_TDM} mode consists of the following lines:
 
 - **MCLK:** Master clock line. It is an optional signal depending on the slave side, mainly used for offering a reference clock to the I2S slave device.
 - **BCLK:** Bit clock line. The bit clock for data line.
@@ -57,10 +58,12 @@ I2S File Structure
 
 **Public headers that need to be included in the I2S application are as follows:**
 
-- ``i2s.h``: The header file that provides legacy I2S APIs (for apps using legacy driver).
-- ``i2s_std.h``: The header file that provides standard communication mode specific APIs (for apps using new driver with standard mode).
-- ``i2s_pdm.h``: The header file that provides PDM communication mode specific APIs (for apps using new driver with PDM mode).
-- ``i2s_tdm.h``: The header file that provides TDM communication mode specific APIs (for apps using new driver with TDM mode).
+.. list::
+
+    - ``i2s.h``: The header file that provides legacy I2S APIs (for apps using legacy driver).
+    - ``i2s_std.h``: The header file that provides standard communication mode specific APIs (for apps using new driver with standard mode).
+    :SOC_I2S_SUPPORTS_PDM: - ``i2s_pdm.h``: The header file that provides PDM communication mode specific APIs (for apps using new driver with PDM mode).
+    :SOC_I2S_SUPPORTS_TDM: - ``i2s_tdm.h``: The header file that provides TDM communication mode specific APIs (for apps using new driver with TDM mode).
 
 .. note::
 
@@ -78,27 +81,14 @@ I2S Clock
 Clock Source
 ^^^^^^^^^^^^
 
-- :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`: Default PLL clock.
+.. list::
 
-.. only:: SOC_I2S_SUPPORTS_PLL_F160M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F120M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`: 120 MHz PLL clock.
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F96M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
-
-.. only:: SOC_I2S_SUPPORTS_PLL_F240M
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
-
-.. only:: SOC_I2S_SUPPORTS_APLL
-
-    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock, which is more precise than ``I2S_CLK_SRC_PLL_160M`` in high sample rate applications. Its frequency is configurable according to the sample rate. However, if APLL has been occupied by EMAC or other channels, the APLL frequency cannot be changed, and the driver will try to work under this APLL frequency. If this frequency cannot meet the requirements of I2S, the clock configuration will fail.
+    - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_DEFAULT`: Default PLL clock.
+    :SOC_I2S_SUPPORTS_PLL_F160M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_160M`: 160 MHz PLL clock.
+    :SOC_I2S_SUPPORTS_PLL_F120M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_120M`: 120 MHz PLL clock.
+    :SOC_I2S_SUPPORTS_PLL_F96M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_96M`: 96 MHz PLL clock.
+    :SOC_I2S_SUPPORTS_PLL_F240M: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_PLL_240M`: 240 MHz PLL clock.
+    :SOC_I2S_SUPPORTS_APLL: - :cpp:enumerator:`i2s_clock_src_t::I2S_CLK_SRC_APLL`: Audio PLL clock, which is more precise than ``I2S_CLK_SRC_PLL_160M`` in high sample rate applications. Its frequency is configurable according to the sample rate. However, if APLL has been occupied by EMAC or other channels, the APLL frequency cannot be changed, and the driver will try to work under this APLL frequency. If this frequency cannot meet the requirements of I2S, the clock configuration will fail.
 
 Clock Terminology
 ^^^^^^^^^^^^^^^^^
@@ -131,8 +121,8 @@ ESP32-C6    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-S3   I2S 0/1    I2S 0     I2S 0    I2S 0/1    none       none
 ESP32-H2    I2S 0     I2S 0     none      I2S 0     none       none
 ESP32-P4   I2S 0~2    I2S 0     I2S 0    I2S 0~2    none       none
-ESP32-C5    I2S 0     I2S 0     I2S 0     I2S 0     none       none
-ESP32-C61   I2S 0     I2S 0     I2S 0     I2S 0     none       none
+ESP32-C5    I2S 0     I2S 0     none      I2S 0     none       none
+ESP32-C61   I2S 0     I2S 0     none      I2S 0     none       none
 =========  ========  ========  ========  ========  ========  ==========
 
 Standard Mode
@@ -847,7 +837,7 @@ Here is the table of the data received in the buffer with different :cpp:member:
 Full-duplex
 ^^^^^^^^^^^
 
-Full-duplex mode registers TX and RX channel in an I2S port at the same time, and the channels share the BCLK and WS signals. Currently, STD and TDM communication modes supports full-duplex mode in the following way, but PDM full-duplex is not supported because due to different PDM TX and RX clocks.
+Full-duplex mode registers TX and RX channel in an I2S port at the same time, and the channels share the BCLK and WS signals. Currently, {IDF_TARGET_I2S_STD_TDM} communication modes supports full-duplex mode in the following way, but PDM full-duplex is not supported because due to different PDM TX and RX clocks.
 
 Note that one handle can only stand for one channel. Therefore, it is still necessary to configure the slot and clock for both TX and RX channels one by one.
 
