@@ -116,6 +116,7 @@ typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
  */
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int r_ble_controller_init(esp_bt_controller_config_t *cfg);
+extern void esp_ble_controller_info_capture(uint32_t cycle_times);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int r_ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int r_ble_log_deinit_async(void);
@@ -1652,3 +1653,28 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+
+int IRAM_ATTR
+ble_capture_info_user_handler(uint8_t type, uint32_t reason)
+{
+    int i;
+
+    switch(type) {
+        case 0:
+            for (i = 0; i < 2; i++) {
+                esp_ble_controller_info_capture(0x010101);
+            }
+
+            break;
+#if CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        case 1:
+            if ((reason == 0x08) || (reason == 0x3d) || (reason == 0x28)) {
+                osi_assert_wrapper(__LINE__,__func__, type, reason);
+            }
+            break;
+#endif // CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        default:
+            break;
+    }
+    return 0;
+}
