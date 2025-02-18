@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -186,14 +186,21 @@ rtos_save_\name\()_coproc_norestore:
 
     /**
      * @brief Restore the HWLP registers contained in the dedicated save area if the given task ever used it.
-     *        This routine sets the HWLP context to clean in any case.
+     *        This routine sets the HWLP context to dirty if the task ever used it and any of the loop counter
+     *        is not zero. Else, it sets it to clean.
      *
      * @param a0 StaticTask address for the newly scheduled task
      */
 hwlp_restore_if_used:
     addi  sp, sp, -16
     sw    ra, (sp)
-    /* Check if the HWLP was in use beforehand */
+    /* Re-enable the HWLP coprocessor */
+    csrwi CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
+    /* Check if the HWLP was ever used by this task, if yes:
+     * - Set HWLP state to DIRTY if any of the HWLP counter is != 0.
+     *   Please note that the `hwlp_restore_regs` macro will set the DIRTY bit!
+     * - Keep the state as CLEAN if both counters are 0.
+     */
     li    a1, 0
     li    a2, HWLP_COPROC_IDX
     call  pxPortGetCoprocArea
@@ -201,13 +208,22 @@ hwlp_restore_if_used:
     lw    a1, RV_COPROC_ENABLE(a0)
     /* To avoid having branches below, set the coprocessor enable flag now */
     andi  a2, a1, 1 << HWLP_COPROC_IDX
-    beqz  a2, _hwlp_restore_never_used
+    beqz  a2, _hwlp_restore_end
     /* Enable bit was set, restore the coprocessor context */
     lw    a0, RV_COPROC_SA+HWLP_COPROC_IDX*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[HWLP_COPROC_IDX] */
+    /* This will set the dirty flag for sure */
     hwlp_restore_regs a0
-_hwlp_restore_never_used:
-    /* Clear the context */
+#if SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1
+    /* The hardware doesn't update the HWLP state properly after executing the last instruction,
+     * as such, we must manually put the state of the HWLP to dirty now if any counter is not 0 */
+    csrr    a0, CSR_LOOP0_COUNT
+    bnez    a0, _hwlp_restore_end
+    csrr    a0, CSR_LOOP1_COUNT
+    bnez    a0, _hwlp_restore_end
+    /* The counters are 0, cleaning the state */
+#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1 */
     csrwi CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
+_hwlp_restore_end:
     lw   ra, (sp)
     addi sp, sp, 16
     ret
@@ -458,6 +474,11 @@ rtos_current_tcb:
     .global rtos_int_enter
     .type rtos_int_enter, @function
 rtos_int_enter:
+#if SOC_CPU_COPROC_NUM > 0
+    /* Use s2 to store the state of the coprocessors */
+    li      s2, 0
+#endif /* SOC_CPU_COPROC_NUM > 0 */
+
 #if ( configNUM_CORES > 1 )
     csrr    s0, mhartid                     /* s0 = coreID */
     slli    s0, s0, 2                       /* s0 = coreID * 4 */
@@ -483,7 +504,6 @@ rtos_int_enter:
     li      a0, 0                           /* return 0 in case we are going to branch */
     bnez    a1, rtos_int_enter_end          /* if (port_uxInterruptNesting[coreID] > 0) jump to rtos_int_enter_end */
 
-    li      s2, 0
 #if SOC_CPU_COPROC_NUM > 0
     /* Disable the coprocessors to forbid the ISR from using it */
 #if SOC_CPU_HAS_PIE
@@ -525,6 +545,7 @@ rtos_int_enter:
     addi    a1, a1, -HWLP_DIRTY_STATE
     bnez    a1, 1f
     /* State is dirty! The hardware loop feature was used, save the registers */
+    ori     s2, s2, 1 << HWLP_COPROC_IDX    /* Mark the HWLP coprocessor as enabled (dirty) */
     li      a1, 1                           /* Allocate the save area if not already allocated */
     li      a2, HWLP_COPROC_IDX
     mv      s1, ra
@@ -537,8 +558,6 @@ rtos_int_enter:
     /* Get the area where we need to save the HWLP registers */
     lw      a0, RV_COPROC_SA+HWLP_COPROC_IDX*4(a0)      /* a0 = RvCoprocSaveArea->sa_coprocs[\coproc_idx] */
     hwlp_save_regs a0
-    /* Disable the HWLP feature so that ISR cannot use them */
-    csrwi   CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
 1:
 #endif
 
@@ -559,9 +578,16 @@ rtos_int_enter:
     ESP_HW_STACK_GUARD_MONITOR_START_CUR_CORE a0 a1
 #endif /* CONFIG_ESP_SYSTEM_HW_STACK_GUARD */
 
+rtos_int_enter_end:
+    /* Disable the HWLP coprocessor for ISRs */
+#if SOC_CPU_HAS_HWLOOP
+    csrwi   CSR_HWLP_STATE_REG, HWLP_OFF_STATE
+#endif
+
+#if SOC_CPU_COPROC_NUM > 0
     /* Return the coprocessor context from s2 */
     mv      a0, s2
-rtos_int_enter_end:
+#endif /* SOC_CPU_COPROC_NUM > 0 */
     ret
 
 /**
@@ -577,8 +603,8 @@ rtos_int_enter_end:
     .type rtos_int_exit, @function
 rtos_int_exit:
     /* To speed up this routine and because this current routine is only meant to be called from the interrupt
-     * handler, let's use callee-saved registers instead of stack space. Registers `s5-s11` are not used by
-     * the caller */
+     * handler, let's use callee-saved registers instead of stack space */
+    mv      s10, ra
     mv      s11, a0
 #if SOC_CPU_COPROC_NUM > 0
     /* Save a1 as it contains the bitmap with the enabled coprocessors */
@@ -586,10 +612,10 @@ rtos_int_exit:
 #endif
 
 #if ( configNUM_CORES > 1 )
-    csrr    a1, mhartid                     /* a1 = coreID */
-    slli    a1, a1, 2                       /* a1 = a1 * 4 */
+    csrr    s7, mhartid                     /* s7 = coreID */
+    slli    s7, s7, 2                       /* s7 = s7 * 4 */
     la      a0, port_xSchedulerRunning      /* a0 = &port_xSchedulerRunning */
-    add     a0, a0, a1                      /* a0 = &port_xSchedulerRunning[coreID] */
+    add     a0, a0, s7                      /* a0 = &port_xSchedulerRunning[coreID] */
     lw      a0, (a0)                        /* a0 = port_xSchedulerRunning[coreID] */
 #else
     lw      a0, port_xSchedulerRunning      /* a0 = port_xSchedulerRunning */
@@ -599,7 +625,7 @@ rtos_int_exit:
     /* Update nesting interrupts counter */
     la      a2, port_uxInterruptNesting     /* a2 = &port_uxInterruptNesting */
 #if ( configNUM_CORES > 1 )
-    add     a2, a2, a1                      /* a2 = &port_uxInterruptNesting[coreID] // a1 already contains coreID * 4 */
+    add     a2, a2, s7                      /* a2 = &port_uxInterruptNesting[coreID] // s7 already contains coreID * 4 */
 #endif /* ( configNUM_CORES > 1 ) */
     lw      a0, 0(a2)                       /* a0 = port_uxInterruptNesting[coreID] */
 
@@ -611,84 +637,66 @@ rtos_int_exit:
     bnez    a0, rtos_int_exit_end
 
 isr_skip_decrement:
-    /* If the CPU reached this label, a2 (uxInterruptNesting) is 0 for sure */
-
-    /* Schedule the next task if a yield is pending */
-    la      s7, xPortSwitchFlag             /* s7 = &xPortSwitchFlag */
-#if ( configNUM_CORES > 1 )
-    add     s7, s7, a1                      /* s7 = &xPortSwitchFlag[coreID] // a1 already contains coreID * 4  */
-#endif /* ( configNUM_CORES > 1 ) */
-    lw      a0, 0(s7)                       /* a0 = xPortSwitchFlag[coreID] */
-    beqz    a0, no_switch_restore_coproc    /* if (xPortSwitchFlag[coreID] == 0) jump to no_switch_restore_coproc */
-
-    /* Preserve return address and schedule next task. To speed up the process, and because this current routine
-     * is only meant to be called from the interrupt handle, let's save some speed and space by using callee-saved
-     * registers instead of stack space. Registers `s3-s11` are not used by the caller */
-    mv      s10, ra
-#if ( SOC_CPU_COPROC_NUM > 0 )
-    /* In the cases where the newly scheduled task is different from the previously running one,
-     * we have to disable the coprocessors to let them trigger an exception on first use.
-     * Else, if the same task is scheduled, restore the former coprocessors state (before the interrupt) */
-    call    rtos_current_tcb
-    /* Keep former TCB in s9 */
-    mv      s9, a0
-#endif
-    call    vTaskSwitchContext
-#if ( SOC_CPU_COPROC_NUM == 0 )
-    mv      ra, s10                         /* Restore original return address */
-#endif
-    /* Clears the switch pending flag (stored in s7) */
-    sw      zero, 0(s7)                     /* xPortSwitchFlag[coreID] = 0; */
 
 #if ( SOC_CPU_COPROC_NUM > 0 )
-    /* If the Task to schedule is NOT the same as the former one (s9), keep the coprocessors disabled */
+    /* Keep the current TCB in a0 */
     call    rtos_current_tcb
-    mv      ra, s10                         /* Restore original return address */
-    beq     a0, s9, no_switch_restore_coproc
-
-#if SOC_CPU_HAS_HWLOOP
-    /* We have to restore the context of the HWLP if the newly scheduled task used it before. In all cases, this
-     * routine will also clean the state and set it to clean */
-    mv      s7, ra
-    /* a0 contains the current TCB address */
-    call    hwlp_restore_if_used
-    mv      ra, s7
-#endif /* SOC_CPU_HAS_HWLOOP */
-
-#if SOC_CPU_HAS_FPU
-    /* Disable the FPU in the `mstatus` value to return */
-    li      a1, ~CSR_MSTATUS_FPU_DISABLE
-    and     s11, s11, a1
-#endif /* SOC_CPU_HAS_FPU */
-    j       no_switch_restored
-
 #endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
 
-no_switch_restore_coproc:
-    /* We reach here either because there is no switch scheduled or because the TCB that is going to be scheduled
-     * is the same as the one that has been interrupted. In both cases, we need to restore the coprocessors status */
+    /* Schedule the next task if a yield is pending */
+    la      s6, xPortSwitchFlag             /* s6 = &xPortSwitchFlag */
+#if ( configNUM_CORES > 1 )
+    add     s6, s6, s7                      /* s6 = &xPortSwitchFlag[coreID] // s7 already contains coreID * 4  */
+#endif /* ( configNUM_CORES > 1 ) */
+    lw      a1, 0(s6)                       /* a1 = xPortSwitchFlag[coreID] */
+    bnez    a1, context_switch_requested    /* if (xPortSwitchFlag[coreID] != 0) jump to context_switch_requested */
+
+no_context_switch:
+    /* No need to do anything on the FPU side, its state is already saved in `s11` */
+
 #if SOC_CPU_HAS_HWLOOP
-    /* Check if the ISR altered the state of the HWLP */
-    csrr    a1, CSR_HWLP_STATE_REG
-    addi    a1, a1, -HWLP_DIRTY_STATE
-    bnez    a1, 1f
-    /* ISR used the HWLP, restore the HWLP context! */
-    mv      s7, ra
-    /* a0 contains the current TCB address */
-    call    hwlp_restore_if_used
-    mv      ra, s7
+    csrwi   CSR_HWLP_STATE_REG, HWLP_CLEAN_STATE
+    /* If the HWLP coprocessor has a hardware bug with its state, manually set the state to DIRTY
+     * if it was already dirty before the interrupt, else, keep it to CLEAN */
+#if SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1
+    andi    a1, s8, 1 << HWLP_COPROC_IDX
+    beqz    a1, 1f
+    /* To re-enable the HWLP coprocessor, set the status to DIRTY */
+    csrwi   CSR_HWLP_STATE_REG, HWLP_DIRTY_STATE
 1:
-    /* Else, the ISR hasn't touched HWLP registers, we don't need to restore the HWLP registers */
+#endif /* SOC_CPU_HAS_HWLOOP_STATE_BUG && ESP32P4_REV_MIN_FULL <= 1 */
 #endif /* SOC_CPU_HAS_HWLOOP */
 
 #if SOC_CPU_HAS_PIE
-    andi    a0, s8, 1 << PIE_COPROC_IDX
-    beqz    a0, 2f
-    pie_enable a0
-2:
+    /* Re-enable the PIE coprocessor if it was used */
+    andi    a1, s8, 1 << PIE_COPROC_IDX
+    beqz    a1, 1f
+    pie_enable a1
+1:
 #endif /* SOC_CPU_HAS_PIE */
+    j restore_stack_pointer
 
-no_switch_restored:
+context_switch_requested:
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    /* Preserve former TCB in s9 */
+    mv      s9, a0
+#endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
+    call    vTaskSwitchContext
+    /* Clears the switch pending flag (stored in s6) */
+    sw      zero, 0(s6)                     /* xPortSwitchFlag[coreID] = 0; */
+
+#if ( SOC_CPU_COPROC_NUM > 0 )
+    /* If the Task to schedule is NOT the same as the former one (s9), keep the coprocessors disabled. */
+    /* Check if the new TCB is the same as the previous one */
+    call    rtos_current_tcb
+    beq     a0, s9, no_context_switch
+#endif /* ( SOC_CPU_COPROC_NUM > 0 ) */
+
+#if SOC_CPU_HAS_HWLOOP
+    call    hwlp_restore_if_used
+#endif /* SOC_CPU_HAS_HWLOOP */
+
+restore_stack_pointer:
 
 #if CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     /* esp_hw_stack_guard_monitor_stop(); pass the scratch registers */
@@ -698,10 +706,8 @@ no_switch_restored:
 
 #if ( configNUM_CORES > 1 )
     /* Recover the stack of next task and prepare to exit */
-    csrr    a1, mhartid
-    slli    a1, a1, 2
     la      a0, pxCurrentTCBs               /* a0 = &pxCurrentTCBs */
-    add     a0, a0, a1                      /* a0 = &pxCurrentTCBs[coreID] */
+    add     a0, a0, s7                      /* a0 = &pxCurrentTCBs[coreID] */
     lw      a0, 0(a0)                       /* a0 = pxCurrentTCBs[coreID] */
     lw      sp, 0(a0)                       /* sp = previous sp */
 #else
@@ -724,4 +730,5 @@ no_switch_restored:
 
 rtos_int_exit_end:
     mv      a0, s11                         /* a0 = new mstatus */
+    mv      ra, s10
     ret
