@@ -310,6 +310,15 @@ config BT_LE_CONTROLLER_LOG_DUMP_ONLY
     help
             Only operate in dump mode
 
+config BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    bool "Output ble controller logs to SPI bus (Experimental)"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    select BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Output ble controller logs to SPI bus
+
 config BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     bool "Store ble controller logs to flash(Experimental)"
     depends on !BT_LE_CONTROLLER_LOG_DUMP_ONLY
