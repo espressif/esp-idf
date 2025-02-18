@@ -21,13 +21,13 @@
 // #define SOC_ANA_CMPR_SUPPORTED          1
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1    //TODO: [ESP32H21] IDF-11621
 #define SOC_UART_SUPPORTED              1
-// #define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32H21] IDF-11603
-// #define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32H21] IDF-11603
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
 // #define SOC_IEEE802154_BLE_ONLY         1
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1    //TODO: [ESP32H21] IDF-11616
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    //TODO: [ESP32H21] IDF-11624
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -176,11 +176,11 @@
 #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
 /*-------------------------- GDMA CAPS -------------------------------------*/
-// #define SOC_AHB_GDMA_VERSION                1U
+#define SOC_AHB_GDMA_VERSION                1U
 #define SOC_GDMA_NUM_GROUPS_MAX             1U
 #define SOC_GDMA_PAIRS_PER_GROUP_MAX        3
-// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule
-// #define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule TODO: IDF-11604
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 #define SOC_ETM_GROUPS                  1U  // Number of ETM groups

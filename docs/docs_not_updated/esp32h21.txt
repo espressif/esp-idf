@@ -253,7 +253,6 @@ api-reference/system/wdts.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/system_time.rst
 api-reference/system/himem.rst
-api-reference/system/async_memcpy.rst
 api-reference/system/console.rst
 api-reference/system/internal-unstable.rst
 api-reference/system/ulp_instruction_set.rst
