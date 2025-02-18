@@ -1283,6 +1283,10 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
     bool
     default y
 
+config SOC_BLE_CTE_SUPPORTED
+    bool
+    default y
+
 config SOC_PHY_COMBO_MODULE
     bool
     default y
