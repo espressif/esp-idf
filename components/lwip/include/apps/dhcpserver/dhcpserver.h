@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,6 +46,13 @@ enum dhcps_offer_option{
 	OFFER_DNS = 0x02,
 	OFFER_END
 };
+
+typedef enum
+{
+    DNS_TYPE_MAIN = 0, /**< DNS main server address*/
+    DNS_TYPE_BACKUP,   /**< DNS backup server address (Wi-Fi STA and Ethernet only) */
+    DNS_TYPE_MAX
+} dns_type_t;
 
 /** @brief DHCP server's description of compile time configuration values in dhcpserver.c
  *
@@ -161,20 +168,38 @@ err_t dhcps_set_option_info(dhcps_t *dhcps, u8_t op_id, void *opt_info, u32_t op
 bool dhcp_search_ip_on_mac(dhcps_t *dhcps, u8_t *mac, ip4_addr_t *ip);
 
 /**
- * @brief Sets DNS server address for the DHCP server
+ * @brief Sets the DNS server address for the DHCP server
  * @param dhcps Pointer to the DHCP handle
  * @param dnsserver Address of the DNS server
- * @return ERR_ARG if invalid handle, ERR_OK on success
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
  */
 err_t dhcps_dns_setserver(dhcps_t *dhcps, const ip_addr_t *dnsserver);
 
 /**
- * @brief Gets DNS server associated with this DHCP server
+ * @brief Sets the DNS server address for the DHCP server with a specific type
  * @param dhcps Pointer to the DHCP handle
  * @param dnsserver Address of the DNS server
- * @return ERR_ARG if invalid handle, ERR_OK on success
+ * @param type Type of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+ */
+err_t dhcps_dns_setserver_by_type(dhcps_t *dhcps, const ip_addr_t *dnsserver, dns_type_t type);
+
+/**
+ * @brief Gets the DNS server associated with this DHCP server
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
  */
 err_t dhcps_dns_getserver(dhcps_t *dhcps, ip4_addr_t *dnsserver);
+
+/**
+ * @brief Gets the DNS server associated with this DHCP server with a specific type
+ * @param dhcps Pointer to the DHCP handle
+ * @param dnsserver Address of the DNS server
+ * @param type Type of the DNS server
+ * @return ERR_ARG if invalid handle, ERR_VAL if invalid type, ERR_OK on success
+ */
+err_t dhcps_dns_getserver_by_type(dhcps_t *dhcps, ip4_addr_t *dnsserver, dns_type_t type);
 
 /**
  * @brief Sets callback on assigning an IP to the connected client
