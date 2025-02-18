@@ -108,6 +108,8 @@ extern int r_ble_log_deinit_async(void);
 extern void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void r_ble_log_async_output_dump_all(bool output);
 extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
+extern int r_ble_log_ctrl_level_and_mod(uint8_t log_level, uint32_t mod_switch);
+extern int r_ble_ctrl_mod_type(uint16_t mod, uint32_t mod_type_switch);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int r_ble_controller_deinit(void);
 extern int r_ble_controller_enable(uint8_t mode);
@@ -250,6 +252,11 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
     }
 
     ret = r_ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
+        if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = r_ble_log_ctrl_level_and_mod(CONFIG_BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL, CONFIG_BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH);
     if (ret == ESP_OK) {
         log_is_inited = true;
     }
@@ -383,6 +390,22 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     assert(err == ESP_OK);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+void esp_task_wdt_isr_user_handler(void)
+{
+    esp_ble_controller_log_dump_all(true);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+void __real_esp_panic_handler(void *info);
+void __wrap_esp_panic_handler (void *info)
+{
+    esp_ble_controller_log_dump_all(true);
+    __real_esp_panic_handler(info);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
@@ -917,6 +940,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "controller_sleep_init failed %d", ret);
         goto free_controller;
     }
+
     ESP_ERROR_CHECK(esp_read_mac((uint8_t *)mac, ESP_MAC_BT));
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Bluetooth MAC: %02x:%02x:%02x:%02x:%02x:%02x",
              mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
@@ -1027,6 +1051,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif // CONFIG_SW_COEXIST_ENABLE
+
 #if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
     r_ble_ll_scan_start_time_init_compensation(500);
     r_priv_sdk_config_insert_proc_time_set(500);
