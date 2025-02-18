@@ -456,6 +456,21 @@ void esp_ble_controller_log_dump_all(bool output)
         portEXIT_CRITICAL_SAFE(&spinlock);
     }
 }
+#if CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+void esp_task_wdt_isr_user_handler(void)
+{
+    esp_ble_controller_log_dump_all(true);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+void __real_esp_panic_handler(void *info);
+void __wrap_esp_panic_handler (void *info)
+{
+    esp_ble_controller_log_dump_all(true);
+    __real_esp_panic_handler(info);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */
