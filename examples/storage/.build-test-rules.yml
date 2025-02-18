@@ -99,7 +99,6 @@ examples/storage/perf_benchmark:
       reason: not supported yet # TODO: [esp32h21] IDF-11609
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
-    - if: IDF_TARGET in ["esp32c61"]
       temporary: true
       reason: lack of runners, build only # TODO: IDF-8970
 
