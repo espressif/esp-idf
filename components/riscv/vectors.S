@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -236,6 +236,16 @@ _panic_handler:
     la    ra, _return_from_exception
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrrw a0, EXT_ILL_CSR, zero
+#if SOC_CPU_HAS_HWLOOP
+    /* Check if the HWLP bit is set. */
+    andi a1, a0, EXT_ILL_RSN_HWLP
+    beqz a1, hwlp_not_used
+    /* HWLP used in an ISR, abort */
+    mv   a0, sp
+    j    vPortCoprocUsedInISR
+hwlp_not_used:
+#endif /* SOC_CPU_HAS_HWLOOP */
+
     /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
 #if SOC_CPU_HAS_PIE
     /* Check if the PIE bit is set. */

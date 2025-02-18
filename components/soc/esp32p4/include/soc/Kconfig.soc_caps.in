@@ -523,6 +523,10 @@ config SOC_CPU_HAS_HWLOOP
     bool
     default y
 
+config SOC_CPU_HAS_HWLOOP_STATE_BUG
+    bool
+    default y
+
 config SOC_CPU_HAS_PIE
     bool
     default y
