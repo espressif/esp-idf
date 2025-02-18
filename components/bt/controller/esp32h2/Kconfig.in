@@ -415,6 +415,36 @@ config BT_LE_LOG_HCI_BUF_SIZE
     help
             Configure the size of the BLE HCI LOG buffer.
 
+config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+    bool "Enable wrap panic handler"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+        Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+
+config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+    bool "Enable esp_task_wdt_isr_user_handler implementation"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+        Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+
+config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
+    int "The output level of controller log"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    range 0 5
+    default 1
+    help
+        The output level of controller log.
+
+config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
+    hex "The switch of module log output"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    range 0 0xFFFFFFFF
+    default 0xFFFFFFFF
+    help
+        The switch of module log output, this is an unsigned 32-bit hexadecimal value.
+
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
     range 1 5
