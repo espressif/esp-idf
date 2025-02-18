@@ -112,9 +112,6 @@ BOOLEAN bta_gatts_hdl_event(BT_HDR *p_msg)
         bta_gatts_set_attr_value(p_srvc_cb, (tBTA_GATTS_DATA *) p_msg);
         break;
     }
-    case BTA_GATTS_API_LISTEN_EVT:
-        bta_gatts_listen(p_cb, (tBTA_GATTS_DATA *) p_msg);
-        break;
     case BTA_GATTS_API_ADD_INCL_SRVC_EVT:
     case BTA_GATTS_API_ADD_CHAR_EVT:
     case BTA_GATTS_API_ADD_DESCR_EVT:

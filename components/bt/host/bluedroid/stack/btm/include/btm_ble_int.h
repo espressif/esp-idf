@@ -342,10 +342,10 @@ typedef struct {
     tBTM_INQ_RESULTS_CB *p_scan_results_cb;
     tBTM_CMPL_CB *p_scan_cmpl_cb;
     TIMER_LIST_ENT scan_timer_ent;
-
+#if (BLE_42_SCAN_EN == TRUE)
     struct pkt_queue *adv_rpt_queue;
     struct osi_event *adv_rpt_ready;
-
+#endif // #if (BLE_42_SCAN_EN == TRUE)
     /* background connection procedure cb value */
     tBTM_BLE_CONN_TYPE bg_conn_type;
     UINT32 scan_int;
@@ -388,12 +388,14 @@ extern "C" {
 #endif
 
 void btm_ble_timeout(TIMER_LIST_ENT *p_tle);
+#if (BLE_42_SCAN_EN == TRUE)
 void btm_ble_process_adv_pkt (UINT8 *p);
 void btm_ble_process_adv_discard_evt(UINT8 *p);
 void btm_ble_process_direct_adv_pkt (UINT8 *p);
 bool btm_ble_adv_pkt_ready(void);
 bool btm_ble_adv_pkt_post(pkt_linked_item_t *pkt);
 void btm_ble_proc_scan_rsp_rpt (UINT8 *p);
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 tBTM_STATUS btm_ble_read_remote_name(BD_ADDR remote_bda, tBTM_INQ_INFO *p_cur, tBTM_CMPL_CB *p_cb);
 BOOLEAN btm_ble_cancel_remote_name(BD_ADDR remote_bda);
 
@@ -409,7 +411,11 @@ void btm_ble_init (void);
 void btm_ble_free (void);
 void btm_ble_connected (UINT8 *bda, UINT16 handle, UINT8 enc_mode, UINT8 role, tBLE_ADDR_TYPE addr_type, BOOLEAN addr_matched);
 void btm_ble_read_remote_features_complete(UINT8 *p);
+
+#if (BLE_42_ADV_EN == TRUE)
 void btm_ble_write_adv_enable_complete(UINT8 *p);
+#endif // #if (BLE_42_ADV_EN == TRUE)
+
 void btm_ble_conn_complete(UINT8 *p, UINT16 evt_len, BOOLEAN enhanced);
 void btm_read_ble_local_supported_states_complete(UINT8 *p, UINT16 evt_len);
 tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
@@ -459,9 +465,12 @@ void btm_ble_remove_from_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_clear_white_list_complete(UINT8 *p, UINT16 evt_len);
 void btm_ble_white_list_init(UINT8 white_list_size);
 
+#if (tGATT_BG_CONN_DEV == TRUE)
 /* background connection function */
 BOOLEAN btm_ble_suspend_bg_conn(void);
 BOOLEAN btm_ble_resume_bg_conn(void);
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 void btm_ble_initiate_select_conn(BD_ADDR bda);
 BOOLEAN btm_ble_start_auto_conn(BOOLEAN start);
 BOOLEAN btm_ble_start_select_conn(BOOLEAN start, tBTM_BLE_SEL_CBACK   *p_select_cback);
@@ -504,12 +513,14 @@ void btm_ble_add_default_entry_to_resolving_list(void);
 void btm_ble_set_privacy_mode_complete(UINT8 *p, UINT16 evt_len);
 #endif
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 void btm_ble_multi_adv_configure_rpa (tBTM_BLE_MULTI_ADV_INST *p_inst);
 void btm_ble_multi_adv_init(void);
 void *btm_ble_multi_adv_get_ref(UINT8 inst_id);
 void btm_ble_multi_adv_cleanup(void);
 void btm_ble_multi_adv_reenable(UINT8 inst_id);
 void btm_ble_multi_adv_enb_privacy(BOOLEAN enable);
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 char btm_ble_map_adv_tx_power(int tx_power_index);
 void btm_ble_batchscan_init(void);
 void btm_ble_batchscan_cleanup(void);

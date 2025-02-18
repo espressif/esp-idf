@@ -236,6 +236,54 @@
 #define BLE_50_FEATURE_SUPPORT   FALSE
 #endif /* UC_BT_BLE_ENABLED */
 
+#if (UC_BT_BLE_42_DTM_TEST_EN == TRUE)
+#define BLE_42_DTM_TEST_EN       TRUE
+#else
+#define BLE_42_DTM_TEST_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_42_ADV_EN == TRUE)
+#define BLE_42_ADV_EN       TRUE
+#else
+#define BLE_42_ADV_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_42_SCAN_EN == TRUE)
+#define BLE_42_SCAN_EN       TRUE
+#else
+#define BLE_42_SCAN_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_50_EXTEND_ADV_EN == TRUE)
+#define BLE_50_EXTEND_ADV_EN       TRUE
+#else
+#define BLE_50_EXTEND_ADV_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_50_PERIODIC_ADV_EN == TRUE)
+#define BLE_50_PERIODIC_ADV_EN       TRUE
+#else
+#define BLE_50_PERIODIC_ADV_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_50_EXTEND_SCAN_EN == TRUE)
+#define BLE_50_EXTEND_SCAN_EN       TRUE
+#else
+#define BLE_50_EXTEND_SCAN_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_50_EXTEND_SYNC_EN == TRUE)
+#define BLE_50_EXTEND_SYNC_EN       TRUE
+#else
+#define BLE_50_EXTEND_SYNC_EN       FALSE
+#endif
+
+#if (UC_BT_BLE_50_DTM_TEST_EN == TRUE)
+#define BLE_50_DTM_TEST_EN       TRUE
+#else
+#define BLE_50_DTM_TEST_EN       FALSE
+#endif
+
 #if (UC_BT_BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER   TRUE
 #else
@@ -571,12 +619,6 @@
 
 #ifndef BTA_AV_CO_CP_SCMS_T
 #define BTA_AV_CO_CP_SCMS_T  FALSE
-#endif
-
-#if UC_BT_BLE_HOST_QUEUE_CONGESTION_CHECK
-#define SCAN_QUEUE_CONGEST_CHECK  TRUE
-#else
-#define SCAN_QUEUE_CONGEST_CHECK  FALSE
 #endif
 
 #ifdef UC_CONFIG_BT_GATTS_PPCP_CHAR_GAP
@@ -1297,7 +1339,72 @@
 #endif
 
 #ifndef BLE_ANDROID_CONTROLLER_SCAN_FILTER
-#define BLE_ANDROID_CONTROLLER_SCAN_FILTER            TRUE
+#define BLE_ANDROID_CONTROLLER_SCAN_FILTER            FALSE
+#endif
+
+#ifndef BLE_HOST_BLE_MULTI_ADV_EN
+#define BLE_HOST_BLE_MULTI_ADV_EN                     FALSE
+#endif
+
+#ifndef BLE_HOST_TRACK_ADVERTISER_EN
+#define BLE_HOST_TRACK_ADVERTISER_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_ENERGY_INFO_EN
+#define BLE_HOST_ENERGY_INFO_EN                  FALSE
+#endif
+
+
+#ifndef BLE_HOST_ENABLE_TEST_MODE_EN
+#define BLE_HOST_ENABLE_TEST_MODE_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_EXECUTE_CBACK_EN
+#define BLE_HOST_EXECUTE_CBACK_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_REMOVE_ALL_ACL_EN
+#define BLE_HOST_REMOVE_ALL_ACL_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_REMOVE_AN_ACL_EN
+#define BLE_HOST_REMOVE_AN_ACL_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_READ_TX_POWER_EN
+#define BLE_HOST_READ_TX_POWER_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_STOP_ADV_UNUSED
+#define BLE_HOST_STOP_ADV_UNUSED                  FALSE
+#endif
+
+#ifndef BLE_HOST_BLE_OBSERVE_EN
+#define BLE_HOST_BLE_OBSERVE_EN                  FALSE
+#endif
+
+#ifndef BLE_HOST_BLE_SCAN_PARAM_UNUSED
+#define BLE_HOST_BLE_SCAN_PARAM_UNUSED           FALSE
+#endif
+
+#ifndef BLE_HOST_CONN_SCAN_PARAM_EN
+#define BLE_HOST_CONN_SCAN_PARAM_EN              FALSE
+#endif
+
+#ifndef BLE_HOST_SETUP_STORAGE_EN
+#define BLE_HOST_SETUP_STORAGE_EN              FALSE
+#endif
+
+#ifndef BLE_HOST_READ_SCAN_REPORTS_EN
+#define BLE_HOST_READ_SCAN_REPORTS_EN              FALSE
+#endif
+
+#ifndef BLE_HOST_BATCH_SCAN_EN
+#define BLE_HOST_BATCH_SCAN_EN              FALSE
+#endif
+
+#ifndef BLE_HOST_BG_CONNECT_EN
+#define BLE_HOST_BG_CONNECT_EN              FALSE
 #endif
 
 #ifndef LOCAL_BLE_CONTROLLER_ID
