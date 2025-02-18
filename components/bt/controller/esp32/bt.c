@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,6 +47,10 @@
 
 #include "esp_rom_sys.h"
 #include "hli_api.h"
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
 #if CONFIG_BT_ENABLED
 
@@ -1686,6 +1690,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     coex_init();
 #endif
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_init();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
     btdm_cfg_mask = btdm_config_mask_load();
 
     err = btdm_controller_init(btdm_cfg_mask, cfg);
@@ -1712,6 +1720,10 @@ esp_err_t esp_bt_controller_deinit(void)
     if (btdm_controller_status != ESP_BT_CONTROLLER_STATUS_INITED) {
         return ESP_ERR_INVALID_STATE;
     }
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
     btdm_controller_deinit();
 
