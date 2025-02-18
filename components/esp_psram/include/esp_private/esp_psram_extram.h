@@ -79,6 +79,7 @@ esp_err_t esp_psram_chip_init(void);
  *       ext bss and ext noinit considerations, thus, even if the function is called before esp_psram_init(), it will return the final
  *       effective size of the PSRAM memory that would have been added into the heap after esp_psram_init() is performed
  *       instead of the vanilla size of the PSRAM memory.
+ *       This function is only available if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION is enabled.
  */
 size_t esp_psram_get_heap_size_to_protect(void);
 

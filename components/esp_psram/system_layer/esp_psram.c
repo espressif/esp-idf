@@ -226,24 +226,6 @@ static void s_xip_psram_placement(uint32_t *psram_available_size, uint32_t *out_
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
-static inline uint32_t s_get_ext_bss_size(void)
-{
-#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    return ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
-#else
-    return 0;
-#endif /* CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY */
-}
-
-static inline uint32_t s_get_ext_noinit_size(void)
-{
-#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-    return ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
-#else
-    return 0;
-#endif /* CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY */
-}
-
 static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
 {
     esp_err_t ret = ESP_FAIL;
@@ -374,77 +356,6 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
 esp_err_t esp_psram_chip_init(void)
 {
     return s_psram_chip_init();
-}
-
-/**
- * @brief Calculates the effective PSRAM memory that would be / is mapped.
- *
- * @return The size of PSRAM memory that would be / is mapped in bytes, or 0 if PSRAM isn't successfully initialized
- */
-static size_t esp_psram_get_effective_mapped_size(void)
-{
-    size_t byte_aligned_size = 0;
-    size_t total_mapped_size = 0;
-
-    // return if the PSRAM is not enabled
-    if (!s_psram_ctx.is_chip_initialised) {
-        return 0;
-    }
-
-    if (s_psram_ctx.is_initialised) {
-        return s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size;
-    } else {
-        uint32_t psram_available_size = 0;
-        esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
-        assert(ret == ESP_OK);
-
-#if CONFIG_SPIRAM_RODATA
-        psram_available_size -= mmu_psram_get_rodata_segment_length();
-#endif /* CONFIG_SPIRAM_RODATA */
-
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-        psram_available_size -= mmu_psram_get_text_segment_length();
-#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
-
-        ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
-        assert(ret == ESP_OK);
-        total_mapped_size += MIN(byte_aligned_size, psram_available_size - total_mapped_size);
-
-#if CONFIG_IDF_TARGET_ESP32S2
-        if (total_mapped_size < psram_available_size) {
-            size_t word_aligned_size = 0;
-            ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0,  &word_aligned_size);
-            assert(ret == ESP_OK);
-            total_mapped_size += MIN(word_aligned_size, psram_available_size - total_mapped_size);
-        }
-#endif
-        return total_mapped_size;
-    }
-}
-
-size_t esp_psram_get_heap_size_to_protect(void)
-{
-    // return if the PSRAM is not enabled
-    if (!s_psram_ctx.is_chip_initialised) {
-        return 0;
-    }
-
-    if (s_psram_ctx.is_initialised) {
-        return s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size;
-    } else {
-        size_t effective_mapped_size = esp_psram_get_effective_mapped_size();
-        if (effective_mapped_size == 0) {
-            return 0;
-        }
-
-        effective_mapped_size -= s_get_ext_bss_size();
-        effective_mapped_size -= s_get_ext_noinit_size();
-
-#if CONFIG_IDF_TARGET_ESP32
-        effective_mapped_size -= esp_himem_reserved_area_size() - 1;
-#endif
-        return effective_mapped_size;
-    }
 }
 
 esp_err_t esp_psram_init(void)
@@ -697,3 +608,94 @@ void esp_psram_bss_init(void)
     memset(&_ext_ram_bss_start, 0, size);
 #endif
 }
+
+#if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+static inline uint32_t s_get_ext_bss_size(void)
+{
+#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
+    return ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
+#else
+    return 0;
+#endif /* CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY */
+}
+
+static inline uint32_t s_get_ext_noinit_size(void)
+{
+#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+    return ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
+#else
+    return 0;
+#endif /* CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY */
+}
+
+/**
+ * @brief Calculates the effective PSRAM memory that would be / is mapped.
+ *
+ * @return The size of PSRAM memory that would be / is mapped in bytes, or 0 if PSRAM isn't successfully initialized
+ */
+static size_t esp_psram_get_effective_mapped_size(void)
+{
+    size_t byte_aligned_size = 0;
+    size_t total_mapped_size = 0;
+
+    // return if the PSRAM is not enabled
+    if (!s_psram_ctx.is_chip_initialised) {
+        return 0;
+    }
+
+    if (s_psram_ctx.is_initialised) {
+        return s_psram_ctx.mapped_regions[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.mapped_regions[PSRAM_MEM_32BIT_ALIGNED].size;
+    } else {
+        uint32_t psram_available_size = 0;
+        esp_err_t ret = esp_psram_impl_get_available_size(&psram_available_size);
+        assert(ret == ESP_OK);
+
+#if CONFIG_SPIRAM_RODATA
+        psram_available_size -= mmu_psram_get_rodata_segment_length();
+#endif /* CONFIG_SPIRAM_RODATA */
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+        psram_available_size -= mmu_psram_get_text_segment_length();
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS */
+
+        ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_8BIT | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0, &byte_aligned_size);
+        assert(ret == ESP_OK);
+        total_mapped_size += MIN(byte_aligned_size, psram_available_size - total_mapped_size);
+
+#if CONFIG_IDF_TARGET_ESP32S2
+        if (total_mapped_size < psram_available_size) {
+            size_t word_aligned_size = 0;
+            ret = esp_mmu_map_get_max_consecutive_free_block_size(MMU_MEM_CAP_READ | MMU_MEM_CAP_WRITE | MMU_MEM_CAP_32BIT, MMU_TARGET_PSRAM0,  &word_aligned_size);
+            assert(ret == ESP_OK);
+            total_mapped_size += MIN(word_aligned_size, psram_available_size - total_mapped_size);
+        }
+#endif
+        return total_mapped_size;
+    }
+}
+
+size_t esp_psram_get_heap_size_to_protect(void)
+{
+    // return if the PSRAM is not enabled
+    if (!s_psram_ctx.is_chip_initialised) {
+        return 0;
+    }
+
+    if (s_psram_ctx.is_initialised) {
+        return s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size + s_psram_ctx.regions_to_heap[PSRAM_MEM_32BIT_ALIGNED].size;
+    } else {
+        size_t effective_mapped_size = esp_psram_get_effective_mapped_size();
+        if (effective_mapped_size == 0) {
+            return 0;
+        }
+
+        effective_mapped_size -= s_get_ext_bss_size();
+        effective_mapped_size -= s_get_ext_noinit_size();
+
+#if CONFIG_IDF_TARGET_ESP32
+        effective_mapped_size -= esp_himem_reserved_area_size() - 1;
+#endif
+        return effective_mapped_size;
+    }
+}
+#endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
