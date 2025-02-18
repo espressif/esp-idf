@@ -95,7 +95,9 @@ SPI 传输事务
 
 - 传输事务开始前，需用要求的事务参数填充一个或多个 :cpp:type:`spi_slave_transaction_t` 结构体。可以通过调用函数 :cpp:func:`spi_slave_queue_trans` 来将所有传输事务排进队列，并在稍后使用函数 :cpp:func:`spi_slave_get_trans_result` 查询结果；也可以将所有请求输入 :cpp:func:`spi_slave_transmit` 中单独处理。主机上的传输事务完成前，后两个函数将被阻塞，以便发送并接收队列中的数据。
 
--（可选）如需卸载 SPI 从机驱动程序，请调用 :cpp:func:`spi_slave_free`。
+- （可选）启用/禁用驱动程序功能：从机驱动程序支持在程序初始化后通过调用 :cpp:func:`spi_slave_disable` / :cpp:func:`spi_slave_enable` 来禁用/启用驱动程序，以便能够更改时钟或电源配置或休眠以节省电量。默认情况下，驱动程序在初始化后为“启用”状态。
+
+- （可选）如需卸载 SPI 从机驱动程序，请调用 :cpp:func:`spi_slave_free`。
 
 
 传输事务数据和主/从机长度不匹配

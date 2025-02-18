@@ -1084,9 +1084,11 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
     spi_slave_hd_data_t *ret_trans, tx_data = {
         .data = slv_send,
         .len = sizeof(slv_send),
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     }, rx_data = {
         .data = slv_rexcv,
         .len = sizeof(slv_rexcv),
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
 
     for (uint8_t allow_pd = 0; allow_pd < 2; allow_pd ++) {
@@ -1100,11 +1102,13 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
 
         for (uint8_t cnt = 0; cnt < 3; cnt ++) {
             printf("Going into sleep with power %s ...\n", (bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");
+            TEST_ESP_OK(spi_slave_hd_disable(TEST_SLAVE_HOST));
             TEST_ESP_OK(esp_light_sleep_start());
+            TEST_ESP_OK(spi_slave_hd_enable(TEST_SLAVE_HOST));
             printf("Waked up!\n");
             // check if the sleep happened as expected
             TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
             // check if the power domain also is powered down
             TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -1125,6 +1129,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
             spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
 
             // check trans result
+            TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
             TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
             printf("master rx %s", mst_rexcv);
             printf("slave  rx %s", slv_rexcv);
@@ -1168,6 +1173,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     spi_slave_hd_data_t *ret_trans, tx_data[TEST_SLP_TRANS_NUM], rx_data = {
         .data = slv_rexcv,
         .len = sizeof(slv_rexcv),
+        .flags = SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO,
     };
 
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
@@ -1182,11 +1188,13 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
 
     for (uint8_t i = 0; i < 2; i++) {
         printf("Going into sleep with power down ...\n");
+        TEST_ESP_OK(spi_slave_hd_disable(TEST_SLAVE_HOST));
         TEST_ESP_OK(esp_light_sleep_start());
+        TEST_ESP_OK(spi_slave_hd_enable(TEST_SLAVE_HOST));
         printf("Waked up!\n");
         // check if the sleep happened as expected
         TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         // check if the power domain also is powered down
         TEST_ASSERT_EQUAL((bus_cfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
@@ -1196,6 +1204,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
             slv_send[cnt][11] = cnt + i + '0';
             tx_data[cnt].data = slv_send[cnt];
             tx_data[cnt].len = sizeof(slv_send[0]);
+            tx_data[cnt].flags |= SPI_SLAVE_HD_TRANS_DMA_BUFFER_ALIGN_AUTO;
             TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &tx_data[cnt], portMAX_DELAY));
             TEST_ESP_OK(spi_slave_hd_append_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
         }
@@ -1215,6 +1224,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
             spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
 
             // check append trans result
+            TEST_ESP_OK(spi_slave_hd_get_append_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
             TEST_ESP_OK(spi_slave_hd_get_append_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
             printf("master rx %s", mst_rexcv);
             printf("slave  rx %s", slv_rexcv);

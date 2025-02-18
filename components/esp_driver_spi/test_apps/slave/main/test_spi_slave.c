@@ -725,6 +725,7 @@ static IRAM_ATTR void spi_queue_reset_in_isr(void)
 
     free(slave_isr_send);
     free(slave_isr_recv);
+    free(dummy_data);
     free(slave_isr_exp);
     spi_slave_free(TEST_SPI_HOST);
 }
@@ -733,7 +734,6 @@ TEST_CASE_MULTIPLE_DEVICES("SPI_Slave: Test_Queue_Reset_in_ISR", "[spi_ms]", tes
 #endif  // CONFIG_SPI_SLAVE_ISR_IN_IRAM
 
 #if (SOC_CPU_CORES_NUM > 1) && (!CONFIG_FREERTOS_UNICORE)
-
 #define TEST_ISR_CNT    100
 static void test_slave_isr_core_setup_cbk(spi_slave_transaction_t *curr_trans)
 {
@@ -782,7 +782,7 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 }
 #endif
 
-TEST_CASE("test spi slave sleep retention", "[spi]")
+TEST_CASE("test_spi_slave_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
     TEST_ESP_OK(esp_sleep_enable_timer_wakeup(1 * 1000 * 1000));
@@ -811,12 +811,14 @@ TEST_CASE("test spi slave sleep retention", "[spi]")
 
         for (uint8_t cnt = 0; cnt < 3; cnt ++) {
             printf("Going into sleep with power %s ...\n", (buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? "down" : "hold");
+            TEST_ESP_OK(spi_slave_disable(TEST_SPI_HOST));
             TEST_ESP_OK(esp_light_sleep_start());
+            TEST_ESP_OK(spi_slave_enable(TEST_SPI_HOST));
             printf("Waked up!\n");
 
             // check if the sleep happened as expected
             TEST_ASSERT_EQUAL(0, sleep_ctx.sleep_request_result);
-#if SOC_SPI_SUPPORT_SLEEP_RETENTION
+#if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
             // check if the power domain also is powered down
             TEST_ASSERT_EQUAL((buscfg.flags & SPICOMMON_BUSFLAG_SLP_ALLOW_PD) ? PMU_SLEEP_PD_TOP : 0, (sleep_ctx.sleep_flags) & PMU_SLEEP_PD_TOP);
 #endif
