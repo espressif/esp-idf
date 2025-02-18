@@ -392,6 +392,10 @@ menu "Controller debug features"
     config BT_LE_ERROR_SIM_ENABLED
         bool "Enable controller features for internal testing"
         default n
+
+    config BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        bool "When ACL disconnects abnormally, assertion processing is performed(Experimental)"
+        default n
 endmenu
 
 config BT_LE_LL_RESOLV_LIST_SIZE
@@ -757,14 +761,14 @@ config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
         The value of upperlimitmax needs to be a power of 2.
 
 config BT_LE_CTRL_CHAN_ASS_EN
-    bool "Enable channel assessment"
+    bool "Enable channel assessment(Experimental)"
     default n
     help
         If this option is enabled, The Controller will records the communication quality
         for each channel and then start a timer to check and update the channel map every 4 seconds.
 
 config BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX
-    bool "Enable aux packet when ext adv data length is zero"
+    bool "Enable aux packet when ext adv data length is zero(Experimental)"
     default y
     help
         When this option is enabled, auxiliary packets will be present in the events of
