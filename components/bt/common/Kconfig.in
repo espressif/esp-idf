@@ -4,3 +4,58 @@ config BT_ALARM_MAX_NUM
     help
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
+
+config BT_BLE_LOG_SPI_OUT_ENABLED
+    bool "Output ble logs to SPI bus (Experimental)"
+    default n
+    help
+        Output ble logs to SPI bus
+
+config BT_BLE_LOG_SPI_OUT_QUEUE_SIZE
+    int "Number of ble log async SPI output queues"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 4
+    help
+            The number of ble log async SPI output queues
+
+config BT_BLE_LOG_SPI_OUT_TRANS_BUF_SIZE
+    int "Size of ble log async SPI output transaction buffer size"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 2048
+    help
+            The size of ble log async SPI output transaction buffer size
+
+config BT_BLE_LOG_SPI_OUT_MOSI_IO_NUM
+    int "GPIO number of SPI MOSI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 0
+    help
+            GPIO number of SPI MOSI
+
+config BT_BLE_LOG_SPI_OUT_SCLK_IO_NUM
+    int "GPIO number of SPI SCLK"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 1
+    help
+            GPIO number of SPI SCLK
+
+config BT_BLE_LOG_SPI_OUT_CS_IO_NUM
+    int "GPIO number of SPI CS"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default 2
+    help
+            GPIO number of SPI CS
+
+config BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+    bool "Enable ble log & logic analyzer log time sync"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default y
+    help
+            Enable ble log & logic analyzer log time sync
+
+config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
+    int "GPIO number of SYNC IO"
+    depends on BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
+    default 3
+    help
+            GPIO number of SYNC IO
