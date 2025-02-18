@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,6 +10,9 @@
 #include "esp_cpu.h"
 #include "esp_fault.h"
 #include "esp32c61/rom/rom_layout.h"
+#if CONFIG_SPIRAM
+#include "esp_private/esp_psram_extram.h"
+#endif /* CONFIG_SPIRAM */
 
 #ifdef BOOTLOADER_BUILD
 // Without L bit set
@@ -27,6 +30,7 @@
 
 #define ALIGN_UP_TO_MMU_PAGE_SIZE(addr) (((addr) + (SOC_MMU_PAGE_SIZE) - 1) & ~((SOC_MMU_PAGE_SIZE) - 1))
 #define ALIGN_DOWN_TO_MMU_PAGE_SIZE(addr)  ((addr) & ~((SOC_MMU_PAGE_SIZE) - 1))
+#define ALIGN_UP(addr, align)  ((addr) & ~((align) - 1))
 
 static void esp_cpu_configure_invalid_regions(void)
 {
@@ -172,16 +176,60 @@ void esp_cpu_configure_region_protection(void)
     extern int _instruction_reserved_end;
     extern int _rodata_reserved_end;
 
-    const uint32_t irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
-    const uint32_t drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
+    const uint32_t page_aligned_irom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_instruction_reserved_end));
+    __attribute__((unused)) const uint32_t page_aligned_drom_resv_end = ALIGN_UP_TO_MMU_PAGE_SIZE((uint32_t)(&_rodata_reserved_end));
 
     PMP_ENTRY_CFG_RESET(7);
+    PMP_ENTRY_SET(7, SOC_IROM_LOW, NONE);
+
+/**
+    Virtual space layout:
+
+    _________   <- SOC_IROM_LOW
+    |       |
+    |_______|   <- _instruction_reserved_end
+    |_______|   <- page_aligned_irom_resv_end
+    |       |
+    |_______|   <- _rodata_reserved_end
+    |_______|   <- page_aligned_drom_resv_end
+    |       |
+    |       |
+    |       |
+    |_______|   <- page_aligned_drom_resv_end + available_psram_heap
+    |       |
+    |       |
+    |       |
+    |       |
+    |_______|   <- SOC_DROM_HIGH
+
+    if CONFIG_SPIRAM_FETCH_INSTRUCTIONS: [_instruction_reserved_end, page_aligned_irom_resv_end) in heap (RW)
+    if CONFIG_SPIRAM_RODATA: [_rodata_reserved_end, page_aligned_drom_resv_end) in heap (RW)
+    if CONFIG_SPIRAM: [_rodata_reserved_end, page_aligned_drom_resv_end + available_psram_heap] in heap / reserved for mapping (RW)
+*/
+
     PMP_ENTRY_CFG_RESET(8);
     PMP_ENTRY_CFG_RESET(9);
     PMP_ENTRY_CFG_RESET(10);
-    PMP_ENTRY_SET(7, SOC_IROM_LOW, NONE);
-    PMP_ENTRY_SET(8, irom_resv_end, PMP_TOR | RX);
-    PMP_ENTRY_SET(9, drom_resv_end, PMP_TOR | R);
+
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    PMP_ENTRY_SET(8, (uint32_t)(&_instruction_reserved_end), PMP_TOR | RX);
+    PMP_ENTRY_SET(9, page_aligned_irom_resv_end, PMP_TOR | RW);
+#else
+    PMP_ENTRY_SET(8, page_aligned_irom_resv_end, PMP_TOR | RX);
+    PMP_ENTRY_SET(9, page_aligned_irom_resv_end, NONE);
+#endif /* CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
+
+#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    PMP_ENTRY_SET(10, (uint32_t)(&_rodata_reserved_end), PMP_TOR | R);
+#else
+    PMP_ENTRY_SET(10, page_aligned_drom_resv_end, PMP_TOR | R);
+#endif /* CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION*/
+
+#if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    size_t available_psram_heap = esp_psram_get_heap_size_to_protect();
+    PMP_ENTRY_CFG_RESET(11);
+    PMP_ENTRY_SET(11, ALIGN_UP(page_aligned_drom_resv_end + available_psram_heap, SOC_CPU_PMP_REGION_GRANULARITY), PMP_TOR | RW);
+#endif /* CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION */
 #else
     const uint32_t pmpaddr7 = PMPADDR_NAPOT(SOC_IROM_LOW, SOC_IROM_HIGH);
     // Add the W attribute in the case of PSRAM
@@ -190,7 +238,7 @@ void esp_cpu_configure_region_protection(void)
 #endif
 
     // 5. Peripheral addresses
-    const uint32_t pmpaddr10 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
-    PMP_ENTRY_SET(10, pmpaddr10, PMP_NAPOT | RW);
+    const uint32_t pmpaddr12 = PMPADDR_NAPOT(SOC_PERIPHERAL_LOW, SOC_PERIPHERAL_HIGH);
+    PMP_ENTRY_SET(12, pmpaddr12, PMP_NAPOT | RW);
     _Static_assert(SOC_PERIPHERAL_LOW < SOC_PERIPHERAL_HIGH, "Invalid peripheral region");
 }
