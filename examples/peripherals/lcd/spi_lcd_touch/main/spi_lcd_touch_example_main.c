@@ -1,24 +1,24 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
 
-#include <stdio.h>
-#include <unistd.h>
-#include <sys/lock.h>
-#include <sys/param.h>
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "esp_timer.h"
-#include "esp_lcd_panel_io.h"
-#include "esp_lcd_panel_vendor.h"
-#include "esp_lcd_panel_ops.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 #include "esp_err.h"
+#include "esp_lcd_panel_io.h"
+#include "esp_lcd_panel_ops.h"
+#include "esp_lcd_panel_vendor.h"
 #include "esp_log.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "lvgl.h"
+#include <stdio.h>
+#include <sys/lock.h>
+#include <sys/param.h>
+#include <unistd.h>
 
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_ILI9341
 #include "esp_lcd_ili9341.h"
@@ -28,12 +28,14 @@
 
 #if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
 #include "esp_lcd_touch_stmpe610.h"
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+#include "esp_lcd_touch_xpt2046.h"
 #endif
 
 static const char *TAG = "example";
 
 // Using SPI2 in the example
-#define LCD_HOST  SPI2_HOST
+#define LCD_HOST SPI2_HOST
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////// Please update the following configuration according to your LCD spec //////////////////////////////
@@ -69,7 +71,8 @@ static const char *TAG = "example";
 #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
 #define EXAMPLE_LVGL_TASK_PRIORITY     2
 
-// LVGL library is not thread-safe, this example will call LVGL APIs from different tasks, so use a mutex to protect it
+// LVGL library is not thread-safe, this example will call LVGL APIs from
+// different tasks, so use a mutex to protect it
 static _lock_t lvgl_api_lock;
 
 extern void example_lvgl_demo_ui(lv_disp_t *disp);
@@ -81,7 +84,8 @@ static bool example_notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, 
     return false;
 }
 
-/* Rotate display and touch, when rotated screen in LVGL. Called when driver parameters are updated. */
+/* Rotate display and touch, when rotated screen in LVGL. Called when driver
+ * parameters are updated. */
 static void example_lvgl_port_update_callback(lv_display_t *disp)
 {
     esp_lcd_panel_handle_t panel_handle = lv_display_get_user_data(disp);
@@ -125,8 +129,7 @@ static void example_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uin
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, px_map);
 }
 
-#if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
-static void example_lvgl_touch_cb(lv_indev_t * indev, lv_indev_data_t * data)
+static void example_lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
 {
     uint16_t touchpad_x[1] = {0};
     uint16_t touchpad_y[1] = {0};
@@ -145,7 +148,6 @@ static void example_lvgl_touch_cb(lv_indev_t * indev, lv_indev_data_t * data)
         data->state = LV_INDEV_STATE_RELEASED;
     }
 }
-#endif
 
 static void example_increase_lvgl_tick(void *arg)
 {
@@ -200,7 +202,8 @@ void app_main(void)
         .trans_queue_depth = 10,
     };
     // Attach the LCD to the SPI bus
-    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &io_config, &io_handle));
+    ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST,
+                                             &io_config, &io_handle));
 
     esp_lcd_panel_handle_t panel_handle = NULL;
     esp_lcd_panel_dev_config_t panel_config = {
@@ -210,10 +213,12 @@ void app_main(void)
     };
 #if CONFIG_EXAMPLE_LCD_CONTROLLER_ILI9341
     ESP_LOGI(TAG, "Install ILI9341 panel driver");
-    ESP_ERROR_CHECK(esp_lcd_new_panel_ili9341(io_handle, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(
+        esp_lcd_new_panel_ili9341(io_handle, &panel_config, &panel_handle));
 #elif CONFIG_EXAMPLE_LCD_CONTROLLER_GC9A01
     ESP_LOGI(TAG, "Install GC9A01 panel driver");
-    ESP_ERROR_CHECK(esp_lcd_new_panel_gc9a01(io_handle, &panel_config, &panel_handle));
+    ESP_ERROR_CHECK(
+        esp_lcd_new_panel_gc9a01(io_handle, &panel_config, &panel_handle));
 #endif
 
     ESP_ERROR_CHECK(esp_lcd_panel_reset(panel_handle));
@@ -267,11 +272,17 @@ void app_main(void)
         .on_color_trans_done = example_notify_lvgl_flush_ready,
     };
     /* Register done callback */
-    ESP_ERROR_CHECK(esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, display));
+    ESP_ERROR_CHECK(
+        esp_lcd_panel_io_register_event_callbacks(io_handle, &cbs, display));
 
 #if CONFIG_EXAMPLE_LCD_TOUCH_ENABLED
     esp_lcd_panel_io_handle_t tp_io_handle = NULL;
-    esp_lcd_panel_io_spi_config_t tp_io_config = ESP_LCD_TOUCH_IO_SPI_STMPE610_CONFIG(EXAMPLE_PIN_NUM_TOUCH_CS);
+    esp_lcd_panel_io_spi_config_t tp_io_config =
+#ifdef CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
+        ESP_LCD_TOUCH_IO_SPI_STMPE610_CONFIG(EXAMPLE_PIN_NUM_TOUCH_CS);
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+        ESP_LCD_TOUCH_IO_SPI_XPT2046_CONFIG(EXAMPLE_PIN_NUM_TOUCH_CS);
+#endif
     // Attach the TOUCH to the SPI bus
     ESP_ERROR_CHECK(esp_lcd_new_panel_io_spi((esp_lcd_spi_bus_handle_t)LCD_HOST, &tp_io_config, &tp_io_handle));
 
@@ -280,10 +291,11 @@ void app_main(void)
         .y_max = EXAMPLE_LCD_V_RES,
         .rst_gpio_num = -1,
         .int_gpio_num = -1,
-        .flags = {
+        .flags =
+        {
             .swap_xy = 0,
             .mirror_x = 0,
-            .mirror_y = 0,
+            .mirror_y = CONFIG_EXAMPLE_LCD_MIRROR_Y,
         },
     };
     esp_lcd_touch_handle_t tp = NULL;
@@ -291,10 +303,13 @@ void app_main(void)
 #if CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
     ESP_LOGI(TAG, "Initialize touch controller STMPE610");
     ESP_ERROR_CHECK(esp_lcd_touch_new_spi_stmpe610(tp_io_handle, &tp_cfg, &tp));
-#endif // CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
+#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+    ESP_LOGI(TAG, "Initialize touch controller XPT2046");
+    ESP_ERROR_CHECK(esp_lcd_touch_new_spi_xpt2046(tp_io_handle, &tp_cfg, &tp));
+#endif
 
     static lv_indev_t *indev;
-    indev = lv_indev_create();  // Input device driver (Touch)
+    indev = lv_indev_create(); // Input device driver (Touch)
     lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
     lv_indev_set_display(indev, display);
     lv_indev_set_user_data(indev, tp);
