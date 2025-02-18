@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -151,13 +151,14 @@ static ssize_t cdcacm_read(int fd, void *data, size_t size)
     ssize_t received = 0;
     _lock_acquire_recursive(&s_read_lock);
 
-    while (cdcacm_data_length_in_buffer() < size) {
-        if (!s_blocking) {
-            errno = EWOULDBLOCK;
-            _lock_release_recursive(&s_read_lock);
-            return -1;
+    if (s_blocking) {
+        while (cdcacm_data_length_in_buffer() < size) {
+            xSemaphoreTake(s_rx_semaphore, portMAX_DELAY);
         }
-        xSemaphoreTake(s_rx_semaphore, portMAX_DELAY);
+    } else {
+        /* process pending interrupts before requesting available data */
+        esp_usb_console_poll_interrupts();
+        size = MIN(size, cdcacm_data_length_in_buffer());
     }
 
     if (s_rx_mode == ESP_LINE_ENDINGS_CR || s_rx_mode == ESP_LINE_ENDINGS_LF) {
