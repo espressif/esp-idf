@@ -825,6 +825,9 @@ esp_err_t i2c_param_config(i2c_port_t i2c_num, const i2c_config_t *i2c_conf)
 #endif // SOC_I2C_SUPPORT_SLAVE
     {
         i2c_hal_master_init(&(i2c_context[i2c_num].hal));
+        I2C_CLOCK_SRC_ATOMIC() {
+            i2c_ll_set_source_clk(i2c_context[i2c_num].hal.dev, src_clk);
+        }
         //Default, we enable hardware filter
         i2c_ll_master_set_filter(i2c_context[i2c_num].hal.dev, I2C_FILTER_CYC_NUM_DEF);
         I2C_CLOCK_SRC_ATOMIC() {
