@@ -8,19 +8,26 @@
 
 #include <string.h>
 #include "driver/spi_master.h"
+#include "driver/gpio.h"
+#include "esp_timer.h"
 #include "freertos/semphr.h"
 
 // Public typedefs
-typedef enum
-{
-    esp_controller = 0,
-    ceva_controller = 1
-} spi_out_source_t;
+#define BLE_LOG_SPI_OUT_SOURCE_ESP 0
+#define BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY 1
+#define BLE_LOG_SPI_OUT_SOURCE_BLUEDROID 2
+#define BLE_LOG_SPI_OUT_SOURCE_NIMBLE 3
+#define BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM 4
+#define BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM 5
+#define BLE_LOG_SPI_OUT_SOURCE_SYNC 0xFE
+#define BLE_LOG_SPI_OUT_SOURCE_LOSS 0xFF
 
 // Public functions
 void ble_log_spi_out_init(void);
 void ble_log_spi_out_deinit(void);
-void ble_log_spi_out_write(uint32_t len, const uint8_t *addr, spi_out_source_t source);
+void ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len);
 void ble_log_spi_out_write_esp(uint32_t len, const uint8_t *addr, bool end);
+void ble_log_spi_out_ts_sync_start(void);
+void ble_log_spi_out_ts_sync_stop(void);
 
 #endif // __BT_SPI_OUT_H__
