@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,18 @@ bool esp_psram_extram_test(void);
  * @brief Init .bss on psram
  */
 void esp_psram_bss_init(void);
+
+/**
+ * @brief Calculates the effective PSRAM memory that would be / is added into the heap.
+ *
+ * @return The size of PSRAM memory that would be / is added into the heap in bytes, or 0 if PSRAM hardware isn't successfully initialized
+ * @note The function pre-calculates the effective size of the PSRAM memory that would be added into the heap after performing the XIP or
+ *       ext bss and ext noinit considerations, thus, even if the function is called before esp_psram_init(), it will return the final
+ *       effective size of the PSRAM memory that would have been added into the heap after esp_psram_init() is performed
+ *       instead of the vanilla size of the PSRAM memory.
+ *       This function is only available if CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION is enabled.
+ */
+size_t esp_psram_get_heap_size_to_protect(void);
 
 #if CONFIG_IDF_TARGET_ESP32
 /**

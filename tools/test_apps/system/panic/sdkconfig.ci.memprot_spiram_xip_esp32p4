@@ -10,3 +10,4 @@ CONFIG_TEST_MEMPROT=y
 # Enable SPIRAM to check the alignment gap's memory protection
 CONFIG_SPIRAM=y
 CONFIG_SPIRAM_USE_CAPS_ALLOC=y
+CONFIG_SPIRAM_XIP_FROM_PSRAM=y
