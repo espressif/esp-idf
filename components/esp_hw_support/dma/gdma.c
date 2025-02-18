@@ -392,10 +392,9 @@ esp_err_t gdma_config_transfer(gdma_channel_handle_t dma_chan, const gdma_transf
     // if MSPI encryption is enabled, and DMA wants to read/write external memory
     if (esp_flash_encryption_enabled()) {
         gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, config->access_ext_mem);
-        // when DMA access the encrypted memory, extra alignment is needed, for both internal and external memory
+        // when DMA access the encrypted memory, extra alignment is needed for external memory
         if (config->access_ext_mem) {
             ext_mem_alignment = MAX(ext_mem_alignment, GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT);
-            int_mem_alignment = MAX(int_mem_alignment, GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT);
         }
     } else {
         gdma_hal_enable_access_encrypt_mem(hal, pair->pair_id, dma_chan->direction, false);
