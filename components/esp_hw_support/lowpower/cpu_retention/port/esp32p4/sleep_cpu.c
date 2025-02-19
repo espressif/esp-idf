@@ -380,6 +380,8 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     uint8_t core_id = esp_cpu_get_core_id();
+    /* mstatus is core privated CSR, do it near the core critical regs restore */
+    uint32_t mstatus = save_mstatus_and_disable_global_int();
     rv_core_critical_regs_save();
 
     RvCoreCriticalSleepFrame * frame = s_cpu_retention.retent.critical_frame[core_id];
@@ -405,7 +407,7 @@ static TCM_IRAM_ATTR esp_err_t do_cpu_retention(sleep_cpu_entry_cb_t goto_sleep,
         validate_retention_frame_crc((uint32_t*)frame, RV_SLEEP_CTX_SZ1 - 2 * sizeof(long), (uint32_t *)(&frame->frame_crc));
     }
 #endif
-
+    restore_mstatus(mstatus);
     return pmu_sleep_finish(dslp);
 }
 
@@ -413,7 +415,6 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
         uint32_t wakeup_opt, uint32_t reject_opt, uint32_t lslp_mem_inf_fpu, bool dslp)
 {
     esp_sleep_execute_event_callbacks(SLEEP_EVENT_SW_CPU_TO_MEM_START, (void *)0);
-    uint32_t mstatus = save_mstatus_and_disable_global_int();
     uint8_t core_id = esp_cpu_get_core_id();
 #if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
@@ -443,9 +444,8 @@ esp_err_t TCM_IRAM_ATTR esp_sleep_cpu_retention(uint32_t (*goto_sleep)(uint32_t,
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
 #endif
 
-    rv_core_noncritical_regs_restore();
     cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
-    restore_mstatus(mstatus);
+    rv_core_noncritical_regs_restore();
 
 #if ESP_SLEEP_POWER_DOWN_CPU && !CONFIG_FREERTOS_UNICORE
     atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
@@ -518,6 +518,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
         atomic_store(&s_smp_retention_state[core_id], SMP_BACKUP_START);
         rv_core_noncritical_regs_save();
         cpu_domain_dev_regs_save(s_cpu_retention.retent.clic_frame[core_id]);
+        uint32_t mstatus = save_mstatus_and_disable_global_int();
         rv_core_critical_regs_save();
         RvCoreCriticalSleepFrame *frame_critical = s_cpu_retention.retent.critical_frame[core_id];
         if ((frame_critical->pmufunc & 0x3) == 0x1) {
@@ -537,6 +538,7 @@ static TCM_IRAM_ATTR void smp_core_do_retention(void)
                 REG_CLR_BIT(HP_SYS_CLKRST_HP_RST_EN0_REG, HP_SYS_CLKRST_REG_RST_EN_CORE1_GLOBAL);
             }
             atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_START);
+            restore_mstatus(mstatus);
             cpu_domain_dev_regs_restore(s_cpu_retention.retent.clic_frame[core_id]);
             rv_core_noncritical_regs_restore();
             atomic_store(&s_smp_retention_state[core_id], SMP_RESTORE_DONE);
