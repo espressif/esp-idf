@@ -54,6 +54,17 @@ static int s_drom_paddr_offset;
 static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, uint32_t target_vaddr_start, uint32_t target_paddr_start)
 {
     uint32_t flash_end_page_vaddr = SOC_DRAM_FLASH_ADDRESS_HIGH - CONFIG_MMU_PAGE_SIZE;
+    uint32_t psram_vaddr_start;
+
+#if !CONFIG_SPIRAM_BOOT_INIT
+    // Once PMP sets up the IROM/DROM split, the target_vaddr_start would not be configured to write (W) access. Thus, performing s_do_load_from_flash() post the PMP split
+    // is configured, copying the flash contents to the PSRAM would generate a store access fault.
+    // Thus, we need to choose a different PSRAM virtual address (that would have the PMP write (W) access) to map and copy the flash contents into the PSRAM.
+    // Choosing the second last PSRAM page instead of the last one, to avoid overlap with flash_end_page_vaddr for targets that share the same flash and psram virtual space.
+    uint32_t psram_second_last_page_vaddr = SOC_DRAM_PSRAM_ADDRESS_HIGH - 2 * CONFIG_MMU_PAGE_SIZE;
+    assert((psram_second_last_page_vaddr % CONFIG_MMU_PAGE_SIZE) == 0);
+#endif
+
     ESP_EARLY_LOGV(TAG, "flash_paddr_start: 0x%"PRIx32", flash_end_page_vaddr: 0x%"PRIx32", size: 0x%"PRIx32", target_vaddr_start: 0x%"PRIx32, flash_paddr_start, flash_end_page_vaddr, size, target_vaddr_start);
     assert((flash_paddr_start % CONFIG_MMU_PAGE_SIZE) == 0);
     assert((flash_end_page_vaddr % CONFIG_MMU_PAGE_SIZE) == 0);
@@ -62,15 +73,28 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
     uint32_t mapped_size = 0;
     while (mapped_size < size) {
         uint32_t actual_mapped_len = 0;
-        mmu_hal_map_region(MMU_LL_PSRAM_MMU_ID, MMU_TARGET_PSRAM0, target_vaddr_start, target_paddr_start + mapped_size, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
+#if !CONFIG_SPIRAM_BOOT_INIT
+        psram_vaddr_start = psram_second_last_page_vaddr;
+#else
+        psram_vaddr_start = target_vaddr_start;
+#endif /* !CONFIG_SPIRAM_BOOT_INIT*/
+
+        mmu_hal_map_region(MMU_LL_PSRAM_MMU_ID, MMU_TARGET_PSRAM0, psram_vaddr_start, target_paddr_start + mapped_size, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
         assert(actual_mapped_len == CONFIG_MMU_PAGE_SIZE);
 
         mmu_hal_map_region(MMU_LL_FLASH_MMU_ID, MMU_TARGET_FLASH0, flash_end_page_vaddr, flash_paddr_start + mapped_size, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
         assert(actual_mapped_len == CONFIG_MMU_PAGE_SIZE);
 
-        cache_hal_invalidate_addr(target_vaddr_start, CONFIG_MMU_PAGE_SIZE);
+        cache_hal_invalidate_addr(psram_vaddr_start, CONFIG_MMU_PAGE_SIZE);
         cache_hal_invalidate_addr(flash_end_page_vaddr, CONFIG_MMU_PAGE_SIZE);
-        memcpy((void *)target_vaddr_start, (void *)flash_end_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+        memcpy((void *)psram_vaddr_start, (void *)flash_end_page_vaddr, CONFIG_MMU_PAGE_SIZE);
+
+#if !CONFIG_SPIRAM_BOOT_INIT
+        cache_hal_writeback_addr(psram_vaddr_start, CONFIG_MMU_PAGE_SIZE);
+        mmu_hal_map_region(MMU_LL_PSRAM_MMU_ID, MMU_TARGET_PSRAM0, target_vaddr_start, target_paddr_start + mapped_size, CONFIG_MMU_PAGE_SIZE, &actual_mapped_len);
+        assert(actual_mapped_len == CONFIG_MMU_PAGE_SIZE);
+        cache_hal_invalidate_addr(target_vaddr_start, CONFIG_MMU_PAGE_SIZE);
+#endif /* !CONFIG_SPIRAM_BOOT_INIT */
 
         ESP_EARLY_LOGV(TAG, "target_vaddr_start: 0x%"PRIx32, target_vaddr_start);
         mapped_size += CONFIG_MMU_PAGE_SIZE;
