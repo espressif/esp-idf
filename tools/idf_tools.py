@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding=utf-8
 #
-# SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -2617,7 +2617,7 @@ def action_install_python_env(args):  # type: ignore
     else:
         if subprocess.run([sys.executable, '-m', 'venv', '-h'], check=False, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode == 0:
             # venv available
-            virtualenv_options = ['--clear']  # delete environment if already exists
+            virtualenv_options = []
 
             info(f'Creating a new Python environment in {idf_python_env_path}')
 
@@ -2632,6 +2632,18 @@ def action_install_python_env(args):  # type: ignore
                          'version of Python. If you have not set IDF_PYTHON_ENV_PATH intentionally then it is '
                          'recommended to re-run this script from a clean shell where an ESP-IDF environment is '
                          'not active.')
+
+                # Verify if IDF_PYTHON_ENV_PATH is a valid ESP-IDF Python virtual environment directory
+                # to decide if content should be removed
+                if (
+                    os.path.exists(os.path.join(environ_idf_python_env_path, VENV_VER_FILE))
+                    or re.search(PYTHON_VENV_DIR_TEMPLATE.format(r'\d+\.\d+', r'\d+\.\d+'), environ_idf_python_env_path)
+                ):
+                    virtualenv_options.append('--clear')  # delete environment if already exists
+                elif os.listdir(environ_idf_python_env_path):  # show the message only if the directory is not empty
+                    info(f'IDF_PYTHON_ENV_PATH is set to {environ_idf_python_env_path}, '
+                         'but it does not appear to be an ESP-IDF Python virtual environment directory. '
+                         'Existing data in this folder will be preserved to prevent unintentional data loss.')
 
             except KeyError:
                 # if IDF_PYTHON_ENV_PATH not defined then the above checks can be skipped
