@@ -168,6 +168,9 @@
 .if-ref-master: &if-ref-master
   if: '$CI_COMMIT_REF_NAME == "master"'
 
+.if-ref-master-no_label: &if-ref-master-no_label
+  if: '$CI_COMMIT_REF_NAME == "master" && $BOT_TRIGGER_WITH_LABEL == null'
+
 .if-tag-release: &if-tag-release
   if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+(\.\d+)?($|-)/'
 
@@ -218,6 +221,11 @@
     - <<: *if-qa-test-tag
       when: never
     - <<: *if-protected-no_label
+
+# Not uploading on release branches
+.rules:sync_support_status:
+  rules:
+    - <<: *if-ref-master-no_label
 
 .rules:protected-no_label-always:
   rules:
