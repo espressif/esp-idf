@@ -246,21 +246,7 @@ inline static bool esp_ptr_word_aligned(const void *p)
  *
  * @return true: is executable; false: not executable
  */
-__attribute__((always_inline))
-inline static bool esp_ptr_executable(const void *p)
-{
-    intptr_t ip = (intptr_t) p;
-    return (ip >= SOC_IROM_LOW && ip < SOC_IROM_HIGH)
-        || (ip >= SOC_IRAM_LOW && ip < SOC_IRAM_HIGH)
-        || (ip >= SOC_IROM_MASK_LOW && ip < SOC_IROM_MASK_HIGH)
-#if defined(SOC_CACHE_APP_LOW) && defined(CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE)
-        || (ip >= SOC_CACHE_APP_LOW && ip < SOC_CACHE_APP_HIGH)
-#endif
-#if SOC_RTC_FAST_MEM_SUPPORTED
-        || (ip >= SOC_RTC_IRAM_LOW && ip < SOC_RTC_IRAM_HIGH)
-#endif
-    ;
-}
+bool esp_ptr_executable(const void *p);
 
 /**
  * @brief Check if the pointer is byte accessible
