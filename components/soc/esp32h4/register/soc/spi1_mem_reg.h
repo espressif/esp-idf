@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define REG_SPI_MEM_BASE(i)                     (DR_REG_SPIMEM0_BASE + (i) * 0x1000)
+
 /** SPI_MEM_CMD_REG register
  *  SPI1 memory command register
  */

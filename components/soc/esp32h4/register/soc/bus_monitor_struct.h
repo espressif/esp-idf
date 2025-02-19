@@ -1319,12 +1319,12 @@ typedef struct {
     volatile bus_monitor_clock_gate_reg_t monitor_clock_gate;
     uint32_t reserved_118[185];
     volatile bus_monitor_date_reg_t monitor_date;
-} bus_dev_t;
+} bus_monitor_dev_t;
 
-extern bus_dev_t ASSIST_DEBUG;
+extern bus_monitor_dev_t BUS_MONITOR;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(bus_dev_t) == 0x400, "Invalid size of bus_dev_t structure");
+_Static_assert(sizeof(bus_monitor_dev_t) == 0x400, "Invalid size of bus_monitor_dev_t structure");
 #endif
 
 #ifdef __cplusplus

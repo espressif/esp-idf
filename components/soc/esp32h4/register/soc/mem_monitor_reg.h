@@ -14,7 +14,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_SETTING_REG register
  *  Bus access logging configuration register
  */
-#define MEM_MONITOR_LOG_SETTING_REG (DR_REG_MEM_BASE + 0x0)
+#define MEM_MONITOR_LOG_SETTING_REG (DR_REG_MEM_MONITOR_BASE + 0x0)
 /** MEM_MONITOR_LOG_MODE : R/W; bitpos: [3:0]; default: 0;
  *  Configures monitoring modes.bit[0]: Configures write monitoring.
  *  0: Disable
@@ -78,7 +78,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_SETTING1_REG register
  *  Bus access logging configuration register
  */
-#define MEM_MONITOR_LOG_SETTING1_REG (DR_REG_MEM_BASE + 0x4)
+#define MEM_MONITOR_LOG_SETTING1_REG (DR_REG_MEM_MONITOR_BASE + 0x4)
 /** MEM_MONITOR_LOG_DMA_2_ENA : R/W; bitpos: [7:0]; default: 0;
  *  Configures whether to enable  DMA_2 bus access logging.bit[0]: Configures whether
  *  to enable DMA_2 bus access logging.
@@ -105,7 +105,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_CHECK_DATA_REG register
  *  Configures monitored data in Bus access logging
  */
-#define MEM_MONITOR_LOG_CHECK_DATA_REG (DR_REG_MEM_BASE + 0x8)
+#define MEM_MONITOR_LOG_CHECK_DATA_REG (DR_REG_MEM_MONITOR_BASE + 0x8)
 /** MEM_MONITOR_LOG_CHECK_DATA : R/W; bitpos: [31:0]; default: 0;
  *  Configures the data to be monitored during bus accessing.
  */
@@ -117,7 +117,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_DATA_MASK_REG register
  *  Configures masked data in Bus access logging
  */
-#define MEM_MONITOR_LOG_DATA_MASK_REG (DR_REG_MEM_BASE + 0xc)
+#define MEM_MONITOR_LOG_DATA_MASK_REG (DR_REG_MEM_MONITOR_BASE + 0xc)
 /** MEM_MONITOR_LOG_DATA_MASK : R/W; bitpos: [3:0]; default: 0;
  *  Configures which byte(s) in MEM_MONITOR_LOG_CHECK_DATA_REG to mask.bit[0]:
  *  Configures whether to mask the least significant byte of
@@ -145,7 +145,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MIN_REG register
  *  Configures monitored address space in Bus access logging
  */
-#define MEM_MONITOR_LOG_MIN_REG (DR_REG_MEM_BASE + 0x10)
+#define MEM_MONITOR_LOG_MIN_REG (DR_REG_MEM_MONITOR_BASE + 0x10)
 /** MEM_MONITOR_LOG_MIN : R/W; bitpos: [31:0]; default: 0;
  *  Configures the lower bound address of the monitored address space.
  */
@@ -157,7 +157,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MAX_REG register
  *  Configures monitored address space in Bus access logging
  */
-#define MEM_MONITOR_LOG_MAX_REG (DR_REG_MEM_BASE + 0x14)
+#define MEM_MONITOR_LOG_MAX_REG (DR_REG_MEM_MONITOR_BASE + 0x14)
 /** MEM_MONITOR_LOG_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of the monitored address space.
  */
@@ -170,7 +170,7 @@ extern "C" {
  *  Configures the address space of from MEM_MONITOR_LOG_MIN_REG to
  *  MEM_MONITOR_LOG_MAX_REG as the monitored address space of the certain master.
  */
-#define MEM_MONITOR_LOG_MON_ADDR_UPDATE_0_REG (DR_REG_MEM_BASE + 0x18)
+#define MEM_MONITOR_LOG_MON_ADDR_UPDATE_0_REG (DR_REG_MEM_MONITOR_BASE + 0x18)
 /** MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE : WT; bitpos: [7:0]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
@@ -196,7 +196,7 @@ extern "C" {
  *  Configures the address space of from MEM_MONITOR_LOG_MIN_REG to
  *  MEM_MONITOR_LOG_MAX_REG as the monitored address space of the certain master.
  */
-#define MEM_MONITOR_LOG_MON_ADDR_UPDATE_1_REG (DR_REG_MEM_BASE + 0x1c)
+#define MEM_MONITOR_LOG_MON_ADDR_UPDATE_1_REG (DR_REG_MEM_MONITOR_BASE + 0x1c)
 /** MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE : WT; bitpos: [7:0]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
@@ -245,7 +245,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_START_REG register
  *  Configures the starting address of the storage memory for recorded data
  */
-#define MEM_MONITOR_LOG_MEM_START_REG (DR_REG_MEM_BASE + 0x20)
+#define MEM_MONITOR_LOG_MEM_START_REG (DR_REG_MEM_MONITOR_BASE + 0x20)
 /** MEM_MONITOR_LOG_MEM_START : R/W; bitpos: [31:0]; default: 0;
  *  Configures the starting address of the storage space for recorded data.
  */
@@ -257,7 +257,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_END_REG register
  *  Configures the end address of the storage memory for recorded data
  */
-#define MEM_MONITOR_LOG_MEM_END_REG (DR_REG_MEM_BASE + 0x24)
+#define MEM_MONITOR_LOG_MEM_END_REG (DR_REG_MEM_MONITOR_BASE + 0x24)
 /** MEM_MONITOR_LOG_MEM_END : R/W; bitpos: [31:0]; default: 0;
  *  Configures the ending address of the storage space for recorded data.
  */
@@ -269,7 +269,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG register
  *  Represents the address for the next write
  */
-#define MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG (DR_REG_MEM_BASE + 0x28)
+#define MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG (DR_REG_MEM_MONITOR_BASE + 0x28)
 /** MEM_MONITOR_LOG_MEM_CURRENT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Represents the address of the next write.
  */
@@ -282,7 +282,7 @@ extern "C" {
  *  Updates the address for the next write with the starting address for the recorded
  *  data
  */
-#define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG (DR_REG_MEM_BASE + 0x2c)
+#define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG (DR_REG_MEM_MONITOR_BASE + 0x2c)
 /** MEM_MONITOR_LOG_MEM_ADDR_UPDATE : WT; bitpos: [0]; default: 0;
  *  Configures whether to update the value in MEM_MONITOR_LOG_MEM_START_REG to
  *  MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG.\raggedright1: Update
@@ -296,7 +296,7 @@ extern "C" {
 /** MEM_MONITOR_LOG_MEM_FULL_FLAG_REG register
  *  Logging overflow status register
  */
-#define MEM_MONITOR_LOG_MEM_FULL_FLAG_REG (DR_REG_MEM_BASE + 0x30)
+#define MEM_MONITOR_LOG_MEM_FULL_FLAG_REG (DR_REG_MEM_MONITOR_BASE + 0x30)
 /** MEM_MONITOR_LOG_MEM_FULL_FLAG : RO; bitpos: [0]; default: 0;
  *  Represents whether data overflows the storage space.0: Not Overflow
  *  1: Overflow
@@ -317,7 +317,7 @@ extern "C" {
 /** MEM_MONITOR_CLOCK_GATE_REG register
  *  Register clock control
  */
-#define MEM_MONITOR_CLOCK_GATE_REG (DR_REG_MEM_BASE + 0x34)
+#define MEM_MONITOR_CLOCK_GATE_REG (DR_REG_MEM_MONITOR_BASE + 0x34)
 /** MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 0;
  *  Configures whether to enable the register clock gating.0: Disable
  *  1: Enable
@@ -330,7 +330,7 @@ extern "C" {
 /** MEM_MONITOR_DATE_REG register
  *  Version control register
  */
-#define MEM_MONITOR_DATE_REG (DR_REG_MEM_BASE + 0x3fc)
+#define MEM_MONITOR_DATE_REG (DR_REG_MEM_MONITOR_BASE + 0x3fc)
 /** MEM_MONITOR_DATE : R/W; bitpos: [27:0]; default: 36733248;
  *  Version control register.
  */

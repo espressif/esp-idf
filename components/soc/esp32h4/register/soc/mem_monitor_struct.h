@@ -354,12 +354,12 @@ typedef struct {
     volatile mem_monitor_clock_gate_reg_t monitor_clock_gate;
     uint32_t reserved_038[241];
     volatile mem_monitor_date_reg_t monitor_date;
-} mem_dev_t;
+} mem_monitor_dev_t;
 
-extern mem_dev_t MEM_MONITOR;
+extern mem_monitor_dev_t MEM_MONITOR;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(mem_dev_t) == 0x400, "Invalid size of mem_dev_t structure");
+_Static_assert(sizeof(mem_monitor_dev_t) == 0x400, "Invalid size of mem_monitor_dev_t structure");
 #endif
 
 #ifdef __cplusplus

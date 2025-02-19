@@ -108,3 +108,7 @@ tools/test_apps/system/unicore_bootloader:
   enable:
     - if: SOC_CPU_CORES_NUM > 1
       reason: the test should be run on multicore chips
+  disable:
+    - if: IDF_TARGET in ["esp32h4"]
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32H4] IDF-12300

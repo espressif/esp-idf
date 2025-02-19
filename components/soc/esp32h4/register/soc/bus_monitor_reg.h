@@ -14,7 +14,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_MONTR_ENA_REG register
  *  core0 monitor enable configuration register
  */
-#define BUS_MONITOR_CORE_0_MONTR_ENA_REG (DR_REG_BUS_BASE + 0x0)
+#define BUS_MONITOR_CORE_0_MONTR_ENA_REG (DR_REG_BUS_MONITOR_BASE + 0x0)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_RD_ENA : R/W; bitpos: [0]; default: 0;
  *  Configures whether to monitor read operations in region 0 by the Data bus.
  *  0: Not monitor
@@ -118,7 +118,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_INTR_RAW_REG register
  *  core0 monitor interrupt status register
  */
-#define BUS_MONITOR_CORE_0_INTR_RAW_REG (DR_REG_BUS_BASE + 0x4)
+#define BUS_MONITOR_CORE_0_INTR_RAW_REG (DR_REG_BUS_MONITOR_BASE + 0x4)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_RD_RAW : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status of read operations in region 0 by Data bus.
  */
@@ -195,7 +195,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_INTR_ENA_REG register
  *  core0 monitor interrupt enable register
  */
-#define BUS_MONITOR_CORE_0_INTR_ENA_REG (DR_REG_BUS_BASE + 0x8)
+#define BUS_MONITOR_CORE_0_INTR_ENA_REG (DR_REG_BUS_MONITOR_BASE + 0x8)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_RD_INTR_ENA : R/W; bitpos: [0]; default: 0;
  *  Core0 dram0 area0 read monitor interrupt enable
  */
@@ -270,7 +270,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_INTR_CLR_REG register
  *  core0 monitor interrupt clear register
  */
-#define BUS_MONITOR_CORE_0_INTR_CLR_REG (DR_REG_BUS_BASE + 0xc)
+#define BUS_MONITOR_CORE_0_INTR_CLR_REG (DR_REG_BUS_MONITOR_BASE + 0xc)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_RD_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear the interrupt for read operations in region 0 by Data bus.
  */
@@ -347,7 +347,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_MIN_REG register
  *  Configures lower boundary address of region 0 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_0_AREA_DRAM0_0_MIN_REG (DR_REG_BUS_BASE + 0x10)
+#define BUS_MONITOR_CORE_0_AREA_DRAM0_0_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x10)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Data bus region 0.
  */
@@ -359,7 +359,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_MAX_REG register
  *  Configures upper boundary address of region 0 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_0_AREA_DRAM0_0_MAX_REG (DR_REG_BUS_BASE + 0x14)
+#define BUS_MONITOR_CORE_0_AREA_DRAM0_0_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x14)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Data bus region 0.
  */
@@ -371,7 +371,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_1_MIN_REG register
  *  Configures lower boundary address of region 1 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_0_AREA_DRAM0_1_MIN_REG (DR_REG_BUS_BASE + 0x18)
+#define BUS_MONITOR_CORE_0_AREA_DRAM0_1_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x18)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Data bus region 1.
  */
@@ -383,7 +383,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_1_MAX_REG register
  *  Configures upper boundary address of region 1 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_0_AREA_DRAM0_1_MAX_REG (DR_REG_BUS_BASE + 0x1c)
+#define BUS_MONITOR_CORE_0_AREA_DRAM0_1_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x1c)
 /** BUS_MONITOR_CORE_0_AREA_DRAM0_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Data bus region 1.
  */
@@ -395,7 +395,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_PIF_0_MIN_REG register
  *  Configures lower boundary address of region 0 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_0_AREA_PIF_0_MIN_REG (DR_REG_BUS_BASE + 0x20)
+#define BUS_MONITOR_CORE_0_AREA_PIF_0_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x20)
 /** BUS_MONITOR_CORE_0_AREA_PIF_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Peripheral bus region 0.
  */
@@ -407,7 +407,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_PIF_0_MAX_REG register
  *  Configures upper boundary address of region 0 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_0_AREA_PIF_0_MAX_REG (DR_REG_BUS_BASE + 0x24)
+#define BUS_MONITOR_CORE_0_AREA_PIF_0_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x24)
 /** BUS_MONITOR_CORE_0_AREA_PIF_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Peripheral bus region 0.
  */
@@ -419,7 +419,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_PIF_1_MIN_REG register
  *  Configures lower boundary address of region 1 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_0_AREA_PIF_1_MIN_REG (DR_REG_BUS_BASE + 0x28)
+#define BUS_MONITOR_CORE_0_AREA_PIF_1_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x28)
 /** BUS_MONITOR_CORE_0_AREA_PIF_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Peripheral bus region 1.
  */
@@ -431,7 +431,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_PIF_1_MAX_REG register
  *  Configures upper boundary address of region 1 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_0_AREA_PIF_1_MAX_REG (DR_REG_BUS_BASE + 0x2c)
+#define BUS_MONITOR_CORE_0_AREA_PIF_1_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x2c)
 /** BUS_MONITOR_CORE_0_AREA_PIF_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Peripheral bus region 1.
  */
@@ -443,7 +443,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_PC_REG register
  *  Region monitoring HP CPU PC status register
  */
-#define BUS_MONITOR_CORE_0_AREA_PC_REG (DR_REG_BUS_BASE + 0x30)
+#define BUS_MONITOR_CORE_0_AREA_PC_REG (DR_REG_BUS_MONITOR_BASE + 0x30)
 /** BUS_MONITOR_CORE_0_AREA_PC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value when an interrupt is triggered during region monitoring.
  */
@@ -455,7 +455,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_AREA_SP_REG register
  *  Region monitoring HP CPU SP status register
  */
-#define BUS_MONITOR_CORE_0_AREA_SP_REG (DR_REG_BUS_BASE + 0x34)
+#define BUS_MONITOR_CORE_0_AREA_SP_REG (DR_REG_BUS_MONITOR_BASE + 0x34)
 /** BUS_MONITOR_CORE_0_AREA_SP : RO; bitpos: [31:0]; default: 0;
  *  Represents the SP value when an interrupt is triggered during region monitoring.
  */
@@ -467,7 +467,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_SP_MIN_REG register
  *  Configures stack monitoring lower boundary address
  */
-#define BUS_MONITOR_CORE_0_SP_MIN_REG (DR_REG_BUS_BASE + 0x38)
+#define BUS_MONITOR_CORE_0_SP_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x38)
 /** BUS_MONITOR_CORE_0_SP_MIN : R/W; bitpos: [31:0]; default: 0;
  *  Configures the lower bound address of SP.
  */
@@ -479,7 +479,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_SP_MAX_REG register
  *  Configures stack monitoring upper boundary address
  */
-#define BUS_MONITOR_CORE_0_SP_MAX_REG (DR_REG_BUS_BASE + 0x3c)
+#define BUS_MONITOR_CORE_0_SP_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x3c)
 /** BUS_MONITOR_CORE_0_SP_MAX : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the upper bound address of SP.
  */
@@ -491,7 +491,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_SP_PC_REG register
  *  Stack monitoring HP CPU PC status register
  */
-#define BUS_MONITOR_CORE_0_SP_PC_REG (DR_REG_BUS_BASE + 0x40)
+#define BUS_MONITOR_CORE_0_SP_PC_REG (DR_REG_BUS_MONITOR_BASE + 0x40)
 /** BUS_MONITOR_CORE_0_SP_PC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value during stack monitoring.
  */
@@ -503,7 +503,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_RCD_EN_REG register
  *  HP CPU PC logging enable register
  */
-#define BUS_MONITOR_CORE_0_RCD_EN_REG (DR_REG_BUS_BASE + 0x44)
+#define BUS_MONITOR_CORE_0_RCD_EN_REG (DR_REG_BUS_MONITOR_BASE + 0x44)
 /** BUS_MONITOR_CORE_0_RCD_RECORDEN : R/W; bitpos: [0]; default: 0;
  *  Configures whether to enable PC logging.
  *  0: Disable
@@ -526,7 +526,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_RCD_PDEBUGPC_REG register
  *  PC logging register
  */
-#define BUS_MONITOR_CORE_0_RCD_PDEBUGPC_REG (DR_REG_BUS_BASE + 0x48)
+#define BUS_MONITOR_CORE_0_RCD_PDEBUGPC_REG (DR_REG_BUS_MONITOR_BASE + 0x48)
 /** BUS_MONITOR_CORE_0_RCD_PDEBUGPC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value at HP CPU reset.
  */
@@ -538,7 +538,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_RCD_PDEBUGSP_REG register
  *  PC logging register
  */
-#define BUS_MONITOR_CORE_0_RCD_PDEBUGSP_REG (DR_REG_BUS_BASE + 0x4c)
+#define BUS_MONITOR_CORE_0_RCD_PDEBUGSP_REG (DR_REG_BUS_MONITOR_BASE + 0x4c)
 /** BUS_MONITOR_CORE_0_RCD_PDEBUGSP : RO; bitpos: [31:0]; default: 0;
  *  Represents SP.
  */
@@ -550,7 +550,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_LASTPC_BEFORE_EXCEPTION_REG register
  *  cpu status register
  */
-#define BUS_MONITOR_CORE_0_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_BUS_BASE + 0x60)
+#define BUS_MONITOR_CORE_0_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_BUS_MONITOR_BASE + 0x60)
 /** BUS_MONITOR_CORE_0_LASTPC_BEFORE_EXC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC of the last command before the HP CPU enters exception.
  */
@@ -562,7 +562,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_DEBUG_MODE_REG register
  *  cpu status register
  */
-#define BUS_MONITOR_CORE_0_DEBUG_MODE_REG (DR_REG_BUS_BASE + 0x64)
+#define BUS_MONITOR_CORE_0_DEBUG_MODE_REG (DR_REG_BUS_MONITOR_BASE + 0x64)
 /** BUS_MONITOR_CORE_0_DEBUG_MODE : RO; bitpos: [0]; default: 0;
  *  Represents whether RISC-V CPU (HP CPU) is in debugging mode.
  *  1: In debugging mode
@@ -585,7 +585,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_0_REG register
  *  TRACE lockup cause logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_0_REG (DR_REG_BUS_BASE + 0x68)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_0_REG (DR_REG_BUS_MONITOR_BASE + 0x68)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_CAUSE_0 : RO; bitpos: [5:0]; default: 0;
  *  Represents the latest lockup cause
  */
@@ -597,7 +597,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_0_REG register
  *  TRACE lockup tval logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_0_REG (DR_REG_BUS_BASE + 0x6c)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_0_REG (DR_REG_BUS_MONITOR_BASE + 0x6c)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_TVAL_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the latest lockup tval
  */
@@ -609,7 +609,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_0_REG register
  *  TRACE lockup iaddr logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_0_REG (DR_REG_BUS_BASE + 0x70)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_0_REG (DR_REG_BUS_MONITOR_BASE + 0x70)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_IADDR_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the latest lockup iaddr
  */
@@ -621,7 +621,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_0_REG register
  *  TRACE lockup priv logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_0_REG (DR_REG_BUS_BASE + 0x74)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_0_REG (DR_REG_BUS_MONITOR_BASE + 0x74)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_PRIV_0 : RO; bitpos: [1:0]; default: 0;
  *  Represents the latest lockup priv
  */
@@ -633,7 +633,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_1_REG register
  *  TRACE lockup cause logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_1_REG (DR_REG_BUS_BASE + 0x78)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_CAUSE_1_REG (DR_REG_BUS_MONITOR_BASE + 0x78)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_CAUSE_1 : RO; bitpos: [5:0]; default: 0;
  *  Represents the last lockup cause
  */
@@ -645,7 +645,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_1_REG register
  *  TRACE lockup tval logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_1_REG (DR_REG_BUS_BASE + 0x7c)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_TVAL_1_REG (DR_REG_BUS_MONITOR_BASE + 0x7c)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_TVAL_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the last lockup tval
  */
@@ -657,7 +657,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_1_REG register
  *  TRACE lockup iaddr logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_1_REG (DR_REG_BUS_BASE + 0x80)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_IADDR_1_REG (DR_REG_BUS_MONITOR_BASE + 0x80)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_IADDR_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the last lockup iaddr
  */
@@ -669,7 +669,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_1_REG register
  *  TRACE lockup priv logging register
  */
-#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_1_REG (DR_REG_BUS_BASE + 0x84)
+#define BUS_MONITOR_CORE_0_TRACE_LOCKUP_PRIV_1_REG (DR_REG_BUS_MONITOR_BASE + 0x84)
 /** BUS_MONITOR_CORE_0_TRACE_LOCKUP_RECORDING_PRIV_1 : RO; bitpos: [1:0]; default: 0;
  *  Represents the last lockup priv
  */
@@ -681,7 +681,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_MONTR_ENA_REG register
  *  core1 monitor enable configuration register
  */
-#define BUS_MONITOR_CORE_1_MONTR_ENA_REG (DR_REG_BUS_BASE + 0x88)
+#define BUS_MONITOR_CORE_1_MONTR_ENA_REG (DR_REG_BUS_MONITOR_BASE + 0x88)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_RD_ENA : R/W; bitpos: [0]; default: 0;
  *  Configures whether to monitor read operations in region 0 by the Data bus.
  *  0: Not monitor
@@ -785,7 +785,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_INTR_RAW_REG register
  *  core1 monitor interrupt status register
  */
-#define BUS_MONITOR_CORE_1_INTR_RAW_REG (DR_REG_BUS_BASE + 0x8c)
+#define BUS_MONITOR_CORE_1_INTR_RAW_REG (DR_REG_BUS_MONITOR_BASE + 0x8c)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_RD_RAW : RO; bitpos: [0]; default: 0;
  *  The raw interrupt status of read operations in region 0 by Data bus.
  */
@@ -862,7 +862,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_INTR_ENA_REG register
  *  core1 monitor interrupt enable register
  */
-#define BUS_MONITOR_CORE_1_INTR_ENA_REG (DR_REG_BUS_BASE + 0x90)
+#define BUS_MONITOR_CORE_1_INTR_ENA_REG (DR_REG_BUS_MONITOR_BASE + 0x90)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_RD_INTR_ENA : R/W; bitpos: [0]; default: 0;
  *  Core1 dram0 area0 read monitor interrupt enable
  */
@@ -937,7 +937,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_INTR_CLR_REG register
  *  core1 monitor interrupt clear register
  */
-#define BUS_MONITOR_CORE_1_INTR_CLR_REG (DR_REG_BUS_BASE + 0x94)
+#define BUS_MONITOR_CORE_1_INTR_CLR_REG (DR_REG_BUS_MONITOR_BASE + 0x94)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_RD_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear the interrupt for read operations in region 0 by Data bus.
  */
@@ -1014,7 +1014,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_MIN_REG register
  *  Configures lower boundary address of region 0 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_1_AREA_DRAM0_0_MIN_REG (DR_REG_BUS_BASE + 0x98)
+#define BUS_MONITOR_CORE_1_AREA_DRAM0_0_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0x98)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Data bus region 0.
  */
@@ -1026,7 +1026,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_MAX_REG register
  *  Configures upper boundary address of region 0 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_1_AREA_DRAM0_0_MAX_REG (DR_REG_BUS_BASE + 0x9c)
+#define BUS_MONITOR_CORE_1_AREA_DRAM0_0_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0x9c)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Data bus region 0.
  */
@@ -1038,7 +1038,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_1_MIN_REG register
  *  Configures lower boundary address of region 1 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_1_AREA_DRAM0_1_MIN_REG (DR_REG_BUS_BASE + 0xa0)
+#define BUS_MONITOR_CORE_1_AREA_DRAM0_1_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0xa0)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Data bus region 1.
  */
@@ -1050,7 +1050,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_1_MAX_REG register
  *  Configures upper boundary address of region 1 monitored on Data bus
  */
-#define BUS_MONITOR_CORE_1_AREA_DRAM0_1_MAX_REG (DR_REG_BUS_BASE + 0xa4)
+#define BUS_MONITOR_CORE_1_AREA_DRAM0_1_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0xa4)
 /** BUS_MONITOR_CORE_1_AREA_DRAM0_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Data bus region 1.
  */
@@ -1062,7 +1062,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_PIF_0_MIN_REG register
  *  Configures lower boundary address of region 0 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_1_AREA_PIF_0_MIN_REG (DR_REG_BUS_BASE + 0xa8)
+#define BUS_MONITOR_CORE_1_AREA_PIF_0_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0xa8)
 /** BUS_MONITOR_CORE_1_AREA_PIF_0_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Peripheral bus region 0.
  */
@@ -1074,7 +1074,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_PIF_0_MAX_REG register
  *  Configures upper boundary address of region 0 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_1_AREA_PIF_0_MAX_REG (DR_REG_BUS_BASE + 0xac)
+#define BUS_MONITOR_CORE_1_AREA_PIF_0_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0xac)
 /** BUS_MONITOR_CORE_1_AREA_PIF_0_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Peripheral bus region 0.
  */
@@ -1086,7 +1086,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_PIF_1_MIN_REG register
  *  Configures lower boundary address of region 1 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_1_AREA_PIF_1_MIN_REG (DR_REG_BUS_BASE + 0xb0)
+#define BUS_MONITOR_CORE_1_AREA_PIF_1_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0xb0)
 /** BUS_MONITOR_CORE_1_AREA_PIF_1_MIN : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the lower bound address of Peripheral bus region 1.
  */
@@ -1098,7 +1098,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_PIF_1_MAX_REG register
  *  Configures upper boundary address of region 1 monitored on Peripheral bus
  */
-#define BUS_MONITOR_CORE_1_AREA_PIF_1_MAX_REG (DR_REG_BUS_BASE + 0xb4)
+#define BUS_MONITOR_CORE_1_AREA_PIF_1_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0xb4)
 /** BUS_MONITOR_CORE_1_AREA_PIF_1_MAX : R/W; bitpos: [31:0]; default: 0;
  *  Configures the upper bound address of Peripheral bus region 1.
  */
@@ -1110,7 +1110,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_PC_REG register
  *  Region monitoring HP CPU PC status register
  */
-#define BUS_MONITOR_CORE_1_AREA_PC_REG (DR_REG_BUS_BASE + 0xb8)
+#define BUS_MONITOR_CORE_1_AREA_PC_REG (DR_REG_BUS_MONITOR_BASE + 0xb8)
 /** BUS_MONITOR_CORE_1_AREA_PC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value when an interrupt is triggered during region monitoring.
  */
@@ -1122,7 +1122,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_AREA_SP_REG register
  *  Region monitoring HP CPU SP status register
  */
-#define BUS_MONITOR_CORE_1_AREA_SP_REG (DR_REG_BUS_BASE + 0xbc)
+#define BUS_MONITOR_CORE_1_AREA_SP_REG (DR_REG_BUS_MONITOR_BASE + 0xbc)
 /** BUS_MONITOR_CORE_1_AREA_SP : RO; bitpos: [31:0]; default: 0;
  *  Represents the SP value when an interrupt is triggered during region monitoring.
  */
@@ -1134,7 +1134,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_SP_MIN_REG register
  *  Configures stack monitoring lower boundary address
  */
-#define BUS_MONITOR_CORE_1_SP_MIN_REG (DR_REG_BUS_BASE + 0xc0)
+#define BUS_MONITOR_CORE_1_SP_MIN_REG (DR_REG_BUS_MONITOR_BASE + 0xc0)
 /** BUS_MONITOR_CORE_1_SP_MIN : R/W; bitpos: [31:0]; default: 0;
  *  Configures the lower bound address of SP.
  */
@@ -1146,7 +1146,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_SP_MAX_REG register
  *  Configures stack monitoring upper boundary address
  */
-#define BUS_MONITOR_CORE_1_SP_MAX_REG (DR_REG_BUS_BASE + 0xc4)
+#define BUS_MONITOR_CORE_1_SP_MAX_REG (DR_REG_BUS_MONITOR_BASE + 0xc4)
 /** BUS_MONITOR_CORE_1_SP_MAX : R/W; bitpos: [31:0]; default: 4294967295;
  *  Configures the upper bound address of SP.
  */
@@ -1158,7 +1158,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_SP_PC_REG register
  *  Stack monitoring HP CPU PC status register
  */
-#define BUS_MONITOR_CORE_1_SP_PC_REG (DR_REG_BUS_BASE + 0xc8)
+#define BUS_MONITOR_CORE_1_SP_PC_REG (DR_REG_BUS_MONITOR_BASE + 0xc8)
 /** BUS_MONITOR_CORE_1_SP_PC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value during stack monitoring.
  */
@@ -1170,7 +1170,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_RCD_EN_REG register
  *  HP CPU PC logging enable register
  */
-#define BUS_MONITOR_CORE_1_RCD_EN_REG (DR_REG_BUS_BASE + 0xcc)
+#define BUS_MONITOR_CORE_1_RCD_EN_REG (DR_REG_BUS_MONITOR_BASE + 0xcc)
 /** BUS_MONITOR_CORE_1_RCD_RECORDEN : R/W; bitpos: [0]; default: 0;
  *  Configures whether to enable PC logging.
  *  0: Disable
@@ -1193,7 +1193,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_RCD_PDEBUGPC_REG register
  *  PC logging register
  */
-#define BUS_MONITOR_CORE_1_RCD_PDEBUGPC_REG (DR_REG_BUS_BASE + 0xd0)
+#define BUS_MONITOR_CORE_1_RCD_PDEBUGPC_REG (DR_REG_BUS_MONITOR_BASE + 0xd0)
 /** BUS_MONITOR_CORE_1_RCD_PDEBUGPC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC value at HP CPU reset.
  */
@@ -1205,7 +1205,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_RCD_PDEBUGSP_REG register
  *  PC logging register
  */
-#define BUS_MONITOR_CORE_1_RCD_PDEBUGSP_REG (DR_REG_BUS_BASE + 0xd4)
+#define BUS_MONITOR_CORE_1_RCD_PDEBUGSP_REG (DR_REG_BUS_MONITOR_BASE + 0xd4)
 /** BUS_MONITOR_CORE_1_RCD_PDEBUGSP : RO; bitpos: [31:0]; default: 0;
  *  Represents SP.
  */
@@ -1217,7 +1217,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_LASTPC_BEFORE_EXCEPTION_REG register
  *  cpu status register
  */
-#define BUS_MONITOR_CORE_1_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_BUS_BASE + 0xe8)
+#define BUS_MONITOR_CORE_1_LASTPC_BEFORE_EXCEPTION_REG (DR_REG_BUS_MONITOR_BASE + 0xe8)
 /** BUS_MONITOR_CORE_1_LASTPC_BEFORE_EXC : RO; bitpos: [31:0]; default: 0;
  *  Represents the PC of the last command before the HP CPU enters exception.
  */
@@ -1229,7 +1229,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_DEBUG_MODE_REG register
  *  cpu status register
  */
-#define BUS_MONITOR_CORE_1_DEBUG_MODE_REG (DR_REG_BUS_BASE + 0xec)
+#define BUS_MONITOR_CORE_1_DEBUG_MODE_REG (DR_REG_BUS_MONITOR_BASE + 0xec)
 /** BUS_MONITOR_CORE_1_DEBUG_MODE : RO; bitpos: [0]; default: 0;
  *  Represents whether RISC-V CPU (HP CPU) is in debugging mode.
  *  1: In debugging mode
@@ -1252,7 +1252,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_0_REG register
  *  TRACE lockup cause logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_0_REG (DR_REG_BUS_BASE + 0xf0)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_0_REG (DR_REG_BUS_MONITOR_BASE + 0xf0)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_CAUSE_0 : RO; bitpos: [5:0]; default: 0;
  *  Represents the latest lockup cause
  */
@@ -1264,7 +1264,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_0_REG register
  *  TRACE lockup tval logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_0_REG (DR_REG_BUS_BASE + 0xf4)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_0_REG (DR_REG_BUS_MONITOR_BASE + 0xf4)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_TVAL_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the latest lockup tval
  */
@@ -1276,7 +1276,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_0_REG register
  *  TRACE lockup iaddr logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_0_REG (DR_REG_BUS_BASE + 0xf8)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_0_REG (DR_REG_BUS_MONITOR_BASE + 0xf8)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_IADDR_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the latest lockup iaddr
  */
@@ -1288,7 +1288,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_0_REG register
  *  TRACE lockup priv logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_0_REG (DR_REG_BUS_BASE + 0xfc)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_0_REG (DR_REG_BUS_MONITOR_BASE + 0xfc)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_PRIV_0 : RO; bitpos: [1:0]; default: 0;
  *  Represents the latest lockup priv
  */
@@ -1300,7 +1300,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_1_REG register
  *  TRACE lockup cause logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_1_REG (DR_REG_BUS_BASE + 0x100)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_CAUSE_1_REG (DR_REG_BUS_MONITOR_BASE + 0x100)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_CAUSE_1 : RO; bitpos: [5:0]; default: 0;
  *  Represents the last lockup cause
  */
@@ -1312,7 +1312,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_1_REG register
  *  TRACE lockup tval logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_1_REG (DR_REG_BUS_BASE + 0x104)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_TVAL_1_REG (DR_REG_BUS_MONITOR_BASE + 0x104)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_TVAL_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the last lockup tval
  */
@@ -1324,7 +1324,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_1_REG register
  *  TRACE lockup iaddr logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_1_REG (DR_REG_BUS_BASE + 0x108)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_IADDR_1_REG (DR_REG_BUS_MONITOR_BASE + 0x108)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_IADDR_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the last lockup iaddr
  */
@@ -1336,7 +1336,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_1_REG register
  *  TRACE lockup priv logging register
  */
-#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_1_REG (DR_REG_BUS_BASE + 0x10c)
+#define BUS_MONITOR_CORE_1_TRACE_LOCKUP_PRIV_1_REG (DR_REG_BUS_MONITOR_BASE + 0x10c)
 /** BUS_MONITOR_CORE_1_TRACE_LOCKUP_RECORDING_PRIV_1 : RO; bitpos: [1:0]; default: 0;
  *  Represents the last lockup priv
  */
@@ -1348,7 +1348,7 @@ extern "C" {
 /** BUS_MONITOR_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG register
  *  exception monitor status register
  */
-#define BUS_MONITOR_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_BUS_BASE + 0x110)
+#define BUS_MONITOR_CORE_X_IRAM0_DRAM0_EXCEPTION_MONITOR_0_REG (DR_REG_BUS_MONITOR_BASE + 0x110)
 /** BUS_MONITOR_CORE_X_IRAM0_DRAM0_LIMIT_CYCLE_0 : R/W; bitpos: [19:0]; default: 0;
  *  reg_core_x_iram0_dram0_limit_cycle_0
  */
@@ -1360,7 +1360,7 @@ extern "C" {
 /** BUS_MONITOR_CLOCK_GATE_REG register
  *  Register clock control
  */
-#define BUS_MONITOR_CLOCK_GATE_REG (DR_REG_BUS_BASE + 0x114)
+#define BUS_MONITOR_CLOCK_GATE_REG (DR_REG_BUS_MONITOR_BASE + 0x114)
 /** BUS_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 1;
  *  Configures whether to enable the register clock gating.
  *  0: Disable
@@ -1374,7 +1374,7 @@ extern "C" {
 /** BUS_MONITOR_DATE_REG register
  *  Version control register
  */
-#define BUS_MONITOR_DATE_REG (DR_REG_BUS_BASE + 0x3fc)
+#define BUS_MONITOR_DATE_REG (DR_REG_BUS_MONITOR_BASE + 0x3fc)
 /** BUS_MONITOR_DATE : R/W; bitpos: [27:0]; default: 34640176;
  *  version register
  */
