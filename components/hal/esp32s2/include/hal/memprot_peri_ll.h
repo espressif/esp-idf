@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -109,7 +109,7 @@ static inline intptr_t memprot_ll_peri1_rtcslow_get_fault_address(void)
 
 static inline bool memprot_ll_peri1_rtcslow_is_intr_mine(void)
 {
-    if (memprot_ll_dram0_is_assoc_intr()) {
+    if (memprot_ll_peri1_is_assoc_intr()) {
         uint32_t faulting_address = (uint32_t)memprot_ll_peri1_rtcslow_get_fault_address();
         return faulting_address >= PERI1_RTCSLOW_ADDRESS_LOW && faulting_address <= PERI1_RTCSLOW_ADDRESS_HIGH;
     }
