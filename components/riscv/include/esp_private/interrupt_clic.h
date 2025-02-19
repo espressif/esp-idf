@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,20 @@ FORCE_INLINE_ATTR void rv_utils_set_mtvt(uint32_t mtvt_val)
 {
     RV_WRITE_CSR(MTVT_CSR, mtvt_val);
 }
+
+#if SOC_CPU_SUPPORT_WFE
+/**
+ * @brief Set the MEXSTATUS_WFFEN value, used to enable/disable wait for event mode.
+ */
+FORCE_INLINE_ATTR void rv_utils_wfe_mode_enable(bool en)
+{
+    if (en) {
+        RV_SET_CSR(MEXSTATUS, MEXSTATUS_WFFEN);
+    } else {
+        RV_CLEAR_CSR(MEXSTATUS, MEXSTATUS_WFFEN);
+    }
+}
+#endif
 
 /**
  * @brief Get the current CPU raw interrupt level
