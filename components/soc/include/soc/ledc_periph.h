@@ -31,7 +31,7 @@ extern const ledc_signal_conn_t ledc_periph_signal[2];
 extern const ledc_signal_conn_t ledc_periph_signal[1];
 #endif
 
-#if SOC_PAU_SUPPORTED
+#if SOC_PAU_SUPPORTED && SOC_LEDC_SUPPORT_SLEEP_RETENTION
 
 #if SOC_LIGHT_SLEEP_SUPPORTED
 #if SOC_PHY_SUPPORTED

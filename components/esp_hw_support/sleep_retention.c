@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -514,7 +514,9 @@ static void sleep_retention_entries_destroy(sleep_retention_module_t module)
     }
     if (created_modules == 0) {
         sleep_retention_entries_check_and_distroy_final_default();
+#if SOC_LIGHT_SLEEP_SUPPORTED
         pmu_sleep_disable_regdma_backup();
+#endif
         memset((void *)s_retention.lists, 0, sizeof(s_retention.lists));
         s_retention.highpri = (uint8_t)-1;
     }
@@ -641,8 +643,12 @@ esp_err_t sleep_retention_entries_create(const sleep_retention_entries_config_t 
     if (err)  goto error;
     err = sleep_retention_entries_create_wrapper(retent, num, priority, module);
     if (err)  goto error;
+#if SOC_LIGHT_SLEEP_SUPPORTED
     pmu_sleep_enable_regdma_backup();
+#endif
+#if SOC_LIGHT_SLEEP_SUPPORTED && SOC_DEEP_SLEEP_SUPPORTED
     ESP_ERROR_CHECK(esp_deep_sleep_register_hook(&pmu_sleep_disable_regdma_backup));
+#endif
 
 error:
     return err;
