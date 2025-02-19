@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -72,6 +72,8 @@ typedef struct {
     void *proc_req_cb_arg;                      /**< External Port process callback argument */
     ext_port_event_cb_t event_cb;               /**< External Port event callback */
     void *event_cb_arg;                         /**< External Port event callback argument */
+    ext_hub_request_cb_t hub_request_cb;        /**< External Port Hub request callback */
+    void *hub_request_cb_arg;                   /**< External Port Hub request callback argument */
 } ext_port_driver_config_t;
 
 /**

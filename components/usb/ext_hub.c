@@ -1706,92 +1706,46 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
 // --------------------------- USB Chapter 11 ----------------------------------
 // -----------------------------------------------------------------------------
 
-esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature)
+esp_err_t ext_hub_class_request(ext_hub_handle_t ext_hub_hdl, ext_hub_request_data_t *data, void *user_arg)
 {
     EXT_HUB_ENTER_CRITICAL();
     EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
+    EXT_HUB_CHECK(data != NULL && ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
 
     esp_err_t ret;
-    EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
     ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
     usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
 
-    EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
+    EXT_HUB_CHECK(data->port_num != 0 && data->port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
     EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
                   ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
-    USB_SETUP_PACKET_INIT_SET_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port_num, feature);
-    transfer->num_bytes = sizeof(usb_setup_packet_t);
-
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
-    ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
-    if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Set port feature %#x, failed to submit ctrl urb: %s",
-                 ext_hub_dev->constant.dev_addr,
-                 port_num,
-                 feature,
-                 esp_err_to_name(ret));
-        device_error(ext_hub_dev);
+    switch (data->request) {
+    case USB_B_REQUEST_HUB_GET_PORT_STATUS:
+        USB_SETUP_PACKET_INIT_GET_PORT_STATUS((usb_setup_packet_t *)transfer->data_buffer, data->port_num);
+        transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_port_status_t);
+        ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_STATUS;
+        break;
+    case USB_B_REQUEST_HUB_SET_PORT_FEATURE:
+        USB_SETUP_PACKET_INIT_SET_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, data->port_num, data->feature);
+        transfer->num_bytes = sizeof(usb_setup_packet_t);
+        ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
+        break;
+    case USB_B_REQUEST_HUB_CLEAR_FEATURE:
+        USB_SETUP_PACKET_INIT_CLEAR_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, data->port_num, data->feature);
+        transfer->num_bytes = sizeof(usb_setup_packet_t);
+        ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
+        break;
+    default:
+        ESP_LOGE(EXT_HUB_TAG, "Request %X not supported", data->request);
+        return ESP_ERR_NOT_SUPPORTED;
     }
-    return ret;
-}
 
-esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, uint8_t feature)
-{
-    EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
-    EXT_HUB_EXIT_CRITICAL();
-
-    esp_err_t ret;
-    EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
-    ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
-    usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
-
-    EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
-                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
-
-    USB_SETUP_PACKET_INIT_CLEAR_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port_num, feature);
-    transfer->num_bytes = sizeof(usb_setup_packet_t);
-
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
     ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
     if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Clear port feature %#x, failed to submit ctrl urb: %s",
-                 ext_hub_dev->constant.dev_addr,
-                 port_num,
-                 feature,
-                 esp_err_to_name(ret));
-        device_error(ext_hub_dev);
-    }
-    return ret;
-}
-
-esp_err_t ext_hub_get_port_status(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
-{
-    EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
-    EXT_HUB_EXIT_CRITICAL();
-
-    esp_err_t ret;
-    EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
-    ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
-    usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
-
-    EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
-                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
-
-    USB_SETUP_PACKET_INIT_GET_PORT_STATUS((usb_setup_packet_t *)transfer->data_buffer, port_num);
-    transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_port_status_t);
-
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_STATUS;
-    ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
-    if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Get port status, failed to submit ctrl urb: %s",
-                 ext_hub_dev->constant.dev_addr,
-                 port_num,
+        ESP_LOGE(EXT_HUB_TAG, "Request %X, port %d, feature %d: failed to submit ctrl urb: %s",
+                 data->request, data->port_num, data->feature,
                  esp_err_to_name(ret));
         device_error(ext_hub_dev);
     }

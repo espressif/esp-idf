@@ -535,6 +535,7 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     ext_port_driver_config_t ext_port_config = {
         .proc_req_cb = ext_port_callback,
         .event_cb = ext_port_event_callback,
+        .hub_request_cb = ext_hub_class_request,
     };
     ret = ext_port_install(&ext_port_config);
     if (ret != ESP_OK) {
