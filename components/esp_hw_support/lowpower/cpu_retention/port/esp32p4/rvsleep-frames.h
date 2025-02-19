@@ -87,7 +87,7 @@ STRUCT_BEGIN
 
     STRUCT_FIELD (long, 4, RV_SLP_CTX_PMUFUNC,  pmufunc)    /* A field is used to identify whether it is going
                                                              * to sleep or has just been awakened. We use the
-                                                             * lowest 2 bits as indication infomation, 3 means
+                                                             * lowest 2 bits as indication information, 3 means
                                                              * being awakened, 1 means going to sleep */
 #if CONFIG_PM_CHECK_SLEEP_RETENTION_FRAME
     STRUCT_FIELD (long, 4, RV_SLP_CSF_CTX_CRC,  frame_crc)  /* Used to check RvCoreCriticalSleepFrame integrity */
@@ -113,6 +113,7 @@ STRUCT_END(RvCoreCriticalSleepFrame)
 STRUCT_BEGIN
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MSCRATCH,         mscratch)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_MISA,             misa)
+    STRUCT_FIELD (long, 4, RV_SLP_CTX_MHCR,             mhcr)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TSELECT,          tselect)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TDATA1,           tdata1)
     STRUCT_FIELD (long, 4, RV_SLP_CTX_TDATA2,           tdata2)
