@@ -72,8 +72,8 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.1|
       - Angle of Arrival (AoA)/Angle of Departure (AoD)
-      - |unsupported|
-      - |developing202412|
+      - |developing202512|
+      - |experimental|
     * -
       - GATT Caching
       - |experimental|
@@ -88,15 +88,15 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.2|
       - LE Isochronous Channels (BIS/CIS)
-      - |unsupported|
-      - |developing202412|
+      - |developing202512|
+      - |developing202512|
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
-      - |unsupported|
+      - |developing202512|
       - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
@@ -104,7 +104,7 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
-      - |unsupported|
+      - |developing202512|
       - |supported|
     * -
       - LE Channel Classification
@@ -112,20 +112,20 @@ If none of our chip series meet your needs, please contact `customer support tea
       - |supported|
     * - .. centered:: |5.4|
       - Advertising Coding Selection
-      - |unsupported|
+      - |developing202512|
       - |supported|
     * -
       - Encrypted Advertising Data
-      - |unsupported|
+      - |developing202512|
       - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
-      - |unsupported|
-      - |developing202412|
+      - |developing202512|
+      - |experimental|
 
 .. [1]
    If you would like to know the Bluetooth SIG certification information for supported features,
@@ -138,7 +138,7 @@ You are encouraged to consult with our `customer support team <https://www.espre
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center
