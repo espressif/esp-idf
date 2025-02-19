@@ -91,6 +91,7 @@ if(CONFIG_BT_ENABLED)
             endif()
             set(ldscripts "linker_esp32c2.lf")
         else()
+            list(APPEND srcs "controller/${target_name}/ble.c")
             list(APPEND ldscripts "linker_esp_ble_controller.lf")
         endif()
 
