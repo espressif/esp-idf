@@ -582,6 +582,8 @@ static inline void adc_ll_enable_func_clock(bool enable)
  */
 static inline void adc_ll_reset_register(void)
 {
+    PCR.saradc_conf.saradc_rst_en = 1;
+    PCR.saradc_conf.saradc_rst_en = 0;
     PCR.saradc_conf.saradc_reg_rst_en = 1;
     PCR.saradc_conf.saradc_reg_rst_en = 0;
 }
