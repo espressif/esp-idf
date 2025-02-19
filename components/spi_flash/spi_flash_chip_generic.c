@@ -829,11 +829,6 @@ esp_err_t spi_flash_common_set_io_mode(esp_flash_t *chip, esp_flash_wrsr_func_t 
 
 esp_err_t spi_flash_chip_generic_suspend_cmd_conf(esp_flash_t *chip)
 {
-    // Only XMC support auto-suspend
-    if (chip->chip_id >> 16 != 0x20) {
-        ESP_EARLY_LOGE(TAG, "The flash you use doesn't support auto suspend, only \'XMC\' is supported");
-        return ESP_ERR_NOT_SUPPORTED;
-    }
     spi_flash_sus_cmd_conf sus_conf = {
         .sus_mask = 0x80,
         .cmd_rdsr = CMD_RDSR2,
