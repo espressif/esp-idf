@@ -60,3 +60,6 @@ _If there are any breaking changes, please mention it here. Talking about (1) wh
 _Please strictly follow the breaking change restriction, which means, if there is a breaking change but you are merging to non-major versions, you have to separate the breaking part out to another MR for a major version. The breaking change subsection is only accepted in MRs merging to major versions._
 
 * [VFS/UART] Now vfs_uart_set_rts_cts accept one more instance argument, to support configuration to different ports.
+
+<!-- Don't remove the next line - assigns the MR author as the assignee -->
+/assign me
