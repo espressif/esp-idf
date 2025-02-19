@@ -409,7 +409,6 @@ components/esp_event/include/esp_event_loop.h
 components/esp_event/private_include/esp_event_internal.h
 components/esp_event/private_include/esp_event_private.h
 components/esp_event/test/test_event.c
-components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
 components/esp_hid/include/esp_hidd_gatts.h
 components/esp_hid/include/esp_hidd_transport.h
