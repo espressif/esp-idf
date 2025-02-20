@@ -192,6 +192,14 @@ config BT_HID_DEVICE_ENABLED
     help
         This enables the BT HID Device
 
+config BT_HID_REMOVE_DEVICE_BONDING_ENABLED
+    bool "Remove Device Bonding Information when HID Virtual Cable Unplugging"
+    depends on BT_HID_ENABLED
+    default y
+    help
+        This enables the BT HID to remove device bonding information when virtual cable unplugging,
+        removing device bonding information is optional in HID 1.0 but mandatory in HID 1.1
+
 menuconfig BT_PBAC_ENABLED
     bool "PBAP Client"
     depends on BT_CLASSIC_ENABLED
