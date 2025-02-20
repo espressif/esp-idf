@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,4 +33,6 @@
 #include "esp32p4/rom/libc_stubs.h"
 #elif CONFIG_IDF_TARGET_ESP32H21
 #include "esp32h21/rom/libc_stubs.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/libc_stubs.h"
 #endif
