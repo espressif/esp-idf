@@ -28,12 +28,6 @@ if(NOT non_os_build)
                      "periph_ctrl.c"
                      "revision.c"
                      "rtc_module.c"
-                     "sleep_modem.c"
-                     "sleep_modes.c"
-                     "sleep_console.c"
-                     "sleep_usb.c"
-                     "sleep_gpio.c"
-                     "sleep_event.c"
                      "regi2c_ctrl.c"
                      "esp_gpio_reserve.c"
                      "sar_periph_ctrl_common.c"
@@ -49,14 +43,23 @@ if(NOT non_os_build)
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")
     endif()
-
     if(CONFIG_SOC_ISP_SHARE_CSI_BRG)
         list(APPEND srcs "mipi_csi_share_hw_ctrl.c")
     endif()
     if(CONFIG_SOC_PAU_SUPPORTED)
-        list(APPEND srcs "sleep_retention.c"
-                         "sleep_system_peripheral.c"
-                         )
+        list(APPEND srcs "sleep_retention.c")
+    endif()
+    if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
+        list(APPEND srcs "sleep_modem.c"
+                         "sleep_modes.c"
+                         "sleep_console.c"
+                         "sleep_usb.c"
+                         "sleep_gpio.c"
+                         "sleep_event.c"
+            )
+        if(CONFIG_SOC_PAU_SUPPORTED)
+            list(APPEND srcs "sleep_system_peripheral.c")
+        endif()
     endif()
 
     # [refactor-todo]
