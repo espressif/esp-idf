@@ -65,7 +65,7 @@
 #define L2CAP_WAIT_UNPARK_TOUT       2            /* 2 seconds */
 #define L2CAP_LINK_INFO_RESP_TOUT    2            /* 2 seconds */
 #define L2CAP_UPDATE_CONN_PARAM_TOUT 6            /* 6 seconds */
-#define L2CAP_BLE_LINK_CONNECT_TOUT  BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT  // configed in menuconfig
+#define L2CAP_BLE_LINK_CONNECT_TOUT  BLE_ESTABLISH_LINK_CONNECTION_TIMEOUT  // configured in menuconfig
 #define L2CAP_BLE_CONN_PARAM_UPD_TOUT   30        /* 30 seconds */
 
 /* quick timer uses millisecond unit */
@@ -80,10 +80,10 @@
 ** the Bluetooth specification.
 */
 typedef enum {
-    CST_CLOSED,                           /* Channel is in clodes state           */
+    CST_CLOSED,                           /* Channel is in closed state           */
     CST_ORIG_W4_SEC_COMP,                 /* Originator waits security clearence  */
     CST_TERM_W4_SEC_COMP,                 /* Acceptor waits security clearence    */
-    CST_W4_L2CAP_CONNECT_RSP,             /* Waiting for peer conenct response    */
+    CST_W4_L2CAP_CONNECT_RSP,             /* Waiting for peer connect response    */
     CST_W4_L2CA_CONNECT_RSP,              /* Waiting for upper layer connect rsp  */
     CST_CONFIG,                           /* Negotiating configuration            */
     CST_OPEN,                             /* Data transfer state                  */
@@ -208,8 +208,8 @@ typedef struct {
     UINT32      controller_idle;            /* # of times less than 2 packets in controller */
     /* when the xmit window was closed          */
     UINT32      pkts_retransmitted;         /* # of packets that were retransmitted     */
-    UINT32      retrans_touts;              /* # of retransmission timouts              */
-    UINT32      xmit_ack_touts;             /* # of xmit ack timouts                    */
+    UINT32      retrans_touts;              /* # of retransmission timeouts              */
+    UINT32      xmit_ack_touts;             /* # of xmit ack timeouts                    */
 
 #define L2CAP_ERTM_STATS_NUM_AVG 10
 #define L2CAP_ERTM_STATS_AVG_NUM_SAMPLES 100
@@ -386,7 +386,7 @@ typedef struct t_l2c_linkcb {
 
     tL2C_CCB            *p_pending_ccb;             /* ccb of waiting channel during link disconnect */
     TIMER_LIST_ENT      info_timer_entry;           /* Timer entry for info resp timeout evt */
-    TIMER_LIST_ENT      upda_con_timer;             /* Timer entry for update connection parametr */
+    TIMER_LIST_ENT      upda_con_timer;             /* Timer entry for update connection parameter */
     BD_ADDR             remote_bd_addr;             /* The BD address of the remote     */
 
     UINT8               link_role;                  /* Master or slave                  */
@@ -599,7 +599,7 @@ extern BOOLEAN  l2cu_start_post_bond_timer (UINT16 handle);
 extern void     l2cu_release_lcb (tL2C_LCB *p_lcb);
 extern tL2C_LCB *l2cu_find_lcb_by_bd_addr (BD_ADDR p_bd_addr, tBT_TRANSPORT transport);
 extern tL2C_LCB *l2cu_find_lcb_by_handle (UINT16 handle);
-extern uint8_t l2cu_plcb_active_count(void);
+extern uint8_t l2cu_ble_plcb_active_count(void);
 extern void     l2cu_update_lcb_4_bonding (BD_ADDR p_bd_addr, BOOLEAN is_bonding);
 
 extern UINT8    l2cu_get_conn_role (tL2C_LCB *p_this_lcb);
