@@ -17,6 +17,7 @@
 #include "esp_rom_gpio.h"
 #include "esp_rom_sys.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
@@ -557,16 +558,12 @@ esp_err_t sdmmc_host_init(void)
 
 static void configure_pin_iomux(uint8_t gpio_num)
 {
-    const int sdmmc_func = SDMMC_LL_IOMUX_FUNC;
-    const int drive_strength = 3;
     assert(gpio_num != (uint8_t) GPIO_NUM_NC);
-    gpio_pulldown_dis(gpio_num);
 
-    uint32_t reg = GPIO_PIN_MUX_REG[gpio_num];
-    assert(reg != UINT32_MAX);
-    PIN_INPUT_ENABLE(reg);
-    gpio_hal_iomux_func_sel(reg, sdmmc_func);
-    PIN_SET_DRV(reg, drive_strength);
+    gpio_pulldown_dis(gpio_num);
+    gpio_input_enable(gpio_num);
+    gpio_iomux_output(gpio_num, SDMMC_LL_IOMUX_FUNC, false);
+    gpio_set_drive_capability(gpio_num, 3);
 }
 
 static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char *name)
