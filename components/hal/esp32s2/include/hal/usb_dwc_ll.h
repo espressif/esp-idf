@@ -361,7 +361,7 @@ static inline unsigned usb_dwc_ll_ghwcfg_get_hsphy_type(usb_dwc_dev_t *hw)
 
 static inline unsigned usb_dwc_ll_ghwcfg_get_channel_num(usb_dwc_dev_t *hw)
 {
-    return hw->ghwcfg2_reg.numhstchnl;
+    return hw->ghwcfg2_reg.numhstchnl + 1;
 }
 
 // --------------------------- HPTXFSIZ Register -------------------------------
