@@ -138,39 +138,37 @@ The following table shows a typical comparison between WolfSSL and MbedTLS when 
 
     These values can vary based on configuration options and version of respective libraries.
 
-.. only:: esp32
+ATECC608A (Secure Element) with ESP-TLS
+--------------------------------------------------
 
-    ATECC608A (Secure Element) with ESP-TLS
-    --------------------------------------------------
+ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
 
-    ESP-TLS provides support for using ATECC608A cryptoauth chip with ESP32 series of SoCs. The use of ATECC608A is supported only when ESP-TLS is used with MbedTLS as its underlying SSL/TLS stack. ESP-TLS uses MbedTLS as its underlying TLS/SSL stack by default unless changed manually.
+.. note::
 
-    .. note::
+    ATECC608A chip interfaced to ESP32 series must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
 
-        ATECC608A chip interfaced to ESP32 must be already configured. For details, please refer to `esp_cryptoauth_utility <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#esp_cryptoauth_utility>`_.
+To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
 
-    To enable the secure element support, and use it in your project for TLS connection, you have to follow the below steps:
+1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
 
-    1) Add `esp-cryptoauthlib <https://github.com/espressif/esp-cryptoauthlib>`_ in your project, for details please refer `how to use esp-cryptoauthlib with ESP-IDF <https://github.com/espressif/esp-cryptoauthlib#how-to-use-esp-cryptoauthlib-with-esp-idf>`_.
+2) Enable the following menuconfig option::
 
-    2) Enable the following menuconfig option::
+    menuconfig > Component config > ESP-TLS > Use Secure Element (ATECC608A) with ESP-TLS
 
-        menuconfig > Component config > ESP-TLS > Use Secure Element (ATECC608A) with ESP-TLS
+3) Select type of ATECC608A chip with following option::
 
-    3) Select type of ATECC608A chip with following option::
+    menuconfig > Component config > esp-cryptoauthlib > Choose Type of ATECC608A chip
 
-        menuconfig > Component config > esp-cryptoauthlib > Choose Type of ATECC608A chip
+To know more about different types of ATECC608A chips and how to obtain the type of ATECC608A connected to your ESP module, please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_.
 
-    To know more about different types of ATECC608A chips and how to obtain the type of ATECC608A connected to your ESP module, please visit `ATECC608A chip type <https://github.com/espressif/esp-cryptoauthlib/blob/master/esp_cryptoauth_utility/README.md#find-type-of-atecc608a-chip-connected-to-esp32-wroom32-se>`_.
+4) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`.
 
-    4) Enable the use of ATECC608A in ESP-TLS by providing the following config option in :cpp:type:`esp_tls_cfg_t`.
+.. code-block:: c
 
-    .. code-block:: c
-
-            esp_tls_cfg_t cfg = {
-                /* other configurations options */
-                .use_secure_element = true,
-            };
+        esp_tls_cfg_t cfg = {
+            /* other configurations options */
+            .use_secure_element = true,
+        };
 
 .. only:: SOC_DIG_SIGN_SUPPORTED
 
