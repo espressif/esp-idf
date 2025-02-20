@@ -415,6 +415,36 @@ config BT_LE_LOG_HCI_BUF_SIZE
     help
             Configure the size of the BLE HCI LOG buffer.
 
+config BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+    bool "Enable wrap panic handler"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+        Wrap esp_panic_handler to get controller logs when PC pointer exception crashes.
+
+config BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+    bool "Enable esp_task_wdt_isr_user_handler implementation"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    default n
+    help
+        Implement esp_task_wdt_isr_user_handler to get controller logs when task wdt issue is triggered.
+
+config BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL
+    int "The output level of controller log"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    range 0 5
+    default 1
+    help
+        The output level of controller log.
+
+config BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH
+    hex "The switch of module log output"
+    depends on BT_LE_CONTROLLER_LOG_ENABLED
+    range 0 0xFFFFFFFF
+    default 0xFFFFFFFF
+    help
+        The switch of module log output, this is an unsigned 32-bit hexadecimal value.
+
 config BT_LE_LL_RESOLV_LIST_SIZE
     int "BLE LL Resolving list size"
     range 1 5
@@ -658,7 +688,7 @@ config BT_LE_SCAN_DUPL_CACHE_REFRESH_PERIOD
         again.
 
 config BT_LE_MSYS_INIT_IN_CONTROLLER
-    bool
+    bool "Msys Mbuf Init in Controller"
     default y
 
 config BT_LE_TX_CCA_ENABLED
@@ -749,3 +779,48 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         Move most IRAM into flash. This will increase the usage of flash and reduce ble performance.
         Because the code is moved to the flash, the execution speed of the code is reduced.
         To have a small impact on performance, you need to enable flash suspend (SPI_FLASH_AUTO_SUSPEND).
+
+menu "BLE disconnects when Instant Passed (0x28) occurs"
+    config BT_LE_CTRL_LLCP_CONN_UPDATE
+        bool "BLE ACL connection update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs during connection update procedure.
+
+    config BT_LE_CTRL_LLCP_CHAN_MAP_UPDATE
+        bool "BLE ACL channel map update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in channel map update procedure.
+
+    config BT_LE_CTRL_LLCP_PHY_UPDATE
+        bool "BLE ACL PHY update procedure"
+        default n
+        help
+            If this option is enabled, Controller will terminate the connection
+            when Instant Passed (0x28) error occurs in PHY update procedure.
+endmenu
+
+config BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX
+    int "The value of upperlimitmax during scan backoff procedure"
+    range 1 256
+    default 32
+    help
+        The value of upperlimitmax needs to be a power of 2.
+
+config BT_LE_CTRL_CHAN_ASS_EN
+    bool "Enable channel assessment"
+    default n
+    help
+        If this option is enabled, The Controller will records the communication quality
+        for each channel and then start a timer to check and update the channel map every 4 seconds.
+
+config BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX
+    bool "Enable aux packet when ext adv data length is zero"
+    default y
+    help
+        When this option is enabled, auxiliary packets will be present in the events of
+        'Non-Connectable and Non-Scannable' regardless of whether the advertising length is 0.
+        If this option is not enabled, auxiliary packets will only be present when the advertising length is not 0.
