@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -44,10 +44,8 @@ static uint32_t page0_page = INVALID_PHY_PAGE;
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
+size_t mmu_psram_get_text_segment_length(void)
 {
-    uint32_t page_id = start_page;
-
     uint32_t flash_pages = 0;
 #if CONFIG_IDF_TARGET_ESP32S2
     flash_pages += Cache_Count_Flash_Pages(PRO_CACHE_IBUS0, &page0_mapped);
@@ -55,9 +53,17 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #elif CONFIG_IDF_TARGET_ESP32S3
     flash_pages += Cache_Count_Flash_Pages(CACHE_IBUS, &page0_mapped);
 #endif
-    if ((flash_pages + page_id) > BYTES_TO_MMU_PAGE(psram_size)) {
+    return MMU_PAGE_TO_BYTES(flash_pages);
+}
+
+esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
+{
+    uint32_t page_id = start_page;
+
+    uint32_t flash_bytes = mmu_psram_get_text_segment_length();
+    if ((flash_bytes + MMU_PAGE_TO_BYTES(page_id)) > psram_size) {
         ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %" PRIu32 " B, from %" PRIu32 " B to %" PRIu32 " B",
-                       MMU_PAGE_TO_BYTES(flash_pages), MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(flash_pages + page_id));
+                       flash_bytes, MMU_PAGE_TO_BYTES(start_page), flash_bytes + MMU_PAGE_TO_BYTES(page_id));
         return ESP_FAIL;
     }
 
@@ -87,10 +93,8 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
-esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
+size_t mmu_psram_get_rodata_segment_length(void)
 {
-    uint32_t page_id = start_page;
-
     uint32_t flash_pages = 0;
 #if CONFIG_IDF_TARGET_ESP32S2
     flash_pages += Cache_Count_Flash_Pages(PRO_CACHE_IBUS2, &page0_mapped);
@@ -100,8 +104,17 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
 #elif CONFIG_IDF_TARGET_ESP32S3
     flash_pages += Cache_Count_Flash_Pages(CACHE_DBUS, &page0_mapped);
 #endif
-    if ((flash_pages + page_id) > BYTES_TO_MMU_PAGE(psram_size)) {
-        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, need to copy to %" PRIu32 " B.", MMU_PAGE_TO_BYTES(flash_pages + page_id));
+    return MMU_PAGE_TO_BYTES(flash_pages);
+}
+
+esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
+{
+    uint32_t page_id = start_page;
+
+    uint32_t flash_bytes = mmu_psram_get_rodata_segment_length();
+
+    if ((flash_bytes + MMU_PAGE_TO_BYTES(page_id)) > psram_size) {
+        ESP_EARLY_LOGE(TAG, "SPI RAM space not enough for the instructions, need to copy to %" PRIu32 " B.", flash_bytes + MMU_PAGE_TO_BYTES(page_id));
         return ESP_FAIL;
     }
 
