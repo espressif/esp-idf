@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,7 +112,7 @@ static inline intptr_t memprot_ll_peri1_rtcslow_get_fault_address(void)
 
 static inline bool memprot_ll_peri1_rtcslow_is_intr_mine(void)
 {
-    if (memprot_ll_dram0_is_assoc_intr()) {
+    if (memprot_ll_peri1_is_assoc_intr()) {
         uint32_t faulting_address = (uint32_t)memprot_ll_peri1_rtcslow_get_fault_address();
         return faulting_address >= PERI1_RTCSLOW_ADDRESS_LOW && faulting_address <= PERI1_RTCSLOW_ADDRESS_HIGH;
     }
@@ -123,7 +123,7 @@ static inline memprot_hal_err_t memprot_ll_peri1_rtcslow_set_prot(uint32_t *spli
 {
     uint32_t addr = (uint32_t)split_addr;
 
-    //check corresponding range fit & aligment to 32bit boundaries
+    //check corresponding range fit & alignment to 32bit boundaries
     if (addr < PERI1_RTCSLOW_ADDRESS_LOW || addr > PERI1_RTCSLOW_ADDRESS_HIGH) {
         return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
@@ -281,7 +281,7 @@ static inline memprot_hal_err_t memprot_ll_peri2_rtcslow_0_set_prot(uint32_t *sp
 {
     uint32_t addr = (uint32_t)split_addr;
 
-    //check corresponding range fit & aligment to 32bit boundaries
+    //check corresponding range fit & alignment to 32bit boundaries
     if (addr < PERI2_RTCSLOW_0_ADDRESS_LOW || addr > PERI2_RTCSLOW_0_ADDRESS_HIGH) {
         return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
@@ -369,7 +369,7 @@ static inline memprot_hal_err_t memprot_ll_peri2_rtcslow_1_set_prot(uint32_t *sp
 {
     uint32_t addr = (uint32_t)split_addr;
 
-    //check corresponding range fit & aligment to 32bit boundaries
+    //check corresponding range fit & alignment to 32bit boundaries
     if (addr < PERI2_RTCSLOW_1_ADDRESS_LOW || addr > PERI2_RTCSLOW_1_ADDRESS_HIGH) {
         return MEMP_HAL_ERR_SPLIT_ADDR_INVALID;
     }
