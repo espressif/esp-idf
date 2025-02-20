@@ -78,7 +78,8 @@ typedef struct {
 } psram_mem_t;
 
 typedef struct {
-    bool is_initialised;
+    bool is_chip_initialised;   // if psram hardware is initialised or not
+    bool is_initialised;        // if psram initialised with memory mapping or not and is ready to use
     /**
      * @note 1
      * As we can't use heap allocator during this stage, we need to statically declare these regions.
@@ -138,9 +139,9 @@ static void IRAM_ATTR s_mapping(int v_start, int size)
 }
 #endif  //CONFIG_IDF_TARGET_ESP32
 
-static esp_err_t s_psram_chip_init(uint32_t *out_available_size)
+static esp_err_t s_psram_chip_init(void)
 {
-    if (s_psram_ctx.is_initialised) {
+    if (s_psram_ctx.is_chip_initialised) {
         return ESP_ERR_INVALID_STATE;
     }
 
@@ -152,7 +153,7 @@ static esp_err_t s_psram_chip_init(uint32_t *out_available_size)
 #endif
         return ret;
     }
-    s_psram_ctx.is_initialised = true;
+    s_psram_ctx.is_chip_initialised = true;
 
     uint32_t psram_physical_size = 0;
     ret = esp_psram_impl_get_physical_size(&psram_physical_size);
@@ -167,13 +168,6 @@ static esp_err_t s_psram_chip_init(uint32_t *out_available_size)
     ESP_EARLY_LOGI(TAG, "PSRAM initialized, cache is in low/high (2-core) mode.");
 #endif
 #endif
-
-    uint32_t psram_available_size = 0;
-    ret = esp_psram_impl_get_available_size(&psram_available_size);
-    assert(ret == ESP_OK);
-
-    *out_available_size = psram_available_size;
-
     return ESP_OK;
 }
 
@@ -349,14 +343,25 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
 #endif
 }
 
+esp_err_t esp_psram_chip_init(void)
+{
+    return s_psram_chip_init();
+}
+
 esp_err_t esp_psram_init(void)
 {
     esp_err_t ret = ESP_FAIL;
-    uint32_t psram_available_size = 0;
-    ret = s_psram_chip_init(&psram_available_size);
-    if (ret != ESP_OK) {
-        return ret;
+
+    if (!s_psram_ctx.is_chip_initialised) {
+        ret = esp_psram_chip_init();
+        if (ret != ESP_OK) {
+            return ret;
+        }
     }
+
+    uint32_t psram_available_size = 0;
+    ret = esp_psram_impl_get_available_size(&psram_available_size);
+    assert(ret == ESP_OK);
 
     /**
      * `start_page` is the psram physical address in MMU page size.
@@ -382,6 +387,7 @@ esp_err_t esp_psram_init(void)
     cache_register_writeback(&drv);
 #endif
 
+    s_psram_ctx.is_initialised = true;
     return ESP_OK;
 }
 

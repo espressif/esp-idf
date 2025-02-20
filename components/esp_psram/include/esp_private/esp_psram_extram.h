@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,17 @@ bool esp_psram_extram_test(void);
  * @brief Init .bss on psram
  */
 void esp_psram_bss_init(void);
+
+/**
+ * @brief Initialize the PSRAM hardware.
+ * Just initialize the PSRAM hardware, does not load the XIP segments or map the PSRAM memory
+ *
+ * @return
+ *        - ESP_OK:                On success
+ *        - ESP_FAIL:              PSRAM isn't initialized successfully, potential reason would be: wrong VDDSDIO, invalid chip ID, etc.
+ *        - ESP_ERR_INVALID_STATE: PSRAM is initialized already
+ */
+esp_err_t esp_psram_chip_init(void);
 
 #if CONFIG_IDF_TARGET_ESP32
 /**

@@ -565,17 +565,21 @@ void IRAM_ATTR call_start_cpu0(void)
 #endif
 #endif
 
+#if CONFIG_SPIRAM_BOOT_HW_INIT
+    if (esp_psram_chip_init() != ESP_OK) {
+#if CONFIG_SPIRAM_IGNORE_NOTFOUND
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM; continuing without it.");
+#else
+        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
+        abort();
+#endif
+    }
+#endif
+
 #if CONFIG_SPIRAM_BOOT_INIT
     if (esp_psram_init() != ESP_OK) {
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
         ESP_DRAM_LOGE(TAG, "Failed to init external RAM, needed for external .bss segment");
-        abort();
-#endif
-
-#if CONFIG_SPIRAM_IGNORE_NOTFOUND
-        ESP_EARLY_LOGI(TAG, "Failed to init external RAM; continuing without it.");
-#else
-        ESP_DRAM_LOGE(TAG, "Failed to init external RAM!");
         abort();
 #endif
     }
@@ -792,13 +796,13 @@ void IRAM_ATTR call_start_cpu0(void)
     }
 
 #if CONFIG_IDF_TARGET_ESP32
-#if !CONFIG_SPIRAM_BOOT_INIT
+#if !CONFIG_SPIRAM_BOOT_HW_INIT
     // If psram is uninitialized, we need to improve some flash configuration.
     bootloader_flash_clock_config(&fhdr);
     bootloader_flash_gpio_config(&fhdr);
     bootloader_flash_dummy_config(&fhdr);
     bootloader_flash_cs_timing_config();
-#endif //!CONFIG_SPIRAM_BOOT_INIT
+#endif //!CONFIG_SPIRAM_BOOT_HW_INIT
 #endif //CONFIG_IDF_TARGET_ESP32
 
 #if CONFIG_SPI_FLASH_SIZE_OVERRIDE
