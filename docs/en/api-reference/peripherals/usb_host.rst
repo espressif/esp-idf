@@ -3,6 +3,8 @@ USB Host
 
 :link_to_translation:`zh_CN:[中文]`
 
+{IDF_TARGET_OTG_NUM_HOST_CHAN: default="8", esp32p4="16"}
+
 The document provides information regarding the USB Host Library. This document is split into the following sections:
 
 .. contents:: Sections
@@ -471,7 +473,7 @@ When external Hubs support feature is enabled (:ref:`CONFIG_USB_HOST_HUBS_SUPPOR
 
 To handle each attached device, different amount of channels are required. This amount does depend on the device class (EPs number).
 
-Supported amount of channels for {IDF_TARGET_NAME} is {OTG_NUM_HOST_CHAN}.
+Supported amount of channels for {IDF_TARGET_NAME} is {IDF_TARGET_OTG_NUM_HOST_CHAN}.
 
 .. note::
 
