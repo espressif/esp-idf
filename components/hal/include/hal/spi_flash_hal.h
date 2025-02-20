@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,6 +27,10 @@ extern "C" {
 #define SPI_FLASH_HAL_MAX_WRITE_BYTES 64
 #define SPI_FLASH_HAL_MAX_READ_BYTES 64
 
+/* spi flash state */
+#define SPI_FLASH_HAL_STATUS_BUSY      BIT0
+#define SPI_FLASH_HAL_STATUS_SUSPEND   BIT1
+
 /**
  * Generic driver context structure for all chips using the SPI peripheral.
  * Include this into the HEAD of the driver data for other driver
@@ -53,6 +57,7 @@ typedef struct {
 #define SPI_FLASH_HOST_CONTEXT_SLICER_FLAG_DTR           BIT(0)  ///< Slice data according to DTR mode, the address and length must be even (A0=0).
     int freq_mhz;               /// Flash clock frequency.
     uint8_t tsus_val;     ///< Tsus value of suspend (us)
+    bool auto_waiti_pes;  ///< True for auto-wait idle after suspend command. False for using time delay.
 } spi_flash_hal_context_t;
 ESP_STATIC_ASSERT(sizeof(spi_flash_hal_context_t) == 48, "size of spi_flash_hal_context_t incorrect. Please check data compatibility with the ROM");
 
@@ -82,11 +87,12 @@ typedef struct {
     int cs_num;             ///< Which cs pin is used, 0-(SOC_SPI_PERIPH_CS_NUM-1).
     bool auto_sus_en;       ///< Auto suspend feature enable bit 1: enable, 0: disable.
     bool octal_mode_en;     ///< Octal spi flash mode enable bit 1: enable, 0: disable.
-    bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directely if set to 1.
+    bool using_timing_tuning;               ///< System exist SPI0/1 timing tuning, using value from system directly if set to 1.
     esp_flash_io_mode_t default_io_mode;        ///< Default flash io mode.
     int freq_mhz;         ///< SPI flash clock speed (MHZ).
     int clock_src_freq;    ///< SPI flash clock source (MHZ).
-    uint8_t tsus_val;     ///< Tsus value of suspend (us)
+    uint8_t tsus_val;     ///< Tsus value of suspend (us).
+    bool auto_waiti_pes;  ///< True for auto-wait idle after suspend command. False for using time delay.
 } spi_flash_hal_config_t;
 
 /**

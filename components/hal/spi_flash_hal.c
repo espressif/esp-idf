@@ -130,7 +130,12 @@ esp_err_t spi_flash_hal_init(spi_flash_hal_context_t *data_out, const spi_flash_
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_SUSPEND;
         data_out->flags |= SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
         data_out->tsus_val = cfg->tsus_val;
+        data_out->auto_waiti_pes = cfg->auto_waiti_pes;
     }
+
+#if CONFIG_SPI_FLASH_SOFTWARE_RESUME
+    data_out->flags &= ~SPI_FLASH_HOST_CONTEXT_FLAG_AUTO_RESUME;
+#endif
 
 #if SOC_SPI_MEM_SUPPORT_OPI_MODE
     if (cfg->octal_mode_en) {

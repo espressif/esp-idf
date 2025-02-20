@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,7 +145,8 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
 {
     spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spi_flash_hal_context_t* ctx = (spi_flash_hal_context_t*)host;
-    spimem_flash_ll_auto_wait_idle_init(dev, true);
+    bool pes_waiti_delay = ctx->auto_waiti_pes ? false : true;
+    spimem_flash_ll_auto_wait_idle_init(dev, true, pes_waiti_delay);
     if (ctx->freq_mhz == 120) {
         spimem_flash_ll_set_wait_idle_dummy_phase(dev, ctx->extra_dummy);
     }
@@ -159,6 +160,7 @@ void spi_flash_hal_setup_auto_suspend_mode(spi_flash_host_inst_t *host)
     spimem_flash_ll_sus_set_spi0_lock_trans(dev, SPIMEM_FLASH_LL_SPI0_MAX_LOCK_VAL_MSPI_TICKS);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
     spimem_flash_ll_sus_check_sus_setup(dev, true);
+    spimem_flash_ll_res_check_sus_setup(dev, true);
 #endif
 }
 
@@ -166,18 +168,16 @@ void spi_flash_hal_setup_auto_resume_mode(spi_flash_host_inst_t *host)
 {
     spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_resume_init(dev, true);
-#if SOC_SPI_MEM_SUPPORT_CHECK_SUS
-    spimem_flash_ll_res_check_sus_setup(dev, true);
-#endif
 }
 
 void spi_flash_hal_disable_auto_suspend_mode(spi_flash_host_inst_t *host)
 {
     spi_mem_dev_t *dev = (spi_mem_dev_t *)spi_flash_ll_get_hw(SPI1_HOST);
-    spimem_flash_ll_auto_wait_idle_init(dev, false);
+    spimem_flash_ll_auto_wait_idle_init(dev, false, false);
     spimem_flash_ll_auto_suspend_init(dev, false);
 #if SOC_SPI_MEM_SUPPORT_CHECK_SUS
     spimem_flash_ll_sus_check_sus_setup(dev, false);
+    spimem_flash_ll_res_check_sus_setup(dev, false);
 #endif
 }
 
@@ -185,9 +185,6 @@ void spi_flash_hal_disable_auto_resume_mode(spi_flash_host_inst_t *host)
 {
     spi_mem_dev_t *dev = (spi_mem_dev_t*)spi_flash_ll_get_hw(SPI1_HOST);
     spimem_flash_ll_auto_resume_init(dev, false);
-#if SOC_SPI_MEM_SUPPORT_CHECK_SUS
-    spimem_flash_ll_res_check_sus_setup(dev, false);
-#endif
 }
 #endif // SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
@@ -195,6 +192,7 @@ void spi_flash_hal_resume(spi_flash_host_inst_t *host)
 {
 #if SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     spimem_flash_ll_resume((spi_mem_dev_t*)(((spi_flash_hal_context_t *)host)->spi));
+    host->driver->poll_cmd_done(host);
 #else
     abort();
 #endif
@@ -204,6 +202,7 @@ void spi_flash_hal_suspend(spi_flash_host_inst_t *host)
 {
 #if SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     spimem_flash_ll_suspend((spi_mem_dev_t *)(((spi_flash_hal_context_t *)host)->spi));
+    host->driver->poll_cmd_done(host);
 #else
     abort();
 #endif
