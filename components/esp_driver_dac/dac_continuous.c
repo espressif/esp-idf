@@ -228,7 +228,7 @@ esp_err_t dac_continuous_new_channels(const dac_continuous_config_t *cont_cfg, d
 
     /* Create PM lock */
 #if CONFIG_PM_ENABLE
-    esp_pm_lock_type_t pm_lock_type = ESP_PM_APB_FREQ_MAX;
+    esp_pm_lock_type_t pm_lock_type = cont_cfg->clk_src == DAC_DIGI_CLK_SRC_APLL ? ESP_PM_NO_LIGHT_SLEEP : ESP_PM_APB_FREQ_MAX;
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, "dac_driver", &handle->pm_lock), err3, TAG, "Failed to create DAC pm lock");
 #endif
     handle->chan_cnt = __builtin_popcount(cont_cfg->chan_mask);

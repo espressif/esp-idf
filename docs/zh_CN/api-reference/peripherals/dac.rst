@@ -96,7 +96,7 @@ DAC 外设中包含一个余弦波发生器，可以在通道上产生余弦波�
 
 启用电源管理时（即开启 :ref:`CONFIG_PM_ENABLE`），系统会在进入 Light-sleep 模式前调整或停止 DAC 时钟源，这可能会影响 DAC 信号，从而导致数据无法正确转换。
 
-在连续模式下使用 DAC 驱动时，可以通过获取电源管理锁来防止系统在 DMA 或余弦波模式下改变或停止时钟源。电源锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。在进行 DAC 转换时（即 DMA 或余弦波发生器运行时），驱动程序会保证在调用 :cpp:func:`dac_continuous_enable` 后获取电源管理锁。同样地，在调用 :cpp:func:`dac_continuous_disable` 时，驱动程序会释放锁。
+在连续模式下使用 DAC 驱动时，可以通过获取电源管理锁来防止系统在 DMA 或余弦波模式下改变或停止时钟源。时钟源为 APB 时，锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_APB_FREQ_MAX`。时钟源为 APLL 时（仅在 DMA 模式下），锁的类型将被设置为 :cpp:enumerator:`esp_pm_lock_type_t::ESP_PM_NO_LIGHT_SLEEP`。在进行 DAC 转换时（即 DMA 或余弦波发生器运行时），驱动程序会保证在调用 :cpp:func:`dac_continuous_enable` 后获取电源管理锁。同样地，在调用 :cpp:func:`dac_continuous_disable` 时，驱动程序会释放锁。
 
 IRAM 安全
 ^^^^^^^^^
