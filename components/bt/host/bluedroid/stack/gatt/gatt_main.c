@@ -1244,7 +1244,8 @@ uint8_t gatt_tcb_active_count(void)
 
     for(p_node = list_begin(gatt_cb.p_tcb_list); p_node; p_node = list_next(p_node)) {
         p_tcb = list_node(p_node);
-        if (p_tcb && p_tcb->in_use && (p_tcb->ch_state != GATT_CH_CLOSE)) {
+        if (p_tcb && p_tcb->in_use && (p_tcb->transport == BT_TRANSPORT_LE) &&
+            (p_tcb->ch_state != GATT_CH_CLOSE)) {
             count++;
         }
     }
