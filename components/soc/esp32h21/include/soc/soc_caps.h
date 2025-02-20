@@ -63,7 +63,7 @@
 // #define SOC_WDT_SUPPORTED               1    //TODO: [ESP32H21] IDF-11528
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32H21] IDF-11526
 // #define SOC_RNG_SUPPORTED               1    //TODO: [ESP32H21] IDF-11503
-// #define SOC_MODEM_CLOCK_SUPPORTED       1
+#define SOC_MODEM_CLOCK_SUPPORTED       1
 // #define SOC_REG_I2C_SUPPORTED           1    //TODO: [ESP32H21] IDF-11550
 // #define SOC_PHY_SUPPORTED               1
 // #define SOC_PCNT_SUPPORTED              1    //TODO: [ESP32H21] IDF-11566
