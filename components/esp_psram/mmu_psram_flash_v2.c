@@ -84,10 +84,14 @@ static uint32_t s_do_load_from_flash(uint32_t flash_paddr_start, uint32_t size, 
 #endif //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+size_t mmu_psram_get_text_segment_length(void)
+{
+    return ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
+}
+
 esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
 {
-    size_t irom_size = ALIGN_UP_BY((uint32_t)&_instruction_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_instruction_reserved_start, CONFIG_MMU_PAGE_SIZE);
-    s_irom_size = irom_size;
+    s_irom_size = mmu_psram_get_text_segment_length();
 
     uint32_t flash_drom_paddr_start = 0;
     uint32_t flash_irom_paddr_start = 0;
@@ -95,8 +99,8 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     flash_irom_paddr_start = ALIGN_DOWN_BY(flash_irom_paddr_start, CONFIG_MMU_PAGE_SIZE);
     ESP_EARLY_LOGI(TAG, "flash_irom_paddr_start: 0x%x", flash_irom_paddr_start);
 
-    if ((MMU_PAGE_TO_BYTES(start_page) + irom_size) > psram_size) {
-        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", irom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + irom_size);
+    if ((MMU_PAGE_TO_BYTES(start_page) + s_irom_size) > psram_size) {
+        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash instructions, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", s_irom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + s_irom_size);
         return ESP_ERR_NO_MEM;
     }
 
@@ -106,22 +110,27 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
     ESP_EARLY_LOGV(TAG, "flash_irom_paddr_start: 0x%"PRIx32", MMU_PAGE_TO_BYTES(start_page): 0x%"PRIx32", s_irom_paddr_offset: 0x%"PRIx32", s_irom_vaddr_start: 0x%"PRIx32, flash_irom_paddr_start, MMU_PAGE_TO_BYTES(start_page), s_irom_paddr_offset, s_irom_vaddr_start);
 
     uint32_t mapped_size = 0;
-    mapped_size = s_do_load_from_flash(flash_irom_paddr_start, irom_size, irom_load_addr_aligned, MMU_PAGE_TO_BYTES(start_page));
-    cache_hal_writeback_addr(irom_load_addr_aligned, irom_size);
+    mapped_size = s_do_load_from_flash(flash_irom_paddr_start, s_irom_size, irom_load_addr_aligned, MMU_PAGE_TO_BYTES(start_page));
+    cache_hal_writeback_addr(irom_load_addr_aligned, s_irom_size);
 
     ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08"PRIx32" and vaddr=0x%08"PRIx32", 0x%"PRIx32" bytes are mapped", MMU_PAGE_TO_BYTES(start_page), irom_load_addr_aligned, mapped_size);
 
-    *out_page = BYTES_TO_MMU_PAGE(irom_size);
+    *out_page = BYTES_TO_MMU_PAGE(s_irom_size);
 
     return ESP_OK;
 }
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
+
+size_t mmu_psram_get_rodata_segment_length(void)
+{
+    return ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
+}
+
 esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_size, uint32_t *out_page)
 {
-    size_t drom_size = ALIGN_UP_BY((uint32_t)&_rodata_reserved_end, CONFIG_MMU_PAGE_SIZE) - ALIGN_DOWN_BY((uint32_t)&_rodata_reserved_start, CONFIG_MMU_PAGE_SIZE);
-    s_drom_size = drom_size;
+    s_drom_size = mmu_psram_get_rodata_segment_length();
 
     uint32_t flash_drom_paddr_start = 0;
     uint32_t flash_irom_paddr_start = 0;
@@ -129,8 +138,8 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     flash_drom_paddr_start = ALIGN_DOWN_BY(flash_drom_paddr_start, CONFIG_MMU_PAGE_SIZE);
     ESP_EARLY_LOGI(TAG, "flash_drom_paddr_start: 0x%x", flash_drom_paddr_start);
 
-    if ((MMU_PAGE_TO_BYTES(start_page) + drom_size) > psram_size) {
-        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash rodata, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", drom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + drom_size);
+    if ((MMU_PAGE_TO_BYTES(start_page) + s_drom_size) > psram_size) {
+        ESP_EARLY_LOGE(TAG, "PSRAM space not enough for the Flash rodata, need %"PRId32" B, from %"PRId32" B to %"PRId32" B", s_drom_size, MMU_PAGE_TO_BYTES(start_page), MMU_PAGE_TO_BYTES(start_page) + s_drom_size);
         return ESP_ERR_NO_MEM;
     }
 
@@ -140,12 +149,12 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
     ESP_EARLY_LOGV(TAG, "flash_drom_paddr_start: 0x%"PRIx32", MMU_PAGE_TO_BYTES(start_page): 0x%"PRIx32", s_drom_paddr_offset: 0x%"PRIx32", s_drom_vaddr_start: 0x%"PRIx32, flash_drom_paddr_start, MMU_PAGE_TO_BYTES(start_page), s_drom_paddr_offset, s_drom_vaddr_start);
 
     uint32_t mapped_size = 0;
-    mapped_size = s_do_load_from_flash(flash_drom_paddr_start, drom_size, drom_load_addr_aligned, MMU_PAGE_TO_BYTES(start_page));
-    cache_hal_writeback_addr(drom_load_addr_aligned, drom_size);
+    mapped_size = s_do_load_from_flash(flash_drom_paddr_start, s_drom_size, drom_load_addr_aligned, MMU_PAGE_TO_BYTES(start_page));
+    cache_hal_writeback_addr(drom_load_addr_aligned, s_drom_size);
 
     ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08"PRIx32" and vaddr=0x%08"PRIx32", 0x%"PRIx32" bytes are mapped", MMU_PAGE_TO_BYTES(start_page), drom_load_addr_aligned, mapped_size);
 
-    *out_page = BYTES_TO_MMU_PAGE(drom_size);
+    *out_page = BYTES_TO_MMU_PAGE(s_drom_size);
 
     return ESP_OK;
 }

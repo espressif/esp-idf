@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,14 @@ extern "C" {
                     Part 1 APIs (See @Backgrounds on top of this file)
 -------------------------------------------------------------------------------*/
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+
+/**
+ * @brief Calculates the size of memory that would be used for copying flash texts into PSRAM (in bytes)
+ *
+ * @return size_t size of memory that would be used for copying flash texts into PSRAM (in bytes)
+ */
+size_t mmu_psram_get_text_segment_length(void);
+
 /**
  * @brief Copy Flash texts to PSRAM
  *
@@ -50,6 +58,14 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 #endif  //#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
 
 #if CONFIG_SPIRAM_RODATA
+
+/**
+ * @brief Calculates the size of memory that would be used for copying flash rodata into PSRAM (in bytes)
+ *
+ * @return size_t size of memory that would be used for copying flash rodata into PSRAM (in bytes)
+ */
+size_t mmu_psram_get_rodata_segment_length(void);
+
 /**
  * @brief Copy Flash rodata to PSRAM
  *
