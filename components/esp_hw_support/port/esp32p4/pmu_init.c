@@ -149,8 +149,8 @@ static inline void pmu_power_domain_force_default(pmu_context_t *ctx)
     pmu_ll_lp_set_power_force_power_down(ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_isolate   (ctx->hal->dev, false);
     pmu_ll_lp_set_power_force_reset     (ctx->hal->dev, false);
-    pmu_ll_set_dcdc_force_power_up(ctx->hal->dev, false);
-    pmu_ll_set_dcdc_force_power_down(ctx->hal->dev, false);
+    pmu_ll_set_dcdc_switch_force_power_up(ctx->hal->dev, false);
+    pmu_ll_set_dcdc_switch_force_power_down(ctx->hal->dev, false);
 }
 
 static inline void pmu_hp_system_param_default(pmu_hp_mode_t mode, pmu_hp_system_param_t *param)
