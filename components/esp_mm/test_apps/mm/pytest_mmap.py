@@ -1,6 +1,5 @@
 # SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 
@@ -24,6 +23,7 @@ PSRAM_RELEASE_CONFIGS = [
     pytest.param('psram_release_esp32', marks=[pytest.mark.esp32]),
     pytest.param('psram_release_esp32s2', marks=[pytest.mark.esp32s2]),
     pytest.param('psram_release_esp32s3', marks=[pytest.mark.esp32s3]),
+    pytest.param('psram_release_esp32p4', marks=[pytest.mark.esp32p4]),
 ]
 
 
