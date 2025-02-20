@@ -1,4 +1,9 @@
-/* MEMPROT IramDram testing code */
+/*
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include "sdkconfig.h"
@@ -6,6 +11,8 @@
 #include "spi_flash_mmap.h"
 #include "esp32s2/memprot.h"
 #include "soc/soc.h"
+
+static const char *TAG = "memprot_test_ESP32S2";
 
 /*
  * ESP32S2 MEMORY PROTECTION MODULE TEST
@@ -108,7 +115,6 @@ static uint8_t RTC_SLOW_ATTR rtcslow_dummy_buffer[2 * SRAM_TEST_BUFFER_SIZE] = {
  * testing regions and splitting address scheme
  *
  */
-
 static uint32_t *test_memprot_dram0_rtcfast_get_min_split_addr(void)
 {
     return (uint32_t *)(rtcfast_dummy_buffer + sizeof(rtcfast_dummy_buffer) / 2);
@@ -187,7 +193,6 @@ static uint32_t *test_memprot_addr_high(mem_type_prot_t mem_type)
     }
 }
 
-
 static uint32_t *test_memprot_get_split_addr(mem_type_prot_t mem_type)
 {
     switch (mem_type) {
@@ -209,7 +214,6 @@ static uint32_t *test_memprot_get_split_addr(mem_type_prot_t mem_type)
         abort();
     }
 }
-
 
 /*
  * testing setup of the memory-protection module
@@ -356,9 +360,11 @@ static void test_memprot_read(mem_type_prot_t mem_type)
     bool write_perm_low, write_perm_high, read_perm_low, read_perm_high;
     esp_memprot_get_perm_write(mem_type, &write_perm_low, &write_perm_high);
     esp_memprot_get_perm_read(mem_type, &read_perm_low, &read_perm_high);
+    ESP_EARLY_LOGD(TAG, "TEST_READ (low: r=%u w=%u, high: r=%u w=%u):", read_perm_low, write_perm_low, read_perm_high, write_perm_high);
 
     volatile uint32_t *ptr_low = test_memprot_addr_low(mem_type);
     volatile uint32_t *ptr_high = test_memprot_addr_high(mem_type);
+    ESP_EARLY_LOGD(TAG, "[test_addr_low=0x%08X test_addr_high=0x%08X]", ptr_low, ptr_high);
 
     //temporarily allow WRITE for setting the test values
     esp_memprot_set_write_perm(mem_type, true, true);
@@ -398,12 +404,14 @@ static void test_memprot_write(mem_type_prot_t mem_type)
     bool write_perm_low, write_perm_high, read_perm_low, read_perm_high;
     esp_memprot_get_perm_write(mem_type, &write_perm_low, &write_perm_high);
     esp_memprot_get_perm_read(mem_type, &read_perm_low, &read_perm_high);
+    ESP_EARLY_LOGD(TAG, "TEST_WRITE (low: r=%u w=%u, high: r=%u w=%u):", read_perm_low, write_perm_low, read_perm_high, write_perm_high);
 
     //temporarily allow READ operation
     esp_memprot_set_read_perm(mem_type, true, true);
 
     volatile uint32_t *ptr_low = test_memprot_addr_low(mem_type);
     volatile uint32_t *ptr_high = test_memprot_addr_high(mem_type);
+    ESP_EARLY_LOGD(TAG, "[test_addr_low=0x%08X test_addr_high=0x%08X]", ptr_low, ptr_high);
 
     //perform WRITE in low region
     const uint32_t test_val = 10;
@@ -448,8 +456,13 @@ static void test_memprot_exec(mem_type_prot_t mem_type)
     bool exec_perm_low, exec_perm_high;
     esp_memprot_get_perm_exec(mem_type, &exec_perm_low, &exec_perm_high);
 
+    bool read_perm_low, read_perm_high;
+    esp_memprot_get_perm_read(mem_type, &read_perm_low, &read_perm_high);
+    ESP_EARLY_LOGD(TAG, "TEST_EXEC (low: r=%u w=%u x=%u, high: r=%u w=%u x=%u):", read_perm_low, write_perm_low, exec_perm_low, read_perm_high, write_perm_high, exec_perm_high);
+
     volatile uint32_t *fnc_ptr_low = test_memprot_addr_low(mem_type);
     volatile uint32_t *fnc_ptr_high = test_memprot_addr_high(mem_type);
+    ESP_EARLY_LOGD(TAG, "[test_addr_low=0x%08X test_addr_high=0x%08X]", fnc_ptr_low, fnc_ptr_high);
 
     //enable WRITE permission for both segments
     esp_memprot_set_write_perm(mem_type, true, true);
