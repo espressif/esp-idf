@@ -83,13 +83,16 @@ choice BT_BLE_CCA_MODE
     default BT_BLE_CCA_MODE_NONE
     help
         Define BT BLE CCA mode
+        Note that if CCA feature is enabled, the hardware may not transmit packets due to channel busy.
+        Therefore, it may potentially lead to an increase in the time taken for scanning advertising packet
+        and establishing connections, or a decrease in the throughput rate of the connection.
 
     config BT_BLE_CCA_MODE_NONE
         bool "NONE"
     config BT_BLE_CCA_MODE_HW
         bool "Hardware"
     config BT_BLE_CCA_MODE_SW
-        bool "Software"
+        bool "Software (experimental)"
 endchoice
 
 config BT_BLE_CCA_MODE

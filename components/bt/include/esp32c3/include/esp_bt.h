@@ -491,7 +491,7 @@ typedef struct {
     uint8_t ble_cca_mode;                   /*!< BLE CCA mode. Configurable in menuconfig
                                                 - 0 - Disable (default)
                                                 - 1 - Hardware-triggered CCA
-                                                - 2 - Software-based CCA */
+                                                - 2 - Software-based CCA (experimental) */
     uint8_t ble_data_lenth_zero_aux;        /*!< Enable / disable auxiliary packets when the extended ADV data length is zero. Configurable in menuconfig.
                                                 - 0 - Disable (default)
                                                 - 1 - Enable */
