@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,8 @@
 #include "esp_log.h"
 #include "esp_err.h"
 #include "esp_check.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/io_mux.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/timers.h"
@@ -44,6 +46,9 @@ esp_err_t rtc_gpio_init(gpio_num_t gpio_num)
 {
     ESP_RETURN_ON_FALSE(rtc_gpio_is_valid_gpio(gpio_num), ESP_ERR_INVALID_ARG, RTCIO_TAG, "RTCIO number error");
     RTCIO_ENTER_CRITICAL();
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(gpio_num, true);
+#endif
     rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_FUNC_RTC);
     RTCIO_EXIT_CRITICAL();
 
@@ -56,6 +61,10 @@ esp_err_t rtc_gpio_deinit(gpio_num_t gpio_num)
     RTCIO_ENTER_CRITICAL();
     // Select Gpio as Digital Gpio
     rtcio_hal_function_select(rtc_io_number_get(gpio_num), RTCIO_FUNC_DIGITAL);
+
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    io_mux_enable_lp_io_clock(gpio_num, false);
+#endif
     RTCIO_EXIT_CRITICAL();
 
     return ESP_OK;
