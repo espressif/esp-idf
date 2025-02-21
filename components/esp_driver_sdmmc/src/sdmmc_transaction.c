@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,12 +22,6 @@
 #include "sdmmc_private.h"
 #include "soc/soc_caps.h"
 
-/* Number of DMA descriptors used for transfer.
- * Increasing this value above 4 doesn't improve performance for the usual case
- * of SD memory cards (most data transfers are multiples of 512 bytes).
- */
-#define SDMMC_DMA_DESC_CNT  4
-
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
 
 static const char* TAG = "sdmmc_req";
@@ -38,13 +32,6 @@ typedef enum {
     SDMMC_SENDING_DATA,
     SDMMC_BUSY,
 } sdmmc_req_state_t;
-
-typedef struct {
-    uint8_t* ptr;
-    size_t size_remaining;
-    size_t next_desc;
-    size_t desc_remaining;
-} sdmmc_transfer_state_t;
 
 const uint32_t SDMMC_DATA_ERR_MASK =
     SDMMC_INTMASK_DTO | SDMMC_INTMASK_DCRC |
@@ -60,8 +47,6 @@ const uint32_t SDMMC_CMD_ERR_MASK =
     SDMMC_INTMASK_RCRC |
     SDMMC_INTMASK_RESP_ERR;
 
-DRAM_DMA_ALIGNED_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
-static sdmmc_transfer_state_t s_cur_transfer = { 0 };
 static QueueHandle_t s_request_mutex;
 static bool s_is_app_cmd;   // This flag is set if the next command is an APP command
 #ifdef CONFIG_PM_ENABLE
@@ -75,8 +60,6 @@ static esp_err_t handle_event(sdmmc_command_t* cmd, sdmmc_req_state_t* state,
 static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
                                 sdmmc_req_state_t* pstate, sdmmc_event_t* unhandled_events);
 static void process_command_response(uint32_t status, sdmmc_command_t* cmd);
-static void fill_dma_descriptors(size_t num_desc);
-static size_t get_free_descriptors_count(void);
 static bool wait_for_busy_cleared(uint32_t timeout_ms);
 
 esp_err_t sdmmc_host_transaction_handler_init(void)
@@ -152,19 +135,8 @@ esp_err_t sdmmc_host_do_transaction(int slot, sdmmc_command_t* cmdinfo)
             goto out;
         }
 #endif
-        // this clears "owned by IDMAC" bits
-        memset(s_dma_desc, 0, sizeof(s_dma_desc));
-        // initialize first descriptor
-        s_dma_desc[0].first_descriptor = 1;
-        // save transfer info
-        s_cur_transfer.ptr = (uint8_t*) cmdinfo->data;
-        s_cur_transfer.size_remaining = cmdinfo->datalen;
-        s_cur_transfer.next_desc = 0;
-        s_cur_transfer.desc_remaining = (cmdinfo->datalen + SDMMC_DMA_MAX_BUF_LEN - 1) / SDMMC_DMA_MAX_BUF_LEN;
-        // prepare descriptors
-        fill_dma_descriptors(SDMMC_DMA_DESC_CNT);
         // write transfer info into hardware
-        sdmmc_host_dma_prepare(&s_dma_desc[0], cmdinfo->blklen, cmdinfo->datalen);
+        sdmmc_host_dma_prepare(cmdinfo->data, cmdinfo->datalen, cmdinfo->blklen);
     }
     // write command into hardware, this also sends the command to the card
     ret = sdmmc_host_start_command(slot, hw_cmd, cmdinfo->arg);
@@ -203,66 +175,6 @@ out:
 #endif
     xSemaphoreGive(s_request_mutex);
     return ret;
-}
-
-static size_t get_free_descriptors_count(void)
-{
-    const size_t next = s_cur_transfer.next_desc;
-    size_t count = 0;
-    /* Starting with the current DMA descriptor, count the number of
-     * descriptors which have 'owned_by_idmac' set to 0. These are the
-     * descriptors already processed by the DMA engine.
-     */
-    for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
-        sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
-        assert(ret == ESP_OK);
-#endif
-        if (desc->owned_by_idmac) {
-            break;
-        }
-        ++count;
-        if (desc->next_desc_ptr == NULL) {
-            /* final descriptor in the chain */
-            break;
-        }
-    }
-    return count;
-}
-
-static void fill_dma_descriptors(size_t num_desc)
-{
-    for (size_t i = 0; i < num_desc; ++i) {
-        if (s_cur_transfer.size_remaining == 0) {
-            return;
-        }
-        const size_t next = s_cur_transfer.next_desc;
-        sdmmc_desc_t* desc = &s_dma_desc[next];
-        assert(!desc->owned_by_idmac);
-        size_t size_to_fill =
-            (s_cur_transfer.size_remaining < SDMMC_DMA_MAX_BUF_LEN) ?
-            s_cur_transfer.size_remaining : SDMMC_DMA_MAX_BUF_LEN;
-        bool last = size_to_fill == s_cur_transfer.size_remaining;
-        desc->last_descriptor = last;
-        desc->second_address_chained = 1;
-        desc->owned_by_idmac = 1;
-        desc->buffer1_ptr = s_cur_transfer.ptr;
-        desc->next_desc_ptr = (last) ? NULL : &s_dma_desc[(next + 1) % SDMMC_DMA_DESC_CNT];
-        assert(size_to_fill < 4 || size_to_fill % 4 == 0);
-        desc->buffer1_size = (size_to_fill + 3) & (~3);
-
-        s_cur_transfer.size_remaining -= size_to_fill;
-        s_cur_transfer.ptr += size_to_fill;
-        s_cur_transfer.next_desc = (s_cur_transfer.next_desc + 1) % SDMMC_DMA_DESC_CNT;
-        ESP_LOGV(TAG, "fill %d desc=%d rem=%d next=%d last=%d sz=%d",
-                 num_desc, next, s_cur_transfer.size_remaining,
-                 s_cur_transfer.next_desc, desc->last_descriptor, desc->buffer1_size);
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
-        assert(ret == ESP_OK);
-#endif
-    }
 }
 
 static esp_err_t handle_idle_state_events(void)
@@ -467,15 +379,7 @@ static esp_err_t process_events(sdmmc_event_t evt, sdmmc_command_t* cmd,
                 sdmmc_host_dma_stop();
             }
             if (mask_check_and_clear(&evt.dma_status, SDMMC_DMA_DONE_MASK)) {
-                s_cur_transfer.desc_remaining--;
-                if (s_cur_transfer.size_remaining) {
-                    int desc_to_fill = get_free_descriptors_count();
-                    fill_dma_descriptors(desc_to_fill);
-                    sdmmc_host_dma_resume();
-                }
-                if (s_cur_transfer.desc_remaining == 0) {
-                    next_state = SDMMC_BUSY;
-                }
+                next_state = SDMMC_BUSY;
             }
             if (orig_evt.sdmmc_status & (SDMMC_INTMASK_SBE | SDMMC_INTMASK_DATA_OVER)) {
                 // On start bit error, DATA_DONE interrupt will not be generated
