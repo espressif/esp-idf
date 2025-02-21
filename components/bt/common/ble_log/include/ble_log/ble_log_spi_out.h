@@ -29,5 +29,7 @@ void ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len);
 void ble_log_spi_out_write_esp(uint32_t len, const uint8_t *addr, bool end);
 void ble_log_spi_out_ts_sync_start(void);
 void ble_log_spi_out_ts_sync_stop(void);
+int ble_log_spi_out_printf(uint8_t source, const char *format, ...);
+void ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len);
 
 #endif // __BT_SPI_OUT_H__

@@ -176,8 +176,7 @@ IRAM_ATTR static void esp_timer_cb_flushout(void)
         if (trans_head->trans.length) {
             spi_out_append_trans();
         }
-    }
-    else {
+    } else {
         // Restart flushout timer
         esp_timer_start_once(flushout_timer_handle, SPI_OUT_FLUSHOUT_TIMEOUT);
     }
@@ -374,8 +373,7 @@ IRAM_ATTR void ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16
     const uint8_t tail = SPI_OUT_TAIL;
 
     // Write frame head first, then payload, finally frame tail
-    do
-    {
+    do {
         if (spi_out_write(head, 4) != 0) {
             loss_frame_cnt++;
             break;
@@ -398,4 +396,54 @@ IRAM_ATTR void ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16
     return;
 }
 
+IRAM_ATTR int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
+{
+    // Get esp timestamp
+    uint32_t esp_ts = esp_timer_get_time();
+
+    // Get arguments
+    va_list args;
+    va_start(args, format);
+
+    // Get len as ref to allocate heap memory
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int len = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    // Length validation
+    if ((len < 0) || (len > 0xFFFF)) {
+        va_end(args);
+        return -1;
+    }
+
+    // Allocate memory
+    uint8_t *buffer = malloc(len + 1);
+    if (!buffer) {
+        va_end(args);
+        return -1;
+    }
+
+    // Generate string
+    vsnprintf((char *)buffer, len + 1, format, args);
+    va_end(args);
+
+    // Write to SPI
+    ble_log_spi_out_write(source, (const uint8_t *)&esp_ts, 4);
+    ble_log_spi_out_write(source, (const uint8_t *)buffer, len);
+
+    // Release
+    free(buffer);
+    return 0;
+}
+
+IRAM_ATTR void ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
+{
+    // Get esp timestamp
+    uint32_t esp_ts = esp_timer_get_time();
+
+    // Write to SPI
+    ble_log_spi_out_write(source, (const uint8_t *)&esp_ts, 4);
+    ble_log_spi_out_write(source, addr, len);
+}
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
