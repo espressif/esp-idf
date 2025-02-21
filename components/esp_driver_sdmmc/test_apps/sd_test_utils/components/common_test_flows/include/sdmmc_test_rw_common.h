@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,6 +49,12 @@ void sdmmc_test_rw_unaligned_buffer(sdmmc_card_t* card);
  * @param card Pointer to the card object, must be initialized before calling this function.
  */
 void sdmmc_test_rw_with_offset(sdmmc_card_t* card);
+
+/**
+ * @brief Test read/write with higher priority tasks running concurrently
+ * @param card Pointer to the card object, must be initialized before calling this function.
+ */
+void sdmmc_test_rw_highprio_task(sdmmc_card_t* card);
 
 #ifdef __cplusplus
 };
