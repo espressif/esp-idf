@@ -39,6 +39,8 @@ extern "C" {
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTERRUPT_PRO_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *

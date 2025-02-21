@@ -42,6 +42,8 @@ extern const uint8_t GPIO_PIN_MUX_REG_OFFSET[SOC_GPIO_PIN_COUNT];
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(3))
 #define GPIO_LL_SDIO_EXT_INTR_ENA     (BIT(4))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
