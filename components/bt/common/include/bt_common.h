@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -82,6 +82,13 @@
 #define BT_HCI_LOG_INCLUDED  UC_BT_HCI_LOG_DEBUG_EN
 #else
 #define BT_HCI_LOG_INCLUDED  FALSE
+#endif
+
+// HCI LOG TO SPI
+#if UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#define BT_BLE_LOG_SPI_OUT_HCI_ENABLED  UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#else
+#define BT_BLE_LOG_SPI_OUT_HCI_ENABLED  FALSE
 #endif
 
 #if UC_BT_HCI_LOG_DATA_BUFFER_SIZE
