@@ -41,6 +41,10 @@
 #include "stack/hcimsgs.h"
 #include "hci_log/bt_hci_log.h"
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+
 #define HCI_BLE_EVENT 0x3e
 #define PACKET_TYPE_TO_INBOUND_INDEX(type) ((type) - 2)
 #define PACKET_TYPE_TO_INDEX(type) ((type) - 1)
@@ -559,6 +563,9 @@ void bt_record_hci_data(uint8_t *data, uint16_t len)
 
 static int host_recv_pkt_cb(uint8_t *data, uint16_t len)
 {
+#if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM, data, len);
+#endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
     //Target has packet to host, malloc new buffer for packet
     BT_HDR *pkt = NULL;
     pkt_linked_item_t *linked_pkt = NULL;
