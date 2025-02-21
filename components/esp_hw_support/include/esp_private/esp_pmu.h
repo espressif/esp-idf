@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -276,11 +276,6 @@ void pmu_sleep_increase_ldo_volt(void);
  *        power in the sleep and wake-up processes.
  */
 void pmu_sleep_shutdown_dcdc(void);
-
-/**
- * @brief DCDC has taken over power supply, shut down LDO to save power consumption
- */
-void pmu_sleep_shutdown_ldo(void);
 #endif // SOC_DCDC_SUPPORTED
 
 /**
