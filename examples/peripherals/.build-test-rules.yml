@@ -299,6 +299,10 @@ examples/peripherals/mcpwm/mcpwm_servo_control:
 examples/peripherals/mcpwm/mcpwm_sync:
   disable:
     - if: SOC_MCPWM_SUPPORTED != 1
+  disable_test:
+    - if: IDF_TARGET in ["esp32c5", "esp32h2", "esp32p4", "esp32c6"]
+      temporary: true
+      reason: the earlier test script is invalid. c6 tests never executed. need to check manually
   depends_components:
     - esp_driver_mcpwm
 
