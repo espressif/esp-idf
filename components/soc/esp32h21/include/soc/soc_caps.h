@@ -20,7 +20,7 @@
 // #define SOC_ADC_SUPPORTED               1    //TODO: [ESP32H21] IDF-11589, IDF-11592
 // #define SOC_ANA_CMPR_SUPPORTED          1
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1    //TODO: [ESP32H21] IDF-11621
-#define SOC_UART_SUPPORTED              1       //TODO: [ESP32H21] IDF-11618
+#define SOC_UART_SUPPORTED              1
 // #define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32H21] IDF-11603
 // #define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32H21] IDF-11603
 // #define SOC_GPTIMER_SUPPORTED           1    //TODO: [ESP32H21] IDF-11594
@@ -499,7 +499,7 @@
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
 
-// #define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
+#define SOC_UART_SUPPORT_SLEEP_RETENTION   (1)         /*!< Support back up registers before sleep */
 
 #define SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN 5
 #define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
