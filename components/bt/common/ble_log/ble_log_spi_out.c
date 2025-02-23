@@ -437,6 +437,53 @@ IRAM_ATTR int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
     return 0;
 }
 
+IRAM_ATTR int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
+{
+    // Get ESP timestamp
+    uint32_t esp_ts = esp_timer_get_time();
+
+    // Create log prefix in the format: "[level][tag] "
+    char prefix[32];
+    int prefix_len = snprintf(prefix, sizeof(prefix), "[%d][%s] ", level, tag ? tag : "NULL");
+
+    // Compute the length of the formatted log message
+    va_list args;
+    va_start(args, format);
+    va_list args_copy;
+    va_copy(args_copy, args);
+    int log_len = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    // Validate length
+    if (log_len < 0 || log_len > 0xFFFF) {
+        va_end(args);
+        return -1;
+    }
+
+    // Compute total log length (prefix + formatted message)
+    int total_len = prefix_len + log_len;
+
+    // Allocate memory for the complete log message
+    uint8_t *buffer = malloc(total_len + 1);
+    if (!buffer) {
+        va_end(args);
+        return -1;
+    }
+
+    // Construct the final log message
+    memcpy(buffer, prefix, prefix_len);  // Copy the prefix
+    vsnprintf((char *)(buffer + prefix_len), log_len + 1, format, args);
+    va_end(args);
+
+    // Transmit log data via SPI
+    ble_log_spi_out_write(source, (const uint8_t *)&esp_ts, 4);
+    ble_log_spi_out_write(source, buffer, total_len);
+
+    // Free allocated memory
+    free(buffer);
+    return 0;
+}
+
 IRAM_ATTR void ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
 {
     // Get esp timestamp

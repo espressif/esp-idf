@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -131,6 +131,13 @@
 #define UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED  TRUE
 #else
 #define UC_BT_BLE_LOG_SPI_OUT_HCI_ENABLED  FALSE
+#endif
+
+//BLUEDROID LOG TO SPI
+#ifdef CONFIG_BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+#define UC_BT_BLE_LOG_SPI_OUT_HOST_ENABLED  TRUE
+#else
+#define UC_BT_BLE_LOG_SPI_OUT_HOST_ENABLED  FALSE
 #endif
 
 #ifdef CONFIG_BT_HCI_LOG_DATA_BUFFER_SIZE
