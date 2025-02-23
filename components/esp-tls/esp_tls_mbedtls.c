@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "esp_tls_mbedtls.h"
 #include "esp_tls_private.h"
 #include "esp_tls_error_capture_internal.h"
+#include "esp_tls_platform_port.h"
 #include <errno.h>
 #include "esp_log.h"
 #include "esp_check.h"
@@ -928,9 +929,23 @@ int esp_mbedtls_server_session_create(esp_tls_cfg_server_t *cfg, int sockfd, esp
     if ((ret = esp_mbedtls_server_session_init(cfg, sockfd, tls)) != 0) {
         return ret;
     }
+
+    uint64_t timeout_ms;
+    if (cfg->tls_handshake_timeout_ms == 0) {
+        timeout_ms = ESP_TLS_DEFAULT_SERVER_HANDSHAKE_TIMEOUT_MS;
+    } else {
+        timeout_ms = cfg->tls_handshake_timeout_ms;
+    }
+    uint64_t start_time = esp_tls_get_platform_time();
+
     while ((ret = esp_mbedtls_server_session_continue_async(tls)) != 0) {
         if (ret != ESP_TLS_ERR_SSL_WANT_READ && ret != ESP_TLS_ERR_SSL_WANT_WRITE) {
             return ret;
+        }
+        uint64_t elapsed_time_us = esp_tls_get_platform_time() - start_time;
+        if ((elapsed_time_us / 1000) > timeout_ms) {
+            ESP_LOGD(TAG, "Server handshake timed out");
+            return ESP_ERR_ESP_TLS_SERVER_HANDSHAKE_TIMEOUT;
         }
     }
     return ret;

@@ -307,6 +307,10 @@ typedef struct esp_tls_cfg_server {
     bool use_secure_element;                    /*!< Enable this option to use secure element or
                                                  atecc608a chip */
 
+    uint32_t tls_handshake_timeout_ms;                   /*!< TLS handshake timeout in milliseconds.
+                                                    Note: If this value is not set, by default the timeout is
+                                                    set to 10 seconds. If you wish that the session should wait
+                                                    indefinitely then please use a larger value e.g., INT32_MAX */
 
 #if defined(CONFIG_ESP_TLS_SERVER_SESSION_TICKETS)
     esp_tls_server_session_ticket_ctx_t * ticket_ctx; /*!< Session ticket generation context.
