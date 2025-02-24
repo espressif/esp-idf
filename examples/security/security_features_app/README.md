@@ -111,13 +111,13 @@ The necessary `security eFuses` are yet to be burned. They shall be burned by th
 When the application is built (later in the workflow) the `bootloader` and `application` shall only be signed with the first key. To sign it with multiple keys, please follow below additional steps:
 
 -  Repeat `Step 1` to `Step 3` for `secure_boot_signing_key_2.pem` and `secure_boot_signing_key_3.pem` respectively.
--  Sign it with remaining two keys by executing following commands for `secure_boot_signing_key_2.pem` and `secure_boot_signing_key_3.pem` respectively:
+-  Sign it with remaining two keys by executing following commands with adding `-a` option for `secure_boot_signing_key_2.pem` and `secure_boot_signing_key_3.pem` respectively:
 
 	```
 	espsecure.py sign_data --version 2 --keyfile 	/* Signing key placeholder */ --output bootloader-signed.bin build/bootloader/bootloader.bin
 	```
 	```
-	espsecure.py sign_data --version 2 --keyfile 	/* Signing key placeholder */ --output my-app-signed.bin build/security_features.bin
+	espsecure.py sign_data --version 2 --keyfile 	/* Signing key placeholder */ --output my-app-signed.bin build/security_features_app.bin
 	```
 
 
@@ -150,7 +150,7 @@ Follow below steps to enable Flash Encryption:
 	espefuse.py --port $ESPPORT --chip esp32c3 burn_efuse SPI_BOOT_CRYPT_CNT 7
 	```
     
-At this point the Flash Encryption feature is enabled for the device. The necessary `security eFuses` shall be enabled by the `security_features` firmware.
+At this point the Flash Encryption feature is enabled for the device. The necessary `security eFuses` shall be enabled by the `security_features_app` firmware.
 
 #### Encrypting the partitions
 After the application is built (Later in the workflow), all partitions that need encryption can be encrypted with the following command:
@@ -161,7 +161,7 @@ espsecure.py encrypt_flash_data --aes_xts --keyfile my_flash_encryption_key.bin 
 
 The bootloader offset for esp32c3 is `0x0`. The partition table offset for the example has been set to `0xD000` which can be changed through menuconfig. The partition offset for other partitions can be obtained by running ```idf.py partition-table```
 
-For this example we need to encrypt only the following 3 partitions: `bootloader.bin`, `partition-table.bin`, `security_features.bin`.
+For this example we need to encrypt only the following 3 partitions: `bootloader.bin`, `partition-table.bin`, `security_features_app.bin`.
 
 It can be done with following commands:
 
@@ -213,7 +213,7 @@ We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partit
 
 4. This shall generate `nvs_encr_partition.bin` which we shall flash later at the [Flash stage](README.md#flash) of the workflow.
 
-### Enabling Secure JTAG Return Material Access (RMA)
+### Enabling Secure JTAG Return Material Authorization (RMA)
 
 The target provides an ability to disable JTAG access in the device for the software. Which can be re-enabled in future after authentication using a unique token generated beforehand. This way the module can be opened up by bypassing security features after authentication for debugging purposes after it has returned back to the manufacturer due to some issue. This way when a security wise locked device comes back to the ODM/OEM due to some issue, the module can be opened up by bypassing security features after successful authentication.
 
@@ -250,7 +250,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 
 5. Configuring appropriate JTAG interface
 
-    By default esp32c3 is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32c3/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/v4.3/esp32c3/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
+    By default esp32c3 is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
     Please note that JTAG configuration cannot be done once the application firmware is flashed on the device.
 
 ## Build
