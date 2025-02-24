@@ -141,7 +141,7 @@ static esp_clock_output_mapping_t* clkout_mapping_alloc(clkout_channel_handle_t*
     allocated_mapping->ref_cnt++;
     if (allocated_mapping->ref_cnt == 1) {
 #if SOC_GPIO_CLOCKOUT_BY_IO_MUX
-        gpio_iomux_output(gpio_num, CLKOUT_CHANNEL_TO_IOMUX_FUNC(allocated_mapping->clkout_channel_hdl->channel_id), false);
+        gpio_iomux_output(gpio_num, CLKOUT_CHANNEL_TO_IOMUX_FUNC(allocated_mapping->clkout_channel_hdl->channel_id));
 #elif SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX
         gpio_set_pull_mode(gpio_num, GPIO_FLOATING);
         gpio_func_sel(gpio_num, PIN_FUNC_GPIO);

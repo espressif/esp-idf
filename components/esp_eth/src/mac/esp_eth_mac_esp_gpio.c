@@ -90,7 +90,7 @@ static esp_err_t emac_esp_iomux_init(gpio_num_t gpio_num, const emac_iomux_info_
             if (is_input) {
                 ESP_RETURN_ON_ERROR(gpio_iomux_input(iomux_info->gpio_num, iomux_info->func, signal_idx), TAG, "failed to set perip. input via IOMUX");
             } else {
-                ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_info->gpio_num, iomux_info->func, false), TAG, "failed to set perip. output via IOMUX");
+                ESP_RETURN_ON_ERROR(gpio_iomux_output(iomux_info->gpio_num, iomux_info->func), TAG, "failed to set perip. output via IOMUX");
             }
             ESP_RETURN_ON_ERROR(gpio_set_pull_mode(iomux_info->gpio_num, GPIO_FLOATING),
                                 TAG, "failed to set pull mode at GPIO %i", iomux_info->gpio_num);

@@ -53,7 +53,7 @@ esp_err_t gpio_sleep_pupd_config_unapply(gpio_num_t gpio_num);
 esp_err_t gpio_func_sel(gpio_num_t gpio_num, uint32_t func);
 
 /**
- * @brief Enable output for an IO
+ * @brief Enable output for an IO (as a simple GPIO output)
  *
  * @param gpio_num GPIO number
  *
@@ -126,13 +126,12 @@ esp_err_t gpio_iomux_input(gpio_num_t gpio_num, int func, uint32_t signal_idx);
   * @param gpio_num GPIO number of the pad.
   * @param func The index number of the IOMUX function to be selected for the pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param out_en_inv Whether the output enable control is inverted or not.
   *
   * @return
   *     - ESP_OK Success
   *     - ESP_ERR_INVALID_ARG GPIO number error
   */
-esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func, bool out_en_inv);
+esp_err_t gpio_iomux_output(gpio_num_t gpio_num, int func);
 
 #ifdef __cplusplus
 }

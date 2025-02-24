@@ -99,8 +99,8 @@ TEST_CASE("GPIO output internal clock", "[gpio_output_clock][ignore]")
 #if CONFIG_IDF_TARGET_ESP32
     /* ESP32 clock out channel pin reuses UART TX/RX pin, restore its default
        configuration at the end of the test */
-    gpio_iomux_output(U0RXD_GPIO_NUM, FUNC_U0RXD_U0RXD, false);
-    gpio_iomux_output(U0TXD_GPIO_NUM, FUNC_U0TXD_U0TXD, false);
+    gpio_iomux_output(U0RXD_GPIO_NUM, FUNC_U0RXD_U0RXD);
+    gpio_iomux_output(U0TXD_GPIO_NUM, FUNC_U0TXD_U0TXD);
 #endif
 }
 

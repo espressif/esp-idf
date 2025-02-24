@@ -183,7 +183,6 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
     }
     if (config->clk_in_gpio_num >= 0) {
-        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->clk_in_gpio_num);
 
         // deprecated, to be removed in in esp-idf v6.0

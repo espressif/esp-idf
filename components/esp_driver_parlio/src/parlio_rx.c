@@ -258,7 +258,6 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     if (config->clk_src == PARLIO_CLK_SRC_EXTERNAL) {
         ESP_RETURN_ON_FALSE(config->clk_in_gpio_num >= 0, ESP_ERR_INVALID_ARG, TAG, "clk_in_gpio_num must be set while the clock input from external");
         /* Connect the clock in signal to the GPIO matrix if it is set */
-        gpio_func_sel(config->clk_in_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->clk_in_gpio_num);
 
         // deprecated, to be removed in in esp-idf v6.0
@@ -290,7 +289,6 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
 
     /* Initialize the valid GPIO as input */
     if (config->valid_gpio_num >= 0) {
-        gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
         gpio_input_enable(config->valid_gpio_num);
 
         // deprecated, to be removed in in esp-idf v6.0
@@ -305,7 +303,6 @@ static esp_err_t s_parlio_rx_unit_set_gpio(parlio_rx_unit_handle_t rx_unit, cons
     for (int i = 0; i < config->data_width; i++) {
         /* Loop the data_gpio_nums to connect data and valid signals via GPIO matrix */
         if (config->data_gpio_nums[i] >= 0) {
-            gpio_func_sel(config->data_gpio_nums[i], PIN_FUNC_GPIO);
             gpio_input_enable(config->data_gpio_nums[i]);
 
             // deprecated, to be removed in in esp-idf v6.0
