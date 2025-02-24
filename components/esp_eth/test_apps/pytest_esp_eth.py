@@ -315,6 +315,19 @@ def test_esp32p4_emac(dut: IdfDut) -> None:
     ethernet_heap_alloc_test(dut)
 
 
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize(
+    'config',
+    [
+        'rmii_clko_esp32p4',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_esp32p4_emac_clko(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='esp_emac_clk_out')
+
+
 # ----------- LAN8720 -----------
 @pytest.mark.eth_lan8720
 @pytest.mark.parametrize(

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -563,4 +563,24 @@ TEST_CASE("internal emac erroneous frames", "[esp_emac]")
     extra_cleanup();
     vEventGroupDelete(eth_event_group);
     vSemaphoreDelete(mutex);
+}
+
+TEST_CASE("internal emac ref rmii clk out", "[esp_emac_clk_out]")
+{
+    esp_eth_mac_t *mac = mac_init(NULL, NULL);
+    TEST_ASSERT_NOT_NULL(mac);
+    esp_eth_phy_t *phy = phy_init(NULL);
+    TEST_ASSERT_NOT_NULL(phy);
+    esp_eth_config_t eth_config = ETH_DEFAULT_CONFIG(mac, phy);
+    esp_eth_handle_t eth_handle = NULL;
+    // install Ethernet driver
+    // This is a simple test and it only verifies the REF RMII output CLK is configured and started, and the internal
+    // EMAC is clocked by it. It does not verify the whole system functionality. As such, it can be executed on the same
+    // test boards which are configured to input REF RMII CLK by default with only minor HW modification.
+    TEST_ESP_OK(esp_eth_driver_install(&eth_config, &eth_handle));
+    extra_eth_config(eth_handle);
+    TEST_ESP_OK(esp_eth_driver_uninstall(eth_handle));
+    TEST_ESP_OK(phy->del(phy));
+    TEST_ESP_OK(mac->del(mac));
+    extra_cleanup();
 }
