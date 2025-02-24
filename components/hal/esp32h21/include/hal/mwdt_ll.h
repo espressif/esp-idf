@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -276,30 +276,22 @@ FORCE_INLINE_ATTR void mwdt_ll_set_intr_enable(timg_dev_t *hw, bool enable)
  * @param hw Beginning address of the peripheral registers.
  * @param clk_src Clock source
  */
-
 FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_source_t clk_src)
 {
-    uint8_t clk_id = 0;
+    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
     switch (clk_src) {
     case MWDT_CLK_SRC_XTAL:
-        clk_id = 0;
+        PCR.timergroup[group_id].timergroup_wdt_clk_conf.tg_wdt_clk_sel = 0;
         break;
     case MWDT_CLK_SRC_RC_FAST:
-        clk_id = 1;
+        PCR.timergroup[group_id].timergroup_wdt_clk_conf.tg_wdt_clk_sel = 1;
         break;
     case MWDT_CLK_SRC_PLL_F48M:
-        clk_id = 2;
+        PCR.timergroup[group_id].timergroup_wdt_clk_conf.tg_wdt_clk_sel = 2;
         break;
     default:
         HAL_ASSERT(false);
         break;
-    }
-
-
-    if (hw == &TIMERG0) {
-        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_sel = clk_id;
-    } else {
-        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_sel = clk_id;
     }
 }
 
@@ -312,11 +304,8 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
 __attribute__((always_inline))
 static inline void mwdt_ll_enable_clock(timg_dev_t *hw, bool en)
 {
-    if (hw == &TIMERG0) {
-        PCR.timergroup0_wdt_clk_conf.tg0_wdt_clk_en = en;
-    } else {
-        PCR.timergroup1_wdt_clk_conf.tg1_wdt_clk_en = en;
-    }
+    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
+    PCR.timergroup[group_id].timergroup_wdt_clk_conf.tg_wdt_clk_en = en;
 }
 
 #ifdef __cplusplus

@@ -23,7 +23,7 @@
 #define SOC_UART_SUPPORTED              1       //TODO: [ESP32H21] IDF-11618
 // #define SOC_GDMA_SUPPORTED              1    //TODO: [ESP32H21] IDF-11603
 // #define SOC_AHB_GDMA_SUPPORTED          1    //TODO: [ESP32H21] IDF-11603
-// #define SOC_GPTIMER_SUPPORTED           1    //TODO: [ESP32H21] IDF-11594
+#define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
 // #define SOC_IEEE802154_BLE_ONLY         1
@@ -436,12 +436,12 @@
 /*--------------------------- TIMER GROUP CAPS ---------------------------------------*/
 #define SOC_TIMER_GROUPS                  (2)
 #define SOC_TIMER_GROUP_TIMERS_PER_GROUP  (1U)
+#define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
 #define SOC_TIMER_GROUP_COUNTER_BIT_WIDTH (54)
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
-#define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
-// #define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
+// #define SOC_TIMER_SUPPORT_ETM             (1)    //TODO: [ESP32H21] IDF-11576
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)

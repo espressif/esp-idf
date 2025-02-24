@@ -103,7 +103,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(200, 20000, value);
+            TEST_ASSERT_UINT_WITHIN(400, 20000, value);     //200 more threshold for cpu on stop process
         }
         printf("restart timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {
@@ -121,7 +121,7 @@ TEST_CASE("gptimer_wallclock_with_various_clock_sources", "[gptimer]")
             printf("get raw count of gptimer %d: %llu\r\n", i, value);
             // convert the raw count to us
             value = value * 1000000 / timer_resolution_hz[i];
-            TEST_ASSERT_UINT_WITHIN(400, 40000, value);
+            TEST_ASSERT_UINT_WITHIN(600, 40000, value);     //same 200 for cpu time
         }
         printf("disable timers\r\n");
         for (int i = 0; i < SOC_TIMER_GROUP_TOTAL_TIMERS; i++) {

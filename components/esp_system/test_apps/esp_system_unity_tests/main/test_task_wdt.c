@@ -16,7 +16,7 @@
 #include "soc/rtc.h"
 #include "soc/soc_caps.h"
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 #include "esp_sleep.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/sleep_cpu.h"
@@ -49,7 +49,7 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_TIMER_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
 TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_wdt]")
 {
     timeout_flag = false;

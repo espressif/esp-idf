@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,8 +16,6 @@
 #include "soc/timer_group_struct.h"
 #include "soc/pcr_struct.h"
 #include "soc/soc_etm_source.h"
-
-//TODO: [ESP32H21] IDF-11594, inherit from h2
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,11 +60,7 @@ extern "C" {
  */
 static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
 {
-    if (group_id == 0) {
-        PCR.timergroup0_conf.tg0_clk_en = enable;
-    } else {
-        PCR.timergroup1_conf.tg1_clk_en = enable;
-    }
+    PCR.timergroup[group_id].timergroup_conf.tg_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -84,15 +78,11 @@ static inline void _timer_ll_enable_bus_clock(int group_id, bool enable)
  */
 static inline void _timer_ll_reset_register(int group_id)
 {
-    if (group_id == 0) {
-        PCR.timergroup0_conf.tg0_rst_en = 1;
-        PCR.timergroup0_conf.tg0_rst_en = 0;
-        TIMERG0.wdtconfig0.wdt_flashboot_mod_en = 0;
-    } else {
-        PCR.timergroup1_conf.tg1_rst_en = 1;
-        PCR.timergroup1_conf.tg1_rst_en = 0;
-        TIMERG1.wdtconfig0.wdt_flashboot_mod_en = 0;
-    }
+    timg_dev_t *hw = TIMER_LL_GET_HW(group_id);
+
+    PCR.timergroup[group_id].timergroup_conf.tg_rst_en = 1;
+    PCR.timergroup[group_id].timergroup_conf.tg_rst_en = 0;
+    hw->wdtconfig0.wdt_flashboot_mod_en = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -109,25 +99,20 @@ static inline void _timer_ll_reset_register(int group_id)
 static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
     (void)timer_num; // only one timer in each group
-    uint8_t clk_id = 0;
+    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
     switch (clk_src) {
     case GPTIMER_CLK_SRC_XTAL:
-        clk_id = 0;
+        PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_sel = 0;
         break;
     case GPTIMER_CLK_SRC_RC_FAST:
-        clk_id = 1;
+        PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_sel = 1;
         break;
     case GPTIMER_CLK_SRC_PLL_F48M:
-        clk_id = 2;
+        PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_sel = 2;
         break;
     default:
         HAL_ASSERT(false);
         break;
-    }
-    if (hw == &TIMERG0) {
-        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_sel = clk_id;
-    } else {
-        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_sel = clk_id;
     }
 }
 
@@ -141,11 +126,9 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
 {
     (void)timer_num; // only one timer in each group
-    if (hw == &TIMERG0) {
-        PCR.timergroup0_timer_clk_conf.tg0_timer_clk_en = en;
-    } else {
-        PCR.timergroup1_timer_clk_conf.tg1_timer_clk_en = en;
-    }
+    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
+
+    PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_en = en;
 }
 
 /**
