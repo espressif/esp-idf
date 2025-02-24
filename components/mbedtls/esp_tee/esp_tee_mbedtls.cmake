@@ -1,18 +1,18 @@
-idf_component_get_property(hal_dir hal COMPONENT_DIR)
 idf_component_get_property(heap_dir heap COMPONENT_DIR)
 
-set(priv_requires soc esp_hw_support)
+set(priv_requires esp_hw_support hal soc)
+
 set(include_dirs "${COMPONENT_DIR}/port/include"
                  "${COMPONENT_DIR}/mbedtls/include"
                  "${COMPONENT_DIR}/mbedtls/library")
 
+# Supporting headers
+list(APPEND include_dirs "${heap_dir}/include")
+
 # Shared GDMA layer for TEE
 set(srcs "${COMPONENT_DIR}/esp_tee/esp_tee_crypto_shared_gdma.c")
 
-# HAL for the AES/SHA peripherals
-list(APPEND srcs "${hal_dir}/aes_hal.c"
-                 "${hal_dir}/sha_hal.c")
-
+# AES-SHA implementation
 list(APPEND include_dirs "${COMPONENT_DIR}/port/aes/include"
                          "${COMPONENT_DIR}/port/aes/dma/include"
                          "${COMPONENT_DIR}/port/sha/core/include")
@@ -23,9 +23,6 @@ list(APPEND srcs "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
 
 list(APPEND srcs "${COMPONENT_DIR}/port/sha/core/sha.c"
                  "${COMPONENT_DIR}/port/sha/esp_sha.c")
-
-# Supporting headers
-list(APPEND include_dirs "${heap_dir}/include")
 
 idf_component_register(INCLUDE_DIRS "${include_dirs}"
                        PRIV_REQUIRES "${priv_requires}"

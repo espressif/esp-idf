@@ -24,12 +24,11 @@ if(esp_tee_build)
                                  "src/secure_boot_v2/secure_boot.c"
                                  "src/${IDF_TARGET}/secure_boot_secure_features.c")
         endif()
-        list(APPEND priv_requires efuse)
     endif()
 
     idf_component_register(SRCS ${tee_srcs}
                            INCLUDE_DIRS ${tee_inc_dirs}
-                           PRIV_REQUIRES efuse)
+                           PRIV_REQUIRES efuse esp_app_format)
     return()
 endif()
 

@@ -13,7 +13,6 @@
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "esp_attr.h"
-#include "bootloader_flash.h"
 #include "hal/brownout_hal.h"
 #include "hal/brownout_ll.h"
 #include "esp_rom_sys.h"

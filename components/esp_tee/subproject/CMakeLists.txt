@@ -24,6 +24,9 @@ list(APPEND EXTRA_COMPONENT_DIRS ${CUSTOM_SECURE_SERVICE_COMPONENT_DIR})
 set(ESP_TEE_BUILD 1)
 set(NON_OS_BUILD 1)
 
+# Additional components
+list(APPEND COMPONENTS bootloader_support efuse mbedtls)
+
 # TEE-specific components
 list(APPEND COMPONENTS tee_flash_mgr tee_ota_ops tee_sec_storage tee_attestation)
 
@@ -36,9 +39,6 @@ set(common_req esp_common esp_hw_support esp_rom freertos hal log newlib soc spi
 if(CONFIG_IDF_TARGET_ARCH_RISCV)
     list(APPEND common_req riscv)
 endif()
-
-# Included for `esp_app_desc` configuration structure
-list(APPEND common_req esp_app_format)
 
 idf_build_set_property(__COMPONENT_REQUIRES_COMMON "${common_req}")
 idf_build_set_property(__OUTPUT_SDKCONFIG 0)

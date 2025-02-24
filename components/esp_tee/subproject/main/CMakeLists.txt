@@ -1,12 +1,6 @@
 idf_build_get_property(target IDF_TARGET)
 idf_build_get_property(arch IDF_TARGET_ARCH)
-idf_build_get_property(idf_path IDF_PATH)
-
-idf_component_get_property(efuse_dir efuse COMPONENT_DIR)
-idf_component_get_property(esp_hw_support_dir esp_hw_support COMPONENT_DIR)
-idf_component_get_property(hal_dir hal COMPONENT_DIR)
 idf_component_get_property(heap_dir heap COMPONENT_DIR)
-idf_component_get_property(mbedtls_dir mbedtls COMPONENT_DIR)
 
 set(srcs)
 set(include)
@@ -45,31 +39,11 @@ list(APPEND include "include"
 # Heap
 list(APPEND srcs "common/multi_heap.c")
 
-# Sources and headers shared with IDF
-list(APPEND include "${efuse_dir}/private_include"
-                    "${efuse_dir}/${target}/private_include")
-
-list(APPEND srcs "${hal_dir}/apm_hal.c"
-                 "${hal_dir}/brownout_hal.c"
-                 "${hal_dir}/wdt_hal_iram.c")
-
-if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
-    list(APPEND srcs "${hal_dir}/spi_flash_hal.c")
-endif()
-
 # TLSF implementation for heap
-list(APPEND include "${heap_dir}/include"
-                    "${heap_dir}/tlsf"
+list(APPEND include "${heap_dir}/tlsf"
                     "${heap_dir}/tlsf/include")
-list(APPEND srcs "${heap_dir}/tlsf/tlsf.c")
 
-# Crypto
-# AES
-list(APPEND include "${mbedtls_dir}/port/include"
-                    "${mbedtls_dir}/port/aes/include"
-                    "${mbedtls_dir}/port/aes/dma/include")
-# SHA
-list(APPEND include "${mbedtls_dir}/port/sha/core/include")
+list(APPEND srcs "${heap_dir}/tlsf/tlsf.c")
 
 # esp_app_desc_t configuration structure for TEE
 list(APPEND srcs "common/esp_app_desc_tee.c")
