@@ -55,7 +55,7 @@ static void spi_out_init_trans(void)
 {
     for (int i = 0; i < CONFIG_BT_BLE_LOG_SPI_OUT_QUEUE_SIZE; i++) {
         // Allocate memory for SPI transaction
-        uint8_t *buf = (uint8_t *)spi_bus_dma_memory_alloc(SPI_OUT_BUS, CONFIG_BT_BLE_LOG_SPI_OUT_TRANS_BUF_SIZE, 0);
+        uint8_t *buf = (uint8_t *)heap_caps_malloc(CONFIG_BT_BLE_LOG_SPI_OUT_TRANS_BUF_SIZE, MALLOC_CAP_DMA);
         assert(buf);
 
         // Initialize new trans
