@@ -544,8 +544,9 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
  */
 static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in_sig_idx)
 {
-    uint32_t val = REG_GET_BIT(GPIO_FUNC0_IN_SEL_CFG_REG + in_sig_idx * 4, GPIO_SIG0_IN_SEL);
-    return (val ? val : -1);
+    gpio_func_in_sel_cfg_reg_t reg;
+    reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
+    return (reg.sig_in_sel ? reg.func_in_sel : -1);
 }
 
 /**
@@ -689,21 +690,21 @@ static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, gpio_num_t gpio_n
  */
 static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, gpio_num_t gpio_num, gpio_int_type_t intr_type)
 {
-    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_14) &&
-               "only gpio7~14 support deep sleep wake-up function");
+    HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
+               "only gpio5~11 support deep sleep wake-up function");
 
     LP_AON.ext_wakeup_cntl.aon_ext_wakeup_filter = 1;
 
     uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
-    wakeup_sel_mask |= BIT(gpio_num - 7);
+    wakeup_sel_mask |= BIT(gpio_num - 5);
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel, wakeup_sel_mask);
 
     bool trigger_level = (intr_type == GPIO_INTR_LOW_LEVEL) ? 0 : 1;
     uint32_t wakeup_level_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_lv);
     if (trigger_level) {
-        wakeup_level_mask |= BIT(gpio_num - 7);
+        wakeup_level_mask |= BIT(gpio_num - 5);
     } else {
-        wakeup_level_mask &= ~BIT(gpio_num - 7);
+        wakeup_level_mask &= ~BIT(gpio_num - 5);
     }
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_lv, wakeup_level_mask);
 }
@@ -716,11 +717,11 @@ static inline void gpio_ll_deepsleep_wakeup_enable(gpio_dev_t *hw, gpio_num_t gp
  */
 static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, gpio_num_t gpio_num)
 {
-    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_14) &&
-               "only gpio7~14 support deep sleep wake-up function");
+    HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
+               "only gpio5~11 support deep sleep wake-up function");
 
     uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
-    wakeup_sel_mask &= ~BIT(gpio_num - 7);
+    wakeup_sel_mask &= ~BIT(gpio_num - 5);
     HAL_FORCE_MODIFY_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel, wakeup_sel_mask);
 }
 
@@ -733,11 +734,11 @@ static inline void gpio_ll_deepsleep_wakeup_disable(gpio_dev_t *hw, gpio_num_t g
  */
 static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t gpio_num)
 {
-    HAL_ASSERT((gpio_num >= GPIO_NUM_7 && gpio_num <= GPIO_NUM_14) &&
-               "only gpio7~14 support deep sleep wake-up function");
+    HAL_ASSERT((gpio_num >= GPIO_NUM_5 && gpio_num <= GPIO_NUM_11) &&
+               "only gpio5~11 support deep sleep wake-up function");
 
     uint32_t wakeup_sel_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_AON.ext_wakeup_cntl, aon_ext_wakeup_sel);
-    return wakeup_sel_mask & BIT(gpio_num - 7);
+    return wakeup_sel_mask & BIT(gpio_num - 5);
 }
 
 #ifdef __cplusplus

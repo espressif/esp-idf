@@ -25,12 +25,12 @@
     * - GPIO0
       -
       -
-      - Strapping 管脚
+      -
 
     * - GPIO1
       - ADC1_CH0
       -
-      - Strapping 管脚
+      -
 
     * - GPIO2
       - ADC1_CH1
@@ -65,7 +65,7 @@
     * - GPIO8
       -
       - LP_GPIO3
-      -
+      - Strapping 管脚
 
     * - GPIO9
       -
@@ -154,7 +154,7 @@
 
 .. note::
 
-    - Strapping 管脚：GPIO0、GPIO1、GPIO13 和 GPIO14 是 Strapping 管脚。更多信息请参考 `ESP32-H21 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
+    - Strapping 管脚：GPIO8、GPIO13 和 GPIO14 是 Strapping 管脚。更多信息请参考 `ESP32-H21 技术规格书 <{IDF_TARGET_DATASHEET_CN_URL}>`_。
     - SPI0/1：GPIO19 ~ GPIO25 通常用于 SPI flash，不推荐用于其他用途。
     - USB-JTAG：GPIO17 和 GPIO18 默认用于 USB-JTAG。如果将它们配置为普通 GPIO，驱动程序将禁用 USB-JTAG 功能。
 

@@ -192,7 +192,7 @@
 #define SOC_GPIO_PIN_COUNT                      26
 // #define SOC_GPIO_SUPPORT_PIN_GLITCH_FILTER      1
 // #define SOC_GPIO_FLEX_GLITCH_FILTER_NUM         8
-// #define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
+#define SOC_GPIO_SUPPORT_PIN_HYS_FILTER         1
 
 // GPIO peripheral has the ETM extension
 // #define SOC_GPIO_SUPPORT_ETM          1
@@ -216,8 +216,10 @@
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
+// LP_IOs and DIG_IOs can be hold during deep sleep and after waking up
+#define SOC_GPIO_SUPPORT_HOLD_IO_IN_DSLP (1)
 // Support to hold a single digital I/O when the digital domain is powered off
-// #define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
+#define SOC_GPIO_SUPPORT_HOLD_SINGLE_IO_IN_DSLP  (1)
 
 // The Clock Out signal is route to the pin by GPIO matrix
 // #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1)
@@ -227,9 +229,8 @@
 /*-------------------------- RTCIO CAPS --------------------------------------*/
 /* No dedicated LP_IOMUX subsystem on ESP32-H2. LP functions are still supported
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
-// #define SOC_RTCIO_PIN_COUNT         (8U)
-// #define SOC_RTCIO_HOLD_SUPPORTED    (1)
-// #define SOC_RTCIO_VALID_RTCIO_MASK  (0x7F80)
+#define SOC_RTCIO_PIN_COUNT         (7U)
+#define SOC_RTCIO_HOLD_SUPPORTED    (1)
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
 #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
