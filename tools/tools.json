@@ -266,36 +266,36 @@
       "versions": [
         {
           "linux-amd64": {
-            "sha256": "aee15b8e02440f9ec6a8070f017621dc400dbd62a4701f9cf456dbe34d2a0c4d",
-            "size": 309829872,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-x86_64-linux-gnu.tar.xz"
+            "sha256": "2fadcb207e0cfa43c346bea19faae75b93564ce3596c329a05581efda904b4bd",
+            "size": 332469648,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-x86_64-linux-gnu.tar.xz"
           },
           "linux-arm64": {
-            "sha256": "14abbc368d9c153270aa4d22ce28d78633cb0f1ca83d4be70591d9e39ae9bc82",
-            "size": 295561044,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-aarch64-linux-gnu.tar.xz"
+            "sha256": "1b89303c0441ec50e33e60e95655fb2ec3404438492210224f74ed266fffd9be",
+            "size": 314758500,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-aarch64-linux-gnu.tar.xz"
           },
           "linux-armhf": {
-            "sha256": "4133285303aabb1831c477536a13413319a569170b0aa54b92abe69cc0e7b938",
-            "size": 298186872,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-arm-linux-gnueabihf.tar.xz"
+            "sha256": "3b97742bc5901fed574796fb9af68fa87109db7c270a66ec0238c1cccc5c3fd9",
+            "size": 316153008,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-arm-linux-gnueabihf.tar.xz"
           },
           "macos": {
-            "sha256": "b4641ec4dd574b6b7d037aa1bb2e5ff5a8a4623c88e89668db656282eb1d9dc8",
-            "size": 282868024,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-x86_64-apple-darwin.tar.xz"
+            "sha256": "87105e122811ca1903c59a7c348b6d76a07743c62e76928e06cd0e1d1a189700",
+            "size": 296945876,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-x86_64-apple-darwin.tar.xz"
           },
           "macos-arm64": {
-            "sha256": "5d2e187ef40ecc9996630a7c6efcc19bdfd32ec4ce8cc4dd3014cd24e7016560",
-            "size": 261757404,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-aarch64-apple-darwin.tar.xz"
+            "sha256": "802b6221789d93ac384e32dd857f2b8bd12e5eb6abc0a4c0f57966a1e9535a05",
+            "size": 272363128,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-aarch64-apple-darwin.tar.xz"
           },
-          "name": "esp-18.1.2_20240912",
+          "name": "esp-19.1.2_20250211",
           "status": "recommended",
           "win64": {
-            "sha256": "c4af15073b105dc174c0452dfd1875bab200412fa3151c0363cfc0d30abf5173",
-            "size": 429583224,
-            "url": "https://github.com/espressif/llvm-project/releases/download/esp-18.1.2_20240912/clang-esp-18.1.2_20240912-x86_64-w64-mingw32.tar.xz"
+            "sha256": "c6d60b3bb0a94a8405993f9830347b1fdb6a8143acec67b701a804ff89c4b541",
+            "size": 466584068,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250211/clang-esp-19.1.2_20250211-x86_64-w64-mingw32.tar.xz"
           }
         }
       ]
