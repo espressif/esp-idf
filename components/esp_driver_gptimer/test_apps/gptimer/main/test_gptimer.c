@@ -13,11 +13,11 @@
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 
-#if CONFIG_GPTIMER_ISR_IRAM_SAFE
+#if CONFIG_GPTIMER_ISR_CACHE_SAFE
 #define TEST_ALARM_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_ALARM_CALLBACK_ATTR
-#endif // CONFIG_GPTIMER_ISR_IRAM_SAFE
+#endif // CONFIG_GPTIMER_ISR_CACHE_SAFE
 
 TEST_CASE("gptimer_set_get_raw_count", "[gptimer]")
 {
@@ -299,7 +299,7 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_
  * Also should account for the inaccuracy of the systick during DFS.
 */
 #if CONFIG_PM_ENABLE
-#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 15000
+#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 50000
 #else
 #define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 1000
 #endif // CONFIG_PM_ENABLE

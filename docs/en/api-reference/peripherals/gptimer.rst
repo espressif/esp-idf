@@ -3,350 +3,395 @@ General Purpose Timer (GPTimer)
 
 :link_to_translation:`zh_CN:[中文]`
 
-Introduction
-------------
 
-GPTimer (General Purpose Timer) is the driver of {IDF_TARGET_NAME} Timer Group peripheral. The hardware timer features high resolution and flexible alarm action. A timer alarm occurs when the internal counter of a timer reaches a specific target value. At that moment, a user-registered per-timer callback function is triggered.
+This document introduces the features of the General Purpose Timer (GPTimer) driver in ESP-IDF. The table of contents is as follows:
 
-General-purpose timers are typically used in the following scenarios:
+.. contents::
+    :local:
+    :depth: 2
 
-- To run freely like a clock, providing high-resolution timestamps anytime and anywhere;
-- To generate periodic alarms that trigger events at regular intervals;
-- To generate one-shot alarms that respond at a specific target time.
+Overview
+--------
 
-Functional Overview
--------------------
+GPTimer is a dedicated driver for the {IDF_TARGET_NAME} [`Timer Group peripheral <{IDF_TARGET_TRM_EN_URL}#timg>`__]. This timer can select different clock sources and prescalers to meet the requirements of nanosecond-level resolution. Additionally, it has flexible timeout alarm functions and allows automatic updating of the count value at the alarm moment, achieving very precise timing cycles.
 
-The following sections of this document cover the typical steps to install and operate a timer:
+Based on the **high resolution, high count range, and high response** capabilities of the hardware timer, the main application scenarios of this driver include:
 
-.. list::
+- Running freely as a calendar clock to provide timestamp services for other modules
+- Generating periodic alarms to complete periodic tasks
+- Generating one-shot alarms, which can be used to implement a monotonic software timer list with asynchronous updates of alarm values
+- Working with the GPIO module to achieve PWM signal output and input capture
+- etc.
 
-    - :ref:`gptimer-resource-allocation` - covers which parameters should be set up to get a timer handle and how to recycle the resources when GPTimer finishes working.
-    - :ref:`set-and-get-count-value` - covers how to force the timer counting from a start point and how to get the count value at anytime.
-    - :ref:`set-up-alarm-action` - covers the parameters that should be set up to enable the alarm event.
-    - :ref:`gptimer-register-event-callbacks` - covers how to hook user specific code to the alarm event callback function.
-    - :ref:`enable-and-disable-timer` - covers how to enable and disable the timer.
-    - :ref:`start-and-stop-timer` - shows some typical use cases that start the timer with different alarm behavior.
-    :SOC_TIMER_SUPPORT_ETM: - :ref:`gptimer-etm-event-and-task` - describes what the events and tasks can be connected to the ETM channel.
-    - :ref:`gptimer-power-management` - describes how different source clock selections can affect power consumption.
-    - :ref:`gptimer-iram-safe` - describes tips on how to make the timer interrupt and IO control functions work better along with a disabled cache.
-    - :ref:`gptimer-thread-safety` - lists which APIs are guaranteed to be thread safe by the driver.
-    - :ref:`gptimer-kconfig-options` - lists the supported Kconfig options that can be used to make a different effect on driver behavior.
+Quick Start
+-----------
 
-.. _gptimer-resource-allocation:
+This section provides a concise overview of how to use the GPTimer driver. Through practical examples, it demonstrates how to initialize and start a timer, configure alarm events, and register callback functions. The typical usage flow is as follows:
 
-Resource Allocation
-^^^^^^^^^^^^^^^^^^^
+.. blockdiag::
+    :scale: 100%
+    :caption: GPTimer driver's general usage flow (click to enlarge)
+    :align: center
 
-Different ESP chips might have different numbers of independent timer groups, and within each group, there could also be several independent timers. [1]_
+    blockdiag {
+        default_fontsize = 14;
+        node_width = 250;
+        node_height = 80;
+        class emphasis [color = pink, style = dashed];
 
-A GPTimer instance is represented by :cpp:type:`gptimer_handle_t`. The driver behind manages all available hardware resources in a pool, so that you do not need to care about which timer and which group it belongs to.
+        create [label="gptimer_new_timer"];
+        config [label="gptimer_set_alarm_action \n gptimer_register_event_callbacks"];
+        enable [label="gptimer_enable"];
+        start [label="gptimer_start"];
+        running [label="Timer Running", class="emphasis"]
+        stop [label="gptimer_stop"];
+        disable [label="gptimer_disable"];
+        cleanup [label="gptimer_delete_timer"];
 
-To install a timer instance, there is a configuration structure that needs to be given in advance: :cpp:type:`gptimer_config_t`:
+        create -> config -> enable -> start -> running -> stop -> disable -> cleanup;
+        enable -> start [folded];
+        stop -> disable [folded];
+    }
 
-- :cpp:member:`gptimer_config_t::clk_src` selects the source clock for the timer. The available clocks are listed in :cpp:type:`gptimer_clock_source_t`, you can only pick one of them. For the effect on power consumption of different clock source, please refer to Section :ref:`gptimer-power-management`.
-- :cpp:member:`gptimer_config_t::direction` sets the counting direction of the timer, supported directions are listed in :cpp:type:`gptimer_count_direction_t`, you can only pick one of them.
-- :cpp:member:`gptimer_config_t::resolution_hz` sets the resolution of the internal counter. Each count step is equivalent to **1 / resolution_hz** seconds.
-- :cpp:member:`gptimer_config::intr_priority` sets the priority of the timer interrupt. If it is set to ``0``, the driver will allocate an interrupt with a default priority. Otherwise, the driver will use the given priority.
-- :cpp:member:`gptimer_config_t::allow_pd` configures if the driver allows the system to power down the peripheral in light sleep mode. Before entering sleep, the system will backup the GPTimer register context, which will be restored later when the system exit the sleep mode. Powering down the peripheral can save more power, but at the cost of more memory consumed to save the register context. It's a tradeoff between power consumption and memory consumption. This configuration option relies on specific hardware feature, if you enable it on an unsupported chip, you will see error message like ``not able to power down in light sleep``.
-- Optional :cpp:member:`gptimer_config_t::intr_shared` sets whether or not mark the timer interrupt source as a shared one. For the pros/cons of a shared interrupt, you can refer to :doc:`Interrupt Handling <../../api-reference/system/intr_alloc>`.
+Creating and Starting a Timer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-With all the above configurations set in the structure, the structure can be passed to :cpp:func:`gptimer_new_timer` which will instantiate the timer instance and return a handle of the timer.
-
-The function can fail due to various errors such as insufficient memory, invalid arguments, etc. Specifically, when there are no more free timers (i.e., all hardware resources have been used up), then :c:macro:`ESP_ERR_NOT_FOUND` will be returned. The total number of available timers is represented by the :c:macro:`SOC_TIMER_GROUP_TOTAL_TIMERS` and its value depends on the ESP chip.
-
-If a previously created GPTimer instance is no longer required, you should recycle the timer by calling :cpp:func:`gptimer_del_timer`. This allows the underlying HW timer to be used for other purposes. Before deleting a GPTimer handle, please disable it by :cpp:func:`gptimer_disable` in advance or make sure it has not enabled yet by :cpp:func:`gptimer_enable`.
-
-Creating a GPTimer Handle with Resolution of 1 MHz
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+First, we need to create a timer instance. The following code shows how to create a timer with a resolution of 1 MHz:
 
 .. code:: c
 
-   gptimer_handle_t gptimer = NULL;
-   gptimer_config_t timer_config = {
-       .clk_src = GPTIMER_CLK_SRC_DEFAULT,
-       .direction = GPTIMER_COUNT_UP,
-       .resolution_hz = 1 * 1000 * 1000, // 1MHz, 1 tick = 1us
-   };
-   ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
+    gptimer_handle_t gptimer = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT, // Select the default clock source
+        .direction = GPTIMER_COUNT_UP,      // Counting direction is up
+        .resolution_hz = 1 * 1000 * 1000,   // Resolution is 1 MHz, i.e., 1 tick equals 1 microsecond
+    };
+    // Create a timer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
+    // Enable the timer
+    ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    // Start the timer
+    ESP_ERROR_CHECK(gptimer_start(gptimer));
 
-.. _set-and-get-count-value:
+When creating a timer instance, we need to configure parameters such as the clock source, counting direction, and resolution through :cpp:type:`gptimer_config_t`. These parameters determine how the timer works. Then, call the :cpp:func:`gptimer_new_timer` function to create a new timer instance, which returns a handle pointing to the new instance. The timer handle is essentially a pointer to the timer memory object, of type :cpp:type:`gptimer_handle_t`.
 
-Set and Get Count Value
-^^^^^^^^^^^^^^^^^^^^^^^
+Here are the other configuration parameters of the :cpp:type:`gptimer_config_t` structure and their explanations:
 
-When the GPTimer is created, the internal counter will be reset to zero by default. The counter value can be updated asynchronously by :cpp:func:`gptimer_set_raw_count`. The maximum count value is dependent on the bit width of the hardware timer, which is also reflected by the SOC macro :c:macro:`SOC_TIMER_GROUP_COUNTER_BIT_WIDTH`. When updating the raw count of an active timer, the timer will immediately start counting from the new value.
-
-Count value can be retrieved by :cpp:func:`gptimer_get_raw_count`, at any time.
-
-.. _set-up-alarm-action:
-
-Set up Alarm Action
-^^^^^^^^^^^^^^^^^^^
-
-For most of the use cases of GPTimer, you should set up the alarm action before starting the timer, except for the simple wall-clock scenario, where a free running timer is enough. To set up the alarm action, you should configure several members of :cpp:type:`gptimer_alarm_config_t` based on how you make use of the alarm event:
-
-- :cpp:member:`gptimer_alarm_config_t::alarm_count` sets the target count value that triggers the alarm event. You should also take the counting direction into consideration when setting the alarm value. Specially, :cpp:member:`gptimer_alarm_config_t::alarm_count` and :cpp:member:`gptimer_alarm_config_t::reload_count` cannot be set to the same value when :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is true, as keeping reload with a target alarm count is meaningless. Please also note, because of the interrupt latency, it's not recommended to set the alarm period smaller than 5 us.
-
-- :cpp:member:`gptimer_alarm_config_t::reload_count` sets the count value to be reloaded when the alarm event happens. This configuration only takes effect when :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` is set to true.
-
-- :cpp:member:`gptimer_alarm_config_t::auto_reload_on_alarm` flag sets whether to enable the auto-reload feature. If enabled, the hardware timer will reload the value of :cpp:member:`gptimer_alarm_config_t::reload_count` into counter immediately when an alarm event happens.
-
-To make the alarm configurations take effect, you should call :cpp:func:`gptimer_set_alarm_action`. Especially, if :cpp:type:`gptimer_alarm_config_t` is set to ``NULL``, the alarm function will be disabled.
+- :cpp:member:`gptimer_config_t::clk_src` selects the clock source for the timer. Available clock sources are listed in :cpp:type:`gptimer_clock_source_t`, and only one can be selected. Different clock sources vary in resolution, accuracy, and power consumption.
+- :cpp:member:`gptimer_config_t::direction` sets the counting direction of the timer. Supported directions are listed in :cpp:type:`gptimer_count_direction_t`, and only one can be selected.
+- :cpp:member:`gptimer_config_t::resolution_hz` sets the resolution of the internal counter. Each tick is equivalent to **1 / resolution_hz** seconds.
+- :cpp:member:`gptimer_config_t::intr_priority` sets the interrupt priority. If set to ``0``, a default priority interrupt will be allocated; otherwise, the specified priority will be used.
+- :cpp:member:`gptimer_config_t::flags` is used to fine-tune some behaviors of the driver, including the following options:
+    - :cpp:member:`gptimer_config_t::flags::allow_pd` configures whether the driver allows the system to power down the peripheral in sleep mode. Before entering sleep, the system will back up the GPTimer register context, which will be restored when the system wakes up. Note that powering down the peripheral can save power but will consume more memory to save the register context. You need to balance power consumption and memory usage. This configuration option depends on specific hardware features. If enabled on an unsupported chip, you will see an error message like ``not able to power down in light sleep``.
 
 .. note::
 
-    If an alarm value is set and the timer has already exceeded this value, the alarm will be triggered immediately.
+    Note that if all hardware timers in the current chip have been allocated, :cpp:func:`gptimer_new_timer` will return the :c:macro:`ESP_ERR_NOT_FOUND` error.
 
-.. _gptimer-register-event-callbacks:
+Before starting the timer, it must be enabled. The enable function :cpp:func:`gptimer_enable` can switch the internal state machine of the driver to the active state, which includes some system service requests/registrations, such as applying for a power management lock. The corresponding disable function is :cpp:func:`gptimer_disable`, which releases all system services.
 
-Register Event Callbacks
-^^^^^^^^^^^^^^^^^^^^^^^^
+.. note::
 
-After the timer starts up, it can generate a specific event (e.g., the "Alarm Event") dynamically. If you have some functions that should be called when the event happens, please hook your function to the interrupt service routine by calling :cpp:func:`gptimer_register_event_callbacks`. All supported event callbacks are listed in :cpp:type:`gptimer_event_callbacks_t`:
+    When calling the :cpp:func:`gptimer_enable` and :cpp:func:`gptimer_disable` functions, they need to be used in pairs. This means you cannot call :cpp:func:`gptimer_enable` or :cpp:func:`gptimer_disable` twice in a row. This pairing principle ensures the correct management and release of resources.
 
--  :cpp:member:`gptimer_event_callbacks_t::on_alarm` sets a callback function for alarm events. As this function is called within the ISR context, you must ensure that the function does not attempt to block (e.g., by making sure that only FreeRTOS APIs with ``ISR`` suffix are called from within the function). The function prototype is declared in :cpp:type:`gptimer_alarm_cb_t`.
+The :cpp:func:`gptimer_start` function is used to start the timer. After starting, the timer will begin counting and will automatically overflow and restart from 0 when it reaches the maximum or minimum value (depending on the counting direction).
+The :cpp:func:`gptimer_stop` function is used to stop the timer. Note that stopping a timer does not clear the current value of the counter. To clear the counter, use the :cpp:func:`gptimer_set_raw_count` function introduced later.
+The :cpp:func:`gptimer_start` and :cpp:func:`gptimer_stop` functions follow the idempotent principle. This means that if the timer is already started, calling the :cpp:func:`gptimer_start` function again will have no effect. Similarly, if the timer is already stopped, calling the :cpp:func:`gptimer_stop` function again will have no effect.
 
-You can save your own context to :cpp:func:`gptimer_register_event_callbacks` as well, via the parameter ``user_data``. The user data will be directly passed to the callback function.
+.. note::
 
-This function lazy installs the interrupt service for the timer but not enable it. So please call this function before :cpp:func:`gptimer_enable`, otherwise the :c:macro:`ESP_ERR_INVALID_STATE` error will be returned. See Section :ref:`enable-and-disable-timer` for more information.
+    However, note that when the timer is in the **intermediate state** of starting (the start has begun but not yet completed), if another thread calls the :cpp:func:`gptimer_start` or :cpp:func:`gptimer_stop` function, it will return the :c:macro:`ESP_ERR_INVALID_STATE` error to avoid triggering uncertain behavior.
 
-.. _enable-and-disable-timer:
+Setting and Getting the Count Value
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Enable and Disable Timer
-^^^^^^^^^^^^^^^^^^^^^^^^
+When a timer is newly created, its internal counter value defaults to zero. You can set other count values using the :cpp:func:`gptimer_set_raw_count` function. The maximum count value depends on the bit width of the hardware timer (usually no less than ``54 bits``).
 
-Before doing IO control to the timer, you need to enable the timer first, by calling :cpp:func:`gptimer_enable`. This function:
+.. note::
 
-* Switches the timer driver state from **init** to **enable**.
-* Enables the interrupt service if it has been lazy installed by :cpp:func:`gptimer_register_event_callbacks`.
-* Acquires a proper power management lock if a specific clock source (e.g., APB clock) is selected. See Section :ref:`gptimer-power-management` for more information.
+    If the timer is already running, :cpp:func:`gptimer_set_raw_count` will make the timer immediately jump to the new value and start counting from the newly set value.
 
-Calling :cpp:func:`gptimer_disable` does the opposite, that is, put the timer driver back to the **init** state, disable the interrupts service and release the power management lock.
-
-.. _start-and-stop-timer:
-
-Start and Stop Timer
-^^^^^^^^^^^^^^^^^^^^
-
-The basic IO operation of a timer is to start and stop. Calling :cpp:func:`gptimer_start` can make the internal counter work, while calling :cpp:func:`gptimer_stop` can make the counter stop working. The following illustrates how to start a timer with or without an alarm event.
-
-Calling :cpp:func:`gptimer_start` transits the driver state from **enable** to **run**, and vice versa. You need to make sure the start and stop functions are used in pairs, otherwise, the functions may return :c:macro:`ESP_ERR_INVALID_STATE`. Most of the time, this error means that the timer is already stopped or in the "start protection" state (i.e., :cpp:func:`gptimer_start` is called but not finished).
-
-Start Timer as a Wall Clock
-~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The :cpp:func:`gptimer_get_raw_count` function is used to get the current count value of the timer. This count value is the accumulated count since the timer started (assuming it started from 0). Note that the returned value has not been converted to any unit; it is a pure count value. You need to convert the count value to time units based on the actual resolution of the timer. The timer's resolution can be obtained using the :cpp:func:`gptimer_get_resolution` function.
 
 .. code:: c
 
-    ESP_ERROR_CHECK(gptimer_enable(gptimer));
-    ESP_ERROR_CHECK(gptimer_start(gptimer));
-    // Retrieve the timestamp at any time
+    // Check the timer's resolution
+    uint32_t resolution_hz;
+    ESP_ERROR_CHECK(gptimer_get_resolution(gptimer, &resolution_hz));
+    // Read the current count value
     uint64_t count;
     ESP_ERROR_CHECK(gptimer_get_raw_count(gptimer, &count));
+    // (Optional) Convert the count value to time units (seconds)
+    double time = (double)count / resolution_hz;
 
-Trigger Period Events
-~~~~~~~~~~~~~~~~~~~~~
+Triggering Periodic Alarm Events
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. code:: c
+In addition to the timestamp function, the general-purpose timer also supports alarm functions. The following code shows how to set a periodic alarm that triggers once per second:
 
-    typedef struct {
-        uint64_t event_count;
-    } example_queue_element_t;
+.. code-block:: c
+    :emphasize-lines: 10-32
+
+    gptimer_handle_t gptimer = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT, // Select the default clock source
+        .direction = GPTIMER_COUNT_UP,      // Counting direction is up
+        .resolution_hz = 1 * 1000 * 1000,   // Resolution is 1 MHz, i.e., 1 tick equals 1 microsecond
+    };
+    // Create a timer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
     static bool example_timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
     {
-        BaseType_t high_task_awoken = pdFALSE;
-        QueueHandle_t queue = (QueueHandle_t)user_ctx;
-        // Retrieve the count value from event data
-        example_queue_element_t ele = {
-            .event_count = edata->count_value
-        };
-        // Optional: send the event data to other task by OS queue
-        // Do not introduce complex logics in callbacks
-        // Suggest dealing with event data in the main loop, instead of in this callback
-        xQueueSendFromISR(queue, &ele, &high_task_awoken);
-        // return whether we need to yield at the end of ISR
-        return high_task_awoken == pdTRUE;
+        // General process for handling event callbacks:
+        // 1. Retrieve user context data from user_ctx (passed in from gptimer_register_event_callbacks)
+        // 2. Get alarm event data from edata, such as edata->count_value
+        // 3. Perform user-defined operations
+        // 4. Return whether a high-priority task was awakened during the above operations to notify the scheduler to switch tasks
+        return false;
     }
 
     gptimer_alarm_config_t alarm_config = {
-        .reload_count = 0, // counter will reload with 0 on alarm event
-        .alarm_count = 1000000, // period = 1s @resolution 1MHz
-        .flags.auto_reload_on_alarm = true, // enable auto-reload
+        .reload_count = 0,      // When the alarm event occurs, the timer will automatically reload to 0
+        .alarm_count = 1000000, // Set the actual alarm period, since the resolution is 1us, 1000000 represents 1s
+        .flags.auto_reload_on_alarm = true, // Enable auto-reload function
     };
+    // Set the timer's alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     gptimer_event_callbacks_t cbs = {
-        .on_alarm = example_timer_on_alarm_cb, // register user callback
+        .on_alarm = example_timer_on_alarm_cb, // Call the user callback function when the alarm event occurs
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
+    // Register timer event callback functions, allowing user context to be carried
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    // Enable the timer
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    // Start the timer
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
-Trigger One-Shot Event
-~~~~~~~~~~~~~~~~~~~~~~
+The :cpp:func:`gptimer_set_alarm_action` function is used to configure the timer's alarm action. When the timer count value reaches the specified alarm value, an alarm event will be triggered. Users can choose to automatically reload the preset count value when the alarm event occurs, thereby achieving periodic alarms.
 
-.. code:: c
+Here are the necessary members of the :cpp:type:`gptimer_alarm_config_t` structure and their functions. By configuring these parameters, users can flexibly control the timer's alarm behavior to meet different application needs.
 
-    typedef struct {
-        uint64_t event_count;
-    } example_queue_element_t;
+- :cpp:member:`gptimer_alarm_config_t::alarm_count` sets the target count value that triggers the alarm event. When the timer count value reaches this value, an alarm event will be triggered. When setting the alarm value, consider the counting direction of the timer. If the current count value has **exceeded** the alarm value, the alarm event will be triggered immediately.
+- :cpp:member:`gptimer_alarm_config_t::reload_count` sets the count value to be reloaded when the alarm event occurs. This configuration only takes effect when the :cpp:member:`gptimer_alarm_config_t::flags::auto_reload_on_alarm` flag is ``true``. The actual alarm period will be determined by ``|alarm_count - reload_count|``. From a practical application perspective, it is not recommended to set the alarm period to less than 5us.
+
+.. note::
+
+    Specifically, ``gptimer_set_alarm_action(gptimer, NULL);`` means disabling the timer's alarm function.
+
+The :cpp:func:`gptimer_register_event_callbacks` function is used to register the timer event callback functions. When the timer triggers a specific event (such as an alarm event), the user-defined callback function will be called. Users can perform custom operations in the callback function, such as sending signals, to achieve more flexible event handling mechanisms. Since the callback function is executed in the interrupt context, avoid performing complex operations (including any operations that may cause blocking) in the callback function to avoid affecting the system's real-time performance. The :cpp:func:`gptimer_register_event_callbacks` function also allows users to pass a context pointer to access user-defined data in the callback function.
+
+The supported event callback functions for GPTimer are as follows:
+
+- :cpp:type:`gptimer_alarm_cb_t` alarm event callback function, which has a corresponding data structure :cpp:type:`gptimer_alarm_event_data_t` for passing alarm event-related data:
+  - :cpp:member:`gptimer_alarm_event_data_t::alarm_value` stores the alarm value, which is the target count value that triggers the alarm event.
+  - :cpp:member:`gptimer_alarm_event_data_t::count_value` stores the count value when entering the interrupt handler after the alarm occurs. This value may differ from the alarm value due to interrupt handler delays, and the count value may have been automatically reloaded when the alarm occurred.
+
+.. note::
+
+    Be sure to register the callback function before calling :cpp:func:`gptimer_enable`, otherwise the timer event will not correctly trigger the interrupt service.
+
+Triggering One-Shot Alarm Events
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some application scenarios only require triggering a one-shot alarm interrupt. The following code shows how to set a one-shot alarm that triggers after 1 second:
+
+.. code-block:: c
+    :emphasize-lines: 12-13,24
+
+    gptimer_handle_t gptimer = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT, // Select the default clock source
+        .direction = GPTIMER_COUNT_UP,      // Counting direction is up
+        .resolution_hz = 1 * 1000 * 1000,   // Resolution is 1 MHz, i.e., 1 tick equals 1 microsecond
+    };
+    // Create a timer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
     static bool example_timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
     {
-        BaseType_t high_task_awoken = pdFALSE;
-        QueueHandle_t queue = (QueueHandle_t)user_ctx;
-        // Stop timer the sooner the better
+        // This is just a demonstration of how to stop the timer when the alarm occurs for the first time
         gptimer_stop(timer);
-        // Retrieve the count value from event data
-        example_queue_element_t ele = {
-            .event_count = edata->count_value
-        };
-        // Optional: send the event data to other task by OS queue
-        xQueueSendFromISR(queue, &ele, &high_task_awoken);
-        // return whether we need to yield at the end of ISR
-        return high_task_awoken == pdTRUE;
+        // General process for handling event callbacks:
+        // 1. Retrieve user context data from user_ctx (passed in from gptimer_register_event_callbacks)
+        // 2. Get alarm event data from edata, such as edata->count_value
+        // 3. Perform user-defined operations
+        // 4. Return whether a high-priority task was awakened during the above operations to notify the scheduler to switch tasks
+        return false;
     }
 
     gptimer_alarm_config_t alarm_config = {
-        .alarm_count = 1 * 1000 * 1000, // alarm target = 1s @resolution 1MHz
+        .alarm_count = 1000000, // Set the actual alarm period, since the resolution is 1us, 1000000 represents 1s
+        .flags.auto_reload_on_alarm = false; // Disable auto-reload function
     };
+    // Set the timer's alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     gptimer_event_callbacks_t cbs = {
-        .on_alarm = example_timer_on_alarm_cb, // register user callback
+        .on_alarm = example_timer_on_alarm_cb, // Call the user callback function when the alarm event occurs
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
+    // Register timer event callback functions, allowing user context to be carried
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    // Enable the timer
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    // Start the timer
     ESP_ERROR_CHECK(gptimer_start(gptimer));
 
-Dynamic Alarm Update
-~~~~~~~~~~~~~~~~~~~~
+Unlike periodic alarms, the above code disables the auto-reload function when configuring the alarm behavior. This means that after the alarm event occurs, the timer will not automatically reload to the preset count value but will continue counting until it overflows. If you want the timer to stop immediately after the alarm, you can call :cpp:func:`gptimer_stop` in the callback function.
 
-Alarm value can be updated dynamically inside the ISR handler callback, by changing :cpp:member:`gptimer_alarm_event_data_t::alarm_value`. Then the alarm value will be updated after the callback function returns.
+Resource Recycling
+^^^^^^^^^^^^^^^^^^
 
-.. code:: c
+When the timer is no longer needed, you should call the :cpp:func:`gptimer_delete_timer` function to release software and hardware resources. Before deleting, ensure that the timer is already stopped.
 
-    typedef struct {
-        uint64_t event_count;
-    } example_queue_element_t;
+Advanced Features
+-----------------
+
+After understanding the basic usage, we can further explore more features of the GPTimer driver.
+
+Dynamic Alarm Value Update
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The GPTimer driver supports dynamically updating the alarm value in the interrupt callback function by calling the :cpp:func:`gptimer_set_alarm_action` function, thereby implementing a monotonic software timer list. The following code shows how to reset the next alarm trigger time when the alarm event occurs:
+
+.. code-block:: c
+    :emphasize-lines: 12-16
+
+    gptimer_handle_t gptimer = NULL;
+    gptimer_config_t timer_config = {
+        .clk_src = GPTIMER_CLK_SRC_DEFAULT, // Select the default clock source
+        .direction = GPTIMER_COUNT_UP,      // Counting direction is up
+        .resolution_hz = 1 * 1000 * 1000,   // Resolution is 1 MHz, i.e., 1 tick equals 1 microsecond
+    };
+    // Create a timer instance
+    ESP_ERROR_CHECK(gptimer_new_timer(&timer_config, &gptimer));
 
     static bool example_timer_on_alarm_cb(gptimer_handle_t timer, const gptimer_alarm_event_data_t *edata, void *user_ctx)
     {
-        BaseType_t high_task_awoken = pdFALSE;
-        QueueHandle_t queue = (QueueHandle_t)user_data;
-        // Retrieve the count value from event data
-        example_queue_element_t ele = {
-            .event_count = edata->count_value
-        };
-        // Optional: send the event data to other task by OS queue
-        xQueueSendFromISR(queue, &ele, &high_task_awoken);
-        // reconfigure alarm value
         gptimer_alarm_config_t alarm_config = {
-            .alarm_count = edata->alarm_value + 1000000, // alarm in next 1s
+            .alarm_count = edata->alarm_value + 1000000, // Next alarm in 1s from the current alarm
         };
+        // Update the alarm value
         gptimer_set_alarm_action(timer, &alarm_config);
-        // return whether we need to yield at the end of ISR
-        return high_task_awoken == pdTRUE;
+        return false;
     }
 
     gptimer_alarm_config_t alarm_config = {
-        .alarm_count = 1000000, // initial alarm target = 1s @resolution 1MHz
+        .alarm_count = 1000000, // Set the actual alarm period, since the resolution is 1us, 1000000 represents 1s
+        .flags.auto_reload_on_alarm = false, // Disable auto-reload function
     };
+    // Set the timer's alarm action
     ESP_ERROR_CHECK(gptimer_set_alarm_action(gptimer, &alarm_config));
 
     gptimer_event_callbacks_t cbs = {
-        .on_alarm = example_timer_on_alarm_cb, // register user callback
+        .on_alarm = example_timer_on_alarm_cb, // Call the user callback function when the alarm event occurs
     };
-    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, queue));
+    // Register timer event callback functions, allowing user context to be carried
+    ESP_ERROR_CHECK(gptimer_register_event_callbacks(gptimer, &cbs, NULL));
+    // Enable the timer
     ESP_ERROR_CHECK(gptimer_enable(gptimer));
+    // Start the timer
     ESP_ERROR_CHECK(gptimer_start(gptimer));
-
 
 .. only:: SOC_TIMER_SUPPORT_ETM
 
     .. _gptimer-etm-event-and-task:
 
-    ETM Event and Task
-    ^^^^^^^^^^^^^^^^^^
+    GPTimer's ETM Events and Tasks
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    GPTimer is able to generate various events that can interact with the :doc:`ETM </api-reference/peripherals/etm>` module. The supported events are listed in the :cpp:type:`gptimer_etm_event_type_t`. You can call :cpp:func:`gptimer_new_etm_event` to get the corresponding ETM event handle. Likewise, GPTimer exposes several tasks that can be triggered by other ETM events. The supported tasks are listed in the :cpp:type:`gptimer_etm_task_type_t`. You can call :cpp:func:`gptimer_new_etm_task` to get the corresponding ETM task handle.
+    GPTimer can generate various events that can be connected to the :doc:`ETM </api-reference/peripherals/etm>` module. The event types are listed in :cpp:type:`gptimer_etm_event_type_t`. Users can create an ``ETM event`` handle by calling :cpp:func:`gptimer_new_etm_event`.
+    GPTimer also supports some tasks that can be triggered by other events and executed automatically. The task types are listed in :cpp:type:`gptimer_etm_task_type_t`. Users can create an ``ETM task`` handle by calling :cpp:func:`gptimer_new_etm_task`.
 
-    For how to connect the event and task to an ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
-
-    .. _gptimer-power-management:
-
-.. only:: not SOC_TIMER_SUPPORT_ETM
-
-    .. _gptimer-power-management:
+    For how to connect the timer events and tasks to the ETM channel, please refer to the :doc:`ETM </api-reference/peripherals/etm>` documentation.
 
 Power Management
 ^^^^^^^^^^^^^^^^
 
-When power management is enabled, i.e., :ref:`CONFIG_PM_ENABLE` is on, the system may adjust or disable the clock source before going to sleep. As a result, the time keeping will be inaccurate.
+When power management :ref:`CONFIG_PM_ENABLE` is enabled, the system may adjust or disable the clock source before entering sleep mode, causing the GPTimer to lose accuracy.
 
-The driver can prevent the above issue by creating a power management lock. The lock type is set based on different clock sources. The driver will acquire the lock in :cpp:func:`gptimer_enable`, and release it in :cpp:func:`gptimer_disable`. So that the timer can work correctly in between these two functions, because the clock source won't be disabled or adjusted its frequency during this time.
+To prevent this, the GPTimer driver creates a power management lock internally. When the :cpp:func:`gptimer_enable` function is called, the lock is activated to ensure the system does not enter sleep mode, thus maintaining the timer's accuracy. To reduce power consumption, you can call the :cpp:func:`gptimer_disable` function to release the power management lock, allowing the system to enter sleep mode. However, this will stop the timer, so you need to restart the timer after waking up.
 
 .. only:: SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
-    Besides the potential changes to the clock source, when the power management is enabled, the system can also power down the GPTimer hardware before sleep. Set the :cpp:member:`gptimer_config_t::allow_pd` to ``true`` to enable the power down feature. GPTimer registers will be backed up before sleep and restored after wake up. Please note, enabling this option will increase the memory consumption.
-
-.. _gptimer-iram-safe:
-
-IRAM Safe
-^^^^^^^^^
-
-By default, the GPTimer interrupt will be deferred when the cache is disabled because of writing or erasing the flash. Thus the alarm interrupt will not get executed in time, which is not expected in a real-time application.
-
-There is a Kconfig option :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` that:
-
--  Enables the interrupt being serviced even when the cache is disabled
--  Places all functions that used by the ISR into IRAM [2]_
--  Places driver object into DRAM (in case it is mapped to PSRAM by accident)
-
-This allows the interrupt to run while the cache is disabled, but comes at the cost of increased IRAM consumption.
-
-There is another Kconfig option :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` that can put commonly used IO control functions into IRAM as well. So, these functions can also be executable when the cache is disabled. These IO control functions are as follows:
-
-- :cpp:func:`gptimer_start`
-- :cpp:func:`gptimer_stop`
-- :cpp:func:`gptimer_get_raw_count`
-- :cpp:func:`gptimer_set_raw_count`
-- :cpp:func:`gptimer_set_alarm_action`
-
-.. _gptimer-thread-safety:
+    Besides disabling the clock source, the system can also power down the GPTimer before entering sleep mode to further reduce power consumption. To achieve this, set :cpp:member:`gptimer_config_t::allow_pd` to ``true``. Before the system enters sleep mode, the GPTimer register context will be backed up to memory and restored after the system wakes up. Note that enabling this option reduces power consumption but increases memory usage. Therefore, you need to balance power consumption and memory usage when using this feature.
 
 Thread Safety
 ^^^^^^^^^^^^^
 
-All the APIs provided by the driver are guaranteed to be thread safe, which means you can call them from different RTOS tasks without protection by extra locks. The following functions are allowed to run under ISR context.
+The driver uses critical sections to ensure atomic operations on registers. Key members in the driver handle are also protected by critical sections. The driver's internal state machine uses atomic instructions to ensure thread safety, with state checks preventing certain invalid concurrent operations (e.g., conflicts between `start` and `stop`). Therefore, GPTimer driver APIs can be used in a multi-threaded environment without extra locking.
 
-- :cpp:func:`gptimer_start`
-- :cpp:func:`gptimer_stop`
-- :cpp:func:`gptimer_get_raw_count`
-- :cpp:func:`gptimer_set_raw_count`
-- :cpp:func:`gptimer_get_captured_count`
-- :cpp:func:`gptimer_set_alarm_action`
+The following functions can also be used in an interrupt context:
 
-.. _gptimer-kconfig-options:
+.. list::
 
-Kconfig Options
-^^^^^^^^^^^^^^^
+    - :cpp:func:`gptimer_start`
+    - :cpp:func:`gptimer_stop`
+    - :cpp:func:`gptimer_get_raw_count`
+    - :cpp:func:`gptimer_set_raw_count`
+    - :cpp:func:`gptimer_get_captured_count`
+    - :cpp:func:`gptimer_set_alarm_action`
 
-- :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` controls where to place the GPTimer control functions (IRAM or flash).
-- :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` controls where to place the GPTimer ISR handler (IRAM or flash).
-- :ref:`CONFIG_GPTIMER_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled, see Section :ref:`gptimer-iram-safe` for more information.
-- :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` is used to enabled the debug log output. Enable this option will increase the firmware binary size.
+Cache Safety
+^^^^^^^^^^^^
+
+When the file system performs Flash read/write operations, the system temporarily disables the Cache function to avoid errors when loading instructions and data from Flash. This causes the GPTimer interrupt handler to be unresponsive during this period, preventing the user callback function from executing in time. If you want the interrupt handler to run normally when the Cache is disabled, you can enable the :ref:`CONFIG_GPTIMER_ISR_CACHE_SAFE` option.
+
+.. note::
+
+    Note that when this option is enabled, all interrupt callback functions and their context data **must be placed in internal storage**. This is because the system cannot load data and instructions from Flash when the Cache is disabled.
+
+Performance
+^^^^^^^^^^^
+
+To improve the real-time responsiveness of interrupt handling, the GPTimer driver provides the :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` option. Once enabled, the interrupt handler is placed in internal RAM, reducing delays caused by potential cache misses when loading instructions from Flash.
+
+.. note::
+
+    However, the user callback function and its context data called by the interrupt handler may still reside in Flash. Cache misses are still possible, so users must manually place the callback function and data in internal RAM, for example by using :c:macro:`IRAM_ATTR` and :c:macro:`DRAM_ATTR`.
+
+As mentioned above, the GPTimer driver allows some functions to be called in an interrupt context. By enabling the :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` option, these functions can also be placed in IRAM, which helps avoid performance loss caused by cache misses and allows them to be used when the Cache is disabled.
+
+Other Kconfig Options
+^^^^^^^^^^^^^^^^^^^^^
+
+- The :ref:`CONFIG_GPTIMER_ENABLE_DEBUG_LOG` option forces the GPTimer driver to enable all debug logs, regardless of the global log level settings. Enabling this option helps developers obtain more detailed log information during debugging, making it easier to locate and solve problems.
+
+Resource Consumption
+^^^^^^^^^^^^^^^^^^^^
+
+Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consumption of the GPTimer driver. The following are the test conditions (using ESP32-C2 as an example):
+
+- Compiler optimization level set to ``-Os`` to ensure minimal code size.
+- Default log level set to ``ESP_LOG_INFO`` to balance debug information and performance.
+- Disable the following driver optimization options:
+    - :ref:`CONFIG_GPTIMER_ISR_HANDLER_IN_IRAM` - Do not place the interrupt handler in IRAM.
+    - :ref:`CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM` - Do not place control functions in IRAM.
+    - :ref:`CONFIG_GPTIMER_ISR_CACHE_SAFE` - Do not enable Cache safety options.
+
+**Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
+
++------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+| Component Layer  | Total Size | DIRAM | .bss | .data | .text | Flash Code | .text | Flash Data | .rodata |
++==================+============+=======+======+=======+=======+============+=======+============+=========+
+| soc              |          8 |     0 |    0 |     0 |     0 |          0 |     0 |          8 |       8 |
++------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+| hal              |        206 |     0 |    0 |     0 |     0 |        206 |   206 |          0 |       0 |
++------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+| driver           |       4251 |    12 |   12 |     0 |     0 |       4046 |  4046 |        193 |     193 |
++------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+
+Additionally, each GPTimer handle dynamically allocates about ``90`` bytes of memory from the heap. If the :cpp:member:`gptimer_config_t::flags::allow_pd` option is enabled, each timer will also consume approximately ``30`` extra bytes of memory during sleep to store the register context.
 
 Application Examples
 --------------------
 
 .. list::
 
-    * :example:`peripherals/timer_group/gptimer` demonstrates how to use the general purpose timer APIs on ESP SOC chip to generate periodic alarm events and manage different alarm actions.
-    :SOC_TIMER_SUPPORT_ETM: * :example:`peripherals/timer_group/gptimer_capture_hc_sr04` demonstrates how to use the general purpose timer and ETM (Event Task Matrix) peripheral to capture internal timer count values and measure the time between two events, specifically to decode the pulse width signals generated from a common HC-SR04 sonar sensor.
-    :not esp32c2: * :example:`peripherals/timer_group/wiegand_interface` uses two timers (one in one-shot mode and another in periodic mode) to trigger the interrupt and change the output state of the GPIO in the interrupt.
-
+    - :example:`peripherals/timer_group/gptimer` demonstrates how to use the general-purpose timer APIs on ESP SOC chips to generate periodic alarm events and trigger different alarm actions.
+    - :example:`peripherals/timer_group/wiegand_interface` uses two timers (one in one-shot alarm mode and the other in periodic alarm mode) to trigger interrupts and change the GPIO output state in the alarm event callback function, simulating the output waveform of the Wiegand protocol.
+    :SOC_TIMER_SUPPORT_ETM: - :example:`peripherals/timer_group/gptimer_capture_hc_sr04` demonstrates how to use the general-purpose timer and Event Task Matrix (ETM) to accurately capture timestamps of ultrasonic sensor events and convert them into distance information.
 
 API Reference
 -------------
@@ -358,9 +403,3 @@ API Reference
 .. only:: SOC_TIMER_SUPPORT_ETM
 
     .. include-build-file:: inc/gptimer_etm.inc
-
-.. [1]
-   Different ESP chip series might have different numbers of GPTimer instances. For more details, please refer to **{IDF_TARGET_NAME} Technical Reference Manual** > Chapter **Timer Group (TIMG)** [`PDF <{IDF_TARGET_TRM_EN_URL}#timg>`__]. The driver does forbid you from applying for more timers, but it returns error when all available hardware resources are used up. Please always check the return value when doing resource allocation (e.g., :cpp:func:`gptimer_new_timer`).
-
-.. [2]
-   :cpp:member:`gptimer_event_callbacks_t::on_alarm` callback and the functions invoked by the callback should also be placed in IRAM, please take care of them by yourself.
