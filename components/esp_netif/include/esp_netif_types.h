@@ -105,6 +105,8 @@ typedef enum {
     IP_EVENT_PPP_GOT_IP,               /*!< PPP interface got IP */
     IP_EVENT_PPP_LOST_IP,              /*!< PPP interface lost IP */
     IP_EVENT_TX_RX,                    /*!< transmitting/receiving data packet */
+    IP_EVENT_PPPD_GOT_IP,              /*!< PPP server interface got IP */
+    IP_EVENT_PPPD_LOST_IP,             /*!< PPP server interface lost IP */
 } ip_event_t;
 
 /** @brief IP event base declaration */
