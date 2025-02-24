@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -107,7 +107,7 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
     if (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) {
         clk_src = LP_ADC_CLK_SRC_LP_DYN_FAST;
     } else
-#endif /* CONFIG_SOC_LP_ADC_SUPPORTED */
+#endif /* SOC_LP_ADC_SUPPORTED */
     {
         clk_src = ADC_DIGI_CLK_SRC_DEFAULT;
         if (init_config->clk_src) {
@@ -119,10 +119,28 @@ esp_err_t adc_oneshot_new_unit(const adc_oneshot_unit_init_cfg_t *init_config, a
 
     adc_oneshot_hal_cfg_t config = {
         .unit = init_config->unit_id,
-        .work_mode = (init_config->ulp_mode != ADC_ULP_MODE_DISABLE) ? ADC_HAL_LP_MODE : ADC_HAL_SINGLE_READ_MODE,
         .clk_src = clk_src,
         .clk_src_freq_hz = clk_src_freq_hz,
     };
+
+    switch (init_config->ulp_mode) {
+    case ADC_ULP_MODE_FSM:
+        config.work_mode = ADC_HAL_LP_MODE;  // esp32 ulp-fsm mode
+        break;
+    case ADC_ULP_MODE_RISCV:
+        config.work_mode = ADC_HAL_SINGLE_READ_MODE;  // esp32s2, esp32s3 ulp-riscv mode
+        break;
+#if SOC_LP_ADC_SUPPORTED
+    case ADC_ULP_MODE_LP_CORE:
+        config.work_mode = ADC_HAL_LP_MODE;  // lp core mode
+        break;
+#endif /* SOC_LP_ADC_SUPPORTED */
+    case ADC_ULP_MODE_DISABLE:
+    default:
+        config.work_mode = ADC_HAL_SINGLE_READ_MODE;  // oneshot read mode
+        break;
+    }
+
     adc_oneshot_hal_init(&(unit->hal), &config);
 
     //To enable the APB_SARADC periph if needed
