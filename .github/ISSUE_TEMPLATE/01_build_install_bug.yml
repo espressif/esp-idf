@@ -96,6 +96,26 @@ body:
     validations:
       required: false
   - type: textarea
+    id: diag
+    attributes:
+      label: Diagnostic report archive.
+      description: |
+        Diagnostic report for ESP-IDF created using [idf.py diag](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-diag.html) or [esp-idf-diag](https://github.com/espressif/esp-idf-diag). The `idf.py diag` command is available beginning with ESP-IDF version 5.5. For older versions, you may want to consider using the `esp-idf-diag` command.
+
+        In your project directory, execute the following command:
+
+        Using `idf.py diag`
+           1. idf.py diag
+
+        Using `esp-idf-diag`
+           1. pip install esp-idf-diag
+           2. esp-idf-diag create
+
+        Once the report is generated, the tool will guide you with the next steps.
+      placeholder: Please attach the diagnostic report zip file here.
+    validations:
+      required: false
+  - type: textarea
     id: more-info
     attributes:
       label: More Information.
