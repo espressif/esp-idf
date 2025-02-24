@@ -652,7 +652,7 @@ static SPI_MASTER_ISR_ATTR void spi_setup_device(spi_device_t *dev, spi_trans_pr
             .duty_cycle = dev->cfg.duty_cycle_pos,
             .input_delay_ns = dev->cfg.input_delay_ns,
             .half_duplex = dev->hal_dev.half_duplex,
-            .use_gpio = !(dev->host->bus_attr->flags | SPICOMMON_BUSFLAG_IOMUX_PINS),
+            .use_gpio = !(dev->host->bus_attr->flags & SPICOMMON_BUSFLAG_IOMUX_PINS),
         };
 
         if (ESP_OK == spi_hal_cal_clock_conf(&timing_param, &dev->hal_dev.timing_conf)) {
