@@ -703,10 +703,13 @@ static char *_get_host_header(char *host, int port)
 {
     int err = 0;
     char *host_name;
+    assert(host != NULL);
+    // Check if host is an IPv6 address literal that needs square brackets according to RFC3986
+    bool is_ipv6 = (host[0] != '[' && strchr(host, ':') != NULL);
     if (port != DEFAULT_HTTP_PORT && port != DEFAULT_HTTPS_PORT) {
-        err = asprintf(&host_name, "%s:%d", host, port);
+        err = asprintf(&host_name, is_ipv6 ? "[%s]:%d" : "%s:%d", host, port);
     } else {
-        err = asprintf(&host_name, "%s", host);
+        err = asprintf(&host_name, is_ipv6 ? "[%s]" : "%s", host);
     }
     if (err == -1) {
         return NULL;
