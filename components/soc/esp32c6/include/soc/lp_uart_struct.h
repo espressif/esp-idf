@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,7 @@ typedef union {
 typedef union {
     struct {
         /** rx_tout_en : R/W; bitpos: [0]; default: 0;
-         *  This is the enble bit for uart receiver's timeout function.
+         *  This is the enable bit for uart receiver's timeout function.
          */
         uint32_t rx_tout_en:1;
         /** rx_tout_flow_dis : R/W; bitpos: [1]; default: 0;
@@ -120,7 +120,7 @@ typedef union {
          */
         uint32_t rxfifo_tout:1;
         /** sw_xon : R/WTC/SS; bitpos: [9]; default: 0;
-         *  This interrupt raw bit turns to high level when receiver recevies Xon char when
+         *  This interrupt raw bit turns to high level when receiver receives Xon char when
          *  uart_sw_flow_con_en is set to 1.
          */
         uint32_t sw_xon:1;
@@ -466,7 +466,7 @@ typedef union {
          */
         uint32_t stop_bit_num:2;
         /** txd_brk : R/W; bitpos: [6]; default: 0;
-         *  Set this bit to enbale transmitter to  send NULL when the process of sending data
+         *  Set this bit to enable transmitter to  send NULL when the process of sending data
          *  is done.
          */
         uint32_t txd_brk:1;
@@ -791,30 +791,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
-         *  The  denominator of the frequency divider factor.
-         */
-        uint32_t sclk_div_b:6;
-        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
-         *  The numerator of the frequency divider factor.
-         */
-        uint32_t sclk_div_a:6;
-        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
-         *  The integral part of the frequency divider factor.
-         */
-        uint32_t sclk_div_num:8;
-        /** sclk_sel : R/W; bitpos: [21:20]; default: 3;
-         *  UART clock source select. 1: 80Mhz.  2: 8Mhz.  3: XTAL.
-         */
-        uint32_t sclk_sel:2;
-        /** sclk_en : R/W; bitpos: [22]; default: 1;
-         *  Set this bit to enable UART Tx/Rx clock.
-         */
-        uint32_t sclk_en:1;
-        /** rst_core : R/W; bitpos: [23]; default: 0;
-         *  Write 1 then write 0 to this bit to reset UART Tx/Rx.
-         */
-        uint32_t rst_core:1;
+        uint32_t reserved_20:24;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Set this bit to enable UART Tx clock.
          */
@@ -1115,7 +1092,7 @@ typedef struct lp_uart_dev_t {
     volatile lp_uart_id_reg_t id;
 } lp_uart_dev_t;
 
-// We map the LP_UART instance to the uart_dev_t struct for convinience of using the same HAL/LL. See soc/uart_struct.h
+// We map the LP_UART instance to the uart_dev_t struct for convenience of using the same HAL/LL. See soc/uart_struct.h
 // extern lp_uart_dev_t LP_UART;
 
 #ifndef __cplusplus

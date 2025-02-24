@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,7 +36,7 @@ typedef struct {
  * @param  baud_rate The baud-rate to be set
  * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
- * @return None
+ * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
 #define uart_hal_set_baudrate(hal, baud_rate, sclk_freq) uart_ll_set_baudrate((hal)->dev, baud_rate, sclk_freq)
 
@@ -202,7 +202,7 @@ void uart_hal_init(uart_hal_context_t *hal, uart_port_t uart_num);
  * @brief Get the UART source clock type
  *
  * @param  hal Context of the HAL layer
- * @param  sclk The poiter to accept the UART source clock type
+ * @param  sclk The pointer to accept the UART source clock type
  *
  * @return None
  */
@@ -357,7 +357,7 @@ void uart_hal_set_mode(uart_hal_context_t *hal, uart_mode_t mode);
  * @brief Configure the UART hardware to inverse the signals
  *
  * @param  hal Context of the HAL layer
- * @param  inv_mask The sigal mask needs to be inversed. Use the ORred mask of type `uart_signal_inv_t`
+ * @param  inv_mask The signal mask needs to be inversed. Use the ORred mask of type `uart_signal_inv_t`
  *
  * @return None
  */
@@ -437,7 +437,7 @@ bool uart_hal_is_hw_rts_en(uart_hal_context_t *hal);
  * @brief Configure TX signal loop back to RX module, just for the testing purposes
  *
  * @param  hal Context of the HAL layer
- * @param  loop_back_en Set ture to enable the loop back function, else set it false.
+ * @param  loop_back_en Set true to enable the loop back function, else set it false.
  *
  * @return None
  */
