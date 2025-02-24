@@ -1518,13 +1518,14 @@
 #endif /* defined(HID_DEV_INCLUDED) && (HID_DEV_INCLUDED==TRUE) */
 #endif
 
+/* The maximum length, in bytes, of all SDP attributes combined. */
 #ifndef SDP_MAX_PAD_LEN
-#define SDP_MAX_PAD_LEN             300
+#define SDP_MAX_PAD_LEN             UC_SDP_MAX_PAD_LEN
 #endif
 
 /* The maximum length, in bytes, of an attribute. */
 #ifndef SDP_MAX_ATTR_LEN
-#define SDP_MAX_ATTR_LEN            400
+#define SDP_MAX_ATTR_LEN            UC_SDP_MAX_ATTR_LEN
 #endif
 
 /* The maximum number of attribute filters supported by SDP databases. */
