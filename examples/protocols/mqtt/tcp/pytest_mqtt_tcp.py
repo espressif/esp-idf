@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
@@ -12,6 +12,7 @@ import pexpect
 import pytest
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 msgid = -1
 
@@ -25,13 +26,15 @@ def mqqt_server_sketch(my_ip, port):  # type: (str, str) -> None
         s.settimeout(60)
         s.bind((my_ip, port))
         s.listen(1)
-        q,addr = s.accept()
+        q, addr = s.accept()
         q.settimeout(30)
         print('connection accepted')
     except Exception:
-        print('Local server on {}:{} listening/accepting failure: {}'
-              'Possibly check permissions or firewall settings'
-              'to accept connections on this address'.format(my_ip, port, sys.exc_info()[0]))
+        print(
+            'Local server on {}:{} listening/accepting failure: {}'
+            'Possibly check permissions or firewall settings'
+            'to accept connections on this address'.format(my_ip, port, sys.exc_info()[0])
+        )
         raise
     data = q.recv(1024)
     # check if received initial empty message
@@ -49,8 +52,8 @@ def mqqt_server_sketch(my_ip, port):  # type: (str, str) -> None
     print('server closed')
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_mqtt_qos1(dut: Dut) -> None:
     global msgid
     """
@@ -73,7 +76,7 @@ def test_examples_protocol_mqtt_qos1(dut: Dut) -> None:
 
     # 2. start mqtt broker sketch
     host_ip = get_host_ip4_by_dest_ip(ip_address)
-    thread1 = Thread(target=mqqt_server_sketch, args=(host_ip,1883))
+    thread1 = Thread(target=mqqt_server_sketch, args=(host_ip, 1883))
     thread1.start()
 
     data_write = 'mqtt://' + host_ip
@@ -85,8 +88,10 @@ def test_examples_protocol_mqtt_qos1(dut: Dut) -> None:
     msgid_enqueued = dut.expect(b'outbox: ENQUEUE msgid=([0-9]+)', timeout=30).group(1).decode()
     msgid_deleted = dut.expect(b'outbox: DELETED msgid=([0-9]+)', timeout=30).group(1).decode()
     # 4. check the msgid of received data are the same as that of enqueued and deleted from outbox
-    if (msgid_enqueued == str(msgid) and msgid_deleted == str(msgid)):
+    if msgid_enqueued == str(msgid) and msgid_deleted == str(msgid):
         print('PASS: Received correct msg id')
     else:
         print('Failure!')
-        raise ValueError('Mismatch of msgid: received: {}, enqueued {}, deleted {}'.format(msgid, msgid_enqueued, msgid_deleted))
+        raise ValueError(
+            'Mismatch of msgid: received: {}, enqueued {}, deleted {}'.format(msgid, msgid_enqueued, msgid_deleted)
+        )

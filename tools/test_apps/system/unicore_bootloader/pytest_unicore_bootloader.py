@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os
 import re
@@ -7,13 +7,12 @@ import pytest
 from artifacts_handler import ArtifactType
 from idf_ci_utils import IDF_PATH
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['multicore', 'multicore_psram'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) -> None:  # type: ignore
     dut.expect('Multicore bootloader')
     dut.expect('Multicore app')
@@ -37,11 +36,9 @@ def test_multicore_app_and_unicore_bootloader(dut: Dut, app_downloader, config) 
     dut.expect('NVS test done')
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['unicore', 'unicore_psram'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_unicore_app_and_multicore_bootloader(dut: Dut, app_downloader, config) -> None:  # type: ignore
     dut.expect('Unicore bootloader')
     dut.expect('Unicore app')

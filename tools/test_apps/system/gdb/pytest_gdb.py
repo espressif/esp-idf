@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import json
 import logging
@@ -12,14 +12,13 @@ from typing import Optional
 import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
-
+from pytest_embedded_idf.utils import idf_parametrize
 
 MAX_RETRIES = 3
 RETRY_DELAY = 3  # seconds
 
 
 def run_openocd(dut: IdfDut) -> Optional[Popen]:
-
     desc_path = os.path.join(dut.app.binary_path, 'project_description.json')
     try:
         with open(desc_path, 'r') as f:
@@ -79,14 +78,17 @@ def _test_idf_gdb(dut: IdfDut) -> None:
     assert ocd
 
     try:
-        with open(os.path.join(dut.logdir, 'gdb.txt'), 'w') as gdb_log, \
-            pexpect.spawn(f'idf.py -B {dut.app.binary_path} gdb --batch',
-                          timeout=60,
-                          logfile=gdb_log,
-                          encoding='utf-8',
-                          codec_errors='ignore') as p:
+        with open(os.path.join(dut.logdir, 'gdb.txt'), 'w') as gdb_log, pexpect.spawn(
+            f'idf.py -B {dut.app.binary_path} gdb --batch',
+            timeout=60,
+            logfile=gdb_log,
+            encoding='utf-8',
+            codec_errors='ignore',
+        ) as p:
             p.expect(re.compile(r'add symbol table from file.*bootloader.elf'))
-            p.expect(re.compile(r'add symbol table from file.*rom.elf'))  # if fail here: add target support here https://github.com/espressif/esp-rom-elfs
+            p.expect(
+                re.compile(r'add symbol table from file.*rom.elf')
+            )  # if fail here: add target support here https://github.com/espressif/esp-rom-elfs
             p.expect_exact('hit Temporary breakpoint 1, app_main ()')
     finally:
         # Check if the process is still running
@@ -95,15 +97,13 @@ def _test_idf_gdb(dut: IdfDut) -> None:
             ocd.kill()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.jtag
+@idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
 def test_idf_gdb(dut: IdfDut) -> None:
     _test_idf_gdb(dut)
 
 
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.usb_serial_jtag
+@idf_parametrize('target', ['esp32c6', 'esp32h2'], indirect=['target'])
 def test_idf_gdb_usj(dut: IdfDut) -> None:
     _test_idf_gdb(dut)

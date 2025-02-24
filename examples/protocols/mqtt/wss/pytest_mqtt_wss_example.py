@@ -1,18 +1,20 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import logging
 import os
 import re
 import ssl
 import sys
-from threading import Event, Thread
+from threading import Event
+from threading import Thread
 
 import paho.mqtt.client as mqtt
 import pexpect
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 event_client_connected = Event()
 event_stop_client = Event()
@@ -45,8 +47,8 @@ def on_message(client, userdata, msg):  # type: (mqtt.Client, tuple, mqtt.client
     message_log += 'Received data:' + msg.topic + ' ' + payload + '\n'
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_mqtt_wss(dut):  # type: (Dut) -> None
     broker_url = ''
     broker_port = 0
@@ -76,13 +78,15 @@ def test_examples_protocol_mqtt_wss(dut):  # type: (Dut) -> None
         client = mqtt.Client(transport='websockets')
         client.on_connect = on_connect
         client.on_message = on_message
-        client.tls_set(None,
-                       None,
-                       None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
+        client.tls_set(None, None, None, cert_reqs=ssl.CERT_NONE, tls_version=ssl.PROTOCOL_TLSv1_2, ciphers=None)
         print('Connecting...')
         client.connect(broker_url, broker_port, 60)
     except Exception:
-        print('ENV_TEST_FAILURE: Unexpected error while connecting to broker {}: {}:'.format(broker_url, sys.exc_info()[0]))
+        print(
+            'ENV_TEST_FAILURE: Unexpected error while connecting to broker {}: {}:'.format(
+                broker_url, sys.exc_info()[0]
+            )
+        )
         raise
     # Starting a py-client in a separate thread
     thread1 = Thread(target=mqtt_client_task, args=(client,))

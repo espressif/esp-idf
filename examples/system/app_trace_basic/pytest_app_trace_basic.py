@@ -1,10 +1,11 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import time
 
 import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 from pytest_embedded_jtag import OpenOcd
 
 
@@ -23,22 +24,18 @@ def apptrace_wait_stop(openocd: OpenOcd, timeout: int = 30) -> None:
         time.sleep(1)
 
 
-@pytest.mark.parametrize(
-    'embedded_services, no_gdb',
+@idf_parametrize('embedded_services', ['esp,idf,jtag'], indirect=['embedded_services'])
+@idf_parametrize('no_gdb', ['y'], indirect=['no_gdb'])
+@idf_parametrize(
+    'openocd_cli_args,port,target,markers',
     [
-        ('esp,idf,jtag', 'y'),
+        (None, None, 'esp32', (pytest.mark.jtag,)),
+        ('-f board/esp32s2-kaluga-1.cfg', None, 'esp32s2', (pytest.mark.jtag,)),
+        ('-f board/esp32c2-ftdi.cfg', None, 'esp32c2', (pytest.mark.jtag,)),
+        ('-f board/esp32s3-builtin.cfg', '/dev/serial_ports/ttyACM-esp32', 'esp32s3', (pytest.mark.usb_serial_jtag,)),
+        ('-f board/esp32c3-builtin.cfg', '/dev/serial_ports/ttyACM-esp32', 'esp32c3', (pytest.mark.usb_serial_jtag,)),
     ],
-    indirect=True,
-)
-@pytest.mark.parametrize(
-    'port, openocd_cli_args', [
-        pytest.param(None, None, marks=[pytest.mark.esp32, pytest.mark.jtag]),
-        pytest.param(None, '-f board/esp32s2-kaluga-1.cfg', marks=[pytest.mark.esp32s2, pytest.mark.jtag]),
-        pytest.param(None, '-f board/esp32c2-ftdi.cfg', marks=[pytest.mark.esp32c2, pytest.mark.jtag]),
-        pytest.param('/dev/serial_ports/ttyACM-esp32', '-f board/esp32s3-builtin.cfg', marks=[pytest.mark.esp32s3, pytest.mark.usb_serial_jtag]),
-        pytest.param('/dev/serial_ports/ttyACM-esp32', '-f board/esp32c3-builtin.cfg', marks=[pytest.mark.esp32c3, pytest.mark.usb_serial_jtag]),
-    ],
-    indirect=True
+    indirect=['openocd_cli_args', 'port', 'target'],
 )
 def test_examples_app_trace_basic(dut: IdfDut, openocd: OpenOcd) -> None:
     dut.openocd.write('reset')
@@ -68,6 +65,4 @@ def test_examples_app_trace_basic(dut: IdfDut, openocd: OpenOcd) -> None:
                     found = True
                     break
             if found is not True:
-                raise RuntimeError(
-                    '"{}" could not be found in {}'.format(log_str, 'apptrace.log')
-                )
+                raise RuntimeError('"{}" could not be found in {}'.format(log_str, 'apptrace.log'))

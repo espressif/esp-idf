@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import random
 import string
@@ -7,6 +7,7 @@ from typing import Tuple
 import pexpect
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def run_phy_tsens_test(dut: Tuple[Dut, Dut]) -> None:
@@ -143,14 +144,9 @@ def run_phy_tsens_test_with_light_sleep(dut: Tuple[Dut, Dut]) -> None:
         assert 0 < float(temp_val) < 70
 
 
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32c5
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize('count', [2], indirect=True)
+@idf_parametrize('target', ['esp32c3', 'esp32c6', 'esp32c5', 'esp32s2', 'esp32s3', 'esp32c61'], indirect=['target'])
 def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
     for _dut in dut:
         _dut.expect('esp>')
@@ -167,7 +163,6 @@ def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
     run_phy_tsens_test_with_light_sleep(dut)
 
 
-@pytest.mark.esp32c2
 @pytest.mark.wifi_two_dut
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
@@ -177,6 +172,7 @@ def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_phy_tsens_coexist_c2_xtal26m(dut: Tuple[Dut, Dut]) -> None:
     for _dut in dut:
         _dut.expect('esp>')

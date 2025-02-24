@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import http.server
 import multiprocessing
@@ -13,16 +13,18 @@ import pytest
 from common_test_methods import get_env_config_variable
 from common_test_methods import get_host_ip4_by_dest_ip
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 from RangeHTTPServer import RangeRequestHandler
 
 server_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_cert.pem')
 key_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'test_certs/server_key.pem')
 
 
-def https_request_handler() -> Callable[...,http.server.BaseHTTPRequestHandler]:
+def https_request_handler() -> Callable[..., http.server.BaseHTTPRequestHandler]:
     """
     Returns a request handler class that handles broken pipe exception
     """
+
     class RequestHandler(RangeRequestHandler):
         def finish(self) -> None:
             try:
@@ -47,14 +49,12 @@ def start_https_server(ota_image_dir: str, server_ip: str, server_port: int) -> 
     requestHandler = https_request_handler()
     httpd = http.server.HTTPServer((server_ip, server_port), requestHandler)
 
-    httpd.socket = ssl.wrap_socket(httpd.socket,
-                                   keyfile=key_file,
-                                   certfile=server_file, server_side=True)
+    httpd.socket = ssl.wrap_socket(httpd.socket, keyfile=key_file, certfile=server_file, server_side=True)
     httpd.serve_forever()
 
 
-@pytest.mark.esp32c6
 @pytest.mark.wifi_high_traffic
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_examples_tee_secure_ota_example(dut: Dut) -> None:
     """
     This is a positive test case, which downloads complete binary file multiple number of times.

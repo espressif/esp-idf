@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import subprocess
@@ -6,12 +6,21 @@ import sys
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.parametrize('config', [
-    pytest.param('default', marks=[pytest.mark.supported_targets, pytest.mark.generic, pytest.mark.temp_skip(targets=['esp32c2'], reason='must have 4MB')]),
-    pytest.param('default', marks=[pytest.mark.esp32c2, pytest.mark.generic, pytest.mark.flash_4mb]),
-], indirect=True)
+@idf_parametrize('config', ['default'], indirect=['config'])
+@idf_parametrize(
+    'target,markers',
+    [
+        (
+            'supported_targets',
+            (pytest.mark.generic, pytest.mark.temp_skip(targets=['esp32c2'], reason='must have 4MB')),
+        ),
+        ('esp32c2', (pytest.mark.generic, pytest.mark.flash_4mb)),
+    ],
+    indirect=['target'],
+)
 def test_otatool_example(dut: Dut) -> None:
     # Verify factory firmware
     dut.expect('OTA Tool Example')

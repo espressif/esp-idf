@@ -1,11 +1,10 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.flash_encryption
 @pytest.mark.parametrize(
     'config',
@@ -15,11 +14,11 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_flash_encryption(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c3
 @pytest.mark.flash_encryption
 @pytest.mark.parametrize(
     'config',
@@ -28,11 +27,11 @@ def test_flash_encryption(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_flash_encryption_rom_impl(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32s3
 @pytest.mark.flash_encryption_f4r8
 @pytest.mark.parametrize(
     'config',
@@ -43,11 +42,11 @@ def test_flash_encryption_rom_impl(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_flash_encryption_f4r8(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32s3
 @pytest.mark.flash_encryption_f8r8
 @pytest.mark.parametrize(
     'config',
@@ -56,5 +55,6 @@ def test_flash_encryption_f4r8(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
 def test_flash_encryption_f8r8(dut: Dut) -> None:
     dut.run_all_single_board_cases()

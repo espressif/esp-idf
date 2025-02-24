@@ -5,6 +5,7 @@ import time
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 CONFIGS = [
     pytest.param('esp32_singlecore', marks=[pytest.mark.esp32]),
@@ -26,8 +27,10 @@ CONFIGS = [
 ]
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target', [('esp32_singlecore', 'esp32'), ('basic', 'supported_targets')], indirect=['config', 'target']
+)
 def test_deep_sleep(dut: Dut) -> None:
     def expect_enable_deep_sleep_touch() -> None:
         expect_items = ['Enabling timer wakeup, 20s']

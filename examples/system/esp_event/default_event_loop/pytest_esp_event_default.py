@@ -1,25 +1,30 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import logging
 
 import pytest
 from pytest_embedded import Dut
-
+from pytest_embedded_idf.utils import idf_parametrize
 # Timer events
+
 TIMER_EVENT_LIMIT = 3
 
-TIMER_EXPIRY_HANDLING = 'TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed {} out of ' + str(TIMER_EVENT_LIMIT) + ' times'
+TIMER_EXPIRY_HANDLING = (
+    'TIMER_EVENTS:TIMER_EVENT_EXPIRY: timer_expiry_handler, executed {} out of ' + str(TIMER_EVENT_LIMIT) + ' times'
+)
 
 # Task events
 TASK_ITERATION_LIMIT = 5
 TASK_UNREGISTRATION_LIMIT = 3
 
-TASK_ITERATION_POST = 'TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, {} out of ' + str(TASK_ITERATION_LIMIT)
+TASK_ITERATION_POST = 'TASK_EVENTS:TASK_ITERATION_EVENT: posting to default loop, {} out of ' + str(
+    TASK_ITERATION_LIMIT
+)
 TASK_ITERATION_HANDLING = 'TASK_EVENTS:TASK_ITERATION_EVENT: task_iteration_handler, executed {} times'
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
     logging.info('Checking iteration events posting and handling')
     dut.expect_exact('setting up')
@@ -34,8 +39,13 @@ def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
             dut.expect_exact(TASK_ITERATION_HANDLING.format(iteration))
             dut.expect_exact('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
         elif iteration == TASK_UNREGISTRATION_LIMIT:
-            dut.expect(['TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler',
-                        'TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler'], expect_all=True)
+            dut.expect(
+                [
+                    'TASK_EVENTS:TASK_ITERATION_EVENT: unregistering task_iteration_handler',
+                    'TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler',
+                ],
+                expect_all=True,
+            )
             logging.info('Unregistered handler at iteration {} out of {}'.format(iteration, TASK_ITERATION_LIMIT))
         else:
             dut.expect_exact('TASK_EVENTS:TASK_ITERATION_EVENT: all_event_handler')
@@ -46,8 +56,8 @@ def test_default_event_loop_example_iteration_events(dut: Dut) -> None:
     logging.info('Deleted task event source')
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_default_event_loop_example_timer_events(dut: Dut) -> None:
     logging.info('Checking timer events posting and handling')
 

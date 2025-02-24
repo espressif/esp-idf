@@ -1,15 +1,12 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded.dut import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
-@pytest.mark.esp32c5
-@pytest.mark.esp32c61
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32c6', 'esp32h2', 'esp32p4', 'esp32c5', 'esp32c61'], indirect=['target'])
 def test_temp_sensor_monitor_example(dut: Dut) -> None:
     dut.expect_exact('Install temperature sensor')
     dut.expect_exact('Enable temperature sensor')

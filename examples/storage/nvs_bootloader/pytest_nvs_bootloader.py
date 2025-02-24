@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_nvs_bootloader_example(dut: Dut) -> None:
     # Expect to read hooks messages and data from NVS partition
     dut.expect_exact('Before reading from NVS partition')
@@ -20,16 +21,15 @@ def test_nvs_bootloader_example(dut: Dut) -> None:
     dut.expect_exact('User application is loaded and running.')
 
 
-@pytest.mark.esp32c3
 @pytest.mark.nvs_encr_hmac
 @pytest.mark.parametrize('config', ['nvs_enc_hmac'], indirect=True)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_nvs_bootloader_example_nvs_encr_hmac(dut: Dut) -> None:
     test_nvs_bootloader_example(dut)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.flash_encryption
 @pytest.mark.parametrize('config', ['nvs_enc_flash_enc'], indirect=True)
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_nvs_bootloader_example_flash_enc(dut: Dut) -> None:
     test_nvs_bootloader_example(dut)
