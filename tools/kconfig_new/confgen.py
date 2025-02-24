@@ -7,12 +7,10 @@
 # Used internally by the ESP-IDF build system. But designed to be
 # non-IDF-specific.
 #
-# SPDX-FileCopyrightText: 2018-2021 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import json
-import os
 import os.path
 import re
 import sys
@@ -388,9 +386,17 @@ def write_cmake(deprecated_options, config, filename):
             sym = node.item
             if not isinstance(sym, kconfiglib.Symbol):
                 return
-
             if sym.config_string:
                 val = sym.str_value
+                if not val and sym.type in (
+                    kconfiglib.INT,
+                    kconfiglib.HEX,
+                ):
+                    print(
+                        f'warning: {sym.name} has no value set in the configuration.'
+                        ' This can be caused e.g. by missing default value for the current chip version.'
+                    )
+                    val = None
                 if sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE) and val == 'n':
                     val = ''  # write unset values as empty variables
                 elif sym.orig_type == kconfiglib.STRING:
