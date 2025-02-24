@@ -11,6 +11,8 @@
 extern "C" {
 #endif
 
+#define DR_REG_RNG_BASE   DR_REG_TRNG_BASE
+
 /** RNG_DATA_REG register
  *  RNG result register
  */

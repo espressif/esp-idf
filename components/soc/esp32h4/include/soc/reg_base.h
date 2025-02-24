@@ -8,7 +8,7 @@
 
 #define DR_REG_TRACE0_BASE                        0x60000000
 #define DR_REG_TRACE1_BASE                        0x60001000
-#define DR_REG_ASSIST_DEBUG_BASE                  0x60002000
+#define DR_REG_BUS_MONITOR_BASE                   0x60002000
 #define DR_REG_INTPRI_BASE                        0x60005000
 #define DR_REG_CACHE_BASE                         0x60008000
 #define DR_REG_GPSPI2_BASE                        0x60010000
@@ -77,3 +77,4 @@
 #define DR_REG_TOUCH_AON_BASE                     0x600B5C00
 
 #define DR_REG_I2C_ANA_MST_BASE                   0x600AF800    // TODO: [ESP32H4] IDF-12315 inherit from verify code, need check
+#define DR_REG_CLINT_M_BASE                       0x20000000    // TODO: [ESP32H4] IDF-12303 inherit from verify code, need check
