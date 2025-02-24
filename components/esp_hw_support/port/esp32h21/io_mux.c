@@ -15,8 +15,11 @@
 
 static portMUX_TYPE s_io_mux_spinlock = portMUX_INITIALIZER_UNLOCKED;
 static soc_module_clk_t s_io_mux_clk_src = 0; // by default, the clock source is not set explicitly by any consumer (e.g. SDM, Filter)
-static uint8_t s_rtc_io_enabled_cnt[MAX_RTC_GPIO_NUM] = { 0 };
-static uint32_t s_rtc_io_using_mask = 0;
+
+static rtc_io_status_t s_rtc_io_status = {
+    .rtc_io_enabled_cnt = { 0 },
+    .rtc_io_using_mask = 0
+};
 
 esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 {
@@ -41,20 +44,21 @@ esp_err_t io_mux_set_clock_source(soc_module_clk_t clk_src)
 
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
+    assert(gpio_num != GPIO_NUM_NC);
     portENTER_CRITICAL(&s_io_mux_spinlock);
     if (enable) {
-        if (s_rtc_io_enabled_cnt[gpio_num] == 0) {
-            s_rtc_io_using_mask |= (1ULL << gpio_num);
+        if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask |= (1ULL << gpio_num);
         }
-        s_rtc_io_enabled_cnt[gpio_num]++;
-    } else if (!enable && (s_rtc_io_enabled_cnt[gpio_num] > 0)) {
-        s_rtc_io_enabled_cnt[gpio_num]--;
-        if (s_rtc_io_enabled_cnt[gpio_num] == 0) {
-            s_rtc_io_using_mask &= ~(1ULL << gpio_num);
+        s_rtc_io_status.rtc_io_enabled_cnt[gpio_num]++;
+    } else if (!enable && (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] > 0)) {
+        s_rtc_io_status.rtc_io_enabled_cnt[gpio_num]--;
+        if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {
+            s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << gpio_num);
         }
     }
     RTCIO_RCC_ATOMIC() {
-        if (s_rtc_io_using_mask == 0) {
+        if (s_rtc_io_status.rtc_io_using_mask == 0) {
             rtcio_ll_enable_io_clock(false);
         } else {
             rtcio_ll_enable_io_clock(true);
@@ -65,10 +69,11 @@ void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 
 void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num)
 {
+    assert(gpio_num != GPIO_NUM_NC);
     portENTER_CRITICAL(&s_io_mux_spinlock);
-    s_rtc_io_enabled_cnt[gpio_num] = 0;
-    s_rtc_io_using_mask &= ~(1ULL << gpio_num);
-    if (s_rtc_io_using_mask == 0) {
+    s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] = 0;
+    s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << gpio_num);
+    if (s_rtc_io_status.rtc_io_using_mask == 0) {
         RTCIO_RCC_ATOMIC() {
             rtcio_ll_enable_io_clock(false);
         }
