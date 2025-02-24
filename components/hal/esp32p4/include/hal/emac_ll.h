@@ -907,7 +907,7 @@ static inline void emac_ll_clock_enable_ptp(void *ext_regs, soc_periph_emac_ptp_
 
 static inline void emac_ll_pause_frame_enable(void *ext_regs, bool enable)
 {
-    HP_SYSTEM.sys_gmac_ctrl0.sys_phy_intf_sel = enable;
+    HP_SYSTEM.sys_gmac_ctrl0.sys_sbd_flowctrl = enable;
 }
 
 #ifdef __cplusplus
