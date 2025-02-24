@@ -11,6 +11,21 @@ config BT_BLE_LOG_SPI_OUT_ENABLED
     help
         Output ble logs to SPI bus
 
+config BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+    bool "Enable HCI log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable logging of HCI packets to the SPI bus when BLE SPI log output is enabled.
+
+config BT_BLE_LOG_SPI_OUT_HOST_ENABLED
+    bool "Enable Host log output to SPI"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        This configuration applies to the logs of both Bluedroid Host and NimBLE Host.
+        When BLE SPI log output is enabled, this option allows host logs to be transmitted via SPI.
+
 config BT_BLE_LOG_SPI_OUT_QUEUE_SIZE
     int "Number of ble log async SPI output queues"
     depends on BT_BLE_LOG_SPI_OUT_ENABLED
