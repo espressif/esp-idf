@@ -1,6 +1,7 @@
 config BT_ALARM_MAX_NUM
     int "Maximum number of Bluetooth alarms"
     default 50
+    depends on (BT_BLUEDROID_ENABLED || BT_NIMBLE_ENABLED)
     help
         This option decides the maximum number of alarms which
         could be used by Bluetooth host.
