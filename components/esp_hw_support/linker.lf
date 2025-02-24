@@ -68,6 +68,11 @@ entries:
             sar_periph_ctrl (noflash)
         elif PM_SLP_IRAM_OPT = y:
             sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
+    if ESP_VBAT_ISR_CACHE_SAFE = y:
+        sleep_modes: esp_sleep_disable_wakeup_source (noflash)
+        sleep_modes: esp_sleep_enable_vbat_under_volt_wakeup (noflash)
+        sleep_modes: esp_sleep_sub_mode_config (noflash)
+        sleep_modes: esp_sleep_sub_mode_force_disable (noflash)
 
 [mapping:soc_pm]
 archive: libsoc.a

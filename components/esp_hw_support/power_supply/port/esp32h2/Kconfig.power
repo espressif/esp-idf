@@ -78,6 +78,14 @@ menu "Power Supplier"
                     during deep sleep.
                 - When this option is disabled, the RTC battery input (VBAT) must not be left floating.
 
+        config ESP_VBAT_ISR_CACHE_SAFE
+            bool "VBAT ISR IRAM-Safe"
+            default y
+            depends on SOC_VBAT_SUPPORTED && ESP_VBAT_INIT_AUTO
+            help
+                Ensure the VBAT interrupt is IRAM-Safe by allowing the interrupt handler to be
+                executable when the cache is disabled (e.g. SPI Flash write).
+
         config ESP_VBAT_USE_RECHARGEABLE_BATTERY
             bool "The battery for RTC battery is a rechargeable battery"
             default n
@@ -166,6 +174,13 @@ menu "Power Supplier"
             config ESP_VBAT_BROWNOUT_DET_LVL_SEL_0
                 bool "2.57V"
         endchoice
+
+        config ESP_VBAT_WAKEUP_CHIP_ON_VBAT_BROWNOUT
+            bool "Wake up chip in deepsleep if VBAT brownout"
+            depends on !ESP_VBAT_USE_RECHARGEABLE_BATTERY
+            default n
+            help
+                Wake up the chip if the vbat voltage drops below the brownout voltage during deepsleep.
 
         config ESP_VBAT_DET_LVL_LOW
             int

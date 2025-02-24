@@ -47,6 +47,7 @@ typedef enum {
 #define RTC_SLEEP_PD_MODEM              PMU_SLEEP_PD_MODEM      //!< Power down modem(include wifi, ble and 15.4)
 
 //These flags are not power domains, but will affect some sleep parameters
+#define RTC_SLEEP_POWER_BY_VBAT         BIT(26)
 #define RTC_SLEEP_DIG_USE_8M            BIT(27)
 #define RTC_SLEEP_USE_ADC_TESEN_MONITOR BIT(28)
 #define RTC_SLEEP_NO_ULTRA_LOW          BIT(29) //!< Avoid using ultra low power in deep sleep, in which RTCIO cannot be used as input, and RTCMEM can't work under high temperature
@@ -123,6 +124,12 @@ typedef enum {
 #define RTC_LP_VAD_TRIG_EN          0
 #endif //SOC_LP_VAD_SUPPORTED
 
+#if SOC_VBAT_SUPPORTED
+#define RTC_VBAT_UNDER_VOLT_TRIG_EN            PMU_VBAT_UNDERVOLT_WAKEUP_EN   //!< VBAT under voltage wakeup
+#else
+#define RTC_VBAT_UNDER_VOLT_TRIG_EN            0
+#endif //SOC_VBAT_SUPPORTED
+
 #define RTC_XTAL32K_DEAD_TRIG_EN    0 // TODO
 #define RTC_BROWNOUT_DET_TRIG_EN    0 // TODO
 
@@ -143,6 +150,7 @@ typedef enum {
                                RTC_XTAL32K_DEAD_TRIG_EN | \
                                RTC_USB_TRIG_EN          | \
                                RTC_LP_VAD_TRIG_EN       | \
+                               RTC_VBAT_UNDER_VOLT_TRIG_EN | \
                                RTC_BROWNOUT_DET_TRIG_EN)
 
 
