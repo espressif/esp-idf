@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -880,20 +880,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
-         *  The  denominator of the frequency divider factor.
-         */
-        uint32_t sclk_div_b:6;      //HP UART's sclk_div_b is in hp_sys_clkrst_struct.h
-        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
-         *  The numerator of the frequency divider factor.
-         */
-        uint32_t sclk_div_a:6;      //HP UART's sclk_div_a is in hp_sys_clkrst_struct.h
-        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
-         *  The integral part of the frequency divider factor.
-         *  It is only used by LP UART
-         */
-        uint32_t sclk_div_num:8;    //HP UART's sclk_div_num is in hp_sys_clkrst_struct.h
-        uint32_t reserved_20:4;
+        uint32_t reserved_0:24;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Set this bit to enable UART Tx clock.
          */
@@ -1263,7 +1250,7 @@ typedef struct uart_dev_t{
     volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
     volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
     volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
-    volatile uart_clk_conf_reg_t clk_conf;      /* UART0/1/2/3/4 instance have this register reserved, configure in corresponding PCR registers */
+    volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
     uint32_t reserved_094;
