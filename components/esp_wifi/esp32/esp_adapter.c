@@ -589,6 +589,15 @@ static uint8_t coex_schm_flexible_period_get_wrapper(void)
 #endif
 }
 
+static void * coex_schm_get_phase_by_idx_wrapper(int phase_idx)
+{
+#if CONFIG_SW_COEXIST_ENABLE
+    return coex_schm_get_phase_by_idx(phase_idx);
+#else
+    return NULL;
+#endif
+}
+
 static void IRAM_ATTR esp_empty_wrapper(void)
 {
 
@@ -725,5 +734,6 @@ wifi_osi_funcs_t g_wifi_osi_funcs = {
     ._coex_schm_register_cb = coex_schm_register_cb_wrapper,
     ._coex_schm_flexible_period_set = coex_schm_flexible_period_set_wrapper,
     ._coex_schm_flexible_period_get = coex_schm_flexible_period_get_wrapper,
+    ._coex_schm_get_phase_by_idx = coex_schm_get_phase_by_idx_wrapper,
     ._magic = ESP_WIFI_OS_ADAPTER_MAGIC,
 };
