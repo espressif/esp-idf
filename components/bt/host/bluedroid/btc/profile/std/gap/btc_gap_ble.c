@@ -1251,6 +1251,25 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.trans_power_report_evt.delta = params->trans_pwr_report_evt.delta;
             break;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+        case BTA_BLE_GAP_SET_DEFAULT_SUBRATE_EVT:
+            msg.act = ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT;
+            param.set_default_subrate_evt.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        case BTA_BLE_GAP_SUBRATE_REQUEST_EVT:
+            msg.act = ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT;
+            param.subrate_req_cmpl_evt.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        case BTA_BLE_GAP_SUBRATE_CHANGE_EVT:
+            msg.act = ESP_GAP_BLE_SUBRATE_CHANGE_EVT;
+            param.subrate_change_evt.status = btc_btm_status_to_esp_status(params->subrate_change_evt.status);
+            param.subrate_change_evt.conn_handle = params->subrate_change_evt.conn_handle;
+            param.subrate_change_evt.subrate_factor = params->subrate_change_evt.subrate_factor;
+            param.subrate_change_evt.peripheral_latency = params->subrate_change_evt.peripheral_latency;
+            param.subrate_change_evt.continuation_number = params->subrate_change_evt.continuation_number;
+            param.subrate_change_evt.supervision_timeout = params->subrate_change_evt.supervision_timeout;
+            break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
         default:
             break;
     }
@@ -2592,6 +2611,16 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         BTA_DmBleGapSetTransPwrRptEnable(arg_5->set_trans_pwr_rpting_en.conn_handle, arg_5->set_trans_pwr_rpting_en.local_enable, arg_5->set_trans_pwr_rpting_en.remote_enable);
         break;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    case BTC_GAP_BLE_SET_DEFALT_SUBRATE:
+        BTA_DmBleGapSetDefaultSubrate(arg_5->default_subrate_param.subrate_min, arg_5->default_subrate_param.subrate_max, arg_5->default_subrate_param.max_latency,
+                                    arg_5->default_subrate_param.continuation_number, arg_5->default_subrate_param.supervision_timeout);
+        break;
+    case BTC_GAP_BLE_SUBRATE_REQUEST:
+        BTA_DmBleGapSubrateReqest(arg_5->subrate_req_param.conn_handle, arg_5->subrate_req_param.subrate_min, arg_5->subrate_req_param.subrate_max,
+                                arg_5->subrate_req_param.max_latency, arg_5->subrate_req_param.continuation_number, arg_5->subrate_req_param.supervision_timeout);
+        break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     default:
         break;
     }

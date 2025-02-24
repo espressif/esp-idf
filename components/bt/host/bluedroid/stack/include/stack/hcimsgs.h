@@ -1230,4 +1230,15 @@ UINT8 btsnd_hcic_ble_set_path_loss_rpt_params(uint16_t conn_handle, uint8_t high
 UINT8 btsnd_hcic_ble_set_path_loss_rpt_enable(uint16_t conn_handle, uint8_t enable);
 UINT8 btsnd_hcic_ble_set_trans_pwr_rpt_enable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define HCIC_PARAM_SIZE_SET_DEFAULT_SUBRATE_PARAMS_LEN              10
+#define HCIC_PARAM_SIZE_SUBRATE_REQ_LENGTH_PARAMS_LEN               12
+UINT8 btsnd_hcic_ble_set_default_subrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                            UINT16 continuation_number, UINT16 supervision_timeout);
+
+UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                        UINT16 continuation_number, UINT16 supervision_timeout);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #endif

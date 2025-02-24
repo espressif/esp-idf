@@ -328,6 +328,10 @@ enum {
     BTA_DM_API_SET_PATH_LOSS_REPORTING_EN,
     BTA_DM_API_SET_TRANS_POWER_REPORTING_EN,
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    BTA_DM_API_SET_DEFALT_SUBRATE,
+    BTA_DM_API_SUBRATE_REQUEST,
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1114,6 +1118,27 @@ typedef struct {
 } tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+typedef struct {
+    BT_HDR hdr;
+    UINT16 subrate_min;
+    UINT16 subrate_max;
+    UINT16 max_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT16 subrate_min;
+    UINT16 subrate_max;
+    UINT16 max_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTA_DM_API_BLE_SUBRATE_REQUEST;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1832,6 +1857,10 @@ typedef union {
     tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE     path_loss_rpt_en;
     tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE     trans_pwr_rpt_en;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE  default_subrate;
+    tBTA_DM_API_BLE_SUBRATE_REQUEST      subrate_request;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2492,5 +2521,8 @@ void bta_dm_api_set_path_loss_report_params(tBTA_DM_MSG *p_data);
 void bta_dm_api_set_path_loss_reporting_en(tBTA_DM_MSG *p_data);
 void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
-
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void bta_dm_api_set_default_subrate(tBTA_DM_MSG *p_data);
+void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 #endif /* BTA_DM_INT_H */

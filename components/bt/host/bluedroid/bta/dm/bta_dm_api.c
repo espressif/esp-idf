@@ -3099,6 +3099,41 @@ void BTA_DmBleGapSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable
 }
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTA_DmBleGapSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout)
+{
+    tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE *)osi_malloc(sizeof(tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SET_DEFALT_SUBRATE;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+
+void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout)
+{
+    tBTA_DM_API_BLE_SUBRATE_REQUEST *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_BLE_SUBRATE_REQUEST *)osi_malloc(sizeof(tBTA_DM_API_BLE_SUBRATE_REQUEST)))
+        != NULL) {
+        p_msg->hdr.event = BTA_DM_API_SUBRATE_REQUEST;
+        p_msg->conn_handle = conn_handle;
+        p_msg->subrate_min = subrate_min;
+        p_msg->subrate_max = subrate_max;
+        p_msg->max_latency = max_latency;
+        p_msg->continuation_number = continuation_number;
+        p_msg->supervision_timeout = supervision_timeout;
+        bta_sys_sendmsg(p_msg);
+    }
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit

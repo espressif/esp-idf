@@ -438,6 +438,11 @@
 #define HCI_BLE_SET_TRANS_POWER_REPORTING_ENABLE   (0x007A | HCI_GRP_BLE_CMDS)
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define HCI_BLE_SET_DEFAULT_SUBRATE                (0x007D | HCI_GRP_BLE_CMDS)
+#define HCI_BLE_SUBRATE_REQUEST                    (0x007E | HCI_GRP_BLE_CMDS)
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 // Vendor OGF define
 #define HCI_VENDOR_OGF          0x3F
 
@@ -894,6 +899,10 @@
 #define HCI_BLE_PATH_LOSS_THRESHOLD_EVT        0x20
 #define HCI_BLE_TRANS_POWER_REPORTING_EVT      0x21
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define HCI_BLE_SUBRATE_CHANGE_EVT             0x23
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 /* Definitions for LE Channel Map */
 #define HCI_BLE_CHNL_MAP_SIZE               5

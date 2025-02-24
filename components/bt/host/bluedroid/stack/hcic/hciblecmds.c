@@ -2750,3 +2750,57 @@ UINT8 btsnd_hcic_ble_set_trans_pwr_rpt_enable(uint16_t conn_handle, uint8_t loca
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+UINT8 btsnd_hcic_ble_set_default_subrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                            UINT16 continuation_number, UINT16 supervision_timeout)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set default subrate, subrate_min %d subrate_max %d max_latency %d continuation_number %d supervision_timeout %d",
+                                                        subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_DEFAULT_SUBRATE_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_DEFAULT_SUBRATE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_DEFAULT_SUBRATE_PARAMS_LEN);
+
+    UINT16_TO_STREAM(pp, subrate_min);
+    UINT16_TO_STREAM(pp, subrate_max);
+    UINT16_TO_STREAM(pp, max_latency);
+    UINT16_TO_STREAM(pp, continuation_number);
+    UINT16_TO_STREAM(pp, supervision_timeout);
+
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                        UINT16 continuation_number, UINT16 supervision_timeout)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci subrate req, conn_handle %d subrate_min %d subrate_max %d max_latency %d continuation_number %d supervision_timeout %d",
+                                                    conn_handle, subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout);
+
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SUBRATE_REQ_LENGTH_PARAMS_LEN);
+
+    pp = (UINT8 *)(p + 1);
+
+    UINT16_TO_STREAM(pp, HCI_BLE_SUBRATE_REQUEST);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SUBRATE_REQ_LENGTH_PARAMS_LEN);
+
+    UINT16_TO_STREAM(pp, conn_handle);
+    UINT16_TO_STREAM(pp, subrate_min);
+    UINT16_TO_STREAM(pp, subrate_max);
+    UINT16_TO_STREAM(pp, max_latency);
+    UINT16_TO_STREAM(pp, continuation_number);
+    UINT16_TO_STREAM(pp, supervision_timeout);
+
+    btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+    return TRUE;
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)

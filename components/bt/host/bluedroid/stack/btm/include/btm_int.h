@@ -1126,6 +1126,11 @@ void btm_ble_big_sync_terminate_complete(UINT8 hci_status, UINT8 big_handle);
 void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p);
 void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void btm_subrate_req_cmd_status(UINT8 status);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 /* Internal functions provided by btm_sco.c
 ********************************************
 */

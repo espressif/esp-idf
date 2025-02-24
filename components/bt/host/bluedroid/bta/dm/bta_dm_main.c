@@ -337,6 +337,10 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_api_set_path_loss_reporting_en, /* BTA_DM_API_SET_PATH_LOSS_REPORTING_EN */
     bta_dm_api_set_trans_power_reporting_en, /* BTA_DM_API_SET_TRANS_POWER_REPORTING_EN */
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    bta_dm_api_set_default_subrate, /* BTA_DM_API_SET_DEFALT_SUBRATE */
+    bta_dm_api_subrate_request, /* BTA_DM_API_SUBRATE_REQUEST */
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 };
 
 

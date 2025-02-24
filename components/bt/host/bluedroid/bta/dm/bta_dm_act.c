@@ -6314,6 +6314,20 @@ void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data)
 }
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void bta_dm_api_set_default_subrate(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetDefaultSubrate(p_data->default_subrate.subrate_min, p_data->default_subrate.subrate_max, p_data->default_subrate.max_latency,
+                            p_data->default_subrate.continuation_number, p_data->default_subrate.supervision_timeout);
+}
+
+void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSubrateRequest(p_data->subrate_request.conn_handle, p_data->subrate_request.subrate_min, p_data->subrate_request.subrate_max,
+                            p_data->subrate_request.max_latency, p_data->subrate_request.continuation_number, p_data->subrate_request.supervision_timeout);
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **

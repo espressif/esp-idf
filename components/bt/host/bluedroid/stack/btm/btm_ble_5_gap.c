@@ -1663,3 +1663,47 @@ void btm_ble_transmit_power_report_evt(tBTM_BLE_TRANS_POWER_REPORT_EVT *params)
 }
 
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout)
+{
+    tBTM_STATUS status = BTM_SUCCESS;
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if ((err = btsnd_hcic_ble_set_default_subrate(subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("%s cmd err=0x%x", __func__, err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_DEFAULT_SUBRATE_EVT, &cb_params);
+}
+
+void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout)
+{
+    btsnd_hcic_ble_subrate_request(conn_handle, subrate_min, subrate_max, max_latency, continuation_number, supervision_timeout);
+}
+
+void btm_subrate_req_cmd_status(UINT8 status)
+{
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    if (status != HCI_SUCCESS) {
+        status = (status | BTM_HCI_ERROR);
+    }
+    cb_params.status = status;
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SUBRATE_REQUEST_EVT, &cb_params);
+}
+
+void btm_ble_subrate_change_evt(tBTM_BLE_SUBRATE_CHANGE_EVT *params)
+{
+    if (params->status != HCI_SUCCESS) {
+        params->status = (params->status | BTM_HCI_ERROR);
+    }
+
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SUBRATE_CHANGE_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)

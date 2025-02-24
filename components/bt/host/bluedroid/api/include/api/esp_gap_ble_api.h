@@ -240,6 +240,10 @@ typedef enum {
     ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT,                 /*!< when enable or disable the reporting to the local Host of transmit power level changes complete, the event comes */
     ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT,                         /*!< when receive a path loss threshold crossing, the event comes */
     ESP_GAP_BLE_TRANS_PWR_RPTING_EVT,                            /*!< when receive a transmit power level report, the event comes */
+    // BLE connection subrating
+    ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT,                /*!< when set default subrate complete, the event comes */
+    ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT,                    /*!< when subrate request command complete, the event comes */
+    ESP_GAP_BLE_SUBRATE_CHANGE_EVT,                              /*!< when Connection Subrate Update procedure has completed and some parameters of the specified connection have changed, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1122,6 +1126,36 @@ typedef enum {
 } esp_ble_path_loss_zone_t;
 
 /**
+* @brief Connection subrating default parameters
+*/
+typedef struct {
+    uint16_t subrate_min;         /*!< Minimum subrate factor allowed in requests by a Peripheral. Range: 0x0001 to 0x01F4, default: 0x0001 */
+    uint16_t subrate_max;         /*!< Maximum subrate factor allowed in requests by a Peripheral. Range: 0x0001 to 0x01F4, default: 0x0001. subrate_max × (max_latency + 1) should not be greater than 500 */
+    uint16_t max_latency;         /*!< Maximum Peripheral latency allowed in requests by a Peripheral, in units of subrated connection intervals.
+                                    Range: 0x0000 to 0x01F3, default: 0x0000 */
+    uint16_t continuation_number; /*!< Minimum number of underlying connection events to remain active after a packet containing a Link Layer
+                                    PDU with a non-zero Length field is sent or received in requests by a Peripheral. Range: 0x0000 to 0x01F3,
+                                    default: 0x0000. continuation_number should not greater than or equal to subrate_max */
+    uint16_t supervision_timeout; /*!< Maximum supervision timeout allowed in requests by a Peripheral (N * 10 ms). Range: 0x000A to 0x0C80,
+                                    Time Range: 100 ms to 32 s, default: 0x0C80 (32 s) */
+} esp_ble_default_subrate_param_t;
+
+/**
+* @brief Connection subrating request parameters
+*/
+typedef struct {
+    uint16_t conn_handle;         /*!< Connection handle of the ACL */
+    uint16_t subrate_min;         /*!< Minimum subrate factor to be applied to the underlying connection interval. Range: 0x0001 to 0x01F4 */
+    uint16_t subrate_max;         /*!< Maximum subrate factor to be applied to the underlying connection interval. Range: 0x0001 to 0x01F4 */
+    uint16_t max_latency;         /*!< Maximum Peripheral latency for the connection in units of subrated connection intervals. Range: 0x0000 to 0x01F3 */
+    uint16_t continuation_number; /*!< Minimum number of underlying connection events to remain active after a packet containing
+                                    a Link Layer PDU with a non-zero Length field is sent or received. Range: 0x0000 to 0x01F3 */
+    uint16_t supervision_timeout; /*!< Supervision timeout for this connection (N * 10 ms). Range: 0x000A to 0x0C80, Time Range: 100 ms to 32 s
+                                    The supervision_timeout, in milliseconds, shall be greater than 2 × current connection interval × subrate_max × (max_latency + 1) */
+} esp_ble_subrate_req_param_t;
+
+
+/**
  * @brief Gap callback parameters union
  */
 typedef union {
@@ -1716,6 +1750,31 @@ typedef union {
     } trans_power_report_evt;        /*!< Event parameter of ESP_GAP_BLE_TRANS_PWR_RPTING_EVT */
 
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT
+     */
+    struct ble_default_subrate_evt {
+        esp_bt_status_t status;       /*!< Indicate setting default subrate command success, status = (controller error code | 0x100) if status is not equal to 0 */
+    } set_default_subrate_evt;        /*!< Event parameter of ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT
+     */
+    struct ble_subrate_request_evt {
+        esp_bt_status_t status;              /*!< Indicate subrate request command success, status = (controller error code | 0x100) if status is not equal to 0 */
+    } subrate_req_cmpl_evt;          /*!< Event parameter of ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_SUBRATE_CHANGE_EVT
+     */
+    struct ble_subrate_change_evt {
+        esp_bt_status_t status;       /*!< command succeeded or this event was generated following a request from the peer device. status = (controller error code | 0x100) if status is not equal to 0 */
+        uint16_t conn_handle;         /*!< connection handle */
+        uint16_t subrate_factor;      /*!< New subrate factor applied to the specified underlying connection interval, range 0x0001 to 0x01F4 */
+        uint16_t peripheral_latency;  /*!< New Peripheral latency for the connection in number of subrated connection events, range: 0x0000 to 0x01F3 */
+        uint16_t continuation_number; /*!< Number of underlying connection events to remain active after a packet containing a Link Layer PDU with a non-zero Length field is sent or received, range: 0x0000 to 0x01F3 */
+        uint16_t supervision_timeout; /*!< New supervision timeout for this connection(Time = N × 10 ms). Range: 0x000A to 0x0C80, Time Range: 100 ms to 32 s */
+    } subrate_change_evt;             /*!< Event parameter of ESP_GAP_BLE_SUBRATE_CHANGE_EVT */
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -2996,6 +3055,46 @@ esp_err_t esp_ble_gap_set_path_loss_reporting_enable(uint16_t conn_handle, bool 
  */
 esp_err_t esp_ble_gap_set_transmit_power_reporting_enable(uint16_t conn_handle, bool local_enable, bool remote_enable);
 
+/**
+ * @brief           This function is used to set the initial values for the acceptable parameters for subrating requests,
+ *                  for all future ACL connections where the Controller is the Central. This command does not affect any
+ *                  existing connection.
+ *
+ *
+ * @param[in]       default_subrate_params: The default subrate parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *default_subrate_params);
+
+/**
+ * @brief           This function is used by a Central or a Peripheral to request a change to the subrating factor and/or other parameters
+ *                  applied to an existing connection.
+ *
+ *                  If this API is issued on the Central, the following rules shall apply when the Controller initiates the Connection Subrate Update procedure:
+ *                    1. The Peripheral latency shall be less than or equal to max_latency.
+ *                    2. The subrate factor shall be between subrate_min and subrate_max.
+ *                    3. The continuation number shall be equal to the lesser of continuation_number and (subrate factor - 1).
+ *                    4. The connection supervision timeout shall be equal to supervision_timeout.
+ *
+ *                 If this API is issued on the Peripheral, the following rules shall apply when the Controller initiates the Connection Subrate Request procedure:
+ *                    1. The Peripheral latency shall be less than or equal to max_latency.
+ *                    2. The minimum and maximum subrate factors shall be between subrate_min and subrate_max.
+ *                    3. The continuation number shall be equal to the lesser of continuation_number and (maximum subrate factor - 1).
+ *                    4.The connection supervision timeout shall be equal to supervision_timeout.
+ *
+ *
+ * @param[in]       subrate_req_params: The subrate request parameters.
+ *
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ */
+esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params);
 
 #ifdef __cplusplus
 }
