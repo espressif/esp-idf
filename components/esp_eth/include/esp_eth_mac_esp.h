@@ -242,7 +242,7 @@ typedef enum {
         .smi_gpio =                                                           \
         {                                                                     \
             .mdc_num = 31,                                                    \
-            .mdio_num = 27                                                    \
+            .mdio_num = 52                                                    \
         },                                                                    \
         .interface = EMAC_DATA_INTERFACE_RMII,                                \
         .clock_config =                                                       \

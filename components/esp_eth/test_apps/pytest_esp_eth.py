@@ -265,6 +265,38 @@ def test_esp_eth_ip101(dut: IdfDut) -> None:
     ethernet_l2_test(dut)
 
 
+# ----------- IP101 ESP32P4 -----------
+@pytest.mark.esp32p4
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize('config', [
+    'default_ip101_esp32p4',
+], indirect=True)
+def test_esp32p4_ethernet(dut: IdfDut) -> None:
+    ethernet_test(dut)
+    dut.serial.hard_reset()
+    ethernet_l2_test(dut)
+
+
+@pytest.mark.esp32p4
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize('config', [
+    'default_ip101_esp32p4',
+], indirect=True)
+def test_esp32p4_emac(dut: IdfDut) -> None:
+    ethernet_int_emac_test(dut)
+    dut.serial.hard_reset()
+    ethernet_heap_alloc_test(dut)
+
+
+@pytest.mark.esp32p4
+@pytest.mark.eth_ip101
+@pytest.mark.parametrize('config', [
+    'rmii_clko_esp32p4',
+], indirect=True)
+def test_esp32p4_emac_clko(dut: IdfDut) -> None:
+    dut.run_all_single_board_cases(group='esp_emac_clk_out')
+
+
 # ----------- LAN8720 -----------
 @pytest.mark.esp32
 @pytest.mark.eth_lan8720
