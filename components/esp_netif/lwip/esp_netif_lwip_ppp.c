@@ -37,6 +37,8 @@ typedef struct lwip_peer2peer_ctx {
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
     esp_ip4_addr_t ppp_our_ip4_addr;      // our desired IP (IPADDR_ANY if no preference)
     esp_ip4_addr_t ppp_their_ip4_addr;    // their desired IP (IPADDR_ANY if no preference)
+    esp_ip4_addr_t ppp_dns1_addr;         // dns server 1 IP (IPADDR_ANY if no preference)
+    esp_ip4_addr_t ppp_dns2_addr;         // dns server 2 IP (IPADDR_ANY if no preference)
 #endif
     ppp_pcb *ppp;
 } lwip_peer2peer_ctx_t;
@@ -268,6 +270,17 @@ esp_err_t esp_netif_start_ppp(esp_netif_t *esp_netif)
         ppp_ctx->ppp->ipcp_wantoptions.hisaddr = ppp_ctx->ppp_their_ip4_addr.addr;
         ppp_ctx->ppp->ipcp_wantoptions.accept_local = 1;
     }
+    if (ppp_ctx->ppp_dns1_addr.addr != IPADDR_ANY) {
+        ppp_set_ipcp_dnsaddr(ppp_ctx->ppp, 0, &ppp_ctx->ppp_dns1_addr);
+    }
+    if (ppp_ctx->ppp_dns2_addr.addr != IPADDR_ANY) {
+        ppp_set_ipcp_dnsaddr(ppp_ctx->ppp, 1, &ppp_ctx->ppp_dns2_addr);
+    }
+    if (ppp_ctx->ppp_dns1_addr.addr != IPADDR_ANY ||
+        ppp_ctx->ppp_dns2_addr.addr != IPADDR_ANY) {
+        // No need to request DNS servers from peer when providing DNS servers.
+        ppp_set_usepeerdns(ppp_ctx->ppp, 0);
+    }
 #endif // CONFIG_LWIP_PPP_SERVER_SUPPORT
 
 #if ESP_IPV6_AUTOCONFIG
@@ -338,6 +351,8 @@ esp_err_t esp_netif_ppp_set_params(esp_netif_t *netif, const esp_netif_ppp_confi
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
     obj->ppp_our_ip4_addr = config->ppp_our_ip4_addr;
     obj->ppp_their_ip4_addr = config->ppp_their_ip4_addr;
+    obj->ppp_dns1_addr = config->ppp_dns1_addr;
+    obj->ppp_dns2_addr = config->ppp_dns2_addr;
 #endif
     return ESP_OK;
 }
@@ -357,6 +372,8 @@ esp_err_t esp_netif_ppp_get_params(esp_netif_t *netif, esp_netif_ppp_config_t *c
 #ifdef CONFIG_LWIP_PPP_SERVER_SUPPORT
     config->ppp_our_ip4_addr = obj->ppp_our_ip4_addr;
     config->ppp_their_ip4_addr = obj->ppp_their_ip4_addr;
+    config->ppp_dns1_addr = obj->ppp_dns1_addr;
+    config->ppp_dns2_addr = obj->ppp_dns2_addr;
 #endif
 
     return ESP_OK;
