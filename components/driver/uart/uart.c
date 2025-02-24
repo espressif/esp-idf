@@ -278,9 +278,11 @@ esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baud_rate)
     uart_hal_get_sclk(&(uart_context[uart_num].hal), &src_clk);
     ESP_RETURN_ON_ERROR(uart_get_sclk_freq(src_clk, &sclk_freq), UART_TAG, "Invalid src_clk");
 
+    bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
+    success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), baud_rate, sclk_freq);
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
+    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
     return ESP_OK;
 }
 
@@ -703,10 +705,11 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     uint32_t sclk_freq;
     ESP_RETURN_ON_ERROR(uart_get_sclk_freq(clk_src, &sclk_freq), UART_TAG, "Invalid src_clk");
 
+    bool success = false;
     UART_ENTER_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_init(&(uart_context[uart_num].hal), uart_num);
     uart_hal_set_sclk(&(uart_context[uart_num].hal), clk_src);
-    uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
+    success = uart_hal_set_baudrate(&(uart_context[uart_num].hal), uart_config->baud_rate, sclk_freq);
     uart_hal_set_parity(&(uart_context[uart_num].hal), uart_config->parity);
     uart_hal_set_data_bit_num(&(uart_context[uart_num].hal), uart_config->data_bits);
     uart_hal_set_stop_bits(&(uart_context[uart_num].hal), uart_config->stop_bits);
@@ -715,6 +718,7 @@ esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_conf
     UART_EXIT_CRITICAL(&(uart_context[uart_num].spinlock));
     uart_hal_rxfifo_rst(&(uart_context[uart_num].hal));
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
+    ESP_RETURN_ON_FALSE(success, ESP_FAIL, UART_TAG, "baud rate unachievable");
     return ESP_OK;
 }
 
