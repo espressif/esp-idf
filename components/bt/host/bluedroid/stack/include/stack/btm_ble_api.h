@@ -1081,7 +1081,12 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT                     46
 #define    BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT                 47
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               50
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define    BTM_BLE_GAP_SET_DEFAULT_SUBRATE_EVT                     48
+#define    BTM_BLE_GAP_SUBRATE_REQUEST_EVT                         49
+#define    BTM_BLE_GAP_SUBRATE_CHANGE_EVT                          50
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               51
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1431,8 +1436,18 @@ typedef struct {
     UINT8 tx_power_level_flag;
     INT8 delta;
 } __attribute__((packed)) tBTM_BLE_TRANS_POWER_REPORT_EVT;
-
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT16 subrate_factor;
+    UINT16 peripheral_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} __attribute__((packed)) tBTM_BLE_SUBRATE_CHANGE_EVT;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -1797,6 +1812,9 @@ typedef union {
     tBTM_BLE_PATH_LOSS_THRESHOLD_EVT      path_loss_thres_evt;
     tBTM_BLE_TRANS_POWER_REPORT_EVT       trans_pwr_report_evt;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    tBTM_BLE_SUBRATE_CHANGE_EVT          subrate_change_evt;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } tBTM_BLE_5_GAP_CB_PARAMS;
 
 typedef struct {
@@ -3329,5 +3347,13 @@ void BTM_BleSetPathLossRptParams(uint16_t conn_handle, uint8_t high_threshold, u
 void BTM_BleSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable);
 void BTM_BleSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
+                                UINT16 continuation_number, UINT16 supervision_timeout);
+
+void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max,
+                            UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 #endif

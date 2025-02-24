@@ -129,6 +129,10 @@ typedef enum {
     BTC_GAP_BLE_SET_PATH_LOSS_REPORTING_EN,
     BTC_GAP_BLE_SET_TRANS_POWER_REPORTING_EN,
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    BTC_GAP_BLE_SET_DEFALT_SUBRATE,
+    BTC_GAP_BLE_SUBRATE_REQUEST,
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -496,6 +500,25 @@ typedef union {
         uint8_t remote_enable;
     } set_trans_pwr_rpting_en;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    // BTC_GAP_BLE_SET_DEFALT_SUBRATE
+    struct default_subrate_param_args {
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+    } default_subrate_param;
+    // BTC_GAP_BLE_SUBRATE_REQUEST
+    struct subrate_req_param_args {
+        uint16_t conn_handle;
+        uint16_t subrate_min;
+        uint16_t subrate_max;
+        uint16_t max_latency;
+        uint16_t continuation_number;
+        uint16_t supervision_timeout;
+    } subrate_req_param;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

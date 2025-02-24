@@ -224,6 +224,10 @@ static void btu_ble_path_loss_threshold_evt(UINT8 *p);
 static void btu_ble_transmit_power_report_evt(UINT8 *p);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
 
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+static void btu_ble_subrate_change_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 #if (BLE_42_ADV_EN == TRUE)
 extern osi_sem_t adv_enable_sem;
 extern osi_sem_t adv_data_sem;
@@ -577,6 +581,11 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             btu_ble_transmit_power_report_evt(p);
             break;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+        case HCI_BLE_SUBRATE_CHANGE_EVT:
+            btu_ble_subrate_change_evt(p);
+            break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -1580,6 +1589,11 @@ static void btu_hcif_hdl_command_status (UINT16 opcode, UINT8 status, UINT8 *p_c
         btm_read_remote_trans_pwr_level_cmpl(status);
         break;
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    case HCI_BLE_SUBRATE_REQUEST:
+        btm_subrate_req_cmd_status(status);
+        break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
     default:
         /* If command failed to start, we may need to tell BTM */
         if (status != HCI_SUCCESS) {
@@ -3045,6 +3059,26 @@ static void btu_ble_transmit_power_report_evt(UINT8 *p)
     btm_ble_transmit_power_report_evt(&trans_pwr_report_evt);
 }
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+static void btu_ble_subrate_change_evt(UINT8 *p)
+{
+    tBTM_BLE_SUBRATE_CHANGE_EVT subrate_change_evt = {0};
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(subrate_change_evt.status, p);
+    STREAM_TO_UINT16(subrate_change_evt.conn_handle, p);
+    STREAM_TO_UINT16(subrate_change_evt.subrate_factor, p);
+    STREAM_TO_UINT16(subrate_change_evt.peripheral_latency, p);
+    STREAM_TO_UINT16(subrate_change_evt.continuation_number, p);
+    STREAM_TO_UINT16(subrate_change_evt.supervision_timeout, p);
+
+    btm_ble_subrate_change_evt(&subrate_change_evt);
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 /**********************************************
 ** End of BLE Events Handler

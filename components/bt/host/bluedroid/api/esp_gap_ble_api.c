@@ -1906,3 +1906,60 @@ esp_err_t esp_ble_gap_set_transmit_power_reporting_enable(uint16_t conn_handle, 
 }
 
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *default_subrate_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!default_subrate_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SET_DEFALT_SUBRATE;
+
+    arg.default_subrate_param.subrate_min = default_subrate_params->subrate_min;
+    arg.default_subrate_param.subrate_max = default_subrate_params->subrate_max;
+    arg.default_subrate_param.max_latency = default_subrate_params->max_latency;
+    arg.default_subrate_param.continuation_number = default_subrate_params->continuation_number;
+    arg.default_subrate_param.supervision_timeout = default_subrate_params->supervision_timeout;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params)
+{
+    btc_msg_t msg = {0};
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    if (!subrate_req_params) {
+        return ESP_ERR_NOT_ALLOWED;
+    }
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_SUBRATE_REQUEST;
+
+    arg.subrate_req_param.conn_handle = subrate_req_params->conn_handle;
+    arg.subrate_req_param.subrate_min = subrate_req_params->subrate_min;
+    arg.subrate_req_param.subrate_max = subrate_req_params->subrate_max;
+    arg.subrate_req_param.max_latency = subrate_req_params->max_latency;
+    arg.subrate_req_param.continuation_number = subrate_req_params->continuation_number;
+    arg.subrate_req_param.supervision_timeout = subrate_req_params->supervision_timeout;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
