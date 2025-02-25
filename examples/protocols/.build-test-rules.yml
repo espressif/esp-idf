@@ -60,6 +60,14 @@ examples/protocols/http_server:
   depends_components+:
     - esp_http_server
 
+examples/protocols/http_server/async_handlers:
+  <<: *default_rules
+  disable_test:
+    - if: IDF_TARGET not in ["esp32"]
+      reason: only test on esp32
+  depends_components+:
+    - esp_http_server
+
 examples/protocols/http_server/captive_portal:
   <<: *default_rules
   disable+:
