@@ -45,7 +45,6 @@ Currently, the Host Library and the underlying Host Stack has the following limi
     - Only supports using one configuration. Changing to other configurations after enumeration is not supported yet.
     - Transfer timeouts are not supported yet.
     :esp32p4: - {IDF_TARGET_NAME} contains two USB-OTG peripherals USB 2.0 OTG High-Speed and USB 2.0 OTG Full-Speed. Only the High-Speed instance is supported now.
-    - The External Hub Driver: Supports only devices with the same speed as upstream port speed (e.g., Low-speed device won't work through Full-speed external Hub).
     - The External Hub Driver: Remote Wakeup feature is not supported (External Hubs are active, even if there are no devices inserted).
     - The External Hub Driver: Doesn't handle error cases (overcurrent handling, errors during initialization etc. are not implemented yet).
     - The External Hub Driver: No Interface selection. The Driver uses the first available Interface with Hub Class code (09h).

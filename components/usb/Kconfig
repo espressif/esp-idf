@@ -115,13 +115,6 @@ menu "USB-OTG"
         menu "Downstream Port configuration"
             depends on USB_HOST_HUBS_SUPPORTED
 
-            config USB_HOST_EXT_PORT_SUPPORT_LS
-                depends on IDF_EXPERIMENTAL_FEATURES
-                bool "Support LS"
-                default n
-                help
-                    Enables support of Low-speed devices, connected through the external Hub.
-
             config USB_HOST_EXT_PORT_RESET_ATTEMPTS
                 depends on IDF_EXPERIMENTAL_FEATURES
                 # Invisible config option
