@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,7 +30,7 @@ extern "C" {
 *
 * @note Please do not modify this value
 */
-#define ESP_BT_CTRL_CONFIG_VERSION      0x02410230
+#define ESP_BT_CTRL_CONFIG_VERSION      0x02502230
 
 /**
 * @brief Internal use only
@@ -319,6 +319,24 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
 #define BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED 0
 #endif
 
+#if defined(CONFIG_BT_CTRL_LE_LOG_EN)
+#define BT_BLE_LOG_EN CONFIG_BT_CTRL_LE_LOG_EN
+#else
+#define BT_BLE_LOG_EN (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_LOG_MODE_EN)
+#define BLE_LOG_MODE_EN CONFIG_BT_CTRL_LE_LOG_MODE_EN
+#else
+#define BLE_LOG_MODE_EN (0)
+#endif
+
+#if defined(CONFIG_BT_CTRL_LE_LOG_LEVEL)
+#define BLE_LOG_LEVEL CONFIG_BT_CTRL_LE_LOG_LEVEL
+#else
+#define BLE_LOG_LEVEL (0)
+#endif
+
 #define BT_CONTROLLER_INIT_CONFIG_DEFAULT() {                              \
     .magic = ESP_BT_CTRL_CONFIG_MAGIC_VAL,                                 \
     .version = ESP_BT_CTRL_CONFIG_VERSION,                                 \
@@ -365,6 +383,8 @@ typedef void (* esp_bt_hci_tl_callback_t) (void *arg, uint8_t status);
     .master_en = BT_CTRL_BLE_MASTER,                                       \
     .scan_en = BT_CTRL_BLE_SCAN,                                           \
     .ble_aa_check = BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED,     \
+    .ble_log_mode_en = BLE_LOG_MODE_EN,                                    \
+    .ble_log_level = BLE_LOG_LEVEL,                                        \
 }
 
 #else
@@ -490,6 +510,8 @@ typedef struct {
     bool master_en;                         /*!< In the flash mode, True if the master feature is enabled (default); false otherwise. Configurable in menuconfig.*/
     bool scan_en;                           /*!< In the flash mode, True if the scan feature is enabled (default); false otherwise. Configurable in menuconfig.*/
     bool ble_aa_check;                      /*!< True if adds a verification step for the Access Address within the CONNECT_IND PDU; false otherwise. Configurable in menuconfig */
+    uint32_t ble_log_mode_en;               /*!< BLE log mode enable */
+    uint8_t ble_log_level;                  /*!< BLE log level */
 } esp_bt_controller_config_t;
 
 /**
@@ -913,6 +935,16 @@ void esp_wifi_bt_power_domain_on(void);
 * @note This function is not recommended to use due to potential risk.
 */
 void esp_wifi_bt_power_domain_off(void);
+
+/**
+ * @brief Select buffers
+*/
+typedef enum {
+    ESP_BLE_LOG_BUF_HCI         = 0x02,
+    ESP_BLE_LOG_BUF_CONTROLLER  = 0x05,
+} esp_ble_log_buf_t;
+
+void esp_ble_controller_log_dump_all(bool output);
 
 #ifdef __cplusplus
 }
