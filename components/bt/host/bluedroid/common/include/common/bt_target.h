@@ -168,6 +168,10 @@
 #define BTC_HD_INCLUDED             TRUE
 #endif /* UC_BT_HID_DEVICE_ENABLED */
 
+#if UC_BT_HID_REMOVE_DEVICE_BONDING_ENABLED
+#define BTC_HID_REMOVE_DEVICE_BONDING     TRUE
+#endif
+
 #endif /* UC_BT_CLASSIC_ENABLED */
 
 /* This is set to enable use of GAP L2CAP connections. */
@@ -402,6 +406,10 @@
 
 #ifndef BTC_HD_INCLUDED
 #define BTC_HD_INCLUDED FALSE
+#endif
+
+#ifndef BTC_HID_REMOVE_DEVICE_BONDING
+#define BTC_HID_REMOVE_DEVICE_BONDING     FALSE
 #endif
 
 #ifndef SBC_DEC_INCLUDED
