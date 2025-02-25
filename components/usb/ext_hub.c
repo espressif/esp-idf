@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -29,7 +29,7 @@ typedef enum {
     EXT_HUB_STATE_ATTACHED,                         /**< Device attached, but not state is unknown (no: Hub Descriptor, Device status and Hub status) */
     EXT_HUB_STATE_CONFIGURED,                       /**< Device attached and configured (has Hub Descriptor, Device status and Hub status were requested )*/
     EXT_HUB_STATE_SUSPENDED,                        /**< Device suspended */
-    EXT_HUB_STATE_FAILED                            /**< Device has internal error */
+    EXT_HUB_STATE_RELEASED,                         /**< Device released and its ports are not available */
 } ext_hub_state_t;
 
 /**
@@ -53,10 +53,10 @@ typedef enum {
     EXT_HUB_STAGE_CHECK_HUB_DESCRIPTOR,             /**< Device received the Hub Descriptor and requires its' handling  */
     EXT_HUB_STAGE_GET_HUB_STATUS,                   /**< Device requests Hub Status. For more details, refer to 11.24.2.6 Get Hub Status of usb_20 */
     EXT_HUB_STAGE_CHECK_HUB_STATUS,                 /**< Device received the Hub Status and requires its' handling  */
-    // Stages, don't required response handling
-    EXT_HUB_STAGE_PORT_FEATURE,                     /**< Device completed the Port Feature class-specific request (Set Feature or Clear Feature). For more details, refer to 11.24.2 Class-specific Requests of usb_20 */
-    EXT_HUB_STAGE_PORT_STATUS_REQUEST,              /**< Device completed the Port Get Status class-specific request. For more details, refer to 11.24.2 Class-specific Requests of usb_20 */
-    EXT_HUB_STAGE_FAILURE                           /**< Device has internal error and requires handling */
+    // Stages, don't required get stage handling
+    EXT_HUB_STAGE_CHECK_PORT_FEATURE,               /**< Device completed the Port Feature class-specific request (Set Feature or Clear Feature). For more details, refer to 11.24.2 Class-specific Requests of usb_20 */
+    EXT_HUB_STAGE_CHECK_PORT_STATUS,                /**< Device completed the Port Get Status class-specific request. For more details, refer to 11.24.2 Class-specific Requests of usb_20 */
+    EXT_HUB_STAGE_ERROR                             /**< Device has internal error and requires handling */
 } ext_hub_stage_t;
 
 const char *const ext_hub_stage_strings[] = {
@@ -76,15 +76,14 @@ const char *const ext_hub_stage_strings[] = {
  * @brief Device action flags
  */
 typedef enum {
-    DEV_ACTION_EP0_COMPLETE             = (1 << 1),  /**< Device complete one of stages, requires handling */
+    DEV_ACTION_EP0_COMPLETE             = (1 << 1),  /**< Device's Control EP transfer completed */
     DEV_ACTION_EP1_FLUSH                = (1 << 2),  /**< Device's Interrupt EP needs to be flushed */
     DEV_ACTION_EP1_DEQUEUE              = (1 << 3),  /**< Device's Interrupt EP needs to be dequeued */
     DEV_ACTION_EP1_CLEAR                = (1 << 4),  /**< Device's Interrupt EP needs to be cleared */
-    DEV_ACTION_REQ                      = (1 << 5),  /**< Device has new actions and required handling */
+    DEV_ACTION_REQ                      = (1 << 5),  /**< Device has new actions and requires handling */
     DEV_ACTION_ERROR                    = (1 << 6),  /**< Device encounters an error */
-    DEV_ACTION_GONE                     = (1 << 7),  /**< Device was gone */
-    DEV_ACTION_RELEASE                  = (1 << 8),  /**< Device was released */
-    DEV_ACTION_FREE                     = (1 << 9),  /**< Device should be freed */
+    DEV_ACTION_RELEASE                  = (1 << 7),  /**< Device should be released */
+    DEV_ACTION_FREE                     = (1 << 8),  /**< Device should be freed */
 } dev_action_t;
 
 typedef struct ext_hub_s ext_hub_dev_t;
@@ -301,14 +300,13 @@ static bool _device_set_actions(ext_hub_dev_t *ext_hub_dev, uint32_t action_flag
         // Move device form idle device list to callback device list
         TAILQ_REMOVE(&p_ext_hub_driver->dynamic.ext_hubs_tailq, ext_hub_dev, dynamic.tailq_entry);
         TAILQ_INSERT_TAIL(&p_ext_hub_driver->dynamic.ext_hubs_pending_tailq, ext_hub_dev, dynamic.tailq_entry);
-        ext_hub_dev->dynamic.action_flags |= action_flags;
         ext_hub_dev->dynamic.flags.in_pending_list = 1;
         call_proc_req_cb = true;
     } else {
         // The device is already on the callback list, thus a processing request is already pending.
-        ext_hub_dev->dynamic.action_flags |= action_flags;
         call_proc_req_cb = false;
     }
+    ext_hub_dev->dynamic.action_flags |= action_flags;
     return call_proc_req_cb;
 }
 
@@ -317,7 +315,8 @@ static esp_err_t device_enable_int_ep(ext_hub_dev_t *ext_hub_dev)
     ESP_LOGD(EXT_HUB_TAG, "[%d] Enable EP IN", ext_hub_dev->constant.dev_addr);
     esp_err_t ret = usbh_ep_enqueue_urb(ext_hub_dev->constant.ep_in_hdl, ext_hub_dev->constant.in_urb);
     if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "Failed to submit in urb: %s", esp_err_to_name(ret));
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Failed to submit in urb: %s", ext_hub_dev->constant.dev_addr, esp_err_to_name(ret));
+        device_error(ext_hub_dev);
     }
     return ret;
 }
@@ -369,7 +368,7 @@ static void device_status_change_handle(ext_hub_dev_t *ext_hub_dev, const uint8_
                 assert(i < ext_hub_dev->single_thread.maxchild);        // Port should be in range
                 assert(p_ext_hub_driver->constant.port_driver);         // Port driver call should be valid
                 // Request Port status to handle changes
-                p_ext_hub_driver->constant.port_driver->get_status(ext_hub_dev->constant.ports[i]);
+                ESP_ERROR_CHECK(p_ext_hub_driver->constant.port_driver->get_status(ext_hub_dev->constant.ports[i]));
             }
         }
     } else {
@@ -384,7 +383,9 @@ static void device_error(ext_hub_dev_t *ext_hub_dev)
     bool call_proc_req_cb = false;
 
     EXT_HUB_ENTER_CRITICAL();
-    call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_ERROR);
+    ext_hub_dev->dynamic.flags.waiting_release = 1;
+    call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_ERROR |
+                                           DEV_ACTION_RELEASE);
     EXT_HUB_EXIT_CRITICAL();
 
     if (call_proc_req_cb) {
@@ -462,45 +463,72 @@ exit:
     return ret;
 }
 
+static esp_err_t device_release_ports(ext_hub_dev_t *ext_hub_dev)
+{
+    esp_err_t ret = ESP_OK;
+    // Mark all ports as gone
+    for (uint8_t i = 0; i < ext_hub_dev->constant.hub_desc->bNbrPorts; i++) {
+        // Only for ports, that were created
+        if (ext_hub_dev->constant.ports[i] != NULL) {
+            // Mark port as gone
+            ret = p_ext_hub_driver->constant.port_driver->gone(ext_hub_dev->constant.ports[i]);
+            if (ret == ESP_OK) {
+                // Port doesn't have a device and can be recycled right now
+                ESP_ERROR_CHECK(device_port_free(ext_hub_dev, i));
+            } else if (ret == ESP_ERR_NOT_FINISHED) {
+                // Port has a device and will be recycled after USBH device will be released by all clients and freed
+                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port is gone", ext_hub_dev->constant.dev_addr, i + 1);
+                // Not an error case, but it's good to notify this with the error message
+                // TODO: IDF-12173 remove the error, instead set up the flag and verify the flag while recycle
+                ret = ESP_OK;
+            } else {
+                ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to mark port as gone: %s",
+                         ext_hub_dev->constant.dev_addr, i + 1, esp_err_to_name(ret));
+                return ret;
+            }
+        } else {
+            ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port was not created", ext_hub_dev->constant.dev_addr, i + 1);
+        }
+    }
+    return ret;
+}
+
 static void device_release(ext_hub_dev_t *ext_hub_dev)
 {
-    esp_err_t ret;
-
     ESP_LOGD(EXT_HUB_TAG, "[%d] Device release", ext_hub_dev->constant.dev_addr);
 
-    // Release IN EP
-    ESP_ERROR_CHECK(usbh_ep_command(ext_hub_dev->constant.ep_in_hdl, USBH_EP_CMD_HALT));
-
     EXT_HUB_ENTER_CRITICAL();
+    assert(ext_hub_dev->dynamic.flags.waiting_release); // Device should waiting the release
     ext_hub_dev->dynamic.flags.is_gone = 1;
     ext_hub_dev->dynamic.flags.waiting_release = 0;
     EXT_HUB_EXIT_CRITICAL();
 
-    if (ext_hub_dev->single_thread.state >= EXT_HUB_STATE_CONFIGURED) {
-        // Hub device was configured and has a descriptor
-        assert(ext_hub_dev->constant.hub_desc != NULL);
-        assert(p_ext_hub_driver->constant.port_driver);
-        // Mark all ports as gone
-        for (uint8_t i = 0; i < ext_hub_dev->constant.hub_desc->bNbrPorts; i++) {
-            if (ext_hub_dev->constant.ports[i]) {
-                ret = p_ext_hub_driver->constant.port_driver->gone(ext_hub_dev->constant.ports[i]);
-                if (ret == ESP_OK) {
-                    // Port doesn't have a device and can be recycled right now
-                    ret = device_port_free(ext_hub_dev, i);
-                    if (ret != ESP_OK) {
-                        // Hub runs into an error state
-                        // TODO: IDF-10057 Hub handling error
-                    }
-                } else if (ret == ESP_ERR_NOT_FINISHED) {
-                    // Port has a device and will be recycled after USBH device will be released by all clients and freed
-                    ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Port is gone", ext_hub_dev->constant.dev_addr, i + 1);
-                } else {
-                    ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Unable to mark port as gone: %s",
-                             ext_hub_dev->constant.dev_addr, i + 1, esp_err_to_name(ret));
-                }
-            }
+    // Release IN EP
+    ESP_ERROR_CHECK(usbh_ep_command(ext_hub_dev->constant.ep_in_hdl, USBH_EP_CMD_HALT));
+
+    switch (ext_hub_dev->single_thread.state) {
+    case EXT_HUB_STATE_ATTACHED:
+        // Device has no configured ports, release the USBH device object
+        ESP_LOGD(EXT_HUB_TAG, "[%d] Release USBH device object", ext_hub_dev->constant.dev_addr);
+        ESP_ERROR_CHECK(usbh_dev_close(ext_hub_dev->constant.dev_hdl));
+        break;
+    case EXT_HUB_STATE_CONFIGURED:
+    case EXT_HUB_STATE_SUSPENDED:
+        assert(ext_hub_dev->constant.hub_desc != NULL); // Device should have a Hub descriptor
+        assert(p_ext_hub_driver->constant.port_driver); // Port driver should be available
+
+        // Release ports if device has them
+        if (ext_hub_dev->constant.hub_desc->bNbrPorts) {
+            ESP_ERROR_CHECK(device_release_ports(ext_hub_dev));
         }
+        break;
+    default:
+        // Should never occur
+        abort();
+        break;
     }
+
+    ext_hub_dev->single_thread.state = EXT_HUB_STATE_RELEASED;
 }
 
 static esp_err_t device_alloc_desc(ext_hub_dev_t *ext_hub_hdl, const usb_hub_descriptor_t *hub_desc)
@@ -520,6 +548,9 @@ static esp_err_t device_alloc_desc(ext_hub_dev_t *ext_hub_hdl, const usb_hub_des
 
 static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_dev)
 {
+    EXT_HUB_CHECK(config != NULL, ESP_ERR_INVALID_ARG);
+    EXT_HUB_CHECK(config->dev_addr != 0, ESP_ERR_NOT_ALLOWED);
+
     esp_err_t ret;
     urb_t *ctrl_urb = NULL;
     urb_t *in_urb = NULL;
@@ -537,7 +568,8 @@ static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_d
     ext_hub_dev_t *hub_dev = heap_caps_calloc(1, sizeof(ext_hub_dev_t), MALLOC_CAP_DEFAULT);
 
     if (hub_dev == NULL) {
-        ESP_LOGE(EXT_HUB_TAG, "Unable to allocate device");
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Unable to allocate device",
+                 config->dev_addr);
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
@@ -545,13 +577,16 @@ static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_d
     // Allocate Control transfer URB
     ctrl_urb = urb_alloc(sizeof(usb_setup_packet_t) + EXT_HUB_CTRL_TRANSFER_MAX_DATA_LEN, 0);
     if (ctrl_urb == NULL) {
-        ESP_LOGE(EXT_HUB_TAG, "Unable to allocate Control URB");
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Unable to allocate Control URB",
+                 config->dev_addr);
         ret = ESP_ERR_NO_MEM;
         goto ctrl_urb_fail;
     }
 
     if (config->ep_in_desc->wMaxPacketSize > EXT_HUB_MAX_STATUS_BYTES_SIZE) {
-        ESP_LOGE(EXT_HUB_TAG, "wMaxPacketSize=%d is not supported", config->ep_in_desc->wMaxPacketSize);
+        ESP_LOGE(EXT_HUB_TAG, "[%d] wMaxPacketSize=%d is not supported",
+                 config->dev_addr,
+                 config->ep_in_desc->wMaxPacketSize);
         ret = ESP_ERR_NOT_SUPPORTED;
         goto in_urb_fail;
     }
@@ -559,7 +594,8 @@ static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_d
     in_urb = urb_alloc(config->ep_in_desc->wMaxPacketSize, 0);
     // Allocate Interrupt transfer URB
     if (in_urb == NULL) {
-        ESP_LOGE(EXT_HUB_TAG, "Unable to allocate Interrupt URB");
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Unable to allocate Interrupt URB",
+                 config->dev_addr);
         ret =  ESP_ERR_NO_MEM;
         goto in_urb_fail;
     }
@@ -576,7 +612,9 @@ static esp_err_t device_alloc(device_config_t *config, ext_hub_dev_t **ext_hub_d
 
     ret = usbh_ep_alloc(config->dev_hdl, &ep_config, &ep_hdl);
     if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "Endpoint allocation failure: %s", esp_err_to_name(ret));
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Interrupt EP allocation failure: %s",
+                 config->dev_addr,
+                 esp_err_to_name(ret));
         goto ep_fail;
     }
     // Configure Control transfer URB
@@ -678,15 +716,22 @@ static esp_err_t device_configure(ext_hub_dev_t *ext_hub_dev)
     ESP_LOGD(EXT_HUB_TAG, "\tPower on to power good time: %dms", hub_desc->bPwrOn2PwrGood * 2);
     ESP_LOGD(EXT_HUB_TAG, "\tMaximum current: %d mA", hub_desc->bHubContrCurrent);
 
-    // Create External Port flexible array
+    if (hub_desc->bNbrPorts == 0) {
+        ESP_LOGW(EXT_HUB_TAG, "[%d] Device doesn't have any ports", ext_hub_dev->constant.dev_addr);
+        // Nothing to configure, keep the device in EXT_HUB_STATE_ATTACHED
+        return ESP_OK;
+    }
+
+    // Device has external ports
+    // Create flexible array for port object pointers
     ext_hub_dev->constant.ports = heap_caps_calloc(ext_hub_dev->constant.hub_desc->bNbrPorts, sizeof(ext_port_hdl_t), MALLOC_CAP_DEFAULT);
     if (ext_hub_dev->constant.ports == NULL) {
-        ESP_LOGE(EXT_HUB_TAG, "Ports list allocation error");
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Ports list allocation error", ext_hub_dev->constant.dev_addr);
         ret = ESP_ERR_NO_MEM;
         goto fail;
     }
 
-    // Create port and add it to pending list
+    // Create each port object
     for (uint8_t i = 0; i < ext_hub_dev->constant.hub_desc->bNbrPorts; i++) {
         ext_hub_dev->constant.ports[i] = NULL;
         ret = device_port_new(ext_hub_dev, i);
@@ -807,6 +852,13 @@ exit:
 // -----------------------------------------------------------------------------
 // -------------------------- Device handling  ---------------------------------
 // -----------------------------------------------------------------------------
+static void handle_error(ext_hub_dev_t *ext_hub_dev)
+{
+    ESP_LOGE(EXT_HUB_TAG, "[%d] Device is not working properly, wait device removal",
+             ext_hub_dev->constant.dev_addr);
+    // Force change the stage
+    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_ERROR;
+}
 
 static bool handle_hub_descriptor(ext_hub_dev_t *ext_hub_dev)
 {
@@ -815,12 +867,12 @@ static bool handle_hub_descriptor(ext_hub_dev_t *ext_hub_dev)
     usb_transfer_t *ctrl_xfer = &ext_hub_dev->constant.ctrl_urb->transfer;
     const usb_hub_descriptor_t *hub_desc = (const usb_hub_descriptor_t *)(ctrl_xfer->data_buffer + sizeof(usb_setup_packet_t));
 
-    if (ctrl_xfer->status != USB_TRANSFER_STATUS_COMPLETED) {
-        ESP_LOGE(EXT_HUB_TAG, "Bad transfer status %d: stage=%d", ctrl_xfer->status, ext_hub_dev->single_thread.stage);
+    ESP_LOG_BUFFER_HEXDUMP(EXT_HUB_TAG, ctrl_xfer->data_buffer, ctrl_xfer->actual_num_bytes, ESP_LOG_VERBOSE);
+
+    if (hub_desc->bDescriptorType != USB_CLASS_DESCRIPTOR_TYPE_HUB) {
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Hub Descriptor has wrong bDescriptorType", ext_hub_dev->constant.dev_addr);
         return false;
     }
-
-    ESP_LOG_BUFFER_HEXDUMP(EXT_HUB_TAG, ctrl_xfer->data_buffer, ctrl_xfer->actual_num_bytes, ESP_LOG_VERBOSE);
 
     ret = device_alloc_desc(ext_hub_dev, hub_desc);
     if (ret != ESP_OK) {
@@ -886,7 +938,8 @@ static void handle_port_feature(ext_hub_dev_t *ext_hub_dev)
 
     assert(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts);
     assert(p_ext_hub_driver->constant.port_driver);
-    p_ext_hub_driver->constant.port_driver->req_process(ext_hub_dev->constant.ports[port_idx]);
+    // [TODO: IDF-12174] Revisit the External Hub Driver to ensure consistent error handling.
+    ESP_ERROR_CHECK(p_ext_hub_driver->constant.port_driver->req_process(ext_hub_dev->constant.ports[port_idx]));
 }
 
 static void handle_port_status(ext_hub_dev_t *ext_hub_dev)
@@ -899,7 +952,8 @@ static void handle_port_status(ext_hub_dev_t *ext_hub_dev)
 
     assert(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts);
     assert(p_ext_hub_driver->constant.port_driver);
-    p_ext_hub_driver->constant.port_driver->set_status(ext_hub_dev->constant.ports[port_idx], new_status);
+    // [TODO: IDF-12174] Revisit the External Hub Driver to ensure consistent error handling.
+    ESP_ERROR_CHECK(p_ext_hub_driver->constant.port_driver->set_status(ext_hub_dev->constant.ports[port_idx], new_status));
 }
 
 static bool device_control_request(ext_hub_dev_t *ext_hub_dev)
@@ -942,7 +996,8 @@ static bool device_control_response_handling(ext_hub_dev_t *ext_hub_dev)
 
     // Check transfer status
     if (ctrl_xfer->status != USB_TRANSFER_STATUS_COMPLETED) {
-        ESP_LOGE(EXT_HUB_TAG, "Control request bad transfer status %d",
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Control request bad transfer status %d",
+                 ext_hub_dev->constant.dev_addr,
                  ctrl_xfer->status);
         return stage_pass;
     }
@@ -960,11 +1015,11 @@ static bool device_control_response_handling(ext_hub_dev_t *ext_hub_dev)
     case EXT_HUB_STAGE_CHECK_HUB_STATUS:
         stage_pass = handle_hub_status(ext_hub_dev);
         break;
-    case EXT_HUB_STAGE_PORT_FEATURE:
+    case EXT_HUB_STAGE_CHECK_PORT_FEATURE:
         handle_port_feature(ext_hub_dev);
-        stage_pass = true;
+        stage_pass =  true;
         break;
-    case EXT_HUB_STAGE_PORT_STATUS_REQUEST:
+    case EXT_HUB_STAGE_CHECK_PORT_STATUS:
         handle_port_status(ext_hub_dev);
         stage_pass = true;
         break;
@@ -986,8 +1041,6 @@ static bool stage_need_process(ext_hub_stage_t stage)
     case EXT_HUB_STAGE_GET_DEVICE_STATUS:
     case EXT_HUB_STAGE_GET_HUB_DESCRIPTOR:
     case EXT_HUB_STAGE_GET_HUB_STATUS:
-    // Error stage
-    case EXT_HUB_STAGE_FAILURE:
         need_process_cb = true;
         break;
     default:
@@ -1002,10 +1055,12 @@ static bool stage_need_process(ext_hub_stage_t stage)
 // false - terminal stage
 static bool device_set_next_stage(ext_hub_dev_t *ext_hub_dev, bool last_stage_pass)
 {
+    bool call_proc_req_cb = false;
     ext_hub_stage_t last_stage = ext_hub_dev->single_thread.stage;
     ext_hub_stage_t next_stage;
 
     if (last_stage_pass) {
+        // Device doesn't have an error
         ESP_LOGD(EXT_HUB_TAG, "Stage %s OK", ext_hub_stage_strings[last_stage]);
         if (last_stage == EXT_HUB_STAGE_GET_DEVICE_STATUS ||
                 last_stage == EXT_HUB_STAGE_GET_HUB_DESCRIPTOR ||
@@ -1016,24 +1071,18 @@ static bool device_set_next_stage(ext_hub_dev_t *ext_hub_dev, bool last_stage_pa
             // Terminal stages, move to IDLE
             next_stage = EXT_HUB_STAGE_IDLE;
         }
+        ext_hub_dev->single_thread.stage = next_stage;
+        call_proc_req_cb = stage_need_process(next_stage);
     } else {
+        // Device has an error
         ESP_LOGE(EXT_HUB_TAG, "Stage %s FAILED", ext_hub_stage_strings[last_stage]);
-        // These stages cannot fail
-        assert(last_stage != EXT_HUB_STAGE_PORT_FEATURE ||
-               last_stage != EXT_HUB_STAGE_PORT_STATUS_REQUEST);
-
-        next_stage = EXT_HUB_STAGE_FAILURE;
+        // Set error and wait device to be removed
+        EXT_HUB_ENTER_CRITICAL();
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_ERROR);
+        EXT_HUB_EXIT_CRITICAL();
     }
 
-    ext_hub_dev->single_thread.stage = next_stage;
-    return stage_need_process(next_stage);
-}
-
-static void handle_error(ext_hub_dev_t *ext_hub_dev)
-{
-    ext_hub_dev->single_thread.state = EXT_HUB_STATE_FAILED;
-    // TODO: IDF-10057 Hub handling error
-    ESP_LOGW(EXT_HUB_TAG, "%s has not been implemented yet", __FUNCTION__);
+    return call_proc_req_cb;
 }
 
 static void handle_device(ext_hub_dev_t *ext_hub_dev)
@@ -1042,9 +1091,6 @@ static void handle_device(ext_hub_dev_t *ext_hub_dev)
     bool stage_pass = false;
     // FSM for external Hub
     switch (ext_hub_dev->single_thread.stage) {
-    case EXT_HUB_STAGE_IDLE:
-        stage_pass = true;
-        break;
     case EXT_HUB_STAGE_GET_DEVICE_STATUS:
     case EXT_HUB_STAGE_GET_HUB_DESCRIPTOR:
     case EXT_HUB_STAGE_GET_HUB_STATUS:
@@ -1053,16 +1099,12 @@ static void handle_device(ext_hub_dev_t *ext_hub_dev)
     case EXT_HUB_STAGE_CHECK_DEVICE_STATUS:
     case EXT_HUB_STAGE_CHECK_HUB_DESCRIPTOR:
     case EXT_HUB_STAGE_CHECK_HUB_STATUS:
-    case EXT_HUB_STAGE_PORT_FEATURE:
-    case EXT_HUB_STAGE_PORT_STATUS_REQUEST:
+    case EXT_HUB_STAGE_CHECK_PORT_FEATURE:
+    case EXT_HUB_STAGE_CHECK_PORT_STATUS:
         stage_pass = device_control_response_handling(ext_hub_dev);
         break;
-    case EXT_HUB_STAGE_FAILURE:
-        handle_error(ext_hub_dev);
-        stage_pass = true;
-        break;
     default:
-        // Should never occur
+        // No one must handle the device when EXT_HUB_STAGE_IDLE, so it should never occur
         abort();
         break;
     }
@@ -1099,21 +1141,6 @@ static void handle_ep1_clear(ext_hub_dev_t *ext_hub_dev)
 {
     // We allow the pipe command to fail just in case the pipe becomes invalid mid command
     usbh_ep_command(ext_hub_dev->constant.ep_in_hdl, USBH_EP_CMD_CLEAR);
-}
-
-static void handle_gone(ext_hub_dev_t *ext_hub_dev)
-{
-    bool call_proc_req_cb = false;
-
-    // Set the flags
-    EXT_HUB_ENTER_CRITICAL();
-    ext_hub_dev->dynamic.flags.waiting_free = 1;
-    call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_FREE);
-    EXT_HUB_EXIT_CRITICAL();
-
-    if (call_proc_req_cb) {
-        p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
-    }
 }
 
 // -----------------------------------------------------------------------------
@@ -1279,7 +1306,7 @@ next_iface:
 esp_err_t ext_hub_new_dev(uint8_t dev_addr)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
     esp_err_t ret;
     ext_hub_dev_t *hub_dev = NULL;
@@ -1317,7 +1344,7 @@ esp_err_t ext_hub_new_dev(uint8_t dev_addr)
     // Create External Hub device
     ret = device_alloc(&hub_config, &hub_dev);
     if (ret != ESP_OK) {
-        ESP_LOGE(EXT_HUB_TAG, "External HUB device alloc error %s", esp_err_to_name(ret));
+        ESP_LOGE(EXT_HUB_TAG, "[%d] Unable to add device, error %s", dev_addr, esp_err_to_name(ret));
         goto exit;
     }
 
@@ -1341,17 +1368,16 @@ exit:
 esp_err_t ext_hub_dev_gone(uint8_t dev_addr)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
     esp_err_t ret;
-
     ext_hub_dev_t *ext_hub_dev = NULL;
-    bool in_pending = false;
+    bool call_proc_req_cb = false;
 
     EXT_HUB_CHECK(dev_addr != 0, ESP_ERR_INVALID_ARG);
     // Find device with dev_addr in the devices TAILQ
-    // TODO: IDF-10058
-    // Release all devices by dev_addr
+    // TODO: IDF-10058 Hubs support interface selection (HS)
+    // All objects which are linked to dev_addr should be freed, but before IDF-10058, one address - one device
     ret = get_dev_by_addr(dev_addr, &ext_hub_dev);
     if (ret != ESP_OK) {
         ESP_LOGD(EXT_HUB_TAG, "No device with address %d was found", dev_addr);
@@ -1363,23 +1389,30 @@ esp_err_t ext_hub_dev_gone(uint8_t dev_addr)
     EXT_HUB_ENTER_CRITICAL();
     if (ext_hub_dev->dynamic.flags.waiting_release ||
             ext_hub_dev->dynamic.flags.waiting_children) {
-        // External Hub was already released or waiting children to be freed
         EXT_HUB_EXIT_CRITICAL();
+        // External Hub was already released or waiting children to be freed
         ret = ESP_ERR_INVALID_STATE;
         goto exit;
     }
-    if (ext_hub_dev->dynamic.flags.in_pending_list) {
-        in_pending = true;
-        // TODO: IDF-10490
-        // test case:
-        // - detach the external Hub device right before the Hub Descriptor request.
-        _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
+
+    if ((ext_hub_dev->single_thread.maxchild == 0) && !ext_hub_dev->dynamic.flags.in_pending_list) {
+        // Not in pending list and doesn't have any children
+        ext_hub_dev->dynamic.flags.waiting_free = 1;
+        ext_hub_dev->dynamic.flags.waiting_release = 1;
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE |
+                                               DEV_ACTION_FREE);
+    } else {
+        // If external Hub was configured and enabled, its EP In is active
+        // After detachment the Hub, the driver handles the EP In interrupt and added the device to the list
+        // Usually, when device was detached, device object is already in pending list
+        // with DEV_ACTION_EP1_DEQUEUE action. Then just add the RELEASE action
+        ext_hub_dev->dynamic.flags.waiting_release = 1;
+        call_proc_req_cb = _device_set_actions(ext_hub_dev, DEV_ACTION_RELEASE);
     }
     EXT_HUB_EXIT_CRITICAL();
 
-    // Device not in pending, can be released immediately
-    if (!in_pending) {
-        device_release(ext_hub_dev);
+    if (call_proc_req_cb) {
+        p_ext_hub_driver->constant.proc_req_cb(false, p_ext_hub_driver->constant.proc_req_cb_arg);
     }
 
     ret = ESP_OK;
@@ -1433,7 +1466,7 @@ esp_err_t ext_hub_status_handle_complete(ext_hub_handle_t ext_hub_hdl)
 esp_err_t ext_hub_process(void)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     // Keep processing until all device's with pending events have been handled
     while (!TAILQ_EMPTY(&p_ext_hub_driver->dynamic.ext_hubs_pending_tailq)) {
         // Move the device back into the idle device list,
@@ -1466,9 +1499,6 @@ esp_err_t ext_hub_process(void)
         }
         if (action_flags & DEV_ACTION_ERROR) {
             handle_error(ext_hub_dev);
-        }
-        if (action_flags & DEV_ACTION_GONE) {
-            handle_gone(ext_hub_dev);
         }
         if (action_flags & DEV_ACTION_RELEASE) {
             device_release(ext_hub_dev);
@@ -1540,7 +1570,7 @@ esp_err_t ext_hub_get_status(ext_hub_handle_t ext_hub_hdl)
 esp_err_t ext_hub_port_recycle(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
     ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
@@ -1552,7 +1582,8 @@ esp_err_t ext_hub_port_recycle(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 
     EXT_HUB_CHECK(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
     EXT_HUB_CHECK(p_ext_hub_driver->constant.port_driver != NULL, ESP_ERR_NOT_SUPPORTED);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_RELEASED, ESP_ERR_INVALID_STATE);
 
     EXT_HUB_ENTER_CRITICAL();
     if (ext_hub_dev->dynamic.flags.waiting_release) {
@@ -1610,7 +1641,7 @@ exit:
 esp_err_t ext_hub_port_reset(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1625,7 +1656,7 @@ esp_err_t ext_hub_port_reset(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 esp_err_t ext_hub_port_active(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1640,7 +1671,7 @@ esp_err_t ext_hub_port_active(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 esp_err_t ext_hub_port_disable(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1648,6 +1679,8 @@ esp_err_t ext_hub_port_disable(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
     uint8_t port_idx = port_num - 1;
     EXT_HUB_CHECK(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
     EXT_HUB_CHECK(p_ext_hub_driver->constant.port_driver != NULL, ESP_ERR_NOT_SUPPORTED);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
     return p_ext_hub_driver->constant.port_driver->disable(ext_hub_dev->constant.ports[port_idx]);
 }
@@ -1655,7 +1688,7 @@ esp_err_t ext_hub_port_disable(ext_hub_handle_t ext_hub_hdl, uint8_t port_num)
 esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num, usb_speed_t *speed)
 {
     EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
     EXT_HUB_EXIT_CRITICAL();
 
     EXT_HUB_CHECK(ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
@@ -1663,6 +1696,8 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
     uint8_t port_idx = port_num - 1;
     EXT_HUB_CHECK(port_idx < ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
     EXT_HUB_CHECK(p_ext_hub_driver->constant.port_driver != NULL, ESP_ERR_NOT_SUPPORTED);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
     return p_ext_hub_driver->constant.port_driver->get_speed(ext_hub_dev->constant.ports[port_idx], speed);
 }
@@ -1683,12 +1718,13 @@ esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_nu
     usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
 
     EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
     USB_SETUP_PACKET_INIT_SET_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port_num, feature);
     transfer->num_bytes = sizeof(usb_setup_packet_t);
 
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_PORT_FEATURE;
+    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
     ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Set port feature %#x, failed to submit ctrl urb: %s",
@@ -1696,6 +1732,7 @@ esp_err_t ext_hub_set_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_nu
                  port_num,
                  feature,
                  esp_err_to_name(ret));
+        device_error(ext_hub_dev);
     }
     return ret;
 }
@@ -1712,12 +1749,13 @@ esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_
     usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
 
     EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
     USB_SETUP_PACKET_INIT_CLEAR_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port_num, feature);
     transfer->num_bytes = sizeof(usb_setup_packet_t);
 
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_PORT_FEATURE;
+    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
     ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Clear port feature %#x, failed to submit ctrl urb: %s",
@@ -1725,6 +1763,7 @@ esp_err_t ext_hub_clear_port_feature(ext_hub_handle_t ext_hub_hdl, uint8_t port_
                  port_num,
                  feature,
                  esp_err_to_name(ret));
+        device_error(ext_hub_dev);
     }
     return ret;
 }
@@ -1741,18 +1780,20 @@ esp_err_t ext_hub_get_port_status(ext_hub_handle_t ext_hub_hdl, uint8_t port_num
     usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
 
     EXT_HUB_CHECK(port_num != 0 && port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED, ESP_ERR_INVALID_STATE);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
 
     USB_SETUP_PACKET_INIT_GET_PORT_STATUS((usb_setup_packet_t *)transfer->data_buffer, port_num);
     transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_port_status_t);
 
-    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_PORT_STATUS_REQUEST;
+    ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_STATUS;
     ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "[%d:%d] Get port status, failed to submit ctrl urb: %s",
                  ext_hub_dev->constant.dev_addr,
                  port_num,
                  esp_err_to_name(ret));
+        device_error(ext_hub_dev);
     }
     return ret;
 }
