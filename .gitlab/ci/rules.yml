@@ -68,6 +68,7 @@
   - "tools/ci/check_public_headers.py"
   - "tools/ci/check_register_rw_half_word.cmake"
   - "tools/ci/check_register_rw_half_word.py"
+  - "examples/build_system/**/*"
 
 .patterns-host_test: &patterns-host_test
   - ".gitlab/ci/host-test.yml"
