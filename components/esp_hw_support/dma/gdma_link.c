@@ -166,7 +166,9 @@ esp_err_t gdma_link_mount_buffers(gdma_link_list_handle_t list, int start_item_i
         uint8_t *buf = (uint8_t *)config->buffer;
         size_t len = config->length;
         // check the buffer alignment
-        ESP_RETURN_ON_FALSE(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer not aligned to %zu", buffer_alignment);
+        if (!config->flags.bypass_buffer_align_check) {
+            ESP_RETURN_ON_FALSE(((uintptr_t)buf & (buffer_alignment - 1)) == 0, ESP_ERR_INVALID_ARG, TAG, "buffer not aligned to %zu", buffer_alignment);
+        }
         uint32_t num_items_need = (len + max_buffer_mount_length - 1) / max_buffer_mount_length;
         // check if there are enough link list items
         ESP_RETURN_ON_FALSE((begin_item_idx + num_items_need) <= (start_item_index + num_items_avail), ESP_ERR_INVALID_ARG, TAG, "no more space for buffer mounting");
