@@ -393,11 +393,11 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     portENTER_CRITICAL_SAFE(&spinlock);
     esp_panic_handler_feed_wdts();
     ble_log_async_output_dump_all(true);
-    stop_write = true;
     esp_bt_ontroller_log_deinit();
-    portEXIT_CRITICAL_SAFE(&spinlock);
+    stop_write = true;
 
     buffer = (const uint8_t *)mapped_ptr;
+    esp_panic_handler_feed_wdts();
     if (is_filled) {
         read_index = next_erase_index;
     } else {
@@ -409,7 +409,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     while (read_index != write_index) {
         esp_rom_printf("%02x ", buffer[read_index]);
         if (print_len > max_print_len) {
-            vTaskDelay(2);
+            esp_panic_handler_feed_wdts();
             print_len = 0;
         }
 
@@ -417,6 +417,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
         read_index = (read_index + 1) % MAX_STORAGE_SIZE;
     }
     esp_rom_printf(":DUMP_END]\r\n");
+    portEXIT_CRITICAL_SAFE(&spinlock);
     esp_partition_munmap(mmap_handle);
     err = esp_bt_controller_log_init(log_output_mode);
     assert(err == ESP_OK);
@@ -430,6 +431,9 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         esp_bt_controller_log_storage(len, addr, end);
 #endif //CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
     } else {
+        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+        portENTER_CRITICAL_SAFE(&spinlock);
+        esp_panic_handler_feed_wdts();
         for (int i = 0; i < len; i++) {
             esp_rom_printf("%02x ", addr[i]);
         }
@@ -437,6 +441,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
         if (end) {
             esp_rom_printf("\n");
         }
+        portEXIT_CRITICAL_SAFE(&spinlock);
     }
 }
 
