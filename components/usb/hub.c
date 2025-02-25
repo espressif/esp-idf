@@ -351,16 +351,6 @@ static void ext_port_event_callback(ext_port_event_data_t *event_data, void *arg
             }
         }
 
-#if (!CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS)
-        if (port_speed == USB_SPEED_LOW) {
-            ESP_LOGE(HUB_DRIVER_TAG, "Connected %s-speed device, not supported",
-            (char *[]) {
-                "Low", "Full", "High"
-            }[port_speed]);
-            goto new_ds_dev_err;
-        }
-#endif // CONFIG_USB_HOST_EXT_PORT_SUPPORT_LS
-
         if (dev_tree_node_new(event_data->connected.parent_dev_hdl, event_data->connected.parent_port_num, port_speed) != ESP_OK) {
             ESP_LOGE(HUB_DRIVER_TAG, "Failed to add new downstream device");
             goto new_ds_dev_err;
