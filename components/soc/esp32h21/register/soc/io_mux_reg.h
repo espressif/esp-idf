@@ -1,11 +1,16 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #pragma once
+
+#include <stdint.h>
 #include "soc/soc.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* The following are the bit fields for PERIPHS_IO_MUX_x_U registers */
 /* Output enable in sleep mode */
@@ -98,20 +103,14 @@
 #define PIN_SLP_SEL_ENABLE(PIN_NAME)        SET_PERI_REG_MASK(PIN_NAME,SLP_SEL)
 #define PIN_SLP_SEL_DISABLE(PIN_NAME)       CLEAR_PERI_REG_MASK(PIN_NAME,SLP_SEL)
 
-#define PIN_INPUT_ENABLE(PIN_NAME)               SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_INPUT_DISABLE(PIN_NAME)              CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
-#define PIN_SET_DRV(PIN_NAME, drv)            REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
-#define PIN_PULLUP_DIS(PIN_NAME)                 REG_CLR_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLUP_EN(PIN_NAME)                  REG_SET_BIT(PIN_NAME, FUN_PU)
-#define PIN_PULLDWN_DIS(PIN_NAME)             REG_CLR_BIT(PIN_NAME, FUN_PD)
-#define PIN_PULLDWN_EN(PIN_NAME)              REG_SET_BIT(PIN_NAME, FUN_PD)
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)      REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
-#define PIN_FILTER_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FILTER_EN)
-#define PIN_FILTER_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FILTER_EN)
-#define PIN_HYS_EN_SEL_EFUSE(PIN_NAME)      REG_CLR_BIT(PIN_NAME, HYS_SEL)
-#define PIN_HYS_EN_SEL_SOFT(PIN_NAME)       REG_SET_BIT(PIN_NAME, HYS_SEL)
-#define PIN_HYS_SOFT_ENABLE(PIN_NAME)       REG_SET_BIT(PIN_NAME, HYS_EN)
-#define PIN_HYS_SOFT_DISABLE(PIN_NAME)      REG_CLR_BIT(PIN_NAME, HYS_EN)
+#define PIN_INPUT_ENABLE(PIN_NAME)          SET_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_INPUT_DISABLE(PIN_NAME)         CLEAR_PERI_REG_MASK(PIN_NAME,FUN_IE)
+#define PIN_SET_DRV(PIN_NAME, drv)          REG_SET_FIELD(PIN_NAME, FUN_DRV, (drv));
+#define PIN_PULLUP_DIS(PIN_NAME)            REG_CLR_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLUP_EN(PIN_NAME)             REG_SET_BIT(PIN_NAME, FUN_PU)
+#define PIN_PULLDWN_DIS(PIN_NAME)           REG_CLR_BIT(PIN_NAME, FUN_PD)
+#define PIN_PULLDWN_EN(PIN_NAME)            REG_SET_BIT(PIN_NAME, FUN_PD)
+#define PIN_FUNC_SELECT(PIN_NAME, FUNC)     REG_SET_FIELD(PIN_NAME, MCU_SEL, FUNC)
 
 #define IO_MUX_GPIO0_REG                    PERIPHS_IO_MUX_U_PAD_MTMS
 #define IO_MUX_GPIO1_REG                    PERIPHS_IO_MUX_U_PAD_MTDO
@@ -140,27 +139,12 @@
 #define IO_MUX_GPIO24_REG                   PERIPHS_IO_MUX_U_PAD_SPICLK
 #define IO_MUX_GPIO25_REG                   PERIPHS_IO_MUX_U_PAD_SPID
 
-#define FUNC_GPIO_GPIO                              1
 #define PIN_FUNC_GPIO								1
 
-#define GPIO_PAD_PULLUP(num) do{PIN_PULLDWN_DIS(IOMUX_REG_GPIO##num);PIN_PULLUP_EN(IOMUX_REG_GPIO##num);}while(0)
-#define GPIO_PAD_PULLDOWN(num) do{PIN_PULLUP_DIS(IOMUX_REG_GPIO##num);PIN_PULLDWN_EN(IOMUX_REG_GPIO##num);}while(0)
-#define GPIO_PAD_SET_DRV(num, drv) PIN_SET_DRV(IOMUX_REG_GPIO##num, drv)
+#define USB_INT_PHY0_DM_GPIO_NUM      17
+#define USB_INT_PHY0_DP_GPIO_NUM      18
 
-#define U0RXD_GPIO_NUM               15
-#define U0TXD_GPIO_NUM               16
-
-#define SPI_HD_GPIO_NUM              23
-#define SPI_WP_GPIO_NUM              22
-#define SPI_CS0_GPIO_NUM             20
-#define SPI_CLK_GPIO_NUM             24
-#define SPI_D_GPIO_NUM               25
-#define SPI_Q_GPIO_NUM               21
-
-#define USB_INT_PHY0_DM_GPIO_NUM      26
-#define USB_INT_PHY0_DP_GPIO_NUM      27
-
-#define EXT_OSC_SLOW_GPIO_NUM        13
+#define EXT_OSC_SLOW_GPIO_NUM        6
 
 
 #define MAX_RTC_GPIO_NUM             11             // GPIO5~11 are the pads with LP function
@@ -168,33 +152,7 @@
 #define MAX_GPIO_NUM                 29
 #define HIGH_IO_HOLD_BIT_SHIFT       32
 
-#define GPIO_NUM_IN_INVALID          0x28
-
 #define REG_IO_MUX_BASE DR_REG_IO_MUX_BASE
-#define PIN_CTRL                          (REG_IO_MUX_BASE +0x00)
-#define PAD_POWER_SEL                               BIT(15)
-#define PAD_POWER_SEL_V                             0x1
-#define PAD_POWER_SEL_M                             BIT(15)
-#define PAD_POWER_SEL_S                             15
-
-#define PAD_POWER_SWITCH_DELAY                      0x7
-#define PAD_POWER_SWITCH_DELAY_V                    0x7
-#define PAD_POWER_SWITCH_DELAY_M                    (PAD_POWER_SWITCH_DELAY_V << PAD_POWER_SWITCH_DELAY_S)
-#define PAD_POWER_SWITCH_DELAY_S                    12
-
-#define CLK_OUT3                                    IO_MUX_CLK_OUT3
-#define CLK_OUT3_V                                  IO_MUX_CLK_OUT3_V
-#define CLK_OUT3_S                                  IO_MUX_CLK_OUT3_S
-#define CLK_OUT3_M                                  IO_MUX_CLK_OUT3_M
-#define CLK_OUT2                                    IO_MUX_CLK_OUT2
-#define CLK_OUT2_V                                  IO_MUX_CLK_OUT2_V
-#define CLK_OUT2_S                                  IO_MUX_CLK_OUT2_S
-#define CLK_OUT2_M                                  IO_MUX_CLK_OUT2_M
-#define CLK_OUT1                                    IO_MUX_CLK_OUT1
-#define CLK_OUT1_V                                  IO_MUX_CLK_OUT1_V
-#define CLK_OUT1_S                                  IO_MUX_CLK_OUT1_S
-#define CLK_OUT1_M                                  IO_MUX_CLK_OUT1_M
-// definitions above are inherited from previous version of code, should double check
 
 // definitions below are generated from pin_txt.csv
 #define PERIPHS_IO_MUX_U_PAD_MTMS                  (REG_IO_MUX_BASE + 0x0)
@@ -363,3 +321,7 @@
 #define IO_MUX_REG_DATE_M  ((IO_MUX_REG_DATE_V)<<(IO_MUX_REG_DATE_S))
 #define IO_MUX_REG_DATE_V  0xFFFFFFF
 #define IO_MUX_REG_DATE_S  0
+
+#ifdef __cplusplus
+}
+#endif

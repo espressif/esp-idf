@@ -37,6 +37,8 @@ extern "C" {
 
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
@@ -259,7 +261,7 @@ static inline void gpio_ll_pin_filter_disable(gpio_dev_t *hw, uint32_t gpio_num)
 static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     // On ESP32C5, there is an efuse bit that controls the hysteresis enable or not for all IOs.
-    // We are not going to use the hardware control in IDF for C5.
+    // We are not going to use the hardware control for C5.
     // Therefore, we need to always switch to use software control first.
     // i.e. Swt hys_sel to 1, so that hys_en determines whether hysteresis is enabled or not
     IO_MUX.gpio[gpio_num].hys_sel = 1;

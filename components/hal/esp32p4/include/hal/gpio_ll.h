@@ -44,6 +44,8 @@ extern "C" {
 #define GPIO_LL_INTR2_ENA      (BIT(3))
 #define GPIO_LL_INTR3_ENA      (BIT(4))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTR0_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
