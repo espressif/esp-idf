@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,12 +127,64 @@ void rmt_release_group_handle(rmt_group_t *group)
     }
 }
 
-esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src)
+#if !SOC_RMT_CHANNEL_CLK_INDEPENDENT
+static esp_err_t s_rmt_set_group_prescale(rmt_channel_t *chan, uint32_t expect_resolution_hz, uint32_t *ret_channel_prescale)
+{
+    uint32_t periph_src_clk_hz = 0;
+    rmt_group_t *group = chan->group;
+    int group_id = group->group_id;
+
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(group->clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz), TAG, "get clock source freq failed");
+
+    uint32_t group_resolution_hz = 0;
+    uint32_t group_prescale = 0;
+    uint32_t channel_prescale = 0;
+
+    if (group->resolution_hz == 0) {
+        while (++group_prescale <= RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE) {
+            group_resolution_hz = periph_src_clk_hz / group_prescale;
+            channel_prescale = (group_resolution_hz + expect_resolution_hz / 2) / expect_resolution_hz;
+            // use the first value found during the search that satisfies the division requirement (highest frequency)
+            if (channel_prescale > 0 && channel_prescale <= RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE) {
+                break;
+            }
+        }
+    } else {
+        group_prescale = periph_src_clk_hz / group->resolution_hz;
+        channel_prescale = (group->resolution_hz + expect_resolution_hz / 2) / expect_resolution_hz;
+    }
+
+    ESP_RETURN_ON_FALSE(group_prescale > 0 && group_prescale <= RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE, ESP_ERR_INVALID_ARG, TAG,
+                        "group prescale out of the range");
+    ESP_RETURN_ON_FALSE(channel_prescale > 0 && channel_prescale <= RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE, ESP_ERR_INVALID_ARG, TAG,
+                        "channel prescale out of the range");
+
+    // group prescale is shared by all rmt_channel, only set once. use critical section to avoid race condition.
+    bool prescale_conflict = false;
+    group_resolution_hz = periph_src_clk_hz / group_prescale;
+    portENTER_CRITICAL(&group->spinlock);
+    if (group->resolution_hz == 0) {
+        group->resolution_hz = group_resolution_hz;
+        RMT_CLOCK_SRC_ATOMIC() {
+            rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, group->clk_src, group_prescale, 1, 0);
+            rmt_ll_enable_group_clock(group->hal.regs, true);
+        }
+    } else {
+        prescale_conflict = (group->resolution_hz != group_resolution_hz);
+    }
+    portEXIT_CRITICAL(&group->spinlock);
+    ESP_RETURN_ON_FALSE(!prescale_conflict, ESP_ERR_INVALID_ARG, TAG,
+                        "group resolution conflict, already is %"PRIu32" but attempt to %"PRIu32"", group->resolution_hz, group_resolution_hz);
+    ESP_LOGD(TAG, "group (%d) clock resolution:%"PRIu32"Hz", group_id, group->resolution_hz);
+    *ret_channel_prescale = channel_prescale;
+    return ESP_OK;
+}
+#endif // SOC_RMT_CHANNEL_CLK_INDEPENDENT
+
+esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t clk_src, uint32_t expect_channel_resolution)
 {
     esp_err_t ret = ESP_OK;
     rmt_group_t *group = chan->group;
-    int channel_id = chan->channel_id;
-    uint32_t periph_src_clk_hz = 0;
     bool clock_selection_conflict = false;
     // check if we need to update the group clock source, group clock source is shared by all channels
     portENTER_CRITICAL(&group->spinlock);
@@ -142,7 +194,7 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
         clock_selection_conflict = (group->clk_src != clk_src);
     }
     portEXIT_CRITICAL(&group->spinlock);
-    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_STATE, TAG,
+    ESP_RETURN_ON_FALSE(!clock_selection_conflict, ESP_ERR_INVALID_ARG, TAG,
                         "group clock conflict, already is %d but attempt to %d", group->clk_src, clk_src);
 
     // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
@@ -153,10 +205,6 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
         periph_rtc_dig_clk8m_enable();
     }
 #endif // SOC_RMT_SUPPORT_RC_FAST
-
-    // get clock source frequency
-    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
-                        TAG, "get clock source frequency failed");
 
 #if CONFIG_PM_ENABLE
     // if DMA is not used, we're using CPU to push the data to the RMT FIFO
@@ -172,18 +220,39 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
     }
 #endif // SOC_RMT_SUPPORT_APB
 
-    sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, channel_id); // e.g. rmt_0_0
+    sprintf(chan->pm_lock_name, "rmt_%d_%d", group->group_id, chan->channel_id); // e.g. rmt_0_0
     ret  = esp_pm_lock_create(pm_lock_type, 0, chan->pm_lock_name, &chan->pm_lock);
     ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
 #endif // CONFIG_PM_ENABLE
 
-    // no division for group clock source, to achieve highest resolution
+    uint32_t real_div;
+#if SOC_RMT_CHANNEL_CLK_INDEPENDENT
+    uint32_t periph_src_clk_hz = 0;
+    // get clock source frequency
+    ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz((soc_module_clk_t)clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &periph_src_clk_hz),
+                        TAG, "get clock source frequency failed");
     RMT_CLOCK_SRC_ATOMIC() {
-        rmt_ll_set_group_clock_src(group->hal.regs, channel_id, clk_src, 1, 1, 0);
+        rmt_ll_set_group_clock_src(group->hal.regs, chan->channel_id, clk_src, 1, 1, 0);
         rmt_ll_enable_group_clock(group->hal.regs, true);
     }
     group->resolution_hz = periph_src_clk_hz;
     ESP_LOGD(TAG, "group clock resolution:%"PRIu32, group->resolution_hz);
+    real_div = (group->resolution_hz + expect_channel_resolution / 2) / expect_channel_resolution;
+#else
+    // set division for group clock source, to achieve highest resolution while guaranteeing the channel resolution.
+    ESP_RETURN_ON_ERROR(s_rmt_set_group_prescale(chan, expect_channel_resolution, &real_div), TAG, "set rmt group prescale failed");
+#endif // SOC_RMT_CHANNEL_CLK_INDEPENDENT
+
+    if (chan->direction == RMT_CHANNEL_DIRECTION_TX) {
+        rmt_ll_tx_set_channel_clock_div(group->hal.regs, chan->channel_id, real_div);
+    } else {
+        rmt_ll_rx_set_channel_clock_div(group->hal.regs, chan->channel_id, real_div);
+    }
+    // resolution lost due to division, calculate the real resolution
+    chan->resolution_hz = group->resolution_hz / real_div;
+    if (chan->resolution_hz != expect_channel_resolution) {
+        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, chan->resolution_hz);
+    }
     return ret;
 }
 
