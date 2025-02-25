@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -59,6 +59,19 @@ static char test_device_name[ESP_BLE_ADV_NAME_LEN_MAX] = "ESP_GATTS_DEMO";
 #define PREPARE_BUF_MAX_SIZE 1024
 
 static uint8_t char1_str[] = {0x11,0x22,0x33};
+
+static uint16_t descr_value = 0x0;
+/**
+ * Current MTU size for the active connection.
+ *
+ * This simplified implementation assumes a single connection.
+ * For multi-connection scenarios, the MTU should be stored per connection ID.
+ */
+static uint16_t local_mtu = 23;
+
+static uint8_t char_value_read[CONFIG_EXAMPLE_CHAR_READ_DATA_LEN] = {0xDE,0xED,0xBE,0xEF};
+
+
 static esp_gatt_char_prop_t a_property = 0;
 static esp_gatt_char_prop_t b_property = 0;
 
@@ -348,17 +361,53 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         esp_ble_gatts_create_service(gatts_if, &gl_profile_tab[PROFILE_A_APP_ID].service_id, GATTS_NUM_HANDLE_TEST_A);
         break;
     case ESP_GATTS_READ_EVT: {
-        ESP_LOGI(GATTS_TAG, "Characteristic read, conn_id %d, trans_id %" PRIu32 ", handle %d", param->read.conn_id, param->read.trans_id, param->read.handle);
+        ESP_LOGI(GATTS_TAG,
+                    "Characteristic read request: conn_id=%d, trans_id=%" PRIu32 ", handle=%d, is_long=%d, offset=%d, need_rsp=%d",
+                    param->read.conn_id, param->read.trans_id, param->read.handle,
+                    param->read.is_long, param->read.offset, param->read.need_rsp);
+
+        // If no response is needed, exit early (stack handles it automatically)
+        if (!param->read.need_rsp) {
+            return;
+        }
+
         esp_gatt_rsp_t rsp;
         memset(&rsp, 0, sizeof(esp_gatt_rsp_t));
         rsp.attr_value.handle = param->read.handle;
-        rsp.attr_value.len = 4;
-        rsp.attr_value.value[0] = 0xde;
-        rsp.attr_value.value[1] = 0xed;
-        rsp.attr_value.value[2] = 0xbe;
-        rsp.attr_value.value[3] = 0xef;
-        esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id,
-                                    ESP_GATT_OK, &rsp);
+
+        // Handle descriptor read request
+        if (param->read.handle == gl_profile_tab[PROFILE_A_APP_ID].descr_handle) {
+            memcpy(rsp.attr_value.value, &descr_value, 2);
+            rsp.attr_value.len = 2;
+            esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
+            return;
+        }
+
+        // Handle characteristic read request
+        if (param->read.handle == gl_profile_tab[PROFILE_A_APP_ID].char_handle) {
+            uint16_t offset = param->read.offset;
+
+            // Validate read offset
+            if (param->read.is_long && offset > CONFIG_EXAMPLE_CHAR_READ_DATA_LEN) {
+                ESP_LOGW(GATTS_TAG, "Read offset (%d) out of range (0-%d)", offset, CONFIG_EXAMPLE_CHAR_READ_DATA_LEN);
+                rsp.attr_value.len = 0;
+                esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_INVALID_OFFSET, &rsp);
+                return;
+            }
+
+            // Determine response length based on MTU
+            uint16_t mtu_size = local_mtu - 1;  // ATT header (1 byte)
+            uint16_t send_len = (CONFIG_EXAMPLE_CHAR_READ_DATA_LEN - offset > mtu_size) ? mtu_size : (CONFIG_EXAMPLE_CHAR_READ_DATA_LEN - offset);
+
+            memcpy(rsp.attr_value.value, &char_value_read[offset], send_len);
+            rsp.attr_value.len = send_len;
+
+            // Send response to GATT client
+            esp_err_t err = esp_ble_gatts_send_response(gatts_if, param->read.conn_id, param->read.trans_id, ESP_GATT_OK, &rsp);
+            if (err != ESP_OK) {
+                ESP_LOGE(GATTS_TAG, "Failed to send response: %s", esp_err_to_name(err));
+            }
+        }
         break;
     }
     case ESP_GATTS_WRITE_EVT: {
@@ -367,7 +416,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
             ESP_LOGI(GATTS_TAG, "value len %d, value ", param->write.len);
             ESP_LOG_BUFFER_HEX(GATTS_TAG, param->write.value, param->write.len);
             if (gl_profile_tab[PROFILE_A_APP_ID].descr_handle == param->write.handle && param->write.len == 2){
-                uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
+                descr_value = param->write.value[1]<<8 | param->write.value[0];
                 if (descr_value == 0x0001){
                     if (a_property & ESP_GATT_CHAR_PROP_BIT_NOTIFY){
                         ESP_LOGI(GATTS_TAG, "Notification enable");
@@ -412,6 +461,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         break;
     case ESP_GATTS_MTU_EVT:
         ESP_LOGI(GATTS_TAG, "MTU exchange, MTU %d", param->mtu.mtu);
+        local_mtu = param->mtu.mtu;
         break;
     case ESP_GATTS_UNREG_EVT:
         break;
@@ -490,6 +540,7 @@ static void gatts_profile_a_event_handler(esp_gatts_cb_event_t event, esp_gatt_i
         ESP_LOGI(GATTS_TAG, "Disconnected, remote "ESP_BD_ADDR_STR", reason 0x%02x",
                  ESP_BD_ADDR_HEX(param->disconnect.remote_bda), param->disconnect.reason);
         esp_ble_gap_start_advertising(&adv_params);
+        local_mtu = 23; // Reset MTU for a single connection
         break;
     case ESP_GATTS_CONF_EVT:
         ESP_LOGI(GATTS_TAG, "Confirm receive, status %d, attr_handle %d", param->conf.status, param->conf.handle);
