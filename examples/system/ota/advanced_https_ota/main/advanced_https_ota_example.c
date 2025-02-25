@@ -148,6 +148,9 @@ static void event_handler(void* arg, esp_event_base_t event_base,
             case ESP_HTTPS_OTA_VERIFY_CHIP_ID:
                 ESP_LOGI(TAG, "Verifying chip id of new image: %d", *(esp_chip_id_t *)event_data);
                 break;
+            case ESP_HTTPS_OTA_VERIFY_CHIP_REVISION:
+                ESP_LOGI(TAG, "Verifying chip revision of new image: %d", *(esp_chip_id_t *)event_data);
+                break;
             case ESP_HTTPS_OTA_DECRYPT_CB:
                 ESP_LOGI(TAG, "Callback to decrypt function");
                 break;
