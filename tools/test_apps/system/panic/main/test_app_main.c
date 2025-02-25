@@ -88,7 +88,6 @@ void app_main(void)
 #endif
 #if !CONFIG_FREERTOS_UNICORE
     HANDLE_TEST(test_name, test_task_wdt_cpu1);
-    HANDLE_TEST(test_name, test_task_wdt_both_cpus);
 #endif
     HANDLE_TEST(test_name, test_storeprohibited);
     HANDLE_TEST(test_name, test_cache_error);
