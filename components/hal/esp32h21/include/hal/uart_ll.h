@@ -20,8 +20,6 @@
 #include "soc/pcr_reg.h"
 #include "esp_attr.h"
 
-//TODO: [ESP32H21] IDF-11618, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -59,9 +57,6 @@ extern "C" {
 #define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
     (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
 
-// UART sleep retention module
-#define UART_LL_SLEEP_RETENTION_MODULE_ID(uart_num) ((uart_num == UART_NUM_0) ? SLEEP_RETENTION_MODULE_UART0 : \
-                                                     (uart_num == UART_NUM_1) ? SLEEP_RETENTION_MODULE_UART1 : -1)
 
 #define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
 #define UART_LL_WAKEUP_FIFO_THRED_MAX(hw) UART_RX_WAKE_UP_THRHD_V
@@ -99,14 +94,14 @@ typedef enum {
  */
 FORCE_INLINE_ATTR bool uart_ll_is_enabled(uint32_t uart_num)
 {
-    uint32_t uart_clk_config_reg = ((uart_num == 0) ? PCR_UART0_CONF_REG :
-                                    (uart_num == 1) ? PCR_UART1_CONF_REG : 0);
-    uint32_t uart_rst_bit = ((uart_num == 0) ? PCR_UART0_RST_EN :
-                            (uart_num == 1) ? PCR_UART1_RST_EN : 0);
-    uint32_t uart_en_bit  = ((uart_num == 0) ? PCR_UART0_CLK_EN :
-                            (uart_num == 1) ? PCR_UART1_CLK_EN : 0);
-    return REG_GET_BIT(uart_clk_config_reg, uart_rst_bit) == 0 &&
-        REG_GET_BIT(uart_clk_config_reg, uart_en_bit) != 0;
+    switch (uart_num) {
+    case 0:
+        return PCR.uart0_conf.uart0_clk_en && !PCR.uart0_conf.uart0_rst_en;
+    case 1:
+        return PCR.uart1_conf.uart1_clk_en && !PCR.uart1_conf.uart1_rst_en;
+    default:
+        return false;
+    }
 }
 
 /**
@@ -253,7 +248,9 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
     uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
 
-    if (sclk_div == 0) abort();
+    if (sclk_div == 0) {
+        abort();
+    }
 
     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
     // The baud rate configuration register is divided into
@@ -429,7 +426,7 @@ FORCE_INLINE_ATTR void uart_ll_txfifo_rst(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
 {
-    return hw->status.rxfifo_cnt;
+    return HAL_FORCE_READ_U32_REG_FIELD(hw->status, rxfifo_cnt);
 }
 
 /**
@@ -441,7 +438,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_rxfifo_len(uart_dev_t *hw)
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_txfifo_len(uart_dev_t *hw)
 {
-    return UART_LL_FIFO_DEF_LEN - hw->status.txfifo_cnt;
+    return UART_LL_FIFO_DEF_LEN - HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt);
 }
 
 /**
@@ -516,7 +513,7 @@ FORCE_INLINE_ATTR void uart_ll_get_parity(uart_dev_t *hw, uart_parity_t *parity_
  */
 FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full_thrhd)
 {
-    hw->conf1.rxfifo_full_thrhd = full_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, rxfifo_full_thrhd, full_thrhd);
 }
 
 /**
@@ -530,7 +527,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rxfifo_full_thr(uart_dev_t *hw, uint16_t full
  */
 FORCE_INLINE_ATTR void uart_ll_set_txfifo_empty_thr(uart_dev_t *hw, uint16_t empty_thrhd)
 {
-    hw->conf1.txfifo_empty_thrhd = empty_thrhd;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->conf1, txfifo_empty_thrhd, empty_thrhd);
 }
 
 /**
@@ -594,7 +591,7 @@ FORCE_INLINE_ATTR void uart_ll_set_hw_flow_ctrl(uart_dev_t *hw, uart_hw_flowcont
 {
     //only when UART_HW_FLOWCTRL_RTS is set , will the rx_thresh value be set.
     if (flow_ctrl & UART_HW_FLOWCTRL_RTS) {
-        hw->hwfc_conf_sync.rx_flow_thrhd = rx_thrs;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->hwfc_conf_sync, rx_flow_thrhd, rx_thrs);
         hw->hwfc_conf_sync.rx_flow_en = 1;
     } else {
         hw->hwfc_conf_sync.rx_flow_en = 0;
@@ -640,10 +637,10 @@ FORCE_INLINE_ATTR void uart_ll_set_sw_flow_ctrl(uart_dev_t *hw, uart_sw_flowctrl
     if (sw_flow_ctrl_en) {
         hw->swfc_conf0_sync.xonoff_del = 1;
         hw->swfc_conf0_sync.sw_flow_con_en = 1;
-        hw->swfc_conf1.xon_threshold = flow_ctrl->xon_thrd;
-        hw->swfc_conf1.xoff_threshold = flow_ctrl->xoff_thrd;
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_char, flow_ctrl->xon_char);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_char, flow_ctrl->xoff_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xon_threshold, flow_ctrl->xon_thrd);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf1, xoff_threshold, flow_ctrl->xoff_thrd);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xon_character, flow_ctrl->xon_char);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(hw->swfc_conf0_sync, xoff_character, flow_ctrl->xoff_char);
     } else {
         hw->swfc_conf0_sync.sw_flow_con_en = 0;
         hw->swfc_conf0_sync.xonoff_del = 0;
@@ -1021,7 +1018,7 @@ FORCE_INLINE_ATTR void uart_ll_get_data_bit_num(uart_dev_t *hw, uart_word_length
  */
 FORCE_INLINE_ATTR bool uart_ll_is_tx_idle(uart_dev_t *hw)
 {
-    return ((hw->status.txfifo_cnt == 0) && (hw->fsm_status.st_utx_out == 0));
+    return ((HAL_FORCE_READ_U32_REG_FIELD(hw->status, txfifo_cnt) == 0) && (hw->fsm_status.st_utx_out == 0));
 }
 
 /**
@@ -1066,7 +1063,7 @@ FORCE_INLINE_ATTR void uart_ll_xon_force_on(uart_dev_t *hw, bool always_on)
 {
     hw->swfc_conf0_sync.force_xon = 1;
     uart_ll_update(hw);
-    if(!always_on) {
+    if (!always_on) {
         hw->swfc_conf0_sync.force_xon = 0;
         uart_ll_update(hw);
     }
@@ -1112,7 +1109,7 @@ FORCE_INLINE_ATTR void uart_ll_inverse_signal(uart_dev_t *hw, uint32_t inv_mask)
 FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 {
     uint16_t tout_val = tout_thrd;
-    if(tout_thrd > 0) {
+    if (tout_thrd > 0) {
         hw->tout_conf_sync.rx_tout_thrhd = tout_val;
         hw->tout_conf_sync.rx_tout_en = 1;
     } else {
@@ -1131,7 +1128,7 @@ FORCE_INLINE_ATTR void uart_ll_set_rx_tout(uart_dev_t *hw, uint16_t tout_thrd)
 FORCE_INLINE_ATTR uint16_t uart_ll_get_rx_tout_thr(uart_dev_t *hw)
 {
     uint16_t tout_thrd = 0;
-    if(hw->tout_conf_sync.rx_tout_en > 0) {
+    if (hw->tout_conf_sync.rx_tout_en > 0) {
         tout_thrd = hw->tout_conf_sync.rx_tout_thrhd;
     }
     return tout_thrd;
