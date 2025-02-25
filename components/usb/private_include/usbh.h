@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,6 +194,18 @@ esp_err_t usbh_uninstall(void);
 esp_err_t usbh_process(void);
 
 // ---------------------- Device Pool Functions --------------------------------
+/**
+ * @brief Determines whether a UID is currently assigned in the USBH device list
+ *
+ * @note This function may block execution while checking the device list.
+ *
+ * @param[in] uid Unique ID to check
+ *
+ * @return
+ *    - true if UID is already in use.
+ *    - false if UID is available for assignment.
+ */
+bool usbh_devs_is_uid_in_use(uint32_t uid);
 
 /**
  * @brief Get the current number of devices
