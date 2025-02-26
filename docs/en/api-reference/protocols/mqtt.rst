@@ -42,11 +42,11 @@ Application Examples
 MQTT Message Retransmission
 ---------------------------
 
-A new MQTT message is created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non blocking counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`.
+A new MQTT message can be created by calling :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish()>` or its non-blocking counterpart :cpp:func:`esp_mqtt_client_enqueue <esp_mqtt_client_enqueue()>`.
 
-Messages with QoS 0 is sent only once. QoS 1 and 2 have different behaviors since the protocol requires extra steps to complete the process.
+Messages with QoS 0 are sent only once. QoS 1 and 2 behave differently since the protocol requires additional steps to complete the process.
 
-The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 publish messages to avoid losses in faulty connections, even though the MQTT specification requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
+The ESP-MQTT library opts to always retransmit unacknowledged QoS 1 and 2 publish messages to prevent data loss in faulty connections, even though the MQTT specification requires the re-transmission only on reconnect with Clean Session flag been set to 0 (set :cpp:member:`disable_clean_session <esp_mqtt_client_config_t::session_t::disable_clean_session>` to true for this behavior).
 
 QoS 1 and 2 messages that may need retransmission are always enqueued, but first transmission try occurs immediately if :cpp:func:`esp_mqtt_client_publish <esp_mqtt_client_publish>` is used. A transmission retry for unacknowledged messages will occur after :cpp:member:`message_retransmit_timeout <esp_mqtt_client_config_t::session_t::message_retransmit_timeout>`. After :ref:`CONFIG_MQTT_OUTBOX_EXPIRED_TIMEOUT_MS` messages will expire and be deleted. If :ref:`CONFIG_MQTT_REPORT_DELETED_MESSAGES` is set, an event will be sent to notify the user.
 

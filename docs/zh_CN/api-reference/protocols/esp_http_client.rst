@@ -32,19 +32,17 @@ HTTP 基本请求
 
 为了使 ESP HTTP 客户端充分利用持久连接的优势，建议尽可能多地使用同一个句柄实例来发起请求，可参考应用示例中的函数 ``http_rest_with_url`` 和 ``http_rest_with_hostname_path``。示例中，一旦创建连接，即会在连接关闭前发出多个请求（如 ``GET``、 ``POST``、 ``PUT`` 等）。
 
-.. only:: esp32
+为 TLS 使用安全元件 (ATECC608)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    为 TLS 使用安全元件 (ATECC608)
-    __________________________________
+安全元件 (ATECC608) 也可用于 HTTP 客户端连接中的底层 TLS 连接。详细内容请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 **ESP-TLS 中的 ATECC608A（安全元件）支持** 小节。如需支持安全元素，必须首先在 menuconfig 中通过 :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT` 对其进行启用，此后，可配置 HTTP 客户端使用安全元素，如下所示：
 
-    安全元件 (ATECC608) 也可用于 HTTP 客户端连接中的底层 TLS 连接。请参考 :doc:`ESP-TLS 文档 </api-reference/protocols/esp_tls>` 中的 *ESP-TLS 中的 ATECC608A（安全元件）支持* 小节，了解更多细节。如需支持安全元素，必须首先在 menuconfig 中通过 :ref:`CONFIG_ESP_TLS_USE_SECURE_ELEMENT` 对其进行启用，此后，可配置 HTTP 客户端使用安全元素，如下所示：
+.. code-block:: c
 
-    .. code-block:: c
-
-        esp_http_client_config_t cfg = {
-            /* other configurations options */
-            .use_secure_element = true,
-        };
+    esp_http_client_config_t cfg = {
+        /* other configurations options */
+        .use_secure_element = true,
+    };
 
 
 HTTPS 请求
