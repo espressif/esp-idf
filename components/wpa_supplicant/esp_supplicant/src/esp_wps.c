@@ -1593,6 +1593,7 @@ wifi_station_wps_deinit(void)
         sm->wps = NULL;
     }
     if (s_wps_sm_cb) {
+        s_wps_sm_cb->wps_sm_notify_deauth = NULL;
         os_free(s_wps_sm_cb);
         s_wps_sm_cb = NULL;
     }
