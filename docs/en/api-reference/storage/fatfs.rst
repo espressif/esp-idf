@@ -43,11 +43,11 @@ Most applications use the following workflow when working with ``esp_vfs_fat_`` 
 
 The convenience functions :cpp:func:`esp_vfs_fat_sdmmc_mount`, :cpp:func:`esp_vfs_fat_sdspi_mount`, and :cpp:func:`esp_vfs_fat_sdcard_unmount` wrap the steps described above and also handle SD card initialization. These functions are described in the next section.
 
-Differences to POSIX standard
------------------------------
+Differences from the POSIX Standard
+-----------------------------------
 
 #. :cpp:func:`link`: Because FAT filesystem does not support hardlinks, :cpp:func:`link` copies contents of the file instead. (This only applies to files on FatFs volumes.)
-#. :cpp:func:`unlink`: When trying to remove an open file, the operation will either fail with ``EBUSY``, when ``CONFIG_FATFS_FS_LOCK`` is enabled, or the behaviour is undefined (possibly causing FS corruption), if not.
+#. :cpp:func:`unlink`: Attempting to remove an open file will fail with ``EBUSY`` when ``CONFIG_FATFS_FS_LOCK`` is enabled. Otherwise, the behavior is undefined and may cause file system corruption.
 
 .. _using-fatfs-with-vfs-and-sdcards:
 
