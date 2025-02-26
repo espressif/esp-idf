@@ -4,12 +4,7 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
 
 on:
-  push:
-    branches:
-      - 'master'
-      - 'release/*'
-    tags:
-      - 'v*.*'
+  pull_request:
 
 env:
   # Platforms to build the image for
