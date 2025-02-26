@@ -206,7 +206,10 @@ TEST_CASE("flash suspend test", "[spi_flash][suspend]")
     ESP_LOGI(TAG, "During Erase, ISR interval time:\n\t\t%0.2f us", GET_US_BY_CCOUNT(s_isr_interval_time / (times - 1)));
     ESP_LOGI(TAG, "The tsus value which passes the test is:\n\t\t%ld us", isr_interval_time - isr_duration_time);
     // 15 stands for threshold. We allow the interval time minus duration time is little bit larger than TSUS value
+#if CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
+    // Don't check the performance because it should be slow.
     TEST_ASSERT_LESS_THAN(CONFIG_SPI_FLASH_SUSPEND_TSUS_VAL_US + 15, isr_interval_time - isr_duration_time);
+#endif
     ESP_LOGI(TAG, "Reasonable value!");
 
     ESP_LOGI(TAG, "Finish");
