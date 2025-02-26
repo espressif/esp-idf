@@ -6,6 +6,7 @@
 #ifndef __BT_SPI_OUT_H__
 #define __BT_SPI_OUT_H__
 
+#include <stdarg.h>
 #include <string.h>
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -19,6 +20,7 @@
 #define BLE_LOG_SPI_OUT_SOURCE_NIMBLE 3
 #define BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM 4
 #define BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM 5
+#define BLE_LOG_SPI_OUT_SOURCE_USER 0x10
 #define BLE_LOG_SPI_OUT_SOURCE_SYNC 0xFE
 #define BLE_LOG_SPI_OUT_SOURCE_LOSS 0xFF
 

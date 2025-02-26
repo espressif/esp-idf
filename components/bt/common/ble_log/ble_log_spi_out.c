@@ -176,8 +176,10 @@ IRAM_ATTR static void esp_timer_cb_flushout(void)
         if (trans_head->trans.length) {
             spi_out_append_trans();
         }
-    } else {
-        // Restart flushout timer
+    }
+
+    // Restart flushout timer if not active
+    if (!esp_timer_is_active(flushout_timer_handle)) {
         esp_timer_start_once(flushout_timer_handle, SPI_OUT_FLUSHOUT_TIMEOUT);
     }
 
@@ -193,6 +195,9 @@ IRAM_ATTR static void esp_timer_cb_ts_sync(void)
     uint32_t lc_ts = 0;
     uint32_t esp_ts = 0;
 
+    // Toggle sync IO
+    sync_io_level = !sync_io_level;
+
     // Enter critical
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
@@ -205,7 +210,7 @@ IRAM_ATTR static void esp_timer_cb_ts_sync(void)
     lc_ts = r_os_cputime_get32();
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
-    // Toggle Sync IO
+    // Set sync IO level
     gpio_set_level(CONFIG_BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM, (uint32_t)sync_io_level);
 
     // Get ESP timestamp
@@ -219,9 +224,6 @@ IRAM_ATTR static void esp_timer_cb_ts_sync(void)
     memcpy(sync_frame + 1, &lc_ts, sizeof(lc_ts));
     memcpy(sync_frame + 5, &esp_ts, sizeof(esp_ts));
     ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_SYNC, sync_frame, 9);
-
-    // Update IO level
-    sync_io_level = !sync_io_level;
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
 
@@ -351,6 +353,10 @@ void ble_log_spi_out_ts_sync_stop(void)
         if (esp_timer_is_active(ts_sync_timer_handle)) {
             esp_timer_stop(ts_sync_timer_handle);
         }
+
+        // Set sync IO to low level
+        sync_io_level = 0;
+        gpio_set_level(CONFIG_BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM, (uint32_t)sync_io_level);
     }
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_TS_SYNC_ENABLED
