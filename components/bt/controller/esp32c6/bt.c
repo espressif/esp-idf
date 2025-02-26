@@ -1661,6 +1661,10 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
 
+#if CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+#include "esp_gdbstub.h"
+#endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+
 int IRAM_ATTR
 ble_capture_info_user_handler(uint8_t type, uint32_t reason)
 {
@@ -1671,12 +1675,16 @@ ble_capture_info_user_handler(uint8_t type, uint32_t reason)
             for (i = 0; i < 2; i++) {
                 esp_ble_controller_info_capture(0x010101);
             }
-
+#if CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+            uintptr_t sp;
+            __asm__ volatile ("mv %0, sp" : "=r" (sp));
+            esp_gdbstub_panic_handler(&sp);
+#endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
             break;
 #if CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
         case 1:
             if ((reason == 0x08) || (reason == 0x3d) || (reason == 0x28)) {
-                osi_assert_wrapper(__LINE__,__func__, type， reason);
+                osi_assert_wrapper(__LINE__,__func__, type, reason);
             }
             break;
 #endif // CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
