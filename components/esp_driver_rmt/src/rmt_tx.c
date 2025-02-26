@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -315,16 +315,9 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
         ESP_GOTO_ON_ERROR(rmt_tx_init_dma_link(tx_channel, config), err, TAG, "install tx DMA failed");
     }
 #endif
-    // select the clock source
-    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&tx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution, find the divider to get the closest resolution
-    uint32_t real_div = (group->resolution_hz + config->resolution_hz / 2) / config->resolution_hz;
-    rmt_ll_tx_set_channel_clock_div(hal->regs, channel_id, real_div);
-    // resolution lost due to division, calculate the real resolution
-    tx_channel->base.resolution_hz = group->resolution_hz / real_div;
-    if (tx_channel->base.resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, tx_channel->base.resolution_hz);
-    }
+    tx_channel->base.direction = RMT_CHANNEL_DIRECTION_TX;
+    // select the clock source and set clock resolution
+    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&tx_channel->base, config->clk_src, config->resolution_hz), err, TAG, "set clock resolution failed");
 
     rmt_ll_tx_set_mem_blocks(hal->regs, channel_id, tx_channel->base.mem_block_num);
     // set limit threshold, after transmit ping_pong_symbols size, an interrupt event would be generated
@@ -359,7 +352,6 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
 
     portMUX_INITIALIZE(&tx_channel->base.spinlock);
     atomic_init(&tx_channel->base.fsm, RMT_FSM_INIT);
-    tx_channel->base.direction = RMT_CHANNEL_DIRECTION_TX;
     tx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
     // polymorphic methods
     tx_channel->base.del = rmt_del_tx_channel;

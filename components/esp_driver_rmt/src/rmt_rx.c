@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -254,16 +254,9 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         ESP_GOTO_ON_ERROR(ret, err, TAG, "install rx interrupt failed");
     }
 
-    // select the clock source
-    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src), err, TAG, "set group clock failed");
-    // set channel clock resolution, find the divider to get the closest resolution
-    uint32_t real_div = (group->resolution_hz + config->resolution_hz / 2) / config->resolution_hz;
-    rmt_ll_rx_set_channel_clock_div(hal->regs, channel_id, real_div);
-    // resolution loss due to division, calculate the real resolution
-    rx_channel->base.resolution_hz = group->resolution_hz / real_div;
-    if (rx_channel->base.resolution_hz != config->resolution_hz) {
-        ESP_LOGW(TAG, "channel resolution loss, real=%"PRIu32, rx_channel->base.resolution_hz);
-    }
+    rx_channel->base.direction = RMT_CHANNEL_DIRECTION_RX;
+    // select the clock source and set clock resolution
+    ESP_GOTO_ON_ERROR(rmt_select_periph_clock(&rx_channel->base, config->clk_src, config->resolution_hz), err, TAG, "set clock resolution failed");
 
     rx_channel->filter_clock_resolution_hz = group->resolution_hz;
     // On esp32 and esp32s2, the counting clock used by the RX filter always comes from APB clock
@@ -303,7 +296,6 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
     // initialize other members of rx channel
     portMUX_INITIALIZE(&rx_channel->base.spinlock);
     atomic_init(&rx_channel->base.fsm, RMT_FSM_INIT);
-    rx_channel->base.direction = RMT_CHANNEL_DIRECTION_RX;
     rx_channel->base.hw_mem_base = &RMTMEM.channels[channel_id + RMT_RX_CHANNEL_OFFSET_IN_GROUP].symbols[0];
     // polymorphic methods
     rx_channel->base.del = rmt_del_rx_channel;
