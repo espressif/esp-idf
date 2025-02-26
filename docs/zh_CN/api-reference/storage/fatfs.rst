@@ -43,10 +43,11 @@ FatFs 与 VFS 配合使用
 
 便捷函数 :cpp:func:`esp_vfs_fat_sdmmc_mount`、:cpp:func:`esp_vfs_fat_sdspi_mount` 和 :cpp:func:`esp_vfs_fat_sdcard_unmount` 对上述步骤进行了封装，并加入了对 SD 卡初始化的处理。我们将在下一章节详细介绍以上函数。
 
-.. note::
+与 POSIX 标准的差异
+---------------------
 
-    FAT 文件系统不支持硬链接，因此调用 :cpp:func:`link` 后会复制文件内容（仅适用于 FatFs 卷上的文件）。
-
+#. :cpp:func:`link`：由于 FAT 文件系统不支持硬链接，调用 :cpp:func:`link` 后会复制文件内容（仅适用于 FatFs 卷上的文件）。
+#. :cpp:func:`unlink`：当尝试删除已打开的文件时，如果启用了 ``CONFIG_FATFS_FS_LOCK``，操作将失败并返回 ``EBUSY``。如果未启用，则行为未定义（可能导致文件系统损坏）。
 
 .. _using-fatfs-with-vfs-and-sdcards:
 
