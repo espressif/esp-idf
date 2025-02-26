@@ -97,6 +97,18 @@ Supported since ESP-IDF v5.0.
 | release/v5.2           | v5.2.2+     | v5.2     |
 | release/v5.3 and above | v5.3+       | v5.3     |
 
+#### v2.0
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.0           | v5.0.8+     | v5.0.8   |
+| release/v5.1           | v5.1.5+     | v5.1.5*  |
+| release/v5.2           | v5.2.4+     | v5.2.4   |
+| release/v5.3           | v5.3.2+     | v5.3.2*  |
+| release/v5.4 and above | v5.4+       | v5.4     |
+
+Note: IDF v5.1.5 and v5.3.2 are compatible with C2 v2.0. However the chip revision check hasn't been updated on these releases. Enable `ESP32C2_REV2_DEVELOPMENT` config to bypass the outdated check.
+
 ### ESP32-C6
 
 #### v0.0, v0.1
