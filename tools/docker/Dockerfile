@@ -2,6 +2,10 @@ FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
+# Unpacking libc-bin (2.35-0ubuntu3.9) over (2.35-0ubuntu3.8)
+# Errors were encountered while processing: libc-bin
+RUN apt-mark hold libc-bin
+
 RUN : \
   && apt-get update \
   && apt-get install -y \
@@ -29,6 +33,7 @@ RUN : \
     ninja-build \
     python3 \
     python3-venv \
+    python-is-python3 \
     ruby \
     unzip \
     wget \
@@ -36,7 +41,6 @@ RUN : \
     zip \
   && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
-  && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
   && :
 
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
@@ -83,6 +87,7 @@ RUN echo IDF_CHECKOUT_REF=$IDF_CHECKOUT_REF IDF_CLONE_BRANCH_OR_TAG=$IDF_CLONE_B
 
 # Install all the required tools
 RUN : \
+  && apt-mark hold libc-bin \
   && update-ca-certificates --fresh \
   && $IDF_PATH/tools/idf_tools.py --non-interactive install required --targets=${IDF_INSTALL_TARGETS} \
   && $IDF_PATH/tools/idf_tools.py --non-interactive install qemu* --targets=${IDF_INSTALL_TARGETS} \
