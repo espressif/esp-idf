@@ -1,27 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdlib.h>
 #include <sys/lock.h>
-#include "sdkconfig.h"
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "esp_attr.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "esp_check.h"
 #include "driver/gptimer.h"
-#include "esp_memory_utils.h"
 #include "gptimer_priv.h"
-
-static const char *TAG = "gptimer";
+#include "esp_memory_utils.h"
 
 static void gptimer_default_isr(void *args);
 
@@ -134,9 +121,6 @@ static esp_err_t gptimer_destroy(gptimer_t *timer)
 
 esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *ret_timer)
 {
-#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     gptimer_t *timer = NULL;
     ESP_RETURN_ON_FALSE(config && ret_timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -185,7 +169,7 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     timer->direction = config->direction;
     timer->intr_priority = config->intr_priority;
     timer->flags.intr_shared = config->flags.intr_shared;
-    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, resolution=%"PRIu32"Hz", group_id, timer_id, timer, timer->resolution_hz);
+    ESP_LOGD(TAG, "new gptimer (%d,%d) at %p, %zu bytes used", group_id, timer_id, timer, heap_caps_get_allocated_size(timer));
     *ret_timer = timer;
     return ESP_OK;
 
@@ -228,7 +212,9 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
 
 esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     timer_hal_set_counter_value(&timer->hal, value);
@@ -238,7 +224,9 @@ esp_err_t gptimer_set_raw_count(gptimer_handle_t timer, unsigned long long value
 
 esp_err_t gptimer_get_raw_count(gptimer_handle_t timer, unsigned long long *value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL || value == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_hal_capture_and_get_counter_value(&timer->hal);
@@ -255,7 +243,9 @@ esp_err_t gptimer_get_resolution(gptimer_handle_t timer, uint32_t *out_resolutio
 
 esp_err_t gptimer_get_captured_count(gptimer_handle_t timer, uint64_t *value)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer && value, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL || value == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
 
     portENTER_CRITICAL_SAFE(&timer->spinlock);
     *value = timer_ll_get_counter_value(timer->hal.dev, timer->timer_id);
@@ -305,14 +295,22 @@ esp_err_t gptimer_register_event_callbacks(gptimer_handle_t timer, const gptimer
 
 esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_config_t *config)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
     if (config) {
 #if CONFIG_GPTIMER_CTRL_FUNC_IN_IRAM
-        ESP_RETURN_ON_FALSE_ISR(esp_ptr_internal(config), ESP_ERR_INVALID_ARG, TAG, "alarm config struct not in internal RAM");
+        // when the function is placed in IRAM, we expect the config struct is also placed in internal RAM
+        // if the cache is disabled, the function can still access the config struct
+        if (esp_ptr_internal(config) == false) {
+            return ESP_ERR_INVALID_ARG;
+        }
 #endif
         // When auto_reload is enabled, alarm_count should not be equal to reload_count
         bool valid_auto_reload = !config->flags.auto_reload_on_alarm || config->alarm_count != config->reload_count;
-        ESP_RETURN_ON_FALSE_ISR(valid_auto_reload, ESP_ERR_INVALID_ARG, TAG, "reload count can't equal to alarm count");
+        if (valid_auto_reload == false) {
+            return ESP_ERR_INVALID_ARG;
+        }
 
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer->reload_count = config->reload_count;
@@ -340,6 +338,7 @@ esp_err_t gptimer_set_alarm_action(gptimer_handle_t timer, const gptimer_alarm_c
 esp_err_t gptimer_enable(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // the only acceptable FSM change: init->enable
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_INIT;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE),
                         ESP_ERR_INVALID_STATE, TAG, "timer not in init state");
@@ -360,6 +359,7 @@ esp_err_t gptimer_enable(gptimer_handle_t timer)
 esp_err_t gptimer_disable(gptimer_handle_t timer)
 {
     ESP_RETURN_ON_FALSE(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // the only acceptable FSM change: enable->init
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_ENABLE;
     ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_INIT),
                         ESP_ERR_INVALID_STATE, TAG, "timer not in enable state");
@@ -379,7 +379,14 @@ esp_err_t gptimer_disable(gptimer_handle_t timer)
 
 esp_err_t gptimer_start(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the timer is already started, do nothing
+    if (atomic_load(&timer->fsm) == GPTIMER_FSM_RUN) {
+        return ESP_OK;
+    }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_ENABLE;
     if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_RUN_WAIT)) {
@@ -393,7 +400,8 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
         atomic_store(&timer->fsm, GPTIMER_FSM_RUN);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not ready for a new start");
+        // return error if the timer is not in the expected state
+        return ESP_ERR_INVALID_STATE;
     }
 
     return ESP_OK;
@@ -401,7 +409,15 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
 
 esp_err_t gptimer_stop(gptimer_handle_t timer)
 {
-    ESP_RETURN_ON_FALSE_ISR(timer, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    if (timer == NULL) {
+        // not printing error message here because the return value already indicates the error well
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    // if the timer is not started, do nothing
+    if (atomic_load(&timer->fsm) == GPTIMER_FSM_ENABLE) {
+        return ESP_OK;
+    }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_RUN;
     if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE_WAIT)) {
@@ -412,7 +428,8 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
         atomic_store(&timer->fsm, GPTIMER_FSM_ENABLE);
         portEXIT_CRITICAL_SAFE(&timer->spinlock);
     } else {
-        ESP_RETURN_ON_FALSE_ISR(false, ESP_ERR_INVALID_STATE, TAG, "timer is not running");
+        // return error if the timer is not in the expected state
+        return ESP_ERR_INVALID_STATE;
     }
 
     return ESP_OK;
