@@ -15,7 +15,6 @@
 #include "soc/soc_caps.h"
 #include "esp_attr.h"
 #include "test_board.h"
-#include "soc/parl_io_struct.h"
 
 TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
 {

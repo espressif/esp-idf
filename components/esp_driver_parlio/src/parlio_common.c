@@ -19,7 +19,7 @@
 #include "hal/parlio_ll.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/sleep_retention.h"
-#include "parlio_private.h"
+#include "parlio_priv.h"
 
 static const char *TAG = "parlio";
 

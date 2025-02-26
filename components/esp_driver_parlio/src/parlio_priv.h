@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,11 +26,12 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_OBJ_CACHE_SAFE
 #define PARLIO_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define PARLIO_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif
+
 #define PARLIO_DMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_DMA)
 
 #if SOC_PARLIO_TX_RX_SHARE_INTERRUPT
@@ -39,10 +40,10 @@
 #define PARLIO_INTR_ALLOC_FLAG_SHARED 0
 #endif
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
-#define PARLIO_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#if CONFIG_PARLIO_TX_CACHE_SAFE
+#define PARLIO_TX_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
 #else
-#define PARLIO_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED)
+#define PARLIO_TX_INTR_ALLOC_FLAG   (ESP_INTR_FLAG_LOWMED | PARLIO_INTR_ALLOC_FLAG_SHARED)
 #endif
 
 // Use retention link only when the target supports sleep retention is enabled
@@ -59,14 +60,6 @@ typedef dma_descriptor_align8_t     parlio_dma_desc_t;
 #define PARLIO_GDMA_NEW_CHANNEL     gdma_new_axi_channel
 #endif
 #endif // defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS)
-
-#define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
-
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
-#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_64B_ALIGNED
-#else
-#define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
-#endif
 
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()

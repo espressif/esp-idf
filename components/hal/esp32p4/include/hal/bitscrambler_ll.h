@@ -166,7 +166,7 @@ static inline void bitscrambler_ll_set_cond_mode(bitscrambler_dev_t *hw, bitscra
  */
 static inline void bitscrambler_ll_enable_prefetch_on_reset(bitscrambler_dev_t *hw, bitscrambler_direction_t dir, bool en)
 {
-    // 0: means do prefetch on reset, 1: means no reset prefetch, user has to load the instruction manually in the assembly code
+    // 0: means do data prefetch on reset, 1: means no reset prefetch, user has to load the data manually in the assembly code
     hw->ctrl[dir].fetch_mode = en ? 0 : 1;
 }
 

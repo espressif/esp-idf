@@ -126,7 +126,7 @@ typedef bool (*parlio_tx_done_callback_t)(parlio_tx_unit_handle_t tx_unit, const
 /**
  * @brief Group of Parallel IO TX callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
@@ -137,7 +137,7 @@ typedef struct {
  * @brief Set event callbacks for Parallel IO TX unit
  *
  * @note User can deregister a previously registered callback by calling this function and setting the callback member in the `cbs` structure to NULL.
- * @note When CONFIG_PARLIO_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_PARLIO_TX_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well. The `user_data` should also reside in SRAM.
  *
  * @param[in] tx_unit Parallel IO TX unit that created by `parlio_new_tx_unit`
