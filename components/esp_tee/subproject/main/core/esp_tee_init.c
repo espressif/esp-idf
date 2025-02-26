@@ -59,7 +59,6 @@ static void tee_init_app_config(void)
     esp_tee_app_config.api_minor_version = ESP_TEE_API_MINOR_VER;
 
     /* Set the TEE-related fields (from the TEE binary) that the REE will use to interface with TEE */
-    esp_tee_app_config.s_entry_addr = &_sec_world_entry;
     esp_tee_app_config.s_int_handler = &_tee_s_intr_handler;
 }
 

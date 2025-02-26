@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -68,7 +68,9 @@ TEST_CASE("Test multiple calls to sample app (basic services)", "[basic]")
 
 TEST_CASE("Custom secure service call", "[basic]")
 {
-    dummy_secure_service();
+    int res = -1;
+    dummy_secure_service(1, 2, 3, 4, 5, 6, 7, 8, &res);
+    TEST_ASSERT_EQUAL_UINT32(36, res);
 }
 
 void test_task(void *pvParameters)

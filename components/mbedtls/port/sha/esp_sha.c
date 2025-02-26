@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <assert.h>
+#include "hal/sha_ll.h"
 #include "hal/sha_hal.h"
 #include "hal/sha_types.h"
 #include "soc/soc_caps.h"
@@ -20,9 +21,32 @@
 #include "sha/sha_parallel_engine.h"
 #else
 #include "sha/sha_core.h"
+#include "esp_sha_internal.h"
+#include "esp_private/esp_crypto_lock_internal.h"
+#if SOC_SHA_CRYPTO_DMA
+#include "hal/crypto_dma_ll.h"
+#endif
 #endif
 
 static const char *TAG = "esp_sha";
+
+#if !SOC_SHA_SUPPORT_PARALLEL_ENG
+void esp_sha_enable_periph_clk(bool enable)
+{
+    SHA_RCC_ATOMIC() {
+        sha_ll_enable_bus_clock(enable);
+        if (enable) {
+            sha_ll_reset_register();
+        }
+#if SOC_SHA_CRYPTO_DMA
+        crypto_dma_ll_enable_bus_clock(enable);
+        if (enable) {
+            crypto_dma_ll_reset_register();
+        }
+#endif
+    }
+}
+#endif
 
 void esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {

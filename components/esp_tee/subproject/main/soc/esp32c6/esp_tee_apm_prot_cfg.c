@@ -11,6 +11,7 @@
 #include "soc/soc.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/efuse_reg.h"
+#include "soc/pcr_reg.h"
 
 extern void tee_apm_violation_isr(void *arg);
 
@@ -91,34 +92,41 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 5: Peripherals [RSA - TEE Controller & APM] (RW) */
-    /* Protected: APM, TEE Controller */
+    /* Region 5/6: Peripherals [RSA - TEE Controller & APM] (RW) */
+    /* Protected: AES + SHA PCR, APM, TEE Controller */
     {
         .regn_num = 5,
         .regn_start_addr = DR_REG_RSA_BASE,
+        .regn_end_addr   = (PCR_AES_CONF_REG - 0x4),
+        .regn_pms        = 0x6,
+        .filter_enable   = 1,
+    },
+    {
+        .regn_num = 6,
+        .regn_start_addr = PCR_RSA_CONF_REG,
         .regn_end_addr   = (DR_REG_TEE_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 6: Peripherals [Miscellaneous - PMU] (RW) */
+    /* Region 7: Peripherals [Miscellaneous - PMU] (RW) */
     {
-        .regn_num = 6,
+        .regn_num = 7,
         .regn_start_addr = DR_REG_MISC_BASE,
         .regn_end_addr   = (DR_REG_PMU_BASE - 0x04),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 7: Peripherals [DEBUG - PWDET] (RW) */
+    /* Region 8: Peripherals [DEBUG - PWDET] (RW) */
     {
-        .regn_num = 7,
+        .regn_num = 8,
         .regn_start_addr = DR_REG_OPT_DEBUG_BASE,
         .regn_end_addr   = 0x600D0000,
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 8: REE SRAM region (RW) */
+    /* Region 9: REE SRAM region (RW) */
     {
-        .regn_num = 8,
+        .regn_num = 9,
         .regn_start_addr = SOC_NS_IRAM_START,
         .regn_end_addr   = SOC_IRAM_HIGH,
         .regn_pms        = 0x6,
@@ -164,9 +172,9 @@ apm_ctrl_secure_mode_config_t hp_apm_sec_mode_data = {
 
 /* HP_APM: TEE mode accessible regions */
 apm_ctrl_region_config_data_t hp_apm_pms_data_tee[] = {
-    /* Region 9: Entire memory region (RWX)*/
+    /* Region 10: Entire memory region (RWX)*/
     {
-        .regn_num = 9,
+        .regn_num = 10,
         .regn_start_addr = 0x0,
         .regn_end_addr   = ~0x0,
         .regn_pms        = 0x7,
@@ -302,6 +310,9 @@ void esp_tee_configure_apm_protection(void)
 {
     /* Disable all control filter first to have full access of address rage. */
     apm_hal_apm_ctrl_filter_enable_all(false);
+
+    /* Switch HP_CPU to TEE mode */
+    apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, APM_LL_MASTER_HPCORE, APM_LL_SECURE_MODE_TEE);
 
     /* LP APM0 configuration. */
     lp_apm0_sec_mode_data.regn_count = sizeof(lp_apm0_pms_data) / sizeof(apm_ctrl_region_config_data_t);

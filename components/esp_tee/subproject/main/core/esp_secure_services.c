@@ -26,6 +26,7 @@
 #include "soc/soc_caps.h"
 #include "aes/esp_aes.h"
 #include "sha/sha_core.h"
+#include "esp_sha_internal.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -323,6 +324,11 @@ void _ss_esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 void _ss_esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
 {
     esp_sha_block(sha_type, data_block, is_first_block);
+}
+
+void _ss_esp_sha_enable_periph_clk(bool enable)
+{
+    esp_sha_enable_periph_clk(enable);
 }
 
 /* ---------------------------------------------- OTA ------------------------------------------------- */

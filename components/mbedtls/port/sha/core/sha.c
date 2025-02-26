@@ -16,6 +16,7 @@
 #include "esp_private/esp_crypto_lock_internal.h"
 #include "esp_log.h"
 #include "sha/sha_core.h"
+#include "esp_sha_internal.h"
 #include "hal/sha_hal.h"
 #include "hal/sha_ll.h"
 #include "soc/soc_caps.h"
@@ -50,6 +51,15 @@
 #include "hal/crypto_dma_ll.h"
 #endif
 #endif /* SOC_SHA_SUPPORT_DMA */
+
+#if !ESP_TEE_BUILD
+#define SHA_LOCK()    esp_crypto_sha_aes_lock_acquire()
+#define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
+#else
+#define SHA_RCC_ATOMIC()
+#define SHA_LOCK()
+#define SHA_RELEASE()
+#endif
 
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
@@ -89,34 +99,16 @@ inline static size_t block_length(esp_sha_type type)
 /* Enable SHA peripheral and then lock it */
 void esp_sha_acquire_hardware(void)
 {
-#if !ESP_TEE_BUILD
     /* Released when releasing hw with esp_sha_release_hardware() */
-    esp_crypto_sha_aes_lock_acquire();
-#endif
-
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-#if SOC_AES_CRYPTO_DMA
-        crypto_dma_ll_enable_bus_clock(true);
-        crypto_dma_ll_reset_register();
-#endif
-    }
+    SHA_LOCK();
+    esp_sha_enable_periph_clk(true);
 }
 
 /* Disable SHA peripheral block and then release it */
 void esp_sha_release_hardware(void)
 {
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-#if SOC_AES_CRYPTO_DMA
-        crypto_dma_ll_enable_bus_clock(false);
-#endif
-    }
-
-#if !ESP_TEE_BUILD
-    esp_crypto_sha_aes_lock_release();
-#endif
+    esp_sha_enable_periph_clk(false);
+    SHA_RELEASE();
 }
 
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)
