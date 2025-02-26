@@ -428,6 +428,12 @@ menu "Controller debug features"
     config BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
         bool "When ACL disconnects abnormally, assertion processing is performed(Experimental)"
         default n
+
+    config BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+        bool "Remain scene with GDB to capture relevant status info(Experimental)"
+        default n
+        help
+            Retain scene with GDB to capture info, requires disabling WDT (CONFIG_ESP_INT_WDT, CONFIG_ESP_TASK_WDT_EN).
 endmenu
 
 config BT_LE_LL_RESOLV_LIST_SIZE
