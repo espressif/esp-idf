@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@ esp_gap_ble_cb_t esp_ble_gap_get_callback(void)
 }
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
 esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
 {
     btc_msg_t msg = {0};
@@ -51,8 +52,9 @@ esp_err_t esp_ble_gap_config_adv_data(esp_ble_adv_data_t *adv_data)
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), btc_gap_ble_arg_deep_copy,
                 btc_gap_ble_arg_deep_free)== BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
-
+#if (BLE_42_SCAN_EN == TRUE)
 esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params)
 {
     btc_msg_t msg = {0};
@@ -99,7 +101,9 @@ esp_err_t esp_ble_gap_stop_scanning(void)
     msg.act = BTC_GAP_BLE_ACT_STOP_SCAN;
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
+#if (BLE_42_ADV_EN == TRUE)
 esp_err_t esp_ble_gap_start_advertising(esp_ble_adv_params_t *adv_params)
 {
     btc_msg_t msg = {0};
@@ -140,6 +144,7 @@ esp_err_t esp_ble_gap_clear_advertising(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 
 esp_err_t esp_ble_gap_update_conn_params(esp_ble_conn_update_params_t *params)
@@ -536,6 +541,7 @@ uint8_t *esp_ble_resolve_adv_data( uint8_t *adv_data, uint8_t type, uint8_t *len
 }
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
 esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
 {
     btc_msg_t msg = {0};
@@ -557,6 +563,7 @@ esp_err_t esp_ble_gap_config_adv_data_raw(uint8_t *raw_data, uint32_t raw_data_l
                 btc_gap_ble_arg_deep_free) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
 {
@@ -933,7 +940,7 @@ esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)
     return ESP_FAIL;
 }
 
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_DTM_TEST_EN == TRUE)
 esp_err_t esp_ble_dtm_tx_start(const esp_ble_dtm_tx_t *tx_params)
 {
     btc_msg_t msg = {0};
@@ -973,9 +980,9 @@ esp_err_t esp_ble_dtm_rx_start(const esp_ble_dtm_rx_t *rx_params)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
 
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
 esp_err_t esp_ble_dtm_enh_tx_start(const esp_ble_dtm_enh_tx_t *tx_params)
 {
     btc_msg_t msg = {0};
@@ -1015,8 +1022,9 @@ esp_err_t esp_ble_dtm_enh_rx_start(const esp_ble_dtm_enh_rx_t *rx_params)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 esp_err_t esp_ble_dtm_stop(void)
 {
     btc_msg_t msg = {0};
@@ -1029,6 +1037,7 @@ esp_err_t esp_ble_dtm_stop(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
 esp_err_t esp_ble_gap_set_privacy_mode(esp_ble_addr_type_t addr_type, esp_bd_addr_t addr, esp_ble_privacy_mode_t mode)
 {
@@ -1125,6 +1134,7 @@ esp_err_t esp_ble_gap_set_preferred_phy(esp_bd_addr_t bd_addr,
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 esp_err_t esp_ble_gap_ext_adv_set_rand_addr(uint8_t instance, esp_bd_addr_t rand_addr)
 {
     btc_msg_t msg;
@@ -1280,7 +1290,9 @@ esp_err_t esp_ble_gap_ext_adv_set_clear(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 esp_err_t esp_ble_gap_periodic_adv_set_params(uint8_t instance, const esp_ble_gap_periodic_adv_params_t *params)
 {
     btc_msg_t msg;
@@ -1375,7 +1387,9 @@ esp_err_t esp_ble_gap_periodic_adv_stop(uint8_t instance)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 esp_err_t esp_ble_gap_periodic_adv_create_sync(const esp_ble_gap_periodic_adv_sync_params_t *params)
 {
     btc_msg_t msg;
@@ -1488,7 +1502,9 @@ esp_err_t esp_ble_gap_periodic_adv_clear_dev(void)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 esp_err_t esp_ble_gap_set_ext_scan_params(const esp_ble_ext_scan_params_t *params)
 {
     btc_msg_t msg;
@@ -1540,6 +1556,7 @@ esp_err_t esp_ble_gap_stop_ext_scan(void)
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 esp_err_t esp_ble_gap_prefer_ext_connect_params_set(esp_bd_addr_t addr,
                                                     esp_ble_gap_phy_mask_t phy_mask,

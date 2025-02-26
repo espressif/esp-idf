@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,13 @@
 
 #if BTC_DYNAMIC_MEMORY == TRUE
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
 #include "bta/bta_api.h"
 extern tBTA_BLE_ADV_DATA *gl_bta_adv_data_ptr;
 extern tBTA_BLE_ADV_DATA *gl_bta_scan_rsp_data_ptr;
 #define gl_bta_adv_data     (*gl_bta_adv_data_ptr)
 #define gl_bta_scan_rsp_data    (*gl_bta_scan_rsp_data_ptr)
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // BLE_42_FEATURE_SUPPORT
 #endif
 
@@ -64,6 +66,7 @@ typedef enum {
     BTC_GAP_BLE_READ_PHY,
     BTC_GAP_BLE_SET_PREFERED_DEF_PHY,
     BTC_GAP_BLE_SET_DEF_PHY,
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     BTC_GAP_BLE_SET_EXT_ADV_RAND_ADDR,
     BTC_GAP_BLE_SET_EXT_ADV_PARAMS,
     BTC_GAP_BLE_CFG_EXT_ADV_DATA_RAW,
@@ -72,23 +75,32 @@ typedef enum {
     BTC_GAP_BLE_EXT_ADV_STOP,
     BTC_GAP_BLE_EXT_ADV_SET_REMOVE,
     BTC_GAP_BLE_EXT_ADV_SET_CLEAR,
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
     BTC_GAP_BLE_SET_PERIODIC_ADV_PARAMS,
     BTC_GAP_BLE_CFG_PERIODIC_ADV_DATA_RAW,
     BTC_GAP_BLE_PERIODIC_ADV_START,
     BTC_GAP_BLE_PERIODIC_ADV_STOP,
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
     BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC,
     BTC_GAP_BLE_PERIODIC_ADV_SYNC_CANCEL,
     BTC_GAP_BLE_PERIODIC_ADV_SYNC_TERMINATE,
     BTC_GAP_BLE_PERIODIC_ADV_ADD_DEV_TO_LIST,
     BTC_GAP_BLE_PERIODIC_REMOVE_ADD_DEV_FROM_LIST,
     BTC_GAP_BLE_PERIODIC_CLEAR_DEV,
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
     BTC_GAP_BLE_SET_EXT_SCAN_PARAMS,
     BTC_GAP_BLE_START_EXT_SCAN,
     BTC_GAP_BLE_STOP_EXT_SCAN,
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
     BTC_GAP_BLE_SET_EXT_PEFER_CONNET_PARAMS,
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
     BTC_GAP_BLE_DTM_ENH_TX_START,
     BTC_GAP_BLE_DTM_ENH_RX_START,
-#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
     BTC_GAP_BLE_ACT_GET_DEV_NAME,
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
     BTC_GAP_BLE_PERIODIC_ADV_RECV_ENABLE,
@@ -96,10 +108,10 @@ typedef enum {
     BTC_GAP_BLE_PERIODIC_ADV_SET_INFO_TRANS,
     BTC_GAP_BLE_SET_PERIODIC_ADV_SYNC_TRANS_PARAMS,
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
-#if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_DTM_TEST_EN == TRUE)
     BTC_GAP_BLE_DTM_TX_START,
     BTC_GAP_BLE_DTM_RX_START,
-#endif // #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
     BTC_GAP_BLE_DTM_STOP,
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
     BTC_GAP_BLE_ACT_CLEAR_ADV,
@@ -257,6 +269,7 @@ typedef union {
     struct set_channels_args {
        esp_gap_ble_channels channels;
     } set_channels;
+#if (BLE_42_DTM_TEST_EN == TRUE)
     struct dtm_tx_start_args {
         uint8_t tx_channel;
         uint8_t len_of_data;
@@ -265,6 +278,7 @@ typedef union {
     struct dtm_rx_start_args {
         uint8_t rx_channel;
     } dtm_rx_start;
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
     //BTC_DEV_VENDOR_HCI_CMD_EVT
     struct vendor_cmd_send_args {
         uint16_t  opcode;
@@ -301,7 +315,7 @@ typedef union {
         esp_ble_gap_phy_mask_t rx_phy_mask;
         uint16_t phy_options;
     } set_def_phy;
-
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
     struct ext_adv_set_rand_addr_args {
         uint8_t instance;
         esp_bd_addr_t rand_addr;
@@ -337,7 +351,9 @@ typedef union {
     struct ext_adv_set_remove_args {
         uint8_t instance;
     } ext_adv_set_remove;
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
     struct peridic_adv_set_params_args {
         uint8_t instance;
         esp_ble_gap_periodic_adv_params_t params;
@@ -358,6 +374,7 @@ typedef union {
     struct periodic_adv_stop_args {
         uint8_t instance;
     } periodic_adv_stop;
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
     struct periodic_adv_create_sync_args {
         esp_ble_gap_periodic_adv_sync_params_t params;

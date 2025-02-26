@@ -616,8 +616,10 @@ void bta_dm_disable (tBTA_DM_MSG *p_data)
 #endif
 
 #if BLE_INCLUDED == TRUE
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     // btm_ble_multi_adv_init is called when the host is enabled, so btm_ble_multi_adv_cleanup is called when the host is disabled.
     btm_ble_multi_adv_cleanup();
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #endif
 
 }
@@ -970,7 +972,7 @@ void bta_dm_clear_white_list(tBTA_DM_MSG *p_data)
     BTM_BleClearWhitelist(p_data->white_list.update_wl_cb);
 #endif
 }
-
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
 {
 #if (BLE_INCLUDED == TRUE)
@@ -981,6 +983,7 @@ void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data)
     }
 #endif  ///BLE_INCLUDED == TRUE
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void bta_dm_read_rssi(tBTA_DM_MSG *p_data)
 {
@@ -991,6 +994,7 @@ void bta_dm_read_rssi(tBTA_DM_MSG *p_data)
     }
 }
 
+#if (CLASSIC_BT_INCLUDED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_set_visibility
@@ -1080,6 +1084,7 @@ void bta_dm_set_visibility(tBTA_DM_MSG *p_data)
     }
 
 }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 
 /*******************************************************************************
 **
@@ -1211,6 +1216,7 @@ void bta_dm_add_device (tBTA_DM_MSG *p_data)
     }
 }
 
+#if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_close_acl
@@ -1256,7 +1262,9 @@ void bta_dm_close_acl(tBTA_DM_MSG *p_data)
     /* otherwise, no action needed */
 
 }
+#endif // #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
 
+#if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_remove_all_acl
@@ -1285,7 +1293,7 @@ void bta_dm_remove_all_acl(tBTA_DM_MSG *p_data)
         }
     }
 }
-
+#endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -4589,6 +4597,7 @@ void bta_dm_eir_update_uuid(tBT_UUID uuid, BOOLEAN adding)
 }
 #endif
 
+#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_enable_test_mode
@@ -4620,7 +4629,9 @@ void bta_dm_disable_test_mode(tBTA_DM_MSG *p_data)
     UNUSED(p_data);
     BTM_DeviceReset(NULL);
 }
+#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 
+#if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_execute_callback
@@ -4640,6 +4651,7 @@ void bta_dm_execute_callback(tBTA_DM_MSG *p_data)
 
     p_data->exec_cback.p_exec_cback(p_data->exec_cback.p_param);
 }
+#endif // #if (BLE_HOST_EXECUTE_CBACK_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5164,6 +5176,7 @@ void bta_dm_ble_set_conn_params (tBTA_DM_MSG *p_data)
             p_data->ble_set_conn_params.slave_latency, p_data->ble_set_conn_params.supervision_tout);
 }
 
+#if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_conn_scan_params
@@ -5181,7 +5194,9 @@ void bta_dm_ble_set_scan_params(tBTA_DM_MSG *p_data)
                          p_data->ble_set_scan_params.scan_mode,
                          p_data->ble_set_scan_params.scan_param_setup_cback);
 }
+#endif // #if (BLE_HOST_BLE_SCAN_PARAM_UNUSED == TRUE)
 
+#if (BLE_42_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_scan_fil_params
@@ -5213,8 +5228,9 @@ void bta_dm_ble_set_scan_fil_params(tBTA_DM_MSG *p_data)
     }
 
 }
+#endif // #if (BLE_42_SCAN_EN == TRUE)
 
-
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_conn_scan_params
@@ -5229,6 +5245,8 @@ void bta_dm_ble_set_conn_scan_params (tBTA_DM_MSG *p_data)
     BTM_BleSetConnScanParams(p_data->ble_set_conn_scan_params.scan_int,
                              p_data->ble_set_conn_scan_params.scan_window);
 }
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_update_conn_params
@@ -5295,6 +5313,7 @@ void bta_dm_ble_clear_rand_address(tBTA_DM_MSG *p_data)
     BTM_BleClearRandAddress();
 }
 
+#if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_stop_advertising
@@ -5309,10 +5328,11 @@ void bta_dm_ble_stop_advertising(tBTA_DM_MSG *p_data)
     if (p_data->hdr.event != BTA_DM_API_BLE_STOP_ADV_EVT) {
         APPL_TRACE_ERROR("Invalid BTA event,can't stop the BLE adverting\n");
     }
-
+#if (BLE_42_ADV_EN == TRUE)
     btm_ble_stop_adv();
+#endif // #if (BLE_42_ADV_EN == TRUE)
 }
-
+#endif // #if (BLE_HOST_STOP_ADV_UNUSED == TRUE)
 
 
 #if BLE_PRIVACY_SPT == TRUE
@@ -5344,6 +5364,7 @@ void bta_dm_ble_config_local_icon (tBTA_DM_MSG *p_data)
     BTM_BleConfigLocalIcon (p_data->ble_local_icon.icon);
 }
 
+#if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_observe
@@ -5383,6 +5404,7 @@ void bta_dm_ble_observe (tBTA_DM_MSG *p_data)
         }
     }
 }
+#endif // #if (BLE_HOST_BLE_OBSERVE_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5428,23 +5450,7 @@ void bta_dm_ble_scan (tBTA_DM_MSG *p_data)
     }
 }
 
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_adv_params
-**
-** Description      This function set the adv parameters.
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_adv_params (tBTA_DM_MSG *p_data)
-{
-    BTM_BleSetAdvParams(p_data->ble_set_adv_params.adv_int_min,
-                        p_data->ble_set_adv_params.adv_int_max,
-                        p_data->ble_set_adv_params.p_dir_bda,
-                        BTA_DM_BLE_ADV_CHNL_MAP);
-}
-
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_params_all
@@ -5482,6 +5488,7 @@ void bta_dm_ble_set_adv_params_all  (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_params_all.p_start_adv_cback)(status);
     }
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -5499,6 +5506,7 @@ void bta_dm_ble_update_duplicate_exceptional_list(tBTA_DM_MSG *p_data)
                                           p_data->ble_duplicate_exceptional_list.exceptional_list_cb);
 }
 
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_adv_config
@@ -5514,29 +5522,6 @@ void bta_dm_ble_set_adv_config (tBTA_DM_MSG *p_data)
 
     if (BTM_BleWriteAdvData(p_data->ble_set_adv_data.data_mask,
                             (tBTM_BLE_ADV_DATA *)p_data->ble_set_adv_data.p_adv_cfg) == BTM_SUCCESS) {
-        status = BTA_SUCCESS;
-    }
-
-    if (p_data->ble_set_adv_data.p_adv_data_cback) {
-        (*p_data->ble_set_adv_data.p_adv_data_cback)(status);
-    }
-}
-
-/*******************************************************************************
-**
-** Function         bta_dm_ble_set_long_adv
-**
-** Description      This function set the long ADV data
-**
-** Parameters:
-**
-*******************************************************************************/
-void bta_dm_ble_set_long_adv (tBTA_DM_MSG *p_data)
-{
-    tBTA_STATUS status = BTA_FAILURE;
-
-    if (BTM_BleWriteLongAdvData(p_data->ble_set_long_adv_data.adv_data,
-                                p_data->ble_set_long_adv_data.adv_data_len) == BTM_SUCCESS) {
         status = BTA_SUCCESS;
     }
 
@@ -5567,7 +5552,6 @@ void bta_dm_ble_set_adv_config_raw (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
-
 
 /*******************************************************************************
 **
@@ -5614,7 +5598,7 @@ void bta_dm_ble_set_scan_rsp_raw (tBTA_DM_MSG *p_data)
         (*p_data->ble_set_adv_data_raw.p_adv_data_cback)(status);
     }
 }
-
+#endif // #if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_set_data_length
@@ -5671,6 +5655,7 @@ void bta_dm_ble_set_data_length(tBTA_DM_MSG *p_data)
 
 }
 
+#if (BLE_42_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_broadcast
@@ -5696,7 +5681,9 @@ void bta_dm_ble_broadcast (tBTA_DM_MSG *p_data)
     }
 
 }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_multi_adv_enb
@@ -5804,7 +5791,9 @@ void btm_dm_ble_multi_adv_disable(tBTA_DM_MSG *p_data)
                                     p_data->ble_multi_adv_disable.inst_id, p_ref, BTA_FAILURE);
     }
 }
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 
+#if (BLE_42_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_tx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleTransmitterTest(p_data->dtm_tx_start.tx_channel, p_data->dtm_tx_start.len_of_data, p_data->dtm_tx_start.pkt_payload, p_data->dtm_tx_start.p_dtm_cmpl_cback);
@@ -5814,11 +5803,14 @@ void bta_dm_ble_gap_dtm_rx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleReceiverTest(p_data->dtm_rx_start.rx_channel, p_data->dtm_rx_start.p_dtm_cmpl_cback);
 }
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
 
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 void bta_dm_ble_gap_dtm_stop(tBTA_DM_MSG *p_data)
 {
     BTM_BleTestEnd(p_data->dtm_stop.p_dtm_cmpl_cback);
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
 void bta_dm_ble_gap_clear_adv(tBTA_DM_MSG *p_data)
 {
@@ -5857,7 +5849,8 @@ void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
     BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
 }
 
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
+#if (BLE_50_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {
     BTM_BleEnhancedTransmitterTest(p_data->dtm_enh_tx_start.tx_channel, p_data->dtm_enh_tx_start.len_of_data,
@@ -5869,7 +5862,8 @@ void bta_dm_ble_gap_dtm_enhance_rx_start(tBTA_DM_MSG *p_data)
     BTM_BleEnhancedReceiverTest(p_data->dtm_enh_rx_start.rx_channel, p_data->dtm_enh_rx_start.phy,
                                     p_data->dtm_enh_rx_start.modulation_index, p_data->dtm_enh_rx_start.p_dtm_cmpl_cback);
 }
-
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
 void bta_dm_ble_gap_read_phy(tBTA_DM_MSG *p_data)
 {
     //tBTM_STATUS btm_status = 0;
@@ -5895,6 +5889,7 @@ void bta_dm_ble_gap_set_prefer_phy(tBTA_DM_MSG *p_data)
                         p_data->ble_set_per_phy.phy_options);
 }
 
+#if (BLE_50_EXTEND_ADV_EN == TRUE)
 void bta_dm_ble_gap_ext_adv_set_rand_addr(tBTA_DM_MSG *p_data)
 {
     BTM_BleSetExtendedAdvRandaddr(p_data->ble_set_ext_adv_rand_addr.instance, p_data->ble_set_ext_adv_rand_addr.rand_addr);
@@ -5935,7 +5930,9 @@ void bta_dm_ble_gap_ext_adv_set_clear(tBTA_DM_MSG *p_data)
 {
     BTM_BleExtAdvSetClear();
 }
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
 
+#if (BLE_50_PERIODIC_ADV_EN == TRUE)
 void bta_dm_ble_gap_periodic_adv_set_params(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s, instance = %d", __func__, p_data->ble_set_periodic_adv_params.instance);
@@ -5962,7 +5959,9 @@ void bta_dm_ble_gap_periodic_adv_enable(tBTA_DM_MSG *p_data)
     BTM_BlePeriodicAdvEnable(p_data->ble_enable_periodic_adv.instance,
                              p_data->ble_enable_periodic_adv.enable);
 }
+#endif // #if (BLE_50_PERIODIC_ADV_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 void bta_dm_ble_gap_periodic_adv_create_sync(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -6007,8 +6006,9 @@ void bta_dm_ble_gap_periodic_adv_clear_dev(tBTA_DM_MSG *p_data)
     APPL_TRACE_API("%s", __func__);
     BTM_BlePeriodicAdvClearDev();
 }
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
-
+#if (BLE_50_EXTEND_SCAN_EN == TRUE)
 void bta_dm_ble_gap_set_ext_scan_params(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -6022,14 +6022,14 @@ void bta_dm_ble_gap_ext_scan(tBTA_DM_MSG *p_data)
     BTM_BleExtendedScan(p_data->ble_ext_scan.start, p_data->ble_ext_scan.duration,
                         p_data->ble_ext_scan.period);
 }
+#endif // #if (BLE_50_EXTEND_SCAN_EN == TRUE)
 
 void bta_dm_ble_gap_set_prefer_ext_conn_params(tBTA_DM_MSG *p_data)
 {
     tBTM_EXT_CONN_PARAMS conn_params;
     conn_params.phy_mask = p_data->ble_set_per_ext_conn_params.phy_mask;
 
-    APPL_TRACE_API("%s, start = %d, duration = %d, period = %d", __func__, p_data->ble_ext_scan.start, p_data->ble_ext_scan.duration,
-                    p_data->ble_ext_scan.period);
+    APPL_TRACE_API("%s, phy_mask %d", __func__, p_data->ble_set_per_ext_conn_params.phy_mask);
 
     if (conn_params.phy_mask & BTA_PHY_1M_MASK) {
         memcpy(&conn_params.phy_1m_conn_params, &p_data->ble_set_per_ext_conn_params.phy_1m_conn_params,
@@ -6081,6 +6081,7 @@ void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data)
                                          p_data->ble_set_past_params.params.cte_type);
 }
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+#if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_setup_storage
@@ -6112,7 +6113,9 @@ void bta_dm_ble_setup_storage (tBTA_DM_MSG *p_data)
                               btm_status);
     }
 }
+#endif // #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 
+#if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_enable_batch_scan
@@ -6170,7 +6173,9 @@ void bta_dm_ble_disable_batch_scan (tBTA_DM_MSG *p_data)
                               btm_status);
     }
 }
+#endif // #if (BLE_HOST_BATCH_SCAN_EN == TRUE)
 
+#if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_read_scan_reports
@@ -6197,7 +6202,9 @@ void bta_dm_ble_read_scan_reports(tBTA_DM_MSG *p_data)
                               btm_status);
     }
 }
+#endif // #if (BLE_HOST_READ_SCAN_REPORTS_EN == TRUE)
 
+#if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_dm_ble_track_advertiser
@@ -6230,6 +6237,7 @@ void bta_dm_ble_track_advertiser(tBTA_DM_MSG *p_data)
         p_data->ble_track_advert.p_track_adv_cback(&track_adv_data);
     }
 }
+#endif // #if (BLE_HOST_TRACK_ADVERTISER_EN == TRUE)
 
 /*******************************************************************************
 **
@@ -6406,6 +6414,7 @@ void bta_dm_scan_filter_param_setup (tBTA_DM_MSG *p_data)
 }
 #endif
 
+#if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         bta_ble_enable_scan_cmpl
@@ -6453,6 +6462,7 @@ void bta_dm_ble_get_energy_info(tBTA_DM_MSG *p_data)
         bta_ble_energy_info_cmpl(0, 0, 0, 0, btm_status);
     }
 }
+#endif // #if (BLE_HOST_ENERGY_INFO_EN == TRUE)
 
 #if ((defined BTA_GATT_INCLUDED) &&  (BTA_GATT_INCLUDED == TRUE) && SDP_INCLUDED == TRUE)
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
