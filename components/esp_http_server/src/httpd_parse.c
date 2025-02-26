@@ -895,13 +895,13 @@ esp_err_t httpd_query_key_value(const char *qry_str, const char *key, char *val,
 
         /* Copy value to the caller's buffer. */
         size_t copy_len = MIN(val_len, val_size - 1);
-        memcpy(val, val_ptr, copy_len);
-        val[copy_len] = '\0';
-
         /* If buffer length is smaller than needed, return truncation error */
         if (copy_len < val_len) {
             return ESP_ERR_HTTPD_RESULT_TRUNC;
         }
+        memcpy(val, val_ptr, copy_len);
+        val[copy_len] = '\0';
+
         return ESP_OK;
     }
     ESP_LOGD(TAG, LOG_FMT("key %s not found"), key);
@@ -960,12 +960,12 @@ esp_err_t httpd_req_get_url_query_str(httpd_req_t *r, char *buf, size_t buf_len)
 
         /* Copy data to the caller's buffer. */
         size_t copy_len = MIN(data_len, buf_len - 1);
-        memcpy(buf, qry, copy_len);
-        buf[copy_len] = '\0';
-
         if (copy_len < data_len) {
             return ESP_ERR_HTTPD_RESULT_TRUNC;
         }
+        memcpy(buf, qry, copy_len);
+        buf[copy_len] = '\0';
+
         return ESP_OK;
     }
     return ESP_ERR_NOT_FOUND;
@@ -1040,7 +1040,6 @@ esp_err_t httpd_req_get_hdr_value_str(httpd_req_t *r, const char *field, char *v
     struct httpd_req_aux *ra = r->aux;
     const char   *hdr_ptr = ra->scratch;         /*!< Request headers are kept in scratch buffer */
     unsigned     count    = ra->req_hdrs_count;  /*!< Count set during parsing  */
-    const size_t buf_len  = val_size;
 
     while (count--) {
         /* Search for the ':' character. Else, it would mean
@@ -1137,16 +1136,16 @@ esp_err_t static httpd_cookie_key_value(const char *cookie_str, const char *key,
 
         /* Copy value to the caller's buffer. */
         size_t copy_len = MIN(val_len, *val_size - 1);
+        /* If buffer length is smaller than needed, return truncation error */
+        if (copy_len < val_len) {
+            return ESP_ERR_HTTPD_RESULT_TRUNC;
+        }
         memcpy(val, val_ptr, copy_len);
         val[copy_len] = '\0';
 
         /* Save actual Cookie value size (including terminating null) */
         *val_size = copy_len + 1;
 
-        /* If buffer length is smaller than needed, return truncation error */
-        if (copy_len < val_len) {
-            return ESP_ERR_HTTPD_RESULT_TRUNC;
-        }
         return ESP_OK;
     }
     ESP_LOGD(TAG, LOG_FMT("cookie %s not found"), key);
