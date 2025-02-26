@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -825,6 +825,13 @@ reset_err:
         case ROOT_PORT_STATE_ENABLED:
             // There is an enabled (active) device. We need to indicate to USBH that the device is gone
             pass_event_to_usbh = true;
+            break;
+        case ROOT_PORT_STATE_RECOVERY:
+            // In a very rare case of having 2 or more events of type DISCONNECTION/ERROR/OVERCURRENT
+            // in a short time, we can endup here, where the driver has not yet recovered from
+            // the 1st error but already got a 2nd error.
+            // Just check that the RECOVER action is requested and return
+            assert(p_hub_driver_obj->dynamic.port_reqs | PORT_REQ_RECOVER);
             break;
         default:
             abort();    // Should never occur
