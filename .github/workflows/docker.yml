@@ -5,11 +5,6 @@ concurrency:
 
 on:
   push:
-    branches:
-      - 'master'
-      - 'release/*'
-    tags:
-      - 'v*.*'
 
 env:
   # Platforms to build the image for
@@ -27,21 +22,10 @@ jobs:
       # as a build arg) and TAG_NAME (used when tagging the image).
       #
       # The following 3 steps cover the alternatives (tag, release branch, master branch):
-      - name: Set variables (tags)
-        if: ${{ github.ref_type == 'tag' }}
-        run: |
-          echo "CLONE_BRANCH_OR_TAG=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "TAG_NAME=$GITHUB_REF_NAME" >> $GITHUB_ENV
       - name: Set variables (release branches)
-        if: ${{ github.ref_type == 'branch' && startsWith(github.ref_name, 'release/') }}
         run: |
           echo "CLONE_BRANCH_OR_TAG=$GITHUB_REF_NAME" >> $GITHUB_ENV
-          echo "TAG_NAME=release-${GITHUB_REF_NAME##release/}" >> $GITHUB_ENV
-      - name: Set variables (main branch)
-        if: ${{ github.ref_type == 'branch' && github.ref_name == 'master' }}
-        run: |
-          echo "CLONE_BRANCH_OR_TAG=master" >> $GITHUB_ENV
-          echo "TAG_NAME=latest" >> $GITHUB_ENV
+          echo "TAG_NAME=release-v5.3" >> $GITHUB_ENV
 
       # Display the variables set above, just in case.
       - name: Check variables
@@ -60,14 +44,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
       - name: Set up QEMU for multiarch builds
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:qemu-v7.0.0-28
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
+        with:
+          cache-binary: false
       - name: Build and push
-        uses: docker/build-push-action@v3
+        uses: docker/build-push-action@v6
         with:
           context: tools/docker
-          push: true
+          push: false
           tags: ${{ env.DOCKERHUB_REPO }}:${{ env.TAG_NAME }}
           platforms: ${{ env.BUILD_PLATFORMS }}
           build-args: |
