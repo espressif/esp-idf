@@ -146,7 +146,7 @@ menu "Power Management"
         select PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP if !SOC_CPU_IN_TOP_DOMAIN
         default n #TODO: enable by default if periph init/deinit management supported (WIFI-5252)
         help
-            If enabled, digital peripherals will be powered down in light sleep, all related peripherals will
+            If enabled, digital peripherals will try to powered down in light sleep, then all related peripherals will
             not be available during sleep, including wake-up sources from the peripherals (For detailed availability
             information, see the note of the corresponding wakeup source enable function).
             The chip will automatically save/restore register context during sleep/wakeup to make the upper layer
@@ -170,6 +170,14 @@ menu "Power Management"
             potential to block the sleep process and cause the wakeup time to be skipped, which will cause the tick
             of freertos to not be compensated correctly when returning from sleep and cause the system to crash.
             To avoid this, you can increase FREERTOS_IDLE_TIME_BEFORE_SLEEP threshold in menuconfig.
+
+            Note3: Enabling this option does not necessarily mean that the peripheral power domain will be
+            turned down during sleep. The control priority of `esp_sleep_pd_config` is higher than this option,
+            user code can still prevent the peripheral power domain from powering down during sleep by
+            `esp_sleep_pd_config(ESP_PD_DOMAIN_TOP, ESP_PD_OPTION_ON)`. In addition, whether the peripheral power
+            domain is powered down during sleep also depends on the sleep working strategy selected by the driver.
+            If any module belonging to the peripheral power domain chooses not to be powered down during sleep,
+            then the peripheral power domain will not be powered off either.
 
     config PM_UPDATE_CCOMPARE_HLI_WORKAROUND
         bool
