@@ -832,6 +832,9 @@
 #define HCI_BLE_CHNL_MAP_SIZE               5
 
 #define HCI_VENDOR_SPECIFIC_EVT         0xFF  /* Vendor specific events */
+#define HCI_VSE_LE_LEGACY_SCAN_REQ_RECEIVED_EVT 0xC0
+#define HCI_VSE_LE_CHAN_MAP_UPDATE_CMPL_EVT     0xC1
+#define HCI_VSE_LE_EVT_MAX                      0xFF
 #define HCI_NAP_TRACE_EVT               0xFF  /* was define 0xFE, 0xFD, change to 0xFF
                                                  because conflict w/ TCI_EVT and per
                                                  specification compliant */

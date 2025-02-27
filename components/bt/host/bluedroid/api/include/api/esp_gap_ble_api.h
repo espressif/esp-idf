@@ -231,6 +231,7 @@ typedef enum {
     ESP_GAP_BLE_SET_PRIVACY_MODE_COMPLETE_EVT,                   /*!< When set privacy mode complete, the event comes */
     ESP_GAP_BLE_SET_CSA_SUPPORT_COMPLETE_EVT,                    /*!< When set CSA support complete, the event comes */
     ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT,                /*!< When set vendor event mask complete, the event comes */
+    ESP_GAP_BLE_VENDOR_HCI_EVT,                                  /*!< When BLE vendor HCI event received, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1588,6 +1589,14 @@ typedef union {
     struct ble_set_vendor_evt_mask_cmpl_evt_param {
         esp_bt_status_t status;                     /*!< Indicate set vendor event mask operation success status */
     } set_vendor_evt_mask_cmpl;                     /*!< Event parameter of ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT */
+    /**
+     * @brief ESP_GAP_BLE_VENDOR_HCI_EVT
+     */
+    struct ble_vendor_hci_event_evt_param {
+        uint8_t        subevt_code;                 /*!< Subevent code for vendor HCI event, the range is 0xC0 to 0xFF */
+        uint8_t        param_len;                   /*!< The length of the event parameter buffer */
+        uint8_t        *param_buf;                  /*!< The pointer of the event parameter buffer */
+    } vendor_hci_evt;                               /*!< Event parameter buffer of ESP_GAP_BLE_VENDOR_HCI_EVT */
 } esp_ble_gap_cb_param_t;
 
 /**
