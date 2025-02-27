@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,7 @@ typedef struct ota_ops_entry_ {
     bool need_erase;
     uint32_t wrote_size;
     uint8_t partial_bytes;
+    bool ota_resumption;
     WORD_ALIGNED_ATTR uint8_t partial_data[16];
     LIST_ENTRY(ota_ops_entry_) entries;
 } ota_ops_entry_t;
@@ -111,6 +112,22 @@ static esp_ota_img_states_t set_new_state_otadata(void)
 #endif
 }
 
+static ota_ops_entry_t* esp_ota_init_entry(const esp_partition_t *partition)
+{
+    ota_ops_entry_t *new_entry = (ota_ops_entry_t *) calloc(1, sizeof(ota_ops_entry_t));
+    if (new_entry == NULL) {
+        return NULL;
+    }
+
+    LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
+
+    new_entry->part = partition;
+    new_entry->handle = ++s_ota_ops_last_handle;
+
+    return new_entry;
+}
+
+
 esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp_ota_handle_t *out_handle)
 {
     ota_ops_entry_t *new_entry;
@@ -144,6 +161,13 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
     }
 #endif
 
+    new_entry = esp_ota_init_entry(partition);
+    if (new_entry == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+    new_entry->need_erase = (image_size == OTA_WITH_SEQUENTIAL_WRITES);
+    *out_handle = new_entry->handle;
+
     if (image_size != OTA_WITH_SEQUENTIAL_WRITES) {
         // If input image size is 0 or OTA_SIZE_UNKNOWN, erase entire partition
         if ((image_size == 0) || (image_size == OTA_SIZE_UNKNOWN)) {
@@ -157,16 +181,44 @@ esp_err_t esp_ota_begin(const esp_partition_t *partition, size_t image_size, esp
         }
     }
 
-    new_entry = (ota_ops_entry_t *) calloc(sizeof(ota_ops_entry_t), 1);
+    return ESP_OK;
+}
+
+esp_err_t esp_ota_resume(const esp_partition_t *partition, const size_t erase_size, const size_t image_offset, esp_ota_handle_t *out_handle)
+{
+    ota_ops_entry_t *new_entry;
+
+    if ((partition == NULL) || (out_handle == NULL)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (image_offset > partition->size) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    partition = esp_partition_verify(partition);
+    if (partition == NULL) {
+        return ESP_ERR_NOT_FOUND;
+    }
+
+    // The staging partition cannot be of type Factory, but the final partition can be.
+    if (!is_ota_partition(partition)) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    const esp_partition_t* running_partition = esp_ota_get_running_partition();
+    if (partition == running_partition) {
+        return ESP_ERR_OTA_PARTITION_CONFLICT;
+    }
+
+    new_entry = esp_ota_init_entry(partition);
     if (new_entry == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    LIST_INSERT_HEAD(&s_ota_ops_entries_head, new_entry, entries);
-
-    new_entry->part = partition;
-    new_entry->handle = ++s_ota_ops_last_handle;
-    new_entry->need_erase = (image_size == OTA_WITH_SEQUENTIAL_WRITES);
+    new_entry->ota_resumption = true;
+    new_entry->wrote_size = image_offset;
+    new_entry->need_erase = (erase_size == OTA_WITH_SEQUENTIAL_WRITES);
     *out_handle = new_entry->handle;
     return ESP_OK;
 }
