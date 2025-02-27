@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import struct
@@ -89,6 +89,36 @@ def test_examples_security_secure_boot(dut: Dut) -> None:
     dut.expect('Secure Boot is enabled', timeout=10)
     dut.serial.reset_efuses()
     dut.burn_wafer_version()
+
+
+# Test secure boot flow.
+# Correctly signed bootloader + correctly signed app should work
+@pytest.mark.host_test
+@pytest.mark.qemu
+@pytest.mark.esp32c3
+@pytest.mark.parametrize(
+    'qemu_extra_args',
+    [
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32c3_efuses.bin")},if=none,format=raw,id=efuse '
+        '-global driver=nvram.esp32c3.efuse,property=drive,value=efuse '
+        '-global driver=timer.esp32c3.timg,property=wdt_disable,value=true',
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('config', ['qemu'], indirect=True)
+def test_examples_security_secure_boot_qemu(dut: Dut) -> None:
+    try:
+        dut.expect('Secure Boot is enabled', timeout=10)
+        dut.expect('Restarting now.', timeout=10)
+        dut.expect('Secure Boot is enabled', timeout=10)
+
+    finally:
+        # the above example test burns the efuses, and hence the efuses file which the
+        # qemu uses to emulate the efuses, "esp32c3_efuses.bin", gets modified.
+        # Thus, restore the efuses file values back to the default ESP32C3 efuses values.
+        with open(os.path.join(os.path.dirname(__file__), 'test', 'esp32c3_efuses.bin'), 'wb') as efuse_file:
+            esp32c3_efuses = '0' * 77 + 'c' + '0' * 1970
+            efuse_file.write(bytearray.fromhex(esp32c3_efuses))
 
 
 # Test efuse key index and key block combination.
