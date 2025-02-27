@@ -37,4 +37,11 @@ menu "Example Configuration"
                 Touch controller XPT2046 connected via SPI.
     endchoice
 
+    config EXAMPLE_LCD_MIRROR_Y
+        int
+        default 1 if EXAMPLE_LCD_TOUCH_ENABLED && EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
+        default 0
+        help
+            This value is 1 if XPT2046 touch controller is selected, 0 otherwise.
+
 endmenu

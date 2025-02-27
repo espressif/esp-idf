@@ -129,7 +129,6 @@ static void example_lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uin
     esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, px_map);
 }
 
-#ifdef CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_STMPE610
 static void example_lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
 {
     uint16_t touchpad_x[1] = {0};
@@ -149,30 +148,6 @@ static void example_lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
         data->state = LV_INDEV_STATE_RELEASED;
     }
 }
-#elif CONFIG_EXAMPLE_LCD_TOUCH_CONTROLLER_XPT2046
-static void example_lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
-{
-    uint16_t touchpad_x[1] = {0};
-    uint16_t touchpad_y[1] = {0};
-    uint8_t touchpad_cnt = 0;
-
-    esp_lcd_touch_handle_t touch_pad = lv_indev_get_user_data(indev);
-    esp_lcd_touch_read_data(touch_pad);
-    bool touchpad_pressed = esp_lcd_touch_get_coordinates(touch_pad, touchpad_x, touchpad_y, NULL, &touchpad_cnt, 1);
-
-    if (touchpad_pressed && touchpad_cnt > 0) {
-        int32_t x = touchpad_x[0];
-        int32_t y = touchpad_y[0];
-
-        data->point.x = x;
-        data->point.y = y;
-        data->state = LV_INDEV_STATE_PRESSED;
-
-    } else {
-        data->state = LV_INDEV_STATE_RELEASED;
-    }
-}
-#endif
 
 static void example_increase_lvgl_tick(void *arg)
 {
@@ -320,7 +295,7 @@ void app_main(void)
         {
             .swap_xy = 0,
             .mirror_x = 0,
-            .mirror_y = 1,
+            .mirror_y = CONFIG_EXAMPLE_LCD_MIRROR_Y,
         },
     };
     esp_lcd_touch_handle_t tp = NULL;
