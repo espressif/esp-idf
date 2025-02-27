@@ -366,7 +366,7 @@ static void test_use_external_non_free_running_clock(parlio_tx_unit_handle_t tx_
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
     // let core clock running for a while to update the clock divider threshold
-    esp_rom_delay_us(100);
+    esp_rom_delay_us(100 * 1000);
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0xAA,
     };
