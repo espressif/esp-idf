@@ -15,32 +15,32 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
 
   .. table:: Supported Features of Wi-Fi and BLE Coexistence
 
-      +-------+--------+-----------+-----+------------+-----------+----------+
-      |                            |BLE                                      |
-      +                            +-----+------------+-----------+----------+
-      |                            |Scan |Advertising |Connecting |Connected |
-      +-------+--------+-----------+-----+------------+-----------+----------+
-      | Wi-Fi |STA     |Scan       |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connecting |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connected  |Y    |Y           |Y          |Y         |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |SOFTAP  |TX Beacon  |Y    |Y           |Y          |Y         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connecting |C1   |C1          |C1         |C1        |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |Connected  |C1   |C1          |C1         |C1        |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |Sniffer |RX         |C1   |C1          |C1         |C1        |
-      +       +--------+-----------+-----+------------+-----------+----------+
-      |       |ESP-NOW |RX         |S    |S           |S          |S         |
-      +       +        +-----------+-----+------------+-----------+----------+
-      |       |        |TX         |Y    |Y           |Y          |Y         |
-      +-------+--------+-----------+-----+------------+-----------+----------+
+      +-------+--------+-----------+-----+------------+----------+
+      |                            |BLE                          |
+      +                            +-----+------------+----------+
+      |                            |Scan |Advertising |Connected |
+      +-------+--------+-----------+-----+------------+----------+
+      | Wi-Fi |STA     |Scan       |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connecting |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connected  |Y    |Y           |Y         |
+      +       +--------+-----------+-----+------------+----------+
+      |       |SOFTAP  |TX Beacon  |Y    |Y           |Y         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connecting |C1   |C1          |C1        |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |Connected  |C1   |C1          |C1        |
+      +       +--------+-----------+-----+------------+----------+
+      |       |Sniffer |RX         |C1   |C1          |C1        |
+      +       +--------+-----------+-----+------------+----------+
+      |       |ESP-NOW |RX         |S    |S           |S         |
+      +       +        +-----------+-----+------------+----------+
+      |       |        |TX         |Y    |Y           |Y         |
+      +-------+--------+-----------+-----+------------+----------+
 
 
-.. only:: esp32
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED
 
   .. table:: Supported Features of Wi-Fi and Classic Bluetooth (BT) Coexistence
 
@@ -71,10 +71,12 @@ Supported Coexistence Scenario for {IDF_TARGET_NAME}
 
 .. note::
 
-  Y: supported and performance is stable
-  C1: supported but the performance is unstable
-  X: not supported
-  S: supported and performance is stable in STA mode, otherwise not supported
+  .. list::
+
+    - Y: supported and the performance is stable
+    - C1: supported but the performance is unstable
+    - X: not supported
+    :SOC_WIFI_SUPPORTED: - S: supported and the performance is stable in STA mode, otherwise not supported
 
 Coexistence Mechanism and Policy
 ------------------------------------------------
@@ -117,42 +119,45 @@ The RF resource allocation mechanism is based on priority. As shown below, both 
 Coexistence Policy
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Coexistence Period and Time Slice
-""""""""""""""""""""""""""""""""""""""""
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
-.. only:: esp32
+  Coexistence Period and Time Slice
+  """"""""""""""""""""""""""""""""""""""""
 
-  Wi-Fi, BT, and BLE have their fixed time slice to use the RF. A coexistence period is divided into 3 time slices in the order of Wi-Fi, BT, and BLE. In the Wi-Fi slice, Wi-Fi's request to the coexistence arbitration module will have higher priority. Similarly, BT/BLE can enjoy higher priority at their own time slices. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
+  .. only:: SOC_BLE_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED
 
-
-.. only:: SOC_WIFI_SUPPORTED and SOC_BLE_SUPPORTED and not esp32
-
-  Wi-Fi and BLE have their fixed time slice to use the RF. In the Wi-Fi time slice, Wi-Fi will send a higher priority request to the coexistence arbitration module. Similarly, BLE can enjoy higher priority at their own time slice. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
+    Wi-Fi, BT, and BLE have their fixed time slice to use the RF. A coexistence period is divided into 3 time slices in the order of Wi-Fi, BT, and BLE. In the Wi-Fi slice, Wi-Fi's request to the coexistence arbitration module will have higher priority. Similarly, BT/BLE can enjoy higher priority at their own time slices. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
 
-.. list::
+  .. only:: not SOC_BT_CLASSIC_SUPPORTED
 
-  :esp32: 1) IDLE status: the coexistence of BT and BLE is controlled by Bluetooth module.
-  :SOC_WIFI_SUPPORTED and SOC_BLE_SUPPORTED and not esp32: 1) IDLE status: RF module is controlled by Bluetooth module.
-  #) CONNECTED status: the coexistence period starts at the Target Beacon Transmission Time (TBTT) and is more than 100 ms.
-  #) SCAN status: Wi-Fi slice and coexistence period are longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
-  #) CONNECTING status: Wi-Fi slice is longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
+    Wi-Fi and BLE have their fixed time slice to use the RF. In the Wi-Fi time slice, Wi-Fi will send a higher priority request to the coexistence arbitration module. Similarly, BLE can enjoy higher priority at their own time slice. The duration of the coexistence period and the proportion of each time slice are divided into four categories according to the Wi-Fi status:
 
+  .. list::
 
-According to the coexistence logic, different coexistence periods and time slice strategies will be selected based on the Wi-Fi and Bluetooth usage scenarios. A Coexistence policy corresponding to a certain usage scenarios is called a "coexistence scheme". For example, the scenario of Wi-Fi CONNECTED and BLE CONNECTED has a corresponding coexistence scheme. In this scheme, the time slices of Wi-Fi and BLE in a coexistence period each account for 50%. The time allocation is shown in the following figure:
-
-.. figure:: ../../_static/coexist_wifi_connected_and_ble_connected_time_slice.png
-    :align: center
-    :alt: Time Slice Under the Status of Wi-Fi CONNECTED and BLE CONNECTED
-    :figclass: align-center
-
-    Time Slice Under the Status of Wi-Fi CONNECTED and BLE CONNECTED
+    :SOC_BLE_SUPPORTED and SOC_BT_CLASSIC_SUPPORTED: 1) IDLE status: the coexistence of BT and BLE is controlled by Bluetooth module.
+    :not SOC_BT_CLASSIC_SUPPORTED: 1) IDLE status: RF module is controlled by Bluetooth module.
+    #) CONNECTED status: the coexistence period starts at the Target Beacon Transmission Time (TBTT) and is more than 100 ms.
+    #) SCAN status: Wi-Fi slice and coexistence period are longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
+    #) CONNECTING status: Wi-Fi slice is longer than in the CONNECTED status. To ensure Bluetooth performance, the Bluetooth time slice will also be adjusted accordingly.
 
 
-Dynamic Priority
-""""""""""""""""""""""""""""
+  According to the coexistence logic, different coexistence periods and time slice strategies will be selected based on the Wi-Fi and Bluetooth usage scenarios. A Coexistence policy corresponding to a certain usage scenarios is called a "coexistence scheme". For example, the scenario of Wi-Fi CONNECTED and BLE CONNECTED has a corresponding coexistence scheme. In this scheme, the time slices of Wi-Fi and BLE in a coexistence period each account for 50%. The time allocation is shown in the following figure:
 
-The coexistence module assigns different priorities to different status of Wi-Fi and Bluetooth. And the priority for each status is dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
+  .. figure:: ../../_static/coexist_wifi_connected_and_ble_connected_time_slice.png
+      :align: center
+      :alt: Time Slice Under the Status of Wi-Fi CONNECTED and BLE CONNECTED
+      :figclass: align-center
+
+      Time Slice Under the Status of Wi-Fi CONNECTED and BLE CONNECTED
+
+
+.. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
+
+  Dynamic Priority
+  """"""""""""""""""""""""""""
+
+  The coexistence module assigns varying priorities to different statuses of each module, and these priorities are dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
 
 .. only:: SOC_WIFI_SUPPORTED
 
