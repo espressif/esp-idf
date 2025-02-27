@@ -767,7 +767,7 @@ static void btu_hcif_disconnection_comp_evt (UINT8 *p)
 
     btm_acl_disconnected(handle, reason);
 
-    HCI_TRACE_WARNING("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
+    HCI_TRACE_EVENT("hcif disc complete: hdl 0x%x, rsn 0x%x", handle, reason);
 }
 
 /*******************************************************************************
