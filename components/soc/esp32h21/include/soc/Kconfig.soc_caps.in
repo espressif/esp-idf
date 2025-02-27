@@ -99,6 +99,10 @@ config SOC_MODEM_CLOCK_SUPPORTED
     bool
     default y
 
+config SOC_REG_I2C_SUPPORTED
+    bool
+    default y
+
 config SOC_AES_SUPPORTED
     bool
     default y
@@ -904,5 +908,9 @@ config SOC_MODEM_CLOCK_IS_INDEPENDENT
     default y
 
 config SOC_RCC_IS_INDEPENDENT
+    bool
+    default y
+
+config SOC_CLK_ANA_I2C_MST_HAS_ROOT_GATE
     bool
     default y
