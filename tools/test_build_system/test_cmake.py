@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import logging
 import os
@@ -16,13 +16,16 @@ from test_build_system_helpers import run_cmake_and_build
 
 def test_build_custom_cmake_project(test_app_copy: Path) -> None:
     # Test is compatible with any target. Random targets in the list are selected for performance reasons
-    for target in ['esp32', 'esp32s3', 'esp32c6', 'esp32h2']:
+    idf_path = Path(os.environ['IDF_PATH'])
+    for target in ['esp32','esp32c2','esp32c3','esp32c6','esp32h2','esp32p4','esp32s2','esp32s3']:
         logging.info(f'Test build ESP-IDF as a library to a custom CMake projects for {target}')
-        idf_path = Path(os.environ['IDF_PATH'])
         run_cmake_and_build(str(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'), '-G', 'Ninja',
                             '-DCMAKE_TOOLCHAIN_FILE={}'.format(idf_path / 'tools' / 'cmake' / f'toolchain-{target}.cmake'), f'-DTARGET={target}')
         assert file_contains((test_app_copy / 'build' / 'compile_commands.json'), '"command"')
         shutil.rmtree(test_app_copy / 'build')
+
+    logging.info(f'Test build ESP-IDF as a library to a custom CMake projects for host')
+    run_cmake_and_build(str(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'), '-G', 'Ninja')
 
 
 def test_build_cmake_library_psram_workaround(test_app_copy: Path) -> None:
