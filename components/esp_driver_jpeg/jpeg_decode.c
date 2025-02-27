@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -631,9 +631,7 @@ static esp_err_t jpeg_parse_header_info_to_hw(jpeg_decoder_handle_t decoder_engi
     dht_func[1][0](hal, header_info->huffbits[1][0], header_info->huffcode[1][0], header_info->tmp_huff);
     dht_func[1][1](hal, header_info->huffbits[1][1], header_info->huffcode[1][1], header_info->tmp_huff);
 
-    if (header_info->dri_marker) {
-        jpeg_ll_set_restart_interval(hal->dev, header_info->ri);
-    }
+    jpeg_ll_set_restart_interval(hal->dev, header_info->ri);
 
     return ESP_OK;
 }
