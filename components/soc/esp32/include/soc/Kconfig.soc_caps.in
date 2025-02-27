@@ -736,8 +736,8 @@ config SOC_TOUCH_SENSOR_NUM
     default 10
 
 config SOC_TOUCH_MIN_CHAN_ID
-    bool
-    default n
+    int
+    default 0
 
 config SOC_TOUCH_MAX_CHAN_ID
     int
