@@ -8,6 +8,6 @@ dependencies:
   esp-qa/ping-cmd:
     version: "~1.0.0"
   espressif/esp-extconn:
-    version: "~0.1.0"
+    version: "~0.2.0"
     rules:
       - if: "target in [esp32p4]"
