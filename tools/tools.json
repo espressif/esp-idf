@@ -953,7 +953,8 @@
       "license": "GPL-2.0-only",
       "name": "qemu-xtensa",
       "supported_targets": [
-        "esp32"
+        "esp32",
+        "esp32s3"
       ],
       "version_cmd": [
         "qemu-system-xtensa",
