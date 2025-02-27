@@ -180,6 +180,8 @@ menu "SPI Flash driver"
             back and verified. This can catch hardware problems with SPI flash, or flash which
             was not erased before verification.
 
+            This will slightly influence the write performance.
+
     config SPI_FLASH_LOG_FAILED_WRITE
         bool "Log errors if verification fails"
         depends on SPI_FLASH_VERIFY_WRITE
