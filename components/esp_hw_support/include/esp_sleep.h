@@ -481,7 +481,6 @@ esp_err_t esp_deep_sleep_enable_gpio_wakeup(uint64_t gpio_pin_mask, esp_deepslee
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE if wakeup triggers conflict
- *      - ESP_ERR_NOT_SUPPORTED if GPIO wakeup source is not available
  */
 esp_err_t esp_sleep_enable_gpio_wakeup(void);
 
@@ -501,7 +500,6 @@ esp_err_t esp_sleep_enable_gpio_wakeup(void);
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_ARG if wakeup from given UART is not supported
- *      - ESP_ERR_NOT_SUPPORTED if UART wakeup source is not available
  */
 esp_err_t esp_sleep_enable_uart_wakeup(int uart_num);
 
