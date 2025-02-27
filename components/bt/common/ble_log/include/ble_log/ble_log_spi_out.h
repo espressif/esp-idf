@@ -6,6 +6,7 @@
 #ifndef __BT_SPI_OUT_H__
 #define __BT_SPI_OUT_H__
 
+#include <stdarg.h>
 #include <string.h>
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
@@ -19,8 +20,18 @@
 #define BLE_LOG_SPI_OUT_SOURCE_NIMBLE 3
 #define BLE_LOG_SPI_OUT_SOURCE_HCI_UPSTREAM 4
 #define BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM 5
+#define BLE_LOG_SPI_OUT_SOURCE_USER 0x10
 #define BLE_LOG_SPI_OUT_SOURCE_SYNC 0xFE
 #define BLE_LOG_SPI_OUT_SOURCE_LOSS 0xFF
+
+// SPI Log Level Definitions
+#define BLE_LOG_SPI_OUT_LEVEL_NONE      0  /*!< No log output */
+#define BLE_LOG_SPI_OUT_LEVEL_ERROR     1  /*!< Critical errors that SPI driver cannot recover from */
+#define BLE_LOG_SPI_OUT_LEVEL_WARN      2  /*!< Recoverable error conditions in SPI communication */
+#define BLE_LOG_SPI_OUT_LEVEL_INFO      3  /*!< Informational messages about SPI transactions */
+#define BLE_LOG_SPI_OUT_LEVEL_DEBUG     4  /*!< Detailed debug information, such as SPI register values */
+#define BLE_LOG_SPI_OUT_LEVEL_VERBOSE   5  /*!< Very detailed debugging logs, potentially flooding output */
+#define BLE_LOG_SPI_OUT_LEVEL_MAX       6  /*!< Number of SPI log levels supported */
 
 // Public functions
 void ble_log_spi_out_init(void);
@@ -30,6 +41,7 @@ void ble_log_spi_out_write_esp(uint32_t len, const uint8_t *addr, bool end);
 void ble_log_spi_out_ts_sync_start(void);
 void ble_log_spi_out_ts_sync_stop(void);
 int ble_log_spi_out_printf(uint8_t source, const char *format, ...);
+int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...);
 void ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len);
 
 #endif // __BT_SPI_OUT_H__
