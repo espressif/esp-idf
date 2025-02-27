@@ -216,7 +216,7 @@ The following options will reduce IRAM usage of some ESP-IDF features:
    Any memory that ends up unused for static IRAM will be added to the heap.
 
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     Flash Suspend Feature
     ^^^^^^^^^^^^^^^^^^^^^
@@ -231,6 +231,8 @@ The following options will reduce IRAM usage of some ESP-IDF features:
     User ISR callbacks and involved variables have to be in internal RAM if they are also used in interrupt contexts.
 
     Placing additional code into IRAM will exacerbate IRAM usage. For this reason, there is :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`, which can alleviate the aforementioned kinds of IRAM usage. By enabling this feature, the Cache will not be disabled when SPI flash driver APIs and SPI flash driver-based APIs are used. Therefore, code and data in flash can be executed or accessed normally, but with some minor delay. See :ref:`auto-suspend` for more details about this feature.
+
+    IRAM usage for flash driver can be declined with :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` enabled. Please refer to :ref:`internal_memory_saving_for_flash_driver` for more detailed information.
 
     Regarding the flash suspend feature usage, and corresponding response time delay, please also see this example :example:`system/flash_suspend`.
 

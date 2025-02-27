@@ -153,6 +153,17 @@ menu "Main Flash configuration"
                 whether suspend is valid instead of waiting for a specific long time, which can save a
                 lot of time and benefit for performance improvement.
 
+        config SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM
+            bool "Place spi_flash operation functions into IRAM" if SPI_FLASH_AUTO_SUSPEND
+            default y
+            help
+                When disabled, certain functions in `spi_flash` component will be placed into Flash memory
+                instead of IRAM. Disabling this option will save almost 10KB of IRAM depending on which
+                functions are used.
+
+                When enabled, these functions will be placed in internal RAM, with better performance.
+
+                For more information please refer to programming guide.
 
     endmenu
 endmenu

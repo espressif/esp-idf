@@ -258,6 +258,49 @@ Additionally, all API functions are protected with a mutex (``s_flash_op_mutex``
 
 In a single core environment (:ref:`CONFIG_FREERTOS_UNICORE` enabled), you need to disable both caches, so that no inter-CPU communication can take place.
 
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
+
+    .. _internal_memory_saving_for_flash_driver:
+
+    Internal Memory Saving For Flash Driver
+    ---------------------------------------
+
+    The ESP-IDF provides options to optimize the usage of IRAM by selectively placing certain functions into flash memory via turning off :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM`. It allows SPI flash operation functions to be executed from flash memory instead of IRAM. Thus it will save some IRAM memory for other significant time-critical functions or tasks.
+
+    However, this has some implications for flash itself. Functions placed into flash memory may have slightly increased execution times compared to those placed in IRAM. Applications with strict timing requirements or those heavily reliant on SPI flash operations may need to evaluate the trade-offs before enabling this option.
+
+    .. note::
+
+        :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` should not be turned off when :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` is not enabled, otherwise it will cause critical crash. As for flash suspend feature, please refer to :ref:`auto-suspend` for more information.
+
+    Resource Consumption
+    ^^^^^^^^^^^^^^^^^^^^
+
+    Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consumption of the SPI flash driver. The following are the test conditions (using ESP32-C2 as an example):
+
+    **Note that the following data are not exact values and are for reference only; they may differ on different chip models.**
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is enabled.
+
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+    | Component Layer  | Total Size | DIRAM | .bss | .data | .text | Flash Code | .text | Flash Data | .rodata |
+    +==================+============+=======+======+=======+=======+============+=======+============+=========+
+    | hal              |       4624 |  4038 |    0 |     0 |  4038 |        586 |   586 |          0 |       0 |
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+    | spi_flash        |      14074 | 11597 |   82 |  1589 |  9926 |       2230 |  2230 |        247 |     247 |
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+
+    Resource consumption when :ref:`CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM` is disabled.
+
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+    | Component Layer  | Total Size | DIRAM | .bss | .data | .text | Flash Code | .text | Flash Data | .rodata |
+    +==================+============+=======+======+=======+=======+============+=======+============+=========+
+    | hal              |       4632 |     0 |    0 |     0 |     0 |       4632 |  4632 |          0 |       0 |
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+    | spi_flash        |      14569 |  1399 |   22 |   429 |   948 |      11648 | 11648 |       1522 |    1522 |
+    +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
+
+
 Related Documents
 ------------------
 

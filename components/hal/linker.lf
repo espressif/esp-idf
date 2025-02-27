@@ -3,8 +3,6 @@ archive: libhal.a
 entries:
     if APP_BUILD_TYPE_PURE_RAM_APP = n:
         mmu_hal (noflash)
-        spi_flash_hal_iram (noflash)
-        spi_flash_encrypt_hal_iram (noflash)
         if IDF_TARGET_ESP32 = y:
             cache_hal_esp32 (noflash)
         else:
@@ -15,8 +13,6 @@ entries:
         wdt_hal_iram (noflash)
     if SOC_SYSTIMER_SUPPORTED = y && HAL_SYSTIMER_USE_ROM_IMPL = n:
         systimer_hal (noflash)
-    if SOC_GPSPI_SUPPORTED = y && IDF_TARGET_ESP32 = n:
-        spi_flash_hal_gpspi (noflash)
     if SOC_PMU_SUPPORTED = y:
         pmu_hal (noflash)
     if SOC_GPIO_PORT != 0:

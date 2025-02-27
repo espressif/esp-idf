@@ -11,6 +11,7 @@ from pytest_embedded import Dut
     [
         'release',
         'i2c_isr_flash',
+        'text_in_flash_when_suspend',
     ],
     indirect=True,
 )
