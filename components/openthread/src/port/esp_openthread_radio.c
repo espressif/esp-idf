@@ -519,6 +519,15 @@ void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCoun
 
     s_mac_frame_counter = aMacFrameCounter;
 }
+
+void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    if (aMacFrameCounter > s_mac_frame_counter) {
+        s_mac_frame_counter = aMacFrameCounter;
+    }
+}
 #endif // OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
 
 uint64_t otPlatRadioGetNow(otInstance *aInstance)
