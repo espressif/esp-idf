@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -189,10 +189,10 @@ static int
 ble_prph_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
-        if (event->link_estab.status == 0) {
+    case BLE_GAP_EVENT_CONNECT:
+        if (event->connect.status == 0) {
             /* A new connection was established. */
-            ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->link_estab.conn_handle,
+            ESP_LOGI(TAG, "Connection established. Handle:%d. Total:%d", event->connect.conn_handle,
                      ++s_ble_prph_conn_num);
 #if CONFIG_EXAMPLE_RESTART_ADV_AFTER_CONNECTED
             ble_prph_restart_adv();
