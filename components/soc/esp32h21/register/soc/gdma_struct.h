@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -472,48 +472,48 @@ typedef union {
     uint32_t val;
 } gdma_in_link_chn_reg_t;
 
-/** Type of out_conf0_ch0 register
- *  Configure 0 register of Tx channel 0.
+/** Type of out_conf0_chn register
+ *  Configure 0 register of Tx channel n.
  */
 typedef union {
     struct {
-        /** out_rst_ch0 : R/W; bitpos: [0]; default: 0;
-         *  This bit is used to reset DMA channel 0 Tx FSM and Tx FIFO pointer.
+        /** out_rst_chn : R/W; bitpos: [0]; default: 0;
+         *  This bit is used to reset DMA channel n Tx FSM and Tx FIFO pointer.
          */
-        uint32_t out_rst_ch0:1;
-        /** out_loop_test_ch0 : R/W; bitpos: [1]; default: 0;
+        uint32_t out_rst_chn:1;
+        /** out_loop_test_chn : R/W; bitpos: [1]; default: 0;
          *  reserved
          */
-        uint32_t out_loop_test_ch0:1;
-        /** out_auto_wrback_ch0 : R/W; bitpos: [2]; default: 0;
+        uint32_t out_loop_test_chn:1;
+        /** out_auto_wrback_chn : R/W; bitpos: [2]; default: 0;
          *  Set this bit to enable automatic outlink-writeback when all the data in tx buffer
          *  has been transmitted.
          */
-        uint32_t out_auto_wrback_ch0:1;
-        /** out_eof_mode_ch0 : R/W; bitpos: [3]; default: 1;
-         *  EOF flag generation mode when transmitting data. 1: EOF flag for Tx channel 0 is
+        uint32_t out_auto_wrback_chn:1;
+        /** out_eof_mode_chn : R/W; bitpos: [3]; default: 1;
+         *  EOF flag generation mode when transmitting data. 1: EOF flag for Tx channel n is
          *  generated when data need to transmit has been popped from FIFO in DMA
          */
-        uint32_t out_eof_mode_ch0:1;
-        /** outdscr_burst_en_ch0 : R/W; bitpos: [4]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel 0 reading link
+        uint32_t out_eof_mode_chn:1;
+        /** outdscr_burst_en_chn : R/W; bitpos: [4]; default: 0;
+         *  Set this bit to 1 to enable INCR burst transfer for Tx channel n reading link
          *  descriptor when accessing internal SRAM.
          */
-        uint32_t outdscr_burst_en_ch0:1;
-        /** out_data_burst_en_ch0 : R/W; bitpos: [5]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel 0 transmitting data
+        uint32_t outdscr_burst_en_chn:1;
+        /** out_data_burst_en_chn : R/W; bitpos: [5]; default: 0;
+         *  Set this bit to 1 to enable INCR burst transfer for Tx channel n transmitting data
          *  when accessing internal SRAM.
          */
-        uint32_t out_data_burst_en_ch0:1;
-        /** out_etm_en_ch0 : R/W; bitpos: [6]; default: 0;
-         *  Set this bit to 1 to enable etm control mode, dma Tx channel 0 is triggered by etm
+        uint32_t out_data_burst_en_chn:1;
+        /** out_etm_en_chn : R/W; bitpos: [6]; default: 0;
+         *  Set this bit to 1 to enable etm control mode, dma Tx channel n is triggered by etm
          *  task.
          */
-        uint32_t out_etm_en_ch0:1;
+        uint32_t out_etm_en_chn:1;
         uint32_t reserved_7:25;
     };
     uint32_t val;
-} gdma_out_conf0_ch0_reg_t;
+} gdma_out_conf0_chn_reg_t;
 
 /** Type of out_conf1_chn register
  *  Configure 1 register of Tx channel n.
@@ -579,49 +579,6 @@ typedef union {
     };
     uint32_t val;
 } gdma_out_link_chn_reg_t;
-
-/** Type of out_conf0_chn register
- *  Configure 0 register of Tx channel n.
- */
-typedef union {
-    struct {
-        /** out_rst_chn : R/W; bitpos: [0]; default: 0;
-         *  This bit is used to reset DMA channel n Tx FSM and Tx FIFO pointer.
-         */
-        uint32_t out_rst_chn:1;
-        /** out_loop_test_chn : R/W; bitpos: [1]; default: 0;
-         *  reserved
-         */
-        uint32_t out_loop_test_chn:1;
-        /** out_auto_wrback_chn : R/W; bitpos: [2]; default: 0;
-         *  Set this bit to enable automatic outlink-writeback when all the data in tx buffer
-         *  has been transmitted.
-         */
-        uint32_t out_auto_wrback_chn:1;
-        /** out_eof_mode_chn : R/W; bitpos: [3]; default: 1;
-         *  EOF flag generation mode when transmitting data. 1: EOF flag for Tx channel n is
-         *  generated when data need to transmit has been popped from FIFO in DMA
-         */
-        uint32_t out_eof_mode_chn:1;
-        /** outdscr_burst_en_chn : R/W; bitpos: [4]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel n reading link
-         *  descriptor when accessing internal SRAM.
-         */
-        uint32_t outdscr_burst_en_chn:1;
-        /** out_data_burst_en_chn : R/W; bitpos: [5]; default: 0;
-         *  Set this bit to 1 to enable INCR burst transfer for Tx channel n transmitting data
-         *  when accessing internal SRAM.
-         */
-        uint32_t out_data_burst_en_chn:1;
-        /** out_etm_en_chn : R/W; bitpos: [6]; default: 0;
-         *  Set this bit to 1 to enable etm control mode, dma Tx channel n is triggered by etm
-         *  task.
-         */
-        uint32_t out_etm_en_chn:1;
-        uint32_t reserved_7:25;
-    };
-    uint32_t val;
-} gdma_out_conf0_chn_reg_t;
 
 
 /** Group: Version Registers */
@@ -966,123 +923,73 @@ typedef union {
 
 
 typedef struct {
-    volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch0;
-    volatile gdma_in_int_st_chn_reg_t in_int_st_ch0;
-    volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch0;
-    volatile gdma_in_int_clr_chn_reg_t in_int_clr_ch0;
-    volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch1;
-    volatile gdma_in_int_st_chn_reg_t in_int_st_ch1;
-    volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch1;
-    volatile gdma_in_int_clr_chn_reg_t in_int_clr_ch1;
-    volatile gdma_in_int_raw_chn_reg_t in_int_raw_ch2;
-    volatile gdma_in_int_st_chn_reg_t in_int_st_ch2;
-    volatile gdma_in_int_ena_chn_reg_t in_int_ena_ch2;
-    volatile gdma_in_int_clr_chn_reg_t in_int_clr_ch2;
-    volatile gdma_out_int_raw_chn_reg_t out_int_raw_ch0;
-    volatile gdma_out_int_st_chn_reg_t out_int_st_ch0;
-    volatile gdma_out_int_ena_chn_reg_t out_int_ena_ch0;
-    volatile gdma_out_int_clr_chn_reg_t out_int_clr_ch0;
-    volatile gdma_out_int_raw_chn_reg_t out_int_raw_ch1;
-    volatile gdma_out_int_st_chn_reg_t out_int_st_ch1;
-    volatile gdma_out_int_ena_chn_reg_t out_int_ena_ch1;
-    volatile gdma_out_int_clr_chn_reg_t out_int_clr_ch1;
-    volatile gdma_out_int_raw_chn_reg_t out_int_raw_ch2;
-    volatile gdma_out_int_st_chn_reg_t out_int_st_ch2;
-    volatile gdma_out_int_ena_chn_reg_t out_int_ena_ch2;
-    volatile gdma_out_int_clr_chn_reg_t out_int_clr_ch2;
+    volatile gdma_in_int_raw_chn_reg_t raw;
+    volatile gdma_in_int_st_chn_reg_t st;
+    volatile gdma_in_int_ena_chn_reg_t ena;
+    volatile gdma_in_int_clr_chn_reg_t clr;
+} gdma_in_int_chn_reg_t;
+
+typedef struct {
+    volatile gdma_out_int_raw_chn_reg_t raw;
+    volatile gdma_out_int_st_chn_reg_t st;
+    volatile gdma_out_int_ena_chn_reg_t ena;
+    volatile gdma_out_int_clr_chn_reg_t clr;
+} gdma_out_int_chn_reg_t;
+
+typedef struct {
+    volatile gdma_in_conf0_chn_reg_t in_conf0;
+    volatile gdma_in_conf1_chn_reg_t in_conf1;
+    volatile gdma_infifo_status_chn_reg_t infifo_status;
+    volatile gdma_in_pop_chn_reg_t in_pop;
+    volatile gdma_in_link_chn_reg_t in_link;
+    volatile gdma_in_state_chn_reg_t in_state;
+    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr;
+    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr;
+    volatile gdma_in_dscr_chn_reg_t in_dscr;
+    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0;
+    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1;
+    volatile gdma_in_pri_chn_reg_t in_pri;
+    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel;
+} gdma_in_chn_reg_t;
+
+typedef struct {
+    volatile gdma_out_conf0_chn_reg_t out_conf0;
+    volatile gdma_out_conf1_chn_reg_t out_conf1;
+    volatile gdma_outfifo_status_chn_reg_t outfifo_status;
+    volatile gdma_out_push_chn_reg_t out_push;
+    volatile gdma_out_link_chn_reg_t out_link;
+    volatile gdma_out_state_chn_reg_t out_state;
+    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr;
+    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr;
+    volatile gdma_out_dscr_chn_reg_t out_dscr;
+    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0;
+    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1;
+    volatile gdma_out_pri_chn_reg_t out_pri;
+    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel;
+} gdma_out_chn_reg_t;
+
+typedef struct {
+    volatile gdma_in_chn_reg_t in;
+    uint32_t reserved_in[11];
+    volatile gdma_out_chn_reg_t out;
+    uint32_t reserved_out[11];
+} gdma_chn_reg_t;
+
+
+typedef struct gdma_dev_s {
+    volatile gdma_in_int_chn_reg_t in_intr[3];
+    volatile gdma_out_int_chn_reg_t out_intr[3];
     volatile gdma_ahb_test_reg_t ahb_test;
     volatile gdma_misc_conf_reg_t misc_conf;
     volatile gdma_date_reg_t date;
     uint32_t reserved_06c;
-    volatile gdma_in_conf0_chn_reg_t in_conf0_ch0;
-    volatile gdma_in_conf1_chn_reg_t in_conf1_ch0;
-    volatile gdma_infifo_status_chn_reg_t infifo_status_ch0;
-    volatile gdma_in_pop_chn_reg_t in_pop_ch0;
-    volatile gdma_in_link_chn_reg_t in_link_ch0;
-    volatile gdma_in_state_chn_reg_t in_state_ch0;
-    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch0;
-    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch0;
-    volatile gdma_in_dscr_chn_reg_t in_dscr_ch0;
-    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch0;
-    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch0;
-    volatile gdma_in_pri_chn_reg_t in_pri_ch0;
-    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel_ch0;
-    uint32_t reserved_0a4[11];
-    volatile gdma_out_conf0_ch0_reg_t out_conf0_ch0;
-    volatile gdma_out_conf1_chn_reg_t out_conf1_ch0;
-    volatile gdma_outfifo_status_chn_reg_t outfifo_status_ch0;
-    volatile gdma_out_push_chn_reg_t out_push_ch0;
-    volatile gdma_out_link_chn_reg_t out_link_ch0;
-    volatile gdma_out_state_chn_reg_t out_state_ch0;
-    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch0;
-    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch0;
-    volatile gdma_out_dscr_chn_reg_t out_dscr_ch0;
-    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch0;
-    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch0;
-    volatile gdma_out_pri_chn_reg_t out_pri_ch0;
-    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel_ch0;
-    uint32_t reserved_104[11];
-    volatile gdma_in_conf0_chn_reg_t in_conf0_ch1;
-    volatile gdma_in_conf1_chn_reg_t in_conf1_ch1;
-    volatile gdma_infifo_status_chn_reg_t infifo_status_ch1;
-    volatile gdma_in_pop_chn_reg_t in_pop_ch1;
-    volatile gdma_in_link_chn_reg_t in_link_ch1;
-    volatile gdma_in_state_chn_reg_t in_state_ch1;
-    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch1;
-    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch1;
-    volatile gdma_in_dscr_chn_reg_t in_dscr_ch1;
-    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch1;
-    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch1;
-    volatile gdma_in_pri_chn_reg_t in_pri_ch1;
-    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel_ch1;
-    uint32_t reserved_164[11];
-    volatile gdma_out_conf0_chn_reg_t out_conf0_ch1;
-    volatile gdma_out_conf1_chn_reg_t out_conf1_ch1;
-    volatile gdma_outfifo_status_chn_reg_t outfifo_status_ch1;
-    volatile gdma_out_push_chn_reg_t out_push_ch1;
-    volatile gdma_out_link_chn_reg_t out_link_ch1;
-    volatile gdma_out_state_chn_reg_t out_state_ch1;
-    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch1;
-    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch1;
-    volatile gdma_out_dscr_chn_reg_t out_dscr_ch1;
-    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch1;
-    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch1;
-    volatile gdma_out_pri_chn_reg_t out_pri_ch1;
-    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel_ch1;
-    uint32_t reserved_1c4[11];
-    volatile gdma_in_conf0_chn_reg_t in_conf0_ch2;
-    volatile gdma_in_conf1_chn_reg_t in_conf1_ch2;
-    volatile gdma_infifo_status_chn_reg_t infifo_status_ch2;
-    volatile gdma_in_pop_chn_reg_t in_pop_ch2;
-    volatile gdma_in_link_chn_reg_t in_link_ch2;
-    volatile gdma_in_state_chn_reg_t in_state_ch2;
-    volatile gdma_in_suc_eof_des_addr_chn_reg_t in_suc_eof_des_addr_ch2;
-    volatile gdma_in_err_eof_des_addr_chn_reg_t in_err_eof_des_addr_ch2;
-    volatile gdma_in_dscr_chn_reg_t in_dscr_ch2;
-    volatile gdma_in_dscr_bf0_chn_reg_t in_dscr_bf0_ch2;
-    volatile gdma_in_dscr_bf1_chn_reg_t in_dscr_bf1_ch2;
-    volatile gdma_in_pri_chn_reg_t in_pri_ch2;
-    volatile gdma_in_peri_sel_chn_reg_t in_peri_sel_ch2;
-    uint32_t reserved_224[11];
-    volatile gdma_out_conf0_chn_reg_t out_conf0_ch2;
-    volatile gdma_out_conf1_chn_reg_t out_conf1_ch2;
-    volatile gdma_outfifo_status_chn_reg_t outfifo_status_ch2;
-    volatile gdma_out_push_chn_reg_t out_push_ch2;
-    volatile gdma_out_link_chn_reg_t out_link_ch2;
-    volatile gdma_out_state_chn_reg_t out_state_ch2;
-    volatile gdma_out_eof_des_addr_chn_reg_t out_eof_des_addr_ch2;
-    volatile gdma_out_eof_bfr_des_addr_chn_reg_t out_eof_bfr_des_addr_ch2;
-    volatile gdma_out_dscr_chn_reg_t out_dscr_ch2;
-    volatile gdma_out_dscr_bf0_chn_reg_t out_dscr_bf0_ch2;
-    volatile gdma_out_dscr_bf1_chn_reg_t out_dscr_bf1_ch2;
-    volatile gdma_out_pri_chn_reg_t out_pri_ch2;
-    volatile gdma_out_peri_sel_chn_reg_t out_peri_sel_ch2;
+    volatile gdma_chn_reg_t channel[3];
 } gdma_dev_t;
 
 extern gdma_dev_t GDMA;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(gdma_dev_t) == 0x284, "Invalid size of gdma_dev_t structure");
+_Static_assert(sizeof(gdma_dev_t) == 0x2B0, "Invalid size of gdma_dev_t structure");
 #endif
 
 #ifdef __cplusplus

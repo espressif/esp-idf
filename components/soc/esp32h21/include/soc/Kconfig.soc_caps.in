@@ -7,7 +7,19 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_GDMA_SUPPORTED
+    bool
+    default y
+
+config SOC_AHB_GDMA_SUPPORTED
+    bool
+    default y
+
 config SOC_GPTIMER_SUPPORTED
+    bool
+    default y
+
+config SOC_ASYNC_MEMCPY_SUPPORTED
     bool
     default y
 
@@ -219,6 +231,10 @@ config SOC_DS_KEY_CHECK_MAX_WAIT_US
     int
     default 1100
 
+config SOC_AHB_GDMA_VERSION
+    int
+    default 1
+
 config SOC_GDMA_NUM_GROUPS_MAX
     int
     default 1
@@ -226,6 +242,10 @@ config SOC_GDMA_NUM_GROUPS_MAX
 config SOC_GDMA_PAIRS_PER_GROUP_MAX
     int
     default 3
+
+config SOC_GDMA_SUPPORT_SLEEP_RETENTION
+    bool
+    default y
 
 config SOC_ETM_GROUPS
     int

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -250,7 +250,17 @@ int apm_hal_apm_ctrl_get_int_src_num(apm_ctrl_path_t *apm_path);
 
 #endif //CONFIG_IDF_TARGET_ESP32P4
 
-#endif //SOC_APM_SUPPORTED
+#elif SOC_APM_CTRL_FILTER_SUPPORTED //!SOC_APM_SUPPORTED
+#include "soc/hp_apm_reg.h"
+#include "soc/lp_apm_reg.h"
+#include "soc/lp_apm0_reg.h"
+
+#define apm_hal_apm_ctrl_filter_enable_all(en) \
+    REG_WRITE(LP_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0); \
+    REG_WRITE(LP_APM0_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0); \
+    REG_WRITE(HP_APM_FUNC_CTRL_REG, en ? 0xFFFFFFFF : 0);
+
+#endif
 
 #ifdef __cplusplus
 }
