@@ -141,6 +141,7 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx);
  */
 static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 {
+    TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
     twai_ll_exit_reset_mode(hal_ctx->dev);
 }
@@ -202,7 +203,7 @@ static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx
  * @param check_flags Bit mask of flags to check
  * @return True if one or more of the flags in check_flags are set
  */
-
+__attribute__((always_inline))
 static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint32_t check_flags)
 {
     return hal_ctx->state_flags & check_flags;
@@ -300,7 +301,7 @@ static inline bool twai_hal_read_rx_buffer_and_clear(twai_hal_context_t *hal_ctx
     }
 #else
     if (twai_ll_get_status(hal_ctx->dev) & TWAI_LL_STATUS_DOS) {
-        //No need to release RX buffer as we'll be releaseing all RX frames in continuously later
+        //No need to release RX buffer as we'll be releasing all RX frames in continuously later
         return false;
     }
 #endif
@@ -323,7 +324,7 @@ __attribute__((always_inline))
 static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ctx)
 {
     uint32_t msg_cnt = 0;
-    //Note: Need to keep polling th rx message counter incase another message arrives whilst clearing
+    //Note: Need to keep polling th rx message counter in case another message arrives whilst clearing
     while (twai_ll_get_rx_msg_count(hal_ctx->dev) > 0) {
         twai_ll_set_cmd_release_rx_buffer(hal_ctx->dev);
         msg_cnt++;
@@ -347,7 +348,7 @@ static inline uint32_t twai_hal_clear_rx_fifo_overrun(twai_hal_context_t *hal_ct
  * - Checking if a reset will cancel a TX. If so, mark that we need to retry that message after the reset
  * - Save how many RX messages were lost due to this reset
  * - Enter reset mode to stop any the peripheral from receiving any bus activity
- * - Store the regsiter state of the peripheral
+ * - Store the register state of the peripheral
  *
  * @param hal_ctx Context of the HAL layer
  */
