@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,10 +11,12 @@ extern "C" {
 #endif
 
 #include "sdkconfig.h"
+#include "soc/soc_caps.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/sens_reg.h"
 #include "hal/gpio_types.h"
 #include "ulp_riscv_register_ops.h"
+#include "hal/rtc_io_ll.h"
 
 typedef enum {
     ULP_RISCV_GPIO_INTR_DISABLE = 0,    /*!< Disable RTC GPIO interrupt                             */
@@ -33,10 +35,8 @@ typedef enum {
 
 static inline void ulp_riscv_gpio_init(gpio_num_t gpio_num)
 {
-#if CONFIG_IDF_TARGET_ESP32S2
-    SET_PERI_REG_MASK(SENS_SAR_IO_MUX_CONF_REG, SENS_IOMUX_CLK_GATE_EN_M);
-#elif CONFIG_IDF_TARGET_ESP32S3
-    SET_PERI_REG_MASK(SENS_SAR_PERI_CLK_GATE_CONF_REG, SENS_IOMUX_CLK_EN_M);
+#if SOC_LP_IO_CLOCK_IS_INDEPENDENT
+    rtcio_ll_enable_io_clock(true);
 #endif
     SET_PERI_REG_MASK(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_MUX_SEL);
     REG_SET_FIELD(RTC_IO_TOUCH_PAD0_REG + gpio_num*4, RTC_IO_TOUCH_PAD0_FUN_SEL, 0);
