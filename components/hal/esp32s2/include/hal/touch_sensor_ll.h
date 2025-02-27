@@ -1683,6 +1683,29 @@ static inline void touch_ll_sleep_read_data(uint32_t *raw_data)
 }
 
 /**
+ * Get the data of the touch channel according to the types
+ *
+ * @param sample_cfg_id The sample configuration index
+ * @param type  data type
+ *              0/1: TOUCH_LL_READ_RAW, the raw data of the touch channel
+ *              2:   TOUCH_LL_READ_BENCHMARK, benchmark value of touch channel,
+ *                   the benchmark value is the maximum during the first measurement period
+ *              3:   TOUCH_LL_READ_SMOOTH, the smoothed data that obtained by filtering the raw data.
+ * @param smooth_data pointer to smoothed data
+ */
+__attribute__((always_inline))
+static inline void touch_ll_sleep_read_chan_data(uint8_t type, uint32_t *data)
+{
+    SENS.sar_touch_conf.touch_data_sel = type;
+    if (type == TOUCH_LL_READ_RAW) {
+        uint32_t touch_num = RTCCNTL.touch_slp_thres.touch_slp_pad;
+        *data = SENS.sar_touch_status[touch_num - 1].touch_pad_data;
+    } else {
+        *data = SENS.sar_touch_slp_status.touch_slp_data;
+    }
+}
+
+/**
  * Select touch sensor dbias to save power in sleep mode.
  *
  * @note If change the dbias, the reading of touch sensor will changed. Users should make sure the threshold.

@@ -46,7 +46,11 @@ if(CONFIG_ULP_COPROC_TYPE_FSM OR CONFIG_ULP_COPROC_TYPE_RISCV)
             "ulp_riscv/ulp_riscv.c"
             "ulp_riscv/ulp_riscv_lock.c"
             "ulp_riscv/ulp_riscv_i2c.c")
+            if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+                list(APPEND srcs "ulp_riscv/ulp_riscv_touch.c")
+            endif()
     endif()
+
 endif()
 
 if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
@@ -75,6 +79,10 @@ if(CONFIG_ULP_COPROC_TYPE_LP_CORE)
 
     if(CONFIG_SOC_LP_CORE_SUPPORT_ETM)
         list(APPEND srcs "lp_core/lp_core_etm.c")
+    endif()
+
+    if(CONFIG_SOC_TOUCH_SENSOR_SUPPORTED)
+        list(APPEND srcs "lp_core/lp_core_touch.c")
     endif()
 
     if(CONFIG_SOC_LP_ADC_SUPPORTED)

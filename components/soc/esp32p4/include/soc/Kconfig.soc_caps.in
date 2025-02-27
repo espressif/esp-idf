@@ -1723,6 +1723,14 @@ config SOC_TOUCH_SENSOR_NUM
     int
     default 14
 
+config SOC_TOUCH_MIN_CHAN_ID
+    bool
+    default n
+
+config SOC_TOUCH_MAX_CHAN_ID
+    int
+    default 13
+
 config SOC_TOUCH_SUPPORT_SLEEP_WAKEUP
     bool
     default y

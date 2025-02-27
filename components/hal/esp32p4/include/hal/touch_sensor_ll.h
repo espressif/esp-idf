@@ -585,6 +585,18 @@ static inline void touch_ll_sample_cfg_set_engaged_num(uint8_t sample_cfg_num)
 }
 
 /**
+ * Get the engaged sample configuration number
+ *
+ * @return The engaged sample configuration number, range 0~3.
+ */
+static inline uint32_t touch_ll_sample_cfg_get_engaged_num(void)
+{
+    uint32_t sample_cfg_num = LP_ANA_PERI.touch_scan_ctrl2.freq_scan_cnt_limit;
+    return sample_cfg_num ? sample_cfg_num : 1;
+}
+
+
+/**
  * Set capacitance and resistance of the RC filter of the sampling frequency.
  *
  * @param sample_cfg_id The sample configuration index
