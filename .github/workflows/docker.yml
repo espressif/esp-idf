@@ -48,11 +48,9 @@ jobs:
         with:
           image: tonistiigi/binfmt:qemu-v7.0.0-28
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-        with:
-          cache-binary: false
+        uses: docker/setup-buildx-action@v2
       - name: Build and push
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v3
         with:
           context: tools/docker
           push: false

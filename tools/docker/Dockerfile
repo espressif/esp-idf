@@ -2,11 +2,6 @@ FROM ubuntu:22.04
 
 ARG DEBIAN_FRONTEND=noninteractive
 
-# Unpacking libc-bin (2.35-0ubuntu3.9) over (2.35-0ubuntu3.8)
-# Errors were encountered while processing: libc-bin
-RUN apt-get update \
- && apt-get install -y --no-install-recommends libc-bin
-
 RUN : \
   && apt-get update \
   && apt-get install -y \
@@ -34,7 +29,6 @@ RUN : \
     ninja-build \
     python3 \
     python3-venv \
-    python-is-python3 \
     ruby \
     unzip \
     wget \
@@ -42,6 +36,7 @@ RUN : \
     zip \
   && apt-get autoremove -y \
   && rm -rf /var/lib/apt/lists/* \
+  && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
   && :
 
 # To build the image for a branch or a tag of IDF, pass --build-arg IDF_CLONE_BRANCH_OR_TAG=name.
