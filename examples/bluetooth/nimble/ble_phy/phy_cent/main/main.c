@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -347,9 +347,9 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        if (event->link_estab.status == 0) {
+        if (event->connect.status == 0) {
             /* Connection successfully established. */
 
 	    switch (s_current_phy) {
@@ -367,20 +367,20 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
                 break;
             }
 
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
 
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
                 return 0;
             }
 
             /* Perform service discovery. */
-            rc = peer_disc_all(event->link_estab.conn_handle,
+            rc = peer_disc_all(event->connect.conn_handle,
                                blecent_on_disc_complete, NULL);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
@@ -389,7 +389,7 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
-                        event->link_estab.status);
+                        event->connect.status);
             blecent_scan();
         }
 
