@@ -136,6 +136,7 @@ void twai_hal_stop(twai_hal_context_t *hal_ctx);
  */
 static inline void twai_hal_start_bus_recovery(twai_hal_context_t *hal_ctx)
 {
+    TWAI_HAL_CLEAR_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED);
     TWAI_HAL_SET_BITS(hal_ctx->state_flags, TWAI_HAL_STATE_FLAG_RECOVERING);
     twai_ll_exit_reset_mode(hal_ctx->dev);
 }
@@ -197,7 +198,7 @@ static inline bool twai_hal_check_last_tx_successful(twai_hal_context_t *hal_ctx
  * @param check_flags Bit mask of flags to check
  * @return True if one or more of the flags in check_flags are set
  */
-
+__attribute__((always_inline))
 static inline bool twai_hal_check_state_flags(twai_hal_context_t *hal_ctx, uint32_t check_flags)
 {
     return hal_ctx->state_flags & check_flags;
