@@ -295,6 +295,8 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     case WIFI_REASON_ASSOC_FAIL:
     case WIFI_REASON_CONNECTION_FAIL:
     case WIFI_REASON_HANDSHAKE_TIMEOUT:
+    case WIFI_REASON_INVALID_MDE:
+    case WIFI_REASON_INVALID_FTE:
         wpa_sta_clear_curr_pmksa();
         wpa_sm_notify_disassoc(&gWpaSm);
         break;
@@ -352,7 +354,7 @@ static int check_n_add_wps_sta(struct hostapd_data *hapd, struct sta_info *sta_i
 }
 #endif
 
-static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u8 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
+static bool hostap_sta_join(void **sta, u8 *bssid, u8 *wpa_ie, u8 wpa_ie_len, u8 *rsnxe, u16 rsnxe_len, bool *pmf_enable, int subtype, uint8_t *pairwise_cipher)
 {
     struct sta_info *sta_info = NULL;
     struct hostapd_data *hapd = hostapd_get_hapd_data();
