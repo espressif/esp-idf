@@ -74,5 +74,3 @@ PROVIDE ( LP_TIMER            = 0x600B5000 );
 PROVIDE ( LP_WDT              = 0x600B5400 );
 PROVIDE ( TOUCH_SENS          = 0x600B5800 );
 PROVIDE ( TOUCH_AON           = 0x600B5C00 );
-
-PROVIDE ( LP_UART             = 0x600B1400 ); /* TODO: IDF-12445 [ESP32H4] inherit from verify code, need remove */
