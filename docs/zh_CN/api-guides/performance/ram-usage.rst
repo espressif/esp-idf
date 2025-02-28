@@ -216,7 +216,7 @@ IRAM 优化
    任何最终未用于静态 IRAM 的内存都将添加到堆内存中。
 
 
-.. only:: esp32c3
+.. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
 
     flash 暂停特性
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -231,6 +231,8 @@ IRAM 优化
     在中断上下文中使用用户 ISR 回调及其相关变量时，也必须将其放置在内部 RAM 中。
 
     将额外代码放置到 IRAM 中，将增加 IRAM 使用量，ESP-IDF 提供了 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 选项，可以缓解 IRAM 的使用。通过启用此功能，使用 SPI flash API 和基于 SPI flash API 的 API 时，不会导致缓存禁用，因此 flash 中的代码和数据仍可正常执行或访问，但会有些延迟。有关此功能的详细信息，请参阅 :ref:`auto-suspend`。
+
+    启用 :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND` 后，可以减少 flash 驱动的 IRAM 使用。更多详细信息请参阅 :ref:`internal_memory_saving_for_flash_driver`。
 
     有关 flash 暂停特性的使用及其相应的响应时间延迟，请参阅 :example:`system/flash_suspend`。
 
