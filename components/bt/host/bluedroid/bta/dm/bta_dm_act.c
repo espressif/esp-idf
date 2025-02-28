@@ -5849,6 +5849,11 @@ void bta_dm_ble_gap_set_csa_support(tBTA_DM_MSG *p_data)
     BTM_BleSetCsaSupport(p_data->ble_set_csa_support.csa_select, p_data->ble_set_csa_support.p_cback);
 }
 
+void bta_dm_ble_gap_set_vendor_evt_mask(tBTA_DM_MSG *p_data)
+{
+    APPL_TRACE_API("%s, evt_mask = %d", __func__, p_data->ble_set_vendor_evt_mask.evt_mask);
+    BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask, p_data->ble_set_vendor_evt_mask.p_cback);
+}
 
 #if (BLE_50_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)

@@ -427,6 +427,7 @@
 #define HCI_SUBCODE_BLE_RD_STATIC_ADDR             0x0B
 #define HCI_SUBCODE_BLE_CLEAR_ADV                  0x0C
 #define HCI_SUBCODE_BLE_SET_CSA_SUPPORT            0x12
+#define HCI_SUBCODE_BLE_SET_VENDOR_EVT_MASK        0x16
 #define HCI_SUBCODE_BLE_MAX                        0x7F
 
 //ESP BT subcode define
@@ -473,6 +474,8 @@
 #define HCI_VENDOR_BLE_CLEAR_ADV          HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_CLEAR_ADV)
 /* BLE set CSA support */
 #define HCI_VENDOR_BLE_SET_CSA_SUPPORT    HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_SET_CSA_SUPPORT)
+/* BLE set vendor event mask */
+#define HCI_VENDOR_BLE_SET_EVT_MASK       HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BLE, HCI_SUBCODE_BLE_SET_VENDOR_EVT_MASK)
 //ESP BT HCI CMD
 #define HCI_VENDOR_BT_SET_MIN_ENC_KEY_SIZE         HCI_ESP_VENDOR_OPCODE_BUILD(HCI_VENDOR_OGF, HCI_ESP_GROUP_BT, HCI_SUBCODE_BT_SET_MIN_ENC_KEY_SIZE)
 
@@ -829,6 +832,9 @@
 #define HCI_BLE_CHNL_MAP_SIZE               5
 
 #define HCI_VENDOR_SPECIFIC_EVT         0xFF  /* Vendor specific events */
+#define HCI_VSE_LE_LEGACY_SCAN_REQ_RECEIVED_EVT 0xC0
+#define HCI_VSE_LE_CHAN_MAP_UPDATE_CMPL_EVT     0xC1
+#define HCI_VSE_LE_EVT_MAX                      0xFF
 #define HCI_NAP_TRACE_EVT               0xFF  /* was define 0xFE, 0xFD, change to 0xFF
                                                  because conflict w/ TCI_EVT and per
                                                  specification compliant */
