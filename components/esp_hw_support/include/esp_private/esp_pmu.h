@@ -239,6 +239,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk
  * @brief Get default sleep configuration
  * @param config pmu_sleep_config instance
  * @param sleep_flags flags indicates the power domain that will be powered down and the sleep submode
+ * @param clk_flags indicates the clock ICG cell that will be ungated
  * @param adjustment total software and hardware time overhead
  * @param slowclk_period re-calibrated slow clock period in microseconds,
  *                       Q13.19 fixed point format
@@ -248,7 +249,7 @@ uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t sleep_flags, uint32_t slowclk
 
  * @return hardware time overhead in us
  */
-const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t sleep_flags, uint32_t adjustment, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
+const pmu_sleep_config_t* pmu_sleep_config_default(pmu_sleep_config_t *config, uint32_t sleep_flags, uint32_t clk_flags, uint32_t adjustment, uint32_t slowclk_period, uint32_t fastclk_period, bool dslp);
 
 /**
  * @brief Prepare the chip to enter sleep mode

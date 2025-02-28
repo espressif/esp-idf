@@ -149,6 +149,7 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
 const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
         uint32_t sleep_flags,
+        uint32_t clk_flags,
         uint32_t adjustment,
         uint32_t slowclk_period,
         uint32_t fastclk_period,
