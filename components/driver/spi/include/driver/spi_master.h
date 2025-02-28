@@ -77,6 +77,7 @@ typedef struct {
         delay before the MISO is ready on the line. Leave at 0 unless you know you need a delay. For better timing
         performance at high frequency (over 8MHz), it's suggest to have the right value.
         */
+    spi_sampling_point_t sample_point;  ///< Sample point tuning of spi master receiving bit.
     int spics_io_num;               ///< CS GPIO pin for this device, or -1 if not used
     uint32_t flags;                 ///< Bitwise OR of SPI_DEVICE_* flags
     int queue_size;                 ///< Transaction queue size. This sets how many transactions can be 'in the air' (queued using spi_device_queue_trans but not yet finished using spi_device_get_trans_result) at the same time
