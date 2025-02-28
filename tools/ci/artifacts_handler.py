@@ -30,6 +30,7 @@ TYPE_PATTERNS_DICT = {
         '**/build*/bootloader/*.elf',
         '**/build*/*.map',
         '**/build*/*.elf',
+        '**/build*/gdbinit/*',
     ],
     ArtifactType.BUILD_DIR_WITHOUT_MAP_AND_ELF_FILES: [
         '**/build*/build_log.txt',
