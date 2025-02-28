@@ -67,11 +67,27 @@ static void
 ble_spp_client_set_handle(const struct peer *peer)
 {
     const struct peer_chr *chr;
+    const struct peer_dsc *dsc;
+    uint8_t value[2];
     chr = peer_chr_find_uuid(peer,
                              BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
                              BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID));
     attribute_handle[peer->conn_handle] = chr->chr.val_handle;
+    MODLOG_DFLT(INFO, "attribute_handle %x\n", attribute_handle[peer->conn_handle]);
 
+    dsc = peer_dsc_find_uuid(peer,
+                             BLE_UUID16_DECLARE(GATT_SPP_SVC_UUID),
+                             BLE_UUID16_DECLARE(GATT_SPP_CHR_UUID),
+                             BLE_UUID16_DECLARE(BLE_GATT_DSC_CLT_CFG_UUID16));
+    if (dsc == NULL) {
+        MODLOG_DFLT(ERROR, "Error: Peer lacks a CCCD for the subscribable characteristic\n");
+	return;
+    }
+
+    value[0] = 1;
+    value[1] = 0;
+    ble_gattc_write_flat(peer->conn_handle, dsc->dsc.handle,
+                            value, sizeof(value), NULL, NULL);
 }
 
 
