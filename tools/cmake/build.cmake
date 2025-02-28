@@ -148,6 +148,16 @@ function(__build_set_default_build_specifications)
                                     # always generate debug symbols (even in release mode, these don't
                                     # go into the final binary so have no impact on size
                                     "-ggdb")
+    if(NOT IDF_TARGET STREQUAL "linux")
+        # Building for chip targets: we use a known version of the toolchain.
+        # Use latest supported versions.
+        # For Linux target -std settings, refer to the __linux_build_set_lang_version
+        # function, which must be called after project().
+        # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
+        # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
+        list(APPEND c_compile_options   "-std=gnu17")
+        list(APPEND cxx_compile_options "-std=gnu++2b")
+    endif()
 
     idf_build_set_property(COMPILE_DEFINITIONS "${compile_definitions}" APPEND)
     idf_build_set_property(COMPILE_OPTIONS "${compile_options}" APPEND)
@@ -155,47 +165,48 @@ function(__build_set_default_build_specifications)
     idf_build_set_property(CXX_COMPILE_OPTIONS "${cxx_compile_options}" APPEND)
 endfunction()
 
-function(__build_set_lang_version)
+function(__linux_build_set_lang_version)
+    # This must be called after the project() function when languages are
+    # enabled in CMake. Refer to
+    # https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html#languages
+    # for more information. We use language-specific functions such as
+    # check_c_compiler_flag here. Remember, we cannot use enable_language()
+    # because it must not be invoked before the first call to project().
+    # Refer to policy CMP0165 for more details.
     if(NOT IDF_TARGET STREQUAL "linux")
-        # Building for chip targets: we use a known version of the toolchain.
-        # Use latest supported versions.
-        # Please update docs/en/api-guides/c.rst, docs/en/api-guides/cplusplus.rst and
-        # tools/test_apps/system/cxx_build_test/main/test_cxx_standard.cpp when changing this.
-        set(c_std gnu17)
-        set(cxx_std gnu++2b)
-    else()
-        enable_language(C CXX)
-        # Building for Linux target, fall back to an older version of the standard
-        # if the preferred one is not supported by the compiler.
-        set(preferred_c_versions gnu17 gnu11 gnu99)
-        set(ver_found FALSE)
-        foreach(c_version ${preferred_c_versions})
-            check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
-            if(ver_${c_version}_supported)
-                set(c_std ${c_version})
-                set(ver_found TRUE)
-                break()
-            endif()
-        endforeach()
-        if(NOT ver_found)
-            message(FATAL_ERROR "Failed to set C language standard to one of the supported versions: "
-                                "${preferred_c_versions}. Please upgrade the host compiler.")
-        endif()
+        return()
+    endif()
 
-        set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
-        set(ver_found FALSE)
-        foreach(cxx_version ${preferred_cxx_versions})
-            check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
-            if(ver_${cxx_version}_supported)
-                set(cxx_std ${cxx_version})
-                set(ver_found TRUE)
-                break()
-            endif()
-        endforeach()
-        if(NOT ver_found)
-            message(FATAL_ERROR "Failed to set C++ language standard to one of the supported versions: "
-                                "${preferred_cxx_versions}. Please upgrade the host compiler.")
+    # Building for Linux target, fall back to an older version of the standard
+    # if the preferred one is not supported by the compiler.
+    set(preferred_c_versions gnu99 gnu17 gnu11 gnu99)
+    set(ver_found FALSE)
+    foreach(c_version ${preferred_c_versions})
+        check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
+        if(ver_${c_version}_supported)
+            set(c_std ${c_version})
+            set(ver_found TRUE)
+            break()
         endif()
+    endforeach()
+    if(NOT ver_found)
+        message(FATAL_ERROR "Failed to set C language standard to one of the supported versions: "
+                            "${preferred_c_versions}. Please upgrade the host compiler.")
+    endif()
+
+    set(preferred_cxx_versions gnu++2b gnu++20 gnu++2a gnu++17 gnu++14)
+    set(ver_found FALSE)
+    foreach(cxx_version ${preferred_cxx_versions})
+        check_cxx_compiler_flag("-std=${cxx_version}" ver_${cxx_version}_supported)
+        if(ver_${cxx_version}_supported)
+            set(cxx_std ${cxx_version})
+            set(ver_found TRUE)
+            break()
+        endif()
+    endforeach()
+    if(NOT ver_found)
+        message(FATAL_ERROR "Failed to set C++ language standard to one of the supported versions: "
+                            "${preferred_cxx_versions}. Please upgrade the host compiler.")
     endif()
 
     idf_build_set_property(C_COMPILE_OPTIONS "-std=${c_std}" APPEND)
@@ -241,7 +252,6 @@ function(__build_init idf_path)
     idf_build_set_property(IDF_COMPONENT_MANAGER 0)
 
     __build_set_default_build_specifications()
-    __build_set_lang_version()
 
     # Add internal components to the build
     idf_build_get_property(idf_path IDF_PATH)

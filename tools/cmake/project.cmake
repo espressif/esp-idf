@@ -587,6 +587,7 @@ macro(project project_name)
 
     # The actual call to project()
     __project(${project_name} C CXX ASM)
+    __linux_build_set_lang_version()
 
     # Generate compile_commands.json (needs to come after project call).
     set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
