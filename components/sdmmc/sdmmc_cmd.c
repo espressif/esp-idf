@@ -264,7 +264,22 @@ esp_err_t sdmmc_send_cmd_set_relative_addr(sdmmc_card_t* card, uint16_t* out_rca
     if (err != ESP_OK) {
         return err;
     }
-    *out_rca = (card->is_mmc) ? mmc_rca : SD_R6_RCA(cmd.response);
+
+    if (card->is_mmc) {
+        *out_rca = mmc_rca;
+    } else {
+        uint16_t response_rca = SD_R6_RCA(cmd.response);
+        if (response_rca == 0) {
+            // Try to get another RCA value if RCA value in the previous response was 0x0000
+            // The value 0x0000 is reserved to set all cards into the Stand-by State with CMD7
+            err = sdmmc_send_cmd(card, &cmd);
+            if (err != ESP_OK) {
+                return err;
+            }
+            response_rca = SD_R6_RCA(cmd.response);
+        }
+        *out_rca = response_rca;
+    }
     return ESP_OK;
 }
 
