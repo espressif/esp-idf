@@ -550,3 +550,71 @@ config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
         Enabling this option will add stricter verification of the Access Address in the CONNECT_IND PDU.
         This improves security by ensuring that only connection requests with valid Access Addresses are accepted.
         If disabled, only basic checks are applied, improving compatibility.
+
+menu "Controller debug log Options (Experimental)"
+    config BT_CTRL_LE_LOG_EN
+        depends on BT_CTRL_RUN_IN_FLASH_ONLY
+        bool "Enable BLE debug log"
+        default n
+
+    config BT_CTRL_LE_HCI_LOG_EN
+        depends on BT_CTRL_LE_LOG_EN
+        bool "Enable BLE HCI log"
+        default n
+
+    config BT_CTRL_LE_LOG_DUMP_ONLY
+        depends on BT_CTRL_LE_LOG_EN
+        bool "Enable BLE log dump only"
+        default n
+
+    config BT_CTRL_LE_LOG_STORAGE_EN
+        depends on BT_CTRL_LE_LOG_EN
+        bool "Enable BLE log storage to flash"
+        default n
+
+    config BT_CTRL_LE_LOG_PARTITION_SIZE
+        int "The size of ble controller log partition(Multiples of 4K)"
+        depends on BT_CTRL_LE_LOG_STORAGE_EN
+        default 65536
+        help
+            The size of ble controller log partition shall be a multiples of 4K.
+            The name of log partition shall be "bt_ctrl_log".
+            The partition type shall be ESP_PARTITION_TYPE_DATA.
+            The partition sub_type shall be ESP_PARTITION_SUBTYPE_ANY.
+
+    config BT_CTRL_LE_LOG_SPI_OUT_EN
+        bool "Output ble controller logs to SPI bus"
+        depends on BT_CTRL_LE_LOG_EN
+        depends on !BT_CTRL_LE_LOG_DUMP_ONLY
+        select BT_BLE_LOG_SPI_OUT_ENABLED
+        default n
+        help
+            Output ble controller logs to SPI bus
+
+    config BT_CTRL_LE_LOG_MODE_EN
+        depends on BT_CTRL_LE_LOG_EN
+        int "Enable log for specified BLE mode"
+        range 0 4095
+        default 4093
+
+    config BT_CTRL_LE_LOG_LEVEL
+        depends on BT_CTRL_LE_LOG_EN
+        int "The level of BLE log"
+        range 0 5
+        default 2
+
+    config BT_CTRL_LE_LOG_BUF1_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log buffer1"
+        default 1024
+
+    config BT_CTRL_LE_LOG_HCI_BUF_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log HCI buffer"
+        default 1024
+
+    config BT_CTRL_LE_LOG_BUF2_SIZE
+        depends on BT_CTRL_LE_LOG_EN
+        int "The size of BLE log buffer2"
+        default 1024
+endmenu
