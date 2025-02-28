@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <sys/time.h>
+#include "soc/soc_caps.h"
+#include "soc/gpio_num.h"
+#include "esp_rom_caps.h"
 #include "lp_core_test_app.h"
 #include "lp_core_test_app_counter.h"
 #include "lp_core_test_app_set_timer_wakeup.h"
@@ -17,6 +20,7 @@
 #include "unity.h"
 #include "esp_sleep.h"
 #include "esp_timer.h"
+#include "driver/rtc_io.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
@@ -301,6 +305,7 @@ TEST_CASE("LP core gpio tests", "[ulp]")
         .lp_timer_sleep_duration_us = LP_TIMER_TEST_SLEEP_DURATION_US,
     };
 
+    rtc_gpio_init(GPIO_NUM_0);
     load_and_start_lp_core_firmware(&cfg, lp_core_main_gpio_bin_start, lp_core_main_gpio_bin_end);
 
     while(!ulp_gpio_test_finished) {
