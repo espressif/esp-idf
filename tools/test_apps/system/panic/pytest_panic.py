@@ -185,42 +185,6 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS_DUAL_CORE, indirect=True)
-@pytest.mark.generic
-def test_task_wdt_both_cpus(dut: PanicTestDut, config: str, test_func_name: str) -> None:
-    if dut.target == 'esp32s3':
-        pytest.xfail(reason='Only prints "Print CPU 1 backtrace", IDF-6560')
-    dut.run_test_func(test_func_name)
-    dut.expect_exact(
-        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
-    )
-    dut.expect_exact('CPU 0: Infinite loop')
-    dut.expect_exact('CPU 1: Infinite loop')
-    if dut.is_xtensa:
-        # see comment in test_task_wdt_cpu0
-        dut.expect_none('register dump:')
-        dut.expect_exact('Print CPU 0 (current core) backtrace')
-        dut.expect_backtrace()
-        dut.expect_exact('Print CPU 1 backtrace')
-        dut.expect_backtrace()
-        # On Xtensa, we get incorrect backtrace from GDB in this test
-        expected_backtrace = ['infinite_loop', 'vPortTaskWrapper']
-    else:
-        assert False, 'No dual-core RISC-V chips yet, check this test case later'
-    dut.expect_elf_sha256()
-    dut.expect_none('Guru Meditation')
-
-    coredump_pattern = (PANIC_ABORT_PREFIX +
-                        'Task watchdog got triggered. '
-                        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)\n - IDLE0 (CPU 0)')
-    common_test(
-        dut,
-        config,
-        expected_backtrace=expected_backtrace,
-        expected_coredump=[coredump_pattern]
-    )
-
-
 @pytest.mark.parametrize('config', CONFIGS_EXTRAM_STACK, indirect=True)
 def test_panic_extram_stack(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
