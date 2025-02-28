@@ -3,6 +3,8 @@ USB 主机
 
 :link_to_translation:`en:[English]`
 
+{IDF_TARGET_OTG_NUM_HOST_CHAN: default="8", esp32p4="16"}
+
 本文档提供了 USB 主机库的相关信息，按以下章节展开：
 
 .. contents:: 章节
@@ -470,7 +472,7 @@ USB 设备可能是热插拔的，因此必须配置电源开关和设备连接�
 
 每个连接的设备需要不同数量的通道，而所需通道数则取决于设备类别（EP 数量）。
 
-对于 {IDF_TARGET_NAME}，支持的通道数量为 {OTG_NUM_HOST_CHAN}。
+对于 {IDF_TARGET_NAME}，支持的通道数量为 {IDF_TARGET_OTG_NUM_HOST_CHAN}。
 
 .. note::
 
