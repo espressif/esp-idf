@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -64,11 +64,12 @@ esp_err_t esp_openthread_uart_init_port(const esp_openthread_uart_config_t *conf
 #ifndef CONFIG_ESP_CONSOLE_UART
     // If UART console is used, UART vfs devices should be registered during startup.
     // Otherwise we need to register them here.
-    DIR *uart_dir = opendir("/dev/uart");
-    if (!uart_dir) {
+    char uart_path[16];
+    snprintf(uart_path, sizeof(uart_path), "/dev/uart/%d", config->port);
+    bool is_uart_registered = (access(uart_path, F_OK) == 0);
+    if (!is_uart_registered) {
+        // If UART vfs devices are registered, we will failed to open the directory
         esp_vfs_dev_uart_register();
-    } else {
-        closedir(uart_dir);
     }
 #endif
     ESP_RETURN_ON_ERROR(uart_param_config(config->port, &config->uart_config), OT_PLAT_LOG_TAG,
