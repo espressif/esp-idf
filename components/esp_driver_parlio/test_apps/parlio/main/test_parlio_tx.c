@@ -329,18 +329,6 @@ static void test_use_external_non_free_running_clock(parlio_tx_unit_handle_t tx_
 
 TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
 {
-    printf("use gpio as external clock source\r\n");
-    // configure the data gpio for loopback test
-    gpio_config_t gpio_conf = {
-        .mode = GPIO_MODE_INPUT,
-        .pin_bit_mask = BIT64(TEST_DATA0_GPIO) | BIT64(TEST_DATA1_GPIO) | BIT64(TEST_DATA2_GPIO) | BIT64(TEST_DATA3_GPIO) |
-        BIT64(TEST_DATA4_GPIO) | BIT64(TEST_DATA5_GPIO) | BIT64(TEST_DATA6_GPIO) | BIT64(TEST_DATA7_GPIO),
-    };
-    TEST_ESP_OK(gpio_config(&gpio_conf));
-    // configure the external clock output gpio
-    gpio_conf.mode = GPIO_MODE_OUTPUT;
-    gpio_conf.pin_bit_mask = BIT64(TEST_EXT_CLK_GPIO);
-    TEST_ESP_OK(gpio_config(&gpio_conf));
 
     printf("install parlio tx unit\r\n");
     parlio_tx_unit_handle_t tx_unit = NULL;
@@ -366,6 +354,7 @@ TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
         .max_transfer_size = 256,
         .bit_pack_order = PARLIO_BIT_PACK_ORDER_LSB,
         .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .flags.io_loop_back = true,
     };
 
     uint8_t test_round = 50;
@@ -376,9 +365,4 @@ TEST_CASE("parallel tx unit use external non-free running clock", "[parlio_tx]")
     config.input_clk_src_freq_hz = 1 * 1000 * 1000;
     printf("test special condition, input clk freq equals to output clk freq\r\n");
     test_use_external_non_free_running_clock(tx_unit, config, test_round);
-
-    TEST_ESP_OK(gpio_reset_pin(TEST_EXT_CLK_GPIO));
-    for (int i = 0; i < 8; i++) {
-        TEST_ESP_OK(gpio_reset_pin(config.data_gpio_nums[i]));
-    }
 };

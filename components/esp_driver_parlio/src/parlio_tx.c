@@ -475,6 +475,7 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
 
 esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
 {
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
@@ -482,11 +483,14 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
         if (tx_unit->pm_lock) {
             esp_pm_lock_acquire(tx_unit->pm_lock);
         }
-        parlio_hal_context_t *hal = &tx_unit->base.group->hal;
         parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, true);
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
+    }
+
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, true);
     }
 
     // check if we need to start one pending transaction
@@ -630,9 +634,6 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
 
     if (status & PARLIO_LL_EVENT_TX_EOF) {
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
-        PARLIO_CLOCK_SRC_ATOMIC() {
-            parlio_ll_tx_enable_clock(hal->regs, false);
-        }
         parlio_ll_tx_start(hal->regs, false);
 
         parlio_tx_trans_desc_t *trans_desc = NULL;
