@@ -592,9 +592,7 @@ static uint32_t IRAM_ATTR esp_sleep_start(uint32_t pd_flags)
     rtc_sleep_init(config);
 
     // Set state machine time for light sleep
-    if (!deep_sleep) {
-        rtc_sleep_low_init(s_config.rtc_clk_cal_period);
-    }
+    rtc_sleep_low_init(s_config.rtc_clk_cal_period, deep_sleep);
 
     // Configure timer wakeup
     if (s_config.wakeup_triggers & RTC_TIMER_TRIG_EN) {
