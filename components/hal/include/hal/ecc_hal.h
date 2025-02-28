@@ -195,6 +195,13 @@ int ecc_hal_read_mod_op_result(uint8_t *r, uint16_t len);
 
 #endif /* SOC_ECC_EXTENDED_MODES_SUPPORTED */
 
+/**
+ * @brief Enable constant time multiplication operations
+ *
+ * @param true: enable; false: disable
+ */
+void ecc_hal_enable_constant_time_point_mul(bool enable);
+
 #ifdef __cplusplus
 }
 #endif

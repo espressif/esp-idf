@@ -44,6 +44,14 @@ int esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_
 
     ecc_hal_write_mul_param(scalar, point->x, point->y, len);
     ecc_hal_set_mode(work_mode);
+
+    /*
+     * Enable constant-time point multiplication operations for the ECC hardware accelerator,
+     * if supported for the given target. This protects the ECC multiplication operation from
+     * timing attacks. This increases the time taken (by almost 50%) for some point
+     * multiplication operations performed by the ECC hardware accelerator.
+     */
+    ecc_hal_enable_constant_time_point_mul(true);
     ecc_hal_start_calc();
 
     memset(result, 0, sizeof(ecc_point_t));
