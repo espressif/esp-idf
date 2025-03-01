@@ -1160,8 +1160,9 @@ tBTA_JV_STATUS BTA_JvRfcommWrite(UINT32 handle, UINT32 req_id, int len, UINT8 *p
         p_msg->p_data = p_data;
         p_msg->len = len;
         APPL_TRACE_API( "write ok");
-        bta_sys_sendmsg(p_msg);
-        status = BTA_JV_SUCCESS;
+        if (bta_sys_sendmsg(p_msg)) {
+            status = BTA_JV_SUCCESS;
+        }
     }
     return (status);
 }
