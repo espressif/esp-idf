@@ -18,6 +18,6 @@ entries:
 archive: libesp_driver_gptimer.a
 entries:
     if APPTRACE_SV_TS_SOURCE_GPTIMER = y:
-      gptimer (noflash)
+      gptimer: gptimer_get_raw_count (noflash)
     else:
       * (default)
