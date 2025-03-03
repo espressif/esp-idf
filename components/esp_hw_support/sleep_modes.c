@@ -216,6 +216,12 @@
 #define CHECK_SOURCE(source, value, mask) ((s_config.wakeup_triggers & mask) && \
                                             (source == value))
 
+#if CONFIG_PM_SLP_IRAM_OPT
+# define SLEEP_FN_ATTR      IRAM_ATTR
+#else
+# define SLEEP_FN_ATTR
+#endif
+
 #define MAX_DSLP_HOOKS      3
 
 static esp_deep_sleep_cb_t s_dslp_cb[MAX_DSLP_HOOKS] = {0};
@@ -525,7 +531,7 @@ static uint32_t s_stopped_tgwdt_bmap = 0;
 #endif
 
 // Must be called from critical sections.
-static void IRAM_ATTR suspend_timers(uint32_t sleep_flags) {
+static SLEEP_FN_ATTR void suspend_timers(uint32_t sleep_flags) {
     if (!(sleep_flags & RTC_SLEEP_PD_XTAL)) {
 #if SOC_SLEEP_TGWDT_STOP_WORKAROUND
         /* If timegroup implemented task watchdog or interrupt watchdog is running, we have to stop it. */
@@ -547,7 +553,7 @@ static void IRAM_ATTR suspend_timers(uint32_t sleep_flags) {
 }
 
 // Must be called from critical sections.
-static void IRAM_ATTR resume_timers(uint32_t sleep_flags) {
+static SLEEP_FN_ATTR void resume_timers(uint32_t sleep_flags) {
     if (!(sleep_flags & RTC_SLEEP_PD_XTAL)) {
 #if SOC_SLEEP_SYSTIMER_STALL_WORKAROUND
         for (uint32_t counter_id = 0; counter_id < SOC_SYSTIMER_COUNTER_NUM; ++counter_id) {
@@ -567,7 +573,7 @@ static void IRAM_ATTR resume_timers(uint32_t sleep_flags) {
 }
 
 // [refactor-todo] provide target logic for body of uart functions below
-static void IRAM_ATTR flush_uarts(void)
+static SLEEP_FN_ATTR void flush_uarts(void)
 {
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (uart_ll_is_enabled(i)) {
@@ -582,7 +588,7 @@ static uint32_t s_suspended_uarts_bmap = 0;
  * Suspend enabled uarts and return suspended uarts bit map.
  * Must be called from critical sections.
  */
-FORCE_INLINE_ATTR void suspend_uarts(void)
+static SLEEP_FN_ATTR void suspend_uarts(void)
 {
     s_suspended_uarts_bmap = 0;
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
@@ -603,7 +609,7 @@ FORCE_INLINE_ATTR void suspend_uarts(void)
 }
 
 // Must be called from critical sections
-FORCE_INLINE_ATTR void resume_uarts(void)
+static SLEEP_FN_ATTR void resume_uarts(void)
 {
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
         if (s_suspended_uarts_bmap & 0x1) {
@@ -629,7 +635,7 @@ FORCE_INLINE_ATTR void resume_uarts(void)
         completion time has exceeded the wakeup time, we should abandon the flush, skip the sleep and
         return ESP_ERR_SLEEP_REJECT.
  */
-FORCE_INLINE_ATTR bool light_sleep_uart_prepare(uint32_t sleep_flags, int64_t sleep_duration)
+static SLEEP_FN_ATTR bool light_sleep_uart_prepare(uint32_t sleep_flags, int64_t sleep_duration)
 {
     bool should_skip_sleep = false;
 #if !SOC_PM_SUPPORT_TOP_PD || !CONFIG_ESP_CONSOLE_UART
@@ -662,7 +668,7 @@ FORCE_INLINE_ATTR bool light_sleep_uart_prepare(uint32_t sleep_flags, int64_t sl
 /**
  * These save-restore workaround should be moved to lower layer
  */
-FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool deep_sleep)
+static SLEEP_FN_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool deep_sleep)
 {
     if (deep_sleep){
         for (int n = 0; n < MAX_DSLP_HOOKS; n++) {
@@ -716,7 +722,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool dee
 /**
  * These save-restore workaround should be moved to lower layer
  */
-FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
+static SLEEP_FN_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 {
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
     if (sleep_flags & PMU_SLEEP_PD_TOP) {
@@ -760,7 +766,7 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
 #endif
 }
 
-static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
+static SLEEP_FN_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
 {
     // Calibrate rtc slow clock
 #ifdef CONFIG_ESP_SYSTEM_RTC_EXT_XTAL
@@ -800,7 +806,7 @@ static IRAM_ATTR void sleep_low_power_clock_calibration(bool is_dslp)
 
 inline static uint32_t call_rtc_sleep_start(uint32_t reject_triggers, uint32_t lslp_mem_inf_fpu, bool dslp);
 
-static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t clk_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
+static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t clk_flags, esp_sleep_mode_t mode, bool allow_sleep_rejection)
 {
     // Stop UART output so that output is not lost due to APB frequency change.
     // For light sleep, suspend UART output — it will resume after wakeup.
@@ -1254,9 +1260,9 @@ esp_err_t IRAM_ATTR esp_deep_sleep_try_to_start(void)
  * Placed into IRAM as flash may need some time to be powered on.
  */
 static esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint32_t clk_flags,
-                                       uint32_t flash_enable_time_us) IRAM_ATTR __attribute__((noinline));
+                                       uint32_t flash_enable_time_us) __attribute__((noinline));
 
-static esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint32_t clk_flags,
+static SLEEP_FN_ATTR esp_err_t esp_light_sleep_inner(uint32_t sleep_flags, uint32_t clk_flags,
                                        uint32_t flash_enable_time_us)
 {
 #if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED
@@ -1687,7 +1693,7 @@ esp_err_t esp_sleep_enable_vad_wakeup(void)
 }
 #endif
 
-static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
+static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 {
     if (sleep_duration < 0) {
         sleep_duration = 0;
@@ -2325,7 +2331,7 @@ FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
 }
 #endif
 
-static uint32_t get_power_down_flags(void)
+static SLEEP_FN_ATTR uint32_t get_power_down_flags(void)
 {
     // Where needed, convert AUTO options to ON. Later interpret AUTO as OFF.
 
@@ -2502,7 +2508,7 @@ static uint32_t get_power_down_flags(void)
     return pd_flags;
 }
 
-static uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsleep)
+static SLEEP_FN_ATTR uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsleep)
 {
     // Override user-configured FOSC power modes.
     if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_RTC_USE_RC_FAST_MODE]) {
@@ -2554,7 +2560,7 @@ static uint32_t get_sleep_flags(uint32_t sleep_flags, bool deepsleep)
     return sleep_flags;
 }
 
-static uint32_t get_sleep_clock_icg_flags(void)
+static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
 {
     uint32_t clk_flags = 0;
 

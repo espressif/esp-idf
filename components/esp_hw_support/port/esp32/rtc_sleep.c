@@ -65,7 +65,7 @@ typedef struct {
  * Configure whether certain peripherals are powered down in deep sleep
  * @param cfg power down flags as rtc_sleep_pd_config_t structure
  */
-static void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
+void rtc_sleep_pd(rtc_sleep_pd_config_t cfg)
 {
     REG_SET_FIELD(RTC_CNTL_DIG_PWC_REG, RTC_CNTL_LSLP_MEM_FORCE_PU, ~cfg.dig_pd);
     REG_SET_FIELD(RTC_CNTL_PWC_REG, RTC_CNTL_SLOWMEM_FORCE_LPU, ~cfg.rtc_pd);
@@ -345,7 +345,7 @@ uint32_t rtc_deep_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt)
     return rtc_sleep_finish();
 }
 
-static uint32_t rtc_sleep_finish(void)
+static IRAM_ATTR uint32_t rtc_sleep_finish(void)
 {
     /* In deep sleep mode, we never get here */
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);

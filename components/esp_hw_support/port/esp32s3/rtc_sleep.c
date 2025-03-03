@@ -284,7 +284,7 @@ __attribute__((weak)) uint32_t rtc_sleep_start(uint32_t wakeup_opt, uint32_t rej
     return rtc_sleep_finish(lslp_mem_inf_fpu);
 }
 
-static uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
+static IRAM_ATTR uint32_t rtc_sleep_finish(uint32_t lslp_mem_inf_fpu)
 {
     /* In deep sleep mode, we never get here */
     uint32_t reject = REG_GET_FIELD(RTC_CNTL_INT_RAW_REG, RTC_CNTL_SLP_REJECT_INT_RAW);

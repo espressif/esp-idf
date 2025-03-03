@@ -803,7 +803,7 @@ static inline void IRAM_ATTR other_core_should_skip_light_sleep(int core_id)
 #endif
 }
 
-void IRAM_ATTR vApplicationSleep( TickType_t xExpectedIdleTime )
+void vApplicationSleep( TickType_t xExpectedIdleTime )
 {
     portENTER_CRITICAL(&s_switch_lock);
     int core_id = xPortGetCoreID();
