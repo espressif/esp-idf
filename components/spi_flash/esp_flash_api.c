@@ -1378,10 +1378,30 @@ esp_err_t esp_flash_write_encrypted(esp_flash_t *chip, uint32_t address, const v
         COUNTER_ADD_BYTES(write, encrypt_byte);
 
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
+
+        if (lock_once == true) {
+            err = s_encryption_write_unlock(chip);
+            if (err != ESP_OK) {
+                bus_acquired = false;
+                //Error happens, we end flash operation. Re-enable cache and flush it
+                goto restore_cache;
+            }
+            bus_acquired = false;
+        }
         err = s_verify_write(chip, row_addr, encrypt_byte, (uint32_t *)encrypt_buf, is_encrypted);
         if (err != ESP_OK) {
             //Error happens, we end flash operation. Re-enable cache and flush it
             goto restore_cache;
+        }
+
+        if (lock_once == true) {
+            err = s_encryption_write_lock(chip);
+            if (err != ESP_OK) {
+                bus_acquired = false;
+                //Error happens, we end flash operation. Re-enable cache and flush it
+                goto restore_cache;
+            }
+            bus_acquired = true;
         }
 #endif //CONFIG_SPI_FLASH_VERIFY_WRITE
     }
