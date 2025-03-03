@@ -536,6 +536,7 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 	if (cfg->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE) {
+		mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 		wpa_printf(MSG_INFO, "Using default cert bundle");
 		if (esp_crt_bundle_attach_fn) {
 			ret = (*esp_crt_bundle_attach_fn)(&tls->conf);
