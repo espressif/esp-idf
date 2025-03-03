@@ -228,9 +228,9 @@ void __wrap_esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state
     esp_tee_service_call(3, SS_ESP_SHA_WRITE_DIGEST_STATE, sha_type, digest_state);
 }
 
-void __wrap_esp_sha_enable_periph_clk(bool enable)
+void __wrap_esp_crypto_sha_enable_periph_clk(bool enable)
 {
-    esp_tee_service_call(2, SS_ESP_SHA_ENABLE_PERIPH_CLK, enable);
+    esp_tee_service_call(2, SS_ESP_CRYPTO_SHA_ENABLE_PERIPH_CLK, enable);
 }
 
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */

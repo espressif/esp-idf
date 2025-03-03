@@ -40,6 +40,8 @@ endforeach()
 
 target_link_libraries(${COMPONENT_LIB} INTERFACE ${mbedtls_targets})
 
+target_link_libraries(mbedcrypto PRIVATE idf::esp_security)
+
 target_include_directories(mbedcrypto PRIVATE ${crypto_port_inc_dirs})
 
 # Shared GDMA layer for TEE

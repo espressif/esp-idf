@@ -208,9 +208,9 @@ secure_services:
         type: IDF
         function: esp_sha_write_digest_state
         args: 2
-      - id: 132
+      - id: 98
         type: IDF
-        function: esp_sha_enable_periph_clk
+        function: esp_crypto_sha_enable_periph_clk
         args: 1
   # ID: 134-149 (16) - eFuse
   - family: efuse
