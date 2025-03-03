@@ -1191,3 +1191,33 @@ esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle)
     return ESP_FAIL;
 #endif
 }
+
+#define MAX_DOMAIN_MATCH_LEN 128
+esp_err_t esp_eap_client_set_domain_match(const char *domain_match)
+{
+    if (g_wpa_domain_match) {
+        os_free(g_wpa_domain_match);
+        g_wpa_domain_match = NULL;
+    }
+
+    int len = os_strlen(domain_match);
+    if (len > MAX_DOMAIN_MATCH_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    g_wpa_domain_match = (char *)os_zalloc(len+1);
+    if (g_wpa_domain_match == NULL) {
+        return ESP_ERR_NO_MEM;
+    }
+
+    os_strlcpy(g_wpa_domain_match, domain_match, len+1);
+
+    return ESP_OK;
+}
+
+void esp_eap_client_clear_domain_match(void)
+{
+    if (g_wpa_domain_match) {
+        os_free(g_wpa_domain_match);
+    }
+    g_wpa_domain_match = NULL;
+}
