@@ -2,6 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded_idf.utils import idf_parametrize
+
 # If `test_env` is define, should not run on generic runner
 
 
@@ -16,7 +17,7 @@ def test_slave_hd_single_dev(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if 'test_env' in case.attributes:
             continue
-        case_tester.run_normal_case(case=case, reset=True)
+        case_tester.run_normal_case(case=case, reset=True, timeout=180)
 
 
 # if `test_env` not defined, will run on `generic_multi_device` by default

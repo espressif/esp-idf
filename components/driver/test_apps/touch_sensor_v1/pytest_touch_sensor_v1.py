@@ -15,4 +15,4 @@ from pytest_embedded_idf.utils import idf_parametrize
 )
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_touch_sensor_v1(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=60)
+    dut.run_all_single_board_cases(timeout=60, reset=True)
