@@ -145,7 +145,7 @@ typedef struct {
     struct {
         ext_hub_cb_t proc_req_cb;                   /**< Process callback  */
         void *proc_req_cb_arg;                      /**< Process callback argument */
-        const ext_hub_port_driver_t* port_driver;   /**< External Port Driver */
+        const ext_port_driver_api_t* port_driver;   /**< External Port Driver */
     } constant;                         /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
 } ext_hub_driver_t;
 
@@ -396,7 +396,7 @@ static void device_error(ext_hub_dev_t *ext_hub_dev)
 static esp_err_t device_port_new(ext_hub_dev_t *ext_hub_dev, uint8_t port_idx)
 {
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (ext_hub_handle_t) ext_hub_dev,
+        .context = (void*) ext_hub_dev,
         .parent_dev_hdl =  ext_hub_dev->constant.dev_hdl,
         .parent_port_num = port_idx + 1,
         .port_power_delay_ms = ext_hub_dev->constant.hub_desc->bPwrOn2PwrGood * 2,
@@ -1702,52 +1702,76 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
     return p_ext_hub_driver->constant.port_driver->get_speed(ext_hub_dev->constant.ports[port_idx], speed);
 }
 
-// -----------------------------------------------------------------------------
-// --------------------------- USB Chapter 11 ----------------------------------
-// -----------------------------------------------------------------------------
+// -------------------------------------------------------------------------------------------------
+// ---------------------------------- USB Chapter 11 -----------------------------------------------
+// -------------------------------------------------------------------------------------------------
 
-esp_err_t ext_hub_class_request(ext_hub_handle_t ext_hub_hdl, ext_hub_request_data_t *data, void *user_arg)
+static esp_err_t ext_hub_control_request(ext_hub_dev_t *ext_hub_dev, uint8_t port1, uint8_t request, uint8_t feature)
 {
-    EXT_HUB_ENTER_CRITICAL();
-    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
-    EXT_HUB_EXIT_CRITICAL();
-    EXT_HUB_CHECK(data != NULL && ext_hub_hdl != NULL, ESP_ERR_INVALID_ARG);
-
     esp_err_t ret;
-    ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
     usb_transfer_t *transfer = &ext_hub_dev->constant.ctrl_urb->transfer;
-
-    EXT_HUB_CHECK(data->port_num != 0 && data->port_num <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
-    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
-                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
-
-    switch (data->request) {
+    switch (request) {
     case USB_B_REQUEST_HUB_GET_PORT_STATUS:
-        USB_SETUP_PACKET_INIT_GET_PORT_STATUS((usb_setup_packet_t *)transfer->data_buffer, data->port_num);
+        USB_SETUP_PACKET_INIT_GET_PORT_STATUS((usb_setup_packet_t *)transfer->data_buffer, port1);
         transfer->num_bytes = sizeof(usb_setup_packet_t) + sizeof(usb_port_status_t);
         ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_STATUS;
         break;
     case USB_B_REQUEST_HUB_SET_PORT_FEATURE:
-        USB_SETUP_PACKET_INIT_SET_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, data->port_num, data->feature);
+        USB_SETUP_PACKET_INIT_SET_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port1, feature);
         transfer->num_bytes = sizeof(usb_setup_packet_t);
         ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
         break;
     case USB_B_REQUEST_HUB_CLEAR_FEATURE:
-        USB_SETUP_PACKET_INIT_CLEAR_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, data->port_num, data->feature);
+        USB_SETUP_PACKET_INIT_CLEAR_PORT_FEATURE((usb_setup_packet_t *)transfer->data_buffer, port1, feature);
         transfer->num_bytes = sizeof(usb_setup_packet_t);
         ext_hub_dev->single_thread.stage = EXT_HUB_STAGE_CHECK_PORT_FEATURE;
         break;
     default:
-        ESP_LOGE(EXT_HUB_TAG, "Request %X not supported", data->request);
+        ESP_LOGE(EXT_HUB_TAG, "Request %X not supported", request);
         return ESP_ERR_NOT_SUPPORTED;
     }
 
     ret = usbh_dev_submit_ctrl_urb(ext_hub_dev->constant.dev_hdl, ext_hub_dev->constant.ctrl_urb);
     if (ret != ESP_OK) {
         ESP_LOGE(EXT_HUB_TAG, "Request %X, port %d, feature %d: failed to submit ctrl urb: %s",
-                 data->request, data->port_num, data->feature,
+                 request, port1, feature,
                  esp_err_to_name(ret));
         device_error(ext_hub_dev);
     }
     return ret;
+}
+
+// -------------------------------------------------------------------------------------------------
+// ---------------------------------- Parent Request -----------------------------------------------
+// -------------------------------------------------------------------------------------------------
+
+esp_err_t ext_hub_request(ext_port_hdl_t port_hdl, ext_port_parent_request_data_t *data, void *user_arg)
+{
+    EXT_HUB_ENTER_CRITICAL();
+    EXT_HUB_CHECK_FROM_CRIT(p_ext_hub_driver != NULL, ESP_ERR_NOT_ALLOWED);
+    EXT_HUB_EXIT_CRITICAL();
+    EXT_HUB_CHECK(data != NULL && port_hdl != NULL, ESP_ERR_INVALID_ARG);
+
+    uint8_t port1;
+    ext_hub_handle_t ext_hub_hdl = (ext_hub_handle_t)ext_port_get_context(port_hdl);
+    ext_hub_dev_t *ext_hub_dev = (ext_hub_dev_t *)ext_hub_hdl;
+
+    ESP_ERROR_CHECK(ext_port_get_port_num(port_hdl, &port1));
+    EXT_HUB_CHECK(port1 != 0 && port1 <= ext_hub_dev->constant.hub_desc->bNbrPorts, ESP_ERR_INVALID_SIZE);
+    EXT_HUB_CHECK(ext_hub_dev->single_thread.state == EXT_HUB_STATE_CONFIGURED ||
+                  ext_hub_dev->single_thread.state == EXT_HUB_STATE_SUSPENDED, ESP_ERR_INVALID_STATE);
+
+    switch (data->type) {
+    case EXT_PORT_PARENT_REQ_CONTROL:
+        return ext_hub_control_request(ext_hub_dev, port1, data->control.req, data->control.feature);
+
+    case EXT_PORT_PARENT_REQ_PROC_COMPLETED:
+        return ext_hub_status_handle_complete(ext_hub_hdl);
+
+    default:
+        break;
+    }
+
+    ESP_LOGE(EXT_HUB_TAG, "Request type %d not supported", data->type);
+    return ESP_ERR_NOT_SUPPORTED;
 }

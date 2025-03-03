@@ -13,10 +13,7 @@
 #include "usb/usb_types_stack.h"
 #include "usb/usb_types_ch9.h"
 #include "usb/usb_types_ch11.h"
-
-#if CONFIG_USB_HOST_HUB_MULTI_LEVEL
-#define ENABLE_MULTIPLE_HUBS             1
-#endif // CONFIG_USB_HOST_HUB_MULTI_LEVEL
+#include "ext_port.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,45 +32,12 @@ typedef struct ext_hub_s *ext_hub_handle_t;
 typedef bool (*ext_hub_cb_t)(bool in_isr, void *user_arg);
 
 /**
- * @brief Specific data for Hub class specific request
- */
-typedef struct {
-    usb_hub_class_request_t request;
-    uint8_t port_num;
-    uint8_t feature;
-} ext_hub_request_data_t;
-
-/**
- * @brief Callback used to indicate that the External Port driver requires a Hub class specific request
- */
-typedef esp_err_t (*ext_hub_request_cb_t)(ext_hub_handle_t ext_hub_hdl, ext_hub_request_data_t *request_data, void *user_arg);
-
-// ------------------------ External Port API typedefs -------------------------
-
-/**
- * @brief External Hub Port driver
- */
-typedef struct {
-    esp_err_t (*new)(void *port_cfg, void **port_hdl);
-    esp_err_t (*reset)(void *port_hdl);
-    esp_err_t (*recycle)(void *port_hdl);
-    esp_err_t (*active)(void *port_hdl);
-    esp_err_t (*disable)(void *port_hdl);
-    esp_err_t (*gone)(void *port_hdl);
-    esp_err_t (*del)(void *port_hdl);
-    esp_err_t (*get_speed)(void *por_hdl, usb_speed_t *speed);
-    esp_err_t (*get_status)(void *port_hdl);
-    esp_err_t (*set_status)(void *port_hdl, const usb_port_status_t *status);
-    esp_err_t (*req_process)(void *port_hdl);
-} ext_hub_port_driver_t;
-
-/**
  * @brief External Hub Driver configuration
  */
 typedef struct {
     ext_hub_cb_t proc_req_cb;                       /**< External Hub process callback */
     void *proc_req_cb_arg;                          /**< External Hub process callback argument */
-    const ext_hub_port_driver_t* port_driver;       /**< External Port Driver */
+    const ext_port_driver_api_t* port_driver;       /**< External Port Driver */
 } ext_hub_config_t;
 
 // ------------------------------ Driver ---------------------------------------
@@ -287,11 +251,11 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
 // --------------------------- USB Chapter 11 ----------------------------------
 
 /**
- * @brief USB Hub Class specific request
+ * @brief USB Hub Request
  *
  * @note This function designed to be called from the External Port driver
  *
- * @param[in] ext_hub_hdl   External Hub handle
+ * @param[in] port_hdl      External Port handle
  * @param[in] data          Request data
  * @param[in] user_arg      User argument
  *
@@ -303,7 +267,7 @@ esp_err_t ext_hub_port_get_speed(ext_hub_handle_t ext_hub_hdl, uint8_t port_num,
  *    - ESP_ERR_NOT_SUPPORTED if the request is not supported
  *    - ESP_OK if control transfer was successfully submitted
  */
-esp_err_t ext_hub_class_request(ext_hub_handle_t ext_hub_hdl, ext_hub_request_data_t *data, void *user_arg);
+esp_err_t ext_hub_request(ext_port_hdl_t port_hdl, ext_port_parent_request_data_t *data, void *user_arg);
 
 #ifdef __cplusplus
 }

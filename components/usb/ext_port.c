@@ -78,7 +78,7 @@ struct ext_port_s {
         usb_device_handle_t parent_dev_hdl;     /**< Ports' parent device handle */
         uint8_t parent_dev_addr;                /**< Ports' parent device bus address */
         // Port related constant members
-        ext_hub_handle_t ext_hub_hdl;           /**< Ports' parent External Hub handle */
+        void* context;                          /**< Ports' parent External Hub handle */
         uint8_t port_num;                       /**< Ports' parent External Hub Port number */
         int power_on_delay_ms;                  /**< Ports' Power on time to Power Good, ms */
     } constant;                                 /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
@@ -102,7 +102,7 @@ typedef struct {
         void *proc_req_cb_arg;                  /**< External Port process callback argument */
         ext_port_event_cb_t event_cb;           /**< External Port event callback */
         void *event_cb_arg;                     /**< External Port event callback argument */
-        ext_hub_request_cb_t hub_request_cb;    /**< External Port Hub request callback */
+        ext_port_parent_request_cb_t hub_request_cb;    /**< External Port Hub request callback */
         void *hub_request_cb_arg;                /**< External Port Hub request callback argument */
     } constant;                                 /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
 } ext_port_driver_t;
@@ -232,13 +232,15 @@ static inline bool port_has_finished_reset(ext_port_t *ext_port)
  */
 static esp_err_t port_request_status(ext_port_t* ext_port)
 {
-    ext_hub_request_data_t req_data = {
-        .request = USB_B_REQUEST_HUB_GET_PORT_STATUS,
-        .port_num = ext_port->constant.port_num,
+    ext_port_parent_request_data_t data = {
+        .type = EXT_PORT_PARENT_REQ_CONTROL,
+        .control = {
+            .req = USB_B_REQUEST_HUB_GET_PORT_STATUS,
+        }
     };
 
-    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
-                                                               &req_data,
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb((ext_port_hdl_t)ext_port,
+                                                               &data,
                                                                p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
@@ -264,14 +266,16 @@ static esp_err_t port_request_status(ext_port_t* ext_port)
  */
 static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_feature_t feature)
 {
-    ext_hub_request_data_t req_data = {
-        .request = USB_B_REQUEST_HUB_SET_PORT_FEATURE,
-        .port_num = ext_port->constant.port_num,
-        .feature = feature,
+    ext_port_parent_request_data_t data = {
+        .type = EXT_PORT_PARENT_REQ_CONTROL,
+        .control = {
+            .req = USB_B_REQUEST_HUB_SET_PORT_FEATURE,
+            .feature = feature,
+        }
     };
 
-    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
-                                                               &req_data,
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb((ext_port_hdl_t)ext_port,
+                                                               &data,
                                                                p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
@@ -309,14 +313,16 @@ static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_featu
  */
 static esp_err_t port_clear_feature(ext_port_t *ext_port, const usb_hub_port_feature_t feature)
 {
-    ext_hub_request_data_t req_data = {
-        .request = USB_B_REQUEST_HUB_CLEAR_FEATURE,
-        .port_num = ext_port->constant.port_num,
-        .feature = feature,
+    ext_port_parent_request_data_t data = {
+        .type = EXT_PORT_PARENT_REQ_CONTROL,
+        .control = {
+            .req = USB_B_REQUEST_HUB_CLEAR_FEATURE,
+            .feature = feature,
+        }
     };
 
-    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
-                                                               &req_data,
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb((ext_port_hdl_t)ext_port,
+                                                               &data,
                                                                p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
@@ -410,7 +416,6 @@ static void port_event(ext_port_t *ext_port, ext_port_event_t event)
     };
     switch (event) {
     case EXT_PORT_CONNECTED:
-        event_data.connected.ext_hub_hdl = ext_port->constant.ext_hub_hdl;
         event_data.connected.parent_dev_hdl = ext_port->constant.parent_dev_hdl;
         event_data.connected.parent_port_num = ext_port->constant.port_num;
         break;
@@ -428,7 +433,7 @@ static void port_event(ext_port_t *ext_port, ext_port_event_t event)
         break;
     }
 
-    p_ext_port_driver->constant.event_cb(&event_data, p_ext_port_driver->constant.event_cb_arg);
+    p_ext_port_driver->constant.event_cb((ext_port_hdl_t)ext_port, &event_data, p_ext_port_driver->constant.event_cb_arg);
 }
 
 /**
@@ -453,7 +458,7 @@ static ext_port_t *get_port_from_pending_list(void)
  * - Port state:         USB_PORT_STATE_NOT_CONFIGURED
  * - Port device status: PORT_DEV_NOT_PRESENT
  *
- * @param[in] ext_hub_hdl       Ports' parent hub handle
+ * @param[in] context           Ports' parent hub handle
  * @param[in] parent_dev_hdl    Ports' parent device handle
  * @param[in] parent_port_num   Ports' parent port number
  * @param[in] port_delay_ms     Ports' Power on time to Power Good, ms
@@ -464,10 +469,10 @@ static ext_port_t *get_port_from_pending_list(void)
  *    - ESP_ERR_NOT_FINISHED:   Unable to allocate the port object: parent device is not available
  *    - ESP_OK:                 Port object created successfully
  */
-static esp_err_t port_alloc(ext_hub_handle_t ext_hub_hdl, usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, uint16_t port_delay_ms, ext_port_t **port_obj)
+static esp_err_t port_alloc(void* context, usb_device_handle_t parent_dev_hdl, uint8_t parent_port_num, uint16_t port_delay_ms, ext_port_t **port_obj)
 {
     uint8_t parent_dev_addr = 0;
-    EXT_PORT_CHECK(ext_hub_hdl != NULL && parent_dev_hdl != NULL, ESP_ERR_INVALID_ARG);
+    EXT_PORT_CHECK(context != NULL && parent_dev_hdl != NULL, ESP_ERR_INVALID_ARG);
     // This is the one exception from the requirement to use only the Ext Hub Driver API.
     // TODO: IDF-10023 Move responsibility of parent-child tree building to Hub Driver instead of USBH
     EXT_PORT_CHECK(usbh_dev_get_addr(parent_dev_hdl, &parent_dev_addr) == ESP_OK, ESP_ERR_NOT_FINISHED);
@@ -479,7 +484,7 @@ static esp_err_t port_alloc(ext_hub_handle_t ext_hub_hdl, usb_device_handle_t pa
 
     ext_port->constant.parent_dev_hdl = parent_dev_hdl;
     ext_port->constant.parent_dev_addr = parent_dev_addr;
-    ext_port->constant.ext_hub_hdl = ext_hub_hdl;
+    ext_port->constant.context = context;
     ext_port->constant.port_num = parent_port_num;
 #if (EXT_PORT_POWER_ON_CUSTOM_DELAY)
     ext_port->constant.power_on_delay_ms = EXT_PORT_POWER_ON_CUSTOM_DELAY_MS;
@@ -545,7 +550,7 @@ static esp_err_t handle_complete(ext_port_t *ext_port)
     // When multiply Hubs are attached, we can have ports in pending list, but for another parent
     ext_port_t *port = NULL;
     TAILQ_FOREACH(port, &p_ext_port_driver->single_thread.pending_tailq, tailq_entry) {
-        if (port->constant.ext_hub_hdl == ext_port->constant.ext_hub_hdl) {
+        if (port->constant.context == ext_port->constant.context) {
             // Port with same parent has been found
             all_ports_were_handled = false;
             break;
@@ -559,7 +564,13 @@ static esp_err_t handle_complete(ext_port_t *ext_port)
 
     if (all_ports_were_handled) {
         // Notify parent to enable Interrupt EP
-        ext_hub_status_handle_complete(ext_port->constant.ext_hub_hdl);
+        ext_port_parent_request_data_t data = {
+            .type = EXT_PORT_PARENT_REQ_PROC_COMPLETED,
+        };
+
+        ESP_ERROR_CHECK(p_ext_port_driver->constant.hub_request_cb((ext_port_hdl_t)ext_port,
+                                                                   &data,
+                                                                   p_ext_port_driver->constant.hub_request_cb_arg));
     }
 
     if (has_pending_ports) {
@@ -965,7 +976,7 @@ static esp_err_t port_new(void *port_cfg, void **port_hdl)
 
     ext_port_t *port = NULL;
     ext_port_config_t *config = (ext_port_config_t *)port_cfg;
-    esp_err_t ret = port_alloc(config->ext_hub_hdl,
+    esp_err_t ret = port_alloc(config->context,
                                config->parent_dev_hdl,
                                config->parent_port_num,
                                config->port_power_delay_ms,
@@ -1002,6 +1013,7 @@ static esp_err_t port_recycle(void *port_hdl)
     EXT_PORT_CHECK(port_hdl != NULL, ESP_ERR_INVALID_ARG);
     ext_port_t *ext_port = (ext_port_t *) port_hdl;
 
+    EXT_PORT_CHECK(ext_port->flags.is_gone == 0, ESP_ERR_INVALID_STATE);
     ESP_LOGD(EXT_PORT_TAG, "Port %d request recycle, state=%d", ext_port->constant.port_num, ext_port->state);
 
     port_set_actions(ext_port, PORT_ACTION_RECYCLE);
@@ -1307,7 +1319,7 @@ static esp_err_t port_req_process(void* port_hdl)
 /**
  * @brief External Port Driver API
  */
-const ext_hub_port_driver_t ext_port_driver = {
+const ext_port_driver_api_t ext_port_driver = {
     .new = port_new,
     .reset = port_reset,
     .recycle = port_recycle,
@@ -1425,8 +1437,24 @@ esp_err_t ext_port_process(void)
     return ESP_OK;
 }
 
-const ext_hub_port_driver_t *ext_port_get_driver(void)
+const ext_port_driver_api_t *ext_port_get_driver(void)
 {
     EXT_PORT_CHECK(p_ext_port_driver != NULL, NULL);
     return &ext_port_driver;
+}
+
+void* ext_port_get_context(ext_port_hdl_t port_hdl)
+{
+    EXT_PORT_CHECK(p_ext_port_driver != NULL, NULL);
+    ext_port_t *ext_port = (ext_port_t *)port_hdl;
+    return ext_port->constant.context;
+}
+
+esp_err_t ext_port_get_port_num(ext_port_hdl_t port_hdl, uint8_t *port1)
+{
+    EXT_PORT_CHECK(p_ext_port_driver != NULL, ESP_ERR_NOT_ALLOWED);
+    EXT_PORT_CHECK(port_hdl != NULL && port1 != NULL, ESP_ERR_INVALID_ARG);
+    ext_port_t *ext_port = (ext_port_t *)port_hdl;
+    *port1 = ext_port->constant.port_num;
+    return ESP_OK;
 }
