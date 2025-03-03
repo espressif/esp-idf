@@ -319,6 +319,30 @@ esp_err_t esp_eap_client_set_fast_params(esp_eap_fast_config config);
  */
 esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle);
 
+/**
+ * @brief Set name for certificate domain name validation
+ *
+ * Enabling this option will only accept certificate with the provided subject name
+ *
+ * @param[in] domain_match The expected domain name
+ * @param[in] len      Length of the domain name (limited to 1~127 bytes).
+ *
+ * @return
+ *    - ESP_OK: The identity was set successfully.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (len <= 0 or len >= 128).
+ *    - ESP_ERR_NO_MEM: Memory allocation failure.
+ */
+esp_err_t esp_eap_client_set_domain_match(const char *domain_match);
+
+/**
+ * @brief Clear the domain name for certificate validation
+ *
+ * This function clears the domain name that was previously set for the EAP client.
+ * After calling this function, the EAP client will no longer use the previously
+ * configured domain name during the authentication process.
+ */
+void esp_eap_client_clear_domain_match(void);
+
 #ifdef __cplusplus
 }
 #endif
