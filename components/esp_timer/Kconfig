@@ -1,5 +1,9 @@
 menu "ESP Timer (High Resolution Timer)"
 
+    config ESP_TIMER_IN_IRAM
+        bool "Place esp_timer functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
     config ESP_TIMER_PROFILING
         bool "Enable esp_timer profiling features"
         default n
@@ -25,7 +29,7 @@ menu "ESP Timer (High Resolution Timer)"
         help
             Configure the stack size of "timer_task" task. This task is used
             to dispatch callbacks of timers created using ets_timer and esp_timer
-            APIs. If you are seing stack overflow errors in timer task, increase
+            APIs. If you are seeing stack overflow errors in timer task, increase
             this value.
 
             Note that this is not the same as FreeRTOS timer task. To configure
@@ -102,7 +106,7 @@ menu "ESP Timer (High Resolution Timer)"
         bool "Support ISR dispatch method"
         default n
         help
-            Allows using ESP_TIMER_ISR dispatch method (ESP_TIMER_TASK dispatch method is also avalible).
+            Allows using ESP_TIMER_ISR dispatch method (ESP_TIMER_TASK dispatch method is also available).
             - ESP_TIMER_TASK - Timer callbacks are dispatched from a high-priority esp_timer task.
             - ESP_TIMER_ISR - Timer callbacks are dispatched directly from the timer interrupt handler.
             The ISR dispatch can be used, in some cases, when a callback is very simple

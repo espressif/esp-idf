@@ -4,19 +4,6 @@ import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
-CONFIGS = [
-    pytest.param('general', marks=[pytest.mark.supported_targets]),
-    pytest.param('release', marks=[pytest.mark.supported_targets]),
-    pytest.param('single_core', marks=[pytest.mark.esp32]),
-    pytest.param('freertos_compliance', marks=[pytest.mark.esp32]),
-    pytest.param('isr_dispatch_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('isr_dispatch_esp32c3', marks=[pytest.mark.esp32c3]),
-    pytest.param('cpu1_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('any_cpu_esp32', marks=[pytest.mark.esp32]),
-    pytest.param('cpu1_esp32s3', marks=[pytest.mark.esp32s3]),
-    pytest.param('any_cpu_esp32s3', marks=[pytest.mark.esp32s3]),
-]
-
 
 @pytest.mark.generic
 @idf_parametrize(
@@ -64,4 +51,17 @@ def test_esp_timer_psram(dut: Dut) -> None:
 )
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_esp_timer_esp32c2_xtal_26mhz(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=120)
+
+
+@pytest.mark.flash_suspend
+@pytest.mark.parametrize(
+    'config',
+    [
+        'flash_auto_suspend',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_esp_timer_flash_auto_suspend(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120)

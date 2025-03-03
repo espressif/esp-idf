@@ -35,12 +35,12 @@ void esp_timer_impl_init_system_time(void)
 #endif
 }
 
-int64_t IRAM_ATTR esp_system_get_time(void)
+int64_t ESP_TIMER_IRAM_ATTR esp_system_get_time(void)
 {
     return esp_timer_get_time() + s_correction_us;
 }
 
-uint32_t IRAM_ATTR esp_system_get_time_resolution(void)
+uint32_t ESP_TIMER_IRAM_ATTR esp_system_get_time_resolution(void)
 {
     return 1000;
 }
