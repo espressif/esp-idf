@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,18 +168,20 @@ static esp_err_t handle_session_command0(session_t *cur_session,
     out->payload_case = SEC2_PAYLOAD__PAYLOAD_SR0;
     out->sr0 = out_resp;
 
-    resp->sec_ver = SEC_SCHEME_VERSION__SecScheme2;
-    resp->proto_case = SESSION_DATA__PROTO_SEC2;
-    resp->sec2 = out;
-
     cur_session->username_len = in->sc0->client_username.len;
     cur_session->username = malloc(cur_session->username_len);
     if (!cur_session->username) {
         ESP_LOGE(TAG, "Failed to allocate memory!");
         free(cur_session->srp_hd);
+        free(out);
+        free(out_resp);
         return ESP_ERR_NO_MEM;
     }
     memcpy(cur_session->username, in->sc0->client_username.data, in->sc0->client_username.len);
+
+    resp->sec_ver = SEC_SCHEME_VERSION__SecScheme2;
+    resp->proto_case = SESSION_DATA__PROTO_SEC2;
+    resp->sec2 = out;
 
     cur_session->state = SESSION_STATE_CMD1;
 
