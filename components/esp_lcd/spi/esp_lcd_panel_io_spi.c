@@ -17,7 +17,9 @@
 #include "esp_lcd_panel_io.h"
 #include "driver/spi_master.h"
 #include "driver/gpio.h"
+#include "esp_private/gpio.h"
 #include "hal/gpio_ll.h"
+#include "hal/gpio_hal.h"
 #include "esp_log.h"
 #include "esp_check.h"
 #include "esp_lcd_common.h"
@@ -93,11 +95,9 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
 
     // if the DC line is not encoded into any spi transaction phase or it's not controlled by SPI peripheral
     if (io_config->dc_gpio_num >= 0) {
-        gpio_config_t io_conf = {
-            .mode = GPIO_MODE_OUTPUT,
-            .pin_bit_mask = 1ULL << io_config->dc_gpio_num,
-        };
-        ESP_GOTO_ON_ERROR(gpio_config(&io_conf), err, TAG, "configure GPIO for D/C line failed");
+        gpio_set_level(io_config->dc_gpio_num, 0);
+        gpio_func_sel(io_config->dc_gpio_num, PIN_FUNC_GPIO);
+        gpio_output_enable(io_config->dc_gpio_num);
     }
 
     spi_panel_io->flags.dc_cmd_level = io_config->flags.dc_high_on_cmd;
@@ -129,7 +129,7 @@ esp_err_t esp_lcd_new_panel_io_spi(esp_lcd_spi_bus_handle_t bus, const esp_lcd_p
 err:
     if (spi_panel_io) {
         if (io_config->dc_gpio_num >= 0) {
-            gpio_reset_pin(io_config->dc_gpio_num);
+            gpio_output_disable(io_config->dc_gpio_num);
         }
         free(spi_panel_io);
     }
@@ -151,7 +151,7 @@ static esp_err_t panel_io_spi_del(esp_lcd_panel_io_t *io)
     }
     spi_bus_remove_device(spi_panel_io->spi_dev);
     if (spi_panel_io->dc_gpio_num >= 0) {
-        gpio_reset_pin(spi_panel_io->dc_gpio_num);
+        gpio_output_disable(spi_panel_io->dc_gpio_num);
     }
     ESP_LOGD(TAG, "del lcd panel io spi @%p", spi_panel_io);
     free(spi_panel_io);
