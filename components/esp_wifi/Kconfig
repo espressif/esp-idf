@@ -541,7 +541,7 @@ menu "Wi-Fi"
     config ESP_WIFI_RRM_SUPPORT
         bool "Enable 802.11k APIs Support"
         depends on ESP_WIFI_11KV_SUPPORT
-        default n
+        default y
         help
                 Select this option to enable 802.11k APIs(RRM support).
                 Only APIs which are helpful for network assisted roaming
@@ -556,7 +556,7 @@ menu "Wi-Fi"
     config ESP_WIFI_WNM_SUPPORT
         bool "Enable 802.11v APIs Support"
         depends on ESP_WIFI_11KV_SUPPORT
-        default n
+        default y
         help
                 Select this option to enable 802.11v APIs(BTM support).
                 Only APIs which are helpful for network assisted roaming
