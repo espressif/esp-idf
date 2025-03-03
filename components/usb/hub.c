@@ -19,7 +19,7 @@
 #include "usb/usb_helpers.h"
 
 #if ENABLE_USB_HUBS
-#include "ext_port.h"
+#include "ext_hub.h"
 #endif // ENABLE_USB_HUBS
 
 /*
@@ -325,14 +325,16 @@ static void ext_port_callback(void *user_arg)
     p_hub_driver_obj->constant.proc_req_cb(USB_PROC_REQ_SOURCE_HUB, false, p_hub_driver_obj->constant.proc_req_cb_arg);
 }
 
-static void ext_port_event_callback(ext_port_event_data_t *event_data, void *arg)
+static void ext_port_event_callback(ext_port_hdl_t port_hdl, ext_port_event_data_t *event_data, void *arg)
 {
+    ext_hub_handle_t ext_hub_hdl = (ext_hub_handle_t) ext_port_get_context(port_hdl);
+
     switch (event_data->event) {
     case EXT_PORT_CONNECTED:
         // First reset is done by ext_port logic
         usb_speed_t port_speed;
 
-        if (ext_hub_port_get_speed(event_data->connected.ext_hub_hdl,
+        if (ext_hub_port_get_speed(ext_hub_hdl,
                                    event_data->connected.parent_port_num,
                                    &port_speed) != ESP_OK) {
             goto new_ds_dev_err;
@@ -357,7 +359,7 @@ static void ext_port_event_callback(ext_port_event_data_t *event_data, void *arg
         }
         break;
 new_ds_dev_err:
-        ext_hub_port_disable(event_data->connected.ext_hub_hdl, event_data->connected.parent_port_num);
+        ext_hub_port_disable(ext_hub_hdl, event_data->connected.parent_port_num);
         break;
     case EXT_PORT_RESET_COMPLETED:
         ESP_ERROR_CHECK(dev_tree_node_reset_completed(event_data->reset_completed.parent_dev_hdl, event_data->reset_completed.parent_port_num));
@@ -535,7 +537,7 @@ esp_err_t hub_install(hub_config_t *hub_config, void **client_ret)
     ext_port_driver_config_t ext_port_config = {
         .proc_req_cb = ext_port_callback,
         .event_cb = ext_port_event_callback,
-        .hub_request_cb = ext_hub_class_request,
+        .hub_request_cb = ext_hub_request,
     };
     ret = ext_port_install(&ext_port_config);
     if (ret != ESP_OK) {
