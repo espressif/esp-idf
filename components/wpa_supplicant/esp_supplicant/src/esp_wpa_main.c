@@ -299,6 +299,10 @@ static void wpa_sta_disconnected_cb(uint8_t reason_code)
     case WIFI_REASON_INVALID_FTE:
         wpa_sta_clear_curr_pmksa();
         wpa_sm_notify_disassoc(&gWpaSm);
+#if defined(CONFIG_IEEE80211R)
+        /* clear all ft auth related IEs so that next will be open auth */
+        wpa_sta_clear_ft_auth_ie();
+#endif
         break;
     default:
         if (g_wpa_pmk_caching_disabled) {

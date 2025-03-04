@@ -181,7 +181,7 @@ static int handle_assoc_frame(u8 *frame, size_t len,
     return 0;
 }
 
-static void wpa_sta_clear_ft_auth_ie(void)
+void wpa_sta_clear_ft_auth_ie(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     wpa_printf(MSG_DEBUG, "Clearing all FT IE parameters and keys");
@@ -344,8 +344,7 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 
 void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-    struct wpa_sm *sm = &gWpaSm;
+#if defined(CONFIG_IEEE80211KV)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
 #if defined(CONFIG_RRM)
@@ -361,13 +360,7 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
     if (wpa_s->current_bss) {
         wpa_s->current_bss = NULL;
     }
-#if defined(CONFIG_IEEE80211R)
-    if (!sm->cur_pmksa) {
-        /* clear all ft auth related IEs so that next will be open auth */
-        wpa_sta_clear_ft_auth_ie();
-    }
-#endif
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+#endif /* defined(CONFIG_IEEE80211KV) */
 }
 
 #if defined(CONFIG_RRM)
