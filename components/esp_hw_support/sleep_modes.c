@@ -108,8 +108,11 @@
 #elif CONFIG_IDF_TARGET_ESP32H2
 #include "esp32h2/rom/rtc.h"
 #include "esp32h2/rom/cache.h"
-#include "esp32h2/rom/rtc.h"
 #include "soc/extmem_reg.h"
+#include "hal/gpio_ll.h"
+#elif CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/rtc.h"
+#include "esp32h21/rom/cache.h"
 #include "hal/gpio_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/rtc.h"
@@ -165,6 +168,9 @@
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (318)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (107)
 #elif CONFIG_IDF_TARGET_ESP32H2
+#define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
+#define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
+#elif CONFIG_IDF_TARGET_ESP32H21
 #define DEFAULT_SLEEP_OUT_OVERHEAD_US       (118)
 #define DEFAULT_HARDWARE_OUT_OVERHEAD_US    (9)
 #elif CONFIG_IDF_TARGET_ESP32P4

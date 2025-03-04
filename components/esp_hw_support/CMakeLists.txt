@@ -171,12 +171,6 @@ set(public_include_dirs "include" "include/soc" "include/soc/${target}"
                         "dma/include" "ldo/include" "debug_probe/include"
                         "mspi_timing_tuning/include" "power_supply/include")
 
-if(CONFIG_IDF_TARGET_ESP32H21)
-    list(REMOVE_ITEM srcs
-        "sleep_modes.c" # TODO: [ESP32H21] IDF-11515, IDF-11517
-    )
-endif()
-
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}
                        PRIV_INCLUDE_DIRS port/include include/esp_private
