@@ -49,7 +49,7 @@ typedef enum esp_tls_role {
  */
 typedef struct psk_key_hint {
     const uint8_t* key;                     /*!< key in PSK authentication mode in binary format */
-    const size_t   key_size;                /*!< length of the key */
+    size_t   key_size;                      /*!< length of the key */
     const char* hint;                       /*!< hint in PSK authentication mode in string format */
 } psk_hint_key_t;
 
