@@ -101,6 +101,12 @@ typedef struct {
         uint16_t *ble_ext_adv_data_max_len_ptr
     );
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    void (*parse_ble_read_periodic_adv_list_size_response) (
+        BT_HDR *response,
+        uint16_t *periodic_advertiser_list_size
+    );
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     void (*parse_ble_read_suggested_default_data_length_response)(
         BT_HDR *response,

@@ -1502,6 +1502,17 @@ esp_err_t esp_ble_gap_periodic_adv_clear_dev(void)
             == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 
 }
+
+esp_err_t esp_ble_gap_get_periodic_list_size(uint8_t *size)
+{
+    if (size == NULL) {
+        return ESP_FAIL;
+    }
+    btc_get_periodic_list_size(size);
+
+    return ESP_OK;
+}
+
 #endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 
 #if (BLE_50_EXTEND_SCAN_EN == TRUE)
