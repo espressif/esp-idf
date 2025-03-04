@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include "soc/soc.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/rtc.h"
+#include "rom/rtc.h"
 #include "soc/pcr_struct.h"
 #include "soc/lp_clkrst_struct.h"
 #include "soc/pmu_reg.h"
@@ -17,7 +17,6 @@
 #include "soc/regi2c_bbpll.h"
 #include "hal/assert.h"
 #include "hal/log.h"
-#include "esp32h4/rom/rtc.h"
 #include "hal/misc.h"
 
 //TODO: [ESP32H4] IDF-12285 inherited from verification branch, need check
@@ -309,7 +308,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32
 
     /* Configure 480M PLL */
     switch (xtal_freq_mhz) {
-    case RTC_XTAL_FREQ_32M:
+    case SOC_XTAL_FREQ_32M:
     default:
         div_ref = 0;
         div7_0 = 8;

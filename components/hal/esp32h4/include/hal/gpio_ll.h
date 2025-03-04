@@ -20,8 +20,8 @@
 #include "soc/gpio_periph.h"
 #include "soc/gpio_struct.h"
 #include "soc/lp_aon_struct.h"
-#include "soc/lp_io_struct.h"
 #include "soc/pmu_struct.h"
+#include "soc/io_mux_struct.h"
 #include "soc/usb_serial_jtag_reg.h"
 #include "soc/pcr_struct.h"
 #include "soc/clk_tree_defs.h"
@@ -41,36 +41,28 @@ extern "C" {
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
+#define GPIO_LL_INTR_SOURCE0   ETS_GPIO_INTERRUPT_PRO_SOURCE
+
 /**
  * @brief Get the configuration for an IO
  *
  * @param hw Peripheral GPIO hardware instance address.
  * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
+ * @param[out] io_config Pointer to the structure that saves the specific IO configuration
  */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num, gpio_io_config_t *io_config)
 {
-    uint32_t bit_mask = 1 << gpio_num;
-    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    *oe = (hw->enable.val & bit_mask) >> gpio_num;
-    *od = hw->pinn[gpio_num].pinn_pad_driver;
-    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->funcn_out_sel_cfg[gpio_num].funcn_out_sel;
-    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
+    io_config->pu = IO_MUX.gpio[gpio_num].fun_wpu;
+    io_config->pd = IO_MUX.gpio[gpio_num].fun_wpd;
+    io_config->ie = IO_MUX.gpio[gpio_num].fun_ie;
+    io_config->oe = (hw->enable.val & (1 << gpio_num)) >> gpio_num;
+    io_config->oe_ctrl_by_periph = !(hw->funcn_out_sel_cfg[gpio_num].oe_sel);
+    io_config->oe_inv = hw->funcn_out_sel_cfg[gpio_num].oe_inv_sel;
+    io_config->od = hw->pinn[gpio_num].pinn_pad_driver;
+    io_config->drv = (gpio_drive_cap_t)IO_MUX.gpio[gpio_num].fun_drv;
+    io_config->fun_sel = IO_MUX.gpio[gpio_num].mcu_sel;
+    io_config->sig_out = hw->funcn_out_sel_cfg[gpio_num].out_sel;
+    io_config->slp_sel = IO_MUX.gpio[gpio_num].slp_sel;
 }
 
 /**
@@ -469,44 +461,16 @@ static inline bool gpio_ll_is_digital_io_hold(gpio_dev_t *hw, uint32_t gpio_num)
 }
 
 /**
-  * @brief Set pad input to a peripheral signal through the IOMUX.
+  * @brief Configure peripheral signal input whether to bypass GPIO matrix.
   *
   * @param hw Peripheral GPIO hardware instance address.
-  * @param gpio_num GPIO number of the pad.
   * @param signal_idx Peripheral signal id to input. One of the ``*_IN_IDX`` signals in ``soc/gpio_sig_map.h``.
+  * @param from_gpio_matrix True if not to bypass GPIO matrix, otherwise False.
   */
 __attribute__((always_inline))
-static inline void gpio_ll_iomux_in(gpio_dev_t *hw, uint32_t gpio, uint32_t signal_idx)
+static inline void gpio_ll_set_input_signal_from(gpio_dev_t *hw, uint32_t signal_idx, bool from_gpio_matrix)
 {
-    REG_CLR_BIT(GPIO_FUNC0_IN_SEL_CFG_REG + signal_idx * 4, GPIO_SIG0_IN_SEL);
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG + (gpio * 4));
-}
-
-/**
- * @brief  Select a function for the pin in the IOMUX
- *
- * @param  pin_name Pin name to configure
- * @param  func Function to assign to the pin
- */
-static inline void gpio_ll_iomux_func_sel(uint32_t pin_name, uint32_t func)
-{
-    // Disable USB Serial JTAG if pins 12 or pins 13 needs to select an IOMUX function
-    if (pin_name == IO_MUX_GPIO27_REG || pin_name == IO_MUX_GPIO32_REG) {
-        CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE);
-    }
-    PIN_FUNC_SELECT(pin_name, func);
-}
-
-/**
- * @brief  Control the pin in the IOMUX
- *
- * @param  bmap   write mask of control value
- * @param  val    Control value
- * @param  shift  write mask shift of control value
- */
-static inline __attribute__((always_inline)) void gpio_ll_set_pin_ctrl(uint32_t val, uint32_t bmap, uint32_t shift)
-{
-    SET_PERI_REG_BITS(PIN_CTRL, bmap, val, shift);
+    hw->func_in_sel_cfg[signal_idx].sig_in_sel = from_gpio_matrix;
 }
 
 /**
@@ -530,16 +494,14 @@ static inline void gpio_ll_func_sel(gpio_dev_t *hw, uint8_t gpio_num, uint32_t f
   * @brief Set peripheral output to an GPIO pad through the IOMUX.
   *
   * @param hw Peripheral GPIO hardware instance address.
-  * @param gpio_num gpio_num GPIO number of the pad.
-  * @param func The function number of the peripheral pin to output pin.
-  *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
+  * @param gpio_num GPIO number of the pad.
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
   * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-static inline void gpio_ll_iomux_out(gpio_dev_t *hw, uint8_t gpio_num, int func, uint32_t oen_inv)
+static inline void gpio_ll_set_output_enable_ctrl(gpio_dev_t *hw, uint8_t gpio_num, bool ctrl_by_periph, bool oen_inv)
 {
-    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_sel = 0;
-    hw->funcn_out_sel_cfg[gpio_num].funcn_oe_inv_sel = oen_inv;
-    gpio_ll_func_sel(hw, gpio_num, func);
+    hw->funcn_out_sel_cfg[gpio_num].oe_inv_sel = oen_inv;       // control valid only when using gpio matrix to route signal to the IO
+    hw->funcn_out_sel_cfg[gpio_num].oe_sel = !ctrl_by_periph;
 }
 
 /**

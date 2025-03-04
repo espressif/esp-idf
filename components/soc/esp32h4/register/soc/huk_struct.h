@@ -149,10 +149,10 @@ typedef union {
          *  Write 1 to continue HUK Generator operation at LOAD/GAIN state.
          */
         uint32_t start:1;
-        /** continue : WT; bitpos: [1]; default: 0;
+        /** conti : WT; bitpos: [1]; default: 0;
          *  Write 1 to start HUK Generator at IDLE state.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_2:30;
     };
     uint32_t val;

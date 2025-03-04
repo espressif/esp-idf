@@ -56,9 +56,9 @@ extern "C" {
 #define INTTHRESH_STANDARD  0
 #define MINTSTATUS_CSR      0x346
 
-#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61
+#elif CONFIG_IDF_TARGET_ESP32C5 || CONFIG_IDF_TARGET_ESP32C61 || CONFIG_IDF_TARGET_ESP32H4
 
-/* The ESP32-C5 (MP) and C61 use the standard CLIC specification, for example, it defines the mintthresh CSR */
+/* The ESP32-C5 (MP), C61 and H4 use the standard CLIC specification, for example, it defines the mintthresh CSR */
 #define INTTHRESH_STANDARD  1
 #define MINTSTATUS_CSR      0xFB1
 #define MINTTHRESH_CSR      0x347

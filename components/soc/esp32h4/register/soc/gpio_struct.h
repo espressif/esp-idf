@@ -641,12 +641,12 @@ typedef union {
 } gpio_func_in_sel_cfg_reg_t;
 
 /** Group: Output Configuration Registers */
-/** Type of funcn_out_sel_cfg register
+/** Type of out_sel_cfg register
  *  Configuration register for GPIOn output
  */
 typedef union {
     struct {
-        /** funcn_out_sel : R/W/SC; bitpos: [8:0]; default: 256;
+        /** out_sel : R/W/SC; bitpos: [8:0]; default: 256;
          *  Configures to select a signal $Y (0 <= $Y < 256) from 256 peripheral signals to be
          *  output from GPIOn.
          *  0: Select signal 0
@@ -661,25 +661,25 @@ typedef union {
          *  For the detailed signal list, see Table .
          *  "
          */
-        uint32_t funcn_out_sel:9;
-        /** funcn_out_inv_sel : R/W/SC; bitpos: [9]; default: 0;
+        uint32_t out_sel:9;
+        /** out_inv_sel : R/W/SC; bitpos: [9]; default: 0;
          *  Configures whether or not to invert the output value.
          *  0: Not invert
          *  1: Invert
          */
-        uint32_t funcn_out_inv_sel:1;
-        /** funcn_oe_sel : R/W; bitpos: [10]; default: 0;
+        uint32_t out_inv_sel:1;
+        /** oe_sel : R/W; bitpos: [10]; default: 0;
          *  Configures to select the source of output enable signal.
          *  0: Use output enable signal from peripheral.
          *  1: Force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG.
          */
-        uint32_t funcn_oe_sel:1;
-        /** funcn_oe_inv_sel : R/W; bitpos: [11]; default: 0;
+        uint32_t oe_sel:1;
+        /** oe_inv_sel : R/W; bitpos: [11]; default: 0;
          *  Configures whether or not to invert the output enable signal.
          *  0: Not invert
          *  1: Invert
          */
-        uint32_t funcn_oe_inv_sel:1;
+        uint32_t oe_inv_sel:1;
         uint32_t reserved_12:20;
     };
     uint32_t val;
