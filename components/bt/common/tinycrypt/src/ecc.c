@@ -59,6 +59,9 @@
 #include <tinycrypt/ecc.h>
 #include <tinycrypt/ecc_platform_specific.h>
 #include <string.h>
+#include <stdio.h>
+
+#include "esp_tinycrypt_port.h"
 
 /* IMPORTANT: Make sure a cryptographically-secure PRNG is set and the platform
  * has access to enough entropy in order to feed the PRNG regularly. */
@@ -639,6 +642,7 @@ void apply_z(uECC_word_t * X1, uECC_word_t * Y1, const uECC_word_t * const Z,
 	uECC_vli_modMult_fast(Y1, Y1, t1, curve); /* y1 * z^3 */
 }
 
+#if !SOC_ECC_SUPPORTED
 /* P = (x1, y1) => 2P, (x2, y2) => P' */
 static void XYcZ_initial_double(uECC_word_t * X1, uECC_word_t * Y1,
 				uECC_word_t * X2, uECC_word_t * Y2,
@@ -662,31 +666,6 @@ static void XYcZ_initial_double(uECC_word_t * X1, uECC_word_t * Y1,
 	apply_z(X2, Y2, z, curve);
 }
 
-void XYcZ_add(uECC_word_t * X1, uECC_word_t * Y1,
-	      uECC_word_t * X2, uECC_word_t * Y2,
-	      uECC_Curve curve)
-{
-	/* t1 = X1, t2 = Y1, t3 = X2, t4 = Y2 */
-	uECC_word_t t5[NUM_ECC_WORDS];
-	wordcount_t num_words = curve->num_words;
-
-	uECC_vli_modSub(t5, X2, X1, curve->p, num_words); /* t5 = x2 - x1 */
-	uECC_vli_modSquare_fast(t5, t5, curve); /* t5 = (x2 - x1)^2 = A */
-	uECC_vli_modMult_fast(X1, X1, t5, curve); /* t1 = x1*A = B */
-	uECC_vli_modMult_fast(X2, X2, t5, curve); /* t3 = x2*A = C */
-	uECC_vli_modSub(Y2, Y2, Y1, curve->p, num_words); /* t4 = y2 - y1 */
-	uECC_vli_modSquare_fast(t5, Y2, curve); /* t5 = (y2 - y1)^2 = D */
-
-	uECC_vli_modSub(t5, t5, X1, curve->p, num_words); /* t5 = D - B */
-	uECC_vli_modSub(t5, t5, X2, curve->p, num_words); /* t5 = D - B - C = x3 */
-	uECC_vli_modSub(X2, X2, X1, curve->p, num_words); /* t3 = C - B */
-	uECC_vli_modMult_fast(Y1, Y1, X2, curve); /* t2 = y1*(C - B) */
-	uECC_vli_modSub(X2, X1, t5, curve->p, num_words); /* t3 = B - x3 */
-	uECC_vli_modMult_fast(Y2, Y2, X2, curve); /* t4 = (y2 - y1)*(B - x3) */
-	uECC_vli_modSub(Y2, Y2, Y1, curve->p, num_words); /* t4 = y3 */
-
-	uECC_vli_set(X2, t5, num_words);
-}
 
 /* Input P = (x1, y1, Z), Q = (x2, y2, Z)
    Output P + Q = (x3, y3, Z3), P - Q = (x3', y3', Z3)
@@ -729,12 +708,49 @@ static void XYcZ_addC(uECC_word_t * X1, uECC_word_t * Y1,
 
 	uECC_vli_set(X1, t7, num_words);
 }
+#endif /* !SOC_ECC_SUPPORTED */
+
+void XYcZ_add(uECC_word_t * X1, uECC_word_t * Y1,
+	      uECC_word_t * X2, uECC_word_t * Y2,
+	      uECC_Curve curve)
+{
+	/* t1 = X1, t2 = Y1, t3 = X2, t4 = Y2 */
+	uECC_word_t t5[NUM_ECC_WORDS];
+	wordcount_t num_words = curve->num_words;
+
+	uECC_vli_modSub(t5, X2, X1, curve->p, num_words); /* t5 = x2 - x1 */
+	uECC_vli_modSquare_fast(t5, t5, curve); /* t5 = (x2 - x1)^2 = A */
+	uECC_vli_modMult_fast(X1, X1, t5, curve); /* t1 = x1*A = B */
+	uECC_vli_modMult_fast(X2, X2, t5, curve); /* t3 = x2*A = C */
+	uECC_vli_modSub(Y2, Y2, Y1, curve->p, num_words); /* t4 = y2 - y1 */
+	uECC_vli_modSquare_fast(t5, Y2, curve); /* t5 = (y2 - y1)^2 = D */
+
+	uECC_vli_modSub(t5, t5, X1, curve->p, num_words); /* t5 = D - B */
+	uECC_vli_modSub(t5, t5, X2, curve->p, num_words); /* t5 = D - B - C = x3 */
+	uECC_vli_modSub(X2, X2, X1, curve->p, num_words); /* t3 = C - B */
+	uECC_vli_modMult_fast(Y1, Y1, X2, curve); /* t2 = y1*(C - B) */
+	uECC_vli_modSub(X2, X1, t5, curve->p, num_words); /* t3 = B - x3 */
+	uECC_vli_modMult_fast(Y2, Y2, X2, curve); /* t4 = (y2 - y1)*(B - x3) */
+	uECC_vli_modSub(Y2, Y2, Y1, curve->p, num_words); /* t4 = y3 */
+
+	uECC_vli_set(X2, t5, num_words);
+}
 
 void EccPoint_mult(uECC_word_t * result, const uECC_word_t * point,
 		   const uECC_word_t * scalar,
 		   const uECC_word_t * initial_Z,
 		   bitcount_t num_bits, uECC_Curve curve)
 {
+#if SOC_ECC_SUPPORTED
+    wordcount_t num_words = curve->num_words;
+
+    /* Only p256r1 is supported currently. */
+    assert (curve == uECC_secp256r1());
+
+    esp_tinycrypt_calc_ecc_mult((const uint8_t *)&point[0], (const uint8_t *)&point[num_words],
+                                (uint8_t *)scalar, (uint8_t *)&result[0], (uint8_t *)&result[num_words],
+                                num_words * uECC_WORD_SIZE, false);
+#else
 	/* R0 and R1 */
 	uECC_word_t Rx[2][NUM_ECC_WORDS];
 	uECC_word_t Ry[2][NUM_ECC_WORDS];
@@ -773,6 +789,7 @@ void EccPoint_mult(uECC_word_t * result, const uECC_word_t * point,
 
 	uECC_vli_set(result, Rx[0], num_words);
 	uECC_vli_set(result + num_words, Ry[0], num_words);
+#endif /* SOC_ECC_SUPPORTED */
 }
 
 uECC_word_t regularize_k(const uECC_word_t * const k, uECC_word_t *k0,
@@ -866,8 +883,6 @@ int uECC_generate_random_int(uECC_word_t *random, const uECC_word_t *top,
 
 int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve)
 {
-	uECC_word_t tmp1[NUM_ECC_WORDS];
-	uECC_word_t tmp2[NUM_ECC_WORDS];
 	wordcount_t num_words = curve->num_words;
 
 	/* The point at infinity is invalid. */
@@ -881,19 +896,34 @@ int uECC_valid_point(const uECC_word_t *point, uECC_Curve curve)
 		return -2;
 	}
 
+#if SOC_ECC_SUPPORTED
+    /* Only p256r1 is supported currently. */
+    if (curve != uECC_secp256r1()) {
+        return -5;
+    }
+
+    if (esp_tinycrypt_verify_ecc_point((const uint8_t *)&point[0],
+                                       (const uint8_t *)&point[num_words],
+                                       num_words * uECC_WORD_SIZE)) {
+        return -3;
+    }
+#else
+	uECC_word_t tmp1[NUM_ECC_WORDS];
+	uECC_word_t tmp2[NUM_ECC_WORDS];
+
 	uECC_vli_modSquare_fast(tmp1, point + num_words, curve);
 	curve->x_side(tmp2, point, curve); /* tmp2 = x^3 + ax + b */
 
 	/* Make sure that y^2 == x^3 + ax + b */
 	if (uECC_vli_equal(tmp1, tmp2, num_words) != 0)
 		return -3;
+#endif /* SOC_ECC_SUPPORTED */
 
 	return 0;
 }
 
 int uECC_valid_public_key(const uint8_t *public_key, uECC_Curve curve)
 {
-
 	uECC_word_t _public[NUM_ECC_WORDS * 2];
 
 	uECC_vli_bytesToNative(_public, public_key, curve->num_bytes);
@@ -912,7 +942,6 @@ int uECC_valid_public_key(const uint8_t *public_key, uECC_Curve curve)
 int uECC_compute_public_key(const uint8_t *private_key, uint8_t *public_key,
 			    uECC_Curve curve)
 {
-
 	uECC_word_t _private[NUM_ECC_WORDS];
 	uECC_word_t _public[NUM_ECC_WORDS * 2];
 
