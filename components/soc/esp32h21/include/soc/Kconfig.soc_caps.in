@@ -59,6 +59,14 @@ config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
 
+config SOC_PMU_SUPPORTED
+    bool
+    default y
+
+config SOC_LP_TIMER_SUPPORTED
+    bool
+    default y
+
 config SOC_SPI_FLASH_SUPPORTED
     bool
     default y
@@ -709,23 +717,23 @@ config SOC_PHY_DIG_REGS_MEM_SIZE
 
 config SOC_PM_SUPPORT_BT_WAKEUP
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_EXT1_WAKEUP
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_CPU_PD
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_MODEM_PD
     bool
-    default y
+    default n
 
 config SOC_PM_SUPPORT_XTAL32K_PD
     bool
@@ -745,7 +753,7 @@ config SOC_PM_SUPPORT_VDDSDIO_PD
 
 config SOC_PM_SUPPORT_TOP_PD
     bool
-    default y
+    default n
 
 config SOC_PM_PAU_LINK_NUM
     int
