@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "usb/usb_types_stack.h"
+#include "usb/usb_types_ch11.h"
 #include "sdkconfig.h"
 
 #ifdef __cplusplus
