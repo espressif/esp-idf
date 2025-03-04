@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -141,6 +141,7 @@ struct dhcps_t {
     void* dhcps_cb_arg;
     struct udp_pcb *dhcps_pcb;
     dhcps_handle_state state;
+    bool has_declined_ip;
 };
 
 
@@ -172,6 +173,7 @@ dhcps_t *dhcps_new(void)
     dhcps->dhcps_captiveportal_uri = NULL;
     dhcps->dhcps_pcb = NULL;
     dhcps->state = DHCPS_HANDLE_CREATED;
+    dhcps->has_declined_ip = false;
     return dhcps;
 }
 
@@ -974,9 +976,9 @@ static u8_t parse_options(dhcps_t *dhcps, u8_t *optptr, s16_t len)
             break;
 
         case DHCPDECLINE://4
-            s.state = DHCPS_STATE_IDLE;
+            s.state = DHCPS_STATE_DECLINE;
 #if DHCPS_DEBUG
-            DHCPS_LOG("dhcps: DHCPD_STATE_IDLE\n");
+            DHCPS_LOG("dhcps: DHCPS_STATE_DECLINE\n");
 #endif
             break;
 
@@ -1022,6 +1024,10 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
         dhcps->renew = false;
 
         if (dhcps->plist != NULL) {
+            if (dhcps->has_declined_ip) {
+                dhcps->has_declined_ip = false;
+            }
+
             for (pback_node = dhcps->plist; pback_node != NULL; pback_node = pback_node->pnext) {
                 pdhcps_pool = pback_node->pnode;
 
@@ -1052,7 +1058,11 @@ static s16_t parse_msg(dhcps_t *dhcps, struct dhcps_msg *m, u16_t len)
                 }
             }
         } else {
-            dhcps->client_address.addr = dhcps->dhcps_poll.start_ip.addr;
+            if (dhcps->has_declined_ip) {
+                dhcps->has_declined_ip = false;
+            } else {
+                dhcps->client_address.addr = dhcps->dhcps_poll.start_ip.addr;
+            }
         }
 
         if (dhcps->client_address_plus.addr > dhcps->dhcps_poll.end_ip.addr) {
@@ -1103,7 +1113,7 @@ POOL_CHECK:
 
         s16_t ret = parse_options(dhcps, &m->options[4], len);;
 
-        if (ret == DHCPS_STATE_RELEASE || ret == DHCPS_STATE_NAK) {
+        if (ret == DHCPS_STATE_RELEASE || ret == DHCPS_STATE_NAK || ret ==  DHCPS_STATE_DECLINE) {
             if (pnode != NULL) {
                 node_remove_from_list(&dhcps->plist, pnode);
                 free(pnode);
@@ -1115,6 +1125,9 @@ POOL_CHECK:
                 pdhcps_pool = NULL;
             }
 
+            if (ret ==  DHCPS_STATE_DECLINE) {
+                dhcps->has_declined_ip = true;
+            }
             memset(&dhcps->client_address, 0x0, sizeof(dhcps->client_address));
         }
 
