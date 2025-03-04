@@ -281,6 +281,21 @@ static inline bitscrambler_state_t bitscrambler_ll_get_current_state(bitscramble
 }
 
 /**
+ * @brief Return if the bitscrambler FIFO is ready
+ *
+ * @note For TX, means the outfifo is not empty, then we can start the peripheral to transmit the data
+ *       For RX, means the infifo is not full, then we can start the peripheral to receive the data
+ *
+ * @param hw BitScrambler hardware instance address.
+ * @param dir Direction, BITSCRAMBLER_DIR_TX or BITSCRAMBLER_DIR_RX
+ * @return true if FIFO is ready, false otherwise
+ */
+static inline bool bitscrambler_ll_is_fifo_ready(bitscrambler_dev_t *hw, bitscrambler_direction_t dir)
+{
+    return hw->state[dir].fifo_empty;
+}
+
+/**
  * @brief Enable the bus clock for BitScrambler module
  */
 static inline void _bitscrambler_ll_set_bus_clock_sys_enable(bool enable)

@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Unlicense OR CC0-1.0
+
+cfg prefetch false    # disable data prefetch
+cfg eof_on downstream # set EOF on downstream
+cfg trailing_bytes 4
+
+loop:
+	read 8            # because of prefetch is disabled, we need to read 8 bits manually
+	set 0..15 L,      # don't care what the input is, just pull up/down the output data
+	set 16..31 H,
+	write 32,
+	jmp loop

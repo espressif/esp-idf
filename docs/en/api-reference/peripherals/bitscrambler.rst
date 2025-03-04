@@ -163,7 +163,7 @@ Meta-instructions set global BitScrambler configuration. Meta-instructions are a
 Global configuration meta-instructions
 """"""""""""""""""""""""""""""""""""""
 
-- ``cfg prefetch true|false``: If prefetch is set to ``true``, the BitScrambler will read 64 bits from the input DMA stream into the input register at startup. If set to ``false``, the input register is initialized to zero. This setting defaults to ``true`` if not specified.
+- ``cfg prefetch true|false``: If prefetch is set to ``true``, the BitScrambler will read 64 bits from the input DMA stream into the input register at startup. If set to ``false``, the input register is initialized to zero. This setting defaults to ``true`` if not specified. Please note, if the prefetch is enabled while the input stream can't provide at least 64 bits of data, the BitScrambler will hang.
 - ``cfg eof_on upstream|downstream``: After the input stream ends, the BitScrambler will still process a certain amount of 'trailing' dummy bytes so it can flush any data contained in its registers. This setting indicates from where the data will be counted: ``upstream`` makes the bitscrambler count the bytes being read, ``downstream`` makes it count the bytes being written. This defaults to ``upstream`` if not specified.
 - ``cfg trailing_bytes N``: This indicates how many dummy bytes will be read or written (depending on the ``eof_on`` setting) before the BitScrambler indicates an end-of-stream on its output. This defaults to ``0`` if not specified.
 - ``cfg lut_width_bits 8|16|32``: This selects the bus width of the LUT output RAM, in bits. The LUT can be 2048x8 bits, 1024x16 bits or 512x32 bits in size. This defaults to ``32`` if not specified.

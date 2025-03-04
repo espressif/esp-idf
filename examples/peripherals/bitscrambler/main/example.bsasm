@@ -7,10 +7,10 @@
 # byte 2 etc. Output byte 1 consists of bit 1 of input byte 0, bit 1 of
 # input byte 1, bit 1 of input byte 2, etc.
 
+cfg eof_on downstream
 cfg trailing_bytes 8			#If we have an EOF on the input, we still
 								#need to process the 64 bits in M0/M1
 cfg prefetch true				#We expect M0/M1 to be filled
-cfg lut_width_bits 8			#Not really applicable here
 
 loop:
 	# Note: we start with 64 bits in M0 and M1, so we can immediately start outputting.

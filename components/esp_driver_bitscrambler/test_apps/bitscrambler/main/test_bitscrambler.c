@@ -13,6 +13,8 @@
 
 BITSCRAMBLER_PROGRAM(bitscrambler_program_trivial, "trivial");
 BITSCRAMBLER_PROGRAM(bitscrambler_program_timeout, "timeout");
+BITSCRAMBLER_PROGRAM(bitscrambler_program_eof_upstream, "eof_upstream");
+BITSCRAMBLER_PROGRAM(bitscrambler_program_eof_downstream, "eof_downstream");
 
 TEST_CASE("Basic BitScrambler I/O", "[bs]")
 {
@@ -51,6 +53,64 @@ TEST_CASE("Timeout on stuck program", "[bs]")
     esp_err_t err = bitscrambler_loopback_run(bs, data_in, len, data_out, len, NULL);
     TEST_ASSERT(err == ESP_ERR_TIMEOUT);
     bitscrambler_free(bs);
+    free(data_in);
+    free(data_out);
+}
+
+TEST_CASE("BitScrambler with EOF counted on upstream", "[bs]")
+{
+    const size_t len = 32;
+    uint8_t *data_in = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint32_t *data_out = heap_caps_aligned_calloc(8, 1, len * 4, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_in);
+    TEST_ASSERT_NOT_NULL(data_out);
+
+    bitscrambler_handle_t bs;
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len * 4));
+    TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_eof_upstream));
+    size_t res_len = 0;
+    TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
+    bitscrambler_free(bs);
+
+    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", len, res_len);
+    for (size_t i = 0; i < res_len / 4; i++) {
+        printf("%08lX ", data_out[i]);
+        if (i % 4 == 3) {
+            printf("\n");
+        }
+        TEST_ASSERT_EQUAL(0xFFFF0000, data_out[i]);
+    }
+    TEST_ASSERT_EQUAL(len * 4, res_len);
+
+    free(data_in);
+    free(data_out);
+}
+
+TEST_CASE("BitScrambler with EOF counted on downstream", "[bs]")
+{
+    const size_t len = 32;
+    uint8_t *data_in = heap_caps_aligned_calloc(8, 1, len, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    uint32_t *data_out = heap_caps_aligned_calloc(8, 1, len * 4, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    TEST_ASSERT_NOT_NULL(data_in);
+    TEST_ASSERT_NOT_NULL(data_out);
+
+    bitscrambler_handle_t bs;
+    TEST_ESP_OK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, len * 4));
+    TEST_ESP_OK(bitscrambler_load_program(bs, bitscrambler_program_eof_downstream));
+    size_t res_len = 0;
+    TEST_ESP_OK(bitscrambler_loopback_run(bs, data_in, len, data_out, len * 4, &res_len));
+    bitscrambler_free(bs);
+
+    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", len, res_len);
+    for (size_t i = 0; i < res_len / 4; i++) {
+        printf("%08lX ", data_out[i]);
+        if (i % 4 == 3) {
+            printf("\n");
+        }
+        TEST_ASSERT_EQUAL(0xFFFF0000, data_out[i]);
+    }
+    TEST_ASSERT_EQUAL(len * 4, res_len);
+
     free(data_in);
     free(data_out);
 }

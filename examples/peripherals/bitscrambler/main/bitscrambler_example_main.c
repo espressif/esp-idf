@@ -31,12 +31,13 @@ void app_main(void)
 {
     ESP_LOGI(TAG, "BitScrambler example main");
 
-    size_t test_data_len = sizeof(testdata);
-    uint8_t* result_buf = heap_caps_calloc(test_data_len, 1, MALLOC_CAP_DMA);
+    size_t input_data_len = sizeof(testdata);
+    size_t output_data_len = input_data_len; // because the example BitScrambler program doesn't increase or decrease the data length
+    uint8_t* result_buf = heap_caps_calloc(output_data_len, 1, MALLOC_CAP_DMA);
     assert(result_buf);
 
     size_t result_buf_size = heap_caps_get_allocated_size(result_buf);
-    assert(result_buf_size >= test_data_len);
+    assert(result_buf_size >= output_data_len);
 
     bitscrambler_handle_t bs;
     ESP_ERROR_CHECK(bitscrambler_loopback_create(&bs, SOC_BITSCRAMBLER_ATTACH_I2S0, result_buf_size));
@@ -44,10 +45,10 @@ void app_main(void)
 
     size_t result_len;
     // we can even use a const array as the input data because the DMA can read data from the Flash region
-    ESP_ERROR_CHECK(bitscrambler_loopback_run(bs, (void*)testdata, test_data_len, result_buf, result_buf_size, &result_len));
+    ESP_ERROR_CHECK(bitscrambler_loopback_run(bs, (void*)testdata, input_data_len, result_buf, result_buf_size, &result_len));
     bitscrambler_free(bs);
 
-    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", test_data_len, result_len);
+    printf("BitScrambler program complete. Input %zu, output %zu bytes:\n", input_data_len, result_len);
     for (size_t i = 0; i < result_len; i++) {
         printf("%02X ", result_buf[i]);
         if ((i & 7) == 7) {
