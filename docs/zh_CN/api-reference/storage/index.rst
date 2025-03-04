@@ -12,7 +12,7 @@
 - :doc:`FAT <fatfs>` 是一个可用于 SPI flash 或者 SD/MMC 存储卡的标准文件系统。
 - :doc:`磨损均衡 <wear-levelling>` 库实现了一个适用于 SPI NOR flash 的 flash 翻译层 (FTL)，用于 flash 中 FAT 分区的容器。
 
-与存储安全相关的信息，请参考 :doc:` 存储安全 <storage-security>`。
+与存储安全相关的信息，请参考 :doc:`存储安全 <storage-security>`。
 
 .. note::
 
