@@ -517,6 +517,7 @@ if(CONFIG_BT_ENABLED)
     if(NOT (CONFIG_BT_LE_CRYPTO_STACK_MBEDTLS OR CONFIG_BT_NIMBLE_CRYPTO_STACK_MBEDTLS))
         list(APPEND include_dirs
                 common/tinycrypt/include
+                common/tinycrypt/port
             )
         list(APPEND srcs "common/tinycrypt/src/utils.c"
                 "common/tinycrypt/src/sha256.c"
@@ -532,7 +533,8 @@ if(CONFIG_BT_ENABLED)
                 "common/tinycrypt/src/hmac_prng.c"
                 "common/tinycrypt/src/ecc_platform_specific.c"
                 "common/tinycrypt/src/hmac.c"
-                "common/tinycrypt/src/cbc_mode.c")
+                "common/tinycrypt/src/cbc_mode.c"
+                "common/tinycrypt/port/esp_tinycrypt_port.c")
     endif()
 
     if(CONFIG_BT_NIMBLE_ENABLED)
