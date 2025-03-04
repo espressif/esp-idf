@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import asyncio
 import json
@@ -161,7 +160,7 @@ async def version_match(tp, protover, verbose=False):
             # information with versions and capabilities of both
             # provisioning service and application
             info = json.loads(response)
-            if info['prov']['ver'].lower() == protover.lower():
+            if info['local_ctrl']['ver'].lower() == protover.lower():
                 return True
 
         except ValueError:
@@ -188,14 +187,19 @@ async def has_capability(tp, capability='none', verbose=False):
             # information with versions and capabilities of both
             # provisioning service and application
             info = json.loads(response)
-            supported_capabilities = info['prov']['cap']
-            if capability.lower() == 'none':
-                # No specific capability to check, but capabilities
-                # feature is present so return True
-                return True
-            elif capability in supported_capabilities:
-                return True
-            return False
+            try:
+                supported_capabilities = info['local_ctrl']['cap']
+                if capability.lower() == 'none':
+                    # No specific capability to check, but capabilities
+                    # feature is present so return True
+                    return True
+                elif capability in supported_capabilities:
+                    return True
+                return False
+            except KeyError:
+                # If capabilities field is not present, it means
+                # that capabilities are not supported
+                return False
 
         except ValueError:
             # If decoding as JSON fails, it means that capabilities

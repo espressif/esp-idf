@@ -431,7 +431,7 @@ async def main():
                 args.sec1_pop = ''
 
         if (args.secver == 2):
-            sec_patch_ver = await get_sec_patch_ver(obj_transport)
+            sec_patch_ver = await get_sec_patch_ver(obj_transport, args.verbose)
             if len(args.sec2_usr) == 0:
                 args.sec2_usr = input('Security Scheme 2 - SRP6a Username required: ')
             if len(args.sec2_pwd) == 0:
