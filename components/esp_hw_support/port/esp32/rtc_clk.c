@@ -34,7 +34,7 @@
 
 #define XTAL_32K_BOOTSTRAP_TIME_US      7
 
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz);
 
 // Current PLL frequency, in MHZ (320 or 480). Zero if PLL is not enabled.
@@ -387,7 +387,7 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, dbias);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     esp_rom_set_cpu_ticks_per_us(8);
     REG_SET_FIELD(RTC_CNTL_REG, RTC_CNTL_DIG_DBIAS_WAK, DIG_DBIAS_XTAL);
@@ -542,7 +542,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         rtc_clk_bbpll_configure(rtc_clk_xtal_freq_get(), config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
     }
 }
 

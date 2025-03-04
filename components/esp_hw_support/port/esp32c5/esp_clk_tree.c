@@ -14,6 +14,7 @@
 #include "hal/clk_tree_ll.h"
 #include "hal/clk_gate_ll.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_rom_sys.h"
 
 static const char *TAG = "esp_clk_tree";
 
@@ -104,6 +105,18 @@ void esp_clk_tree_initialize(void)
     _clk_gate_ll_ref_20m_clk_en(false);
     _clk_gate_ll_ref_12m_clk_en(false);
     esp_clk_tree_initialized = true;
+}
+
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+    (void)clk_circuit;
+    return false;
+}
+
+esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+{
+    (void)clk_circuit; (void)enable;
+    return ESP_OK; // TODO: PM-354
 }
 
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)

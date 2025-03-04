@@ -17,6 +17,8 @@ entries:
         rtc_clk (noflash)
         rtc_time (noflash_text)
         esp_clk_tree: esp_clk_tree_enable_src (noflash)
+        esp_clk_tree: esp_clk_tree_enable_power (noflash)
+        esp_clk_tree: esp_clk_tree_is_power_on (noflash)
     if IDF_TARGET_ESP32 = y:
         rtc_clk:rtc_clk_cpu_freq_to_pll_mhz (noflash)
         rtc_clk:rtc_clk_cpu_freq_to_xtal (noflash)

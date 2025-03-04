@@ -50,16 +50,15 @@ void rtc_clk_32k_enable(bool enable)
 
 void rtc_clk_32k_enable_external(void)
 {
-    // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    gpio_ll_input_enable(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
-    REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_enable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_SET_BIT(LP_AON_GPIO_HOLD0_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
 }
 
 void rtc_clk_32k_disable_external(void)
 {
-    gpio_ll_input_disable(&GPIO, EXT_OSC_SLOW_GPIO_NUM);
-    REG_CLR_BIT(LP_AON_GPIO_HOLD0_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_disable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_CLR_BIT(LP_AON_GPIO_HOLD0_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
     clk_ll_xtal32k_disable();
 }
 
@@ -170,7 +169,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     esp_rom_set_cpu_ticks_per_us(cpu_freq);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     clk_ll_cpu_set_divider(1);
     clk_ll_ahb_set_divider(1);
@@ -262,7 +261,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         rtc_clk_cpu_freq_to_pll_160_mhz(config->freq_mhz);
         rtc_clk_set_cpu_switch_to_bbpll(SLEEP_EVENT_HW_PLL_EN_STOP);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
         if ((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL_F160M) && !s_bbpll_digi_consumers_ref_count) {
             // We don't turn off the bbpll if some consumers depend on bbpll
             rtc_clk_bbpll_disable();
@@ -308,7 +307,7 @@ void rtc_clk_cpu_freq_set_config_fast(const rtc_cpu_freq_config_t *config)
                s_cur_pll_freq == CLK_LL_PLL_480M_FREQ_MHZ) {
         rtc_clk_cpu_freq_to_pll_160_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
     } else {
         /* fallback */
         rtc_clk_cpu_freq_set_config(config);

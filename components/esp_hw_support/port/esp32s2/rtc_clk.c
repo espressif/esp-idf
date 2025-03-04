@@ -33,7 +33,7 @@ static const char *TAG = "rtc_clk";
 static uint32_t s_cur_pll_freq = CLK_LL_PLL_480M_FREQ_MHZ;
 
 static void rtc_clk_cpu_freq_to_xtal(int freq, int div);
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 
 void rtc_clk_32k_enable(bool enable)
 {
@@ -376,7 +376,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t* config)
         rtc_clk_bbpll_configure((soc_xtal_freq_t)CLK_LL_XTAL_FREQ_MHZ, config->source_freq_mhz);
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
     }
 }
 
@@ -488,7 +488,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     }
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     assert(0 && "LDO dbias need to modified");
     esp_rom_set_cpu_ticks_per_us(8);

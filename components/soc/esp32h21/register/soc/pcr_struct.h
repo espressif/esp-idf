@@ -1448,15 +1448,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** ls_div_num : HRO; bitpos: [7:0]; default: 0;
-         *  clk_hproot is div1 of low-speed clock-source if clck-source is a low-speed
-         *  clock-source such as XTAL/FOSC.
-         */
-        uint32_t ls_div_num:8;
-        /** hs_div_num : HRO; bitpos: [15:8]; default: 2;
-         *  clk_hproot is div3 of SPLL if the clock-source is high-speed clock SPLL.
-         */
-        uint32_t hs_div_num:8;
+        uint32_t reserved_0:16;
         /** soc_clk_sel : R/W; bitpos: [17:16]; default: 0;
          *  This field is used to select clock source. 0: XTAL, 1: SPLL, 2: FOSC, 3: reserved.
          */

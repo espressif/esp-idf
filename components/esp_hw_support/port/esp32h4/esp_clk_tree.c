@@ -47,6 +47,22 @@ uint32_t *freq_value)
     return ESP_OK;
 }
 
+void esp_clk_tree_initialize(void)
+{
+}
+
+bool esp_clk_tree_is_power_on(soc_root_clk_circuit_t clk_circuit)
+{
+    (void)clk_circuit;
+    return false;
+}
+
+esp_err_t esp_clk_tree_enable_power(soc_root_clk_circuit_t clk_circuit, bool enable)
+{
+    (void)clk_circuit; (void)enable;
+    return ESP_OK; // TODO: PM-354
+}
+
 esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
 {
     (void)clk_src; (void)enable;

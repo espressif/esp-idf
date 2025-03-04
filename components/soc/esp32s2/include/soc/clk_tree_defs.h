@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +54,14 @@ typedef enum {
     SOC_ROOT_CLK_EXT_XTAL,             /*!< External 40MHz crystal */
     SOC_ROOT_CLK_EXT_XTAL32K,          /*!< External 32kHz crystal/clock signal */
 } soc_root_clk_t;
+
+/**
+ * @brief ROOT clock circuit, which requires explicitly enabling the targeting circuit to use
+ */
+typedef enum {
+    SOC_ROOT_CIRCUIT_CLK_BBPLL,         /*!< BBPLL_CLK is the output of the BBPLL generator circuit */
+    SOC_ROOT_CIRCUIT_CLK_APLL,          /*!< APLL_CLK is the output of the APLL generator circuit */
+} soc_root_clk_circuit_t;
 
 /**
  * @brief CPU_CLK mux inputs, which are the supported clock sources for the CPU_CLK

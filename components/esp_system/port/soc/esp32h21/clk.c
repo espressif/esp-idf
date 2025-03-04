@@ -16,13 +16,8 @@
 #include "esp32h21/rom/ets_sys.h"
 #include "esp32h21/rom/uart.h"
 #include "soc/soc.h"
-#include "soc/pcr_reg.h"
 #include "soc/rtc.h"
 #include "soc/rtc_periph.h"
-#include "soc/i2s_reg.h"
-#include "soc/lpperi_reg.h"
-#include "soc/lp_clkrst_reg.h"
-#include "soc/pcr_reg.h"
 #include "hal/wdt_hal.h"
 #include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
@@ -31,8 +26,6 @@
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_sleep.h"
-
-// TODO: [ESP32H21] IDF-11900, IDF-11907
 
 /* Number of cycles to wait from the 32k XTAL oscillator to consider it running.
  * Larger values increase startup delay. Smaller values may cause false positive
@@ -48,8 +41,7 @@ static const char *TAG = "clk";
 
 void esp_rtc_init(void)
 {
-// TODO: [ESP32H21] IDF-11906
-#if !CONFIG_IDF_ENV_FPGA
+#if SOC_PMU_SUPPORTED && !CONFIG_IDF_ENV_FPGA
     pmu_init();
 #endif
 }
@@ -65,12 +57,12 @@ __attribute__((weak)) void esp_clk_init(void)
 
 #ifdef CONFIG_BOOTLOADER_WDT_ENABLE
     // WDT uses a SLOW_CLK clock source. After a function select_rtc_slow_clk a frequency of this source can changed.
-    // If the frequency changes from 150kHz to 32kHz, then the timeout set for the WDT will increase 4.6 times.
+    // If the frequency changes from 600kHz to 32kHz, then the timeout set for the WDT will increase 18.75 times.
     // Therefore, for the time of frequency change, set a new lower timeout value (2 sec).
     // This prevents excessive delay before resetting in case the supply voltage is drawdown.
-    // (If frequency is changed from 150kHz to 32kHz then WDT timeout will increased to 2 sec * 150/32 = 9.375 sec).
+    // (If frequency is changed from 600kHz to 32kHz then WDT timeout will increased to 2 sec * 600/32 = 37.5 sec).
 
-    wdt_hal_context_t rtc_wdt_ctx = {.inst = WDT_RWDT, .rwdt_dev = &LP_WDT};
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
     uint32_t stage_timeout_ticks = (uint32_t)(2000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
@@ -85,8 +77,6 @@ __attribute__((weak)) void esp_clk_init(void)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_OSC_SLOW);
-#elif defined(CONFIG_RTC_CLK_SRC_INT_RC32K)
-    select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC32K);
 #else
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_RC_SLOW);
 #endif
@@ -155,22 +145,17 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
                     if (retry_32k_xtal-- > 0) {
                         continue;
                     }
-                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 150 kHz oscillator");
+                    ESP_EARLY_LOGW(TAG, "32 kHz clock not found, switching to internal 600 kHz oscillator");
                     rtc_slow_clk_src = SOC_RTC_SLOW_CLK_SRC_RC_SLOW;
                 }
             }
-        } else if (rtc_slow_clk_src == SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
         // Disable unused clock sources after clock source switching is complete.
-        // Regardless of the clock source selection, the internal 136K clock source will always keep on.
+        // Regardless of the clock source selection, the internal 600k clock source will always keep on.
         if ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
             rtc_clk_32k_enable(false);
             rtc_clk_32k_disable_external();
-        }
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_RC32K) {
-            rtc_clk_rc32k_enable(false);
         }
 
         if (SLOW_CLK_CAL_CYCLES > 0) {

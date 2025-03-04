@@ -7,6 +7,7 @@
 #include "esp_attr.h"
 #include "soc/i2c_ana_mst_reg.h"
 #include "hal/regi2c_ctrl_ll.h"
+#include "sdkconfig.h"
 
 /* SLAVE */
 #define REGI2C_BBPLL       0x66    // regi2c_bbpll.h
@@ -29,7 +30,9 @@ void esp_rom_regi2c_write_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, 
 static IRAM_ATTR uint8_t regi2c_enable_block(uint8_t block)
 {
     uint32_t i2c_sel = 0;
+#if !CONFIG_IDF_ENV_FPGA // on FPGA, unable to manipulate modem registers, skip the check
     assert(regi2c_ctrl_ll_master_is_clock_enabled());
+#endif
 
     /* Before config I2C register, enable corresponding slave. */
     switch (block) {

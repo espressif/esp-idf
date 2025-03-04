@@ -129,8 +129,6 @@
 #define SPI_D_GPIO_NUM               16
 #define SPI_Q_GPIO_NUM               17
 
-#define EXT_OSC_SLOW_GPIO_NUM        0
-
 #define MAX_RTC_GPIO_NUM              5
 #define MAX_PAD_GPIO_NUM             20
 #define MAX_GPIO_NUM                 24

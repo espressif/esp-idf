@@ -28,6 +28,8 @@ extern "C" {
 #define UART_LL_FIFO_DEF_LEN  (SOC_UART_FIFO_LEN)
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
+// Get UART sleep clock with giving uart num
+#define UART_LL_SLEEP_CLOCK(num) (((num) == UART_NUM_0) ? (ESP_SLEEP_CLOCK_UART0) : (ESP_SLEEP_CLOCK_UART1))
 
 #define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
 

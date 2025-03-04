@@ -54,11 +54,11 @@
 #define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
-// #define SOC_PMU_SUPPORTED               1
+#define SOC_PMU_SUPPORTED               1
 // #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
-// #define SOC_CLK_TREE_SUPPORTED          1    //TODO: [ESP32H21] IDF-11521
+#define SOC_CLK_TREE_SUPPORTED          1
 // #define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32H21] IDF-11544
 #define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32H21] IDF-11526
@@ -230,7 +230,7 @@
 // #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM       (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-/* No dedicated LP_IOMUX subsystem on ESP32-H2. LP functions are still supported
+/* No dedicated LP_IOMUX subsystem on ESP32-H21. LP functions are still supported
  * for hold, wake & 32kHz crystal functions - via LP_AON registers */
 #define SOC_RTCIO_PIN_COUNT         (7U)
 #define SOC_RTCIO_HOLD_SUPPORTED    (1)
@@ -541,14 +541,16 @@
 #define SOC_PM_MODEM_RETENTION_BY_REGDMA           (1)
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
+#define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+#define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */
 #define SOC_CLK_OSC_SLOW_SUPPORTED                (1)     /*!< Support to connect an external oscillator, not a crystal */
-#define SOC_CLK_RC32K_SUPPORTED                   (1)     /*!< Support an internal 32kHz RC oscillator */
 
-#define SOC_CLK_LP_FAST_SUPPORT_LP_PLL            (1)      /*!< Support LP_PLL clock as the LP_FAST clock source */
+#define SOC_CLK_LP_FAST_SUPPORT_XTAL_D2           (1)     /*!< Support XTAL_D2 clock as the LP_FAST clock source */
+
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_RCC_IS_INDEPENDENT                    1       /*!< Reset and Clock Control is independent, thanks to the PCR registers */

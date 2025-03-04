@@ -15,7 +15,7 @@
 #include "soc/rtc.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/rtc_clk.h"
-#include "soc/io_mux_reg.h"
+#include "hal/gpio_ll.h"
 #include "soc/soc.h"
 #include "esp_hw_log.h"
 #include "esp_rom_sys.h"
@@ -28,19 +28,18 @@ static const char *TAG = "rtc_clk";
 static int s_cur_pll_freq;
 
 void rtc_clk_cpu_freq_to_xtal(int freq, int div);
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 
 void rtc_clk_32k_enable_external(void)
 {
-    // EXT_OSC_SLOW_GPIO_NUM == GPIO_NUM_0
-    PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
-    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_enable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_SET_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
 }
 
 void rtc_clk_32k_disable_external(void)
 {
-    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG);
-    REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(EXT_OSC_SLOW_GPIO_NUM));
+    gpio_ll_input_disable(&GPIO, SOC_EXT_OSC_SLOW_GPIO_NUM);
+    REG_CLR_BIT(RTC_CNTL_PAD_HOLD_REG, BIT(SOC_EXT_OSC_SLOW_GPIO_NUM));
 }
 
 void rtc_clk_8m_enable(bool clk_8m_en, bool d256_en)
@@ -220,7 +219,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
         if (old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL) {
             rtc_clk_bbpll_disable();
         }
@@ -317,7 +316,7 @@ void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     esp_rom_set_cpu_ticks_per_us(20);
     clk_ll_cpu_set_divider(1);

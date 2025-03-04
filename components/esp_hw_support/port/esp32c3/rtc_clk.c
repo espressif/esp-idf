@@ -26,7 +26,7 @@ static const char *TAG = "rtc_clk";
 static int s_cur_pll_freq;
 
 static void rtc_clk_cpu_freq_to_xtal(int freq, int div);
-static void rtc_clk_cpu_freq_to_8m(void);
+static void rtc_clk_cpu_freq_to_rc_fast(void);
 
 static uint32_t s_bbpll_digi_consumers_ref_count = 0; // Currently, it only tracks whether the 48MHz PHY clock is in-use by USB Serial/JTAG
 
@@ -248,7 +248,7 @@ void rtc_clk_cpu_freq_set_config(const rtc_cpu_freq_config_t *config)
         }
         rtc_clk_cpu_freq_to_pll_mhz(config->freq_mhz);
     } else if (config->source == SOC_CPU_CLK_SRC_RC_FAST) {
-        rtc_clk_cpu_freq_to_8m();
+        rtc_clk_cpu_freq_to_rc_fast();
         if ((old_cpu_clk_src == SOC_CPU_CLK_SRC_PLL) && !s_bbpll_digi_consumers_ref_count) {
             // We don't turn off the bbpll if some consumers depend on bbpll
             rtc_clk_bbpll_disable();
@@ -346,7 +346,7 @@ static void rtc_clk_cpu_freq_to_xtal(int cpu_freq, int div)
     rtc_clk_apb_freq_update(cpu_freq * MHZ);
 }
 
-static void rtc_clk_cpu_freq_to_8m(void)
+static void rtc_clk_cpu_freq_to_rc_fast(void)
 {
     esp_rom_set_cpu_ticks_per_us(20);
     clk_ll_cpu_set_divider(1);
