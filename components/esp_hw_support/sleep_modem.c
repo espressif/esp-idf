@@ -221,7 +221,7 @@ bool modem_domain_pd_allowed(void)
 #endif
 }
 
-uint32_t IRAM_ATTR sleep_modem_reject_triggers(void)
+uint32_t sleep_modem_reject_triggers(void)
 {
     uint32_t reject_triggers = 0;
 #if SOC_PM_SUPPORT_PMU_MODEM_STATE
