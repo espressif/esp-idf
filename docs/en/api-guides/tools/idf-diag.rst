@@ -2,6 +2,8 @@
 IDF Diag
 ********
 
+:link_to_translation:`zh_CN:[中文]`
+
 IDF Diag is a tool intended to speed up and assist in troubleshooting problems associated with the ESP-IDF environment and projects. It integrates the esp-idf-diag_ Python package into :ref:`idf.py`. IDF Diag gathers information about installed IDF tools, the Python environment, project artifacts, logs and other relevant data, storing them in a report directory. The report directory can be easily reviewed and supplemented with files that were not automatically collected but are considered pertinent to the reported issue. Once the report directory is complete, it can be compressed into a zip file and shared, such as by attaching it to a GitHub issue.
 
 Creating Report Directory
@@ -21,7 +23,7 @@ By default, the diagnostic data in the report directory is redacted to remove po
 
 .. note::
 
-    Please make sure to thoroughly check the report directory for any sensitive information before sharing and remove files you do not want to share. Kindly include any additional files you find relevant that were not automatically added.
+    Please make sure to thoroughly check the report directory for any sensitive information before sharing, and remove files you do not want to share. Kindly include any additional files you find relevant that were not automatically added.
 
 Creating Zip Archive
 ^^^^^^^^^^^^^^^^^^^^
@@ -32,9 +34,9 @@ After the report directory has been checked and is ready, it can be archived int
 
     $ idf.py diag --zip <REPORT_DIRECTORY>
 
-The ``REPORT_DIRECTORY`` refers to the directory created by the ``idf.py diag`` command. By default, the zip archive is named after the ``REPORT_DIRECTORY`` with a .zip extension. For instance, it might be named ``idf-diag-5aaa949b-40dc-4d53-96f1-1280c801585a.zip``. You can specify a different name for the output zip archive using the ``--output`` option.
+The ``REPORT_DIRECTORY`` refers to the directory created by the ``idf.py diag`` command. By default, the zip archive is named after the ``REPORT_DIRECTORY`` with a ``.zip`` extension. For instance, it might be named ``idf-diag-5aaa949b-40dc-4d53-96f1-1280c801585a.zip``. You can use the ``--output`` option to specify a different filename.
 
-The report archive can now be shared, for example, by attaching it to a GitHub issue. It might offer useful insights into your project environment that could assist in resolving any problems you are facing.
+The report archive can now be shared, for example, by attaching it to a GitHub issue. It might provide key insights into the project environment, helping with issue diagnosis.
 
 
 Additional Information
