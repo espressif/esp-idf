@@ -125,7 +125,7 @@
 /components/hal/test_apps/crypto/     @esp-idf-codeowners/peripherals @esp-idf-codeowners/security
 /components/heap/                     @esp-idf-codeowners/system
 /components/http_parser/              @esp-idf-codeowners/app-utilities
-/components/idf_test/                 @esp-idf-codeowners/ci
+/components/idf_test/                 @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/ieee802154/               @esp-idf-codeowners/ieee802154
 /components/json/                     @esp-idf-codeowners/app-utilities
 /components/linux/                    @esp-idf-codeowners/system
@@ -151,7 +151,7 @@
 /components/tcp_transport/            @esp-idf-codeowners/network
 /components/touch_element/            @esp-idf-codeowners/peripherals
 /components/ulp/                      @esp-idf-codeowners/system
-/components/unity/                    @esp-idf-codeowners/ci
+/components/unity/                    @esp-idf-codeowners/peripherals @esp-idf-codeowners/system
 /components/usb/                      @esp-idf-codeowners/peripherals/usb
 /components/vfs/                      @esp-idf-codeowners/storage
 /components/wear_levelling/           @esp-idf-codeowners/storage
