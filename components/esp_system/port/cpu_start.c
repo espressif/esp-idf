@@ -58,6 +58,7 @@
 #include "esp32c2/rom/secure_boot.h"
 #elif CONFIG_IDF_TARGET_ESP32P4
 #include "soc/hp_sys_clkrst_reg.h"
+#include "hal/l2mem_ll.h"
 #elif CONFIG_IDF_TARGET_ESP32H21
 #include "esp_memprot.h"
 #endif
@@ -401,6 +402,11 @@ void IRAM_ATTR call_start_cpu0(void)
         "la gp, __global_pointer$\n"
         ".option pop"
     );
+#endif
+
+#if CONFIG_IDF_TARGET_ESP32P4
+    // enable the buffer mode before any AHB burst happens, that's why we do it here
+    l2mem_ll_enable_ahb_burst_buffer(true, true);
 #endif
 
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
