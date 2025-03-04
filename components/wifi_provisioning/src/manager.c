@@ -351,6 +351,8 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
     /* Set version information / capabilities of provisioning service and application */
     cJSON *version_json = wifi_prov_get_info_json();
     char *version_str = cJSON_Print(version_json);
+    ESP_LOGD(TAG, "version_str :%s:", version_str);
+
     ret = protocomm_set_version(prov_ctx->pc, "proto-ver", version_str);
     free(version_str);
     cJSON_Delete(version_json);
