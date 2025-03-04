@@ -43,7 +43,7 @@
 static bool s_rf_closed = true;
 #define CCA_DETECTION_TIME 8
 
-extern void bt_bb_set_zb_tx_on_delay(uint16_t time);
+extern void ieee802154_txon_delay_set(void);
 
 IEEE802154_STATIC volatile ieee802154_state_t s_ieee802154_state;
 static uint8_t *s_tx_frame = NULL;
@@ -802,12 +802,7 @@ esp_err_t ieee802154_mac_init(void)
     ieee802154_ll_disable_coex();
 #endif
 
-#if CONFIG_IDF_ENV_FPGA
-    bt_bb_set_zb_tx_on_delay(80);
-#else
-    bt_bb_set_zb_tx_on_delay(50);
-    REG_WRITE(IEEE802154_RXON_DELAY_REG, 50);
-#endif
+    ieee802154_txon_delay_set();
 
     memset(s_rx_frame, 0, sizeof(s_rx_frame));
 
