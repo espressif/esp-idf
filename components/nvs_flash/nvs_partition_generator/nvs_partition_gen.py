@@ -3,24 +3,23 @@
 # esp-idf NVS partition generation tool. Tool helps in generating NVS-compatible
 # partition binary, with key-value pair entries provided via a CSV file.
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import array
 import binascii
 import codecs
 import csv
 import datetime
-import distutils.dir_util
 import os
 import random
 import struct
 import sys
 import textwrap
 import zlib
-from io import open
+
+import distutils.dir_util
 
 try:
     from cryptography.hazmat.backends import default_backend
@@ -891,7 +890,7 @@ def generate_key(args):
 
         encr_key_bytes = e_key + t_key
         key_len = len(encr_key_bytes)
-        key = f"{int.from_bytes(encr_key_bytes, 'big'):x}"
+        key = encr_key_bytes.hex()
 
         keys_buf[0:key_len] = encr_key_bytes
         crc_data = keys_buf[0:key_len]
