@@ -369,6 +369,9 @@ void gdbstub_handle_debug_int(esp_gdbstub_frame_t *regs_frame)
  * */
 void esp_gdbstub_init(void)
 {
+#ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
+    s_scratch.paniced_task_index = GDBSTUB_CUR_TASK_INDEX_UNKNOWN;
+#endif
     esp_intr_alloc(ETS_UART0_INTR_SOURCE, 0, esp_gdbstub_int, NULL, NULL);
     esp_gdbstub_init_dports();
 }
