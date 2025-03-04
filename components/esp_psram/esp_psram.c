@@ -307,21 +307,31 @@ static void s_psram_mapping(uint32_t psram_available_size, uint32_t start_page)
     * After mapping, we DON'T care about the PSRAM PHYSICAL ADDRESS ANYMORE!
     *----------------------------------------------------------------------------*/
 
-    //------------------------------------Configure .bss in PSRAM-------------------------------------//
+    //------------------------------------Configure heap in PSRAM-------------------------------------//
+    uintptr_t ext_segment_start = UINTPTR_MAX;
+    uintptr_t ext_segment_end = 0;
+
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    //should never be negative number
-    uint32_t ext_bss_size = ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
-    ESP_EARLY_LOGV(TAG, "ext_bss_size is %" PRIu32, ext_bss_size);
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_bss_size;
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_bss_size;
+    ext_segment_start = (uintptr_t)&_ext_ram_bss_start;
+    ext_segment_end = (uintptr_t)&_ext_ram_bss_end;
 #endif  //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-    uint32_t ext_noinit_size = ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
-    ESP_EARLY_LOGV(TAG, "ext_noinit_size is %" PRIu32, ext_noinit_size);
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_noinit_size;
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_noinit_size;
-#endif
+    if ((uintptr_t)&_ext_ram_noinit_start < ext_segment_start) {
+        ext_segment_start = (uintptr_t)&_ext_ram_noinit_start;
+    }
+    if ((uintptr_t)&_ext_ram_noinit_end > ext_segment_end) {
+        ext_segment_end = (uintptr_t)&_ext_ram_noinit_end;
+    }
+#endif  //#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+
+    if ((ext_segment_start != UINTPTR_MAX) || (ext_segment_end != 0)) {
+        assert(ext_segment_end >= ext_segment_start);
+        uint32_t ext_segment_size = ext_segment_end - ext_segment_start;
+        ESP_EARLY_LOGV(TAG, "ext_segment_size is %" PRIu32, ext_segment_size);
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_segment_size;
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_segment_size;
+    }
 
 #if CONFIG_IDF_TARGET_ESP32
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
