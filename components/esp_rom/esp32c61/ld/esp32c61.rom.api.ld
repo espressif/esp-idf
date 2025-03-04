@@ -29,6 +29,8 @@ PROVIDE ( esp_rom_uart_rx_string      = UartRxString );
 PROVIDE ( esp_rom_uart_set_as_console = uart_tx_switch );
 PROVIDE ( esp_rom_uart_putc           = ets_write_char_uart );
 
+PROVIDE ( esp_rom_usb_serial_putc     = uart_tx_one_char3 );
+
 PROVIDE ( esp_rom_output_flush_tx       = uart_tx_flush );
 PROVIDE ( esp_rom_output_tx_one_char    = uart_tx_one_char );
 PROVIDE ( esp_rom_output_tx_wait_idle   = uart_tx_wait_idle );

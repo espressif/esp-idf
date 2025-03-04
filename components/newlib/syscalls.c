@@ -15,6 +15,7 @@
 #include <sys/fcntl.h>
 #include "sdkconfig.h"
 #include "esp_rom_uart.h"
+#include "esp_system_console.h"
 
 static int syscall_not_implemented(struct _reent *r, ...)
 {
@@ -33,7 +34,7 @@ ssize_t _write_r_console(struct _reent *r, int fd, const void * data, size_t siz
     const char* cdata = (const char*) data;
     if (fd == STDOUT_FILENO || fd == STDERR_FILENO) {
         for (size_t i = 0; i < size; ++i) {
-            esp_rom_output_tx_one_char(cdata[i]);
+            esp_system_console_put_char(cdata[i]);
         }
         return size;
     }

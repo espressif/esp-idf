@@ -30,3 +30,4 @@
 #define ESP_ROM_HAS_VERSION                 (1) // ROM has version/eco information
 #define ESP_ROM_HAS_VPRINTF_FUNC            (1) // ROM has ets_vprintf
 #define ESP_ROM_HAS_OUTPUT_PUTC_FUNC        (1) // ROM has esp_rom_output_putc (or ets_write_char_uart)
+#define ESP_ROM_CONSOLE_OUTPUT_SECONDARY    (1) // The console output functions will also output to the USB-serial secondary console

@@ -98,3 +98,7 @@ config ESP_ROM_HAS_VPRINTF_FUNC
 config ESP_ROM_HAS_OUTPUT_PUTC_FUNC
     bool
     default y
+
+config ESP_ROM_CONSOLE_OUTPUT_SECONDARY
+    bool
+    default y
