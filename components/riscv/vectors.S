@@ -236,22 +236,25 @@ _panic_handler:
     la    ra, _return_from_exception
     /* EXT_ILL CSR should contain the reason for the Illegal Instruction */
     csrrw a0, EXT_ILL_CSR, zero
-#if SOC_CPU_HAS_HWLOOP
-    /* Check if the HWLP bit is set. */
-    andi a1, a0, EXT_ILL_RSN_HWLP
-    beqz a1, hwlp_not_used
-    /* HWLP used in an ISR, abort */
-    mv   a0, sp
-    j    vPortCoprocUsedInISR
-hwlp_not_used:
-#endif /* SOC_CPU_HAS_HWLOOP */
 
-    /* Hardware loop cannot be treated lazily, so we should never end here if a HWLP instruction is used */
 #if SOC_CPU_HAS_PIE
     /* Check if the PIE bit is set. */
     andi a1, a0, EXT_ILL_RSN_PIE
     bnez a1, rtos_save_pie_coproc
 #endif /* SOC_CPU_HAS_PIE */
+
+    /* We cannot check the HWLP bit in a0 since a hardware bug may set this bit even though no HWLP
+     * instruction was executed in the program at all, so check mtval (`t0`) */
+#if SOC_CPU_HAS_HWLOOP
+    /* HWLP instructions  all have an opcode of 0b0101011 */
+    andi  a1, t0, 0b1111111
+    addi  a1, a1, -0b0101011
+    bnez a1, hwlp_not_used
+    /* HWLP used in an ISR, abort */
+    mv   a0, sp
+    j    vPortCoprocUsedInISR
+hwlp_not_used:
+#endif /* SOC_CPU_HAS_HWLOOP */
 
 #if SOC_CPU_HAS_FPU
     /* Check if the FPU bit is set. When targets have the FPU reason bug (SOC_CPU_HAS_FPU_EXT_ILL_BUG),
