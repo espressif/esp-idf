@@ -403,7 +403,6 @@ components/esp_event/esp_event_private.c
 components/esp_event/host_test/esp_event_unit_test/main/esp_event_test.cpp
 components/esp_event/host_test/fixtures.hpp
 components/esp_event/include/esp_event_loop.h
-components/esp_event/private_include/esp_event_internal.h
 components/esp_event/private_include/esp_event_private.h
 components/esp_hid/include/esp_hid_common.h
 components/esp_hid/include/esp_hidd.h
