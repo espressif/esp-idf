@@ -233,8 +233,8 @@ STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_L,  qacc_h_l,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_QACC_H_H,  qacc_h_h,   4)
 STRUCT_AFIELD (long, 4,  RV_PIE_UA_STATE,  ua_state,   4)
 STRUCT_FIELD  (long, 4,  RV_PIE_XACC,      xacc)
-/* This register contains SAR, SAR_BYTES and FFT_BIT_WIDTH in this order (from top to low) */
-STRUCT_FIELD  (long,    4,  RV_PIE_MISC,      misc)
+/* misc field contains registers: XACC (upper byte) [7:0], FFT_BIT_WIDTH [11:8], SAR_BYTES [15:12], and SAR [21:16] */
+STRUCT_FIELD  (long, 4,  RV_PIE_MISC,      misc)
 STRUCT_END(RvPIESaveArea)
 
 /* Redefine the coprocessor area size previously defined to 0 */
