@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -173,7 +173,6 @@ esp_err_t jpeg_parse_dri_marker(jpeg_dec_header_info_t *header_info)
         return ESP_ERR_INVALID_SIZE;
     }
     header_info->ri = jpeg_get_bytes(header_info, 2);
-    header_info->dri_marker = true;
     return ESP_OK;
 }
 
