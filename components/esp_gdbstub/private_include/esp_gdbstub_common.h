@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -133,6 +133,9 @@ void esp_gdbstub_send_char(char c);
 /** Send a string as part of the packet */
 void esp_gdbstub_send_str(const char *s);
 
+/** Send a string of limited length as part of a packet */
+void esp_gdbstub_send_str_n(const char *c, size_t len);
+
 /** Send a hex value as part of the packet */
 void esp_gdbstub_send_hex(int val, int bits);
 
@@ -165,4 +168,4 @@ void esp_gdbstub_trigger_cpu(void);
  * @param reg_index  register index, depends on architecture
  * @param value  32 bit data value
  */
-void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t value);
+void esp_gdbstub_set_register(esp_gdbstub_frame_t *frame, uint32_t reg_index, uint32_t *value_ptr);

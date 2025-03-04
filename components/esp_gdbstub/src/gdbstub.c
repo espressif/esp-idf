@@ -24,6 +24,12 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#if GDBSTUB_QXFER_FEATURES_ENABLED
+#define GDBSTUB_QXFER_SUPPORTED_STR ";qXfer:features:read+"
+#else
+#define GDBSTUB_QXFER_SUPPORTED_STR ""
+#endif
+
 #ifdef CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
 static inline int gdb_tid_to_task_index(int tid);
 static inline int task_index_to_gdb_tid(int tid);
@@ -672,29 +678,35 @@ static void handle_C_command(const unsigned char *cmd, int len)
 /* Set Register ... */
 static void handle_P_command(const unsigned char *cmd, int len)
 {
-    uint32_t reg_index = 0;
-    if (cmd[1] == '=') {
-        reg_index = esp_gdbstub_gethex(&cmd, 4);
-        cmd++;
-    } else if (cmd[2] == '=') {
-        reg_index = esp_gdbstub_gethex(&cmd, 8);
-        cmd++;
-        cmd++;
-    } else {
-        esp_gdbstub_send_str_packet("E02");
+    uint32_t reg_index = esp_gdbstub_gethex(&cmd, -1);
+    if (*cmd != '=') {
+        esp_gdbstub_send_str_packet("E.unexpected P packet format");
         return;
     }
-    uint32_t addr = esp_gdbstub_gethex(&cmd, -1);
-    /* The address comes with inverted byte order.*/
-    uint8_t *addr_ptr = (uint8_t *)&addr;
-    uint32_t p_address = 0;
-    uint8_t *p_addr_ptr = (uint8_t *)&p_address;
-    p_addr_ptr[3] = addr_ptr[0];
-    p_addr_ptr[2] = addr_ptr[1];
-    p_addr_ptr[1] = addr_ptr[2];
-    p_addr_ptr[0] = addr_ptr[3];
+    cmd++; /* skip '=' */
 
-    esp_gdbstub_set_register((esp_gdbstub_frame_t *)selected_task_frame, reg_index, p_address);
+    /* In general, we operate with 32-bit sized values here.
+     * However, some registers may be larger. For example, q registers are 128-bit sized.  */
+#if GDBSTUB_MAX_REGISTER_SIZE > 4
+    uint8_t value[GDBSTUB_MAX_REGISTER_SIZE * sizeof(uint32_t)] = {0};
+    uint32_t *value_ptr = (uint32_t *)value;
+    for(int i = 0; i < sizeof(value); i++) {
+        value[i] = (uint8_t) esp_gdbstub_gethex(&cmd, 8);
+        if (*cmd == 0)
+            break;
+    }
+#else
+    uint32_t value;
+    uint32_t *value_ptr = &value;
+    value = gdbstub_hton(esp_gdbstub_gethex(&cmd, -1));
+#endif
+
+    if (*cmd != 0) {
+        esp_gdbstub_send_str_packet("E.unexpected register size");
+        return;
+    }
+
+    esp_gdbstub_set_register((esp_gdbstub_frame_t *)selected_task_frame, reg_index, value_ptr);
     /* Convert current register file to GDB*/
     esp_gdbstub_frame_to_regfile((esp_gdbstub_frame_t *)selected_task_frame, gdb_local_regfile);
     /* Sen OK response*/
@@ -706,10 +718,42 @@ static void handle_P_command(const unsigned char *cmd, int len)
 static void handle_qSupported_command(const unsigned char *cmd, int len)
 {
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+");
+    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+" GDBSTUB_QXFER_SUPPORTED_STR);
     esp_gdbstub_send_end();
 }
 
+#if GDBSTUB_QXFER_FEATURES_ENABLED
+static void qXfer_data(const char *ptr, uint32_t size, uint32_t offset, uint32_t length)
+{
+	if (offset >= size) {
+		/* No data to send.  */
+		esp_gdbstub_send_str_packet("l");
+	} else {
+		size_t len = MIN(length, size - offset);
+        esp_gdbstub_send_start();
+		esp_gdbstub_send_char('m');
+		esp_gdbstub_send_str_n(ptr + offset, len);
+        esp_gdbstub_send_end();
+	}
+}
+
+static void handle_qXfer_command(const unsigned char *cmd, int len)
+{
+    uint32_t offset;
+    uint32_t length;
+    const char *target_feature_str = "qXfer:features:read:target.xml:";
+    const int target_feature_str_len = strlen(target_feature_str);
+	if (!command_name_matches(target_feature_str, cmd, target_feature_str_len)) {
+		/* Send empty packet for not supported requests.  */
+		esp_gdbstub_send_str_packet(NULL);
+	}
+	cmd += target_feature_str_len;
+	offset = esp_gdbstub_gethex(&cmd, -1);
+	cmd++; /* skip ',' */
+	length = esp_gdbstub_gethex(&cmd, -1);
+	qXfer_data(target_xml, strlen(target_xml), offset, length);
+}
+#endif // GDBSTUB_QXFER_FEATURES_ENABLED
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 /** Handle a command received from gdb */
@@ -787,6 +831,10 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
         return GDBSTUB_ST_CONT;
     } else if (command_name_matches("qSupported", cmd, 10)) {
         handle_qSupported_command(cmd, len);
+#if GDBSTUB_QXFER_FEATURES_ENABLED
+    } else if (command_name_matches("qXfer", cmd, 5)) {
+        handle_qXfer_command(cmd, len);
+#endif // GDBSTUB_QXFER_FEATURES_ENABLED
 #endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #if CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     } else if (s_scratch.state != GDBSTUB_TASK_SUPPORT_DISABLED) {
