@@ -1498,7 +1498,7 @@ esp_err_t esp_wifi_force_wakeup_release(void);
 /**
   * @brief     configure country
   *
-  * @attention 1. When ieee80211d_enabled, the country info of the AP to which
+  * @attention 1. When ieee80211d_enabled is enabled, the country info of the AP to which
   *               the station is connected is used. E.g. if the configured country is US
   *               and the country info of the AP to which the station is connected is JP
   *               then the country info that will be used is JP. If the station disconnected
