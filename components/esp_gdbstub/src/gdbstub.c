@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -193,7 +193,9 @@ int getActiveTaskNum(void);
 int __swrite(struct _reent *, void *, const char *, int);
 int gdbstub__swrite(struct _reent *data1, void *data2, const char *buff, int len);
 
-volatile esp_gdbstub_frame_t *temp_regs_frame;
+volatile esp_gdbstub_frame_t *selected_task_frame;  /* related to task that has been chosen via GDB */
+volatile esp_gdbstub_frame_t *running_task_frame;   /* related to task that was interrupted. GDBStub implements all-stop mode,
+                                                       and this frame is needed to continue executing the task that was interrupted. */
 
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 static int bp_count = 0;
@@ -220,7 +222,7 @@ static bool gdb_debug_int = false;
  */
 void gdbstub_handle_uart_int(esp_gdbstub_frame_t *regs_frame)
 {
-    temp_regs_frame = regs_frame;
+    running_task_frame = selected_task_frame = regs_frame;
     not_send_reason = step_in_progress;
     if (step_in_progress == true) {
         esp_gdbstub_send_str_packet("S05");
@@ -297,7 +299,7 @@ void gdbstub_handle_debug_int(esp_gdbstub_frame_t *regs_frame)
 {
     bp_count = 0;
     wp_count = 0;
-    temp_regs_frame = regs_frame;
+    running_task_frame = selected_task_frame = regs_frame;
     gdb_debug_int = true;
     not_send_reason = step_in_progress;
     if (step_in_progress == true) {
@@ -654,7 +656,7 @@ static void handle_S_command(const unsigned char *cmd, int len)
 static void handle_s_command(const unsigned char *cmd, int len)
 {
     step_in_progress = true;
-    esp_gdbstub_do_step((esp_gdbstub_frame_t *)temp_regs_frame);
+    esp_gdbstub_do_step((esp_gdbstub_frame_t *)running_task_frame);
 }
 
 /** Step ... */
@@ -689,9 +691,9 @@ static void handle_P_command(const unsigned char *cmd, int len)
     p_addr_ptr[1] = addr_ptr[2];
     p_addr_ptr[0] = addr_ptr[3];
 
-    esp_gdbstub_set_register((esp_gdbstub_frame_t *)temp_regs_frame, reg_index, p_address);
+    esp_gdbstub_set_register((esp_gdbstub_frame_t *)selected_task_frame, reg_index, p_address);
     /* Convert current register file to GDB*/
-    esp_gdbstub_frame_to_regfile((esp_gdbstub_frame_t *)temp_regs_frame, gdb_local_regfile);
+    esp_gdbstub_frame_to_regfile((esp_gdbstub_frame_t *)selected_task_frame, gdb_local_regfile);
     /* Sen OK response*/
     esp_gdbstub_send_str_packet("OK");
 }
@@ -964,12 +966,13 @@ static void set_active_task(size_t index)
         esp_gdbstub_frame_to_regfile(&s_scratch.paniced_frame, &s_scratch.regfile);
     } else {
         /* Get the registers from TCB.
-         * FIXME: for the task currently running on the other CPU, extracting the registers from TCB
+         * TODO: IDF-12550. For the task currently running on the other CPU, extracting the registers from TCB
          * isn't valid. Need to use some IPC mechanism to obtain the registers of the other CPU.
          */
         TaskHandle_t handle = NULL;
         get_task_handle(index, &handle);
         if (handle != NULL) {
+            selected_task_frame = ((StaticTask_t *)handle)->pxDummy1 /* pxTopOfStack */;
             esp_gdbstub_tcb_to_regfile(handle, &s_scratch.regfile);
         }
     }
