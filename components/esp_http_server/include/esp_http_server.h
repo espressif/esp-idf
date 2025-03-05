@@ -441,7 +441,7 @@ typedef struct httpd_uri {
      */
     void *user_ctx;
 
-#ifdef CONFIG_HTTPD_WS_SUPPORT
+#if CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__
     /**
      * Flag for indicating a WebSocket endpoint.
      * If this flag is true, then method must be HTTP_GET. Otherwise the handshake will not be handled.
@@ -1673,7 +1673,7 @@ esp_err_t httpd_queue_work(httpd_handle_t handle, httpd_work_fn_t work, void *ar
  * Functions and structs for WebSocket server
  * @{
  */
-#ifdef CONFIG_HTTPD_WS_SUPPORT
+#if CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__
 /**
  * @brief Enum for WebSocket packet types (Opcode in the header)
  * @note Please refer to RFC6455 Section 5.4 for more details
@@ -1808,7 +1808,7 @@ esp_err_t httpd_ws_send_data(httpd_handle_t handle, int socket, httpd_ws_frame_t
 esp_err_t httpd_ws_send_data_async(httpd_handle_t handle, int socket, httpd_ws_frame_t *frame,
                                    transfer_complete_cb callback, void *arg);
 
-#endif /* CONFIG_HTTPD_WS_SUPPORT */
+#endif /* CONFIG_HTTPD_WS_SUPPORT || __DOXYGEN__ */
 /** End of WebSocket related stuff
  * @}
  */
