@@ -225,6 +225,13 @@ menu "Hardware Settings"
             help
                 Place peripheral control functions (e.g. periph_module_reset) into IRAM,
                 so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
+
+        config REGI2C_CTRL_FUNC_IN_IRAM
+            bool "Place regi2c control functions into IRAM"
+            default y
+            help
+                Place analog i2c master control functions (e.g. regi2c_ctrl_read_reg, regi2c_ctrl_write_reg) into IRAM,
+                so that these functions can be IRAM-safe and able to be called in the other IRAM interrupt context.
     endmenu
 
     menu "ETM Configuration"

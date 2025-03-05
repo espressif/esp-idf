@@ -51,6 +51,13 @@ entries:
     if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
+    if REGI2C_CTRL_FUNC_IN_IRAM = y:
+        regi2c_ctrl:regi2c_ctrl_read_reg (noflash)
+        regi2c_ctrl:regi2c_ctrl_read_reg_mask (noflash)
+        regi2c_ctrl:regi2c_ctrl_write_reg (noflash)
+        regi2c_ctrl:regi2c_ctrl_write_reg_mask (noflash)
+        regi2c_ctrl:regi2c_enter_critical (noflash)
+        regi2c_ctrl:regi2c_exit_critical (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
     if SOC_ADC_SHARED_POWER = y:
