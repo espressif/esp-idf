@@ -368,23 +368,25 @@ TCM_IRAM_ATTR uint32_t pmu_sleep_start(uint32_t wakeup_opt, uint32_t reject_opt,
     //    the return process, which results in dirty cachelines in L1 Cache again.
     pmu_sleep_cache_sync_items(SMMU_GID_DEFAULT, CACHE_SYNC_WRITEBACK, CACHE_MAP_L1_DCACHE, 0, 0);
 
+    if (!dslp) {
 #if CONFIG_SPIRAM
-    psram_ctrlr_ll_wait_all_transaction_done();
+        psram_ctrlr_ll_wait_all_transaction_done();
 #endif
-    s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
-    if (s_mpll_freq_mhz_before_sleep) {
+        s_mpll_freq_mhz_before_sleep = rtc_clk_mpll_get_freq();
+        if (s_mpll_freq_mhz_before_sleep) {
 #if CONFIG_SPIRAM
-        _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
-        _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
-        if (!s_pmu_sleep_regdma_backup_enabled) {
-            // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
-            // If it's a PD_TOP sleep, psram MSPI core clock will be disabled by REGDMA
-            // !!! Need to manually check that data in PSRAM will not be accessed from now on. !!!
-            _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
-            _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_2, PSRAM_CLK_SRC_XTAL);
+            _psram_ctrlr_ll_select_clk_source(PSRAM_CTRLR_LL_MSPI_ID_3, PSRAM_CLK_SRC_XTAL);
+            if (!s_pmu_sleep_regdma_backup_enabled) {
+                // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.
+                // If it's a PD_TOP sleep, psram MSPI core clock will be disabled by REGDMA
+                // !!! Need to manually check that data in PSRAM will not be accessed from now on. !!!
+                _psram_ctrlr_ll_enable_core_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+                _psram_ctrlr_ll_enable_module_clock(PSRAM_CTRLR_LL_MSPI_ID_2, false);
+            }
+#endif
+            rtc_clk_mpll_disable();
         }
-#endif
-        rtc_clk_mpll_disable();
     }
 
 
@@ -438,7 +440,7 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 
     pmu_ll_imm_set_pad_slp_sel(PMU_instance()->hal->dev, false);
 
-    if (s_mpll_freq_mhz_before_sleep) {
+    if (s_mpll_freq_mhz_before_sleep && !dslp) {
         rtc_clk_mpll_enable();
         rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep);
 #if CONFIG_SPIRAM
