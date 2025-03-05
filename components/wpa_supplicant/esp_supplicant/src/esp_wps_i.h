@@ -83,6 +83,7 @@ struct wps_sm {
     bool ignore_sel_reg;
     struct discard_ap_list_t dis_ap_list[WPS_MAX_DIS_AP_NUM];
     u8 discard_ap_cnt;
+    bool intermediate_disconnect;
 };
 
 #define API_MUTEX_TAKE() do {\
