@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -848,9 +848,11 @@ int wps_finish(void)
     return ret;
 }
 
+/* This will get executed in the wifi task's context */
 static void wps_sm_notify_deauth(void)
 {
-    if (gWpsSm && gWpsSm->wps->state != WPS_FINISHED) {
+    if (gWpsSm && gWpsSm->wps->state != WPS_FINISHED &&
+            !gWpsSm->intermediate_disconnect) {
         wps_stop_process(WPS_FAIL_REASON_RECV_DEAUTH);
     }
 }
@@ -1616,7 +1618,9 @@ wifi_wps_scan_done(void *arg, ETS_STATUS status)
     sm->discover_ssid_cnt = 0;
 
     if (wps_get_status() == WPS_STATUS_PENDING) {
+        sm->intermediate_disconnect = true;
         esp_wifi_disconnect();
+        sm->intermediate_disconnect = false;
 
         os_memcpy(wifi_config.sta.bssid, sm->bssid, ETH_ALEN);
         os_memcpy(wifi_config.sta.ssid, (char *)sm->creds[0].ssid, sm->creds[0].ssid_len);
