@@ -1594,6 +1594,13 @@ static void btc_ble_dtm_enhance_rx_start(uint8_t rx_channel, uint8_t phy, uint8_
 }
 #endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+void btc_get_periodic_list_size(uint8_t *size)
+{
+    BTM_BleGetPeriodicAdvListSize(size);
+    return;
+}
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 static void btc_ble_dtm_stop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)
 {
