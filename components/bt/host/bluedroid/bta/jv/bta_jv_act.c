@@ -1058,7 +1058,7 @@ void sdp_bqb_add_language_attr_ctrl(BOOLEAN enable)
 
 /**
  * @brief       Adds a protocol list and service name (if provided) to an SDP record given by
- *              sdp_handle, and marks it as browseable. This is a shortcut for defining a
+ *              sdp_handle, and marks it as browsable. This is a shortcut for defining a
  *              set of protocols that includes L2CAP, RFCOMM, and optionally OBEX.
  *
  * @param[in]   sdp_handle: SDP handle
@@ -1133,9 +1133,9 @@ static bool create_base_record(const uint32_t sdp_handle, const char *name, cons
         }
     }
 
-    // Mark the service as browseable.
+    // Mark the service as browsable.
     uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
-    stage = "browseable";
+    stage = "browsable";
     if (!SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list)){
         APPL_TRACE_ERROR("create_base_record: failed to create base service "
                    "record, stage: %s, scn: %d, name: %s, with_obex: %d",
@@ -1754,6 +1754,7 @@ static void bta_jv_port_mgmt_cl_cback(UINT32 code, UINT16 port_handle, void* dat
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.port_status = code;
         evt_data.rfc_close.async = TRUE;
+        evt_data.rfc_close.user_data = p_pcb->user_data;
         if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
             evt_data.rfc_close.async = FALSE;
             evt_data.rfc_close.status = BTA_JV_SUCCESS;
@@ -2082,6 +2083,7 @@ static void bta_jv_port_mgmt_sr_cback(UINT32 code, UINT16 port_handle, void *dat
         evt_data.rfc_close.status = BTA_JV_FAILURE;
         evt_data.rfc_close.async = TRUE;
         evt_data.rfc_close.port_status = code;
+        evt_data.rfc_close.user_data = user_data;
         p_pcb->cong = FALSE;
 
         tBTA_JV_RFCOMM_CBACK    *p_cback = p_cb->p_cback;
