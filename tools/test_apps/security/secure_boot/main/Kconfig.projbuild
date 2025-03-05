@@ -1,0 +1,9 @@
+menu "Example Configuration"
+
+    config EXAMPLE_TARGET_QEMU
+        bool "Run the example tests for target QEMU"
+        default n
+        help
+            Run the example tests for target QEMU
+
+endmenu

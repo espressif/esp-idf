@@ -764,7 +764,7 @@ menu "Security features"
 
     config SECURE_BOOT_FLASH_BOOTLOADER_DEFAULT
         bool "Flash bootloader along with other artifacts when using the default flash command"
-        depends on SECURE_BOOT_V2_ENABLED && SECURE_BOOT_BUILD_SIGNED_BINARIES
+        depends on SECURE_BOOT_V2_ENABLED
         default n
         help
             When Secure Boot V2 is enabled, by default the bootloader is not flashed along with other artifacts
