@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,13 +12,14 @@
 #include "esp_err.h"
 #include "esp_log.h"
 #include "esp_console.h"
-#include "esp_vfs_cdcacm.h"
-#include "driver/usb_serial_jtag_vfs.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "driver/uart_vfs.h"
 #include "driver/usb_serial_jtag.h"
+#include "driver/usb_serial_jtag_vfs.h"
+#include "esp_private/usb_console.h"
+#include "esp_vfs_cdcacm.h"
 
 #include "console_private.h"
 
@@ -294,7 +295,26 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // set the state to deinit to force the while loop in
+    // esp_console_repl_task to break
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    const esp_err_t read_interrupted = esp_console_interrupt_reading();
+    if (read_interrupted != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    // wait for the task to notify that
+    // esp_console_repl_task returned
+    assert(repl_com->state_mux != NULL);
+    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    assert(ret_val == pdTRUE);
+
+    // delete the semaphore for the repl state
+    vSemaphoreDelete(repl_com->state_mux);
+    repl_com->state_mux =  NULL;
+
     esp_console_deinit();
     uart_vfs_dev_use_nonblocking(uart_repl->uart_channel);
     uart_driver_delete(uart_repl->uart_channel);
@@ -316,7 +336,26 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // set the state to deinit to force the while loop in
+    // esp_console_repl_task to break
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    const esp_err_t read_interrupted = esp_console_interrupt_reading();
+    if (read_interrupted != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    // wait for the task to notify that
+    // esp_console_repl_task returned
+    assert(repl_com->state_mux != NULL);
+    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    assert(ret_val == pdTRUE);
+
+    // delete the semaphore for the repl state
+    vSemaphoreDelete(repl_com->state_mux);
+    repl_com->state_mux =  NULL;
+
     esp_console_deinit();
     free(cdc_repl);
 _exit:
@@ -336,7 +375,26 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
         ret = ESP_ERR_INVALID_STATE;
         goto _exit;
     }
+
+    // set the state to deinit to force the while loop in
+    // esp_console_repl_task to break
     repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
+    const esp_err_t read_interrupted = esp_console_interrupt_reading();
+    if (read_interrupted != ESP_OK) {
+        return ESP_FAIL;
+    }
+
+    // wait for the task to notify that
+    // esp_console_repl_task returned
+    assert(repl_com->state_mux != NULL);
+    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    assert(ret_val == pdTRUE);
+
+    // delete the semaphore for the repl state
+    vSemaphoreDelete(repl_com->state_mux);
+    repl_com->state_mux =  NULL;
+
     esp_console_deinit();
     usb_serial_jtag_vfs_use_nonblocking();
     usb_serial_jtag_driver_uninstall();

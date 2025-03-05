@@ -45,6 +45,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 
 typedef struct linenoiseCompletions {
   size_t len;
@@ -57,6 +58,7 @@ typedef void(linenoiseFreeHintsCallback)(void *);
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
 void linenoiseSetHintsCallback(linenoiseHintsCallback *);
 void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
+void linenoiseSetInterruptReadingData(int, uint64_t);
 void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
 int linenoiseProbe(void);

@@ -11,6 +11,7 @@
 #include "sdkconfig.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_console.h"
 
 #define CONSOLE_PROMPT_MAX_LEN (32)
@@ -32,6 +33,7 @@ typedef struct {
     esp_console_repl_t repl_core;        // base class
     char prompt[CONSOLE_PROMPT_MAX_LEN]; // Prompt to be printed before each line
     repl_state_t state;
+    SemaphoreHandle_t state_mux;
     const char *history_save_path;
     TaskHandle_t task_hdl;              // REPL task handle
     size_t max_cmdline_length;          // Maximum length of a command line. If 0, default value will be used.
@@ -49,3 +51,4 @@ esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *r
 esp_err_t esp_console_setup_history(const char *history_path,
                                     uint32_t max_history_len,
                                     esp_console_repl_com_t *repl_com);
+esp_err_t esp_console_interrupt_reading(void);

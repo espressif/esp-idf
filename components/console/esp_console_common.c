@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,8 +10,13 @@
 #include "console_private.h"
 #include "esp_log.h"
 #include "linenoise/linenoise.h"
+#include "esp_vfs_eventfd.h"
 
 static const char *TAG = "console.common";
+
+static bool s_init = false;
+static int s_interrupt_reading_fd = -1;
+static uint64_t s_interrupt_reading_signal = 1;
 
 esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com)
 {
@@ -94,8 +99,33 @@ esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_co
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback *)&esp_console_get_hint);
 
+    /* Tell linenoise what file descriptor to add to the read file descriptor set,
+     * that will be used to signal a read termination */
+    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
+    ret = esp_vfs_eventfd_register(&config);
+    if (ret == ESP_OK) {
+        /* first time calling the eventfd register function */
+        s_interrupt_reading_fd = eventfd(0, 0);
+        linenoiseSetInterruptReadingData(s_interrupt_reading_fd, s_interrupt_reading_signal);
+    } else if (ret == ESP_ERR_INVALID_STATE) {
+        /* the evenfd has already been registered*/
+    } else {
+        /* issue with arg, this should not happen */
+        goto _exit;
+    }
+
+    repl_com->state_mux = xSemaphoreCreateMutex();
+    if (repl_com->state_mux == NULL) {
+        ESP_LOGE(TAG, "state_mux create error");
+        ret = ESP_ERR_NO_MEM;
+        goto _exit;
+    }
+    xSemaphoreGive(repl_com->state_mux);
+
+    s_init = true;
     return ESP_OK;
 _exit:
+    s_init = false;
     return ret;
 }
 
@@ -125,6 +155,10 @@ void esp_console_repl_task(void *args)
     /* Waiting for task notify. This happens when `esp_console_start_repl()`
      * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+
+    assert(repl_com->state_mux != NULL);
+    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+    assert(ret_val == pdTRUE);
 
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
@@ -187,6 +221,18 @@ void esp_console_repl_task(void *args)
         /* linenoise allocates line buffer on the heap, so need to free it */
         linenoiseFree(line);
     }
+
+    xSemaphoreGive(repl_com->state_mux);
     ESP_LOGD(TAG, "The End");
     vTaskDelete(NULL);
+}
+
+esp_err_t esp_console_interrupt_reading(void)
+{
+    if (!s_init) {
+        return ESP_FAIL;
+    }
+    ssize_t ret = write(s_interrupt_reading_fd, &s_interrupt_reading_signal, sizeof(s_interrupt_reading_signal));
+    assert(ret == sizeof(s_interrupt_reading_signal));
+    return ESP_OK;
 }

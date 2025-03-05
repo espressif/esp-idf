@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -127,8 +127,7 @@ TEST_CASE("esp console init/deinit with context test", "[console]")
 static int do_cmd_quit(int argc, char **argv)
 {
     printf("ByeBye\r\n");
-    s_repl->del(s_repl);
-
+    TEST_ESP_OK(s_repl->del(s_repl));
     linenoiseHistoryFree(); // Free up memory
 
     return 0;
@@ -153,6 +152,27 @@ TEST_CASE("esp console repl test", "[console][ignore]")
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
     vTaskDelay(pdMS_TO_TICKS(2000));
+}
+
+TEST_CASE("esp console repl deinit", "[console][ignore]")
+{
+    esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
+    esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
+    TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
+
+    /* start the repl task */
+    TEST_ESP_OK(esp_console_start_repl(s_repl));
+
+    /* wait to make sure the task reaches linenoiseEdit function
+     * and gets stuck in the select */
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    /* call the delete function, this returns only when the repl task terminated */
+    const esp_err_t res = s_repl->del(s_repl);
+
+    /* if this point is reached, the repl environment has been deleted successfully */
+    TEST_ASSERT(res == ESP_OK);
+    printf("-------------- %p\n", s_repl);
 }
 
 static const esp_console_cmd_t cmd_a = {

@@ -122,6 +122,7 @@
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
+#include <sys/param.h>
 #include <unistd.h>
 #include <assert.h>
 #include "linenoise.h"
@@ -143,6 +144,9 @@ static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
 static bool allow_empty = true;
+
+static int intr_reading_fd = -1;
+static uint64_t intr_reading_signal = -1;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -239,6 +243,37 @@ static void flushWrite(void) {
     fsync(fileno(stdout));
 }
 
+static int linenoiseReadBytes(int fd, void *buf, size_t max_bytes)
+{
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(fd, &read_fds);
+    if (intr_reading_fd !=-1) {
+        FD_SET(intr_reading_fd, &read_fds);
+    }
+    int maxFd = MAX(fd, intr_reading_fd);
+    /* call select to wait for either a read ready or an except to happen */
+    int nread = select(maxFd + 1, &read_fds, NULL, NULL, NULL);
+    if (nread < 0) {
+        return -1;
+    }
+
+    if(FD_ISSET(intr_reading_fd, &read_fds)) {
+        /* read termination request happened, return */
+        int buf[sizeof(intr_reading_signal)];
+        nread = read(intr_reading_fd, buf, sizeof(intr_reading_signal));
+        if ((nread == sizeof(intr_reading_signal)) && (buf[0] == intr_reading_signal)) {
+            return -1;
+        }
+    }
+    else if(FD_ISSET(fd, &read_fds)) {
+        /* a read ready triggered the select to return. call the
+         * read function with the number of bytes max_bytes */
+        nread = read(fd, buf, max_bytes);
+    }
+    return nread;
+}
+
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
@@ -273,7 +308,7 @@ static int getCursorPosition(void) {
         /* Keep using unistd's functions. Here, using `read` instead of `fgets`
          * or `fgets` guarantees us that we we can read a byte regardless on
          * whether the sender sent end of line character(s) (CR, CRLF, LF). */
-        if (read(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
+        if (linenoiseReadBytes(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
             /* If we couldn't read a byte from STDIN or if 'R' was received,
              * the transmission is finished. */
             break;
@@ -413,7 +448,7 @@ static int completeLine(struct linenoiseState *ls) {
                 refreshLine(ls);
             }
 
-            nread = read(in_fd, &c, 1);
+            nread = linenoiseReadBytes(in_fd, &c, 1);
             if (nread <= 0) {
                 freeCompletions(&lc);
                 return -1;
@@ -454,6 +489,12 @@ void linenoiseSetCompletionCallback(linenoiseCompletionCallback *fn) {
  * right of the prompt. */
 void linenoiseSetHintsCallback(linenoiseHintsCallback *fn) {
     hintsCallback = fn;
+}
+
+void linenoiseSetInterruptReadingData(int fd, uint64_t data)
+{
+    intr_reading_fd = fd;
+    intr_reading_signal = data;
 }
 
 /* Register a function to free the hints returned by the hints callback
@@ -890,8 +931,6 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
 
     while(1) {
         char c;
-        int nread;
-        char seq[3];
 
         /**
          * To determine whether the user is pasting data or typing itself, we
@@ -903,8 +942,10 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
          * about 40ms (or even more)
          */
         t1 = getMillis();
-        nread = read(in_fd, &c, 1);
-        if (nread <= 0) return l.len;
+        int nread = linenoiseReadBytes(in_fd, &c, 1);
+        if (nread <= 0) {
+            return l.len;
+        }
 
         if ( (getMillis() - t1) < LINENOISE_PASTE_KEY_DELAY && c != ENTER) {
             /* Pasting data, insert characters without formatting.
@@ -946,7 +987,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
             errno = EAGAIN;
             return -1;
         case BACKSPACE:   /* backspace */
-        case 8:     /* ctrl-h */
+        case CTRL_H:     /* ctrl-h */
             linenoiseEditBackspace(&l);
             break;
         case CTRL_D:     /* ctrl-d, remove char at right of cursor, or if the
@@ -980,18 +1021,42 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case CTRL_N:    /* ctrl-n */
             linenoiseEditHistoryNext(&l, LINENOISE_HISTORY_NEXT);
             break;
-        case ESC:    /* escape sequence */
-            /* Read the next two bytes representing the escape sequence. */
-            if (read(in_fd, seq, 2) < 2) {
-                break;
-            }
-
+        case CTRL_U: /* Ctrl+u, delete the whole line. */
+            buf[0] = '\0';
+            l.pos = l.len = 0;
+            refreshLine(&l);
+            break;
+        case CTRL_K: /* Ctrl+k, delete from current to end of line. */
+            buf[l.pos] = '\0';
+            l.len = l.pos;
+            refreshLine(&l);
+            break;
+        case CTRL_A: /* Ctrl+a, go to the start of the line */
+            linenoiseEditMoveHome(&l);
+            break;
+        case CTRL_E: /* ctrl+e, go to the end of the line */
+            linenoiseEditMoveEnd(&l);
+            break;
+        case CTRL_L: /* ctrl+l, clear screen */
+            linenoiseClearScreen();
+            refreshLine(&l);
+            break;
+        case CTRL_W: /* ctrl+w, delete previous word */
+            linenoiseEditDeletePrevWord(&l);
+            break;
+        case ESC: {     /* escape sequence */
             /* ESC [ sequences. */
+            char seq[3];
+            int r = linenoiseReadBytes(in_fd, seq, 2);
+            if (r != 2) {
+                return -1;
+            }
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    if (read(in_fd, seq+2, 1) == -1) {
-                        break;
+                    r = linenoiseReadBytes(in_fd, seq + 2, 1);
+                    if (r != 1) {
+                        return -1;
                     }
                     if (seq[2] == '~') {
                         switch(seq[1]) {
@@ -1023,7 +1088,6 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
                     }
                 }
             }
-
             /* ESC O sequences. */
             else if (seq[0] == 'O') {
                 switch(seq[1]) {
@@ -1036,31 +1100,9 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
                 }
             }
             break;
+        }
         default:
             if (linenoiseEditInsert(&l,c)) return -1;
-            break;
-        case CTRL_U: /* Ctrl+u, delete the whole line. */
-            buf[0] = '\0';
-            l.pos = l.len = 0;
-            refreshLine(&l);
-            break;
-        case CTRL_K: /* Ctrl+k, delete from current to end of line. */
-            buf[l.pos] = '\0';
-            l.len = l.pos;
-            refreshLine(&l);
-            break;
-        case CTRL_A: /* Ctrl+a, go to the start of the line */
-            linenoiseEditMoveHome(&l);
-            break;
-        case CTRL_E: /* ctrl+e, go to the end of the line */
-            linenoiseEditMoveEnd(&l);
-            break;
-        case CTRL_L: /* ctrl+l, clear screen */
-            linenoiseClearScreen();
-            refreshLine(&l);
-            break;
-        case CTRL_W: /* ctrl+w, delete previous word */
-            linenoiseEditDeletePrevWord(&l);
             break;
         }
         flushWrite();
@@ -1103,12 +1145,7 @@ int linenoiseProbe(void) {
         }
         read_bytes += cb;
     }
-    /* Restore old mode */
-    flags &= ~O_NONBLOCK;
-    res = fcntl(stdin_fileno, F_SETFL, flags);
-    if (res != 0) {
-        return -1;
-    }
+
     if (read_bytes < 4) {
         return -2;
     }
@@ -1133,9 +1170,17 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
     /* dumb terminal, fall back to fgets */
     fputs(prompt, stdout);
     flushWrite();
+
     size_t count = 0;
+    const int in_fd = fileno(stdin);
+    char c = 'c';
+
     while (count < buflen) {
-        int c = fgetc(stdin);
+
+        int nread = linenoiseReadBytes(in_fd, &c, 1);
+        if (nread < 0) {
+            return nread;
+        }
         if (c == '\n') {
             break;
         } else if (c == BACKSPACE || c == CTRL_H) {
