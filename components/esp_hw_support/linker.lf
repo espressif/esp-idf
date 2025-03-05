@@ -41,7 +41,13 @@ entries:
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
     if PERIPH_CTRL_FUNC_IN_IRAM = y:
-        periph_ctrl: periph_module_reset (noflash)
+        periph_ctrl:periph_module_reset (noflash)
+        periph_ctrl:periph_rcc_enter (noflash)
+        periph_ctrl:periph_rcc_exit (noflash)
+        periph_ctrl:periph_rcc_acquire_enter (noflash)
+        periph_ctrl:periph_rcc_acquire_exit (noflash)
+        periph_ctrl:periph_rcc_release_enter (noflash)
+        periph_ctrl:periph_rcc_release_exit (noflash)
     if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
