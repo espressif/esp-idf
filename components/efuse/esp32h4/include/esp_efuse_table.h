@@ -10,7 +10,7 @@ extern "C" {
 
 #include "esp_efuse.h"
 
-// md5_digest_table 6bfa2ae917ac6cbce5b70a55ea6a78bd
+// md5_digest_table 39c442690c2273d557b5bb0db99fbe04
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -65,6 +65,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_UART_PRINT_CONTROL[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FORCE_SEND_RESUME[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SECURE_VERSION[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HUK_GEN_STATE[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[];
 #define ESP_EFUSE_WR_DIS_MAC_FACTORY ESP_EFUSE_WR_DIS_MAC
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC_EXT[];
@@ -77,6 +78,7 @@ extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HYS_EN_PAD[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_PVT_GLITCH_CHARGE_RESET[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_VDD_SPI_LDO_ADJUST[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_LDO_POWER_SEL[];
+extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[];
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLOCK_USR_DATA[];
 #define ESP_EFUSE_WR_DIS_USER_DATA ESP_EFUSE_WR_DIS_BLOCK_USR_DATA
 extern const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_CUSTOM_MAC[];
