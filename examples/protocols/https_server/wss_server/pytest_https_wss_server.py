@@ -1,26 +1,25 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
-from __future__ import division, print_function, unicode_literals
-
 import logging
 import os
 import threading
 import time
 from types import TracebackType
-from typing import Any, Optional
+from typing import Any
+from typing import Optional
 
 import pytest
 import websocket
 from common_test_methods import get_env_config_variable
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 OPCODE_TEXT = 0x1
 OPCODE_BIN = 0x2
 OPCODE_PING = 0x9
-OPCODE_PONG = 0xa
+OPCODE_PONG = 0xA
 CORRECT_ASYNC_DATA = 'Hello client'
 
 
@@ -28,9 +27,9 @@ class WsClient:
     def __init__(self, ip, port, ca_file):  # type: (str, int, str) -> None
         self.port = port
         self.ip = ip
-        sslopt = {'ca_certs':ca_file, 'check_hostname': False}
+        sslopt = {'ca_certs': ca_file, 'check_hostname': False}
         self.ws = websocket.WebSocket(sslopt=sslopt)
-        # Set timeout to 10 seconds to avoid conection failure at the time of handshake
+        # Set timeout to 10 seconds to avoid connection failure at the time of handshake
         self.ws.settimeout(10)
 
     def __enter__(self):  # type: ignore
@@ -106,10 +105,9 @@ def test_multiple_client_keep_alive_and_async_response(ip, port, ca_file):  # ty
         t.join()
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_https_wss_server(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'wss_server.bin')
     bin_size = os.path.getsize(binary_file)
@@ -172,8 +170,10 @@ def test_examples_protocol_https_wss_server(dut: Dut) -> None:
                 logging.info('Failed the test for keep alive,\nthe client got abruptly disconnected')
                 raise
 
-        # keepalive timeout is 10 seconds so do not respond for (10 + 1) senconds
-        logging.info('Testing if client is disconnected if it does not respond for 10s i.e. keep_alive timeout (approx time = 11s)')
+        # keepalive timeout is 10 seconds so do not respond for (10 + 1) seconds
+        logging.info(
+            'Testing if client is disconnected if it does not respond for 10s i.e. keep_alive timeout (approx time = 11s)'
+        )
         try:
             dut.expect('Client not alive, closing fd {}'.format(client_fd), timeout=20)
             dut.expect('Client disconnected {}'.format(client_fd))

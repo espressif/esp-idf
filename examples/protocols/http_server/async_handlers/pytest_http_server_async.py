@@ -7,10 +7,11 @@ import time
 
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
 @pytest.mark.ethernet
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_http_server_async_handler(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')

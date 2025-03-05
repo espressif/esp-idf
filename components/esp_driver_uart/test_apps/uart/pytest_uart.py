@@ -1,6 +1,7 @@
-# SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
 
 input_argv = {
     'esp32': ['uart'],
@@ -16,7 +17,6 @@ input_argv = {
 }
 
 
-@pytest.mark.supported_targets
 @pytest.mark.temp_skip_ci(targets=['esp32s3'], reason='skip due to duplication with test_uart_single_dev_psram')
 @pytest.mark.generic
 @pytest.mark.parametrize(
@@ -27,7 +27,8 @@ input_argv = {
     ],
     indirect=True,
 )
-def test_uart_single_dev(case_tester) -> None:                # type: ignore
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_uart_single_dev(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     chip_type = dut.app.target
 
@@ -48,7 +49,6 @@ def test_uart_single_dev(case_tester) -> None:                # type: ignore
             dut._run_normal_case(case, reset=True)
 
 
-@pytest.mark.esp32s3
 @pytest.mark.octal_psram
 @pytest.mark.parametrize(
     'config',
@@ -58,7 +58,8 @@ def test_uart_single_dev(case_tester) -> None:                # type: ignore
     ],
     indirect=True,
 )
-def test_uart_single_dev_psram(case_tester) -> None:          # type: ignore
+@idf_parametrize('target', ['esp32s3'], indirect=['target'])
+def test_uart_single_dev_psram(case_tester) -> None:  # type: ignore
     dut = case_tester.first_dut
     for case in case_tester.test_menu:
         dut.serial.hard_reset()

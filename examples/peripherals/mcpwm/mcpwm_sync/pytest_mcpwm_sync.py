@@ -1,21 +1,16 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
-@pytest.mark.esp32p4
 @pytest.mark.generic
-@pytest.mark.parametrize('config', [
-    pytest.param('gpio', marks=[pytest.mark.esp32, pytest.mark.esp32s3]),
-    pytest.param('tez', marks=[pytest.mark.esp32, pytest.mark.esp32s3]),
-    pytest.param('soft', marks=[pytest.mark.esp32s3]),
-], indirect=True)
+@idf_parametrize(
+    'config,target',
+    [('gpio', 'esp32'), ('gpio', 'esp32s3'), ('tez', 'esp32'), ('tez', 'esp32s3'), ('soft', 'esp32s3')],
+    indirect=['config', 'target'],
+)
 def test_mcpwm_sync_example(dut: Dut) -> None:
     dut.expect_exact('example: Create timers')
     dut.expect_exact('example: Create operators')

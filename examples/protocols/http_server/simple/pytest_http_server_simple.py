@@ -12,6 +12,7 @@ import threading
 import time
 
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
 
 try:
     import http.client
@@ -45,18 +46,15 @@ class http_client_thread(threading.Thread):
         except socket.timeout:
             self.exc = 1
 
-    def join(self, timeout=None):   # type: ignore
+    def join(self, timeout=None):  # type: ignore
         threading.Thread.join(self)
         if self.exc:
             raise socket.timeout
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
 def test_examples_protocol_http_server_simple(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
     bin_size = os.path.getsize(binary_file)
@@ -106,7 +104,7 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
     dut.expect('Registering /hello and /echo URIs', timeout=30)
 
     # Generate random data of 10KB
-    random_data = ''.join(string.printable[random.randint(0,len(string.printable)) - 1] for _ in range(10 * 1024))
+    random_data = ''.join(string.printable[random.randint(0, len(string.printable)) - 1] for _ in range(10 * 1024))
     logging.info('Test /echo POST handler with random data')
     if not client.test_post_handler(got_ip, got_port, random_data):
         raise RuntimeError
@@ -116,7 +114,9 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
     if not client.test_custom_uri_query(got_ip, got_port, queries):
         raise RuntimeError
 
-    dut.expect_exact('Found URL query => query1=http%3A%2F%2Ffoobar&query3=abcd%2B1234%20xyz&query2=Esp%21%40%20%23%2471', timeout=30)
+    dut.expect_exact(
+        'Found URL query => query1=http%3A%2F%2Ffoobar&query3=abcd%2B1234%20xyz&query2=Esp%21%40%20%23%2471', timeout=30
+    )
     dut.expect_exact('Found URL query parameter => query1=http%3A%2F%2Ffoobar', timeout=30)
     dut.expect_exact('Decoded query parameter => http://foobar', timeout=30)
     dut.expect_exact('Found URL query parameter => query3=abcd%2B1234%20xyz', timeout=30)
@@ -125,12 +125,9 @@ def test_examples_protocol_http_server_simple(dut: Dut) -> None:
     dut.expect_exact('Decoded query parameter => Esp!@ #$71', timeout=30)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
-@pytest.mark.esp32s3
 @pytest.mark.wifi_router
+@idf_parametrize('target', ['esp32', 'esp32c3', 'esp32s3'], indirect=['target'])
 def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
-
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')
     bin_size = os.path.getsize(binary_file)
@@ -169,9 +166,15 @@ def test_examples_protocol_http_server_lru_purge_enable(dut: Dut) -> None:
         t.join()
 
 
-@pytest.mark.esp32
 @pytest.mark.wifi_router
-@pytest.mark.parametrize('config', ['sse',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'sse',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_http_server_sse(dut: Dut) -> None:
     # Get binary file
     binary_file = os.path.join(dut.app.binary_path, 'simple.bin')

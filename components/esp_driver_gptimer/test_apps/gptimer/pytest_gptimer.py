@@ -2,9 +2,9 @@
 # SPDX-License-Identifier: CC0-1.0
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -14,11 +14,11 @@ from pytest_embedded import Dut
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gptimer(dut: Dut) -> None:
     dut.run_all_single_board_cases()
 
 
-@pytest.mark.esp32c2
 @pytest.mark.generic
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
@@ -28,5 +28,6 @@ def test_gptimer(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_gptimer_esp32c2_xtal_26mhz(dut: Dut) -> None:
     dut.run_all_single_board_cases()

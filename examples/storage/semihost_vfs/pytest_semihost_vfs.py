@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import os
 import shutil
@@ -8,6 +8,7 @@ from itertools import zip_longest
 
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 TEMP_DIR = tempfile.mkdtemp()
 HOST_FILE_NAME = 'host_file.txt'
@@ -24,6 +25,7 @@ def prepare() -> t.Generator[None, None, None]:
 
 
 @pytest.mark.jtag
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 @pytest.mark.parametrize(
     'embedded_services, no_gdb, openocd_cli_args',
     [
@@ -31,9 +33,9 @@ def prepare() -> t.Generator[None, None, None]:
             'esp,idf,jtag',
             'y',
             f'-c \'set ESP_SEMIHOST_BASEDIR "{TEMP_DIR}"\' -f board/esp32-wrover-kit-3.3v.cfg',
-            marks=[pytest.mark.esp32],
         ),
-    ], ids=[
+    ],
+    ids=[
         'esp32',
     ],
     indirect=True,

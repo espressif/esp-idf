@@ -4,6 +4,32 @@
 default_stages: [pre-commit]
 
 repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: "v0.9.7"
+    hooks:
+      - id: ruff-format
+        args: [ "--preview" ]
+        files: 'pytest_.*\.py$'
+  - repo: local
+    hooks:
+      - id: pytest-linter
+        name: Pytest Linter Check
+        entry: tools/ci/check_test_files.py
+        language: python
+        files: 'pytest_.*\.py$'
+        require_serial: true
+        additional_dependencies:
+          - pytest-embedded-idf[serial]~=1.14
+          - pytest-embedded-jtag~=1.14
+          - pytest-embedded-qemu~=1.14
+          - pytest-ignore-test-results~=0.3
+          - pytest-rerunfailures
+          - pytest-timeout
+          - idf-build-apps~=2.8
+          - python-gitlab
+          - minio
+          - click
+          - esp-idf-monitor
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
     hooks:
@@ -54,6 +80,8 @@ repos:
           (?x)^(
               .*_pb2.py
           )$
+          |pytest_eth_iperf.py
+          |pytest_iperf.py
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:
@@ -151,7 +179,7 @@ repos:
         require_serial: true
         additional_dependencies:
           - PyYAML == 5.3.1
-          - idf-build-apps>=2.6.2,<3
+          - idf-build-apps>=2.8,<3
       - id: sort-yaml-files
         name: sort yaml files
         entry: tools/ci/sort_yaml.py

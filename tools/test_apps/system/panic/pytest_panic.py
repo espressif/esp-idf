@@ -10,6 +10,7 @@ from typing import Union
 
 import pexpect
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
 from test_panic_util import PanicTestDut
 
 TARGETS_XTENSA_SINGLE_CORE = [
@@ -108,7 +109,7 @@ CONFIG_COREDUMP_SUMMARY = [pytest.param('coredump_flash_elf_sha', marks=TARGETS_
 
 CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED = [
     pytest.param('coredump_flash_encrypted', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
-    pytest.param('coredump_flash_encrypted_coredump_plain', marks=[pytest.mark.esp32, pytest.mark.esp32c3])
+    pytest.param('coredump_flash_encrypted_coredump_plain', marks=[pytest.mark.esp32, pytest.mark.esp32c3]),
 ]
 
 # Panic abort information will start with this string.
@@ -149,8 +150,13 @@ def expect_coredump_uart_write_logs(dut: PanicTestDut, check_cpu_reset: Optional
     return coredump_base64
 
 
-def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[List[str]] = None, check_cpu_reset: Optional[bool] = True,
-                expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None) -> None:
+def common_test(
+    dut: PanicTestDut,
+    config: str,
+    expected_backtrace: Optional[List[str]] = None,
+    check_cpu_reset: Optional[bool] = True,
+    expected_coredump: Optional[Sequence[Union[str, Pattern[Any]]]] = None,
+) -> None:
     if 'gdbstub' in config:
         if 'coredump' in config:
             uart_str = dut.expect(dut.COREDUMP_CHECKSUM, return_what_before_match=True).decode('utf-8')
@@ -182,13 +188,84 @@ def common_test(dut: PanicTestDut, config: str, expected_backtrace: Optional[Lis
         dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect_exact(
-        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
-    )
+    dut.expect_exact('Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:')
     dut.expect_exact('CPU 0: main')
     if dut.is_xtensa:
         # on Xtensa, dumping registers on abort is not necessary, we only need to dump the backtrace
@@ -202,29 +279,37 @@ def test_task_wdt_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
-    coredump_pattern = (PANIC_ABORT_PREFIX +
-                        'Task watchdog got triggered. '
-                        'The following tasks/users did not reset the watchdog in time:\n - ')
+    coredump_pattern = (
+        PANIC_ABORT_PREFIX + 'Task watchdog got triggered. '
+        'The following tasks/users did not reset the watchdog in time:\n - '
+    )
     if dut.is_multi_core:
         coredump_pattern += 'IDLE0 (CPU 0)'
     else:
         coredump_pattern += 'IDLE (CPU 0)'
 
     common_test(
-        dut,
-        config,
-        expected_backtrace=get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        dut, config, expected_backtrace=get_default_backtrace(test_func_name), expected_coredump=[coredump_pattern]
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS_DUAL_CORE, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config',
+    [
+        'coredump_flash_bin_crc',
+        'coredump_flash_elf_sha',
+        'coredump_uart_bin_crc',
+        'coredump_uart_elf_crc',
+        'gdbstub',
+        'panic',
+    ],
+    indirect=['config'],
+)
+@idf_parametrize('target', ['esp32', 'esp32p4', 'esp32s3'], indirect=['target'])
 def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
-    dut.expect_exact(
-        'Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:'
-    )
+    dut.expect_exact('Task watchdog got triggered. The following tasks/users did not reset the watchdog in time:')
     dut.expect_exact('CPU 1: Infinite loop')
     expected_backtrace = ['infinite_loop', 'vPortTaskWrapper']
     if dut.is_xtensa:
@@ -240,18 +325,25 @@ def test_task_wdt_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> N
     dut.expect_elf_sha256()
     dut.expect_none('Guru Meditation')
 
-    coredump_pattern = (PANIC_ABORT_PREFIX +
-                        'Task watchdog got triggered. '
-                        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)')
-    common_test(
-        dut,
-        config,
-        expected_backtrace=expected_backtrace,
-        expected_coredump=[coredump_pattern]
+    coredump_pattern = (
+        PANIC_ABORT_PREFIX + 'Task watchdog got triggered. '
+        'The following tasks/users did not reset the watchdog in time:\n - IDLE1 (CPU 1)'
     )
+    common_test(dut, config, expected_backtrace=expected_backtrace, expected_coredump=[coredump_pattern])
 
 
-@pytest.mark.parametrize('config', CONFIGS_EXTRAM_STACK, indirect=True)
+@idf_parametrize(
+    'config,target,markers',
+    [
+        ('coredump_flash_extram_stack_heap_esp32', 'esp32', (pytest.mark.psram,)),
+        ('coredump_flash_extram_stack_heap_esp32s2', 'esp32s2', (pytest.mark.generic,)),
+        ('coredump_flash_extram_stack_heap_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
+        ('coredump_flash_extram_stack_bss_esp32', 'esp32', (pytest.mark.psram,)),
+        ('coredump_flash_extram_stack_bss_esp32s2', 'esp32s2', (pytest.mark.generic,)),
+        ('coredump_flash_extram_stack_bss_esp32s3', 'esp32s3', (pytest.mark.quad_psram,)),
+    ],
+    indirect=['config', 'target'],
+)
 def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
     if 'heap' in config:
         dut.run_test_func('test_panic_extram_stack_heap')
@@ -267,24 +359,92 @@ def test_panic_extram_stack(dut: PanicTestDut, config: str) -> None:
         coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][8-9a-bA-B][0-9a-fA-F]{5}) (0x[a-fA-F0-9]+) RW')
     elif dut.target == 'esp32s2':
         # ESP32-S2 External data memory range [0x3f500000-0x3ff80000)
-        coredump_pattern = re.compile('.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW')
+        coredump_pattern = re.compile(
+            '.coredump.tasks.data (0x3[fF][5-9a-fA-F][0-7][0-9a-fA-F]{4}) (0x[a-fA-F0-9]+) RW'
+        )
     else:
         # ESP32-S3 External data memory range [0x3c000000-0x3e000000)
         coredump_pattern = re.compile('.coredump.tasks.data (0x3[c-dC-D][0-9a-fA-F]{6}) (0x[a-fA-F0-9]+) RW')
 
-    common_test(
-        dut,
-        config,
-        expected_backtrace=None,
-        expected_coredump=[coredump_pattern]
-    )
+    common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_int_wdt(
-    dut: PanicTestDut, target: str, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_int_wdt(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Interrupt wdt timeout on CPU0')
     dut.expect_reg_dump(0)
@@ -304,11 +464,82 @@ def test_int_wdt(
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_int_wdt_cache_disabled(
-    dut: PanicTestDut, target: str, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_int_wdt_cache_disabled(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Interrupt wdt timeout on CPU0')
     dut.expect_reg_dump(0)
@@ -328,8 +559,81 @@ def test_int_wdt_cache_disabled(
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.target in ['esp32c3', 'esp32c2']:
@@ -356,13 +660,84 @@ def test_cache_error(dut: PanicTestDut, config: str, test_func_name: str) -> Non
         # 'test_cache_error' missing from GDB backtrace on ESP32-S2 and ESP-S3, IDF-6561
         expected_backtrace = ['die', 'app_main', 'main_task', 'vPortTaskWrapper']
 
-    common_test(
-        dut, config, expected_backtrace=expected_backtrace, check_cpu_reset=(dut.target != 'esp32')
-    )
+    common_test(dut, config, expected_backtrace=expected_backtrace, check_cpu_reset=(dut.target != 'esp32'))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_stack_overflow(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -382,11 +757,82 @@ def test_stack_overflow(dut: PanicTestDut, config: str, test_func_name: str) -> 
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_instr_fetch_prohibited(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_instr_fetch_prohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
         dut.expect_gme('InstrFetchProhibited')
@@ -411,11 +857,82 @@ def test_instr_fetch_prohibited(
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_illegal_instruction(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_illegal_instruction(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
         dut.expect_gme('IllegalInstruction')
@@ -449,20 +966,239 @@ def check_x_prohibited(dut: PanicTestDut, config: str, test_func_name: str, oper
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_storeprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     check_x_prohibited(dut, config, test_func_name, 'Store')
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_loadprohibited(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     check_x_prohibited(dut, config, test_func_name, 'Load')
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
@@ -478,17 +1214,86 @@ def test_abort(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     common_test(
         dut,
         config,
-        expected_backtrace=[
-            'panic_abort',
-            'esp_system_abort',
-            'abort'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        expected_backtrace=['panic_abort', 'esp_system_abort', 'abort'] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern],
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'Undefined behavior of type out_of_bounds'
@@ -508,17 +1313,89 @@ def test_ub(dut: PanicTestDut, config: str, test_func_name: str) -> None:
             'panic_abort',
             'esp_system_abort',
             '__ubsan_default_handler',
-            '__ubsan_handle_out_of_bounds'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+            '__ubsan_handle_out_of_bounds',
+        ]
+        + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern],
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_abort_cache_disabled(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_abort_cache_disabled(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
     dut.run_test_func(test_func_name)
@@ -535,17 +1412,86 @@ def test_abort_cache_disabled(
     common_test(
         dut,
         config,
-        expected_backtrace=[
-            'panic_abort',
-            'esp_system_abort',
-            'abort'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        expected_backtrace=['panic_abort', 'esp_system_abort', 'abort'] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern],
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
@@ -561,20 +1507,87 @@ def test_assert(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     common_test(
         dut,
         config,
-        expected_backtrace=[
-            'panic_abort',
-            'esp_system_abort',
-            '__assert_func'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        expected_backtrace=['panic_abort', 'esp_system_abort', '__assert_func'] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern],
     )
 
 
-@pytest.mark.parametrize('config', CONFIGS, indirect=True)
 @pytest.mark.generic
-def test_assert_cache_disabled(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
+@idf_parametrize(
+    'config,target',
+    [
+        ('coredump_flash_bin_crc', 'supported_targets'),
+        ('coredump_flash_elf_sha', 'esp32'),
+        ('coredump_flash_elf_sha', 'esp32c2'),
+        ('coredump_flash_elf_sha', 'esp32c3'),
+        ('coredump_flash_elf_sha', 'esp32c5'),
+        ('coredump_flash_elf_sha', 'esp32c6'),
+        ('coredump_flash_elf_sha', 'esp32c61'),
+        ('coredump_flash_elf_sha', 'esp32h2'),
+        ('coredump_flash_elf_sha', 'esp32p4'),
+        ('coredump_flash_elf_sha', 'esp32s2'),
+        ('coredump_flash_elf_sha', 'esp32s3'),
+        ('coredump_flash_elf_soft_sha', 'esp32'),
+        ('coredump_flash_elf_soft_sha', 'esp32c2'),
+        ('coredump_flash_elf_soft_sha', 'esp32c3'),
+        ('coredump_flash_elf_soft_sha', 'esp32c5'),
+        ('coredump_flash_elf_soft_sha', 'esp32c6'),
+        ('coredump_flash_elf_soft_sha', 'esp32c61'),
+        ('coredump_flash_elf_soft_sha', 'esp32h2'),
+        ('coredump_flash_elf_soft_sha', 'esp32p4'),
+        ('coredump_flash_elf_soft_sha', 'esp32s2'),
+        ('coredump_flash_elf_soft_sha', 'esp32s3'),
+        ('coredump_uart_bin_crc', 'esp32'),
+        ('coredump_uart_bin_crc', 'esp32c2'),
+        ('coredump_uart_bin_crc', 'esp32c3'),
+        ('coredump_uart_bin_crc', 'esp32c5'),
+        ('coredump_uart_bin_crc', 'esp32c6'),
+        ('coredump_uart_bin_crc', 'esp32c61'),
+        ('coredump_uart_bin_crc', 'esp32h2'),
+        ('coredump_uart_bin_crc', 'esp32p4'),
+        ('coredump_uart_bin_crc', 'esp32s2'),
+        ('coredump_uart_bin_crc', 'esp32s3'),
+        ('coredump_uart_elf_crc', 'esp32'),
+        ('coredump_uart_elf_crc', 'esp32c2'),
+        ('coredump_uart_elf_crc', 'esp32c3'),
+        ('coredump_uart_elf_crc', 'esp32c5'),
+        ('coredump_uart_elf_crc', 'esp32c6'),
+        ('coredump_uart_elf_crc', 'esp32c61'),
+        ('coredump_uart_elf_crc', 'esp32h2'),
+        ('coredump_uart_elf_crc', 'esp32p4'),
+        ('coredump_uart_elf_crc', 'esp32s2'),
+        ('coredump_uart_elf_crc', 'esp32s3'),
+        ('coredump_flash_custom_stack', 'esp32c2'),
+        ('coredump_flash_custom_stack', 'esp32c3'),
+        ('coredump_flash_custom_stack', 'esp32c5'),
+        ('coredump_flash_custom_stack', 'esp32c6'),
+        ('coredump_flash_custom_stack', 'esp32c61'),
+        ('coredump_flash_custom_stack', 'esp32h2'),
+        ('coredump_flash_custom_stack', 'esp32p4'),
+        ('gdbstub', 'esp32'),
+        ('gdbstub', 'esp32c2'),
+        ('gdbstub', 'esp32c3'),
+        ('gdbstub', 'esp32c5'),
+        ('gdbstub', 'esp32c6'),
+        ('gdbstub', 'esp32c61'),
+        ('gdbstub', 'esp32h2'),
+        ('gdbstub', 'esp32p4'),
+        ('gdbstub', 'esp32s2'),
+        ('gdbstub', 'esp32s3'),
+        ('panic', 'esp32'),
+        ('panic', 'esp32c2'),
+        ('panic', 'esp32c3'),
+        ('panic', 'esp32c5'),
+        ('panic', 'esp32c6'),
+        ('panic', 'esp32c61'),
+        ('panic', 'esp32h2'),
+        ('panic', 'esp32p4'),
+        ('panic', 'esp32s2'),
+        ('panic', 'esp32s3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_assert_cache_disabled(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     if dut.target == 'esp32s2':
         pytest.xfail(reason='Crashes in itoa which is not in ROM, IDF-3572')
     dut.run_test_func(test_func_name)
@@ -591,12 +1604,8 @@ def test_assert_cache_disabled(
     common_test(
         dut,
         config,
-        expected_backtrace=[
-            'panic_abort',
-            'esp_system_abort',
-            '__assert_func'
-        ] + get_default_backtrace(test_func_name),
-        expected_coredump=[coredump_pattern]
+        expected_backtrace=['panic_abort', 'esp_system_abort', '__assert_func'] + get_default_backtrace(test_func_name),
+        expected_coredump=[coredump_pattern],
     )
 
 
@@ -614,18 +1623,16 @@ def cache_error_log_check(dut: PanicTestDut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.supported_targets
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
-def test_assert_cache_write_back_error_can_print_backtrace(
-    dut: PanicTestDut, config: str, test_func_name: str
-) -> None:
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_assert_cache_write_back_error_can_print_backtrace(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     cache_error_log_check(dut)
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['panic_delay'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_panic_delay(dut: PanicTestDut) -> None:
     dut.run_test_func('test_storeprohibited')
     try:
@@ -642,8 +1649,8 @@ def test_panic_delay(dut: PanicTestDut) -> None:
 
 
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_panic_handler_stuck0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -655,10 +1662,8 @@ def test_panic_handler_stuck0(dut: PanicTestDut, config: str, test_func_name: st
 
 
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
-@pytest.mark.esp32
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_panic_handler_stuck1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -670,8 +1675,8 @@ def test_panic_handler_stuck1(dut: PanicTestDut, config: str, test_func_name: st
 
 
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_panic_handler_crash0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -689,10 +1694,8 @@ def test_panic_handler_crash0(dut: PanicTestDut, config: str, test_func_name: st
 
 
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
-@pytest.mark.esp32
-@pytest.mark.esp32s3
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32', 'esp32s3', 'esp32p4'], indirect=['target'])
 def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -723,7 +1726,7 @@ CONFIGS_MEMPROT_IDRAM = [
     pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
     pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
     pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
+    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
 ]
 
 CONFIGS_MEMPROT_DCACHE = [
@@ -736,7 +1739,7 @@ CONFIGS_MEMPROT_RTC_FAST_MEM = [
     pytest.param('memprot_esp32c5', marks=[pytest.mark.esp32c5]),
     pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
     pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
+    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
 ]
 
 CONFIGS_MEMPROT_RTC_SLOW_MEM = [
@@ -748,7 +1751,7 @@ CONFIGS_MEMPROT_FLASH_IDROM = [
     pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
     pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
     pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
+    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
 ]
 
 CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = [
@@ -756,12 +1759,13 @@ CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA = [
     pytest.param('memprot_esp32c6', marks=[pytest.mark.esp32c6]),
     pytest.param('memprot_esp32c61', marks=[pytest.mark.esp32c61]),
     pytest.param('memprot_esp32h2', marks=[pytest.mark.esp32h2]),
-    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4])
+    pytest.param('memprot_esp32p4', marks=[pytest.mark.esp32p4]),
 ]
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_DCACHE, indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
+@idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_dcache_read_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_exact(r'Test error: Test function has returned')
@@ -769,9 +1773,10 @@ def test_dcache_read_violation(dut: PanicTestDut, test_func_name: str) -> None:
 
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_DCACHE, indirect=True)
 @pytest.mark.generic
 @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
+@idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
+@idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Memory protection fault')
@@ -781,8 +1786,21 @@ def test_dcache_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -801,8 +1819,21 @@ def test_iram_reg1_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_iram_reg2_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -826,8 +1857,21 @@ def test_iram_reg2_write_violation(dut: PanicTestDut, test_func_name: str) -> No
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -852,9 +1896,22 @@ def test_iram_reg3_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 
 
 # TODO: IDF-6820: ESP32-S2 -> Fix incorrect panic reason: Unhandled debug exception
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
 @pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Incorrect panic reason may be observed', run=False)
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -879,9 +1936,24 @@ def test_iram_reg4_write_violation(dut: PanicTestDut, test_func_name: str) -> No
 
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False)
+@pytest.mark.xfail(
+    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
+)
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -899,9 +1971,24 @@ def test_dram_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
 
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_IDRAM, indirect=True)
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False)
+@pytest.mark.xfail(
+    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
+)
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c2', 'esp32c2'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -917,17 +2004,42 @@ def test_dram_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> 
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_rtc_fast_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_exact(r'Test error: Test function has returned')
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=True)
 @pytest.mark.generic
-@pytest.mark.skipif('config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]', reason='Not a violation condition, no PMS peripheral case')
+@pytest.mark.skipif(
+    'config.getvalue("target") in ["esp32c5", "esp32c6", "esp32h2", "esp32p4"]',
+    reason='Not a violation condition, no PMS peripheral case',
+)
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Memory protection fault')
@@ -947,9 +2059,22 @@ def test_rtc_fast_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
 
 
 # TODO: IDF-6820: ESP32-S2 -> Fix multiple panic reasons in different runs
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_FAST_MEM, indirect=True)
 @pytest.mark.generic
-@pytest.mark.xfail('config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False)
+@pytest.mark.xfail(
+    'config.getvalue("target") == "esp32s2"', reason='Multiple panic reasons for the same test may surface', run=False
+)
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32s2', 'esp32s2'),
+        ('memprot_esp32c3', 'esp32c3'),
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
 
@@ -973,8 +2098,9 @@ def test_rtc_fast_reg3_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_SLOW_MEM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
+@idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_rtc_slow_reg1_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Memory protection fault')
@@ -984,8 +2110,9 @@ def test_rtc_slow_reg1_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_RTC_SLOW_MEM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['memprot_esp32s2'], indirect=['config'])
+@idf_parametrize('target', ['esp32s2'], indirect=['target'])
 def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Memory protection fault')
@@ -995,8 +2122,18 @@ def test_rtc_slow_reg2_execute_violation(dut: PanicTestDut, test_func_name: str)
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')
@@ -1004,8 +2141,18 @@ def test_irom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')
@@ -1013,8 +2160,18 @@ def test_drom_reg_write_violation(dut: PanicTestDut, test_func_name: str) -> Non
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_FLASH_IDROM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Instruction access fault')
@@ -1022,8 +2179,18 @@ def test_drom_reg_execute_violation(dut: PanicTestDut, test_func_name: str) -> N
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Store access fault')
@@ -1031,8 +2198,18 @@ def test_invalid_memory_region_write_violation(dut: PanicTestDut, test_func_name
     dut.expect_cpu_reset()
 
 
-@pytest.mark.parametrize('config', CONFIGS_MEMPROT_INVALID_REGION_PROTECTION_USING_PMA, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config,target',
+    [
+        ('memprot_esp32c5', 'esp32c5'),
+        ('memprot_esp32c6', 'esp32c6'),
+        ('memprot_esp32c61', 'esp32c61'),
+        ('memprot_esp32h2', 'esp32h2'),
+        ('memprot_esp32p4', 'esp32p4'),
+    ],
+    indirect=['config', 'target'],
+)
 def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     dut.expect_gme('Instruction access fault')
@@ -1040,9 +2217,9 @@ def test_invalid_memory_region_execute_violation(dut: PanicTestDut, test_func_na
     dut.expect_cpu_reset()
 
 
-@pytest.mark.esp32
 @pytest.mark.generic
 @pytest.mark.parametrize('config', ['gdbstub_coredump'], indirect=True)
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_gdbstub_coredump(dut: PanicTestDut) -> None:
     test_func_name = 'test_storeprohibited'
     dut.run_test_func(test_func_name)
@@ -1050,7 +2227,7 @@ def test_gdbstub_coredump(dut: PanicTestDut) -> None:
 
 
 def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
-    dut.expect_exact(f'Guru Meditation Error: Core  {cpu} panic\'ed (Stack protection fault).')
+    dut.expect_exact(f"Guru Meditation Error: Core  {cpu} panic'ed (Stack protection fault).")
     dut.expect_none('ASSIST_DEBUG is not triggered BUT interrupt occurred!')
     dut.expect_exact(f'Detected in task "HWSG{cpu}"')
     addr = dut.expect('at 0x([0-9a-fA-F]{8})')
@@ -1066,25 +2243,37 @@ def test_hw_stack_guard_cpu(dut: PanicTestDut, cpu: int) -> None:
     assert end_addr > start_addr
 
 
-@pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config',
+    ['coredump_flash_bin_crc', 'coredump_uart_bin_crc', 'coredump_uart_elf_crc', 'gdbstub', 'panic'],
+    indirect=['config'],
+)
+@idf_parametrize(
+    'target', ['esp32c2', 'esp32c3', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4'], indirect=['target']
+)
 def test_hw_stack_guard_cpu0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     test_hw_stack_guard_cpu(dut, 0)
     common_test(dut, config)
 
 
-@pytest.mark.parametrize('config', CONFIGS_HW_STACK_GUARD_DUAL_CORE, indirect=True)
 @pytest.mark.generic
+@idf_parametrize(
+    'config',
+    ['coredump_flash_bin_crc', 'coredump_uart_bin_crc', 'coredump_uart_elf_crc', 'gdbstub', 'panic'],
+    indirect=['config'],
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_hw_stack_guard_cpu1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     test_hw_stack_guard_cpu(dut, 1)
     common_test(dut, config)
 
 
-@pytest.mark.esp32
 @pytest.mark.parametrize('config', ['panic'], indirect=True)
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -1096,8 +2285,9 @@ def test_illegal_access(dut: PanicTestDut, config: str, test_func_name: str) -> 
         dut.expect_none('Guru Meditation')
 
 
-@pytest.mark.parametrize('config', CONFIG_CAPTURE_DRAM, indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['coredump_flash_capture_dram'], indirect=['config'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'assert failed:[\s\w()]*?\s[.\w/]*\.(?:c|cpp|h|hpp):\d.*$'
@@ -1144,19 +2334,22 @@ def _test_coredump_summary(dut: PanicTestDut, flash_encrypted: bool, coredump_en
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY, indirect=True)
+@idf_parametrize('config', ['coredump_flash_elf_sha'], indirect=['config'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_coredump_summary(dut: PanicTestDut) -> None:
     _test_coredump_summary(dut, False, False)
 
 
 @pytest.mark.flash_encryption
-@pytest.mark.parametrize('config', CONFIG_COREDUMP_SUMMARY_FLASH_ENCRYPTED, indirect=True)
+@idf_parametrize('config', ['coredump_flash_encrypted', 'coredump_flash_encrypted_coredump_plain'], indirect=['config'])
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_coredump_summary_flash_encrypted(dut: PanicTestDut, config: str) -> None:
     _test_coredump_summary(dut, True, config == 'coredump_flash_encrypted')
 
 
-@pytest.mark.parametrize('config', [pytest.param('coredump_flash_elf_sha', marks=TARGETS_ALL)], indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['coredump_flash_elf_sha'], indirect=['config'])
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     if dut.is_xtensa:
@@ -1174,24 +2367,22 @@ def test_tcb_corrupted(dut: PanicTestDut, target: str, config: str, test_func_na
     #        TCB             NAME
     # ---------- ----------------
     if dut.is_multi_core:
-        regex_patterns = [rb'[0-9xa-fA-F]             main',
-                          rb'[0-9xa-fA-F]             ipc0',
-                          rb'[0-9xa-fA-F]             ipc1']
+        regex_patterns = [
+            rb'[0-9xa-fA-F]             main',
+            rb'[0-9xa-fA-F]             ipc0',
+            rb'[0-9xa-fA-F]             ipc1',
+        ]
     else:
         regex_patterns = [rb'[0-9xa-fA-F]             main']
 
     coredump_pattern = [re.compile(pattern.decode('utf-8')) for pattern in regex_patterns]
 
-    common_test(
-        dut,
-        config,
-        expected_backtrace=None,
-        expected_coredump=coredump_pattern
-    )
+    common_test(dut, config, expected_backtrace=None, expected_coredump=coredump_pattern)
 
 
-@pytest.mark.parametrize('config', CONFIGS_BACKTRACE, indirect=True)
 @pytest.mark.generic
+@idf_parametrize('config', ['framepointer'], indirect=['config'])
+@idf_parametrize('target', ['esp32c3', 'esp32p4'], indirect=['target'])
 def test_panic_print_backtrace(dut: PanicTestDut, config: str, test_func_name: str) -> None:
     dut.run_test_func(test_func_name)
     regex_pattern = rb'abort\(\) was called at PC [0-9xa-f]+ on core 0'
@@ -1201,9 +2392,4 @@ def test_panic_print_backtrace(dut: PanicTestDut, config: str, test_func_name: s
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
     coredump_pattern = re.compile(PANIC_ABORT_PREFIX + regex_pattern.decode('utf-8'))
-    common_test(
-        dut,
-        config,
-        expected_backtrace=None,
-        expected_coredump=[coredump_pattern]
-    )
+    common_test(dut, config, expected_backtrace=None, expected_coredump=[coredump_pattern])

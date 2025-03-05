@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def dac_example_expect(dut: Dut, mode: str) -> None:
@@ -13,8 +13,6 @@ def dac_example_expect(dut: Dut, mode: str) -> None:
     dut.expect('Play count: 2', timeout=10)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
 @pytest.mark.generic
 @pytest.mark.parametrize(
     'config',
@@ -24,6 +22,7 @@ def dac_example_expect(dut: Dut, mode: str) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32', 'esp32s2'], indirect=['target'])
 def test_dac_audio_example(dut: Dut) -> None:
     sdkconfig = dut.app.sdkconfig
     if sdkconfig['EXAMPLE_DAC_WRITE_SYNC']:

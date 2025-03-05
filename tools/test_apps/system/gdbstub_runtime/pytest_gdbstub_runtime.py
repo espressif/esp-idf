@@ -1,11 +1,13 @@
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
 import os
 import os.path as path
 import sys
 from typing import Any
+from typing import Dict
 
 import pytest
+from pytest_embedded_idf.utils import idf_parametrize
 
 sys.path.append(path.expandvars(path.join('$IDF_PATH', 'tools', 'test_apps', 'system', 'panic')))
 from test_panic_util import PanicTestDut  # noqa: E402
@@ -26,7 +28,7 @@ def start_gdb(dut: PanicTestDut) -> None:
     dut.start_gdb_for_gdbstub()
 
 
-def run_and_break(dut: PanicTestDut, cmd: str) -> dict[Any, Any]:
+def run_and_break(dut: PanicTestDut, cmd: str) -> Dict[Any, Any]:
     responses = dut.gdb_write(cmd)
     assert dut.find_gdb_response('running', 'result', responses) is not None
     if not dut.find_gdb_response('stopped', 'notify', responses):  # have not stopped on breakpoint yet
@@ -37,8 +39,8 @@ def run_and_break(dut: PanicTestDut, cmd: str) -> dict[Any, Any]:
     return payload
 
 
-@pytest.mark.esp32p4
 @pytest.mark.generic
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
 def test_hwloop_jump(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -96,8 +98,8 @@ def test_hwloop_jump(dut: PanicTestDut) -> None:
     assert payload['stopped-threads'] == 'all'
 
 
-@pytest.mark.supported_targets
 @pytest.mark.generic
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     start_gdb(dut)
 
@@ -130,7 +132,9 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     # 4200ae5c:	f99ff0ef          	jal	ra,4200adf4 <foo>
     # 4200ae60:	a011                	j	4200ae64 <app_main+0x4e>    <----------- here after return from foo()
     #        }
-    assert payload['frame']['line'] == str(get_line_number('label_3:', 1) if dut.is_xtensa else get_line_number('foo();', 0))
+    assert payload['frame']['line'] == str(
+        get_line_number('label_3:', 1) if dut.is_xtensa else get_line_number('foo();', 0)
+    )
     assert payload['frame']['func'] == 'app_main'
     assert payload['stopped-threads'] == 'all'
 
@@ -197,11 +201,9 @@ def test_gdbstub_runtime(dut: PanicTestDut) -> None:
     assert payload['stopped-threads'] == 'all'
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
 @pytest.mark.generic
 @pytest.mark.temp_skip_ci(targets=['esp32', 'esp32s2', 'esp32s3'], reason='fix IDF-7927')
+@idf_parametrize('target', ['esp32', 'esp32s2', 'esp32s3'], indirect=['target'])
 def test_gdbstub_runtime_xtensa_stepping_bug(dut: PanicTestDut) -> None:
     start_gdb(dut)
 

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import binascii
 from collections import namedtuple
@@ -7,8 +7,7 @@ from io import BytesIO
 import espsecure
 import pytest
 from pytest_embedded import Dut
-
-
+from pytest_embedded_idf.utils import idf_parametrize
 # To prepare a test runner for this example:
 # 1. Generate zero flash encryption key:
 #   dd if=/dev/zero of=key.bin bs=1 count=32
@@ -16,6 +15,8 @@ from pytest_embedded import Dut
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CONFIG 0xf
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_efuse FLASH_CRYPT_CNT 0x1
 #   espefuse.py --do-not-confirm -p $ESPPORT burn_key flash_encryption key.bin
+
+
 def _test_flash_encryption(dut: Dut) -> None:
     # Erase the nvs_key partition
     dut.serial.erase_partition('nvs_key')
@@ -35,14 +36,19 @@ def _test_flash_encryption(dut: Dut) -> None:
         aes_xts = True
 
     # Emulate espsecure encrypt_flash_data command
-    EncryptFlashDataArgs = namedtuple('EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts'])
+    EncryptFlashDataArgs = namedtuple(
+        'EncryptFlashDataArgs', ['output', 'plaintext_file', 'address', 'keyfile', 'flash_crypt_conf', 'aes_xts']
+    )
     args = EncryptFlashDataArgs(BytesIO(), BytesIO(plain_data), flash_addr, BytesIO(key_bytes), 0xF, aes_xts)
     espsecure.encrypt_flash_data(args)
 
     expected_ciphertext = args.output.getvalue()
     hex_ciphertext = binascii.hexlify(expected_ciphertext).decode('ascii')
-    expected_str = (' '.join(hex_ciphertext[i:i + 2] for i in range(0, 16, 2)) + '  ' +
-                    ' '.join(hex_ciphertext[i:i + 2] for i in range(16, 32, 2)))
+    expected_str = (
+        ' '.join(hex_ciphertext[i : i + 2] for i in range(0, 16, 2))
+        + '  '
+        + ' '.join(hex_ciphertext[i : i + 2] for i in range(16, 32, 2))
+    )
 
     lines = [
         'FLASH_CRYPT_CNT eFuse value is 1',
@@ -62,20 +68,18 @@ def _test_flash_encryption(dut: Dut) -> None:
         # The status of NVS encryption for the "nvs" partition
         'NVS partition "nvs" is encrypted.',
         # The status of NVS encryption for the "custom_nvs" partition
-        'NVS partition "custom_nvs" is encrypted.'
+        'NVS partition "custom_nvs" is encrypted.',
     ]
     for line in lines:
         dut.expect(line, timeout=20)
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c3
 @pytest.mark.flash_encryption
+@idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
 def test_examples_security_flash_encryption(dut: Dut) -> None:
     _test_flash_encryption(dut)
 
 
-@pytest.mark.esp32c3
 @pytest.mark.flash_encryption
 @pytest.mark.parametrize(
     'config',
@@ -84,5 +88,6 @@ def test_examples_security_flash_encryption(dut: Dut) -> None:
     ],
     indirect=True,
 )
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
 def test_examples_security_flash_encryption_rom_impl(dut: Dut) -> None:
     _test_flash_encryption(dut)

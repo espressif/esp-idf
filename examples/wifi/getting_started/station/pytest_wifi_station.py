@@ -6,8 +6,9 @@ from typing import Tuple
 
 import pytest
 from pytest_embedded import Dut
-
+from pytest_embedded_idf.utils import idf_parametrize
 # diff of esp32s2/esp32s3 ~45K, others ~50K
+
 DIFF_THRESHOLD = {
     'esp32s2': 40 * 1000,
     'esp32s3': 40 * 1000,
@@ -15,19 +16,12 @@ DIFF_THRESHOLD = {
 }
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32c3
-@pytest.mark.esp32s2
-@pytest.mark.esp32s3
-@pytest.mark.esp32c5
-@pytest.mark.esp32c6
-@pytest.mark.esp32c61
 @pytest.mark.wifi_two_dut
-@pytest.mark.parametrize(
-    'count, config, skip_autoflash', [
-        (2, 'default|enable_softap', 'y')
-    ], indirect=True
+@pytest.mark.parametrize('count, config, skip_autoflash', [(2, 'default|enable_softap', 'y')], indirect=True)
+@idf_parametrize(
+    'target',
+    ['esp32', 'esp32c2', 'esp32c3', 'esp32s2', 'esp32s3', 'esp32c5', 'esp32c6', 'esp32c61'],
+    indirect=['target'],
 )
 def test_wifi_sdkconfig_disable_softap_save_binary_size(
     dut: Tuple[Dut, Dut],

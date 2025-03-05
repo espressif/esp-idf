@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # # SPDX-License-Identifier: CC0-1.0
 import logging
 import os
@@ -8,15 +8,13 @@ import signal
 import pexpect
 import pytest
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 
 def run_gdb_test(dut: IdfDut) -> None:
-    with open(os.path.join(dut.logdir, 'ocd.txt'), 'w', encoding='utf-8') as ocd_log, \
-        pexpect.spawn(f'openocd -f board/esp32c6-builtin.cfg',
-                      timeout=60,
-                      logfile=ocd_log,
-                      encoding='utf-8',
-                      codec_errors='ignore') as p:
+    with open(os.path.join(dut.logdir, 'ocd.txt'), 'w', encoding='utf-8') as ocd_log, pexpect.spawn(
+        f'openocd -f board/esp32c6-builtin.cfg', timeout=60, logfile=ocd_log, encoding='utf-8', codec_errors='ignore'
+    ) as p:
         try:
             p.expect(re.compile(r'JTAG tap: esp32c6.cpu tap/device found'), timeout=5)
             logging.info('JTAG is enabled.')
@@ -29,10 +27,9 @@ def run_gdb_test(dut: IdfDut) -> None:
             p.kill(signal.SIGKILL)
 
 
-@pytest.mark.esp32c6
 @pytest.mark.jtag_re_enable
+@idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_jtag_re_enable(dut: IdfDut) -> None:
-
     dut.expect_exact('esp32c6>', timeout=30)
 
     logging.info('Initially:')

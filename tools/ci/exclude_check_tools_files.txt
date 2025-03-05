@@ -61,3 +61,5 @@ tools/legacy_exports/export_legacy.bat
 tools/ci/idf_build_apps_dump_soc_caps.py
 tools/bt/bt_hci_to_btsnoop.py
 tools/bt/README.md
+tools/ci/test_linter.py
+tools/ci/check_test_files.py
