@@ -336,7 +336,6 @@
 // #define SOC_PARLIO_RX_UNITS_PER_GROUP        1U  /*!< number of RX units in each group */
 // #define SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the TX unit */
 // #define SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH    8   /*!< Number of data lines of the RX unit */
-// #define SOC_PARLIO_TX_RX_SHARE_INTERRUPT     1   /*!< TX and RX unit share the same interrupt source number */
 
 /*--------------------------- MPI CAPS ---------------------------------------*/
 // #define SOC_MPI_MEM_BLOCKS_NUM (4)

@@ -1,7 +1,21 @@
+[mapping:parlio_driver]
+archive: libesp_driver_parlio.a
+entries:
+    if PARLIO_TX_ISR_HANDLER_IN_IRAM = y:
+        parlio_tx: parlio_tx_default_isr (noflash)
+        parlio_tx: parlio_tx_do_transaction (noflash)
+    if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
+        parlio_rx: parlio_rx_default_eof_callback (noflash)
+        parlio_rx: parlio_rx_default_desc_done_callback (noflash)
+        parlio_rx: parlio_rx_mount_transaction_buffer (noflash)
+        parlio_rx: parlio_rx_set_delimiter_config (noflash)
+
 [mapping:parlio_driver_gdma]
 archive: libesp_hw_support.a
 entries:
-    if PARLIO_ISR_IRAM_SAFE:
+    if PARLIO_TX_ISR_HANDLER_IN_IRAM = y:
         gdma_link: gdma_link_mount_buffers (noflash)
         gdma_link: gdma_link_get_head_addr (noflash)
+        gdma: gdma_start (noflash)
+    if PARLIO_RX_ISR_HANDLER_IN_IRAM = y:
         gdma: gdma_start (noflash)

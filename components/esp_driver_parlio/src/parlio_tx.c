@@ -32,7 +32,7 @@
 #include "hal/parlio_ll.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
-#include "parlio_private.h"
+#include "parlio_priv.h"
 #include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_private/esp_clk_tree_common.h"
@@ -344,7 +344,7 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_GOTO_ON_ERROR(parlio_select_periph_clock(unit, config), err, TAG, "set clock source failed");
 
     // install interrupt service
-    int isr_flags = PARLIO_INTR_ALLOC_FLAG;
+    int isr_flags = PARLIO_TX_INTR_ALLOC_FLAG;
     ret = esp_intr_alloc_intrstatus(parlio_periph_signals.groups[group->group_id].tx_irq_id, isr_flags,
                                     (uint32_t)parlio_ll_get_interrupt_status_reg(hal->regs),
                                     PARLIO_LL_EVENT_TX_MASK, parlio_tx_default_isr, unit, &unit->intr);
@@ -442,7 +442,7 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
 {
     ESP_RETURN_ON_FALSE(tx_unit && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-#if CONFIG_PARLIO_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_TX_ISR_CACHE_SAFE
     if (cbs->on_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_trans_done callback not in IRAM");
     }
@@ -456,7 +456,7 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
     return ESP_OK;
 }
 
-static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
+static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
 
@@ -661,7 +661,7 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     return ESP_OK;
 }
 
-static void IRAM_ATTR parlio_tx_default_isr(void *args)
+static void parlio_tx_default_isr(void *args)
 {
     parlio_tx_unit_t *tx_unit = (parlio_tx_unit_t *)args;
     parlio_group_t *group = tx_unit->base.group;
