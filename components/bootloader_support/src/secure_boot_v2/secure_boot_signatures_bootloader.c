@@ -154,13 +154,12 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
     ets_secure_boot_key_digests_t trusted_key_digests = {0};
     bool valid_sig_blk = false;
     for (unsigned i = 0; i < SECURE_BOOT_NUM_BLOCKS; i++) {
+        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
         if (sig_block->block[i].version != ESP_SECURE_BOOT_SCHEME) {
             ESP_LOGD(TAG, "%s signing scheme selected but signature block %d generated for %s scheme", esp_secure_boot_get_scheme_name(ESP_SECURE_BOOT_SCHEME), i, esp_secure_boot_get_scheme_name(sig_block->block[i].version));
-            continue;
         } else {
             valid_sig_blk = true;
         }
-        trusted_key_digests.key_digests[i] = &trusted.key_digests[i];
     }
     if (valid_sig_blk != true) {
         ESP_LOGE(TAG, "No signature block generated for valid scheme");
