@@ -29,7 +29,7 @@ if(NOT non_os_build)
         list(APPEND srcs "src/esp_dpa_protection.c")
     endif()
 
-    list(APPEND srcs "src/esp_crypto_lock.c")
+    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND priv_requires efuse esp_hw_support esp_system esp_timer)
 endif()
 

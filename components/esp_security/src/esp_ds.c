@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,7 +14,7 @@
 #include "esp_timer.h"
 #include "esp_ds.h"
 #include "esp_crypto_lock.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_hmac.h"
 #include "esp_memory_utils.h"
 #if CONFIG_IDF_TARGET_ESP32S2
@@ -268,20 +268,11 @@ static void ds_acquire_enable(void)
     esp_crypto_ds_lock_acquire();
 
     // We also enable SHA and HMAC here. SHA is used by HMAC, HMAC is used by DS.
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(true);
-        hmac_ll_reset_register();
-    }
+    esp_crypto_hmac_enable_periph_clk(true);
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-    }
+    esp_crypto_sha_enable_periph_clk(true);
 
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(true);
-        ds_ll_reset_register();
-    }
+    esp_crypto_ds_enable_periph_clk(true);
 
     hmac_hal_start();
 }
@@ -290,17 +281,11 @@ static void ds_disable_release(void)
 {
     ds_hal_finish();
 
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(false);
-    }
+    esp_crypto_ds_enable_periph_clk(false);
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-    }
+    esp_crypto_sha_enable_periph_clk(false);
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_hmac_enable_periph_clk(false);
 
     esp_crypto_ds_lock_release();
 }
@@ -445,15 +430,9 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
     // would be enough rather than acquiring a lock for the Digital Signature peripheral.
     esp_crypto_sha_aes_lock_acquire();
 
-    AES_RCC_ATOMIC() {
-        aes_ll_enable_bus_clock(true);
-        aes_ll_reset_register();
-    }
+    esp_crypto_aes_enable_periph_clk(true);
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-    }
+    esp_crypto_sha_enable_periph_clk(true);
 
     ets_ds_data_t *ds_data = (ets_ds_data_t *) data;
     const ets_ds_p_data_t *ds_plain_data = (const ets_ds_p_data_t *) p_data;
@@ -464,13 +443,9 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
         result = ESP_ERR_INVALID_ARG;
     }
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-    }
+    esp_crypto_sha_enable_periph_clk(false);
 
-    AES_RCC_ATOMIC() {
-        aes_ll_enable_bus_clock(false);
-    }
+    esp_crypto_aes_enable_periph_clk(false);
 
     esp_crypto_sha_aes_lock_release();
 

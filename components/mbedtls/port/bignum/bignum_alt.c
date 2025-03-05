@@ -1,25 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <assert.h>
 #include "esp_crypto_lock.h"
 #include "bignum_impl.h"
 #include "mbedtls/bignum.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 
 #include "hal/mpi_hal.h"
-#include "hal/mpi_ll.h"
 
 void esp_mpi_enable_hardware_hw_op( void )
 {
     esp_crypto_mpi_lock_acquire();
 
     /* Enable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
-    }
+    esp_crypto_mpi_enable_periph_clk(true);
 
     mpi_hal_enable_hardware_hw_op();
 }
@@ -30,9 +27,7 @@ void esp_mpi_disable_hardware_hw_op( void )
     mpi_hal_disable_hardware_hw_op();
 
     /* Disable RSA hardware */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
 
     esp_crypto_mpi_lock_release();
 }

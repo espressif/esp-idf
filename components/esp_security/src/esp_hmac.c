@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,7 @@
 #include "esp_hmac.h"
 #include "esp_log.h"
 #include "esp_crypto_lock.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "soc/hwcrypto_reg.h"
 #include "soc/system_reg.h"
 
@@ -71,20 +71,11 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     esp_crypto_hmac_lock_acquire();
 
     // We also enable SHA and DS here. SHA is used by HMAC, DS will otherwise hold SHA in reset state.
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(true);
-        hmac_ll_reset_register();
-    }
+    esp_crypto_hmac_enable_periph_clk(true);
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(true);
-        sha_ll_reset_register();
-    }
+    esp_crypto_sha_enable_periph_clk(true);
 
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(true);
-        ds_ll_reset_register();
-    }
+    esp_crypto_ds_enable_periph_clk(true);
 
     hmac_hal_start();
 
@@ -146,17 +137,11 @@ esp_err_t esp_hmac_calculate(hmac_key_id_t key_id,
     // Read back result (bit swapped)
     hmac_hal_read_result_256(hmac);
 
-    DS_RCC_ATOMIC() {
-        ds_ll_enable_bus_clock(false);
-    }
+    esp_crypto_ds_enable_periph_clk(false);
 
-    SHA_RCC_ATOMIC() {
-        sha_ll_enable_bus_clock(false);
-    }
+    esp_crypto_sha_enable_periph_clk(false);
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_hmac_enable_periph_clk(false);
 
     esp_crypto_hmac_lock_release();
 
@@ -195,9 +180,7 @@ esp_err_t esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 
     ESP_LOGD(TAG, "HMAC computation in downstream mode is completed.");
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_hmac_enable_periph_clk(false);
 
     esp_crypto_hmac_lock_release();
 
@@ -208,15 +191,11 @@ esp_err_t esp_hmac_jtag_disable()
 {
     esp_crypto_hmac_lock_acquire();
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(true);
-    }
+    esp_crypto_hmac_enable_periph_clk(true);
 
     REG_WRITE(HMAC_SET_INVALIDATE_JTAG_REG, 1);
 
-    HMAC_RCC_ATOMIC() {
-        hmac_ll_enable_bus_clock(false);
-    }
+    esp_crypto_hmac_enable_periph_clk(false);
 
     esp_crypto_hmac_lock_release();
 
