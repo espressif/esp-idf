@@ -73,10 +73,10 @@ typedef union {
  */
 typedef union {
     struct {
-        /** continue : WO; bitpos: [0]; default: 0;
+        /** conti : WO; bitpos: [0]; default: 0;
          *  Continue typical sha.
          */
-        uint32_t continue:1;
+        uint32_t conti:1;
         uint32_t reserved_1:31;
     };
     uint32_t val;
@@ -196,7 +196,7 @@ typedef struct {
     uint32_t reserved_004[2];
     volatile sha_dma_block_num_reg_t dma_block_num;
     volatile sha_start_reg_t start;
-    volatile sha_continue_reg_t continue;
+    volatile sha_continue_reg_t conti;
     volatile sha_busy_reg_t busy;
     volatile sha_dma_start_reg_t dma_start;
     volatile sha_dma_continue_reg_t dma_continue;
@@ -205,8 +205,8 @@ typedef struct {
     volatile sha_date_reg_t date;
     volatile sha_dma_rx_reset_reg_t dma_rx_reset;
     uint32_t reserved_034[3];
-    volatile uint32_t 2_sm_3_h[16];
-    volatile uint32_t 2_sm_3_m[32];
+    volatile uint32_t h[16];
+    volatile uint32_t m[32];
 } sha_dev_t;
 
 extern sha_dev_t SHA;

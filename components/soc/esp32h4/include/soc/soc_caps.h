@@ -217,18 +217,18 @@
 // #define SOC_GPIO_CLOCKOUT_BY_GPIO_MATRIX    (1) TODO: [ESP32H4] IDF-12361
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-#define SOC_RTCIO_PIN_COUNT                 6
-#define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
-                                             * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
-                                             * when the pins are switched to RTC function.
-                                             */
-#define SOC_RTCIO_HOLD_SUPPORTED            1
-#define SOC_RTCIO_WAKE_SUPPORTED            1
+// #define SOC_RTCIO_PIN_COUNT                 6
+// #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED 1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
+//                                              * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
+//                                              * when the pins are switched to RTC function.
+//                                              */
+// #define SOC_RTCIO_HOLD_SUPPORTED            1
+// #define SOC_RTCIO_WAKE_SUPPORTED            1
 
 /*-------------------------- Dedicated GPIO CAPS -----------------------------*/
-#define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
-#define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
-#define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
+// #define SOC_DEDIC_GPIO_OUT_CHANNELS_NUM (8) /*!< 8 outward channels on each CPU core */
+// #define SOC_DEDIC_GPIO_IN_CHANNELS_NUM  (8) /*!< 8 inward channels on each CPU core */
+// #define SOC_DEDIC_PERIPH_ALWAYS_ENABLE  (1) /*!< The dedicated GPIO (a.k.a. fast GPIO) is featured by some customized CPU instructions, which is always enabled */
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H4 has 2 I2C
@@ -480,6 +480,8 @@
 
 // UART has an extra TX_WAIT_SEND state when the FIFO is not empty and XOFF is enabled
 #define SOC_UART_SUPPORT_FSM_TX_WAIT_SEND   (1)
+
+#define SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE (1)
 
 /*-------------------------- COEXISTENCE HARDWARE PTI CAPS -------------------------------*/
 #define SOC_COEX_HW_PTI                 (1)

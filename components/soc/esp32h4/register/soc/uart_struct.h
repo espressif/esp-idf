@@ -1345,7 +1345,6 @@ typedef struct {
 
 extern uart_dev_t UART0;
 extern uart_dev_t UART1;
-extern uart_dev_t LP_UART;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uart_dev_t) == 0xa0, "Invalid size of uart_dev_t structure");
