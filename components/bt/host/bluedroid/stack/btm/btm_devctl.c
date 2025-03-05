@@ -82,7 +82,9 @@ void btm_dev_init (void)
     /* Initialize nonzero defaults */
 #if (BTM_MAX_LOC_BD_NAME_LEN > 0)
     memset(btm_cb.cfg.ble_bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
+#if (CLASSIC_BT_INCLUDED == TRUE)
     memset(btm_cb.cfg.bredr_bd_name, 0, sizeof(tBTM_LOC_BD_NAME));
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #endif
 
     btm_cb.devcb.reset_timer.param  = (TIMER_PARAM_TYPE)TT_DEV_RESET;
@@ -169,8 +171,12 @@ static void reset_complete(void)
     btm_cb.ble_ctr_cb.conn_state = BLE_CONN_IDLE;
     btm_cb.ble_ctr_cb.bg_conn_type = BTM_BLE_CONN_NONE;
     btm_cb.ble_ctr_cb.p_select_cback = NULL;
+#if (tGATT_BG_CONN_DEV == TRUE)
     gatt_reset_bgdev_list();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+#if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
     btm_ble_multi_adv_init();
+#endif // #if (BLE_HOST_BLE_MULTI_ADV_EN == TRUE)
 #endif
 
     btm_pm_reset();
@@ -471,7 +477,7 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name, tBT_DEVICE_TYPE name_type)
             btm_cb.cfg.ble_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
         }
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (name_type & BT_DEVICE_TYPE_BREDR) {
         p = (UINT8 *)btm_cb.cfg.bredr_bd_name;
         if (p != (UINT8 *)p_name) {
@@ -479,6 +485,7 @@ tBTM_STATUS BTM_SetLocalDeviceName (char *p_name, tBT_DEVICE_TYPE name_type)
             btm_cb.cfg.bredr_bd_name[BTM_MAX_LOC_BD_NAME_LEN] = '\0';
         }
     }
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 #else
     p = (UINT8 *)p_name;
 #endif
@@ -519,21 +526,22 @@ tBTM_STATUS BTM_ReadLocalDeviceName (char **p_name, tBT_DEVICE_TYPE name_type)
     */
 
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if ((name_type == BT_DEVICE_TYPE_DUMO) &&
         (BCM_STRNCMP_S(btm_cb.cfg.bredr_bd_name, btm_cb.cfg.ble_bd_name, BTM_MAX_LOC_BD_NAME_LEN) != 0)) {
         *p_name = NULL;
         BTM_TRACE_ERROR("Error, BLE and BREDR have different names, return NULL\n");
         return (BTM_NO_RESOURCES);
     }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     if (name_type & BT_DEVICE_TYPE_BLE) {
         *p_name = btm_cb.cfg.ble_bd_name;
     }
-
+#if (CLASSIC_BT_INCLUDED == TRUE)
     if (name_type & BT_DEVICE_TYPE_BREDR) {
         *p_name = btm_cb.cfg.bredr_bd_name;
     }
-
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     return (BTM_SUCCESS);
 #else
     *p_name = NULL;
@@ -752,9 +760,6 @@ void btm_vsc_complete (UINT8 *p, UINT16 opcode, UINT16 evt_len,
 #if (BLE_INCLUDED == TRUE)
     tBTM_BLE_CB *ble_cb = &btm_cb.ble_ctr_cb;
     switch(opcode) {
-        case HCI_VENDOR_BLE_LONG_ADV_DATA:
-            BTM_TRACE_EVENT("Set long adv data complete\n");
-            break;
         case HCI_VENDOR_BLE_UPDATE_DUPLICATE_EXCEPTIONAL_LIST: {
             uint8_t subcode, status; uint32_t length;
             STREAM_TO_UINT8(status, p);
@@ -1038,6 +1043,7 @@ tBTM_STATUS BTM_WriteVoiceSettings(UINT16 settings)
     return (BTM_NO_RESOURCES);
 }
 
+#if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_EnableTestMode
@@ -1094,6 +1100,7 @@ tBTM_STATUS BTM_EnableTestMode(void)
         return (BTM_NO_RESOURCES);
     }
 }
+#endif // #if (BLE_HOST_ENABLE_TEST_MODE_EN == TRUE)
 
 /*******************************************************************************
 **

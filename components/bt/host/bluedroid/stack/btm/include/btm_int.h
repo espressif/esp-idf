@@ -208,8 +208,10 @@ tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
 tBTM_CMPL_CB        *p_switch_role_cb;  /* Callback function to be called when  */
 /* requested switch role is completed   */
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 TIMER_LIST_ENT       tx_power_timer;
 tBTM_CMPL_CB        *p_tx_power_cmpl_cb;/* Callback function to be called       */
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 #if CLASSIC_BT_INCLUDED == TRUE
 TIMER_LIST_ENT       afh_channels_timer;
@@ -722,14 +724,18 @@ struct tBTM_SEC_DEV_REC{
 */
 typedef struct {
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
+#if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_LOC_BD_NAME bredr_bd_name;                 /* local BREDR device name */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
     tBTM_LOC_BD_NAME ble_bd_name;                   /* local BLE device name */
 #endif
+#if (CLASSIC_BT_INCLUDED == TRUE)
     BOOLEAN          pin_type;                   /* TRUE if PIN type is fixed */
     UINT8            pin_code_len;               /* Bonding information */
     PIN_CODE         pin_code;                   /* PIN CODE if pin type is fixed */
-    BOOLEAN          connectable;                /* If TRUE page scan should be enabled */
-    UINT8            def_inq_scan_mode;          /* ??? limited/general/none */
+    // BOOLEAN          connectable;                /* If TRUE page scan should be enabled */
+    // UINT8            def_inq_scan_mode;          /* ??? limited/general/none */
+#endif // #if (CLASSIC_BT_INCLUDED == TRUE)
 } tBTM_CFG;
 
 enum {
@@ -950,7 +956,7 @@ typedef struct {
 #endif // SMP_INCLUDED == TRUE || BT_CLASSIC_ENABLED == TRUE
     list_t                  *p_sec_dev_rec_list;
     tBTM_SEC_SERV_REC       *p_out_serv;
-    tBTM_MKEY_CALLBACK      *mkey_cback;
+    // tBTM_MKEY_CALLBACK      *mkey_cback;
 
     BD_ADDR                  connecting_bda;
     DEV_CLASS                connecting_dc;

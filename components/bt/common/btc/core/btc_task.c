@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -383,6 +383,7 @@ static void btc_deinit_mem(void) {
     }
 
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
     if (gl_bta_adv_data_ptr) {
         osi_free(gl_bta_adv_data_ptr);
         gl_bta_adv_data_ptr = NULL;
@@ -392,6 +393,7 @@ static void btc_deinit_mem(void) {
         osi_free(gl_bta_scan_rsp_data_ptr);
         gl_bta_scan_rsp_data_ptr = NULL;
     }
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // BLE_42_FEATURE_SUPPORT
 
 #if GATTS_INCLUDED == TRUE && GATT_DYNAMIC_MEMORY == TRUE
@@ -446,6 +448,7 @@ static bt_status_t btc_init_mem(void) {
 
 #if BTC_DYNAMIC_MEMORY == TRUE
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
+#if (BLE_42_ADV_EN == TRUE)
     if ((gl_bta_adv_data_ptr = (tBTA_BLE_ADV_DATA *)osi_malloc(sizeof(tBTA_BLE_ADV_DATA))) == NULL) {
         goto error_exit;
     }
@@ -455,6 +458,7 @@ static bt_status_t btc_init_mem(void) {
         goto error_exit;
     }
     memset((void *)gl_bta_scan_rsp_data_ptr, 0, sizeof(tBTA_BLE_ADV_DATA));
+#endif // #if (BLE_42_ADV_EN == TRUE)
 #endif // (BLE_42_FEATURE_SUPPORT == TRUE)
 #endif // BTC_DYNAMIC_MEMORY == TRUE
 
@@ -524,9 +528,6 @@ bt_status_t btc_init(void)
     btc_gap_ble_init();
 #endif  ///BLE_INCLUDED == TRUE
 
-#if SCAN_QUEUE_CONGEST_CHECK
-    btc_adv_list_init();
-#endif
     /* TODO: initial the profile_tab */
     return BT_STATUS_SUCCESS;
 }
@@ -542,18 +543,6 @@ void btc_deinit(void)
 #if (BLE_INCLUDED == TRUE)
     btc_gap_ble_deinit();
 #endif  ///BLE_INCLUDED == TRUE
-#if SCAN_QUEUE_CONGEST_CHECK
-    btc_adv_list_deinit();
-#endif
-}
-
-bool btc_check_queue_is_congest(void)
-{
-    if (osi_thread_queue_wait_size(btc_thread, 0) >= BT_QUEUE_CONGEST_SIZE) {
-        return true;
-    }
-
-    return false;
 }
 
 int get_btc_work_queue_size(void)
