@@ -14,6 +14,7 @@
 #include "crypto.h"
 #include "des_i.h"
 
+#include "psa/crypto.h"
 /*
  * This implementation is based on a DES implementation included in
  * LibTomCrypt. The version here is modified to fit in wpa_supplicant/hostapd
@@ -398,29 +399,55 @@ static void desfunc(u32 *block, const u32 *keys)
 
 int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
 {
-	u8 pkey[8], next, tmp;
-	int i;
-	u32 ek[32], work[2];
+	psa_status_t status;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id;
 
-	/* Add parity bits to the key */
-	next = 0;
-	for (i = 0; i < 7; i++) {
-		tmp = key[i];
-		pkey[i] = (tmp >> i) | next | 1;
-		next = tmp << (7 - i);
-	}
-	pkey[i] = next | 1;
+    status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        printf("%s: psa_crypto_init failed\n", __func__);
+        return -1;
+    }
 
-	deskey(pkey, 0, ek);
+    psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
+    psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
+    psa_set_key_type(&attributes, PSA_KEY_TYPE_DES);
+    psa_set_key_bits(&attributes, 64);
 
-	work[0] = WPA_GET_BE32(clear);
-	work[1] = WPA_GET_BE32(clear + 4);
-	desfunc(work, ek);
-	WPA_PUT_BE32(cypher, work[0]);
-	WPA_PUT_BE32(cypher + 4, work[1]);
+    status = psa_import_key(&attributes, key, 8, &key_id);
+    if (status != PSA_SUCCESS) {
+        printf("%s: psa_import_key failed, status: %d\n", __func__, status);
+        return -1;
+    }
 
-	forced_memzero(pkey, sizeof(pkey));
-	forced_memzero(ek, sizeof(ek));
+    psa_reset_key_attributes(&attributes);
+
+    psa_cipher_operation_t operation = PSA_CIPHER_OPERATION_INIT;
+
+    status = psa_cipher_encrypt_setup(&operation, key_id, PSA_ALG_ECB_NO_PADDING);
+    if (status != PSA_SUCCESS) {
+        printf("%s: psa_cipher_encrypt_setup failed\n", __func__);
+        return -1;
+    }
+
+    size_t output_length = 0;
+
+    status = psa_cipher_update(&operation, clear, 8, cypher, 8, &output_length);
+    if (status != PSA_SUCCESS) {
+        printf("%s: psa_cipher_update failed\n", __func__);
+        return -1;
+    }
+
+    status = psa_cipher_finish(&operation, cypher + output_length, 8 - output_length, &output_length);
+    if (status != PSA_SUCCESS) {
+        printf("%s: psa_cipher_finish failed\n", __func__);
+        return -1;
+    }
+
+    psa_cipher_abort(&operation);
+
+    psa_destroy_key(key_id);
+
 	return 0;
 }
 

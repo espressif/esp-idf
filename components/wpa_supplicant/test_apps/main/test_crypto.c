@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,17 @@
 #include "utils/common.h"
 #include "utils/includes.h"
 #include "crypto/crypto.h"
+#include "crypto/aes_wrap.h"
 
 #include "mbedtls/ecp.h"
+#include "mbedtls/pk.h"
 #include "test_utils.h"
 #include "test_wpa_supplicant_common.h"
+
+#include "psa/crypto.h"
+#include "mbedtls/psa_util.h"
+#include "esp_heap_caps.h"
+#include "crypto/sha384.h"
 
 typedef struct crypto_bignum crypto_bignum;
 
@@ -535,4 +542,565 @@ TEST_CASE("Test crypto lib ECC apis", "[wpa_crypto]")
 
     }
 
+}
+
+TEST_CASE("Test crypto lib aes apis", "[wpa_crypto]")
+{
+    set_leak_threshold(1);
+
+    {
+        /* Check init and deinit APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        void *ctx = aes_encrypt_init(key, key_size);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        aes_encrypt_deinit(ctx);
+
+        ctx = NULL;
+
+        ctx = aes_decrypt_init(key, key_size);
+        TEST_ASSERT_NOT_NULL(ctx);
+        aes_decrypt_deinit(ctx);
+    }
+
+    {
+        /* Check encrypt and decrypt APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t plain[16] = {[0 ... 15] = 0xA5};
+        const uint8_t expected_cipher[16] = {0x69, 0x84, 0xC9, 0x14, 0x53, 0x57, 0xE1, 0x09, 0xAA, 0x74, 0xDB, 0x96, 0x8B, 0x17, 0xA0, 0x6A};
+
+        void *ctx = aes_encrypt_init(key, key_size);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        uint8_t crypt[16];
+        int ret = aes_encrypt(ctx, plain, crypt);
+        aes_encrypt_deinit(ctx);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(crypt, expected_cipher, 16));
+
+        ctx = aes_decrypt_init(key, key_size);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        uint8_t decrypted[16];
+        ret = aes_decrypt(ctx, crypt, decrypted);
+        aes_decrypt_deinit(ctx);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(decrypted, plain, 16));
+    }
+
+    {
+        /* Check encrypt and decrypt 128 bit CBC APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t iv[16] = {[0 ... 15] = 0x5A};
+        uint8_t plain[16] = {[0 ... 15] = 0xA5};
+
+        const uint8_t expected_cipher[16] = {
+            0xA0, 0x67, 0x6C, 0x77, 0x53, 0xE2, 0x17, 0x63, 0x00, 0x4C, 0xB8, 0xF6, 0xA8, 0x9F, 0xC0, 0xD2
+        };
+
+        int ret = aes_128_cbc_encrypt(key, iv, plain, 16);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(plain, expected_cipher, 16));
+
+        ret = aes_128_cbc_decrypt(key, iv, plain, 16);
+        TEST_ASSERT(ret == 0);
+        uint8_t expected_plain[16] = {[0 ... 15] = 0xA5};
+        TEST_ASSERT(!memcmp(plain, expected_plain, 16));
+    }
+
+    {
+        /* Check encrypt 128 bit CTR APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t iv[16] = {[0 ... 15] = 0x5A};
+        uint8_t plain[16] = {[0 ... 15] = 0xA5};
+
+        const uint8_t expected_cipher[16] = {
+            0x44, 0xF5, 0x91, 0x0A, 0xE0, 0xEF, 0x5C, 0xF2, 0x28, 0xEB, 0x74, 0x41, 0xAA, 0xB2, 0x24, 0xE6
+        };
+
+        int ret = aes_128_ctr_encrypt(key, iv, plain, 16);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(plain, expected_cipher, 16));
+    }
+
+    /*
+        {
+            Check internal crypto cipher APIs
+            const uint8_t key_size = 16;
+            const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+            const uint8_t iv[16] = {[0 ... 15] = 0x5A};
+            uint8_t plain[16] = {[0 ... 15] = 0xA5};
+
+            const uint8_t expected_cipher[16] = {
+                0xA0, 0x67, 0x6C, 0x77, 0x53, 0xE2, 0x17, 0x63, 0x00, 0x4C, 0xB8, 0xF6, 0xA8, 0x9F, 0xC0, 0xD2
+            };
+
+            struct crypto_cipher *ctx = crypto_cipher_init(CRYPTO_CIPHER_ALG_AES, iv, key, key_size);
+            TEST_ASSERT_NOT_NULL(ctx);
+
+            uint8_t crypt[16];
+            int ret = crypto_cipher_encrypt(ctx, plain, crypt, 16);
+            TEST_ASSERT(ret == 0);
+            TEST_ASSERT(!memcmp(crypt, expected_cipher, 16));
+
+            ret = crypto_cipher_decrypt(ctx, crypt, plain, 16);
+            TEST_ASSERT(ret == 0);
+            uint8_t expected_plain[16] = {[0 ... 15] = 0xA5};
+            TEST_ASSERT(!memcmp(plain, expected_plain, 16));
+
+            crypto_cipher_deinit(ctx);
+        }
+    */
+    {
+        /* Check omac1_aes_128 APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t data[16] = {[0 ... 15] = 0xA5};
+        uint8_t mac[16];
+
+        const uint8_t expected_mac[16] = {
+            0x4e, 0x47, 0xb3, 0xcc, 0xf8, 0x41, 0xd0, 0x2f, 0xeb, 0xc1, 0xa9, 0x90, 0xdf, 0xc8, 0xe4, 0x8d
+        };
+
+        int ret = omac1_aes_128(key, data, 16, mac);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(mac, expected_mac, 16));
+
+        /* Also check a negative case */
+        const uint8_t expected_mac_neg[16] = {
+            0x4e, 0x47, 0xb3, 0xcc, 0xf8, 0x41, 0xd0, 0x2f, 0xeb, 0xc1, 0xa9, 0x90, 0xdf, 0xc8, 0xe4, 0x8e
+        };
+        TEST_ASSERT(memcmp(mac, expected_mac_neg, 16));
+    }
+
+    {
+        /* Check aes_ccm_ae APIs */
+        const uint8_t key_size = 16;
+        const uint8_t key[16] = {[0 ... key_size - 1] = 0x3A};
+        const uint8_t nonce[13] = {[0 ... 12] = 0x5A};
+        const uint8_t aad[16] = {[0 ... 15] = 0xA5};
+        const uint8_t data[16] = {[0 ... 15] = 0xA5};
+        uint8_t crypt[16];
+        uint8_t tag[16];
+
+        const uint8_t expected_crypt[16] = {
+            0x28, 0xd9, 0xfe, 0x15, 0xc7, 0xc5, 0xc8, 0xb7, 0xc0, 0x18, 0x28, 0x9b, 0x4b, 0x0b, 0xea, 0x66
+        };
+
+        const uint8_t expected_tag[16] = {
+            0xbf, 0xf4, 0x0e, 0x51, 0x78, 0xc0, 0xbd, 0x93, 0x29, 0xd7, 0x63, 0x28, 0xc6, 0x71, 0xe6, 0x60
+        };
+
+        int ret = aes_ccm_ae(key, key_size, nonce, 16, data, 16, aad, 16, crypt, tag);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(crypt, expected_crypt, 16));
+
+        uint8_t decrypted[16] = {0};
+
+        ret = aes_ccm_ad(key, key_size, nonce, 16, crypt, 16, aad, 16, tag, decrypted);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(tag, expected_tag, 16));
+        TEST_ASSERT(!memcmp(decrypted, data, 16));
+    }
+}
+
+// NOTE: This is disable as PSA does not support DES
+/*
+TEST_CASE("Test crypto lib des apis", "[wpa_crypto]")
+{
+    {
+        const uint8_t key[8] = {[0 ... 7] = 0x3A};
+        const uint8_t plain[8] = {[0 ... 7] = 0xA5};
+
+        const uint8_t expected_cipher[8] = {
+            0x54, 0x24, 0x29, 0x5E, 0x53, 0x94, 0x1D, 0x8E
+        };
+
+        uint8_t crypt[8];
+        int ret = des_encrypt(plain, key, crypt);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(crypt, expected_cipher, 8));
+    }
+}
+*/
+
+TEST_CASE("Test crypto lib ecdsa apis", "[wpa_crypto]")
+{
+    set_leak_threshold(300);
+    {
+        /* Check ecdsa_get_sign apis */
+        uint8_t data[64] = {[0 ... 63] = 0xA5};
+
+        struct crypto_ec_key *eckey = crypto_ec_key_gen(MBEDTLS_ECP_DP_SECP256R1);
+        TEST_ASSERT_NOT_NULL(eckey);
+        // Signature length is defined as 2 * key_size
+        int ret = crypto_ecdsa_get_sign(data, NULL, NULL, eckey, 2 * 32);
+        TEST_ASSERT(ret == 0);
+
+        uint8_t expected_data[64] = {[0 ... 63] = 0xA5};
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, data, 64);
+        TEST_ASSERT(ret == 0);
+
+        // Negative test case
+        expected_data[0] = 0x5A;
+        ret = crypto_ec_key_verify_signature(eckey, expected_data, 64, data, 64);
+        TEST_ASSERT(ret == -1);
+        crypto_ec_key_deinit(eckey);
+    }
+}
+
+TEST_CASE("Test crypto lib hash apis", "[wpa_crypto]")
+{
+    set_leak_threshold(1);
+    {
+        /* Check sha256 APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[32];
+
+        uint8_t expected_hash[32] = {
+            0xFC, 0x8B, 0x64, 0x00, 0x1C, 0x5F, 0xDD, 0x0F, 0x2F, 0x40, 0xFB, 0x67, 0xDA, 0xE4, 0xA8, 0x65, 0xA2, 0xC5, 0xBD, 0x17, 0x83, 0x66, 0x76, 0xD6, 0xD5, 0xB5, 0x8B, 0x79, 0x17, 0xE3, 0x37, 0x17
+        };
+
+        size_t len[1] = {32};
+        int ret = sha256_vector(1, data, len, hash);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 32));
+    }
+
+    {
+        /* Check sha384 APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[48];
+
+        // 80b0d3a08d530e02627c374ef4bf507faa55001e2ffdcd20c0be7d0f47ea600e3d980256699409c673d6fc823742fc20
+        uint8_t expected_hash[48] = {
+            0x80, 0xB0, 0xD3, 0xA0, 0x8D, 0x53, 0x0E, 0x02, 0x62, 0x7C, 0x37, 0x4E, 0xF4, 0xBF, 0x50, 0x7F, 0xAA, 0x55, 0x00, 0x1E, 0x2F, 0xFD, 0xCD, 0x20, 0xC0, 0xBE, 0x7D, 0x0F, 0x47, 0xEA, 0x60, 0x0E, 0x3D, 0x98, 0x02, 0x56, 0x69, 0x94, 0x09, 0xC6, 0x73, 0xD6, 0xFC, 0x82, 0x37, 0x42, 0xFC, 0x20
+        };
+
+        size_t len[1] = {32};
+        int ret = sha384_vector(1, data, len, hash);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 48));
+    }
+
+    {
+        /* Check sha512 APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[64];
+
+        // 774B67B3A64977E9A42E46217F17A6E85402A50A1EC8B75EB53FCDD5D4EB4B54D4A249F863E97128CF6529763BC96AA73CA9AE49784D2FF158B324A6016CB518
+        uint8_t expected_hash[64] = {
+            0x77, 0x4B, 0x67, 0xB3, 0xA6, 0x49, 0x77, 0xE9, 0xA4, 0x2E, 0x46, 0x21, 0x7F, 0x17, 0xA6, 0xE8, 0x54, 0x02, 0xA5, 0x0A, 0x1E, 0xC8, 0xB7, 0x5E, 0xB5, 0x3F, 0xCD, 0xD5, 0xD4, 0xEB, 0x4B, 0x54, 0xD4, 0xA2, 0x49, 0xF8, 0x63, 0xE9, 0x71, 0x28, 0xCF, 0x65, 0x29, 0x76, 0x3B, 0xC9, 0x6A, 0xA7, 0x3C, 0xA9, 0xAE, 0x49, 0x78, 0x4D, 0x2F, 0xF1, 0x58, 0xB3, 0x24, 0xA6, 0x01, 0x6C, 0xB5, 0x18
+        };
+
+        size_t len[1] = {32};
+
+        int ret = sha512_vector(1, data, len, hash);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 64));
+    }
+
+    {
+        /* Check SHA1 APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[20];
+        size_t len[1] = {32};
+
+        // 3723E743D2EAB795ED034F03ECD20E69E8839219
+        uint8_t expected_hash[20] = {
+            0x37, 0x23, 0xE7, 0x43, 0xD2, 0xEA, 0xB7, 0x95, 0xED, 0x03, 0x4F, 0x03, 0xEC, 0xD2, 0x0E, 0x69, 0xE8, 0x83, 0x92, 0x19
+        };
+
+        int ret = sha1_vector(1, data, len, hash);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 20));
+    }
+
+    {
+        /* Check MD5 APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[16];
+        size_t len[1] = {32};
+
+        // 096CABA666F7B5381886AA0BD54114ED
+        uint8_t expected_hash[16] = {
+            0x09, 0x6C, 0xAB, 0xA6, 0x66, 0xF7, 0xB5, 0x38, 0x18, 0x86, 0xAA, 0x0B, 0xD5, 0x41, 0x14, 0xED
+        };
+
+        int ret = md5_vector(1, data, len, hash);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 16));
+    }
+
+    {
+        /* Check incremental hash APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+        uint8_t hash[32];
+        size_t len[1] = {32};
+
+        uint8_t expected_hash[16] = {
+            0x09, 0x6C, 0xAB, 0xA6, 0x66, 0xF7, 0xB5, 0x38, 0x18, 0x86, 0xAA, 0x0B, 0xD5, 0x41, 0x14, 0xED
+        };
+
+        struct crypto_hash *ctx = crypto_hash_init(CRYPTO_HASH_ALG_MD5, NULL, 0);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        crypto_hash_update(ctx, data[0], 32);
+
+        int ret = crypto_hash_finish(ctx, hash, len);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 16));
+    }
+
+    {
+        /* Check incremental hash API with an user side error for memory leaks */
+
+        struct crypto_hash *ctx = crypto_hash_init(CRYPTO_HASH_ALG_MD5, NULL, 0);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        /* Assume a user error occured, no update API call, only finish to free the ctx */
+
+        int ret = crypto_hash_finish(ctx, NULL, NULL);
+        TEST_ASSERT(ret == -1);
+    }
+
+    {
+        /* Check incremental mac APIs */
+        const uint8_t *data[1];
+        data[0] = calloc(1, 32);
+        memset((void *)data[0], 0xA5, 32);
+
+        uint8_t hash[32];
+        size_t len[1] = {32};
+
+        uint8_t key[32] = {[0 ... 31] = 0x3A};
+
+        // 2b89551909266ed16c077407800210be3c537474ed3d6850ca9f313aea897cd5
+        uint8_t expected_hash[32] = {
+            0x2B, 0x89, 0x55, 0x19, 0x09, 0x26, 0x6E, 0xD1, 0x6C, 0x07, 0x74, 0x07, 0x80, 0x02, 0x10, 0xBE, 0x3C, 0x53, 0x74, 0x74, 0xED, 0x3D, 0x68, 0x50, 0xCA, 0x9F, 0x31, 0x3A, 0xEA, 0x89, 0x7C, 0xD5
+        };
+
+        struct crypto_hash *ctx = crypto_hash_init(CRYPTO_HASH_ALG_HMAC_SHA256, key, 32);
+        TEST_ASSERT_NOT_NULL(ctx);
+
+        crypto_hash_update(ctx, data[0], 32);
+
+        int ret = crypto_hash_finish(ctx, hash, len);
+        free((void *)data[0]);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 32));
+    }
+
+    {
+        /* Check hmac_sha384 APIs */
+        const uint8_t data[32] = {[0 ... 31] = 0xA5};
+        uint8_t hash[48];
+        uint8_t key[32] = {[0 ... 31] = 0x3A};
+
+        // 8014a069bfa41e5d298e2c6050ad6ca8a3d7ac447068455b035c24c531f67d2687db1259105fabe9cdb0809604e552ce
+        uint8_t expected_hash[48] = {
+            0x80, 0x14, 0xA0, 0x69, 0xBF, 0xA4, 0x1E, 0x5D, 0x29, 0x8E, 0x2C, 0x60, 0x50, 0xAD, 0x6C, 0xA8, 0xA3, 0xD7, 0xAC, 0x44, 0x70, 0x68, 0x45, 0x5B, 0x03, 0x5C, 0x24, 0xC5, 0x31, 0xF6, 0x7D, 0x26, 0x87, 0xDB, 0x12, 0x59, 0x10, 0x5F, 0xAB, 0xE9, 0xCD, 0xB0, 0x80, 0x96, 0x04, 0xE5, 0x52, 0xCE
+        };
+
+        int ret = hmac_sha384(key, 32, data, 32, hash);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(hash, expected_hash, 48));
+    }
+}
+
+TEST_CASE("Test crypto lib rsa apis", "[wpa_crypto]")
+{
+    set_leak_threshold(1);
+    {
+        const char *rsa_key =
+            "-----BEGIN RSA PRIVATE KEY-----\n"
+            "MIIEowIBAAKCAQEAojDGyuzNRtqWDS3no8PPA0LFCme4V8qnpKaJnHjp/YxMEcny\n"
+            "W3eWPBTtL0WUvSRHBY7PgiVTKWKN/4zuRq77XnLxZQuRGYQeLcpLmsyZPArnlfym\n"
+            "jZRsXPsnPscmbKt5SAxCrFKXKIwZ76rR7he/2OsxQ7O6yfIm3JQQRt1h+PjCvPoq\n"
+            "JmvqhbMDH/0bTeNEdGPQPEx8+Xohhkb6bYivH8Jcm1FkZTVDfMtZsmismghr7ufB\n"
+            "gOLrc9NnFO7r9G8MtV+mtqWV8Urm7KkN4fs/e9i8XlHcd7qalSlEtDl0+md6xwV0\n"
+            "ZFvJQ2jlQEnZ94CEgAwYlpbsGlis+cfjdIf+wQIDAQABAoIBAFRnwey1E5c+BjzR\n"
+            "mOz25/Kwes6Rb7PweRIMwSy3GD6lFqljSUckkwCte0nQkjlkebmAuqjmN8Mf0Pof\n"
+            "I5mRUquyccG+JUL8KKB32KS0uUIwAplhpGOlzEcPRTs8dNi03CcMil4XlSa60nyR\n"
+            "jzKzFVoT+81Z6WlTJbpBK79VUrk4GCNPrvwU3r+H68zOQG0CSia5eoWSOEVuFlSw\n"
+            "01ixNbQRgCKZQQB72FQAtxBNIiPuWNg1nc+a7GMMKMmzzHr2xNUyv6byiQ0ADW6v\n"
+            "uOZbuNJ6gy6xltswGjR3mUcmGA9JoLwKTHLKD9qDzAE40RYU/G3I3o1PsbzdYnIr\n"
+            "hPnoLwkCgYEA0b3vBcpyIld1+BYPB1Q0b5uFbTXbegGvR8jU82ZGWs/uKUpO/wmq\n"
+            "A3P2Q7Bm+91Zsz0hiQ56k2N2tsb5H/tOcOwBSkzbViJ4w9IroFZydQpv5mZXSELh\n"
+            "b0wSnet4L99TxsJiA55S6JmawrgRCBGhOsTQA0bKNGFioN1CkcVrjhsCgYEAxfYV\n"
+            "KvdhmU9hRauYFHYVCiHYTC8ae8W1p8YwUc6N9PnUvUazYCpX257HlQgs0QzIcj0k\n"
+            "dz9/DqfE6xuPdVzyrFwwdn3MthN6QOWUNEnh0XeVnoUtFS8Tld3YFVO9sCGQg1JV\n"
+            "OWasqz8G/xxxycjiKp7ls5jcgJ/K5JaNwyJZhFMCgYBacgIxyBQhtP99JN4ENg6K\n"
+            "llEaQCBN444XcYZLE66BGKtGCPI5zowPAyGOHPK75773qQPeG21GQ5z8wp7JaNBx\n"
+            "p4QC61OmOCVFpEsF0GF5ETAh9b3rvlOCcBaTHOhuFGsHCenET7DG9v4iu8c0aI3T\n"
+            "Tu24i/1ESz6Byggb3js8QwKBgBfTlpilTcn2E+8eyB8uVznw+Oeyg62CDmszH325\n"
+            "LrzdlQ1zBQP+FLUKV1tIsJw4vaeCVHFF4zUQXFMv7gRiO5MjRXH9kjYYAg7tkvj4\n"
+            "K4Xartd1kAeMsv7GxMtMWPhqEcq8jiVqhj3WSDFMayWuWAppNZx4OZIBqZn5xPZH\n"
+            "nB6hAoGBAK70lFDgWH7tm6kmmSSSDk9jk4CHiXgWogVGog0+RAtKf4JaFU6Tz5UY\n"
+            "ejqo/sXVm7GCAKtpQ6iK79ZMmFOVG4fGx3WdrjAmCLspiO3FeJ2dR0hoc/OkbDv/\n"
+            "QOtjDKCvW8b3bLUD369Yh9GVCur5eJ6sjZga4D7jaSEgON3ENIkE\n"
+            "-----END RSA PRIVATE KEY-----\n";
+
+        mbedtls_pk_context *ctx = calloc(1, sizeof(mbedtls_pk_context));
+        mbedtls_pk_init(ctx);
+
+        // Read the above key into mbedtls_pk_context
+        int ret = mbedtls_pk_parse_key(ctx, (const unsigned char *)rsa_key, strlen(rsa_key) + 1, NULL, 0, NULL, MBEDTLS_PSA_RANDOM_STATE);
+        TEST_ASSERT(ret == 0);
+        uint8_t data[32] = {[0 ... 31] = 0xA5};
+        uint8_t encrypted[2048];
+        size_t encrypted_size = 2048;
+
+        psa_crypto_init();
+
+        ret = crypto_public_key_encrypt_pkcs1_v15((struct crypto_public_key *)ctx, data, 32, encrypted, &encrypted_size);
+        TEST_ASSERT(ret == 0);
+
+        uint8_t decrypted[32] = {[0 ... 31] = 0};
+        size_t decrypted_size = 32;
+
+        ret = crypto_private_key_decrypt_pkcs1_v15((struct crypto_private_key *)ctx, encrypted, encrypted_size, decrypted, &decrypted_size);
+        TEST_ASSERT(ret == 0);
+        TEST_ASSERT(!memcmp(data, decrypted, 32));
+        mbedtls_pk_free(ctx);
+        free(ctx);
+    }
+
+    {
+        /* Check pkcs1 signature */
+        const char *rsa_key =
+            "-----BEGIN RSA PRIVATE KEY-----\n"
+            "MIIEowIBAAKCAQEAojDGyuzNRtqWDS3no8PPA0LFCme4V8qnpKaJnHjp/YxMEcny\n"
+            "W3eWPBTtL0WUvSRHBY7PgiVTKWKN/4zuRq77XnLxZQuRGYQeLcpLmsyZPArnlfym\n"
+            "jZRsXPsnPscmbKt5SAxCrFKXKIwZ76rR7he/2OsxQ7O6yfIm3JQQRt1h+PjCvPoq\n"
+            "JmvqhbMDH/0bTeNEdGPQPEx8+Xohhkb6bYivH8Jcm1FkZTVDfMtZsmismghr7ufB\n"
+            "gOLrc9NnFO7r9G8MtV+mtqWV8Urm7KkN4fs/e9i8XlHcd7qalSlEtDl0+md6xwV0\n"
+            "ZFvJQ2jlQEnZ94CEgAwYlpbsGlis+cfjdIf+wQIDAQABAoIBAFRnwey1E5c+BjzR\n"
+            "mOz25/Kwes6Rb7PweRIMwSy3GD6lFqljSUckkwCte0nQkjlkebmAuqjmN8Mf0Pof\n"
+            "I5mRUquyccG+JUL8KKB32KS0uUIwAplhpGOlzEcPRTs8dNi03CcMil4XlSa60nyR\n"
+            "jzKzFVoT+81Z6WlTJbpBK79VUrk4GCNPrvwU3r+H68zOQG0CSia5eoWSOEVuFlSw\n"
+            "01ixNbQRgCKZQQB72FQAtxBNIiPuWNg1nc+a7GMMKMmzzHr2xNUyv6byiQ0ADW6v\n"
+            "uOZbuNJ6gy6xltswGjR3mUcmGA9JoLwKTHLKD9qDzAE40RYU/G3I3o1PsbzdYnIr\n"
+            "hPnoLwkCgYEA0b3vBcpyIld1+BYPB1Q0b5uFbTXbegGvR8jU82ZGWs/uKUpO/wmq\n"
+            "A3P2Q7Bm+91Zsz0hiQ56k2N2tsb5H/tOcOwBSkzbViJ4w9IroFZydQpv5mZXSELh\n"
+            "b0wSnet4L99TxsJiA55S6JmawrgRCBGhOsTQA0bKNGFioN1CkcVrjhsCgYEAxfYV\n"
+            "KvdhmU9hRauYFHYVCiHYTC8ae8W1p8YwUc6N9PnUvUazYCpX257HlQgs0QzIcj0k\n"
+            "dz9/DqfE6xuPdVzyrFwwdn3MthN6QOWUNEnh0XeVnoUtFS8Tld3YFVO9sCGQg1JV\n"
+            "OWasqz8G/xxxycjiKp7ls5jcgJ/K5JaNwyJZhFMCgYBacgIxyBQhtP99JN4ENg6K\n"
+            "llEaQCBN444XcYZLE66BGKtGCPI5zowPAyGOHPK75773qQPeG21GQ5z8wp7JaNBx\n"
+            "p4QC61OmOCVFpEsF0GF5ETAh9b3rvlOCcBaTHOhuFGsHCenET7DG9v4iu8c0aI3T\n"
+            "Tu24i/1ESz6Byggb3js8QwKBgBfTlpilTcn2E+8eyB8uVznw+Oeyg62CDmszH325\n"
+            "LrzdlQ1zBQP+FLUKV1tIsJw4vaeCVHFF4zUQXFMv7gRiO5MjRXH9kjYYAg7tkvj4\n"
+            "K4Xartd1kAeMsv7GxMtMWPhqEcq8jiVqhj3WSDFMayWuWAppNZx4OZIBqZn5xPZH\n"
+            "nB6hAoGBAK70lFDgWH7tm6kmmSSSDk9jk4CHiXgWogVGog0+RAtKf4JaFU6Tz5UY\n"
+            "ejqo/sXVm7GCAKtpQ6iK79ZMmFOVG4fGx3WdrjAmCLspiO3FeJ2dR0hoc/OkbDv/\n"
+            "QOtjDKCvW8b3bLUD369Yh9GVCur5eJ6sjZga4D7jaSEgON3ENIkE\n"
+            "-----END RSA PRIVATE KEY-----\n";
+
+        mbedtls_pk_context *ctx = calloc(1, sizeof(mbedtls_pk_context));
+        mbedtls_pk_init(ctx);
+
+        // Read the above key into mbedtls_pk_context
+        int ret = mbedtls_pk_parse_key(ctx, (const unsigned char *)rsa_key, strlen(rsa_key) + 1, NULL, 0, NULL, MBEDTLS_PSA_RANDOM_STATE);
+        TEST_ASSERT(ret == 0);
+
+        uint8_t data[32] = {[0 ... 31] = 0xA5};
+        uint8_t signature[2048];
+        size_t signature_size = 2048;
+
+        ret = crypto_private_key_sign_pkcs1((struct crypto_private_key *)ctx, data, 32, signature, &signature_size);
+        TEST_ASSERT(ret == 0);
+
+        // printf("Signature size: %d\n", signature_size);
+        // for (int i = 0; i < signature_size; i++) {
+        //     printf("%02X", signature[i]);
+        // }
+        // printf("\n");
+
+        // 700CE7B382057B3DA95734BFF2371A6435E9B226BFE2BB97922529A3331F1DEE57CA02341EE7448A5605813C8124BD64EBC21623EAC7CA8DECB61B615676BA0CBCE3A0B51369E4D69C8C7628AC55952D1553951722C05A0F79F9AC1C17061781532B8E2577529C480F96B93ED73D4079C865D71758ABB6EC4B51C4ED0ED8D47DF82C9B8701E072D5B9786CC835A52F508F2BCC2A762DD8C4BB9C02B44591954EDEF38655A2E551C6BAA0AFA803D583147856980D4EF3A1053A32EB997B3DEF46C86E7BB59F83F7D6FE38E825B60BF42652DF87AA4F19689BFBB6CEF07789A4B3AAD270A4FF9D942083BA08D0D97BD0D707B57424C652850627A505D23E1D0B2E
+        uint8_t expected_signature[256] = {
+            0x70, 0x0C, 0xE7, 0xB3, 0x82, 0x05, 0x7B, 0x3D, 0xA9, 0x57,
+            0x34, 0xBF, 0xF2, 0x37, 0x1A, 0x64, 0x35, 0xE9, 0xB2, 0x26,
+            0xBF, 0xE2, 0xBB, 0x97, 0x92, 0x25, 0x29, 0xA3, 0x33, 0x1F,
+            0x1D, 0xEE, 0x57, 0xCA, 0x02, 0x34, 0x1E, 0xE7, 0x44, 0x8A,
+            0x56, 0x05, 0x81, 0x3C, 0x81, 0x24, 0xBD, 0x64, 0xEB, 0xC2,
+            0x16, 0x23, 0xEA, 0xC7, 0xCA, 0x8D, 0xEC, 0xB6, 0x1B, 0x61,
+            0x56, 0x76, 0xBA, 0x0C, 0xBC, 0xE3, 0xA0, 0xB5, 0x13, 0x69,
+            0xE4, 0xD6, 0x9C, 0x8C, 0x76, 0x28, 0xAC, 0x55, 0x95, 0x2D,
+            0x15, 0x53, 0x95, 0x17, 0x22, 0xC0, 0x5A, 0x0F, 0x79, 0xF9,
+            0xAC, 0x1C, 0x17, 0x06, 0x17, 0x81, 0x53, 0x2B, 0x8E, 0x25,
+            0x77, 0x52, 0x9C, 0x48, 0x0F, 0x96, 0xB9, 0x3E, 0xD7, 0x3D,
+            0x40, 0x79, 0xC8, 0x65, 0xD7, 0x17, 0x58, 0xAB, 0xB6, 0xEC,
+            0x4B, 0x51, 0xC4, 0xED, 0x0E, 0xD8, 0xD4, 0x7D, 0xF8, 0x2C,
+            0x9B, 0x87, 0x01, 0xE0, 0x72, 0xD5, 0xB9, 0x78, 0x6C, 0xC8,
+            0x35, 0xA5, 0x2F, 0x50, 0x8F, 0x2B, 0xCC, 0x2A, 0x76, 0x2D,
+            0xD8, 0xC4, 0xBB, 0x9C, 0x02, 0xB4, 0x45, 0x91, 0x95, 0x4E,
+            0xDE, 0xF3, 0x86, 0x55, 0xA2, 0xE5, 0x51, 0xC6, 0xBA, 0xA0,
+            0xAF, 0xA8, 0x03, 0xD5, 0x83, 0x14, 0x78, 0x56, 0x98, 0x0D,
+            0x4E, 0xF3, 0xA1, 0x05, 0x3A, 0x32, 0xEB, 0x99, 0x7B, 0x3D,
+            0xEF, 0x46, 0xC8, 0x6E, 0x7B, 0xB5, 0x9F, 0x83, 0xF7, 0xD6,
+            0xFE, 0x38, 0xE8, 0x25, 0xB6, 0x0B, 0xF4, 0x26, 0x52, 0xDF,
+            0x87, 0xAA, 0x4F, 0x19, 0x68, 0x9B, 0xFB, 0xB6, 0xCE, 0xF0,
+            0x77, 0x89, 0xA4, 0xB3, 0xAA, 0xD2, 0x70, 0xA4, 0xFF, 0x9D,
+            0x94, 0x20, 0x83, 0xBA, 0x08, 0xD0, 0xD9, 0x7B, 0xD0, 0xD7,
+            0x07, 0xB5, 0x74, 0x24, 0xC6, 0x52, 0x85, 0x06, 0x27, 0xA5,
+            0x05, 0xD2, 0x3E, 0x1D, 0x0B, 0x2E
+        };
+
+        TEST_ASSERT(signature_size == 256);
+        for (int i = 0; i < signature_size; i++) {
+            if (signature[i] != expected_signature[i]) {
+                printf("Mismatch at index %d\n", i);
+                printf("Expected: %02X, Got: %02X\n", expected_signature[i], signature[i]);
+            }
+        }
+
+        mbedtls_pk_free(ctx);
+        free(ctx);
+    }
+}
+
+TEST_CASE("Test crypto lib ec apis", "[wpa_crypto]")
+{
+    set_leak_threshold(1);
+    {
+        psa_key_id_t key_id;
+        psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+
+        psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_SIGN_MESSAGE | PSA_KEY_USAGE_VERIFY_MESSAGE | PSA_KEY_USAGE_EXPORT);
+        psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+        psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(PSA_ECC_FAMILY_SECP_R1));
+        psa_set_key_bits(&key_attributes, 256);
+
+        psa_status_t status = psa_generate_key(&key_attributes, &key_id);
+        TEST_ASSERT(status == PSA_SUCCESS);
+
+        unsigned char *key_buf = NULL;
+        int ret = crypto_write_pubkey_der((struct crypto_ec_key *)&key_id, &key_buf);
+        TEST_ASSERT(ret > 0);
+        free(key_buf);
+        ESP_LOGI("EC Test", "Public key DER size: %d", ret);
+    }
 }

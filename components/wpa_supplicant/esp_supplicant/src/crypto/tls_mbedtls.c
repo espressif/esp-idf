@@ -37,6 +37,8 @@
 #include "mbedtls/platform.h"
 #include "eap_peer/eap.h"
 
+#include "mbedtls/psa_util.h"
+
 #ifdef CONFIG_TLSV13
 #include "psa/crypto.h"
 #include "md_psa.h"
@@ -177,7 +179,7 @@ static int set_pki_context(tls_context_t *tls, const struct tls_connection_param
 
     ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->private_key_blob, cfg->private_key_blob_len,
                                (const unsigned char *)cfg->private_key_passwd,
-                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_esp_random, NULL);
+                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
         return ret;
@@ -594,6 +596,12 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
     assert(params != NULL);
     assert(tls != NULL);
 
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
+        return -1;
+    }
+
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ssl_config_init(&tls->conf);
 
@@ -603,7 +611,7 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
         goto exit;
     }
 
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_esp_random, NULL);
+    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
     /* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.

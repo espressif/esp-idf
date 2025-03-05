@@ -16,6 +16,8 @@
 #include "sha/sha_core.h"
 #endif
 
+#include "psa/crypto.h"
+
 #define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT 0
 static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 void set_leak_threshold(int threshold)
@@ -62,12 +64,15 @@ void setUp(void)
     mbedtls_aes_free(&ctx);
 #endif // SOC_AES_SUPPORTED
 
+    psa_crypto_init();
+
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 }
 
 void tearDown(void)
 {
+    mbedtls_psa_crypto_free();
     size_t after_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     size_t after_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
     check_leak(before_free_8bit, after_free_8bit, "8BIT");

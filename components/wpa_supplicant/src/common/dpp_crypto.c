@@ -1016,11 +1016,11 @@ fail:
 
 int dpp_auth_derive_l_initiator(struct dpp_authentication *auth)
 {
-	struct crypto_ec_group *group;
+	struct crypto_ec_group *group = NULL;
 	struct crypto_ec_point *L = NULL, *sum = NULL;
-	struct crypto_ec_point *BR_point, *PR_point;
+	struct crypto_ec_point *BR_point = NULL, *PR_point = NULL;
 	struct crypto_bignum *lx;
-	struct crypto_bignum *bI_bn;
+	struct crypto_bignum *bI_bn = NULL;
 	int ret = -1;
 
 	/* L = bI * (BR + PR) */
@@ -1042,7 +1042,7 @@ int dpp_auth_derive_l_initiator(struct dpp_authentication *auth)
 	    crypto_ec_point_mul((struct crypto_ec *)group, sum, bI_bn, L) != 0 ||
 	    crypto_ec_get_affine_coordinates((struct crypto_ec *)group, L, lx, NULL) != 0) {
 		wpa_printf(MSG_ERROR,
-			   "OpenSSL: failed: %s", __func__);
+			   "DPP: failed: %s", __func__);
 		goto fail;
 	}
 
@@ -1056,6 +1056,21 @@ fail:
 	crypto_ec_point_deinit(sum, 1);
 	crypto_bignum_deinit(lx, 0);
 
+	if (BR_point) {
+		crypto_ec_point_deinit(BR_point, 0);
+	}
+
+	if (PR_point) {
+		crypto_ec_point_deinit(PR_point, 0);
+	}
+
+	if (group) {
+		crypto_ec_deinit((struct crypto_ec *)group);
+	}
+
+	if (bI_bn) {
+		crypto_bignum_deinit(bI_bn, 0);
+	}
 
 	return ret;
 }

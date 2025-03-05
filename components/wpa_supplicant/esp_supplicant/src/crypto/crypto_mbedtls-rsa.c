@@ -20,6 +20,9 @@
 #include <mbedtls/platform.h>
 #include <mbedtls/sha256.h>
 
+#include "psa/crypto.h"
+#include <mbedtls/psa_util.h>
+
 /* Dummy structures; these are just typecast to struct crypto_rsa_key */
 struct crypto_public_key;
 struct crypto_private_key;
@@ -181,23 +184,55 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
                                         const u8 *in, size_t inlen,
                                         u8 *out, size_t *outlen)
 {
-    int ret;
+    int ret = 0;
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
 
     if (!pkey) {
-        return -1;
-    }
-
-    ret = mbedtls_rsa_pkcs1_encrypt(mbedtls_pk_rsa(*pkey), mbedtls_esp_random,
-                                    NULL, inlen, in, out);
-
-    if (ret != 0) {
-        wpa_printf(MSG_ERROR, " failed  !  mbedtls_rsa_pkcs1_encrypt returned -0x%04x", -ret);
+        wpa_printf(MSG_ERROR, "failed to allocate memory");
+        ret = -1;
         goto cleanup;
     }
-    *outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
+
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
+        ret = -1;
+        goto cleanup;
+    }
+
+    ret = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_ENCRYPT, &attributes);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to get key attributes");
+        ret = -1;
+        goto cleanup;
+    }
+
+    ret = mbedtls_pk_import_into_psa(pkey, &attributes, &key_id);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to import key into PSA");
+        ret = -1;
+        goto cleanup;
+    }
+
+    size_t output_len = 0;
+    status = psa_asymmetric_encrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, in, inlen, NULL, 0, out, *outlen, &output_len);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to encrypt data, returned %d", (int) status);
+        ret = -1;
+        goto cleanup;
+    }
+
+    *outlen = output_len;
 
 cleanup:
+
+    if (key_id) {
+        printf("Destroying key\n");
+        psa_reset_key_attributes(&attributes);
+        psa_destroy_key(key_id);
+    }
     return ret;
 }
 
@@ -205,22 +240,54 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
                                           const u8 *in, size_t inlen,
                                           u8 *out, size_t *outlen)
 {
-    int ret;
-    size_t i;
+    int ret = 0;
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
 
     if (!pkey) {
+        wpa_printf(MSG_ERROR, "failed to allocate memory");
+        ret = -1;
+        goto cleanup;
+    }
+
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
         return -1;
     }
 
-    i = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
-    ret = mbedtls_rsa_rsaes_pkcs1_v15_decrypt(mbedtls_pk_rsa(*pkey), mbedtls_esp_random,
-                                              NULL, &i, in, out, *outlen);
-
-    if (ret == 0) {
-        *outlen = i;
+    ret = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_DECRYPT, &attributes);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to get key attributes");
+        ret = -1;
+        goto cleanup;
     }
 
+    ret = mbedtls_pk_import_into_psa(pkey, &attributes, &key_id);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to import key into PSA");
+        ret = -1;
+        goto cleanup;
+    }
+
+    size_t output_len = 0;
+    size_t heap_free_before = esp_get_free_heap_size();
+    status = psa_asymmetric_decrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, in, inlen, NULL, 0, out, *outlen, &output_len);
+    if (status != PSA_SUCCESS) {
+        printf("Failed to decrypt data, returned %d", (int) status);
+        ret = -1;
+        goto cleanup;
+    }
+    size_t heap_free_after = esp_get_free_heap_size();
+    printf("Heap free before: %d, Heap free after: %d, used: %d\n", heap_free_before, heap_free_after, heap_free_before - heap_free_after);
+    *outlen = output_len;
+    
+cleanup:
+    if (key_id) {
+        psa_reset_key_attributes(&attributes);
+        psa_destroy_key(key_id);
+    }
     return ret;
 }
 
@@ -228,22 +295,54 @@ int crypto_private_key_sign_pkcs1(struct crypto_private_key *key,
                                   const u8 *in, size_t inlen,
                                   u8 *out, size_t *outlen)
 {
-    int ret;
+    int ret = 0;
     mbedtls_pk_context *pkey  = (mbedtls_pk_context *)key;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
 
     if (!pkey) {
+        wpa_printf(MSG_ERROR, "failed to allocate memory");
+        ret = -1;
+        goto cleanup;
+    }
+
+    psa_status_t status = psa_crypto_init();
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
         return -1;
     }
 
-    if ((ret = mbedtls_rsa_pkcs1_sign(mbedtls_pk_rsa(*pkey), mbedtls_esp_random, NULL,
-                                      (mbedtls_pk_rsa(*pkey))->MBEDTLS_PRIVATE(hash_id),
-                                      inlen, in, out)) != 0) {
-        wpa_printf(MSG_ERROR, " failed  ! mbedtls_rsa_pkcs1_sign returned %d", ret);
+    ret = mbedtls_pk_get_psa_attributes(pkey, PSA_KEY_USAGE_SIGN_HASH , &attributes);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to get key attributes");
+        ret = -1;
         goto cleanup;
     }
-    *outlen = mbedtls_rsa_get_len(mbedtls_pk_rsa(*pkey));
+
+    ret = mbedtls_pk_import_into_psa(pkey, &attributes, &key_id);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to import key into PSA");
+        ret = -1;
+        goto cleanup;
+    }
+
+    printf("Hash ID: %d\n", (mbedtls_pk_rsa(*pkey))->MBEDTLS_PRIVATE(hash_id));
+
+    size_t output_len = 0;
+    status = psa_sign_hash(key_id, PSA_ALG_RSA_PKCS1V15_SIGN_RAW, in, inlen, out, *outlen, &output_len);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "Failed to sign data, returned %d", (int) status);
+        ret = -1;
+        goto cleanup;
+    }
+
+    *outlen = output_len;
 
 cleanup:
+    if (key_id) {
+        psa_reset_key_attributes(&attributes);
+        psa_destroy_key(key_id);
+    }
     return ret;
 }
 
