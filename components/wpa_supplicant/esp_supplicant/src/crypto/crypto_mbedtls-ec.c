@@ -32,6 +32,11 @@
 
 #include "esp_heap_caps.h"
 
+#include <mbedtls/psa_util.h>
+#include "psa/crypto.h"
+
+#include "esp_heap_caps.h"
+
 #define ECP_PRV_DER_MAX_BYTES   ( 29 + 3 * MBEDTLS_ECP_MAX_BYTES )
 #define ECP_PUB_DER_MAX_BYTES   ( 30 + 2 * MBEDTLS_ECP_MAX_BYTES )
 

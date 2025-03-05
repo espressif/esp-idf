@@ -271,6 +271,25 @@ int  crypto_private_key_decrypt_pkcs1_v15(struct crypto_private_key *key,
     }
     *outlen = output_len;
 
+    ret = mbedtls_pk_import_into_psa(pkey, &attributes, &key_id);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "failed to import key into PSA");
+        ret = -1;
+        goto cleanup;
+    }
+
+    size_t output_len = 0;
+    size_t heap_free_before = esp_get_free_heap_size();
+    status = psa_asymmetric_decrypt(key_id, PSA_ALG_RSA_PKCS1V15_CRYPT, in, inlen, NULL, 0, out, *outlen, &output_len);
+    if (status != PSA_SUCCESS) {
+        printf("Failed to decrypt data, returned %d", (int) status);
+        ret = -1;
+        goto cleanup;
+    }
+    size_t heap_free_after = esp_get_free_heap_size();
+    printf("Heap free before: %d, Heap free after: %d, used: %d\n", heap_free_before, heap_free_after, heap_free_before - heap_free_after);
+    *outlen = output_len;
+    
 cleanup:
     psa_reset_key_attributes(&key_attributes);
     if (key_id) {
