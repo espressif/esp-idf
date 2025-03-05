@@ -222,7 +222,21 @@ static void parse_ble_read_adv_max_len_response(
     }
     osi_free(response);
 }
-#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#endif // #if (BLE_50_EXTEND_ADV_EN == TRUE
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+static void parse_ble_read_periodic_adv_list_size_response(
+    BT_HDR *response,
+    uint16_t *periodic_adv_list_size_ptr)
+{
+
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_RD_PERIOD_ADV_LIST_SIZE, 1 /* bytes after */);
+    if (stream) {
+        // Size: 1 Octets ; Value: 0x01 to 0xFF ; Total number of Periodic Advertiser list entries that can be stored in the Controller
+        STREAM_TO_UINT8(*periodic_adv_list_size_ptr, stream);
+    }
+    osi_free(response);
+}
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 
@@ -287,6 +301,9 @@ static const hci_packet_parser_t interface = {
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
     parse_ble_read_adv_max_len_response,
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    parse_ble_read_periodic_adv_list_size_response,
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     parse_ble_read_suggested_default_data_length_response
 };
