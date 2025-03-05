@@ -33,6 +33,7 @@ ignores:
   - "components/hal/*/efuse_hal.c"
   - "components/hal/include/hal/adc_types.h"
   - "components/hal/include/hal/adc_hal.h"
+  - "components/hal/include/hal/rtc_hal.h"
   - "components/hal/include/hal/apm_hal.h"
   - "components/hal/include/hal/ecdsa_hal.h"
   - "components/hal/include/hal/emac_hal.h"

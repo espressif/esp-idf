@@ -13,7 +13,7 @@
 #include "soc/ext_mem_defs.h"
 #include "hal/cache_types.h"
 #include "hal/assert.h"
-#include "esp32h4/rom/cache.h"
+#include "rom/cache.h"
 
 //TODO: [ESP32H4] IDF-12289 inherited from verification branch, need check
 

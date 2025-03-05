@@ -24,7 +24,7 @@ extern "C" {
 #include "esp_attr.h"
 #include "esp_assert.h"
 
-#include "esp32h4/rom/ets_sys.h"
+#include "rom/ets_sys.h"
 
 /* The value that needs to be written to LP_WDT_WPROTECT_REG to write-enable the wdt registers */
 #define LP_WDT_WKEY_VALUE 0x50D83AA1
