@@ -631,10 +631,7 @@ static esp_err_t esp_ota_verify_chip_revision(const void *arg)
     esp_image_header_t *data = (esp_image_header_t *)(arg);
     esp_https_ota_dispatch_event(ESP_HTTPS_OTA_VERIFY_CHIP_REVISION, (void *)(&data->min_chip_rev_full), sizeof(uint16_t));
 
-    uint16_t ota_img_revision = data->min_chip_rev_full;
-    uint32_t chip_revision = efuse_hal_chip_revision();
-    if (ota_img_revision > chip_revision) {
-        ESP_LOGE(TAG, "Image requires chip rev >= v%d.%d, but chip is v%d.%d", ota_img_revision / 100, ota_img_revision % 100, chip_revision / 100, chip_revision % 100);
+    if (!bootloader_common_check_chip_revision_validity(data, true)) {
         return ESP_ERR_INVALID_VERSION;
     }
     return ESP_OK;

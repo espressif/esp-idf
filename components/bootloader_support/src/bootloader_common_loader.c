@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +30,37 @@
 #define IS_FIELD_SET(rev_full) (((rev_full) != 65535) && ((rev_full) != 0))
 
 static const char* TAG = "boot_comm";
+
+bool bootloader_common_check_chip_revision_validity(const esp_image_header_t *img_hdr, bool check_max_revision)
+{
+    if (!img_hdr) {
+        return false;
+    }
+
+    unsigned revision = efuse_hal_chip_revision();
+    unsigned min_rev = img_hdr->min_chip_rev_full;
+
+    bool is_min_rev_invalid = !ESP_CHIP_REV_ABOVE(revision, min_rev);
+    if (is_min_rev_invalid) {
+        ESP_LOGE(TAG, "chip revision check failed. Required >= v%d.%d, found v%d.%d.",
+            min_rev / 100, min_rev % 100,
+            revision / 100, revision % 100);
+        return false;
+    }
+
+    if (check_max_revision) {
+        unsigned int max_rev = img_hdr->max_chip_rev_full;
+        bool is_max_rev_invalid = IS_FIELD_SET(max_rev) && revision > max_rev && !efuse_hal_get_disable_wafer_version_major();
+        if (is_max_rev_invalid) {
+            ESP_LOGE(TAG, "chip revision check failed. Required <= v%d.%d, found v%d.%d.",
+                max_rev / 100, max_rev % 100,
+                revision / 100, revision % 100);
+            return false;
+        }
+    }
+
+    return true;
+}
 
 uint32_t bootloader_common_ota_select_crc(const esp_ota_select_entry_t *s)
 {
@@ -91,24 +122,15 @@ esp_err_t bootloader_common_check_chip_validity(const esp_image_header_t* img_hd
         err = ESP_FAIL;
     } else {
 #ifndef CONFIG_IDF_ENV_FPGA
-        unsigned revision = efuse_hal_chip_revision();
-        unsigned int major_rev = revision / 100;
-        unsigned int minor_rev = revision % 100;
-        unsigned min_rev = img_hdr->min_chip_rev_full;
-        if (type == ESP_IMAGE_BOOTLOADER || type == ESP_IMAGE_APPLICATION) {
-            if (!ESP_CHIP_REV_ABOVE(revision, min_rev)) {
-                ESP_LOGE(TAG, "Image requires chip rev >= v%d.%d, but chip is v%d.%d",
-                         min_rev / 100, min_rev % 100,
-                         major_rev, minor_rev);
+        if (type == ESP_IMAGE_APPLICATION) {
+            if (!bootloader_common_check_chip_revision_validity(img_hdr, true)) {
                 err = ESP_FAIL;
             }
         }
-        if (type == ESP_IMAGE_APPLICATION) {
-            unsigned max_rev = img_hdr->max_chip_rev_full;
-            if ((IS_FIELD_SET(max_rev) && (revision > max_rev) && !efuse_hal_get_disable_wafer_version_major())) {
-                ESP_LOGE(TAG, "Image requires chip rev <= v%d.%d, but chip is v%d.%d",
-                         max_rev / 100, max_rev % 100,
-                         major_rev, minor_rev);
+
+        // Maximum revision check is skipped for bootloader images
+        if (type == ESP_IMAGE_BOOTLOADER) {
+            if (!bootloader_common_check_chip_revision_validity(img_hdr, false)) {
                 err = ESP_FAIL;
             }
         }
