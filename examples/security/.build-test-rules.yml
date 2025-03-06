@@ -32,7 +32,7 @@ examples/security/nvs_encryption_hmac:
 
 examples/security/security_features_app:
   disable:
-    - if: IDF_TARGET not in ["esp32c3"]
+    - if: IDF_TARGET not in ["esp32c3", "esp32s3"]
 
 examples/security/tee/tee_attestation:
   disable:
