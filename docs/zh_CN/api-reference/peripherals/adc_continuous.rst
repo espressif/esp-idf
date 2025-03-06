@@ -54,11 +54,11 @@ ADC 连续转换模式驱动基于 {IDF_TARGET_NAME} SAR ADC 模块实现，不�
 
 请按照以下步骤设置配置结构体 :cpp:type:`adc_continuous_handle_cfg_t`，创建 ADC 连续转换模式驱动的句柄：
 
-- :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size`：以字节为单位设置最大缓冲池的大小，驱动程序将 ADC 转换结果保存到该缓冲池中。缓冲池已满时，新的转换将丢失。
+- :cpp:member:`adc_continuous_handle_cfg_t::max_store_buf_size`：以字节为单位设置最大缓冲池的大小，驱动程序将 ADC 转换结果保存到该缓冲池中。
 - :cpp:member:`adc_continuous_handle_cfg_t::conv_frame_size`：以字节为单位设置 ADC 转换帧大小。
 - :cpp:member:`adc_continuous_handle_cfg_t::flags`：设置可以改变驱动程序行为的标志。
 
-  - ``flush_pool``：缓冲池满时自动清空缓冲池。
+  - ``flush_pool``：缓冲池满时自动清空缓冲池中的旧数据，重新写入新数据。否则，缓冲池满时，新的数据将丢失。
 
 
 完成以上 ADC 配置后，使用已设置的配置结构体 :cpp:type:`adc_continuous_handle_cfg_t` 调用 :cpp:func:`adc_continuous_new_handle`。该函数可能将在特定情况下返回错误值，如无效参数、内存不足等。
