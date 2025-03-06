@@ -1385,7 +1385,7 @@ static void btc_ble_set_vendor_evt_mask_callback(UINT8 status)
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_SET_VENDOR_EVT_MASK_COMPLETE_EVT;
 
-    param.set_csa_support_cmpl.status = btc_btm_status_to_esp_status(status);
+    param.set_vendor_evt_mask_cmpl.status = btc_btm_status_to_esp_status(status);
 
     ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
 
@@ -1399,15 +1399,46 @@ static void btc_ble_vendor_hci_event_callback(UINT8 subevt_code, UINT8 param_len
     esp_ble_gap_cb_param_t param = {0};
     bt_status_t ret;
     btc_msg_t msg = {0};
+    esp_ble_vendor_evt_param_t *evt_param = &param.vendor_hci_evt.param;
+    bool copy_param = false;
 
     msg.sig = BTC_SIG_API_CB;
     msg.pid = BTC_PID_GAP_BLE;
     msg.act = ESP_GAP_BLE_VENDOR_HCI_EVT;
 
     param.vendor_hci_evt.subevt_code = subevt_code;
-    param.vendor_hci_evt.param_len = param_len;
-    param.vendor_hci_evt.param_buf = params;
-    ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy, btc_gap_ble_cb_deep_free);
+    param.vendor_hci_evt.param_len = 0;
+    param.vendor_hci_evt.param_buf = NULL;
+    switch (subevt_code) {
+    case BLE_VENDOR_PDU_RECV_EVT:
+        param.vendor_hci_evt.subevt_code = ESP_BLE_VENDOR_PDU_RECV_EVT;
+        STREAM_TO_UINT8(evt_param->pdu_recv.type, params);
+        STREAM_TO_UINT8(evt_param->pdu_recv.handle, params);
+        STREAM_TO_UINT8(evt_param->pdu_recv.addr_type, params);
+        STREAM_TO_BDADDR(evt_param->pdu_recv.peer_addr, params);
+        break;
+    case BLE_VENDOR_CHMAP_UPDATE_EVT:
+        param.vendor_hci_evt.subevt_code = ESP_BLE_VENDOR_CHAN_MAP_UPDATE_EVT;
+        STREAM_TO_UINT8(evt_param->chan_map_update.status, params);
+        STREAM_TO_UINT16(evt_param->chan_map_update.conn_handle, params);
+        REVERSE_STREAM_TO_ARRAY(evt_param->chan_map_update.ch_map, params, ESP_GAP_BLE_CHANNELS_LEN);
+        break;
+    case BLE_VENDOR_SLEEP_WAKEUP_EVT:
+        param.vendor_hci_evt.subevt_code = ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT;
+        // No parameters
+        break;
+    default:
+        copy_param = true;
+        break;
+    }
+
+    if (copy_param) {
+        param.vendor_hci_evt.param_len = param_len;
+        param.vendor_hci_evt.param_buf = (param_len) ? params : NULL;
+        ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), btc_gap_ble_cb_deep_copy, btc_gap_ble_cb_deep_free);
+    } else {
+        ret = btc_transfer_context(&msg, &param, sizeof(esp_ble_gap_cb_param_t), NULL, NULL);
+    }
 
     if (ret != BT_STATUS_SUCCESS) {
         BTC_TRACE_ERROR("%s btc_transfer_context failed\n", __func__);
