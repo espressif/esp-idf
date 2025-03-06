@@ -89,8 +89,8 @@ extern "C" {
 typedef uint32_t core_dump_crc_t;
 
 #if CONFIG_IDF_TARGET_ESP32
-#include "mbedtls/sha256.h" /* mbedtls_sha256_context */
-typedef mbedtls_sha256_context sha256_ctx_t;
+#include "psa/crypto.h"
+typedef psa_hash_operation_t sha256_ctx_t;
 #else
 #include "hal/sha_types.h"  /* SHA_CTX */
 typedef SHA_CTX sha256_ctx_t;

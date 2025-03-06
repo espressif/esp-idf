@@ -21,23 +21,19 @@ uint32_t esp_core_dump_elf_version(void) __attribute__((alias("core_dump_sha_ver
 
 static void core_dump_sha256_start(core_dump_sha_ctx_t *sha_ctx)
 {
-    mbedtls_sha256_init(&sha_ctx->ctx);
-    mbedtls_sha256_starts(&sha_ctx->ctx, false);
+    psa_hash_operation_init(sha_ctx->ctx);
+    psa_hash_setup(&sha_ctx->ctx, PSA_ALG_SHA_256);
 }
 
 static void core_dump_sha256_update(core_dump_sha_ctx_t *sha_ctx, const void *data, size_t data_len)
 {
-    // set software mode of SHA calculation
-#if CONFIG_MBEDTLS_HARDWARE_SHA
-    sha_ctx->ctx.mode = ESP_MBEDTLS_SHA256_SOFTWARE;
-#endif
-    mbedtls_sha256_update(&sha_ctx->ctx, data, data_len);
+    psa_hash_update(&sha_ctx->ctx, data, data_len);
 }
 
 static void core_dump_sha256_finish(core_dump_sha_ctx_t *sha_ctx)
 {
-    mbedtls_sha256_finish(&sha_ctx->ctx, sha_ctx->result);
-    mbedtls_sha256_free(&sha_ctx->ctx);
+    size_t hash_len;
+    psa_hash_finish(&sha_ctx->ctx, sha_ctx->result, COREDUMP_SHA256_LEN, &hash_len);
 }
 
 #else
