@@ -57,6 +57,9 @@ extern "C" {
 #define UART_LL_PCR_REG_GET(hw, reg_suffix, field_suffix)  \
     (((hw) == &UART0) ? PCR.uart0_##reg_suffix.uart0_##field_suffix : PCR.uart1_##reg_suffix.uart1_##field_suffix)
 
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
+#define UART_LL_WAKEUP_FIFO_THRED_MAX(hw) UART_RX_WAKE_UP_THRHD_V
+
 // Define UART interrupts
 typedef enum {
     UART_INTR_RXFIFO_FULL      = (0x1 << 0),
@@ -254,28 +257,29 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
  * @param  baud The baud rate to be set.
  * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
- * @return None
+ * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
-FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
+FORCE_INLINE_ATTR bool uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-// #define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
-//     const uint32_t max_div = BIT(12) - 1;   // UART divider integer part only has 12 bits
-//     uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+#define DIV_UP(a, b)    (((a) + (b) - 1) / (b))
+    if (baud == 0) {
+        return false;
+    }
+    const uint32_t max_div = UART_CLKDIV_V;   // UART divider integer part only has 12 bits
+    uint32_t sclk_div = DIV_UP(sclk_freq, (uint64_t)max_div * baud);
+#undef DIV_UP
 
-//     if (sclk_div == 0) abort();
+    if (sclk_div == 0 || sclk_div > (PCR_UART0_SCLK_DIV_NUM_V + 1)) {
+        return false; // unachievable baud-rate
+    }
 
-//     uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
-//     // The baud rate configuration register is divided into
-//     // an integer part and a fractional part.
-//     hw->clkdiv_sync.clkdiv = clk_div >> 4;
-//     hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
-//     if ((hw) == &LP_UART) {
-//         abort();
-//     } else {
-//         UART_LL_PCR_REG_U32_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
-//     }
-// #undef DIV_UP
-//     uart_ll_update(hw);
+    uint32_t clk_div = ((sclk_freq) << 4) / (baud * sclk_div);
+    // The baud rate configuration register is divided into an integer part and a fractional part.
+    hw->clkdiv_sync.clkdiv = clk_div >> 4;
+    hw->clkdiv_sync.clkdiv_frag = clk_div & 0xf;
+    UART_LL_PCR_REG_U32_SET(hw, sclk_conf, sclk_div_num, sclk_div - 1);
+    uart_ll_update(hw);
+    return true;
 }
 
 /**
@@ -288,16 +292,11 @@ FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint3
  */
 FORCE_INLINE_ATTR uint32_t uart_ll_get_baudrate(uart_dev_t *hw, uint32_t sclk_freq)
 {
-    // typeof(hw->clkdiv_sync) div_reg;
-    // div_reg.val = hw->clkdiv_sync.val;
-    // int sclk_div;
-    // if ((hw) == &LP_UART) {
-    //     sclk_div = HAL_FORCE_READ_U32_REG_FIELD(hw->clk_conf, sclk_div_num) + 1;
-    // } else {
-    //     sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
-    // }
-    // return ((sclk_freq << 4)) / (((div_reg.clkdiv_int << 4) | div_reg.clkdiv_frag) * sclk_div);
-    return 0;
+    typeof(hw->clkdiv_sync) div_reg;
+    div_reg.val = hw->clkdiv_sync.val;
+    int sclk_div;
+    sclk_div = UART_LL_PCR_REG_U32_GET(hw, sclk_conf, sclk_div_num) + 1;
+    return ((sclk_freq << 4)) / (((div_reg.clkdiv << 4) | div_reg.clkdiv_frag) * sclk_div);
 }
 
 /**
@@ -746,6 +745,51 @@ FORCE_INLINE_ATTR void uart_ll_set_dtr_active_level(uart_dev_t *hw, int level)
 FORCE_INLINE_ATTR void uart_ll_set_wakeup_edge_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
 {
     hw->sleep_conf2.active_threshold = wakeup_thrd - UART_LL_WAKEUP_EDGE_THRED_MIN;
+}
+
+/**
+ * @brief  Set the number of received data bytes for the RX FIFO threshold wake-up mode.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  wakeup_thrd The wakeup threshold value in bytes to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_fifo_thrd(uart_dev_t *hw, uint32_t wakeup_thrd)
+{
+    // System would wakeup when reach the number of the received data number threshold.
+    HAL_FORCE_MODIFY_U32_REG_FIELD(hw->sleep_conf2, rx_wake_up_thrhd, wakeup_thrd);
+}
+
+/**
+ * @brief  Set the UART wakeup mode.
+ *
+ * @param  hw Beginning address of the peripheral registers.
+ * @param  mode UART wakeup mode to be set.
+ *
+ * @return None.
+ */
+FORCE_INLINE_ATTR void uart_ll_set_wakeup_mode(uart_dev_t *hw, uart_wakeup_mode_t mode)
+{
+    switch(mode){
+        case UART_WK_MODE_ACTIVE_THRESH:
+            hw->sleep_conf2.wk_mode_sel = 0;
+            break;
+        default:
+            abort();
+            break;
+    }
+}
+
+/**
+ * @brief   Enable/disable the UART pad clock in sleep_state
+ *
+ * @param hw     Beginning address of the peripheral registers.
+ * @param enable enable or disable
+ */
+FORCE_INLINE_ATTR void uart_ll_enable_pad_sleep_clock(uart_dev_t *hw, bool enable)
+{
+    (void)hw; (void)enable;
 }
 
 /**

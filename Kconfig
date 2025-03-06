@@ -147,6 +147,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
     config IDF_TARGET_ESP32H4
         bool
         default "y" if IDF_TARGET="esp32h4"
+        select FREERTOS_UNICORE  # TODO: [ESP32H4] IDF-12319, need remove
         select IDF_TARGET_ARCH_RISCV
         select IDF_ENV_FPGA
         select IDF_ENV_BRINGUP

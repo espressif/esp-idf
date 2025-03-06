@@ -469,10 +469,9 @@
 // #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
 
 /*-------------------------- UART CAPS ---------------------------------------*/
-// ESP32-H4 has 3 UARTs (2 HP UART, and 1 LP UART)  TODO: IDF-12445 [ESP32H4] inherit from verify code, need remove LP*/
-#define SOC_UART_NUM                    (3)
+// ESP32-H4 has 2 HP UARTs
+#define SOC_UART_NUM                    (2)
 #define SOC_UART_HP_NUM                 (2)
-#define SOC_UART_LP_NUM                 (1U)
 #define SOC_UART_FIFO_LEN               (128)       /*!< The UART hardware FIFO length */
 #define SOC_LP_UART_FIFO_LEN            (16)        /*!< The LP UART hardware FIFO length */
 #define SOC_UART_BITRATE_MAX            (5000000)   /*!< Max bit rate supported by UART */

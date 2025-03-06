@@ -20,5 +20,6 @@
 #define ESP_ROM_WITHOUT_REGI2C              (1) // ROM has the regi2c bug or rom does not support regi2c function
 #define ESP_ROM_HAS_NEWLIB                  (1) // ROM has newlib (at least parts of it) functions included
 #define ESP_ROM_HAS_NEWLIB_NANO_FORMAT      (1) // ROM has the newlib nano versions of formatting functions
+#define ESP_ROM_USB_OTG_NUM                 (-1) // No USB_OTG CDC in the ROM, set -1 for Kconfig usage.
 #define ESP_ROM_WDT_INIT_PATCH              (1) // ROM version does not configure the clock
 #define ESP_ROM_RAM_APP_NEEDS_MMU_INIT      (1) // ROM doesn't init cache MMU when it's a RAM APP, needs MMU hal to init
