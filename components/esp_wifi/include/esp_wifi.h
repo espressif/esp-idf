@@ -1647,6 +1647,7 @@ esp_err_t esp_wifi_sta_get_rssi(int *rssi);
     * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  *    - ESP_ERR_WIFI_NOT_STARTED: WiFi is not started by esp_wifi_start
   *    - ESP_ERR_INVALID_ARG: invalid argument
   */
 esp_err_t esp_wifi_set_band(wifi_band_t band);
