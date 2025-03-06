@@ -40,9 +40,7 @@ static int handle_task_commands(unsigned char *cmd, int len);
 static void esp_gdbstub_send_str_as_hex(const char *str);
 #endif
 
-#ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 static void handle_qSupported_command(const unsigned char *cmd, int len);
-#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 #if (CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME || CONFIG_ESP_GDBSTUB_SUPPORT_TASKS)
 static bool command_name_matches(const char *pattern, const unsigned char *ucmd, int len);
@@ -712,13 +710,18 @@ static void handle_P_command(const unsigned char *cmd, int len)
     /* Sen OK response*/
     esp_gdbstub_send_str_packet("OK");
 }
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 /** qSupported requests the communication with GUI
  */
 static void handle_qSupported_command(const unsigned char *cmd, int len)
 {
     esp_gdbstub_send_start();
-    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;qRelocInsn+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+" GDBSTUB_QXFER_SUPPORTED_STR);
+#if CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
+    esp_gdbstub_send_str("qSupported:multiprocess+;swbreak-;hwbreak+;fork-events+;vfork-events+;exec-events+;vContSupported+;no-resumed+" GDBSTUB_QXFER_SUPPORTED_STR);
+#else
+    esp_gdbstub_send_str("qSupported:multiprocess+" GDBSTUB_QXFER_SUPPORTED_STR);
+#endif
     esp_gdbstub_send_end();
 }
 
@@ -754,7 +757,6 @@ static void handle_qXfer_command(const unsigned char *cmd, int len)
 	qXfer_data(target_xml, strlen(target_xml), offset, length);
 }
 #endif // GDBSTUB_QXFER_FEATURES_ENABLED
-#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 
 /** Handle a command received from gdb */
 int esp_gdbstub_handle_command(unsigned char *cmd, int len)
@@ -829,13 +831,13 @@ int esp_gdbstub_handle_command(unsigned char *cmd, int len)
         handle_P_command(data, len - 1);
     } else if (cmd[0] == 'c') { //continue execution
         return GDBSTUB_ST_CONT;
+#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     } else if (command_name_matches("qSupported", cmd, 10)) {
         handle_qSupported_command(cmd, len);
 #if GDBSTUB_QXFER_FEATURES_ENABLED
     } else if (command_name_matches("qXfer", cmd, 5)) {
         handle_qXfer_command(cmd, len);
 #endif // GDBSTUB_QXFER_FEATURES_ENABLED
-#endif // CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
 #if CONFIG_ESP_GDBSTUB_SUPPORT_TASKS
     } else if (s_scratch.state != GDBSTUB_TASK_SUPPORT_DISABLED) {
         return handle_task_commands(cmd, len);
