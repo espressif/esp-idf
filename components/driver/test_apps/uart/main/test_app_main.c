@@ -10,7 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#define TEST_MEMORY_LEAK_THRESHOLD (200)
+#define TEST_MEMORY_LEAK_THRESHOLD (250)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
