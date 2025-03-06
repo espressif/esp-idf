@@ -39,6 +39,7 @@ static const char *TAG = "jpeg.decoder";
 static void s_decoder_error_log_print(uint32_t status);
 static esp_err_t jpeg_dec_config_dma_descriptor(jpeg_decoder_handle_t decoder_engine);
 static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const uint8_t *in_buf, uint32_t inbuf_len);
+static esp_err_t jpeg_check_marker(jpeg_decoder_handle_t decoder_engine);
 static esp_err_t jpeg_parse_header_info_to_hw(jpeg_decoder_handle_t decoder_engine);
 static bool jpeg_dec_transaction_on_picked(uint32_t channel_num, const dma2d_trans_channel_info_t *dma2d_chans, void *users_config);
 
@@ -225,6 +226,7 @@ esp_err_t jpeg_decoder_process(jpeg_decoder_handle_t decoder_engine, const jpeg_
     decoder_engine->decoded_buf = decode_outbuf;
 
     ESP_GOTO_ON_ERROR(jpeg_parse_marker(decoder_engine, bit_stream, stream_size), err2, TAG, "jpeg parse marker failed");
+    ESP_GOTO_ON_ERROR(jpeg_check_marker(decoder_engine), err2, TAG, "jpeg check marker failed");
     ESP_GOTO_ON_ERROR(jpeg_parse_header_info_to_hw(decoder_engine), err2, TAG, "write header info to hw failed");
     ESP_GOTO_ON_ERROR(jpeg_dec_config_dma_descriptor(decoder_engine), err2, TAG, "config dma descriptor failed");
 
@@ -722,6 +724,38 @@ static esp_err_t jpeg_parse_marker(jpeg_decoder_handle_t decoder_engine, const u
 
     // Update information after parse marker finishes
     decoder_engine->header_info->buffer_left = decoder_engine->total_size - decoder_engine->header_info->header_size;
+
+    return ESP_OK;
+}
+
+static esp_err_t jpeg_default_huff_table(jpeg_dec_header_info_t *header_info)
+{
+    // Copy default Huffman table parameters to JPEG header
+    // DC Coefficients
+    memcpy(header_info->huffbits[0][0], luminance_dc_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    memcpy(header_info->huffbits[0][1], chrominance_dc_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    // AC Coefficients
+    memcpy(header_info->huffbits[1][0],  luminance_ac_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    memcpy(header_info->huffbits[1][1],  chrominance_ac_coefficients, JPEG_HUFFMAN_BITS_LEN_TABLE_LEN);
+    // DC Values
+    memcpy(header_info->huffcode[0][0], luminance_dc_values, JPEG_HUFFMAN_DC_VALUE_TABLE_LEN);
+    memcpy(header_info->huffcode[0][1], chrominance_dc_values, JPEG_HUFFMAN_DC_VALUE_TABLE_LEN);
+    // AC Values
+    memcpy(header_info->huffcode[1][0], luminance_ac_values, JPEG_HUFFMAN_AC_VALUE_TABLE_LEN);
+    memcpy(header_info->huffcode[1][1], chrominance_ac_values, JPEG_HUFFMAN_AC_VALUE_TABLE_LEN);
+
+    return ESP_OK;
+}
+
+static esp_err_t jpeg_check_marker(jpeg_decoder_handle_t decoder_engine)
+{
+    // Check if Huffman table is present in JPEG image
+    if (!decoder_engine->header_info->dht_marker) {
+
+        // Huffman table not present, define a default one
+        // This is common for USB Cameras, not to include the table into the JPEG image to save a bandwidth on a USB bus
+        jpeg_default_huff_table(decoder_engine->header_info);
+    }
 
     return ESP_OK;
 }
