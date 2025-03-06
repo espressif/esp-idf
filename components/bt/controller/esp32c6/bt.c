@@ -57,6 +57,13 @@
 
 #include "hal/efuse_hal.h"
 #include "soc/rtc.h"
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+
 /* Macro definition
  ************************************************************************
  */
@@ -114,6 +121,8 @@ extern int r_ble_log_deinit_async(void);
 extern void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void r_ble_log_async_output_dump_all(bool output);
 extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
+extern int r_ble_log_ctrl_level_and_mod(uint8_t log_level, uint32_t mod_switch);
+extern int r_ble_ctrl_mod_type(uint16_t mod, uint32_t mod_type_switch);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int r_ble_controller_deinit(void);
 extern int r_ble_controller_enable(uint8_t mode);
@@ -193,6 +202,7 @@ enum log_out_mode {
     LOG_DUMP_MEMORY,
     LOG_ASYNC_OUT,
     LOG_STORAGE_TO_FLASH,
+    LOG_SPI_OUT,
 };
 
 bool log_is_inited = false;
@@ -201,6 +211,8 @@ uint8_t log_output_mode = LOG_DUMP_MEMORY;
 #else
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 uint8_t log_output_mode = LOG_STORAGE_TO_FLASH;
+#elif CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+uint8_t log_output_mode = LOG_SPI_OUT;
 #else
 uint8_t log_output_mode = LOG_ASYNC_OUT;
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
@@ -248,21 +260,35 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
             }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
             break;
+        case LOG_SPI_OUT:
+            task_create = true;
+#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            ble_log_spi_out_init();
+            bt_controller_log_interface = ble_log_spi_out_write_esp;
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+            break;
         default:
             assert(0);
     }
 
     ret = r_ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
+    if (ret != ESP_OK) {
+        return ret;
+    }
+
+    ret = r_ble_log_ctrl_level_and_mod(CONFIG_BT_LE_CONTROLLER_LOG_OUTPUT_LEVEL, CONFIG_BT_LE_CONTROLLER_LOG_MOD_OUTPUT_SWITCH);
     if (ret == ESP_OK) {
         log_is_inited = true;
     }
-
     return ret;
 }
 
 void esp_bt_ontroller_log_deinit(void)
 {
     r_ble_log_deinit_async();
+#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif
     log_is_inited = false;
 }
 
@@ -387,6 +413,22 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     assert(err == ESP_OK);
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+void esp_task_wdt_isr_user_handler(void)
+{
+    esp_ble_controller_log_dump_all(true);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
+void __real_esp_panic_handler(void *info);
+void __wrap_esp_panic_handler (void *info)
+{
+    esp_ble_controller_log_dump_all(true);
+    __real_esp_panic_handler(info);
+}
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* This variable tells if BLE is running */

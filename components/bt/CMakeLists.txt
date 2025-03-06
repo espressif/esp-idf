@@ -31,6 +31,7 @@ set(common_include_dirs
     common/btc/profile/esp/blufi/include
     common/btc/profile/esp/include
     common/hci_log/include
+    common/ble_log/include
 )
 
 set(ble_mesh_include_dirs
@@ -148,6 +149,7 @@ if(CONFIG_BT_ENABLED)
          "common/osi/osi.c"
          "common/osi/semaphore.c"
          "porting/mem/bt_osi_mem.c"
+         "common/ble_log/ble_log_spi_out.c"
          )
 
     # Host Bluedroid
@@ -890,6 +892,9 @@ if(CONFIG_BT_ENABLED)
             target_link_libraries(${COMPONENT_LIB} PUBLIC btdm_app)
         endif()
     elseif(CONFIG_BT_CONTROLLER_ENABLED)
+        if(CONFIG_BT_LE_CONTROLLER_LOG_WRAP_PANIC_HANDLER_ENABLE)
+            target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=esp_panic_handler")
+        endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
             add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/esp32c6/libble_app.a")
         else()
