@@ -1741,7 +1741,7 @@ esp_err_t esp_ble_gap_vendor_command_send(esp_ble_vendor_cmd_params_t *vendor_cm
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_gap_set_vendor_event_mask(uint32_t event_mask)
+esp_err_t esp_ble_gap_set_vendor_event_mask(esp_ble_vendor_evt_mask_t event_mask)
 {
     btc_msg_t msg = {0};
     btc_ble_gap_args_t arg;
