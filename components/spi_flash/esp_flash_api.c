@@ -22,6 +22,8 @@
 #include "esp_private/esp_clk.h"
 #include "esp_spi_flash_counters.h"
 #include "esp_check.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
@@ -1439,6 +1441,20 @@ restore_cache:
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
 {
+#if !CONFIG_SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        ESP_LOGE(TAG, "ESP32H2 chips lower than v1.2 are not recommended to suspend the Flash");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+#if CONFIG_IDF_TARGET_ESP32C6
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
+        ESP_LOGE(TAG, "ESP32C6 chips lower than v0.2 are not recommended to suspend the Flash");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+#endif
     ESP_EARLY_LOGW(TAG, "Flash suspend feature is enabled");
     if (chip->chip_drv->get_chip_caps == NULL) {
         // chip caps get failed, pass the flash capability check.
