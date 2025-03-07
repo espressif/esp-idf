@@ -6,6 +6,7 @@
 
 #include <sys/lock.h>
 #include <sys/param.h>
+#include "esp_memory_utils.h"
 #include "hal/gpio_ll.h"
 #include "hal/cam_ll.h"
 #include "hal/color_hal.h"
@@ -25,7 +26,7 @@
 #include "esp_private/esp_clk_tree_common.h"
 #include "../../dvp_share_ctrl.h"
 
-#ifdef CONFIG_CAM_CTLR_DVP_CAM_ISR_IRAM_SAFE
+#ifdef CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE
 #define CAM_DVP_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define CAM_DVP_MEM_ALLOC_CAPS      (MALLOC_CAP_DEFAULT)
@@ -576,7 +577,7 @@ static esp_err_t esp_cam_ctlr_dvp_cam_register_event_callbacks(esp_cam_ctlr_hand
     ESP_RETURN_ON_FALSE(cbs->on_trans_finished, ESP_ERR_INVALID_ARG, TAG, "invalid argument: on_trans_finished is null");
     ESP_RETURN_ON_FALSE(cbs->on_get_new_trans || !ctlr->bk_buffer_dis, ESP_ERR_INVALID_ARG, TAG, "invalid argument: on_get_new_trans is null");
 
-#if CONFIG_CAM_CTLR_DVP_CAM_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
