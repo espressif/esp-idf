@@ -63,7 +63,9 @@ static inline uint32_t twai_hal_decode_interrupt(twai_hal_context_t *hal_ctx)
     }
     //Transmit interrupt set whenever TX buffer becomes free
 #ifdef CONFIG_TWAI_ERRATA_FIX_TX_INTR_LOST
-    if ((interrupts & TWAI_LL_INTR_TI || hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED) && status & TWAI_LL_STATUS_TBS) {
+    if ((interrupts & TWAI_LL_INTR_TI || hal_ctx->state_flags & TWAI_HAL_STATE_FLAG_TX_BUFF_OCCUPIED)
+        && status & TWAI_LL_STATUS_TBS
+        && !(state_flags & TWAI_HAL_STATE_FLAG_BUS_OFF)) {
 #else
     if (interrupts & TWAI_LL_INTR_TI) {
 #endif
