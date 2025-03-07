@@ -93,6 +93,18 @@ void _esp_error_check_failed_without_abort(esp_err_t rc, const char *file, int l
 /** @endcond */
 
 /**
+ * Macro that returns the error code if an error occurs, optionally running extra code.
+ * The extra code can be placed after the function thay may error and it will only run if the error occurs.
+ */
+#define ESP_RETURN_ON_ERR(x, ...) do {        \
+        esp_err_t err_rc_ = (x);              \
+        if (unlikely(err_rc_ != ESP_OK)) {    \
+            __VA_ARGS__;                      \
+            return err_rc_;                   \
+        }                                     \
+    } while (0)
+
+/**
  * Macro which can be used to check the error code,
  * and terminate the program in case the code is not ESP_OK.
  * Prints the error code, error location, and the failed statement to serial output.
