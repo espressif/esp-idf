@@ -30,8 +30,6 @@
 #define GPIO_EVT_CH5_ANY_EDGE                   22
 #define GPIO_EVT_CH6_ANY_EDGE                   23
 #define GPIO_EVT_CH7_ANY_EDGE                   24
-#define GPIO_EVT_ZERO_DET_POS0                  25
-#define GPIO_EVT_ZERO_DET_NEG0                  26
 #define LEDC_EVT_DUTY_CHNG_END_CH0              27
 #define LEDC_EVT_DUTY_CHNG_END_CH1              28
 #define LEDC_EVT_DUTY_CHNG_END_CH2              29
@@ -154,9 +152,6 @@
 #define I2S0_EVT_TX_DONE                        146
 #define I2S0_EVT_X_WORDS_RECEIVED               147
 #define I2S0_EVT_X_WORDS_SENT                   148
-#define ULP_EVT_ERR_INTR                        149
-#define ULP_EVT_HALT                            150
-#define ULP_EVT_START_INTR                      151
 #define RTC_EVT_TICK                            152
 #define RTC_EVT_OVF                             153
 #define RTC_EVT_CMP                             154
@@ -377,12 +372,6 @@
 #define I2S0_TASK_STOP_RX                       159
 #define I2S0_TASK_STOP_TX                       160
 #define I2S0_TASK_SYNC_CHECK                    161
-#define ULP_TASK_WAKEUP_CPU                     162
-#define ULP_TASK_INT_CPU                        163
-#define RTC_TASK_START                          164
-#define RTC_TASK_STOP                           165
-#define RTC_TASK_CLR                            166
-#define RTC_TASK_TRIGGERFLW                     167
 #define GDMA_TASK_IN_START_CH0                  168
 #define GDMA_TASK_IN_START_CH1                  169
 #define GDMA_TASK_IN_START_CH2                  170
