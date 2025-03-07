@@ -2,9 +2,9 @@
 
 examples/system/app_trace_basic:
   disable_test:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61"]
+    - if: IDF_TARGET in ["esp32p4", "esp32h21"]
       temporary: true
-      reason: usb-serial-jtag tests are not stable yet. TODO[C61] IDF-10992
+      reason: lack of runners.
 
 examples/system/base_mac_address:
   depends_components:
