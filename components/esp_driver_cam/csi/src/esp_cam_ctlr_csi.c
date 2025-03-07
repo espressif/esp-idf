@@ -12,6 +12,7 @@
 #include "esp_heap_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
+#include "esp_memory_utils.h"
 #include "esp_clk_tree.h"
 #include "esp_cam_ctlr.h"
 #include "esp_cam_ctlr_csi.h"
