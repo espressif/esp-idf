@@ -23,6 +23,8 @@ extern const uint8_t signature_verification_key_end[] asm("_binary_signature_ver
 
 #define SIGNATURE_VERIFICATION_KEYLEN 64
 #define PSA_ECDSA_PUB_KEY_SIZE_BITS 256
+#define UNCOMPRESSED_SECP256R1_KEY_SIZE 65  // Size for uncompressed SECP256R1 (1 + 32 + 32)
+#define ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR 0x04
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN];
@@ -75,14 +77,29 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_handle;
 
+    // Format the public key for PSA import
+    uint8_t formatted_key[UNCOMPRESSED_SECP256R1_KEY_SIZE];
+    formatted_key[0] = ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR;
+
+    // Copy X and Y coordinates
+    if (keylen == 64) { // Raw coordinates without format byte
+        memcpy(&formatted_key[1], signature_verification_key_start, 64);
+    } else if (keylen == UNCOMPRESSED_SECP256R1_KEY_SIZE && signature_verification_key_start[0] == ECC_UNCOMPRESSED_POINT_FORMAT_INDICATOR) {
+        // Key is already in correct format
+        memcpy(formatted_key, signature_verification_key_start, UNCOMPRESSED_SECP256R1_KEY_SIZE);
+    } else {
+        ESP_LOGE(TAG, "Invalid key format or length");
+        return ESP_FAIL;
+    }
+
     // Set key attributes
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
     psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(PSA_ECC_FAMILY_SECP_R1));
     psa_set_key_bits(&key_attributes, PSA_ECDSA_PUB_KEY_SIZE_BITS);
 
-    // Import the public key
-    status = psa_import_key(&key_attributes, signature_verification_key_start, keylen, &key_handle);
+    // Import the properly formatted public key
+    status = psa_import_key(&key_attributes, formatted_key, sizeof(formatted_key), &key_handle);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to import key, status:%d", status);
         return ESP_FAIL;

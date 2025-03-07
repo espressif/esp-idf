@@ -88,11 +88,6 @@ static int sha256_sprintf(char *sha, const char *fmt, ...)
     psa_status_t status;
     psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
 
-    status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        goto exit;
-    }
-
     status = psa_hash_setup(&operation, PSA_ALG_SHA_256);
     if (status != PSA_SUCCESS) {
         goto exit;

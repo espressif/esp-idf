@@ -121,12 +121,6 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     int ret;
     esp_err_t esp_ret = ESP_FAIL;
 
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d", (int) status);
-        return esp_ret;
-    }
-
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ssl_config_init(&tls->conf);

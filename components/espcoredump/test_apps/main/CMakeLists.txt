@@ -6,6 +6,7 @@ list(APPEND priv_includes "${espcoredump_dir}/include_core_dump")
 # list(APPEND SRCS "${espcoredump_dir}/src/core_dump_sha.c")
 idf_component_register(SRCS ${SRCS}
                        INCLUDE_DIRS "."
-                       PRIV_REQUIRES unity espcoredump
+                       PRIV_REQUIRES unity
                        PRIV_INCLUDE_DIRS ${priv_includes}
+                       REQUIRES mbedtls espcoredump
                        WHOLE_ARCHIVE)

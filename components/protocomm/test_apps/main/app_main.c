@@ -1,28 +1,22 @@
 /*
- * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
- * SPDX-License-Identifier: Apache-2.0
+ * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "unity.h"
-#include "mbedtls/aes.h"
+#include "test_utils.h"
 #include "memory_checks.h"
-#include "soc/soc_caps.h"
+#include "esp_newlib.h"
+#include "psa/crypto.h"
+#include "mbedtls/aes.h"
 #if SOC_SHA_SUPPORT_PARALLEL_ENG
 #include "sha/sha_parallel_engine.h"
 #else
 #include "sha/sha_core.h"
 #endif
-#include "esp_newlib.h"
-#include "psa/crypto.h"
-
-#if SOC_SHA_SUPPORT_SHA512
-#define SHA_TYPE SHA2_512
-#else
-#define SHA_TYPE SHA2_256
-#endif //SOC_SHA_SUPPORT_SHA512
+#include "bignum_impl.h"
 
 /* setUp runs before every test */
 void setUp(void)
@@ -32,8 +26,18 @@ void setUp(void)
     // and initial DMA setup memory which is considered as leaked otherwise
     const uint8_t input_buffer[64] = {0};
     uint8_t output_buffer[64];
-    esp_sha(SHA_TYPE, input_buffer, sizeof(input_buffer), output_buffer);
+#if SOC_SHA_SUPPORT_SHA256
+    esp_sha(SHA2_256, input_buffer, sizeof(input_buffer), output_buffer);
+#endif // SOC_SHA_SUPPORT_SHA256
+#if SOC_SHA_SUPPORT_SHA512
+    esp_sha(SHA2_512, input_buffer, sizeof(input_buffer), output_buffer);
+#endif // SOC_SHA_SUPPORT_SHA512
 #endif // SOC_SHA_SUPPORTED
+
+#if defined(CONFIG_MBEDTLS_HARDWARE_MPI)
+    esp_mpi_enable_hardware_hw_op();
+    esp_mpi_disable_hardware_hw_op();
+#endif // CONFIG_MBEDTLS_HARDWARE_MPI
 
 #if SOC_AES_SUPPORTED
     // Execute mbedtls_aes_init operation to allocate AES interrupt
@@ -69,10 +73,15 @@ void tearDown(void)
 
     test_utils_finish_and_evaluate_leaks(test_utils_get_leak_level(ESP_LEAK_TYPE_WARNING, ESP_COMP_LEAK_ALL),
             test_utils_get_leak_level(ESP_LEAK_TYPE_CRITICAL, ESP_COMP_LEAK_ALL));
+}
 
+static void test_task(void *pvParameters)
+{
+    vTaskDelay(2); /* Delay a bit to let the main task be deleted */
+    unity_run_menu();
 }
 
 void app_main(void)
 {
-    unity_run_menu();
+    xTaskCreatePinnedToCore(test_task, "testTask", CONFIG_UNITY_FREERTOS_STACK_SIZE, NULL, CONFIG_UNITY_FREERTOS_PRIORITY, NULL, CONFIG_UNITY_FREERTOS_CPU);
 }

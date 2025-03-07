@@ -8,7 +8,6 @@
 #include "unity_test_runner.h"
 #include "esp_heap_caps.h"
 #include "esp_ota_ops.h"
-#include "psa/crypto.h"
 
 // Some resources are lazy allocated, e.g. newlib locks, GDMA channel lazy installed by crypto driver
 // the threshold is left for those cases
@@ -28,7 +27,6 @@ void setUp(void)
 {
     // load the partition table before measuring the initial free heap size.
     TEST_ASSERT_NOT_EQUAL(NULL, esp_ota_get_running_partition());
-    psa_crypto_init();
     before_free_8bit = heap_caps_get_free_size(MALLOC_CAP_8BIT);
     before_free_32bit = heap_caps_get_free_size(MALLOC_CAP_32BIT);
 

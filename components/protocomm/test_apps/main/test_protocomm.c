@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -715,7 +715,7 @@ static esp_err_t test_security1_no_encryption (void)
         return ESP_ERR_INVALID_STATE;
     }
 
-    // Intialise protocomm session with zero public keys
+    // Initialise protocomm session with zero public keys
     if (test_new_session(session) != ESP_OK) {
         ESP_LOGE(TAG, "Error creating new session");
         stop_test_service();
@@ -794,7 +794,7 @@ static esp_err_t test_security1_session_overflow (void)
         return ESP_FAIL;
     }
 
-    // Intialise protocomm session with zero public keys
+    // Initialise protocomm session with zero public keys
     if (test_new_session(session1) != ESP_OK) {
         ESP_LOGE(TAG, "Error creating new session");
         stop_test_service();
@@ -860,7 +860,7 @@ static esp_err_t test_security1_wrong_pop (void)
         return ESP_FAIL;
     }
 
-    // Intialise protocomm session with zero public keys
+    // Initialise protocomm session with zero public keys
     if (test_new_session(session) != ESP_OK) {
         ESP_LOGE(TAG, "Error creating new session");
         stop_test_service();
@@ -975,7 +975,7 @@ static esp_err_t test_security1_weak_session (void)
         return ESP_FAIL;
     }
 
-    // Intialise protocomm session with zero public keys
+    // Initialise protocomm session with zero public keys
     if (test_new_session(session) != ESP_OK) {
         ESP_LOGE(TAG, "Error creating new session");
         stop_test_service();
@@ -1028,7 +1028,7 @@ static esp_err_t test_protocomm (session_t *session)
         return ESP_FAIL;
     }
 
-    // Intialise protocomm session with zero public keys
+    // Initialise protocomm session with zero public keys
     if (test_new_session(session) != ESP_OK) {
         ESP_LOGE(TAG, "Error creating new session");
         stop_test_service();
@@ -1189,9 +1189,4 @@ TEST_CASE("security 1 insecure client test", "[PROTOCOMM]")
 TEST_CASE("security 1 weak session test", "[PROTOCOMM]")
 {
     TEST_ASSERT(test_security1_weak_session() == ESP_OK);
-}
-
-void app_main(void)
-{
-    unity_run_menu();
 }

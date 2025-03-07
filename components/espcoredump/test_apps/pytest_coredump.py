@@ -12,6 +12,12 @@ def test_coredump(dut: Dut) -> None:
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['checksum_sha256',], indirect=True)
+@pytest.mark.parametrize(
+    'config',
+    [
+        'checksum_sha256',
+    ],
+    indirect=True,
+)
 def test_coredump_sha(dut: Dut) -> None:
     dut.run_all_single_board_cases()

@@ -143,16 +143,9 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     ESP_LOGD(TAG, LOG_FMT("Server key before encoding: %s"), server_raw_text);
 
-    /* Initialize PSA Crypto library */
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA Crypto");
-        return ESP_FAIL;
-    }
-
     /* Generate SHA-1 hash */
     psa_hash_operation_t sha1_operation = PSA_HASH_OPERATION_INIT;
-    status = psa_hash_setup(&sha1_operation, PSA_ALG_SHA_1);
+    psa_status_t status = psa_hash_setup(&sha1_operation, PSA_ALG_SHA_1);
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to setup SHA-1 operation");
         return ESP_FAIL;
@@ -161,6 +154,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
     status = psa_hash_update(&sha1_operation, (uint8_t *)server_raw_text, strlen(server_raw_text));
     if (status != PSA_SUCCESS) {
         ESP_LOGE(TAG, "Failed to update SHA-1 hash");
+        psa_hash_abort(&sha1_operation);
         return ESP_FAIL;
     }
 

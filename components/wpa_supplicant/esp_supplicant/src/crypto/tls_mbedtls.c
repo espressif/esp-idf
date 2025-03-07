@@ -651,13 +651,6 @@ struct tls_connection * tls_connection_init(void *tls_ctx)
         wpa_printf(MSG_ERROR, "TLS: Failed to allocate connection memory");
         return NULL;
     }
-#ifdef CONFIG_TLSV13
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
-        return NULL;
-    }
-#endif /* CONFIG_TLSV13 */
     return conn;
 }
 

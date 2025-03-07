@@ -183,19 +183,13 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
 
 bootloader_sha256_handle_t bootloader_sha256_start(void)
 {
-    // Initialize PSA Crypto subsystem
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        return NULL;
-    }
-
     psa_hash_operation_t *op = (psa_hash_operation_t *)malloc(sizeof(psa_hash_operation_t));
     if (!op) {
         return NULL;
     }
 
     *op = psa_hash_operation_init();
-    status = psa_hash_setup(op, PSA_ALG_SHA_256);
+    psa_status_t status = psa_hash_setup(op, PSA_ALG_SHA_256);
     if (status != PSA_SUCCESS) {
         free(op);
         return NULL;
@@ -224,6 +218,8 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
         psa_status_t status = psa_hash_finish(op, digest, PSA_HASH_LENGTH(PSA_ALG_SHA_256), &hash_len);
         assert(status == PSA_SUCCESS);
         assert(hash_len == PSA_HASH_LENGTH(PSA_ALG_SHA_256));
+        (void)status; // Suppress unused variable warning in release builds
+        (void)hash_len; // Suppress unused variable warning in release builds
     } else {
         psa_hash_abort(op);
     }

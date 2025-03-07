@@ -9,7 +9,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 #include <string.h>
 #include <stdlib.h>
@@ -60,14 +60,6 @@ static void https_get_task(void *pvParameters)
     mbedtls_x509_crt cacert;
     mbedtls_ssl_config conf;
     mbedtls_net_context server_fd;
-
-#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
-    psa_status_t status = psa_crypto_init();
-    if (status != PSA_SUCCESS) {
-        ESP_LOGE(TAG, "Failed to initialize PSA crypto, returned %d", (int) status);
-        return;
-    }
-#endif
 
     mbedtls_ssl_init(&ssl);
     mbedtls_x509_crt_init(&cacert);

@@ -13,6 +13,9 @@
 #include "esp_security_priv.h"
 #include "esp_err.h"
 #include "hal/efuse_hal.h"
+#if defined(CONFIG_MBEDTLS_PSA_CRYPTO_C)
+#include "psa/crypto.h"
+#endif /* CONFIG_MBEDTLS_PSA_CRYPTO_C */
 
 #if SOC_HUK_MEM_NEEDS_RECHARGE
 #include "hal/huk_hal.h"
