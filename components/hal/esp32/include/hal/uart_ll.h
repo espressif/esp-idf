@@ -205,17 +205,23 @@ FORCE_INLINE_ATTR void uart_ll_get_sclk(uart_dev_t *hw, soc_module_clk_t *source
  * @param  baud The baud-rate to be set. When the source clock is APB, the max baud-rate is `UART_LL_BITRATE_MAX`
  * @param  sclk_freq Frequency of the clock source of UART, in Hz.
 
- * @return None
+ * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
-FORCE_INLINE_ATTR void uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
+FORCE_INLINE_ATTR bool uart_ll_set_baudrate(uart_dev_t *hw, uint32_t baud, uint32_t sclk_freq)
 {
-    uint32_t clk_div;
-
-    clk_div = ((sclk_freq) << 4) / baud;
-    // The baud-rate configuration register is divided into
-    // an integer part and a fractional part.
-    hw->clk_div.div_int = clk_div >> 4;
-    hw->clk_div.div_frag = clk_div &  0xf;
+    if (baud == 0) {
+        return false;
+    }
+    uint32_t clk_div = ((sclk_freq) << 4) / baud;
+    // The baud-rate configuration register is divided into an integer part and a fractional part.
+    uint32_t clkdiv_int = clk_div >> 4;
+    if (clkdiv_int > UART_CLKDIV_V) {
+        return false; // unachievable baud-rate
+    }
+    uint32_t clkdiv_frag = clk_div & 0xf;
+    hw->clk_div.div_int = clkdiv_int;
+    hw->clk_div.div_frag = clkdiv_frag;
+    return true;
 }
 
 /**

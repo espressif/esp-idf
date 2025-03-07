@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,10 @@ static esp_err_t lp_core_uart_param_config(const lp_core_uart_cfg_t *cfg)
     uart_hal_init(&hal, LP_UART_PORT_NUM);
 
     /* Override protocol parameters from the configuration */
-    lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq);
+    if (!lp_uart_ll_set_baudrate(hal.dev, cfg->uart_proto_cfg.baud_rate, sclk_freq)) {
+        /* Unachievable baud rate */
+        return ESP_FAIL;
+    }
     uart_hal_set_parity(&hal, cfg->uart_proto_cfg.parity);
     uart_hal_set_data_bit_num(&hal, cfg->uart_proto_cfg.data_bits);
     uart_hal_set_stop_bits(&hal, cfg->uart_proto_cfg.stop_bits);

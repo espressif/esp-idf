@@ -31,6 +31,7 @@ static rtc_io_status_t s_rtc_io_status = {
 
 void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 {
+    assert(gpio_num != GPIO_NUM_NC);
     portENTER_CRITICAL(&s_io_mux_spinlock);
     if (enable) {
         if (s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] == 0) {
@@ -55,6 +56,7 @@ void io_mux_enable_lp_io_clock(gpio_num_t gpio_num, bool enable)
 
 void io_mux_force_disable_lp_io_clock(gpio_num_t gpio_num)
 {
+    assert(gpio_num != GPIO_NUM_NC);
     portENTER_CRITICAL(&s_io_mux_spinlock);
     s_rtc_io_status.rtc_io_enabled_cnt[gpio_num] = 0;
     s_rtc_io_status.rtc_io_using_mask &= ~(1ULL << gpio_num);
