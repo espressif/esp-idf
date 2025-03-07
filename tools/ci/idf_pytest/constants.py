@@ -139,6 +139,8 @@ ENV_MARKERS = {
     'twai_std': 'twai runner with all twai supported targets connect to usb-can adapter',
     'lp_i2s': 'lp_i2s runner tested with hp_i2s',
     'ram_app': 'ram_app runners',
+    'esp32c3eco7': 'esp32c3 major version(v1.1) chips',
+    'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
 }
 
 # by default the timeout is 1h, for some special cases we need to extend it
