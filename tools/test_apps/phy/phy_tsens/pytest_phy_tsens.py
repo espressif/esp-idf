@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import random
 import string
@@ -177,6 +177,57 @@ def test_phy_tsens_coexist(dut: Tuple[Dut, Dut]) -> None:
     indirect=True,
 )
 def test_phy_tsens_coexist_c2_xtal26m(dut: Tuple[Dut, Dut]) -> None:
+    for _dut in dut:
+        _dut.expect('esp>')
+    run_phy_tsens_test(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_init_wifi_first(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_with_light_sleep(dut)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2eco4
+@pytest.mark.parametrize(
+    'count, config, target, baud',
+    [
+        (2, 'c2_eco4', 'esp32c2', '74880'),
+    ],
+    indirect=True,
+)
+def test_phy_tsens_coexist_c2eco4_xtal26m(dut: Tuple[Dut, Dut]) -> None:
+    for _dut in dut:
+        _dut.expect('esp>')
+    run_phy_tsens_test(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_init_wifi_first(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_with_light_sleep(dut)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.esp32c3eco7
+@pytest.mark.parametrize(
+    'count, config, target',
+    [
+        (2, 'c3_eco7', 'esp32c3'),
+    ],
+    indirect=True,
+)
+def test_phy_tsens_coexist_c3eco7(dut: Tuple[Dut, Dut]) -> None:
     for _dut in dut:
         _dut.expect('esp>')
     run_phy_tsens_test(dut)
