@@ -39,8 +39,7 @@ esp_err_t esp_supplicant_str_to_mac(const char *str, uint8_t dest[6])
 
 struct wpa_supplicant g_wpa_supp;
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-#if defined(CONFIG_RRM)
+#ifdef CONFIG_RRM
 static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
                              u8 *payload, size_t len, int8_t rssi)
 {
@@ -59,8 +58,10 @@ static void handle_rrm_frame(struct wpa_supplicant *wpa_s, u8 *sender,
 }
 #endif /* CONFIG_RRM */
 
+#if defined(CONFIG_IEEE80211KV)
 static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 channel)
 {
+#if defined(CONFIG_RRM) || defined(CONFIG_WNM)
     u8 category;
     u8 bssid[ETH_ALEN];
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
@@ -83,11 +84,13 @@ static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 cha
         handle_rrm_frame(wpa_s, sender, frame, len, rssi);
     }
 #endif /* CONFIG_RRM */
+#endif /* defined(CONFIG_RRM) || defined(CONFIG_WNM) */
     return 0;
 }
 
 static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
 {
+#if defined(CONFIG_WNM)
     wifi_config_t *config;
 
     /* Reset only if btm is enabled */
@@ -110,8 +113,11 @@ static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
     }
     os_free(config);
     wpa_printf(MSG_DEBUG, "cleared bssid flag");
+#endif /* CONFIG_WNM */
 }
+#endif /* CONFIG_IEEE80211KV */
 
+#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 {
     wpa_s->type &= ~(1 << WLAN_FC_STYPE_ACTION);
@@ -142,6 +148,7 @@ static void register_mgmt_frames(struct wpa_supplicant *wpa_s)
 #endif /* CONFIG_IEEE80211R */
     esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
 }
+#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
 #ifdef CONFIG_IEEE80211R
 static int handle_auth_frame(u8 *frame, size_t len,
@@ -174,7 +181,7 @@ static int handle_assoc_frame(u8 *frame, size_t len,
     return 0;
 }
 
-static void wpa_sta_clear_ft_auth_ie(void)
+void wpa_sta_clear_ft_auth_ie(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     wpa_printf(MSG_DEBUG, "Clearing all FT IE parameters and keys");
@@ -187,7 +194,6 @@ static void wpa_sta_clear_ft_auth_ie(void)
     wpa_sm_drop_sa(sm);
 }
 #endif /* CONFIG_IEEE80211R */
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 
 void esp_supplicant_unset_all_appie(void)
 {
@@ -338,8 +344,7 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
 
 void supplicant_sta_disconn_handler(uint8_t reason_code)
 {
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-    struct wpa_sm *sm = &gWpaSm;
+#if defined(CONFIG_IEEE80211KV)
     struct wpa_supplicant *wpa_s = &g_wpa_supp;
 
 #if defined(CONFIG_RRM)
@@ -355,16 +360,9 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
     if (wpa_s->current_bss) {
         wpa_s->current_bss = NULL;
     }
-#if defined(CONFIG_IEEE80211R)
-    if (!sm->cur_pmksa) {
-        /* clear all ft auth related IEs so that next will be open auth */
-        wpa_sta_clear_ft_auth_ie();
-    }
-#endif
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+#endif /* defined(CONFIG_IEEE80211KV) */
 }
 
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
 #if defined(CONFIG_RRM)
 bool esp_rrm_is_rrm_supported_connection(void)
 {
@@ -481,8 +479,8 @@ static size_t get_rm_enabled_ie(uint8_t *ie, size_t len)
 
     return rrm_ie_len + 2;
 }
-
 #endif /* defined(CONFIG_RRM) */
+
 #if defined(CONFIG_WNM)
 bool esp_wnm_is_btm_supported_connection(void)
 {
@@ -636,9 +634,9 @@ void wpa_supplicant_connect(struct wpa_supplicant *wpa_s,
     esp_wifi_connect();
 }
 
+#if defined(CONFIG_WNM) || defined(CONFIG_MBO)
 void esp_set_scan_ie(void)
 {
-#ifdef CONFIG_WNM
 #define SCAN_IE_LEN 64
     uint8_t *ie, *pos;
     size_t len = SCAN_IE_LEN, ie_len;
@@ -649,20 +647,24 @@ void esp_set_scan_ie(void)
         return;
     }
     pos = ie;
+#ifdef CONFIG_WNM
     ie_len = get_extended_caps_ie(pos, len);
     pos += ie_len;
     len -= ie_len;
+#endif /* defined(CONFIG_WNM) */
 #ifdef CONFIG_MBO
     ie_len = get_mbo_oce_scan_ie(pos, len);
     pos += ie_len;
     len -= ie_len;
 #endif /* CONFIG_MBO */
-    esp_wifi_unset_appie_internal(WIFI_APPIE_PROBEREQ);
-    esp_wifi_set_appie_internal(WIFI_APPIE_PROBEREQ, ie, SCAN_IE_LEN - len, 0);
+    if (SCAN_IE_LEN - len) {
+        esp_wifi_unset_appie_internal(WIFI_APPIE_PROBEREQ);
+        esp_wifi_set_appie_internal(WIFI_APPIE_PROBEREQ, ie, SCAN_IE_LEN - len, 0);
+    }
     os_free(ie);
 #undef SCAN_IE_LEN
-#endif /* defined(CONFIG_WNM) */
 }
+#endif /* defined(CONFIG_WNM) || defined(CONFIG_MBO) */
 
 #ifdef CONFIG_IEEE80211R
 static size_t add_mdie(uint8_t *bssid, uint8_t *ie, size_t len)
@@ -765,42 +767,22 @@ int wpa_drv_send_action(struct wpa_supplicant *wpa_s,
     return ret;
 }
 
-#ifdef CONFIG_SUPPLICANT_TASK
-int esp_supplicant_post_evt(uint32_t evt_id, uint32_t data)
-{
-    supplicant_event_t evt;
-    evt.id = evt_id;
-    evt.data = data;
-
-    /* Make sure lock exists before taking it */
-    SUPPLICANT_API_LOCK();
-
-    /* Make sure no event can be sent when deletion event is sent or task not initialized */
-    if (!s_supplicant_task_init_done) {
-        SUPPLICANT_API_UNLOCK();
-        return -1;
-    }
-
-    if (os_queue_send(s_supplicant_evt_queue, &evt, os_task_ms_to_tick(10)) != TRUE) {
-        SUPPLICANT_API_UNLOCK();
-        return -1;
-    }
-    if (evt_id == SIG_SUPPLICANT_DEL_TASK) {
-        s_supplicant_task_init_done = false;
-    }
-    SUPPLICANT_API_UNLOCK();
-    return 0;
-}
-#endif /* CONFIG_SUPPLICANT_TASK */
-#else /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
+#ifndef CONFIG_WNM
 void esp_set_scan_ie(void) { }
-
-bool esp_rrm_is_rrm_supported_connection(void)
+bool esp_wnm_is_btm_supported_connection(void)
 {
     return false;
 }
+int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
+                                           const char *btm_candidates,
+                                           int cand_list)
+{
+    return -1;
+}
+#endif
 
-bool esp_wnm_is_btm_supported_connection(void)
+#ifndef CONFIG_RRM
+bool esp_rrm_is_rrm_supported_connection(void)
 {
     return false;
 }
@@ -815,22 +797,15 @@ int esp_rrm_send_neighbor_rep_request(neighbor_rep_request_cb cb,
 {
     return -1;
 }
-int esp_wnm_send_bss_transition_mgmt_query(enum btm_query_reason query_reason,
-                                           const char *btm_candidates,
-                                           int cand_list)
-{
-    return -1;
-}
+#endif
 
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
-
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
+#if defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE)
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 {
 #define ASSOC_IE_LEN 128
     uint8_t *ie, *pos;
     size_t len = ASSOC_IE_LEN;
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
+#if defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R)
     size_t ie_len;
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
     ie = os_malloc(ASSOC_IE_LEN + ies_len);
@@ -843,6 +818,7 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     ie_len = get_rm_enabled_ie(pos, len);
     pos += ie_len;
     len -= ie_len;
+#endif /* defined(CONFIG_RRM) */
 #ifdef CONFIG_MBO
     ie_len = get_operating_class_ie(pos, len);
     pos += ie_len;
@@ -851,7 +827,6 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
     pos += ie_len;
     len -= ie_len;
 #endif /* CONFIG_MBO */
-#endif /* defined(CONFIG_RRM) */
 #ifdef CONFIG_IEEE80211R
     if (mdie) {
         ie_len = add_mdie(bssid, pos, len);
@@ -870,4 +845,4 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie)
 }
 #else
 void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool mdie) { }
-#endif  /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE) */
+#endif  /* defined(CONFIG_RRM) || defined(CONFIG_IEEE80211R) || defined(CONFIG_WPA3_SAE) */
