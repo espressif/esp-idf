@@ -412,7 +412,7 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_DES);
-    psa_set_key_bits(&attributes, 64);
+    psa_set_key_bits(&attributes, 128);
 
     status = psa_import_key(&attributes, key, 8, &key_id);
     if (status != PSA_SUCCESS) {

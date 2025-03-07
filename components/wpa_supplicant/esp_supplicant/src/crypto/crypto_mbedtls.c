@@ -46,13 +46,12 @@
 
 struct crypto_hash {
     union {
-		psa_hash_operation_t *hash_operation;
-		psa_mac_operation_t *mac_operation;
-	} u;
-	int is_mac;
-	psa_key_id_t key_id;
+        psa_hash_operation_t *hash_operation;
+        psa_mac_operation_t *mac_operation;
+    } u;
+    int is_mac;
+    psa_key_id_t key_id;
 };
-
 
 static int digest_vector(psa_algorithm_t alg, size_t num_elem,
                          const u8 *addr[], const size_t *len, u8 *mac)
@@ -144,38 +143,38 @@ struct crypto_hash * crypto_hash_init(enum crypto_hash_alg alg, const u8 *key,
     psa_algorithm_t psa_alg;
     int is_hmac = 0;
 
-    switch(alg) {
-        case CRYPTO_HASH_ALG_MD5:
-        case CRYPTO_HASH_ALG_HMAC_MD5:
-            psa_alg = PSA_ALG_MD5;
-            break;
-        case CRYPTO_HASH_ALG_SHA1:
-        case CRYPTO_HASH_ALG_HMAC_SHA1:
-            psa_alg = PSA_ALG_SHA_1;
-            break;
-        case CRYPTO_HASH_ALG_SHA256:
-        case CRYPTO_HASH_ALG_HMAC_SHA256:
-            psa_alg = PSA_ALG_SHA_256;
-            break;
-        case CRYPTO_HASH_ALG_SHA384:
-            psa_alg = PSA_ALG_SHA_384;
-            break;
-        case CRYPTO_HASH_ALG_SHA512:
-            psa_alg = PSA_ALG_SHA_512;
-            break;
-        default:
-            os_free(ctx);
-            return NULL;
+    switch (alg) {
+    case CRYPTO_HASH_ALG_MD5:
+    case CRYPTO_HASH_ALG_HMAC_MD5:
+        psa_alg = PSA_ALG_MD5;
+        break;
+    case CRYPTO_HASH_ALG_SHA1:
+    case CRYPTO_HASH_ALG_HMAC_SHA1:
+        psa_alg = PSA_ALG_SHA_1;
+        break;
+    case CRYPTO_HASH_ALG_SHA256:
+    case CRYPTO_HASH_ALG_HMAC_SHA256:
+        psa_alg = PSA_ALG_SHA_256;
+        break;
+    case CRYPTO_HASH_ALG_SHA384:
+        psa_alg = PSA_ALG_SHA_384;
+        break;
+    case CRYPTO_HASH_ALG_SHA512:
+        psa_alg = PSA_ALG_SHA_512;
+        break;
+    default:
+        os_free(ctx);
+        return NULL;
     }
 
-    switch(alg) {
-        case CRYPTO_HASH_ALG_HMAC_MD5:
-        case CRYPTO_HASH_ALG_HMAC_SHA1:
-        case CRYPTO_HASH_ALG_HMAC_SHA256:
-            is_hmac = 1;
-            break;
-        default:
-            break;
+    switch (alg) {
+    case CRYPTO_HASH_ALG_HMAC_MD5:
+    case CRYPTO_HASH_ALG_HMAC_SHA1:
+    case CRYPTO_HASH_ALG_HMAC_SHA256:
+        is_hmac = 1;
+        break;
+    default:
+        break;
     }
 
     // If is_hmac is set, then it is HMAC mode
@@ -251,7 +250,7 @@ void crypto_hash_update(struct crypto_hash *crypto_ctx, const u8 *data, size_t l
     } else {
         status = psa_hash_update(crypto_ctx->u.hash_operation, data, len);
     }
-    
+
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_hash_update failed", __func__);
     }
@@ -573,7 +572,7 @@ int aes_128_cbc_encrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
     psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
 
-    status = psa_crypto_init(); 
+    status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_crypto_init failed", __func__);
         return -1;
@@ -796,7 +795,6 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     }
 #endif /* CONFIG_MBEDTLS_CIPHER_MODE_WITH_PADDING */
     return ctx;
-
 
 cleanup:
     os_free(ctx);
@@ -1047,7 +1045,7 @@ int des_encrypt(const u8 *clear, const u8 *key, u8 *cypher)
     psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
     psa_set_key_algorithm(&attributes, PSA_ALG_ECB_NO_PADDING);
     psa_set_key_type(&attributes, PSA_KEY_TYPE_DES);
-    psa_set_key_bits(&attributes, 64);
+    psa_set_key_bits(&attributes, 128);
 
     status = psa_import_key(&attributes, key, 8, &key_id);
     if (status != PSA_SUCCESS) {
@@ -1135,7 +1133,7 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
     }
 
     size_t output_length = 0;
-	size_t tag_len = 0;
+    size_t tag_len = 0;
 
     status = psa_aead_update_ad(&operation, aad, aad_len);
     if (status != PSA_SUCCESS) {
@@ -1159,7 +1157,7 @@ int aes_ccm_ae(const u8 *key, size_t key_len, const u8 *nonce,
 
     psa_destroy_key(key_id);
 
-	return 0;
+    return 0;
 }
 
 int aes_ccm_ad(const u8 *key, size_t key_len, const u8 *nonce,
