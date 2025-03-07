@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
+import base64
+import json
 from importlib.metadata import version
 from io import BufferedRandom
 from io import BytesIO
@@ -19,11 +21,11 @@ import pytest
 from esp_idf_nvs_partition_gen.nvs_partition_gen import NVS
 from nvs_logger import nvs_log
 from nvs_logger import NVS_Logger
+from nvs_logger import print_minimal_json
 from nvs_parser import nvs_const
 from nvs_parser import NVS_Entry
 from nvs_parser import NVS_Partition
 from packaging.version import Version
-
 
 NVS_PART_GEN_VERSION_SKIP = '0.1.8'
 
@@ -346,6 +348,29 @@ def setup_read_only(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
     return nvs_obj
 
 
+def setup_minimal_json(nvs_file: Optional[Union[BytesIO, BufferedRandom]]) -> NVS:
+    size_fixed, read_only = nvs_partition_gen.check_size(str(0x4000))
+    nvs_obj = nvs_partition_gen.nvs_open(
+        result_obj=nvs_file,
+        input_size=size_fixed,
+        version=nvs_partition_gen.Page.VERSION2,
+        is_encrypt=False,
+        key=None,
+        read_only=read_only
+    )
+
+    nvs_partition_gen.write_entry(nvs_obj, 'storage', 'namespace', '', '')
+    nvs_partition_gen.write_entry(nvs_obj, 'int32_test', 'data', 'i32', str(-42))
+    nvs_partition_gen.write_entry(nvs_obj, 'uint32_test', 'data', 'u32', str(96))
+    nvs_partition_gen.write_entry(nvs_obj, 'int8_test', 'data', 'i8', str(100))
+    nvs_partition_gen.write_entry(nvs_obj, 'blob_key', 'file', 'binary',
+                                  '../nvs_partition_generator/testdata/sample_multipage_blob.bin')
+    nvs_partition_gen.write_entry(nvs_obj, 'short_str_key', 'data', 'string', 'Another string data')
+    nvs_partition_gen.write_entry(nvs_obj, 'long_str_key', 'data', 'string', LOREM_STRING)
+
+    return nvs_obj
+
+
 # Helper functions
 def prepare_duplicate_list(nvs: NVS_Partition) -> Dict[str, List[NVS_Entry]]:
     seen_written_entires_all: Dict[str, List[NVS_Entry]] = {}
@@ -441,3 +466,50 @@ def test_check_read_only_partition(generate_nvs: Callable, setup_func: Callable)
     assert len(nvs.raw_data) == 0x1000
     assert nvs_check.check_partition_size(nvs, logger, read_only=True)
     assert not nvs_check.check_empty_page_present(nvs, logger)
+
+
+@pytest.mark.parametrize('setup_func', [setup_minimal_json])
+def test_print_minimal_json(generate_nvs: Callable, setup_func: Callable, capsys: pytest.CaptureFixture) -> None:
+    nvs = generate_nvs(setup_func)
+    logger.set_format('json')
+    print_minimal_json(nvs)
+    captured = capsys.readouterr()
+    assert captured.out.startswith('[')
+    assert captured.out.endswith(']\n')
+    assert '"namespace"' in captured.out
+    assert '"key"' in captured.out
+    assert '"encoding"' in captured.out
+    assert '"data"' in captured.out
+    assert '"state"' in captured.out
+    assert '"is_empty"' in captured.out
+
+    # Check if the data is correct
+    assert '100' in captured.out and '-42' in captured.out and '96' in captured.out
+    assert 'Another string data' in captured.out
+    # Check if the LOREM_STRING is present and properly formatted
+    lorem_string_escaped = LOREM_STRING.replace('\n', '\\n')
+    assert lorem_string_escaped in captured.out
+    # Check if the blob key data is present and correct
+    assert captured.out.count('"key": "blob_key"') == 2
+
+    # Load the captured output as JSON
+    output_json = json.loads(captured.out)
+
+    # Gather all entries with the key 'blob_key' and decode them from base64
+    blob_key_data_binary = b''.join(
+        base64.b64decode(entry['data']) for entry in output_json if entry['key'] == 'blob_key'
+    )
+
+    # Read the sample multipage blob data from the binary file
+    with open('../nvs_partition_generator/testdata/sample_multipage_blob.bin', 'rb') as f:
+        sample_blob_data = f.read()
+
+    # Check if the gathered blob_key data matches the sample multipage blob data
+    assert sample_blob_data == blob_key_data_binary
+    # Check if all keys are present
+    assert captured.out.count('blob_key') == 2
+    assert captured.out.count('short_str_key') == 1
+    assert captured.out.count('long_str_key') == 1
+    assert captured.out.count('int32_test') == 2  # 2 entries for int32_test
+    assert captured.out.count('uint32_test') == 1
+    assert captured.out.count('int8_test') == 1
