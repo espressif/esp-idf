@@ -34,3 +34,4 @@ void esp_set_assoc_ie(uint8_t *bssid, const u8 *ies, size_t ies_len, bool add_md
 void supplicant_sta_conn_handler(uint8_t* bssid);
 void supplicant_sta_disconn_handler(uint8_t reason_code);
 #endif
+void wpa_sta_clear_ft_auth_ie(void);
