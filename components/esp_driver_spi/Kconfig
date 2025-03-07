@@ -23,7 +23,6 @@ menu "ESP-Driver:SPI Configurations"
         bool "Place SPI master ISR function into IRAM"
         default y
         depends on !HEAP_PLACE_FUNCTION_INTO_FLASH
-        select PERIPH_CTRL_FUNC_IN_IRAM
         select ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
         select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
         help
@@ -52,7 +51,6 @@ menu "ESP-Driver:SPI Configurations"
     config SPI_SLAVE_ISR_IN_IRAM
         bool "Place SPI slave ISR function into IRAM"
         default y
-        select PERIPH_CTRL_FUNC_IN_IRAM
         select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Place the SPI slave ISR in to IRAM to avoid possible cache miss.
