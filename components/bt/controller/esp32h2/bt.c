@@ -34,6 +34,7 @@
 #include "os/endian.h"
 
 #include "esp_bt.h"
+#include "ble_priv.h"
 #include "esp_intr_alloc.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
@@ -109,6 +110,7 @@ typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
  */
 extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int r_ble_controller_init(esp_bt_controller_config_t *cfg);
+extern void esp_ble_controller_info_capture(uint32_t cycle_times);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 extern int r_ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int r_ble_log_deinit_async(void);
@@ -939,13 +941,19 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto modem_deint;
     }
 
+    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
+
     ret = r_ble_controller_init(cfg);
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "r_ble_controller_init failed %d", ret);
         goto modem_deint;
     }
 
-    ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
+    ret = ble_stack_initEnv();
+    if (ret != ESP_OK) {
+        ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_stack_initEnv failed %d", ret);
+        goto free_controller;
+    }
 
     ble_controller_scan_duplicate_config();
 
@@ -988,6 +996,7 @@ free_controller:
     hci_transport_deinit();
     controller_sleep_deinit();
     os_msys_deinit();
+    ble_stack_deinitEnv();
     r_ble_controller_deinit();
 modem_deint:
     esp_ble_unregister_bb_funcs();
@@ -1023,6 +1032,7 @@ esp_err_t esp_bt_controller_deinit(void)
     modem_clock_deselect_lp_clock_source(PERIPH_BT_MODULE);
     modem_clock_module_disable(PERIPH_BT_MODULE);
 
+    ble_stack_deinitEnv();
     r_ble_controller_deinit();
     esp_ble_unregister_bb_funcs();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -1076,6 +1086,12 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     r_ble_ll_scan_start_time_init_compensation(500);
     r_priv_sdk_config_insert_proc_time_set(500);
 #endif // CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+
+    if (ble_stack_enable() != 0) {
+        ret = ESP_FAIL;
+        goto error;
+    }
+
     if (r_ble_controller_enable(mode) != 0) {
         ret = ESP_FAIL;
         goto error;
@@ -1084,6 +1100,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     return ESP_OK;
 
 error:
+    ble_stack_disable();
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
@@ -1107,6 +1124,7 @@ esp_err_t esp_bt_controller_disable(void)
     if (r_ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
+    ble_stack_disable();
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
@@ -1615,3 +1633,35 @@ int ble_sm_alg_gen_key_pair(uint8_t *pub, uint8_t *priv)
 
 #endif // CONFIG_BT_LE_SM_LEGACY || CONFIG_BT_LE_SM_SC
 #endif // (!CONFIG_BT_NIMBLE_ENABLED) && (CONFIG_BT_CONTROLLER_ENABLED)
+#if CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+#include "esp_gdbstub.h"
+#endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+
+int IRAM_ATTR
+ble_capture_info_user_handler(uint8_t type, uint32_t reason)
+{
+    int i;
+
+    switch(type) {
+        case 0:
+            for (i = 0; i < 2; i++) {
+                esp_ble_controller_info_capture(0x010101);
+            }
+#if CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+            uintptr_t sp;
+            __asm__ volatile ("mv %0, sp" : "=r" (sp));
+            esp_gdbstub_panic_handler(&sp);
+#endif // CONFIG_BT_LE_DEBUG_REMAIN_SCENE_ENABLED
+            break;
+#if CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        case 1:
+            if ((reason == 0x08) || (reason == 0x3d) || (reason == 0x28)) {
+                osi_assert_wrapper(__LINE__,__func__, type, reason);
+            }
+            break;
+#endif // CONFIG_BT_LE_ASSERT_WHEN_ABNORMAL_DISCONN_ENABLED
+        default:
+            break;
+    }
+    return 0;
+}
