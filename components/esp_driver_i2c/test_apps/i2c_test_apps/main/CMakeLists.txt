@@ -34,6 +34,10 @@ if(CONFIG_SOC_I2C_SUPPORT_SLAVE)
     endif()
 endif()
 
+if(NOT CONFIG_I2C_MASTER_ISR_HANDLER_IN_IRAM)
+    list(APPEND srcs "test_i2c_flash_text.c")
+endif()
+
 idf_component_register(SRCS ${srcs}
                        PRIV_REQUIRES unity driver test_utils
                        WHOLE_ARCHIVE)

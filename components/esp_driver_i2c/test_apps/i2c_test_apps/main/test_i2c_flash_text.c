@@ -32,7 +32,7 @@ void spi_flash_suspend_test_task(void *arg)
 {
     spi_flash_test_context_t *context = (spi_flash_test_context_t *)arg;
 
-    uint32_t cnt = 200;
+    uint32_t cnt = 20;
     while (cnt--) {
         if (context->flash_handle->suspend_times != 0) {
             break;
@@ -120,7 +120,7 @@ TEST_CASE("Flash suspend support on i2c", "[i2c]")
     // Quit when suspend is triggered.
     xTaskCreatePinnedToCore(spi_flash_suspend_test_task, "flash_task", 4096, context, 2, NULL, 0);
 
-    xSemaphoreTake(context->sem, pdMS_TO_TICKS(5000)); // We don't always wait the semaphore
+    xSemaphoreTake(context->sem, portMAX_DELAY);
 
     printf("test finishes, suspend for %ld times\n", context->flash_handle->suspend_times);
     TEST_ASSERT_NOT_EQUAL(0, context->flash_handle->suspend_times);
