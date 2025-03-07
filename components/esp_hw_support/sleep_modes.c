@@ -16,6 +16,7 @@
 #include "esp_memory_utils.h"
 #include "esp_sleep.h"
 #include "esp_private/esp_clk_tree_common.h"
+#include "esp_private/esp_clk_utils.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_timer_private.h"
 #include "esp_private/rtc_clk.h"
@@ -79,9 +80,6 @@
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_task_wdt.h"
 #include "esp_private/sar_periph_ctrl.h"
-#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
-#include "esp_private/mspi_timing_tuning.h"
-#endif
 
 #ifdef CONFIG_IDF_TARGET_ESP32
 #include "esp32/rom/cache.h"
@@ -94,7 +92,6 @@
 #include "esp_private/gpio.h"
 #elif CONFIG_IDF_TARGET_ESP32S3
 #include "esp32s3/rom/rtc.h"
-#include "esp_private/mspi_timing_tuning.h"
 #elif CONFIG_IDF_TARGET_ESP32C3
 #include "esp32c3/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C2
@@ -818,9 +815,9 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
     }
 #endif
 
-#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
-    // Will switch to XTAL turn down MSPI speed
-    mspi_timing_change_speed_mode_cache_safe(true);
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    uint32_t xtal_freq = rtc_clk_xtal_freq_get();
+    esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(xtal_freq, xtal_freq);
 #endif
 
 #if SOC_PM_RETENTION_SW_TRIGGER_REGDMA
@@ -1121,14 +1118,9 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
         }
         misc_modules_wake_prepare(sleep_flags);
     }
-
-#if MSPI_TIMING_LL_FLASH_CPU_CLK_SRC_BINDED
-    if (cpu_freq_config.source_freq_mhz > clk_ll_xtal_load_freq_mhz()) {
-        // Turn up MSPI speed if switch to PLL
-        mspi_timing_change_speed_mode_cache_safe(false);
-    }
+#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
+    esp_clk_utils_mspi_speed_mode_sync_after_cpu_freq_switching(cpu_freq_config.source_freq_mhz, cpu_freq_config.freq_mhz);
 #endif
-
     // re-enable UART output
     resume_uarts();
     return result ? ESP_ERR_SLEEP_REJECT : ESP_OK;

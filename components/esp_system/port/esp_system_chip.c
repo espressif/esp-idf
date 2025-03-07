@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,10 +9,11 @@
 #include "esp_cpu.h"
 #include "soc/soc.h"
 #include "soc/soc_caps.h"
+#include "hal/clk_tree_ll.h"
+#include "esp_private/esp_clk_utils.h"
 #include "esp_private/rtc_clk.h"
 #include "esp_private/panic_internal.h"
 #include "esp_private/system_internal.h"
-#include "esp_private/mspi_timing_tuning.h"
 #include "esp_heap_caps.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
@@ -36,15 +37,9 @@ void IRAM_ATTR esp_restart_noos_dig(void)
     }
 
 #if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    /**
-     * Turn down MSPI speed
-     *
-     * We set MSPI clock to a high speed one before, ROM doesn't have such high speed clock source option.
-     * This function will change clock source to a ROM supported one when system restarts.
-     */
-    mspi_timing_change_speed_mode_cache_safe(true);
-#endif  //#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-
+    uint32_t xtal_freq = clk_ll_xtal_load_freq_mhz();
+    esp_clk_utils_mspi_speed_mode_sync_before_cpu_freq_switching(xtal_freq, xtal_freq);
+#endif
     // switch to XTAL (otherwise we will keep running from the PLL)
     rtc_clk_cpu_set_to_default_config();
 
