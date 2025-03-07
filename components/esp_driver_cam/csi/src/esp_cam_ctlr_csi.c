@@ -25,7 +25,7 @@
 #include "esp_private/esp_cache_private.h"
 #include "esp_cache.h"
 
-#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
 #define CSI_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define CSI_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -374,7 +374,7 @@ esp_err_t s_register_event_callbacks(esp_cam_ctlr_handle_t handle, const esp_cam
     csi_controller_t *ctlr = __containerof(handle, csi_controller_t, base);
     ESP_RETURN_ON_FALSE(ctlr->csi_fsm == CSI_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "driver starts already, not allow cbs register");
 
-#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }

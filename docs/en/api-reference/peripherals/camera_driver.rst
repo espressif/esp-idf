@@ -134,8 +134,12 @@ The factory function :cpp:func:`esp_cam_new_csi_ctlr` and :cpp:func:`esp_cam_ctl
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` controls whether the default ISR handler should be masked when the cache is disabled
+The following Kconfig options affect the behavior of the interrupt handler when cache is disabled:
 
+.. list::
+
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for more details.
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`, see :ref:`cam-thread-safety` for more details.
 
 .. _cam-iram-safe:
 
@@ -144,7 +148,14 @@ IRAM Safe
 
 By default, the CSI interrupt will be deferred when the cache is disabled because of writing or erasing the flash.
 
-There is a Kconfig option :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE` that:
+There are Kconfig options
+
+.. list::
+
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
+
+that
 
 -  Enables the interrupt being serviced even when the cache is disabled
 -  Places all functions that used by the ISR into IRAM
