@@ -301,8 +301,10 @@ static void test_use_external_non_free_running_clock(parlio_tx_unit_handle_t tx_
     uint32_t clock_div = config.input_clk_src_freq_hz / config.output_clk_freq_hz;
     TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
     TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
-    // let core clock running for a while to update the clock divider threshold
-    esp_rom_delay_us(100 * 1000);
+    // let core clock running for a while to update the clock divider threshold, this is a hardware limitation
+    // the following rising edge count is not a magic value, we just need it to be larger than the clock divider value in the previous test case
+    test_gpio_simulate_rising_edge(TEST_EXT_CLK_GPIO, 100);
+    esp_rom_delay_us(1000);
     parlio_transmit_config_t transmit_config = {
         .idle_value = 0xAA,
     };
