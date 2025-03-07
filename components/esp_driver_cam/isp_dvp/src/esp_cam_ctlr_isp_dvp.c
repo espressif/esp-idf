@@ -31,7 +31,7 @@
 #include "esp_cam_ctlr_isp_dvp.h"
 #include "../../dvp_share_ctrl.h"
 
-#if CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE
 #define ISP_DVP_MEM_ALLOC_CAPS   (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define ISP_DVP_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
@@ -262,7 +262,7 @@ static esp_err_t s_isp_dvp_register_event_callbacks(esp_cam_ctlr_handle_t handle
     isp_dvp_controller_t *dvp_ctlr = __containerof(handle, isp_dvp_controller_t, base);
     ESP_RETURN_ON_FALSE(dvp_ctlr->fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "controller isn't in init state");
 
-#if CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE
+#if CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE
     if (cbs->on_get_new_trans) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_get_new_trans), ESP_ERR_INVALID_ARG, TAG, "on_get_new_trans callback not in IRAM");
     }
