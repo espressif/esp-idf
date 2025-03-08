@@ -41,7 +41,8 @@ if(NOT BOOTLOADER_BUILD)
                      "dma/esp_dma_utils.c"
                      "dma/gdma_link.c"
                      "spi_share_hw_ctrl.c"
-                     "spi_bus_lock.c")
+                     "spi_bus_lock.c"
+                     "clk_utils.c")
 
     if(CONFIG_SOC_ADC_SUPPORTED)
         list(APPEND srcs "adc_share_hw_ctrl.c")

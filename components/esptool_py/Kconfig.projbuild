@@ -149,6 +149,14 @@ menu "Serial flasher config"
             depends on SOC_MEMSPI_SRC_FREQ_15M_SUPPORTED
     endchoice
 
+    config ESPTOOLPY_FLASHFREQ_VAL
+        int
+        depends on IDF_TARGET_ESP32P4
+        default 20 if ESPTOOLPY_FLASHFREQ_20M
+        default 40 if ESPTOOLPY_FLASHFREQ_40M
+        default 80 if ESPTOOLPY_FLASHFREQ_80M
+        default 120 if ESPTOOLPY_FLASHFREQ_120M
+
     config ESPTOOLPY_FLASHFREQ_80M_DEFAULT
         bool
         default y if IDF_TARGET_ESP32S2 || IDF_TARGET_ESP32S3 || IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32C6
