@@ -164,7 +164,9 @@ def test_examples_app_trace_basic(dut: IdfDut) -> None:
 
 @pytest.mark.esp32s3
 @pytest.mark.esp32c3
+@pytest.mark.esp32c5
 @pytest.mark.esp32c6
+@pytest.mark.esp32c61
 @pytest.mark.esp32h2
 @pytest.mark.usb_serial_jtag
 def test_examples_app_trace_basic_usj(dut: IdfDut) -> None:
