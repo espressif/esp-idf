@@ -699,7 +699,7 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
 __attribute__((always_inline))
 static inline void adc_ll_set_dtest_param(uint32_t param)
 {
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR , param);
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
 }
 
 /**
@@ -714,13 +714,13 @@ static inline void adc_ll_set_ent_param(uint32_t param)
 }
 
 /**
- * Enable the SAR TOUT bus
+ * Enable/disable the calibration voltage reference for ADC unit.
  *
  * @param adc_n ADC index number.
- * @param en true for enable
+ * @param en true to enable, false to disable
  */
 __attribute__((always_inline))
-static inline void adc_ll_enable_encal_ref(adc_unit_t adc_n, bool en)
+static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
 {
     //C6 doesn't support ADC2, here is for backward compatibility for RNG
     if (adc_n == ADC_UNIT_1) {
@@ -734,13 +734,13 @@ static inline void adc_ll_enable_encal_ref(adc_unit_t adc_n, bool en)
  * Init regi2c SARADC registers
  */
 __attribute__((always_inline))
-static inline void adc_ll_regi2c_adc_init(void)
+static inline void adc_ll_regi2c_init(void)
 {
     adc_ll_set_dtest_param(2);
     adc_ll_set_ent_param(1);
     // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
-    adc_ll_enable_encal_ref(ADC_UNIT_1, true);
-    adc_ll_enable_encal_ref(ADC_UNIT_2, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
 }
 
 /**
@@ -751,8 +751,8 @@ static inline void adc_ll_regi2c_adc_deinit(void)
 {
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(0);
-    adc_ll_enable_encal_ref(ADC_UNIT_1, false);
-    adc_ll_enable_encal_ref(ADC_UNIT_2, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
 }
 
 /*---------------------------------------------------------------

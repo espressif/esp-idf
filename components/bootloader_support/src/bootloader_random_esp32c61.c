@@ -18,12 +18,12 @@ void bootloader_random_enable(void)
     adc_ll_digi_controller_clk_div(0, 0, 0);
 
     // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
-    regi2c_ctrl_ll_i2c_reset_set();
+    regi2c_ctrl_ll_reset(false);
     regi2c_ctrl_ll_i2c_periph_enable();
     // enable analog i2c master clock for RNG runtime
     ANALOG_CLOCK_ENABLE();
 
-    adc_ll_regi2c_adc_init();
+    adc_ll_regi2c_init();
     adc_ll_set_calibration_param(ADC_UNIT_1, 0x866);
     adc_ll_set_calibration_param(ADC_UNIT_2, 0x866);
 

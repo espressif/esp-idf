@@ -129,19 +129,19 @@ static inline void regi2c_ctrl_ll_i2c_periph_disable(void)
 }
 
 /**
- * @brief Set regi2c reset
+ * @brief Enter / Exit reset state
+ *
+ * @param enter True to reset mode, false to normal working mode
  */
-static inline void regi2c_ctrl_ll_i2c_reset_set(void)
+static inline void regi2c_ctrl_ll_reset(bool enter)
 {
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-}
-
-/**
- * @brief Clear regi2c reset
- */
-static inline void regi2c_ctrl_ll_i2c_reset_clear(void)
-{
-    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    if (enter) {
+        // Reset mode
+        CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    } else {
+        // Normal working mode
+        SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    }
 }
 
 #ifdef __cplusplus
