@@ -179,7 +179,7 @@ function(__linux_build_set_lang_version)
 
     # Building for Linux target, fall back to an older version of the standard
     # if the preferred one is not supported by the compiler.
-    set(preferred_c_versions gnu99 gnu17 gnu11 gnu99)
+    set(preferred_c_versions gnu17 gnu11 gnu99)
     set(ver_found FALSE)
     foreach(c_version ${preferred_c_versions})
         check_c_compiler_flag("-std=${c_version}" ver_${c_version}_supported)
