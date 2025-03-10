@@ -703,7 +703,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< channel of connected AP*/
-    wifi_auth_mode_t authmode;/**< authentication mode used by AP*/
+    wifi_auth_mode_t authmode;/**< authentication mode used by the connection*/
 } wifi_event_sta_connected_t;
 
 /** Argument structure for WIFI_EVENT_STA_DISCONNECTED event */
