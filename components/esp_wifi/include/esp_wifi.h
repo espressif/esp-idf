@@ -1199,6 +1199,27 @@ esp_err_t esp_wifi_get_event_mask(uint32_t *mask);
 esp_err_t esp_wifi_80211_tx(wifi_interface_t ifx, const void *buffer, int len, bool en_sys_seq);
 
 /**
+  * @brief Callback function of 80211 tx data
+  *
+  * @param tx_info TX information of 80211 tx. The information can only be used in the callback context.
+  */
+typedef void (*esp_wifi_80211_tx_done_cb_t)(const esp_80211_tx_info_t *tx_info);
+
+/**
+  * @brief Register the TX callback function of 80211 tx data.
+  *
+  * @attention This callback will be executed in WiFi task, so avoid doing any time consuming activity in the callback.
+  *            Doing heavy work here can affect the WiFi performance.
+  *
+  * @param cb callback function. If the cb is NULL, then unregister the tx cb.
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_WIFI_NOT_INIT: WiFi is not initialized by esp_wifi_init
+  */
+esp_err_t esp_wifi_register_80211_tx_cb(esp_wifi_80211_tx_done_cb_t cb);
+
+/**
   * @brief The RX callback function of Channel State Information(CSI)  data.
   *
   *        Each time a CSI data is received, the callback function will be called.
