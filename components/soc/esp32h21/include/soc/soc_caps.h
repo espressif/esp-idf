@@ -40,7 +40,7 @@
 // #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
 // #define SOC_GPSPI_SUPPORTED             1    //TODO: [ESP32H21] IDF-11583, IDF-11584, IDF-11587
 // #define SOC_LEDC_SUPPORTED              1    //TODO: [ESP32H21] IDF-11568
-// #define SOC_I2C_SUPPORTED               1    //TODO: [ESP32H21] IDF-11578, IDF-11580
+#define SOC_I2C_SUPPORTED               1
 #define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32H21] IDF-11596, IDF-11598
 // #define SOC_SUPPORT_COEXISTENCE         1    //TODO: [ESP32H21] IDF-11658, IDF-11659, IDF-11660
 #define SOC_MPI_SUPPORTED               1
@@ -245,23 +245,23 @@
 
 /*-------------------------- I2C CAPS ----------------------------------------*/
 // ESP32-H21 has 2 I2C
-// #define SOC_I2C_NUM                 (2U)
-// #define SOC_HP_I2C_NUM              (2U)
+#define SOC_I2C_NUM                             (2U)
+#define SOC_HP_I2C_NUM                          (2U)
 
-// #define SOC_I2C_FIFO_LEN            (32) /*!< I2C hardware FIFO depth */
-// #define SOC_I2C_CMD_REG_NUM         (8)  /*!< Number of I2C command registers */
-// #define SOC_I2C_SUPPORT_SLAVE       (1)
+#define SOC_I2C_FIFO_LEN                        (32) /*!< I2C hardware FIFO depth */
+#define SOC_I2C_CMD_REG_NUM                     (8)  /*!< Number of I2C command registers */
+#define SOC_I2C_SUPPORT_SLAVE                   (1)
 
-// #define SOC_I2C_SUPPORT_HW_FSM_RST  (1)
-// #define SOC_I2C_SUPPORT_HW_CLR_BUS  (1)
+#define SOC_I2C_SUPPORT_HW_FSM_RST              (1)
+#define SOC_I2C_SUPPORT_HW_CLR_BUS              (1)
 
-// #define SOC_I2C_SUPPORT_XTAL        (1)
-// #define SOC_I2C_SUPPORT_RTC         (1)
-// #define SOC_I2C_SUPPORT_10BIT_ADDR   (1)
-// #define SOC_I2C_SLAVE_SUPPORT_BROADCAST    (1)
-// #define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE    (1)
-// #define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS   (1)
-// #define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH    (1)
+#define SOC_I2C_SUPPORT_XTAL                    (1)
+#define SOC_I2C_SUPPORT_RTC                     (1)
+#define SOC_I2C_SUPPORT_10BIT_ADDR              (1)
+#define SOC_I2C_SLAVE_SUPPORT_BROADCAST         (1)
+#define SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE     (1)
+#define SOC_I2C_SLAVE_SUPPORT_I2CRAM_ACCESS     (1)
+#define SOC_I2C_SLAVE_SUPPORT_SLAVE_UNMATCH     (1)
 // #define SOC_I2C_SUPPORT_SLEEP_RETENTION           (1)
 
 /*-------------------------- I2S CAPS ----------------------------------------*/

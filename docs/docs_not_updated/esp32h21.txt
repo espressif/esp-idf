@@ -176,7 +176,6 @@ api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/bitscrambler.rst
 api-reference/peripherals/temp_sensor.rst
 api-reference/peripherals/usb_device.rst
-api-reference/peripherals/i2c.rst
 api-reference/peripherals/jpeg.rst
 api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/usb_host.rst

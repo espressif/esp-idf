@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,17 +9,13 @@
 #pragma once
 
 #include <stdbool.h>
-#include "soc/soc_caps.h"
 #include "hal/misc.h"
 #include "hal/assert.h"
 #include "soc/i2c_periph.h"
-#include "soc/soc_caps.h"
 #include "soc/i2c_struct.h"
 #include "soc/pcr_struct.h"
 #include "hal/i2c_types.h"
 #include "soc/clk_tree_defs.h"
-#include "soc/lp_clkrst_struct.h"
-#include "soc/lpperi_struct.h"
 #include "hal/misc.h"
 
 #ifdef __cplusplus
@@ -70,7 +66,8 @@ typedef enum {
 } i2c_ll_slave_intr_t;
 
 // Get the I2C hardware instance
-#define I2C_LL_GET_HW(i2c_num)      (((i2c_num) == I2C_NUM_0) ? (&I2C0) : (&LP_I2C))
+#define I2C_LL_GET_HW(i2c_num)      (i2c_num == 0 ? (&I2C0) : (&I2C1))
+#define I2C_LL_GET_NUM(hw)          (hw == &I2C0 ? 0 : 1)
 #define I2C_LL_MASTER_EVENT_INTR    (I2C_NACK_INT_ENA_M|I2C_TIME_OUT_INT_ENA_M|I2C_TRANS_COMPLETE_INT_ENA_M|I2C_ARBITRATION_LOST_INT_ENA_M|I2C_END_DETECT_INT_ENA_M)
 #define I2C_LL_SLAVE_EVENT_INTR     (I2C_TRANS_COMPLETE_INT_ENA_M|I2C_TXFIFO_WM_INT_ENA_M|I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
 #define I2C_LL_SLAVE_RX_EVENT_INTR  (I2C_TRANS_COMPLETE_INT_ENA_M | I2C_RXFIFO_WM_INT_ENA_M | I2C_SLAVE_STRETCH_INT_ENA_M)
@@ -79,14 +76,6 @@ typedef enum {
 #define I2C_LL_SCL_WAIT_US_VAL_DEFAULT   (2500)  // Approximate value for SCL timeout regs (in us).
 
 #define I2C_LL_STRETCH_PROTECT_TIME  (0x3ff)
-
-// Record for Pins usage logs
-
-#define LP_I2C_SCL_PIN_ERR_LOG   "SCL pin can only be configured as GPIO#7"
-#define LP_I2C_SDA_PIN_ERR_LOG   "SDA pin can only be configured as GPIO#6"
-
-#define LP_I2C_SDA_IOMUX_PAD 6
-#define LP_I2C_SCL_IOMUX_PAD 7
 
 /**
  * @brief  Calculate I2C bus frequency
@@ -171,7 +160,8 @@ static inline void i2c_ll_reset_register(int i2c_port)
  */
 static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_config_t *bus_cfg)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[0].i2c_sclk_conf, i2c_sclk_div_num, bus_cfg->clkm_div - 1);
+
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[I2C_LL_GET_NUM(hw)].i2c_sclk_conf, i2c_sclk_div_num, bus_cfg->clkm_div - 1);
 
     /* According to the Technical Reference Manual, the following timings must be subtracted by 1.
      * However, according to the practical measurement and some hardware behaviour, if wait_high_period and scl_high minus one.
@@ -204,8 +194,8 @@ static inline void i2c_ll_master_set_bus_timing(i2c_dev_t *hw, i2c_hal_clk_confi
 static inline void i2c_ll_master_set_fractional_divider(i2c_dev_t *hw, uint8_t div_a, uint8_t div_b)
 {
     /* Set div_a and div_b to 0, as it's not necessary to use them */
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[0].i2c_sclk_conf, i2c_sclk_div_a, div_a);
-    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[0].i2c_sclk_conf, i2c_sclk_div_b, div_b);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[I2C_LL_GET_NUM(hw)].i2c_sclk_conf, i2c_sclk_div_a, div_a);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(PCR.i2c[I2C_LL_GET_NUM(hw)].i2c_sclk_conf, i2c_sclk_div_b, div_b);
 }
 
 /**
@@ -318,7 +308,7 @@ static inline void i2c_ll_set_tout(i2c_dev_t *hw, int tout)
 }
 
 /**
- * @brief  Enable the I2C slave to respond to broadcast address
+ * @brief  Configure I2C slave broadcasting mode.
  *
  * @param  hw Beginning address of the peripheral registers
  * @param  broadcast_en Set true to enable broadcast, else, set it false
@@ -802,72 +792,9 @@ static inline void i2c_ll_master_rx_full_ack_level(i2c_dev_t *hw, int ack_level)
  */
 static inline void i2c_ll_set_source_clk(i2c_dev_t *hw, i2c_clock_source_t src_clk)
 {
-    if (hw == &LP_I2C) {
-        // Do nothing
-        return;
-    }
-
-    // src_clk : (1) for RTC_CLK, (0) for XTAL
-    PCR.i2c[0].i2c_sclk_conf.i2c_sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
+    // src_clk : (1) for RC_FAST, (0) for XTAL
+    PCR.i2c[I2C_LL_GET_NUM(hw)].i2c_sclk_conf.i2c_sclk_sel = (src_clk == I2C_CLK_SRC_RC_FAST) ? 1 : 0;
 }
-
-/**
- * @brief Set LP I2C source clock
- *
- * @param  hw Address offset of the LP I2C peripheral registers
- * @param  src_clk Source clock for the LP I2C peripheral
- *
- * @return None
- */
-static inline void lp_i2c_ll_set_source_clk(i2c_dev_t *hw, soc_periph_lp_i2c_clk_src_t src_clk)
-{
-    (void)hw;
-    // src_clk : (0) for LP_FAST_CLK (RTC Fast), (1) for XTAL_D2_CLK
-    switch (src_clk) {
-    case LP_I2C_SCLK_LP_FAST:
-        LP_CLKRST.lpperi.lp_i2c_clk_sel = 0;
-        break;
-    case LP_I2C_SCLK_XTAL_D2:
-        LP_CLKRST.lpperi.lp_i2c_clk_sel = 1;
-        break;
-    default:
-        // Invalid source clock selected
-        abort();
-    }
-}
-
-/// LP_CLKRST.lpperi is a shared register, so this function must be used in an atomic way
-#define lp_i2c_ll_set_source_clk(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_set_source_clk(__VA_ARGS__)
-
-/**
- * @brief Enable bus clock for the LP I2C module
- *
- * @param hw_id LP I2C instance ID
- * @param enable True to enable, False to disable
- */
-static inline void _lp_i2c_ll_enable_bus_clock(int hw_id, bool enable)
-{
-    (void)hw_id;
-    LPPERI.clk_en.lp_ext_i2c_ck_en = enable;
-}
-
-/// LPPERI.clk_en is a shared register, so this function must be used in an atomic way
-#define lp_i2c_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _lp_i2c_ll_enable_bus_clock(__VA_ARGS__)
-
-/**
- * @brief Reset LP I2C module
- *
- * @param hw_id LP I2C instance ID
- */
-static inline void lp_i2c_ll_reset_register(int hw_id)
-{
-    (void)hw_id;
-    LPPERI.reset_en.lp_ext_i2c_reset_en = 1;
-    LPPERI.reset_en.lp_ext_i2c_reset_en = 0;
-}
-
-/// LPPERI.reset_en is a shared register, so this function must be used in an atomic way
-#define lp_i2c_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; lp_i2c_ll_reset_register(__VA_ARGS__)
 
 /**
  * @brief Enable I2C peripheral controller clock
@@ -877,12 +804,7 @@ static inline void lp_i2c_ll_reset_register(int hw_id)
  */
 static inline void i2c_ll_enable_controller_clock(i2c_dev_t *hw, bool en)
 {
-    if (hw == &LP_I2C) {
-        // Do nothing
-        return;
-    }
-
-    PCR.i2c[0].i2c_sclk_conf.i2c_sclk_en = en;
+    PCR.i2c[I2C_LL_GET_NUM(hw)].i2c_sclk_conf.i2c_sclk_en = en;
 }
 
 /**
@@ -993,7 +915,6 @@ static inline bool i2c_ll_master_is_cmd_done(i2c_dev_t *hw, int cmd_idx)
 static inline uint32_t i2c_ll_calculate_timeout_us_to_reg_val(uint32_t src_clk_hz, uint32_t timeout_us)
 {
     uint32_t clk_cycle_num_per_us = src_clk_hz / (1 * 1000 * 1000);
-    // round up to an integer
     return 32 - __builtin_clz(clk_cycle_num_per_us * timeout_us);
 }
 
@@ -1045,7 +966,7 @@ typedef enum {
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  high_period The I2C SCL height period (in core clock cycle, height_period > 2)
+ * @param  high_period The I2C SCL high period (in core clock cycle, hight_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  * @param  wait_high_period The I2C SCL wait rising edge period.
  *
@@ -1233,16 +1154,16 @@ static inline void i2c_ll_slave_disable_rx_it(i2c_dev_t *hw)
  * @brief  Configure I2C SCL timing
  *
  * @param  hw Beginning address of the peripheral registers
- * @param  height_period The I2C SCL height period (in core clock cycle, height_period > 2)
+ * @param  hight_period The I2C SCL high period (in core clock cycle, high_period > 2)
  * @param  low_period The I2C SCL low period (in core clock cycle, low_period > 1)
  *
  * @return None.
  */
-static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int height_period, int low_period)
+static inline void i2c_ll_set_scl_timing(i2c_dev_t *hw, int hight_period, int low_period)
 {
     hw->scl_low_period.scl_low_period = low_period - 1;
-    hw->scl_high_period.scl_high_period = height_period - 10;
-    hw->scl_high_period.scl_wait_high_period = height_period - hw->scl_high_period.scl_high_period;
+    hw->scl_high_period.scl_high_period = hight_period - 10;
+    hw->scl_high_period.scl_wait_high_period = hight_period - hw->scl_high_period.scl_high_period;
 }
 
 /**
