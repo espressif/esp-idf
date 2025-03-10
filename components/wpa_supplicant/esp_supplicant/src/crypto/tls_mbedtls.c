@@ -529,6 +529,11 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
     mbedtls_ssl_set_verify(&tls->ssl, tls_disable_key_usages, NULL);
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
 
+    if (cfg->domain_match) {
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+        mbedtls_ssl_set_hostname(&tls->ssl, cfg->domain_match);
+    }
+
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     if (cfg->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE) {
         wpa_printf(MSG_INFO, "Using default cert bundle");

@@ -67,6 +67,7 @@ bool g_wpa_suiteb_certification;
 bool g_wpa_default_cert_bundle;
 int (*esp_crt_bundle_attach_fn)(void *conf);
 #endif
+char *g_wpa_domain_match;
 
 void eap_peer_config_deinit(struct eap_sm *sm);
 void eap_peer_blob_deinit(struct eap_sm *sm);
@@ -529,7 +530,7 @@ int eap_peer_config_init(
 	sm->config.identity = NULL;
 	sm->config.password = NULL;
 	sm->config.new_password = NULL;
-
+	sm->config.domain_match = g_wpa_domain_match;
 	sm->config.private_key_passwd = private_key_passwd;
 	sm->config.client_cert = (u8 *)sm->blob[0].name;
 	sm->config.private_key = (u8 *)sm->blob[1].name;
@@ -592,6 +593,7 @@ int eap_peer_config_init(
 		sm->config.flags |= TLS_CONN_USE_DEFAULT_CERT_BUNDLE;
 	}
 #endif
+
 	/* To be used only for EAP-FAST */
 	if (g_wpa_phase1_options) {
 		sm->config.phase1 = g_wpa_phase1_options;

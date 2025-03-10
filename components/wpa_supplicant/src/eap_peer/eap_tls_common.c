@@ -74,6 +74,7 @@ static void eap_tls_params_from_conf1(struct tls_connection_params *params,
 	params->client_cert = (char *) config->client_cert;
 	params->private_key = (char *) config->private_key;
 	params->private_key_passwd = (char *) config->private_key_passwd;
+	params->domain_match = config->domain_match;
 	eap_tls_params_flags(params, config->phase1);
 	if (wifi_sta_get_enterprise_disable_time_check())
 		params->flags |= TLS_CONN_DISABLE_TIME_CHECKS;
