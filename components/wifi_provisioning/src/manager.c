@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -156,7 +156,7 @@ static struct wifi_prov_mgr_ctx *prov_ctx;
 
 /* This executes registered app_event_callback for a particular event
  *
- * NOTE : By the time this fucntion returns, it is possible that
+ * NOTE : By the time this function returns, it is possible that
  * the manager got de-initialized due to a call to wifi_prov_mgr_deinit()
  * either inside the event callbacks or from another thread. Therefore
  * post execution of execute_event_cb(), the validity of prov_ctx must
@@ -257,7 +257,15 @@ static cJSON* wifi_prov_get_info_json(void)
     /* Version field */
     cJSON_AddStringToObject(prov_info_json, "ver", prov_ctx->mgr_info.version);
 
+    /* Security field */
+    int sec_ver = 0;
+    uint8_t sec_patch_ver = 0;
+
+    protocomm_get_sec_version(prov_ctx->pc, &sec_ver, &sec_patch_ver);
+    assert(sec_ver == prov_ctx->security);
     cJSON_AddNumberToObject(prov_info_json, "sec_ver", prov_ctx->security);
+    cJSON_AddNumberToObject(prov_info_json, "sec_patch_ver", sec_patch_ver);
+
     /* Capabilities field */
     cJSON_AddItemToObject(prov_info_json, "cap", prov_capabilities);
 
@@ -304,19 +312,6 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
         return ret;
     }
 
-    /* Set version information / capabilities of provisioning service and application */
-    cJSON *version_json = wifi_prov_get_info_json();
-    char *version_str = cJSON_Print(version_json);
-    ret = protocomm_set_version(prov_ctx->pc, "proto-ver", version_str);
-    free(version_str);
-    cJSON_Delete(version_json);
-    if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to set version endpoint");
-        scheme->prov_stop(prov_ctx->pc);
-        protocomm_delete(prov_ctx->pc);
-        return ret;
-    }
-
     /* Set protocomm security type for endpoint */
     if (prov_ctx->security == 0) {
 #ifdef CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_0
@@ -348,6 +343,19 @@ static esp_err_t wifi_prov_mgr_start_service(const char *service_name, const cha
     }
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "Failed to set security endpoint");
+        scheme->prov_stop(prov_ctx->pc);
+        protocomm_delete(prov_ctx->pc);
+        return ret;
+    }
+
+    /* Set version information / capabilities of provisioning service and application */
+    cJSON *version_json = wifi_prov_get_info_json();
+    char *version_str = cJSON_Print(version_json);
+    ret = protocomm_set_version(prov_ctx->pc, "proto-ver", version_str);
+    free(version_str);
+    cJSON_Delete(version_json);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to set version endpoint");
         scheme->prov_stop(prov_ctx->pc);
         protocomm_delete(prov_ctx->pc);
         return ret;
@@ -1608,7 +1616,6 @@ esp_err_t wifi_prov_mgr_start_provisioning(wifi_prov_security_t security, const 
     }
 #endif
     prov_ctx->security = security;
-
 
     esp_timer_create_args_t wifi_connect_timer_conf = {
         .callback = wifi_connect_timer_cb,
