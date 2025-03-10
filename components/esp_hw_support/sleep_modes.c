@@ -1646,7 +1646,9 @@ esp_err_t esp_sleep_enable_ulp_wakeup(void)
 esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
 {
 #if CONFIG_SOC_CLK_TREE_SUPPORTED
-    if (time_in_us > ((BIT64(SOC_LP_TIMER_BIT_WIDTH_LO + SOC_LP_TIMER_BIT_WIDTH_HI) - 1) / esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX)) * MHZ ) {
+    uint32_t lp_slow_freq_hz = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
+    assert(lp_slow_freq_hz);
+    if (time_in_us > ((BIT64(SOC_LP_TIMER_BIT_WIDTH_LO + SOC_LP_TIMER_BIT_WIDTH_HI) - 1) / lp_slow_freq_hz) * MHZ ) {
         return ESP_ERR_INVALID_ARG;
     }
 #endif
