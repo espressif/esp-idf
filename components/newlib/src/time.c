@@ -174,8 +174,6 @@ WEAK_UNLESS_TIMEFUNC_IMPL int _gettimeofday_r(struct _reent *r, struct timeval *
         tv->tv_sec = microseconds / 1000000;
         tv->tv_usec = microseconds % 1000000;
     }
-    __errno_r(r) = ENOSYS;
-
     return 0;
 #else
     __errno_r(r) = ENOSYS;
