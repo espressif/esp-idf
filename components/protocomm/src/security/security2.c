@@ -13,7 +13,8 @@
 
 #include <mbedtls/gcm.h>
 #include <mbedtls/error.h>
-#include <esp_random.h>
+#include <mbedtls/entropy.h>
+#include <mbedtls/ctr_drbg.h>
 
 #include <protocomm_security.h>
 #include <protocomm_security2.h>
@@ -23,6 +24,7 @@
 #include "constants.pb-c.h"
 
 #include "esp_srp.h"
+#include "endian.h"
 
 static const char *TAG = "security2";
 
@@ -30,12 +32,20 @@ static const char *TAG = "security2";
 #define PUBLIC_KEY_LEN              (384)
 #define CLIENT_PROOF_LEN            (64)
 #define AES_GCM_KEY_LEN             (256)
-#define AES_GCM_IV_SIZE             (16)
+#define AES_GCM_IV_SIZE             (12)
 #define AES_GCM_TAG_LEN             (16)
+#define SESSION_ID_LEN              (8)
 
 #define SESSION_STATE_CMD0  0 /* Session is not setup: Initial State*/
 #define SESSION_STATE_CMD1  1 /* Session is not setup: Cmd0 done */
 #define SESSION_STATE_DONE  2 /* Session setup successful */
+
+typedef struct aes_gcm_iv {
+    uint8_t session_id[SESSION_ID_LEN];
+    uint32_t counter;
+} aes_gcm_iv_t;
+
+static_assert(sizeof(aes_gcm_iv_t) == AES_GCM_IV_SIZE, "Invalid size of AES GCM IV");
 
 typedef struct session {
     /* Session data */
@@ -60,6 +70,12 @@ static void hexdump(const char *msg, char *buf, int len)
 {
     ESP_LOGD(TAG, "%s ->", msg);
     ESP_LOG_BUFFER_HEX_LEVEL(TAG, buf, len, ESP_LOG_DEBUG);
+}
+
+static inline void sec2_gcm_iv_counter_increment(uint8_t *iv_buf)
+{
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) iv_buf;
+    iv->counter = htobe32(be32toh(iv->counter) + 1);
 }
 
 static esp_err_t sec2_new_session(protocomm_security_handle_t handle, uint32_t session_id);
@@ -219,14 +235,34 @@ static esp_err_t handle_session_command1(session_t *cur_session,
     }
     hexdump("Device proof", device_proof, CLIENT_PROOF_LEN);
 
-    /* Initialize crypto context */
-    mbedtls_gcm_init(&cur_session->ctx_gcm);
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
 
-    /* Considering the protocomm component is only used after RF ( Wifi/Bluetooth ) is enabled.
-     * Hence, we can be sure that the RNG generates true random numbers */
-    esp_fill_random(&cur_session->iv, AES_GCM_IV_SIZE);
+    mbedtls_entropy_init(&entropy);
+    mbedtls_ctr_drbg_init(&ctr_drbg);
+
+    int ret;
+    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to seed random number generator");
+        free(device_proof);
+        return ESP_FAIL;
+    }
+
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    ret = mbedtls_ctr_drbg_random(&ctr_drbg, iv->session_id, SESSION_ID_LEN);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to generate random number");
+        free(device_proof);
+        return ESP_FAIL;
+    }
+    /* Initialize counter value to 1 */
+    iv->counter = htobe32(0x1);
 
     hexdump("Initialization vector", (char *)cur_session->iv, AES_GCM_IV_SIZE);
+
+    /* Initialize crypto context */
+    mbedtls_gcm_init(&cur_session->ctx_gcm);
 
     mbed_err = mbedtls_gcm_setkey(&cur_session->ctx_gcm, MBEDTLS_CIPHER_ID_AES, (unsigned char *)cur_session->session_key, AES_GCM_KEY_LEN);
     if (mbed_err != 0) {
@@ -422,6 +458,13 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
         return ESP_ERR_INVALID_STATE;
     }
 
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    if (be32toh(iv->counter) == 0) {
+        ESP_LOGE(TAG, "Invalid counter value, restart session");
+        return ESP_ERR_INVALID_STATE;
+    }
+    hexdump("Encrypt IV", (char *)cur_session->iv, AES_GCM_IV_SIZE);
+
     *outlen = inlen + AES_GCM_TAG_LEN;
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
@@ -438,6 +481,9 @@ static esp_err_t sec2_encrypt(protocomm_security_handle_t handle,
         return ESP_FAIL;
     }
     memcpy(*outbuf + inlen, gcm_tag, AES_GCM_TAG_LEN);
+
+    /* Increment counter value for next operation */
+    sec2_gcm_iv_counter_increment(cur_session->iv);
 
     return ESP_OK;
 }
@@ -462,6 +508,13 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
         return ESP_ERR_INVALID_STATE;
     }
 
+    aes_gcm_iv_t *iv = (aes_gcm_iv_t *) cur_session->iv;
+    if (be32toh(iv->counter) == 0) {
+        ESP_LOGE(TAG, "Invalid counter value, restart session");
+        return ESP_ERR_INVALID_STATE;
+    }
+    hexdump("Decrypt IV", (char *)cur_session->iv, AES_GCM_IV_SIZE);
+
     *outlen = inlen - AES_GCM_TAG_LEN;
     *outbuf = (uint8_t *) malloc(*outlen);
     if (!*outbuf) {
@@ -475,6 +528,10 @@ static esp_err_t sec2_decrypt(protocomm_security_handle_t handle,
         ESP_LOGE(TAG, "Failed at mbedtls_gcm_auth_decrypt : %d", ret);
         return ESP_FAIL;
     }
+
+    /* Increment counter value for next operation */
+    sec2_gcm_iv_counter_increment(cur_session->iv);
+
     return ESP_OK;
 }
 
@@ -536,6 +593,7 @@ static esp_err_t sec2_req_handler(protocomm_security_handle_t handle,
 
 const protocomm_security_t protocomm_security2 = {
     .ver = 2,
+    .patch_ver = 1,
     .init = sec2_init,
     .cleanup = sec2_cleanup,
     .new_transport_session = sec2_new_session,
