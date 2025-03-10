@@ -224,7 +224,10 @@ esp_err_t bitscrambler_load_program(bitscrambler_handle_t bs, const void *progra
     //Set options from header
     bitscrambler_ll_set_lut_width(bs->hw, bs->cfg.dir, hdr.lut_width);
     bitscrambler_ll_enable_prefetch_on_reset(bs->hw, bs->cfg.dir, hdr.prefetch);
-    bitscrambler_ll_set_eof_mode(bs->hw, bs->cfg.dir, hdr.eof_on);
+    // the bitscrambler assembler (bsasm.py) treats 'eof_on=1' as "upstream", a.k.a, read from upstream
+    // quote from bsasm.py: {'op': 'eof_on', 'default': 1, 'enum': {'upstream': 1, 'downstream': 0}},
+    bitscrambler_eof_mode_t eof_mode = hdr.eof_on ? BITSCRAMBLER_EOF_MODE_READ : BITSCRAMBLER_EOF_MODE_WRITE;
+    bitscrambler_ll_set_eof_mode(bs->hw, bs->cfg.dir, eof_mode);
     bitscrambler_ll_set_tailing_bits(bs->hw, bs->cfg.dir, hdr.trailing_bits);
     //fixed options
     bitscrambler_ll_set_dummy_mode(bs->hw, bs->cfg.dir, BITSCRAMBLER_DUMMY_MODE_DUMMY);

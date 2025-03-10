@@ -62,6 +62,9 @@ typedef enum {
 
 /**
  * @brief Commands to set the state of bitscrambler
+ *
+ * @note Pause->Run, bitscrambler can continue from the last instruction;
+ *       Halt->Run, bitscrambler will start from the first instruction;
  */
 typedef enum {
     BITSCRAMBLER_SET_STATE_RUN,   /*!< Run */
