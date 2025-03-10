@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -101,10 +101,6 @@ void IRAM_ATTR esp_restart_noos(void)
     }
 #endif
 
-    // Disable cache
-    Cache_Disable_ICache();
-    Cache_Disable_DCache();
-
     // Reset and stall the other CPU.
     // CPU must be reset before stalling, in case it was running a s32c1i
     // instruction. This would cause memory pool to be locked by arbiter
@@ -115,6 +111,10 @@ void IRAM_ATTR esp_restart_noos(void)
     esp_cpu_reset(other_core_id);
     esp_cpu_stall(other_core_id);
 #endif
+
+    // Disable cache
+    Cache_Disable_ICache();
+    Cache_Disable_DCache();
 
     // 2nd stage bootloader reconfigures SPI flash signals.
     // Reset them to the defaults expected by ROM.
