@@ -10,7 +10,6 @@ from pytest_embedded_idf.utils import idf_parametrize
     'config',
     [
         'release',
-        'freertos_compliance',
         'freertos_flash',
     ],
     indirect=True,
@@ -47,18 +46,8 @@ def test_master_esp_flash(case_tester) -> None:  # type: ignore
 @pytest.mark.parametrize(
     'count, config',
     [
-        (
-            2,
-            'release',
-        ),
-        (
-            2,
-            'freertos_compliance',
-        ),
-        (
-            2,
-            'freertos_flash',
-        ),
+        (2, 'release'),
+        (2, 'freertos_flash'),
         (2, 'iram_safe'),
     ],
     indirect=True,

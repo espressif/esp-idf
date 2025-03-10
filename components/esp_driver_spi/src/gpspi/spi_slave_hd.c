@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 #include "freertos/queue.h"
-#include "freertos/ringbuf.h"
 #include "driver/gpio.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/spi_common_internal.h"
@@ -22,6 +21,12 @@
 #include "hal/spi_slave_hd_hal.h"
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
+#endif
+
+#ifdef CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_SLAVE_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_SLAVE_ISR_ATTR
 #endif
 
 #if (SOC_SPI_PERIPH_NUM == 2)
@@ -105,6 +110,9 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     SPIHD_CHECK(config->dma_chan == (int)host_id || config->dma_chan == SPI_DMA_CH_AUTO, "dma is required or invalid channel", ESP_ERR_INVALID_ARG);
 #elif SOC_GDMA_SUPPORTED
     SPIHD_CHECK(config->dma_chan == SPI_DMA_CH_AUTO, "dma is required or invalid channel, only support SPI_DMA_CH_AUTO", ESP_ERR_INVALID_ARG);
+#endif
+#ifndef CONFIG_SPI_SLAVE_ISR_IN_IRAM
+    SPIHD_CHECK((bus_config->intr_flags & ESP_INTR_FLAG_IRAM) == 0, "ESP_INTR_FLAG_IRAM should be disabled when CONFIG_SPI_SLAVE_ISR_IN_IRAM is not set.", ESP_ERR_INVALID_ARG);
 #endif
 
     spi_chan_claimed = spicommon_periph_claim(host_id, "slave_hd");
@@ -241,12 +249,12 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
 
     //Alloc intr
     if (!host->append_mode) {
-        ret = esp_intr_alloc(spicommon_irqsource_for_host(host_id), 0, s_spi_slave_hd_segment_isr,
+        ret = esp_intr_alloc(spicommon_irqsource_for_host(host_id), bus_config->intr_flags, s_spi_slave_hd_segment_isr,
                              (void *)host, &host->intr);
         if (ret != ESP_OK) {
             goto cleanup;
         }
-        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, s_spi_slave_hd_segment_isr,
+        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), bus_config->intr_flags, s_spi_slave_hd_segment_isr,
                              (void *)host, &host->intr_dma);
         if (ret != ESP_OK) {
             goto cleanup;
@@ -262,7 +270,7 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
         gdma_register_rx_event_callbacks(host->dma_ctx->rx_dma_chan, &txrx_cbs, host);
 #else
         //On ESP32S2, `cmd7` and `cmd8` are designed as all `spi_dma` events, so use `dma_src` only
-        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), 0, s_spi_slave_hd_append_legacy_isr,
+        ret = esp_intr_alloc(spicommon_irqdma_source_for_host(host_id), bus_config->intr_flags, s_spi_slave_hd_append_legacy_isr,
                              (void *)host, &host->intr_dma);
         if (ret != ESP_OK) {
             goto cleanup;
@@ -405,7 +413,7 @@ static void rx_invoke(spi_slave_hd_slot_t *host)
     portEXIT_CRITICAL(&host->int_spinlock);
 }
 
-static inline IRAM_ATTR BaseType_t intr_check_clear_callback(spi_slave_hd_slot_t *host, spi_event_t ev, slave_cb_t cb)
+static inline SPI_SLAVE_ISR_ATTR BaseType_t intr_check_clear_callback(spi_slave_hd_slot_t *host, spi_event_t ev, slave_cb_t cb)
 {
     BaseType_t cb_awoken = pdFALSE;
     if (spi_slave_hd_hal_check_clear_event(&host->hal, ev) && cb) {
@@ -414,7 +422,7 @@ static inline IRAM_ATTR BaseType_t intr_check_clear_callback(spi_slave_hd_slot_t
     }
     return cb_awoken;
 }
-static IRAM_ATTR void s_spi_slave_hd_segment_isr(void *arg)
+static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_segment_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t *)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
@@ -536,7 +544,7 @@ static IRAM_ATTR void s_spi_slave_hd_segment_isr(void *arg)
     }
 }
 
-static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
+static SPI_SLAVE_ISR_ATTR void spi_slave_hd_append_tx_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
@@ -579,7 +587,7 @@ static IRAM_ATTR void spi_slave_hd_append_tx_isr(void *arg)
     }
 }
 
-static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
+static SPI_SLAVE_ISR_ATTR void spi_slave_hd_append_rx_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)arg;
     spi_slave_hd_callback_config_t *callback = &host->callback;
@@ -631,7 +639,7 @@ static IRAM_ATTR void spi_slave_hd_append_rx_isr(void *arg)
 }
 
 #if SOC_GDMA_SUPPORTED
-static IRAM_ATTR bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
+static SPI_SLAVE_ISR_ATTR bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data)
 {
     assert(event_data);
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t*)user_data;
@@ -646,7 +654,7 @@ static IRAM_ATTR bool s_spi_slave_hd_append_gdma_isr(gdma_channel_handle_t dma_c
 }
 
 #else
-static IRAM_ATTR void s_spi_slave_hd_append_legacy_isr(void *arg)
+static SPI_SLAVE_ISR_ATTR void s_spi_slave_hd_append_legacy_isr(void *arg)
 {
     spi_slave_hd_slot_t *host = (spi_slave_hd_slot_t *)arg;
     spi_slave_hd_hal_context_t *hal = &host->hal;

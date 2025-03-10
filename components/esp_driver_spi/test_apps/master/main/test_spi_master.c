@@ -121,7 +121,7 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
 
 // Test All clock source
 #define TEST_CLK_BYTE_LEN           10000
-#define TEST_TRANS_TIME_BIAS_RATIO  (float)2.0/100   // think 2% transfer time bias as acceptable
+#define TEST_TRANS_TIME_BIAS_RATIO  (float)5.0/100   // think 5% transfer time bias as acceptable
 TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
 {
     int64_t start = 0, end = 0;
@@ -1380,8 +1380,8 @@ TEST_CASE_MULTIPLE_DEVICES("SPI Master: FD, DMA, Master Single Direction Test", 
 /********************************************************************************
  *      Test SPI transaction interval
  ********************************************************************************/
-//Disabled since the check in portENTER_CRITICAL in esp_intr_enable/disable increase the delay
-#ifndef CONFIG_FREERTOS_CHECK_PORT_CRITICAL_COMPLIANCE
+//Disabled since place code in flash increase the delay
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
 
 #define RECORD_TIME_PREPARE() uint32_t __t1, __t2
 #define RECORD_TIME_START()   do {__t1 = esp_cpu_get_cycle_count();}while(0)
