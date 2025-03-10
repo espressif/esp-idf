@@ -2180,14 +2180,37 @@ void wpa_sm_deinit(void)
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
     sm->pmksa = NULL;
+    os_free(sm->assoc_rsnxe);
+    sm->assoc_rsnxe = NULL;
+    os_free(sm->ap_rsn_ie);
+    sm->ap_rsn_ie = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
-    os_free(sm->assoc_rsnxe);
     wpa_sm_drop_sa(sm);
     sm->assoc_rsnxe = NULL;
     memset(sm, 0, sizeof(*sm));
 }
 
+/**
+ * wpa_sm_set_param - Set WPA state machine parameters
+ * @sm: Pointer to WPA state machine data from wpa_sm_init()
+ * @param: Parameter field
+ * @value: Parameter value
+ * Returns: 0 on success, -1 on failure
+ */
+int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
+		     unsigned int value)
+{
+	int ret = 0;
+
+	if (sm == NULL)
+		return -1;
+	switch (param) {
+	default:
+		break;
+	}
+	return ret;
+}
 
 #ifdef ESP_SUPPLICANT
 /**

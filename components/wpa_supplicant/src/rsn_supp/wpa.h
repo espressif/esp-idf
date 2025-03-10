@@ -35,6 +35,9 @@ struct l2_ethhdr {
     be16 h_proto;
 } STRUCT_PACKED;
 
+enum wpa_sm_conf_params {
+    WPA_PARAM_RSN_OVERRIDE,
+};
 
 void wpa_sm_set_state(enum wpa_states state);
 

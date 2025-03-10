@@ -439,6 +439,40 @@ int wpa_pmk_to_ptk(const u8 *pmk, size_t pmk_len, const char *label,
 void rsn_pmkid(const u8 *pmk, size_t pmk_len, const u8 *aa, const u8 *spa,
 	       u8 *pmkid, int akmp);
 
+struct wpa_eapol_ie_parse {
+	const u8 *wpa_ie;
+	size_t wpa_ie_len;
+	const u8 *rsn_ie;
+	size_t rsn_ie_len;
+	const u8 *pmkid;
+	const u8 *gtk;
+	size_t gtk_len;
+	const u8 *mac_addr;
+	size_t mac_addr_len;
+#ifdef CONFIG_IEEE80211W
+	const u8 *igtk;
+	size_t igtk_len;
+#endif /* CONFIG_IEEE80211W */
+#ifdef CONFIG_IEEE80211R
+	const u8 *mdie;
+	size_t mdie_len;
+	const u8 *ftie;
+	size_t ftie_len;
+	const u8 *reassoc_deadline;
+	const u8 *key_lifetime;
+#endif /* CONFIG_IEEE80211R */
+	const u8 *transition_disable;
+	size_t transition_disable_len;
+	const u8 *rsnxe;
+	size_t rsnxe_len;
+};
+int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie);
+static inline int wpa_supplicant_parse_ies(const u8 *buf, size_t len,
+					   struct wpa_eapol_ie_parse *ie)
+{
+	return wpa_parse_kde_ies(buf, len, ie);
+}
+
 int wpa_cipher_key_len(int cipher);
 int wpa_cipher_rsc_len(int cipher);
 int wpa_cipher_to_alg(int cipher);
