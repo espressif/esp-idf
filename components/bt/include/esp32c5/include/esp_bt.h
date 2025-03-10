@@ -159,7 +159,7 @@ esp_err_t esp_ble_tx_power_set_enhanced(esp_ble_enhanced_power_type_t power_type
  */
 esp_power_level_t esp_ble_tx_power_get_enhanced(esp_ble_enhanced_power_type_t power_type, uint16_t handle);
 
-#define CONFIG_VERSION  0x20250104
+#define CONFIG_VERSION  0x20250310
 #define CONFIG_MAGIC    0x5A5AA5A5
 
 /**
@@ -224,6 +224,7 @@ typedef struct {
     uint8_t ble_data_lenth_zero_aux;                 /*!< Enable / disable auxiliary packets when the extended ADV data length is zero. Configurable in menuconfig.
                                                         - 0 - Disable (default)
                                                         - 1 - Enable */
+    uint8_t vhci_enabled;                            /*!< VHCI mode is enabled */
     uint32_t config_magic;                           /*!< Magic number for configuration validation */
 } esp_bt_controller_config_t;
 
@@ -277,6 +278,7 @@ typedef struct {
     .scan_backoff_upperlimitmax = BT_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,                   \
     .ble_chan_ass_en            = DEFAULT_BT_LE_CTRL_CHAN_ASS_EN,                       \
     .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
+    .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
