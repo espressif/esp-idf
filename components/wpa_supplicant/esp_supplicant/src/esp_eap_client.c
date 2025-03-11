@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -932,6 +932,9 @@ esp_err_t esp_eap_client_set_ca_cert(const unsigned char *ca_cert, int ca_cert_l
         g_wpa_ca_cert_len = ca_cert_len;
     }
 
+    /* CA certs Set/updated, flushing current PMK cache */
+    wpa_sm_pmksa_cache_flush(get_wpa_sm(), NULL);
+
     return ESP_OK;
 }
 
@@ -1192,32 +1195,36 @@ esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle)
 #endif
 }
 
-#define MAX_DOMAIN_MATCH_LEN 128
-esp_err_t esp_eap_client_set_domain_match(const char *domain_match)
+#define MAX_DOMAIN_MATCH_LEN 255 /* Maximum host name defined in RFC 1035 */
+esp_err_t esp_eap_client_set_domain_name(const char *domain_name)
 {
+#ifdef CONFIG_TLS_INTERNAL_CLIENT
+    return ESP_ERR_NOT_SUPPORTED;
+#else
+    int len = domain_name ? os_strnlen(domain_name, MAX_DOMAIN_MATCH_LEN + 1) : 0;
+    if (len > MAX_DOMAIN_MATCH_LEN) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    if (g_wpa_domain_match && domain_name && os_strcmp(g_wpa_domain_match, domain_name) == 0) {
+        return ESP_OK;
+    }
     if (g_wpa_domain_match) {
         os_free(g_wpa_domain_match);
         g_wpa_domain_match = NULL;
     }
 
-    int len = os_strlen(domain_match);
-    if (len > MAX_DOMAIN_MATCH_LEN) {
-        return ESP_ERR_INVALID_ARG;
+    if (!domain_name) {
+        return ESP_OK;
     }
-    g_wpa_domain_match = (char *)os_zalloc(len+1);
-    if (g_wpa_domain_match == NULL) {
+    g_wpa_domain_match = os_strdup(domain_name);
+    if (!g_wpa_domain_match) {
         return ESP_ERR_NO_MEM;
     }
 
-    os_strlcpy(g_wpa_domain_match, domain_match, len+1);
+    /* flushing the PMK only needed when going for a better security ie no-domain name to domain name
+     * or changing the domain name */
+    wpa_sm_pmksa_cache_flush(get_wpa_sm(), NULL);
 
     return ESP_OK;
-}
-
-void esp_eap_client_clear_domain_match(void)
-{
-    if (g_wpa_domain_match) {
-        os_free(g_wpa_domain_match);
-    }
-    g_wpa_domain_match = NULL;
+#endif
 }
