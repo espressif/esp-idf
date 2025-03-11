@@ -226,6 +226,12 @@ static BT_HDR *make_read_max_adv_data_len(void)
     return make_command_no_params(HCI_BLE_RD_MAX_ADV_DATA_LEN);
 }
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+static BT_HDR *read_periodic_adv_list_size(void)
+{
+    return make_command_no_params(HCI_BLE_RD_PERIOD_ADV_LIST_SIZE);
+}
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 // Internal functions
 
@@ -277,6 +283,9 @@ static const hci_packet_factory_t interface = {
 #if (BLE_50_EXTEND_ADV_EN == TRUE)
     make_read_max_adv_data_len,
 #endif // #if (BLE_50_EXTEND_ADV_EN == TRUE)
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+    read_periodic_adv_list_size,
+#endif // #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     make_ble_read_suggested_default_data_length,
     make_ble_write_suggested_default_data_length,

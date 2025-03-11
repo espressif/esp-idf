@@ -3022,7 +3022,9 @@ tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb);
 
 void BTM_BleGetWhiteListSize(uint16_t *length);
 
-
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+void BTM_BleGetPeriodicAdvListSize(uint8_t *size);
+#endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadLinkQuality
