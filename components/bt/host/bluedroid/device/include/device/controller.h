@@ -82,6 +82,7 @@ typedef struct controller_t {
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     uint16_t (*ble_get_ext_adv_data_max_len)(void);
+    uint8_t (*get_ble_periodic_adv_list_size)(void);
 #endif // BLE_50_FEATURE_SUPPORT
 
 #if (BTM_SCO_HCI_INCLUDED == TRUE)
