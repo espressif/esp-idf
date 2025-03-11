@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -73,6 +73,12 @@ extern "C" {
     SDMMC_LL_EVENT_FRUN | SDMMC_LL_EVENT_HLE |\
     SDMMC_LL_EVENT_SBE | SDMMC_LL_EVENT_ACD |\
     SDMMC_LL_EVENT_EBE)
+
+// DMA interrupts (idsts register)
+#define SDMMC_LL_EVENT_DMA_TI      SDMMC_IDMAC_INTMASK_TI
+#define SDMMC_LL_EVENT_DMA_RI      SDMMC_IDMAC_INTMASK_RI
+#define SDMMC_LL_EVENT_DMA_NI      SDMMC_IDMAC_INTMASK_NI
+#define SDMMC_LL_EVENT_DMA_MASK    0x1f    //NI and AI will be indicated by TI/RI and FBE/DU respectively
 
 /**
  * SDMMC capabilities

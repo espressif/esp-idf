@@ -19,6 +19,7 @@
 #include "driver/gpio.h"
 #include "esp_private/gpio.h"
 #include "driver/sdmmc_host.h"
+#include "esp_cache.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_cache_private.h"
@@ -35,6 +36,12 @@
 #include "hal/sdmmc_ll.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH    32
+
+/* Number of DMA descriptors used for transfer.
+ * Increasing this value above 4 doesn't improve performance for the usual case
+ * of SD memory cards (most data transfers are multiples of 512 bytes).
+ */
+#define SDMMC_DMA_DESC_CNT  4
 
 #define SDMMC_FREQ_SDR104           208000      /*!< MMC 208MHz speed */
 
@@ -96,6 +103,10 @@ typedef struct host_ctx_t {
     uint8_t                    num_of_init_slots;
     int8_t                     active_slot_num;
 #endif
+    uint8_t* data_ptr;
+    size_t size_remaining;
+    size_t next_desc;
+    size_t desc_remaining;
 } host_ctx_t;
 
 #if SOC_SDMMC_NUM_SLOTS >= 2
@@ -103,6 +114,7 @@ static host_ctx_t s_host_ctx = {.active_slot_num = -1};
 #else
 static host_ctx_t s_host_ctx = {0};
 #endif
+DRAM_DMA_ALIGNED_ATTR static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
 
 static void sdmmc_isr(void *arg);
 static esp_err_t sdmmc_host_pullup_en_internal(int slot, int width);
@@ -1021,17 +1033,89 @@ void sdmmc_host_enable_clk_cmd11(int slot, bool enable)
     sdmmc_ll_enable_1v8_mode(s_host_ctx.hal.dev, slot, enable);
 }
 
+static size_t get_free_descriptors_count(void)
+{
+    const size_t next = s_host_ctx.next_desc;
+    size_t count = 0;
+    /* Starting with the current DMA descriptor, count the number of
+     * descriptors which have 'owned_by_idmac' set to 0. These are the
+     * descriptors already processed by the DMA engine.
+     */
+    for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
+        sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_M2C);
+        assert(ret == ESP_OK);
+#endif
+        if (desc->owned_by_idmac) {
+            break;
+        }
+        ++count;
+        if (desc->next_desc_ptr == NULL) {
+            /* final descriptor in the chain */
+            break;
+        }
+    }
+    return count;
+}
+
+static void fill_dma_descriptors(size_t num_desc)
+{
+    for (size_t i = 0; i < num_desc; ++i) {
+        if (s_host_ctx.size_remaining == 0) {
+            return;
+        }
+        const size_t next = s_host_ctx.next_desc;
+        sdmmc_desc_t* desc = &s_dma_desc[next];
+        assert(!desc->owned_by_idmac);
+        size_t size_to_fill =
+            (s_host_ctx.size_remaining < SDMMC_DMA_MAX_BUF_LEN) ?
+            s_host_ctx.size_remaining : SDMMC_DMA_MAX_BUF_LEN;
+        bool last = size_to_fill == s_host_ctx.size_remaining;
+        desc->last_descriptor = last;
+        desc->second_address_chained = 1;
+        desc->owned_by_idmac = 1;
+        desc->buffer1_ptr = s_host_ctx.data_ptr;
+        desc->next_desc_ptr = (last) ? NULL : &s_dma_desc[(next + 1) % SDMMC_DMA_DESC_CNT];
+        assert(size_to_fill < 4 || size_to_fill % 4 == 0);
+        desc->buffer1_size = (size_to_fill + 3) & (~3);
+
+        s_host_ctx.size_remaining -= size_to_fill;
+        s_host_ctx.data_ptr += size_to_fill;
+        s_host_ctx.next_desc = (s_host_ctx.next_desc + 1) % SDMMC_DMA_DESC_CNT;
+        ESP_EARLY_LOGV(TAG, "fill %d desc=%d rem=%d next=%d last=%d sz=%d",
+                       num_desc, next, s_host_ctx.size_remaining,
+                       s_host_ctx.next_desc, desc->last_descriptor, desc->buffer1_size);
+#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+        esp_err_t ret = esp_cache_msync((void *)desc, sizeof(sdmmc_desc_t), ESP_CACHE_MSYNC_FLAG_DIR_C2M);
+        assert(ret == ESP_OK);
+#endif
+    }
+}
+
 void sdmmc_host_dma_stop(void)
 {
     sdmmc_ll_stop_dma(s_host_ctx.hal.dev);
 }
 
-void sdmmc_host_dma_prepare(sdmmc_desc_t *desc, size_t block_size, size_t data_size)
+void sdmmc_host_dma_prepare(void* data_ptr, size_t data_size, size_t block_size)
 {
+    // this clears "owned by IDMAC" bits
+    memset(s_dma_desc, 0, sizeof(s_dma_desc));
+    // initialize first descriptor
+    s_dma_desc[0].first_descriptor = 1;
+    // save transfer info
+    s_host_ctx.data_ptr = (uint8_t*) data_ptr;
+    s_host_ctx.size_remaining = data_size;
+    s_host_ctx.next_desc = 0;
+    s_host_ctx.desc_remaining = (data_size + SDMMC_DMA_MAX_BUF_LEN - 1) / SDMMC_DMA_MAX_BUF_LEN;
+    // prepare descriptors
+    fill_dma_descriptors(SDMMC_DMA_DESC_CNT);
+
     // Set size of data and DMA descriptor pointer
     sdmmc_ll_set_data_transfer_len(s_host_ctx.hal.dev, data_size);
     sdmmc_ll_set_block_size(s_host_ctx.hal.dev, block_size);
-    sdmmc_ll_set_desc_addr(s_host_ctx.hal.dev, (uint32_t)desc);
+    sdmmc_ll_set_desc_addr(s_host_ctx.hal.dev, (uint32_t)&s_dma_desc[0]);
 
     // Enable everything needed to use DMA
     sdmmc_ll_enable_dma(s_host_ctx.hal.dev, true);
@@ -1123,7 +1207,19 @@ static void sdmmc_isr(void *arg)
 
     uint32_t dma_pending = sdmmc_ll_get_idsts_interrupt_raw(s_host_ctx.hal.dev);
     sdmmc_ll_clear_idsts_interrupt(s_host_ctx.hal.dev, dma_pending);
-    event.dma_status = dma_pending & 0x1f;
+
+    if (dma_pending & SDMMC_LL_EVENT_DMA_NI) {
+        // refill DMA descriptors
+        size_t free_desc = get_free_descriptors_count();
+        if (free_desc > 0) {
+            fill_dma_descriptors(free_desc);
+            sdmmc_host_dma_resume();
+        }
+        //NI, logic OR of TI and RI. This is a sticky bit and must be cleared each time TI or RI is cleared.
+        dma_pending &= ~(SDMMC_LL_EVENT_DMA_NI | SDMMC_LL_EVENT_DMA_TI | SDMMC_LL_EVENT_DMA_RI);
+    }
+
+    event.dma_status = dma_pending & SDMMC_LL_EVENT_DMA_MASK;
 
     if (pending != 0 || dma_pending != 0) {
         xQueueSendFromISR(queue, &event, &higher_priority_task_awoken);
