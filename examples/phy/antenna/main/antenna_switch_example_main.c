@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -117,10 +117,11 @@ void wifi_init_sta(void)
         .sta = {
             .ssid = EXAMPLE_ESP_WIFI_SSID,
             .password = EXAMPLE_ESP_WIFI_PASS,
-            /* Authmode threshold resets to WPA2 as default if password matches WPA2 standards (password len => 8).
+            /* Authmode threshold resets to WPA2 as default if auth mode threshold equals WIFI_AUTH_OPEN
+             * and password matches WPA2 standards (password len => 8).
              * If you want to connect the device to deprecated WEP/WPA networks, Please set the threshold value
              * to WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK and set the password with length and format matching to
-	         * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
+             * WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK standards.
              */
             .threshold.authmode = ESP_WIFI_SCAN_AUTH_MODE_THRESHOLD,
             .sae_pwe_h2e = WPA3_SAE_PWE_BOTH,
