@@ -54,8 +54,8 @@
 // #define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32H21] IDF-11500
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
-#define SOC_PMU_SUPPORTED               1
-#define SOC_LP_TIMER_SUPPORTED          1
+// #define SOC_PMU_SUPPORTED               1
+// #define SOC_LP_TIMER_SUPPORTED          1
 // #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_CLK_TREE_SUPPORTED          1    //TODO: [ESP32H21] IDF-11521
@@ -78,7 +78,7 @@
 // #define SOC_LIGHT_SLEEP_SUPPORTED       1    //TODO: [ESP32H21] IDF-11517, IDF-11520
 // #define SOC_DEEP_SLEEP_SUPPORTED        1    //TODO: [ESP32H21] IDF-11515
 // #define SOC_MODEM_CLOCK_SUPPORTED       1
-#define SOC_PM_SUPPORTED                1
+// #define SOC_PM_SUPPORTED                1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
 #define SOC_XTAL_SUPPORT_32M            1
@@ -520,16 +520,16 @@
 #define SOC_PHY_DIG_REGS_MEM_SIZE       (21*4)
 
 /*-------------------------- Power Management CAPS ----------------------------*/
-#define SOC_PM_SUPPORT_BT_WAKEUP        (0)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP      (0)
-#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (0) /*!<Supports one bit per pin to configure the EXT1 trigger level */
-#define SOC_PM_SUPPORT_CPU_PD           (0)
-#define SOC_PM_SUPPORT_MODEM_PD         (0) /*!<modem includes BLE and 15.4 */
+#define SOC_PM_SUPPORT_BT_WAKEUP        (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP      (1)
+#define SOC_PM_SUPPORT_EXT1_WAKEUP_MODE_PER_PIN   (1) /*!<Supports one bit per pin to configure the EXT1 trigger level */
+#define SOC_PM_SUPPORT_CPU_PD           (1)
+#define SOC_PM_SUPPORT_MODEM_PD         (1) /*!<modem includes BLE and 15.4 */
 #define SOC_PM_SUPPORT_XTAL32K_PD       (1)
 #define SOC_PM_SUPPORT_RC32K_PD         (1)
 #define SOC_PM_SUPPORT_RC_FAST_PD       (1)
 #define SOC_PM_SUPPORT_VDDSDIO_PD       (1)
-#define SOC_PM_SUPPORT_TOP_PD           (0)
+#define SOC_PM_SUPPORT_TOP_PD           (1)
 #define SOC_PM_PAU_LINK_NUM             (5)
 #define SOC_PM_RETENTION_MODULE_NUM     (32)
 #define SOC_PM_PAU_REGDMA_LINK_CONFIGURABLE        (1)
