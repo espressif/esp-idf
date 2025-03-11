@@ -203,7 +203,7 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     esp_err_t ret = ESP_OK;
     pcnt_unit_t *unit = NULL;
     ESP_GOTO_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
-    ESP_GOTO_ON_FALSE(config->low_limit < 0 && config->high_limit > 0 && config->low_limit >= PCNT_LL_MIN_LIN &&
+    ESP_GOTO_ON_FALSE(config->low_limit < 0 && config->high_limit > 0 && config->low_limit >= PCNT_LL_MIN_LIM &&
                       config->high_limit <= PCNT_LL_MAX_LIM, ESP_ERR_INVALID_ARG, err, TAG,
                       "invalid limit range:[%d,%d]", config->low_limit, config->high_limit);
     if (config->intr_priority) {
