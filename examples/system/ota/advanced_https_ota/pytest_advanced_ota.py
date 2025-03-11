@@ -167,7 +167,7 @@ def test_examples_protocol_advanced_https_ota_example(dut: Dut) -> None:
         thread1.terminate()
 
 
-@pytest.mark.wifi_router
+@pytest.mark.ethernet_ota
 @pytest.mark.parametrize('config', ['ota_resumption'], indirect=True)
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -> None:
@@ -193,13 +193,6 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
 
-        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-            dut.expect('Please input ssid password:')
-            env_name = 'wifi_router'
-            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-            ap_password = get_env_config_variable(env_name, 'ap_password')
-            dut.write(f'{ap_ssid} {ap_password}')
-
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
@@ -213,7 +206,7 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
         dut.expect('Starting OTA...', timeout=60)
 
-        restart_device_with_random_delay(dut, 10, 30)
+        restart_device_with_random_delay(dut, 5, 15)
         thread1.terminate()
 
         # Start server
@@ -223,13 +216,6 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption(dut: Dut) -
 
         # Validate that the device restarts correctly
         dut.expect('Loaded app from partition at offset', timeout=180)
-
-        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-            dut.expect('Please input ssid password:')
-            env_name = 'wifi_router'
-            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-            ap_password = get_env_config_variable(env_name, 'ap_password')
-            dut.write(f'{ap_ssid} {ap_password}')
 
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
@@ -681,7 +667,7 @@ def test_examples_protocol_advanced_https_ota_example_partial_request(dut: Dut) 
         thread1.terminate()
 
 
-@pytest.mark.wifi_router
+@pytest.mark.ethernet_ota
 @pytest.mark.parametrize(
     'config',
     [
@@ -719,13 +705,6 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption_partial_dow
         # start test
         dut.expect('Loaded app from partition at offset', timeout=30)
 
-        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-            dut.expect('Please input ssid password:')
-            env_name = 'wifi_router'
-            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-            ap_password = get_env_config_variable(env_name, 'ap_password')
-            dut.write(f'{ap_ssid} {ap_password}')
-
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
             print('Connected to AP/Ethernet with IP: {}'.format(ip_address))
@@ -737,7 +716,7 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption_partial_dow
         print('writing to device: {}'.format('https://' + host_ip + ':' + str(server_port) + '/' + bin_name))
         dut.write('https://' + host_ip + ':' + str(server_port) + '/' + bin_name)
 
-        restart_device_with_random_delay(dut, 10, 30)
+        restart_device_with_random_delay(dut, 5, 15)
         thread1.terminate()
 
         # Start server
@@ -747,13 +726,6 @@ def test_examples_protocol_advanced_https_ota_example_ota_resumption_partial_dow
 
         # Validate that the device restarts correctly
         dut.expect('Loaded app from partition at offset', timeout=180)
-
-        if dut.app.sdkconfig.get('EXAMPLE_WIFI_SSID_PWD_FROM_STDIN') is True:
-            dut.expect('Please input ssid password:')
-            env_name = 'wifi_router'
-            ap_ssid = get_env_config_variable(env_name, 'ap_ssid')
-            ap_password = get_env_config_variable(env_name, 'ap_password')
-            dut.write(f'{ap_ssid} {ap_password}')
 
         try:
             ip_address = dut.expect(r'IPv4 address: (\d+\.\d+\.\d+\.\d+)[^\d]', timeout=30)[1].decode()
