@@ -404,11 +404,6 @@ void IRAM_ATTR call_start_cpu0(void)
     );
 #endif
 
-#if CONFIG_IDF_TARGET_ESP32P4
-    // enable the buffer mode before any AHB burst happens, that's why we do it here
-    l2mem_ll_enable_ahb_burst_buffer(true, true);
-#endif
-
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif
