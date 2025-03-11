@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -367,6 +367,27 @@ esp_err_t esp_now_set_pmk(const uint8_t *pmk);
   *          - ESP_ERR_ESPNOW_NOT_INIT : ESPNOW is not initialized
   */
 esp_err_t esp_now_set_wake_window(uint16_t window);
+
+/**
+  * @brief     Set the OUI (Organization Identifier) in the vendor-specific element for ESPNOW.
+  *
+  * @param     oui  The oui should occupy 3 bytes. If the oui is NULL, then use the default value (0x18fe34).
+  *
+  * @return
+  *          - ESP_OK : succeed
+  */
+esp_err_t esp_now_set_user_oui(uint8_t *oui);
+
+/**
+  * @brief     Get the OUI (Organization Identifier) in the vendor-specific element for ESPNOW.
+  *
+  * @param     oui  user configured OUI.
+  *
+  * @return
+  *          - ESP_OK : succeed
+  *          - ESP_ERR_ESPNOW_ARG : invalid argument
+  */
+esp_err_t esp_now_get_user_oui(uint8_t *oui);
 
 /**
   * @}
