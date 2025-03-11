@@ -327,28 +327,22 @@ esp_err_t esp_eap_client_use_default_cert_bundle(bool use_default_bundle);
 void esp_wifi_set_okc_support(bool enable);
 
 /**
- * @brief Set name for certificate domain name validation
+ * @brief Set the domain name for certificate validation
  *
- * Enabling this option will only accept certificate with the provided subject name
+ * This function sets the expected domain name for validating the certificate's subject name.
+ * If the provided domain name does not match the certificate's subject name, validation will fail.
  *
- * @param[in] domain_match The expected domain name
- * @param[in] len      Length of the domain name (limited to 1~127 bytes).
+ * @attention  1. The `domain_name` should be a NULL-terminated string.
+ *
+ * @param[in] domain_name The expected domain name. Pass `NULL` to clear the domain matching.
  *
  * @return
- *    - ESP_OK: The identity was set successfully.
- *    - ESP_ERR_INVALID_ARG: Invalid argument (len <= 0 or len >= 128).
+ *    - ESP_OK: The domain match was set successfully.
+ *    - ESP_ERR_INVALID_ARG: Invalid argument (length > 255).
  *    - ESP_ERR_NO_MEM: Memory allocation failure.
+ *    - ESP_ERR_NOT_SUPPORTED: Feature not supported.
  */
-esp_err_t esp_eap_client_set_domain_match(const char *domain_match);
-
-/**
- * @brief Clear the domain name for certificate validation
- *
- * This function clears the domain name that was previously set for the EAP client.
- * After calling this function, the EAP client will no longer use the previously
- * configured domain name during the authentication process.
- */
-void esp_eap_client_clear_domain_match(void);
+esp_err_t esp_eap_client_set_domain_name(const char *domain_name);
 
 #ifdef __cplusplus
 }

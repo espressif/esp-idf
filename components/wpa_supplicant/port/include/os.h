@@ -261,6 +261,9 @@ char * ets_strdup(const char *s);
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
 #endif
+#ifndef os_strnlen
+#define os_strnlen(s, n) strnlen((s), (n))
+#endif
 #ifndef os_strcasecmp
 #ifdef _MSC_VER
 #define os_strcasecmp(s1, s2) _stricmp((s1), (s2))
