@@ -12,6 +12,7 @@ Some additional security eFuses shall be enabled in the firmware.
 
 > [!CAUTION]
 > The instructions in the example directly burn eFuses and once done, it cannot be reverted. Please go through the below steps carefully before executing the example. All the steps must be followed without any changes and in the exact sequence, otherwise the device may end up in an unrecoverable state. Follow the [QEMU workflow](#enable-security-features-with-help-of-qemu) if you want to test the example without the risk of bricking an actual device.
+> Some target may provide additional configuration and functionalities. Please visit the documentation for the respective target for more information.
 
 ### Hardware Required
 
@@ -22,26 +23,13 @@ Some additional security eFuses shall be enabled in the firmware.
 
 ## Pre-requisites
 
-### 1. Set ESPPORT and Target
+### 1. Set ESPPORT
 
-In the example, we need to use the Serial port and target in nearly all the commands. To make it easier, we shall set the ESPPORT and TARGET_SOC environment variable at once and reuse it later. See the documentation about [Connecting the ESP device to PC](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/get-started/establish-serial-connection.html#connect-esp32-to-pc) to find out the Serial port.
+In the example, we need to use the Serial port in nearly all the commands. To make it easier, we shall set the ESPPORT environment variable at once and reuse it later. See the documentation about [Connecting the ESP device to PC](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/establish-serial-connection.html#connect-esp32-to-pc) to find out the Serial port.
 
 ```sh
 export ESPPORT=/* Serial port to which esp is connected */
 ```
-
-For ESP32-C3,
-
-```sh
-export TARGET_SOC=esp32c3
-```
-
-For ESP32-S3,
-
-```sh
-export TARGET_SOC=esp32s3
-```
-
 
 <details>
     <summary>Setup serial port for QEMU</summary>
@@ -53,9 +41,17 @@ export TARGET_SOC=esp32s3
 
 </details>
 
-**Make sure to perform this step every time when you open a new terminal to use `esptool/espefuse` commands.**
+**Make sure to perform this step every time when you open a new terminal to use `esptool/idf` commands.**
 
-### 2. Erase flash
+### 2. Set the target
+
+The target can be set with following command:
+
+```sh
+idf.py set-target <chip_name>
+```
+
+### 3. Erase flash
 
 Erase the flash on the device to ensure a clean state.
 
@@ -65,26 +61,39 @@ idf.py -p $ESPPORT erase-flash
 
 **Note: This step is not required for QEMU emulation.**
 
-
-### 3. Install esptool
-We shall require esptool utility which can be installed as follows:
-
-```shell
-pip install esptool
-```
-
 ### 4. Installing qemu (optional)
 
 If you want to enable the security features on a target which has been virtually emulated using qemu then you need to install the necessary packages.
 
-The detailed instructions on how to use QEMU can be found in the [QEMU documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/qemu.html).
+The detailed instructions on how to use QEMU can be found in the [QEMU documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-guides/tools/qemu.html).
+
+<details>
+<summary>Target specific documentation</summary>
+
+For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+```sh
+idf.py docs -sp api-guides/tools/qemu.html
+```
+</details>
 
 ## Enabling Security Features
 
 We shall enable the necessary security features one by one as follows:
 
 ### Enabling Secure Boot V2
-For more details about Secure Boot V2 protocol checkout the [Secure boot V2 documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/secure-boot-v2.html).
+
+For more details about Secure Boot V2 protocol checkout the [Secure boot V2 documentation](https://docs.espressif.com/projects/esp-idf/en/latest/security/secure-boot-v2.html).
+
+<details>
+<summary>Target specific documentation</summary>
+
+For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+```sh
+idf.py docs -sp security/secure-boot-v2.html
+```
+</details>
 
 Please follow below steps to enable Secure Boot V2:
 
@@ -158,7 +167,18 @@ When the application is built (later in the workflow) the `bootloader` and `appl
 
 ### Enabling Flash Encryption
 
-Details about the Flash Encryption protocol can be found at the [Flash Encryption documentation](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/security/flash-encryption.html).
+Details about the Flash Encryption protocol can be found at the [Flash Encryption documentation](https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html).
+
+<details>
+<summary>Target specific documentation</summary>
+
+For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+```sh
+idf.py docs -sp security/flash-encryption.html
+```
+</details>
+
 The example also demonstrates reading and writing encrypted partitions in flash memory.
 
 Follow below steps to enable Flash Encryption:
@@ -207,6 +227,7 @@ Follow below steps to enable Flash Encryption:
 At this point the Flash Encryption feature is enabled for the device. The necessary `security eFuses` shall be enabled by the `security_features_app` firmware.
 
 #### Encrypting the partitions
+
 After the application is built (Later in the workflow), all partitions that need encryption can be encrypted with the following command:
 
 ```
@@ -239,19 +260,40 @@ idf.py secure-encrypt-flash-data --aes-xts --keyfile ../my_flash_encryption_key.
 idf.py secure-encrypt-flash-data --aes-xts --keyfile ../my_flash_encryption_key.bin --address 0x20000 --output encrypted_data/security_features-enc.bin security_features_app.bin
 ```
 
-Please refer to [Encrypted Partition](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/security/flash-encryption.html#encrypted-partitions) to check which partitions must be encrypted by default.
+Please refer to [Encrypted Partition](https://docs.espressif.com/projects/esp-idf/en/latest/security/flash-encryption.html#encrypted-partitions) to check which partitions must be encrypted by default.
 
 ### Enabling NVS Encryption
 
-We shall use the `HMAC based NVS encryption scheme`, Please find more details in the [NVS encryption documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-reference/storage/nvs_encryption.html#nvs-encryption-hmac-peripheral-based-scheme)
+We shall use the `HMAC based NVS encryption scheme`, Please find more details in the [NVS encryption documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_encryption.html#nvs-encryption-hmac-peripheral-based-scheme)
 
-For generation of NVS encryption keys and NVS partition, we shall use [NVS partition generator](https://docs.espressif.com/projects/esp-idf/en/latest/esp32c3/api-reference/storage/nvs_partition_gen.html#nvs-partition-generator-utility).
+<details>
+<summary>Target specific documentation</summary>
+
+For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+```sh
+idf.py docs -sp api-reference/storage/nvs_encryption.html
+```
+</details>
+
+For generation of NVS encryption keys and NVS partition, we shall use [NVS partition generator](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_partition_gen.html#nvs-partition-generator-utility).
+
+<details>
+<summary>Target specific documentation</summary>
+
+For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+```sh
+idf.py docs -sp api-reference/storage/nvs_partition_gen.html#nvs-partition-generator-utility
+```
+</details>
+
 We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) script for the operations.
 
 1. Generate HMAC key and NVS encryption key
 
 	```
-	idf.py secure-generate-nvs-partition-key --keyfile ncs_encr_key_new.bin --encryption-scheme HMAC --hmac-keyfile hmac_key_new.bin
+	idf.py secure-generate-nvs-partition-key --keyfile ncs_encr_key.bin --encryption-scheme HMAC --hmac-keyfile hmac_key.bin
 	```
 2. Burn the HMAC key in eFuse
 
@@ -275,17 +317,27 @@ We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partit
 3. Generate encrypted NVS partition.
 
 	If you don't want to put external data in the NVS partition then you may skip this step.
-	See [Generating NVS partition](https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/storage/nvs_partition_gen.html#generate-encrypted-nvs-partition) for detailed information on generating the encrypted NVS partition.
+	See [Generating NVS partition](https://docs.espressif.com/projects/esp-idf/en/stable/api-reference/storage/nvs_partition_gen.html#generate-encrypted-nvs-partition) for detailed information on generating the encrypted NVS partition.
 	Execute following command to generate the encrypted NVS partition.
 
 	```
 	idf.py secure-encrypt-nvs-partition -k keys/nvs_encr_key.bin /* CSV placeholder */ nvs_encr_partition.bin /* NVS partition offset */
 	```
 	where,
-	* `CSV placeholder`: CSV file which contains data of the NVS partition. See [CSV file format](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-reference/storage/nvs_partition_gen.html#csv-file-format) for more details.
+	* `CSV placeholder`: CSV file which contains data of the NVS partition. See [CSV file format](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_partition_gen.html#csv-file-format) for more details.
 	* `NVS partition offset`: NVS partition offset. Can be found out by executing `idf.py partition-table`
 
 4. This shall generate `nvs_encr_partition.bin` which we shall flash later at the [Flash stage](README.md#flash) of the workflow.
+
+	<details>
+	<summary>Target specific documentation</summary>
+
+	For target specific documentation, run the following command after setting the [target](#2-set-the-target)
+
+	```sh
+	idf.py docs -sp api-reference/storage/nvs_partition_gen.html
+	```
+	</details>
 
 ### Enabling Secure JTAG Return Material Authorization (RMA)
 
@@ -294,7 +346,7 @@ The target provides an ability to disable JTAG access in the device for the soft
 1. Generate the HMAC key
 
     ```shell
-    $IDF_PYTHON_ENV_PATH/bin/python ../hmac_soft_jtag/jtag_example_helper.py generate_hmac_key secure_jtag_hmac_key.bin
+    python ../hmac_soft_jtag/jtag_example_helper.py generate_hmac_key secure_jtag_hmac_key.bin
     ```
 
     This key needs to be stored at a secure place in order to re-generate the secure token afterwards.
@@ -302,10 +354,10 @@ The target provides an ability to disable JTAG access in the device for the soft
 2. Generate the secure token
 
     ```shell
-    $IDF_PYTHON_ENV_PATH/bin/python ../hmac_soft_jtag/jtag_example_helper.py generate_token secure_jtag_hmac_key.bin secure_jtag_token.bin
+    python ../hmac_soft_jtag/jtag_example_helper.py generate_token secure_jtag_hmac_key.bin secure_jtag_token.bin
     ```
 
-    The example directly consumes this token data and re-enables the software disabled JTAG interface. The re-enablement can be tested by attempting a JTAG connection with the device after JTAG is enabled by the firmware. More details about JTAG debugging can be found [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/jtag-debugging/index.html).
+    The example directly consumes this token data and re-enables the software disabled JTAG interface. The re-enablement can be tested by attempting a JTAG connection with the device after JTAG is enabled by the firmware. More details about JTAG debugging can be found [here](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/jtag-debugging/index.html).
     If this is not generated, the example uses a test-only token which is already present in the example.
 
 3. Burn the key in the eFuse
@@ -346,18 +398,10 @@ The target provides an ability to disable JTAG access in the device for the soft
 
 5. Configuring appropriate JTAG interface
 
-    By default esp32 is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/stable/esp32c3/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
+    By default esp32 is set to use the [built-in JTAG interface](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/jtag-debugging/configure-builtin-jtag.html). Please follow the steps given [here](https://docs.espressif.com/projects/esp-idf/en/stable/api-guides/jtag-debugging/configure-other-jtag.html) to configure the alternative JTAG interface.
     Please note that JTAG configuration cannot be done once the application firmware is flashed on the device.
 
 ## Build
-
-### Set the target
-
-The target can be set with following command:
-
-```sh
-idf.py set-target $TARGET_SOC
-```
 
 ### Build the example
 
@@ -396,18 +440,8 @@ Please check the output of `idf.py build` command executed earlier for all the n
 For this example the following command can be used
 
 ```sh
-esptool.py --chip $TARGET_SOC -b 115200 --before default_reset --after no_reset --no-stub -p $ESPPORT write_flash 0x0 build/encrypted_data/bootloader-enc.bin 0xd000 build/encrypted_data/partition-table-enc.bin 0x20000 build/encrypted_data/security_features-enc.bin --force
+esptool.py --chip <chip_name> -b 115200 --before default_reset --after no_reset --no-stub -p $ESPPORT write_flash 0x0 build/encrypted_data/bootloader-enc.bin 0xd000 build/encrypted_data/partition-table-enc.bin 0x20000 build/encrypted_data/security_features-enc.bin --force
 ```
-
-<details>
-<summary> Generate flash image for qemu</summary>
-In case of qemu the flash image can be generated with help of the following command:
-
-```sh
-esptool.py --chip $TARGET_SOC merge_bin --fill-flash-size 4MB -o qemu/security_features_flash_image.bin @qemu/qemu_flash_args
-```
-
-The same file shall be used by the command to execute the image on qemu.
 
 </details>
 

@@ -291,7 +291,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                   md5_disable: str,
                   flash_offset: str,
                   fill_flash_size: str,
-                  merge_args: str) -> None:
+                  merge_args: tuple[str]) -> None:
         ensure_build_directory(args, ctx.info_name)
         project_desc = _get_project_desc(ctx, args)
         merge_bin_args = [PYTHON, '-m', 'esptool']
@@ -321,10 +321,10 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                 yellow_print('idf.py merge-bin: --fill-flash-size is only valid for RAW format, option will be ignored.')
             else:
                 merge_bin_args += ['--fill-flash-size', fill_flash_size]
-        if not merge_args:
-            merge_bin_args += ['@flash_args']
+        if merge_args:
+            merge_bin_args += list(merge_args)
         else:
-            merge_bin_args += ['@{}'.format(merge_args)]
+            merge_bin_args += ['@flash_args']
         print(f'Merged binary {output} will be created in the build directory...')
         RunTool('merge_bin', merge_bin_args, args.build_dir, build_dir=args.build_dir, hints=not args.no_hints)()
 
@@ -680,13 +680,12 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                         'names': ['--fill-flash-size'],
                         'help': ('[ONLY RAW] If set, the final binary file will be padded with FF bytes up to this flash size.'),
                         'type': click.Choice(['256KB', '512KB', '1MB', '2MB', '4MB', '8MB', '16MB', '32MB', '64MB', '128MB']),
-                    },
+                    }
+                ],
+                'arguments': [
                     {
-                        'names': ['--merge-args'],
-                        'help': (
-                            'Filepath to specify which binaries should be merged with their respective addresses. '
-                            'The file format should be the same as flash_args.'
-                        ),
+                        'names': ['merge-args'],
+                        'nargs': -1,
                     }
                 ],
                 'dependencies': ['all'],  # all = build
