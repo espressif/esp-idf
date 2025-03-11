@@ -247,6 +247,10 @@ The range of the duty cycle values passed to functions depends on selected ``dut
 
         On {IDF_TARGET_NAME}, when channel's binded timer selects its maximum duty resolution, the duty cycle value cannot be set to ``(2 ** duty_resolution)``. Otherwise, the internal duty counter in the hardware will overflow and be messed up.
 
+    .. only:: esp32h2
+
+        The hardware limitation above only applies to chip revision before v1.2.
+
 
 Change PWM Duty Cycle using Hardware
 """"""""""""""""""""""""""""""""""""
