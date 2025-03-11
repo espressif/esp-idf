@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,11 +17,14 @@
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/mipi_csi_share_hw_ctrl.h"
 #include "hal/hal_utils.h"
+#include "hal/color_hal.h"
 #include "soc/mipi_csi_bridge_struct.h"
 #include "soc/isp_periph.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/isp_private.h"
+
+#define ISP_DIV_ROUND_UP(x, y)    (((x) + (y) - 1) / (y))
 
 typedef struct isp_platform_t {
     _lock_t         mutex;
@@ -76,6 +79,9 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     esp_err_t ret = ESP_FAIL;
     ESP_RETURN_ON_FALSE(proc_config && ret_proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc_config->input_data_source != ISP_INPUT_DATA_SOURCE_DWGDMA, ESP_ERR_NOT_SUPPORTED, TAG, "input source not supported yet");
+    if (proc_config->flags.bypass_isp) {
+        ESP_RETURN_ON_FALSE(proc_config->input_data_color_type == proc_config->output_data_color_type, ESP_ERR_INVALID_ARG, TAG, "isp is bypassed, input and output data color type should be same");
+    }
 
     isp_processor_t *proc = heap_caps_calloc(1, sizeof(isp_processor_t), ISP_MEM_ALLOC_CAPS);
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_NO_MEM, TAG, "no mem");
@@ -117,27 +123,39 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     proc->isp_fsm = ISP_FSM_INIT;
     proc->spinlock = (portMUX_TYPE)portMUX_INITIALIZER_UNLOCKED;
 
-    //Input color format
-    bool valid_format = false;
+    //Input & Output color format
     color_space_pixel_format_t in_color_format = {
         .color_type_id = proc_config->input_data_color_type,
     };
-    valid_format = isp_ll_set_input_data_color_format(proc->hal.hw, in_color_format);
-    ESP_GOTO_ON_FALSE(valid_format, ESP_ERR_INVALID_ARG, err, TAG, "invalid input color space config");
-
-    //Output color format
-    valid_format = false;
     color_space_pixel_format_t out_color_format = {
         .color_type_id = proc_config->output_data_color_type,
     };
-    valid_format = isp_ll_set_output_data_color_format(proc->hal.hw, out_color_format);
-    ESP_GOTO_ON_FALSE(valid_format, ESP_ERR_INVALID_ARG, err, TAG, "invalid output color space config");
+    int in_bits_per_pixel = color_hal_pixel_format_get_bit_depth(in_color_format);
+
+    if (!proc_config->flags.bypass_isp) {
+        bool valid_format = false;
+        valid_format = isp_ll_set_input_data_color_format(proc->hal.hw, in_color_format);
+        ESP_GOTO_ON_FALSE(valid_format, ESP_ERR_INVALID_ARG, err, TAG, "invalid input color space config");
+
+        valid_format = false;
+        valid_format = isp_ll_set_output_data_color_format(proc->hal.hw, out_color_format);
+        ESP_GOTO_ON_FALSE(valid_format, ESP_ERR_INVALID_ARG, err, TAG, "invalid output color space config");
+    }
 
     isp_ll_clk_enable(proc->hal.hw, true);
     isp_ll_set_input_data_source(proc->hal.hw, proc_config->input_data_source);
     isp_ll_enable_line_start_packet_exist(proc->hal.hw, proc_config->has_line_start_packet);
     isp_ll_enable_line_end_packet_exist(proc->hal.hw, proc_config->has_line_end_packet);
-    isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, proc_config->h_res);
+    if (proc_config->flags.bypass_isp) {
+        /**
+         * When ISP bypass, input module is still working, input Hsize needs to be re-calculated
+         * according to input bits per pixel and IDI32.
+         * Hsize now stands for the number of 32-bit in one line.
+         */
+        isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, ISP_DIV_ROUND_UP(proc_config->h_res * in_bits_per_pixel, 32));
+    } else {
+        isp_ll_set_intput_data_h_pixel_num(proc->hal.hw, proc_config->h_res);
+    }
     isp_ll_set_intput_data_v_row_num(proc->hal.hw, proc_config->v_res);
     isp_ll_set_bayer_mode(proc->hal.hw, proc_config->bayer_order);
     isp_ll_yuv_set_std(proc->hal.hw, proc_config->yuv_std);
@@ -154,6 +172,7 @@ esp_err_t esp_isp_new_processor(const esp_isp_processor_cfg_t *proc_config, isp_
     proc->h_res = proc_config->h_res;
     proc->v_res = proc_config->v_res;
     proc->bayer_order = proc_config->bayer_order;
+    proc->bypass_isp = proc_config->flags.bypass_isp;
 
     *ret_proc = proc;
 
@@ -209,6 +228,7 @@ esp_err_t esp_isp_enable(isp_proc_handle_t proc)
 {
     ESP_RETURN_ON_FALSE(proc, ESP_ERR_INVALID_ARG, TAG, "invalid argument: null pointer");
     ESP_RETURN_ON_FALSE(proc->isp_fsm == ISP_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "processor isn't in init state");
+    ESP_RETURN_ON_FALSE(proc->bypass_isp == false, ESP_ERR_INVALID_STATE, TAG, "processor is configured to be bypassed");
 
     isp_ll_enable(proc->hal.hw, true);
     proc->isp_fsm = ISP_FSM_ENABLE;
