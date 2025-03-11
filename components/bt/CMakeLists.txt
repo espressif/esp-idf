@@ -100,7 +100,8 @@ if(CONFIG_BT_ENABLED)
             list(APPEND ldscripts "linker_rw_bt_controller.lf")
 
         elseif(CONFIG_IDF_TARGET_ESP32C2)
-            list(APPEND srcs "controller/esp32c2/bt.c")
+            list(APPEND srcs "controller/esp32c2/bt.c"
+                             "controller/esp32c2/ble.c")
             if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
                 list(APPEND srcs "controller/esp32c2/dummy.c")
             endif()

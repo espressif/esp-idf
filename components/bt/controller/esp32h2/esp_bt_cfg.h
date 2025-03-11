@@ -198,6 +198,12 @@ extern "C" {
 #define HCI_UART_EN 0 // hci ram mode
 #endif
 
+#ifdef CONFIG_BT_LE_HCI_INTERFACE_USE_RAM
+#define DEFAULT_BT_LE_VHCI_ENABLED      (CONFIG_BT_LE_HCI_INTERFACE_USE_RAM)
+#else
+#define DEFAULT_BT_LE_VHCI_ENABLED      (0)
+#endif
+
 #ifdef CONFIG_BT_LE_SLEEP_ENABLE
 #define NIMBLE_SLEEP_ENABLE CONFIG_BT_LE_SLEEP_ENABLE
 #else
