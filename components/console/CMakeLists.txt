@@ -2,6 +2,7 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs "commands.c"
          "esp_console_common.c"
+         "esp_console_repl_internal.c"
          "split_argv.c"
          "linenoise/linenoise.c")
 

@@ -12,6 +12,7 @@
 #include "linenoise/linenoise.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 /*
  * NOTE: Most of these unit tests DO NOT work standalone. They require pytest to control
@@ -23,6 +24,8 @@
  * For more information on pytest, please refer to
  * https://docs.espressif.com/projects/esp-idf/en/latest/esp32/contribute/esp-idf-tests-with-pytest.html.
  */
+
+extern void set_leak_threshold(int threshold);
 
 typedef struct {
     const char *in;
@@ -123,12 +126,17 @@ TEST_CASE("esp console init/deinit with context test", "[console]")
     TEST_ESP_OK(esp_console_deinit());
 }
 
+static bool can_terminate = false;
+static SemaphoreHandle_t s_test_console_mutex = NULL;
+static StaticSemaphore_t s_test_console_mutex_buf;
+
 /* handle 'quit' command */
 static int do_cmd_quit(int argc, char **argv)
 {
-    printf("ByeBye\r\n");
-    TEST_ESP_OK(s_repl->del(s_repl));
-    linenoiseHistoryFree(); // Free up memory
+    TEST_ASSERT_NOT_NULL(s_test_console_mutex);
+    xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+    can_terminate = true;
+    xSemaphoreGive(s_test_console_mutex);
 
     return 0;
 }
@@ -144,6 +152,11 @@ static esp_console_cmd_t s_quit_cmd = {
    ran separately in test_console_repl  */
 TEST_CASE("esp console repl test", "[console][ignore]")
 {
+    set_leak_threshold(400);
+
+    s_test_console_mutex = xSemaphoreCreateMutexStatic(&s_test_console_mutex_buf);
+    TEST_ASSERT_NOT_NULL(s_test_console_mutex);
+
     esp_console_repl_config_t repl_config = ESP_CONSOLE_REPL_CONFIG_DEFAULT();
     esp_console_dev_uart_config_t uart_config = ESP_CONSOLE_DEV_UART_CONFIG_DEFAULT();
     TEST_ESP_OK(esp_console_new_repl_uart(&uart_config, &repl_config, &s_repl));
@@ -151,10 +164,29 @@ TEST_CASE("esp console repl test", "[console][ignore]")
     TEST_ESP_OK(esp_console_cmd_register(&s_quit_cmd));
 
     TEST_ESP_OK(esp_console_start_repl(s_repl));
-    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    bool temp_can_terminate = false;
+    do {
+        xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+        temp_can_terminate = can_terminate;
+        xSemaphoreGive(s_test_console_mutex);
+    } while (temp_can_terminate != true);
+
+    /* Wait to make sure the command has finished its execution */
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    esp_err_t ret = esp_console_stop_repl(s_repl);
+    TEST_ESP_OK(ret);
+
+    xSemaphoreTake(s_test_console_mutex, portMAX_DELAY);
+    can_terminate = false;
+    xSemaphoreGive(s_test_console_mutex);
+
+    vTaskDelay(pdMS_TO_TICKS(500));
+
+    printf("ByeBye\r\n");
 }
 
-extern void set_leak_threshold(int threshold);
 TEST_CASE("esp console repl deinit", "[console][ignore]")
 {
     set_leak_threshold(400);
@@ -168,14 +200,12 @@ TEST_CASE("esp console repl deinit", "[console][ignore]")
 
     /* wait to make sure the task reaches linenoiseEdit function
      * and gets stuck in the select */
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(500));
 
     /* call the delete function, this returns only when the repl task terminated */
-    const esp_err_t res = s_repl->del(s_repl);
+    const esp_err_t res = esp_console_stop_repl(s_repl);
 
-    /* wait to make sure the task reaches linenoiseEdit function
-     * and gets stuck in the select */
-    vTaskDelay(pdMS_TO_TICKS(10));
+    vTaskDelay(pdMS_TO_TICKS(500));
 
     /* if this point is reached, the repl environment has been deleted successfully */
     TEST_ASSERT(res == ESP_OK);

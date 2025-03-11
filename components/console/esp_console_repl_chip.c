@@ -24,7 +24,7 @@
 #include "console_private.h"
 
 #if !CONFIG_ESP_CONSOLE_NONE
-static const char *TAG = "console.repl";
+static const char *TAG = "console.repl.chip";
 #endif // !CONFIG_ESP_CONSOLE_NONE
 
 #if CONFIG_ESP_CONSOLE_UART_DEFAULT || CONFIG_ESP_CONSOLE_UART_CUSTOM
@@ -296,26 +296,10 @@ static esp_err_t esp_console_repl_uart_delete(esp_console_repl_t *repl)
         goto _exit;
     }
 
-    // set the state to deinit to force the while loop in
-    // esp_console_repl_task to break
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
-
-    const esp_err_t read_interrupted = esp_console_interrupt_reading();
-    if (read_interrupted != ESP_OK) {
-        return ESP_FAIL;
+    ret = esp_console_common_deinit(&uart_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
     }
-
-    // wait for the task to notify that
-    // esp_console_repl_task returned
-    assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
-
-    // delete the semaphore for the repl state
-    vSemaphoreDelete(repl_com->state_mux);
-    repl_com->state_mux =  NULL;
-
-    esp_console_common_deinit(&uart_repl->repl_com);
 
     esp_console_deinit();
     uart_vfs_dev_use_nonblocking(uart_repl->uart_channel);
@@ -339,26 +323,10 @@ static esp_err_t esp_console_repl_usb_cdc_delete(esp_console_repl_t *repl)
         goto _exit;
     }
 
-    // set the state to deinit to force the while loop in
-    // esp_console_repl_task to break
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
-
-    const esp_err_t read_interrupted = esp_console_interrupt_reading();
-    if (read_interrupted != ESP_OK) {
-        return ESP_FAIL;
+    ret = esp_console_common_deinit(&cdc_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
     }
-
-    // wait for the task to notify that
-    // esp_console_repl_task returned
-    assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
-
-    // delete the semaphore for the repl state
-    vSemaphoreDelete(repl_com->state_mux);
-    repl_com->state_mux =  NULL;
-
-    esp_console_common_deinit(&cdc_repl->repl_com);
 
     esp_console_deinit();
     free(cdc_repl);
@@ -380,26 +348,10 @@ static esp_err_t esp_console_repl_usb_serial_jtag_delete(esp_console_repl_t *rep
         goto _exit;
     }
 
-    // set the state to deinit to force the while loop in
-    // esp_console_repl_task to break
-    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
-
-    const esp_err_t read_interrupted = esp_console_interrupt_reading();
-    if (read_interrupted != ESP_OK) {
-        return ESP_FAIL;
+    ret = esp_console_common_deinit(&usb_serial_jtag_repl->repl_com);
+    if (ret != ESP_OK) {
+        goto _exit;
     }
-
-    // wait for the task to notify that
-    // esp_console_repl_task returned
-    assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
-
-    // delete the semaphore for the repl state
-    vSemaphoreDelete(repl_com->state_mux);
-    repl_com->state_mux =  NULL;
-
-    esp_console_common_deinit(&usb_serial_jtag_repl->repl_com);
 
     esp_console_deinit();
     usb_serial_jtag_vfs_use_nonblocking();

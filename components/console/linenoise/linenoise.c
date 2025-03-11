@@ -116,14 +116,12 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
-#include <stdlib.h>
 #include <ctype.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/fcntl.h>
 #include <sys/time.h>
 #include <sys/param.h>
-#include <unistd.h>
 #include <assert.h>
 #include "linenoise.h"
 
@@ -144,9 +142,6 @@ static int history_max_len = LINENOISE_DEFAULT_HISTORY_MAX_LEN;
 static int history_len = 0;
 static char **history = NULL;
 static bool allow_empty = true;
-
-static int intr_reading_fd = -1;
-static uint64_t intr_reading_signal = -1;
 
 /* The linenoiseState structure represents the state during line editing.
  * We pass this state to functions implementing specific editing
@@ -243,35 +238,21 @@ static void flushWrite(void) {
     fsync(fileno(stdout));
 }
 
-static int linenoiseReadBytes(int fd, void *buf, size_t max_bytes)
+static linenoise_read_bytes_fn read_func = NULL;
+void linenoiseSetReadFunction(linenoise_read_bytes_fn read_fn)
 {
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
-    FD_SET(fd, &read_fds);
-    if (intr_reading_fd !=-1) {
-        FD_SET(intr_reading_fd, &read_fds);
-    }
-    int maxFd = MAX(fd, intr_reading_fd);
-    /* call select to wait for either a read ready or an except to happen */
-    int nread = select(maxFd + 1, &read_fds, NULL, NULL, NULL);
-    if (nread < 0) {
-        return -1;
-    }
+    read_func = read_fn;
+}
 
-    if(FD_ISSET(intr_reading_fd, &read_fds)) {
-        /* read termination request happened, return */
-        int buf[sizeof(intr_reading_signal)];
-        nread = read(intr_reading_fd, buf, sizeof(intr_reading_signal));
-        if ((nread == sizeof(intr_reading_signal)) && (buf[0] == intr_reading_signal)) {
-            return -1;
-        }
-    }
-    else if(FD_ISSET(fd, &read_fds)) {
-        /* a read ready triggered the select to return. call the
-         * read function with the number of bytes max_bytes */
-        nread = read(fd, buf, max_bytes);
-    }
-    return nread;
+__attribute__((weak)) void linenoiseSetReadCharacteristics(void)
+{
+    /* By default linenoise uses blocking reads */
+    int stdin_fileno = fileno(stdin);
+    int flags = fcntl(stdin_fileno, F_GETFL);
+    flags &= ~O_NONBLOCK;
+    (void)fcntl(stdin_fileno, F_SETFL, flags);
+
+    linenoiseSetReadFunction(read);
 }
 
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
@@ -308,7 +289,7 @@ static int getCursorPosition(void) {
         /* Keep using unistd's functions. Here, using `read` instead of `fgets`
          * or `fgets` guarantees us that we we can read a byte regardless on
          * whether the sender sent end of line character(s) (CR, CRLF, LF). */
-        if (linenoiseReadBytes(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
+        if (read_func(in_fd, buf + i, 1) != 1 || buf[i] == 'R') {
             /* If we couldn't read a byte from STDIN or if 'R' was received,
              * the transmission is finished. */
             break;
@@ -448,7 +429,7 @@ static int completeLine(struct linenoiseState *ls) {
                 refreshLine(ls);
             }
 
-            nread = linenoiseReadBytes(in_fd, &c, 1);
+            nread = read_func(in_fd, &c, 1);
             if (nread <= 0) {
                 freeCompletions(&lc);
                 return -1;
@@ -489,12 +470,6 @@ void linenoiseSetCompletionCallback(linenoiseCompletionCallback *fn) {
  * right of the prompt. */
 void linenoiseSetHintsCallback(linenoiseHintsCallback *fn) {
     hintsCallback = fn;
-}
-
-void linenoiseSetInterruptReadingData(int fd, uint64_t data)
-{
-    intr_reading_fd = fd;
-    intr_reading_signal = data;
 }
 
 /* Register a function to free the hints returned by the hints callback
@@ -942,7 +917,7 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
          * about 40ms (or even more)
          */
         t1 = getMillis();
-        int nread = linenoiseReadBytes(in_fd, &c, 1);
+        int nread = read_func(in_fd, &c, 1);
         if (nread <= 0) {
             return l.len;
         }
@@ -1047,14 +1022,14 @@ static int linenoiseEdit(char *buf, size_t buflen, const char *prompt)
         case ESC: {     /* escape sequence */
             /* ESC [ sequences. */
             char seq[3];
-            int r = linenoiseReadBytes(in_fd, seq, 2);
+            int r = read_func(in_fd, seq, 2);
             if (r != 2) {
                 return -1;
             }
             if (seq[0] == '[') {
                 if (seq[1] >= '0' && seq[1] <= '9') {
                     /* Extended escape, read additional byte. */
-                    r = linenoiseReadBytes(in_fd, seq + 2, 1);
+                    r = read_func(in_fd, seq + 2, 1);
                     if (r != 1) {
                         return -1;
                     }
@@ -1115,11 +1090,13 @@ void linenoiseAllowEmpty(bool val) {
 }
 
 int linenoiseProbe(void) {
-    /* Switch to non-blocking mode */
+    linenoiseSetReadCharacteristics();
+
+    /* Make sure we are in non blocking mode */
     int stdin_fileno = fileno(stdin);
-    int flags = fcntl(stdin_fileno, F_GETFL);
-    flags |= O_NONBLOCK;
-    int res = fcntl(stdin_fileno, F_SETFL, flags);
+    int old_flags = fcntl(stdin_fileno, F_GETFL);
+    int new_flags = old_flags | O_NONBLOCK;
+    int res = fcntl(stdin_fileno, F_SETFL, new_flags);
     if (res != 0) {
         return -1;
     }
@@ -1144,6 +1121,12 @@ int linenoiseProbe(void) {
             continue;
         }
         read_bytes += cb;
+    }
+
+    /* Switch back to whatever mode we had before the function call */
+    res = fcntl(stdin_fileno, F_SETFL, old_flags);
+    if (res != 0) {
+        return -1;
     }
 
     if (read_bytes < 4) {
@@ -1177,7 +1160,7 @@ static int linenoiseDumb(char* buf, size_t buflen, const char* prompt) {
 
     while (count < buflen) {
 
-        int nread = linenoiseReadBytes(in_fd, &c, 1);
+        int nread = read_func(in_fd, &c, 1);
         if (nread < 0) {
             return nread;
         }

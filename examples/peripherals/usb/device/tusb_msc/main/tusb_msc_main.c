@@ -274,7 +274,7 @@ static int console_exit(int argc, char **argv)
     tinyusb_msc_storage_deinit();
     tinyusb_driver_uninstall();
     printf("Application Exit\n");
-    repl->del(repl);
+    esp_console_stop_repl(repl);
     return 0;
 }
 

@@ -201,24 +201,6 @@ static void register_ping(void)
 
 static esp_console_repl_t *s_repl = NULL;
 
-/* handle 'quit' command */
-static int do_cmd_quit(int argc, char **argv)
-{
-    printf("ByeBye\r\n");
-    s_repl->del(s_repl);
-    return 0;
-}
-
-static esp_err_t register_quit(void)
-{
-    esp_console_cmd_t command = {
-        .command = "quit",
-        .help = "Quit REPL environment",
-        .func = &do_cmd_quit
-    };
-    return esp_console_cmd_register(&command);
-}
-
 void app_main(void)
 {
     ESP_ERROR_CHECK(nvs_flash_init());
@@ -256,8 +238,6 @@ void app_main(void)
 
     /* register command `ping` */
     register_ping();
-    /* register command `quit` */
-    register_quit();
 
     // start console REPL
     ESP_ERROR_CHECK(esp_console_start_repl(s_repl));

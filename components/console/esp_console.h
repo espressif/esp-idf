@@ -451,12 +451,22 @@ esp_err_t esp_console_new_repl_usb_serial_jtag(const esp_console_dev_usb_serial_
 /**
  * @brief Start REPL environment
  * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
- * @note Once the REPL gets started, it won't be stopped until the user calls repl->del(repl) to destroy the REPL environment.
+ * @note Once the REPL gets started, it won't be stopped until the user calls esp_console_stop_repl to destroy the REPL environment.
  * @return
  *      - ESP_OK on success
  *      - ESP_ERR_INVALID_STATE, if repl has started already
  */
 esp_err_t esp_console_start_repl(esp_console_repl_t *repl);
+
+/**
+ * @brief Stop REPL environment
+ *
+ * @param[in] repl REPL handle returned from esp_console_new_repl_xxx
+ * @return
+ *      - ESP_OK on success
+ *      - others on failure
+ */
+esp_err_t esp_console_stop_repl(esp_console_repl_t *repl);
 
 #ifdef __cplusplus
 }

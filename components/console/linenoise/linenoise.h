@@ -43,6 +43,8 @@
 extern "C" {
 #endif
 
+#include <sys/types.h>
+#include <unistd.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -58,7 +60,6 @@ typedef void(linenoiseFreeHintsCallback)(void *);
 void linenoiseSetCompletionCallback(linenoiseCompletionCallback *);
 void linenoiseSetHintsCallback(linenoiseHintsCallback *);
 void linenoiseSetFreeHintsCallback(linenoiseFreeHintsCallback *);
-void linenoiseSetInterruptReadingData(int, uint64_t);
 void linenoiseAddCompletion(linenoiseCompletions *, const char *);
 
 int linenoiseProbe(void);
@@ -76,6 +77,10 @@ bool linenoiseIsDumbMode(void);
 void linenoisePrintKeyCodes(void);
 void linenoiseAllowEmpty(bool);
 int linenoiseSetMaxLineLen(size_t len);
+
+typedef ssize_t (*linenoise_read_bytes_fn)(int, void*, size_t);
+void linenoiseSetReadFunction(linenoise_read_bytes_fn read_fn);
+void linenoiseSetReadCharacteristics(void);
 
 #ifdef __cplusplus
 }

@@ -6,6 +6,8 @@
 
 #include "sdkconfig.h"
 #include <sys/cdefs.h> // __containerof
+#include <sys/param.h>
+#include <sys/fcntl.h>
 #include "esp_console.h"
 #include "console_private.h"
 #include "esp_log.h"
@@ -17,10 +19,6 @@
 #endif
 
 static const char *TAG = "console.common";
-
-static bool s_init = false;
-static int s_interrupt_reading_fd = -1;
-static uint64_t s_interrupt_reading_signal = 1;
 
 esp_err_t esp_console_setup_prompt(const char *prompt, esp_console_repl_com_t *repl_com)
 {
@@ -68,6 +66,11 @@ _exit:
     return ret;
 }
 
+__attribute__((weak)) esp_err_t esp_console_internal_set_event_fd(esp_console_repl_com_t *repl_com)
+{
+    return ESP_OK;
+}
+
 esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_com_t *repl_com)
 {
     esp_err_t ret = ESP_OK;
@@ -103,50 +106,36 @@ esp_err_t esp_console_common_init(size_t max_cmdline_length, esp_console_repl_co
     linenoiseSetCompletionCallback(&esp_console_get_completion);
     linenoiseSetHintsCallback((linenoiseHintsCallback *)&esp_console_get_hint);
 
-    /* Tell linenoise what file descriptor to add to the read file descriptor set,
-     * that will be used to signal a read termination */
-    esp_vfs_eventfd_config_t config = ESP_VFS_EVENTD_CONFIG_DEFAULT();
-    ret = esp_vfs_eventfd_register(&config);
-    if (ret == ESP_OK) {
-        /* first time calling the eventfd register function */
-        s_interrupt_reading_fd = eventfd(0, 0);
-        linenoiseSetInterruptReadingData(s_interrupt_reading_fd, s_interrupt_reading_signal);
-    } else if (ret == ESP_ERR_INVALID_STATE) {
-        /* the evenfd has already been registered*/
-    } else {
-        /* issue with arg, this should not happen */
+#if CONFIG_VFS_SUPPORT_SELECT
+    ret = esp_console_internal_set_event_fd(repl_com);
+    if (ret != ESP_OK) {
         goto _exit;
     }
+#endif
 
-    repl_com->state_mux = xSemaphoreCreateMutex();
-    if (repl_com->state_mux == NULL) {
-        ESP_LOGE(TAG, "state_mux create error");
-        ret = ESP_ERR_NO_MEM;
-        goto _exit;
-    }
-    xSemaphoreGive(repl_com->state_mux);
-
-    s_init = true;
     return ESP_OK;
 _exit:
-    s_init = false;
     return ret;
 }
 
-void esp_console_common_deinit(esp_console_repl_com_t *repl_com)
+__attribute__((weak)) esp_err_t esp_console_common_deinit(esp_console_repl_com_t *repl_com)
 {
+    // set the state to deinit to force the while loop in
+    // esp_console_repl_task to break
+    repl_com->state = CONSOLE_REPL_STATE_DEINIT;
+
     /* Unregister the heap function to avoid memory leak, since it is created
      * every time a console init is called. */
     esp_err_t ret = esp_console_deregister_help_command();
-    assert(ret == ESP_OK);
-
-    /* unregister eventfd to avoid memory leaks, since it is created every time a
-     * console init is called */
-    (void)esp_vfs_eventfd_unregister();
+    if (ret != ESP_OK) {
+        return ret;
+    }
 
     /* free the history to avoid memory leak, since it is created
      * every time a console init is called. */
     linenoiseHistoryFree();
+
+    return ESP_OK;
 }
 
 esp_err_t esp_console_start_repl(esp_console_repl_t *repl)
@@ -176,9 +165,10 @@ void esp_console_repl_task(void *args)
      * function is called. */
     ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-    assert(repl_com->state_mux != NULL);
-    BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
-    assert(ret_val == pdTRUE);
+    if (repl_com->state_mux != NULL) {
+        BaseType_t ret_val = xSemaphoreTake(repl_com->state_mux, portMAX_DELAY);
+        assert(ret_val == pdTRUE);
+    }
 
     /* Change standard input and output of the task if the requested UART is
      * NOT the default one. This block will replace stdin, stdout and stderr.
@@ -242,17 +232,9 @@ void esp_console_repl_task(void *args)
         linenoiseFree(line);
     }
 
-    xSemaphoreGive(repl_com->state_mux);
+    if (repl_com->state_mux != NULL) {
+        xSemaphoreGive(repl_com->state_mux);
+    }
     ESP_LOGD(TAG, "The End");
     vTaskDelete(NULL);
-}
-
-esp_err_t esp_console_interrupt_reading(void)
-{
-    if (!s_init) {
-        return ESP_FAIL;
-    }
-    ssize_t ret = write(s_interrupt_reading_fd, &s_interrupt_reading_signal, sizeof(s_interrupt_reading_signal));
-    assert(ret == sizeof(s_interrupt_reading_signal));
-    return ESP_OK;
 }
