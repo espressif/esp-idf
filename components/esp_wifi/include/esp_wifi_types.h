@@ -247,19 +247,19 @@ typedef struct {
 typedef enum {
     WIFI_FAST_SCAN = 0,                   /**< Do fast scan, scan will end after find SSID match AP */
     WIFI_ALL_CHANNEL_SCAN,                /**< All channel scan, scan will end after scan all the channel */
-}wifi_scan_method_t;
+} wifi_scan_method_t;
 
 typedef enum {
     WIFI_CONNECT_AP_BY_SIGNAL = 0,        /**< Sort match AP in scan list by RSSI */
     WIFI_CONNECT_AP_BY_SECURITY,          /**< Sort match AP in scan list by security mode */
-}wifi_sort_method_t;
+} wifi_sort_method_t;
 
-/** @brief Structure describing parameters for a WiFi fast scan */
+/** @brief Structure describing parameters for Wi-Fi scan during connection */
 typedef struct {
-    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode. Defaults to -127 if set to >= 0 */
-    wifi_auth_mode_t    authmode;         /**< The weakest authmode to accept in the fast scan mode
+    int8_t              rssi;             /**< The minimum rssi to accept in Wi-Fi scan. Defaults to -127 if set to >= 0 */
+    wifi_auth_mode_t    authmode;         /**< The weakest auth mode to accept in Wi-Fi scan
                                                Note: Incase this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set authmode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
-}wifi_scan_threshold_t;
+} wifi_scan_threshold_t;
 
 typedef enum {
     WIFI_PS_NONE,        /**< No power save */
