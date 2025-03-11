@@ -333,11 +333,11 @@ typedef enum {
 } wifi_sort_method_t;
 
 /**
-  * @brief Structure describing parameters for a Wi-Fi fast scan
+  * @brief Structure describing parameters for Wi-Fi scan during connection
   */
 typedef struct {
-    int8_t              rssi;             /**< The minimum rssi to accept in the fast scan mode. Defaults to -127 if set to >= 0 */
-    wifi_auth_mode_t    authmode;         /**< The weakest auth mode to accept in the fast scan mode
+    int8_t              rssi;             /**< The minimum rssi to accept in Wi-Fi scan. Defaults to -127 if set to >= 0 */
+    wifi_auth_mode_t    authmode;         /**< The weakest auth mode to accept in Wi-Fi scan
                                                Note: In case this value is not set and password is set as per WPA2 standards(password len >= 8), it will be defaulted to WPA2 and device won't connect to deprecated WEP/WPA networks. Please set auth mode threshold as WIFI_AUTH_WEP/WIFI_AUTH_WPA_PSK to connect to WEP/WPA networks */
 } wifi_scan_threshold_t;
 
