@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -85,6 +85,11 @@ typedef struct protocomm_security {
      * Unique version number of security implementation
      */
     int ver;
+
+    /**
+     * Patch version number of security implementation
+     */
+    uint8_t patch_ver;
 
     /**
      * Function for initializing/allocating security
