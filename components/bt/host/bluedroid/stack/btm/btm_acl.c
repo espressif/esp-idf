@@ -2218,6 +2218,18 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
     *length = p_cb->white_list_avail_size;
     return;
 }
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->periodic_adv_list_size == 0) {
+        BTM_TRACE_WARNING("%s Periodic Adv list is full.", __func__);
+    }
+    *size = p_cb->periodic_adv_list_size;
+}
+#endif  //#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 #endif  ///BLE_INCLUDED == TRUE
 
 /*******************************************************************************

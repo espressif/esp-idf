@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1584,6 +1584,13 @@ static void btc_ble_dtm_enhance_rx_start(uint8_t rx_channel, uint8_t phy, uint8_
 
     BTA_DmBleDtmEnhRxStart(rx_channel, phy, modulation_index, p_dtm_cmpl_cback);
 }
+
+void btc_get_periodic_list_size(uint8_t *size)
+{
+    BTM_BleGetPeriodicAdvListSize(size);
+    return;
+}
+
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 static void btc_ble_dtm_stop(tBTA_DTM_CMD_CMPL_CBACK *p_dtm_cmpl_cback)

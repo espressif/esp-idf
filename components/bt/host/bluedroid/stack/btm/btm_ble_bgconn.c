@@ -423,6 +423,23 @@ void btm_ble_white_list_init(UINT8 white_list_size)
     btm_cb.ble_ctr_cb.white_list_avail_size = white_list_size;
 }
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_periodic_adv_list_init
+**
+** Description      Initialize the periodic advertiser list size.
+**
+** Parameters       periodic_adv_size: The size of the periodic advertiser list to be initialized.
+**
+*******************************************************************************/
+void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size)
+{
+    BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, periodic_adv_size);
+    btm_cb.ble_ctr_cb.periodic_adv_list_size = periodic_adv_size;
+}
+#endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_add_2_white_list_complete
@@ -724,7 +741,7 @@ void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 static void btm_wl_update_to_controller(void)
 {
     /* whitelist will be added in the btm_ble_resume_bg_conn(), we do not
-       support background connection now, so we nedd to use btm_execute_wl_dev_operation
+       support background connection now, so we need to use btm_execute_wl_dev_operation
        to add whitelist directly ,if we support background connection in the future,
        please delete btm_execute_wl_dev_operation(). */
     btm_execute_wl_dev_operation();
