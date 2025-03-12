@@ -131,10 +131,8 @@ if(CONFIG_ESP_ROM_HAS_VERSION)
 endif()
 
 if(ESP_TEE_BUILD)
-    if(target STREQUAL "esp32c6")
-        rom_linker_script("spiflash")
-        rom_linker_script("heap")
-    endif()
+    rom_linker_script("spiflash")
+    rom_linker_script("heap")
 endif()
 
 if(BOOTLOADER_BUILD)

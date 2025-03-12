@@ -136,7 +136,7 @@ esp_err_t bootloader_flash_erase_range(uint32_t start_addr, uint32_t size)
 #if ESP_TEE_BUILD
 #include "esp_fault.h"
 #include "esp_flash_partitions.h"
-#include "esp32c6/rom/spi_flash.h"
+#include "rom/spi_flash.h"
 
 extern bool esp_tee_flash_check_paddr_in_active_tee_part(size_t paddr);
 #endif
