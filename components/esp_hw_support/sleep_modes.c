@@ -329,6 +329,12 @@ static void __attribute__((section(".rtc.entry.text"))) esp_wake_stub_entry(void
 {
 #define _SYM2STR(s) # s
 #define SYM2STR(s)  _SYM2STR(s)
+    goto __after_literal;
+    __asm__ __volatile__ (
+            ".literal_position \n"
+            ".align 4 \n"
+        );
+__after_literal:
 
 #ifdef __riscv
     __asm__ __volatile__ (

@@ -151,6 +151,10 @@ if(NOT non_os_build)
         list(APPEND srcs "esp_clock_output.c")
     endif()
 
+    if(CONFIG_SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY)
+        set_source_files_properties(sleep_modes.c PROPERTIES COMPILE_OPTIONS -mtext-section-literals)
+    endif()
+
     if(CONFIG_SOC_BOD_SUPPORTED)
         list(APPEND srcs "power_supply/brownout.c")
     endif()

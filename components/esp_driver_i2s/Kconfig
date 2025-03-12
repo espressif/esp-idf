@@ -7,6 +7,13 @@ menu "ESP-Driver:I2S Configurations"
             Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
             executable when the cache is disabled (e.g. SPI Flash write).
 
+    config I2S_FORCE_FRAC_DIVISOR
+        bool "Force fractional divisor for PDM mode on v2 HW"
+        default y
+        help
+            Force fractional part of clock divisor to known value.
+            This seems to help reducing noise.
+
     config I2S_ENABLE_DEBUG_LOG
         bool "Enable I2S debug log"
         default n
