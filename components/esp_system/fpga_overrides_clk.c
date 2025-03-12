@@ -34,6 +34,8 @@
 #include "esp32p4/rom/rtc.h"
 #elif CONFIG_IDF_TARGET_ESP32C5
 #include "esp32c5/rom/rtc.h"
+#elif CONFIG_IDF_TARGET_ESP32H4
+#include "esp32h4/rom/rtc.h"
 #endif
 #include "esp_log.h"
 #include "esp_rom_sys.h"
@@ -50,7 +52,7 @@ void bootloader_clock_configure(void)
 {
     s_warn();
     esp_rom_output_tx_wait_idle(0);
-#if CONFIG_IDF_TARGET_ESP32H21
+#if CONFIG_IDF_TARGET_ESP32H21 || CONFIG_IDF_TARGET_ESP32H4
     uint32_t xtal_freq_mhz = 32;
 #else
     uint32_t xtal_freq_mhz = 40;
