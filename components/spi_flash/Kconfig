@@ -120,6 +120,17 @@ menu "Main Flash configuration"
 
                 For new users, DO NOT enable this config.
 
+        config SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
+            bool "Enable chip suspend feature on c6 or h2 anyway (DO NOT ENABLE FOR NEW USERS OR APPLICATIONS)"
+            default n
+            help
+                Flash suspend has a defect on ESP32C6 until v0.2 and ESP32H2 until v1.2. If you already use suspend
+                feature for mass production, you can enable this for bypassing check after knowing the risk.
+                But if you are new users, or developing new applications, or producing a new batch,
+                please DO NOT enable this config option.
+
+                For more information, please refer to errata or connect to Espressif business support team.
+
         config SPI_FLASH_SOFTWARE_RESUME
             bool "Resume flash program/erase form suspend state by software control"
             default n

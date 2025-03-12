@@ -51,3 +51,20 @@ def test_i2c_multi_device(case_tester) -> None:  # type: ignore
     for case in case_tester.test_menu:
         if case.attributes.get('test_env', 'generic_multi_device') == 'generic_multi_device':
             case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.flash_suspend
+@pytest.mark.parametrize(
+    'config',
+    [
+        'i2c_isr_flash',
+    ],
+    indirect=True,
+)
+@idf_parametrize(
+    'target',
+    ['esp32c3'],
+    indirect=['target'],
+)
+def test_flash_auto_suspend_for_i2c(dut: Dut) -> None:
+    dut.run_all_single_board_cases(timeout=30)
