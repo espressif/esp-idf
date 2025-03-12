@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -580,9 +580,14 @@ static esp_err_t lcd_i80_select_periph_clock(esp_lcd_i80_bus_handle_t bus, lcd_c
     // save the resolution of the i80 bus
     bus->resolution_hz = src_clk_hz / LCD_PERIPH_CLOCK_PRE_SCALE;
     // create pm lock based on different clock source
-    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
+    // clock sources like PLL and XTAL will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
+    esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    lock_type = ESP_PM_CPU_FREQ_MAX;
+#endif
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(lock_type, 0, "i80_bus_lcd", &bus->pm_lock), TAG, "create pm lock failed");
 #endif
     return ESP_OK;
 }
