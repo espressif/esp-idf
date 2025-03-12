@@ -21,7 +21,7 @@ extern "C" {
 #define PCNT_LL_GET_HW(num)      (((num) == 0) ? (&PCNT) : NULL)
 #define PCNT_LL_MAX_GLITCH_WIDTH 1023
 #define PCNT_LL_MAX_LIM          SHRT_MAX
-#define PCNT_LL_MIN_LIN          SHRT_MIN
+#define PCNT_LL_MIN_LIM          SHRT_MIN
 
 typedef enum {
     PCNT_LL_WATCH_EVENT_INVALID = -1,
