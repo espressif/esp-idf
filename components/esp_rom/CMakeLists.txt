@@ -75,6 +75,10 @@ if(CONFIG_ESP_ROM_HAS_CACHE_WRITEBACK_BUG)
     list(APPEND sources "patches/esp_rom_cache_writeback_esp32s3.S")
 endif()
 
+if(CONFIG_ESP_ROM_NO_USB_SERIAL_OUTPUT_API)
+    list(APPEND sources "patches/esp_rom_usb_serial.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
