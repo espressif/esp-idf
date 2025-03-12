@@ -315,7 +315,8 @@ static esp_err_t destroy_block(esp_efuse_block_t block)
         }
 #endif // CONFIG_IDF_TARGET_ESP32
         uint32_t data[8 + 3]; // 8 words are data and 3 words are RS coding data
-        esp_efuse_read_block(block, data, 0, blk_len_bit);
+        esp_err_t err = esp_efuse_read_block(block, data, 0, blk_len_bit);
+        (void)err; // Suppress Coverity warning for unchecked return value
         // Inverse data to set only unset bit
         for (unsigned i = 0; i < blk_len_bit / 32; i++) {
             data[i] = ~data[i];
