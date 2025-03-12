@@ -181,7 +181,12 @@ esp_err_t spi_slave_hd_init(spi_host_device_t host_id, const spi_bus_config_t *b
     spi_slave_hd_hal_init(&host->hal, &hal_config);
 
 #ifdef CONFIG_PM_ENABLE
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    ret = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "spi_slave_hd", &host->pm_lock);
+#else
     ret = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_slave_hd", &host->pm_lock);
+#endif
     if (ret != ESP_OK) {
         goto cleanup;
     }
