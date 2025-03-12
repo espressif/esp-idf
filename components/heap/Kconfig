@@ -127,5 +127,6 @@ menu "Heap memory debugging"
             Enable this flag to save up RAM space by placing the heap component in the flash memory
 
             Note that it is only safe to enable this configuration if no functions from esp_heap_caps.h
-            or esp_heap_trace.h are called from ISR.
+            or esp_heap_trace.h are called from IRAM ISR which runs when cache is disabled.
+
 endmenu
