@@ -2295,15 +2295,15 @@ UINT8 btm_proc_smp_cback(tSMP_EVT event, BD_ADDR bd_addr, tSMP_EVT_DATA *p_data)
 
         }
     } else {
-        if (event == SMP_SC_LOC_OOB_DATA_UP_EVT) {
-            tBTM_LE_EVT_DATA evt_data;
-            memcpy(&evt_data.local_oob_data, &p_data->loc_oob_data, sizeof(tSMP_LOC_OOB_DATA));
-            if (btm_cb.api.p_le_callback) {
-                (*btm_cb.api.p_le_callback)(event, bd_addr, &evt_data);
-            }
-        } else {
-            BTM_TRACE_ERROR("btm_proc_smp_cback received for unknown device");
+    }
+    if (event == SMP_SC_LOC_OOB_DATA_UP_EVT) {
+        tBTM_LE_EVT_DATA evt_data;
+        memcpy(&evt_data.local_oob_data, &p_data->loc_oob_data, sizeof(tSMP_LOC_OOB_DATA));
+        if (btm_cb.api.p_le_callback) {
+            (*btm_cb.api.p_le_callback)(event, bd_addr, &evt_data);
         }
+    } else {
+        BTM_TRACE_ERROR("btm_proc_smp_cback received for unknown device");
     }
     return 0;
 }
