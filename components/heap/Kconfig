@@ -120,12 +120,11 @@ menu "Heap memory debugging"
 
     config HEAP_PLACE_FUNCTION_INTO_FLASH
         bool "Force the entire heap component to be placed in flash memory"
-        depends on !HEAP_TLSF_USE_ROM_IMPL
         default n
         help
             Enable this flag to save up RAM space by placing the heap component in the flash memory
 
             Note that it is only safe to enable this configuration if no functions from esp_heap_caps.h
-            or esp_heap_trace.h are called from ISR.
+            or esp_heap_trace.h are called from IRAM ISR which runs when cache is disabled.
 
 endmenu
