@@ -26,7 +26,14 @@ void test_task_wdt_cpu0(void);
 
 #if !CONFIG_FREERTOS_UNICORE
 void test_task_wdt_cpu1(void);
+
+void test_panic_handler_stuck1(void);
+void test_panic_handler_crash1(void);
 #endif
+
+void test_panic_handler_stuck0(void);
+
+void test_panic_handler_crash0(void);
 
 void test_storeprohibited(void);
 

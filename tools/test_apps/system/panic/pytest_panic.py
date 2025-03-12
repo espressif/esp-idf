@@ -326,3 +326,69 @@ def test_assert_cache_disabled(
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
     common_test(dut, config, expected_backtrace=get_default_backtrace(test_func_name))
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.generic
+def test_panic_handler_stuck0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+
+    # Expect a panic handler stuck message
+    dut.expect_exact('Panic handler stuck')
+
+    # Expect a reboot
+    dut.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS|RTC_SW_SYS_RST)')
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.generic
+def test_panic_handler_stuck1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+
+    # Expect a panic handler stuck message
+    dut.expect_exact('Panic handler stuck')
+
+    # Expect a reboot
+    dut.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS|RTC_SW_SYS_RST)')
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.esp32s2
+@pytest.mark.generic
+def test_panic_handler_crash0(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+
+    # Expect a panic handler crash message
+    dut.expect_exact('Panic handler crashed 1 times')
+
+    # Expect a the second panic handler crash message
+    dut.expect_exact('Panic handler crashed 2 times')
+
+    # Expect bailout message
+    dut.expect_exact('Panic handler entered multiple times. Abort panic handling. Rebooting ...')
+
+    # Expect a reboot
+    dut.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS|RTC_SW_SYS_RST)')
+
+
+@pytest.mark.parametrize('config', ['panic'], indirect=True)
+@pytest.mark.esp32
+@pytest.mark.generic
+def test_panic_handler_crash1(dut: PanicTestDut, config: str, test_func_name: str) -> None:
+    dut.expect_test_func_name(test_func_name)
+
+    # Expect a panic handler crash message
+    dut.expect_exact('Panic handler crashed 1 times')
+
+    # Expect a the second panic handler crash message
+    dut.expect_exact('Panic handler crashed 2 times')
+
+    # Expect bailout message
+    dut.expect_exact('Panic handler entered multiple times. Abort panic handling. Rebooting ...')
+
+    # Expect a reboot
+    dut.expect(r'.*rst:.*(RTC_SW_CPU_RST|SW_CPU_RESET|SW_CPU|RTCWDT_RTC_RESET|LP_WDT_SYS|RTCWDT_RTC_RST|CHIP_LP_WDT_RESET|RTC_WDT_SYS|RTC_SW_SYS_RST)')

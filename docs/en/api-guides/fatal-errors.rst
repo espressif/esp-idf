@@ -28,6 +28,8 @@ In certain situations, execution of the program can not be continued in a well d
 
 This guide explains the procedure used in ESP-IDF for handling these errors, and provides suggestions on troubleshooting the errors.
 
+.. _Panic-Handler:
+
 Panic Handler
 -------------
 
@@ -299,6 +301,8 @@ The RTC watchdog is used in the startup code to keep track of execution time and
         rst:0x10 (RTCWDT_RTC_RST)
 
 The RTC watchdog covers the execution time from the first stage bootloader (ROM bootloader) to application startup. It is initially set in the ROM bootloader, then configured in the bootloader with the :ref:`CONFIG_BOOTLOADER_WDT_TIME_MS` option (9000 ms by default). During the application initialization stage, it is reconfigured because the source of the slow clock may have changed, and finally disabled right before the ``app_main()`` call. There is an option :ref:`CONFIG_BOOTLOADER_WDT_DISABLE_IN_USER_CODE` which prevents the RTC watchdog from being disabled before ``app_main``. Instead, the RTC watchdog remains active and must be fed periodically in your application's code.
+
+The RTC watchdog is also used by the system :ref:`panic handler <Panic-Handler>` to protect the system from hanging during a panic. The RTC watchdog is reconfigured in the panic handler to have a timeout of 10 seconds. If the panic handler takes longer than 10 seconds to execute, the system will be reset by the RTC watchdog.
 
 .. _Guru-Meditation-Errors:
 
