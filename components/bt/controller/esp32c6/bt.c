@@ -122,7 +122,7 @@ extern int r_ble_log_init_async(interface_func_t bt_controller_log_interface, bo
 extern int r_ble_log_deinit_async(void);
 extern void r_ble_log_async_select_dump_buffers(uint8_t buffers);
 extern void r_ble_log_async_output_dump_all(bool output);
-extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
+extern void esp_panic_handler_feed_wdts(void);
 extern int r_ble_log_ctrl_level_and_mod(uint8_t log_level, uint32_t mod_switch);
 extern int r_ble_ctrl_mod_type(uint16_t mod, uint32_t mod_type_switch);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -382,13 +382,13 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
 
     portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
     portENTER_CRITICAL_SAFE(&spinlock);
-    esp_panic_handler_reconfigure_wdts(5000);
+    esp_panic_handler_feed_wdts();
     r_ble_log_async_output_dump_all(true);
     esp_bt_ontroller_log_deinit();
     stop_write = true;
 
     buffer = (const uint8_t *)mapped_ptr;
-    esp_panic_handler_reconfigure_wdts(5000);
+    esp_panic_handler_feed_wdts();
     if (is_filled) {
         read_index = next_erase_index;
     } else {
@@ -400,7 +400,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     while (read_index != write_index) {
         esp_rom_printf("%02x ", buffer[read_index]);
         if (print_len > max_print_len) {
-            esp_panic_handler_reconfigure_wdts(5000);
+            esp_panic_handler_feed_wdts();
             print_len = 0;
         }
 
@@ -1412,7 +1412,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
     } else {
         portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL_SAFE(&spinlock);
-        esp_panic_handler_reconfigure_wdts(1000);
+        esp_panic_handler_feed_wdts();
         for (int i = 0; i < len; i++) {
             esp_rom_printf("%02x ", addr[i]);
         }
@@ -1433,7 +1433,7 @@ void esp_ble_controller_log_dump_all(bool output)
     } else {
         portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
         portENTER_CRITICAL_SAFE(&spinlock);
-        esp_panic_handler_reconfigure_wdts(5000);
+        esp_panic_handler_feed_wdts();
         BT_ASSERT_PRINT("\r\n[DUMP_START:");
         r_ble_log_async_output_dump_all(output);
         BT_ASSERT_PRINT(":DUMP_END]\r\n");
