@@ -298,8 +298,14 @@ static NOINLINE_ATTR bool _dma2d_default_rx_isr(dma2d_group_t *group, int channe
         }
     }
 
+    if (intr_status & DMA2D_LL_EVENT_RX_DESC_EMPTY) {
+        if (rx_chan->on_desc_empty) {
+            need_yield |= rx_chan->on_desc_empty(&rx_chan->base, &edata, user_data);
+        }
+    }
+
     // If last transaction completes (regardless success or not), free the channels
-    if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR)) {
+    if (intr_status & (DMA2D_LL_EVENT_RX_SUC_EOF | DMA2D_LL_EVENT_RX_ERR_EOF | DMA2D_LL_EVENT_RX_DESC_ERROR | DMA2D_LL_EVENT_RX_DESC_EMPTY)) {
         if (!(intr_status & DMA2D_LL_EVENT_RX_ERR_EOF)) {
             assert(dma2d_ll_rx_is_fsm_idle(group->hal.dev, channel_id));
         }
@@ -687,6 +693,10 @@ esp_err_t dma2d_register_rx_event_callbacks(dma2d_channel_handle_t dma2d_chan, d
     if (cbs->on_desc_done) {
         rx_chan->on_desc_done = cbs->on_desc_done;
         mask |= DMA2D_LL_EVENT_RX_DONE;
+    }
+    if (cbs->on_desc_empty) {
+        rx_chan->on_desc_empty = cbs->on_desc_empty;
+        mask |= DMA2D_LL_EVENT_RX_DESC_EMPTY;
     }
     rx_chan->user_data = user_data;
     dma2d_ll_rx_enable_interrupt(group->hal.dev, rx_chan->base.channel_id, mask, true);
