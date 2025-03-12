@@ -23,6 +23,12 @@
 
 #define HASH_LEN 32 /* SHA-256 digest length */
 
+/*
+ * Due to esp_mmu_map and spi_flash_mmap APIs not being thread-safe, to avoid
+ * race conditions, we need to lock any map/unmap operations.
+ */
+static _lock_t s_mmap_lock;
+
 esp_err_t esp_partition_read(const esp_partition_t *partition,
                              size_t src_offset, void *dst, size_t size)
 {
@@ -169,7 +175,9 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
     // offset within mmu page size block
     size_t region_offset = phys_addr & (CONFIG_MMU_PAGE_SIZE - 1);
     size_t mmap_addr = phys_addr & ~(CONFIG_MMU_PAGE_SIZE - 1);
+    _lock_acquire(&s_mmap_lock);
     esp_err_t rc = spi_flash_mmap(mmap_addr, size + region_offset, (spi_flash_mmap_memory_t) memory, out_ptr, (spi_flash_mmap_handle_t*) out_handle);
+    _lock_release(&s_mmap_lock);
     // adjust returned pointer to point to the correct offset
     if (rc == ESP_OK) {
         *out_ptr = (void *) (((ptrdiff_t) * out_ptr) + region_offset);
@@ -179,7 +187,9 @@ esp_err_t esp_partition_mmap(const esp_partition_t *partition, size_t offset, si
 
 void esp_partition_munmap(esp_partition_mmap_handle_t handle)
 {
+    _lock_acquire(&s_mmap_lock);
     spi_flash_munmap((spi_flash_mmap_handle_t) handle);
+    _lock_release(&s_mmap_lock);
 }
 
 esp_err_t esp_partition_get_sha256(const esp_partition_t *partition, uint8_t *sha_256)
