@@ -1,3 +1,5 @@
+idf_build_get_property(non_os_build NON_OS_BUILD)
+
 set(srcs "rtc_clk_init.c"
          "rtc_clk.c"
          "pmu_param.c"
@@ -7,7 +9,7 @@ set(srcs "rtc_clk_init.c"
          "chip_info.c"
          )
 
-if(NOT BOOTLOADER_BUILD)
+if(NOT non_os_build)
     list(APPEND srcs "sar_periph_ctrl.c")
 endif()
 
