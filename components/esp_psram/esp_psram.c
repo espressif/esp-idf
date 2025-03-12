@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,21 +274,31 @@ esp_err_t esp_psram_init(void)
     * After mapping, we DON'T care about the PSRAM PHYSICAL ADDRESSS ANYMORE!
     *----------------------------------------------------------------------------*/
 
-    //------------------------------------Configure .bss in PSRAM-------------------------------------//
+    //------------------------------------Configure other sections in PSRAM-------------------------------------//
+    uintptr_t ext_section_start = UINTPTR_MAX;
+    uintptr_t ext_section_end = 0;
+
 #if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
-    //should never be negative number
-    uint32_t ext_bss_size = ((intptr_t)&_ext_ram_bss_end - (intptr_t)&_ext_ram_bss_start);
-    ESP_EARLY_LOGV(TAG, "ext_bss_size is %d", ext_bss_size);
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_bss_size;
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_bss_size;
+    ext_section_start = (uintptr_t)&_ext_ram_bss_start;
+    ext_section_end = (uintptr_t)&_ext_ram_bss_end;
 #endif  //#if CONFIG_SPIRAM_ALLOW_BSS_SEG_EXTERNAL_MEMORY
 
 #if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
-    uint32_t ext_noinit_size = ((intptr_t)&_ext_ram_noinit_end - (intptr_t)&_ext_ram_noinit_start);
-    ESP_EARLY_LOGV(TAG, "ext_noinit_size is %d", ext_noinit_size);
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_noinit_size;
-    s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_noinit_size;
-#endif
+    if ((uintptr_t)&_ext_ram_noinit_start < ext_section_start) {
+        ext_section_start = (uintptr_t)&_ext_ram_noinit_start;
+    }
+    if ((uintptr_t)&_ext_ram_noinit_end > ext_section_end) {
+        ext_section_end = (uintptr_t)&_ext_ram_noinit_end;
+    }
+#endif  //#if CONFIG_SPIRAM_ALLOW_NOINIT_SEG_EXTERNAL_MEMORY
+
+    if ((ext_section_start != UINTPTR_MAX) || (ext_section_end != 0)) {
+        assert(ext_section_end >= ext_section_start);
+        uint32_t ext_section_size = ext_section_end - ext_section_start;
+        ESP_EARLY_LOGV(TAG, "ext_section_size is %" PRIu32, ext_section_size);
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].vaddr_start += ext_section_size;
+        s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= ext_section_size;
+    }
 
 #if CONFIG_IDF_TARGET_ESP32
     s_psram_ctx.regions_to_heap[PSRAM_MEM_8BIT_ALIGNED].size -= esp_himem_reserved_area_size() - 1;
