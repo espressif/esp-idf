@@ -572,9 +572,20 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     portEXIT_CRITICAL_ISR(&channel->spinlock);
 
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
-    // sanity check
-    assert(offset >= rx_chan->mem_off);
-    size_t mem_want = (offset - rx_chan->mem_off) * sizeof(rmt_symbol_word_t);
+
+    // Start from C6, the actual pulse count is the number of input pulses N - 1.
+    // Resulting in the last threshold interrupts may not be triggered correctly when the number of received symbols is a multiple of the memory block size.
+    // As shown in the figure below, So we special handle the offset
+
+    //  mem_off (should be updated here in the last threshold interrupt, but interrupt lost)
+    //     |
+    //     V
+    //     |________|________|
+    //     |        |
+    //   offset   mem_off(actually here now)
+
+    size_t mem_want = (offset >= rx_chan->mem_off ? offset - rx_chan->mem_off : rx_chan->mem_off - offset);
+    mem_want *= sizeof(rmt_symbol_word_t);
     size_t mem_have = trans_desc->buffer_size - trans_desc->copy_dest_off;
     size_t copy_size = mem_want;
     if (mem_want > mem_have) {
