@@ -17,13 +17,22 @@ set(srcs "src/${system_target}/log_timestamp.c"
          "src/buffer/log_buffers.c"
          "src/${system_target}/util.c"
          "src/util.c"
+         "src/log_format_text.c"
          "src/log_print.c"
          "src/log.c")
 
-set(priv_requires "")
+if((NOT non_os_build AND CONFIG_LOG_MODE_TEXT_EN) OR (non_os_build AND CONFIG_BOOTLOADER_LOG_MODE_TEXT_EN))
+    list(APPEND srcs "src/log_format_text.c")
+endif()
+
+if((NOT non_os_build AND CONFIG_LOG_MODE_BINARY_EN) OR (non_os_build AND CONFIG_BOOTLOADER_LOG_MODE_BINARY_EN))
+    list(APPEND srcs "src/log_format_binary.c")
+endif()
+
+set(priv_requires hal)
 
 if(NOT non_os_build)
-    list(APPEND priv_requires soc hal esp_hw_support)
+    list(APPEND priv_requires soc esp_hw_support)
 
     list(APPEND srcs "src/os/log_write.c")
 

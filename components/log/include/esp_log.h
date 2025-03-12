@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,8 @@
 #include "esp_log_timestamp.h"
 #include "esp_log_write.h"
 #include "esp_log_format.h"
+#include "esp_log_args.h"
+#include "esp_log_attr.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -176,11 +178,11 @@ void esp_log_va(esp_log_config_t config, const char *tag, const char *format, va
 #if ESP_LOG_VERSION == 2
 #if defined(__cplusplus) && (__cplusplus >  201703L)
 #define ESP_LOG_LEVEL(configs, tag, format, ...) do { \
-        esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT), tag, format __VA_OPT__(,) __VA_ARGS__); \
+        esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT), tag, ESP_LOG_ATTR_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); \
     } while(0)
 #else // !(defined(__cplusplus) && (__cplusplus >  201703L))
 #define ESP_LOG_LEVEL(configs, tag, format, ...) do { \
-        esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT), tag, format, ##__VA_ARGS__); \
+        esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT), tag, ESP_LOG_ATTR_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); \
     } while(0)
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
@@ -248,14 +250,14 @@ void esp_log_va(esp_log_config_t config, const char *tag, const char *format, va
     if (ESP_LOG_VERSION == 1) { \
         if (_ESP_LOG_EARLY_ENABLED(configs)) { esp_rom_printf(LOG_FORMAT(log_tag_letter, format), esp_log_timestamp(), tag __VA_OPT__(,) __VA_ARGS__); } \
     } else { \
-        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV), tag, format __VA_OPT__(,) __VA_ARGS__); } \
+        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV), tag, ESP_LOG_ATTR_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); } \
     } } while(0)
 #else // !(defined(__cplusplus) && (__cplusplus >  201703L))
 #define ESP_LOG_EARLY_IMPL(tag, format, configs, log_tag_letter, ...) do { \
     if (ESP_LOG_VERSION == 1) { \
         if (_ESP_LOG_EARLY_ENABLED(configs)) { esp_rom_printf(LOG_FORMAT(log_tag_letter, format), esp_log_timestamp(), tag, ##__VA_ARGS__); } \
     } else { \
-        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV), tag, format, ##__VA_ARGS__); } \
+        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV), tag, ESP_LOG_ATTR_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); } \
     } } while(0)
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 
@@ -264,14 +266,14 @@ void esp_log_va(esp_log_config_t config, const char *tag, const char *format, va
     if (ESP_LOG_VERSION == 1) { \
         if (_ESP_LOG_EARLY_ENABLED(configs)) { esp_rom_printf(_ESP_LOG_DRAM_LOG_FORMAT(log_tag_letter, format), tag __VA_OPT__(,) __VA_ARGS__); } \
     } else { \
-        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV | ESP_LOG_CONFIG_DIS_COLOR | ESP_LOG_CONFIG_DIS_TIMESTAMP), tag, DRAM_STR(format) __VA_OPT__(,) __VA_ARGS__); } \
+        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV | ESP_LOG_CONFIG_DIS_COLOR | ESP_LOG_CONFIG_DIS_TIMESTAMP), tag, ESP_LOG_ATTR_DRAM_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); } \
     } } while(0)
 #else // !(defined(__cplusplus) && (__cplusplus >  201703L))
 #define ESP_DRAM_LOG_IMPL(tag, format, configs, log_tag_letter, ...)  do { \
     if (ESP_LOG_VERSION == 1) { \
         if (_ESP_LOG_EARLY_ENABLED(configs)) { esp_rom_printf(_ESP_LOG_DRAM_LOG_FORMAT(log_tag_letter, format), tag, ##__VA_ARGS__); } \
     } else { \
-        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT(configs | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV | ESP_LOG_CONFIG_DIS_COLOR | ESP_LOG_CONFIG_DIS_TIMESTAMP), tag, DRAM_STR(format), ##__VA_ARGS__); } \
+        if (ESP_LOG_ENABLED(configs)) { esp_log(ESP_LOG_CONFIG_INIT((configs) | ESP_LOG_CONFIGS_DEFAULT | ESP_LOG_CONFIG_CONSTRAINED_ENV | ESP_LOG_CONFIG_DIS_COLOR | ESP_LOG_CONFIG_DIS_TIMESTAMP), tag, ESP_LOG_ATTR_DRAM_STR(format) ESP_LOG_ARGS(__VA_ARGS__)); } \
     } } while(0)
 #endif // !(defined(__cplusplus) && (__cplusplus >  201703L))
 /** @endcond */
