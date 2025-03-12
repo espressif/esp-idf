@@ -1,7 +1,8 @@
 [mapping:newlib]
 archive: libnewlib.a
 entries:
-  heap (noflash)
+  if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
+    heap (noflash)
   abort (noflash)
   assert (noflash)
   stdatomic (noflash)
