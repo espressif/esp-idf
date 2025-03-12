@@ -26,7 +26,7 @@ endif()
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
-    set(priv_requires esp_mm esp_pm)
+    set(priv_requires esp_mm esp_pm esp_psram)
 endif()
 
 idf_component_register(SRCS ${srcs}
