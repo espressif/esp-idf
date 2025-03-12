@@ -1,11 +1,5 @@
 # Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
 
-examples/system/app_trace_basic:
-  disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
-      temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
-
 examples/system/console/advanced:
   disable_test:
     - if: IDF_TARGET not in ["esp32", "esp32c3"]
