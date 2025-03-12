@@ -2,9 +2,9 @@
 
 examples/system/app_trace_basic:
   disable:
-    - if: IDF_TARGET == "esp32c6" or IDF_TARGET == "esp32h2"
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
-      reason: target esp32c6, esp32h2 is not supported yet
+      reason: target esp32p4 is not supported yet
 
 examples/system/base_mac_address:
   depends_components:
