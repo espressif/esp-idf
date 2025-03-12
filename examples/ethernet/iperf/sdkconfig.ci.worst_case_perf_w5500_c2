@@ -1,0 +1,44 @@
+# ------------------------------------------------------------------------
+# LOW PERFORMANCE BASELINE: IRAM Optimizations Disabled for Validation
+# ------------------------------------------------------------------------
+# This configuration is intentionally set up to represent a *worst-case*
+# performance profile:
+# - All IRAM optimizations for lwIP and Ethernet are disabled
+# - The goal is NOT to optimize but to validate that the system still works
+#   and to establish a functional baseline under poor performance conditions
+#
+# DO NOT USE THIS CONFIG FOR PERFORMANCE BENCHMARKING!
+# It exists to validate stability and functionality in low-IRAM scenarios.
+
+CONFIG_IDF_TARGET="esp32c2"
+
+# Increase main task stack size
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=7168
+
+# Enable filesystem for console commands history storage
+CONFIG_ESPTOOLPY_FLASHSIZE_4MB=y
+CONFIG_PARTITION_TABLE_CUSTOM=y
+CONFIG_PARTITION_TABLE_CUSTOM_FILENAME="partitions_example.csv"
+CONFIG_PARTITION_TABLE_FILENAME="partitions_example.csv"
+
+# Enable FreeRTOS stats formatting functions, needed for 'tasks' command
+CONFIG_FREERTOS_USE_TRACE_FACILITY=y
+CONFIG_FREERTOS_USE_STATS_FORMATTING_FUNCTIONS=y
+
+# Disable watch dog
+CONFIG_ESP_INT_WDT=n
+CONFIG_ESP_TASK_WDT_EN=n
+
+# Disable lwIP IRAM optimization
+CONFIG_LWIP_IRAM_OPTIMIZATION=n
+CONFIG_LWIP_EXTRA_IRAM_OPTIMIZATION=n
+
+# Disable Ethernet IRAM optimization
+CONFIG_ETH_IRAM_OPTIMIZATION=n
+
+# Choose w5500
+CONFIG_EXAMPLE_USE_SPI_ETHERNET=y
+CONFIG_EXAMPLE_USE_INTERNAL_ETHERNET=n
+CONFIG_EXAMPLE_SPI_ETHERNETS_NUM=1
+CONFIG_EXAMPLE_USE_W5500=y
+CONFIG_EXAMPLE_ETH_SPI_CLOCK_MHZ=20
