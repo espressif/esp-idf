@@ -541,10 +541,15 @@ static esp_err_t parlio_select_periph_clock(parlio_rx_unit_handle_t rx_unit, con
 
 #if CONFIG_PM_ENABLE
     if (clk_src != PARLIO_CLK_SRC_EXTERNAL) {
-        /* XTAL and PLL clock source will be turned off in light sleep, so we need to create a NO_LIGHT_SLEEP lock */
+        // XTAL and PLL clock source will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
+        esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
         sprintf(rx_unit->pm_lock_name, "parlio_rx_%d_%d", rx_unit->base.group->group_id, rx_unit->base.unit_id); // e.g. parlio_rx_0_0
-        esp_err_t ret  = esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, rx_unit->pm_lock_name, &rx_unit->pm_lock);
-        ESP_RETURN_ON_ERROR(ret, TAG, "create NO_LIGHT_SLEEP lock failed");
+#if CONFIG_IDF_TARGET_ESP32P4
+        // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+        lock_type = ESP_PM_CPU_FREQ_MAX;
+#endif
+        esp_err_t ret  = esp_pm_lock_create(lock_type, 0, rx_unit->pm_lock_name, &rx_unit->pm_lock);
+        ESP_RETURN_ON_ERROR(ret, TAG, "create pm lock failed");
     }
 #endif
 
