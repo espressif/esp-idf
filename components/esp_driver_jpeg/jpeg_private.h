@@ -118,6 +118,7 @@ typedef enum {
     JPEG_DMA2D_RX_EOF = BIT(0),     // DMA2D rx eof event
     JPEG_DMA2D_RX_DONE = BIT(1),    // DMA2D rx done event
     JPEG_DMA2D_TX_DONE = BIT(2),    // DMA2D tx done event
+    JPEG_DMA2D_RX_DESC_EMPTY = BIT(3),    // DMA2D rx empty event
 } jpeg_dma2d_evt_enum_t;
 
 typedef struct {
