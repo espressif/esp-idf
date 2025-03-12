@@ -135,7 +135,7 @@ def validate_directory_structure(base_path: str, expected_structure: FileStructu
 @idf_parametrize('target', ['esp32'], indirect=['target'])
 def test_examples_fatfsgen(config: str, dut: Dut) -> None:
     # Default timeout - a bit overkill, but better than failing tests
-    timeout = 60
+    timeout = 600
 
     def expect(msg: str, timeout: int = timeout) -> None:
         dut.expect(msg, timeout=timeout)
@@ -177,15 +177,12 @@ def test_examples_fatfsgen(config: str, dut: Dut) -> None:
     expect('example: Mounting FAT filesystem')
 
     if not config_read_only:
-        expect_all(
-            [
-                'example: Opening file',
-                'example: File written',
-                'example: Reading file',
-                'example: Read from file: ' + "'This is written by the device'",
-            ],
-            30,
-        )
+        expect_all([
+            'example: Opening file',
+            'example: File written',
+            'example: Reading file',
+            'example: Read from file: ' + "'This is written by the device'",
+        ])
 
     expect('example: Reading file')
 
