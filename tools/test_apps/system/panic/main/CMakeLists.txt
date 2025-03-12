@@ -9,6 +9,8 @@ if(CONFIG_TEST_MEMPROT)
             list(APPEND srcs "panic_utils/memprot_panic_utils_riscv.c")
         endif()
     endif()
+else()
+    list(APPEND srcs "panic_utils/panic_utils.c")
 endif()
 
 idf_component_register(SRCS "${srcs}"

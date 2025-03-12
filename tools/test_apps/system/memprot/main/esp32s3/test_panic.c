@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,10 @@ extern void esp_panic_handler(panic_info_t *info);
 extern volatile bool g_override_illegal_instruction;
 
 void __real_esp_panic_handler(panic_info_t *info);
-void __real_esp_panic_handler_reconfigure_wdts(void);
+void __real_esp_panic_handler_feed_wdts(void);
+void __real_esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms);
+void __real_esp_panic_handler_increment_entry_count(void);
 void __real_esp_cpu_stall(int core_id);
-
 
 static void disable_all_wdts(void)
 {
@@ -30,11 +31,17 @@ static void disable_all_wdts(void)
     wdt_hal_write_protect_enable(&wdt0_context);
 
 #if SOC_TIMER_GROUPS >= 2
-    //Interupt WDT is the Main Watchdog Timer of Timer Group 1
+    //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
 #endif
+
+    //Disable RTC WDT
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 }
 
 /* Memprot test specific IllegalInstruction exception handler:
@@ -59,13 +66,31 @@ void __wrap_esp_panic_handler(panic_info_t *info)
     }
 }
 
-void __wrap_esp_panic_handler_reconfigure_wdts(void)
+void __wrap_esp_panic_handler_feed_wdts(void)
 {
     if ( g_override_illegal_instruction == true ) {
         disable_all_wdts();
         return;
     } else {
-        __real_esp_panic_handler_reconfigure_wdts();
+        __real_esp_panic_handler_feed_wdts();
+    }
+}
+
+void __wrap_esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
+{
+    if ( g_override_illegal_instruction == true ) {
+        return;
+    } else {
+        __real_esp_panic_handler_enable_rtc_wdt(timeout_ms);
+    }
+}
+
+void __wrap_esp_panic_handler_increment_entry_count(void)
+{
+    if ( g_override_illegal_instruction == true ) {
+        return;
+    } else {
+        __real_esp_panic_handler_increment_entry_count();
     }
 }
 

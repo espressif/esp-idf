@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdlib.h>
 #include <string.h>
 
+#include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 #include "esp_attr.h"
 
@@ -70,12 +71,18 @@
 
 #define MWDT_DEFAULT_TICKS_PER_US       500
 
+#define PANIC_ENTRY_COUNT_MAX 2 // We allow at least 2 panic entries to let the panic handler process Double Exceptions
+
 bool g_panic_abort = false;
 char *g_panic_abort_details = NULL;
 
 static wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT();
 
+static uint32_t DRAM_ATTR g_panic_entry_count[portNUM_PROCESSORS] = {0}; // Number of times panic handler has been entered per core since multiple cores can enter the panic handler simultaneously
+
 #if !CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
+
+/********************** Panic print functions **********************/
 
 #if CONFIG_ESP_CONSOLE_UART
 static uart_hal_context_t s_panic_uart = { .dev = CONFIG_ESP_CONSOLE_UART_NUM == 0 ? &UART0 :&UART1 };
@@ -169,68 +176,106 @@ void panic_print_dec(int d)
 }
 #endif  // CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
-/*
-  If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
-  an overzealous watchdog decides to reset it. On the other hand, if we disable all watchdogs, we run
-  the risk of somehow halting in the panic handler and not resetting. That is why this routine kills
-  all watchdogs except the timer group 0 watchdog, and it reconfigures that to reset the chip after
-  one second.
-
-  We have to do this before we do anything that might cause issues in the WDT interrupt handlers,
-  for example stalling the other core on ESP32 may cause the ESP32_ECO3_CACHE_LOCK_FIX
-  handler to get stuck.
-*/
-void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms)
+static void print_abort_details(const void *f)
 {
-    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-#if SOC_TIMER_GROUPS >= 2
-	// IDF-3825
-    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
-#endif
-
-    //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
-    //Reconfigure TWDT (Timer Group 0)
-    wdt_hal_init(&wdt0_context, WDT_MWDT0, MWDT_LL_DEFAULT_CLK_PRESCALER, false); //Prescaler: wdt counts in ticks of TG0_WDT_TICK_US
-    wdt_hal_write_protect_disable(&wdt0_context);
-    wdt_hal_config_stage(&wdt0_context, 0, timeout_ms * 1000 / MWDT_DEFAULT_TICKS_PER_US, WDT_STAGE_ACTION_RESET_SYSTEM); //1 second before reset
-    wdt_hal_enable(&wdt0_context);
-    wdt_hal_write_protect_enable(&wdt0_context);
-
-#if SOC_TIMER_GROUPS >= 2
-    //Disable IWDT (Timer Group 1)
-    wdt_hal_write_protect_disable(&wdt1_context);
-    wdt_hal_disable(&wdt1_context);
-    wdt_hal_write_protect_enable(&wdt1_context);
-#endif
+    panic_print_str(g_panic_abort_details);
 }
 
-/*
-  This disables all the watchdogs for when we call the gdbstub.
-*/
-static inline void disable_all_wdts(void)
+/********************** Panic handler watchdog timer functions **********************/
+
+/* This function disables the Timer Group WDTs */
+void esp_panic_handler_disable_timg_wdts(void)
 {
     wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
-#if SOC_TIMER_GROUPS >= 2
-    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
-#endif
-
-    //Todo: Refactor to use Interrupt or Task Watchdog API, and a system level WDT context
-    //Task WDT is the Main Watchdog Timer of Timer Group 0
     wdt_hal_write_protect_disable(&wdt0_context);
     wdt_hal_disable(&wdt0_context);
     wdt_hal_write_protect_enable(&wdt0_context);
 
 #if SOC_TIMER_GROUPS >= 2
-    //Interrupt WDT is the Main Watchdog Timer of Timer Group 1
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
     wdt_hal_write_protect_disable(&wdt1_context);
     wdt_hal_disable(&wdt1_context);
     wdt_hal_write_protect_enable(&wdt1_context);
-#endif
+#endif /* SOC_TIMER_GROUPS >= 2 */
 }
 
-static void print_abort_details(const void *f)
+/* This function enables the RTC WDT with the given timeout in milliseconds */
+void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
 {
-    panic_print_str(g_panic_abort_details);
+    wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
+    uint32_t stage_timeout_ticks = (uint32_t)(timeout_ms * rtc_clk_slow_freq_get_hz() / 1000ULL);
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_RTC);
+    wdt_hal_enable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+}
+
+/* Feed the watchdogs if they are enabled and if we are not already in the panic handler */
+void esp_panic_handler_feed_wdts(void)
+{
+    /* If we have already entered the panic handler multiple times,
+     * we should not feed the WDTs. This is because we need an
+     * alternate mechanism to reset the system if we happen to be stuck
+     * in a panic loop.
+     */
+    if (g_panic_entry_count[esp_cpu_get_core_id()] > PANIC_ENTRY_COUNT_MAX) {
+        return;
+    }
+
+    // Feed Timer Group 0 WDT
+    wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+    if (wdt_hal_is_enabled(&wdt0_context)) {
+        wdt_hal_write_protect_disable(&wdt0_context);
+        wdt_hal_feed(&wdt0_context);
+        wdt_hal_write_protect_enable(&wdt0_context);
+    }
+
+#if SOC_TIMER_GROUPS >= 2
+    // Feed Timer Group 1 WDT
+    wdt_hal_context_t wdt1_context = {.inst = WDT_MWDT1, .mwdt_dev = &TIMERG1};
+    if (wdt_hal_is_enabled(&wdt1_context)) {
+        wdt_hal_write_protect_disable(&wdt1_context);
+        wdt_hal_feed(&wdt1_context);
+        wdt_hal_write_protect_enable(&wdt1_context);
+    }
+#endif /* SOC_TIMER_GROUPS >= 2 */
+
+    // Feed RTC WDT
+    if (wdt_hal_is_enabled(&rtc_wdt_ctx)) {
+        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+        wdt_hal_feed(&rtc_wdt_ctx);
+        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+    }
+}
+
+/* This function disables all the watchdogs */
+static inline void disable_all_wdts(void)
+{
+    //Disable Timer Group WDTs
+    esp_panic_handler_disable_timg_wdts();
+
+    //Disable RTC WDT
+    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
+    wdt_hal_disable(&rtc_wdt_ctx);
+    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
+}
+
+/********************** Panic handler functions **********************/
+
+/* This function is called from the panic handler entry point to increment the panic entry count */
+void esp_panic_handler_increment_entry_count(void)
+{
+    int core_id = esp_cpu_get_core_id();
+
+    g_panic_entry_count[core_id]++;
+    if (g_panic_entry_count[core_id] > PANIC_ENTRY_COUNT_MAX) {
+        /* If we have already panicked multiple times, chances are
+         * that the panic handler itself is broken. In this case, we
+         * should just reset the system.
+         */
+        panic_print_str("Panic handler entered multiple times. Abort panic handling. Rebooting ...\r\n");
+        panic_restart();
+    }
 }
 
 // Control arrives from chip-specific panic handler, environment prepared for
@@ -239,8 +284,8 @@ static void print_abort_details(const void *f)
 void esp_panic_handler(panic_info_t *info)
 {
     // The port-level panic handler has already called this, but call it again
-    // to reset the TG0WDT period
-    esp_panic_handler_reconfigure_wdts(1000);
+    // to reset the RTC WDT period
+    esp_panic_handler_feed_wdts();
 
     // If the exception was due to an abort, override some of the panic info
     if (g_panic_abort) {
@@ -251,28 +296,28 @@ void esp_panic_handler(panic_info_t *info)
     }
 
     /*
-      * For any supported chip, the panic handler prints the contents of panic_info_t in the following format:
-      *
-      *
-      * Guru Meditation Error: Core <core> (<exception>). <description>
-      * <details>
-      *
-      * <state>
-      *
-      * <elf_info>
-      *
-      *
-      * ----------------------------------------------------------------------------------------
-      * core - core where exception was triggered
-      * exception - what kind of exception occurred
-      * description - a short description regarding the exception that occurred
-      * details - more details about the exception
-      * state - processor state like register contents, and backtrace
-      * elf_info - details about the image currently running
-      *
-      * NULL fields in panic_info_t are not printed.
-      *
-      * */
+     * For any supported chip, the panic handler prints the contents of panic_info_t in the following format:
+     *
+     *
+     * Guru Meditation Error: Core <core> (<exception>). <description>
+     * <details>
+     *
+     * <state>
+     *
+     * <elf_info>
+     *
+     *
+     * ----------------------------------------------------------------------------------------
+     * core - core where exception was triggered
+     * exception - what kind of exception occurred
+     * description - a short description regarding the exception that occurred
+     * details - more details about the exception
+     * state - processor state like register contents, and backtrace
+     * elf_info - details about the image currently running
+     *
+     * NULL fields in panic_info_t are not printed.
+     *
+     */
     if (info->reason) {
         panic_print_str("Guru Meditation Error: Core ");
         panic_print_dec(info->core);
@@ -310,7 +355,6 @@ void esp_panic_handler(panic_info_t *info)
         panic_print_str("Setting breakpoint at 0x");
         panic_print_hex((uint32_t)info->addr);
         panic_print_str(" and returning...\r\n");
-        disable_all_wdts();
 #if CONFIG_APPTRACE_ENABLE
 #if CONFIG_APPTRACE_SV_ENABLE
         SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
@@ -320,24 +364,16 @@ void esp_panic_handler(panic_info_t *info)
 #endif
 #endif
 
+        disable_all_wdts();
         esp_cpu_set_breakpoint(0, info->addr); // use breakpoint 0
         return;
     }
 #endif //CONFIG_ESP_DEBUG_OCDAWARE
-    // start panic WDT to restart system if we hang in this handler
-    if (!wdt_hal_is_enabled(&rtc_wdt_ctx)) {
-        wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
-        uint32_t stage_timeout_ticks = (uint32_t)(7000ULL * rtc_clk_slow_freq_get_hz() / 1000ULL);
-        wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-        wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
-        // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
-        // @ 115200 UART speed it will take more than 6 sec to print them out.
-        wdt_hal_enable(&rtc_wdt_ctx);
-        wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
-    }
-
-    esp_panic_handler_reconfigure_wdts(1000); // Restart WDT again
+    /* Feed the WDTs here. This is done to fascilitate a "slow" UART
+     * which might take a longer time to print the state of the processor.
+     */
+    esp_panic_handler_feed_wdts();
 
     PANIC_INFO_DUMP(info, state);
     panic_print_str("\r\n");
@@ -361,66 +397,45 @@ void esp_panic_handler(panic_info_t *info)
     panic_print_str("\r\n");
 
 #if CONFIG_APPTRACE_ENABLE
-    disable_all_wdts();
+    esp_panic_handler_feed_wdts();
 #if CONFIG_APPTRACE_SV_ENABLE
     SEGGER_RTT_ESP_FlushNoLock(CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH, APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #else
     esp_apptrace_flush_nolock(ESP_APPTRACE_DEST_TRAX, CONFIG_APPTRACE_POSTMORTEM_FLUSH_THRESH,
                               APPTRACE_ONPANIC_HOST_FLUSH_TMO);
 #endif
-    esp_panic_handler_reconfigure_wdts(1000); // restore WDT config
 #endif // CONFIG_APPTRACE_ENABLE
 
 #if CONFIG_ESP_COREDUMP_ENABLE
-    static bool s_dumping_core;
+    esp_panic_handler_feed_wdts();
+    static bool s_dumping_core = false;
     if (s_dumping_core) {
         panic_print_str("Re-entered core dump! Exception happened during core dump!\r\n");
     } else {
-        disable_all_wdts();
         s_dumping_core = true;
         esp_core_dump_write(info);
         s_dumping_core = false;
-        esp_panic_handler_reconfigure_wdts(1000);
     }
 #endif /* CONFIG_ESP_COREDUMP_ENABLE */
 
 #if CONFIG_ESP_SYSTEM_PANIC_GDBSTUB
-    disable_all_wdts();
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_disable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
     panic_print_str("Entering gdb stub now.\r\n");
+    disable_all_wdts();
     esp_gdbstub_panic_handler((void *)info->frame);
 #else
 #if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
-    // start RTC WDT if it hasn't been started yet and set the timeout to more than the delay time
-    wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
-    uint32_t stage_timeout_ticks = (uint32_t)(((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 1) * 1000
-            * rtc_clk_slow_freq_get_hz()) / 1000ULL);
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_config_stage(&rtc_wdt_ctx, WDT_STAGE0, stage_timeout_ticks, WDT_STAGE_ACTION_RESET_SYSTEM);
-    // 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
-    // @ 115200 UART speed it will take more than 6 sec to print them out.
-    wdt_hal_enable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
-
-    esp_panic_handler_reconfigure_wdts((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 1) * 1000);
+    esp_panic_handler_feed_wdts();
 
     panic_print_str("Rebooting in ");
     panic_print_dec(CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS);
     panic_print_str(" seconds...\r\n");
 
     esp_rom_delay_us(CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS * 1000000);
-
-    esp_panic_handler_reconfigure_wdts(1000);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS */
-
-    wdt_hal_write_protect_disable(&rtc_wdt_ctx);
-    wdt_hal_disable(&rtc_wdt_ctx);
-    wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 
 #if CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT
 
+    esp_panic_handler_feed_wdts();
     if (esp_reset_reason_get_hint() == ESP_RST_UNKNOWN) {
         switch (info->exception) {
         case PANIC_EXCEPTION_IWDT:
@@ -440,9 +455,9 @@ void esp_panic_handler(panic_info_t *info)
     panic_print_str("Rebooting...\r\n");
     panic_restart();
 #else /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
-    disable_all_wdts();
     panic_print_str("CPU halted.\r\n");
     esp_system_reset_modules_on_exit();
+    disable_all_wdts();
     while (1);
 #endif /* CONFIG_ESP_SYSTEM_PANIC_PRINT_REBOOT || CONFIG_ESP_SYSTEM_PANIC_SILENT_REBOOT */
 #endif /* CONFIG_ESP_SYSTEM_PANIC_GDBSTUB */
