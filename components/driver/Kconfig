@@ -153,6 +153,15 @@ menu "Driver Configurations"
                 This configuration option allows the user to bypass the conflict check mechanism with legacy code.
     endmenu # Legacy I2S Driver Configurationss
 
+    menu "Legacy I2C Driver Configurations"
+        depends on SOC_I2C_SUPPORTED
+        config I2C_SKIP_LEGACY_CONFLICT_CHECK
+            bool "Skip legacy conflict check"
+            default n
+            help
+                This configuration option allows the user to bypass the conflict check mechanism with legacy code.
+    endmenu # Legacy I2C Driver Configurationss
+
     menu "Legacy PCNT Driver Configurations"
         depends on SOC_PCNT_SUPPORTED
         config PCNT_SUPPRESS_DEPRECATE_WARN
