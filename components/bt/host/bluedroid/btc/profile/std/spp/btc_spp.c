@@ -1165,7 +1165,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         param.close.async = p_data->rfc_close.async;
         if (spp_local_param.spp_mode == ESP_SPP_MODE_CB) {
             osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-            slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
+            slot = spp_find_slot_by_id((uint32_t)p_data->rfc_close.user_data);
             if (!slot) {
                 param.close.status = ESP_SPP_NO_CONNECTION;
                 osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
@@ -1179,7 +1179,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
             bool need_call = true;
             do {
                 osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-                slot = spp_find_slot_by_handle(p_data->rfc_close.handle);
+                slot = spp_find_slot_by_id((uint32_t)p_data->rfc_close.user_data);
                 if (!slot) {
                     param.close.status = ESP_SPP_NO_CONNECTION;
                     osi_mutex_unlock(&spp_local_param.spp_slot_mutex);
