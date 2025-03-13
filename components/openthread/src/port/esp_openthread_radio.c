@@ -38,10 +38,8 @@
 
 #define ESP_RECEIVE_SENSITIVITY -120
 #define ESP_OPENTHREAD_XTAL_ACCURACY CONFIG_OPENTHREAD_XTAL_ACCURACY
-#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 #define ESP_OPENTHREAD_CSL_ACCURACY CONFIG_OPENTHREAD_CSL_ACCURACY
 #define ESP_OPENTHREAD_CSL_UNCERTAIN CONFIG_OPENTHREAD_CSL_UNCERTAIN
-#endif
 
 #define EVENT_TX_DONE (1 << 0)
 #define EVENT_TX_FAILED (1 << 1)
@@ -581,6 +579,8 @@ otError otPlatRadioEnableCsl(otInstance *aInstance, uint32_t aCslPeriod, otShort
     return OT_ERROR_NONE;
 }
 
+#endif
+
 uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
     return ESP_OPENTHREAD_CSL_ACCURACY;
@@ -590,8 +590,6 @@ uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
 {
     return ESP_OPENTHREAD_CSL_UNCERTAIN;
 }
-
-#endif
 
 // events
 void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *frame, const uint8_t *ack,
@@ -620,11 +618,7 @@ static void IRAM_ATTR convert_to_ot_frame(uint8_t *data, esp_ieee802154_frame_in
     radio_frame->mInfo.mRxInfo.mRssi = frame_info->rssi;
     radio_frame->mInfo.mRxInfo.mLqi = frame_info->lqi;
     radio_frame->mInfo.mRxInfo.mAckedWithFramePending = frame_info->pending;
-    radio_frame->mInfo.mRxInfo.mTimestamp = otPlatTimeGet();
-
-#if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
     radio_frame->mInfo.mRxInfo.mTimestamp = frame_info->timestamp;
-#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 }
 
 static esp_err_t IRAM_ATTR enh_ack_set_security_addr_and_key(otRadioFrame *ack_frame)
