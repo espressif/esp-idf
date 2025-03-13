@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,8 +65,9 @@ int8_t esp_ieee802154_get_txpower(void)
 
 esp_err_t esp_ieee802154_set_txpower(int8_t power)
 {
-    ieee802154_pib_set_power(power);
-    return ESP_OK;
+    esp_ieee802154_txpower_table_t power_table;
+    memset(&power_table, power, sizeof(power_table));
+    return ieee802154_pib_set_power_table(power_table);
 }
 
 esp_err_t esp_ieee802154_set_power_table(esp_ieee802154_txpower_table_t power_table)
