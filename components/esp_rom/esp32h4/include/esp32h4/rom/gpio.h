@@ -6,6 +6,10 @@
 
 #pragma once
 
+#include <stdint.h>
+#include <stdbool.h>
+#include "soc/gpio_reg.h"
+
 //TODO: [ESP32H4] IDF-12390 inherit from verification branch, need check
 
 #ifdef __cplusplus

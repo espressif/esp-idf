@@ -53,6 +53,7 @@ WR_DIS.UART_PRINT_CONTROL,                       EFUSE_BLK0,  18,   1, [] wr_dis
 WR_DIS.FORCE_SEND_RESUME,                        EFUSE_BLK0,  18,   1, [] wr_dis of FORCE_SEND_RESUME
 WR_DIS.SECURE_VERSION,                           EFUSE_BLK0,  18,   1, [] wr_dis of SECURE_VERSION
 WR_DIS.HUK_GEN_STATE,                            EFUSE_BLK0,  19,   1, [] wr_dis of HUK_GEN_STATE
+WR_DIS.BLK1,                                     EFUSE_BLK0,  20,   1, [] wr_dis of BLOCK1
 WR_DIS.MAC,                                      EFUSE_BLK0,  20,   1, [WR_DIS.MAC_FACTORY] wr_dis of MAC
 WR_DIS.MAC_EXT,                                  EFUSE_BLK0,  20,   1, [] wr_dis of MAC_EXT
 WR_DIS.PVT_LIMIT,                                EFUSE_BLK0,  20,   1, [] wr_dis of PVT_LIMIT
@@ -64,6 +65,7 @@ WR_DIS.HYS_EN_PAD,                               EFUSE_BLK0,  20,   1, [] wr_dis
 WR_DIS.PVT_GLITCH_CHARGE_RESET,                  EFUSE_BLK0,  20,   1, [] wr_dis of PVT_GLITCH_CHARGE_RESET
 WR_DIS.VDD_SPI_LDO_ADJUST,                       EFUSE_BLK0,  20,   1, [] wr_dis of VDD_SPI_LDO_ADJUST
 WR_DIS.FLASH_LDO_POWER_SEL,                      EFUSE_BLK0,  20,   1, [] wr_dis of FLASH_LDO_POWER_SEL
+WR_DIS.SYS_DATA_PART1,                           EFUSE_BLK0,  21,   1, [] wr_dis of BLOCK2
 WR_DIS.BLOCK_USR_DATA,                           EFUSE_BLK0,  22,   1, [WR_DIS.USER_DATA] wr_dis of BLOCK_USR_DATA
 WR_DIS.CUSTOM_MAC,                               EFUSE_BLK0,  22,   1, [WR_DIS.MAC_CUSTOM WR_DIS.USER_DATA_MAC_CUSTOM] wr_dis of CUSTOM_MAC
 WR_DIS.BLOCK_KEY0,                               EFUSE_BLK0,  23,   1, [WR_DIS.KEY0] wr_dis of BLOCK_KEY0
@@ -141,7 +143,8 @@ MAC,                                             EFUSE_BLK1,  40,   8, [MAC_FACT
 ,                                                EFUSE_BLK1,  16,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   8,   8, [MAC_FACTORY] MAC address
 ,                                                EFUSE_BLK1,   0,   8, [MAC_FACTORY] MAC address
-MAC_EXT,                                         EFUSE_BLK1,  48,  16, [] Represents the extended bits of MAC address
+MAC_EXT,                                         EFUSE_BLK1,  56,   8, [] Stores the extended bits of MAC address
+,                                                EFUSE_BLK1,  48,   8, [] Stores the extended bits of MAC address
 PVT_LIMIT,                                       EFUSE_BLK1,  64,  16, [] Power glitch monitor threthold
 PVT_CELL_SELECT,                                 EFUSE_BLK1,  80,   7, [] Power glitch monitor PVT cell select
 PVT_PUMP_LIMIT,                                  EFUSE_BLK1,  87,   8, [] Use to configure voltage monitor limit for charge pump

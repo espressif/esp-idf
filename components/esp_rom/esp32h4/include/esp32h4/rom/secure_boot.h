@@ -10,7 +10,6 @@
 #include <stdbool.h>
 #include "ets_sys.h"
 #include "ecdsa.h"
-#include "rsa_pss.h"
 #include "esp_assert.h"
 
 #ifdef __cplusplus

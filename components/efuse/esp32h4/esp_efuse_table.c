@@ -9,7 +9,7 @@
 #include <assert.h>
 #include "esp_efuse_table.h"
 
-// md5_digest_table 6bfa2ae917ac6cbce5b70a55ea6a78bd
+// md5_digest_table 39c442690c2273d557b5bb0db99fbe04
 // This file was generated from the file esp_efuse_table.csv. DO NOT CHANGE THIS FILE MANUALLY.
 // If you want to change some fields, you need to change esp_efuse_table.csv file
 // then run `efuse_common_table` or `efuse_custom_table` command it will generate this file.
@@ -183,6 +183,10 @@ static const esp_efuse_desc_t WR_DIS_HUK_GEN_STATE[] = {
     {EFUSE_BLK0, 19, 1}, 	 // [] wr_dis of HUK_GEN_STATE,
 };
 
+static const esp_efuse_desc_t WR_DIS_BLK1[] = {
+    {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of BLOCK1,
+};
+
 static const esp_efuse_desc_t WR_DIS_MAC[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [WR_DIS.MAC_FACTORY] wr_dis of MAC,
 };
@@ -225,6 +229,10 @@ static const esp_efuse_desc_t WR_DIS_VDD_SPI_LDO_ADJUST[] = {
 
 static const esp_efuse_desc_t WR_DIS_FLASH_LDO_POWER_SEL[] = {
     {EFUSE_BLK0, 20, 1}, 	 // [] wr_dis of FLASH_LDO_POWER_SEL,
+};
+
+static const esp_efuse_desc_t WR_DIS_SYS_DATA_PART1[] = {
+    {EFUSE_BLK0, 21, 1}, 	 // [] wr_dis of BLOCK2,
 };
 
 static const esp_efuse_desc_t WR_DIS_BLOCK_USR_DATA[] = {
@@ -521,7 +529,8 @@ static const esp_efuse_desc_t MAC[] = {
 };
 
 static const esp_efuse_desc_t MAC_EXT[] = {
-    {EFUSE_BLK1, 48, 16}, 	 // [] Represents the extended bits of MAC address,
+    {EFUSE_BLK1, 56, 8}, 	 // [] Stores the extended bits of MAC address,
+    {EFUSE_BLK1, 48, 8}, 	 // [] Stores the extended bits of MAC address,
 };
 
 static const esp_efuse_desc_t PVT_LIMIT[] = {
@@ -810,6 +819,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_HUK_GEN_STATE[] = {
     NULL
 };
 
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_BLK1[] = {
+    &WR_DIS_BLK1[0],    		// [] wr_dis of BLOCK1
+    NULL
+};
+
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_MAC[] = {
     &WR_DIS_MAC[0],    		// [WR_DIS.MAC_FACTORY] wr_dis of MAC
     NULL
@@ -862,6 +876,11 @@ const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_VDD_SPI_LDO_ADJUST[] = {
 
 const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_FLASH_LDO_POWER_SEL[] = {
     &WR_DIS_FLASH_LDO_POWER_SEL[0],    		// [] wr_dis of FLASH_LDO_POWER_SEL
+    NULL
+};
+
+const esp_efuse_desc_t* ESP_EFUSE_WR_DIS_SYS_DATA_PART1[] = {
+    &WR_DIS_SYS_DATA_PART1[0],    		// [] wr_dis of BLOCK2
     NULL
 };
 
@@ -1231,7 +1250,8 @@ const esp_efuse_desc_t* ESP_EFUSE_MAC[] = {
 };
 
 const esp_efuse_desc_t* ESP_EFUSE_MAC_EXT[] = {
-    &MAC_EXT[0],    		// [] Represents the extended bits of MAC address
+    &MAC_EXT[0],    		// [] Stores the extended bits of MAC address
+    &MAC_EXT[1],    		// [] Stores the extended bits of MAC address
     NULL
 };
 
