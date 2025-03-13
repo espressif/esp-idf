@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -100,4 +100,26 @@ TEST_CASE("sdmmc read/write using unaligned buffer, slot 0, 4-bit", "[sdmmc]")
 TEST_CASE("sdmmc read/write using unaligned buffer, slot 1, 4-bit", "[sdmmc]")
 {
     do_one_sdmmc_rw_test_unaligned_buffer(SLOT_1, 4, SDMMC_FREQ_DEFAULT, 0);
+}
+
+/* ========== Read/write tests with higher priority tasks running concurrently ========== */
+
+static void do_one_sdmmc_rw_test_highprio_task(int slot, int width)
+{
+    sdmmc_card_t card;
+    sdmmc_test_sd_skip_if_board_incompatible(slot, width, SDMMC_FREQ_DEFAULT, NO_DDR);
+    sdmmc_test_sd_begin(slot, width, SDMMC_FREQ_DEFAULT, NO_DDR, &card);
+    sdmmc_card_print_info(stdout, &card);
+    sdmmc_test_rw_highprio_task(&card);
+    sdmmc_test_sd_end(&card);
+}
+
+TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 0, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_highprio_task(0, 4);
+}
+
+TEST_CASE("sdmmc read/write with concurrent high-prio task, slot 1, 4-bit", "[sdmmc]")
+{
+    do_one_sdmmc_rw_test_highprio_task(1, 4);
 }

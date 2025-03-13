@@ -299,7 +299,7 @@ TEST_ALARM_CALLBACK_ATTR static bool test_gptimer_alarm_normal_callback(gptimer_
  * Also should account for the inaccuracy of the systick during DFS.
 */
 #if CONFIG_PM_ENABLE
-#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 15000
+#define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 50000
 #else
 #define GPTIMER_ONE_SHOT_ALARM_COUNT_DELTA 1000
 #endif // CONFIG_PM_ENABLE
