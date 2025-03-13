@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -788,9 +788,14 @@ static esp_err_t lcd_rgb_panel_select_clock_src(esp_rgb_panel_t *rgb_panel, lcd_
     }
 
     // create pm lock based on different clock source
-    // clock sources like PLL and XTAL will be turned off in light sleep
 #if CONFIG_PM_ENABLE
-    ESP_RETURN_ON_ERROR(esp_pm_lock_create(ESP_PM_NO_LIGHT_SLEEP, 0, "rgb_panel", &rgb_panel->pm_lock), TAG, "create pm lock failed");
+    // clock sources like PLL and XTAL will be turned off in light sleep, so basically a NO_LIGHT_SLEEP lock is sufficient
+    esp_pm_lock_type_t lock_type = ESP_PM_NO_LIGHT_SLEEP;
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    lock_type = ESP_PM_CPU_FREQ_MAX;
+#endif
+    ESP_RETURN_ON_ERROR(esp_pm_lock_create(lock_type, 0, "rgb_panel", &rgb_panel->pm_lock), TAG, "create pm lock failed");
     // hold the lock during the whole lifecycle of RGB panel
     esp_pm_lock_acquire(rgb_panel->pm_lock);
     ESP_LOGD(TAG, "installed pm lock and hold the lock during the whole panel lifecycle");
