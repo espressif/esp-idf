@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,7 +42,6 @@ extern "C" {
 #define GPIO_LL_GET_HW(num) (((num) == 0) ? (&GPIO) : NULL)
 
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
-#define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
 
 /**
  * @brief Get the configuration for an IO
