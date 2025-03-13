@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,39 +33,6 @@ extern "C" {
 // On ESP32S3, pro cpu and app cpu shares the same interrupt enable bit
 #define GPIO_LL_INTR_ENA      (BIT(0))
 #define GPIO_LL_NMI_INTR_ENA  (BIT(1))
-
-/**
- * @brief Get the configuration for an IO
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
- */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
-{
-    uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
-    uint32_t bit_mask = 1 << bit_shift;
-    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    *oe = (((gpio_num < 32) ? hw->enable : hw->enable1.val) & bit_mask) >> bit_shift;
-    *od = hw->pin[gpio_num].pad_driver;
-    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].func_sel;
-    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
-}
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -710,6 +677,39 @@ static inline void gpio_ll_sleep_output_disable(gpio_dev_t *hw, uint32_t gpio_nu
 static inline void gpio_ll_sleep_output_enable(gpio_dev_t *hw, uint32_t gpio_num)
 {
     PIN_SLP_OUTPUT_ENABLE(GPIO_PIN_MUX_REG[gpio_num]);
+}
+
+/**
+ * @brief Get the configuration for an IO
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @param pu Pull-up enabled or not
+ * @param pd Pull-down enabled or not
+ * @param ie Input enabled or not
+ * @param oe Output enabled or not
+ * @param od Open-drain enabled or not
+ * @param drv Drive strength value
+ * @param fun_sel IOMUX function selection value
+ * @param sig_out Outputting peripheral signal index
+ * @param slp_sel Pin sleep mode enabled or not
+ */
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
+                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+{
+    uint32_t bit_shift = (gpio_num < 32) ? gpio_num : (gpio_num - 32);
+    uint32_t bit_mask = 1 << bit_shift;
+    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
+    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    *oe = (((gpio_num < 32) ? hw->enable : hw->enable1.val) & bit_mask) >> bit_shift;
+    *od = hw->pin[gpio_num].pad_driver;
+    gpio_ll_get_drive_capability(hw, gpio_num, (gpio_drive_cap_t *)drv); // specific workaround in the LL
+    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    *sig_out = hw->func_out_sel_cfg[gpio_num].func_sel;
+    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
 #ifdef __cplusplus
