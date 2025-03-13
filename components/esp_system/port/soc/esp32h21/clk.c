@@ -24,6 +24,7 @@
 #include "soc/lp_clkrst_reg.h"
 #include "soc/pcr_reg.h"
 #include "hal/wdt_hal.h"
+#include "esp_private/esp_modem_clock.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/esp_clk.h"
 #include "esp_private/esp_pmu.h"
@@ -79,6 +80,7 @@ __attribute__((weak)) void esp_clk_init(void)
     wdt_hal_write_protect_enable(&rtc_wdt_ctx);
 #endif
 
+    modem_clock_deselect_all_module_lp_clock_source();
 #if defined(CONFIG_RTC_CLK_SRC_EXT_CRYS)
     select_rtc_slow_clk(SOC_RTC_SLOW_CLK_SRC_XTAL32K);
 #elif defined(CONFIG_RTC_CLK_SRC_EXT_OSC)
@@ -118,9 +120,6 @@ __attribute__((weak)) void esp_clk_init(void)
 
     // Re calculate the ccount to make time calculation correct.
     esp_cpu_set_cycle_count((uint64_t)esp_cpu_get_cycle_count() * new_freq_mhz / old_freq_mhz);
-
-    // Set crypto clock (`clk_sec`) to use 96M PLL clock
-    REG_SET_FIELD(PCR_SEC_CONF_REG, PCR_SEC_CLK_SEL, 0x3);
 }
 
 static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
