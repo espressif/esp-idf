@@ -112,3 +112,29 @@ def test_psram_esp32c5(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32c61'], indirect=['target'])
 def test_psram_esp32c61(dut: Dut) -> None:
     dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'xip_psram_no_boot_init',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32c5', 'esp32c61'], indirect=['target'])
+def test_xip_psram_no_boot_init(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'psram_no_boot_init',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['supported_targets'], indirect=['target'])
+def test_psram_no_boot_init(dut: Dut) -> None:
+    dut.run_all_single_board_cases()

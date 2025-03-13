@@ -1,10 +1,15 @@
 idf_build_get_property(target IDF_TARGET)
 
-set(srcs "test_app_main.c"
-         "test_psram.c")
+set(srcs "test_app_main.c")
 
-if(${target} STREQUAL "esp32")
-    list(APPEND srcs "test_himem.c" "test_4mpsram.c")
+if(CONFIG_SPIRAM_BOOT_INIT)
+    list(APPEND srcs "test_psram.c")
+
+    if(${target} STREQUAL "esp32")
+        list(APPEND srcs "test_himem.c" "test_4mpsram.c")
+    endif()
+else()
+    list(APPEND srcs "test_psram_no_boot_init.c")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
