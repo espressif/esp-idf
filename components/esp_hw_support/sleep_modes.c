@@ -1601,9 +1601,15 @@ esp_err_t esp_sleep_disable_wakeup_source(esp_sleep_source_t source)
 #endif
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_GPIO, RTC_GPIO_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_GPIO_TRIG_EN;
+#if SOC_PMU_SUPPORTED && (SOC_UART_HP_NUM > 2)
+    } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN | RTC_UART2_TRIG_EN))) {
+        s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN | RTC_UART2_TRIG_EN);
+    }
+#else
     } else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_UART, (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN))) {
         s_config.wakeup_triggers &= ~(RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN);
     }
+#endif
 #if CONFIG_ULP_COPROC_TYPE_FSM
     else if (CHECK_SOURCE(source, ESP_SLEEP_WAKEUP_ULP, RTC_ULP_TRIG_EN)) {
         s_config.wakeup_triggers &= ~RTC_ULP_TRIG_EN;
@@ -2082,6 +2088,10 @@ esp_err_t esp_sleep_enable_uart_wakeup(int uart_num)
         s_config.wakeup_triggers |= RTC_UART0_TRIG_EN;
     } else if (uart_num == UART_NUM_1) {
         s_config.wakeup_triggers |= RTC_UART1_TRIG_EN;
+#if SOC_PMU_SUPPORTED && (SOC_UART_HP_NUM > 2)
+    } else if (uart_num == UART_NUM_2) {
+        s_config.wakeup_triggers |= RTC_UART2_TRIG_EN;
+#endif
     } else {
         return ESP_ERR_INVALID_ARG;
     }
@@ -2165,7 +2175,11 @@ esp_sleep_wakeup_cause_t esp_sleep_get_wakeup_cause(void)
         return ESP_SLEEP_WAKEUP_TIMER;
     } else if (wakeup_cause & RTC_GPIO_TRIG_EN) {
         return ESP_SLEEP_WAKEUP_GPIO;
+#if SOC_PMU_SUPPORTED && (SOC_UART_HP_NUM > 2)
+    } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN | RTC_UART2_TRIG_EN)) {
+#else
     } else if (wakeup_cause & (RTC_UART0_TRIG_EN | RTC_UART1_TRIG_EN)) {
+#endif
         return ESP_SLEEP_WAKEUP_UART;
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     } else if (wakeup_cause & RTC_EXT0_TRIG_EN) {
@@ -2571,6 +2585,11 @@ static uint32_t get_sleep_clock_icg_flags(void)
     if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART1] > 0) {
         clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART1);
     }
+#if SOC_UART_HP_NUM > 2
+    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_UART2] > 0) {
+        clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART2);
+    }
+#endif
 #endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
     return clk_flags;
 }

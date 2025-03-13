@@ -92,6 +92,9 @@ typedef enum {
     ESP_SLEEP_CLOCK_LEDC,   //!< The clock ICG cell mapping of LEDC
     ESP_SLEEP_CLOCK_UART0,   //!< The clock ICG cell mapping of UART0
     ESP_SLEEP_CLOCK_UART1,   //!< The clock ICG cell mapping of UART1
+#if SOC_UART_HP_NUM > 2
+    ESP_SLEEP_CLOCK_UART2,   //!< The clock ICG cell mapping of UART2
+#endif
     ESP_SLEEP_CLOCK_MAX     //!< Number of ICG cells
 } esp_sleep_clock_t;
 

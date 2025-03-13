@@ -18,6 +18,7 @@ extern "C" {
 #define PMU_WIFI_SOC_WAKEUP_EN      BIT(5)
 #define PMU_UART0_WAKEUP_EN         BIT(6)
 #define PMU_UART1_WAKEUP_EN         BIT(7)
+#define PMU_UART2_WAKEUP_EN         BIT(9)
 #define PMU_BLE_SOC_WAKEUP_EN       BIT(10)
 // #define PMU_LP_CORE_WAKEUP_EN       BIT(11)
 #define PMU_USB_WAKEUP_EN           BIT(14)
