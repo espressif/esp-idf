@@ -276,7 +276,6 @@ menu "OpenThread"
             help
                 Select this option to enable CSL feature
         menu "CSL Configurations"
-            depends on OPENTHREAD_CSL_ENABLE
             config OPENTHREAD_CSL_ACCURACY
                 int "The current CSL rx/tx scheduling drift, in units of ± ppm"
 
