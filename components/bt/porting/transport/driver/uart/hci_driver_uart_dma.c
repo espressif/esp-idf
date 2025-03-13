@@ -19,7 +19,6 @@
 #include "common/hci_driver_mem.h"
 #include "hci_driver_uart.h"
 
-#include "ble_hci_trans.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 #include "hal/uhci_ll.h"
@@ -81,7 +80,7 @@ typedef struct {
 /* The number of lldescs pool */
 #define HCI_LLDESCS_POOL_NUM                (CONFIG_BT_LE_HCI_LLDESCS_POOL_NUM)
 /* Default block size for HCI RX data  */
-#define HCI_RX_DATA_BLOCK_SIZE              (DEFAULT_BT_LE_ACL_BUF_SIZE + BLE_HCI_TRANS_CMD_SZ)
+#define HCI_RX_DATA_BLOCK_SIZE              (DEFAULT_BT_LE_ACL_BUF_SIZE + HCI_TRANSPORT_CMD_SZ)
 #define HCI_RX_DATA_POOL_NUM                (CONFIG_BT_LE_HCI_TRANS_RX_MEM_NUM)
 #define HCI_RX_INFO_POOL_NUM                (CONFIG_BT_LE_HCI_TRANS_RX_MEM_NUM + 1)
 
