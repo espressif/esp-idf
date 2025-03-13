@@ -563,13 +563,9 @@ static void IRAM_ATTR resume_timers(uint32_t sleep_flags) {
 static void IRAM_ATTR flush_uarts(void)
 {
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
-#ifdef CONFIG_IDF_TARGET_ESP32
-        esp_rom_output_tx_wait_idle(i);
-#else
         if (uart_ll_is_enabled(i)) {
             esp_rom_output_tx_wait_idle(i);
         }
-#endif
     }
 }
 
@@ -583,11 +579,9 @@ FORCE_INLINE_ATTR void suspend_uarts(void)
 {
     s_suspended_uarts_bmap = 0;
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
-#ifndef CONFIG_IDF_TARGET_ESP32
         if (!uart_ll_is_enabled(i)) {
             continue;
         }
-#endif
         uart_ll_force_xoff(i);
         s_suspended_uarts_bmap |= BIT(i);
 #if SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
