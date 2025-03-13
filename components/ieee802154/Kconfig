@@ -75,7 +75,7 @@ menu "IEEE 802.15.4"
     config IEEE802154_TIMING_OPTIMIZATION
         bool "Enable throughput optimization"
         depends on IEEE802154_ENABLED
-        default n
+        default y
         help
             Enabling this option increases throughput by ~5% at the expense of ~2.1k
             IRAM code size increase.
