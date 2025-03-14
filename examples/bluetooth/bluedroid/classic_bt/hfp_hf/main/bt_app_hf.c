@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -174,59 +174,55 @@ extern esp_bd_addr_t peer_addr;
 // If you want to connect a specific device, add it's address here
 // esp_bd_addr_t peer_addr = {0xac, 0x67, 0xb2, 0x53, 0x77, 0xbe};
 
-#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+#if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC
 
-#define ESP_HFP_RINGBUF_SIZE 3600
-static RingbufHandle_t m_rb = NULL;
+static esp_hf_sync_conn_hdl_t s_sync_conn_hdl;
+static bool s_msbc_air_mode = false;
+QueueHandle_t s_audio_buff_queue = NULL;
+static int s_audio_buff_cnt = 0;
 
-static void bt_app_hf_client_audio_open(void)
+static void bt_app_hf_client_audio_data_cb(esp_hf_sync_conn_hdl_t sync_conn_hdl, esp_hf_audio_buff_t *audio_buf, bool is_bad_frame)
 {
-    m_rb = xRingbufferCreate(ESP_HFP_RINGBUF_SIZE, RINGBUF_TYPE_BYTEBUF);
-}
-
-static void bt_app_hf_client_audio_close(void)
-{
-    if (!m_rb) {
-        return ;
-    }
-
-    vRingbufferDelete(m_rb);
-}
-
-static uint32_t bt_app_hf_client_outgoing_cb(uint8_t *p_buf, uint32_t sz)
-{
-    if (!m_rb) {
-        return 0;
-    }
-
-    size_t item_size = 0;
-    uint8_t *data = xRingbufferReceiveUpTo(m_rb, &item_size, 0, sz);
-    if (item_size == sz) {
-        memcpy(p_buf, data, item_size);
-        vRingbufferReturnItem(m_rb, data);
-        return sz;
-    } else if (0 < item_size) {
-        vRingbufferReturnItem(m_rb, data);
-        return 0;
-    } else {
-        // data not enough, do not read
-        return 0;
-    }
-}
-
-static void bt_app_hf_client_incoming_cb(const uint8_t *buf, uint32_t sz)
-{
-    if (! m_rb) {
+    if (is_bad_frame) {
+        esp_hf_client_audio_buff_free(audio_buf);
         return;
     }
-    BaseType_t done = xRingbufferSend(m_rb, (uint8_t *)buf, sz, 0);
-    if (! done) {
-        ESP_LOGE(BT_HF_TAG, "rb send fail");
+
+    if (s_audio_buff_queue && xQueueSend(s_audio_buff_queue, &audio_buf, 0)) {
+        s_audio_buff_cnt++;
+    }
+    else {
+        esp_hf_client_audio_buff_free(audio_buf);
     }
 
-    esp_hf_client_outgoing_data_ready();
+    /* cache some data to add latency */
+    if (s_audio_buff_cnt < 20) {
+        return;
+    }
+
+    esp_hf_audio_buff_t *audio_data_to_send;
+    if (!xQueueReceive(s_audio_buff_queue, &audio_data_to_send, 0)) {
+        return;
+    }
+
+    s_audio_buff_cnt--;
+    if (s_msbc_air_mode && audio_data_to_send->data_len > ESP_HF_MSBC_ENCODED_FRAME_SIZE) {
+        /*
+         * in mSBC air mode, we may receive a mSBC frame with some padding bytes at the end,
+         * but esp_hf_client_audio_data_send API do not allow adding padding bytes at the end,
+         * so we need to remove those padding bytes before send back to peer device.
+         */
+        audio_data_to_send->data_len = ESP_HF_MSBC_ENCODED_FRAME_SIZE;
+    }
+
+    /* send audio data back to AG */
+    if (esp_hf_client_audio_data_send(s_sync_conn_hdl, audio_data_to_send) != ESP_OK) {
+        esp_hf_client_audio_buff_free(audio_data_to_send);
+        ESP_LOGW(BT_HF_TAG, "fail to send audio data");
+    }
 }
-#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
+
+#endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
 
 /* callback for HF_CLIENT */
 void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_t *param)
@@ -255,16 +251,32 @@ void bt_app_hf_client_cb(esp_hf_client_cb_event_t event, esp_hf_client_cb_param_
         {
             ESP_LOGI(BT_HF_TAG, "--audio state %s",
                     c_audio_state_str[param->audio_stat.state]);
-    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI
+    #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC
+            if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
+                s_msbc_air_mode = true;
+                ESP_LOGI(BT_HF_TAG, "--audio air mode: mSBC , preferred_frame_size: %d", param->audio_stat.preferred_frame_size);
+            }
+            else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED) {
+                s_msbc_air_mode = false;
+                ESP_LOGI(BT_HF_TAG, "--audio air mode: CVSD , preferred_frame_size: %d", param->audio_stat.preferred_frame_size);
+            }
+
             if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED ||
                 param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_CONNECTED_MSBC) {
-                esp_hf_client_register_data_callback(bt_app_hf_client_incoming_cb,
-                                                    bt_app_hf_client_outgoing_cb);
-                bt_app_hf_client_audio_open();
+                s_sync_conn_hdl = param->audio_stat.sync_conn_handle;
+                s_audio_buff_queue = xQueueCreate(50, sizeof(esp_hf_audio_buff_t*));
+                esp_hf_client_register_audio_data_callback(bt_app_hf_client_audio_data_cb);
             } else if (param->audio_stat.state == ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED) {
-                bt_app_hf_client_audio_close();
+                s_sync_conn_hdl = 0;
+                s_msbc_air_mode = false;
+                esp_hf_audio_buff_t *buff_to_free = NULL;
+                while (xQueueReceive(s_audio_buff_queue, &buff_to_free, 0)) {
+                    esp_hf_client_audio_buff_free(buff_to_free);
+                }
+                vQueueDelete(s_audio_buff_queue);
+                s_audio_buff_cnt = 0;
             }
-    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI */
+    #endif /* #if CONFIG_BT_HFP_AUDIO_DATA_PATH_HCI && CONFIG_BT_HFP_USE_EXTERNAL_CODEC */
             break;
         }
 
