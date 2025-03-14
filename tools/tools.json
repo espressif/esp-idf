@@ -301,6 +301,67 @@
       ]
     },
     {
+      "description": "Standalone Clang shared libraries distribution",
+      "export_paths": [],
+      "export_vars": {},
+      "info_url": "https://github.com/espressif/llvm-project",
+      "install": "on_request",
+      "license": "Apache-2.0",
+      "name": "esp-clang-libs",
+      "supported_targets": [
+        "esp32",
+        "esp32s2",
+        "esp32s3",
+        "esp32c3",
+        "esp32c2",
+        "esp32c6",
+        "esp32c5",
+        "esp32h2",
+        "esp32p4",
+        "esp32c61",
+        "esp32h21"
+      ],
+      "tool_info_file": "esp-clang/esp-clang-libs.info",
+      "version_cmd": [],
+      "version_regex": "([0-9a-zA-Z\\.\\-_]+)",
+      "versions": [
+        {
+          "linux-amd64": {
+            "sha256": "c13b8a731beec0c2af56f94073ca17202c9e5047de4c6e61f5e3ed319d231962",
+            "size": 76164612,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-x86_64-linux-gnu.tar.xz"
+          },
+          "linux-arm64": {
+            "sha256": "dcf356d2a12eaf9660aa5e91cd70df14486d4bd45f47a8025327255b2fe3ece8",
+            "size": 69938392,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-aarch64-linux-gnu.tar.xz"
+          },
+          "linux-armhf": {
+            "sha256": "e9e110841ffdd43c7fcc57de24f501eec917a02e54f6dbf3a2069fed1017f8a8",
+            "size": 72698812,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-arm-linux-gnueabihf.tar.xz"
+          },
+          "macos": {
+            "sha256": "0ac4cf2340e766a240ae40519f404fceaea4262d5ab89292aa3a4118e6402492",
+            "size": 58104496,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-x86_64-apple-darwin.tar.xz"
+          },
+          "macos-arm64": {
+            "sha256": "d723ce5ae431b44305c888c989e7f405446a23c13f179edc1b6939f9ba437498",
+            "size": 48707440,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-aarch64-apple-darwin.tar.xz"
+          },
+          "name": "esp-19.1.2_20250312",
+          "status": "recommended",
+          "win64": {
+            "sha256": "29e5c945f601b85dd88c29bfabfd8c592d8064e3aba01d946e0ff475e5810c17",
+            "size": 59681772,
+            "url": "https://github.com/espressif/llvm-project/releases/download/esp-19.1.2_20250312/libs-clang-esp-19.1.2_20250312-x86_64-w64-mingw32.tar.xz"
+          }
+        }
+      ]
+    },
+    {
       "description": "Toolchain for 32-bit RISC-V based on GCC",
       "export_paths": [
         [
@@ -985,5 +1046,5 @@
       ]
     }
   ],
-  "version": 2
+  "version": 3
 }
