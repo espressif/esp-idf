@@ -1403,7 +1403,7 @@ config SOC_SPI_MEM_SUPPORT_SW_SUSPEND
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_OPI_MODE
+config SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool
     default y
 

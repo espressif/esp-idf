@@ -68,7 +68,7 @@ void esp_sleep_config_gpio_isolate(void)
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_D),   GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_HD),  GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_WP),  GPIO_PULLUP_ONLY);
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool octal_mspi_required = bootloader_flash_is_octal_mode_enabled();
 #if CONFIG_SPIRAM_MODE_OCT
     octal_mspi_required |= true;
@@ -80,7 +80,7 @@ void esp_sleep_config_gpio_isolate(void)
         gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_D6),  GPIO_PULLUP_ONLY);
         gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_D7),  GPIO_PULLUP_ONLY);
     }
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 #endif // CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU
 }
 
