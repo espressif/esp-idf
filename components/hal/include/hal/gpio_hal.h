@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,14 +43,16 @@ typedef struct {
  * @param pd Pointer to accept the status of pull-down enabled or not
  * @param ie Pointer to accept the status of input enabled or not
  * @param oe Pointer to accept the status of output enabled or not
+ * @param oe_ctrl_by_periph Pointer to accept the status of output enable signal control
+ * @param oe_inv Pointer to accept the status of output enable signal inversed or not
  * @param od Pointer to accept the status of open-drain enabled or not
  * @param drv Pointer to accept the value of drive strength
  * @param fun_sel Pointer to accept the value of IOMUX function selection
  * @param sig_out Pointer to accept the index of outputting peripheral signal
  * @param slp_sel Pointer to accept the status of pin sleep mode enabled or not
  */
-#define gpio_hal_get_io_config(hal, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel) \
-            gpio_ll_get_io_config((hal)->dev, gpio_num, pu, pd, ie, oe, od, drv, fun_sel, sig_out, slp_sel)
+#define gpio_hal_get_io_config(hal, gpio_num, pu, pd, ie, oe, oe_ctrl_by_periph, oe_inv, od, drv, fun_sel, sig_out, slp_sel) \
+            gpio_ll_get_io_config((hal)->dev, gpio_num, pu, pd, ie, oe, oe_ctrl_by_periph, oe_inv, od, drv, fun_sel, sig_out, slp_sel)
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -168,6 +170,16 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num GPIO number
   */
 #define gpio_hal_output_enable(hal, gpio_num) gpio_ll_output_enable((hal)->dev, gpio_num)
+
+/**
+  * @brief Configure the source of output enable signal for the GPIO pin.
+  *
+  * @param hal Context of the HAL layer
+  * @param gpio_num GPIO number
+  * @param ctrl_by_periph True if use output enable signal from peripheral, false if force the output enable signal to be sourced from bit n of GPIO_ENABLE_REG
+  * @param oen_inv True if the output enable needs to be inverted, otherwise False
+  */
+ #define gpio_hal_set_output_enable_ctrl(hal, gpio_num, ctrl_by_periph, oen_inv) gpio_ll_set_output_enable_ctrl((hal)->dev, gpio_num, ctrl_by_periph, oen_inv)
 
 /**
   * @brief Disable open-drain mode on GPIO.
@@ -371,9 +383,8 @@ void gpio_hal_intr_disable(gpio_hal_context_t *hal, uint32_t gpio_num);
   * @param gpio_num gpio_num GPIO number of the pad.
   * @param func The function number of the peripheral pin to output pin.
   *        One of the ``FUNC_X_*`` of specified pin (X) in ``soc/io_mux_reg.h``.
-  * @param oen_inv True if the output enable needs to be inverted, otherwise False.
   */
-#define gpio_hal_iomux_out(hal, gpio_num, func, oen_inv) gpio_ll_iomux_out((hal)->dev, gpio_num, func, oen_inv)
+#define gpio_hal_iomux_out(hal, gpio_num, func) gpio_ll_iomux_out((hal)->dev, gpio_num, func)
 
 #if SOC_GPIO_SUPPORT_FORCE_HOLD
 /**

@@ -207,7 +207,7 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num)
 {
     GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
     gpio_hal_output_disable(gpio_context.gpio_hal, gpio_num);
-    gpio_hal_matrix_out_default(gpio_context.gpio_hal, gpio_num); // Ensure no other output signal is routed via GPIO matrix to this pin
+    gpio_hal_set_output_enable_ctrl(gpio_context.gpio_hal, gpio_num, false, false); // so that output disable could take effect
     return ESP_OK;
 }
 
@@ -800,7 +800,8 @@ void gpio_iomux_in(uint32_t gpio, uint32_t signal_idx)
 
 void gpio_iomux_out(uint8_t gpio_num, int func, bool out_en_inv)
 {
-    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func, (uint32_t)out_en_inv);
+    (void)out_en_inv; // out_en_inv only takes effect when signal goes through gpio matrix to the IO
+    gpio_hal_iomux_out(gpio_context.gpio_hal, gpio_num, func);
 }
 
 static esp_err_t gpio_sleep_pullup_en(gpio_num_t gpio_num)
@@ -1031,12 +1032,14 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         bool pd = 0;
         bool ie = 0;
         bool oe = 0;
+        bool oe_ctrl_by_periph = 0;
+        bool oe_inv = 0;
         bool od = 0;
         bool slp_sel = 0;
         uint32_t drv = 0;
         uint32_t fun_sel = 0;
         uint32_t sig_out = 0;
-        gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, &pu, &pd, &ie, &oe, &od, &drv, &fun_sel, &sig_out, &slp_sel);
+        gpio_hal_get_io_config(gpio_context.gpio_hal, gpio_num, &pu, &pd, &ie, &oe, &oe_ctrl_by_periph, &oe_inv, &od, &drv, &fun_sel, &sig_out, &slp_sel);
 #if !SOC_GPIO_SUPPORT_RTC_INDEPENDENT && SOC_RTCIO_PIN_COUNT > 0
         if (rtc_gpio_is_valid_gpio(gpio_num)) {
             int rtcio_num = rtc_io_number_get(gpio_num);
@@ -1046,11 +1049,18 @@ esp_err_t gpio_dump_io_configuration(FILE *out_stream, uint64_t io_bit_mask)
         }
 #endif
 
+        // When the IO is used as a simple GPIO output, oe signal can only be controlled by the oe register
+        // When the IO is not used as a simple GPIO output, oe signal could be controlled by the peripheral
+        const char *oe_str = oe ? "1" : "0";
+        if (sig_out != SIG_GPIO_OUT_IDX && oe_ctrl_by_periph) {
+            oe_str = "[periph_sig_ctrl]";
+        }
+
         fprintf(out_stream, "IO[%"PRIu32"]%s -\n", gpio_num, esp_gpio_is_reserved(BIT64(gpio_num)) ? " **RESERVED**" : "");
         fprintf(out_stream, "  Pullup: %d, Pulldown: %d, DriveCap: %"PRIu32"\n", pu, pd, drv);
-        fprintf(out_stream, "  InputEn: %d, OutputEn: %d, OpenDrain: %d\n", ie, oe, od);
+        fprintf(out_stream, "  InputEn: %d, OutputEn: %s%s, OpenDrain: %d\n", ie, oe_str, ((fun_sel == PIN_FUNC_GPIO) && (oe_inv)) ? " (inversed)" : "", od);
         fprintf(out_stream, "  FuncSel: %"PRIu32" (%s)\n", fun_sel, (fun_sel == PIN_FUNC_GPIO) ? "GPIO" : "IOMUX");
-        if (oe && fun_sel == PIN_FUNC_GPIO) {
+        if (fun_sel == PIN_FUNC_GPIO) {
             fprintf(out_stream, "  GPIO Matrix SigOut ID: %"PRIu32"%s\n", sig_out, (sig_out == SIG_GPIO_OUT_IDX) ? " (simple GPIO output)" : "");
         }
         if (ie && fun_sel == PIN_FUNC_GPIO) {
