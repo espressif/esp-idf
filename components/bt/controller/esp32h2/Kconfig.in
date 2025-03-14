@@ -1,6 +1,5 @@
 
 menu "HCI Config"
-
     choice BT_LE_HCI_INTERFACE
         prompt "HCI mode"
         default BT_LE_HCI_INTERFACE_USE_RAM
@@ -425,6 +424,10 @@ menu "Controller debug features"
         default n
         help
             Retain scene with GDB to capture info, requires disabling WDT (CONFIG_ESP_INT_WDT, CONFIG_ESP_TASK_WDT_EN).
+
+    config BT_LE_PTR_CHECK_ENABLED
+        bool "Enable boundary check for internal memory"
+        default n
 endmenu
 
 config BT_LE_LL_RESOLV_LIST_SIZE

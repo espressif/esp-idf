@@ -7,6 +7,7 @@
 
 #include "sdkconfig.h"
 #include "esp_bt_cfg.h"
+#include "esp_bit_defs.h"
 
 /* External functions or variables
  ************************************************************************
@@ -28,9 +29,50 @@ int conn_errorSim_enable(void);
 void conn_errorSim_disable(void);
 #endif // CONFIG_BT_LE_ERROR_SIM_ENABLED
 
+#if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+void adv_stack_enableClearLegacyAdvVsCmd(bool en);
+void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+void advFilter_stack_enableDupExcListVsCmd(bool en);
+void arr_stack_enableMultiConnVsCmd(bool en);
+void pcl_stack_enableSetRssiThreshVsCmd(bool en);
+void chanSel_stack_enableSetCsaVsCmd(bool en);
+void log_stack_enableLogsRelatedVsCmd(bool en);
+void hci_stack_enableSetVsEvtMaskVsCmd(bool en);
+void winWiden_stack_enableSetConstPeerScaVsCmd(bool en);
+
+void adv_stack_enableScanReqRxdVsEvent(bool en);
+void conn_stack_enableChanMapUpdCompVsEvent(bool en);
+void sleep_stack_enableWakeupVsEvent(bool en);
+#endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+
 /* Local functions definition
  ***************************************************************************
  */
+#if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+void ble_stack_enableVsCmds(bool en)
+{
+    adv_stack_enableClearLegacyAdvVsCmd(en);
+    advFilter_stack_enableDupExcListVsCmd(en);
+    scan_stack_enableAdvFlowCtrlVsCmd(en);
+    arr_stack_enableMultiConnVsCmd(en);
+    pcl_stack_enableSetRssiThreshVsCmd(en);
+    chanSel_stack_enableSetCsaVsCmd(en);
+    log_stack_enableLogsRelatedVsCmd(en);
+    hci_stack_enableSetVsEvtMaskVsCmd(en);
+    winWiden_stack_enableSetConstPeerScaVsCmd(en);
+}
+
+void ble_stack_enableVsEvents(bool en)
+{
+    adv_stack_enableScanReqRxdVsEvent(en);
+    conn_stack_enableChanMapUpdCompVsEvent(en);
+
+#if CONFIG_BT_LE_SLEEP_ENABLE
+    sleep_stack_enableWakeupVsEvent(en);
+#endif // CONFIG_BT_LE_SLEEP_ENABLE
+}
+#endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+
 int ble_stack_initEnv(void)
 {
     int rc;
@@ -90,11 +132,21 @@ int ble_stack_enable(void)
 #endif // CONFIG_BT_LE_ERROR_SIM_ENABLED
 #endif // DEFAULT_BT_LE_MAX_CONNECTIONS
 
+#if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+    ble_stack_enableVsCmds(true);
+    ble_stack_enableVsEvents(true);
+#endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+
     return 0;
 }
 
 void ble_stack_disable(void)
 {
+#if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+    ble_stack_enableVsEvents(false);
+    ble_stack_enableVsCmds(false);
+#endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
+
 #if DEFAULT_BT_LE_MAX_CONNECTIONS
 #if CONFIG_BT_LE_ERROR_SIM_ENABLED
     conn_errorSim_disable();
