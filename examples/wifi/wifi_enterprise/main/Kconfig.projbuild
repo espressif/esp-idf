@@ -98,4 +98,16 @@ menu "Example Configuration"
         default n
         help
             Use default CA certificate bundle for WiFi enterprise connection
+
+    config EXAMPLE_USE_SERVER_DOMAIN_MATCH
+        bool "Validate server cert domain"
+        help
+            Validate the certificate domain
+
+    config EXAMPLE_SERVER_DOMAIN_MATCH_VALUE
+        string "Server cert domain"
+        depends on EXAMPLE_USE_SERVER_DOMAIN_MATCH
+        default "espressif.com"
+        help
+            Accept only server certificates matching this domain
 endmenu
