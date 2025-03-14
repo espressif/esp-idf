@@ -913,12 +913,15 @@ if(CONFIG_BT_ENABLED)
             target_link_libraries(${COMPONENT_LIB} INTERFACE "-Wl,--wrap=esp_panic_handler")
         endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
-            add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/esp32c6/libble_app.a")
+            add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/esp32c6/libble_app.a"
+                                 REQUIRES esp_phy)
         else()
             if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND CONFIG_IDF_TARGET_ESP32C2)
-                add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/libble_app_flash.a")
+                add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/libble_app_flash.a"
+                                     REQUIRES esp_phy)
             else()
-                add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/libble_app.a")
+                add_prebuilt_library(libble_app "controller/lib_${target}/${target}-bt-lib/libble_app.a"
+                                     REQUIRES esp_phy)
             endif()
         endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
