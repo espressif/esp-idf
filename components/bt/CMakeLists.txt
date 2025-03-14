@@ -924,17 +924,21 @@ if(CONFIG_BT_ENABLED)
         endif()
         if(CONFIG_IDF_TARGET_ESP32C6)
             add_prebuilt_library(libble_app
-                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c6/libble_app.a")
+                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c6/libble_app.a"
+                REQUIRES esp_phy)
         elseif(CONFIG_IDF_TARGET_ESP32C61)
             add_prebuilt_library(libble_app
-                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c61/libble_app.a")
+                "${CMAKE_CURRENT_LIST_DIR}/controller/lib_esp32c6/esp32c6-bt-lib/esp32c61/libble_app.a"
+                REQUIRES esp_phy)
         else()
             if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY AND CONFIG_IDF_TARGET_ESP32C2)
                 add_prebuilt_library(libble_app
-                    "controller/lib_${target_name}/${target_name}-bt-lib/libble_app_flash.a")
+                    "controller/lib_${target_name}/${target_name}-bt-lib/libble_app_flash.a"
+                    REQUIRES esp_phy)
             else()
                 add_prebuilt_library(libble_app
-                    "controller/lib_${target_name}/${target_name}-bt-lib/libble_app.a")
+                    "controller/lib_${target_name}/${target_name}-bt-lib/libble_app.a"
+                    REQUIRES esp_phy)
             endif()
         endif()
         target_link_libraries(${COMPONENT_LIB} PRIVATE libble_app)
