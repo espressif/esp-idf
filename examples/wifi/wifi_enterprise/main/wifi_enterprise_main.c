@@ -156,6 +156,9 @@ static void initialise_wifi(void)
 #ifdef CONFIG_EXAMPLE_USE_DEFAULT_CERT_BUNDLE
     ESP_ERROR_CHECK(esp_eap_client_use_default_cert_bundle(true));
 #endif
+#ifdef CONFIG_EXAMPLE_USE_SERVER_DOMAIN_MATCH
+    ESP_ERROR_CHECK(esp_eap_client_set_domain_match(CONFIG_EXAMPLE_SERVER_DOMAIN_MATCH_VALUE));
+#endif
     ESP_ERROR_CHECK(esp_wifi_sta_enterprise_enable());
     ESP_ERROR_CHECK(esp_wifi_start());
 }
