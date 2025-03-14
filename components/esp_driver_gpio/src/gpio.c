@@ -401,7 +401,6 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_pulldown_dis(io_num);
             }
 
-            ESP_LOGI(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
 
             if (pGPIOConfig->intr_type) {
