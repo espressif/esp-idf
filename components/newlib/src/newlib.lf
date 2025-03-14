@@ -1,10 +1,11 @@
 [mapping:newlib]
 archive: libnewlib.a
 entries:
-  if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
-    heap (noflash)
-  abort (noflash)
-  assert (noflash)
-  stdatomic (noflash)
+  if LIBC_MISC_IN_IRAM = y:
+    if HEAP_PLACE_FUNCTION_INTO_FLASH = n:
+      heap (noflash)
+    abort (noflash)
+    assert (noflash)
+    stdatomic (noflash)
   if STDATOMIC_S32C1I_SPIRAM_WORKAROUND = y:
     stdatomic_s32c1i (noflash)
