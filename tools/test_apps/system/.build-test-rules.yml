@@ -30,6 +30,15 @@ tools/test_apps/system/eh_frame:
 
 tools/test_apps/system/esp_intr_dump:
 
+tools/test_apps/system/flash_auto_suspend_iram_reduction:
+  disable:
+    - if: IDF_TARGET == "esp32" or IDF_TARGET == "esp32s2
+      reason: Targets do not support auto-suspend
+  disable_test:
+    - if: IDF_TARGET != "esp32c3"
+      temporary: true
+      reason: lack of runners
+
 tools/test_apps/system/g0_components:
   enable:
     - if: INCLUDE_DEFAULT == 1 or IDF_TARGET in ["esp32c5", "esp32c61", "esp32h21", "esp32h4"] # preview targets
