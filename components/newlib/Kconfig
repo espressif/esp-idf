@@ -11,6 +11,14 @@ menu "LibC"
             depends on !IDF_TOOLCHAIN_CLANG && IDF_EXPERIMENTAL_FEATURES
     endchoice
 
+    config LIBC_LOCKS_PLACE_IN_IRAM
+        bool "Place lock API in IRAM"
+        default y
+        depends on LIBC_NEWLIB
+        help
+            Enable this option to include be able to call the lock API from
+            code that runs while cache is disabled, e.g. IRAM interrupts.
+
     choice LIBC_STDOUT_LINE_ENDING
         prompt "Line ending for console output"
         default LIBC_STDOUT_LINE_ENDING_CRLF

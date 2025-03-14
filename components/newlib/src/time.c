@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -152,7 +152,7 @@ WEAK_UNLESS_TIMEFUNC_IMPL int adjtime(const struct timeval *delta, struct timeva
 #endif
 }
 
-clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
+clock_t _times_r(struct _reent *r, struct tms *ptms)
 {
     clock_t t = xTaskGetTickCount() * (portTICK_PERIOD_MS * CLK_TCK / 1000);
     ptms->tms_cstime = 0;
@@ -164,7 +164,7 @@ clock_t IRAM_ATTR _times_r(struct _reent *r, struct tms *ptms)
     return (clock_t) tv.tv_sec;
 }
 
-WEAK_UNLESS_TIMEFUNC_IMPL int IRAM_ATTR _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
+WEAK_UNLESS_TIMEFUNC_IMPL int _gettimeofday_r(struct _reent *r, struct timeval *tv, void *tz)
 {
     (void) tz;
 
