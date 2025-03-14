@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <string.h>
 #include <sys/param.h>
 #include "esp_log.h"
 #include "esp_intr_alloc.h"
@@ -26,6 +27,22 @@
 #include "hal/gpio_hal.h"
 
 #define SDMMC_EVENT_QUEUE_LENGTH 32
+
+/* Number of DMA descriptors used for transfer.
+ * Increasing this value above 4 doesn't improve performance for the usual case
+ * of SD memory cards (most data transfers are multiples of 512 bytes).
+ */
+#define SDMMC_DMA_DESC_CNT  4
+
+typedef struct {
+    uint8_t* ptr;
+    size_t size_remaining;
+    size_t next_desc;
+    size_t desc_remaining;
+} sdmmc_transfer_state_t;
+
+static sdmmc_desc_t s_dma_desc[SDMMC_DMA_DESC_CNT];
+static sdmmc_transfer_state_t s_cur_transfer = {};
 
 static void sdmmc_isr(void* arg);
 static void sdmmc_host_dma_init(void);
@@ -727,6 +744,57 @@ static void sdmmc_host_dma_init(void)
     SDMMC.idinten.ti = 1;
 }
 
+static size_t get_free_descriptors_count(void)
+{
+    const size_t next = s_cur_transfer.next_desc;
+    size_t count = 0;
+    /* Starting with the current DMA descriptor, count the number of
+     * descriptors which have 'owned_by_idmac' set to 0. These are the
+     * descriptors already processed by the DMA engine.
+     */
+    for (size_t i = 0; i < SDMMC_DMA_DESC_CNT; ++i) {
+        sdmmc_desc_t* desc = &s_dma_desc[(next + i) % SDMMC_DMA_DESC_CNT];
+        if (desc->owned_by_idmac) {
+            break;
+        }
+        ++count;
+        if (desc->next_desc_ptr == NULL) {
+            /* final descriptor in the chain */
+            break;
+        }
+    }
+    return count;
+}
+
+static void fill_dma_descriptors(size_t num_desc)
+{
+    for (size_t i = 0; i < num_desc; ++i) {
+        if (s_cur_transfer.size_remaining == 0) {
+            return;
+        }
+        const size_t next = s_cur_transfer.next_desc;
+        sdmmc_desc_t* desc = &s_dma_desc[next];
+        assert(!desc->owned_by_idmac);
+        size_t size_to_fill =
+            (s_cur_transfer.size_remaining < SDMMC_DMA_MAX_BUF_LEN) ?
+                s_cur_transfer.size_remaining : SDMMC_DMA_MAX_BUF_LEN;
+        bool last = size_to_fill == s_cur_transfer.size_remaining;
+        desc->last_descriptor = last;
+        desc->second_address_chained = 1;
+        desc->owned_by_idmac = 1;
+        desc->buffer1_ptr = s_cur_transfer.ptr;
+        desc->next_desc_ptr = (last) ? NULL : &s_dma_desc[(next + 1) % SDMMC_DMA_DESC_CNT];
+        assert(size_to_fill < 4 || size_to_fill % 4 == 0);
+        desc->buffer1_size = (size_to_fill + 3) & (~3);
+
+        s_cur_transfer.size_remaining -= size_to_fill;
+        s_cur_transfer.ptr += size_to_fill;
+        s_cur_transfer.next_desc = (s_cur_transfer.next_desc + 1) % SDMMC_DMA_DESC_CNT;
+        ESP_LOGV(TAG, "fill %d desc=%d rem=%d next=%d last=%d sz=%d",
+                num_desc, next, s_cur_transfer.size_remaining,
+                s_cur_transfer.next_desc, desc->last_descriptor, desc->buffer1_size);
+    }
+}
 
 void sdmmc_host_dma_stop(void)
 {
@@ -736,12 +804,24 @@ void sdmmc_host_dma_stop(void)
     SDMMC.bmod.enable = 0;
 }
 
-void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_size)
+void sdmmc_host_dma_prepare(void* data_ptr, size_t data_size, size_t block_size)
 {
+    // this clears "owned by IDMAC" bits
+    memset(s_dma_desc, 0, sizeof(s_dma_desc));
+    // initialize first descriptor
+    s_dma_desc[0].first_descriptor = 1;
+    // save transfer info
+    s_cur_transfer.ptr = (uint8_t*) data_ptr;
+    s_cur_transfer.size_remaining = data_size;
+    s_cur_transfer.next_desc = 0;
+    s_cur_transfer.desc_remaining = (data_size + SDMMC_DMA_MAX_BUF_LEN - 1) / SDMMC_DMA_MAX_BUF_LEN;
+    // prepare descriptors
+    fill_dma_descriptors(SDMMC_DMA_DESC_CNT);
+
     // Set size of data and DMA descriptor pointer
     SDMMC.bytcnt = data_size;
     SDMMC.blksiz = block_size;
-    SDMMC.dbaddr = desc;
+    SDMMC.dbaddr = &s_dma_desc[0];
 
     // Enable everything needed to use DMA
     SDMMC.ctrl.dma_enable = 1;
@@ -822,6 +902,19 @@ static void sdmmc_isr(void* arg) {
 
     uint32_t dma_pending = SDMMC.idsts.val;
     SDMMC.idsts.val = dma_pending;
+
+    if (dma_pending & SDMMC_IDMAC_INTMASK_NI) {
+        // refill DMA descriptors
+        size_t free_desc = get_free_descriptors_count();
+        if (free_desc > 0) {
+            fill_dma_descriptors(free_desc);
+            sdmmc_host_dma_resume();
+        }
+        //NI, logic OR of TI and RI. This is a sticky bit and must be cleared each time TI or RI is cleared.
+        dma_pending &= ~(SDMMC_IDMAC_INTMASK_NI | SDMMC_IDMAC_INTMASK_TI | SDMMC_IDMAC_INTMASK_RI);
+    }
+
+    //NI and AI will be indicated by TI/RI and FBE/DU respectively
     event.dma_status = dma_pending & 0x1f;
 
     if (pending != 0 || dma_pending != 0) {
