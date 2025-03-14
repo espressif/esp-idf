@@ -339,11 +339,6 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 {
     uint64_t gpio_pin_mask = (pGPIOConfig->pin_bit_mask);
     uint32_t io_num = 0;
-    uint8_t input_en = 0;
-    uint8_t output_en = 0;
-    uint8_t od_en = 0;
-    uint8_t pu_en = 0;
-    uint8_t pd_en = 0;
 
     if (pGPIOConfig->pin_bit_mask == 0 ||
             pGPIOConfig->pin_bit_mask & ~SOC_GPIO_VALID_GPIO_MASK) {
@@ -367,35 +362,30 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
 #endif
 
             if ((pGPIOConfig->mode) & GPIO_MODE_DEF_INPUT) {
-                input_en = 1;
                 gpio_input_enable(io_num);
             } else {
                 gpio_input_disable(io_num);
             }
 
             if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OD) {
-                od_en = 1;
                 gpio_od_enable(io_num);
             } else {
                 gpio_od_disable(io_num);
             }
 
             if ((pGPIOConfig->mode) & GPIO_MODE_DEF_OUTPUT) {
-                output_en = 1;
                 gpio_output_enable(io_num);
             } else {
                 gpio_output_disable(io_num);
             }
 
             if (pGPIOConfig->pull_up_en) {
-                pu_en = 1;
                 gpio_pullup_en(io_num);
             } else {
                 gpio_pullup_dis(io_num);
             }
 
             if (pGPIOConfig->pull_down_en) {
-                pd_en = 1;
                 gpio_pulldown_en(io_num);
             } else {
                 gpio_pulldown_dis(io_num);
