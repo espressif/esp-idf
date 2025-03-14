@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -776,6 +776,14 @@ esp_err_t esp_wifi_connect_internal(void);
   *
   */
 esp_err_t esp_wifi_disconnect_internal(void);
+
+/**
+  * @brief Get the time information from the MAC clock. The time is precise only if modem sleep or light sleep is not enabled.
+  *
+  * @return 32-bit time value, unit: microsecond. This time is only 32 bits, which means it will overflow and reset to 0 after approximately 71 minutes.
+  *         Therefore, when using it, the time difference between two consecutive readings should not be too long.
+  */
+uint32_t esp_wifi_internal_get_mac_clock_time(void);
 
 #ifdef __cplusplus
 }
