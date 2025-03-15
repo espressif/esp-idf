@@ -280,6 +280,13 @@ extern void ets_backup_dma_copy(uint32_t reg, uint32_t mem_addr, uint32_t num, b
 extern void btdm_cca_feature_enable(void);
 extern void btdm_aa_check_enhance_enable(void);
 
+#if (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
+extern void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+extern void adv_stack_enableClearLegacyAdvVsCmd(bool en);
+extern void advFilter_stack_enableDupExcListVsCmd(bool en);
+extern void chanSel_stack_enableSetCsaVsCmd(bool en);
+#endif // (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
+
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _bt_controller_bss_start;
@@ -1464,6 +1471,13 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         goto error;
     }
 
+#if (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
+    scan_stack_enableAdvFlowCtrlVsCmd(true);
+    adv_stack_enableClearLegacyAdvVsCmd(true);
+    advFilter_stack_enableDupExcListVsCmd(true);
+    chanSel_stack_enableSetCsaVsCmd(true);
+#endif // (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
+
     btdm_controller_status = ESP_BT_CONTROLLER_STATUS_INITED;
 
     return ESP_OK;
@@ -1484,6 +1498,13 @@ esp_err_t esp_bt_controller_deinit(void)
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
+#if (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
+    scan_stack_enableAdvFlowCtrlVsCmd(false);
+    adv_stack_enableClearLegacyAdvVsCmd(false);
+    advFilter_stack_enableDupExcListVsCmd(false);
+    chanSel_stack_enableSetCsaVsCmd(false);
+#endif // (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
 
     btdm_controller_deinit();
 
