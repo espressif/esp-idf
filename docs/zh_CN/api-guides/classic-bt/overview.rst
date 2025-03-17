@@ -1,4 +1,4 @@
-介绍
+概述
 =======
 
 :link_to_translation:`en:[English]`
@@ -9,7 +9,7 @@
 
     {IDF_TARGET_NAME} 支持双模蓝牙 4.2，并且已经获得双模蓝牙 4.2 认证。
 
-ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现经典蓝牙功能，详见下。
+ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NAME} 系列芯片上实现经典蓝牙功能，详见下图。
 
 .. only:: esp32
 
@@ -20,29 +20,6 @@ ESP-IDF 中的经典蓝牙协议栈是一个分层架构，可在 {IDF_TARGET_NA
 
         {IDF_TARGET_NAME} 经典蓝牙协议栈架构
 
-参考下表可知特定芯片是否支持经典蓝牙控制器。
-
-.. list-table::
-    :width: 100%
-    :widths: auto
-    :header-rows: 1
-
-    * - 芯片系列
-      - 控制器
-    * - ESP32
-      - Y
-    * - ESP32-S2
-      - \–
-    * - ESP32-S3
-      - \–
-    * - ESP32-C2
-      - \-
-    * - ESP32-C3
-      - \-
-    * - ESP32-C6
-      - \-
-    * - ESP32-H2
-      - \-
 
 以下各节简要介绍了每个层，并提供了相关文档和应用示例的快速链接。
 
@@ -59,7 +36,7 @@ ESP 蓝牙控制器
 ESP 蓝牙主机
 -------------
 
-IDF 中的ESP-Bluedroid 主机支持经典蓝牙。
+IDF 中的 ESP-Bluedroid 主机支持经典蓝牙。
 
 
 ESP-Bluedroid

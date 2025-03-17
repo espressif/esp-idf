@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其二，旨在对 Bluetooth LE 设备发现过程进行简要介绍，包括广播与扫描相关的基本概念。随后，本教程会结合 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程，基于 NimBLE 主机层协议栈，对 Bluetooth LE 广播的代码实现进行介绍。
+本文档为低功耗蓝牙 (Bluetooth LE) 入门教程其二，旨在对低功耗蓝牙设备发现过程进行简要介绍，包括广播与扫描相关的基本概念。随后，本教程会结合 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程，基于 NimBLE 主机层协议栈，对低功耗蓝牙广播的代码实现进行介绍。
 
 
 学习目标
@@ -14,7 +14,7 @@
 - 学习 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程的代码结构
 
 
-广播 (Advertising) 与扫描 (Scanning) 是 Bluetooth LE 设备在进入连接前在设备发现 (Device Discovery) 阶段的工作状态。下面，我们先了解与广播有关的基本概念。
+广播 (Advertising) 与扫描 (Scanning) 是低功耗蓝牙设备在进入连接前在设备发现 (Device Discovery) 阶段的工作状态。下面，我们先了解与广播有关的基本概念。
 
 
 广播的基本概念
@@ -39,9 +39,9 @@
 蓝牙信道
 #######################################
 
-与经典蓝牙相同，蓝牙技术联盟为了解决数据冲突的问题，在 Bluetooth LE 上也应用了自适应跳频技术 (Adaptive Frequency Hopping, AFH) ，该技术可以判断 RF 信道的拥挤程度，通过跳频避开拥挤的 RF 信道，以提高通信质量。不过 Bluetooth LE 与经典蓝牙的不同之处在于，所使用的 2.4 GHz ISM 频段被划分为 40 个 2 MHz 带宽的射频 (Radio Frequency, RF) 信道，中心频率范围为 2402 MHz - 2480 MHz ，而经典蓝牙则是将这一频段划分为 79 个 1MHz 带宽的 RF 信道。
+与经典蓝牙相同，蓝牙技术联盟为了解决数据冲突的问题，在低功耗蓝牙上也应用了自适应跳频技术 (Adaptive Frequency Hopping, AFH) ，该技术可以判断 RF 信道的拥挤程度，通过跳频避开拥挤的 RF 信道，以提高通信质量。不过低功耗蓝牙与经典蓝牙的不同之处在于，所使用的 2.4 GHz ISM 频段被划分为 40 个 2 MHz 带宽的射频 (Radio Frequency, RF) 信道，中心频率范围为 2402 MHz - 2480 MHz ，而经典蓝牙则是将这一频段划分为 79 个 1MHz 带宽的 RF 信道。
 
-在 Bluetooth LE 4.2 标准中， RF 信道分为两种类型，如下
+在蓝牙核心规范 4.2 (Bluetooth Core Specification 4.2) 中， RF 信道分为两种类型，如下
 
 .. list-table::
     :align: center
@@ -67,7 +67,7 @@
 扩展广播特性
 ################################
 
-Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播数据，这无疑限制了广播的功能。为了提高广播的可用性，蓝牙 5.0 标准引入了 扩展广播 (Extended Advertising) 特性，这一特性将广播数据包分为
+蓝牙核心规范 4.2 中，广播数据包允许搭载最多 31 字节广播数据，这无疑限制了广播的功能。为了提高广播的可用性，蓝牙 5.0 标准引入了 扩展广播 (Extended Advertising) 特性，这一特性将广播数据包分为
 
 .. list-table::
     :align: center
@@ -124,7 +124,7 @@ Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播�
 广播数据包结构
 ##########################
 
-对于第三个问题，即广播数据包内含有什么信息，在 Bluetooth LE 4.2 标准给出了广播数据包的格式定义，如下图所示
+对于第三个问题，即广播数据包内含有什么信息，在蓝牙核心规范 4.2 中给出了广播数据包的格式定义，如下图所示
 
 
 .. _adv_packet_structure:
@@ -134,7 +134,7 @@ Bluetooth LE 4.2 标准中，广播数据包允许搭载最多 31 字节广播�
     :scale: 35%
     :alt: 广播数据包结构
 
-    Bluetooth LE 4.2 广播数据包结构
+    蓝牙核心规范 4.2 广播数据包结构
 
 
 看起来非常复杂，让我们来逐层分解。广播数据包的最外层包含四个部分，分别是
@@ -336,7 +336,7 @@ PDU 有效负载也分为两部分
     *   -   不可解析随机私有地址 (Non-resolvable Random Private Address)
         -   完全随机的地址，仅用于防止设备被追踪，非常少用
 
-然后看**广播数据**。一个广播数据结构的格式定义如下
+然后看广播数据。一个广播数据结构的格式定义如下
 
 .. list-table::
     :align: center
@@ -361,6 +361,148 @@ PDU 有效负载也分为两部分
         -
 
 
+广播流程
+^^^^^^^^^
+
+使用公共地址进行广播
+########################
+
+使用公共地址进行广播时，需要将 ``esp_ble_adv_params_t`` 成员 ``own_addr_type`` 设置为 ``BLE_ADDR_TYPE_PUBLIC``。广播流程图如下 （*点击图片放大*）：
+
+
+.. seqdiag::
+    :caption: 广播流程图——使用公共地址
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-public-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_public"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
+使用可解析随机私有地址进行广播
+##################################
+
+使用可解析随机私有地址进行广播时，底层协议栈在可解析随机私有地址超时时更新广播地址，默认超时设置为 15 分钟。可解析随机私有地址的超时时间可以通过 menuconfig 中的 ``BT_BLE_RPA_TIMEOUT`` 选项进行配置。需要将 ``esp_ble_adv_params_t`` 成员 ``own_addr_type`` 设置为 ``BLE_ADDR_TYPE_RPA_PUBLIC`` 或 ``BLE_ADDR_TYPE_RPA_RANDOM``。广播流程图如下 （*点击图片放大*）：
+
+
+.. seqdiag::
+    :caption: 广播流程图——使用可解析随机私有地址
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-resolvable-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_local_privacy"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_rpa_public or ble_addr_type_rpa_random"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
+.. note::
+
+   当使用可解析随机私有地址进行广播时，需要等待 ``esp_ble_gap_config_local_privacy`` 事件返回后，才能开始广播，并且需要将广播参数里的 ``own_addr_type`` 类型设置为 ``BLE_ADDR_TYPE_RPA_PUBLIC`` 或 ``BLE_ADDR_TYPE_RPA_RANDOM``。
+
+   要使用 ``BLE_ADDR_TYPE_RPA_RANDOM`` 地址类型，必须首先通过 API ``esp_ble_gap_set_rand_addr`` 设置一个随机静态地址。如果使用 ``BLE_ADDR_TYPE_RPA_PUBLIC``，则无需设置地址。
+
+   ``BLE_ADDR_TYPE_RPA_PUBLIC`` 的操作如下：控制器基于解析列表中的本地身份解析密钥 (IRK) 生成可解析随机私有地址 (RPA)。如果解析列表缺乏匹配条目，则使用公共地址。
+
+   对于 ``BLE_ADDR_TYPE_RPA_RANDOM``，如果解析列表中没有匹配的条目，则使用随机静态地址。
+
+
+使用随机静态地址进行广播
+#########################
+
+与使用可解析随机私有地址进行广播一样，使用随机静态地址进行广播也需要将 ``esp_ble_adv_params_t`` 成员 ``own_addr_type`` 设置为 ``BLE_ADDR_TYPE_RANDOM``。广播流程图如下 （*点击图片放大*）：
+
+
+.. seqdiag::
+    :caption: 广播流程图——使用随机静态地址
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-random-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 12;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_rand_addr"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends set rand address HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set rand address event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_set_static_rand_addr_evt"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="return set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="calls\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_random"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
 扫描的基本概念
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -370,8 +512,7 @@ PDU 有效负载也分为两部分
 2. 多久扫描一次？一次扫描多久？ (When?)
 3. 扫描的过程中需要做什么？ (What?)
 
-第一个问题已经在广播的介绍中说明了。对于 Bluetooth LE 4.2 设备来说，广播者只会在广播信道，即编号为 37-39 的三个信道发送广播数据；对于 Bluetooth LE 5.0 设备来说，如果广播者启用了扩展广播特性，则会在主广播信道发送 `ADV_EXT_IND` ，在次广播信道发送 `AUX_ADV_IND` ，并在 `ADV_EXT_IND` 指示 `AUX_ADV_IND` 所在的次广播信道。
-所以相应的，对于 Bluetooth LE 4.2 设备来说，扫描者只需在广播信道接收广播数据包即可。对于 Bluetooth LE 5.0 设备来说，扫描者应在主广播信道接收主广播数据包和扩展广播数据包的 `ADV_EXT_IND` ； 若扫描者接收到了 `ADV_EXT_IND` ，且 `ADV_EXT_IND` 指示了一个次广播信道，那么还需要到对应的次广播信道去接收 `AUX_ADV_IND` ，以获取完整的扩展广播数据包。
+第一个问题已经在广播的介绍中说明了。对于蓝牙 4.2 设备来说，广播者只会在广播信道，即编号为 37-39 的三个信道发送广播数据；对于蓝牙 5.0 设备来说，如果广播者启用了扩展广播特性，则会在主广播信道发送 `ADV_EXT_IND` ，在次广播信道发送 `AUX_ADV_IND` ，并在 `ADV_EXT_IND` 指示 `AUX_ADV_IND` 所在的次广播信道。所以相应地，对于蓝牙 4.2 设备来说，扫描者只需在广播信道接收广播数据包即可。对于蓝牙 5.0 设备来说，扫描者应在主广播信道接收主广播数据包和扩展广播数据包的 `ADV_EXT_IND` ； 若扫描者接收到了 `ADV_EXT_IND` ，且 `ADV_EXT_IND` 指示了一个次广播信道，那么还需要到对应的次广播信道去接收 `AUX_ADV_IND` ，以获取完整的扩展广播数据包。
 
 
 扫描窗口与扫描间隔
@@ -561,7 +702,7 @@ PDU 有效负载也分为两部分
 
 值得一提的是，前五项广播数据结构长度之和为 28 字节，此时广播数据包仅空余 3 字节，无法继续装载后续的两项广播数据结构。所以后两项广播数据结构必须装填至扫描响应数据包。
 
-你可能还注意到，对应于设备外观的 Raw Data 为 `0x0002`，而代码中对 Generic Tag 的定义是 `0x0200`；还有，设备地址的 Raw Data 除了最后一个字节 `0x00` 以外，似乎与实际地址完全颠倒。这是因为， Bluetooth LE 的空中数据包遵循小端 (Little Endian) 传输的顺序，所以低字节的数据反而会在靠前的位置。
+你可能还注意到，对应于设备外观的 Raw Data 为 `0x0002`，而代码中对 Generic Tag 的定义是 `0x0200`；还有，设备地址的 Raw Data 除了最后一个字节 `0x00` 以外，似乎与实际地址完全颠倒。这是因为，低功耗蓝牙的空中数据包遵循小端 (Little Endian) 传输的顺序，所以低字节的数据反而会在靠前的位置。
 
 另外，注意到 **nRF Connect for Mobile** 程序并没有为我们提供 **CONNECT** 按钮以连接至此设备。这符合我们的预期，因为 Beacon 设备本来就应该是不可连接的。下面，让我们深入代码细节，看看这样的一个 Beacon 设备是怎样实现的。
 
@@ -880,6 +1021,6 @@ PDU 有效负载也分为两部分
 总结
 ---------
 
-通过本教程，你了解了广播和扫描的基本概念，并通过 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE Beacon 设备的方法。
+通过本教程，你了解了广播和扫描的基本概念，并通过 :example:`NimBLE_Beacon <bluetooth/ble_get_started/nimble/NimBLE_Beacon>` 例程掌握了使用 NimBLE 主机层协议栈构建低功耗蓝牙 Beacon 设备的方法。
 
 你可以尝试对例程中的数据进行修改，并在 nRF Connect for Mobile 调试工具中查看修改结果。例如，你可以尝试修改 `adv_fields` 或 `rsp_fields` 结构体，以修改被填充的广播数据结构，或者交换广播数据包和扫描响应数据包中的广播数据结构。但需要注意的一点是，广播数据包和扫描响应数据包的广播数据上限为 31 字节，若设定的广播数据结构大小超过该限值，调用 `ble_gap_adv_start` API 将会失败。

@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其三，旨在对 Bluetooth LE 的连接过程进行简要介绍。随后，本教程会结合 NimBLE_Connection 例程，基于 NimBLE 主机层协议栈，对外围设备的代码实现进行介绍。
+本文档为低功耗蓝牙 (Bluetooth LE) 入门教程其三，旨在对低功耗蓝牙的连接过程进行简要介绍。随后，本教程会结合 NimBLE_Connection 例程，基于 NimBLE 主机层协议栈，对外围设备的代码实现进行介绍。
 
 
 学习目标
@@ -21,7 +21,7 @@
 连接的发起
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-*在 Bluetooth LE 5.0 引入扩展广播特性以后， Legacy ADV 和 Extended ADV 对应的连接建立过程略有差异，下以 Legacy ADV 对应的连接建立过程为例。*
+*在蓝牙核心规范 5.0 引入扩展广播特性以后， Legacy ADV 和 Extended ADV 对应的连接建立过程略有差异，下以 Legacy ADV 对应的连接建立过程为例。*
 
 当扫描者在某一个广播信道接收到一个广播数据包时，若该广播者是可连接的，那么扫描者可以在同一广播信道发送连接请求 (Connection Request)。对于广播者来说，它可以设置 *接受列表 (Filter Accept List)* 以过滤不受信任的设备，或接受任一扫描者的连接请求。随后，广播者转变为外围设备，扫描者转变为中央设备，两者之间可以在数据信道进行双向通信。
 
@@ -101,7 +101,7 @@
     *   -   2
         -   有效负载 (Payload)
         -   0-27 / 0-251
-        -   在 Bluetooth LE 4.2 以前，有效负载最大值为 27 字节； Bluetooth LE 4.2 引入了数据长度扩展 (Data Length Extension, DLE) 特性，有效负载的最大值可达 251 字节
+        -   在蓝牙核心规范 4.2 以前，有效负载最大值为 27 字节； 蓝牙核心规范 4.2 引入了数据长度扩展 (Data Length Extension, DLE) 特性，有效负载的最大值可达 251 字节
     *   -   3
         -   消息完整性检查 (Message Integrity Check, MIC)
         -   4
@@ -124,9 +124,9 @@
         -   ATT 数据 (ATT Header + ATT Data)
         -   0-23 / 0-247
 
-MTU 的默认值为 23 字节，恰为 Bluetooth LE 4.2 之前单个数据 PDU 的最大可承载 ATT 数据字节数。
+MTU 的默认值为 23 字节，恰为蓝牙核心规范 4.2 之前单个数据 PDU 的最大可承载 ATT 数据字节数。
 
-MTU 可以设定为更大的值，例如 140 字节。在 Bluetooth LE 4.2 以前，由于有效负载中最多只有 23 字节可以承载 ATT 数据，所以必须将完整的一包 ATT 数据包拆分成若干份，分散到多个数据 PDU 中。在 Bluetooth LE 4.2 以后，单个数据 PDU 最多可以承载 247 字节 ATT 数据，所以 MTU 为 140 字节时仍然可以使用单个数据 PDU 承载。
+MTU 可以设定为更大的值，例如 140 字节。在蓝牙核心规范 4.2 以前，由于有效负载中最多只有 23 字节可以承载 ATT 数据，所以必须将完整的一包 ATT 数据包拆分成若干份，分散到多个数据 PDU 中。在蓝牙核心规范 4.2 以后，单个数据 PDU 最多可以承载 247 字节 ATT 数据，所以 MTU 为 140 字节时仍然可以使用单个数据 PDU 承载。
 
 
 例程实践
@@ -472,6 +472,6 @@ GAP 事件处理
 总结
 ----------------
 
-通过本教程，你了解了连接的基本概念，并通过 :example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 例程掌握了使用 NimBLE 主机层协议栈构建 Bluetooth LE 外围设备的方法。
+通过本教程，你了解了连接的基本概念，并通过 :example:`NimBLE_Connection <bluetooth/ble_get_started/nimble/NimBLE_Connection>` 例程掌握了使用 NimBLE 主机层协议栈构建低功耗蓝牙外围设备的方法。
 
 你可以尝试对例程中的参数进行修改，并在日志输出中观察修改结果。例如，你可以修改外围设备延迟或连接超时参数，观察连接参数的修改是否能够触发连接更新事件。
