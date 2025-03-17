@@ -27,7 +27,8 @@ if(CONFIG_BT_ENABLED)
         list(APPEND ldscripts "linker_esp_ble_controller.lf")
 
     elseif(CONFIG_IDF_TARGET_ESP32C2)
-        list(APPEND srcs "controller/esp32c2/bt.c")
+        list(APPEND srcs "controller/esp32c2/bt.c"
+                         "controller/esp32c2/ble.c")
         list(APPEND include_dirs include/esp32c2/include)
         set(ldscripts "linker_esp32c2.lf")
 
