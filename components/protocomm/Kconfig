@@ -27,6 +27,17 @@ menu "Protocomm"
             Consult the Enabling protocomm security version section of the
             Protocomm documentation in ESP-IDF Programming guide for more details.
 
+    config ESP_PROTOCOMM_SUPPORT_SECURITY_PATCH_VERSION
+        bool
+        default y
+        help
+            Enable support of security patch version. This is a hidden config option
+            kept for external components like "network_provisioning" to find out if
+            protocomm component support security patch version. This config option
+            also indicates availability of a new API `protocomm_get_sec_version`.
+            Please refer to Protocomm documentation in ESP-IDF Programming guide for
+            more details.
+
     config ESP_PROTOCOMM_KEEP_BLE_ON_AFTER_BLE_STOP
         bool
         depends on BT_ENABLED
