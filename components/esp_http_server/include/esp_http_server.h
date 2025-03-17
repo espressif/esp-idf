@@ -23,8 +23,6 @@ extern "C" {
 
 #define ESP_HTTPD_DEF_CTRL_PORT         (32768)    /*!< HTTP Server control socket port*/
 
-ESP_EVENT_DECLARE_BASE(ESP_HTTP_SERVER_EVENT);
-
 /**
  * @brief   HTTP Server events id
  */
@@ -40,11 +38,15 @@ typedef enum {
     HTTP_SERVER_EVENT_STOP,            /*!< This event occurs when HTTP Server is stopped */
 } esp_http_server_event_id_t;
 
+#if CONFIG_HTTPD_ENABLE_EVENTS || __DOXYGEN_
+ESP_EVENT_DECLARE_BASE(ESP_HTTP_SERVER_EVENT);
+
 /** Argument structure for HTTP_SERVER_EVENT_ON_DATA and HTTP_SERVER_EVENT_SENT_DATA event */
 typedef struct {
     int fd;         /*!< Session socket file descriptor */
     int data_len;   /*!< Data length */
 } esp_http_server_event_data;
+#endif // CONFIG_HTTPD_ENABLE_EVENTS || __DOXYGEN_
 
 /*
 note: esp_https_server.h includes a customized copy of this

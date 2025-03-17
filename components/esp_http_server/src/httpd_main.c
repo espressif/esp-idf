@@ -38,6 +38,7 @@ typedef struct {
 
 static const char *TAG = "httpd";
 
+#ifdef CONFIG_HTTPD_ENABLE_EVENTS
 ESP_EVENT_DEFINE_BASE(ESP_HTTP_SERVER_EVENT);
 
 void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, size_t event_data_size)
@@ -47,6 +48,7 @@ void esp_http_server_dispatch_event(int32_t event_id, const void* event_data, si
         ESP_LOGE(TAG, "Failed to post esp_http_server event: %s", esp_err_to_name(err));
     }
 }
+#endif // CONFIG_HTTPD_ENABLE_EVENTS
 
 static esp_err_t httpd_accept_conn(struct httpd_data *hd, int listen_fd)
 {
