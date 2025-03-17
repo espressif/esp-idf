@@ -19,9 +19,6 @@
 extern "C" {
 #endif
 
-#define TOUCH_MIN_CHAN_ID           1           /*!< The minimum available channel id of the touch pad */
-#define TOUCH_MAX_CHAN_ID           14          /*!< The maximum available channel id of the touch pad */
-
 #define TOUCH_SHIELD_CHAN_ID        14          /*!< The touch channel that can be used as the shield channel */
 
 /**

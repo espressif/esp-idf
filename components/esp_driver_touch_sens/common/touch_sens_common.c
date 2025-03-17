@@ -32,7 +32,7 @@
 #include "esp_check.h"
 #include "touch_sens_private.h"
 
-#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE(num >= TOUCH_MIN_CHAN_ID && num <= TOUCH_MAX_CHAN_ID,  \
+#define TOUCH_CHANNEL_CHECK(num)        ESP_RETURN_ON_FALSE((int)(num) >= (int)TOUCH_MIN_CHAN_ID && num <= TOUCH_MAX_CHAN_ID,  \
                                         ESP_ERR_INVALID_ARG, TAG, "The channel number is out of supported range");
 
 static const char *TAG = "touch";

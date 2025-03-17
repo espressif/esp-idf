@@ -1,20 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "ulp_riscv_touch_ulp_core.h"
 #include "soc/soc_caps.h"
-#include "soc/touch_sensor_pins.h"
-#include "hal/touch_sensor_hal.h"
+#include "hal/touch_sensor_ll.h"
 
 /* Check Touch Channel correctness */
 #define ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(channel)   \
 {                                                           \
-    if (channel >= SOC_TOUCH_SENSOR_NUM ||                  \
-        channel < 0 ||                                      \
-        channel == SOC_TOUCH_DENOISE_CHANNEL) {             \
+    if (channel >= SOC_TOUCH_MAX_CHAN_ID ||                 \
+        channel < SOC_TOUCH_MIN_CHAN_ID) {                  \
             return ESP_ERR_INVALID_ARG;                     \
     }                                                       \
 }                                                           \
@@ -28,7 +26,7 @@ esp_err_t ulp_riscv_touch_pad_read_raw_data(touch_pad_t touch_num, uint32_t *raw
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read raw touch data */
-    *raw_data = touch_hal_read_raw_data(touch_num);
+    touch_ll_read_chan_data((int)touch_num, TOUCH_LL_READ_RAW, raw_data);
 
     return ESP_OK;
 }
@@ -42,7 +40,7 @@ esp_err_t ulp_riscv_touch_pad_read_benchmark(touch_pad_t touch_num, uint32_t *be
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read benchmark data */
-    touch_hal_read_benchmark(touch_num, benchmark);
+    touch_ll_read_chan_data((int)touch_num, TOUCH_LL_READ_BENCHMARK, benchmark);
 
     return ESP_OK;
 }
@@ -56,7 +54,7 @@ esp_err_t ulp_riscv_touch_pad_filter_read_smooth(touch_pad_t touch_num, uint32_t
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read smoothened touch sensor data */
-    touch_hal_filter_read_smooth(touch_num, smooth_data);
+    touch_ll_read_chan_data((int)touch_num, TOUCH_LL_READ_SMOOTH, smooth_data);
 
     return ESP_OK;
 }
@@ -69,7 +67,7 @@ esp_err_t ulp_riscv_touch_pad_reset_benchmark(touch_pad_t touch_num)
     }
 
     /* Reset benchmark */
-    touch_hal_reset_benchmark(touch_num);
+    touch_ll_reset_chan_benchmark(BIT(touch_num));
 
     return ESP_OK;
 }
@@ -83,7 +81,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_data(touch_pad_t touch_num, uin
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read raw touch data */
-    touch_hal_sleep_read_data(raw_data);
+    touch_ll_sleep_read_chan_data(TOUCH_LL_READ_RAW, raw_data);
 
     return ESP_OK;
 }
@@ -97,7 +95,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_benchmark(touch_pad_t touch_num
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read benchmark data */
-    touch_hal_sleep_read_benchmark(benchmark);
+    touch_ll_sleep_read_chan_data(TOUCH_LL_READ_BENCHMARK, benchmark);
 
     return ESP_OK;
 }
@@ -111,7 +109,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(touch_pad_t touch_num, u
     ULP_RISCV_TOUCH_CHANNEL_CHECK_AND_RETURN(touch_num);
 
     /* Read smoothened touch sensor data */
-    touch_hal_sleep_read_smooth(smooth_data);
+    touch_ll_sleep_read_chan_data(TOUCH_LL_READ_SMOOTH, smooth_data);
 
     return ESP_OK;
 }
@@ -119,7 +117,7 @@ esp_err_t ulp_riscv_touch_pad_sleep_channel_read_smooth(touch_pad_t touch_num, u
 esp_err_t ulp_riscv_touch_pad_sleep_channel_reset_benchmark(void)
 {
     /* Reset benchmark */
-    touch_hal_sleep_reset_benchmark();
+    touch_ll_sleep_reset_benchmark();
 
     return ESP_OK;
 }
