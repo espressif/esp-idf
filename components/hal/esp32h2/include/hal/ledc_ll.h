@@ -16,6 +16,7 @@
 #include "soc/clk_tree_defs.h"
 #include "hal/assert.h"
 #include "esp_rom_sys.h"    //for sync issue workaround
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -440,6 +441,7 @@ static inline void ledc_ll_set_duty_range_wr_addr(ledc_dev_t *hw, ledc_mode_t sp
  */
 static inline void ledc_ll_set_fade_param_range(ledc_dev_t *hw, ledc_mode_t speed_mode, ledc_channel_t channel_num, uint8_t range, uint32_t dir, uint32_t cycle, uint32_t scale, uint32_t step)
 {
+    HAL_ASSERT(range < SOC_LEDC_GAMMA_CURVE_FADE_RANGE_MAX);
     // To workaround sync issue
     // This is to ensure the fade param write to the gamma_wr register would not mess up the last wr_addr
     ledc_ll_set_duty_range_wr_addr(hw, speed_mode, channel_num, range);
