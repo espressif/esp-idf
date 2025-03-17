@@ -99,6 +99,9 @@ esp_err_t esp_clk_tree_enable_src(soc_module_clk_t clk_src, bool enable)
         case SOC_MOD_CLK_PLL_F25M:
             clk_gate_ll_ref_25m_clk_en(enable);
             break;
+        case SOC_MOD_CLK_PLL_F50M:
+            clk_gate_ll_ref_50m_clk_en(enable);
+            break;
         case SOC_MOD_CLK_PLL_F80M:
             clk_gate_ll_ref_80m_clk_en(enable);
             break;

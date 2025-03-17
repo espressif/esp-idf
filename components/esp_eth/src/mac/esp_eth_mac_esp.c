@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,6 +22,7 @@
 #endif // CONFIG_IDF_TARGET_ESP32
 #include "hal/clk_tree_ll.h"
 #include "esp_private/esp_clk.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
@@ -472,11 +473,13 @@ static esp_err_t emac_config_pll_clock(emac_esp32_t *emac)
     }
     // Set divider of MPLL clock
     if (real_freq > RMII_CLK_HZ) {
-        int32_t div = real_freq / RMII_CLK_HZ - 1;
+        uint32_t div = real_freq / RMII_CLK_HZ;
         clk_ll_pll_f50m_set_divider(div);
         // compute real RMII CLK frequency
-        real_freq /= div + 1;
+        real_freq /= div;
     }
+    // Enable 50MHz MPLL derived clock
+    esp_clk_tree_enable_src(SOC_MOD_CLK_PLL_F50M, true);
 #endif
     // If the difference of real RMII CLK frequency is not within 50 ppm, i.e. 2500 Hz, the (A/M)PLL is unusable
     ESP_RETURN_ON_FALSE(abs((int)real_freq - (int)expt_freq) <= 2500,
