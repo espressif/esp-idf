@@ -88,9 +88,9 @@ static int mgmt_rx_action(u8 *frame, size_t len, u8 *sender, int8_t rssi, u8 cha
     return 0;
 }
 
+#if defined(CONFIG_WNM)
 static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
 {
-#if defined(CONFIG_WNM)
     wifi_config_t *config;
 
     /* Reset only if btm is enabled */
@@ -113,8 +113,8 @@ static void clear_bssid_flag_and_channel(struct wpa_supplicant *wpa_s)
     }
     os_free(config);
     wpa_printf(MSG_DEBUG, "cleared bssid flag");
-#endif /* CONFIG_WNM */
 }
+#endif /* CONFIG_WNM */
 #endif /* CONFIG_IEEE80211KV */
 
 #if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
@@ -316,8 +316,6 @@ void esp_supplicant_common_deinit(void)
         wpa_s->type = 0;
         esp_wifi_register_mgmt_frame_internal(wpa_s->type, wpa_s->subtype);
     }
-#if defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R)
-#endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
 void supplicant_sta_conn_handler(uint8_t *bssid)
@@ -337,8 +335,10 @@ void supplicant_sta_conn_handler(uint8_t *bssid)
     wpa_bss_flush(wpa_s);
     /* Register for mgmt frames */
     register_mgmt_frames(wpa_s);
+#if defined(CONFIG_WNM)
     /* clear set bssid flag */
     clear_bssid_flag_and_channel(wpa_s);
+#endif /* CONFIG_WNM */
 #endif /* defined(CONFIG_IEEE80211KV) || defined(CONFIG_IEEE80211R) */
 }
 
@@ -350,13 +350,15 @@ void supplicant_sta_disconn_handler(uint8_t reason_code)
 #if defined(CONFIG_RRM)
     wpas_rrm_reset(wpa_s);
     wpas_clear_beacon_rep_data(wpa_s);
+#endif /* defined(CONFIG_RRM) */
+#if defined(CONFIG_WNM)
     /* Not clearing in case of roaming disconnect as BTM induced connection
      * itself sets a specific bssid and channel to connect to before disconnection.
      * Subsequent connections or disconnections will clear this flag */
     if (reason_code != WIFI_REASON_ROAMING) {
         clear_bssid_flag_and_channel(wpa_s);
     }
-#endif /* defined(CONFIG_RRM) */
+#endif /* CONFIG_WNM */
     if (wpa_s->current_bss) {
         wpa_s->current_bss = NULL;
     }
