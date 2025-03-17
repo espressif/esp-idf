@@ -60,8 +60,6 @@ typedef uint32_t esp_paddr_t;
 /**
  * @brief Map a physical memory block to external virtual address block, with given capabilities.
  *
- * @note This API does not guarantee thread safety
- *
  * @param[in]  paddr_start  Start address of the physical memory block
  * @param[in]  size         Size to be mapped. Size will be rounded up by to the nearest multiple of MMU page size
  * @param[in]  target       Physical memory target you're going to map to, see `mmu_target_t`
@@ -87,8 +85,6 @@ esp_err_t esp_mmu_map(esp_paddr_t paddr_start, size_t size, mmu_target_t target,
 
 /**
  * @brief Unmap a previously mapped virtual memory block
- *
- * @note This API does not guarantee thread safety
  *
  * @param[in] ptr  Start address of the virtual memory
  *
