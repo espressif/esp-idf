@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -268,7 +268,8 @@ esp_err_t esp_lcd_new_panel_dpi(esp_lcd_dsi_bus_handle_t bus, const esp_lcd_dpi_
 
 #if CONFIG_PM_ENABLE
     // When MIPI DSI is working, we don't expect the clock source would be turned off
-    esp_pm_lock_type_t pm_lock_type = ESP_PM_NO_LIGHT_SLEEP;
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    esp_pm_lock_type_t pm_lock_type = ESP_PM_CPU_FREQ_MAX;
     ret  = esp_pm_lock_create(pm_lock_type, 0, "dsi_dpi", &dpi_panel->pm_lock);
     ESP_GOTO_ON_ERROR(ret, err, TAG, "create PM lock failed");
     esp_pm_lock_acquire(dpi_panel->pm_lock);

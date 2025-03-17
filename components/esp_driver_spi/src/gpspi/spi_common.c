@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -855,8 +855,14 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     }
 
 #ifdef CONFIG_PM_ENABLE
+#if CONFIG_IDF_TARGET_ESP32P4
+    // use CPU_MAX lock to ensure PSRAM bandwidth and usability during DFS
+    err = esp_pm_lock_create(ESP_PM_CPU_FREQ_MAX, 0, "spi_master",
+                             &bus_attr->pm_lock);
+#else
     err = esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "spi_master",
                              &bus_attr->pm_lock);
+#endif
     if (err != ESP_OK) {
         goto cleanup;
     }
