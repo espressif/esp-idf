@@ -297,6 +297,23 @@ pytest_examples_esp32_wifi_ap:
     - build_pytest_examples_esp32
   tags: [ esp32, wifi_ap ]
 
+pytest_examples_esp32c2_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2, wifi_ap,  xtal_26mhz]
+
+
+pytest_examples_esp32c2eco4_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2eco4, wifi_ap,  xtal_26mhz, esp32c2]
+
 pytest_examples_esp32c3_wifi_ap:
   extends:
     - .pytest_examples_dir_template
@@ -304,6 +321,15 @@ pytest_examples_esp32c3_wifi_ap:
   needs:
     - build_pytest_examples_esp32c3
   tags: [ esp32c3, wifi_ap ]
+
+
+pytest_examples_esp32c3eco7_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3eco7, wifi_ap , esp32c3]
 
 pytest_examples_esp32s3_wifi_ap:
   extends:
@@ -407,6 +433,22 @@ pytest_examples_esp32c2_wifi_two_dut:
   needs:
     - build_pytest_examples_esp32c2
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+
+pytest_examples_esp32c2eco4_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - build_pytest_examples_esp32c2
+  tags: [ esp32c2eco4, wifi_two_dut, xtal_26mhz, esp32c2]
+
+pytest_examples_esp32c3eco7_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - build_pytest_examples_esp32c3
+  tags: [ esp32c3eco7, wifi_two_dut , esp32c3]
 
 pytest_examples_esp32c3_flash_encryption:
   extends:
@@ -881,6 +923,22 @@ pytest_components_esp32c2_wifi_two_dut:
   needs:
     - build_pytest_components_esp32c2
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+
+pytest_components_esp32c3eco7_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c3-wifi
+  needs:
+    - build_pytest_components_esp32c3
+  tags: [ esp32c3eco7, wifi_two_dut , esp32c3]
+
+pytest_components_esp32c2eco4_wifi_two_dut:
+  extends:
+    - .pytest_components_dir_template
+    - .rules:test:component_ut-esp32c2-wifi
+  needs:
+    - build_pytest_components_esp32c2
+  tags: [ esp32c2eco4, wifi_two_dut, xtal_26mhz, esp32c2]
 
 pytest_components_esp32c3_adc:
   extends:
