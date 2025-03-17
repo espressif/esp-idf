@@ -8,13 +8,13 @@ menu "Example Configuration"
 
     config EXAMPLE_CONN_ITVL_MIN
         int "Minimum connection itvl"
-        default 6
+        default 104
         help
             Set the minimum connection interval in 1.25msec units.
 
     config EXAMPLE_CONN_ITVL_MAX
         int "Maximum connection itvl"
-        default 6
+        default 104
         help
             Set the maximum connection interval in 1.25msec units.
 
@@ -26,7 +26,7 @@ menu "Example Configuration"
 
     config EXAMPLE_CONN_TIMEOUT
         int "Supervision timeout"
-        default 500
+        default 600
         help
             Set the supervision timeout in 10msec units.
 
@@ -41,4 +41,16 @@ menu "Example Configuration"
         default 12
         help
             Set the maximum connection event length in 0.625msec units.
+
+    config EXAMPLE_EXTENDED_ADV
+        bool
+        depends on SOC_BLE_50_SUPPORTED && BT_NIMBLE_50_FEATURE_SUPPORT
+        default y if SOC_ESP_NIMBLE_CONTROLLER
+        select BT_NIMBLE_EXT_ADV
+        prompt "Enable Extended Adv"
+        help
+            Use this option to enable extended advertising in the example.
+            If this option is disabled, ensure config BT_NIMBLE_EXT_ADV is
+            also disabled from Nimble stack menuconfig
+
 endmenu

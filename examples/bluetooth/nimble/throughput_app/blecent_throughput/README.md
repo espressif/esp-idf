@@ -14,29 +14,34 @@ It performs read operation on peripheral's `THRPT_LONG_CHR_READ_WRITE` character
 ### Procedure to use this demo example
 
 * `idf.py menuconfig` and configure the parameters as needed (connection related parameters in example parameters).
+* To test throughput on 1M PHY, make sure to disable the Example Configuration -> Enable Extended Adv flag in menuconfig on both sides.
+* To test on 2M PHY or Coded PHY (S2/S8), you must enable the Example Configuration -> Enable Extended Adv flag on both sides.
 * `bleprph_throughput` example needs to be run along with this client side example.
 * After connection link is established between these two devices, user is given a window of `YES_NO_PARAM` (5 seconds) to customize connection parameters. If user has configured parameters from menuconfig, this step can be skipped by either waiting it out or entering `Insert no`.
 * User needs to enter `Insert yes` to customize connection parameters. Enter `MTU` and other connection parameters as directed on console instructions e.g. `MTU 512` for MTU and `conn 6 120 0 500 0 0` for connection parameters in sequence of `min conn_itvl`, `max conn_itvl`, `latency`, `supervision timeout`, `min conn_evt_len` and `max_conn_evt_len`.
 * User will be now presented with throughput test related console prints, this suggests application is now ready to be run throughput test for user defined time. The prints may appear like below
 
 ```
- ==================================================================
- |                 Steps to test nimble throughput                |
- |                                                                |
- |  1. Enter throughput [--Type] [--Test time]                    |
- |  Type: read/write/notify.                                      |
- |  Test time: Enter value in seconds.                            |
- |                                                                |
- |  e.g. throughput read 600                                      |
- |                                                                |
- |  ** Enter 'throughput read 60' for reading char for 60 seconds |
- |  OR 'throughput write 60' for writing to char for 60 seconds   |
- |  OR 'throughput notify 60' for notifications (for 60 seconds)**|
- |                                                                |
-  =================================================================
+  ====================================================================================
+ |                 Steps to test nimble throughput                                   |
+ |                                                                                   |
+ |  1. Enter throughput [--Type] [--Test time] [--Phy]                               |
+ |  Type: read/write/notify.                                                         |
+ |  Test time: Enter value in seconds.                                               |
+ |  Phy mode: Enter value in 0 for 1M, 1 for 2M ,2 for Coded S2,                     |
+ |              3 for Coded S8.                                                      |
+ |                                                                                   |
+ |  e.g. throughput read 600 3                                                       |
+ |                                                                                   |
+ |  ** Enter 'throughput read 60 0' for reading char for 60 seconds  on 1M phy       |
+ |  OR 'throughput write 60 1' for writing to char for 60 seconds  on 2M phy         |
+ |  OR 'throughput notify 60 2' for notifications (for 60 seconds on s=2 coded phy)**|
+ |                                                                                   |
+ =====================================================================================
+
 
 ```
-* If user fail to enter any values for next 30 seconds, the app falls to default behavior of READ for 60 seconds mode.
+* If user fail to enter any values for next 30 seconds, the app falls to default behavior of READ for 60 seconds mode and 1M phy channel.
 * Read and write throughput numbers will be presented in `blecent_throughput` console output. For notification `bleprph_throughput` console shall be referred, as the peripheral is the one who is sending notifications. Below is the sample output of the app:
 
 ```
@@ -82,20 +87,23 @@ GATT procedure initiated: discover all descriptors; chr_val_handle=17 end_handle
 I (36933) blecent_throughput: Service discovery complete; status=0 conn_handle=0
 
 I (36933) blecent_throughput: Format for throughput demo:: throughput read 100
- ==================================================================
- |                 Steps to test nimble throughput                |
- |                                                                |
- |  1. Enter throughput [--Type] [--Test time]                    |
- |  Type: read/write/notify.                                      |
- |  Test time: Enter value in seconds.                            |
- |                                                                |
- |  e.g. throughput read 600                                      |
- |                                                                |
- |  ** Enter 'throughput read 60' for reading char for 60 seconds |
- |  OR 'throughput write 60' for writing to char for 60 seconds   |
- |  OR 'throughput notify 60' for notifications (for 60 seconds)**|
- |                                                                |
- =================================================================
+  ====================================================================================
+ |                 Steps to test nimble throughput                                   |
+ |                                                                                   |
+ |  1. Enter throughput [--Type] [--Test time] [--Phy]                               |
+ |  Type: read/write/notify.                                                         |
+ |  Test time: Enter value in seconds.                                               |
+ |  Phy mode: Enter value in 0 for 1M, 1 for 2M ,2 for Coded S2,                     |
+ |              3 for Coded S8.                                                      |
+ |                                                                                   |
+ |  e.g. throughput read 600 3                                                       |
+ |                                                                                   |
+ |  ** Enter 'throughput read 60 0' for reading char for 60 seconds  on 1M phy       |
+ |  OR 'throughput write 60 1' for writing to char for 60 seconds  on 2M phy         |
+ |  OR 'throughput notify 60 2' for notifications (for 60 seconds on s=2 coded phy)**|
+ |                                                                                   |
+ =====================================================================================
+
 
 Throughput demo >> throughput read 10
 I (55333) Throughput demo handler: throughput read 10
