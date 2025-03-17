@@ -50,7 +50,7 @@
 #define SOC_ECC_SUPPORTED               1
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 // #define SOC_ECDSA_SUPPORTED             1    //TODO: [ESP32H21] IDF-11496
-#define SOC_FLASH_ENC_SUPPORTED         1       //TODO: [ESP32H21] IDF-11499
+#define SOC_FLASH_ENC_SUPPORTED         1
 // #define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32H21] IDF-11500
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
@@ -477,6 +477,7 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+#define SOC_FLASH_ENCRYPTION_XTS_AES_SUPPORT_PSEUDO_ROUND  1
 
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
