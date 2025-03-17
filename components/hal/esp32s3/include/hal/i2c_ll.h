@@ -612,7 +612,7 @@ static inline void i2c_ll_get_rxfifo_cnt(i2c_dev_t *hw, uint32_t *length)
 __attribute__((always_inline))
 static inline void i2c_ll_get_txfifo_len(i2c_dev_t *hw, uint32_t *length)
 {
-    *length = SOC_I2C_FIFO_LEN - hw->sr.txfifo_cnt;
+    *length = (hw->sr.txfifo_cnt >= SOC_I2C_FIFO_LEN) ? 0 : (SOC_I2C_FIFO_LEN - hw->sr.txfifo_cnt);
 }
 
 /**
@@ -1146,7 +1146,7 @@ static inline void i2c_ll_master_disable_rx_it(i2c_dev_t *hw)
 }
 
 /**
- * @brief
+ * @brief  Enable I2C slave TX interrupt
  *
  * @param  hw Beginning address of the peripheral registers
  *

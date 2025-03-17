@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -132,7 +132,13 @@ esp_err_t hal_i2c_init(hal_i2c_config *cfg)
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_ll_set_source_clk(dev, SOC_MOD_CLK_XTAL);
     }
-    i2c_ll_master_cal_bus_clk(clk_hal_xtal_get_freq_mhz() * MHZ, freq, &clk_cal);
+    uint32_t xtal_freq = 0;
+#if SOC_CLK_TREE_SUPPORTED
+    xtal_freq = clk_hal_xtal_get_freq_mhz();
+#else
+    xtal_freq = clk_ll_xtal_get_freq_mhz();
+#endif
+    i2c_ll_master_cal_bus_clk(xtal_freq * MHZ, freq, &clk_cal);
     i2c_ll_master_set_bus_timing(dev, &clk_cal);
 
     i2c_ll_update(dev);
