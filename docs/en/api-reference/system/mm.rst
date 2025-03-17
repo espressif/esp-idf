@@ -157,7 +157,9 @@ SPI Flash can be accessed by SPI1 (ESP-IDF `esp_flash` driver APIs), or by point
 Thread Safety
 =============
 
-APIs in `esp_mmu_map.h` are not guaranteed to be thread-safe.
+Following APIs in ``esp_mmu_map.h`` are not guaranteed to be thread-safe:
+
+- :cpp:func:`esp_mmu_map_dump_mapped_blocks`
 
 APIs in `esp_cache.h` are guaranteed to be thread-safe.
 
