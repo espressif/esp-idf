@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import os.path
 from typing import Tuple
 
@@ -22,6 +21,8 @@ from pytest_embedded_idf.dut import IdfDut
 
 
 @pytest.mark.esp32
+@pytest.mark.esp32c2
+@pytest.mark.esp32c3
 @pytest.mark.wifi_two_dut
 @pytest.mark.parametrize(
     'count, app_path', [
@@ -30,6 +31,68 @@ from pytest_embedded_idf.dut import IdfDut
     ], indirect=True
 )
 def test_wifi_getting_started(dut: Tuple[IdfDut, IdfDut]) -> None:
+    softap = dut[0]
+    station = dut[1]
+
+    ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
+    password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
+    assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
+    assert station.app.sdkconfig.get('ESP_WIFI_PASSWORD') == password
+
+    tag = 'wifi station'
+    station.expect(f'{tag}: got ip:', timeout=60)
+    station.expect(f'{tag}: connected to ap SSID:{ssid} password:{password}', timeout=60)
+    softap.expect('station .+ join, AID=', timeout=60)
+
+
+@pytest.mark.esp32c2
+@pytest.mark.esp32c2eco4
+@pytest.mark.xtal_26mhz
+@pytest.mark.wifi_two_dut
+@pytest.mark.parametrize(
+    'config, baud, app_path, count, target',
+    [
+        (
+            'esp32c2eco4_xtal26m',
+            '74880',
+            f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
+            2,
+            'esp32c2|esp32c2',
+        ),
+    ],
+    indirect=True,
+)
+def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
+    softap = dut[0]
+    station = dut[1]
+
+    ssid = softap.app.sdkconfig.get('ESP_WIFI_SSID')
+    password = softap.app.sdkconfig.get('ESP_WIFI_PASSWORD')
+    assert station.app.sdkconfig.get('ESP_WIFI_SSID') == ssid
+    assert station.app.sdkconfig.get('ESP_WIFI_PASSWORD') == password
+
+    tag = 'wifi station'
+    station.expect(f'{tag}: got ip:', timeout=60)
+    station.expect(f'{tag}: connected to ap SSID:{ssid} password:{password}', timeout=60)
+    softap.expect('station .+ join, AID=', timeout=60)
+
+
+@pytest.mark.esp32c3
+@pytest.mark.esp32c3eco7
+@pytest.mark.wifi_two_dut
+@pytest.mark.parametrize(
+    'config, app_path, count, target',
+    [
+        (
+            'esp32c3eco7',
+            f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
+            2,
+            'esp32c3|esp32c3',
+        ),
+    ],
+    indirect=True,
+)
+def test_wifi_getting_started_esp32c3eco7(dut: Tuple[IdfDut, IdfDut]) -> None:
     softap = dut[0]
     station = dut[1]
 
