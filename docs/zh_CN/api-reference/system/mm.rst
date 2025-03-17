@@ -169,7 +169,9 @@ SPI flash 可以通过 SPI1（ESP-IDF ``spi_flash`` 驱动 API）或指针进行
 线程安全
 ========
 
-``esp_mmu_map.h`` 中的 API 不能确保线程的安全性。
+``esp_mmu_map.h`` 中的以下 API 不能确保线程的安全性：
+
+- :cpp:func:`esp_mmu_map_dump_mapped_blocks`
 
 ``esp_cache.h`` 中的 API 能够确保线程的安全性。
 
