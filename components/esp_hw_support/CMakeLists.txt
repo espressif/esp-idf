@@ -33,11 +33,13 @@ if(NOT non_os_build)
                      "sar_periph_ctrl_common.c"
                      "port/${target}/io_mux.c"
                      "port/${target}/esp_clk_tree.c"
-                     "port/esp_clk_tree_common.c"
                      "dma/esp_dma_utils.c"
                      "dma/gdma_link.c"
                      "spi_bus_lock.c"
                      "clk_utils.c")
+    if(CONFIG_SOC_CLK_TREE_SUPPORTED)
+        list(APPEND srcs "port/esp_clk_tree_common.c")
+    endif()
     if(CONFIG_SOC_GPSPI_SUPPORTED)
         list(APPEND srcs "spi_share_hw_ctrl.c")
     endif()
@@ -58,7 +60,7 @@ if(NOT non_os_build)
                          "sleep_gpio.c"
                          "sleep_event.c"
             )
-        if(CONFIG_SOC_PAU_SUPPORTED)
+        if(CONFIG_SOC_PAU_SUPPORTED AND CONFIG_SOC_PM_SUPPORT_TOP_PD)
             list(APPEND srcs "sleep_system_peripheral.c")
         endif()
     endif()
@@ -170,12 +172,6 @@ endif()
 set(public_include_dirs "include" "include/soc" "include/soc/${target}"
                         "dma/include" "ldo/include" "debug_probe/include"
                         "mspi_timing_tuning/include" "power_supply/include")
-
-if(CONFIG_IDF_TARGET_ESP32H21)
-    list(REMOVE_ITEM srcs
-        "sleep_modes.c" # TODO: [ESP32H21] IDF-11515, IDF-11517
-    )
-endif()
 
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${public_include_dirs}
