@@ -533,7 +533,7 @@ static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, b
 #if CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
 static IRAM_ATTR void esp_bt_controller_spi_log_interface(uint32_t len, const uint8_t *addr, bool end)
 {
-    return ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY, addr, len);
+    ble_log_spi_out_write(BLE_LOG_SPI_OUT_SOURCE_ESP_LEGACY, addr, len);
 }
 #endif // CONFIG_BT_CTRL_LE_LOG_SPI_OUT_EN
 
@@ -1776,7 +1776,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
 #endif
 
 #if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
-    ble_log_spi_out_init();
+    if (ble_log_spi_out_init() != 0) {
+        ESP_LOGE(BT_LOG_TAG, "BLE Log SPI output init failed");
+        goto error;
+    }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
     periph_module_enable(PERIPH_BT_MODULE);
@@ -1803,6 +1806,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     return ESP_OK;
 
 error:
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
     bt_controller_deinit_internal();
 
