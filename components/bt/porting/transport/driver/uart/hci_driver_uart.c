@@ -111,6 +111,7 @@ hci_driver_uart_rx_task(void *p)
             ESP_LOG_BUFFER_HEXDUMP(TAG, data, read_len, ESP_LOG_DEBUG);
             ret = hci_h4_sm_rx(s_hci_driver_uart_env.h4_sm, data, read_len);
             if (ret < 0) {
+                ESP_LOGE(TAG, "parse rx data error! sm_state:%d\n", s_hci_driver_uart_env.h4_sm->state);
                 r_ble_ll_hci_ev_hw_err(ESP_HCI_SYNC_LOSS_ERR);
             }
         }
@@ -175,7 +176,7 @@ hci_driver_uart_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_env, 0, sizeof(hci_driver_uart_env_t));
 
     s_hci_driver_uart_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_env.h4_sm, &s_hci_driver_mem_alloc, hci_driver_uart_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {

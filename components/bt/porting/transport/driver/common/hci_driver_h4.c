@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,7 +27,9 @@
 #include <string.h>
 #include <os/os.h>
 #include <os/os_mbuf.h>
+#include "esp_hci_driver.h"
 #include "common/hci_driver_h4.h"
+#include "common/hci_driver_util.h"
 
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -62,9 +64,11 @@ hci_h4_frame_start(struct hci_h4_sm *rxs, uint8_t pkt_type)
     case HCI_H4_ISO:
         rxs->min_len = 4;
         break;
+#if (!CONFIG_BT_CONTROLLER_ENABLED)
     case HCI_H4_EVT:
         rxs->min_len = 2;
         break;
+#endif // (!CONFIG_BT_CONTROLLER_ENABLED)
     default:
         /* !TODO: Sync loss. Need to wait for reset. */
         return -1;
@@ -76,7 +80,7 @@ hci_h4_frame_start(struct hci_h4_sm *rxs, uint8_t pkt_type)
 static int
 hci_h4_ib_consume(struct hci_h4_input_buffer *ib, uint16_t len)
 {
-    assert(ib->len >= len);
+    HCI_TRANS_ASSERT((ib->len >= len), ib->len, len);
 
     ib->buf += len;
     ib->len -= len;
@@ -113,7 +117,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 
     switch (h4sm->pkt_type) {
     case HCI_H4_CMD:
-        assert(h4sm->allocs && h4sm->allocs->cmd);
+        HCI_TRANS_ASSERT(h4sm->allocs && h4sm->allocs->cmd, 0, 0);
         h4sm->buf = h4sm->allocs->cmd();
         if (!h4sm->buf) {
             return -1;
@@ -124,7 +128,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
 
         break;
     case HCI_H4_ACL:
-        assert(h4sm->allocs && h4sm->allocs->acl);
+        HCI_TRANS_ASSERT(h4sm->allocs && h4sm->allocs->acl, 0, 0);
         h4sm->om = h4sm->allocs->acl();
         if (!h4sm->om) {
             return -1;
@@ -145,7 +149,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
             }
         }
 
-        assert(h4sm->allocs && h4sm->allocs->evt);
+        HCI_TRANS_ASSERT(h4sm->allocs && h4sm->allocs->evt, 0, 0);
 
         /* We can drop legacy advertising events if there's no free buffer in
          * discardable pool.
@@ -167,7 +171,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
         break;
 #endif // !CONFIG_BT_CONTROLLER_ENABLED
     case HCI_H4_ISO:
-        assert(h4sm->allocs && h4sm->allocs->iso);
+        HCI_TRANS_ASSERT(h4sm->allocs && h4sm->allocs->iso, 0, 0);
         h4sm->om = h4sm->allocs->iso();
         if (!h4sm->om) {
             return -1;
@@ -177,8 +181,7 @@ hci_h4_sm_w4_header(struct hci_h4_sm *h4sm, struct hci_h4_input_buffer *ib)
         h4sm->exp_len = (get_le16(&h4sm->hdr[2]) & 0x7fff) + 4;
         break;
     default:
-        assert(0);
-        break;
+        return -2;
     }
 
     return 0;
@@ -193,19 +196,18 @@ hci_h4_sm_w4_payload(struct hci_h4_sm *h4sm,
     int rc;
 
     len = min(ib->len, h4sm->exp_len - h4sm->len);
-
-
     switch (h4sm->pkt_type) {
     case HCI_H4_CMD:
+#if (!CONFIG_BT_CONTROLLER_ENABLED)
     case HCI_H4_EVT:
+#endif // (!CONFIG_BT_CONTROLLER_ENABLED)
         if (h4sm->buf) {
             memcpy(&h4sm->buf[h4sm->len], ib->buf, len);
         }
         break;
     case HCI_H4_ACL:
     case HCI_H4_ISO:
-        assert(h4sm->om);
-
+        HCI_TRANS_ASSERT(h4sm->om, h4sm->pkt_type, len);
         mbuf_len = OS_MBUF_PKTLEN(h4sm->om);
         rc = os_mbuf_append(h4sm->om, ib->buf, len);
         if (rc) {
@@ -215,13 +217,11 @@ hci_h4_sm_w4_payload(struct hci_h4_sm *h4sm,
             len = OS_MBUF_PKTLEN(h4sm->om) - mbuf_len;
             h4sm->len += len;
             hci_h4_ib_consume(ib, len);
-
             return -1;
         }
         break;
     default:
-        assert(0);
-        break;
+        return -2;
     }
 
     h4sm->len += len;
@@ -240,49 +240,108 @@ hci_h4_sm_completed(struct hci_h4_sm *h4sm)
 #if CONFIG_BT_CONTROLLER_ENABLED
     case HCI_H4_CMD:
         if (h4sm->buf) {
-            assert(h4sm->frame_cb);
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
             rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->buf);
-            assert(rc == 0);
+            HCI_TRANS_ASSERT(rc == 0, rc, 0);
             h4sm->buf = NULL;
         }
         break;
     case HCI_H4_ACL:
     case HCI_H4_ISO:
         if (h4sm->om) {
-            assert(h4sm->frame_cb);
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
             rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->om);
-            assert(rc == 0);
+            HCI_TRANS_ASSERT(rc == 0, rc, 0);
             h4sm->om = NULL;
         }
         break;
 #else
     case HCI_H4_CMD:
-    case HCI_H4_EVT:
         if (h4sm->buf) {
-            assert(h4sm->frame_cb);
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
             rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->buf);
             if (rc != 0) {
-                ble_transport_free(h4sm->buf);
+                HCI_TRANS_ASSERT(h4sm->frees && h4sm->frees->cmd, rc, (uint32_t)h4sm->frees);
+                h4sm->frees->cmd(h4sm->buf);
+            }
+            h4sm->buf = NULL;
+        }
+        break;
+    case HCI_H4_EVT:
+        if (h4sm->buf) {
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
+            rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->buf);
+            if (rc != 0) {
+                HCI_TRANS_ASSERT(h4sm->frees && h4sm->frees->evt, rc, (uint32_t)h4sm->frees);
+                h4sm->frees->evt(h4sm->buf);
             }
             h4sm->buf = NULL;
         }
         break;
     case HCI_H4_ACL:
-    case HCI_H4_ISO:
         if (h4sm->om) {
-            assert(h4sm->frame_cb);
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
             rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->om);
             if (rc != 0) {
-                os_mbuf_free_chain(h4sm->om);
+                HCI_TRANS_ASSERT(h4sm->frees && h4sm->frees->acl, rc, (uint32_t)h4sm->frees);
+                h4sm->frees->acl(h4sm->om);
+            }
+            h4sm->om = NULL;
+        }
+        break;
+    case HCI_H4_ISO:
+        if (h4sm->om) {
+            HCI_TRANS_ASSERT(h4sm->frame_cb, 0, 0);
+            rc = h4sm->frame_cb(h4sm->pkt_type, h4sm->om);
+            if (rc != 0) {
+                HCI_TRANS_ASSERT(h4sm->frees && h4sm->frees->iso, rc, (uint32_t)h4sm->frees);
+                h4sm->frees->iso(h4sm->om);
             }
             h4sm->om = NULL;
         }
         break;
 #endif // CONFIG_BT_CONTROLLER_ENABLED
     default:
-        assert(0);
+        HCI_TRANS_ASSERT(0, h4sm->pkt_type, 0);
         break;
     }
+}
+
+static int
+hci_h4_sm_free_buf(struct hci_h4_sm *h4sm)
+{
+    switch (h4sm->pkt_type) {
+        case HCI_H4_CMD:
+            if (h4sm->buf) {
+                h4sm->frees->cmd(h4sm->buf);
+                h4sm->buf = NULL;
+            }
+            break;
+#if (!CONFIG_BT_CONTROLLER_ENABLED)
+        case HCI_H4_EVT:
+            if (h4sm->buf) {
+                h4sm->frees->evt(h4sm->buf);
+                h4sm->buf = NULL;
+            }
+            break;
+#endif  // (!CONFIG_BT_CONTROLLER_ENABLED)
+        case HCI_H4_ACL:
+            if (h4sm->om) {
+                h4sm->frees->acl(h4sm->om);
+                h4sm->om = NULL;
+            }
+            break;
+        case HCI_H4_ISO:
+            if (h4sm->om) {
+                h4sm->frees->iso(h4sm->om);
+                h4sm->om = NULL;
+            }
+            break;
+        default:
+            break;
+    }
+
+    return 0;
 }
 
 int
@@ -307,18 +366,18 @@ hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len)
         /* no break */
         case HCI_H4_SM_W4_HEADER:
             rc = hci_h4_sm_w4_header(h4sm, &ib);
-            assert(rc >= 0);
             if (rc) {
                 break;
             }
+
             h4sm->state = HCI_H4_SM_W4_PAYLOAD;
         /* no break */
         case HCI_H4_SM_W4_PAYLOAD:
             rc = hci_h4_sm_w4_payload(h4sm, &ib);
-            assert(rc >= 0);
             if (rc) {
                 break;
             }
+
             h4sm->state = HCI_H4_SM_COMPLETED;
         /* no break */
         case HCI_H4_SM_COMPLETED:
@@ -330,6 +389,11 @@ hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len)
         }
     }
 
+    if (rc < 0) {
+        hci_h4_sm_free_buf(h4sm);
+        h4sm->state = HCI_H4_SM_W4_PKT_TYPE;
+        return -1;
+    }
     /* Calculate consumed bytes
      *
      * Note: we should always consume some bytes unless there is an oom error.
@@ -339,7 +403,7 @@ hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len)
      */
     len = len - ib.len;
     if (len == 0) {
-        assert(rc < 0);
+        HCI_TRANS_ASSERT((rc < 0), rc, ib.len);
         return -1;
     }
 
@@ -347,10 +411,11 @@ hci_h4_sm_rx(struct hci_h4_sm *h4sm, const uint8_t *buf, uint16_t len)
 }
 
 void
-hci_h4_sm_init(struct hci_h4_sm *h4sm, const struct hci_h4_allocators *allocs,
+hci_h4_sm_init(struct hci_h4_sm *h4sm, const struct hci_h4_allocators *allocs, const struct hci_h4_frees *frees,
                hci_h4_frame_cb *frame_cb)
 {
     memset(h4sm, 0, sizeof(*h4sm));
     h4sm->allocs = allocs;
+    h4sm->frees = frees;
     h4sm->frame_cb = frame_cb;
 }
