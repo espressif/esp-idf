@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,7 +37,6 @@ typedef struct {
 static hci_driver_uart_env_t s_hci_driver_uart_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
 static uint8_t s_hci_driver_uart_rx_data[CONFIG_BT_LE_HCI_RX_PROC_DATA_LEN];
-static hci_driver_uart_params_config_t hci_driver_uart_params = BT_HCI_DRIVER_UART_CONFIG_DEFAULT();
 
 static int
 hci_driver_uart_tx(hci_driver_data_type_t data_type, uint8_t *data, uint32_t length,
@@ -190,8 +189,8 @@ hci_driver_uart_init(hci_driver_forward_fn *cb)
 
     s_hci_driver_uart_env.rx_data = s_hci_driver_uart_rx_data;
     s_hci_driver_uart_env.forward_cb = cb;
-    s_hci_driver_uart_env.hci_uart_params = &hci_driver_uart_params;
-    hci_driver_uart_config(&hci_driver_uart_params);
+    s_hci_driver_uart_env.hci_uart_params = hci_driver_uart_config_param_get();
+    hci_driver_uart_config(s_hci_driver_uart_env.hci_uart_params);
     /* Currently, the queue size is set to 1. It will be considered as semaphore. */
     ESP_ERROR_CHECK(uart_driver_install(s_hci_driver_uart_env.hci_uart_params->hci_uart_port,
                                         CONFIG_BT_LE_HCI_UART_RX_BUFFER_SIZE,
@@ -215,14 +214,9 @@ int
 hci_driver_uart_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
     int rc;
-    hci_driver_uart_params_config_t *uart_param = s_hci_driver_uart_env.hci_uart_params;
 
     hci_driver_uart_task_delete();
-    uart_param->hci_uart_tx_pin = tx_pin;
-    uart_param->hci_uart_rx_pin = rx_pin;
-    uart_param->hci_uart_rts_pin = rts_pin;
-    uart_param->hci_uart_cts_pin = cts_pin;
-    hci_driver_uart_config(uart_param);
+    hci_driver_uart_pin_update(tx_pin, rx_pin, cts_pin, rts_pin);
     /* Currently, the queue size is set to 1. It will be considered as semaphore. */
     ESP_ERROR_CHECK(uart_driver_install(s_hci_driver_uart_env.hci_uart_params->hci_uart_port,
                                         CONFIG_BT_LE_HCI_UART_RX_BUFFER_SIZE,

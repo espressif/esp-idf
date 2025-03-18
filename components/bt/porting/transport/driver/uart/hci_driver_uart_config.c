@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,9 +10,9 @@
 #include "driver/uart.h"
 #include "hci_driver_uart.h"
 
-
 static const char *TAG = "hci_uart_config";
 static uart_config_t s_uart_cfg;
+static hci_driver_uart_params_config_t s_hci_driver_uart_params = BT_HCI_DRIVER_UART_CONFIG_DEFAULT();
 
 int hci_driver_uart_config(hci_driver_uart_params_config_t *uart_config)
 {
@@ -26,7 +26,6 @@ int hci_driver_uart_config(hci_driver_uart_params_config_t *uart_config)
     uart_cfg->source_clk= UART_SCLK_DEFAULT;
     uart_cfg->rx_flow_ctrl_thresh = UART_FIFO_LEN - 1;
 
-
     ESP_LOGI(TAG,"set uart pin tx:%d, rx:%d.\n", uart_config->hci_uart_tx_pin, uart_config->hci_uart_rx_pin);
     ESP_LOGI(TAG,"set rts:%d, cts:%d.\n", uart_config->hci_uart_rts_pin, uart_config->hci_uart_cts_pin);
     ESP_LOGI(TAG,"set baud_rate:%d.\n", uart_config->hci_uart_baud);
@@ -37,4 +36,21 @@ int hci_driver_uart_config(hci_driver_uart_params_config_t *uart_config)
     ESP_ERROR_CHECK(uart_set_pin(uart_config->hci_uart_port, uart_config->hci_uart_tx_pin, uart_config->hci_uart_rx_pin,
                                  uart_config->hci_uart_rts_pin, uart_config->hci_uart_cts_pin));
     return 0;
+}
+
+int
+hci_driver_uart_pin_update(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
+{
+    hci_driver_uart_params_config_t *uart_param = &s_hci_driver_uart_params;
+    uart_param->hci_uart_tx_pin = tx_pin;
+    uart_param->hci_uart_rx_pin = rx_pin;
+    uart_param->hci_uart_rts_pin = rts_pin;
+    uart_param->hci_uart_cts_pin = cts_pin;
+    return hci_driver_uart_config(uart_param);
+}
+
+hci_driver_uart_params_config_t *
+hci_driver_uart_config_param_get(void)
+{
+    return &s_hci_driver_uart_params;
 }
