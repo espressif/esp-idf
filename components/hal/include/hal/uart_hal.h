@@ -214,9 +214,9 @@ void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk);
  * @param  baud_rate The baud-rate to be set
  * @param  sclk_freq Frequency of the clock source of UART, in Hz.
  *
- * @return None
+ * @return True if baud-rate set successfully; False if baud-rate requested cannot be achieved
  */
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate, uint32_t sclk_freq);
+bool uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate, uint32_t sclk_freq);
 
 /**
  * @brief  Configure the UART stop bit

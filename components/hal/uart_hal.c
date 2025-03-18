@@ -17,9 +17,9 @@ void uart_hal_get_sclk(uart_hal_context_t *hal, uart_sclk_t *sclk)
     uart_ll_get_sclk(hal->dev, sclk);
 }
 
-void uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate, uint32_t sclk_freq)
+bool uart_hal_set_baudrate(uart_hal_context_t *hal, uint32_t baud_rate, uint32_t sclk_freq)
 {
-    uart_ll_set_baudrate(hal->dev, baud_rate, sclk_freq);
+    return uart_ll_set_baudrate(hal->dev, baud_rate, sclk_freq);
 }
 
 void uart_hal_get_baudrate(uart_hal_context_t *hal, uint32_t *baud_rate, uint32_t sclk_freq)

@@ -214,7 +214,7 @@ esp_err_t uart_get_sclk_freq(uart_sclk_t sclk, uint32_t* out_freq_hz);
  * @param baudrate UART baud rate.
  *
  * @return
- *     - ESP_FAIL Parameter error
+ *     - ESP_FAIL Parameter error, such as baud rate unachievable
  *     - ESP_OK   Success
  */
 esp_err_t uart_set_baudrate(uart_port_t uart_num, uint32_t baudrate);
@@ -444,7 +444,7 @@ esp_err_t uart_set_tx_idle_num(uart_port_t uart_num, uint16_t idle_num);
  *
  * @return
  *     - ESP_OK   Success
- *     - ESP_FAIL Parameter error
+ *     - ESP_FAIL Parameter error, such as baud rate unachievable
  */
 esp_err_t uart_param_config(uart_port_t uart_num, const uart_config_t *uart_config);
 
