@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1063,6 +1063,7 @@ void master_run_essl(void)
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: Append mode", "[spi_ms]", master_run_essl, slave_run_append);
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 #define TEST_SLP_BUF_ID                 12
 #define TEST_SLP_BUF_VAL                0xDEADBEEF
 TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
@@ -1238,3 +1239,4 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

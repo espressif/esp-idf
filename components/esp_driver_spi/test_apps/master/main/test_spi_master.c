@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,6 +114,8 @@ TEST_CASE("SPI Master clockdiv calculation routines", "[spi]")
         for (int i = 0; i < TEST_CLK_TIMES; i++) {
             check_spi_pre_n_for(clk_param_40m[i][0], clk_param_40m[i][1], clk_param_40m[i][2]);
         }
+    } else {
+        ESP_LOGW(TAG, "Don't find any routing param!!");
     }
 
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
@@ -147,7 +149,7 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
             spi_device_handle_t handle;
             spi_device_interface_config_t devcfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
             devcfg.clock_source = spi_clk_sour[sour_idx];
-            devcfg.clock_speed_hz = MIN(IDF_PERFORMANCE_MAX_SPI_CLK_FREQ, clock_source_hz) >> test_time;
+            devcfg.clock_speed_hz = MIN(IDF_TARGET_MAX_SPI_CLK_FREQ, clock_source_hz) >> test_time;
             devcfg.flags |= SPI_DEVICE_HALFDUPLEX;  //esp32 half duplex to work on high freq
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
             if (devcfg.clock_source == SPI_CLK_SRC_RC_FAST) {
@@ -170,6 +172,9 @@ TEST_CASE("SPI Master clk_source and divider accuracy", "[spi]")
             end = esp_timer_get_time();
             int trans_cost = end - start;
             int time_tolerance = trans_cost_us_predict * TEST_TRANS_TIME_BIAS_RATIO;
+#if !SOC_CLK_TREE_SUPPORTED
+            time_tolerance *= 2;    //cpu is executing too slow before clock supported
+#endif
             printf("real_freq %dk predict_cost %d real_cost_us %d diff %d tolerance %d us\n", real_freq_khz, trans_cost_us_predict, trans_cost, (trans_cost - trans_cost_us_predict), time_tolerance);
 
             TEST_ASSERT_LESS_THAN_UINT32(time_tolerance, abs(trans_cost - trans_cost_us_predict));
@@ -197,7 +202,7 @@ TEST_CASE("test_device_dynamic_freq_update", "[spi]")
         .length = sizeof(master_send) * 8,
     };
 
-    trans_cfg.override_freq_hz = IDF_PERFORMANCE_MAX_SPI_CLK_FREQ;
+    trans_cfg.override_freq_hz = IDF_TARGET_MAX_SPI_CLK_FREQ;
     for (int i = 1; i < 15; i++) {
         TEST_ESP_OK(spi_device_transmit(dev0, &trans_cfg));
         spi_device_get_actual_freq(dev0, &master_send);
@@ -1463,7 +1468,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_NO_POLLING", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_INTR_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //acquire the bus to send polling transactions faster
@@ -1481,7 +1486,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_POLLING", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_POLL_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //release the bus
@@ -1501,7 +1506,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_NO_POLLING_NO_DMA", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_NO_POLLING_NO_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_INTR_CPU, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //acquire the bus to send polling transactions faster
@@ -1519,7 +1524,7 @@ TEST_CASE("spi_speed", "[spi]")
     }
 #ifndef CONFIG_SPIRAM
     printf("[Performance][%s]: %d us\n", "SPI_PER_TRANS_POLLING_NO_DMA", (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
-    TEST_ASSERT_LESS_THAN_INT(IDF_PERFORMANCE_MAX_SPI_PER_TRANS_POLLING_NO_DMA, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
+    TEST_ASSERT_LESS_THAN_INT(IDF_TARGET_MAX_TRANS_TIME_POLL_CPU, (int)GET_US_BY_CCOUNT(t_flight_sorted[(TEST_TIMES + 1) / 2]));
 #endif
 
     //release the bus
@@ -1830,6 +1835,7 @@ TEST_CASE("test_bus_free_safty_to_remain_devices", "[spi]")
     TEST_ESP_OK(spi_bus_free(TEST_SPI_HOST));
 }
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("test_spi_master_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
@@ -1959,3 +1965,4 @@ TEST_CASE("test_spi_master_auto_sleep_retention", "[spi]")
     TEST_ESP_OK(esp_pm_configure(&pm_config));
 }
 #endif  //CONFIG_PM_ENABLE
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

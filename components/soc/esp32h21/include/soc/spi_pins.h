@@ -18,11 +18,11 @@
 
 // GPSPI2 IOMUX PINs
 #define SPI2_FUNC_NUM               2
-#define SPI2_IOMUX_PIN_NUM_MISO     4
-#define SPI2_IOMUX_PIN_NUM_HD       1
 #define SPI2_IOMUX_PIN_NUM_WP       0
+#define SPI2_IOMUX_PIN_NUM_HD       1
 #define SPI2_IOMUX_PIN_NUM_CLK      2
 #define SPI2_IOMUX_PIN_NUM_MOSI     3
+#define SPI2_IOMUX_PIN_NUM_MISO     4
 #define SPI2_IOMUX_PIN_NUM_CS       12
 
 #endif

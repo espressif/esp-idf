@@ -782,6 +782,7 @@ TEST_CASE("test_slave_isr_pin_to_core", "[spi]")
 }
 #endif
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("test_spi_slave_sleep_retention", "[spi]")
 {
     // Prepare a TOP PD sleep
@@ -842,3 +843,4 @@ TEST_CASE("test_spi_slave_sleep_retention", "[spi]")
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

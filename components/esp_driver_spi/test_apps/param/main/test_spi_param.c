@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1269,12 +1269,12 @@ TEST_SPI_MASTER_SLAVE(MODE, mode_conf, "")
 #define TEST_STEP_LEN         96
 #define TEST_STEP             2
 static int s_spi_bus_freq[] = {
-    IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 10,
-    IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 7,
-    IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 4,
-    IDF_PERFORMANCE_MAX_SPI_CLK_FREQ / 2,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 10,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 7,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 4,
+    IDF_TARGET_MAX_SPI_CLK_FREQ / 2,
 #if !CONFIG_IDF_TARGET_ESP32P4      //TODO: IDF-8313, update P4 defaulte clock source
-    IDF_PERFORMANCE_MAX_SPI_CLK_FREQ,
+    IDF_TARGET_MAX_SPI_CLK_FREQ,
 #endif
 };
 
