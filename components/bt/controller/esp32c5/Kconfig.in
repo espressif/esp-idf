@@ -90,7 +90,7 @@ menu "HCI Config"
     config BT_LE_HCI_TRANS_TASK_STACK_SIZE
         int "HCI transport task stack size"
         depends on !BT_LE_HCI_INTERFACE_USE_RAM
-        default 1024
+        default 2048
         help
             This configures stack size of hci transport task
 endmenu
@@ -459,7 +459,7 @@ config BT_LE_CRYPTO_STACK_MBEDTLS
 
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"
-    range 1 15
+    range 1 31
     default 12
     depends on !BT_NIMBLE_ENABLED
 
