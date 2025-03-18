@@ -43,7 +43,8 @@ entries:
             esp_clk:calc_checksum (noflash)
         if SOC_SYSTIMER_SUPPORTED = y:
             systimer (noflash)
-        sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
+        if IDF_TARGET_ESP32H21 != y && IDF_TARGET_ESP32H4 != y:
+            sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
         if SOC_TEMP_SENSOR_SUPPORTED = y:
             sar_periph_ctrl_common:temperature_sensor_power_acquire (noflash)
             sar_periph_ctrl_common:temperature_sensor_power_release (noflash)
