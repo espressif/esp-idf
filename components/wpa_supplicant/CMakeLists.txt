@@ -127,6 +127,9 @@ if(CONFIG_ESP_WIFI_MBEDTLS_CRYPTO)
     if(NOT CONFIG_MBEDTLS_DES_C)
         set(crypto_src ${crypto_src} "src/crypto/des-internal.c")
     endif()
+    if(NOT CONFIG_MBEDTLS_SHA1_C)
+        set(crypto_src ${crypto_src} "src/crypto/sha1.c")
+    endif()
     # Enabling this only for WiFi is probably not a good idea since MbedTLS
     # uses generic crypto init/update functions for this. That causes
     # binary size increment since all the other enabled module
