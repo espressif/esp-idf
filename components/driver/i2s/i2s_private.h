@@ -25,7 +25,7 @@ extern "C" {
 
 // If ISR handler is allowed to run whilst cache is disabled,
 // Make sure all the code and related variables used by the handler are in the SRAM
-#if CONFIG_I2S_ISR_IRAM_SAFE
+#if CONFIG_I2S_ISR_IRAM_SAFE || CONFIG_GDMA_ISR_IRAM_SAFE
 #define I2S_INTR_ALLOC_FLAGS    (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED)
 #define I2S_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
