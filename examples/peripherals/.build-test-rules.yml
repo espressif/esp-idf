@@ -314,6 +314,12 @@ examples/peripherals/parlio/parlio_rx:
   depends_components:
     - esp_driver_parlio
 
+examples/peripherals/parlio/parlio_tx/advanced_rgb_led_matrix:
+  disable:
+    - if: (SOC_PARLIO_SUPPORTED != 1 or SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION != 1) or SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH < 16
+  depends_components:
+    - esp_driver_parlio
+
 examples/peripherals/parlio/parlio_tx/simple_rgb_led_matrix:
   disable:
     - if: SOC_PARLIO_SUPPORTED != 1 or SOC_DEDICATED_GPIO_SUPPORTED != 1
