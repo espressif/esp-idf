@@ -22,7 +22,7 @@ Overview
 
     The {IDF_TARGET_NAME} has one core, with 28 external asynchronous interrupts. Each interrupt's priority is independently programmable. In addition, there are also 4 core local interrupt sources (CLINT). See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32h4
 
     The {IDF_TARGET_NAME} has two cores, with 32 external asynchronous interrupts each. Each interrupt's priority is independently programmable. In addition, there are also 3 core local interrupt sources (CLINT) on each core. See **{IDF_TARGET_NAME} Technical Reference Manual** [`PDF <{IDF_TARGET_TRM_EN_URL}#riscvcpu>`__] for more details.
 
@@ -41,7 +41,7 @@ Non-shared interrupts can be either level- or edge-triggered. Shared interrupts 
 To illustrate why shared interrupts can only be level-triggered, take the scenario where peripheral A and peripheral B share the same edge-triggered interrupt. Peripheral B triggers an interrupt and sets its interrupt signal high, causing a low-to-high edge, which in turn latches the CPU's interrupt bit and triggers the ISR. The ISR executes, checks that peripheral A did not trigger an interrupt, and proceeds to handle and clear peripheral B's interrupt signal. Before the ISR returns, the CPU clears its interrupt bit latch. Thus, during the entire interrupt handling process, if peripheral A triggers an interrupt, it will be missed due the CPU clearing the interrupt bit latch.
 
 
-.. only:: esp32 or esp32s3
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_XTENSA
 
     Multicore Issues
     ----------------
@@ -71,7 +71,7 @@ To illustrate why shared interrupts can only be level-triggered, take the scenar
 
     The remaining interrupt sources are from external peripherals.
 
-.. only:: esp32p4
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_RISCV
 
     Multicore Considerations
     ------------------------

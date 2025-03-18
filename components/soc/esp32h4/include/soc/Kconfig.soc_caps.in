@@ -123,6 +123,14 @@ config SOC_CPU_IDRAM_SPLIT_USING_PMP
     bool
     default y
 
+config SOC_HP_CPU_HAS_MULTIPLE_CORES
+    bool
+    default y
+
+config SOC_CPU_HAS_LOCKUP_RESET
+    bool
+    default y
+
 config SOC_GPIO_PORT
     int
     default 1
