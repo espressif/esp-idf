@@ -31,6 +31,10 @@
 	* 在 release/5.2 分支和 release/5.3 分支进入维护周期之前，发布更多 bugfix 版本
 	* release/5.4 分支和 release/5.5 分支发布更多 bugfix 版本，使这两个分支更加稳定和产品化
 
+* 重大变更
+
+	* 我们计划在 IDF v6.0 中将 MbedTLS 版本升级到 v4.x。另外，我们还会在升级中迁移到更新版的 PSA 加密 API，但请注意，这可能会导致应用程序端在使用加密 API 时出现一些非兼容性更新。
+
 请注意，获取之前芯片的支持状态，请参阅 [ESP-IDF 发布和 SoC 兼容性](https://github.com/espressif/esp-idf/blob/master/README_CN.md#esp-idf-与乐鑫芯片)。
 
 ### 路线图细节
@@ -50,7 +54,7 @@ ESP-IDF 项目重视持续维护和更新，确保我们的客户始终处于技
 
 	* 发布 Bugfix 版本 IDF v5.0.8 和 IDF v5.0.9，并在 2025 年 5 月底停止维护 ESP-IDF v5.0
 	* 发布 Bugfix 版本 IDF v5.1.6 和 IDF v5.1.7，并在 2025 年 12 月底停止维护 ESP-IDF v5.1
-	* 发布 Bugfix 版本 IDF v5.2.4 和 IDF v5.2.5，release/5.2 分支自 2025 年 2 月进入维护周期
+	* 发布 Bugfix 版本 IDF v5.2.4，IDF v5.2.5 和 IDF v5.2.6，release/5.2 分支自 2025 年 2 月进入维护周期
 	* 发布 Bugfix 版本 IDF v5.3.3 和 IDF v5.3.4，release/5.3 分支自 2025 年 7 月进入维护周期
 	* release/5.4 分支发布更多 bugfix 版本，包括 IDF v5.4.1、IDF v5.4.2、IDF v5.4.3；release/5.5 分支发布更多 bugfix 版本，包括 IDF v5.5.1、IDF v5.5.2。通过发布这些 Bugfix 版本，使 release/5.4 分支和 release/5.5 分支更加稳定和产品化。
 
@@ -79,9 +83,6 @@ timeline
           v6.0-RC2 : 2026/02/06  
           v6.0 : 2026/02/13   
 ```
-
-> [!NOTE]
-> 但对于 12 月份的发布，我们也在考虑发布另外一个次要版本。我们将在 2025 年中期确定 v5.6 的计划，如一经确定，我们将把 12 月份的 v6.0 发布变更为 v5.6 发布。
   
 ### ESP-IDF 次要版本发布
 
@@ -111,7 +112,8 @@ timeline
         section 2025 Q1 <br> Bugfix Release Planning
           v5.0.8 : 2025/01/14
           v5.1.6 : 2025/02/18
-          v5.2.4 : 2025/02/23        
+          v5.2.4 : 2025/02/23
+          v5.2.5 : 2025/02/28         
           v5.4.1 : 2025/03/27
           v5.3.3 : 2025/04/04                
         section 2025 Q2 <br> Bugfix Release Planning
@@ -119,7 +121,7 @@ timeline
           v5.4.2 : 2025/06/30 
         section 2025 Q3 <br> Bugfix Release Planning
           v5.3.4 : 2025/08/03
-          v5.2.5 : 2025/09/04
+          v5.2.6 : 2025/09/04
           v5.5.1 : 2025/09/11   
           v5.4.3 : 2025/10/08
         section 2025 Q4 <br> Bugfix Release Planning
