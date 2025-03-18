@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -96,7 +96,7 @@ hci_driver_util_tx_list_enqueue(hci_driver_data_type_t type, uint8_t *data, uint
     hci_driver_util_tx_entry_t *tx_entry;
 
     tx_entry = os_memblock_get(s_hci_driver_util_env.tx_entry_pool);
-    assert(tx_entry != NULL);
+    HCI_TRANS_ASSERT((tx_entry != NULL), 0, 0);
     tx_entry->data_type = type;
     tx_entry->data = data;
     tx_entry->length = len;
@@ -149,7 +149,7 @@ hci_driver_util_tx_list_dequeue(uint32_t max_tx_len, void **tx_data, bool *last_
                 *tx_data = &tx_entry->data[s_hci_driver_util_env.cur_tx_off];
             }
         } else {
-            assert(0);
+            HCI_TRANS_ASSERT(0, tx_entry->data_type, data_len);
         }
         /* If this is the last frame, inform the invoker not to call this API until the current data
          * has been completely sent.
@@ -222,4 +222,11 @@ hci_driver_util_deinit(void)
     hci_driver_util_memory_deinit();
 
     memset(&s_hci_driver_util_env, 0, sizeof(hci_driver_util_env_t));
+}
+
+
+void
+hci_driver_util_assert_check(const uint32_t ln, const char *fn, uint32_t param1, uint32_t param2)
+{
+    ESP_LOGE(TAG, "hci driver assert: line %d in function %s, param: 0x%x, 0x%x", ln, fn, param1, param2);
 }
