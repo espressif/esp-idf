@@ -734,10 +734,11 @@ config BT_NIMBLE_GATT_CACHING_DISABLE_AUTO
 config BT_NIMBLE_WHITELIST_SIZE
     int "BLE white list size"
     depends on BT_NIMBLE_ENABLED
+    range 1 31 if SOC_ESP_NIMBLE_CONTROLLER
     range 1 15
     default 12
     help
-            BLE list size
+        BLE list size
 
 config BT_NIMBLE_TEST_THROUGHPUT_TEST
     bool "Throughput Test Mode enable"
