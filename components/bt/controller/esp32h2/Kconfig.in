@@ -108,7 +108,7 @@ menu "HCI Config"
     config BT_LE_HCI_TRANS_TASK_STACK_SIZE
         int "HCI transport task stack size"
         depends on !BT_LE_HCI_INTERFACE_USE_RAM
-        default 1024
+        default 2048
         help
             This configures stack size of hci transport task
 
