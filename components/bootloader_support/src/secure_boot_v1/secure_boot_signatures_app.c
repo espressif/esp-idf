@@ -14,6 +14,9 @@
 #include "psa/crypto.h"
 #include <string.h>
 #include <sys/param.h>
+#include "mbedtls/pk.h"
+#include "psa/crypto.h"
+
 
 #ifdef CONFIG_SECURE_SIGNED_APPS_ECDSA_SCHEME
 ESP_LOG_ATTR_TAG(TAG, "secure_boot_v1");
@@ -107,10 +110,11 @@ esp_err_t esp_secure_boot_verify_ecdsa_signature_block(const esp_secure_boot_sig
 
     // Verify the signature
     status = psa_verify_hash(key_handle, PSA_ALG_ECDSA(PSA_ALG_SHA_256), image_digest, ESP_SECURE_BOOT_DIGEST_LEN, sig_block->signature, SIGNATURE_VERIFICATION_KEYLEN);
-    ESP_LOGD(TAG, "Verification result %d", status);
+    ESP_LOGI(TAG, "Verification result %d", status);
 
     // Destroy the key handle
     psa_destroy_key(key_handle);
+    psa_reset_key_attributes(&key_attributes);
 
     return status == PSA_SUCCESS ? ESP_OK : ESP_ERR_IMAGE_INVALID;
 #endif // CONFIG_MBEDTLS_ECDSA_C && CONFIG_MBEDTLS_ECP_DP_SECP256R1_ENABLED

@@ -63,6 +63,7 @@
 #include "sha/sha_core.h"
 #endif
 #include "esp_log.h"
+#include "psa/crypto.h"
 
 #ifndef PUT_UINT32_BE
 #define PUT_UINT32_BE(n, b, i)                          \
@@ -100,24 +101,24 @@ struct fast_psk_context {
 };
 
 /* Acquire SHA1 hardware for exclusive use */
-static inline void sha1_setup(void)
-{
-#if SOC_SHA_SUPPORT_PARALLEL_ENG
-    esp_sha_lock_engine(SHA1);
-#else
-    esp_sha_acquire_hardware();
-#endif
-}
+// static inline void sha1_setup(void)
+// {
+// #if SOC_SHA_SUPPORT_PARALLEL_ENG
+//     esp_sha_lock_engine(SHA1);
+// #else
+//     esp_sha_acquire_hardware();
+// #endif
+// }
 
 /* Release SHA1 hardware */
-static inline void sha1_teardown(void)
-{
-#if SOC_SHA_SUPPORT_PARALLEL_ENG
-    esp_sha_unlock_engine(SHA1);
-#else
-    esp_sha_release_hardware();
-#endif
-}
+// static inline void sha1_teardown(void)
+// {
+// #if SOC_SHA_SUPPORT_PARALLEL_ENG
+//     esp_sha_unlock_engine(SHA1);
+// #else
+//     esp_sha_release_hardware();
+// #endif
+// }
 
 /*
  * Pads the given HMAC block context with the appropriate SHA1 padding.
@@ -160,13 +161,62 @@ static inline void write32_be(uint32_t n, uint8_t out[4])
 
 void sha1_op(uint32_t blocks[FAST_PSK_SHA1_BLOCKS_BUF_WORDS], uint32_t output[SHA1_OUTPUT_SZ_WORDS])
 {
-    esp_sha_set_mode(SHA1);
-    /* First block */
-    esp_sha_block(SHA1, blocks, true);
-    /* Second block */
-    esp_sha_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], false);
-    /* Read the final digest */
-    esp_sha_read_digest_state(SHA1, output);
+    // esp_sha_set_mode(SHA1);
+    // /* First block */
+    // esp_sha_block(SHA1, blocks, true);
+    // /* Second block */
+    // esp_sha_block(SHA1, &blocks[SHA1_BLOCK_SZ_WORDS], false);
+    // /* Read the final digest */
+    // esp_sha_read_digest_state(SHA1, output);
+
+    // Convert to PSA API
+    psa_status_t status;
+    psa_hash_operation_t operation = PSA_HASH_OPERATION_INIT;
+
+    status = psa_hash_setup(&operation, PSA_ALG_SHA_1);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE("fastpsk", "psa_hash_setup failed: %d", status);
+        return;
+    }
+
+    // Update with the first block
+    status = psa_hash_update(&operation, (const uint8_t *)blocks, SHA1_BLOCK_SZ);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE("fastpsk", "psa_hash_update failed: %d", status);
+        psa_hash_abort(&operation);
+        return;
+    }
+
+    // Update with the second block
+    status = psa_hash_update(&operation, (const uint8_t *)&blocks[SHA1_BLOCK_SZ_WORDS], SHA1_BLOCK_SZ);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE("fastpsk", "psa_hash_update failed: %d", status);
+        psa_hash_abort(&operation);
+        return;
+    }
+
+    // Finish the hash operation
+    size_t mac_len;
+    status = psa_hash_finish(&operation, (uint8_t *)output, SHA1_OUTPUT_SZ, &mac_len);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE("fastpsk", "psa_hash_finish failed: %d", status);
+        psa_hash_abort(&operation);
+        return;
+    }
+
+    // Ensure the output length is correct
+    if (mac_len != SHA1_OUTPUT_SZ) {
+        ESP_LOGE("fastpsk", "Unexpected hash length: %zu, expected: %d", mac_len, SHA1_OUTPUT_SZ);
+        psa_hash_abort(&operation);
+        return;
+    }
+
+    // Clean up the operation
+    status = psa_hash_abort(&operation);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE("fastpsk", "psa_hash_abort failed: %d", status);
+        return;
+    }
 
 #if CONFIG_IDF_TARGET_ESP32
     for (int i = 0; i < SHA1_OUTPUT_SZ_WORDS; i++) {
@@ -210,7 +260,7 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
     /* Pad the block */
     pad_blocks(&ctx->inner, SHA1_BLOCK_SZ + ssid_len + 4);
 
-    sha1_setup();
+    // sha1_setup();
 
     uint32_t *pi, *po;
     pi = ctx->inner.whole_words;
@@ -245,7 +295,7 @@ void fast_psk_f(const char *password, size_t password_len, const uint8_t *ssid, 
         }
     }
 
-    sha1_teardown();
+    // sha1_teardown();
 
     /* Copy the final result to the output digest */
     memcpy(digest, sum, SHA1_OUTPUT_SZ);

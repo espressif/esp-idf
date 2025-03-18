@@ -44,6 +44,7 @@
 #include "esp_crt_bundle.h"
 #endif
 #include "time_sync.h"
+#include "esp_random.h"
 
 /* Constants that aren't configurable in menuconfig */
 #ifdef CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT
@@ -95,7 +96,7 @@ extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cer
 static const int server_supported_ciphersuites[] = {MBEDTLS_TLS1_3_AES_256_GCM_SHA384, MBEDTLS_TLS1_3_AES_128_CCM_SHA256, 0};
 static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
 #else
-static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0};
+static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256, MBEDTLS_TLS_ECDHE_ECDSA_WITH_AES_128_CCM, 0};
 static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
 #endif // CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT
 #endif // CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS

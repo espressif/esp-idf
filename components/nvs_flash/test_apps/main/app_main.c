@@ -63,8 +63,8 @@ void setUp(void)
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as memory leak otherwise
 #if defined(CONFIG_NVS_ENCRYPTION) && defined(SOC_AES_SUPPORTED)
-    mbedtls_aes_context ctx;
-    mbedtls_aes_init(&ctx);
+    // mbedtls_aes_context ctx;
+    // mbedtls_aes_init(&ctx);
 #endif
 
     // Calling esp_partition_find_first ensures that the partitions have been loaded

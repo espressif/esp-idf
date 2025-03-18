@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,8 @@
 #include "memory_checks.h"
 #include "soc/soc_caps.h"
 #include "esp_newlib.h"
+#include "esp_random.h"
+#include "mbedtls/entropy.h"
 
 /* setUp runs before every test */
 void setUp(void)
@@ -17,8 +19,8 @@ void setUp(void)
     // Execute mbedtls_aes_init operation to allocate AES interrupt
     // allocation memory which is considered as leak otherwise
 #if SOC_AES_SUPPORTED
-    mbedtls_aes_context ctx;
-    mbedtls_aes_init(&ctx);
+    // mbedtls_aes_context ctx;
+    // mbedtls_aes_init(&ctx);
 #endif // SOC_AES_SUPPORTED
 
     test_utils_record_free_mem();

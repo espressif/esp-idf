@@ -3,6 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #endif
@@ -455,9 +458,9 @@ static void *aes_crypt_init(int mode, const u8 *key, size_t len)
         return NULL;
     }
 
-    if (mode == MBEDTLS_AES_ENCRYPT) {
+    if (mode == MBEDTLS_ENCRYPT) {
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_ENCRYPT);
-    } else if (mode == MBEDTLS_AES_DECRYPT) {
+    } else if (mode == MBEDTLS_DECRYPT) {
         psa_set_key_usage_flags(&attributes, PSA_KEY_USAGE_DECRYPT);
     }
 
@@ -490,9 +493,9 @@ static int aes_crypt(void *ctx, int mode, const u8 *in, u8 *out)
         return -1;
     }
 
-    if (mode == MBEDTLS_AES_ENCRYPT) {
+    if (mode == MBEDTLS_ENCRYPT) {
         status = psa_cipher_encrypt_setup(&operation, *key_id, PSA_ALG_ECB_NO_PADDING);
-    } else if (mode == MBEDTLS_AES_DECRYPT) {
+    } else if (mode == MBEDTLS_DECRYPT) {
         status = psa_cipher_decrypt_setup(&operation, *key_id, PSA_ALG_ECB_NO_PADDING);
     } else {
         wpa_printf(MSG_ERROR, "%s: invalid mode", __func__);
@@ -537,12 +540,12 @@ static void aes_crypt_deinit(void *ctx)
 
 void *aes_encrypt_init(const u8 *key, size_t len)
 {
-    return aes_crypt_init(MBEDTLS_AES_ENCRYPT, key, len);
+    return aes_crypt_init(MBEDTLS_ENCRYPT, key, len);
 }
 
 int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
 {
-    return aes_crypt(ctx, MBEDTLS_AES_ENCRYPT, plain, crypt);
+    return aes_crypt(ctx, MBEDTLS_ENCRYPT, plain, crypt);
 }
 
 void aes_encrypt_deinit(void *ctx)
@@ -552,12 +555,12 @@ void aes_encrypt_deinit(void *ctx)
 
 void * aes_decrypt_init(const u8 *key, size_t len)
 {
-    return aes_crypt_init(MBEDTLS_AES_DECRYPT, key, len);
+    return aes_crypt_init(MBEDTLS_DECRYPT, key, len);
 }
 
 int aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
 {
-    return aes_crypt(ctx, MBEDTLS_AES_DECRYPT, crypt, plain);
+    return aes_crypt(ctx, MBEDTLS_DECRYPT, crypt, plain);
 }
 
 void aes_decrypt_deinit(void *ctx)
@@ -735,8 +738,10 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     }
 
     psa_status_t status;
-    psa_key_attributes attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_attributes_t attributes = PSA_KEY_ATTRIBUTES_INIT;
     psa_key_id_t key_id;
+    psa_cipher_operation_t *enc_operation = NULL;
+    psa_cipher_operation_t *dec_operation = NULL;
 
     status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
@@ -768,10 +773,10 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
 
     psa_reset_key_attributes(&attributes);
 
-    psa_cipher_operation_t *enc_operation = os_zalloc(sizeof(psa_cipher_operation_t));
+    enc_operation = os_zalloc(sizeof(psa_cipher_operation_t));
     if (!enc_operation) {
         wpa_printf(MSG_ERROR, "%s: os_zalloc failed", __func__);
-        return NULL;
+        goto cleanup;
     }
 
     ctx->ctx_enc = (void *)enc_operation;
@@ -779,24 +784,50 @@ struct crypto_cipher *crypto_cipher_init(enum crypto_cipher_alg alg,
     status = psa_cipher_encrypt_setup(enc_operation, key_id, psa_alg);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_encrypt_setup failed", __func__);
-        return NULL;
+        goto cleanup;
     }
 
     status = psa_cipher_set_iv(enc_operation, iv, 16);
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed", __func__);
-        return NULL;
+        goto cleanup;
     }
 
-    psa_cipher_operation_t *dec_operation = os_zalloc(sizeof(psa_cipher_operation_t));
+    dec_operation = os_zalloc(sizeof(psa_cipher_operation_t));
     if (!dec_operation) {
         wpa_printf(MSG_ERROR, "%s: os_zalloc failed", __func__);
-        return NULL;
+        goto cleanup;
     }
-#endif /* CONFIG_MBEDTLS_CIPHER_MODE_WITH_PADDING */
+
+    ctx->ctx_dec = (void *)dec_operation;
+
+    status = psa_cipher_decrypt_setup(dec_operation, key_id, psa_alg);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_decrypt_setup failed", __func__);
+        goto cleanup;
+    }
+
+    status = psa_cipher_set_iv(dec_operation, iv, 16);
+    if (status != PSA_SUCCESS) {
+        wpa_printf(MSG_ERROR, "%s: psa_cipher_set_iv failed", __func__);
+        goto cleanup;
+    }
+
+    ctx->key_id = key_id;
+
     return ctx;
 
 cleanup:
+    if (key_id) {
+        psa_destroy_key(key_id);
+    }
+    if (enc_operation) {
+        os_free(enc_operation);
+    }
+    if (dec_operation) {
+        os_free(dec_operation);
+    }
+    psa_reset_key_attributes(&attributes);
     os_free(ctx);
     return NULL;
 }
@@ -856,6 +887,8 @@ void crypto_cipher_deinit(struct crypto_cipher *ctx)
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "%s: psa_destroy_key failed", __func__);
     }
+    os_free(ctx->ctx_enc);
+    os_free(ctx->ctx_dec);
     os_free(ctx);
 }
 #endif

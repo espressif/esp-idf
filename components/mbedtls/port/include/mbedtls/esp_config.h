@@ -25,9 +25,13 @@
 #ifndef ESP_CONFIG_H
 #define ESP_CONFIG_H
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #include "sdkconfig.h"
 #include "mbedtls/mbedtls_config.h"
 #include "soc/soc_caps.h"
+
+
 
 /**
  * \def MBEDTLS_PSA_ASSUME_EXCLUSIVE_BUFFERS
@@ -149,6 +153,8 @@
 /** Override calloc(), free() except for case where memory allocation scheme is not set to custom */
 #ifndef CONFIG_MBEDTLS_CUSTOM_MEM_ALLOC
 #include "esp_mem.h"
+#undef MBEDTLS_PLATFORM_STD_CALLOC
+#undef MBEDTLS_PLATFORM_STD_FREE
 #define MBEDTLS_PLATFORM_STD_CALLOC		esp_mbedtls_mem_calloc
 #define MBEDTLS_PLATFORM_STD_FREE		esp_mbedtls_mem_free
 #endif
@@ -623,11 +629,11 @@
  *
  * Comment this macro to disable FIXED POINT curves optimisation.
  */
-#ifdef CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM
-#define MBEDTLS_ECP_FIXED_POINT_OPTIM 1
-#else
-#define MBEDTLS_ECP_FIXED_POINT_OPTIM 0
-#endif
+// #ifdef CONFIG_MBEDTLS_ECP_FIXED_POINT_OPTIM
+// #define MBEDTLS_ECP_FIXED_POINT_OPTIM 1
+// #else
+// #define MBEDTLS_ECP_FIXED_POINT_OPTIM 0
+// #endif
 
 /**
  * \def MBEDTLS_ECDSA_DETERMINISTIC

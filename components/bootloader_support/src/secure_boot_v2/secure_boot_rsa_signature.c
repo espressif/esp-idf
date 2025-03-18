@@ -5,6 +5,7 @@
  */
 #include "esp_log.h"
 #include "esp_secure_boot.h"
+#include "mbedtls/pk.h"
 #include "psa/crypto.h"
 #include "mbedtls/pk.h"
 #include "mbedtls/rsa.h"

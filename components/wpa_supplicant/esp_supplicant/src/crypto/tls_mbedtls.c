@@ -179,7 +179,7 @@ static int set_pki_context(tls_context_t *tls, const struct tls_connection_param
 
     ret = mbedtls_pk_parse_key(&tls->clientkey, cfg->private_key_blob, cfg->private_key_blob_len,
                                (const unsigned char *)cfg->private_key_passwd,
-                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+                               cfg->private_key_passwd ? os_strlen(cfg->private_key_passwd) : 0);
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "mbedtls_pk_parse_keyfile returned -0x%x", -ret);
         return ret;
@@ -611,7 +611,7 @@ static int tls_create_mbedtls_handle(struct tls_connection *conn,
         goto exit;
     }
 
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+    // mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3) && !defined(CONFIG_TLSV13)
     /* Disable TLSv1.3 even when enabled in MbedTLS and not enabled in WiFi config.

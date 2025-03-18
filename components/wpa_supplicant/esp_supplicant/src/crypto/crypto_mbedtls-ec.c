@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define MBEDTLS_ALLOW_PRIVATE_ACCESS
+
 #ifdef ESP_PLATFORM
 #include "esp_system.h"
 #include "mbedtls/bignum.h"
@@ -23,7 +25,7 @@
 #include "mbedtls/sha256.h"
 #include "mbedtls/asn1write.h"
 #include "mbedtls/error.h"
-#include "mbedtls/oid.h"
+// #include "mbedtls/crypto_oid.h"
 
 #include <mbedtls/psa_util.h>
 #include "psa/crypto.h"
@@ -537,6 +539,82 @@ static struct crypto_ec_key *crypto_alloc_key(void)
     return (struct crypto_ec_key *)key;
 }
 
+static psa_ecc_family_t group_id_to_psa(mbedtls_ecp_group_id grp_id, size_t *bits)
+{
+    switch (grp_id) {
+    case MBEDTLS_ECP_DP_SECP192R1:
+        if (bits) {
+            *bits = 192;
+        }
+        return PSA_ECC_FAMILY_SECP_R1;
+    case MBEDTLS_ECP_DP_SECP224R1:
+        if (bits) {
+            *bits = 224;
+        }
+        return PSA_ECC_FAMILY_SECP_R1;
+    case MBEDTLS_ECP_DP_SECP256R1:
+        if (bits) {
+            *bits = 256;
+        }
+        return PSA_ECC_FAMILY_SECP_R1;
+    case MBEDTLS_ECP_DP_SECP384R1:
+        if (bits) {
+            *bits = 384;
+        }
+        return PSA_ECC_FAMILY_SECP_R1;
+    case MBEDTLS_ECP_DP_SECP521R1:
+        if (bits) {
+            *bits = 521;
+        }
+        return PSA_ECC_FAMILY_SECP_R1;
+    case MBEDTLS_ECP_DP_BP256R1:
+        if (bits) {
+            *bits = 256;
+        }
+        return PSA_ECC_FAMILY_BRAINPOOL_P_R1;
+    case MBEDTLS_ECP_DP_BP384R1:
+        if (bits) {
+            *bits = 384;
+        }
+        return PSA_ECC_FAMILY_BRAINPOOL_P_R1;
+    case MBEDTLS_ECP_DP_BP512R1:
+        if (bits) {
+            *bits = 512;
+        }
+        return PSA_ECC_FAMILY_BRAINPOOL_P_R1;
+    case MBEDTLS_ECP_DP_CURVE25519:
+        if (bits) {
+            *bits = 255;
+        }
+        return PSA_ECC_FAMILY_MONTGOMERY;
+    case MBEDTLS_ECP_DP_SECP192K1:
+        if (bits) {
+            *bits = 192;
+        }
+        return PSA_ECC_FAMILY_SECP_K1;
+    case MBEDTLS_ECP_DP_SECP224K1:
+        if (bits) {
+            *bits = 224;
+        }
+        return PSA_ECC_FAMILY_SECP_K1;
+    case MBEDTLS_ECP_DP_SECP256K1:
+        if (bits) {
+            *bits = 256;
+        }
+        return PSA_ECC_FAMILY_SECP_K1;
+    case MBEDTLS_ECP_DP_CURVE448:
+        if (bits) {
+            *bits = 448;
+        }
+        return PSA_ECC_FAMILY_MONTGOMERY;
+    default:
+        if (bits) {
+            *bits = 0;
+        }
+        return 0;
+    }
+}
+
 struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group,
                                              const u8 *buf, size_t len)
 {
@@ -545,16 +623,13 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
         return NULL;
     }
 
-    mbedtls_ecp_group *ecp_grp = (mbedtls_ecp_group *)group;
-    mbedtls_ecp_group_id grp_id = ecp_grp->id;
-
-    size_t key_bits = 0;
-    psa_ecc_family_t ecc_family = mbedtls_ecc_group_to_psa(grp_id, &key_bits);
-
-    if (ecc_family == 0) {
-        wpa_printf(MSG_ERROR, "Unsupported ECC group");
+    mbedtls_ecp_group *grp = (mbedtls_ecp_group *)group;
+    if (!grp) {
+        wpa_printf(MSG_ERROR, "Invalid ECC group");
+        return NULL;
     }
-
+    size_t key_bits = 0;
+    psa_ecc_family_t ecc_family = group_id_to_psa(grp->id, &key_bits);
     psa_key_id_t *key_id = os_calloc(1, sizeof(psa_key_id_t));
     psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
 
@@ -593,7 +668,7 @@ struct crypto_ec_key * crypto_ec_key_set_pub(const struct crypto_ec_group *group
 
     psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH | PSA_KEY_USAGE_SIGN_HASH | PSA_KEY_USAGE_EXPORT);
     psa_set_key_algorithm(&key_attributes, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
-    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_PUBLIC_KEY(ecc_family));
+    psa_set_key_type(&key_attributes, ecc_family);
 
     status = psa_import_key(&key_attributes, key_buf, key_len, key_id);
     if (status != PSA_SUCCESS) {
@@ -692,26 +767,31 @@ struct crypto_ec_group *crypto_ec_get_group_from_key(struct crypto_ec_key *key)
     }
 
     psa_ecc_family_t ecc_family = psa_get_key_type(&key_attributes);
-    size_t bits = psa_get_key_bits(&key_attributes);
-    int ret = mbedtls_ecc_group_from_psa(ecc_family, bits);
-    if (ret == 0) {
-        wpa_printf(MSG_ERROR, "Unsupported ECC group");
-    }
-
-    mbedtls_ecp_group *e = os_zalloc(sizeof(*e));
-    if (!e) {
+    psa_ecc_family_t *curve = os_zalloc(sizeof(psa_ecc_family_t));
+    if (!curve) {
+        wpa_printf(MSG_ERROR, "memory allocation failed");
         return NULL;
     }
+    *curve = PSA_KEY_TYPE_ECC_GET_FAMILY(ecc_family);
+    // int ret = mbedtls_ecc_group_from_psa(ecc_family, bits);
+    // if (ret == 0) {
+    //     wpa_printf(MSG_ERROR, "Unsupported ECC group");
+    // }
 
-    mbedtls_ecp_group_init(e);
+    // mbedtls_ecp_group *e = os_zalloc(sizeof(*e));
+    // if (!e) {
+    //     return NULL;
+    // }
 
-    if (mbedtls_ecp_group_load(e, ret)) {
-        mbedtls_ecp_group_free(e);
-        os_free(e);
-        e = NULL;
-    }
+    // mbedtls_ecp_group_init(e);
 
-    return (struct crypto_ec_group *)e;
+    // if (mbedtls_ecp_group_load(e, ret)) {
+    //     mbedtls_ecp_group_free(e);
+    //     os_free(e);
+    //     e = NULL;
+    // }
+
+    return (struct crypto_ec_group *)curve;
 }
 
 int crypto_ec_key_group(struct crypto_ec_key *key)
@@ -730,13 +810,8 @@ int crypto_ec_key_group(struct crypto_ec_key *key)
     }
 
     psa_ecc_family_t ecc_family = psa_get_key_type(&key_attributes);
-    size_t bits = psa_get_key_bits(&key_attributes);
-    int ret = mbedtls_ecc_group_from_psa(ecc_family, bits);
-    if (ret == 0) {
-        wpa_printf(MSG_ERROR, "Unsupported ECC group");
-    }
 
-    int iana_group = (int)crypto_ec_get_mbedtls_to_nist_group_id(ret);
+    int iana_group = (int)crypto_ec_get_mbedtls_to_nist_group_id(ecc_family);
     return iana_group;
 }
 
@@ -904,7 +979,7 @@ struct crypto_ec_key *crypto_ec_key_parse_priv(const u8 *privkey, size_t privkey
         wpa_printf(MSG_ERROR, "memory allocation failed");
         return NULL;
     }
-    ret = mbedtls_pk_parse_key(kctx, privkey, privkey_len, NULL, 0, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+    ret = mbedtls_pk_parse_key(kctx, privkey, privkey_len, NULL, 0);
 
     if (ret < 0) {
         //crypto_print_error_string(ret);
@@ -942,6 +1017,12 @@ fail:
 unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id)
 {
     unsigned int nist_grpid = 0;
+    size_t bits = 0;
+    psa_ecc_family_t family = PSA_KEY_TYPE_ECC_GET_FAMILY(id);
+    if (family == PSA_ECC_FAMILY_MONTGOMERY) {
+        // Montgomery curves are not supported in NIST
+        return 0;
+    }
     switch (id) {
     case MBEDTLS_ECP_DP_SECP256R1:
         nist_grpid = 19;
@@ -960,6 +1041,24 @@ unsigned int crypto_ec_get_mbedtls_to_nist_group_id(int id)
         break;
     case MBEDTLS_ECP_DP_BP512R1:
         nist_grpid = 30;
+        break;
+    case PSA_ECC_FAMILY_SECP_R1:
+        if (bits == 256) {
+            nist_grpid = 19; // NIST P-256
+        } else if (bits == 384) {
+            nist_grpid = 20; // NIST P-384
+        } else if (bits == 521) {
+            nist_grpid = 21; // NIST P-521
+        }
+        break;
+    case PSA_ECC_FAMILY_BRAINPOOL_P_R1:
+        if (bits == 256) {
+            nist_grpid = 28; // Brainpool P-256
+        } else if (bits == 384) {
+            nist_grpid = 29; // Brainpool P-384
+        } else if (bits == 512) {
+            nist_grpid = 30; // Brainpool P-512
+        }
         break;
     default:
         break;
@@ -1008,8 +1107,6 @@ int crypto_ecdh(struct crypto_ec_key *key_own, struct crypto_ec_key *key_peer,
         ret = -1;
         goto fail;
     }
-
-    // psa_algorithm_t alg = psa_get_key_algorithm(&peer_key_attributes);
 
     *secret_len = 0;
     size_t secret_length = 0;
@@ -1150,7 +1247,7 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
     }
 
     size_t key_bit_length = 0;
-    psa_ecc_family_t ecc_family = mbedtls_ecc_group_to_psa(ike_group, &key_bit_length);
+    psa_ecc_family_t ecc_family = group_id_to_psa(ike_group, &key_bit_length);
     if (ecc_family == 0) {
         printf("mbedtls_ecc_group_to_psa failed\n");
         return NULL;
@@ -1172,28 +1269,6 @@ struct crypto_ec_key * crypto_ec_key_gen(u16 ike_group)
     psa_reset_key_attributes(&key_attributes);
 
     return (struct crypto_ec_key *)key_id;
-}
-
-/*
- * ECParameters ::= CHOICE {
- *   namedCurve         OBJECT IDENTIFIER
- * }
- */
-static int pk_write_ec_param(unsigned char **p, unsigned char *start,
-                             mbedtls_ecp_keypair *ec)
-{
-    int ret;
-    size_t len = 0;
-    const char *oid;
-    size_t oid_len;
-
-    if ((ret = mbedtls_oid_get_oid_by_ec_grp(ec->MBEDTLS_PRIVATE(grp).id, &oid, &oid_len)) != 0) {
-        return (ret);
-    }
-
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_oid(p, start, oid, oid_len));
-
-    return ((int) len);
 }
 
 static int pk_write_ec_pubkey_formatted(unsigned char **p, unsigned char *start,
@@ -1238,8 +1313,6 @@ int crypto_pk_write_formatted_pubkey_der(mbedtls_pk_context *key, unsigned char 
 {
     int ret;
     unsigned char *c;
-    size_t len = 0, par_len = 0, oid_len;
-    const char *oid;
 
     if (size == 0) {
         return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);
@@ -1247,45 +1320,13 @@ int crypto_pk_write_formatted_pubkey_der(mbedtls_pk_context *key, unsigned char 
 
     c = buf + size;
 
-    ret = mbedtls_pk_write_pubkey_formatted(&c, buf, key, format);
-
+    ret = mbedtls_pk_write_pubkey_der(key, c, size);
     if (ret < 0) {
+        wpa_printf(MSG_ERROR, "mbedtls_pk_write_pubkey_der failed with %d", ret);
         return ret;
     }
-    MBEDTLS_ASN1_CHK_ADD(len, ret);
 
-    if (c - buf < 1) {
-        return (MBEDTLS_ERR_ASN1_BUF_TOO_SMALL);
-    }
-
-    /*
-     *  SubjectPublicKeyInfo  ::=  SEQUENCE  {
-     *       algorithm            AlgorithmIdentifier,
-     *       subjectPublicKey     BIT STRING }
-     */
-    *--c = 0;
-    len += 1;
-
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_len(&c, buf, len));
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_tag(&c, buf, MBEDTLS_ASN1_BIT_STRING));
-
-    if ((ret = mbedtls_oid_get_oid_by_pk_alg(mbedtls_pk_get_type(key),
-                                             &oid, &oid_len)) != 0) {
-        return (ret);
-    }
-
-    if (mbedtls_pk_get_type(key) == MBEDTLS_PK_ECKEY) {
-        MBEDTLS_ASN1_CHK_ADD(par_len, pk_write_ec_param(&c, buf, mbedtls_pk_ec(*key)));
-    }
-
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_algorithm_identifier(&c, buf, oid, oid_len,
-                                                                      par_len));
-
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_len(&c, buf, len));
-    MBEDTLS_ASN1_CHK_ADD(len, mbedtls_asn1_write_tag(&c, buf, MBEDTLS_ASN1_CONSTRUCTED |
-                                                     MBEDTLS_ASN1_SEQUENCE));
-
-    return ((int) len);
+    return ((int) ret);
 }
 
 int crypto_ec_write_pub_key(struct crypto_ec_key *key, unsigned char **key_buf)
@@ -1378,7 +1419,7 @@ struct crypto_ecdh * crypto_ecdh_init(int group)
     psa_key_id_t key_id;
     size_t key_size = 0;
 
-    psa_ecc_family_t ecc_family = mbedtls_ecc_group_to_psa(crypto_mbedtls_get_grp_id(group), &key_size);
+    psa_ecc_family_t ecc_family = group_id_to_psa(crypto_mbedtls_get_grp_id(group), &key_size);
 
     psa_set_key_type(&key_attributes, PSA_KEY_TYPE_ECC_KEY_PAIR(ecc_family));
     psa_set_key_bits(&key_attributes, key_size);
@@ -1404,6 +1445,8 @@ struct wpabuf * crypto_ecdh_get_pubkey(struct crypto_ecdh *ecdh, int y)
     if (status != PSA_SUCCESS) {
         return NULL;
     }
+
+    uint8_t raw_key[PSA_EXPORT_PUBLIC_KEY_MAX_SIZE] = {0};
 
     status = psa_export_public_key(*key_id, raw_key, sizeof(raw_key), &key_size);
     if (status != PSA_SUCCESS) {

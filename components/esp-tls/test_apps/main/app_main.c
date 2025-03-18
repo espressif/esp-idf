@@ -17,7 +17,6 @@
 #endif
 #include "esp_newlib.h"
 #include "psa/crypto.h"
-
 #if SOC_SHA_SUPPORT_SHA512
 #define SHA_TYPE SHA2_512
 #else

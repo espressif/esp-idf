@@ -162,7 +162,7 @@ static int esp_crt_check_signature(const mbedtls_x509_crt* child, const uint8_t*
         goto cleanup;
     }
 
-    if (unlikely((ret = mbedtls_pk_verify_ext(child->MBEDTLS_PRIVATE(sig_pk), child->MBEDTLS_PRIVATE(sig_opts), &pubkey,
+    if (unlikely((ret = mbedtls_pk_verify_ext(child->MBEDTLS_PRIVATE(sig_pk), NULL, &pubkey,
                                               child->MBEDTLS_PRIVATE(sig_md), hash, md_size,
                                               child->MBEDTLS_PRIVATE(sig).p, child->MBEDTLS_PRIVATE(sig).len)) != 0)) {
         ESP_LOGE(TAG, "PK verify failed with error 0x%x", -ret);

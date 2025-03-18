@@ -124,7 +124,7 @@ esp_err_t esp_create_mbedtls_handle(const char *hostname, size_t hostlen, const 
     tls->server_fd.fd = tls->sockfd;
     mbedtls_ssl_init(&tls->ssl);
     mbedtls_ssl_config_init(&tls->conf);
-    mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+    // mbedtls_ssl_conf_rng(&tls->conf, mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
 
 #if CONFIG_MBEDTLS_DYNAMIC_BUFFER
     tls->esp_tls_dyn_buf_strategy = ((esp_tls_cfg_t *)cfg)->esp_tls_dyn_buf_strategy;
@@ -594,8 +594,7 @@ static esp_err_t set_pki_context(esp_tls_t *tls, const esp_tls_pki_t *pki)
 #endif
         if (pki->privkey_pem_buf != NULL) {
             ret = mbedtls_pk_parse_key(pki->pk_key, pki->privkey_pem_buf, pki->privkey_pem_bytes,
-                                       pki->privkey_password, pki->privkey_password_len,
-                                       mbedtls_psa_get_random, MBEDTLS_PSA_RANDOM_STATE);
+                                       pki->privkey_password, pki->privkey_password_len);
         } else {
             return ESP_ERR_INVALID_ARG;
         }

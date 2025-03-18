@@ -121,7 +121,7 @@ struct crypto_private_key *  crypto_private_key_import(const u8 *key,
     mbedtls_pk_init(pkey);
 
     ret = mbedtls_pk_parse_key(pkey, key, len, (const unsigned char *)passwd,
-                               passwd ? os_strlen(passwd) : 0, mbedtls_esp_random, NULL);
+                               passwd ? os_strlen(passwd) : 0);
 
     if (ret < 0) {
         wpa_printf(MSG_ERROR, "failed to parse private key");
@@ -189,8 +189,7 @@ int crypto_public_key_encrypt_pkcs1_v15(struct crypto_public_key *key,
     psa_status_t status = psa_crypto_init();
     if (status != PSA_SUCCESS) {
         wpa_printf(MSG_ERROR, "Failed to initialize PSA crypto, returned %d", (int) status);
-        ret = -1;
-        goto cleanup;
+        return -1;
     }
 
     mbedtls_pk_context *pkey = (mbedtls_pk_context *)key;
