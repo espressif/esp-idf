@@ -1,0 +1,15 @@
+# Options that will enable common IRAM usage reduction option. These options should be safe to use with most setups
+CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH=y
+CONFIG_RINGBUF_PLACE_FUNCTIONS_INTO_FLASH=y
+CONFIG_HEAP_PLACE_FUNCTION_INTO_FLASH=y
+CONFIG_LIBC_LOCKS_PLACE_IN_IRAM=n
+CONFIG_HAL_ASSERTION_SILENT=y
+CONFIG_COMPILER_OPTIMIZATION_ASSERTIONS_SILENT=y
+CONFIG_COMPILER_OPTIMIZATION_SIZE=y
+
+#  Options that will enable IRAM reduction option that are not necessarily safe for all use-cases
+CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH=y
+
+# Options that will enable IRAM reduction option that are only usable together with flash auto-suspend
+CONFIG_SPI_FLASH_AUTO_SUSPEND=y
+CONFIG_LIBC_MISC_IN_IRAM=n

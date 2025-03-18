@@ -11,6 +11,10 @@ menu "LibC"
             depends on !IDF_TOOLCHAIN_CLANG && IDF_EXPERIMENTAL_FEATURES
     endchoice
 
+    config LIBC_MISC_IN_IRAM
+        bool "Place misc libc functions (abort/assert/stdatomics) in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
     config LIBC_LOCKS_PLACE_IN_IRAM
         bool "Place lock API in IRAM"
         default y
