@@ -426,9 +426,10 @@ def start_avahi() -> None:
 
 
 def host_close_service() -> None:
-    command = 'ps aux | grep avahi-publish-s'
+    command = 'ps auxww | grep avahi-publish-s'
     out_bytes = subprocess.check_output(command, shell=True, timeout=5)
     out_str = out_bytes.decode('utf-8')
+    print('host close service avahi status:\n', out_str)
     service_info = [line for line in out_str.splitlines() if 'testxxx _testxxx._udp' in line]
     for line in service_info:
         print('Process:', line)
@@ -468,7 +469,7 @@ def open_host_interface() -> None:
 def get_domain() -> str:
     hostname = socket.gethostname()
     print('hostname is: ', hostname)
-    command = 'ps -aux | grep avahi-daemon | grep running'
+    command = 'ps -auxww | grep avahi-daemon | grep running'
     out_str = subprocess.getoutput(command)
     print('avahi status:\n', out_str)
     role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
