@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -607,7 +607,7 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_dma_env, 0, sizeof(hci_driver_uart_dma_env_t));
 
     s_hci_driver_uart_dma_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, hci_driver_uart_dma_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_dma_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {
