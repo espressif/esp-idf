@@ -453,7 +453,7 @@ config BT_LE_CRYPTO_STACK_MBEDTLS
 
 config BT_LE_WHITELIST_SIZE
     int "BLE white list size"
-    range 1 15
+    range 1 31
     default 12
     depends on !BT_NIMBLE_ENABLED
 
