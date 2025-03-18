@@ -2167,11 +2167,13 @@ void wpa_sm_deinit(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
+    sm->pmksa = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
     os_free(sm->assoc_rsnxe);
     wpa_sm_drop_sa(sm);
     sm->assoc_rsnxe = NULL;
+    memset(sm, 0, sizeof(*sm));
 }
 
 
@@ -2998,6 +3000,8 @@ fail:
 
 void wpa_sm_pmksa_cache_flush(struct wpa_sm *sm, void *network_ctx)
 {
-    pmksa_cache_flush(sm->pmksa, network_ctx, NULL, 0);
+    if (sm->pmksa) {
+        pmksa_cache_flush(sm->pmksa, network_ctx, NULL, 0);
+    }
 }
 #endif // ESP_SUPPLICANT
