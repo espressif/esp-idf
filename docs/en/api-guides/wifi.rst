@@ -2023,6 +2023,94 @@ The table below shows the best throughput results gained in Espressif's lab and 
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`.
 
+.. only:: esp32c5
+
+    - 2.4 GHz band
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 63 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 59 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 49 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    - 5 GHz band
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 71 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 64 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 61 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 50 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c5`.
+
 .. only:: esp32c6
 
      .. list-table::
@@ -2046,26 +2134,70 @@ The table below shows the best throughput results gained in Espressif's lab and 
           - NA
         * - UDP RX
           - 30 MBit/s
-          - 45 MBit/s
+          - 63 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - UDP TX
           - 30 MBit/s
-          - 40 MBit/s
+          - 51 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP RX
           - 20 MBit/s
-          - 30 MBit/s
+          - 46 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP TX
           - 20 MBit/s
-          - 31 MBit/s
+          - 43 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
 
     When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c6`.
+
+.. only:: esp32c61
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - Type/Throughput
+          - Air In Lab
+          - Shield-box
+          - Test Tool
+          - IDF Version (commit ID)
+        * - Raw 802.11 Packet RX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - Raw 802.11 Packet TX
+          - N/A
+          - **130 MBit/s**
+          - Internal tool
+          - NA
+        * - UDP RX
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP TX
+          - 30 MBit/s
+          - 53 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP RX
+          - 20 MBit/s
+          - 45 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP TX
+          - 20 MBit/s
+          - 37 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    When the throughput is tested by iperf example, the sdkconfig is :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c61`.
 
 .. only:: esp32s3
 
