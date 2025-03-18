@@ -46,6 +46,10 @@ typedef struct {
     uint32_t idle_value; // Parallel IO bus idle value
     const void *payload; // payload to be transmitted
     size_t payload_bits; // payload size in bits
+    int dma_link_idx;  // index of DMA link list
+    struct {
+        uint32_t loop_transmission : 1; // whether the transmission is in loop mode
+    } flags;                           // Extra configuration flags
 } parlio_tx_trans_desc_t;
 
 typedef struct parlio_tx_unit_t {
@@ -54,7 +58,7 @@ typedef struct parlio_tx_unit_t {
     intr_handle_t intr;    // allocated interrupt handle
     esp_pm_lock_handle_t pm_lock;   // power management lock
     gdma_channel_handle_t dma_chan; // DMA channel
-    gdma_link_list_handle_t dma_link; // DMA link list handle
+    gdma_link_list_handle_t dma_link[PARLIO_DMA_LINK_NUM]; // DMA link list handle
     size_t int_mem_align; // Alignment for internal memory
     size_t ext_mem_align; // Alignment for external memory
 #if CONFIG_PM_ENABLE
@@ -129,8 +133,10 @@ static esp_err_t parlio_destroy_tx_unit(parlio_tx_unit_t *tx_unit)
         // de-register from group
         parlio_unregister_unit_from_group(&tx_unit->base);
     }
-    if (tx_unit->dma_link) {
-        ESP_RETURN_ON_ERROR(gdma_del_link_list(tx_unit->dma_link), TAG, "delete dma link list failed");
+    for (int i = 0; i < PARLIO_DMA_LINK_NUM; i++) {
+        if (tx_unit->dma_link[i]) {
+            ESP_RETURN_ON_ERROR(gdma_del_link_list(tx_unit->dma_link[i]), TAG, "delete dma link list failed");
+        }
     }
     free(tx_unit);
     return ESP_OK;
@@ -204,8 +210,9 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
     gdma_connect(tx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
     gdma_strategy_config_t gdma_strategy_conf = {
-        .auto_update_desc = true,
-        .owner_check = true,
+        .auto_update_desc = false, // for loop transmission, we have no chance to change the owner
+        .owner_check = false,
+        .eof_till_data_popped = true,
     };
     gdma_apply_strategy(tx_unit->dma_chan, &gdma_strategy_conf);
 
@@ -227,7 +234,9 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
     };
 
     // throw the error to the caller
-    ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &tx_unit->dma_link), TAG, "create DMA link list failed");
+    for (int i = 0; i < PARLIO_DMA_LINK_NUM; i++) {
+        ESP_RETURN_ON_ERROR(gdma_new_link_list(&dma_link_config, &tx_unit->dma_link[i]), TAG, "create DMA link list failed");
+    }
     return ESP_OK;
 }
 
@@ -316,8 +325,6 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // data_width must not conflict with the valid signal
     ESP_RETURN_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
                         ESP_ERR_INVALID_ARG, TAG, "valid signal conflicts with data signal");
-    ESP_RETURN_ON_FALSE(config->max_transfer_size && config->max_transfer_size <= PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8,
-                        ESP_ERR_INVALID_ARG, TAG, "invalid max transfer size");
 #if SOC_PARLIO_TX_CLK_SUPPORT_GATING
     // clock gating is controlled by either the MSB bit of data bus or the valid signal
     ESP_RETURN_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
@@ -386,10 +393,8 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // set sample clock edge
     parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
 
-#if SOC_PARLIO_TX_SIZE_BY_DMA
-    // Always use DATA LEN EOF as the Parlio TX EOF
+    // In default, use DATA LEN EOF as the Parlio TX EOF
     parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
-#endif  // SOC_PARLIO_TX_SIZE_BY_DMA
 
     // clear any pending interrupt
     parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_MASK);
@@ -461,9 +466,37 @@ esp_err_t parlio_tx_unit_register_event_callbacks(parlio_tx_unit_handle_t tx_uni
     return ESP_OK;
 }
 
+static void parlio_mount_buffer(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
+{
+    // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
+    gdma_buffer_mount_config_t mount_config = {
+        .buffer = (void *)t->payload,
+        .length = (t->payload_bits + 7) / 8,
+        .flags = {
+            // if transmission is loop, we don't need to generate the EOF, as well as the final mark
+            .mark_eof = !t->flags.loop_transmission,
+            .mark_final = !t->flags.loop_transmission,
+        }
+    };
+
+    int next_link_idx = t->flags.loop_transmission ? 1 - t->dma_link_idx : t->dma_link_idx;
+    gdma_link_mount_buffers(tx_unit->dma_link[next_link_idx], 0, &mount_config, 1, NULL);
+
+    if (t->flags.loop_transmission) {
+        // concatenate the DMA linked list of the next frame transmission with the DMA linked list of the current frame to realize the reuse of the current transmission transaction
+        gdma_link_concat(tx_unit->dma_link[t->dma_link_idx], -1, tx_unit->dma_link[next_link_idx], 0);
+        t->dma_link_idx = next_link_idx;
+    }
+}
+
 static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_desc_t *t)
 {
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
+
+    if (t->flags.loop_transmission) {
+        // Once a loop transmission is started, it cannot be stopped until it is disabled
+        parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+    }
 
     tx_unit->cur_trans = t;
 
@@ -478,21 +511,10 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     PARLIO_RCC_ATOMIC() {
         parlio_ll_tx_reset_clock(hal->regs);
     }
-
-    // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
-    gdma_buffer_mount_config_t mount_config = {
-        .buffer = (void *)t->payload,
-        .length = (t->payload_bits + 7) / 8,
-        .flags = {
-            .mark_eof = true,
-            .mark_final = true, // singly link list, mark final descriptor
-        }
-    };
     // Since the threshold of the clock divider counter is not updated simultaneously with the clock source switching.
     // The update of the threshold relies on the moment when the counter reaches the threshold each time.
-    // We place gdma_link_mount_buffers between reset clock and disable clock to ensure enough time for updating the threshold of the clock divider counter.
-    gdma_link_mount_buffers(tx_unit->dma_link, 0, &mount_config, 1, NULL);
-
+    // We place parlio_mount_buffer between reset clock and disable clock to ensure enough time for updating the threshold of the clock divider counter.
+    parlio_mount_buffer(tx_unit, t);
     if (switch_clk) {
         PARLIO_CLOCK_SRC_ATOMIC() {
             parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_EXTERNAL);
@@ -506,7 +528,7 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
 
-    gdma_start(tx_unit->dma_chan, gdma_link_get_head_addr(tx_unit->dma_link));
+    gdma_start(tx_unit->dma_chan, gdma_link_get_head_addr(tx_unit->dma_link[t->dma_link_idx]));
     // wait until the data goes from the DMA to TX unit's FIFO
     while (parlio_ll_tx_is_ready(hal->regs) == false);
     // turn on the core clock after we start the TX unit
@@ -592,6 +614,10 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, false);
 
+    // Once a loop teansmission transaction is started, it can only be stopped in disable function
+    // change the EOF condition to be the data length, so the EOF will be triggered normally
+    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
+
     // release power management lock
     if (tx_unit->pm_lock) {
         esp_pm_lock_release(tx_unit->pm_lock);
@@ -612,6 +638,21 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE((payload_bits % 8) == 0, ESP_ERR_INVALID_ARG, TAG, "payload bit length must be multiple of 8");
 #endif // !SOC_PARLIO_TRANS_BIT_ALIGN
 
+#if SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
+    if (config->flags.loop_transmission) {
+        ESP_RETURN_ON_FALSE(parlio_ll_tx_support_dma_eof(NULL), ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported by this chip revision");
+    }
+#else
+    ESP_RETURN_ON_FALSE(config->flags.loop_transmission == false, ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported on this chip");
+#endif
+
+    // check the max payload size if it's not a loop transmission
+    // workaround for EOF limitation, when DMA EOF issue is fixed, we can remove this check
+    if (!config->flags.loop_transmission) {
+        ESP_RETURN_ON_FALSE(tx_unit->max_transfer_bits <= PARLIO_LL_TX_MAX_BITS_PER_FRAME,
+                            ESP_ERR_INVALID_ARG, TAG, "invalid transfer size");
+    }
+
     size_t cache_line_size = 0;
     size_t alignment = 0;
     uint8_t cache_type = 0;
@@ -627,39 +668,48 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
                                             ESP_CACHE_MSYNC_FLAG_DIR_C2M | ESP_CACHE_MSYNC_FLAG_UNALIGNED), TAG, "cache sync failed");
     }
 
-    TickType_t queue_wait_ticks = portMAX_DELAY;
-    if (config->flags.queue_nonblocking) {
-        queue_wait_ticks = 0;
-    }
-    parlio_tx_trans_desc_t *t = NULL;
-    // acquire one transaction description from ready queue or complete queue
-    if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &t, 0) != pdTRUE) {
-        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, queue_wait_ticks) == pdTRUE) {
-            tx_unit->num_trans_inflight--;
+    // check if to start a new transaction or update the current loop transaction
+    bool no_trans_pending_in_queue = uxQueueMessagesWaiting(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS]) == 0;
+    if (tx_unit->cur_trans && tx_unit->cur_trans->flags.loop_transmission && config->flags.loop_transmission && no_trans_pending_in_queue) {
+        tx_unit->cur_trans->payload = payload;
+        tx_unit->cur_trans->payload_bits = payload_bits;
+        parlio_mount_buffer(tx_unit, tx_unit->cur_trans);
+    } else {
+        TickType_t queue_wait_ticks = portMAX_DELAY;
+        if (config->flags.queue_nonblocking) {
+            queue_wait_ticks = 0;
         }
-    }
-    ESP_RETURN_ON_FALSE(t, ESP_ERR_INVALID_STATE, TAG, "no free transaction descriptor, please consider increasing trans_queue_depth");
+        parlio_tx_trans_desc_t *t = NULL;
+        // acquire one transaction description from ready queue or complete queue
+        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_READY], &t, 0) != pdTRUE) {
+            if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_COMPLETE], &t, queue_wait_ticks) == pdTRUE) {
+                tx_unit->num_trans_inflight--;
+            }
+        }
+        ESP_RETURN_ON_FALSE(t, ESP_ERR_INVALID_STATE, TAG, "no free transaction descriptor, please consider increasing trans_queue_depth");
 
-    // fill in the transaction descriptor
-    memset(t, 0, sizeof(parlio_tx_trans_desc_t));
-    t->payload = payload;
-    t->payload_bits = payload_bits;
-    t->idle_value = config->idle_value & tx_unit->idle_value_mask;
+        // fill in the transaction descriptor
+        memset(t, 0, sizeof(parlio_tx_trans_desc_t));
+        t->payload = payload;
+        t->payload_bits = payload_bits;
+        t->idle_value = config->idle_value & tx_unit->idle_value_mask;
+        t->flags.loop_transmission = config->flags.loop_transmission;
 
-    // send the transaction descriptor to progress queue
-    ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE,
-                        ESP_ERR_INVALID_STATE, TAG, "failed to send transaction descriptor to progress queue");
-    tx_unit->num_trans_inflight++;
+        // send the transaction descriptor to progress queue
+        ESP_RETURN_ON_FALSE(xQueueSend(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE,
+                            ESP_ERR_INVALID_STATE, TAG, "failed to send transaction descriptor to progress queue");
+        tx_unit->num_trans_inflight++;
 
-    // check if we need to start one pending transaction
-    parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
-        // check if we need to start one transaction
-        if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
-            atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_RUN);
-            parlio_tx_do_transaction(tx_unit, t);
-        } else {
-            atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
+        // check if we need to start one pending transaction
+        parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_ENABLE;
+        if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_RUN_WAIT)) {
+            // check if we need to start one transaction
+            if (xQueueReceive(tx_unit->trans_queues[PARLIO_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
+                atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_RUN);
+                parlio_tx_do_transaction(tx_unit, t);
+            } else {
+                atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
+            }
         }
     }
 

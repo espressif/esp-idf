@@ -61,6 +61,9 @@ typedef dma_descriptor_align8_t     parlio_dma_desc_t;
 #endif
 #endif // defined(SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS)
 
+// loop transmission requires ping-pong link to prevent data tearing.
+#define PARLIO_DMA_LINK_NUM         2
+
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define PARLIO_CLOCK_SRC_ATOMIC() PERIPH_RCC_ATOMIC()
 #else

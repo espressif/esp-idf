@@ -1371,7 +1371,7 @@ config SOC_PARLIO_TRANS_BIT_ALIGN
     bool
     default y
 
-config SOC_PARLIO_TX_SIZE_BY_DMA
+config SOC_PARLIO_TX_SUPPORT_LOOP_TRANSMISSION
     bool
     default y
 
