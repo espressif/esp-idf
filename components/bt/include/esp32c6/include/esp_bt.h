@@ -338,6 +338,7 @@ typedef struct {
     .ble_chan_ass_en            = DEFAULT_BT_LE_CTRL_CHAN_ASS_EN,                       \
     .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
     .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
+    .ptr_check_enabled          = DEFAULT_BT_LE_PTR_CHECK_ENABLED,                      \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 #endif
