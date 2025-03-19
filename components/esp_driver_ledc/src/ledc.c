@@ -1494,15 +1494,17 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
     LEDC_CHECK(p_ledc_obj[speed_mode] != NULL, LEDC_NOT_INIT, ESP_ERR_INVALID_STATE);
     LEDC_CHECK(ledc_fade_channel_init_check(speed_mode, channel) == ESP_OK, LEDC_FADE_INIT_ERROR_STR, ESP_FAIL);
     ledc_fade_t *fade = s_ledc_fade_rec[speed_mode][channel];
-    ledc_fade_fsm_t state = fade->fsm;
+    bool skip = false;
     bool wait_for_idle = false;
+    portENTER_CRITICAL(&ledc_spinlock);
+    ledc_fade_fsm_t state = fade->fsm;
     assert(state != LEDC_FSM_KILLED_PENDING);
     if (state == LEDC_FSM_IDLE) {
         // if there is no fade going on, do nothing
-        return ESP_OK;
+        skip = true;
+        goto exit;
     }
     // Fade state is either HW_FADE or ISR_CAL (there is a fade in process)
-    portENTER_CRITICAL(&ledc_spinlock);
     // Disable ledc channel interrupt first
     ledc_enable_intr_type(speed_mode, channel, LEDC_INTR_DISABLE);
     // Config duty to the duty cycle at this moment
@@ -1517,21 +1519,22 @@ esp_err_t ledc_fade_stop(ledc_mode_t speed_mode, ledc_channel_t channel)
                      0                     //uint32_t duty_scale
                     );
     _ledc_update_duty(speed_mode, channel);
-    state = fade->fsm;
-    assert(state != LEDC_FSM_IDLE && state != LEDC_FSM_KILLED_PENDING);
     if (state == LEDC_FSM_HW_FADE) {
         fade->fsm = LEDC_FSM_IDLE;
     } else if (state == LEDC_FSM_ISR_CAL) {
         fade->fsm = LEDC_FSM_KILLED_PENDING;
         wait_for_idle = true;
     }
+exit:
     portEXIT_CRITICAL(&ledc_spinlock);
     if (wait_for_idle) {
         // Wait for ISR return, which gives the semaphore and switches state to IDLE
         _ledc_fade_hw_acquire(speed_mode, channel);
         assert(fade->fsm == LEDC_FSM_IDLE);
     }
-    _ledc_fade_hw_release(speed_mode, channel);
+    if (!skip) {
+        _ledc_fade_hw_release(speed_mode, channel);
+    }
     return ESP_OK;
 }
 #endif
