@@ -1400,10 +1400,10 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
     (sm->gd).gtk_len=0; //used as flag if gtk is installed in callback
     if (ie.gtk) {
         wpa_sm_set_seq(sm, key, 0);
-           if (wpa_supplicant_pairwise_gtk(sm,
+        if (wpa_supplicant_pairwise_gtk(sm,
                     ie.gtk, ie.gtk_len, key_info) < 0) {
-        wpa_printf(MSG_DEBUG, "RSN: Failed to configure GTK");
-        goto failed;
+            wpa_printf(MSG_DEBUG, "RSN: Failed to configure GTK");
+            goto failed;
         }
     }
 
@@ -1462,7 +1462,7 @@ static int wpa_supplicant_activate_ptk(struct wpa_sm *sm)
 
 static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
 {
-       u16 key_info=sm->key_info;
+    u16 key_info = sm->key_info;
 
     if (sm->key_install && key_info & WPA_KEY_INFO_INSTALL) {
         if (sm->use_ext_key_id) {
@@ -1521,7 +1521,7 @@ static int wpa_supplicant_send_4_of_4_txcallback(struct wpa_sm *sm)
     return 0;
 
 failed:
-       return WLAN_REASON_UNSPECIFIED;
+    return WLAN_REASON_UNSPECIFIED;
 }
 
 static int wpa_supplicant_process_1_of_2_rsn(struct wpa_sm *sm,
@@ -1840,7 +1840,7 @@ static int wpa_supplicant_decrypt_key_data(struct wpa_sm *sm,
         *key_data_len -= 8; /* AES-WRAP adds 8 bytes */
         /*replaced by xxx to remove malloc*/
         buf = ((u8 *) (key+1))+ 8;
-             /*
+        /*
         buf = os_wifi_malloc(keydatalen);
         if (buf == NULL) {
             wpa_printf(MSG_DEBUG, "WPA: No memory for "
@@ -1947,8 +1947,7 @@ int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len)
 
     hdr = (struct ieee802_1x_hdr *) tmp;
     key = (struct wpa_eapol_key *) (hdr + 1);
-    key192 = (struct wpa_eapol_key_192 *)
-            (tmp + sizeof(struct ieee802_1x_hdr));
+    key192 = (struct wpa_eapol_key_192 *)(tmp + sizeof(struct ieee802_1x_hdr));
     if (mic_len == 24)
         key_data = (u8 *) (key192 + 1);
     else
@@ -2163,7 +2162,7 @@ void wpa_sm_set_state(enum wpa_states state)
 {
     struct wpa_sm *sm = &gWpaSm;
     if(WPA_MIC_FAILURE==WPA_SM_STATE(sm))
-    eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
+        eloop_cancel_timeout(wpa_supplicant_stop_countermeasures, NULL, NULL);
     sm->wpa_state= state;
 }
 
@@ -2494,9 +2493,9 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         sm->pmf_cfg = wifi_cfg.sta.pmf_cfg;
         sm->mgmt_group_cipher = cipher_type_map_public_to_supp(mgmt_cipher);
         if (sm->mgmt_group_cipher == WPA_CIPHER_NONE) {
-                wpa_printf(MSG_ERROR, "mgmt_cipher %d not supported", mgmt_cipher);
-                return -1;
-	}
+            wpa_printf(MSG_ERROR, "mgmt_cipher %d not supported", mgmt_cipher);
+            return -1;
+        }
 #ifdef CONFIG_SUITEB192
         extern bool g_wpa_suiteb_certification;
         if (is_wpa2_enterprise_connection() && g_wpa_suiteb_certification) {
@@ -2604,6 +2603,17 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
     }
 
     esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
+
+    if (sm->ap_rsnxe != NULL) {
+#ifdef CONFIG_SAE_PK
+        const u8 *pw = (const u8 *)esp_wifi_sta_get_prof_password_internal();
+        if (esp_wifi_sta_get_config_sae_pk_internal() != WPA3_SAE_PK_MODE_DISABLED &&
+                sae_pk_valid_password((const char*)pw)) {
+            sm->sae_pk = true;
+        }
+#endif /* CONFIG_SAE_PK */
+    }
+
     os_memset(sm->ssid, 0, sizeof(sm->ssid));
     os_memcpy(sm->ssid, ssid, ssid_len);
     sm->ssid_len = ssid_len;
@@ -2622,8 +2632,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
 /*
  *  Call after set ssid since we calc pmk inside this routine directly
  */
-  void
-wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
+void wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
 {
     struct wifi_ssid *sta_ssid = esp_wifi_sta_get_prof_ssid_internal();
     struct wpa_sm *sm = &gWpaSm;
@@ -2656,7 +2665,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
     }
 
     if (sm->key_mgmt == WPA_KEY_MGMT_IEEE8021X) {
-    /* TODO nothing */
+        /* TODO nothing */
     } else {
         memcpy(sm->pmk, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         sm->pmk_len = PMK_LEN;
@@ -2668,18 +2677,17 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
 #endif /* CONFIG_IEEE80211R */
 }
 
-  void
-set_assoc_ie(u8 * assoc_buf)
+void set_assoc_ie(u8 * assoc_buf)
 {
     struct wpa_sm *sm = &gWpaSm;
 
     sm->assoc_wpa_ie = assoc_buf + 2;
     //wpa_ie insert OUI 4 byte before ver, but RSN have 2 bytes of RSN capability,
     // so wpa_ie have two more bytes than rsn_ie
-    if ( sm->proto == WPA_PROTO_WPA)
-         sm->assoc_wpa_ie_len = ASSOC_IE_LEN;
+    if (sm->proto == WPA_PROTO_WPA)
+        sm->assoc_wpa_ie_len = ASSOC_IE_LEN;
     else
-         sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
+        sm->assoc_wpa_ie_len = ASSOC_IE_LEN - 2;
 
     wpa_config_assoc_ie(sm->proto, assoc_buf, sm->assoc_wpa_ie_len);
 }
@@ -2761,7 +2769,7 @@ int wpa_michael_mic_failure(u16 isunicast)
          * Need to wait for completion of request frame. We do not get
          * any callback for the message completion, so just wait a
          * short while and hope for the best. */
-         os_sleep(0, 10000);
+        os_sleep(0, 10000);
 
         /*deauthenticate AP*/
 
