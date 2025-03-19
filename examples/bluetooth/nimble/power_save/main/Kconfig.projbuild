@@ -171,4 +171,15 @@ menu "Example Configuration"
         help
             Used for internal test ONLY.
             Use this option to advertise in a specific random address.
+
+
+    config EXAMPLE_SLEEP_WAKEUP
+        bool "Enable Vendor-Specific Sleep Wake-Up Event"
+        depends on BT_NIMBLE_VS_SUPPORT
+        default n
+        help
+            When enabled, the Nimble Host allows setting a Vendor-Specific
+            Event Mask for processing sleep wake-up events from the controller.
+            The controller sends a wake-up event (HCI_LE_SLEEP_WAKE_UP 0xFF 0xC3)
+            when it resumes from sleep.
 endmenu
