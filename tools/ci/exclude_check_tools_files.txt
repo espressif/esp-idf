@@ -42,3 +42,4 @@ tools/ci/get_known_failure_cases_file.py
 tools/unit-test-app/**/*
 tools/bt/bt_hci_to_btsnoop.py
 tools/bt/README.md
+tools/ci/dynamic_pipelines/templates/known_generate_test_child_pipeline_warnings.yml

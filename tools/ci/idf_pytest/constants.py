@@ -105,7 +105,9 @@ ENV_MARKERS = {
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board.',
-    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)'
+    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
+    'esp32c3eco7': 'esp32c3 major version(v1.1) chips',
+    'esp32c2eco4': 'esp32c2 major version(v2.0) chips',
 }
 
 
