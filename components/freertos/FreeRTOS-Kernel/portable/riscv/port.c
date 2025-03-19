@@ -6,7 +6,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -297,15 +297,19 @@ static void vPortCleanUpCoprocArea(void *pvTCB)
     const UBaseType_t bottomstack = (UBaseType_t) task->pxDummy8;
     RvCoprocSaveArea* sa = pxRetrieveCoprocSaveAreaFromStackPointer(bottomstack);
 
-    /* If the Task used any coprocessor, check if it is the actual owner of any.
-     * If yes, reset the owner. */
-    if (sa->sa_enable != 0) {
+    /* If the Task ever saved the original stack pointer, restore it before returning */
+    if (sa->sa_allocator != 0) {
         /* Restore the original lowest address of the stack in the TCB */
         task->pxDummy6 = sa->sa_tcbstack;
 
         /* Get the core the task is pinned on */
         #if ( configNUM_CORES > 1 )
             const BaseType_t coreID = task->xDummyCoreID;
+            /* If the task is not pinned on any core, it didn't use any coprocessor than need to be freed (FPU or PIE).
+             * If it used the HWLP coprocessor, it has nothing to clear since there is no "owner" for it. */
+            if (coreID == tskNO_AFFINITY) {
+                return;
+            }
         #else /* configNUM_CORES > 1 */
             const BaseType_t coreID = 0;
         #endif /* configNUM_CORES > 1 */
