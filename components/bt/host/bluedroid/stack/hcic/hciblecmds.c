@@ -2201,33 +2201,6 @@ UINT8 btsnd_hcic_ble_iso_remove_data_path(uint16_t conn_handle, uint8_t data_pat
     return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-UINT8 btsnd_hcic_ble_iso_set_host_feature(uint16_t bit_num, uint8_t bit_val)
-{
-    BT_HDR *p;
-    UINT8 *pp;
-
-    HCI_TRACE_DEBUG("hci set host feature: bit_num %d bit_val %d", bit_num, bit_val);
-#if (BLE_FEAT_ISO_60_EN == TRUE)
-    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS_V2);
-#else
-    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS);
-#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
-    pp = (UINT8 *)(p + 1);
-#if (BLE_FEAT_ISO_60_EN == TRUE)
-    UINT16_TO_STREAM(pp, HCI_BLE_ISO_SET_HOST_FEATURE_V2);
-    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS_V2);
-    // Bit_Number V1
-    UINT16_TO_STREAM(pp, bit_num);
-#else
-    UINT16_TO_STREAM(pp, HCI_BLE_ISO_SET_HOST_FEATURE);
-    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS);
-    // Bit_Number V1
-    UINT8_TO_STREAM(pp, bit_num);
-#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
-    UINT8_TO_STREAM(pp, bit_val);
-    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
 UINT8 btsnd_hcic_ble_iso_read_tx_sync(uint16_t iso_hdl)
 {
     BT_HDR *p;
@@ -2804,3 +2777,32 @@ UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UIN
     return TRUE;
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+UINT8 btsnd_hcic_ble_set_host_feature(uint16_t bit_num, uint8_t bit_val)
+{
+    BT_HDR *p;
+    UINT8 *pp;
+
+    HCI_TRACE_DEBUG("hci set host feature: bit_num %d bit_val %d", bit_num, bit_val);
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS_V2);
+#else
+    HCIC_BLE_CMD_CREATED(p, pp, HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS);
+#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
+    pp = (UINT8 *)(p + 1);
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_HOST_FEATURE_V2);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS_V2);
+    // Bit_Number V1
+    UINT16_TO_STREAM(pp, bit_num);
+#else
+    UINT16_TO_STREAM(pp, HCI_BLE_SET_HOST_FEATURE);
+    UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS);
+    // Bit_Number V1
+    UINT8_TO_STREAM(pp, bit_num);
+#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
+    UINT8_TO_STREAM(pp, bit_val);
+    return btu_hcif_send_cmd_sync(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

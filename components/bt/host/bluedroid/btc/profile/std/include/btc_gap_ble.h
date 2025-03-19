@@ -133,6 +133,9 @@ typedef enum {
     BTC_GAP_BLE_SET_DEFALT_SUBRATE,
     BTC_GAP_BLE_SUBRATE_REQUEST,
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_ACT_SET_HOST_FEATURE,
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -519,6 +522,10 @@ typedef union {
         uint16_t supervision_timeout;
     } subrate_req_param;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    struct set_host_feature_arg {
+            uint16_t bit_num;
+            uint8_t bit_val;
+        } set_host_feature_params;
 } btc_ble_5_gap_args_t;
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 

@@ -1694,6 +1694,9 @@ typedef struct {
 #define BTA_BLE_GAP_SUBRATE_REQUEST_EVT                            BTM_BLE_GAP_SUBRATE_REQUEST_EVT
 #define BTA_BLE_GAP_SUBRATE_CHANGE_EVT                             BTM_BLE_GAP_SUBRATE_CHANGE_EVT
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define BTA_BLE_GAP_SET_HOST_FEATURE_EVT                           BTM_BLE_GAP_SET_HOST_FEATURE_EVT
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
@@ -1717,7 +1720,6 @@ extern tBTM_BLE_5_HCI_CBACK ble_5_hci_cb;
 #define BTA_BLE_ISO_BIGINFO_ADV_REPORT_EVT                         BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define BTA_BLE_ISO_DATA_PATH_UPFATE_EVT                           BTM_BLE_ISO_DATA_PATH_UPFATE_EVT
-#define BTA_BLE_ISO_SET_HOST_FEATURE_EVT                           BTM_BLE_ISO_SET_HOST_FEATURE_EVT
 #define BTA_BLE_ISO_READ_TX_SYNC_EVT                               BTM_BLE_ISO_READ_TX_SYNC_EVT
 #define BTA_BLE_ISO_READ_LINK_QUALITY_EVT                          BTM_BLE_ISO_READ_LINK_QUALITY_EVT
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -3084,6 +3086,10 @@ void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint1
                                 uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+extern void BTA_DmBleGapSetHostFeature(uint16_t bit_num, uint8_t bit_val);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_DmBleSetStorageParams
@@ -3371,7 +3377,6 @@ extern void BTA_DmBleGapIsoBigSyncTerminate(tBTA_DM_BLE_BIG_SYNC_TERMINATE_PARAM
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 extern void BTA_DmBleGapIsoDataPathSet(tBTA_DM_BLE_ISO_SET_DATA_PATH_PARAMS *p_iso_data_path_param);
 extern void BTA_DmBleGapIsoDataPathRemove(tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS *p_iso_data_path_param);
-extern void BTA_DmBleGapIsoSetHostFeature(uint16_t bit_num, uint8_t bit_val);
 extern void BTA_DmBleGapIsoReadTxSync(uint16_t iso_handle);
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
 extern void BTA_DmBleIsoSetCigParams(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t worse_case_SCA, uint8_t packing,

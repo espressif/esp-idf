@@ -214,35 +214,6 @@ esp_err_t esp_ble_iso_remove_iso_data_path(esp_ble_iso_remove_data_path_params_t
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
-esp_err_t esp_ble_iso_set_host_feature(uint16_t bit_num, uint8_t bit_val)
-{
-     btc_msg_t msg = {0};
-    btc_ble_iso_args_t arg;
-
-    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
-        return ESP_ERR_INVALID_STATE;
-    }
-
-#if (BLE_FEAT_ISO_60_EN == TRUE)
-    if (bit_num > 0x07BF) {
-        return ESP_ERR_INVALID_ARG;
-    }
-#else
-    if (bit_num > 0xFF) {
-        return ESP_ERR_INVALID_ARG;
-    }
-#endif
-    msg.sig = BTC_SIG_API_CALL;
-    msg.pid = BTC_PID_ISO_BLE;
-    msg.act = BTC_ISO_ACT_SET_HOST_FEATURE;
-
-    arg.iso_set_host_feature_params.bit_num = bit_num;
-    arg.iso_set_host_feature_params.bit_val = bit_val;
-
-    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_iso_args_t), NULL, NULL)
-                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
-}
-
 esp_err_t esp_ble_iso_read_iso_tx_sync(uint16_t iso_handle)
 {
     btc_msg_t msg = {0};

@@ -112,10 +112,6 @@ static void btc_ble_iso_callback(tBTM_BLE_ISO_EVENT event,
             param.data_path.status = btc_btm_status_to_esp_status(params->btm_data_path_update.status);
             param.data_path.iso_hdl = params->btm_data_path_update.conn_hdl;
             break;
-        case BTA_BLE_ISO_SET_HOST_FEATURE_EVT:
-            msg.act = ESP_BLE_ISO_SET_HOST_FEATURE_CMPL_EVT;
-            param.host_feature.status = btc_btm_status_to_esp_status(params->status);
-            break;
         case BTA_BLE_ISO_READ_TX_SYNC_EVT:
             msg.act = ESP_BLE_ISO_READ_ISO_TX_SYNC_CMPL_EVT;
             param.read_tx_sync.status = btc_btm_status_to_esp_status(params->btm_read_tx_sync.status);
@@ -328,9 +324,6 @@ void btc_iso_ble_call_handler(btc_msg_t *msg)
         break;
     case BTC_ISO_ACT_REMOVE_DATA_PATH:
         BTA_DmBleGapIsoDataPathRemove((tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS *)&arg->iso_remove_data_path_params);
-        break;
-    case BTC_ISO_ACT_SET_HOST_FEATURE:
-        BTA_DmBleGapIsoSetHostFeature(arg->iso_set_host_feature_params.bit_num, arg->iso_set_host_feature_params.bit_val);
         break;
     case BTC_ISO_ACT_READ_ISO_TX_SYNC:
         BTA_DmBleGapIsoReadTxSync(arg->iso_read_tx_sync_params.iso_handle);

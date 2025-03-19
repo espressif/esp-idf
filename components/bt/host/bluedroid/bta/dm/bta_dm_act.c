@@ -6163,12 +6163,6 @@ void bta_dm_ble_iso_remove_data_path(tBTA_DM_MSG *p_data)
     BTM_BleIsoRemoveDataPath(param.conn_handle, param.data_path_dir);
 }
 
-void bta_dm_ble_iso_set_host_feature(tBTA_DM_MSG *p_data)
-{
-    APPL_TRACE_API("%s", __func__);
-    BTM_BleIsoSetHostFeature(p_data->iso_set_host_feat.bit_num, p_data->iso_set_host_feat.bit_val);
-}
-
 void bta_dm_ble_iso_read_tx_sync(tBTA_DM_MSG *p_data)
 {
     APPL_TRACE_API("%s", __func__);
@@ -6327,6 +6321,13 @@ void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data)
                             p_data->subrate_request.max_latency, p_data->subrate_request.continuation_number, p_data->subrate_request.supervision_timeout);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data)
+{
+    BTM_BleSetHostFeature(p_data->set_host_feat.bit_num, p_data->set_host_feat.bit_val);
+}
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #if (BLE_HOST_SETUP_STORAGE_EN == TRUE)
 /*******************************************************************************

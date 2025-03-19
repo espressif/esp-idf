@@ -393,25 +393,6 @@ tBTM_STATUS BTM_BleIsoRemoveDataPath(uint16_t conn_handle, uint8_t data_path_dir
     return BTM_SUCCESS;
 }
 
-tBTM_STATUS BTM_BleIsoSetHostFeature(uint16_t bit_num, uint8_t bit_val)
-{
-    tHCI_STATUS err = HCI_SUCCESS;
-    tBTM_STATUS status = BTM_SUCCESS;
-    tBTM_BLE_ISO_CB_PARAMS cb_params = {0};
-
-    BTM_TRACE_DEBUG("BTM_BleIsoSetHostFeature bit_num %d bit_value %d\n", bit_num, bit_val);
-
-    if ((err = btsnd_hcic_ble_iso_set_host_feature(bit_num, bit_val)) != HCI_SUCCESS) {
-        BTM_TRACE_ERROR("iso set host feature, cmd err=0x%x", err);
-        status = BTM_HCI_ERROR | err;
-    }
-
-    cb_params.status = status;
-    BTM_IsoBleCallbackTrigger(BTM_BLE_ISO_SET_HOST_FEATURE_EVT, &cb_params);
-
-    return status;
-}
-
 tBTM_STATUS BTM_BleIsoReadTxSync(uint16_t iso_hdl)
 {
     tHCI_STATUS err = HCI_SUCCESS;

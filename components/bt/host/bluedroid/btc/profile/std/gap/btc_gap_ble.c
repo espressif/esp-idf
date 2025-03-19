@@ -1270,6 +1270,12 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.subrate_change_evt.supervision_timeout = params->subrate_change_evt.supervision_timeout;
             break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+        case BTA_BLE_GAP_SET_HOST_FEATURE_EVT:
+            msg.act = ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT;
+            param.host_feature.status = btc_btm_status_to_esp_status(params->status);
+            break;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         default:
             break;
     }
@@ -2621,6 +2627,11 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
                                 arg_5->subrate_req_param.max_latency, arg_5->subrate_req_param.continuation_number, arg_5->subrate_req_param.supervision_timeout);
         break;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    case BTC_GAP_ACT_SET_HOST_FEATURE:
+        BTA_DmBleGapSetHostFeature(arg_5->set_host_feature_params.bit_num, arg_5->set_host_feature_params.bit_val);
+        break;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     default:
         break;
     }

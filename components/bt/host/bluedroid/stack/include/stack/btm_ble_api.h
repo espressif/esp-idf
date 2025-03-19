@@ -1086,7 +1086,10 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_GAP_SUBRATE_REQUEST_EVT                         49
 #define    BTM_BLE_GAP_SUBRATE_CHANGE_EVT                          50
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               51
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define    BTM_BLE_GAP_SET_HOST_FEATURE_EVT                        51
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               52
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 
 #if (BLE_FEAT_ISO_EN == TRUE)
@@ -1101,7 +1104,6 @@ typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 #define    BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT                      6
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        7
-#define    BTM_BLE_ISO_SET_HOST_FEATURE_EVT                        8
 #define    BTM_BLE_ISO_READ_TX_SYNC_EVT                            9
 #define    BTM_BLE_ISO_READ_LINK_QUALITY_EVT                       10
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -3296,8 +3298,6 @@ tBTM_STATUS BTM_BleIsoSetDataPath(uint16_t conn_handle, uint8_t data_path_dir, u
                                     uint8_t *codec_cfg);
 tBTM_STATUS BTM_BleIsoRemoveDataPath(uint16_t conn_handle, uint8_t data_path_dir);
 
-tBTM_STATUS BTM_BleIsoSetHostFeature(uint16_t bit_num, uint8_t bit_val);
-
 tBTM_STATUS BTM_BleIsoReadTxSync(uint16_t iso_hdl);
 tBTM_STATUS BTM_BleIsoReadLinkQuality(uint16_t iso_hdl);
 
@@ -3355,5 +3355,7 @@ void BTM_BleSetDefaultSubrate(UINT16 subrate_min, UINT16 subrate_max, UINT16 max
 void BTM_BleSubrateRequest(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max,
                             UINT16 max_latency, UINT16 continuation_number, UINT16 supervision_timeout);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
-
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif
