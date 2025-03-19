@@ -299,7 +299,6 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
 #endif// #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     bta_dm_ble_iso_set_data_path,      /* BTA_DM_API_ISO_SET_DATA_PATH_EVT */
     bta_dm_ble_iso_remove_data_path,   /* BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT */
-    bta_dm_ble_iso_set_host_feature,   /* BTA_DM_API_ISO_SET_HOST_FEATURE_EVT */
     bta_dm_ble_iso_read_tx_sync,       /* BTA_DM_API_ISO_READ_TX_SYNC_EVT */
     bta_dm_ble_iso_read_link_quality,  /* BTA_DM_API_ISO_READ_LINK_QUALITY_EVT */
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -341,6 +340,9 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_api_set_default_subrate, /* BTA_DM_API_SET_DEFALT_SUBRATE */
     bta_dm_api_subrate_request, /* BTA_DM_API_SUBRATE_REQUEST */
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    bta_dm_ble_set_host_feature,   /* BTA_DM_API_SET_HOST_FEATURE_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 };
 
 

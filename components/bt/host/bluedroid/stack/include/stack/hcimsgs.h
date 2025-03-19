@@ -1103,8 +1103,6 @@ UINT8 btsnd_hcic_ble_set_default_periodic_adv_sync_trans_params(UINT8 mode, UINT
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #define HCIC_PARAM_SIZE_ISO_SET_DATA_PATH_PARAMS          13
 #define HCIC_PARAM_SIZE_ISO_REMOVE_DATA_PATH_PARAMS       3
-#define HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS       2
-#define HCIC_PARAM_SIZE_ISO_SET_HOST_FEATURE_PARAMS_V2    3
 
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
 struct ble_hci_le_cis_params {
@@ -1178,8 +1176,6 @@ UINT8 btsnd_hcic_ble_iso_set_data_path(uint16_t conn_handle, uint8_t data_path_d
                                     uint8_t *codec_cfg);
 UINT8 btsnd_hcic_ble_iso_remove_data_path(uint16_t conn_handle, uint8_t data_path_dir);
 
-UINT8 btsnd_hcic_ble_iso_set_host_feature(uint16_t bit_num, uint8_t bit_val);
-
 UINT8 btsnd_hcic_ble_iso_read_tx_sync(uint16_t iso_hdl);
 
 UINT8 btsnd_hcic_ble_iso_read_iso_link_quality(uint16_t iso_hdl);
@@ -1240,5 +1236,11 @@ UINT8 btsnd_hcic_ble_set_default_subrate(UINT16 subrate_min, UINT16 subrate_max,
 UINT8 btsnd_hcic_ble_subrate_request(UINT16 conn_handle, UINT16 subrate_min, UINT16 subrate_max, UINT16 max_latency,
                                         UINT16 continuation_number, UINT16 supervision_timeout);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#define HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS       2
+#define HCIC_PARAM_SIZE_SET_HOST_FEATURE_PARAMS_V2    3
+UINT8 btsnd_hcic_ble_set_host_feature(uint16_t bit_num, uint8_t bit_val);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 
 #endif

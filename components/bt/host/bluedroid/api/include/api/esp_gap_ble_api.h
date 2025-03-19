@@ -244,6 +244,7 @@ typedef enum {
     ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT,                /*!< when set default subrate complete, the event comes */
     ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT,                    /*!< when subrate request command complete, the event comes */
     ESP_GAP_BLE_SUBRATE_CHANGE_EVT,                              /*!< when Connection Subrate Update procedure has completed and some parameters of the specified connection have changed, the event comes */
+    ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT,                       /*!< When host feature set complete, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1775,6 +1776,14 @@ typedef union {
         uint16_t supervision_timeout; /*!< New supervision timeout for this connection(Time = N × 10 ms). Range: 0x000A to 0x0C80, Time Range: 100 ms to 32 s */
     } subrate_change_evt;             /*!< Event parameter of ESP_GAP_BLE_SUBRATE_CHANGE_EVT */
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    /**
+     * @brief ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT
+     */
+    struct ble_set_host_feature_evt_param {
+        esp_bt_status_t status; /*!< Indicate host feature update success status */
+    } host_feature;     /*!< Event parameter of ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT */
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 } esp_ble_gap_cb_param_t;
 
 /**
@@ -3095,6 +3104,19 @@ esp_err_t esp_ble_gap_set_default_subrate(esp_ble_default_subrate_param_t *defau
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_params);
+
+/**
+ * @brief           This function is called to set host feature.
+ *
+ * @param[in]       bit_num: the bit position in the FeatureSet.
+ * @param[in]       bit_val: the feature is enabled or disabled
+ *
+ * @return
+ *                  - ESP_OK : success
+ *                  - other  : failed
+ *
+ */
+esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val);
 
 #ifdef __cplusplus
 }

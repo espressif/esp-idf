@@ -1707,3 +1707,24 @@ void btm_ble_subrate_change_evt(tBTM_BLE_SUBRATE_CHANGE_EVT *params)
     BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SUBRATE_CHANGE_EVT, (tBTM_BLE_5_GAP_CB_PARAMS *)params);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+tBTM_STATUS BTM_BleSetHostFeature(uint16_t bit_num, uint8_t bit_val)
+{
+    tHCI_STATUS err = HCI_SUCCESS;
+    tBTM_STATUS status = BTM_SUCCESS;
+    tBTM_BLE_5_GAP_CB_PARAMS cb_params = {0};
+
+    BTM_TRACE_DEBUG("BTM_BleSetHostFeature bit_num %d bit_value %d\n", bit_num, bit_val);
+
+    if ((err = btsnd_hcic_ble_set_host_feature(bit_num, bit_val)) != HCI_SUCCESS) {
+        BTM_TRACE_ERROR("set host feature, cmd err=0x%x", err);
+        status = BTM_HCI_ERROR | err;
+    }
+
+    cb_params.status = status;
+    BTM_ExtBleCallbackTrigger(BTM_BLE_GAP_SET_HOST_FEATURE_EVT, &cb_params);
+
+    return status;
+}
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)

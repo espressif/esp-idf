@@ -3134,6 +3134,25 @@ void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint1
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+void BTA_DmBleGapSetHostFeature(uint16_t bit_num, uint8_t bit_val)
+{
+    tBTA_DM_API_SET_HOST_FEATURE *p_msg;
+    APPL_TRACE_API("%s", __func__);
+    if ((p_msg = (tBTA_DM_API_SET_HOST_FEATURE *) osi_malloc(sizeof(tBTA_DM_API_SET_HOST_FEATURE))) != NULL) {
+        memset(p_msg, 0, sizeof(tBTA_DM_API_SET_HOST_FEATURE));
+        p_msg->hdr.event = BTA_DM_API_SET_HOST_FEATURE_EVT;
+
+        p_msg->bit_num = bit_num;
+        p_msg->bit_val = bit_val;
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_msg);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 /*******************************************************************************
 **
 ** Function         BTA_VendorInit
@@ -3859,23 +3878,6 @@ void BTA_DmBleGapIsoDataPathRemove(tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS *p_is
 
         p_msg->iso_data_path_remove_param.conn_handle = p_iso_data_path_param->conn_handle;
         p_msg->iso_data_path_remove_param.data_path_dir = p_iso_data_path_param->data_path_dir;
-        //start sent the msg to the bta system control module
-        bta_sys_sendmsg(p_msg);
-    } else {
-        APPL_TRACE_ERROR("%s malloc failed", __func__);
-    }
-}
-
-void BTA_DmBleGapIsoSetHostFeature(uint16_t bit_num, uint8_t bit_val)
-{
-    tBTA_DM_API_ISO_SET_HOST_FEATURE *p_msg;
-    APPL_TRACE_API("%s", __func__);
-    if ((p_msg = (tBTA_DM_API_ISO_SET_HOST_FEATURE *) osi_malloc(sizeof(tBTA_DM_API_ISO_SET_HOST_FEATURE))) != NULL) {
-        memset(p_msg, 0, sizeof(tBTA_DM_API_ISO_SET_HOST_FEATURE));
-        p_msg->hdr.event = BTA_DM_API_ISO_SET_HOST_FEATURE_EVT;
-
-        p_msg->bit_num = bit_num;
-        p_msg->bit_val = bit_val;
         //start sent the msg to the bta system control module
         bta_sys_sendmsg(p_msg);
     } else {

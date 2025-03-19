@@ -1963,3 +1963,34 @@ esp_err_t esp_ble_gap_subrate_request(esp_ble_subrate_req_param_t *subrate_req_p
                 == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+esp_err_t esp_ble_gap_set_host_feature(uint16_t bit_num, uint8_t bit_val)
+{
+    btc_msg_t msg;
+    btc_ble_5_gap_args_t arg;
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    if (bit_num > 0x07BF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+#else
+    if (bit_num > 0xFF) {
+        return ESP_ERR_INVALID_ARG;
+    }
+#endif
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_ACT_SET_HOST_FEATURE;
+
+    arg.set_host_feature_params.bit_num = bit_num;
+    arg.set_host_feature_params.bit_val = bit_val;
+
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_5_gap_args_t), NULL, NULL)
+                == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+#endif //#if (BLE_50_FEATURE_SUPPORT == TRUE)
