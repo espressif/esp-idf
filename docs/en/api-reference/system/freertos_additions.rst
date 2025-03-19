@@ -296,6 +296,10 @@ Byte buffers **do not allow multiple retrievals before returning** (every retrie
 
 Referring to the diagram above, the 38 bytes of continuous stored data at the tail of the buffer is retrieved, returned, and freed. The next call to :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR` then wraps around and does the same to the 30 bytes of continuous stored data at the head of the buffer.
 
+.. note::
+
+    Retrieving items from Allow-Split buffers must be done via :cpp:func:`xRingbufferReceiveSplit` or :cpp:func:`xRingbufferReceiveSplitFromISR` instead of :cpp:func:`xRingbufferReceive` or :cpp:func:`xRingbufferReceiveFromISR`.
+
 Ring Buffers with Queue Sets
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
