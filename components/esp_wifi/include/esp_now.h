@@ -51,7 +51,7 @@ extern "C" {
 
 #define ESP_NOW_MAX_IE_DATA_LEN      250       /**< Maximum data length in a vendor-specific element */
 #define ESP_NOW_MAX_DATA_LEN  ESP_NOW_MAX_IE_DATA_LEN   /**< Maximum length of data sent in each ESPNOW transmission for v1.0 */
-#define ESP_NOW_MAX_DATA_LEN_V2      1490      /**< Maximum length of data sent in each ESPNOW transmission for v2.0 */
+#define ESP_NOW_MAX_DATA_LEN_V2      1470      /**< Maximum length of data sent in each ESPNOW transmission for v2.0 */
 
 /**
  * @brief Status of sending ESPNOW data .
