@@ -58,6 +58,10 @@ static uint8_t own_addr_type;
 
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_HCI_VS)
+static struct ble_gap_event_listener vs_event_listener;
+#endif
+
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
 static struct ble_gap_event_listener power_control_event_listener;
 #endif
@@ -146,6 +150,13 @@ ext_bleprph_advertise(void)
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
     assert (rc == 0);
+
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    rc = ble_hs_send_vs_event_mask(ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT_MASK);
+
+    rc = ble_gap_event_listener_register(&vs_event_listener,
+		    bleprph_gap_event,NULL);
+#endif
 }
 #else
 /**
@@ -444,6 +455,20 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         }
         return 0;
+
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    case BLE_GAP_EVENT_VS_HCI:
+	const struct ble_hci_ev_vs *ev = event->vs_hci.ev;
+
+	switch(ev->id) {
+            case BLE_HCI_VS_SUBEV_LE_SLEEP_WAKE_UP:
+	        MODLOG_DFLT(INFO, "Got Sleep wake up ");
+		break;
+
+	    default:
+		break;
+	}
+#endif
 
     }
 
