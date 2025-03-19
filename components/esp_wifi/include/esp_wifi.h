@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1788,6 +1788,29 @@ esp_err_t esp_wifi_set_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t* bw);
   */
 esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
 
+/**
+  * @brief      Send action frame on target channel
+  *
+  * @param    req   action tx request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_FAIL: failed to send frame
+  */
+esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
+
+/**
+  * @brief      Remain on the target channel for required duration
+  *
+  * @param    req  roc request structure containing relevant fields
+  *
+  * @return
+  *    - ESP_OK: succeed
+  *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_FAIL: failed to perform roc operation
+  */
+esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
 #ifdef __cplusplus
 }
 #endif

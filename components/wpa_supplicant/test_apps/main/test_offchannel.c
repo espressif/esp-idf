@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  *
@@ -54,7 +54,7 @@ static void wifi_event_handler(void *arg, esp_event_base_t event_base,
         wifi_event_action_tx_status_t *evt =
             (wifi_event_action_tx_status_t *)event_data;
 
-        if (evt->status == 0) {
+        if (evt->status == WIFI_ACTION_TX_DONE) {
             ESP_LOGI(TAG, "Action Tx Successful");
         }
     }
@@ -137,17 +137,21 @@ void esp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
     req->no_ack = false;
     req->data_len = len;
     req->rx_cb = dummy_rx_action;
+    req->channel = channel;
+    req->wait_time_ms = wait_time_ms;
+    req->type = WIFI_OFFCHAN_TX_REQ;
+
     memcpy(req->data, buf, req->data_len);
 
     ESP_LOGI(TAG, "Action Tx - MAC:" MACSTR ", Channel-%d, WaitT-%" PRId32 "",
              MAC2STR(dest_mac), channel, wait_time_ms);
 
-    TEST_ESP_OK(esp_wifi_action_tx_req(WIFI_OFFCHAN_TX_REQ, channel, wait_time_ms, req));
+    TEST_ESP_OK(esp_wifi_action_tx_req(req));
 
     os_free(req);
 }
 
-/* Test that foreground Scan doesn't pre-empt ROC & vice versa */
+/* Test that foreground Scan doesn't preempt ROC & vice versa */
 TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 {
     wifi_action_rx_cb_t rx_cb = dummy_rx_action;
@@ -158,8 +162,16 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 
     xEventGroupWaitBits(wifi_event, WIFI_START_EVENT, 1, 0, 5000 / portTICK_PERIOD_MS);
 
-    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
-                                           100, rx_cb));
+    wifi_roc_req_t req = {0};
+    req.ifx = WIFI_IF_STA;
+    req.type = WIFI_ROC_REQ;
+    req.channel = TEST_LISTEN_CHANNEL;
+    req.wait_time_ms = 100;
+    req.rx_cb = rx_cb;
+    req.done_cb = NULL;
+
+    TEST_ESP_OK(esp_wifi_remain_on_channel(&req));
+
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
                                pdTRUE, pdFALSE, 5000 / portTICK_PERIOD_MS);
@@ -167,8 +179,9 @@ TEST_CASE("Test scan and ROC simultaneously", "[Offchan]")
 
     vTaskDelay(1000 / portTICK_PERIOD_MS);
     ESP_ERROR_CHECK(esp_wifi_scan_start(NULL, false));
-    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
-                                           100, rx_cb));
+
+    TEST_ESP_OK(esp_wifi_remain_on_channel(&req));
+
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_SCAN_DONE_EVENT,
                                pdTRUE, pdFALSE, 5000 / portTICK_PERIOD_MS);
     TEST_ASSERT_TRUE(bits == WIFI_SCAN_DONE_EVENT);
@@ -228,13 +241,24 @@ static void test_wifi_roc(void)
     sprintf(mac_str, MACSTR, MAC2STR(mac));
     unity_send_signal_param("Listener mac", mac_str);
 
-    TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_REQ, TEST_LISTEN_CHANNEL,
-                                           10000, rx_cb));
+    wifi_roc_req_t req = {0};
+    req.ifx = WIFI_IF_STA;
+    req.type = WIFI_ROC_REQ;
+    req.channel = TEST_LISTEN_CHANNEL;
+    req.wait_time_ms = 10000;
+    req.rx_cb = rx_cb;
+    req.done_cb = NULL;
+    TEST_ESP_OK(esp_wifi_remain_on_channel(&req));
+
     bits = xEventGroupWaitBits(wifi_event, WIFI_ROC_DONE_EVENT | WIFI_ACTION_RX_EVENT,
                                pdTRUE, pdFALSE, portMAX_DELAY);
     /* Confirm that Frame has been received successfully */
     if (bits == WIFI_ACTION_RX_EVENT) {
-        TEST_ESP_OK(esp_wifi_remain_on_channel(WIFI_IF_STA, WIFI_ROC_CANCEL, 0, 0, NULL));
+        wifi_roc_req_t req = {0};
+        req.ifx = WIFI_IF_STA;
+        req.type = WIFI_ROC_CANCEL;
+        TEST_ESP_OK(esp_wifi_remain_on_channel(&req));
+
         vTaskDelay(1000 / portTICK_PERIOD_MS);
         stop_wifi();
     } else {
