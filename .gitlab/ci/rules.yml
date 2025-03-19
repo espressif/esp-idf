@@ -35,6 +35,7 @@
   # Add folders excluded by "???[!t]" and "??[!s]?"
   # pre-commit: tools/ci/check_rules_components_patterns.py
   - "components/bt/host/**/*"
+  - "components/esp_psram/system_layer/*"
 
 .patterns-downloadable-tools: &patterns-downloadable-tools
   - "tools/idf_tools.py"

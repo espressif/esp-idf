@@ -30,7 +30,7 @@ esp_err_t esp_psram_impl_get_physical_size(uint32_t *out_size_bytes);
 /**
  * @brief To get the available physical psram size in bytes.
  *
- * @param[out] out_size_bytes    availabe physical psram size in bytes.
+ * @param[out] out_size_bytes    available physical psram size in bytes.
  */
 esp_err_t esp_psram_impl_get_available_size(uint32_t *out_size_bytes);
 

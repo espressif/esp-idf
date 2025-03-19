@@ -14,7 +14,7 @@
 #include "soc/soc.h"
 #include "esp_log.h"
 #include "esp_check.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 
 /*
 So, why does the API look this way and is so inflexible to not allow any maps beyond the full 32K chunks? Most of
