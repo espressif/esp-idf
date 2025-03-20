@@ -468,6 +468,7 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
     }
 #endif
     gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO);
+    esp_gpio_revoke(BIT64(gpio_num));
     return ESP_OK;
 }
 
