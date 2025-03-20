@@ -1,31 +1,31 @@
 #!/usr/bin/env python
-
-# SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 #
 # SPDX-License-Identifier: Apache-2.0
-
 # This script is used from the $IDF_PATH/install.* scripts. This way the argument parsing can be done at one place and
 # doesn't have to be implemented for all shells.
-
 import argparse
 from itertools import chain
 
 
 def action_extract_features(args: str) -> None:
     """
-    Command line arguments starting with "--enable-" or "--disable" are features. This function selects those, add them signs '+' or '-' and prints them.
+    Command line arguments starting with "--enable-" or "--disable-" are features.
+    This function selects those, adds them a '+' or '-' sign and prints them.
     """
     features = ['+core']  # "core" features should be always installed
 
     if args:
         arg_enable_prefix = '--enable-'
         arg_disable_prefix = '--disable-'
-        # features to be enabled has prefix '+', disabled has prefix '-'
+        # features to be enabled have prefix '+', disabled have prefix '-'
         for arg in args.split():
             if arg.startswith(arg_enable_prefix):
                 features.append('+' + arg[len(arg_enable_prefix):])
             elif arg.startswith(arg_disable_prefix):
                 features.append('-' + arg[len(arg_disable_prefix):])
+            elif arg.startswith('-'):
+                raise SystemExit(f'ERROR: Invalid feature specifier: {arg}')
         features = list(set(features))
 
     print(','.join(features))
