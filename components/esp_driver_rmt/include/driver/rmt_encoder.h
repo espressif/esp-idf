@@ -26,6 +26,7 @@ typedef enum {
     RMT_ENCODING_RESET = 0,           /*!< The encoding session is in reset state */
     RMT_ENCODING_COMPLETE = (1 << 0), /*!< The encoding session is finished, the caller can continue with subsequent encoding */
     RMT_ENCODING_MEM_FULL = (1 << 1), /*!< The encoding artifact memory is full, the caller should return from current encoding session */
+    RMT_ENCODING_WITH_EOF = (1 << 2), /*!< The encoding session has inserted the EOF marker to the symbol stream */
 } rmt_encode_state_t;
 
 /**
@@ -168,6 +169,8 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
 
 /**
  * @brief Create RMT copy encoder, which copies the given RMT symbols into RMT memory
+ *
+ * @note When transmitting using a copy encoder, ensure that the input data is already formatted as `rmt_symbol_word_t`.
  *
  * @param[in] config Copy encoder configuration
  * @param[out] ret_encoder Returned encoder handle

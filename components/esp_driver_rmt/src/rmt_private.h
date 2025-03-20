@@ -183,6 +183,7 @@ typedef struct {
     struct {
         uint32_t eot_level : 1;    // Set the output level for the "End Of Transmission"
         uint32_t encoding_done: 1; // Indicate whether the encoding has finished (not the encoding of transmission)
+        uint32_t need_eof_mark: 1; // Indicate whether need to insert an EOF mark (a special RMT symbol)
     } flags;
 
 } rmt_tx_trans_desc_t;
@@ -191,7 +192,7 @@ struct rmt_tx_channel_t {
     rmt_channel_t base; // channel base class
     rmt_symbol_word_t *dma_mem_base;    // base address of RMT channel DMA buffer
     rmt_symbol_word_t *dma_mem_base_nc; // base address of RMT channel DMA buffer, accessed in non-cached way
-    size_t mem_off;     // runtime argument, indicating the next writing position in the RMT hardware memory
+    size_t mem_off_bytes; // runtime argument, indicating the next writing position in the RMT hardware memory, the offset unit is in bytes
     size_t mem_end;     // runtime argument, indicating the end of current writing region
     size_t ping_pong_symbols;  // ping-pong size (half of the RMT channel memory)
     size_t queue_size;         // size of transaction queue
