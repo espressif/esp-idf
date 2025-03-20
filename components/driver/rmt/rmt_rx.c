@@ -563,11 +563,21 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
     // disable the RX engine, it will be enabled again when next time user calls `rmt_receive()`
     rmt_ll_rx_enable(hal->regs, channel_id, false);
     uint32_t offset = rmt_ll_rx_get_memory_writer_offset(hal->regs, channel_id);
-    // sanity check
-    assert(offset >= rx_chan->mem_off);
+
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_SW);
     // copy the symbols to user space
-    size_t stream_symbols = offset - rx_chan->mem_off;
+    
+    // Start from C6, the actual pulse count is the number of input pulses N - 1.
+    // Resulting in the last threshold interrupts may not be triggered correctly when the number of received symbols is a multiple of the memory block size.
+    // As shown in the figure below, So we special handle the offset
+
+    //  mem_off (should be updated here in the last threshold interrupt, but interrupt lost)
+    //     |
+    //     V
+    //     |________|________|
+    //     |        |
+    //   offset   mem_off(actually here now)
+    size_t stream_symbols = (offset >= rx_chan->mem_off ? offset - rx_chan->mem_off : rx_chan->mem_off - offset);
     size_t copy_size = rmt_copy_symbols(channel->hw_mem_base + rx_chan->mem_off, stream_symbols,
                                         trans_desc->buffer, trans_desc->copy_dest_off, trans_desc->buffer_size);
     rmt_ll_rx_set_mem_owner(hal->regs, channel_id, RMT_LL_MEM_OWNER_HW);
