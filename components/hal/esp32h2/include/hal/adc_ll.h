@@ -727,7 +727,7 @@ static inline void adc_ll_enable_tout_bus(adc_unit_t adc_n, bool en)
  * Init regi2c SARADC registers
  */
 __attribute__((always_inline))
-static inline void adc_ll_regi2c_adc_init(void)
+static inline void adc_ll_regi2c_init(void)
 {
     adc_ll_set_dtest_param(0);
     adc_ll_set_ent_param(1);

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,7 @@
 #include "soc/soc.h"
 #include "soc/pmu_struct.h"
 #include "hal/pmu_hal.h"
+#include "hal/regi2c_ctrl_ll.h"
 #include "pmu_param.h"
 #include "esp_private/esp_pmu.h"
 #include "soc/regi2c_dig_reg.h"
@@ -209,8 +210,8 @@ static void pmu_lp_system_init_default(pmu_context_t *ctx)
 void pmu_init(void)
 {
     /* Peripheral reg i2c power up */
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+    regi2c_ctrl_ll_reset(false);
+    regi2c_ctrl_ll_i2c_periph_enable();
 
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_RTC_DREG, 1);
     REGI2C_WRITE_MASK(I2C_DIG_REG, I2C_DIG_REG_ENIF_DIG_DREG, 1);

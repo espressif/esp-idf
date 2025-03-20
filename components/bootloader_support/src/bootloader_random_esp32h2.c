@@ -22,7 +22,7 @@ void bootloader_random_enable(void)
     // enable analog i2c master clock for RNG runtime
     ANALOG_CLOCK_ENABLE();
 
-    adc_ll_regi2c_adc_init();
+    adc_ll_regi2c_init();
     adc_ll_set_calibration_param(ADC_UNIT_1, 0x866);
     adc_ll_set_calibration_param(ADC_UNIT_2, 0x866);
 
