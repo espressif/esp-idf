@@ -45,7 +45,17 @@ if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
     endif()
 endif()
 
-if(NOT BOOTLOADER_BUILD AND NOT esp_tee_build)
+if(esp_tee_build)
+    list(APPEND srcs "apm_hal.c"
+                     "brownout_hal.c"
+                     "wdt_hal_iram.c"
+                     "aes_hal.c"
+                     "sha_hal.c")
+
+    if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
+        list(APPEND srcs "spi_flash_hal.c")
+    endif()
+elseif(NOT BOOTLOADER_BUILD)
     list(APPEND srcs "color_hal.c")
 
     if(NOT CONFIG_APP_BUILD_TYPE_PURE_RAM_APP)
