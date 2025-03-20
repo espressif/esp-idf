@@ -4,8 +4,10 @@ import logging
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
 
+import pytest
 from test_build_system_helpers import append_to_file
 from test_build_system_helpers import EnvDict
 from test_build_system_helpers import file_contains
@@ -24,7 +26,11 @@ def test_build_custom_cmake_project(test_app_copy: Path) -> None:
         assert file_contains((test_app_copy / 'build' / 'compile_commands.json'), '"command"')
         shutil.rmtree(test_app_copy / 'build')
 
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='On Win project is not buildable without system compiler on the host machine. (Win CI runners)')
+def test_build_custom_cmake_project_host() -> None:
     logging.info(f'Test build ESP-IDF as a library to a custom CMake projects for host')
+    idf_path = Path(os.environ['IDF_PATH'])
     run_cmake_and_build(str(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib'), '-G', 'Ninja')
 
 
