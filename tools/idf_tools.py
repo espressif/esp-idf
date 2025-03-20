@@ -348,10 +348,7 @@ def get_env_for_extra_paths(extra_paths):  # type: (List[str]) -> Dict[str, str]
     """
     env_arg = os.environ.copy()
     new_path = os.pathsep.join(extra_paths) + os.pathsep + env_arg['PATH']
-    if sys.version_info.major == 2:
-        env_arg['PATH'] = new_path.encode('utf8')  # type: ignore
-    else:
-        env_arg['PATH'] = new_path
+    env_arg['PATH'] = new_path
     return env_arg
 
 
@@ -390,11 +387,13 @@ def unpack(filename, destination):  # type: (str, str) -> None
         archive_obj = ZipFile(filename)
     else:
         raise NotImplementedError('Unsupported archive type')
-    if sys.version_info.major == 2:
-        # This is a workaround for the issue that unicode destination is not handled:
-        # https://bugs.python.org/issue17153
-        destination = str(destination)
-    archive_obj.extractall(destination)
+
+    # Handle tar/zip extraction with backward compatibility
+    if isinstance(archive_obj, tarfile.TarFile) and sys.version_info[:2] >= (3, 12):
+        # Use the tar filter argument for Python 3.12 and later
+        archive_obj.extractall(destination, filter='tar')  # type: ignore
+    else:
+        archive_obj.extractall(destination)
 
 
 def splittype(url):  # type: (str) -> Tuple[Optional[str], str]
@@ -2644,15 +2643,6 @@ def main(argv):  # type: (list[str]) -> None
     # Otherwise sys.executable keeps pointing to the system Python, even when a python binary from a virtualenv is invoked.
     # See https://bugs.python.org/issue22490#msg283859.
     os.environ.pop('__PYVENV_LAUNCHER__', None)
-
-    if sys.version_info.major == 2:
-        try:
-            global_idf_tools_path.decode('ascii')  # type: ignore
-        except UnicodeDecodeError:
-            fatal('IDF_TOOLS_PATH contains non-ASCII characters: {}'.format(global_idf_tools_path) +
-                  '\nThis is not supported yet with Python 2. ' +
-                  'Please set IDF_TOOLS_PATH to a directory with an ASCII name, or switch to Python 3.')
-            raise SystemExit(1)
 
     if CURRENT_PLATFORM is None:
         fatal('Platform {} appears to be unsupported'.format(PYTHON_PLATFORM))
