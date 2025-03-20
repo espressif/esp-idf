@@ -1999,6 +1999,94 @@ AP 睡眠
 
     使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c3`。
 
+.. only:: esp32c5
+
+    - 2.4 GHz 频段
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - 类型/吞吐量
+          - 实验室空气状况
+          - 屏蔽箱
+          - 测试工具
+          - IDF 版本 (commit ID)
+        * - 原始 802.11 数据包接收数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - 原始 802.11 数据包发送数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - UDP 接收数据
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP 发送数据
+          - 30 MBit/s
+          - 63 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 接收数据
+          - 20 MBit/s
+          - 59 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 发送数据
+          - 20 MBit/s
+          - 49 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    - 5 GHz 频段
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - 类型/吞吐量
+          - 实验室空气状况
+          - 屏蔽箱
+          - 测试工具
+          - IDF 版本 (commit ID)
+        * - 原始 802.11 数据包接收数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - 原始 802.11 数据包发送数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - UDP 接收数据
+          - 30 MBit/s
+          - 71 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP 发送数据
+          - 30 MBit/s
+          - 64 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 接收数据
+          - 20 MBit/s
+          - 61 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 发送数据
+          - 20 MBit/s
+          - 50 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c5`。
+
 .. only:: esp32c6
 
      .. list-table::
@@ -2022,26 +2110,70 @@ AP 睡眠
           - N/A
         * - UDP 接收数据
           - 30 MBit/s
-          - 45 MBit/s
+          - 63 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - UDP 发送数据
           - 30 MBit/s
-          - 40 MBit/s
+          - 51 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP 接收数据
           - 20 MBit/s
-          - 30 MBit/s
+          - 46 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
         * - TCP 发送数据
           - 20 MBit/s
-          - 31 MBit/s
+          - 43 MBit/s
           - iperf example
-          - 420ebd20
+          - 7ff0a07d
 
     使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c6`。
+
+.. only:: esp32c61
+
+     .. list-table::
+        :header-rows: 1
+        :widths: 10 10 10 15 20
+
+        * - 类型/吞吐量
+          - 实验室空气状况
+          - 屏蔽箱
+          - 测试工具
+          - IDF 版本 (commit ID)
+        * - 原始 802.11 数据包接收数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - 原始 802.11 数据包发送数据
+          - N/A
+          - **130 MBit/s**
+          - 内部工具
+          - N/A
+        * - UDP 接收数据
+          - 30 MBit/s
+          - 68 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - UDP 发送数据
+          - 30 MBit/s
+          - 53 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 接收数据
+          - 20 MBit/s
+          - 45 MBit/s
+          - iperf example
+          - 7ff0a07d
+        * - TCP 发送数据
+          - 20 MBit/s
+          - 37 MBit/s
+          - iperf example
+          - 7ff0a07d
+
+    使用 iperf example 测试吞吐量时，sdkconfig 是 :idf_file:`examples/wifi/iperf/sdkconfig.defaults.esp32c61`。
 
 .. only:: esp32s3
 
