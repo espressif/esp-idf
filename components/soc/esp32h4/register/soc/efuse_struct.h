@@ -73,7 +73,14 @@ typedef union {
          *  0: enabled
          */
         uint32_t dis_usb_jtag:1;
-        uint32_t reserved_8:1;
+        /** dis_usb_serial_jtag : RO; bitpos: [8]; default: 0;
+         *  Represents whether USB-Serial-JTAG is disabled or enabled.
+         *  1: disabled
+         *  0: enabled
+         *
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t dis_usb_serial_jtag:1;
         /** dis_force_download : RO; bitpos: [9]; default: 0;
          *  Represents whether the function that forces chip into download mode is disabled or
          *  enabled.
@@ -403,7 +410,30 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:8;
+        /** usb_drefh : RO; bitpos: [1:0]; default: 0;
+         *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
+         *  V with step of 80 mV.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_drefh:2;
+        /** usb_drefl : RO; bitpos: [3:2]; default: 0;
+         *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
+         *  V with step of 80 mV.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_drefl:2;
+        /** usb_otg_fs_drefh : RO; bitpos: [5:4]; default: 0;
+         *  Represents the single-end input threshold vrefh of USB_OTG_FS PHY, 1.76 V to 2 V
+         *  with step of 80 mV.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_otg_fs_drefh:2;
+        /** usb_otg_fs_drefl : RO; bitpos: [7:6]; default: 0;
+         *  Represents the single-end input threshold vrefl of USB_OTG_FS PHY, 1.76 V to 2 V
+         *  with step of 80 mV.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_otg_fs_drefl:2;
         /** usb_exchg_pins : RO; bitpos: [8]; default: 0;
          *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.
          *  1: exchanged
@@ -725,7 +755,11 @@ typedef union {
          *  Represents the programming error of EFUSE_DIS_USB_JTAG
          */
         uint32_t dis_usb_jtag_err:1;
-        uint32_t reserved_8:1;
+        /** dis_usb_serial_jtag_err : RO; bitpos: [8]; default: 0;
+         *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t dis_usb_serial_jtag_err:1;
         /** dis_force_download_err : RO; bitpos: [9]; default: 0;
          *  Represents the programming error of EFUSE_DIS_FORCE_DOWNLOAD
          */
@@ -943,7 +977,26 @@ typedef union {
  */
 typedef union {
     struct {
-        uint32_t reserved_0:8;
+        /** usb_drefh_err : RO; bitpos: [1:0]; default: 0;
+         *  Represents the programming error of EFUSE_USB_DREFH
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_drefh_err:2;
+        /** usb_drefl_err : RO; bitpos: [3:2]; default: 0;
+         *  Represents the programming error of EFUSE_USB_DREFL
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_drefl_err:2;
+        /** usb_otg_fs_drefh_err : RO; bitpos: [5:4]; default: 0;
+         *  Represents the programming error of EFUSE_USB_OTG_FS_DREFH
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_otg_fs_drefh_err:2;
+        /** usb_otg_fs_drefl_err : RO; bitpos: [7:6]; default: 0;
+         *  Represents the programming error of EFUSE_USB_OTG_FS_DREFL
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t usb_otg_fs_drefl_err:2;
         /** usb_exchg_pins_err : RO; bitpos: [8]; default: 0;
          *  Represents the programming error of EFUSE_USB_EXCHG_PINS
          */
@@ -1377,7 +1430,36 @@ typedef union {
          *  Other values: Non-idle state
          */
         uint32_t state:4;
-        uint32_t reserved_4:6;
+        /** otp_load_sw : RO; bitpos: [4]; default: 0;
+         *  Represents the value of OTP_LOAD_SW.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_load_sw:1;
+        /** otp_vddq_c_sync2 : RO; bitpos: [5]; default: 0;
+         *  Represents the value of OTP_VDDQ_C_SYNC2.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_vddq_c_sync2:1;
+        /** otp_strobe_sw : RO; bitpos: [6]; default: 0;
+         *  Represents the value of OTP_STROBE_SW.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_strobe_sw:1;
+        /** otp_csb_sw : RO; bitpos: [7]; default: 0;
+         *  Represents the value of OTP_CSB_SW.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_csb_sw:1;
+        /** otp_pgenb_sw : RO; bitpos: [8]; default: 0;
+         *  Represents the value of OTP_PGENB_SW.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_pgenb_sw:1;
+        /** otp_vddq_is_sw : RO; bitpos: [9]; default: 0;
+         *  Represents the value of OTP_VDDQ_IS_SW.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t otp_vddq_is_sw:1;
         /** blk0_valid_bit_cnt : RO; bitpos: [19:10]; default: 0;
          *  Represents the number of block valid bit.
          */
@@ -1491,6 +1573,2085 @@ typedef union {
 } efuse_int_clr_reg_t;
 
 
+/** Group: EFUSE_APB2OTP Block0 Write Disable Data */
+/** Type of apb2otp_wr_dis register
+ *  eFuse apb2otp block0 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_wr_dis : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 write disable data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_wr_dis:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_wr_dis_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup1 Word1 Data */
+/** Type of apb2otp_blk0_backup1_w1 register
+ *  eFuse apb2otp block0 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup1_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup1 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup1_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup1_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup1 Word2 Data */
+/** Type of apb2otp_blk0_backup1_w2 register
+ *  eFuse apb2otp block0 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup1_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup1 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup1_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup1_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup1 Word3 Data */
+/** Type of apb2otp_blk0_backup1_w3 register
+ *  eFuse apb2otp block0 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup1_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup1 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup1_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup1_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup1 Word4 Data */
+/** Type of apb2otp_blk0_backup1_w4 register
+ *  eFuse apb2otp block0 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup1_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup1 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup1_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup1_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup1 Word5 Data */
+/** Type of apb2otp_blk0_backup1_w5 register
+ *  eFuse apb2otp block0 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup1_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup1 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup1_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup1_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup2 Word1 Data */
+/** Type of apb2otp_blk0_backup2_w1 register
+ *  eFuse apb2otp block0 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup2_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup2 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup2_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup2_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup2 Word2 Data */
+/** Type of apb2otp_blk0_backup2_w2 register
+ *  eFuse apb2otp block0 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup2_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup2 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup2_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup2_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup2 Word3 Data */
+/** Type of apb2otp_blk0_backup2_w3 register
+ *  eFuse apb2otp block0 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup2_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup2 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup2_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup2_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup2 Word4 Data */
+/** Type of apb2otp_blk0_backup2_w4 register
+ *  eFuse apb2otp block0 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup2_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup2 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup2_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup2_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup2 Word5 Data */
+/** Type of apb2otp_blk0_backup2_w5 register
+ *  eFuse apb2otp block0 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup2_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup2 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup2_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup2_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup3 Word1 Data */
+/** Type of apb2otp_blk0_backup3_w1 register
+ *  eFuse apb2otp block0 data register12.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup3_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup3 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup3_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup3_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup3 Word2 Data */
+/** Type of apb2otp_blk0_backup3_w2 register
+ *  eFuse apb2otp block0 data register13.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup3_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup3 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup3_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup3_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup3 Word3 Data */
+/** Type of apb2otp_blk0_backup3_w3 register
+ *  eFuse apb2otp block0 data register14.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup3_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup3 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup3_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup3_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup3 Word4 Data */
+/** Type of apb2otp_blk0_backup3_w4 register
+ *  eFuse apb2otp block0 data register15.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup3_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup3 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup3_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup3_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup3 Word5 Data */
+/** Type of apb2otp_blk0_backup3_w5 register
+ *  eFuse apb2otp block0 data register16.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup3_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup3 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup3_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup3_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup4 Word1 Data */
+/** Type of apb2otp_blk0_backup4_w1 register
+ *  eFuse apb2otp block0 data register17.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup4_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup4 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup4_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup4_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup4 Word2 Data */
+/** Type of apb2otp_blk0_backup4_w2 register
+ *  eFuse apb2otp block0 data register18.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup4_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup4 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup4_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup4_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup4 Word3 Data */
+/** Type of apb2otp_blk0_backup4_w3 register
+ *  eFuse apb2otp block0 data register19.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup4_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup4 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup4_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup4_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup4 Word4 Data */
+/** Type of apb2otp_blk0_backup4_w4 register
+ *  eFuse apb2otp block0 data register20.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup4_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup4 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup4_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup4_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block0 Backup4 Word5 Data */
+/** Type of apb2otp_blk0_backup4_w5 register
+ *  eFuse apb2otp block0 data register21.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block0_backup4_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block0 backup4 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block0_backup4_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk0_backup4_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word1 Data */
+/** Type of apb2otp_blk1_w1 register
+ *  eFuse apb2otp block1 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word2 Data */
+/** Type of apb2otp_blk1_w2 register
+ *  eFuse apb2otp block1 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word3 Data */
+/** Type of apb2otp_blk1_w3 register
+ *  eFuse apb2otp block1 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word4 Data */
+/** Type of apb2otp_blk1_w4 register
+ *  eFuse apb2otp block1 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word5 Data */
+/** Type of apb2otp_blk1_w5 register
+ *  eFuse apb2otp block1 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word6 Data */
+/** Type of apb2otp_blk1_w6 register
+ *  eFuse apb2otp block1 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word7 Data */
+/** Type of apb2otp_blk1_w7 register
+ *  eFuse apb2otp block1 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word8 Data */
+/** Type of apb2otp_blk1_w8 register
+ *  eFuse apb2otp block1 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block1 Word9 Data */
+/** Type of apb2otp_blk1_w9 register
+ *  eFuse apb2otp block1 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block1_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block1  word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block1_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk1_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word1 Data */
+/** Type of apb2otp_blk2_w1 register
+ *  eFuse apb2otp block2 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word2 Data */
+/** Type of apb2otp_blk2_w2 register
+ *  eFuse apb2otp block2 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word3 Data */
+/** Type of apb2otp_blk2_w3 register
+ *  eFuse apb2otp block2 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word4 Data */
+/** Type of apb2otp_blk2_w4 register
+ *  eFuse apb2otp block2 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word5 Data */
+/** Type of apb2otp_blk2_w5 register
+ *  eFuse apb2otp block2 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word6 Data */
+/** Type of apb2otp_blk2_w6 register
+ *  eFuse apb2otp block2 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word7 Data */
+/** Type of apb2otp_blk2_w7 register
+ *  eFuse apb2otp block2 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word8 Data */
+/** Type of apb2otp_blk2_w8 register
+ *  eFuse apb2otp block2 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word9 Data */
+/** Type of apb2otp_blk2_w9 register
+ *  eFuse apb2otp block2 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word10 Data */
+/** Type of apb2otp_blk2_w10 register
+ *  eFuse apb2otp block2 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block2 Word11 Data */
+/** Type of apb2otp_blk2_w11 register
+ *  eFuse apb2otp block2 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block2_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block2 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block2_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk2_w11_reg_t;
+
+/** Type of apb2otp_blk10_w11 register
+ *  eFuse apb2otp block10 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word1 Data */
+/** Type of apb2otp_blk3_w1 register
+ *  eFuse apb2otp block3 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word2 Data */
+/** Type of apb2otp_blk3_w2 register
+ *  eFuse apb2otp block3 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word3 Data */
+/** Type of apb2otp_blk3_w3 register
+ *  eFuse apb2otp block3 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word4 Data */
+/** Type of apb2otp_blk3_w4 register
+ *  eFuse apb2otp block3 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word5 Data */
+/** Type of apb2otp_blk3_w5 register
+ *  eFuse apb2otp block3 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word6 Data */
+/** Type of apb2otp_blk3_w6 register
+ *  eFuse apb2otp block3 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word7 Data */
+/** Type of apb2otp_blk3_w7 register
+ *  eFuse apb2otp block3 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word8 Data */
+/** Type of apb2otp_blk3_w8 register
+ *  eFuse apb2otp block3 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word9 Data */
+/** Type of apb2otp_blk3_w9 register
+ *  eFuse apb2otp block3 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word10 Data */
+/** Type of apb2otp_blk3_w10 register
+ *  eFuse apb2otp block3 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block3 Word11 Data */
+/** Type of apb2otp_blk3_w11 register
+ *  eFuse apb2otp block3 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block3_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block3 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block3_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk3_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word1 Data */
+/** Type of apb2otp_blk4_w1 register
+ *  eFuse apb2otp BLOCK7 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word2 Data */
+/** Type of apb2otp_blk4_w2 register
+ *  eFuse apb2otp block4 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word3 Data */
+/** Type of apb2otp_blk4_w3 register
+ *  eFuse apb2otp block4 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word4 Data */
+/** Type of apb2otp_blk4_w4 register
+ *  eFuse apb2otp block4 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word5 Data */
+/** Type of apb2otp_blk4_w5 register
+ *  eFuse apb2otp block4 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word6 Data */
+/** Type of apb2otp_blk4_w6 register
+ *  eFuse apb2otp block4 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word7 Data */
+/** Type of apb2otp_blk4_w7 register
+ *  eFuse apb2otp block4 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word8 Data */
+/** Type of apb2otp_blk4_w8 register
+ *  eFuse apb2otp block4 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word9 Data */
+/** Type of apb2otp_blk4_w9 register
+ *  eFuse apb2otp block4 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word10 Data */
+/** Type of apb2otp_blk4_w10 register
+ *  eFuse apb2otp block4 data registe10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP BLOCK7 Word11 Data */
+/** Type of apb2otp_blk4_w11 register
+ *  eFuse apb2otp block4 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block4_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block4 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block4_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk4_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word1 Data */
+/** Type of apb2otp_blk5_w1 register
+ *  eFuse apb2otp block5 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word2 Data */
+/** Type of apb2otp_blk5_w2 register
+ *  eFuse apb2otp block5 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word3 Data */
+/** Type of apb2otp_blk5_w3 register
+ *  eFuse apb2otp block5 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word4 Data */
+/** Type of apb2otp_blk5_w4 register
+ *  eFuse apb2otp block5 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word5 Data */
+/** Type of apb2otp_blk5_w5 register
+ *  eFuse apb2otp block5 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word6 Data */
+/** Type of apb2otp_blk5_w6 register
+ *  eFuse apb2otp block5 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word7 Data */
+/** Type of apb2otp_blk5_w7 register
+ *  eFuse apb2otp block5 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word8 Data */
+/** Type of apb2otp_blk5_w8 register
+ *  eFuse apb2otp block5 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word9 Data */
+/** Type of apb2otp_blk5_w9 register
+ *  eFuse apb2otp block5 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word10 Data */
+/** Type of apb2otp_blk5_w10 register
+ *  eFuse apb2otp block5 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block5 Word11 Data */
+/** Type of apb2otp_blk5_w11 register
+ *  eFuse apb2otp block5 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block5_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block5 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block5_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk5_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word1 Data */
+/** Type of apb2otp_blk6_w1 register
+ *  eFuse apb2otp block6 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word2 Data */
+/** Type of apb2otp_blk6_w2 register
+ *  eFuse apb2otp block6 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word3 Data */
+/** Type of apb2otp_blk6_w3 register
+ *  eFuse apb2otp block6 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word4 Data */
+/** Type of apb2otp_blk6_w4 register
+ *  eFuse apb2otp block6 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word5 Data */
+/** Type of apb2otp_blk6_w5 register
+ *  eFuse apb2otp block6 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word6 Data */
+/** Type of apb2otp_blk6_w6 register
+ *  eFuse apb2otp block6 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word7 Data */
+/** Type of apb2otp_blk6_w7 register
+ *  eFuse apb2otp block6 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word8 Data */
+/** Type of apb2otp_blk6_w8 register
+ *  eFuse apb2otp block6 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word9 Data */
+/** Type of apb2otp_blk6_w9 register
+ *  eFuse apb2otp block6 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word10 Data */
+/** Type of apb2otp_blk6_w10 register
+ *  eFuse apb2otp block6 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block6 Word11 Data */
+/** Type of apb2otp_blk6_w11 register
+ *  eFuse apb2otp block6 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block6_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block6 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block6_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk6_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word1 Data */
+/** Type of apb2otp_blk7_w1 register
+ *  eFuse apb2otp block7 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word2 Data */
+/** Type of apb2otp_blk7_w2 register
+ *  eFuse apb2otp block7 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word3 Data */
+/** Type of apb2otp_blk7_w3 register
+ *  eFuse apb2otp block7 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word4 Data */
+/** Type of apb2otp_blk7_w4 register
+ *  eFuse apb2otp block7 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word5 Data */
+/** Type of apb2otp_blk7_w5 register
+ *  eFuse apb2otp block7 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word6 Data */
+/** Type of apb2otp_blk7_w6 register
+ *  eFuse apb2otp block7 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word7 Data */
+/** Type of apb2otp_blk7_w7 register
+ *  eFuse apb2otp block7 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word8 Data */
+/** Type of apb2otp_blk7_w8 register
+ *  eFuse apb2otp block7 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word9 Data */
+/** Type of apb2otp_blk7_w9 register
+ *  eFuse apb2otp block7 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word10 Data */
+/** Type of apb2otp_blk7_w10 register
+ *  eFuse apb2otp block7 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block7 Word11 Data */
+/** Type of apb2otp_blk7_w11 register
+ *  eFuse apb2otp block7 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block7_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block7 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block7_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk7_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word1 Data */
+/** Type of apb2otp_blk8_w1 register
+ *  eFuse apb2otp block8 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word2 Data */
+/** Type of apb2otp_blk8_w2 register
+ *  eFuse apb2otp block8 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word3 Data */
+/** Type of apb2otp_blk8_w3 register
+ *  eFuse apb2otp block8 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word4 Data */
+/** Type of apb2otp_blk8_w4 register
+ *  eFuse apb2otp block8 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word5 Data */
+/** Type of apb2otp_blk8_w5 register
+ *  eFuse apb2otp block8 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word6 Data */
+/** Type of apb2otp_blk8_w6 register
+ *  eFuse apb2otp block8 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word7 Data */
+/** Type of apb2otp_blk8_w7 register
+ *  eFuse apb2otp block8 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word8 Data */
+/** Type of apb2otp_blk8_w8 register
+ *  eFuse apb2otp block8 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word9 Data */
+/** Type of apb2otp_blk8_w9 register
+ *  eFuse apb2otp block8 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word10 Data */
+/** Type of apb2otp_blk8_w10 register
+ *  eFuse apb2otp block8 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block8 Word11 Data */
+/** Type of apb2otp_blk8_w11 register
+ *  eFuse apb2otp block8 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block8_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block8 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block8_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk8_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word1 Data */
+/** Type of apb2otp_blk9_w1 register
+ *  eFuse apb2otp block9 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word2 Data */
+/** Type of apb2otp_blk9_w2 register
+ *  eFuse apb2otp block9 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word3 Data */
+/** Type of apb2otp_blk9_w3 register
+ *  eFuse apb2otp block9 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word4 Data */
+/** Type of apb2otp_blk9_w4 register
+ *  eFuse apb2otp block9 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word5 Data */
+/** Type of apb2otp_blk9_w5 register
+ *  eFuse apb2otp block9 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word6 Data */
+/** Type of apb2otp_blk9_w6 register
+ *  eFuse apb2otp block9 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word7 Data */
+/** Type of apb2otp_blk9_w7 register
+ *  eFuse apb2otp block9 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word8 Data */
+/** Type of apb2otp_blk9_w8 register
+ *  eFuse apb2otp block9 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word9 Data */
+/** Type of apb2otp_blk9_w9 register
+ *  eFuse apb2otp block9 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word10 Data */
+/** Type of apb2otp_blk9_w10 register
+ *  eFuse apb2otp block9 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block9 Word11 Data */
+/** Type of apb2otp_blk9_w11 register
+ *  eFuse apb2otp block9 data register11.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block9_w11 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block9 word11 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block9_w11:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk9_w11_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word1 Data */
+/** Type of apb2otp_blk10_w1 register
+ *  eFuse apb2otp block10 data register1.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w1 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word1 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w1:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w1_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word2 Data */
+/** Type of apb2otp_blk10_w2 register
+ *  eFuse apb2otp block10 data register2.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w2 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word2 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w2:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w2_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word3 Data */
+/** Type of apb2otp_blk10_w3 register
+ *  eFuse apb2otp block10 data register3.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w3 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word3 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w3:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w3_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word4 Data */
+/** Type of apb2otp_blk10_w4 register
+ *  eFuse apb2otp block10 data register4.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w4 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word4 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w4:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w4_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word5 Data */
+/** Type of apb2otp_blk10_w5 register
+ *  eFuse apb2otp block10 data register5.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w5 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word5 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w5:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w5_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word6 Data */
+/** Type of apb2otp_blk10_w6 register
+ *  eFuse apb2otp block10 data register6.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w6 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word6 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w6:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w6_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word7 Data */
+/** Type of apb2otp_blk10_w7 register
+ *  eFuse apb2otp block10 data register7.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w7 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word7 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w7:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w7_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word8 Data */
+/** Type of apb2otp_blk10_w8 register
+ *  eFuse apb2otp block10 data register8.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w8 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word8 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w8:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w8_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word9 Data */
+/** Type of apb2otp_blk10_w9 register
+ *  eFuse apb2otp block10 data register9.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w9 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word9 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w9:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w9_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Block10 Word10 Data */
+/** Type of apb2otp_blk10_w10 register
+ *  eFuse apb2otp block10 data register10.
+ */
+typedef union {
+    struct {
+        /** apb2otp_block10_w10 : RO; bitpos: [31:0]; default: 0;
+         *  Otp block10 word10 data.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_block10_w10:32;
+    };
+    uint32_t val;
+} efuse_apb2otp_blk10_w10_reg_t;
+
+
+/** Group: EFUSE_APB2OTP Function Enable Signal */
+/** Type of apb2otp_en register
+ *  eFuse apb2otp enable configuration register.
+ */
+typedef union {
+    struct {
+        /** apb2otp_apb2otp_en : R/W; bitpos: [0]; default: 0;
+         *  Apb2otp mode enable signal.
+         *  This field is only for internal debugging purposes. Do not use it in applications.
+         */
+        uint32_t apb2otp_apb2otp_en:1;
+        uint32_t reserved_1:31;
+    };
+    uint32_t val;
+} efuse_apb2otp_en_reg_t;
+
+
 typedef struct {
     volatile efuse_pgm_datan_reg_t pgm_datan[8];
     volatile efuse_pgm_check_valuen_reg_t pgm_check_valuen[3];
@@ -1538,12 +3699,144 @@ typedef struct {
     volatile efuse_wr_tim_conf1_reg_t wr_tim_conf1;
     volatile efuse_wr_tim_conf2_reg_t wr_tim_conf2;
     volatile efuse_wr_tim_conf0_rs_bypass_reg_t wr_tim_conf0_rs_bypass;
+    uint32_t reserved_200[192];
+    volatile efuse_apb2otp_wr_dis_reg_t apb2otp_wr_dis;
+    volatile efuse_apb2otp_blk0_backup1_w1_reg_t apb2otp_blk0_backup1_w1;
+    volatile efuse_apb2otp_blk0_backup1_w2_reg_t apb2otp_blk0_backup1_w2;
+    volatile efuse_apb2otp_blk0_backup1_w3_reg_t apb2otp_blk0_backup1_w3;
+    volatile efuse_apb2otp_blk0_backup1_w4_reg_t apb2otp_blk0_backup1_w4;
+    volatile efuse_apb2otp_blk0_backup1_w5_reg_t apb2otp_blk0_backup1_w5;
+    volatile efuse_apb2otp_blk0_backup2_w1_reg_t apb2otp_blk0_backup2_w1;
+    volatile efuse_apb2otp_blk0_backup2_w2_reg_t apb2otp_blk0_backup2_w2;
+    volatile efuse_apb2otp_blk0_backup2_w3_reg_t apb2otp_blk0_backup2_w3;
+    volatile efuse_apb2otp_blk0_backup2_w4_reg_t apb2otp_blk0_backup2_w4;
+    volatile efuse_apb2otp_blk0_backup2_w5_reg_t apb2otp_blk0_backup2_w5;
+    volatile efuse_apb2otp_blk0_backup3_w1_reg_t apb2otp_blk0_backup3_w1;
+    volatile efuse_apb2otp_blk0_backup3_w2_reg_t apb2otp_blk0_backup3_w2;
+    volatile efuse_apb2otp_blk0_backup3_w3_reg_t apb2otp_blk0_backup3_w3;
+    volatile efuse_apb2otp_blk0_backup3_w4_reg_t apb2otp_blk0_backup3_w4;
+    volatile efuse_apb2otp_blk0_backup3_w5_reg_t apb2otp_blk0_backup3_w5;
+    volatile efuse_apb2otp_blk0_backup4_w1_reg_t apb2otp_blk0_backup4_w1;
+    volatile efuse_apb2otp_blk0_backup4_w2_reg_t apb2otp_blk0_backup4_w2;
+    volatile efuse_apb2otp_blk0_backup4_w3_reg_t apb2otp_blk0_backup4_w3;
+    volatile efuse_apb2otp_blk0_backup4_w4_reg_t apb2otp_blk0_backup4_w4;
+    volatile efuse_apb2otp_blk0_backup4_w5_reg_t apb2otp_blk0_backup4_w5;
+    volatile efuse_apb2otp_blk1_w1_reg_t apb2otp_blk1_w1;
+    volatile efuse_apb2otp_blk1_w2_reg_t apb2otp_blk1_w2;
+    volatile efuse_apb2otp_blk1_w3_reg_t apb2otp_blk1_w3;
+    volatile efuse_apb2otp_blk1_w4_reg_t apb2otp_blk1_w4;
+    volatile efuse_apb2otp_blk1_w5_reg_t apb2otp_blk1_w5;
+    volatile efuse_apb2otp_blk1_w6_reg_t apb2otp_blk1_w6;
+    volatile efuse_apb2otp_blk1_w7_reg_t apb2otp_blk1_w7;
+    volatile efuse_apb2otp_blk1_w8_reg_t apb2otp_blk1_w8;
+    volatile efuse_apb2otp_blk1_w9_reg_t apb2otp_blk1_w9;
+    volatile efuse_apb2otp_blk2_w1_reg_t apb2otp_blk2_w1;
+    volatile efuse_apb2otp_blk2_w2_reg_t apb2otp_blk2_w2;
+    volatile efuse_apb2otp_blk2_w3_reg_t apb2otp_blk2_w3;
+    volatile efuse_apb2otp_blk2_w4_reg_t apb2otp_blk2_w4;
+    volatile efuse_apb2otp_blk2_w5_reg_t apb2otp_blk2_w5;
+    volatile efuse_apb2otp_blk2_w6_reg_t apb2otp_blk2_w6;
+    volatile efuse_apb2otp_blk2_w7_reg_t apb2otp_blk2_w7;
+    volatile efuse_apb2otp_blk2_w8_reg_t apb2otp_blk2_w8;
+    volatile efuse_apb2otp_blk2_w9_reg_t apb2otp_blk2_w9;
+    volatile efuse_apb2otp_blk2_w10_reg_t apb2otp_blk2_w10;
+    volatile efuse_apb2otp_blk2_w11_reg_t apb2otp_blk2_w11;
+    volatile efuse_apb2otp_blk3_w1_reg_t apb2otp_blk3_w1;
+    volatile efuse_apb2otp_blk3_w2_reg_t apb2otp_blk3_w2;
+    volatile efuse_apb2otp_blk3_w3_reg_t apb2otp_blk3_w3;
+    volatile efuse_apb2otp_blk3_w4_reg_t apb2otp_blk3_w4;
+    volatile efuse_apb2otp_blk3_w5_reg_t apb2otp_blk3_w5;
+    volatile efuse_apb2otp_blk3_w6_reg_t apb2otp_blk3_w6;
+    volatile efuse_apb2otp_blk3_w7_reg_t apb2otp_blk3_w7;
+    volatile efuse_apb2otp_blk3_w8_reg_t apb2otp_blk3_w8;
+    volatile efuse_apb2otp_blk3_w9_reg_t apb2otp_blk3_w9;
+    volatile efuse_apb2otp_blk3_w10_reg_t apb2otp_blk3_w10;
+    volatile efuse_apb2otp_blk3_w11_reg_t apb2otp_blk3_w11;
+    volatile efuse_apb2otp_blk4_w1_reg_t apb2otp_blk4_w1;
+    volatile efuse_apb2otp_blk4_w2_reg_t apb2otp_blk4_w2;
+    volatile efuse_apb2otp_blk4_w3_reg_t apb2otp_blk4_w3;
+    volatile efuse_apb2otp_blk4_w4_reg_t apb2otp_blk4_w4;
+    volatile efuse_apb2otp_blk4_w5_reg_t apb2otp_blk4_w5;
+    volatile efuse_apb2otp_blk4_w6_reg_t apb2otp_blk4_w6;
+    volatile efuse_apb2otp_blk4_w7_reg_t apb2otp_blk4_w7;
+    volatile efuse_apb2otp_blk4_w8_reg_t apb2otp_blk4_w8;
+    volatile efuse_apb2otp_blk4_w9_reg_t apb2otp_blk4_w9;
+    volatile efuse_apb2otp_blk4_w10_reg_t apb2otp_blk4_w10;
+    volatile efuse_apb2otp_blk4_w11_reg_t apb2otp_blk4_w11;
+    volatile efuse_apb2otp_blk5_w1_reg_t apb2otp_blk5_w1;
+    volatile efuse_apb2otp_blk5_w2_reg_t apb2otp_blk5_w2;
+    volatile efuse_apb2otp_blk5_w3_reg_t apb2otp_blk5_w3;
+    volatile efuse_apb2otp_blk5_w4_reg_t apb2otp_blk5_w4;
+    volatile efuse_apb2otp_blk5_w5_reg_t apb2otp_blk5_w5;
+    volatile efuse_apb2otp_blk5_w6_reg_t apb2otp_blk5_w6;
+    volatile efuse_apb2otp_blk5_w7_reg_t apb2otp_blk5_w7;
+    volatile efuse_apb2otp_blk5_w8_reg_t apb2otp_blk5_w8;
+    volatile efuse_apb2otp_blk5_w9_reg_t apb2otp_blk5_w9;
+    volatile efuse_apb2otp_blk5_w10_reg_t apb2otp_blk5_w10;
+    volatile efuse_apb2otp_blk5_w11_reg_t apb2otp_blk5_w11;
+    volatile efuse_apb2otp_blk6_w1_reg_t apb2otp_blk6_w1;
+    volatile efuse_apb2otp_blk6_w2_reg_t apb2otp_blk6_w2;
+    volatile efuse_apb2otp_blk6_w3_reg_t apb2otp_blk6_w3;
+    volatile efuse_apb2otp_blk6_w4_reg_t apb2otp_blk6_w4;
+    volatile efuse_apb2otp_blk6_w5_reg_t apb2otp_blk6_w5;
+    volatile efuse_apb2otp_blk6_w6_reg_t apb2otp_blk6_w6;
+    volatile efuse_apb2otp_blk6_w7_reg_t apb2otp_blk6_w7;
+    volatile efuse_apb2otp_blk6_w8_reg_t apb2otp_blk6_w8;
+    volatile efuse_apb2otp_blk6_w9_reg_t apb2otp_blk6_w9;
+    volatile efuse_apb2otp_blk6_w10_reg_t apb2otp_blk6_w10;
+    volatile efuse_apb2otp_blk6_w11_reg_t apb2otp_blk6_w11;
+    volatile efuse_apb2otp_blk7_w1_reg_t apb2otp_blk7_w1;
+    volatile efuse_apb2otp_blk7_w2_reg_t apb2otp_blk7_w2;
+    volatile efuse_apb2otp_blk7_w3_reg_t apb2otp_blk7_w3;
+    volatile efuse_apb2otp_blk7_w4_reg_t apb2otp_blk7_w4;
+    volatile efuse_apb2otp_blk7_w5_reg_t apb2otp_blk7_w5;
+    volatile efuse_apb2otp_blk7_w6_reg_t apb2otp_blk7_w6;
+    volatile efuse_apb2otp_blk7_w7_reg_t apb2otp_blk7_w7;
+    volatile efuse_apb2otp_blk7_w8_reg_t apb2otp_blk7_w8;
+    volatile efuse_apb2otp_blk7_w9_reg_t apb2otp_blk7_w9;
+    volatile efuse_apb2otp_blk7_w10_reg_t apb2otp_blk7_w10;
+    volatile efuse_apb2otp_blk7_w11_reg_t apb2otp_blk7_w11;
+    volatile efuse_apb2otp_blk8_w1_reg_t apb2otp_blk8_w1;
+    volatile efuse_apb2otp_blk8_w2_reg_t apb2otp_blk8_w2;
+    volatile efuse_apb2otp_blk8_w3_reg_t apb2otp_blk8_w3;
+    volatile efuse_apb2otp_blk8_w4_reg_t apb2otp_blk8_w4;
+    volatile efuse_apb2otp_blk8_w5_reg_t apb2otp_blk8_w5;
+    volatile efuse_apb2otp_blk8_w6_reg_t apb2otp_blk8_w6;
+    volatile efuse_apb2otp_blk8_w7_reg_t apb2otp_blk8_w7;
+    volatile efuse_apb2otp_blk8_w8_reg_t apb2otp_blk8_w8;
+    volatile efuse_apb2otp_blk8_w9_reg_t apb2otp_blk8_w9;
+    volatile efuse_apb2otp_blk8_w10_reg_t apb2otp_blk8_w10;
+    volatile efuse_apb2otp_blk8_w11_reg_t apb2otp_blk8_w11;
+    volatile efuse_apb2otp_blk9_w1_reg_t apb2otp_blk9_w1;
+    volatile efuse_apb2otp_blk9_w2_reg_t apb2otp_blk9_w2;
+    volatile efuse_apb2otp_blk9_w3_reg_t apb2otp_blk9_w3;
+    volatile efuse_apb2otp_blk9_w4_reg_t apb2otp_blk9_w4;
+    volatile efuse_apb2otp_blk9_w5_reg_t apb2otp_blk9_w5;
+    volatile efuse_apb2otp_blk9_w6_reg_t apb2otp_blk9_w6;
+    volatile efuse_apb2otp_blk9_w7_reg_t apb2otp_blk9_w7;
+    volatile efuse_apb2otp_blk9_w8_reg_t apb2otp_blk9_w8;
+    volatile efuse_apb2otp_blk9_w9_reg_t apb2otp_blk9_w9;
+    volatile efuse_apb2otp_blk9_w10_reg_t apb2otp_blk9_w10;
+    volatile efuse_apb2otp_blk9_w11_reg_t apb2otp_blk9_w11;
+    volatile efuse_apb2otp_blk10_w1_reg_t apb2otp_blk10_w1;
+    volatile efuse_apb2otp_blk10_w2_reg_t apb2otp_blk10_w2;
+    volatile efuse_apb2otp_blk10_w3_reg_t apb2otp_blk10_w3;
+    volatile efuse_apb2otp_blk10_w4_reg_t apb2otp_blk10_w4;
+    volatile efuse_apb2otp_blk10_w5_reg_t apb2otp_blk10_w5;
+    volatile efuse_apb2otp_blk10_w6_reg_t apb2otp_blk10_w6;
+    volatile efuse_apb2otp_blk10_w7_reg_t apb2otp_blk10_w7;
+    volatile efuse_apb2otp_blk10_w8_reg_t apb2otp_blk10_w8;
+    volatile efuse_apb2otp_blk10_w9_reg_t apb2otp_blk10_w9;
+    volatile efuse_apb2otp_blk10_w10_reg_t apb2otp_blk10_w10;
+    volatile efuse_apb2otp_blk10_w11_reg_t apb2otp_blk10_w11;
+    uint32_t reserved_704;
+    volatile efuse_apb2otp_en_reg_t apb2otp_en;
 } efuse_dev_t;
 
 extern efuse_dev_t EFUSE;
 
 #ifndef __cplusplus
-_Static_assert(sizeof(efuse_dev_t) == 0x200, "Invalid size of efuse_dev_t structure");
+_Static_assert(sizeof(efuse_dev_t) == 0x70c, "Invalid size of efuse_dev_t structure");
 #endif
 
 #ifdef __cplusplus

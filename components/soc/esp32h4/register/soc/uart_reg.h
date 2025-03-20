@@ -11,6 +11,9 @@
 extern "C" {
 #endif
 
+#define DR_REG_UART_BASE(i)                        (DR_REG_UART0_BASE + (i) * 0x1000)
+#define REG_UART_BASE(i)                           (DR_REG_UART0_BASE + (i) * 0x1000)
+
 /** UART_FIFO_REG register
  *  FIFO data register
  */

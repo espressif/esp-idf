@@ -182,6 +182,17 @@ extern "C" {
 #define EFUSE_DIS_USB_JTAG_M  (EFUSE_DIS_USB_JTAG_V << EFUSE_DIS_USB_JTAG_S)
 #define EFUSE_DIS_USB_JTAG_V  0x00000001U
 #define EFUSE_DIS_USB_JTAG_S  7
+/** EFUSE_DIS_USB_SERIAL_JTAG : RO; bitpos: [8]; default: 0;
+ *  Represents whether USB-Serial-JTAG is disabled or enabled.
+ *  1: disabled
+ *  0: enabled
+ *
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_DIS_USB_SERIAL_JTAG    (BIT(8))
+#define EFUSE_DIS_USB_SERIAL_JTAG_M  (EFUSE_DIS_USB_SERIAL_JTAG_V << EFUSE_DIS_USB_SERIAL_JTAG_S)
+#define EFUSE_DIS_USB_SERIAL_JTAG_V  0x00000001U
+#define EFUSE_DIS_USB_SERIAL_JTAG_S  8
 /** EFUSE_DIS_FORCE_DOWNLOAD : RO; bitpos: [9]; default: 0;
  *  Represents whether the function that forces chip into download mode is disabled or
  *  enabled.
@@ -622,6 +633,42 @@ extern "C" {
  *  Represents rd_repeat_data
  */
 #define EFUSE_RD_REPEAT_DATA4_REG (DR_REG_EFUSE_BASE + 0x40)
+/** EFUSE_USB_DREFH : RO; bitpos: [1:0]; default: 0;
+ *  Represents the single-end input threshold vrefh of USB_SERIAL_JTAG PHY, 1.76 V to 2
+ *  V with step of 80 mV.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_DREFH    0x00000003U
+#define EFUSE_USB_DREFH_M  (EFUSE_USB_DREFH_V << EFUSE_USB_DREFH_S)
+#define EFUSE_USB_DREFH_V  0x00000003U
+#define EFUSE_USB_DREFH_S  0
+/** EFUSE_USB_DREFL : RO; bitpos: [3:2]; default: 0;
+ *  Represents the single-end input threshold vrefl of USB_SERIAL_JTAG PHY, 1.76 V to 2
+ *  V with step of 80 mV.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_DREFL    0x00000003U
+#define EFUSE_USB_DREFL_M  (EFUSE_USB_DREFL_V << EFUSE_USB_DREFL_S)
+#define EFUSE_USB_DREFL_V  0x00000003U
+#define EFUSE_USB_DREFL_S  2
+/** EFUSE_USB_OTG_FS_DREFH : RO; bitpos: [5:4]; default: 0;
+ *  Represents the single-end input threshold vrefh of USB_OTG_FS PHY, 1.76 V to 2 V
+ *  with step of 80 mV.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_OTG_FS_DREFH    0x00000003U
+#define EFUSE_USB_OTG_FS_DREFH_M  (EFUSE_USB_OTG_FS_DREFH_V << EFUSE_USB_OTG_FS_DREFH_S)
+#define EFUSE_USB_OTG_FS_DREFH_V  0x00000003U
+#define EFUSE_USB_OTG_FS_DREFH_S  4
+/** EFUSE_USB_OTG_FS_DREFL : RO; bitpos: [7:6]; default: 0;
+ *  Represents the single-end input threshold vrefl of USB_OTG_FS PHY, 1.76 V to 2 V
+ *  with step of 80 mV.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_OTG_FS_DREFL    0x00000003U
+#define EFUSE_USB_OTG_FS_DREFL_M  (EFUSE_USB_OTG_FS_DREFL_V << EFUSE_USB_OTG_FS_DREFL_S)
+#define EFUSE_USB_OTG_FS_DREFL_V  0x00000003U
+#define EFUSE_USB_OTG_FS_DREFL_S  6
 /** EFUSE_USB_EXCHG_PINS : RO; bitpos: [8]; default: 0;
  *  Represents whether the D+ and D- pins of USB_SERIAL_JTAG PHY is exchanged.
  *  1: exchanged
@@ -1709,6 +1756,14 @@ extern "C" {
 #define EFUSE_DIS_USB_JTAG_ERR_M  (EFUSE_DIS_USB_JTAG_ERR_V << EFUSE_DIS_USB_JTAG_ERR_S)
 #define EFUSE_DIS_USB_JTAG_ERR_V  0x00000001U
 #define EFUSE_DIS_USB_JTAG_ERR_S  7
+/** EFUSE_DIS_USB_SERIAL_JTAG_ERR : RO; bitpos: [8]; default: 0;
+ *  Represents the programming error of EFUSE_DIS_USB_SERIAL_JTAG
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR    (BIT(8))
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_M  (EFUSE_DIS_USB_SERIAL_JTAG_ERR_V << EFUSE_DIS_USB_SERIAL_JTAG_ERR_S)
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_V  0x00000001U
+#define EFUSE_DIS_USB_SERIAL_JTAG_ERR_S  8
 /** EFUSE_DIS_FORCE_DOWNLOAD_ERR : RO; bitpos: [9]; default: 0;
  *  Represents the programming error of EFUSE_DIS_FORCE_DOWNLOAD
  */
@@ -2037,6 +2092,38 @@ extern "C" {
  *  Represents rd_repeat_data_err
  */
 #define EFUSE_RD_REPEAT_DATA_ERR4_REG (DR_REG_EFUSE_BASE + 0x18c)
+/** EFUSE_USB_DREFH_ERR : RO; bitpos: [1:0]; default: 0;
+ *  Represents the programming error of EFUSE_USB_DREFH
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_DREFH_ERR    0x00000003U
+#define EFUSE_USB_DREFH_ERR_M  (EFUSE_USB_DREFH_ERR_V << EFUSE_USB_DREFH_ERR_S)
+#define EFUSE_USB_DREFH_ERR_V  0x00000003U
+#define EFUSE_USB_DREFH_ERR_S  0
+/** EFUSE_USB_DREFL_ERR : RO; bitpos: [3:2]; default: 0;
+ *  Represents the programming error of EFUSE_USB_DREFL
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_DREFL_ERR    0x00000003U
+#define EFUSE_USB_DREFL_ERR_M  (EFUSE_USB_DREFL_ERR_V << EFUSE_USB_DREFL_ERR_S)
+#define EFUSE_USB_DREFL_ERR_V  0x00000003U
+#define EFUSE_USB_DREFL_ERR_S  2
+/** EFUSE_USB_OTG_FS_DREFH_ERR : RO; bitpos: [5:4]; default: 0;
+ *  Represents the programming error of EFUSE_USB_OTG_FS_DREFH
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_OTG_FS_DREFH_ERR    0x00000003U
+#define EFUSE_USB_OTG_FS_DREFH_ERR_M  (EFUSE_USB_OTG_FS_DREFH_ERR_V << EFUSE_USB_OTG_FS_DREFH_ERR_S)
+#define EFUSE_USB_OTG_FS_DREFH_ERR_V  0x00000003U
+#define EFUSE_USB_OTG_FS_DREFH_ERR_S  4
+/** EFUSE_USB_OTG_FS_DREFL_ERR : RO; bitpos: [7:6]; default: 0;
+ *  Represents the programming error of EFUSE_USB_OTG_FS_DREFL
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_USB_OTG_FS_DREFL_ERR    0x00000003U
+#define EFUSE_USB_OTG_FS_DREFL_ERR_M  (EFUSE_USB_OTG_FS_DREFL_ERR_V << EFUSE_USB_OTG_FS_DREFL_ERR_S)
+#define EFUSE_USB_OTG_FS_DREFL_ERR_V  0x00000003U
+#define EFUSE_USB_OTG_FS_DREFL_ERR_S  6
 /** EFUSE_USB_EXCHG_PINS_ERR : RO; bitpos: [8]; default: 0;
  *  Represents the programming error of EFUSE_USB_EXCHG_PINS
  */
@@ -2420,6 +2507,54 @@ extern "C" {
 #define EFUSE_STATE_M  (EFUSE_STATE_V << EFUSE_STATE_S)
 #define EFUSE_STATE_V  0x0000000FU
 #define EFUSE_STATE_S  0
+/** EFUSE_OTP_LOAD_SW : RO; bitpos: [4]; default: 0;
+ *  Represents the value of OTP_LOAD_SW.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_LOAD_SW    (BIT(4))
+#define EFUSE_OTP_LOAD_SW_M  (EFUSE_OTP_LOAD_SW_V << EFUSE_OTP_LOAD_SW_S)
+#define EFUSE_OTP_LOAD_SW_V  0x00000001U
+#define EFUSE_OTP_LOAD_SW_S  4
+/** EFUSE_OTP_VDDQ_C_SYNC2 : RO; bitpos: [5]; default: 0;
+ *  Represents the value of OTP_VDDQ_C_SYNC2.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_VDDQ_C_SYNC2    (BIT(5))
+#define EFUSE_OTP_VDDQ_C_SYNC2_M  (EFUSE_OTP_VDDQ_C_SYNC2_V << EFUSE_OTP_VDDQ_C_SYNC2_S)
+#define EFUSE_OTP_VDDQ_C_SYNC2_V  0x00000001U
+#define EFUSE_OTP_VDDQ_C_SYNC2_S  5
+/** EFUSE_OTP_STROBE_SW : RO; bitpos: [6]; default: 0;
+ *  Represents the value of OTP_STROBE_SW.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_STROBE_SW    (BIT(6))
+#define EFUSE_OTP_STROBE_SW_M  (EFUSE_OTP_STROBE_SW_V << EFUSE_OTP_STROBE_SW_S)
+#define EFUSE_OTP_STROBE_SW_V  0x00000001U
+#define EFUSE_OTP_STROBE_SW_S  6
+/** EFUSE_OTP_CSB_SW : RO; bitpos: [7]; default: 0;
+ *  Represents the value of OTP_CSB_SW.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_CSB_SW    (BIT(7))
+#define EFUSE_OTP_CSB_SW_M  (EFUSE_OTP_CSB_SW_V << EFUSE_OTP_CSB_SW_S)
+#define EFUSE_OTP_CSB_SW_V  0x00000001U
+#define EFUSE_OTP_CSB_SW_S  7
+/** EFUSE_OTP_PGENB_SW : RO; bitpos: [8]; default: 0;
+ *  Represents the value of OTP_PGENB_SW.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_PGENB_SW    (BIT(8))
+#define EFUSE_OTP_PGENB_SW_M  (EFUSE_OTP_PGENB_SW_V << EFUSE_OTP_PGENB_SW_S)
+#define EFUSE_OTP_PGENB_SW_V  0x00000001U
+#define EFUSE_OTP_PGENB_SW_S  8
+/** EFUSE_OTP_VDDQ_IS_SW : RO; bitpos: [9]; default: 0;
+ *  Represents the value of OTP_VDDQ_IS_SW.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_OTP_VDDQ_IS_SW    (BIT(9))
+#define EFUSE_OTP_VDDQ_IS_SW_M  (EFUSE_OTP_VDDQ_IS_SW_V << EFUSE_OTP_VDDQ_IS_SW_S)
+#define EFUSE_OTP_VDDQ_IS_SW_V  0x00000001U
+#define EFUSE_OTP_VDDQ_IS_SW_S  9
 /** EFUSE_BLK0_VALID_BIT_CNT : RO; bitpos: [19:10]; default: 0;
  *  Represents the number of block valid bit.
  */
@@ -2693,6 +2828,1956 @@ extern "C" {
 #define EFUSE_TPGM_INACTIVE_M  (EFUSE_TPGM_INACTIVE_V << EFUSE_TPGM_INACTIVE_S)
 #define EFUSE_TPGM_INACTIVE_V  0x000000FFU
 #define EFUSE_TPGM_INACTIVE_S  13
+
+/** EFUSE_APB2OTP_WR_DIS_REG register
+ *  eFuse apb2otp block0 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_WR_DIS_REG (DR_REG_EFUSE_BASE + 0x500)
+/** EFUSE_APB2OTP_BLOCK0_WR_DIS : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 write disable data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_WR_DIS    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_WR_DIS_M  (EFUSE_APB2OTP_BLOCK0_WR_DIS_V << EFUSE_APB2OTP_BLOCK0_WR_DIS_S)
+#define EFUSE_APB2OTP_BLOCK0_WR_DIS_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_WR_DIS_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP1_W1_REG register
+ *  eFuse apb2otp block0 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W1_REG (DR_REG_EFUSE_BASE + 0x504)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP1_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup1 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W1_M  (EFUSE_APB2OTP_BLOCK0_BACKUP1_W1_V << EFUSE_APB2OTP_BLOCK0_BACKUP1_W1_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W1_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP1_W2_REG register
+ *  eFuse apb2otp block0 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W2_REG (DR_REG_EFUSE_BASE + 0x508)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP1_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup1 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W2_M  (EFUSE_APB2OTP_BLOCK0_BACKUP1_W2_V << EFUSE_APB2OTP_BLOCK0_BACKUP1_W2_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W2_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP1_W3_REG register
+ *  eFuse apb2otp block0 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W3_REG (DR_REG_EFUSE_BASE + 0x50c)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP1_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup1 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W3_M  (EFUSE_APB2OTP_BLOCK0_BACKUP1_W3_V << EFUSE_APB2OTP_BLOCK0_BACKUP1_W3_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W3_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP1_W4_REG register
+ *  eFuse apb2otp block0 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W4_REG (DR_REG_EFUSE_BASE + 0x510)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP1_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup1 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W4_M  (EFUSE_APB2OTP_BLOCK0_BACKUP1_W4_V << EFUSE_APB2OTP_BLOCK0_BACKUP1_W4_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W4_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP1_W5_REG register
+ *  eFuse apb2otp block0 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W5_REG (DR_REG_EFUSE_BASE + 0x514)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP1_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup1 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W5_M  (EFUSE_APB2OTP_BLOCK0_BACKUP1_W5_V << EFUSE_APB2OTP_BLOCK0_BACKUP1_W5_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP1_W5_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP2_W1_REG register
+ *  eFuse apb2otp block0 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W1_REG (DR_REG_EFUSE_BASE + 0x518)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP2_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup2 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W1_M  (EFUSE_APB2OTP_BLOCK0_BACKUP2_W1_V << EFUSE_APB2OTP_BLOCK0_BACKUP2_W1_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W1_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP2_W2_REG register
+ *  eFuse apb2otp block0 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W2_REG (DR_REG_EFUSE_BASE + 0x51c)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP2_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup2 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W2_M  (EFUSE_APB2OTP_BLOCK0_BACKUP2_W2_V << EFUSE_APB2OTP_BLOCK0_BACKUP2_W2_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W2_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP2_W3_REG register
+ *  eFuse apb2otp block0 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W3_REG (DR_REG_EFUSE_BASE + 0x520)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP2_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup2 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W3_M  (EFUSE_APB2OTP_BLOCK0_BACKUP2_W3_V << EFUSE_APB2OTP_BLOCK0_BACKUP2_W3_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W3_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP2_W4_REG register
+ *  eFuse apb2otp block0 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W4_REG (DR_REG_EFUSE_BASE + 0x524)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP2_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup2 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W4_M  (EFUSE_APB2OTP_BLOCK0_BACKUP2_W4_V << EFUSE_APB2OTP_BLOCK0_BACKUP2_W4_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W4_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP2_W5_REG register
+ *  eFuse apb2otp block0 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W5_REG (DR_REG_EFUSE_BASE + 0x528)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP2_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup2 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W5_M  (EFUSE_APB2OTP_BLOCK0_BACKUP2_W5_V << EFUSE_APB2OTP_BLOCK0_BACKUP2_W5_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP2_W5_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP3_W1_REG register
+ *  eFuse apb2otp block0 data register12.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W1_REG (DR_REG_EFUSE_BASE + 0x52c)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP3_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup3 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W1_M  (EFUSE_APB2OTP_BLOCK0_BACKUP3_W1_V << EFUSE_APB2OTP_BLOCK0_BACKUP3_W1_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W1_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP3_W2_REG register
+ *  eFuse apb2otp block0 data register13.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W2_REG (DR_REG_EFUSE_BASE + 0x530)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP3_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup3 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W2_M  (EFUSE_APB2OTP_BLOCK0_BACKUP3_W2_V << EFUSE_APB2OTP_BLOCK0_BACKUP3_W2_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W2_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP3_W3_REG register
+ *  eFuse apb2otp block0 data register14.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W3_REG (DR_REG_EFUSE_BASE + 0x534)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP3_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup3 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W3_M  (EFUSE_APB2OTP_BLOCK0_BACKUP3_W3_V << EFUSE_APB2OTP_BLOCK0_BACKUP3_W3_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W3_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP3_W4_REG register
+ *  eFuse apb2otp block0 data register15.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W4_REG (DR_REG_EFUSE_BASE + 0x538)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP3_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup3 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W4_M  (EFUSE_APB2OTP_BLOCK0_BACKUP3_W4_V << EFUSE_APB2OTP_BLOCK0_BACKUP3_W4_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W4_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP3_W5_REG register
+ *  eFuse apb2otp block0 data register16.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W5_REG (DR_REG_EFUSE_BASE + 0x53c)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP3_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup3 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W5_M  (EFUSE_APB2OTP_BLOCK0_BACKUP3_W5_V << EFUSE_APB2OTP_BLOCK0_BACKUP3_W5_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP3_W5_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP4_W1_REG register
+ *  eFuse apb2otp block0 data register17.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W1_REG (DR_REG_EFUSE_BASE + 0x540)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP4_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup4 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W1_M  (EFUSE_APB2OTP_BLOCK0_BACKUP4_W1_V << EFUSE_APB2OTP_BLOCK0_BACKUP4_W1_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W1_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP4_W2_REG register
+ *  eFuse apb2otp block0 data register18.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W2_REG (DR_REG_EFUSE_BASE + 0x544)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP4_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup4 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W2_M  (EFUSE_APB2OTP_BLOCK0_BACKUP4_W2_V << EFUSE_APB2OTP_BLOCK0_BACKUP4_W2_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W2_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP4_W3_REG register
+ *  eFuse apb2otp block0 data register19.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W3_REG (DR_REG_EFUSE_BASE + 0x548)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP4_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup4 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W3_M  (EFUSE_APB2OTP_BLOCK0_BACKUP4_W3_V << EFUSE_APB2OTP_BLOCK0_BACKUP4_W3_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W3_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP4_W4_REG register
+ *  eFuse apb2otp block0 data register20.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W4_REG (DR_REG_EFUSE_BASE + 0x54c)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP4_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup4 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W4_M  (EFUSE_APB2OTP_BLOCK0_BACKUP4_W4_V << EFUSE_APB2OTP_BLOCK0_BACKUP4_W4_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W4_S  0
+
+/** EFUSE_APB2OTP_BLK0_BACKUP4_W5_REG register
+ *  eFuse apb2otp block0 data register21.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W5_REG (DR_REG_EFUSE_BASE + 0x550)
+/** EFUSE_APB2OTP_BLOCK0_BACKUP4_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block0 backup4 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W5_M  (EFUSE_APB2OTP_BLOCK0_BACKUP4_W5_V << EFUSE_APB2OTP_BLOCK0_BACKUP4_W5_S)
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK0_BACKUP4_W5_S  0
+
+/** EFUSE_APB2OTP_BLK1_W1_REG register
+ *  eFuse apb2otp block1 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W1_REG (DR_REG_EFUSE_BASE + 0x554)
+/** EFUSE_APB2OTP_BLOCK1_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W1_M  (EFUSE_APB2OTP_BLOCK1_W1_V << EFUSE_APB2OTP_BLOCK1_W1_S)
+#define EFUSE_APB2OTP_BLOCK1_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W1_S  0
+
+/** EFUSE_APB2OTP_BLK1_W2_REG register
+ *  eFuse apb2otp block1 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W2_REG (DR_REG_EFUSE_BASE + 0x558)
+/** EFUSE_APB2OTP_BLOCK1_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W2_M  (EFUSE_APB2OTP_BLOCK1_W2_V << EFUSE_APB2OTP_BLOCK1_W2_S)
+#define EFUSE_APB2OTP_BLOCK1_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W2_S  0
+
+/** EFUSE_APB2OTP_BLK1_W3_REG register
+ *  eFuse apb2otp block1 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W3_REG (DR_REG_EFUSE_BASE + 0x55c)
+/** EFUSE_APB2OTP_BLOCK1_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W3_M  (EFUSE_APB2OTP_BLOCK1_W3_V << EFUSE_APB2OTP_BLOCK1_W3_S)
+#define EFUSE_APB2OTP_BLOCK1_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W3_S  0
+
+/** EFUSE_APB2OTP_BLK1_W4_REG register
+ *  eFuse apb2otp block1 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W4_REG (DR_REG_EFUSE_BASE + 0x560)
+/** EFUSE_APB2OTP_BLOCK1_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W4_M  (EFUSE_APB2OTP_BLOCK1_W4_V << EFUSE_APB2OTP_BLOCK1_W4_S)
+#define EFUSE_APB2OTP_BLOCK1_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W4_S  0
+
+/** EFUSE_APB2OTP_BLK1_W5_REG register
+ *  eFuse apb2otp block1 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W5_REG (DR_REG_EFUSE_BASE + 0x564)
+/** EFUSE_APB2OTP_BLOCK1_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W5_M  (EFUSE_APB2OTP_BLOCK1_W5_V << EFUSE_APB2OTP_BLOCK1_W5_S)
+#define EFUSE_APB2OTP_BLOCK1_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W5_S  0
+
+/** EFUSE_APB2OTP_BLK1_W6_REG register
+ *  eFuse apb2otp block1 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W6_REG (DR_REG_EFUSE_BASE + 0x568)
+/** EFUSE_APB2OTP_BLOCK1_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W6_M  (EFUSE_APB2OTP_BLOCK1_W6_V << EFUSE_APB2OTP_BLOCK1_W6_S)
+#define EFUSE_APB2OTP_BLOCK1_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W6_S  0
+
+/** EFUSE_APB2OTP_BLK1_W7_REG register
+ *  eFuse apb2otp block1 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W7_REG (DR_REG_EFUSE_BASE + 0x56c)
+/** EFUSE_APB2OTP_BLOCK1_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W7_M  (EFUSE_APB2OTP_BLOCK1_W7_V << EFUSE_APB2OTP_BLOCK1_W7_S)
+#define EFUSE_APB2OTP_BLOCK1_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W7_S  0
+
+/** EFUSE_APB2OTP_BLK1_W8_REG register
+ *  eFuse apb2otp block1 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W8_REG (DR_REG_EFUSE_BASE + 0x570)
+/** EFUSE_APB2OTP_BLOCK1_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W8_M  (EFUSE_APB2OTP_BLOCK1_W8_V << EFUSE_APB2OTP_BLOCK1_W8_S)
+#define EFUSE_APB2OTP_BLOCK1_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W8_S  0
+
+/** EFUSE_APB2OTP_BLK1_W9_REG register
+ *  eFuse apb2otp block1 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK1_W9_REG (DR_REG_EFUSE_BASE + 0x574)
+/** EFUSE_APB2OTP_BLOCK1_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block1  word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK1_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W9_M  (EFUSE_APB2OTP_BLOCK1_W9_V << EFUSE_APB2OTP_BLOCK1_W9_S)
+#define EFUSE_APB2OTP_BLOCK1_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK1_W9_S  0
+
+/** EFUSE_APB2OTP_BLK2_W1_REG register
+ *  eFuse apb2otp block2 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W1_REG (DR_REG_EFUSE_BASE + 0x578)
+/** EFUSE_APB2OTP_BLOCK2_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W1_M  (EFUSE_APB2OTP_BLOCK2_W1_V << EFUSE_APB2OTP_BLOCK2_W1_S)
+#define EFUSE_APB2OTP_BLOCK2_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W1_S  0
+
+/** EFUSE_APB2OTP_BLK2_W2_REG register
+ *  eFuse apb2otp block2 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W2_REG (DR_REG_EFUSE_BASE + 0x57c)
+/** EFUSE_APB2OTP_BLOCK2_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W2_M  (EFUSE_APB2OTP_BLOCK2_W2_V << EFUSE_APB2OTP_BLOCK2_W2_S)
+#define EFUSE_APB2OTP_BLOCK2_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W2_S  0
+
+/** EFUSE_APB2OTP_BLK2_W3_REG register
+ *  eFuse apb2otp block2 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W3_REG (DR_REG_EFUSE_BASE + 0x580)
+/** EFUSE_APB2OTP_BLOCK2_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W3_M  (EFUSE_APB2OTP_BLOCK2_W3_V << EFUSE_APB2OTP_BLOCK2_W3_S)
+#define EFUSE_APB2OTP_BLOCK2_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W3_S  0
+
+/** EFUSE_APB2OTP_BLK2_W4_REG register
+ *  eFuse apb2otp block2 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W4_REG (DR_REG_EFUSE_BASE + 0x584)
+/** EFUSE_APB2OTP_BLOCK2_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W4_M  (EFUSE_APB2OTP_BLOCK2_W4_V << EFUSE_APB2OTP_BLOCK2_W4_S)
+#define EFUSE_APB2OTP_BLOCK2_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W4_S  0
+
+/** EFUSE_APB2OTP_BLK2_W5_REG register
+ *  eFuse apb2otp block2 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W5_REG (DR_REG_EFUSE_BASE + 0x588)
+/** EFUSE_APB2OTP_BLOCK2_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W5_M  (EFUSE_APB2OTP_BLOCK2_W5_V << EFUSE_APB2OTP_BLOCK2_W5_S)
+#define EFUSE_APB2OTP_BLOCK2_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W5_S  0
+
+/** EFUSE_APB2OTP_BLK2_W6_REG register
+ *  eFuse apb2otp block2 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W6_REG (DR_REG_EFUSE_BASE + 0x58c)
+/** EFUSE_APB2OTP_BLOCK2_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W6_M  (EFUSE_APB2OTP_BLOCK2_W6_V << EFUSE_APB2OTP_BLOCK2_W6_S)
+#define EFUSE_APB2OTP_BLOCK2_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W6_S  0
+
+/** EFUSE_APB2OTP_BLK2_W7_REG register
+ *  eFuse apb2otp block2 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W7_REG (DR_REG_EFUSE_BASE + 0x590)
+/** EFUSE_APB2OTP_BLOCK2_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W7_M  (EFUSE_APB2OTP_BLOCK2_W7_V << EFUSE_APB2OTP_BLOCK2_W7_S)
+#define EFUSE_APB2OTP_BLOCK2_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W7_S  0
+
+/** EFUSE_APB2OTP_BLK2_W8_REG register
+ *  eFuse apb2otp block2 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W8_REG (DR_REG_EFUSE_BASE + 0x594)
+/** EFUSE_APB2OTP_BLOCK2_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W8_M  (EFUSE_APB2OTP_BLOCK2_W8_V << EFUSE_APB2OTP_BLOCK2_W8_S)
+#define EFUSE_APB2OTP_BLOCK2_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W8_S  0
+
+/** EFUSE_APB2OTP_BLK2_W9_REG register
+ *  eFuse apb2otp block2 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W9_REG (DR_REG_EFUSE_BASE + 0x598)
+/** EFUSE_APB2OTP_BLOCK2_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W9_M  (EFUSE_APB2OTP_BLOCK2_W9_V << EFUSE_APB2OTP_BLOCK2_W9_S)
+#define EFUSE_APB2OTP_BLOCK2_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W9_S  0
+
+/** EFUSE_APB2OTP_BLK2_W10_REG register
+ *  eFuse apb2otp block2 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W10_REG (DR_REG_EFUSE_BASE + 0x59c)
+/** EFUSE_APB2OTP_BLOCK2_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W10_M  (EFUSE_APB2OTP_BLOCK2_W10_V << EFUSE_APB2OTP_BLOCK2_W10_S)
+#define EFUSE_APB2OTP_BLOCK2_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W10_S  0
+
+/** EFUSE_APB2OTP_BLK2_W11_REG register
+ *  eFuse apb2otp block2 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK2_W11_REG (DR_REG_EFUSE_BASE + 0x5a0)
+/** EFUSE_APB2OTP_BLOCK2_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block2 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK2_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W11_M  (EFUSE_APB2OTP_BLOCK2_W11_V << EFUSE_APB2OTP_BLOCK2_W11_S)
+#define EFUSE_APB2OTP_BLOCK2_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK2_W11_S  0
+
+/** EFUSE_APB2OTP_BLK3_W1_REG register
+ *  eFuse apb2otp block3 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W1_REG (DR_REG_EFUSE_BASE + 0x5a4)
+/** EFUSE_APB2OTP_BLOCK3_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W1_M  (EFUSE_APB2OTP_BLOCK3_W1_V << EFUSE_APB2OTP_BLOCK3_W1_S)
+#define EFUSE_APB2OTP_BLOCK3_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W1_S  0
+
+/** EFUSE_APB2OTP_BLK3_W2_REG register
+ *  eFuse apb2otp block3 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W2_REG (DR_REG_EFUSE_BASE + 0x5a8)
+/** EFUSE_APB2OTP_BLOCK3_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W2_M  (EFUSE_APB2OTP_BLOCK3_W2_V << EFUSE_APB2OTP_BLOCK3_W2_S)
+#define EFUSE_APB2OTP_BLOCK3_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W2_S  0
+
+/** EFUSE_APB2OTP_BLK3_W3_REG register
+ *  eFuse apb2otp block3 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W3_REG (DR_REG_EFUSE_BASE + 0x5ac)
+/** EFUSE_APB2OTP_BLOCK3_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W3_M  (EFUSE_APB2OTP_BLOCK3_W3_V << EFUSE_APB2OTP_BLOCK3_W3_S)
+#define EFUSE_APB2OTP_BLOCK3_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W3_S  0
+
+/** EFUSE_APB2OTP_BLK3_W4_REG register
+ *  eFuse apb2otp block3 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W4_REG (DR_REG_EFUSE_BASE + 0x5b0)
+/** EFUSE_APB2OTP_BLOCK3_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W4_M  (EFUSE_APB2OTP_BLOCK3_W4_V << EFUSE_APB2OTP_BLOCK3_W4_S)
+#define EFUSE_APB2OTP_BLOCK3_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W4_S  0
+
+/** EFUSE_APB2OTP_BLK3_W5_REG register
+ *  eFuse apb2otp block3 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W5_REG (DR_REG_EFUSE_BASE + 0x5b4)
+/** EFUSE_APB2OTP_BLOCK3_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W5_M  (EFUSE_APB2OTP_BLOCK3_W5_V << EFUSE_APB2OTP_BLOCK3_W5_S)
+#define EFUSE_APB2OTP_BLOCK3_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W5_S  0
+
+/** EFUSE_APB2OTP_BLK3_W6_REG register
+ *  eFuse apb2otp block3 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W6_REG (DR_REG_EFUSE_BASE + 0x5b8)
+/** EFUSE_APB2OTP_BLOCK3_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W6_M  (EFUSE_APB2OTP_BLOCK3_W6_V << EFUSE_APB2OTP_BLOCK3_W6_S)
+#define EFUSE_APB2OTP_BLOCK3_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W6_S  0
+
+/** EFUSE_APB2OTP_BLK3_W7_REG register
+ *  eFuse apb2otp block3 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W7_REG (DR_REG_EFUSE_BASE + 0x5bc)
+/** EFUSE_APB2OTP_BLOCK3_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W7_M  (EFUSE_APB2OTP_BLOCK3_W7_V << EFUSE_APB2OTP_BLOCK3_W7_S)
+#define EFUSE_APB2OTP_BLOCK3_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W7_S  0
+
+/** EFUSE_APB2OTP_BLK3_W8_REG register
+ *  eFuse apb2otp block3 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W8_REG (DR_REG_EFUSE_BASE + 0x5c0)
+/** EFUSE_APB2OTP_BLOCK3_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W8_M  (EFUSE_APB2OTP_BLOCK3_W8_V << EFUSE_APB2OTP_BLOCK3_W8_S)
+#define EFUSE_APB2OTP_BLOCK3_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W8_S  0
+
+/** EFUSE_APB2OTP_BLK3_W9_REG register
+ *  eFuse apb2otp block3 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W9_REG (DR_REG_EFUSE_BASE + 0x5c4)
+/** EFUSE_APB2OTP_BLOCK3_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W9_M  (EFUSE_APB2OTP_BLOCK3_W9_V << EFUSE_APB2OTP_BLOCK3_W9_S)
+#define EFUSE_APB2OTP_BLOCK3_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W9_S  0
+
+/** EFUSE_APB2OTP_BLK3_W10_REG register
+ *  eFuse apb2otp block3 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W10_REG (DR_REG_EFUSE_BASE + 0x5c8)
+/** EFUSE_APB2OTP_BLOCK3_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W10_M  (EFUSE_APB2OTP_BLOCK3_W10_V << EFUSE_APB2OTP_BLOCK3_W10_S)
+#define EFUSE_APB2OTP_BLOCK3_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W10_S  0
+
+/** EFUSE_APB2OTP_BLK3_W11_REG register
+ *  eFuse apb2otp block3 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK3_W11_REG (DR_REG_EFUSE_BASE + 0x5cc)
+/** EFUSE_APB2OTP_BLOCK3_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block3 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK3_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W11_M  (EFUSE_APB2OTP_BLOCK3_W11_V << EFUSE_APB2OTP_BLOCK3_W11_S)
+#define EFUSE_APB2OTP_BLOCK3_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK3_W11_S  0
+
+/** EFUSE_APB2OTP_BLK4_W1_REG register
+ *  eFuse apb2otp BLOCK7 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W1_REG (DR_REG_EFUSE_BASE + 0x5d0)
+/** EFUSE_APB2OTP_BLOCK4_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W1_M  (EFUSE_APB2OTP_BLOCK4_W1_V << EFUSE_APB2OTP_BLOCK4_W1_S)
+#define EFUSE_APB2OTP_BLOCK4_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W1_S  0
+
+/** EFUSE_APB2OTP_BLK4_W2_REG register
+ *  eFuse apb2otp block4 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W2_REG (DR_REG_EFUSE_BASE + 0x5d4)
+/** EFUSE_APB2OTP_BLOCK4_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W2_M  (EFUSE_APB2OTP_BLOCK4_W2_V << EFUSE_APB2OTP_BLOCK4_W2_S)
+#define EFUSE_APB2OTP_BLOCK4_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W2_S  0
+
+/** EFUSE_APB2OTP_BLK4_W3_REG register
+ *  eFuse apb2otp block4 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W3_REG (DR_REG_EFUSE_BASE + 0x5d8)
+/** EFUSE_APB2OTP_BLOCK4_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W3_M  (EFUSE_APB2OTP_BLOCK4_W3_V << EFUSE_APB2OTP_BLOCK4_W3_S)
+#define EFUSE_APB2OTP_BLOCK4_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W3_S  0
+
+/** EFUSE_APB2OTP_BLK4_W4_REG register
+ *  eFuse apb2otp block4 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W4_REG (DR_REG_EFUSE_BASE + 0x5dc)
+/** EFUSE_APB2OTP_BLOCK4_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W4_M  (EFUSE_APB2OTP_BLOCK4_W4_V << EFUSE_APB2OTP_BLOCK4_W4_S)
+#define EFUSE_APB2OTP_BLOCK4_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W4_S  0
+
+/** EFUSE_APB2OTP_BLK4_W5_REG register
+ *  eFuse apb2otp block4 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W5_REG (DR_REG_EFUSE_BASE + 0x5e0)
+/** EFUSE_APB2OTP_BLOCK4_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W5_M  (EFUSE_APB2OTP_BLOCK4_W5_V << EFUSE_APB2OTP_BLOCK4_W5_S)
+#define EFUSE_APB2OTP_BLOCK4_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W5_S  0
+
+/** EFUSE_APB2OTP_BLK4_W6_REG register
+ *  eFuse apb2otp block4 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W6_REG (DR_REG_EFUSE_BASE + 0x5e4)
+/** EFUSE_APB2OTP_BLOCK4_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W6_M  (EFUSE_APB2OTP_BLOCK4_W6_V << EFUSE_APB2OTP_BLOCK4_W6_S)
+#define EFUSE_APB2OTP_BLOCK4_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W6_S  0
+
+/** EFUSE_APB2OTP_BLK4_W7_REG register
+ *  eFuse apb2otp block4 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W7_REG (DR_REG_EFUSE_BASE + 0x5e8)
+/** EFUSE_APB2OTP_BLOCK4_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W7_M  (EFUSE_APB2OTP_BLOCK4_W7_V << EFUSE_APB2OTP_BLOCK4_W7_S)
+#define EFUSE_APB2OTP_BLOCK4_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W7_S  0
+
+/** EFUSE_APB2OTP_BLK4_W8_REG register
+ *  eFuse apb2otp block4 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W8_REG (DR_REG_EFUSE_BASE + 0x5ec)
+/** EFUSE_APB2OTP_BLOCK4_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W8_M  (EFUSE_APB2OTP_BLOCK4_W8_V << EFUSE_APB2OTP_BLOCK4_W8_S)
+#define EFUSE_APB2OTP_BLOCK4_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W8_S  0
+
+/** EFUSE_APB2OTP_BLK4_W9_REG register
+ *  eFuse apb2otp block4 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W9_REG (DR_REG_EFUSE_BASE + 0x5f0)
+/** EFUSE_APB2OTP_BLOCK4_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W9_M  (EFUSE_APB2OTP_BLOCK4_W9_V << EFUSE_APB2OTP_BLOCK4_W9_S)
+#define EFUSE_APB2OTP_BLOCK4_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W9_S  0
+
+/** EFUSE_APB2OTP_BLK4_W10_REG register
+ *  eFuse apb2otp block4 data registe10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W10_REG (DR_REG_EFUSE_BASE + 0x5f4)
+/** EFUSE_APB2OTP_BLOCK4_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W10_M  (EFUSE_APB2OTP_BLOCK4_W10_V << EFUSE_APB2OTP_BLOCK4_W10_S)
+#define EFUSE_APB2OTP_BLOCK4_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W10_S  0
+
+/** EFUSE_APB2OTP_BLK4_W11_REG register
+ *  eFuse apb2otp block4 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK4_W11_REG (DR_REG_EFUSE_BASE + 0x5f8)
+/** EFUSE_APB2OTP_BLOCK4_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block4 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK4_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W11_M  (EFUSE_APB2OTP_BLOCK4_W11_V << EFUSE_APB2OTP_BLOCK4_W11_S)
+#define EFUSE_APB2OTP_BLOCK4_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK4_W11_S  0
+
+/** EFUSE_APB2OTP_BLK5_W1_REG register
+ *  eFuse apb2otp block5 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W1_REG (DR_REG_EFUSE_BASE + 0x5fc)
+/** EFUSE_APB2OTP_BLOCK5_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W1_M  (EFUSE_APB2OTP_BLOCK5_W1_V << EFUSE_APB2OTP_BLOCK5_W1_S)
+#define EFUSE_APB2OTP_BLOCK5_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W1_S  0
+
+/** EFUSE_APB2OTP_BLK5_W2_REG register
+ *  eFuse apb2otp block5 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W2_REG (DR_REG_EFUSE_BASE + 0x600)
+/** EFUSE_APB2OTP_BLOCK5_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W2_M  (EFUSE_APB2OTP_BLOCK5_W2_V << EFUSE_APB2OTP_BLOCK5_W2_S)
+#define EFUSE_APB2OTP_BLOCK5_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W2_S  0
+
+/** EFUSE_APB2OTP_BLK5_W3_REG register
+ *  eFuse apb2otp block5 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W3_REG (DR_REG_EFUSE_BASE + 0x604)
+/** EFUSE_APB2OTP_BLOCK5_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W3_M  (EFUSE_APB2OTP_BLOCK5_W3_V << EFUSE_APB2OTP_BLOCK5_W3_S)
+#define EFUSE_APB2OTP_BLOCK5_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W3_S  0
+
+/** EFUSE_APB2OTP_BLK5_W4_REG register
+ *  eFuse apb2otp block5 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W4_REG (DR_REG_EFUSE_BASE + 0x608)
+/** EFUSE_APB2OTP_BLOCK5_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W4_M  (EFUSE_APB2OTP_BLOCK5_W4_V << EFUSE_APB2OTP_BLOCK5_W4_S)
+#define EFUSE_APB2OTP_BLOCK5_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W4_S  0
+
+/** EFUSE_APB2OTP_BLK5_W5_REG register
+ *  eFuse apb2otp block5 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W5_REG (DR_REG_EFUSE_BASE + 0x60c)
+/** EFUSE_APB2OTP_BLOCK5_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W5_M  (EFUSE_APB2OTP_BLOCK5_W5_V << EFUSE_APB2OTP_BLOCK5_W5_S)
+#define EFUSE_APB2OTP_BLOCK5_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W5_S  0
+
+/** EFUSE_APB2OTP_BLK5_W6_REG register
+ *  eFuse apb2otp block5 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W6_REG (DR_REG_EFUSE_BASE + 0x610)
+/** EFUSE_APB2OTP_BLOCK5_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W6_M  (EFUSE_APB2OTP_BLOCK5_W6_V << EFUSE_APB2OTP_BLOCK5_W6_S)
+#define EFUSE_APB2OTP_BLOCK5_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W6_S  0
+
+/** EFUSE_APB2OTP_BLK5_W7_REG register
+ *  eFuse apb2otp block5 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W7_REG (DR_REG_EFUSE_BASE + 0x614)
+/** EFUSE_APB2OTP_BLOCK5_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W7_M  (EFUSE_APB2OTP_BLOCK5_W7_V << EFUSE_APB2OTP_BLOCK5_W7_S)
+#define EFUSE_APB2OTP_BLOCK5_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W7_S  0
+
+/** EFUSE_APB2OTP_BLK5_W8_REG register
+ *  eFuse apb2otp block5 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W8_REG (DR_REG_EFUSE_BASE + 0x618)
+/** EFUSE_APB2OTP_BLOCK5_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W8_M  (EFUSE_APB2OTP_BLOCK5_W8_V << EFUSE_APB2OTP_BLOCK5_W8_S)
+#define EFUSE_APB2OTP_BLOCK5_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W8_S  0
+
+/** EFUSE_APB2OTP_BLK5_W9_REG register
+ *  eFuse apb2otp block5 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W9_REG (DR_REG_EFUSE_BASE + 0x61c)
+/** EFUSE_APB2OTP_BLOCK5_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W9_M  (EFUSE_APB2OTP_BLOCK5_W9_V << EFUSE_APB2OTP_BLOCK5_W9_S)
+#define EFUSE_APB2OTP_BLOCK5_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W9_S  0
+
+/** EFUSE_APB2OTP_BLK5_W10_REG register
+ *  eFuse apb2otp block5 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W10_REG (DR_REG_EFUSE_BASE + 0x620)
+/** EFUSE_APB2OTP_BLOCK5_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W10_M  (EFUSE_APB2OTP_BLOCK5_W10_V << EFUSE_APB2OTP_BLOCK5_W10_S)
+#define EFUSE_APB2OTP_BLOCK5_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W10_S  0
+
+/** EFUSE_APB2OTP_BLK5_W11_REG register
+ *  eFuse apb2otp block5 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK5_W11_REG (DR_REG_EFUSE_BASE + 0x624)
+/** EFUSE_APB2OTP_BLOCK5_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block5 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK5_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W11_M  (EFUSE_APB2OTP_BLOCK5_W11_V << EFUSE_APB2OTP_BLOCK5_W11_S)
+#define EFUSE_APB2OTP_BLOCK5_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK5_W11_S  0
+
+/** EFUSE_APB2OTP_BLK6_W1_REG register
+ *  eFuse apb2otp block6 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W1_REG (DR_REG_EFUSE_BASE + 0x628)
+/** EFUSE_APB2OTP_BLOCK6_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W1_M  (EFUSE_APB2OTP_BLOCK6_W1_V << EFUSE_APB2OTP_BLOCK6_W1_S)
+#define EFUSE_APB2OTP_BLOCK6_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W1_S  0
+
+/** EFUSE_APB2OTP_BLK6_W2_REG register
+ *  eFuse apb2otp block6 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W2_REG (DR_REG_EFUSE_BASE + 0x62c)
+/** EFUSE_APB2OTP_BLOCK6_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W2_M  (EFUSE_APB2OTP_BLOCK6_W2_V << EFUSE_APB2OTP_BLOCK6_W2_S)
+#define EFUSE_APB2OTP_BLOCK6_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W2_S  0
+
+/** EFUSE_APB2OTP_BLK6_W3_REG register
+ *  eFuse apb2otp block6 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W3_REG (DR_REG_EFUSE_BASE + 0x630)
+/** EFUSE_APB2OTP_BLOCK6_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W3_M  (EFUSE_APB2OTP_BLOCK6_W3_V << EFUSE_APB2OTP_BLOCK6_W3_S)
+#define EFUSE_APB2OTP_BLOCK6_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W3_S  0
+
+/** EFUSE_APB2OTP_BLK6_W4_REG register
+ *  eFuse apb2otp block6 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W4_REG (DR_REG_EFUSE_BASE + 0x634)
+/** EFUSE_APB2OTP_BLOCK6_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W4_M  (EFUSE_APB2OTP_BLOCK6_W4_V << EFUSE_APB2OTP_BLOCK6_W4_S)
+#define EFUSE_APB2OTP_BLOCK6_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W4_S  0
+
+/** EFUSE_APB2OTP_BLK6_W5_REG register
+ *  eFuse apb2otp block6 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W5_REG (DR_REG_EFUSE_BASE + 0x638)
+/** EFUSE_APB2OTP_BLOCK6_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W5_M  (EFUSE_APB2OTP_BLOCK6_W5_V << EFUSE_APB2OTP_BLOCK6_W5_S)
+#define EFUSE_APB2OTP_BLOCK6_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W5_S  0
+
+/** EFUSE_APB2OTP_BLK6_W6_REG register
+ *  eFuse apb2otp block6 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W6_REG (DR_REG_EFUSE_BASE + 0x63c)
+/** EFUSE_APB2OTP_BLOCK6_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W6_M  (EFUSE_APB2OTP_BLOCK6_W6_V << EFUSE_APB2OTP_BLOCK6_W6_S)
+#define EFUSE_APB2OTP_BLOCK6_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W6_S  0
+
+/** EFUSE_APB2OTP_BLK6_W7_REG register
+ *  eFuse apb2otp block6 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W7_REG (DR_REG_EFUSE_BASE + 0x640)
+/** EFUSE_APB2OTP_BLOCK6_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W7_M  (EFUSE_APB2OTP_BLOCK6_W7_V << EFUSE_APB2OTP_BLOCK6_W7_S)
+#define EFUSE_APB2OTP_BLOCK6_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W7_S  0
+
+/** EFUSE_APB2OTP_BLK6_W8_REG register
+ *  eFuse apb2otp block6 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W8_REG (DR_REG_EFUSE_BASE + 0x644)
+/** EFUSE_APB2OTP_BLOCK6_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W8_M  (EFUSE_APB2OTP_BLOCK6_W8_V << EFUSE_APB2OTP_BLOCK6_W8_S)
+#define EFUSE_APB2OTP_BLOCK6_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W8_S  0
+
+/** EFUSE_APB2OTP_BLK6_W9_REG register
+ *  eFuse apb2otp block6 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W9_REG (DR_REG_EFUSE_BASE + 0x648)
+/** EFUSE_APB2OTP_BLOCK6_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W9_M  (EFUSE_APB2OTP_BLOCK6_W9_V << EFUSE_APB2OTP_BLOCK6_W9_S)
+#define EFUSE_APB2OTP_BLOCK6_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W9_S  0
+
+/** EFUSE_APB2OTP_BLK6_W10_REG register
+ *  eFuse apb2otp block6 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W10_REG (DR_REG_EFUSE_BASE + 0x64c)
+/** EFUSE_APB2OTP_BLOCK6_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W10_M  (EFUSE_APB2OTP_BLOCK6_W10_V << EFUSE_APB2OTP_BLOCK6_W10_S)
+#define EFUSE_APB2OTP_BLOCK6_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W10_S  0
+
+/** EFUSE_APB2OTP_BLK6_W11_REG register
+ *  eFuse apb2otp block6 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK6_W11_REG (DR_REG_EFUSE_BASE + 0x650)
+/** EFUSE_APB2OTP_BLOCK6_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block6 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK6_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W11_M  (EFUSE_APB2OTP_BLOCK6_W11_V << EFUSE_APB2OTP_BLOCK6_W11_S)
+#define EFUSE_APB2OTP_BLOCK6_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK6_W11_S  0
+
+/** EFUSE_APB2OTP_BLK7_W1_REG register
+ *  eFuse apb2otp block7 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W1_REG (DR_REG_EFUSE_BASE + 0x654)
+/** EFUSE_APB2OTP_BLOCK7_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W1_M  (EFUSE_APB2OTP_BLOCK7_W1_V << EFUSE_APB2OTP_BLOCK7_W1_S)
+#define EFUSE_APB2OTP_BLOCK7_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W1_S  0
+
+/** EFUSE_APB2OTP_BLK7_W2_REG register
+ *  eFuse apb2otp block7 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W2_REG (DR_REG_EFUSE_BASE + 0x658)
+/** EFUSE_APB2OTP_BLOCK7_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W2_M  (EFUSE_APB2OTP_BLOCK7_W2_V << EFUSE_APB2OTP_BLOCK7_W2_S)
+#define EFUSE_APB2OTP_BLOCK7_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W2_S  0
+
+/** EFUSE_APB2OTP_BLK7_W3_REG register
+ *  eFuse apb2otp block7 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W3_REG (DR_REG_EFUSE_BASE + 0x65c)
+/** EFUSE_APB2OTP_BLOCK7_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W3_M  (EFUSE_APB2OTP_BLOCK7_W3_V << EFUSE_APB2OTP_BLOCK7_W3_S)
+#define EFUSE_APB2OTP_BLOCK7_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W3_S  0
+
+/** EFUSE_APB2OTP_BLK7_W4_REG register
+ *  eFuse apb2otp block7 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W4_REG (DR_REG_EFUSE_BASE + 0x660)
+/** EFUSE_APB2OTP_BLOCK7_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W4_M  (EFUSE_APB2OTP_BLOCK7_W4_V << EFUSE_APB2OTP_BLOCK7_W4_S)
+#define EFUSE_APB2OTP_BLOCK7_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W4_S  0
+
+/** EFUSE_APB2OTP_BLK7_W5_REG register
+ *  eFuse apb2otp block7 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W5_REG (DR_REG_EFUSE_BASE + 0x664)
+/** EFUSE_APB2OTP_BLOCK7_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W5_M  (EFUSE_APB2OTP_BLOCK7_W5_V << EFUSE_APB2OTP_BLOCK7_W5_S)
+#define EFUSE_APB2OTP_BLOCK7_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W5_S  0
+
+/** EFUSE_APB2OTP_BLK7_W6_REG register
+ *  eFuse apb2otp block7 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W6_REG (DR_REG_EFUSE_BASE + 0x668)
+/** EFUSE_APB2OTP_BLOCK7_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W6_M  (EFUSE_APB2OTP_BLOCK7_W6_V << EFUSE_APB2OTP_BLOCK7_W6_S)
+#define EFUSE_APB2OTP_BLOCK7_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W6_S  0
+
+/** EFUSE_APB2OTP_BLK7_W7_REG register
+ *  eFuse apb2otp block7 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W7_REG (DR_REG_EFUSE_BASE + 0x66c)
+/** EFUSE_APB2OTP_BLOCK7_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W7_M  (EFUSE_APB2OTP_BLOCK7_W7_V << EFUSE_APB2OTP_BLOCK7_W7_S)
+#define EFUSE_APB2OTP_BLOCK7_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W7_S  0
+
+/** EFUSE_APB2OTP_BLK7_W8_REG register
+ *  eFuse apb2otp block7 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W8_REG (DR_REG_EFUSE_BASE + 0x670)
+/** EFUSE_APB2OTP_BLOCK7_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W8_M  (EFUSE_APB2OTP_BLOCK7_W8_V << EFUSE_APB2OTP_BLOCK7_W8_S)
+#define EFUSE_APB2OTP_BLOCK7_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W8_S  0
+
+/** EFUSE_APB2OTP_BLK7_W9_REG register
+ *  eFuse apb2otp block7 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W9_REG (DR_REG_EFUSE_BASE + 0x674)
+/** EFUSE_APB2OTP_BLOCK7_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W9_M  (EFUSE_APB2OTP_BLOCK7_W9_V << EFUSE_APB2OTP_BLOCK7_W9_S)
+#define EFUSE_APB2OTP_BLOCK7_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W9_S  0
+
+/** EFUSE_APB2OTP_BLK7_W10_REG register
+ *  eFuse apb2otp block7 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W10_REG (DR_REG_EFUSE_BASE + 0x678)
+/** EFUSE_APB2OTP_BLOCK7_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W10_M  (EFUSE_APB2OTP_BLOCK7_W10_V << EFUSE_APB2OTP_BLOCK7_W10_S)
+#define EFUSE_APB2OTP_BLOCK7_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W10_S  0
+
+/** EFUSE_APB2OTP_BLK7_W11_REG register
+ *  eFuse apb2otp block7 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK7_W11_REG (DR_REG_EFUSE_BASE + 0x67c)
+/** EFUSE_APB2OTP_BLOCK7_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block7 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK7_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W11_M  (EFUSE_APB2OTP_BLOCK7_W11_V << EFUSE_APB2OTP_BLOCK7_W11_S)
+#define EFUSE_APB2OTP_BLOCK7_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK7_W11_S  0
+
+/** EFUSE_APB2OTP_BLK8_W1_REG register
+ *  eFuse apb2otp block8 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W1_REG (DR_REG_EFUSE_BASE + 0x680)
+/** EFUSE_APB2OTP_BLOCK8_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W1_M  (EFUSE_APB2OTP_BLOCK8_W1_V << EFUSE_APB2OTP_BLOCK8_W1_S)
+#define EFUSE_APB2OTP_BLOCK8_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W1_S  0
+
+/** EFUSE_APB2OTP_BLK8_W2_REG register
+ *  eFuse apb2otp block8 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W2_REG (DR_REG_EFUSE_BASE + 0x684)
+/** EFUSE_APB2OTP_BLOCK8_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W2_M  (EFUSE_APB2OTP_BLOCK8_W2_V << EFUSE_APB2OTP_BLOCK8_W2_S)
+#define EFUSE_APB2OTP_BLOCK8_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W2_S  0
+
+/** EFUSE_APB2OTP_BLK8_W3_REG register
+ *  eFuse apb2otp block8 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W3_REG (DR_REG_EFUSE_BASE + 0x688)
+/** EFUSE_APB2OTP_BLOCK8_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W3_M  (EFUSE_APB2OTP_BLOCK8_W3_V << EFUSE_APB2OTP_BLOCK8_W3_S)
+#define EFUSE_APB2OTP_BLOCK8_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W3_S  0
+
+/** EFUSE_APB2OTP_BLK8_W4_REG register
+ *  eFuse apb2otp block8 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W4_REG (DR_REG_EFUSE_BASE + 0x68c)
+/** EFUSE_APB2OTP_BLOCK8_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W4_M  (EFUSE_APB2OTP_BLOCK8_W4_V << EFUSE_APB2OTP_BLOCK8_W4_S)
+#define EFUSE_APB2OTP_BLOCK8_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W4_S  0
+
+/** EFUSE_APB2OTP_BLK8_W5_REG register
+ *  eFuse apb2otp block8 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W5_REG (DR_REG_EFUSE_BASE + 0x690)
+/** EFUSE_APB2OTP_BLOCK8_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W5_M  (EFUSE_APB2OTP_BLOCK8_W5_V << EFUSE_APB2OTP_BLOCK8_W5_S)
+#define EFUSE_APB2OTP_BLOCK8_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W5_S  0
+
+/** EFUSE_APB2OTP_BLK8_W6_REG register
+ *  eFuse apb2otp block8 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W6_REG (DR_REG_EFUSE_BASE + 0x694)
+/** EFUSE_APB2OTP_BLOCK8_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W6_M  (EFUSE_APB2OTP_BLOCK8_W6_V << EFUSE_APB2OTP_BLOCK8_W6_S)
+#define EFUSE_APB2OTP_BLOCK8_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W6_S  0
+
+/** EFUSE_APB2OTP_BLK8_W7_REG register
+ *  eFuse apb2otp block8 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W7_REG (DR_REG_EFUSE_BASE + 0x698)
+/** EFUSE_APB2OTP_BLOCK8_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W7_M  (EFUSE_APB2OTP_BLOCK8_W7_V << EFUSE_APB2OTP_BLOCK8_W7_S)
+#define EFUSE_APB2OTP_BLOCK8_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W7_S  0
+
+/** EFUSE_APB2OTP_BLK8_W8_REG register
+ *  eFuse apb2otp block8 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W8_REG (DR_REG_EFUSE_BASE + 0x69c)
+/** EFUSE_APB2OTP_BLOCK8_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W8_M  (EFUSE_APB2OTP_BLOCK8_W8_V << EFUSE_APB2OTP_BLOCK8_W8_S)
+#define EFUSE_APB2OTP_BLOCK8_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W8_S  0
+
+/** EFUSE_APB2OTP_BLK8_W9_REG register
+ *  eFuse apb2otp block8 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W9_REG (DR_REG_EFUSE_BASE + 0x6a0)
+/** EFUSE_APB2OTP_BLOCK8_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W9_M  (EFUSE_APB2OTP_BLOCK8_W9_V << EFUSE_APB2OTP_BLOCK8_W9_S)
+#define EFUSE_APB2OTP_BLOCK8_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W9_S  0
+
+/** EFUSE_APB2OTP_BLK8_W10_REG register
+ *  eFuse apb2otp block8 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W10_REG (DR_REG_EFUSE_BASE + 0x6a4)
+/** EFUSE_APB2OTP_BLOCK8_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W10_M  (EFUSE_APB2OTP_BLOCK8_W10_V << EFUSE_APB2OTP_BLOCK8_W10_S)
+#define EFUSE_APB2OTP_BLOCK8_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W10_S  0
+
+/** EFUSE_APB2OTP_BLK8_W11_REG register
+ *  eFuse apb2otp block8 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK8_W11_REG (DR_REG_EFUSE_BASE + 0x6a8)
+/** EFUSE_APB2OTP_BLOCK8_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block8 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK8_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W11_M  (EFUSE_APB2OTP_BLOCK8_W11_V << EFUSE_APB2OTP_BLOCK8_W11_S)
+#define EFUSE_APB2OTP_BLOCK8_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK8_W11_S  0
+
+/** EFUSE_APB2OTP_BLK9_W1_REG register
+ *  eFuse apb2otp block9 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W1_REG (DR_REG_EFUSE_BASE + 0x6ac)
+/** EFUSE_APB2OTP_BLOCK9_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W1_M  (EFUSE_APB2OTP_BLOCK9_W1_V << EFUSE_APB2OTP_BLOCK9_W1_S)
+#define EFUSE_APB2OTP_BLOCK9_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W1_S  0
+
+/** EFUSE_APB2OTP_BLK9_W2_REG register
+ *  eFuse apb2otp block9 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W2_REG (DR_REG_EFUSE_BASE + 0x6b0)
+/** EFUSE_APB2OTP_BLOCK9_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W2_M  (EFUSE_APB2OTP_BLOCK9_W2_V << EFUSE_APB2OTP_BLOCK9_W2_S)
+#define EFUSE_APB2OTP_BLOCK9_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W2_S  0
+
+/** EFUSE_APB2OTP_BLK9_W3_REG register
+ *  eFuse apb2otp block9 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W3_REG (DR_REG_EFUSE_BASE + 0x6b4)
+/** EFUSE_APB2OTP_BLOCK9_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W3_M  (EFUSE_APB2OTP_BLOCK9_W3_V << EFUSE_APB2OTP_BLOCK9_W3_S)
+#define EFUSE_APB2OTP_BLOCK9_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W3_S  0
+
+/** EFUSE_APB2OTP_BLK9_W4_REG register
+ *  eFuse apb2otp block9 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W4_REG (DR_REG_EFUSE_BASE + 0x6b8)
+/** EFUSE_APB2OTP_BLOCK9_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W4_M  (EFUSE_APB2OTP_BLOCK9_W4_V << EFUSE_APB2OTP_BLOCK9_W4_S)
+#define EFUSE_APB2OTP_BLOCK9_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W4_S  0
+
+/** EFUSE_APB2OTP_BLK9_W5_REG register
+ *  eFuse apb2otp block9 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W5_REG (DR_REG_EFUSE_BASE + 0x6bc)
+/** EFUSE_APB2OTP_BLOCK9_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W5_M  (EFUSE_APB2OTP_BLOCK9_W5_V << EFUSE_APB2OTP_BLOCK9_W5_S)
+#define EFUSE_APB2OTP_BLOCK9_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W5_S  0
+
+/** EFUSE_APB2OTP_BLK9_W6_REG register
+ *  eFuse apb2otp block9 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W6_REG (DR_REG_EFUSE_BASE + 0x6c0)
+/** EFUSE_APB2OTP_BLOCK9_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W6_M  (EFUSE_APB2OTP_BLOCK9_W6_V << EFUSE_APB2OTP_BLOCK9_W6_S)
+#define EFUSE_APB2OTP_BLOCK9_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W6_S  0
+
+/** EFUSE_APB2OTP_BLK9_W7_REG register
+ *  eFuse apb2otp block9 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W7_REG (DR_REG_EFUSE_BASE + 0x6c4)
+/** EFUSE_APB2OTP_BLOCK9_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W7_M  (EFUSE_APB2OTP_BLOCK9_W7_V << EFUSE_APB2OTP_BLOCK9_W7_S)
+#define EFUSE_APB2OTP_BLOCK9_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W7_S  0
+
+/** EFUSE_APB2OTP_BLK9_W8_REG register
+ *  eFuse apb2otp block9 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W8_REG (DR_REG_EFUSE_BASE + 0x6c8)
+/** EFUSE_APB2OTP_BLOCK9_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W8_M  (EFUSE_APB2OTP_BLOCK9_W8_V << EFUSE_APB2OTP_BLOCK9_W8_S)
+#define EFUSE_APB2OTP_BLOCK9_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W8_S  0
+
+/** EFUSE_APB2OTP_BLK9_W9_REG register
+ *  eFuse apb2otp block9 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W9_REG (DR_REG_EFUSE_BASE + 0x6cc)
+/** EFUSE_APB2OTP_BLOCK9_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W9_M  (EFUSE_APB2OTP_BLOCK9_W9_V << EFUSE_APB2OTP_BLOCK9_W9_S)
+#define EFUSE_APB2OTP_BLOCK9_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W9_S  0
+
+/** EFUSE_APB2OTP_BLK9_W10_REG register
+ *  eFuse apb2otp block9 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W10_REG (DR_REG_EFUSE_BASE + 0x6d0)
+/** EFUSE_APB2OTP_BLOCK9_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W10_M  (EFUSE_APB2OTP_BLOCK9_W10_V << EFUSE_APB2OTP_BLOCK9_W10_S)
+#define EFUSE_APB2OTP_BLOCK9_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W10_S  0
+
+/** EFUSE_APB2OTP_BLK9_W11_REG register
+ *  eFuse apb2otp block9 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK9_W11_REG (DR_REG_EFUSE_BASE + 0x6d4)
+/** EFUSE_APB2OTP_BLOCK9_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block9 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK9_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W11_M  (EFUSE_APB2OTP_BLOCK9_W11_V << EFUSE_APB2OTP_BLOCK9_W11_S)
+#define EFUSE_APB2OTP_BLOCK9_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK9_W11_S  0
+
+/** EFUSE_APB2OTP_BLK10_W1_REG register
+ *  eFuse apb2otp block10 data register1.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W1_REG (DR_REG_EFUSE_BASE + 0x6d8)
+/** EFUSE_APB2OTP_BLOCK10_W1 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word1 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W1    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W1_M  (EFUSE_APB2OTP_BLOCK10_W1_V << EFUSE_APB2OTP_BLOCK10_W1_S)
+#define EFUSE_APB2OTP_BLOCK10_W1_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W1_S  0
+
+/** EFUSE_APB2OTP_BLK10_W2_REG register
+ *  eFuse apb2otp block10 data register2.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W2_REG (DR_REG_EFUSE_BASE + 0x6dc)
+/** EFUSE_APB2OTP_BLOCK10_W2 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word2 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W2    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W2_M  (EFUSE_APB2OTP_BLOCK10_W2_V << EFUSE_APB2OTP_BLOCK10_W2_S)
+#define EFUSE_APB2OTP_BLOCK10_W2_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W2_S  0
+
+/** EFUSE_APB2OTP_BLK10_W3_REG register
+ *  eFuse apb2otp block10 data register3.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W3_REG (DR_REG_EFUSE_BASE + 0x6e0)
+/** EFUSE_APB2OTP_BLOCK10_W3 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word3 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W3    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W3_M  (EFUSE_APB2OTP_BLOCK10_W3_V << EFUSE_APB2OTP_BLOCK10_W3_S)
+#define EFUSE_APB2OTP_BLOCK10_W3_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W3_S  0
+
+/** EFUSE_APB2OTP_BLK10_W4_REG register
+ *  eFuse apb2otp block10 data register4.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W4_REG (DR_REG_EFUSE_BASE + 0x6e4)
+/** EFUSE_APB2OTP_BLOCK10_W4 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word4 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W4    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W4_M  (EFUSE_APB2OTP_BLOCK10_W4_V << EFUSE_APB2OTP_BLOCK10_W4_S)
+#define EFUSE_APB2OTP_BLOCK10_W4_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W4_S  0
+
+/** EFUSE_APB2OTP_BLK10_W5_REG register
+ *  eFuse apb2otp block10 data register5.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W5_REG (DR_REG_EFUSE_BASE + 0x6e8)
+/** EFUSE_APB2OTP_BLOCK10_W5 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word5 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W5    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W5_M  (EFUSE_APB2OTP_BLOCK10_W5_V << EFUSE_APB2OTP_BLOCK10_W5_S)
+#define EFUSE_APB2OTP_BLOCK10_W5_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W5_S  0
+
+/** EFUSE_APB2OTP_BLK10_W6_REG register
+ *  eFuse apb2otp block10 data register6.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W6_REG (DR_REG_EFUSE_BASE + 0x6ec)
+/** EFUSE_APB2OTP_BLOCK10_W6 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word6 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W6    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W6_M  (EFUSE_APB2OTP_BLOCK10_W6_V << EFUSE_APB2OTP_BLOCK10_W6_S)
+#define EFUSE_APB2OTP_BLOCK10_W6_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W6_S  0
+
+/** EFUSE_APB2OTP_BLK10_W7_REG register
+ *  eFuse apb2otp block10 data register7.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W7_REG (DR_REG_EFUSE_BASE + 0x6f0)
+/** EFUSE_APB2OTP_BLOCK10_W7 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word7 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W7    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W7_M  (EFUSE_APB2OTP_BLOCK10_W7_V << EFUSE_APB2OTP_BLOCK10_W7_S)
+#define EFUSE_APB2OTP_BLOCK10_W7_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W7_S  0
+
+/** EFUSE_APB2OTP_BLK10_W8_REG register
+ *  eFuse apb2otp block10 data register8.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W8_REG (DR_REG_EFUSE_BASE + 0x6f4)
+/** EFUSE_APB2OTP_BLOCK10_W8 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word8 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W8    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W8_M  (EFUSE_APB2OTP_BLOCK10_W8_V << EFUSE_APB2OTP_BLOCK10_W8_S)
+#define EFUSE_APB2OTP_BLOCK10_W8_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W8_S  0
+
+/** EFUSE_APB2OTP_BLK10_W9_REG register
+ *  eFuse apb2otp block10 data register9.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W9_REG (DR_REG_EFUSE_BASE + 0x6f8)
+/** EFUSE_APB2OTP_BLOCK10_W9 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word9 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W9    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W9_M  (EFUSE_APB2OTP_BLOCK10_W9_V << EFUSE_APB2OTP_BLOCK10_W9_S)
+#define EFUSE_APB2OTP_BLOCK10_W9_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W9_S  0
+
+/** EFUSE_APB2OTP_BLK10_W10_REG register
+ *  eFuse apb2otp block10 data register10.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W10_REG (DR_REG_EFUSE_BASE + 0x6fc)
+/** EFUSE_APB2OTP_BLOCK10_W10 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word10 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W10    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W10_M  (EFUSE_APB2OTP_BLOCK10_W10_V << EFUSE_APB2OTP_BLOCK10_W10_S)
+#define EFUSE_APB2OTP_BLOCK10_W10_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W10_S  0
+
+/** EFUSE_APB2OTP_BLK10_W11_REG register
+ *  eFuse apb2otp block10 data register11.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_BLK10_W11_REG (DR_REG_EFUSE_BASE + 0x700)
+/** EFUSE_APB2OTP_BLOCK10_W11 : RO; bitpos: [31:0]; default: 0;
+ *  Otp block10 word11 data.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_BLOCK10_W11    0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W11_M  (EFUSE_APB2OTP_BLOCK10_W11_V << EFUSE_APB2OTP_BLOCK10_W11_S)
+#define EFUSE_APB2OTP_BLOCK10_W11_V  0xFFFFFFFFU
+#define EFUSE_APB2OTP_BLOCK10_W11_S  0
+
+/** EFUSE_APB2OTP_EN_REG register
+ *  eFuse apb2otp enable configuration register.
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
+ */
+#define EFUSE_APB2OTP_EN_REG (DR_REG_EFUSE_BASE + 0x708)
+/** EFUSE_APB2OTP_APB2OTP_EN : R/W; bitpos: [0]; default: 0;
+ *  Apb2otp mode enable signal.
+ *  This field is only for internal debugging purposes. Do not use it in applications.
+ */
+#define EFUSE_APB2OTP_APB2OTP_EN    (BIT(0))
+#define EFUSE_APB2OTP_APB2OTP_EN_M  (EFUSE_APB2OTP_APB2OTP_EN_V << EFUSE_APB2OTP_APB2OTP_EN_S)
+#define EFUSE_APB2OTP_APB2OTP_EN_V  0x00000001U
+#define EFUSE_APB2OTP_APB2OTP_EN_S  0
 
 #ifdef __cplusplus
 }

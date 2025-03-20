@@ -71,8 +71,8 @@ uint32_t clk_hal_xtal_get_freq_mhz(void)
 {
     uint32_t freq = clk_ll_xtal_load_freq_mhz();
     if (freq == 0) {
-        HAL_LOGW(CLK_HAL_TAG, "invalid RTC_XTAL_FREQ_REG value, assume 32MHz");
-        return (uint32_t)RTC_XTAL_FREQ_32M;
+        HAL_LOGW(CLK_HAL_TAG, "invalid SOC_XTAL_FREQ_32M value, assume 32MHz");
+        return (uint32_t)SOC_XTAL_FREQ_32M;
     }
     return freq;
 }

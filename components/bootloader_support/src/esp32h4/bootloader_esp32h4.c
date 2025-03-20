@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,54 +10,47 @@
 #include "esp_image_format.h"
 #include "flash_qio_mode.h"
 #include "esp_rom_gpio.h"
+#include "esp_rom_efuse.h"
 #include "esp_rom_uart.h"
 #include "esp_rom_sys.h"
 #include "esp_rom_spiflash.h"
 #include "soc/gpio_sig_map.h"
-#include "soc/io_mux_reg.h"
-#include "soc/assist_debug_reg.h"
 #include "esp_cpu.h"
 #include "soc/rtc.h"
 #include "soc/spi_periph.h"
 #include "soc/cache_reg.h"
 #include "soc/io_mux_reg.h"
-#include "esp32p4/rom/ets_sys.h"
-#include "esp32p4/rom/spi_flash.h"
+#include "soc/pcr_reg.h"
+#include "soc/bus_monitor_reg.h"
 #include "bootloader_common.h"
 #include "bootloader_init.h"
 #include "bootloader_clock.h"
 #include "bootloader_flash_config.h"
 #include "bootloader_mem.h"
 #include "esp_private/regi2c_ctrl.h"
-#include "soc/chip_revision.h"
 #include "soc/regi2c_lp_bias.h"
 #include "soc/regi2c_bias.h"
+#include "soc/hp_system_reg.h"
 #include "bootloader_console.h"
 #include "bootloader_flash_priv.h"
 #include "bootloader_soc.h"
 #include "esp_private/bootloader_flash_internal.h"
 #include "esp_efuse.h"
-#include "hal/assist_debug_ll.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/clk_tree_ll.h"
-#include "hal/lpwdt_ll.h"
-#include "hal/spimem_flash_ll.h"
 #include "soc/lp_wdt_reg.h"
 #include "hal/efuse_hal.h"
-#include "soc/regi2c_syspll.h"
-#include "soc/regi2c_cpll.h"
-#include "soc/regi2c_bias.h"
-#include "esp_private/periph_ctrl.h"
-#include "hal/regi2c_ctrl_ll.h"
-#include "hal/brownout_ll.h"
+#include "hal/lpwdt_ll.h"
 
-static const char *TAG = "boot.esp32p4";
+static const char *TAG = "boot.esp32h4";
 
+// TODO: [ESP32H4] support core1 bus monitor IDF-12592
 static void wdt_reset_cpu0_info_enable(void)
 {
-    _assist_debug_ll_enable_bus_clock(true);
-    REG_WRITE(ASSIST_DEBUG_CORE_0_RCD_EN_REG, ASSIST_DEBUG_CORE_0_RCD_PDEBUGEN | ASSIST_DEBUG_CORE_0_RCD_RECORDEN);
+    REG_SET_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_CLK_EN);
+    REG_CLR_BIT(PCR_ASSIST_CONF_REG, PCR_ASSIST_RST_EN);
+    REG_WRITE(BUS_MONITOR_CORE_0_RCD_EN_REG, BUS_MONITOR_CORE_0_RCD_PDEBUGEN | BUS_MONITOR_CORE_0_RCD_RECORDEN);
 }
 
 static void wdt_reset_info_dump(int cpu)
@@ -71,17 +64,14 @@ static void bootloader_check_wdt_reset(void)
 {
     int wdt_rst = 0;
     soc_reset_reason_t rst_reason = esp_rom_get_reset_reason(0);
-    if (rst_reason == RESET_REASON_CPU_MWDT || rst_reason == RESET_REASON_CPU_RWDT || rst_reason == RESET_REASON_CORE_MWDT ||
-        rst_reason == RESET_REASON_CORE_RWDT || rst_reason == RESET_REASON_SYS_RWDT) {
-        ESP_LOGW(TAG, "CPU has been reset by WDT.");
+    if (rst_reason == RESET_REASON_CORE_RTC_WDT || rst_reason == RESET_REASON_CORE_MWDT0 || rst_reason == RESET_REASON_CORE_MWDT1 ||
+        rst_reason == RESET_REASON_CPU0_MWDT0 || rst_reason == RESET_REASON_CPU0_MWDT1 || rst_reason == RESET_REASON_CPU0_RTC_WDT) {
+        ESP_LOGW(TAG, "PRO CPU has been reset by WDT.");
         wdt_rst = 1;
     }
     if (wdt_rst) {
         // if reset by WDT dump info from trace port
         wdt_reset_info_dump(0);
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-        wdt_reset_info_dump(1);
-#endif
     }
     wdt_reset_cpu0_info_enable();
 }
@@ -93,36 +83,62 @@ static void bootloader_super_wdt_auto_feed(void)
     REG_WRITE(LP_WDT_SWD_WPROTECT_REG, 0);
 }
 
+void spi_flash_din_num_set(uint8_t spi_num, uint8_t din_num)
+{
+    uint32_t reg_val = (REG_READ(SPI_MEM_DIN_NUM_REG(spi_num)) & (~(SPI_MEM_DIN0_NUM_M | SPI_MEM_DIN1_NUM_M | SPI_MEM_DIN2_NUM_M | SPI_MEM_DIN3_NUM_M | SPI_MEM_DIN4_NUM_M | SPI_MEM_DIN5_NUM_M | SPI_MEM_DIN6_NUM_M | SPI_MEM_DIN7_NUM_M | SPI_MEM_DINS_NUM_M)))
+        | (din_num << SPI_MEM_DIN0_NUM_S) | (din_num << SPI_MEM_DIN1_NUM_S) | (din_num << SPI_MEM_DIN2_NUM_S) | (din_num << SPI_MEM_DIN3_NUM_S)
+        | (din_num << SPI_MEM_DIN4_NUM_S) | (din_num << SPI_MEM_DIN5_NUM_S) | (din_num << SPI_MEM_DIN6_NUM_S) | (din_num << SPI_MEM_DIN7_NUM_S) | (din_num << SPI_MEM_DINS_NUM_S);
+    REG_WRITE(SPI_MEM_DIN_NUM_REG(spi_num), reg_val);
+    REG_SET_BIT(SPI_MEM_TIMING_CALI_REG(spi_num), SPI_MEM_TIMING_CALI_UPDATE);
+}
+
+void spi_flash_extra_dummy_set(uint8_t spi_num, uint8_t extra_dummy)
+{
+    rom_spiflash_legacy_data->dummy_len_plus[spi_num] = extra_dummy;
+}
+
+/*
+ * din mode     din_num      dummy
+    1           0            1
+    0           0            0
+    1           0            2
+    0           0            1
+    1           0            3
+    0           0            2
+    1           0            4
+    0           0            3
+ */
 static inline void bootloader_hardware_init(void)
 {
-    _regi2c_ctrl_ll_master_enable_clock(true); // keep ana i2c mst clock always enabled in bootloader
-    regi2c_ctrl_ll_master_configure_clock();
 
-    unsigned chip_version = efuse_hal_chip_revision();
-    if (!ESP_CHIP_REV_ABOVE(chip_version, 1)) {
-        // On ESP32P4 ECO0, the default (power on reset) CPLL and SPLL frequencies are very high, lower them to avoid bias may not be enough in bootloader
-        // And we are fixing SPLL to be 480MHz after app is up
-        REGI2C_WRITE_MASK(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, 6); // lower default cpu_pll freq to 400M
-        REGI2C_WRITE_MASK(I2C_SYSPLL, I2C_SYSPLL_OC_DIV_7_0, 8); // lower default sys_pll freq to 480M
-        esp_rom_delay_us(100);
-    }
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1, 10);
-    REGI2C_WRITE_MASK(I2C_BIAS, I2C_BIAS_DREG_1P1_PVT, 10);
-
-#if !CONFIG_APP_BUILD_TYPE_PURE_RAM_APP
-    // IDF-10019 TODO: This is temporarily for ESP32P4-ECO0, please remove it when eco0 is not widly used.
-    if (likely(ESP_CHIP_REV_ABOVE(chip_version, 1))) {
-        bootloader_init_mspi_clock();
-    }
-#endif
+    // TODO: [ESP32H4] IDF-12315
+    ESP_EARLY_LOGE(TAG, "Analog i2c mst clk enable skipped!\n");
+    /* Enable analog i2c master clock */
+    // SET_PERI_REG_MASK(MODEM_LPCON_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_EN);
+    // SET_PERI_REG_MASK(MODEM_LPCON_I2C_MST_CLK_CONF_REG, MODEM_LPCON_CLK_I2C_MST_SEL_160M);
 }
 
 static inline void bootloader_ana_reset_config(void)
 {
     //Enable super WDT reset.
     bootloader_ana_super_wdt_reset_config(true);
-    //Enable BOD reset (mode1)
-    brownout_ll_ana_reset_enable(true);
+    //Enable BOD reset
+    //TODO: [ESP32H4] IDF-12300 need check
+}
+
+static inline void bootloader_config_dcache(void)
+{
+    REG_SET_BIT(LP_AON_SRAM_USAGE_CONF_REG, LP_AON_DCACHE_USAGE);
+}
+
+static inline void bootloader_config_icache1(void)
+{
+    // TODO: [ESP32H4] IDF-12289
+#if CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
+    REG_CLR_BIT(LP_AON_SRAM_USAGE_CONF_REG, LP_AON_ICACHE1_USAGE);
+#else
+    REG_SET_BIT(LP_AON_SRAM_USAGE_CONF_REG, LP_AON_ICACHE1_USAGE);
+#endif
 }
 
 esp_err_t bootloader_init(void)
@@ -151,7 +167,6 @@ esp_err_t bootloader_init(void)
     esp_efuse_init_virtual_mode_in_ram();
 #endif
 #endif
-
     // config clock
     bootloader_clock_configure();
     // initialize console, from now on, we can use esp_log
@@ -162,7 +177,7 @@ esp_err_t bootloader_init(void)
 #if !CONFIG_APP_BUILD_TYPE_RAM
     //init cache hal
     cache_hal_init();
-    //reset mmu
+    //init mmu
     mmu_hal_init();
     // update flash ID
     bootloader_flash_update_id();
@@ -184,7 +199,8 @@ esp_err_t bootloader_init(void)
         return ret;
     }
 #endif // !CONFIG_APP_BUILD_TYPE_RAM
-
+    bootloader_config_dcache();
+    bootloader_config_icache1();
     // check whether a WDT reset happened
     bootloader_check_wdt_reset();
     // config WDT

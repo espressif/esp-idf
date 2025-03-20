@@ -23,7 +23,7 @@
 #include "soc/soc_caps.h"
 #include "esp_rom_caps.h"
 #include "esp_heap_caps.h"
-#include "esp_rom_libc_stubs.h"
+#include "rom/libc_stubs.h"
 
 #if !(CONFIG_IDF_TARGET_ESP32 || CONFIG_IDF_TARGET_ESP32S2)
 static void esp_cleanup_r(struct _reent *rptr)
