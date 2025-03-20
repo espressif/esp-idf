@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -81,6 +81,40 @@ int32_t* esp_sleep_sub_mode_dump_config(FILE *stream);
  * Reduce digital IOs current leakage during deep sleep.
  */
 void esp_sleep_isolate_digital_gpio(void);
+#endif
+
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+/**
+ * @brief Clock ICG cells which can be gated in sleep mode
+ */
+typedef enum {
+    ESP_SLEEP_CLOCK_IOMUX,  //!< The clock ICG cell mapping of IOMUX
+    ESP_SLEEP_CLOCK_LEDC,   //!< The clock ICG cell mapping of LEDC
+    ESP_SLEEP_CLOCK_UART0,   //!< The clock ICG cell mapping of UART0
+    ESP_SLEEP_CLOCK_UART1,   //!< The clock ICG cell mapping of UART1
+    ESP_SLEEP_CLOCK_MAX     //!< Number of ICG cells
+} esp_sleep_clock_t;
+
+/**
+ * @brief Clock ICG options
+ */
+typedef enum {
+    ESP_SLEEP_CLOCK_OPTION_GATE,    //!< Gate the clock in sleep mode
+    ESP_SLEEP_CLOCK_OPTION_UNGATE   //!< Ungate the clock in sleep mode
+} esp_sleep_clock_option_t;
+
+/**
+ * @brief Gate or Ungate the specified clock in sleep mode
+ *
+ * If not set set using this API, all clock default to ESP_SLEEP_CLOCK_OPTION_GATE.
+ *
+ * @param clock   the specified clock to configure
+ * @param option  clock gate option (ESP_SLEEP_CLOCK_OPTION_GATE or ESP_SLEEP_CLOCK_OPTION_UNGATE)
+ * @return
+ *      - ESP_OK on success
+ *      - ESP_ERR_INVALID_ARG if either of the arguments is out of range
+ */
+esp_err_t esp_sleep_clock_config(esp_sleep_clock_t clock, esp_sleep_clock_option_t option);
 #endif
 
 #if CONFIG_ESP_PHY_ENABLED

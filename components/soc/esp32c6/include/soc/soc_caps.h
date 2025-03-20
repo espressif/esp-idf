@@ -566,6 +566,8 @@
 /* macro redefine for pass esp_wifi headers md5sum check */
 #define MAC_SUPPORT_PMU_MODEM_STATE     SOC_PM_SUPPORT_PMU_MODEM_STATE
 
+#define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
+
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1) /*!<Supports CRC only the stub code in RTC memory */
 
 #define SOC_PM_CPU_RETENTION_BY_SW          (1)

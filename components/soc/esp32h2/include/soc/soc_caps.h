@@ -586,6 +586,8 @@
 #define SOC_PM_SUPPORT_DEEPSLEEP_CHECK_STUB_ONLY   (1)  /*!<Supports CRC only the stub code in RTC memory */
 #define SOC_PM_RETENTION_SW_TRIGGER_REGDMA         (1)  /*!< In esp32H2, regdma will power off when entering sleep */
 
+#define SOC_PM_SUPPORT_PMU_CLK_ICG          (1)
+
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
 #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
 

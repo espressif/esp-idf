@@ -27,11 +27,6 @@
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_memory_utils.h"
 #include "esp_private/sleep_retention.h"
-#if SOC_PMU_SUPPORTED // TODO: replace when icg API available IDF-7595
-#include "soc/pmu_struct.h"
-#include "hal/pmu_types.h"
-#include "soc/pmu_icg_mapping.h"
-#endif
 
 static __attribute__((unused)) const char *LEDC_TAG = "ledc";
 
@@ -971,10 +966,9 @@ esp_err_t ledc_channel_config(const ledc_channel_config_t *ledc_conf)
 #endif
 
         // 3. keep related module integrated clock gating on during sleep
-// TODO: use proper icg API IDF-7595
-#if SOC_PMU_SUPPORTED && !CONFIG_IDF_TARGET_ESP32P4 // P4 does not have peripheral icg
-        uint32_t val = PMU.hp_sys[PMU_MODE_HP_SLEEP].icg_func;
-        PMU.hp_sys[PMU_MODE_HP_SLEEP].icg_func = (val | BIT(PMU_ICG_FUNC_ENA_LEDC) | BIT(PMU_ICG_FUNC_ENA_IOMUX));
+#if SOC_PM_SUPPORT_PMU_CLK_ICG
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_LEDC, ESP_SLEEP_CLOCK_OPTION_UNGATE);
+        esp_sleep_clock_config(ESP_SLEEP_CLOCK_IOMUX, ESP_SLEEP_CLOCK_OPTION_UNGATE);
 #endif
     }
 
