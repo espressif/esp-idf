@@ -55,7 +55,7 @@ variables:
   CHECKOUT_REF_SCRIPT: "$CI_PROJECT_DIR/tools/ci/checkout_project_ref.py"
 
   # Docker images
-  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.5:2"
+  ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.5:3"
   ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.5:2-1"
   TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.5:2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
