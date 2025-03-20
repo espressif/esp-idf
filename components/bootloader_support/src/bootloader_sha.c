@@ -1,15 +1,58 @@
 /*
- * SPDX-FileCopyrightText: 2017-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "bootloader_sha.h"
+
+#include <assert.h>
 #include <stdbool.h>
 #include <string.h>
-#include <assert.h>
 #include <sys/param.h>
 
-#include "esp32/rom/sha.h"
+#include "bootloader_sha.h"
+#include "soc/soc_caps.h"
+#include "rom/sha.h"
+#include "sdkconfig.h"
+
+#if NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM
+#if !CONFIG_IDF_TARGET_ESP32
+static SHA_CTX ctx;
+
+bootloader_sha256_handle_t bootloader_sha256_start()
+{
+    // Enable SHA hardware
+    ets_sha_enable();
+    ets_sha_init(&ctx, SHA2_256);
+    return &ctx; // Meaningless non-NULL value
+}
+
+void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
+{
+    assert(handle != NULL);
+
+#if !SOC_SECURE_BOOT_V2_ECC
+    /* For secure boot, the key field consists of 1 byte of curve identifier and 64 bytes of ECDSA public key.
+     * While verifying the signature block, we need to calculate the SHA of this key field which is of 65 bytes.
+     * ets_sha_update handles it cleanly so we can safely remove the check:
+     */
+    assert(data_len % 4 == 0);
+#endif /* SOC_SECURE_BOOT_V2_ECC */
+
+    ets_sha_update(&ctx, data, data_len, false);
+}
+
+void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
+{
+    assert(handle != NULL);
+
+    if (digest == NULL) {
+        bzero(&ctx, sizeof(ctx));
+        return;
+    }
+    ets_sha_finish(&ctx, digest);
+}
+#else /* !CONFIG_IDF_TARGET_ESP32 */
+
 #include "soc/dport_reg.h"
 #include "soc/hwcrypto_periph.h"
 
@@ -114,3 +157,46 @@ void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest
     }
     asm volatile ("memw");
 }
+#endif /* CONFIG_IDF_TARGET_ESP32 */
+#else /* NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM */
+
+#include "bootloader_flash_priv.h"
+#include <mbedtls/sha256.h>
+
+bootloader_sha256_handle_t bootloader_sha256_start(void)
+{
+    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)malloc(sizeof(mbedtls_sha256_context));
+    if (!ctx) {
+        return NULL;
+    }
+    mbedtls_sha256_init(ctx);
+    int ret = mbedtls_sha256_starts(ctx, false);
+    if (ret != 0) {
+        return NULL;
+    }
+    return ctx;
+}
+
+void bootloader_sha256_data(bootloader_sha256_handle_t handle, const void *data, size_t data_len)
+{
+    assert(handle != NULL);
+    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
+    int ret = mbedtls_sha256_update(ctx, data, data_len);
+    assert(ret == 0);
+    (void)ret;
+}
+
+void bootloader_sha256_finish(bootloader_sha256_handle_t handle, uint8_t *digest)
+{
+    assert(handle != NULL);
+    mbedtls_sha256_context *ctx = (mbedtls_sha256_context *)handle;
+    if (digest != NULL) {
+        int ret = mbedtls_sha256_finish(ctx, digest);
+        assert(ret == 0);
+        (void)ret;
+    }
+    mbedtls_sha256_free(ctx);
+    free(handle);
+    handle = NULL;
+}
+#endif /* !(NON_OS_BUILD || CONFIG_APP_BUILD_TYPE_RAM) */
