@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -330,7 +330,10 @@ esp_err_t pcnt_del_unit(pcnt_unit_handle_t unit)
 
 #if SOC_PCNT_SUPPORT_CLEAR_SIGNAL
     if (unit->clear_signal_gpio_num >= 0) {
-        gpio_reset_pin(unit->clear_signal_gpio_num);
+        uint32_t clear_signal_idx = pcnt_periph_signals.groups[group_id].units[unit_id].clear_sig;
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
+        gpio_pullup_dis(unit->clear_signal_gpio_num);
+        gpio_pulldown_dis(unit->clear_signal_gpio_num);
     }
 #endif // SOC_PCNT_SUPPORT_CLEAR_SIGNAL
 
@@ -370,7 +373,7 @@ esp_err_t pcnt_unit_set_clear_signal(pcnt_unit_handle_t unit, const pcnt_clear_s
             gpio_ll_output_enable(&GPIO, io_num);
         }
     } else {
-        ESP_RETURN_ON_FALSE(unit->clear_signal_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG, "zero signal not set yet");
+        ESP_RETURN_ON_FALSE(unit->clear_signal_gpio_num >= 0, ESP_ERR_INVALID_STATE, TAG, "clear signal not set yet");
         esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, clear_signal_idx, 0);
         gpio_pullup_dis(unit->clear_signal_gpio_num);
         gpio_pulldown_dis(unit->clear_signal_gpio_num);
