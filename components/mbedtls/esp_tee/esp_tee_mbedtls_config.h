@@ -22,6 +22,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+#include "sdkconfig.h"
+
 #ifndef ESP_TEE_MBEDTLS_CONFIG_H
 #define ESP_TEE_MBEDTLS_CONFIG_H
 
@@ -47,9 +49,8 @@
 #define MBEDTLS_SHA224_C
 #define MBEDTLS_SHA256_C
 
-#ifdef CONFIG_MBEDTLS_HARDWARE_SHA
+#if CONFIG_MBEDTLS_HARDWARE_SHA
 #define MBEDTLS_SHA1_ALT
-#define MBEDTLS_SHA224_ALT
 #define MBEDTLS_SHA256_ALT
 #endif
 
