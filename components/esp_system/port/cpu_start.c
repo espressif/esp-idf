@@ -78,8 +78,10 @@
 #include "esp_private/image_process.h"
 #if CONFIG_SPIRAM
 #include "esp_psram.h"
-#include "esp_private/mmu_psram_flash.h"
 #include "esp_private/esp_psram_extram.h"
+#if SOC_SPIRAM_XIP_SUPPORTED
+#include "esp_private/mmu_psram_flash.h"
+#endif
 #endif
 
 #include "esp_private/spi_flash_os.h"

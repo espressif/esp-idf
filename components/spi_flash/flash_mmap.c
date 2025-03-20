@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "hal/mmu_ll.h"
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
+#include "soc/soc_caps.h"
 #if ESP_ROM_NEEDS_SET_CACHE_MMU_SIZE
 #include "soc/mmu.h"
 #endif
@@ -25,7 +26,9 @@
 #include "esp_rom_spiflash.h"
 #if CONFIG_SPIRAM
 #include "esp_private/esp_psram_extram.h"
+#if SOC_SPIRAM_XIP_SUPPORTED
 #include "esp_private/mmu_psram_flash.h"
+#endif
 #endif
 
 #if CONFIG_IDF_TARGET_ESP32

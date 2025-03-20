@@ -18,23 +18,33 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_heap_caps_init.h"
+#include "esp_psram.h"
+#include "esp_mmu_map.h"
 #include "hal/mmu_hal.h"
 #include "hal/mmu_ll.h"
 #include "hal/cache_ll.h"
 #include "soc/soc_caps.h"
 #include "esp_private/esp_psram_io.h"
 #include "esp_private/esp_psram_extram.h"
-#include "esp_private/mmu_psram_flash.h"
-#include "esp_psram_impl.h"
-#include "esp_psram.h"
 #include "esp_private/esp_mmu_map_private.h"
-#include "esp_mmu_map.h"
+#include "esp_private/esp_psram_impl.h"
 #include "esp_private/startup_internal.h"
+#if SOC_SPIRAM_XIP_SUPPORTED
+#include "esp_private/mmu_psram_flash.h"
+#endif
 #if CONFIG_IDF_TARGET_ESP32
 #include "esp32/himem.h"
 #include "esp32/rom/cache.h"
 #include "esp_private/esp_cache_esp32_private.h"
 #endif
+
+#if CONFIG_IDF_TARGET_ESP32
+#define MMU_PAGE_SIZE                   0x8000
+#else
+#define MMU_PAGE_SIZE                   CONFIG_MMU_PAGE_SIZE
+#endif
+#define MMU_PAGE_TO_BYTES(page_id)      ((page_id) * MMU_PAGE_SIZE)
+#define BYTES_TO_MMU_PAGE(bytes)        ((bytes) / MMU_PAGE_SIZE)
 
 /**
  * Two types of PSRAM memory regions for now:

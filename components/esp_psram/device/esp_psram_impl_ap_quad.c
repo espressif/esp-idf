@@ -7,7 +7,7 @@
 #include "sdkconfig.h"
 #include "esp_err.h"
 #include "esp_log.h"
-#include "../esp_psram_impl.h"
+#include "esp_private/esp_psram_impl.h"
 #include "rom/spi_flash.h"
 #include "rom/opi_flash.h"
 #include "esp_rom_gpio.h"
