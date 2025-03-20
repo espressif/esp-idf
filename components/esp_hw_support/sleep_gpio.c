@@ -63,7 +63,7 @@ void esp_sleep_config_gpio_isolate(void)
         }
     }
 
-#if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU
+#if CONFIG_ESP_SLEEP_MSPI_NEED_ALL_IO_PU && !SOC_MSPI_HAS_INDEPENT_IOMUX
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_CLK), GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_Q),   GPIO_PULLUP_ONLY);
     gpio_sleep_set_pull_mode(esp_mspi_get_io(ESP_MSPI_IO_D),   GPIO_PULLUP_ONLY);
@@ -103,14 +103,14 @@ void esp_sleep_enable_gpio_switch(bool enable)
             }
 #endif
             /* If the PSRAM is disable in ESP32xx chips equipped with PSRAM, there will be a large current leakage. */
-#if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
+#if CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM & !SOC_MSPI_HAS_INDEPENT_IOMUX
             if (gpio_num == esp_mspi_get_io(ESP_MSPI_IO_CS1)) {
                 gpio_sleep_sel_dis(gpio_num);
                 continue;
             }
 #endif // CONFIG_ESP_SLEEP_PSRAM_LEAKAGE_WORKAROUND && CONFIG_SPIRAM
 
-#if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND
+#if CONFIG_ESP_SLEEP_FLASH_LEAKAGE_WORKAROUND & !SOC_MSPI_HAS_INDEPENT_IOMUX
             if (gpio_num == esp_mspi_get_io(ESP_MSPI_IO_CS0)) {
                 gpio_sleep_sel_dis(gpio_num);
                 continue;
