@@ -133,6 +133,7 @@ endif()
 if(ESP_TEE_BUILD)
     if(target STREQUAL "esp32c6")
         rom_linker_script("spiflash")
+        rom_linker_script("heap")
     endif()
 endif()
 

@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
-#include "tlsf.h"
+#include <stdbool.h>
+#include "esp_rom_tlsf.h"
 #include "tlsf_block_functions.h"
 #include "multi_heap.h"
 
@@ -37,7 +38,7 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
 esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if (size < (sizeof(heap_t))) {
+    if (size < (tlsf_size() + tlsf_block_size_min() + sizeof(heap_t))) {
         // Region too small to be a heap.
         return ESP_ERR_INVALID_SIZE;
     }
@@ -45,16 +46,13 @@ esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
     heap_t *result = (heap_t *)start_ptr;
     size -= sizeof(heap_t);
 
-    /* Do not specify any maximum size for the allocations so that the default configuration is used */
-    const size_t max_bytes = 0;
-
-    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size, max_bytes);
+    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size);
     if (result->heap_data == NULL) {
         return ESP_FAIL;
     }
 
     result->lock = NULL;
-    result->free_bytes = size - tlsf_size(result->heap_data);
+    result->free_bytes = size - tlsf_size();
     result->pool_size = size;
     result->minimum_free_bytes = result->free_bytes;
 
@@ -152,14 +150,13 @@ size_t esp_tee_heap_get_min_free_size(void)
     return tee_heap->minimum_free_bytes;
 }
 
-static bool tee_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+static void heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
     printf("Block %p data, size: %d bytes, Free: %s\n",
            (void *)ptr,
            size,
            used ? "No" : "Yes");
-    return true;
 }
 
 void esp_tee_heap_dump_info(void)
