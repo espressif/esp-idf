@@ -13,3 +13,5 @@ CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH=y
 # Options that will enable IRAM reduction option that are only usable together with flash auto-suspend
 CONFIG_SPI_FLASH_AUTO_SUSPEND=y
 CONFIG_LIBC_MISC_IN_IRAM=n
+CONFIG_ESP_TIMER_IN_IRAM=n
+CONFIG_SPI_FLASH_PLACE_FUNCTIONS_IN_IRAM=n

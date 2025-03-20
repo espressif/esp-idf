@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,13 @@
 #include <stdint.h>
 #include "esp_err.h"
 #include "esp_intr_alloc.h"
+#include "sdkconfig.h"
+
+#if CONFIG_ESP_TIMER_IN_IRAM
+#define ESP_TIMER_IRAM_ATTR IRAM_ATTR
+#else
+#define ESP_TIMER_IRAM_ATTR
+#endif // CONFIG_ESP_TIMER_IN_IRAM
 
 /**
  * @brief Minimal initialization of platform specific layer of esp_timer
