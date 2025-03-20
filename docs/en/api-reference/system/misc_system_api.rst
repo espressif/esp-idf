@@ -4,7 +4,7 @@ Miscellaneous System APIs
 :link_to_translation:`zh_CN:[中文]`
 
 {IDF_TARGET_BASE_MAC_BLOCK: default="BLK1", esp32="BLK0"}
-{IDF_TARGET_CPU_RESET_DES: default="the CPU is reset", esp32="both CPUs are reset", esp32s3="both CPUs are reset", esp32p4="both CPUs are reset"}
+{IDF_TARGET_CPU_RESET_DES: default="the CPU is reset", esp32="both CPUs are reset", esp32s3="both CPUs are reset", esp32p4="both CPUs are reset", esp32h4="both CPUs are reset"}
 
 Software Reset
 --------------

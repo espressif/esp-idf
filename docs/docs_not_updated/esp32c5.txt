@@ -3,7 +3,6 @@ api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
 api-guides/coexist.rst
 api-guides/wifi.rst
-api-guides/wireshark-user-guide.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/inc/external-ram-esp32-notes.rst
 api-guides/current-consumption-measurement-modules.rst
@@ -41,7 +40,6 @@ api-reference/network/esp_wifi.rst
 api-reference/network/index.rst
 api-reference/system/sleep_modes.rst
 api-reference/system/mm_sync.rst
-api-reference/system/chip_revision.rst
 api-reference/system/async_memcpy.rst
 api-reference/system/power_management.rst
 api-reference/system/inc/power_management_esp32c5.rst

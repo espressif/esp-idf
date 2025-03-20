@@ -3,7 +3,7 @@ Minimizing RAM Usage
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi library, Bluetooth controller", esp32s2="Wi-Fi library", esp32c6="Wi-Fi library, Bluetooth controller, IEEE 802.15.4 library", esp32h2="Bluetooth controller, IEEE 802.15.4 library"}
+{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi library, Bluetooth controller", esp32s2="Wi-Fi library", esp32c6="Wi-Fi library, Bluetooth controller, IEEE 802.15.4 library", esp32c61="Wi-Fi library, Bluetooth controller", esp32h2="Bluetooth controller, IEEE 802.15.4 library", esp32h21="Bluetooth controller, IEEE 802.15.4 library", esp32h4="Bluetooth controller, IEEE 802.15.4 library"}
 
 In some cases, a firmware application's available RAM may run low or run out entirely. In these cases, it is necessary to tune the memory usage of the firmware application.
 
