@@ -449,7 +449,7 @@ def open_host_interface() -> None:
 def get_domain() -> str:
     hostname = socket.gethostname()
     print('hostname is: ', hostname)
-    command = 'ps -aux | grep avahi-daemon | grep running'
+    command = 'ps -auxww | grep avahi-daemon | grep running'
     out_str = subprocess.getoutput(command)
     print('avahi status:\n', out_str)
     role = re.findall(r'\[([\w\W]+)\.local\]', str(out_str))[0]
