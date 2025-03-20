@@ -1499,14 +1499,24 @@ def feature_to_requirements_path(feature):  # type: (str) -> str
 def process_and_check_features(idf_env_obj, features_str):  # type: (IDFEnv, str) -> list[str]
     new_features = []
     remove_features = []
-    for new_feature_candidate in features_str.split(','):
+    invalid_features = []
+
+    for new_feature_candidate in [feature for feature in features_str.split(',') if feature != '']:
+        # Feature to be added/removed needs to be checked if valid
+        sanitized_feat = new_feature_candidate.lstrip('-+')
+        if not os.path.isfile(feature_to_requirements_path(sanitized_feat)):
+            invalid_features += [sanitized_feat]
+            continue
+
         if new_feature_candidate.startswith('-'):
             remove_features += [new_feature_candidate.lstrip('-')]
         else:
-            new_feature_candidate = new_feature_candidate.lstrip('+')
-            # Feature to be added needs to be checked if is valid
-            if os.path.isfile(feature_to_requirements_path(new_feature_candidate)):
-                new_features += [new_feature_candidate]
+            new_features += [new_feature_candidate.lstrip('+')]
+
+    if invalid_features:
+        fatal(f'The following selected features are not valid: {", ".join(invalid_features)}')
+        raise SystemExit(1)
+
     idf_env_obj.get_active_idf_record().update_features(tuple(new_features), tuple(remove_features))
     return idf_env_obj.get_active_idf_record().features
 
