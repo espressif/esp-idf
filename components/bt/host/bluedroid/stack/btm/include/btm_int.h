@@ -43,8 +43,6 @@ typedef struct tBTM_SEC_DEV_REC tBTM_SEC_DEV_REC;
 #include "stack/smp_api.h"
 #endif
 
-#define ESP_VS_REM_LEGACY_AUTH_CMP 0x03
-
 #if BTM_MAX_LOC_BD_NAME_LEN > 0
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 #endif
