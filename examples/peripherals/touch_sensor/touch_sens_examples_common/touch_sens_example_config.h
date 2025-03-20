@@ -17,7 +17,7 @@ extern "C" {
 #define EXAMPLE_TOUCH_CHAN_CFG_DEFAULT()        {  \
     .abs_active_thresh = {1000},  \
     .charge_speed = TOUCH_CHARGE_SPEED_7,  \
-    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_LOW,  \
+    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_DEFAULT,  \
     .group = TOUCH_CHAN_TRIG_GROUP_BOTH,  \
 }
 #elif SOC_TOUCH_SENSOR_VERSION == 2     // ESP32-S2 & ESP32-S3
@@ -25,7 +25,7 @@ extern "C" {
 #define EXAMPLE_TOUCH_CHAN_CFG_DEFAULT()        {  \
     .active_thresh = {2000},  \
     .charge_speed = TOUCH_CHARGE_SPEED_7,  \
-    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_LOW,  \
+    .init_charge_volt = TOUCH_INIT_CHARGE_VOLT_DEFAULT,  \
 }
 #elif SOC_TOUCH_SENSOR_VERSION == 3     // ESP32-P4
 #define EXAMPLE_TOUCH_SAMPLE_CFG_DEFAULT()      {TOUCH_SENSOR_V3_DEFAULT_SAMPLE_CONFIG2(3, 29, 8, 3),\
