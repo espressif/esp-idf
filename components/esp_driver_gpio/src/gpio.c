@@ -445,6 +445,7 @@ esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
         .intr_type = GPIO_INTR_DISABLE,
     };
     gpio_config(&cfg);
+    esp_gpio_revoke(BIT64(gpio_num));
     return ESP_OK;
 }
 
