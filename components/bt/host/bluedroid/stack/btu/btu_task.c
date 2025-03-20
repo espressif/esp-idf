@@ -448,7 +448,7 @@ void btu_start_timer(TIMER_LIST_ENT *p_tle, UINT16 type, UINT32 timeout_sec)
     // NOTE: This value is in seconds but stored in a ticks field.
     p_tle->ticks = timeout_sec;
     p_tle->in_use = TRUE;
-    osi_alarm_set(alarm, (period_ms_t)(timeout_sec * 1000));
+    osi_alarm_set(alarm, (period_ms_t)((period_ms_t)timeout_sec * 1000));
 }
 
 
