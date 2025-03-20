@@ -34,6 +34,9 @@ menu "PSRAM config"
             depends on IDF_EXPERIMENTAL_FEATURES
             bool "200MHz clock speed"
 
+        config SPIRAM_SPEED_80M
+            bool "80MHz clock speed"
+
         config SPIRAM_SPEED_20M
             bool "20MHz clock speed"
     endchoice
@@ -41,6 +44,7 @@ menu "PSRAM config"
     config SPIRAM_SPEED
         int
         default 20 if SPIRAM_SPEED_20M
+        default 80 if SPIRAM_SPEED_80M
         default 100 if SPIRAM_SPEED_100M
         default 200 if SPIRAM_SPEED_200M
 
