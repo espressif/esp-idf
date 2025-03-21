@@ -1,5 +1,6 @@
 menu "ESP-Driver:RMT Configurations"
     depends on SOC_RMT_SUPPORTED
+
     config RMT_ISR_HANDLER_IN_IRAM
         bool "Place RMT ISR handler into IRAM"
         select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA
@@ -33,9 +34,13 @@ menu "ESP-Driver:RMT Configurations"
             where its cache can be disabled.
 
     config RMT_ENABLE_DEBUG_LOG
-        bool "Enable debug log"
+        bool "Force enable debug log"
         default n
         help
-            whether to enable the debug log message for RMT driver.
-            Note that, this option only controls the RMT driver log, won't affect other drivers.
+            If enabled, RMT driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
+
 endmenu
