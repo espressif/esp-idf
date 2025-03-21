@@ -240,7 +240,8 @@ menu "SPI Flash driver"
 
     config SPI_FLASH_ROM_IMPL
         bool "Use esp_flash implementation in ROM"
-        depends on ESP_ROM_HAS_SPI_FLASH
+        depends on ESP_ROM_HAS_SPI_FLASH && !ESPTOOLPY_OCT_FLASH
+        # ROM never supports octal flash before. Future if ROM supports it we can use a ESP_ROM_x macro
         default n
         help
             Enable this flag to use new SPI flash driver functions from ROM instead of ESP-IDF.

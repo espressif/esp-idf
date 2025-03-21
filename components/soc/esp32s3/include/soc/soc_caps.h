@@ -547,7 +547,7 @@
 #define SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND                  (1)
 #define SOC_SPI_MEM_SUPPORT_AUTO_RESUME                   (1)
 #define SOC_SPI_MEM_SUPPORT_SW_SUSPEND                    (1)
-#define SOC_SPI_MEM_SUPPORT_OPI_MODE                      (1)
+#define SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE                (1)
 #define SOC_SPI_MEM_SUPPORT_TIMING_TUNING                 (1)
 #define SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE          (1)
 #define SOC_SPI_MEM_SUPPORT_WRAP                          (1)

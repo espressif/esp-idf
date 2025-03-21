@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -140,7 +140,7 @@ void IRAM_ATTR spi_flash_rom_impl_init(void)
 
 void IRAM_ATTR esp_mspi_pin_init(void)
 {
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     bool octal_mspi_required = bootloader_flash_is_octal_mode_enabled();
 #if CONFIG_SPIRAM_MODE_OCT
     octal_mspi_required |= true;
@@ -159,7 +159,7 @@ void esp_mspi_pin_reserve(void)
     uint64_t reserve_pin_mask = 0;
     uint8_t mspi_io;
     for (esp_mspi_io_t i = 0; i < ESP_MSPI_IO_MAX; i++) {
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
         if (!bootloader_flash_is_octal_mode_enabled()
             && i >=  ESP_MSPI_IO_DQS && i <= ESP_MSPI_IO_D7) {
             continue;
@@ -175,7 +175,7 @@ void esp_mspi_pin_reserve(void)
 
 esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
 {
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     if (bootloader_flash_is_octal_mode_enabled()) {
         return esp_opiflash_init(rom_spiflash_legacy_data->chip.device_id);
     }
@@ -188,7 +188,7 @@ esp_err_t IRAM_ATTR spi_flash_init_chip_state(void)
 
 void IRAM_ATTR spi_flash_set_rom_required_regs(void)
 {
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     if (bootloader_flash_is_octal_mode_enabled()) {
         //Disable the variable dummy mode when doing timing tuning
         CLEAR_PERI_REG_MASK(SPI_MEM_DDR_REG(1), SPI_MEM_SPI_FMEM_VAR_DUMMY);
@@ -223,13 +223,13 @@ static const uint8_t s_mspi_io_num_default[] = {
     MSPI_IOMUX_PIN_NUM_CS0,
     MSPI_IOMUX_PIN_NUM_HD,
     MSPI_IOMUX_PIN_NUM_WP,
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     MSPI_IOMUX_PIN_NUM_DQS,
     MSPI_IOMUX_PIN_NUM_D4,
     MSPI_IOMUX_PIN_NUM_D5,
     MSPI_IOMUX_PIN_NUM_D6,
     MSPI_IOMUX_PIN_NUM_D7
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 };
 
 uint8_t esp_mspi_get_io(esp_mspi_io_t io)
@@ -241,7 +241,7 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
 #endif
 
     assert(io >= ESP_MSPI_IO_CLK);
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     assert(io <= ESP_MSPI_IO_D7);
 #else
     assert(io <= ESP_MSPI_IO_WP);
@@ -265,11 +265,11 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
 #endif
     }
 
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     spiconfig = (io < ESP_MSPI_IO_WP) ? esp_rom_efuse_get_flash_gpio_info() : esp_rom_efuse_get_opiconfig();
 #else
     spiconfig = esp_rom_efuse_get_flash_gpio_info();
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
 
     if (spiconfig == ESP_ROM_EFUSE_FLASH_DEFAULT_SPI) {
         mspi_io = s_mspi_io_num_default[io];
@@ -283,7 +283,7 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
          */
         mspi_io = (spiconfig >> io * 6) & 0x3f;
     }
-#if SOC_SPI_MEM_SUPPORT_OPI_MODE
+#if SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     else {
         /**
          * [0 : 5] -- DQS
@@ -294,7 +294,7 @@ uint8_t esp_mspi_get_io(esp_mspi_io_t io)
          */
         mspi_io = (spiconfig >> (io - ESP_MSPI_IO_DQS) * 6) & 0x3f;
     }
-#endif // SOC_SPI_MEM_SUPPORT_OPI_MODE
+#endif // SOC_SPI_MEM_SUPPORT_FLASH_OPI_MODE
     return mspi_io;
 #else  // SOC_SPI_MEM_SUPPORT_CONFIG_GPIO_BY_EFUSE
     return s_mspi_io_num_default[io];
