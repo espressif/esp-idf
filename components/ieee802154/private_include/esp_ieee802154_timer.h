@@ -94,6 +94,18 @@ void ieee802154_timer1_fire_at(uint32_t fire_time);
 typedef void (*timer_callback_t)(void* ctx);
 
 /**
+ * @brief  Set timer0 callback.
+ *
+ */
+void ieee802154_timer0_set_callback(timer_callback_t timer0_cb, void *timer0_ctx);
+
+/**
+ * @brief  Set timer1 callback.
+ *
+ */
+void ieee802154_timer1_set_callback(timer_callback_t timer1_cb, void *timer1_ctx);
+
+/**
  * @brief  Set timer0 to fire at specific time with callback.
  *
  */
@@ -106,16 +118,16 @@ void ieee802154_timer0_fire_at_with_callback(uint32_t fire_time, timer_callback_
 void ieee802154_timer1_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer1_callback, void *timer1_ctx);
 
 /**
- * @brief  Execute timer0 callback.
+ * @brief  ISR handle for timer0.
  *
  */
-void ieee802154_timer0_execute_callback(void);
+void isr_handle_timer0_done(void);
 
 /**
- * @brief  Execute timer1 callback.
+ * @brief  ISR handle for timer1.
  *
  */
-void ieee802154_timer1_execute_callback(void);
+void isr_handle_timer1_done(void);
 
 #ifdef __cplusplus
 }

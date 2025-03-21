@@ -87,42 +87,52 @@ void ieee802154_timer1_fire_at(uint32_t fire_time)
     ieee802154_timer1_start();
 }
 
-void ieee802154_timer0_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer0_cb, void *timer0_ctx)
+void ieee802154_timer0_set_callback(timer_callback_t timer0_cb, void *timer0_ctx)
 {
     s_timer0_callback = timer0_cb;
     s_timer0_ctx = timer0_ctx;
+}
+
+void ieee802154_timer1_set_callback(timer_callback_t timer1_cb, void *timer1_ctx)
+{
+    s_timer1_callback = timer1_cb;
+    s_timer1_ctx = timer1_ctx;
+}
+
+void ieee802154_timer0_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer0_cb, void *timer0_ctx)
+{
+    ieee802154_timer0_set_callback(timer0_cb, timer0_ctx);
     ieee802154_timer0_fire_at(fire_time);
 }
 
 void ieee802154_timer1_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer1_cb, void *timer1_ctx)
 {
-    s_timer1_callback = timer1_cb;
-    s_timer1_ctx = timer1_ctx;
+    ieee802154_timer1_set_callback(timer1_cb, timer1_ctx);
     ieee802154_timer1_fire_at(fire_time);
 }
 
-void ieee802154_timer0_execute_callback(void)
+void isr_handle_timer0_done(void)
 {
-    timer_callback_t callback_tmp = s_timer0_callback; // tmp function used to allow new callback function to set a new callback without overwriting it
-    void* ctx_tmp = s_timer0_ctx;
+    if (s_timer0_callback) {
+        timer_callback_t callback_tmp = s_timer0_callback; // tmp function used to allow new callback function to set a new callback without overwriting it
+        void* ctx_tmp = s_timer0_ctx;
 
-    s_timer0_callback = NULL;
-    s_timer0_ctx = NULL;
+        s_timer0_callback = NULL;
+        s_timer0_ctx = NULL;
 
-    if (callback_tmp) {
         callback_tmp(ctx_tmp);
     }
 }
 
-void ieee802154_timer1_execute_callback(void)
+void isr_handle_timer1_done(void)
 {
-    timer_callback_t callback_tmp = s_timer1_callback; // tmp function used to allow new callback function to set a new callback without overwriting it
-    void* ctx_tmp = s_timer1_ctx;
+    if (s_timer1_callback) {
+        timer_callback_t callback_tmp = s_timer1_callback; // tmp function used to allow new callback function to set a new callback without overwriting it
+        void* ctx_tmp = s_timer1_ctx;
 
-    s_timer1_callback = NULL;
-    s_timer1_ctx = NULL;
+        s_timer1_callback = NULL;
+        s_timer1_ctx = NULL;
 
-    if (callback_tmp) {
         callback_tmp(ctx_tmp);
     }
 }
