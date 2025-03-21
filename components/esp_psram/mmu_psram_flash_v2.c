@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -103,8 +103,7 @@ esp_err_t mmu_config_psram_text_segment(uint32_t start_page, uint32_t psram_size
 
     ESP_EARLY_LOGV(TAG, "after mapping text, starting from paddr=0x%08"PRIx32" and vaddr=0x%08"PRIx32", 0x%"PRIx32" bytes are mapped", MMU_PAGE_TO_BYTES(start_page), irom_load_addr_aligned, mapped_size);
 
-    start_page += BYTES_TO_MMU_PAGE(irom_size);
-    *out_page = start_page;
+    *out_page = BYTES_TO_MMU_PAGE(irom_size);
 
     return ESP_OK;
 }
@@ -138,8 +137,7 @@ esp_err_t mmu_config_psram_rodata_segment(uint32_t start_page, uint32_t psram_si
 
     ESP_EARLY_LOGV(TAG, "after mapping rodata, starting from paddr=0x%08"PRIx32" and vaddr=0x%08"PRIx32", 0x%"PRIx32" bytes are mapped", MMU_PAGE_TO_BYTES(start_page), drom_load_addr_aligned, mapped_size);
 
-    start_page += BYTES_TO_MMU_PAGE(drom_size);
-    *out_page = start_page;
+    *out_page = BYTES_TO_MMU_PAGE(drom_size);
 
     return ESP_OK;
 }
