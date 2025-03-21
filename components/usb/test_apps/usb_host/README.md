@@ -3,9 +3,10 @@
 
 # USB: Host test application
 
-There are two sets of tests in this application:
+There are three sets of tests in this application:
 1. Low-speed: Expects low-speed USB mouse with interrupt endpoint to be connected
 2. Full-speed: Expects full-speed USB flash disk with 2 bulk endpoints to be connected
+3. High-speed: Expects high-speed USB flash disk with 2 bulk endpoints to be connected
 
-For running these tests locally, you will have to update device definitions (VID, PID, ...) in [mock_msc.h](../common/mock_msc.h) and [mock_hid.h](../common/mock_hid.h).
+For running these tests locally, you will have to update device definitions (VID, PID, ...) in [dev_msc.c](../common/dev_msc.c) and [dev_hid.c](../common/dev_hid.c).
 

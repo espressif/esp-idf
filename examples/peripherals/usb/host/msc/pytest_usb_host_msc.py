@@ -7,8 +7,15 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 @pytest.mark.temp_skip_ci(targets=['esp32s2'], reason='lack of runners with usb_host_flash_disk tag')
 @pytest.mark.usb_host_flash_disk
-@idf_parametrize('target', ['esp32s2', 'esp32s3', 'esp32p4'], indirect=['target'])
+@idf_parametrize(
+    'config,target',
+    [('default', 'esp32s2'), ('default', 'esp32s3'), ('default', 'esp32p4'), ('esp32p4_psram', 'esp32p4')],
+    indirect=['config', 'target'],
+)
 def test_usb_host_msc_example(dut: Dut) -> None:
+    # Check whether the USB-DWC DMA capable memory is allocated in PSRAM
+    usb_dwc_in_psram = bool(dut.app.sdkconfig.get('USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM'))
+
     # Get wMaxPacketSize to get USB device speed
     max_packet_size = int(dut.expect(r'wMaxPacketSize (\d{2,3})')[1].decode())
 
@@ -21,13 +28,13 @@ def test_usb_host_msc_example(dut: Dut) -> None:
 
     # Set write and read throughput limits
     if max_packet_size == 512:  # wMaxPacketSize = 512 for HS
-        write_throughput_limit = 4.9
-        read_throughput_limit = 11.5
+        write_throughput_limit = 3.5 if usb_dwc_in_psram else 4.9
+        read_throughput_limit = 9.9 if usb_dwc_in_psram else 11.5
     else:  # wMaxPacketSize = 64 for FS
         write_throughput_limit = 0.9
         read_throughput_limit = 1.0
 
-    # These values should be updated for HS targets
+    # Evaluate the speed measurements
     if write_throughput > write_throughput_limit:
         print('Write throughput put OK')
     else:
