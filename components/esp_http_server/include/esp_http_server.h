@@ -1708,6 +1708,8 @@ typedef struct httpd_ws_frame {
     httpd_ws_type_t type;       /*!< WebSocket frame type */
     uint8_t *payload;           /*!< Pre-allocated data buffer */
     size_t len;                 /*!< Length of the WebSocket data */
+    size_t left_len;            /*!< Length of the WebSocket data that is yet to be received.
+                                     This field should not be modified by user. */
 } httpd_ws_frame_t;
 
 /**
@@ -1728,10 +1730,29 @@ typedef void (*transfer_complete_cb)(esp_err_t err, int socket, void *arg);
  * @return
  *  - ESP_OK                    : On successful
  *  - ESP_FAIL                  : Socket errors occurs
+ *  - ESP_ERR_INVALID_SIZE      : max_len is too small to fit the entire payload
  *  - ESP_ERR_INVALID_STATE     : Handshake was already done beforehand
  *  - ESP_ERR_INVALID_ARG       : Argument is invalid (null or non-WebSocket)
  */
 esp_err_t httpd_ws_recv_frame(httpd_req_t *req, httpd_ws_frame_t *pkt, size_t max_len);
+
+/**
+ * @brief Receive and parse a WebSocket frame part
+ *
+ * @note    Calling httpd_ws_recv_frame_part() with max_len as 0 will give actual frame size in pkt->len.
+ *          In contrast to httpd_ws_recv_frame, this method is able to read frame payload partially. The amount of data that is yet to be received is stored in pkt->left_len
+ *          Keep in mind however, that you have to read the entire packet before completing the request sucessfully.
+ *
+ * @param[in]   req         Current request
+ * @param[out]  pkt         WebSocket packet
+ * @param[in]   max_len     Maximum length for receive
+ * @return
+ *  - ESP_OK                    : On successful
+ *  - ESP_FAIL                  : Socket errors occurs
+ *  - ESP_ERR_INVALID_STATE     : Handshake was already done beforehand
+ *  - ESP_ERR_INVALID_ARG       : Argument is invalid (null or non-WebSocket)
+ */
+esp_err_t httpd_ws_recv_frame_part(httpd_req_t *req, httpd_ws_frame_t *pkt, size_t max_len);
 
 /**
  * @brief Construct and send a WebSocket frame
