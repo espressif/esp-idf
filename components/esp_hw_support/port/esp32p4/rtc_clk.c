@@ -438,6 +438,13 @@ void rtc_clk_cpu_set_to_default_config(void)
     int freq_mhz = (int)rtc_clk_xtal_freq_get();
 
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1, true);
+}
+
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    int freq_mhz = (int)rtc_clk_xtal_freq_get();
+
+    rtc_clk_cpu_freq_to_xtal(freq_mhz, 1, false);
     s_cur_cpll_freq = 0; // no disable PLL, but set freq to 0 to trigger a PLL calibration after wake-up from sleep
 }
 

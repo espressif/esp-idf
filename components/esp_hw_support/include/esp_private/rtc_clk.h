@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,10 +22,23 @@ extern "C" {
  * source to XTAL (except for S2).
  *
  * Currently, this function is only called in `esp_restart_noos` and `esp_restart_noos_dig` to switch the CPU
- * clock source back to XTAL (by default) before reset, and in `esp_sleep_start` to switch CPU clock source to XTAL
- * before entering sleep for PMU supported chips.
+ * clock source back to XTAL (by default) before reset.
  */
 void rtc_clk_cpu_set_to_default_config(void);
+
+/**
+ * @brief Switch CPU clock source to XTAL, the PLL has different processing methods for different chips.
+ *        1. For earlier chips without PMU, there is no PMU module that can turn off the CPU's PLL, so it has to be
+ *           disabled at here to save the power consumption. Though ESP32C3/S3 has USB CDC device, it can not function
+ *           properly during sleep due to the lack of APB clock (before C6, USJ relies on APB clock to work). Therefore,
+ *           we will always disable CPU's PLL (i.e. BBPLL).
+ *        2. For PMU supported chips, CPU's PLL power can be turned off by PMU, so no need to disable the PLL at here.
+ *           Leaving PLL on at this stage also helps USJ keep connection and retention operation (if they rely on this PLL).
+ *           For ESP32P4, if the APB frequency is configured as the hardware default value (10MHz), this will cause the
+ *           regdma backup/restore to not achieve optimal performance. The MEM/APB frequency divider needs to be configured
+ *           to 40MHz to speed up the retention speed.
+ */
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void);
 
 /**
  * @brief Notify that the BBPLL has a new in-use consumer
