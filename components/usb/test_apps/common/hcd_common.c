@@ -23,6 +23,10 @@
 #include "unity.h"
 #include "sdkconfig.h"
 
+// ----------------------------------------------------- Macros --------------------------------------------------------
+
+// --------------------- Constants -------------------------
+
 #define PORT_NUM                1
 #define EVENT_QUEUE_LEN         5
 #define ENUM_ADDR               1   // Device address to use for tests that enumerate the device
@@ -261,8 +265,14 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
 }
 
 #include "esp_private/esp_cache_private.h"
-#define DATA_BUFFER_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED)
+
 #define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+
+#ifdef CONFIG_USB_HOST_DWC_DMA_CAP_MEMORY_IN_PSRAM      // In esp32p4, the USB-DWC internal DMA can access external RAM
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_SPIRAM)
+#else
+#define DATA_BUFFER_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
+#endif
 
 urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
