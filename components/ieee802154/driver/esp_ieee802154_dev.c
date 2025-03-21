@@ -149,8 +149,6 @@ static IRAM_ATTR void receive_ack_timeout_timer_start(uint32_t duration)
 
     uint32_t current_time = (uint32_t)esp_timer_get_time();
     ieee802154_timer0_fire_at_with_callback(current_time + duration, ieee802154_rx_ack_timeout_callback, (void*)s_tx_frame);
-    ieee802154_timer0_set_threshold(duration);
-    ieee802154_timer0_start();
 }
 #endif
 
@@ -406,20 +404,6 @@ static IRAM_ATTR void next_operation(void)
     }
 }
 
-static void isr_handle_timer0_done(void)
-{
-    ieee802154_timer0_execute_callback();
-#if CONFIG_IEEE802154_TEST
-    extern void esp_ieee802154_timer0_done(void);
-    esp_ieee802154_timer0_done();
-#endif
-}
-
-static void isr_handle_timer1_done(void)
-{
-    ieee802154_timer1_execute_callback();
-}
-
 static IRAM_ATTR void isr_handle_tx_done(void)
 {
     event_end_process();
@@ -507,7 +491,6 @@ static IRAM_ATTR void isr_handle_rx_phase_rx_abort(ieee802154_ll_rx_abort_reason
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
     case IEEE802154_RX_ABORT_BY_ED_STOP:
         // do nothing
-        NEEDS_NEXT_OPT(false);
         return;
     case IEEE802154_RX_ABORT_BY_SFD_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_CRC_ERROR:
@@ -547,8 +530,6 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
     case IEEE802154_RX_ABORT_BY_RX_STOP:
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
     case IEEE802154_RX_ABORT_BY_ED_STOP:
-        NEEDS_NEXT_OPT(false);
-        return;
     case IEEE802154_RX_ABORT_BY_SFD_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_CRC_ERROR:
     case IEEE802154_RX_ABORT_BY_INVALID_LEN:
