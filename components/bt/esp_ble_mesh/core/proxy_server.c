@@ -88,6 +88,7 @@ static enum {
     MESH_GATT_PROXY,
 } gatt_svc = MESH_GATT_NONE;
 
+static char default_device_name[DEVICE_NAME_SIZE + 1] = "ESP-BLE-MESH";
 static char device_name[DEVICE_NAME_SIZE + 1];
 
 struct bt_mesh_proxy_client *bt_mesh_proxy_server_get_client(uint8_t index)
@@ -98,6 +99,24 @@ struct bt_mesh_proxy_client *bt_mesh_proxy_server_get_client(uint8_t index)
 uint8_t bt_mesh_proxy_server_get_client_count(void)
 {
     return ARRAY_SIZE(clients);
+}
+
+int bt_mesh_set_default_device_name(const char *name)
+{
+    if (!name) {
+        BT_ERR("%s, Invalid parameter", __func__);
+        return -EINVAL;
+    }
+
+    if (strlen(name) > DEVICE_NAME_SIZE) {
+        BT_ERR("Too long device name (len %d)", strlen(name));
+        return -EINVAL;
+    }
+
+    memset(default_device_name, 0x0, sizeof(default_device_name));
+    strncpy(default_device_name, name, DEVICE_NAME_SIZE);
+
+    return 0;
 }
 
 int bt_mesh_set_device_name(const char *name)
@@ -1943,7 +1962,7 @@ int bt_mesh_proxy_server_init(void)
 
     bt_mesh_gatts_conn_cb_register(&conn_callbacks);
 
-    strncpy(device_name, "ESP-BLE-MESH", DEVICE_NAME_SIZE);
+    strncpy(device_name, default_device_name, DEVICE_NAME_SIZE);
     return bt_mesh_gatts_set_local_device_name(device_name);
 }
 

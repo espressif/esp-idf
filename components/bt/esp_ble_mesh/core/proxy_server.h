@@ -68,6 +68,7 @@ struct bt_mesh_proxy_client {
 typedef void (*proxy_server_connect_cb_t)(uint8_t conn_handle);
 typedef void (*proxy_server_disconnect_cb_t)(uint8_t conn_handle, uint8_t reason);
 
+int bt_mesh_set_default_device_name(const char *name);
 int bt_mesh_set_device_name(const char *name);
 
 const char *bt_mesh_get_device_name(void);
