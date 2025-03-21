@@ -11,6 +11,7 @@ INPUT += \
          $(PROJECT_PATH)/components/soc/$(IDF_TARGET)/include/soc/touch_sensor_channel.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/$(IDF_TARGET)/ulp.h \
          $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt.h \
+         $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
          $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_access.h \
          $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_apis.h \
          $(PROJECT_PATH)/components/perfmon/include/xtensa_perfmon_masks.h \
