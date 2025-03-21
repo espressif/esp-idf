@@ -239,7 +239,6 @@ test_mqtt_on_host:
 
 test_transport_on_host:
   extends: .host_test_template
-  allow_failure: true # IDFCI-2781 [v5.5, v5.4] test_transport_on_host fails on ubuntu 24.04
   script:
     - cd ${IDF_PATH}/components/tcp_transport/host_test
     - idf.py build
