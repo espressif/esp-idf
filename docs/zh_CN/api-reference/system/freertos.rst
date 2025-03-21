@@ -24,7 +24,7 @@ ESP-IDF FreeRTOS
 
         ESP-IDF FreeRTOS 是目前 ESP-IDF 默认的 FreeRTOS 实现。
 
-.. only:: not esp32p4
+.. only:: not esp32p4 and not esp32h4
 
     .. _amazon_smp_freertos:
 

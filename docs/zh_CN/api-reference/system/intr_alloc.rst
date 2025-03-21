@@ -22,7 +22,7 @@
 
     {IDF_TARGET_NAME} 有一个核，28 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，还有 4 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
-.. only:: esp32p4
+.. only:: esp32p4 or esp32h4
 
     {IDF_TARGET_NAME} 有两个核，每个核有 32 个外部异步中断。每个中断的优先级别都可独立地通过编程设置。此外，每个核还有 3 个核心本地中断源 (CLINT)。详细信息请参见 **{IDF_TARGET_NAME} 技术参考手册** [`PDF <{IDF_TARGET_TRM_CN_URL}#riscvcpu>`__]。
 
@@ -41,7 +41,7 @@
 要解释为什么共享中断只能由电平触发，以外设 A 和外设 B 共用一个边缘触发中断为例进行说明：当外设 B 触发中断时，会将其中断信号设置为高电平，产生一个从低到高的边缘，进而锁存 CPU 中断位，并触发 ISR。接着，ISR 开始执行，检查到此时外设 A 没有触发中断，于是继续处理外设 B 的中断信号，最后将外设 B 的中断状态清除。最后，CPU 会在 ISR 返回之前清除中断位锁存器。因此在整个中断处理过程中，如果外设 A 触发了中断，该中断会因 CPU 清除中断位锁存器而丢失。
 
 
-.. only:: esp32 or esp32s3
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_XTENSA
 
     多核问题
     --------
@@ -71,7 +71,7 @@
 
     其余中断源来自外部外设。
 
-.. only:: esp32p4
+.. only:: SOC_HP_CPU_HAS_MULTIPLE_CORES and CONFIG_IDF_TARGET_ARCH_RISCV
 
     多核问题
     --------

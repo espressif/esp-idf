@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32h2="蓝牙控制器，IEEE 802.15.4 库"}
+{IDF_TARGET_STATIC_MEANS_HEAP:default="Wi-Fi 库和蓝牙控制器", esp32s2="Wi-Fi 库", esp32c6="Wi-Fi 库、蓝牙控制器和 IEEE 802.15.4 库", esp32c61="Wi-Fi 库和蓝牙控制器", esp32h2="蓝牙控制器和 IEEE 802.15.4 库", esp32h21="蓝牙控制器和 IEEE 802.15.4 库", esp32h4="蓝牙控制器和 IEEE 802.15.4 库"}
 
 固件应用程序的可用 RAM 在某些情况下可能处于低水平，甚至完全耗尽。为此，应调整这些情况下固件应用程序的内存使用情况。
 
