@@ -404,6 +404,8 @@ TWAI 驱动程序通过 :cpp:type:`twai_message_t` 结构体的不同位字段�
 安装多个 TWAI 实例
 ^^^^^^^^^^^^^^^^^^
 
+**注意：** {IDF_TARGET_NAME} 包含 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个 TWAI 控制器，因此可创建 {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} 个 TWAI 实例。
+
 以下代码片段演示了如何使用 :cpp:func:`twai_driver_install_v2` 函数来安装多个 TWAI 实例。
 
 .. code-block:: c

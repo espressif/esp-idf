@@ -404,6 +404,8 @@ The usage of macro initializers is not mandatory and each of the configuration s
 Install Multiple TWAI Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+**Note:** You can create {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} functional TWAI instance(s) because the {IDF_TARGET_NAME} has {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} physical TWAI controller(s).
+
 The following code snippet demonstrates how to install multiple TWAI instances via the use of the :cpp:func:`twai_driver_install_v2` function.
 
 .. code-block:: c
