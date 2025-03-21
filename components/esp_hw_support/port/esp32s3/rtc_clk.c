@@ -378,6 +378,11 @@ void rtc_clk_cpu_set_to_default_config(void)
     rtc_clk_cpu_freq_to_xtal(freq_mhz, 1);
 }
 
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
+}
+
 /**
  * Switch to use XTAL as the CPU clock source.
  * Must satisfy: cpu_freq = XTAL_FREQ / div.
