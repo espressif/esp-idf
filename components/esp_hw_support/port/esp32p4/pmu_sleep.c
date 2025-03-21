@@ -442,7 +442,7 @@ TCM_IRAM_ATTR bool pmu_sleep_finish(bool dslp)
 
     if (s_mpll_freq_mhz_before_sleep && !dslp) {
         rtc_clk_mpll_enable();
-        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep);
+        rtc_clk_mpll_configure(clk_hal_xtal_get_freq_mhz(), s_mpll_freq_mhz_before_sleep, true);
 #if CONFIG_SPIRAM
         if (!s_pmu_sleep_regdma_backup_enabled) {
             // MSPI2 and MSPI3 share the register for core clock. So we only set MSPI2 here.

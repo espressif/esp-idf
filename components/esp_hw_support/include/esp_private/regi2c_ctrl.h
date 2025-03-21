@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,7 +31,8 @@ extern "C" {
 #define regi2c_ctrl_read_reg_mask    regi2c_read_reg_mask_raw
 #define regi2c_ctrl_write_reg        regi2c_write_reg_raw
 #define regi2c_ctrl_write_reg_mask   regi2c_write_reg_mask_raw
-
+#define REGI2C_ENTER_CRITICAL()
+#define REGI2C_EXIT_CRITICAL()
 #else
 
 /* Access internal registers, don't use in application */
@@ -43,7 +44,8 @@ void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add,
 /* enter the critical section that protects internal registers. Don't use it in SDK. Use the functions above. */
 void regi2c_enter_critical(void);
 void regi2c_exit_critical(void);
-
+#define REGI2C_ENTER_CRITICAL()  regi2c_enter_critical()
+#define REGI2C_EXIT_CRITICAL()   regi2c_exit_critical()
 #endif // BOOTLOADER_BUILD
 
 /* Convenience macros for the above functions, these use register definitions

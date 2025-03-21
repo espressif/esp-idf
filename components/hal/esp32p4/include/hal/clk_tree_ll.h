@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,7 +25,7 @@
 #include "esp32p4/rom/rtc.h"
 #include "hal/misc.h"
 #include "hal/efuse_hal.h"
-
+#include "esp_private/regi2c_ctrl.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -409,9 +409,12 @@ static inline __attribute__((always_inline)) void clk_ll_cpll_set_config(uint32_
     uint8_t i2c_cpll_lref  = (oc_enb_fcal << I2C_CPLL_OC_ENB_FCAL_LSB) | (dchgp << I2C_CPLL_OC_DCHGP_LSB) | (div_ref);
     uint8_t i2c_cpll_div_7_0 = div7_0;
     uint8_t i2c_cpll_dcur = (1 << I2C_CPLL_OC_DLREF_SEL_LSB ) | (3 << I2C_CPLL_OC_DHREF_SEL_LSB) | dcur;
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
-    REGI2C_WRITE(I2C_CPLL, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
+    // There are sequential regi2c operations in `clk_ll_cpll_set_config`, use the raw regi2c API with one lock wrapper to save time.
+    REGI2C_ENTER_CRITICAL();
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_REF_DIV, i2c_cpll_lref);
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DIV_7_0, i2c_cpll_div_7_0);
+    esp_rom_regi2c_write(I2C_CPLL, I2C_CPLL_HOSTID, I2C_CPLL_OC_DCUR, i2c_cpll_dcur);
+    REGI2C_EXIT_CRITICAL();
 }
 
 /**
@@ -438,17 +441,17 @@ static inline __attribute__((always_inline)) void clk_ll_mpll_set_config(uint32_
 {
     HAL_ASSERT(xtal_freq_mhz == SOC_XTAL_FREQ_40M);
 
-    uint8_t mpll_dhref_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_DHREF);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
-    uint8_t mpll_rstb_val = REGI2C_READ(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
+    uint8_t mpll_dhref_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DHREF,  mpll_dhref_val | (3 << I2C_MPLL_DHREF_LSB));
+    uint8_t mpll_rstb_val = esp_rom_regi2c_read(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val & 0xdf);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_IR_CAL_RSTB, mpll_rstb_val | (1 << I2C_MPLL_IR_CAL_RSTB_lSB));
 
     // MPLL_Freq = XTAL_Freq * (div + 1) / (ref_div + 1)
     uint8_t ref_div = 1;
     uint8_t div = mpll_freq_mhz / 20 - 1;
     uint8_t val = ((div << 3) | ref_div);
-    REGI2C_WRITE(I2C_MPLL, I2C_MPLL_DIV_REG_ADDR, val);
+    esp_rom_regi2c_write(I2C_MPLL, I2C_MPLL_HOSTID, I2C_MPLL_DIV_REG_ADDR, val);
 }
 
 /**
