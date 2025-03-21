@@ -29,4 +29,7 @@
 
     #define REGI2C_READ(block, reg_add) \
         esp_rom_regi2c_read(block, block##_HOSTID,  reg_add)
+
+    #define REGI2C_ENTER_CRITICAL()
+    #define REGI2C_EXIT_CRITICAL()
 #endif
