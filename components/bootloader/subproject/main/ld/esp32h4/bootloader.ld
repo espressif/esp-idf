@@ -138,6 +138,7 @@ SECTIONS
 
   .dram0.data :
   {
+    *(.dram1 .dram1.*) /* catch stray DRAM_ATTR */
     *(.data)
     *(.data.*)
     *(.gnu.linkonce.d.*)
@@ -163,6 +164,7 @@ SECTIONS
     *(.gcc_except_table)
     *(.gnu.linkonce.e.*)
     *(.gnu.version_r)
+    *(.eh_frame_hdr)
     *(.eh_frame)
     . = (. + 3) & ~ 3;
     /* C++ constructor and destructor tables, properly ordered: */

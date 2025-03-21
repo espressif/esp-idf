@@ -90,6 +90,17 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_chip_ver_pkg(
     //ESP32H4 TODO
     return 0;
 }
+__attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk(void)
+{
+    //ESP32H4 TODO
+    return 0;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
+{
+    //ESP32H4 TODO
+    (void)efuse_blk;
+}
 
 /******************* eFuse control functions *************************/
 
@@ -147,6 +158,11 @@ __attribute__((always_inline)) static inline void efuse_ll_set_pwr_on_num(uint16
 __attribute__((always_inline)) static inline void efuse_ll_set_pwr_off_num(uint16_t value)
 {
     EFUSE.wr_tim_conf2.pwr_off_num = value;
+}
+
+__attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void)
+{
+    // EFUSE.wr_tim_conf0_rs_bypass.update = 1;
 }
 
 /******************* eFuse control functions *************************/

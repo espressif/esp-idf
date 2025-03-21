@@ -10,9 +10,9 @@
     - mbedtls
     - protocol_examples_common
   disable:
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32H21] IDF-11581
+      reason: not supported yet  # TODO: [ESP32H21] IDF-11581   [ESP32H4] IDF-12360
 
 .mqtt_dependencies: &mqtt_dependencies
   <<: *default_rules

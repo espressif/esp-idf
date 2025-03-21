@@ -133,7 +133,7 @@ examples/system/nmi_isr:
 
 examples/system/ota/advanced_https_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -153,7 +153,7 @@ examples/system/ota/advanced_https_ota:
 
 examples/system/ota/native_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -174,7 +174,7 @@ examples/system/ota/otatool:
 
 examples/system/ota/partitions_ota:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
   disable_test:
@@ -193,7 +193,7 @@ examples/system/ota/partitions_ota:
 
 examples/system/ota/simple_ota_example:
   disable:
-    - if: IDF_TARGET in ["esp32h2", "esp32h21"]
+    - if: IDF_TARGET in ["esp32h2", "esp32h21", "esp32h4"]
       temporary: true
       reason: not supported yet
     - if: CONFIG_NAME == "spiram" and SOC_SPIRAM_SUPPORTED != 1

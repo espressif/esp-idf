@@ -63,6 +63,7 @@ typedef enum {
 typedef enum {
     ESP_EFUSE_KEY_PURPOSE_USER = 0,                         /**< User purposes (software-only use) */
     ESP_EFUSE_KEY_PURPOSE_ECDSA_KEY = 1,                    /**< ECDSA private key (Expected in little endian order)*/
+    ESP_EFUSE_KEY_PURPOSE_RESERVED = 2,                     /**< Reserved (Used as a place holder)*/
     ESP_EFUSE_KEY_PURPOSE_XTS_AES_128_KEY = 4,              /**< XTS_AES_128_KEY (flash/PSRAM encryption) */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_ALL = 5,                /**< HMAC Downstream mode */
     ESP_EFUSE_KEY_PURPOSE_HMAC_DOWN_JTAG = 6,               /**< JTAG soft enable key (uses HMAC Downstream mode) */
