@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -4286,3 +4286,9 @@
 #define TRACEMEM_MUX_BLK0_ONLY          1
 #define TRACEMEM_MUX_BLK1_ONLY          2
 #define TRACEMEM_MUX_PROBLK1_APPBLK0    3
+
+#if (!CONFIG_FREERTOS_UNICORE)
+#define INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu)   (cpu == 0? DPORT_PRO_INTR_STATUS_0_REG : DPORT_APP_INTR_STATUS_0_REG)
+#else
+#define INTERRUPT_COREx_INTR_STATUS_REG_BASE(cpu)   DPORT_PRO_INTR_STATUS_0_REG
+#endif
