@@ -104,6 +104,11 @@ If the configurations in :cpp:type:`esp_isp_processor_cfg_t` is specified, users
 
 You can use the created handle to enable/disable the ISP driver and do other ISP module installation.
 
+.. note::
+
+    ISP peripheral is necessary if MIPI CSI or ISP_DVP is used as camera controller. This means even if ISP functions are not needed, you still need to install the ISP driver by calling :cpp:func:`esp_isp_new_processor`.
+
+    If ISP functions are not needed, ISP driver supports bypassing ISP pipelines and only necessary functions will be enabled. This can be done by setting :cpp:member:`esp_isp_processor_cfg_t::bypass_isp`.
 
 Install ISP Auto Focus (AF) Driver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
