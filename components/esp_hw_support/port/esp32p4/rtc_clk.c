@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -585,10 +585,17 @@ TCM_IRAM_ATTR void rtc_clk_mpll_enable(void)
     clk_ll_mpll_enable();
 }
 
-void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
+void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_safe)
 {
     /* Analog part */
-    ANALOG_CLOCK_ENABLE();
+    if (thread_safe) {
+        _regi2c_ctrl_ll_master_enable_clock(true);
+    } else {
+        ANALOG_CLOCK_ENABLE();
+#if !BOOTLOADER_BUILD
+        regi2c_enter_critical();
+#endif
+    }
     /* MPLL calibration start */
     regi2c_ctrl_ll_mpll_calibration_start();
     clk_ll_mpll_set_config(mpll_freq, xtal_freq);
@@ -596,8 +603,15 @@ void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq)
     while(!regi2c_ctrl_ll_mpll_calibration_is_done());
     /* MPLL calibration stop */
     regi2c_ctrl_ll_mpll_calibration_stop();
-    ANALOG_CLOCK_DISABLE();
 
+    if (thread_safe) {
+        _regi2c_ctrl_ll_master_enable_clock(false);
+    } else {
+#if !BOOTLOADER_BUILD
+        regi2c_exit_critical();
+#endif
+        ANALOG_CLOCK_DISABLE();
+    }
     s_cur_mpll_freq = mpll_freq;
 }
 

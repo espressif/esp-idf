@@ -58,8 +58,9 @@ void rtc_clk_mpll_disable(void);
  *
  * @param[in] xtal_freq  XTAL frequency
  * @param[in] mpll_freq  MPLL frequency
+ * @param[in] thread_safe Set true if called from thread safe context, which will save the time of taking spin lock.
  */
-void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq);
+void rtc_clk_mpll_configure(uint32_t xtal_freq, uint32_t mpll_freq, bool thread_safe);
 
 /**
  * Get the MPLL frequency
