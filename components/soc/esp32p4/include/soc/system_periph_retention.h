@@ -62,7 +62,7 @@ extern const regdma_entries_config_t tg_regs_retention[TIMG_RETENTION_LINK_LEN];
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    3
+#define IOMUX_RETENTION_LINK_LEN    6
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**

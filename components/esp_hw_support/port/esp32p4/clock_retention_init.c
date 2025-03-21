@@ -18,9 +18,9 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 
     const static sleep_retention_entries_config_t pcr_regs_retention[] = {
         /* Enable i2c master clock */
-        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(0),     LPPERI_CLK_EN_REG,                 LPPERI_CK_EN_LP_I2CMST,                        LPPERI_CK_EN_LP_I2CMST_M,                        1, 1), .owner = ENTRY(0) },
+        [0] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(0),     LPPERI_CLK_EN_REG,                 LPPERI_CK_EN_LP_I2CMST,                        LPPERI_CK_EN_LP_I2CMST_M,                        1, 0), .owner = ENTRY(0) },
         /* Start SYSPLL self-calibration */
-        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(1),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,   0,                                             HP_SYS_CLKRST_REG_SYS_PLL_CAL_STOP_M,            1, 1), .owner = ENTRY(0) },
+        [1] = { .config = REGDMA_LINK_WRITE_INIT (REGDMA_PCR_LINK(1),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,   0,                                             HP_SYS_CLKRST_REG_SYS_PLL_CAL_STOP_M,            1, 0), .owner = ENTRY(0) },
         /* Wait calibration done */
         [2] = { .config = REGDMA_LINK_WAIT_INIT  (REGDMA_PCR_LINK(2),     HP_SYS_CLKRST_ANA_PLL_CTRL0_REG,   HP_SYS_CLKRST_REG_SYS_PLL_CAL_END,             HP_SYS_CLKRST_REG_SYS_PLL_CAL_END_M,             1, 0), .owner = ENTRY(0) },
         /* Stop SYSPLL self-calibration */
