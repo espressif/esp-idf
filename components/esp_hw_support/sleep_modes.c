@@ -259,6 +259,7 @@ typedef struct {
 #if SOC_DCDC_SUPPORTED
     uint64_t rtc_ticks_at_ldo_prepare;
 #endif
+    bool overhead_out_need_remeasure;
 } sleep_config_t;
 
 
@@ -290,7 +291,8 @@ static sleep_config_t s_config = {
     .lock = portMUX_INITIALIZER_UNLOCKED,
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
-    .wakeup_triggers = 0
+    .wakeup_triggers = 0,
+    .overhead_out_need_remeasure = true
 };
 
 /* Internal variable used to track if light sleep wakeup sources are to be
@@ -305,6 +307,12 @@ static const char *TAG = "sleep";
 static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 
+void esp_sleep_overhead_out_time_refresh(void)
+{
+    portENTER_CRITICAL(&s_config.lock);
+    s_config.overhead_out_need_remeasure = true;
+    portEXIT_CRITICAL(&s_config.lock);
+}
 
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
@@ -1403,6 +1411,16 @@ esp_err_t esp_light_sleep_start(void)
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
 
+    if (s_config.overhead_out_need_remeasure) {
+        uint32_t cur_cpu_freq = esp_clk_cpu_freq() / MHZ;
+        uint32_t xtal_freq = rtc_clk_xtal_freq_get();
+        if (cur_cpu_freq < xtal_freq) {
+            s_config.sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US * xtal_freq / cur_cpu_freq;
+        } else {
+            s_config.sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US;
+        }
+    }
+
     /*
      * Adjustment time consists of parts below:
      * 1. Hardware time waiting for internal 8M oscillate clock and XTAL;
@@ -1567,6 +1585,7 @@ esp_err_t esp_light_sleep_start(void)
 
     if (s_light_sleep_wakeup) {
         s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+        s_config.overhead_out_need_remeasure = false;
     }
 
     portEXIT_CRITICAL(&s_config.lock);
@@ -1655,8 +1674,10 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
         return ESP_ERR_INVALID_ARG;
     }
 #endif
+    portENTER_CRITICAL(&s_config.lock);
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
+    portEXIT_CRITICAL(&s_config.lock);
     return ESP_OK;
 }
 

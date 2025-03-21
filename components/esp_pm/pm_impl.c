@@ -20,6 +20,7 @@
 #include "esp_clk_tree.h"
 #include "soc/soc_caps.h"
 
+#include "esp_private/esp_sleep_internal.h"
 #include "esp_private/crosscore_int.h"
 #include "esp_private/periph_ctrl.h"
 
@@ -480,6 +481,7 @@ esp_err_t esp_pm_configure(const void* vconfig)
         // Enable the wakeup source here because the `esp_sleep_disable_wakeup_source` in the `else`
         // branch must be called if corresponding wakeup source is already enabled.
         esp_sleep_enable_timer_wakeup(0);
+        esp_sleep_overhead_out_time_refresh();
     } else if (s_light_sleep_en) {
         // Since auto light-sleep will enable the timer wakeup source, to avoid affecting subsequent possible
         // deepsleep requests, disable the timer wakeup source here.
