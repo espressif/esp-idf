@@ -56,6 +56,10 @@
 #include "esp32h2/rom/digital_signature.h"
 #endif
 
+#if CONFIG_IDF_TARGET_ESP32H21
+#include "esp32h21/rom/digital_signature.h"
+#endif
+
 #if CONFIG_IDF_TARGET_ESP32P4
 #include "esp32p4/rom/digital_signature.h"
 #endif
