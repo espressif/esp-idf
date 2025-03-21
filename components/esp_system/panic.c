@@ -202,6 +202,7 @@ void esp_panic_handler_disable_timg_wdts(void)
 /* This function enables the RTC WDT with the given timeout in milliseconds */
 void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms)
 {
+    wdt_hal_context_t rtc_wdt_ctx = RWDT_HAL_CONTEXT_DEFAULT(); // Use a local context variable to avoid race conditions when both cores enter the panic handler
     wdt_hal_init(&rtc_wdt_ctx, WDT_RWDT, 0, false);
     uint32_t stage_timeout_ticks = (uint32_t)(timeout_ms * rtc_clk_slow_freq_get_hz() / 1000ULL);
     wdt_hal_write_protect_disable(&rtc_wdt_ctx);
