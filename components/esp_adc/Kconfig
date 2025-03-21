@@ -2,6 +2,7 @@ menu "ADC and ADC Calibration"
 
     config ADC_ONESHOT_CTRL_FUNC_IN_IRAM
         bool "Place ISR version ADC oneshot mode read function into IRAM"
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         default n
         help
             Place ISR version ADC oneshot mode read function into IRAM.
