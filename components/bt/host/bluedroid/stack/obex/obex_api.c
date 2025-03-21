@@ -92,11 +92,11 @@ void OBEX_Deinit(void)
     if (obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit != NULL) {
         obex_cb.tl_ops[OBEX_OVER_L2CAP]->deinit();
     }
-    /*
+#if (RFCOMM_INCLUDED == TRUE)
     if (obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit != NULL) {
         obex_cb.tl_ops[OBEX_OVER_RFCOMM]->deinit();
     }
-    */
+#endif
 #if (OBEX_DYNAMIC_MEMORY)
     if (obex_cb_ptr) {
         osi_free(obex_cb_ptr);
