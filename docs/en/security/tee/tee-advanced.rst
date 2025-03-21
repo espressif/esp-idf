@@ -1,5 +1,5 @@
-Advanced Topics
-===============
+ESP-TEE: Advanced Topics
+========================
 
 .. _tee-detailed-architecture:
 

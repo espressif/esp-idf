@@ -1,5 +1,5 @@
-User Guide
-==========
+ESP-TEE: User Guide
+===================
 
 The ESP-TEE (Espressif Trusted Execution Environment) is a security framework built on top of dedicated hardware that ensures only authorized parties or applications can access protected information or services.
 When enabled, ESP-TEE runs in parallel with a FreeRTOS-based ESP-IDF application. In this case, the execution environment is split into the following:
