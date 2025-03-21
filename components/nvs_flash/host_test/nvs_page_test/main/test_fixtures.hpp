@@ -108,7 +108,7 @@ public:
         esp_err_t err = ESP_OK;
 
         size_t columns = size / column_size;
-        volatile size_t column;
+        size_t column;
 
         for(column = 0; column < columns; column = column + 1)
         {
