@@ -1651,9 +1651,10 @@ static esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 
 #if SOC_LP_TIMER_SUPPORTED
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    int64_t backup_cost_ticks = rtc_time_us_to_slowclk(((pmu_sleep_machine_constant_t *)PMU_instance()->mc)->hp.regdma_a2s_work_time_us, s_config.rtc_clk_cal_period);
     // Last timer wake-up validity check
     if ((sleep_duration == 0) || \
-        (target_wakeup_tick < rtc_time_get() + SLEEP_TIMER_ALARM_TO_SLEEP_TICKS)) {
+        (target_wakeup_tick < rtc_time_get() + SLEEP_TIMER_ALARM_TO_SLEEP_TICKS + backup_cost_ticks)) {
         // Treat too short sleep duration setting as timer reject
         return ESP_ERR_SLEEP_REJECT;
     }
