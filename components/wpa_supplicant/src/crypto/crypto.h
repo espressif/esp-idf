@@ -796,6 +796,14 @@ const struct crypto_bignum * crypto_ec_get_order(struct crypto_ec *e);
  * Internal data structure for EC implementation to represent a point. The
  * contents is specific to the used crypto library.
  */
+struct crypto_ec_point;
+
+/**
+ * crypto_ec_get_a - Get 'a' coefficient of an EC group's curve
+ * @e: EC context from crypto_ec_init()
+ * Returns: 'a' coefficient (bignum) of the group
+ */
+struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e);
 
 /**
  * crypto_ec_get_b - Get 'b' coefficient of an EC group's curve
@@ -803,8 +811,6 @@ const struct crypto_bignum * crypto_ec_get_order(struct crypto_ec *e);
  * Returns: 'b' coefficient (bignum) of the group
  */
 const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e);
-
-struct crypto_ec_point;
 
 /**
  * crypto_ec_point_init - Initialize data for an EC point
