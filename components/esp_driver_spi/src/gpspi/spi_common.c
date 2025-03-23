@@ -29,16 +29,20 @@
 #include "soc/dport_reg.h"
 #endif
 
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_COMMON_ISR_ATTR IRAM_ATTR
+#else
+#define SPI_COMMON_ISR_ATTR
+#endif
+
 static const char *SPI_TAG = "spi";
 
 #define SPI_CHECK(a, str, ret_val) ESP_RETURN_ON_FALSE(a, ret_val, SPI_TAG, str)
-
 #define SPI_CHECK_PIN(pin_num, pin_name, check_output) if (check_output) { \
             SPI_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
         } else { \
             SPI_CHECK(GPIO_IS_VALID_GPIO(pin_num), pin_name" not valid", ESP_ERR_INVALID_ARG); \
         }
-
 #define SPI_MAIN_BUS_DEFAULT() { \
         .host_id = 0, \
         .bus_attr = { \
@@ -66,7 +70,7 @@ static spicommon_bus_context_t* bus_ctx[SOC_SPI_PERIPH_NUM] = {&s_mainbus};
 static __attribute__((constructor)) void spi_bus_lock_init_main_bus(void)
 {
     /* Initialize bus context about the main SPI bus lock, called during chip startup. */
-    spi_bus_main_set_lock(g_main_spi_bus_lock);
+    bus_ctx[0]->bus_attr.lock = g_main_spi_bus_lock;
 }
 #endif
 
@@ -303,7 +307,7 @@ esp_err_t spicommon_dma_desc_alloc(spi_dma_ctx_t *dma_ctx, int cfg_max_sz, int *
     return ESP_OK;
 }
 
-void IRAM_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
+void SPI_COMMON_ISR_ATTR spicommon_dma_desc_setup_link(spi_dma_desc_t *dmadesc, const void *data, int len, bool is_rx)
 {
     dmadesc = ADDR_DMA_2_CPU(dmadesc);
     int n = 0;
@@ -767,11 +771,6 @@ bool spicommon_bus_using_iomux(spi_host_device_t host)
     return true;
 }
 
-void spi_bus_main_set_lock(spi_bus_lock_handle_t lock)
-{
-    bus_ctx[0]->bus_attr.lock = lock;
-}
-
 spi_bus_lock_handle_t spi_bus_lock_get_by_id(spi_host_device_t host_id)
 {
     return bus_ctx[host_id]->bus_attr.lock;
@@ -1019,7 +1018,7 @@ static void *dmaworkaround_cb_arg;
 static portMUX_TYPE dmaworkaround_mux = portMUX_INITIALIZER_UNLOCKED;
 static int dmaworkaround_waiting_for_chan = 0;
 
-bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
+bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t cb, void *arg)
 {
 
     int otherchan = (dmachan == 1) ? 2 : 1;
@@ -1042,12 +1041,12 @@ bool IRAM_ATTR spicommon_dmaworkaround_req_reset(int dmachan, dmaworkaround_cb_t
     return ret;
 }
 
-bool IRAM_ATTR spicommon_dmaworkaround_reset_in_progress(void)
+bool SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_reset_in_progress(void)
 {
     return (dmaworkaround_waiting_for_chan != 0);
 }
 
-void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
+void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_idle(int dmachan)
 {
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan - 1] = 0;
@@ -1064,7 +1063,7 @@ void IRAM_ATTR spicommon_dmaworkaround_idle(int dmachan)
     portEXIT_CRITICAL_ISR(&dmaworkaround_mux);
 }
 
-void IRAM_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
+void SPI_COMMON_ISR_ATTR spicommon_dmaworkaround_transfer_active(int dmachan)
 {
     portENTER_CRITICAL_ISR(&dmaworkaround_mux);
     dmaworkaround_channels_busy[dmachan - 1] = 1;

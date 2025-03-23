@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2010-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2010-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -274,13 +274,6 @@ void spicommon_dmaworkaround_transfer_active(int dmachan);
 /*******************************************************************************
  * Bus attributes
  ******************************************************************************/
-/**
- * @brief Set bus lock for the main bus, called by startup code.
- *
- * @param lock The lock to be used by the main SPI bus.
- */
-void spi_bus_main_set_lock(spi_bus_lock_handle_t lock);
-
 /**
  * @brief Get the attributes of a specified SPI bus.
  *
