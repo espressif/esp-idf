@@ -284,4 +284,9 @@ menu "Hardware Settings"
             Due to the poor low-temperature characteristics of
             RC32K (it cannot operate below -40 degrees Celsius),
             please avoid using it whenever possible
+
+    config ESP_INTR_IN_IRAM
+        bool "Place esp_intr_alloc functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+
 endmenu

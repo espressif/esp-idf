@@ -30,6 +30,12 @@
 #include "esp_ipc.h"
 #endif
 
+#if CONFIG_ESP_INTR_IN_IRAM
+#define ESP_INTR_IRAM_ATTR IRAM_ATTR
+#else
+#define ESP_INTR_IRAM_ATTR
+#endif // CONFIG_ESP_INTR_IN_IRAM
+
 /* For targets that uses a CLIC as their interrupt controller, CPU_INT_LINES_COUNT represents the external interrupts count */
 #define CPU_INT_LINES_COUNT 32
 
@@ -453,7 +459,7 @@ static int get_available_int(int flags, int cpu, int force, int source)
 }
 
 //Common shared isr handler. Chain-call all ISRs.
-static void IRAM_ATTR shared_intr_isr(void *arg)
+static void ESP_INTR_IRAM_ATTR shared_intr_isr(void *arg)
 {
     vector_desc_t *vd = (vector_desc_t*)arg;
     shared_vector_desc_t *sh_vec = vd->shared_vec_info;
@@ -476,7 +482,7 @@ static void IRAM_ATTR shared_intr_isr(void *arg)
 
 #if CONFIG_APPTRACE_SV_ENABLE
 //Common non-shared isr handler wrapper.
-static void IRAM_ATTR non_shared_intr_isr(void *arg)
+static void ESP_INTR_IRAM_ATTR non_shared_intr_isr(void *arg)
 {
     non_shared_isr_arg_t *ns_isr_arg = (non_shared_isr_arg_t*)arg;
     portENTER_CRITICAL_ISR(&spinlock);
@@ -729,7 +735,7 @@ esp_err_t esp_intr_alloc_bind(int source, int flags, intr_handler_t handler, voi
 }
 
 
-esp_err_t IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
+esp_err_t ESP_INTR_IRAM_ATTR esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram)
 {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -879,7 +885,7 @@ int esp_intr_get_cpu(intr_handle_t handle)
 //Muxing an interrupt source to interrupt 6, 7, 11, 15, 16 or 29 cause the interrupt to effectively be disabled.
 #define INT_MUX_DISABLED_INTNO 6
 
-esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
+esp_err_t ESP_INTR_IRAM_ATTR esp_intr_enable(intr_handle_t handle)
 {
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
@@ -907,7 +913,7 @@ esp_err_t IRAM_ATTR esp_intr_enable(intr_handle_t handle)
     return ESP_OK;
 }
 
-esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
+esp_err_t ESP_INTR_IRAM_ATTR esp_intr_disable(intr_handle_t handle)
 {
     if (handle == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -950,7 +956,7 @@ esp_err_t IRAM_ATTR esp_intr_disable(intr_handle_t handle)
     return ESP_OK;
 }
 
-void IRAM_ATTR esp_intr_noniram_disable(void)
+void ESP_INTR_IRAM_ATTR esp_intr_noniram_disable(void)
 {
     portENTER_CRITICAL_SAFE(&spinlock);
     uint32_t oldint;
@@ -969,7 +975,7 @@ void IRAM_ATTR esp_intr_noniram_disable(void)
     portEXIT_CRITICAL_SAFE(&spinlock);
 }
 
-void IRAM_ATTR esp_intr_noniram_enable(void)
+void ESP_INTR_IRAM_ATTR esp_intr_noniram_enable(void)
 {
     portENTER_CRITICAL_SAFE(&spinlock);
     uint32_t cpu = esp_cpu_get_core_id();
@@ -988,20 +994,20 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
 //equivalents here.
 
 
-void IRAM_ATTR ets_isr_unmask(uint32_t mask) {
+void ESP_INTR_IRAM_ATTR ets_isr_unmask(uint32_t mask) {
     esp_cpu_intr_enable(mask);
 }
 
-void IRAM_ATTR ets_isr_mask(uint32_t mask) {
+void ESP_INTR_IRAM_ATTR ets_isr_mask(uint32_t mask) {
     esp_cpu_intr_disable(mask);
 }
 
-void IRAM_ATTR esp_intr_enable_source(int inum)
+void ESP_INTR_IRAM_ATTR esp_intr_enable_source(int inum)
 {
     esp_cpu_intr_enable(1 << inum);
 }
 
-void IRAM_ATTR esp_intr_disable_source(int inum)
+void ESP_INTR_IRAM_ATTR esp_intr_disable_source(int inum)
 {
     esp_cpu_intr_disable(1 << inum);
 }
