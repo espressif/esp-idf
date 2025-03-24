@@ -290,7 +290,6 @@ static esp_err_t i2c_slave_bus_destroy(i2c_slave_dev_handle_t i2c_slave)
     if (i2c_slave) {
         if (i2c_slave->base) {
             i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
-            i2c_common_deinit_pins(i2c_slave->base);
             i2c_release_bus_handle(i2c_slave->base);
         }
         if (i2c_slave->slv_rx_mux) {
