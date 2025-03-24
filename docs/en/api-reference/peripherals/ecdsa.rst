@@ -61,13 +61,26 @@ Following code snippet uses :cpp:func:`esp_efuse_write_key` to set physical key 
         // writing key failed, maybe written already
     }
 
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+   ECDSA Curve Configuration
+   -------------------------
+
+   The ECDSA peripheral of {IDF_TARGET_NAME} supports both ECDSA-P192 and ECDSA-P256 operations, but only ECDSA-P256 operations are enabled by default. ECDSA-P192 operations can be enabled based on the following configuration.
+
+   - :ref:`CONFIG_ESP_ECDSA_ENABLE_P192_CURVE`
+     Enables support for ECDSA-P192 curve operations, allowing the device to perform ECDSA operations using both the 192-bit and 256-bit curves. However, if ECDSA-P192 operations have already been permanently disabled during write protecting, enabling this configuration will not re-enable ECDSA-P192 curve operations.
+
+   - :cpp:func:`esp_efuse_enable_ecdsa_p192_curve_mode()`
+     This API can be used to enable ECDSA-P192 curve operations programmatically. It writes the appropriate value to the eFuse to allow both P-192 and P-256 curve operations. Note that this API will fail if the eFuse has already been write-protected.
+
 .. only:: SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
 
     Deterministic Signature Generation
     -----------------------------------
 
     The ECDSA peripheral of {IDF_TARGET_NAME} also supports generation of deterministic signatures using deterministic derivation of the parameter K as specified in the `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ section 3.2.
-
 
 Non-Determinisitic Signature Generation
 ---------------------------------------
