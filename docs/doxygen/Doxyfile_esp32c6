@@ -13,4 +13,4 @@ INPUT += \
     $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_he_types.h \
     $(PROJECT_PATH)/components/esp_wifi/include/esp_wifi_he.h \
-	$(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
+    $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \

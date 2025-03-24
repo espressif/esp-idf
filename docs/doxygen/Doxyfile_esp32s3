@@ -23,4 +23,4 @@ INPUT += \
          $(PROJECT_PATH)/components/ulp/ulp_riscv/shared/include/ulp_riscv_lock_shared.h \
          $(PROJECT_PATH)/components/ulp/ulp_fsm/include/ulp_fsm_common.h \
          $(PROJECT_PATH)/components/ulp/ulp_common/include/ulp_common.h \
-         $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
+         $(PROJECT_PATH)/components/bt/include/esp32c3/include/esp_bt_vs.h \
