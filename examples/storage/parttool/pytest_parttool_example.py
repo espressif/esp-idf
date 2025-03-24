@@ -41,7 +41,11 @@ def test_examples_parttool(dut: Dut) -> None:
     ]
 
     for cmd in cmds:
-        subprocess.check_call(BASE_CMD + cmd.split())
+        try:
+            subprocess.check_call(BASE_CMD + cmd.split())
+        except subprocess.CalledProcessError as e:
+            print(e.output)
+            raise
 
     clean_files = ['custom.bin', 'custom1.bin']
     for clean_file in clean_files:
