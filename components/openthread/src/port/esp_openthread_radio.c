@@ -658,7 +658,7 @@ esp_err_t IRAM_ATTR esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802
 {
     otRadioFrame ack_frame;
     otRadioFrame ot_frame;
-    uint8_t ack_ie_data[OT_ACK_IE_MAX_SIZE];
+    uint8_t ack_ie_data[OT_ACK_IE_MAX_SIZE] = {0};
     uint8_t offset = 0;
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
     uint8_t link_metrics_data_len = 0;
