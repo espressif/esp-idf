@@ -1,6 +1,6 @@
 :orphan:
 
-HCI Vendor-specific (VS) Command
+HCI Vendor-specific (VS) Commands
 ==========================================
 
 :link_to_translation:`zh_CN:[中文]`
@@ -8,10 +8,7 @@ HCI Vendor-specific (VS) Command
 HCI VS Commands for Espressif's Bluetooth Host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS commands are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host).
-If you are using a non-ESP host or HCI UART, these commands will remain disabled unless the initialization function is explicitly called from the application.
-Note, these init functions as well as these additional HCI VS commands are intended for Espressif's Bluetooth Host use only.
-Application developers **should not** call the init functions in their applications.
+The following HCI VS commands are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host). If you are using a non-ESP host or HCI UART, these commands will remain disabled unless the initialization function is explicitly called from the application. Note, these init functions as well as these additional HCI VS commands are intended for Espressif's Bluetooth Host use only. Application developers **should not** call the init functions in their applications.
 
 .. only:: esp32
 
@@ -63,10 +60,7 @@ Application developers **should not** call the init functions in their applicati
 HCI VS Events for Espressif's Bluetooth Host
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS events are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host).
-If you are using a non-ESP host or HCI UART, these events will remain disabled unless the initialization function is explicitly called from the application.
-Note, these init functions as well as these additional HCI VS events are intended for Espressif's Bluetooth Host use only.
-Application developers **should not** call the init functions in their applications.
+The following HCI VS events are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host). If you are using a non-ESP host or HCI UART, these events will remain disabled unless the initialization function is explicitly called from the application. Note, these init functions as well as these additional HCI VS events are intended for Espressif's Bluetooth Host use only. Application developers **should not** call the init functions in their applications.
 
 
 .. only:: esp32
@@ -96,13 +90,10 @@ Application developers **should not** call the init functions in their applicati
     .. doxygendefine:: ESP_BT_VS_LE_ADV_LOST_EVT_SUBCODE
 
 
-
 HCI VS Commands for Espressif's Internal-Use Debugging
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS debugging commands are implemented in Bluetooth Low Energy controller pre-compiled libraries.
-These commands are not linked into the application binary, unless the function `esp_ble_internalTestFeaturesEnable(true)` is called from the application.
-They are intended for Espressif's internal use only. Application developers **should not** call `esp_ble_internalTestFeaturesEnable(true)` in their applications.
+The following HCI VS debugging commands are implemented in Bluetooth Low Energy controller pre-compiled libraries. These commands are not linked into the application binary, unless the function `esp_ble_internalTestFeaturesEnable(true)` is called from the application. They are intended for Espressif's internal use only. Application developers **should not** call `esp_ble_internalTestFeaturesEnable(true)` in their applications.
 
 .. only:: esp32
 
@@ -125,9 +116,7 @@ They are intended for Espressif's internal use only. Application developers **sh
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_GET_CTRL_COMPILE_VER_SUBCMD
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_RELATED_SUBCMD_MAX
 
-    The following HCI VS debugging commands are implemented in Bluetooth Classic controller pre-compiled libraries.
-    These commands are not linked into the application binary, unless the corresponding initialization function is explicitly called from the application.
-    They are intended for Espressif's internal use only. Application developers **should not** call in their applications.
+    The following HCI VS debugging commands are implemented in Bluetooth Classic controller pre-compiled libraries. These commands are not linked into the application binary, unless the corresponding initialization function is explicitly called from the application. They are intended for Espressif's internal use only. Application developers **should not** call in their applications.
 
     .. doxygendefine:: ESP_BT_VS_WR_DM1_ENABLE_OCF
     .. doxygendefine:: ESP_BT_VS_CLK_UPDATE_OCF
@@ -279,9 +268,7 @@ They are intended for Espressif's internal use only. Application developers **sh
     HCI VS Events for Espressif's Internal-Use Debugging
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The following HCI VS debugging events are implemented in Bluetooth controller pre-compiled libraries.
-    These events are not linked into the application binary and are intended for Espressif's internal use only.
-    Application developers **should not** call the corresponding initialization function in their applications.
+    The following HCI VS debugging events are implemented in Bluetooth controller pre-compiled libraries. These events are not linked into the application binary and are intended for Espressif's internal use only. Application developers **should not** call the corresponding initialization function in their applications.
 
     .. only:: esp32
 
