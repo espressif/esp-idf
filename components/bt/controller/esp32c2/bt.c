@@ -61,11 +61,9 @@
 #include "hal/efuse_ll.h"
 #include "soc/rtc.h"
 
-#if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 #include "ble_log/ble_log_spi_out.h"
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
 
 /* Macro definition
  ************************************************************************
@@ -115,7 +113,7 @@ struct ext_funcs_t {
 };
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-typedef void (*interface_func_t) (uint32_t len, const uint8_t*addr, bool end);
+typedef void (*interface_func_t) (uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
 /* External functions or variables
@@ -125,8 +123,10 @@ extern int ble_osi_coex_funcs_register(struct osi_coex_funcs_t *coex_funcs);
 extern int coex_core_ble_conn_dyn_prio_get(bool *low, bool *high);
 extern int ble_controller_init(esp_bt_controller_config_t *cfg);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-extern int ble_log_init_async(interface_func_t bt_controller_log_interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
+extern int ble_log_init_async(interface_func_t interface, bool task_create, uint8_t buffers, uint32_t *bufs_size);
 extern int ble_log_deinit_async(void);
+extern int ble_log_init_simple(interface_func_t interface, void *handler);
+extern void ble_log_deinit_simple(void);
 extern void ble_log_async_output_dump_all(bool output);
 extern void esp_panic_handler_feed_wdts(void);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
@@ -195,10 +195,12 @@ static int esp_ecc_gen_key_pair(uint8_t *pub, uint8_t *priv);
 static int esp_ecc_gen_dh_key(const uint8_t *peer_pub_key_x, const uint8_t *peer_pub_key_y,
                               const uint8_t *our_priv_key, uint8_t *out_dhkey);
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end);
+#if !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag);
+#endif // !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 static void esp_bt_ctrl_log_partition_get_and_erase_first_block(void);
-#endif // #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 /* Local variable definition
  ***************************************************************************
@@ -208,50 +210,29 @@ void *g_ble_lll_rfmgmt_env_p;
 #endif
 /* Static variable declare */
 static DRAM_ATTR esp_bt_controller_status_t ble_controller_status = ESP_BT_CONTROLLER_STATUS_IDLE;
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 const static uint32_t log_bufs_size[] = {CONFIG_BT_LE_LOG_CTRL_BUF1_SIZE, CONFIG_BT_LE_LOG_HCI_BUF_SIZE, CONFIG_BT_LE_LOG_CTRL_BUF2_SIZE};
-enum log_out_mode {
-    LOG_DUMP_MEMORY,
-    LOG_ASYNC_OUT,
-    LOG_STORAGE_TO_FLASH,
-    LOG_SPI_OUT,
-};
+static bool log_is_inited = false;
 
-bool log_is_inited = false;
-#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
-uint8_t log_output_mode = LOG_DUMP_MEMORY;
-#else
-#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-uint8_t log_output_mode = LOG_STORAGE_TO_FLASH;
-#elif CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-uint8_t log_output_mode = LOG_SPI_OUT;
-#else
-uint8_t log_output_mode = LOG_ASYNC_OUT;
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
-
-void esp_bt_log_output_mode_set(uint8_t output_mode)
+esp_err_t esp_bt_controller_log_init(void)
 {
-    log_output_mode = output_mode;
-}
-
-uint8_t esp_bt_log_output_mode_get(void)
-{
-    return log_output_mode;
-}
-
-esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
-{
-    esp_err_t ret = ESP_OK;
-    interface_func_t bt_controller_log_interface;
-    bt_controller_log_interface = esp_bt_controller_log_interface;
-    bool task_create;
-    uint8_t buffers = 0;
-
     if (log_is_inited) {
-        return ret;
+        return ESP_OK;
     }
 
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    if (ble_log_spi_out_init() != 0) {
+        goto spi_out_init_failed;
+    }
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    if (ble_log_init_simple(ble_log_spi_out_ll_write, ble_log_spi_out_ll_log_ev_proc) != 0) {
+        goto log_init_failed;
+    }
+#else // !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    uint8_t buffers = 0;
 #if CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
     buffers |= ESP_BLE_LOG_BUF_CONTROLLER;
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_CTRL_ENABLED
@@ -259,44 +240,41 @@ esp_err_t esp_bt_controller_log_init(uint8_t log_output_mode)
     buffers |= ESP_BLE_LOG_BUF_HCI;
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_HCI_ENABLED
 
-    switch (log_output_mode) {
-        case LOG_DUMP_MEMORY:
-            task_create = false;
-            break;
-        case LOG_ASYNC_OUT:
-        case LOG_STORAGE_TO_FLASH:
-            task_create = true;
-#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-            if (log_output_mode == LOG_STORAGE_TO_FLASH) {
-                esp_bt_ctrl_log_partition_get_and_erase_first_block();
-            }
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-            break;
-        case LOG_SPI_OUT:
-            task_create = true;
-#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-            ble_log_spi_out_init();
-            bt_controller_log_interface = ble_log_spi_out_write_esp;
+    bool task_create = true;
+#if CONFIG_BT_LE_CONTROLLER_LOG_DUMP_ONLY
+    task_create = false;
+#elif CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    esp_bt_ctrl_log_partition_get_and_erase_first_block();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
-            break;
-        default:
-            assert(0);
-    }
 
-    ret = ble_log_init_async(bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size);
-    if (ret == ESP_OK) {
-        log_is_inited = true;
+    if (ble_log_init_async(esp_bt_controller_log_interface, task_create, buffers, (uint32_t *)log_bufs_size) != 0) {
+        goto log_init_failed;
     }
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
 
-    return ret;
+    log_is_inited = true;
+    return ESP_OK;
+
+log_init_failed:
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_deinit();
+spi_out_init_failed:
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    return ESP_FAIL;
 }
 
-void esp_bt_ontroller_log_deinit(void)
+void esp_bt_controller_log_deinit(void)
 {
-    ble_log_deinit_async();
-#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
     ble_log_spi_out_deinit();
-#endif
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
+#if CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    ble_log_deinit_simple();
+#else // !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    ble_log_deinit_async();
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+
     log_is_inited = false;
 }
 
@@ -391,7 +369,7 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     portENTER_CRITICAL_SAFE(&spinlock);
     esp_panic_handler_feed_wdts();
     ble_log_async_output_dump_all(true);
-    esp_bt_ontroller_log_deinit();
+    esp_bt_controller_log_deinit();
     stop_write = true;
 
     buffer = (const uint8_t *)mapped_ptr;
@@ -417,48 +395,53 @@ void esp_bt_read_ctrl_log_from_flash(bool output)
     esp_rom_printf(":DUMP_END]\r\n");
     portEXIT_CRITICAL_SAFE(&spinlock);
     esp_partition_munmap(mmap_handle);
-    err = esp_bt_controller_log_init(log_output_mode);
+    err = esp_bt_controller_log_init();
     assert(err == ESP_OK);
 
 }
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, bool end)
-{
-    if (log_output_mode == LOG_STORAGE_TO_FLASH) {
-#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        esp_bt_controller_log_storage(len, addr, end);
-#endif //CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    } else {
-        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
-        portENTER_CRITICAL_SAFE(&spinlock);
-        esp_panic_handler_feed_wdts();
-        for (int i = 0; i < len; i++) {
-            esp_rom_printf("%02x ", addr[i]);
-        }
 
-        if (end) {
-            esp_rom_printf("\n");
-        }
-        portEXIT_CRITICAL_SAFE(&spinlock);
+#if !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+static void esp_bt_controller_log_interface(uint32_t len, const uint8_t *addr, uint32_t len_append, const uint8_t *addr_append, uint32_t flag)
+{
+    bool end = flag ? true : false;
+#if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    esp_bt_controller_log_storage(len, addr, end);
+#else // !CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL_SAFE(&spinlock);
+    esp_panic_handler_feed_wdts();
+    for (int i = 0; i < len; i++) {
+        esp_rom_printf("%02x ", addr[i]);
     }
+
+    if (end) {
+        esp_rom_printf("\n");
+    }
+    portEXIT_CRITICAL_SAFE(&spinlock);
+#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
 }
+#endif // !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
 
 void esp_ble_controller_log_dump_all(bool output)
 {
-   if (log_output_mode == LOG_STORAGE_TO_FLASH) {
+#if CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+    ble_log_spi_out_dump_all();
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_ENABLED
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-        esp_bt_read_ctrl_log_from_flash(output);
-#endif // CONFIG_BT_LE_CONTROLLER_LOG_STORAGE_ENABLE
-    } else {
-        portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
-        portENTER_CRITICAL_SAFE(&spinlock);
-        esp_panic_handler_feed_wdts();
-        BT_ASSERT_PRINT("\r\n[DUMP_START:");
-        ble_log_async_output_dump_all(output);
-        BT_ASSERT_PRINT(":DUMP_END]\r\n");
-        portEXIT_CRITICAL_SAFE(&spinlock);
-    }
+    esp_bt_read_ctrl_log_from_flash(output);
+#elif !CONFIG_BT_LE_CONTROLLER_LOG_SPI_OUT_ENABLED
+    portMUX_TYPE spinlock = portMUX_INITIALIZER_UNLOCKED;
+    portENTER_CRITICAL_SAFE(&spinlock);
+    esp_panic_handler_feed_wdts();
+    BT_ASSERT_PRINT("\r\n[DUMP_START:");
+    ble_log_async_output_dump_all(output);
+    BT_ASSERT_PRINT(":DUMP_END]\r\n");
+    portEXIT_CRITICAL_SAFE(&spinlock);
+#endif
 }
+
 #if CONFIG_BT_LE_CONTROLLER_LOG_TASK_WDT_USER_HANDLER_ENABLE
 void esp_task_wdt_isr_user_handler(void)
 {
@@ -899,7 +882,7 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble rom commit:[%s]", r_ble_controller_get_rom_compile_version());
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    ret = esp_bt_controller_log_init(log_output_mode);
+    ret = esp_bt_controller_log_init();
     if (ret != ESP_OK) {
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_log_init failed %d", ret);
         goto controller_init_err;
@@ -948,7 +931,7 @@ free_controller:
     controller_sleep_deinit();
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 controller_init_err:
-    esp_bt_ontroller_log_deinit();
+    esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 modem_deint:
@@ -978,7 +961,7 @@ esp_err_t esp_bt_controller_deinit(void)
     controller_sleep_deinit();
 
 #if CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
-    esp_bt_ontroller_log_deinit();
+    esp_bt_controller_log_deinit();
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
     ble_controller_deinit();
 
