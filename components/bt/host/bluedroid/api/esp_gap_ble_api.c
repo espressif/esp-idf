@@ -581,6 +581,7 @@ esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr)
 
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_data_len)
 {
@@ -927,6 +928,26 @@ esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels)
     memcpy(&arg.set_channels.channels, channels, ESP_GAP_BLE_CHANNELS_LEN);
     arg.set_channels.channels[ESP_GAP_BLE_CHANNELS_LEN -1] &= 0x1F;
     return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_ble_gap_read_channel_map(esp_bd_addr_t bd_addr)
+{
+    if (!bd_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    btc_msg_t msg;
+    btc_ble_gap_args_t arg;
+
+    ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
+
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_GAP_BLE;
+    msg.act = BTC_GAP_BLE_READ_CHANNEL_MAP;
+
+    memcpy(arg.read_channel_map.bd_addr, bd_addr, ESP_BD_ADDR_LEN);
+    return (btc_transfer_context(&msg, &arg, sizeof(btc_ble_gap_args_t), NULL, NULL)
+            == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_gap_ble_set_authorization(esp_bd_addr_t bd_addr, bool authorize)

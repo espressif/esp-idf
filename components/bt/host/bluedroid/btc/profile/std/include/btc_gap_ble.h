@@ -136,6 +136,7 @@ typedef enum {
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTC_GAP_ACT_SET_HOST_FEATURE,
 #endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTC_GAP_BLE_READ_CHANNEL_MAP,
 } btc_gap_ble_act_t;
 
 /* btc_ble_gap_args_t */
@@ -314,6 +315,9 @@ typedef union {
     struct set_vendor_evt_mask_args {
         uint32_t evt_mask;
     } set_vendor_evt_mask;
+    struct read_channel_map_args {
+        esp_bd_addr_t bd_addr;
+    } read_channel_map;
 } btc_ble_gap_args_t;
 
 #if (BLE_50_FEATURE_SUPPORT == TRUE)
