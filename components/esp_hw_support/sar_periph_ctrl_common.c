@@ -33,6 +33,12 @@ static const char *TAG_TSENS = "temperature_sensor";
 #define TSENS_RCC_ATOMIC()
 #endif
 
+#if CONFIG_PM_SLP_IRAM_OPT
+# define SAR_PERIPH_CTRL_COMMON_FN_ATTR IRAM_ATTR
+#else
+# define SAR_PERIPH_CTRL_COMMON_FN_ATTR
+#endif
+
 static int s_record_min = INT_NOT_USED;
 static int s_record_max = INT_NOT_USED;
 static int s_temperature_sensor_power_cnt;
@@ -79,7 +85,7 @@ void temperature_sensor_power_release(void)
     portEXIT_CRITICAL(&rtc_spinlock);
 }
 
-static int temperature_sensor_get_raw_value(void)
+static SAR_PERIPH_CTRL_COMMON_FN_ATTR int temperature_sensor_get_raw_value(void)
 {
     int raw_value  = temperature_sensor_ll_get_raw_value();
     return (TEMPERATURE_SENSOR_LL_ADC_FACTOR * raw_value - TEMPERATURE_SENSOR_LL_DAC_FACTOR * temperature_sensor_attributes[s_tsens_idx].offset - TEMPERATURE_SENSOR_LL_OFFSET_FACTOR);

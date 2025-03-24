@@ -39,8 +39,6 @@ entries:
         esp_clk:esp_rtc_get_time_us (noflash)
         esp_clk:esp_clk_private_lock (noflash)
         esp_clk:esp_clk_private_unlock (noflash)
-        if SOC_RTC_MEM_SUPPORTED = y:
-            esp_clk:calc_checksum (noflash)
         if SOC_SYSTIMER_SUPPORTED = y:
             systimer (noflash)
         if IDF_TARGET_ESP32H21 != y && IDF_TARGET_ESP32H4 != y:
@@ -48,7 +46,6 @@ entries:
         if SOC_TEMP_SENSOR_SUPPORTED = y:
             sar_periph_ctrl_common:temperature_sensor_power_acquire (noflash)
             sar_periph_ctrl_common:temperature_sensor_power_release (noflash)
-            sar_periph_ctrl_common:temperature_sensor_get_raw_value (noflash)
             sar_periph_ctrl_common:temp_sensor_get_raw_value (noflash)
         regi2c_ctrl:regi2c_saradc_enable (noflash)
         regi2c_ctrl:regi2c_saradc_disable (noflash)
@@ -61,17 +58,6 @@ archive: libesp_system.a
 entries:
     if PM_RTOS_IDLE_OPT = y:
         freertos_hooks:esp_vApplicationIdleHook (noflash)
-    if PM_SLP_IRAM_OPT = y:
-        task_wdt:idle_hook_cb (noflash)
-        task_wdt:task_wdt_timer_feed (noflash)
-        task_wdt:find_entry_and_check_all_reset (noflash)
-        task_wdt:find_entry_from_task_handle_and_check_all_reset (noflash)
-        task_wdt:esp_task_wdt_reset (noflash)
-        task_wdt:esp_task_wdt_reset_user (noflash)
-        if ESP_TASK_WDT_USE_ESP_TIMER = y:
-            task_wdt_impl_esp_timer:esp_task_wdt_impl_timer_feed (noflash)
-        else:
-            task_wdt_impl_timergroup:esp_task_wdt_impl_timer_feed (noflash)
 
 [mapping:esp_timer_pm]
 archive: libesp_timer.a
