@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -909,6 +909,9 @@ static void btc_spp_write(btc_spp_args_t *arg)
         } else {
             if (fixed_queue_enqueue(slot->tx.queue, arg->write.p_data, 0)) {
                 BTA_JvRfcommWrite(arg->write.handle, slot->id, arg->write.len, arg->write.p_data);
+                // The TX queue of SPP will handle this memory properly.
+                // Set it to NULL here to prevent deep free handler from releasing it.
+                arg->write.p_data = NULL;
             } else {
                 ret = ESP_SPP_NO_RESOURCE;
             }
@@ -966,6 +969,13 @@ void btc_spp_arg_deep_free(btc_msg_t *msg)
     case BTC_SPP_ACT_START_DISCOVERY:
         if (arg->start_discovery.p_uuid_list) {
             osi_free(arg->start_discovery.p_uuid_list);
+            arg->start_discovery.p_uuid_list = NULL;
+        }
+        break;
+    case BTC_SPP_ACT_WRITE:
+        if (arg->write.p_data) {
+            osi_free(arg->write.p_data);
+            arg->write.p_data = NULL;
         }
         break;
     default:
