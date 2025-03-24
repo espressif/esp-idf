@@ -90,3 +90,5 @@
     - windows
   specific_rules:
     - if-schedule-test-build-system-windows
+  patterns:
+    - build_system
