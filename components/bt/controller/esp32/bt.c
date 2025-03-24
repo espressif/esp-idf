@@ -1092,9 +1092,8 @@ static bool async_wakeup_request(int event)
 
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
-            btdm_in_wakeup_requesting_set(true);
-            // NO break
         case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
+            btdm_in_wakeup_requesting_set(true);
             if (!btdm_power_state_active()) {
                 do_wakeup_request = true;
 
@@ -1127,10 +1126,10 @@ static void async_wakeup_request_end(int event)
     bool request_lock = false;
     switch (event) {
         case BTDM_ASYNC_WAKEUP_REQ_HCI:
+        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = true;
             break;
         case BTDM_ASYNC_WAKEUP_REQ_COEX:
-        case BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA:
             request_lock = false;
             break;
         default:
@@ -1950,6 +1949,7 @@ esp_err_t esp_bt_controller_disable(void)
         while (!btdm_power_state_active()) {
             esp_rom_delay_us(1000);
         }
+        async_wakeup_request_end(BTDM_ASYNC_WAKEUP_REQ_CTRL_DISA);
     }
 
     btdm_controller_disable();
