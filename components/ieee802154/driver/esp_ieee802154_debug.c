@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -172,6 +172,18 @@ static char *ieee80154_tx_abort_reason_string[] = {
 #endif // CONFIG_IEEE802154_RECORD_EVENT
 
 #if CONFIG_IEEE802154_RECORD
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+static void ieee802154_dump_frame_print(const uint8_t *frame)
+{
+    for (uint8_t i = 1; i < frame[0]; i+=8) {
+        ESP_EARLY_LOGW(IEEE802154_TAG, "frag(%03d:%03d~%03d): %02x %02x %02x %02x %02x %02x %02x %02x",
+                                    frame[0], i, i+7,
+                                    frame[i], frame[i+1], frame[i+2], frame[i+3],
+                                    frame[i+4], frame[i+5], frame[i+6], frame[i+7]);
+    }
+}
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
+
 void ieee802154_record_print(void)
 {
 #if CONFIG_IEEE802154_RECORD_EVENT
@@ -234,6 +246,33 @@ void ieee802154_record_print(void)
     }
     ESP_EARLY_LOGW(IEEE802154_TAG,"Print the record abort done.");
 #endif // CONFIG_IEEE802154_RECORD_ABORT
+
+#if CONFIG_IEEE802154_RECORD_TXRX_FRAME
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the dumping tx/rx frame, current frame index: %d", g_ieee802154_probe.frame_index);
+    for (uint8_t i = 0; i < IEEE802154_RECORD_TXRX_FRAME_SIZE; i++) {
+        if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_INVALID \
+            || g_ieee802154_probe.frame[i].frame_type >= IEEE802154_RECORD_FRAME_TYPE_VALID_MAX) {
+            continue;
+        }
+        if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX \
+            || g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX_ACK) {
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: %s frame, length: %d, buffer index: %d(%s buffer), timestamp: %lld, mac conf: %08x, packet:",
+                i, (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_RX) ? "rx" : "rx ack",
+                g_ieee802154_probe.frame[i].dump_frame[0], g_ieee802154_probe.frame[i].rx_buffer_index,
+                (g_ieee802154_probe.frame[i].rx_buffer_index < 0 ? "Invalid" :\
+                    (g_ieee802154_probe.frame[i].rx_buffer_index == CONFIG_IEEE802154_RX_BUFFER_SIZE) ? "Stub" : "Valid"),
+                    g_ieee802154_probe.frame[i].timestamp, g_ieee802154_probe.frame[i].mac_conf);
+        } else if (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX \
+            || g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX_ACK) {
+            ESP_EARLY_LOGW(IEEE802154_TAG, "index %2d: %s frame, length: %d, timestamp: %lld, mac conf: %08x, packet:",
+                i, (g_ieee802154_probe.frame[i].frame_type == IEEE802154_RECORD_FRAME_TYPE_TX) ? "tx" : "tx ack",
+                g_ieee802154_probe.frame[i].dump_frame[0], g_ieee802154_probe.frame[i].timestamp,
+                g_ieee802154_probe.frame[i].mac_conf);
+        }
+        ieee802154_dump_frame_print(g_ieee802154_probe.frame[i].dump_frame);
+    }
+    ESP_EARLY_LOGW(IEEE802154_TAG, "Print the dumped tx/rx frame done.");
+#endif // CONFIG_IEEE802154_RECORD_TXRX_FRAME
 }
 #endif // CONFIG_IEEE802154_RECORD
 
