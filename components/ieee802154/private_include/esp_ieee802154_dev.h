@@ -268,7 +268,7 @@ bool ieee802154_mac_is_inited(void);
 #define IEEE802154_STATIC  static
 #define IEEE802154_INLINE  inline
 #endif // CONFIG_IEEE802154_TEST
-#define IEEE802154_NOINLINE __attribute__((noinline))
+#define IEEE802154_NOINLINE __attribute__((noinline, used))
 
 #ifdef __cplusplus
 }
