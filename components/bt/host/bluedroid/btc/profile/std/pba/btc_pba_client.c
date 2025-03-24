@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -855,17 +855,14 @@ void btc_pba_client_cb_handler(btc_msg_t *msg)
         btc_queue_advance();
         break;
     case BTA_PBA_CLIENT_CONN_CLOSE_EVT:
-        /* clear ccb */
-        p_ccb = &btc_pba_client_cb.ccb[p_data->conn.handle - 1];
-        p_ccb->handle = 0;
-        p_ccb->busy = false;
-        p_ccb->path_len = 0;
-        p_ccb->path_pos = 0;
-        if (p_ccb->path) {
-            osi_free(p_ccb->path);
-            p_ccb->path = NULL;
+        if (p_data->conn.handle != 0) {
+            /* clear ccb */
+            p_ccb = &btc_pba_client_cb.ccb[p_data->conn.handle - 1];
+            if (p_ccb->path) {
+                osi_free(p_ccb->path);
+            }
+            memset(p_ccb, 0, sizeof(btc_pba_client_ccb_t));
         }
-        memset(p_ccb->bd_addr.address, 0, BD_ADDR_LEN);
         param.conn_stat.connected = false;
         bdcpy(param.conn_stat.remote_bda, p_data->conn.bd_addr);
         param.conn_stat.handle = p_data->conn.handle;

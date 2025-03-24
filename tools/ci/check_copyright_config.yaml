@@ -240,6 +240,9 @@ ignore:
     - components/bt/host/bluedroid/
     - '!components/bt/host/bluedroid/api/'
     - '!components/bt/host/bluedroid/btc/'
+    - '!components/bt/host/bluedroid/bta/pba/'
+    - '!components/bt/host/bluedroid/stack/goep/'
+    - '!components/bt/host/bluedroid/stack/obex/'
     - components/esp_local_ctrl/proto-c/
     - components/esp_local_ctrl/python/
     - components/protocomm/proto-c/
