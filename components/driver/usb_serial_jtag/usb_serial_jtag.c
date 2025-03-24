@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -209,9 +209,8 @@ int usb_serial_jtag_read_bytes(void* buf, uint32_t length, TickType_t ticks_to_w
 
 int usb_serial_jtag_write_bytes(const void* src, size_t size, TickType_t ticks_to_wait)
 {
-    ESP_RETURN_ON_FALSE(size != 0, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "size should be larger than 0");
-    ESP_RETURN_ON_FALSE(src != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "Invalid buffer pointer.");
-    ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, ESP_ERR_INVALID_ARG, USB_SERIAL_JTAG_TAG, "The driver hasn't been initialized");
+    ESP_RETURN_ON_FALSE(src && size, 0, USB_SERIAL_JTAG_TAG, "invalid buffer or size");
+    ESP_RETURN_ON_FALSE(p_usb_serial_jtag_obj != NULL, 0, USB_SERIAL_JTAG_TAG, "driver is not initialized yet");
 
     BaseType_t result = pdTRUE;
     result = xRingbufferSend(p_usb_serial_jtag_obj->tx_ring_buf, (void*)src, size, ticks_to_wait);
