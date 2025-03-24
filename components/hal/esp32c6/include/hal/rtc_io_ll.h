@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -111,9 +111,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_data_w1ts, BIT(rtcio_num));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1ts, out_w1ts, BIT(rtcio_num));
     } else {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_data_w1tc, BIT(rtcio_num));
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.out_data_w1tc, out_w1tc, BIT(rtcio_num));
     }
 }
 
@@ -204,6 +204,17 @@ static inline void rtcio_ll_pullup_disable(int rtcio_num)
 }
 
 /**
+ * @brief Get RTC GPIO pad pullup status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pullup of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pullup_enabled(int rtcio_num)
+{
+    return LP_IO.gpio[rtcio_num].fun_wpu;
+}
+
+/**
  * RTC GPIO pulldown enable.
  *
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
@@ -223,6 +234,17 @@ static inline void rtcio_ll_pulldown_disable(int rtcio_num)
 {
     /* Enable internal weak pull-down */
     LP_IO.gpio[rtcio_num].fun_wpd = 0;
+}
+
+/**
+ * @brief Get RTC GPIO pad pulldown status.
+ *
+ * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
+ * @return Whether the pulldown of the pad is enabled or not.
+ */
+static inline bool rtcio_ll_is_pulldown_enabled(int rtcio_num)
+{
+    return LP_IO.gpio[rtcio_num].fun_wpd;
 }
 
 /**
@@ -384,7 +406,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_w1tc, 0xff);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IO.status_w1tc, status_intr_w1tc, 0xff);
 }
 
 #ifdef __cplusplus

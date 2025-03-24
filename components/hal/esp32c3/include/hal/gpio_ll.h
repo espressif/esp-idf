@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #include "soc/usb_serial_jtag_reg.h"
 #include "hal/gpio_types.h"
 #include "hal/assert.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,38 +34,6 @@ extern "C" {
 
 #define GPIO_LL_PRO_CPU_INTR_ENA      (BIT(0))
 #define GPIO_LL_PRO_CPU_NMI_INTR_ENA  (BIT(1))
-
-/**
- * @brief Get the configuration for an IO
- *
- * @param hw Peripheral GPIO hardware instance address.
- * @param gpio_num GPIO number
- * @param pu Pull-up enabled or not
- * @param pd Pull-down enabled or not
- * @param ie Input enabled or not
- * @param oe Output enabled or not
- * @param od Open-drain enabled or not
- * @param drv Drive strength value
- * @param fun_sel IOMUX function selection value
- * @param sig_out Outputting peripheral signal index
- * @param slp_sel Pin sleep mode enabled or not
- */
-static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
-                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
-                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
-{
-    uint32_t bit_mask = 1 << gpio_num;
-    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
-    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
-    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
-    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
-    *oe = (hw->enable.val & bit_mask) >> gpio_num;
-    *od = hw->pin[gpio_num].pad_driver;
-    *drv = (iomux_reg_val & FUN_DRV_M) >> FUN_DRV_S;
-    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
-    *sig_out = hw->func_out_sel_cfg[gpio_num].func_sel;
-    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
-}
 
 /**
   * @brief Enable pull-up on GPIO.
@@ -560,7 +529,7 @@ static inline int gpio_ll_get_in_signal_connected_io(gpio_dev_t *hw, uint32_t in
 {
     typeof(hw->func_in_sel_cfg[in_sig_idx]) reg;
     reg.val = hw->func_in_sel_cfg[in_sig_idx].val;
-    return (reg.sig_in_sel ? reg.func_sel : -1);
+    return (reg.sig_in_sel ? reg.in_sel : -1);
 }
 
 /**
@@ -742,6 +711,38 @@ static inline bool gpio_ll_deepsleep_wakeup_is_enabled(gpio_dev_t *hw, uint32_t 
     HAL_ASSERT(gpio_num <= GPIO_NUM_5 && "gpio larger than 5 does not support deep sleep wake-up function");
 
     return GET_PERI_REG_MASK(RTC_CNTL_GPIO_WAKEUP_REG, 1 << (RTC_CNTL_GPIO_PIN0_WAKEUP_ENABLE_S - gpio_num));
+}
+
+/**
+ * @brief Get the configuration for an IO
+ *
+ * @param hw Peripheral GPIO hardware instance address.
+ * @param gpio_num GPIO number
+ * @param pu Pull-up enabled or not
+ * @param pd Pull-down enabled or not
+ * @param ie Input enabled or not
+ * @param oe Output enabled or not
+ * @param od Open-drain enabled or not
+ * @param drv Drive strength value
+ * @param fun_sel IOMUX function selection value
+ * @param sig_out Outputting peripheral signal index
+ * @param slp_sel Pin sleep mode enabled or not
+ */
+static inline void gpio_ll_get_io_config(gpio_dev_t *hw, uint32_t gpio_num,
+                                         bool *pu, bool *pd, bool *ie, bool *oe, bool *od, uint32_t *drv,
+                                         uint32_t *fun_sel, uint32_t *sig_out, bool *slp_sel)
+{
+    uint32_t bit_mask = 1 << gpio_num;
+    uint32_t iomux_reg_val = REG_READ(GPIO_PIN_MUX_REG[gpio_num]);
+    *pu = (iomux_reg_val & FUN_PU_M) >> FUN_PU_S;
+    *pd = (iomux_reg_val & FUN_PD_M) >> FUN_PD_S;
+    *ie = (iomux_reg_val & FUN_IE_M) >> FUN_IE_S;
+    *oe = (hw->enable.val & bit_mask) >> gpio_num;
+    *od = hw->pin[gpio_num].pad_driver;
+    gpio_ll_get_drive_capability(hw, gpio_num, (gpio_drive_cap_t *)drv); // specific workaround in the LL
+    *fun_sel = (iomux_reg_val & MCU_SEL_M) >> MCU_SEL_S;
+    *sig_out = HAL_FORCE_READ_U32_REG_FIELD(hw->func_out_sel_cfg[gpio_num], out_sel);
+    *slp_sel = (iomux_reg_val & SLP_SEL_M) >> SLP_SEL_S;
 }
 
 #ifdef __cplusplus

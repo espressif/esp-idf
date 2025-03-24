@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -283,7 +283,9 @@ static inline void gpio_ll_pin_input_hysteresis_enable(gpio_dev_t *hw, uint32_t 
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
-        LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys |= bit_mask;
+        uint32_t hys_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys);
+        hys_mask |= bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys, hys_mask);
     } else {
         if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
@@ -306,7 +308,9 @@ static inline void gpio_ll_pin_input_hysteresis_disable(gpio_dev_t *hw, uint32_t
     uint64_t bit_mask = 1ULL << gpio_num;
     if (!(bit_mask & SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK)) {
         // GPIO0-15
-        LP_IOMUX.lp_pad_hys.reg_lp_gpio_hys &= ~bit_mask;
+        uint32_t hys_mask = HAL_FORCE_READ_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys);
+        hys_mask &= ~bit_mask;
+        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_IOMUX.lp_pad_hys, reg_lp_gpio_hys, hys_mask);
     } else {
         if (gpio_num < 32 + SOC_RTCIO_PIN_COUNT) {
             // GPIO 16-47
