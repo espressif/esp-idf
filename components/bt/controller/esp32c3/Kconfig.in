@@ -547,6 +547,11 @@ config BT_CTRL_BLE_SCAN
     bool "Enable BLE scan feature"
     default y
 
+config BT_CTRL_BLE_SECURITY_ENABLE
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
+    bool "Enable BLE security feature"
+    default y
+
 config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
     bool "Enable enhanced Access Address check in CONNECT_IND"
     default n
