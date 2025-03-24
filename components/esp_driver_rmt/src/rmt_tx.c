@@ -4,32 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
 #include "esp_rom_gpio.h"
-#include "soc/rmt_periph.h"
+#include "esp_memory_utils.h"
 #include "soc/rtc.h"
-#include "hal/rmt_ll.h"
 #include "hal/gpio_hal.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
 #include "esp_cache.h"
 #include "driver/gpio.h"
 #include "driver/rmt_tx.h"
 #include "rmt_private.h"
-#include "esp_memory_utils.h"
-
-static const char *TAG = "rmt";
 
 struct rmt_sync_manager_t {
     rmt_group_t *group;    // which group the synchro belongs to
@@ -247,9 +229,6 @@ static esp_err_t rmt_tx_destroy(rmt_tx_channel_t *tx_channel)
 
 esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_handle_t *ret_chan)
 {
-#if CONFIG_RMT_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     rmt_tx_channel_t *tx_channel = NULL;
     // Check if priority is valid
