@@ -886,7 +886,7 @@ esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_
     ESP_ERROR_CHECK(usbh_dev_get_addr(dev_hdl, &dev_addr));
     if (!_check_client_opened_device(client_obj, dev_addr)) {
         // Client never opened this device
-        ret = ESP_ERR_INVALID_STATE;
+        ret = ESP_ERR_NOT_FOUND;
         HOST_EXIT_CRITICAL();
         goto exit;
     }
