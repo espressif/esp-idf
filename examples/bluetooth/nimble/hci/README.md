@@ -9,6 +9,9 @@ This is a BLE controller use UART as HCI interface.
 
 It can do the configuration of UART number and UART baudrate by menuconfig.
 
+When using Bluetooth HCI URAT, please make sure that the Espressif Vendor-specific HCI command is not enabled (Disabled by default).
+For detailed description information, please refer to `components/bt/include/$IDF_TARGET/include/esp_bt_vs.h`.
+
 ## BLE HCI example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)

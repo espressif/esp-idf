@@ -35,3 +35,4 @@ INPUT += \
          $(PROJECT_PATH)/components/usb/include/usb/usb_host.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_types_ch9.h \
          $(PROJECT_PATH)/components/usb/include/usb/usb_types_stack.h \
+		 $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \

@@ -1,2 +1,3 @@
 INPUT += \
          $(PROJECT_PATH)/components/driver/include/driver/temperature_sensor.h \
+    	$(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
