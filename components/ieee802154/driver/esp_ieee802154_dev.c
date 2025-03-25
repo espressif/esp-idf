@@ -131,14 +131,24 @@ static IRAM_ATTR void event_end_process(void)
     ieee802154_etm_channel_clear(IEEE802154_ETM_CHANNEL1);
     ieee802154_ll_set_transmit_security(false);
     ieee802154_timer0_stop();
+    ieee802154_timer1_stop();
 }
 
 #if !CONFIG_IEEE802154_TEST
+IEEE802154_NOINLINE static void ieee802154_rx_ack_timeout_callback(void* s_tx_frame)
+{
+    IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX_ACK);
+
+    ieee802154_inner_transmit_failed((uint8_t*)s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
+    NEEDS_NEXT_OPT(true);
+}
+
 static IRAM_ATTR void receive_ack_timeout_timer_start(uint32_t duration)
 {
     ieee802154_ll_enable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
-    ieee802154_timer0_set_threshold(duration);
-    ieee802154_timer0_start();
+
+    uint32_t current_time = (uint32_t)esp_timer_get_time();
+    ieee802154_timer0_fire_at_with_callback(current_time + duration, ieee802154_rx_ack_timeout_callback, (void*)s_tx_frame);
 }
 #endif
 
@@ -394,26 +404,6 @@ static IRAM_ATTR void next_operation(void)
     }
 }
 
-static void isr_handle_timer0_done(void)
-{
-#if !CONFIG_IEEE802154_TEST
-    if (s_ieee802154_state == IEEE802154_STATE_RX_ACK) {
-        ieee802154_inner_transmit_failed(s_tx_frame, ESP_IEEE802154_TX_ERR_NO_ACK);
-        NEEDS_NEXT_OPT(true);
-    }
-#else
-    esp_ieee802154_timer0_done();
-#endif
-}
-
-static void isr_handle_timer1_done(void)
-{
-    // timer 1 is now unused.
-#if CONFIG_IEEE802154_TEST
-    esp_ieee802154_timer1_done();
-#endif
-}
-
 static IRAM_ATTR void isr_handle_tx_done(void)
 {
     event_end_process();
@@ -501,7 +491,7 @@ static IRAM_ATTR void isr_handle_rx_phase_rx_abort(ieee802154_ll_rx_abort_reason
     case IEEE802154_RX_ABORT_BY_TX_ACK_STOP:
     case IEEE802154_RX_ABORT_BY_ED_STOP:
         // do nothing
-        break;
+        return;
     case IEEE802154_RX_ABORT_BY_SFD_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_CRC_ERROR:
     case IEEE802154_RX_ABORT_BY_INVALID_LEN:
@@ -789,7 +779,7 @@ esp_err_t ieee802154_mac_init(void)
 
     ieee802154_ll_enable_events(IEEE802154_EVENT_MASK);
 #if !CONFIG_IEEE802154_TEST
-    ieee802154_ll_disable_events((IEEE802154_EVENT_TIMER0_OVERFLOW) | (IEEE802154_EVENT_TIMER1_OVERFLOW));
+    ieee802154_ll_disable_events(IEEE802154_EVENT_TIMER0_OVERFLOW);
 #endif
     ieee802154_ll_enable_tx_abort_events(BIT(IEEE802154_TX_ABORT_BY_RX_ACK_TIMEOUT - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_COEX_BREAK - 1) | BIT(IEEE802154_TX_ABORT_BY_TX_SECURITY_ERROR - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_FAILED - 1) | BIT(IEEE802154_TX_ABORT_BY_CCA_BUSY - 1));
     ieee802154_ll_enable_rx_abort_events(BIT(IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT - 1) | BIT(IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK - 1));
@@ -902,16 +892,10 @@ esp_err_t ieee802154_transmit(const uint8_t *frame, bool cca)
     return ieee802154_transmit_internal(frame, cca);
 }
 
-IEEE802154_NOINLINE static bool is_target_time_expired(uint32_t target, uint32_t now)
-{
-    return (((now - target) & (1 << 31)) == 0);
-}
-
 esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
 {
     ESP_RETURN_ON_FALSE(frame[0] <= 127, ESP_ERR_INVALID_ARG, IEEE802154_TAG, "Invalid frame length.");
     uint32_t tx_target_time;
-    uint32_t current_time;
     IEEE802154_RF_ENABLE();
     tx_init(frame);
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_TX_AT);
@@ -921,9 +905,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
         ieee802154_set_state(IEEE802154_STATE_TX_CCA);
         ieee802154_enter_critical();
         ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_ED_TRIG_TX);
-        current_time = (uint32_t)esp_timer_get_time();
-        ieee802154_timer0_set_threshold((is_target_time_expired(tx_target_time, current_time) ? 0 : (tx_target_time - current_time))); //uint: 1us
-        ieee802154_timer0_start();
+        ieee802154_timer0_fire_at(tx_target_time);
         ieee802154_exit_critical();
     } else {
         tx_target_time = time - IEEE802154_TX_RAMPUP_TIME_US;
@@ -934,9 +916,7 @@ esp_err_t ieee802154_transmit_at(const uint8_t *frame, bool cca, uint32_t time)
         }
         ieee802154_enter_critical();
         ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL0, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_TX_START);
-        current_time = (uint32_t)esp_timer_get_time();
-        ieee802154_timer0_set_threshold((is_target_time_expired(tx_target_time, current_time) ? 0 : (tx_target_time - current_time))); //uint: 1us
-        ieee802154_timer0_start();
+        ieee802154_timer0_fire_at(tx_target_time);
         ieee802154_exit_critical();
     }
 
@@ -964,20 +944,34 @@ esp_err_t ieee802154_receive(void)
     return ESP_OK;
 }
 
-esp_err_t ieee802154_receive_at(uint32_t time)
+IEEE802154_NOINLINE static void ieee802154_finish_receive_at(void* ctx)
 {
-    uint32_t rx_target_time = time - IEEE802154_RX_RAMPUP_TIME_US;
-    uint32_t current_time;
+    (void)ctx;
+    stop_current_operation();
+    esp_ieee802154_receive_at_done();
+}
+
+IEEE802154_NOINLINE static void ieee802154_start_receive_at(void* ctx)
+{
+    uint32_t rx_stop_time = (uint32_t)ctx;
+    ieee802154_timer1_fire_at_with_callback(rx_stop_time, ieee802154_finish_receive_at, NULL);
+}
+
+esp_err_t ieee802154_receive_at(uint32_t time, uint32_t duration)
+{
+    // TODO: Light sleep current optimization, TZ-1613.
     IEEE802154_RF_ENABLE();
     ieee802154_enter_critical();
     rx_init();
     IEEE802154_SET_TXRX_PTI(IEEE802154_SCENE_RX_AT);
     set_next_rx_buffer();
     ieee802154_set_state(IEEE802154_STATE_RX);
-    ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER0_OVERFLOW, ETM_TASK_RX_START);
-    current_time = (uint32_t)esp_timer_get_time();
-    ieee802154_timer0_set_threshold((is_target_time_expired(rx_target_time, current_time) ? 0 : (rx_target_time - current_time))); //uint: 1us
-    ieee802154_timer0_start();
+    ieee802154_etm_set_event_task(IEEE802154_ETM_CHANNEL1, ETM_EVENT_TIMER1_OVERFLOW, ETM_TASK_RX_START);
+    if (duration) {
+        ieee802154_timer1_fire_at_with_callback(time - IEEE802154_RX_RAMPUP_TIME_US, ieee802154_start_receive_at, (void*)(time + duration));
+    } else {
+        ieee802154_timer1_fire_at(time - IEEE802154_RX_RAMPUP_TIME_US);
+    }
     ieee802154_exit_critical();
     return ESP_OK;
 }
