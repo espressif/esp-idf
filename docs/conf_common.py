@@ -20,6 +20,7 @@ BT_DOCS = ['api-reference/bluetooth/esp_bt_defs.rst',
            'api-reference/bluetooth/esp_bt_device.rst',
            'api-reference/bluetooth/esp_bt_main.rst',
            'api-reference/bluetooth/bt_common.rst',
+           'api-reference/bluetooth/bt_vhci.rst',
            'api-reference/bluetooth/controller_vhci.rst',
            'api-reference/bluetooth/index.rst']
 
