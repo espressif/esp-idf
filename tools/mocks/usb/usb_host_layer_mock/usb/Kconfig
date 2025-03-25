@@ -1,0 +1,14 @@
+# Config item from the original USB component needed for this CMock build
+
+menu "USB Host Layer mock"
+
+    config USB_HOST_CONTROL_TRANSFER_MAX_SIZE
+        int "Largest size (in bytes) of transfers to/from default endpoints"
+        default 256
+        help
+            Each USB device attached is allocated a dedicated buffer for its OUT/IN transfers to/from the device's
+            control endpoint. The maximum size of that buffer is determined by this option. The limited size of the
+            transfer buffer have the following implications:
+            - The maximum length of control transfers is limited
+            - Device's with configuration descriptors larger than this limit cannot be supported
+endmenu

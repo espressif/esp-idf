@@ -1,6 +1,8 @@
 # NOTE: This kind of mocking currently works on Linux targets only.
 #       On Espressif chips, too many dependencies are missing at the moment.
-message(STATUS "building USB HOST MOCKS")
+
+# Full USB Host mock
+message(STATUS "building full USB HOST MOCKS")
 
 idf_component_get_property(original_usb_dir usb COMPONENT_OVERRIDEN_DIR)
 
