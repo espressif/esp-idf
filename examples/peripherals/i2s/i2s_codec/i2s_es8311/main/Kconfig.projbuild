@@ -75,11 +75,4 @@ menu "Example Configuration"
         default 60
         help
             Set voice volume
-
-    config EXAMPLE_BSP
-        bool "Enable Board Support Package (BSP) support"
-        default n
-        select CODEC_I2C_BACKWARD_COMPATIBLE
-        help
-            Use BSP to setup all hardware settings. Specific board must be selected in main/idf_component.yml file.
 endmenu

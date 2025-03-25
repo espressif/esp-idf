@@ -19,7 +19,6 @@
 #define EXAMPLE_MIC_GAIN        CONFIG_EXAMPLE_MIC_GAIN
 #endif
 
-#ifndef CONFIG_EXAMPLE_BSP
 /* I2C port and GPIOs */
 #define I2C_NUM         (0)
 #define I2C_SCL_IO      CONFIG_EXAMPLE_I2C_SCL_IO
@@ -32,10 +31,3 @@
 #define I2S_WS_IO       CONFIG_EXAMPLE_I2S_WS_IO
 #define I2S_DO_IO       CONFIG_EXAMPLE_I2S_DOUT_IO
 #define I2S_DI_IO       CONFIG_EXAMPLE_I2S_DIN_IO
-
-#else // CONFIG_EXAMPLE_BSP
-#include "bsp/esp-bsp.h"
-#define I2C_NUM BSP_I2C_NUM
-#define I2S_NUM         (0)
-
-#endif // CONFIG_EXAMPLE_BSP

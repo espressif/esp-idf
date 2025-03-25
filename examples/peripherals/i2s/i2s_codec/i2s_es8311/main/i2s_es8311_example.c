@@ -10,9 +10,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/i2s_std.h"
-#ifndef CONFIG_EXAMPLE_BSP
 #include "driver/i2c_master.h"
-#endif
 #include "driver/gpio.h"
 #include "esp_system.h"
 #include "esp_codec_dev_defaults.h"
@@ -37,7 +35,6 @@ extern const uint8_t music_pcm_end[]   asm("_binary_canon_pcm_end");
 static esp_err_t es8311_codec_init(void)
 {
     /* Initialize I2C peripheral */
-#ifndef CONFIG_EXAMPLE_BSP
     i2c_master_bus_handle_t i2c_bus_handle = NULL;
     i2c_master_bus_config_t i2c_mst_cfg = {
         .i2c_port = I2C_NUM,
@@ -50,17 +47,12 @@ static esp_err_t es8311_codec_init(void)
         .flags.enable_internal_pullup = true,
     };
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_cfg, &i2c_bus_handle));
-#else
-    ESP_ERROR_CHECK(bsp_i2c_init());
-#endif
 
     /* Create control interface with I2C bus handle */
     audio_codec_i2c_cfg_t i2c_cfg = {
         .port = I2C_NUM,
         .addr = ES8311_CODEC_DEFAULT_ADDR,
-#ifndef CONFIG_EXAMPLE_BSP
         .bus_handle = i2c_bus_handle,
-#endif
     };
     const audio_codec_ctrl_if_t *ctrl_if = audio_codec_new_i2c_ctrl(&i2c_cfg);
     assert(ctrl_if);
@@ -82,7 +74,7 @@ static esp_err_t es8311_codec_init(void)
         .gpio_if = gpio_if,
         .codec_mode = ESP_CODEC_DEV_WORK_MODE_BOTH,
         .master_mode = false,
-        .use_mclk = true,
+        .use_mclk = I2S_MCK_IO >= 0,
         .pa_pin = EXAMPLE_PA_CTRL_IO,
         .pa_reverted = false,
         .hw_gain = {
@@ -131,7 +123,6 @@ static esp_err_t es8311_codec_init(void)
 
 static esp_err_t i2s_driver_init(void)
 {
-#ifndef CONFIG_EXAMPLE_BSP
     i2s_chan_config_t chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM, I2S_ROLE_MASTER);
     chan_cfg.auto_clear = true; // Auto clear the legacy data in the DMA buffer
     ESP_ERROR_CHECK(i2s_new_channel(&chan_cfg, &tx_handle, &rx_handle));
@@ -157,17 +148,6 @@ static esp_err_t i2s_driver_init(void)
     ESP_ERROR_CHECK(i2s_channel_init_std_mode(rx_handle, &std_cfg));
     ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
     ESP_ERROR_CHECK(i2s_channel_enable(rx_handle));
-#else
-    ESP_LOGI(TAG, "Using BSP for HW configuration");
-    i2s_std_config_t std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(EXAMPLE_SAMPLE_RATE),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = BSP_I2S_GPIO_CFG,
-    };
-    std_cfg.clk_cfg.mclk_multiple = EXAMPLE_MCLK_MULTIPLE;
-    ESP_ERROR_CHECK(bsp_audio_init(&std_cfg, &tx_handle, &rx_handle));
-    ESP_ERROR_CHECK(bsp_audio_poweramp_enable(true));
-#endif
     return ESP_OK;
 }
 
