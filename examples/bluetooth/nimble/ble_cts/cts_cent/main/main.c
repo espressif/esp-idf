@@ -18,7 +18,6 @@
 
 static const char *tag = "NimBLE_CTS_CENT";
 static int ble_cts_cent_gap_event(struct ble_gap_event *event, void *arg);
-static uint8_t peer_addr[6];
 
 static char *day_of_week[7] = {
     "Unknown"
@@ -193,6 +192,10 @@ ext_ble_cts_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
 {
     int offset = 0;
     int ad_struct_len = 0;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+
+    memset(peer_addr, 0x0, sizeof peer_addr);
 
     if (disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
             disc->legacy_event_type != BLE_HCI_ADV_RPT_EVTYPE_DIR_IND) {
@@ -200,11 +203,18 @@ ext_ble_cts_cent_should_connect(const struct ble_gap_ext_disc_desc *disc)
     }
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
-        /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+
+	/* Convert string to address */
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+        /* Conversion */
+        for(int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
+        }
+
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
@@ -243,6 +253,10 @@ ble_cts_cent_should_connect(const struct ble_gap_disc_desc *disc)
     struct ble_hs_adv_fields fields;
     int rc;
     int i;
+    uint8_t test_addr[6];
+    uint32_t peer_addr[6];
+
+    memset(peer_addr, 0x0, sizeof peer_addr);
 
     /* The device has to be advertising connectability. */
     if (disc->event_type != BLE_HCI_ADV_RPT_EVTYPE_ADV_IND &&
@@ -259,10 +273,16 @@ ble_cts_cent_should_connect(const struct ble_gap_disc_desc *disc)
     if (strlen(CONFIG_EXAMPLE_PEER_ADDR) && (strncmp(CONFIG_EXAMPLE_PEER_ADDR, "ADDR_ANY", strlen("ADDR_ANY")) != 0)) {
         ESP_LOGI(tag, "Peer address from menuconfig: %s", CONFIG_EXAMPLE_PEER_ADDR);
         /* Convert string to address */
-        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+        sscanf(CONFIG_EXAMPLE_PEER_ADDR, "%lx:%lx:%lx:%lx:%lx:%lx",
                &peer_addr[5], &peer_addr[4], &peer_addr[3],
                &peer_addr[2], &peer_addr[1], &peer_addr[0]);
-        if (memcmp(peer_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
+
+        /* Conversion */
+        for (int i=0; i<6; i++) {
+            test_addr[i] = (uint8_t )peer_addr[i];
+	}
+
+        if (memcmp(test_addr, disc->addr.val, sizeof(disc->addr.val)) != 0) {
             return 0;
         }
     }
