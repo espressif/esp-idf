@@ -323,9 +323,8 @@ esp_err_t usb_host_device_open(usb_host_client_handle_t client_hdl, uint8_t dev_
  * @return
  *    - ESP_OK: Device closed successfully
  *    - ESP_ERR_INVALID_ARG: Invalid argument
- *    - ESP_ERR_NOT_FOUND: Device address not found among opened devices
- *    - ESP_ERR_INVALID_STATE: The client never opened the device, or the client has not released
- *      all the interfaces from the device
+ *    - ESP_ERR_NOT_FOUND: The client never opened the device (the device address not found among opened devices)
+ *    - ESP_ERR_INVALID_STATE: The client has not released all interfaces from the device
  */
 esp_err_t usb_host_device_close(usb_host_client_handle_t client_hdl, usb_device_handle_t dev_hdl);
 
