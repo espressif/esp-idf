@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,9 +32,9 @@ extern "C" {
 #define CLK_LL_PLL_480M_FREQ_MHZ   (480)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
-    .dac = 3, \
-    .dres = 3, \
-    .dgm = 3, \
+    .dac = 7, \
+    .dres = 0, \
+    .dgm = 7, \
     .dbuf = 1, \
 }
 
