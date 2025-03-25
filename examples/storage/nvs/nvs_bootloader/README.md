@@ -137,7 +137,7 @@ Enable NVS encryption using your preferred scheme. Please find more details rega
 (Note: In case you select the `HMAC based NVS encryption scheme`, make sure that you burn the below mentioned [HMAC key](./main/nvs_enc_hmac_key.bin) in the efuses.)
 
 For generating the encrypted NVS partitions, we shall use [NVS partition generator](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_partition_gen.html#nvs-partition-generator-utility).
-We shall use the [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) script for the operations.
+We shall use the [nvs_partition_gen.py](../../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) script for the operations.
 
 Along with the above mentioned file structure, the project folder also contains pre-generated encrypted partitions and the partition corresponding to the selected NVS encryption scheme is flashed along with the build artefacts using the `main/CMakeLists.txt`.
 
@@ -146,13 +146,13 @@ In case the data in `nvs_data.csv` is modified, these encrypted NVS partitions c
 1. NVS Encryption using the flash encryption scheme
 
 ```
-python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_encrypted.bin 0x6000 --inputkey $IDF_PATH/examples/storage/nvs_bootloader/main/encryption_keys.bin
+python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs/nvs_bootloader/main/nvs_encrypted.bin 0x6000 --inputkey $IDF_PATH/examples/storage/nvs/nvs_bootloader/main/encryption_keys.bin
 ```
 
 2. NVS Encryption using the HMAC scheme
 
 ```
-python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_encrypted_hmac.bin 0x6000 --keygen --key_protect_hmac --kp_hmac_inputkey $IDF_PATH/examples/storage/nvs_bootloader/main/nvs_enc_hmac_key.bin
+python nvs_partition_gen.py encrypt $IDF_PATH/examples/storage/nvs/nvs_bootloader/nvs_data.csv $IDF_PATH/examples/storage/nvs/nvs_bootloader/main/nvs_encrypted_hmac.bin 0x6000 --keygen --key_protect_hmac --kp_hmac_inputkey $IDF_PATH/examples/storage/nvs/nvs_bootloader/main/nvs_enc_hmac_key.bin
 ```
 
 Build the application using configurations corresponding to the NVS encryption scheme that you have selected:
