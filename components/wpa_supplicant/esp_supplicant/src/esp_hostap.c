@@ -200,7 +200,7 @@ void *hostap_init(void)
     esp_wifi_ap_set_group_mgmt_cipher_internal(cipher_type_map_supp_to_public(auth_conf->group_mgmt_cipher));
 
 #ifdef CONFIG_OWE_SOFTAP
-    if (authmode == WIFI_AUTH_OWE) {
+    if (authmode == WIFI_AUTH_OWE && esp_wifi_ap_get_owe_config_internal()) {
         auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_OWE;
     }
 #endif /* CONFIG_OWE_SOFTAP */
@@ -375,67 +375,27 @@ u16 esp_send_assoc_resp(struct hostapd_data *hapd, const u8 *addr,
                         u16 status_code, bool omit_rsnxe, int subtype)
 {
 #define ASSOC_RESP_LENGTH 20
-    u8 buf[ASSOC_RESP_LENGTH];
     wifi_mgmt_frm_req_t *reply = NULL;
-    int send_len = 0;
-
     int res = WLAN_STATUS_SUCCESS;
+
+#ifdef CONFIG_OWE_SOFTAP
+    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE) && esp_wifi_ap_get_owe_config_internal()) {
+        int owe_ie_len = 0;
+        u8 *owe_ie = NULL;
+        owe_ie = owe_build_assoc_resp_dhie(hapd, addr, &owe_ie_len);
+        if (owe_ie_len <= 0 || !owe_ie) {
+            wpa_printf(MSG_ERROR, "%s : error creating dhie for assoc resp %d ", __func__, owe_ie_len);
+        }
+        esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, owe_ie, owe_ie_len, 0);
+    }
+#else
+    u8 buf[ASSOC_RESP_LENGTH];
+    int send_len = 0;
 
     if (!omit_rsnxe) {
         send_len = esp_wifi_build_rsnxe(hapd, buf, ASSOC_RESP_LENGTH);
     }
-#ifdef CONFIG_OWE_SOFTAP
-#define OWE_DH_GROUP   19
-#define OWE_DHIE_LEN   37
-    if ((hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE)) {
-        struct wpabuf *pub;
-        struct sta_info *sta = ap_get_sta(hapd, addr);
-	if (!sta) {
-            return WLAN_STATUS_UNSPECIFIED_FAILURE;
-	}
 
-        struct wpabuf *owe_buf = wpabuf_alloc(hapd->wpa_auth->wpa_ie_len);
-        if (!owe_buf) {
-            wpa_printf(MSG_ERROR, "Memory allocation failed for OWE IE");
-            return WLAN_STATUS_UNSPECIFIED_FAILURE;
-        }
-
-	u8 *pos, buf[128];
-	int res;
-	int owe_ie_len = 0;
-
-	pos = buf;
-
-        pos = wpa_auth_write_assoc_resp_owe(sta->wpa_sm, pos,
-                                          buf + sizeof(buf) - pos);
-
-        wpabuf_resize(&owe_buf, pos - buf);
-        wpabuf_put_data(owe_buf, buf, pos - buf);
-	owe_ie_len = pos - buf;
-
-        pub = crypto_ecdh_get_pubkey(sta->owe_ecdh, 0);
-        if (!pub) {
-            res = WLAN_STATUS_UNSPECIFIED_FAILURE;
-            return res;
-        }
-
-
-        wpa_hexdump_buf(MSG_DEBUG, "Own public key", pub);
-
-        wpabuf_resize(&owe_buf, OWE_DHIE_LEN);
-        wpabuf_put_u8(owe_buf, WLAN_EID_EXTENSION);
-        wpabuf_put_u8(owe_buf, 1 + 2 + wpabuf_len(pub));
-        wpabuf_put_u8(owe_buf, WLAN_EID_EXT_OWE_DH_PARAM);
-        wpabuf_put_le16(owe_buf, IANA_SECP256R1);
-        wpabuf_put_buf(owe_buf, pub);
-        wpabuf_free(pub);
-
-        wpa_hexdump_buf(MSG_DEBUG, "OWE: Buffer", owe_buf);
-	owe_ie_len = wpabuf_len(owe_buf);
-
-	esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, (uint8_t *)wpabuf_head(owe_buf), owe_ie_len, 0);
-    }
-#else
     esp_wifi_set_appie_internal(WIFI_APPIE_ASSOC_RESP, buf, send_len, 0);
 #endif /* CONFIG_OWE_SOFTAP */
 
@@ -483,7 +443,8 @@ uint8_t wpa_status_to_reason_code(int status)
 
 bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
                           u8 wpa_ie_len, u8 *rsnxe, uint16_t rsnxe_len,
-                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason, uint8_t *rsn_selection_ie, uint8_t *owe_dh, uint8_t owe_ie_len)
+                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher,
+                          uint8_t *reason, uint8_t *rsn_selection_ie, uint8_t *owe_dh, uint8_t owe_ie_len)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result res = WPA_IE_OK;
@@ -534,12 +495,16 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
             status = wpa_res_to_status_code(res);
 
 #ifdef CONFIG_OWE_SOFTAP
-        if (hapd->conf->wpa_key_mgmt == WPA_KEY_MGMT_OWE) {
-            status = owe_process_assoc_req(sta, owe_dh, owe_ie_len);
-            if (status != WLAN_STATUS_SUCCESS) {
-                return status;
+            uint8_t owe_enabled = esp_wifi_ap_get_owe_config_internal();
+            if (hapd->conf->wpa_key_mgmt & WPA_KEY_MGMT_OWE &&
+                    sta->wpa_sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE &&
+                    owe_dh && owe_enabled) {
+                status = owe_process_assoc_req(hapd, sta, owe_dh, owe_ie_len);
+                if (status != WLAN_STATUS_SUCCESS) {
+                    wpa_printf(MSG_ERROR, "OWE : Failed to process assoc req status %d", status);
+                    return false;
+                }
             }
-        }
 #endif /* CONFIG_OWE_SOFTAP */
 
 send_resp:

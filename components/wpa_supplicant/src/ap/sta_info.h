@@ -70,8 +70,9 @@ struct sta_info {
 #endif /* CONFIG_SAE */
 #endif /* ESP_SUPPLICANT */
 #ifdef CONFIG_OWE_SOFTAP
-       u8 *owe_pmk;
-       struct crypto_ecdh *owe_ecdh;
+        u16 owe_group;
+        u8 *owe_pmk;
+        struct crypto_ecdh *owe_ecdh;
 #endif /* CONFIG_OWE_SOFTAP */
 
 };

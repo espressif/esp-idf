@@ -136,8 +136,9 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
         return NULL;
     }
 
-#ifdef CONFIG_SAE
+#if defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP)
     struct sta_info *sta = ap_get_sta(hapd, addr);
+#ifdef CONFIG_SAE
     if (sta && sta->auth_alg == WLAN_AUTH_SAE) {
         if (!sta->sae || prev_psk)
             return NULL;
@@ -155,7 +156,7 @@ static inline const u8 * wpa_auth_get_psk(struct wpa_authenticator *wpa_auth,
        return sta->owe_pmk;
    }
 #endif /* CONFIG_OWE_SOFTAP */
-
+#endif /* defined(CONFIG_SAE) || defined(CONFIG_OWE_SOFTAP) */
 
     return (u8*)hostapd_get_psk(hapd->conf, addr, prev_psk);
 }
@@ -1472,7 +1473,8 @@ SM_STATE(WPA_PTK, INITIALIZE)
     wpa_remove_ptk(sm);
     wpa_auth_set_eapol(sm->wpa_auth, sm->addr, WPA_EAPOL_portValid, 0);
     sm->TimeoutCtr = 0;
-    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)) {
+    if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
+	sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE) {
         wpa_auth_set_eapol(sm->wpa_auth, sm->addr,
                    WPA_EAPOL_authorized, 0);
     }
@@ -1782,7 +1784,8 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         }
 
         if (!wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
-            wpa_key_mgmt_sae(sm->wpa_key_mgmt)) {
+            wpa_key_mgmt_sae(sm->wpa_key_mgmt) ||
+	    sm->wpa_key_mgmt != WPA_KEY_MGMT_OWE) {
             wpa_printf( MSG_DEBUG, "wpa_key_mgmt=%x", sm->wpa_key_mgmt);
             break;
         }
@@ -2253,7 +2256,8 @@ SM_STEP(WPA_PTK)
             wpa_auth_get_eapol(sm->wpa_auth, sm->addr,
                        WPA_EAPOL_keyRun) > 0)
             SM_ENTER(WPA_PTK, INITPMK);
-        else if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt)
+        else if (wpa_key_mgmt_wpa_psk(sm->wpa_key_mgmt) ||
+		(sm->wpa_key_mgmt == WPA_KEY_MGMT_OWE)
              /* FIX: && 802.1X::keyRun */)
             SM_ENTER(WPA_PTK, INITPSK);
         break;
