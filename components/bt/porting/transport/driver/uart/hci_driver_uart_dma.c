@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -114,7 +114,6 @@ int hci_driver_uart_dma_tx_start(esp_bt_hci_tl_callback_t callback, void *arg);
 static const char *TAG = "uart_dma";
 static hci_driver_uart_dma_env_t s_hci_driver_uart_dma_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
-static hci_driver_uart_params_config_t hci_driver_uart_dma_params = BT_HCI_DRIVER_UART_CONFIG_DEFAULT();
 
 /* The list for hci_rx_data */
 STAILQ_HEAD(g_hci_rxinfo_list, hci_message);
@@ -607,7 +606,7 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_dma_env, 0, sizeof(hci_driver_uart_dma_env_t));
 
     s_hci_driver_uart_dma_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, hci_driver_uart_dma_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_dma_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {
@@ -625,8 +624,8 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     }
 
     s_hci_driver_uart_dma_env.forward_cb = cb;
-    s_hci_driver_uart_dma_env.hci_uart_params = &hci_driver_uart_dma_params;
-    hci_driver_uart_config(&hci_driver_uart_dma_params);
+    s_hci_driver_uart_dma_env.hci_uart_params = hci_driver_uart_config_param_get();
+    hci_driver_uart_config(s_hci_driver_uart_dma_env.hci_uart_params);
 
     ESP_LOGI(TAG, "uart attach uhci!");
     hci_driver_uart_dma_install();
@@ -653,12 +652,7 @@ error:
 int
 hci_driver_uart_dma_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
-    hci_driver_uart_params_config_t *uart_param = s_hci_driver_uart_dma_env.hci_uart_params;
-    uart_param->hci_uart_tx_pin = tx_pin;
-    uart_param->hci_uart_rx_pin = rx_pin;
-    uart_param->hci_uart_rts_pin = rts_pin;
-    uart_param->hci_uart_cts_pin = cts_pin;
-    return hci_driver_uart_config(uart_param);
+    return hci_driver_uart_pin_update(tx_pin, rx_pin, cts_pin, rts_pin);
 }
 
 
