@@ -362,11 +362,15 @@ static esp_err_t _touch_pad_read(touch_pad_t touch_num, uint16_t *touch_value, t
     if (TOUCH_FSM_MODE_SW == mode) {
         touch_pad_set_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
         touch_pad_sw_start();
-        while (!touch_hal_meas_is_done()) {};
+        while (!touch_hal_meas_is_done()) {
+            vTaskDelay(1);
+        }
         *touch_value = touch_hal_read_raw_data(touch_num);
         touch_pad_clear_group_mask((1 << touch_num), (1 << touch_num), (1 << touch_num));
     } else if (TOUCH_FSM_MODE_TIMER == mode) {
-        while (!touch_hal_meas_is_done()) {};
+        while (!touch_hal_meas_is_done()) {
+            vTaskDelay(1);
+        }
         *touch_value = touch_hal_read_raw_data(touch_num);
     } else {
         res = ESP_FAIL;
