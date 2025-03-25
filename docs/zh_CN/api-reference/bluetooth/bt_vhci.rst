@@ -1,14 +1,14 @@
 :orphan:
 
-HCI Vendor-specific (VS) Commands
-==========================================
+乐鑫自定义 HCI 命令
+========================
 
-:link_to_translation:`zh_CN:[中文]`
+:link_to_translation:`en:[English]`
 
-HCI VS Commands for Espressif's Bluetooth Host
+乐鑫蓝牙主机专用的自定义 HCI 命令
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS commands are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host). If you are using a non-ESP host or HCI UART, these commands will remain disabled unless the initialization function is explicitly called from the application. Note, these init functions as well as these additional HCI VS commands are intended for Espressif's Bluetooth Host use only. Application developers **should not** call the init functions in their applications.
+以下自定义 HCI 命令仅适用于乐鑫的蓝牙主机（ESP-Bluedroid 主机 或 ESP-NimBLE 主机）。如果使用非 ESP 主机或 HCI UART，这些命令将默认禁用，除非应用程序调用了相应的初始化函数。请注意，这些初始化函数及附加的自定义 HCI 命令仅供乐鑫蓝牙主机使用。应用程序开发者 **不应** 在其应用程序中调用这些初始化函数。
 
 .. only:: esp32
 
@@ -57,11 +57,11 @@ The following HCI VS commands are exclusively for Espressif's Bluetooth Host (ES
     .. doxygendefine:: ESP_BT_VS_SET_CONST_PEER_SCA_OCF
 
 
-HCI VS Events for Espressif's Bluetooth Host
+
+乐鑫蓝牙主机专用的自定义 HCI 事件
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS events are exclusively for Espressif's Bluetooth Host (ESP-Bluedroid Host or ESP-NimBLE Host). If you are using a non-ESP host or HCI UART, these events will remain disabled unless the initialization function is explicitly called from the application. Note, these init functions as well as these additional HCI VS events are intended for Espressif's Bluetooth Host use only. Application developers **should not** call the init functions in their applications.
-
+以下自定义 HCI 事件仅适用于乐鑫的蓝牙主机（ESP-Bluedroid 主机 或 ESP-NimBLE 主机）。如果使用非 ESP 主机或 HCI UART，这些事件将默认禁用，除非应用程序调用了相应的初始化函数。请注意，这些初始化函数及附加的自定义 HCI 事件仅供乐鑫蓝牙主机使用。应用程序开发者 **不应** 在其应用程序中调用这些初始化函数。
 
 .. only:: esp32
 
@@ -90,10 +90,10 @@ The following HCI VS events are exclusively for Espressif's Bluetooth Host (ESP-
     .. doxygendefine:: ESP_BT_VS_LE_ADV_LOST_EVT_SUBCODE
 
 
-HCI VS Commands for Espressif's Internal-Use Debugging
+乐鑫内部调试 HCI 命令
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The following HCI VS debugging commands are implemented in Bluetooth Low Energy controller pre-compiled libraries. These commands are not linked into the application binary, unless the function `esp_ble_internalTestFeaturesEnable(true)` is called from the application. They are intended for Espressif's internal use only. Application developers **should not** call `esp_ble_internalTestFeaturesEnable(true)` in their applications.
+以下调试 HCI 命令已包含在乐鑫低功耗蓝牙控制器的预编译库中。这些命令不会被链接到应用程序的二进制文件中，除非应用程序中调用了 `esp_ble_internalTestFeaturesEnable(true)`。这些命令仅供乐鑫内部使用。应用程序开发者 **不应** 在其应用程序中调用 `esp_ble_internalTestFeaturesEnable(true)`。
 
 .. only:: esp32
 
@@ -116,7 +116,7 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_GET_CTRL_COMPILE_VER_SUBCMD
     .. doxygendefine:: ESP_BT_VS_CFG_TEST_RELATED_SUBCMD_MAX
 
-    The following HCI VS debugging commands are implemented in Bluetooth Classic controller pre-compiled libraries. These commands are not linked into the application binary, unless the corresponding initialization function is explicitly called from the application. They are intended for Espressif's internal use only. Application developers **should not** call in their applications.
+    以下调试 HCI 命令已包含在乐鑫经典蓝牙控制器的预编译库中。这些命令不会被链接到应用程序的二进制文件中，除非应用程序中调用了相应的初始化函数。这些命令仅供乐鑫内部使用。应用程序开发者 **不应** 在其应用程序中调用初始化函数。
 
     .. doxygendefine:: ESP_BT_VS_WR_DM1_ENABLE_OCF
     .. doxygendefine:: ESP_BT_VS_CLK_UPDATE_OCF
@@ -265,10 +265,10 @@ The following HCI VS debugging commands are implemented in Bluetooth Low Energy 
 
 .. only:: esp32 or esp32c5 or esp32c6 or esp32c61 or esp32h2
 
-    HCI VS Events for Espressif's Internal-Use Debugging
+    乐鑫内部调试 HCI 事件
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-    The following HCI VS debugging events are implemented in Bluetooth controller pre-compiled libraries. These events are not linked into the application binary and are intended for Espressif's internal use only. Application developers **should not** call the corresponding initialization function in their applications.
+    以下调试 HCI 事件已包含在乐鑫蓝牙控制器的预编译库中。这些事件不会被链接到应用程序的二进制文件中，除非应用程序中调用了相应的初始化函数。这些事件仅供乐鑫内部使用。应用程序开发者 **不应** 在其应用程序中调用初始化函数。
 
     .. only:: esp32
 

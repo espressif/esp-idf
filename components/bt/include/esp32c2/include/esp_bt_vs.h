@@ -27,13 +27,27 @@ extern "C" {
  * @note The init function is `scan_stack_enableAdvFlowCtrlVsCmd(true)`
  */
 #define ESP_BT_VS_SET_ADV_REPORT_FLOW_CTRL_OCF                      (0x0109)
+/**
+* @brief Init ADV flow control cmd parameters
+*/
+struct bt_hci_vs_init_adv_flow_ctrl {
+    uint8_t enable; /*!< Enable ADV flow control */
+    uint16_t num;   /*!< ADV buffer maximum value */
+    uint16_t adv_lost_threshold; /*!< ADV lost event triggered threshold */
+};
 
 /**
- * @brief Update the number of advertising report flow control (OCF: 0x010A)
+ * @brief Update the number of advertising report in ADV flow control (OCF: 0x010A)
  *
  * @note The init function is `scan_stack_enableAdvFlowCtrlVsCmd(true)`
  */
 #define ESP_BT_VS_UPD_ADV_REPORT_FLOW_CTRL_NUM_OCF                  (0x010a)
+/**
+* @brief Update ADV flow control cmd parameters
+*/
+struct bt_hci_vs_update_adv_flow_ctrl {
+    uint16_t num; /*!< The number of ADV report processed */
+};
 
 /**
  * @brief Clear legacy advertising (same as HCI_LE_Clear_Advertising_Sets) (OCF: 0x010C)
@@ -41,6 +55,12 @@ extern "C" {
  * @note The init function is `adv_stack_enableClearLegacyAdvVsCmd(true)`
  */
 #define ESP_BT_VS_CLR_LEGACY_ADV_OCF                                (0x010c)
+/**
+* @brief Clear legacy ADV cmd parameters
+*/
+struct bt_hci_vs_ble_clr_legacy_adv {
+    // no parameters
+};
 
 /**
  * @brief Enable/disable channel selection algorithm #2 (OCF: 0x0112)
@@ -48,6 +68,12 @@ extern "C" {
  * @note The init function is `chanSel_stack_enableSetCsaVsCmd(true)`
  */
 #define ESP_BT_VS_ENABLE_CSA2_OCF                                   (0x0112)
+/**
+* @brief Enable/disable channel selection algorithm #2 cmd parameters
+*/
+struct bt_hci_vs_ble_csa_enable {
+    uint8_t csa2_select;  /*!< Select CSA2 */
+};
 
 /**
  * @brief Set BLE vendor events mask (OCF: 0x0116)
@@ -55,7 +81,12 @@ extern "C" {
  * @note The init function is `hci_stack_enableSetVsEvtMaskVsCmd(true)`
  */
 #define ESP_BT_VS_SET_LE_VENDOR_EVTS_MASK_OCF                       (0x0116)
-
+/**
+* @brief Set BLE vendor events mask cmd parameters
+*/
+struct bt_hci_vs_ble_set_vs_evts_mask {
+    uint32_t evt_masks; /*!< BLE vendor events Mask */
+};
 
 // @brief HCI VS Events for Espressif's Bluetooth Host
 //
@@ -71,6 +102,15 @@ extern "C" {
  * @note The init function is `adv_stack_enableScanReqRxdVsEvent(true)`
  */
 #define ESP_BT_VS_LE_CONN_SCAN_REQ_RXED_EVT_SUBCODE                 (0xC0)
+/**
+* @brief BLE Scan/Connect Request, Aux Connect Response received event parameters
+*/
+struct bt_hci_vs_le_conn_scan_req_rxed_evt {
+    uint8_t evt_type;       /*!< Event type; 0: SCAN_REQ; 1: CONN_IND */
+    uint8_t handle;         /*!< Advertisement handle */
+    uint8_t peer_addr_type; /*!< Peer address type */
+    uint8_t peer_addr[6];   /*!< Peer address */
+};
 
 /**
  * @brief BLE Channel Map Update Completion event (EVTCODE: 0xFF, SUBCODE: 0xC1)
@@ -78,6 +118,14 @@ extern "C" {
  * @note The init function is `conn_stack_enableChanMapUpdCompVsEvent(true)`
  */
 #define ESP_BT_VS_LE_CHAN_UPDATE_COMP_EVT_SUBCODE                   (0xC1)
+/**
+* @brief BLE Channel Map Update Completion event parameters
+*/
+struct bt_hci_vs_le_chan_update_comp_evt {
+    uint8_t status;     /*!< Controller error code */
+    uint16_t handle;    /*!< Connection handle */
+    uint8_t ch_map[5];  /*!< Updated channel map */
+};
 
 /**
  * @brief BLE Wakeup From Sleep event (EVTCODE: 0xFF, SUBCODE: 0xC3)
@@ -85,6 +133,12 @@ extern "C" {
  * @note The init function is `sleep_stack_enableWakeupVsEvent(true)`
  */
 #define ESP_BT_VS_LE_SLEEP_WAKEUP_EVT_SUBCODE                       (0xC3)
+/**
+* @brief BLE wakeup event parameters
+*/
+struct bt_hci_vs_le_sleep_wakeup_evt {
+    // no parameters
+};
 
 /**
  * @brief BLE advertising report lost event for flow control (EVTCODE: 0x3E, SUBCODE: 0xF0)
@@ -92,6 +146,12 @@ extern "C" {
  * @note The init function is `scan_stack_enableAdvFlowCtrlVsCmd(true)`
  */
 #define ESP_BT_VS_LE_ADV_LOST_EVT_SUBCODE                           (0xF0)
+/**
+* @brief ADV lost event parameters
+*/
+struct bt_hci_vs_le_adv_lost_evt {
+    uint32_t nb_lost; /*!< The number of ADV report discarded */
+};
 
 //
 // @brief HCI VS Commands for Espressif's Internal-Use Debugging

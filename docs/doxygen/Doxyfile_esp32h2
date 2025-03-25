@@ -13,4 +13,3 @@ INPUT += \
          $(PROJECT_PATH)/components/esp_hw_support/include/soc/esp32h2/esp_hmac.h \
          $(PROJECT_PATH)/components/hal/include/hal/i2s_types.h \
          $(PROJECT_PATH)/components/hal/include/hal/rmt_types.h \
-		 $(PROJECT_PATH)/components/bt/include/$(IDF_TARGET)/include/esp_bt_vs.h \
