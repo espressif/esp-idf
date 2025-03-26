@@ -443,6 +443,20 @@ RMT 编码器是 RMT TX 事务的一部分，用于在特定时间生成正确�
 
 简易回调编码器的功能通常可以通过链式组合其他编码器来实现，但相比编码器链，简易回调编码器更易于理解和维护。
 
+.. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    比特调节 (BitScrambler) 编码器
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    当 RMT 的发送通道开启了 DMA, 我们可以通过编写 :doc:`比特调节器 </api-reference/peripherals/bitscrambler>` 汇编代码来控制 DMA 通路上的数据，进而实现一些简单的编码工作。相较于使用 CPU 做编码工作，比特调节器的性能更高，且不会占用 CPU 资源，但是受限于 BitScrambler 有限的指令存储器空间，它无法实现复杂的编码工作。此外，比特调节器程序的输出流数据格式必须符合 :cpp:type:`rmt_symbol_word_t` 结构。
+
+    调用 :cpp:func:`rmt_new_bitscrambler_encoder` 可以创建一个比特调节器编码器。该函数的配置参数为 :cpp:type:`rmt_bs_encoder_config_t` 结构体，包含以下配置项：
+        - :cpp:member:`rmt_bs_encoder_config_t::program_bin` 指向比特调节器程序的二进制文件的指针。该二进制文件必须符合比特调节器的汇编语言规范，并且在运行时会被加载到比特调节器的指令存储器中。如何编写并编译比特调节器程序请参考 :doc:`比特调节器编程指南 </api-reference/peripherals/bitscrambler>`。
+
+    .. note::
+
+        比特调节编码器**必须**配合开启了 DMA 的 RMT 通道使用。
+
 自定义 NEC 协议的 RMT 编码器
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

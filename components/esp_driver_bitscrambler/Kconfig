@@ -1,0 +1,16 @@
+menu "BitScrambler Configurations"
+    depends on SOC_BITSCRAMBLER_SUPPORTED
+    config BITSCRAMBLER_CTRL_FUNC_IN_IRAM
+        bool "Place BitScrambler control functions in IRAM"
+        default n
+        select BITSCRAMBLER_OBJ_CACHE_SAFE
+        help
+            Place BitScrambler control functions into IRAM for better performance and fewer cache misses.
+
+    config BITSCRAMBLER_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the BitScrambler object will not be allocated from a memory region
+            where its cache can be disabled.
+endmenu # BitScrambler Configurations

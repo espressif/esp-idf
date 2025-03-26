@@ -674,6 +674,9 @@ static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t
     // update current transaction
     tx_chan->cur_trans = t;
 
+    // reset RMT encoder before starting a new transaction
+    rmt_encoder_reset(t->encoder);
+
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
         gdma_reset(channel->dma_chan);
@@ -845,8 +848,6 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     // recycle the interrupted transaction
     if (tx_chan->cur_trans) {
         xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &tx_chan->cur_trans, 0);
-        // reset corresponding encoder
-        rmt_encoder_reset(tx_chan->cur_trans->encoder);
     }
     tx_chan->cur_trans = NULL;
 

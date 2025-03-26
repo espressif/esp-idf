@@ -62,7 +62,7 @@ static esp_err_t rmt_del_led_strip_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
+IRAM_ATTR static esp_err_t rmt_led_strip_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_led_strip_encoder_t *led_encoder = __containerof(encoder, rmt_led_strip_encoder_t, base);
     rmt_encoder_reset(led_encoder->bytes_encoder);
@@ -177,7 +177,7 @@ static esp_err_t rmt_del_nec_protocol_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static esp_err_t rmt_nec_protocol_encoder_reset(rmt_encoder_t *encoder)
+IRAM_ATTR static esp_err_t rmt_nec_protocol_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_nec_protocol_encoder_t *nec_encoder = __containerof(encoder, rmt_nec_protocol_encoder_t, base);
     rmt_encoder_reset(nec_encoder->copy_encoder);

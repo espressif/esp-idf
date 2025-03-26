@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,6 +128,13 @@ typedef struct {
 } rmt_copy_encoder_config_t;
 
 /**
+ * @brief BitScrambler encoder configuration
+ */
+typedef struct {
+    const void *program_bin; /*!< BitScrambler program */
+} rmt_bs_encoder_config_t;
+
+/**
  * @brief Simple callback encoder configuration
  */
 typedef struct {
@@ -181,6 +188,22 @@ esp_err_t rmt_bytes_encoder_update_config(rmt_encoder_handle_t bytes_encoder, co
  *      - ESP_FAIL: Create RMT copy encoder failed because of other error
  */
 esp_err_t rmt_new_copy_encoder(const rmt_copy_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
+
+/**
+ * @brief Create RMT BitScrambler encoder
+ *
+ * @note The BitScrambler encoder is used to encode the user data into RMT symbols by providing the BitScrambler assembly program.
+ *       The BitScrambler program is a binary blob, it should take control of the whole encoding stuffs, including inserting the EOF marker.
+ *
+ * @param[in] config BitScrambler encoder configuration
+ * @param[out] ret_encoder Returned encoder handle
+ * @return
+ *      - ESP_OK: Create RMT BitScrambler encoder successfully
+ *      - ESP_ERR_INVALID_ARG: Create RMT BitScrambler encoder failed because of invalid argument
+ *      - ESP_ERR_NO_MEM: Create RMT BitScrambler encoder failed because out of memory
+ *      - ESP_FAIL: Create RMT BitScrambler encoder failed because of other error
+ */
+esp_err_t rmt_new_bitscrambler_encoder(const rmt_bs_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder);
 
 /**
  * @brief Create RMT simple callback encoder, which uses a callback to convert incoming

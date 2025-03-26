@@ -5,6 +5,8 @@ menu "ESP-Driver:RMT Configurations"
         bool "Place RMT TX ISR handler in IRAM to reduce latency"
         default y
         select RMT_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA
+        select BITSCRAMBLER_CTRL_FUNC_IN_IRAM if SOC_BITSCRAMBLER_SUPPORTED && SOC_RMT_SUPPORT_DMA
         help
             Place RMT TX ISR handler in IRAM to reduce latency caused by cache miss.
 
@@ -19,6 +21,7 @@ menu "ESP-Driver:RMT Configurations"
         bool "Place RMT receive function in IRAM"
         default n
         select RMT_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM if SOC_RMT_SUPPORT_DMA
         help
             Place RMT receive function into IRAM for better performance and fewer cache misses.
 
