@@ -19,11 +19,15 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_system.h"
+#include "esp_log.h"
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "driver/gpio.h"
 
 #define STORAGE_NAMESPACE "storage"
+#define BLOB_EXAMPLE_DATA_SIZE 256
+
+static const char *TAG = "nvs_blob_example";
 
 #if CONFIG_IDF_TARGET_ESP32C3
 #define BOOT_MODE_PIN GPIO_NUM_9
@@ -31,96 +35,60 @@
 #define BOOT_MODE_PIN GPIO_NUM_0
 #endif //CONFIG_IDF_TARGET_ESP32C3
 
-/* Save the number of module restarts in NVS
-   by first reading and then incrementing
-   the number that has been saved previously.
-   Return an error if anything goes wrong
-   during this process.
- */
-esp_err_t save_restart_counter(void)
+/* Test data structure to demonstrate different data types in blob */
+typedef struct {
+    uint8_t id;
+    char name[32];
+    float values[2];
+    uint32_t flags;
+    int16_t counts[2];
+    bool active;
+} test_data_t;
+
+/* Save test data as a blob in NVS */
+esp_err_t save_test_data(void)
 {
     nvs_handle_t my_handle;
     esp_err_t err;
 
-    // Open
+    // Create sample test data
+    test_data_t test_data = {
+        .id = 123,
+        .name = "Test Sample",
+        .values = {3.14f, 2.718f},
+        .flags = 0xABCD1234,
+        .counts = {-100, 100},
+        .active = true
+    };
+
+    // Open NVS handle
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) return err;
-
-    // Read
-    int32_t restart_counter = 0; // value will default to 0, if not set yet in NVS
-    err = nvs_get_i32(my_handle, "restart_conter", &restart_counter);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-
-    // Write
-    restart_counter++;
-    err = nvs_set_i32(my_handle, "restart_conter", restart_counter);
-    if (err != ESP_OK) return err;
-
-    // Commit written value.
-    // After setting any values, nvs_commit() must be called to ensure changes are written
-    // to flash storage. Implementations may write to storage at other times,
-    // but this is not guaranteed.
-    err = nvs_commit(my_handle);
-    if (err != ESP_OK) return err;
-
-    // Close
-    nvs_close(my_handle);
-    return ESP_OK;
-}
-
-/* Save new run time value in NVS
-   by first reading a table of previously saved values
-   and then adding the new value at the end of the table.
-   Return an error if anything goes wrong
-   during this process.
- */
-esp_err_t save_run_time(void)
-{
-    nvs_handle_t my_handle;
-    esp_err_t err;
-
-    // Open
-    err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
-    if (err != ESP_OK) return err;
-
-    // Read the size of memory space required for blob
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-    err = nvs_get_blob(my_handle, "run_time", NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-
-    // Read previously saved blob if available
-    uint32_t* run_time = malloc(required_size + sizeof(uint32_t));
-    if (required_size > 0) {
-        err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) {
-            free(run_time);
-            return err;
-        }
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) opening NVS handle!", esp_err_to_name(err));
+        return err;
     }
 
-    // Write value including previously saved blob if available
-    required_size += sizeof(uint32_t);
-    run_time[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
-    err = nvs_set_blob(my_handle, "run_time", run_time, required_size);
-    free(run_time);
-
-    if (err != ESP_OK) return err;
+    // Write blob
+    ESP_LOGI(TAG, "Saving test data blob...");
+    err = nvs_set_blob(my_handle, "test_data", &test_data, sizeof(test_data_t));
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to write test data blob!");
+        nvs_close(my_handle);
+        return err;
+    }
 
     // Commit
     err = nvs_commit(my_handle);
-    if (err != ESP_OK) return err;
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to commit data");
+    }
 
-    // Close
     nvs_close(my_handle);
-    return ESP_OK;
+    return err;
 }
 
-/* Read from NVS and print restart counter
-   and the table with run times.
-   Return an error if anything goes wrong
-   during this process.
- */
-esp_err_t print_what_saved(void)
+/* Example of storing and appending array data as a blob */
+esp_err_t save_array_data(void)
 {
     nvs_handle_t my_handle;
     esp_err_t err;
@@ -129,70 +97,137 @@ esp_err_t print_what_saved(void)
     err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
     if (err != ESP_OK) return err;
 
-    // Read restart counter
-    int32_t restart_counter = 0; // value will default to 0, if not set yet in NVS
-    err = nvs_get_i32(my_handle, "restart_conter", &restart_counter);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    printf("Restart counter = %" PRIu32 "\n", restart_counter);
-
-    // Read run time blob
-    size_t required_size = 0;  // value will default to 0, if not set yet in NVS
-    // obtain required memory space to store blob being read from NVS
-    err = nvs_get_blob(my_handle, "run_time", NULL, &required_size);
-    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) return err;
-    printf("Run time:\n");
-    if (required_size == 0) {
-        printf("Nothing saved yet!\n");
-    } else {
-        uint32_t* run_time = malloc(required_size);
-        err = nvs_get_blob(my_handle, "run_time", run_time, &required_size);
-        if (err != ESP_OK) {
-            free(run_time);
-            return err;
-        }
-        for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
-            printf("%d: %" PRIu32 "\n", i + 1, run_time[i]);
-        }
-        free(run_time);
+    // First, get the size of existing data (if any)
+    size_t required_size = 0;
+    err = nvs_get_blob(my_handle, "array_data", NULL, &required_size);
+    if (err != ESP_OK && err != ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGE(TAG, "Error (%s) reading array size!", esp_err_to_name(err));
+        nvs_close(my_handle);
+        return err;
     }
 
-    // Close
+    // Allocate memory and read existing data
+    uint32_t* array_data = malloc(required_size + sizeof(uint32_t));
+    if (required_size > 0) {
+        err = nvs_get_blob(my_handle, "array_data", array_data, &required_size);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Error (%s) reading array data!", esp_err_to_name(err));
+            free(array_data);
+            nvs_close(my_handle);
+            return err;
+        }
+    }
+
+    // Append new value
+    required_size += sizeof(uint32_t);
+    array_data[required_size / sizeof(uint32_t) - 1] = xTaskGetTickCount() * portTICK_PERIOD_MS;
+
+    // Save updated array
+    err = nvs_set_blob(my_handle, "array_data", array_data, required_size);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) saving array data!", esp_err_to_name(err));
+    }
+
+    free(array_data);
+
+    // Commit
+    err = nvs_commit(my_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) committing data!", esp_err_to_name(err));
+    }
+
+    nvs_close(my_handle);
+    return err;
+}
+
+/* Read and display all saved blobs */
+esp_err_t read_stored_blobs(void)
+{
+    nvs_handle_t my_handle;
+    esp_err_t err;
+
+    err = nvs_open(STORAGE_NAMESPACE, NVS_READONLY, &my_handle);
+    if (err != ESP_OK) return err;
+
+    // 1. Read test data blob
+    ESP_LOGI(TAG, "Reading test data blob:");
+    test_data_t test_data;
+    size_t test_data_size = sizeof(test_data_t);
+    err = nvs_get_blob(my_handle, "test_data", &test_data, &test_data_size);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "ID: %d", test_data.id);
+        ESP_LOGI(TAG, "Name: %s", test_data.name);
+        ESP_LOGI(TAG, "Values: %.3f, %.3f, %.3f, %.3f",
+                 test_data.values[0], test_data.values[1],
+                 test_data.values[2], test_data.values[3]);
+        ESP_LOGI(TAG, "Flags: 0x%08" PRIX32, test_data.flags);
+        ESP_LOGI(TAG, "Counts: %d, %d", test_data.counts[0], test_data.counts[1]);
+        ESP_LOGI(TAG, "Active: %s", test_data.active ? "true" : "false");
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGW(TAG, "Test data not found!");
+    }
+
+    // 2. Read array data blob
+    ESP_LOGI(TAG, "\nReading array data blob:");
+    size_t required_size = 0;
+    err = nvs_get_blob(my_handle, "array_data", NULL, &required_size);
+    if (err == ESP_OK) {
+        uint32_t* array_data = malloc(required_size);
+        err = nvs_get_blob(my_handle, "array_data", array_data, &required_size);
+        if (err == ESP_OK) {
+            for (int i = 0; i < required_size / sizeof(uint32_t); i++) {
+                ESP_LOGI(TAG, "Array[%d] = %" PRIu32, i, array_data[i]);
+            }
+        }
+        free(array_data);
+    } else if (err == ESP_ERR_NVS_NOT_FOUND) {
+        ESP_LOGW(TAG, "Array data not found!");
+    }
+
     nvs_close(my_handle);
     return ESP_OK;
 }
 
-
 void app_main(void)
 {
+    // Initialize NVS
     esp_err_t err = nvs_flash_init();
     if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        // NVS partition was truncated and needs to be erased
-        // Retry nvs_flash_init
         ESP_ERROR_CHECK(nvs_flash_erase());
         err = nvs_flash_init();
     }
-    ESP_ERROR_CHECK( err );
+    ESP_ERROR_CHECK(err);
 
-    err = print_what_saved();
-    if (err != ESP_OK) printf("Error (%s) reading data from NVS!\n", esp_err_to_name(err));
+    // Save new test data
+    err = save_test_data();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) saving test data!", esp_err_to_name(err));
+    }
 
-    err = save_restart_counter();
-    if (err != ESP_OK) printf("Error (%s) saving restart counter to NVS!\n", esp_err_to_name(err));
+    // Save new array data
+    err = save_array_data();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) saving array data!", esp_err_to_name(err));
+    }
 
+    // Read updated data
+    ESP_LOGI(TAG, "\nReading updated blob data:");
+    err = read_stored_blobs();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Error (%s) reading updated data!", esp_err_to_name(err));
+    }
+
+    ESP_LOGI(TAG, "\nBlob operations completed. Monitoring GPIO for reset...");
+
+    // Setup GPIO for reset monitoring
     gpio_reset_pin(BOOT_MODE_PIN);
     gpio_set_direction(BOOT_MODE_PIN, GPIO_MODE_INPUT);
 
-    /* Read the status of GPIO0. If GPIO0 is LOW for longer than 1000 ms,
-       then save module's run time and restart it
-     */
     while (1) {
         if (gpio_get_level(BOOT_MODE_PIN) == 0) {
             vTaskDelay(1000 / portTICK_PERIOD_MS);
             if(gpio_get_level(BOOT_MODE_PIN) == 0) {
-                err = save_run_time();
-                if (err != ESP_OK) printf("Error (%s) saving run time blob to NVS!\n", esp_err_to_name(err));
-                printf("Restarting...\n");
-                fflush(stdout);
+                ESP_LOGI(TAG, "Reset button pressed, restarting...");
                 esp_restart();
             }
         }
