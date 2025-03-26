@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 #include "hal/mmu_hal.h"
 #include "hal/cache_hal.h"
 #include "hal/cache_ll.h"
+#include "esp_cpu.h"
 #include "esp_cache.h"
 #include "esp_private/esp_cache_private.h"
 #include "esp_private/critical_section.h"
@@ -92,6 +93,56 @@ esp_err_t esp_cache_msync(void *addr, size_t size, int flags)
 
     return ESP_OK;
 }
+
+void esp_cache_suspend_ext_mem_cache(void)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    esp_cpu_branch_prediction_disable();
+#endif
+#if (CONFIG_SPIRAM && SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
+    /**
+     * before suspending the external mem cache, writeback internal mem cache content back to external mem cache
+     * to avoid stuck issue caused by internal mem cache auto-writeback
+     */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
+    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+}
+
+void esp_cache_resume_ext_mem_cache(void)
+{
+    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
+}
+
+#if SOC_CACHE_FREEZE_SUPPORTED
+void esp_cache_freeze_ext_mem_cache(void)
+{
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    //branch predictor will start cache request as well
+    esp_cpu_branch_prediction_disable();
+#endif
+#if (CONFIG_SPIRAM && SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE)
+    /**
+     * before freezing the external mem cache, writeback internal mem cache content back to external mem cache
+     * to avoid stuck issue caused by internal mem cache auto-writeback
+     */
+    cache_ll_writeback_all(CACHE_LL_LEVEL_INT_MEM, CACHE_TYPE_DATA, CACHE_LL_ID_ALL);
+#endif
+    cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+}
+
+void esp_cache_unfreeze_ext_mem_cache(void)
+{
+    cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+    esp_cpu_branch_prediction_enable();
+#endif
+}
+#endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
 //The esp_cache_aligned_malloc function is marked deprecated but also called by other
 //(also deprecated) functions in this file. In order to work around that generating warnings, it's

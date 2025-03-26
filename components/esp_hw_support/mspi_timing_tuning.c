@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -14,8 +14,7 @@
 #include "soc/io_mux_reg.h"
 #include "soc/soc.h"
 #include "hal/spi_flash_hal.h"
-#include "hal/cache_hal.h"
-#include "hal/cache_ll.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_private/mspi_timing_tuning.h"
 #include "esp_private/mspi_timing_config.h"
 #include "mspi_timing_by_mspi_delay.h"
@@ -536,7 +535,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
      * for preventing concurrent from MSPI to external memory
      */
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_freeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    esp_cache_freeze_ext_mem_cache();
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
     if (switch_down) {
@@ -548,7 +547,7 @@ void mspi_timing_change_speed_mode_cache_safe(bool switch_down)
     }
 
 #if SOC_CACHE_FREEZE_SUPPORTED
-    cache_hal_unfreeze(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    esp_cache_unfreeze_ext_mem_cache();
 #endif  //#if SOC_CACHE_FREEZE_SUPPORTED
 
 #if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE && !CONFIG_FREERTOS_UNICORE
