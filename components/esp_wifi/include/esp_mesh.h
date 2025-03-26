@@ -111,7 +111,7 @@ extern "C" {
 #define ESP_ERR_MESH_DISCARD_DUPLICATE    (ESP_ERR_MESH_BASE + 20)   /**< discard the packet due to the duplicate sequence number */
 #define ESP_ERR_MESH_DISCARD              (ESP_ERR_MESH_BASE + 21)   /**< discard the packet */
 #define ESP_ERR_MESH_VOTING               (ESP_ERR_MESH_BASE + 22)   /**< vote in progress */
-#define ESP_ERR_MESH_XMIT                 (ESP_ERR_MESH_BASE + 23)   /**< XMIT */
+#define ESP_ERR_MESH_XMIT                 (ESP_ERR_MESH_BASE + 23)   /**< TX fail, the tx state is a value other than timeout and disconnect */
 #define ESP_ERR_MESH_QUEUE_READ           (ESP_ERR_MESH_BASE + 24)   /**< error in reading queue */
 #define ESP_ERR_MESH_PS                   (ESP_ERR_MESH_BASE + 25)   /**< mesh PS is not specified as enable or disable */
 #define ESP_ERR_MESH_RECV_RELEASE         (ESP_ERR_MESH_BASE + 26)   /**< release esp_mesh_recv_toDS */
@@ -682,6 +682,8 @@ esp_err_t esp_mesh_stop(void);
  *    - ESP_ERR_MESH_QUEUE_FULL
  *    - ESP_ERR_MESH_NO_ROUTE_FOUND
  *    - ESP_ERR_MESH_DISCARD
+ *    - ESP_ERR_MESH_NOT_SUPPORT
+ *    - ESP_ERR_MESH_XMIT
  */
 esp_err_t esp_mesh_send(const mesh_addr_t *to, const mesh_data_t *data,
                         int flag, const mesh_opt_t opt[],  int opt_count);
