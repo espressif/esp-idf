@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -145,9 +145,8 @@ int mock_valid_poll_read_fragmented_callback(esp_transport_handle_t t, int timeo
 
 }
 
-void test_ws_connect(bool expect_valid_connection,
-                     CMOCK_mock_read_CALLBACK read_callback,
-                     CMOCK_mock_poll_read_CALLBACK poll_read_callback=mock_poll_read_callback) {
+TEST_CASE("WebSocket Transport Connection", "[success]")
+{
     constexpr static auto timeout = 50;
     constexpr static auto port = 8080;
     constexpr static auto host = "localhost";
@@ -161,26 +160,39 @@ void test_ws_connect(bool expect_valid_connection,
     unique_transport websocket_transport{esp_transport_ws_init(parent_handle.get()), esp_transport_destroy};
     REQUIRE(websocket_transport);
 
-    SECTION("Successful connection and read data") {
-        fmt::print("Attempting to connect to WebSocket\n");
-	    esp_crypto_sha1_ExpectAnyArgsAndReturn(0);
-        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+    fmt::print("Attempting to connect to WebSocket\n");
+    esp_crypto_sha1_ExpectAnyArgsAndReturn(0);
+    esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
 
-        // Set the callback function for mock_write
-        mock_write_Stub(mock_write_callback);
-        mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+    // Set the callback function for mock_write
+    mock_write_Stub(mock_write_callback);
+    mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
+
+    SECTION("Happy flow") {
         // Set the callback function for mock_read
-        mock_read_Stub(read_callback);
-        mock_poll_read_Stub(poll_read_callback);
+        mock_read_Stub(mock_valid_read_callback);
+        mock_poll_read_Stub(mock_poll_read_callback);
         esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
         mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
 
-        if (!expect_valid_connection) {
-            // for invalid connections we only check that the connect() function fails
-            REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) != 0);
-            // and we're done here
-            return;
-        }
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
+        char buffer[WS_BUFFER_SIZE];
+        int read_len = 0;
+        read_len = esp_transport_read(websocket_transport.get(), &buffer[read_len], WS_BUFFER_SIZE - read_len, timeout);
+
+        fmt::print("Read result: {}\n", read_len);
+        REQUIRE(read_len > 0);  // Ensure data is read
+
+        std::string response(buffer, read_len);
+        REQUIRE(response == "Test");
+    }
+
+    SECTION("Happy flow with fragmented reads byte by byte") {
+        // Set the callback function for mock_read
+        mock_read_Stub(mock_valid_read_fragmented_callback);
+        mock_poll_read_Stub(mock_valid_poll_read_fragmented_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
 
         REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 0);
 
@@ -195,43 +207,111 @@ void test_ws_connect(bool expect_valid_connection,
 
         std::string response(buffer, read_len);
         REQUIRE(response == "Test");
-
     }
 }
 
-// Happy flow
-TEST_CASE("WebSocket Transport Connection", "[websocket_transport]")
+TEST_CASE("WebSocket Transport Connection", "[failure]")
 {
-    test_ws_connect(true, mock_valid_read_callback);
-}
+    constexpr static auto timeout = 50;
+    constexpr static auto port = 8080;
+    constexpr static auto host = "localhost";
+    // Initialize the parent handle
+    unique_transport parent_handle{esp_transport_init(), esp_transport_destroy};
+    REQUIRE(parent_handle);
 
-// Happy flow with fragmented reads byte by byte
-TEST_CASE("ws connect and reads by fragments", "[websocket_transport]")
-{
-    test_ws_connect(true, mock_valid_read_fragmented_callback, mock_valid_poll_read_fragmented_callback);
-}
+    // Set mock functions for parent handle
+    esp_transport_set_func(parent_handle.get(), mock_connect, mock_read, mock_write, mock_close, mock_poll_read, mock_poll_write, mock_destroy);
 
-// Some corner cases where we expect the ws connection to fail
+    unique_transport websocket_transport{esp_transport_ws_init(parent_handle.get()), esp_transport_destroy};
+    REQUIRE(websocket_transport);
 
-TEST_CASE("ws connect fails (0 len response)", "[websocket_transport]")
-{
-    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
-                        return 0;
-                    });
-}
+    fmt::print("Attempting to connect to WebSocket\n");
+    esp_crypto_sha1_ExpectAnyArgsAndReturn(0);
+    esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
 
-TEST_CASE("ws connect fails (invalid response)", "[websocket_transport]")
-{
-    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
-        int resp_len = len/2;
-        std::memset(buf, '?', resp_len);
-        return resp_len;
-    });
-}
+    // Set the callback function for mock_write
+    mock_write_Stub(mock_write_callback);
+    mock_connect_ExpectAndReturn(parent_handle.get(), host, port, timeout, ESP_OK);
 
-TEST_CASE("ws connect fails (big response)", "[websocket_transport]")
-{
-    test_ws_connect(false, [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
-        return WS_BUFFER_SIZE;
-    });
+    SECTION("ws connect fails (0 len response)") {
+        // Set the callback function for mock_read
+        mock_read_Stub([](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+            return 0;
+        });
+        mock_poll_read_Stub(mock_poll_read_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        // check that the connect() function fails
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) != 0);
+    }
+
+    SECTION("ws connect fails (invalid response)") {
+        // Set the callback function for mock_read
+        mock_read_Stub([](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+            int resp_len = len / 2;
+            std::memset(buf, '?', resp_len);
+            return resp_len;
+        });
+        mock_poll_read_Stub(mock_poll_read_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        // check that the connect() function fails
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) != 0);
+    }
+
+    SECTION("ws connect fails (big response)") {
+        // Set the callback function for mock_read
+        mock_read_Stub([](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+            return WS_BUFFER_SIZE;
+        });
+        mock_poll_read_Stub(mock_poll_read_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        // check that the connect() function fails
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) != 0);
+    }
+
+    SECTION("ws connect receives redirection response") {
+        // Set the callback function for mock_read
+        mock_read_Stub( [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+            char response[WS_BUFFER_SIZE];
+            int response_length = snprintf(response, WS_BUFFER_SIZE,
+                                           "HTTP/1.1 301 Moved Permanently\r\n"
+                                           "Location: ws://newhost:8080\r\n"
+                                           "\r\n");
+            std::memcpy(buf, response, response_length);
+            return response_length;
+        });
+        mock_poll_read_Stub(mock_poll_read_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        // check that the connect() function returns redir status
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == 301);
+        // Assert the expected HTTP status code
+        REQUIRE((esp_transport_ws_get_upgrade_request_status(websocket_transport.get())) == 301);
+    }
+
+    SECTION("ws connect receives redirection response without location uri") {
+        // Set the callback function for mock_read
+        mock_read_Stub( [](esp_transport_handle_t h, char *buf, int len, int tout, int n) {
+            char response[WS_BUFFER_SIZE];
+            int response_length = snprintf(response, WS_BUFFER_SIZE,
+                                           "HTTP/1.1 301 Moved Permanently\r\n"
+                                           "\r\n");
+            std::memcpy(buf, response, response_length);
+            return response_length;
+        });
+        mock_poll_read_Stub(mock_poll_read_callback);
+        esp_crypto_base64_encode_ExpectAnyArgsAndReturn(0);
+        mock_destroy_ExpectAnyArgsAndReturn(ESP_OK);
+
+        // check that the connect() function fails
+        REQUIRE(esp_transport_connect(websocket_transport.get(), host, port, timeout) == -1);
+        // Assert the expected HTTP status code
+        REQUIRE((esp_transport_ws_get_upgrade_request_status(websocket_transport.get())) == 301);
+    }
 }

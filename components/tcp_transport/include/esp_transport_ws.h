@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+
 typedef enum ws_transport_opcodes {
     WS_TRANSPORT_OPCODES_CONT =  0x00,
     WS_TRANSPORT_OPCODES_TEXT =  0x01,
@@ -152,7 +153,7 @@ bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t);
 /**
  * @brief               Returns the HTTP status code of the websocket handshake
  *
- * This API should be called after the connection atempt otherwise its result is meaningless
+ * This API should be called after the connection attempt otherwise its result is meaningless
  *
  * @param t             websocket transport handle
  *
@@ -161,6 +162,17 @@ bool esp_transport_ws_get_fin_flag(esp_transport_handle_t t);
  *      -1 on failure
  */
 int esp_transport_ws_get_upgrade_request_status(esp_transport_handle_t t);
+
+/**
+ * @brief               Returns websocket redir host for the last connection attempt
+ *
+ * @param t             websocket transport handle
+ *
+ * @return
+ *      - URI of the redirection host
+ *      - NULL if no redirection was attempted
+ */
+char* esp_transport_ws_get_redir_uri(esp_transport_handle_t t);
 
 /**
  * @brief               Returns websocket op-code for last received data
