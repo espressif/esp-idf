@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,12 +7,43 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include "soc/soc_caps.h"
 #include "esp_err.h"
 #include "esp_bit_defs.h"
 #include "esp_heap_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+/**
+ * @brief Suspend external memory cache
+ *
+ * @note This API is only for internal usage, no thread safety guaranteed
+ */
+void esp_cache_suspend_ext_mem_cache(void);
+
+/**
+ * @brief Resume external memory cache
+ *
+ * @note This API is only for internal usage, no thread safety guaranteed
+ */
+void esp_cache_resume_ext_mem_cache(void);
+
+#if SOC_CACHE_FREEZE_SUPPORTED
+/**
+ * @brief Freeze external memory cache
+ *
+ * @note This API is only for internal usage, no thread safety guaranteed
+ */
+void esp_cache_freeze_ext_mem_cache(void);
+
+/**
+ * @brief Unfreeze external memory cache
+ *
+ * @note This API is only for internal usage, no thread safety guaranteed
+ */
+void esp_cache_unfreeze_ext_mem_cache(void);
 #endif
 
 /**
