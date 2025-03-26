@@ -401,7 +401,7 @@ esp_err_t gpio_config(const gpio_config_t *pGPIOConfig)
                 gpio_pulldown_dis(io_num);
             }
 
-            ESP_LOGI(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
+            ESP_LOGD(GPIO_TAG, "GPIO[%"PRIu32"]| InputEn: %d| OutputEn: %d| OpenDrain: %d| Pullup: %d| Pulldown: %d| Intr:%d ", io_num, input_en, output_en, od_en, pu_en, pd_en, pGPIOConfig->intr_type);
             gpio_set_intr_type(io_num, pGPIOConfig->intr_type);
 
             if (pGPIOConfig->intr_type) {
@@ -455,16 +455,20 @@ esp_err_t gpio_config_as_analog(gpio_num_t gpio_num)
 
 esp_err_t gpio_reset_pin(gpio_num_t gpio_num)
 {
-    assert(GPIO_IS_VALID_GPIO(gpio_num));
-    gpio_config_t cfg = {
-        .pin_bit_mask = BIT64(gpio_num),
-        .mode = GPIO_MODE_DISABLE,
-        //for powersave reasons, the GPIO should not be floating, select pullup
-        .pull_up_en = true,
-        .pull_down_en = false,
-        .intr_type = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&cfg);
+    GPIO_CHECK(GPIO_IS_VALID_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    gpio_intr_disable(gpio_num);
+    // for powersave reasons, the GPIO should not be floating, select pullup
+    gpio_pullup_en(gpio_num);
+    gpio_pulldown_dis(gpio_num);
+    gpio_input_disable(gpio_num);
+    gpio_output_disable(gpio_num);
+#if SOC_RTCIO_PIN_COUNT > 0
+    if (rtc_gpio_is_valid_gpio(gpio_num)) {
+        rtc_gpio_deinit(gpio_num);
+    }
+#endif
+    gpio_hal_func_sel(gpio_context.gpio_hal, gpio_num, PIN_FUNC_GPIO);
+    esp_gpio_revoke(BIT64(gpio_num));
     return ESP_OK;
 }
 
