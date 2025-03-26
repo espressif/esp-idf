@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -400,7 +400,7 @@ r_ble_ll_hci_set_adv_data = 0x40001088;
 r_ble_ll_hci_set_le_event_mask = 0x4000108c;
 r_ble_ll_hci_set_scan_rsp_data = 0x40001090;
 r_ble_ll_hci_status_params_cmd_proc = 0x40001094;
-r_ble_ll_hci_vs_cmd_proc = 0x40001098;
+//r_ble_ll_hci_vs_cmd_proc = 0x40001098;
 r_ble_ll_hci_vs_rd_static_addr = 0x4000109c;
 r_ble_ll_hw_err_timer_cb = 0x400010a0;
 r_ble_ll_hw_error = 0x400010a4;
@@ -937,7 +937,7 @@ r_ble_phy_xcvr_state_get = 0x400018ec;
 r_ble_plf_set_log_level = 0x400018f0;
 r_ble_rtc_wake_up_cpu_init = 0x400018f4;
 r_ble_rtc_wake_up_state_clr = 0x400018f8;
-r_ble_vendor_hci_register = 0x400018fc;
+//r_ble_vendor_hci_register = 0x400018fc;
 r_bt_rf_coex_cfg_set = 0x40001900;
 r_bt_rf_coex_coded_txrx_time_upper_lim = 0x40001904;
 r_bt_rf_coex_dft_pti_set = 0x40001908;
@@ -1173,7 +1173,7 @@ r_ble_ll_get_npl_element_info = 0x40002f48;
 r_ble_rtc_wake_up_cpu_clr = 0x40002f4c;
 r_ble_ll_scan_hci_set_adv_report_flow_ctrl = 0x40002f50;
 r_ble_ll_scan_hci_update_adv_report_flow_ctrl = 0x40002f54;
-r_ble_ll_scan_send_adv_lost_report = 0x40002f58;
+//r_ble_ll_scan_send_adv_lost_report = 0x40002f58;
 r_ble_ll_scan_adv_report_cth_flow_is_enabled = 0x40002f5c;
 r_ble_ll_scan_adv_report_cth_flow_alloc_credit = 0x40002f60;
 r_ble_ll_scan_adv_report_cth_flow_free_credit = 0x40002f64;
