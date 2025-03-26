@@ -61,40 +61,11 @@ menu "Example Configuration"
         default 24 if BIT_WIDTH_24BIT
         default 32 if BIT_WIDTH_32BIT
 
-    choice EXAMPLE_SELECT_MIC_GAIN
-        prompt "Set MIC gain"
-        default MIC_GAIN_18DB
-        help
-            Select the default microphone gain
-
-        config MIC_GAIN_0DB
-            bool "0dB"
-        config MIC_GAIN_6DB
-            bool "6dB"
-        config MIC_GAIN_12DB
-            bool "12dB"
-        config MIC_GAIN_18DB
-            bool "18dB"
-        config MIC_GAIN_24DB
-            bool "24dB"
-        config MIC_GAIN_30DB
-            bool "30dB"
-        config MIC_GAIN_36DB
-            bool "36dB"
-        config MIC_GAIN_42DB
-            bool "42dB"
-    endchoice
-
     config EXAMPLE_CODEC_MIC_GAIN
-        int
-        default 0 if MIC_GAIN_0DB
-        default 1 if MIC_GAIN_6DB
-        default 2 if MIC_GAIN_12DB
-        default 3 if MIC_GAIN_18DB
-        default 4 if MIC_GAIN_24DB
-        default 5 if MIC_GAIN_30DB
-        default 6 if MIC_GAIN_36DB
-        default 7 if MIC_GAIN_42DB
+        int "Set MIC gain (unit: dB)"
+        default 18
+        help
+            Select mic gain for echo mode
 
     config EXAMPLE_CODEC_VOLUME
         int "Voice volume"
