@@ -120,6 +120,7 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *wr_data, 
         /* Copy to stack to avoid alignment restrictions. */
         char *tmp = buf + (sizeof(buf) - len);
         memcpy(tmp, addr, len);
+        esp_core_dump_checksum_update(&wr_data->checksum_ctx, tmp, len);
         esp_core_dump_b64_encode((const uint8_t *)tmp, len, (uint8_t *)buf);
         addr += len;
         ESP_COREDUMP_PRINT("%s\r\n", buf);
@@ -127,7 +128,6 @@ static esp_err_t esp_core_dump_uart_write_data(core_dump_write_data_t *wr_data, 
 
     if (wr_data) {
         wr_data->off += data_len;
-        esp_core_dump_checksum_update(&wr_data->checksum_ctx, data, data_len);
     }
     return err;
 }
