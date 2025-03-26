@@ -344,9 +344,9 @@ bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority)
     return priority_conflict;
 }
 
-int rmt_get_isr_flags(rmt_group_t *group)
+int rmt_isr_priority_to_flags(rmt_group_t *group)
 {
-    int isr_flags = RMT_INTR_ALLOC_FLAG;
+    int isr_flags = 0;
     if (group->intr_priority) {
         // Use user-specified priority bit
         isr_flags |= (1 << (group->intr_priority));

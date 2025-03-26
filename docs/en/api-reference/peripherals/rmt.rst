@@ -567,7 +567,7 @@ Cache Safe
 
 By default, the RMT interrupt is deferred when the Cache is disabled for reasons like writing or erasing the main Flash. Thus the transaction-done interrupt does not get handled in time, which is not acceptable in a real-time application. What is worse, when the RMT transaction relies on **ping-pong** interrupt to successively encode or copy RMT symbols, a delayed interrupt can lead to an unpredictable result.
 
-There is a Kconfig option :ref:`CONFIG_RMT_ISR_CACHE_SAFE` that has the following features:
+There is a Kconfig option :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` that has the following features:
 
 1. Enable the interrupt being serviced even when the cache is disabled
 2. Place all functions used by the ISR into IRAM [2]_
@@ -594,7 +594,7 @@ The following functions are allowed to use under ISR context as well.
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_RMT_ISR_CACHE_SAFE` controls whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-cache-safe` for more information.
+- :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_RMT_RX_ISR_CACHE_SAFE` control whether the default ISR handler can work when cache is disabled, see also :ref:`rmt-cache-safe` for more information.
 - :ref:`CONFIG_RMT_ENABLE_DEBUG_LOG` is used to enable the debug log at the cost of increased firmware binary size.
 - :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` controls where to place the RMT receive function (IRAM or Flash), see :ref:`rmt-cache-safe` for more information.
 

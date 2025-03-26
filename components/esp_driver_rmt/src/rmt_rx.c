@@ -22,7 +22,8 @@ static void rmt_rx_default_isr(void *args);
 #if SOC_RMT_SUPPORT_DMA
 static bool rmt_dma_rx_one_block_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t *event_data, void *user_data);
 
-static void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
+__attribute__((always_inline))
+static inline void rmt_rx_mount_dma_buffer(rmt_rx_channel_t *rx_chan, const void *buffer, size_t buffer_size, size_t per_block_size, size_t last_block_size)
 {
     uint8_t *data = (uint8_t *)buffer;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -248,7 +249,7 @@ esp_err_t rmt_new_rx_channel(const rmt_rx_channel_config_t *config, rmt_channel_
         bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
         ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
         // 2-- Get interrupt allocation flag
-        int isr_flags = rmt_get_isr_flags(group);
+        int isr_flags = rmt_isr_priority_to_flags(group) | RMT_RX_INTR_ALLOC_FLAG;
         // 3-- Allocate interrupt using isr_flag
         ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
                                         (uint32_t)rmt_ll_get_interrupt_status_reg(hal->regs),
@@ -336,7 +337,7 @@ esp_err_t rmt_rx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_RX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_rx_channel_t *rx_chan = __containerof(channel, rmt_rx_channel_t, base);
 
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
     if (cbs->on_recv_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG, TAG, "on_recv_done callback not in IRAM");
     }
@@ -375,7 +376,7 @@ esp_err_t rmt_receive(rmt_channel_handle_t channel, void *buffer, size_t buffer_
     // check buffer alignment
     uint32_t align_check_mask = mem_alignment - 1;
     ESP_RETURN_ON_FALSE_ISR(((((uintptr_t)buffer) & align_check_mask) == 0) && (((buffer_size) & align_check_mask) == 0), ESP_ERR_INVALID_ARG,
-                            TAG, "buffer address or size are not %zu bytes aligned", mem_alignment);
+                            TAG, "buffer address or size are not %"PRIu32 "bytes aligned", mem_alignment);
 
     rmt_group_t *group = channel->group;
     rmt_hal_context_t *hal = &group->hal;
@@ -560,7 +561,7 @@ static esp_err_t rmt_rx_disable(rmt_channel_handle_t channel)
     return ESP_OK;
 }
 
-static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 {
     rmt_channel_t *channel = &rx_chan->base;
     rmt_group_t *group = channel->group;
@@ -663,7 +664,7 @@ static bool IRAM_ATTR rmt_isr_handle_rx_done(rmt_rx_channel_t *rx_chan)
 }
 
 #if SOC_RMT_SUPPORT_RX_PINGPONG
-static bool IRAM_ATTR rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
+bool rmt_isr_handle_rx_threshold(rmt_rx_channel_t *rx_chan)
 {
     bool need_yield = false;
     rmt_channel_t *channel = &rx_chan->base;
@@ -758,7 +759,8 @@ static void rmt_rx_default_isr(void *args)
 }
 
 #if SOC_RMT_SUPPORT_DMA
-static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan, int start_index)
 {
     size_t received_bytes = 0;
     for (int i = 0; i < rx_chan->num_dma_nodes; i++) {
@@ -773,7 +775,8 @@ static size_t IRAM_ATTR rmt_rx_count_symbols_until_eof(rmt_rx_channel_t *rx_chan
     return received_bytes / sizeof(rmt_symbol_word_t);
 }
 
-static size_t IRAM_ATTR rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
+__attribute__((always_inline))
+static inline size_t rmt_rx_count_symbols_for_single_block(rmt_rx_channel_t *rx_chan, int desc_index)
 {
     size_t received_bytes = rx_chan->dma_nodes_nc[desc_index].dw0.length;
     received_bytes = ALIGN_UP(received_bytes, sizeof(rmt_symbol_word_t));

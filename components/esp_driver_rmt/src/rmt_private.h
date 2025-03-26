@@ -59,10 +59,16 @@ extern "C" {
 #endif
 
 // RMT driver object is per-channel, the interrupt source is shared between channels
-#if CONFIG_RMT_ISR_CACHE_SAFE
-#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE
+#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
 #else
-#define RMT_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
+#define RMT_TX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
+#endif
+
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
+#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM)
+#else
+#define RMT_RX_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED)
 #endif
 
 // Hopefully the channel offset won't change in other targets
@@ -264,11 +270,11 @@ esp_err_t rmt_select_periph_clock(rmt_channel_handle_t chan, rmt_clock_source_t 
 bool rmt_set_intr_priority_to_group(rmt_group_t *group, int intr_priority);
 
 /**
- * @brief Get isr_flags to be passed to `esp_intr_alloc_intrstatus()` according to `intr_priority` set in RMT group
+ * @brief Convert the interrupt priority to flags
  * @param group RMT group
- * @return isr_flags
+ * @return isr_flags which is compatible to `ESP_INTR_FLAG_*`
  */
-int rmt_get_isr_flags(rmt_group_t *group);
+int rmt_isr_priority_to_flags(rmt_group_t *group);
 
 /**
  * @brief Create sleep retention link

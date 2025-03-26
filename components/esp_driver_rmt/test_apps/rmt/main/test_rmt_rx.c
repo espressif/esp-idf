@@ -16,7 +16,7 @@
 #include "test_util_rmt_encoders.h"
 #include "test_board.h"
 
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_RX_ISR_CACHE_SAFE
 #define TEST_RMT_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_RMT_CALLBACK_ATTR
