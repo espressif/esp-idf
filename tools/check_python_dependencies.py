@@ -12,20 +12,23 @@ try:
     from packaging.requirements import Requirement
     from packaging.version import Version
 except ImportError:
-    print('packaging cannot be imported. '
-          'If you\'ve installed a custom Python then this package is provided separately and have to be installed as well. '
-          'Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required packages.')
+    print(
+        'packaging cannot be imported. '
+        "If you've installed a custom Python then this package is provided separately and have to be installed as "
+        'well. Please refer to the Get Started section of the ESP-IDF Programming Guide for setting up the required '
+        'packages.'
+    )
     sys.exit(1)
 
 try:
+    from importlib.metadata import PackageNotFoundError
     from importlib.metadata import requires as _requires
     from importlib.metadata import version as _version
-    from importlib.metadata import PackageNotFoundError
 except ImportError:
     # compatibility for python <=3.7
+    from importlib_metadata import PackageNotFoundError  # type: ignore
     from importlib_metadata import requires as _requires  # type: ignore
     from importlib_metadata import version as _version  # type: ignore
-    from importlib_metadata import PackageNotFoundError  # type: ignore
 
 try:
     from typing import Set
@@ -66,12 +69,20 @@ def get_requires(name: str) -> Optional[list]:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='ESP-IDF Python package dependency checker')
-    parser.add_argument('--requirements', '-r',
-                        help='Path to a requirements file (can be used multiple times)',
-                        action='append', default=[])
-    parser.add_argument('--constraints', '-c', default=[],
-                        help='Path to a constraints file (can be used multiple times)',
-                        action='append')
+    parser.add_argument(
+        '--requirements',
+        '-r',
+        help='Path to a requirements file (can be used multiple times)',
+        action='append',
+        default=[],
+    )
+    parser.add_argument(
+        '--constraints',
+        '-c',
+        default=[],
+        help='Path to a constraints file (can be used multiple times)',
+        action='append',
+    )
     args = parser.parse_args()
 
     required_set = set()
@@ -87,7 +98,8 @@ if __name__ == '__main__':
                     con = os.path.basename(con)
                 elif con.startswith('--only-binary'):
                     continue
-                elif con.startswith('-e') and '#egg=' in con:  # version control URLs, take the egg= part at the end only
+                # version control URLs, take the egg= part at the end only
+                elif con.startswith('-e') and '#egg=' in con:
                     con_m = re.search(r'#egg=([^\s]+)', con)
                     if not con_m:
                         print('Malformed input. Cannot find name in {}'.format(con))
@@ -103,7 +115,7 @@ if __name__ == '__main__':
     not_satisfied = []  # in string form which will be printed
 
     # already_checked set is used in order to avoid circular checks which would cause looping.
-    already_checked = set()  # type: Set[Requirement]
+    already_checked: Set[Requirement] = set()
 
     # required_set contains package names in string form without version constraints. If the package has a constraint
     # specification (package name + version requirement) then use that instead. new_req_list is used to store
@@ -125,7 +137,10 @@ if __name__ == '__main__':
             except Exception as e:
                 # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
                 # log package name alongside the error message for easier debugging
-                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
+                not_satisfied.append(
+                    f"Error while checking requirement '{req}'. Package was not found and is required by the "
+                    f'application: {e}'
+                )
                 new_req_list.remove(req)
         else:
             new_req_list.remove(req)
@@ -138,7 +153,7 @@ if __name__ == '__main__':
             try:
                 dependency_requirements = set()
                 extras = list(requirement.extras) or ['']
-                # `requires` returns all sub-requirements including all extras - we need to filter out just required ones
+                # `requires` returns all sub-requirements including all extras; we need to filter out just required ones
                 for name in get_requires(requirement.name) or []:
                     sub_req = Requirement(name)
                     # check extras e.g. esptool[hsm]
@@ -155,7 +170,10 @@ if __name__ == '__main__':
             except Exception as e:
                 # Catch general exception, because get_version may return None (https://github.com/python/cpython/issues/91216)
                 # log package name alongside the error message for easier debugging
-                not_satisfied.append(f"Error while checking requirement '{req}'. Package was not found and is required by the application: {e}")
+                not_satisfied.append(
+                    f"Error while checking requirement '{req}'. Package was not found and is required by the "
+                    f'application: {e}'
+                )
 
     if len(not_satisfied) > 0:
         print('The following Python requirements are not satisfied:')
@@ -166,8 +184,10 @@ if __name__ == '__main__':
             install_script = 'install.bat' if sys.platform == 'win32' else 'install.sh'
             print('To install the missing packages, please run "{}"'.format(install_script))
         else:
-            print('Please follow the instructions found in the "Set up the tools" section of '
-                  'ESP-IDF Getting Started Guide.')
+            print(
+                'Please follow the instructions found in the "Set up the tools" section of '
+                'ESP-IDF Getting Started Guide.'
+            )
 
         print('Diagnostic information:')
         idf_python_env_path = os.environ.get('IDF_PYTHON_ENV_PATH')
