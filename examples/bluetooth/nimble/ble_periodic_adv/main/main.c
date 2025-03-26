@@ -94,8 +94,8 @@ start_periodic_adv(void)
     /* configure periodic advertising */
     memset(&pparams, 0, sizeof(pparams));
     pparams.include_tx_power = 0;
-    pparams.itvl_min = BLE_GAP_ADV_ITVL_MS(120);
-    pparams.itvl_max = BLE_GAP_ADV_ITVL_MS(240);
+    pparams.itvl_min = BLE_GAP_PERIODIC_ITVL_MS(120);
+    pparams.itvl_max = BLE_GAP_PERIODIC_ITVL_MS(240);
 
     rc = ble_gap_periodic_adv_configure(instance, &pparams);
     assert(rc == 0);
