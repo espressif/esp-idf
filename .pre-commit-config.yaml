@@ -8,8 +8,8 @@ repos:
     rev: "v0.9.7"
     hooks:
       - id: ruff-format
-        args: [ "--preview" ]
-        files: 'pytest_.*\.py$'
+      - id: ruff
+        args: [ "--fix" ]
   - repo: local
     hooks:
       - id: pytest-linter
@@ -65,23 +65,6 @@ repos:
       - id: no-commit-to-branch
         name: Do not use uppercase letters in the branch name
         args: ['--pattern', '^[^A-Z]*[A-Z]']
-  - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        args: ['--config=.flake8', '--tee', '--benchmark']
-  - repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
-    hooks:
-      - id: reorder-python-imports
-        name: Reorder Python imports
-        args: [--py38-plus]
-        exclude: >
-          (?x)^(
-              .*_pb2.py
-          )$
-          |pytest_eth_iperf.py
-          |pytest_iperf.py
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0
     hooks:

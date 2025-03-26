@@ -270,11 +270,6 @@
     - <<: *if-dev-push
       changes: *patterns-c-files
 
-.rules:patterns:python-files:
-  rules:
-    - <<: *if-protected
-    - <<: *if-dev-push
-      changes: *patterns-python-files
 
 #.rules:patterns:static-code-analysis-preview:
 #  rules:

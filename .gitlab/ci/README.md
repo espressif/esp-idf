@@ -145,11 +145,11 @@ check if there's a suitable `.if-<if-anchor-you-need>` anchor
 1. if there is, create a rule following [`rules` Template Naming Rules](#rules-template-naming-rules).For detail information, please refer to [GitLab Documentation `rules-if`](https://docs.gitlab.com/ee/ci/yaml/README.html#rulesif). Here's an example.
 
     ```yaml
-    .rules:patterns:python-files:
+    .rules:patterns:clang_tidy:
       rules:
         - <<: *if-protected
         - <<: *if-dev-push
-          changes: *patterns-python-files
+          changes: *patterns-c-files
     ```
 
 2. if there isn't
