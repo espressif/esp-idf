@@ -896,7 +896,7 @@ static inline void adc_ll_set_ent_param(uint32_t param)
 __attribute__((always_inline))
 static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
 {
-    //C6 doesn't support ADC2, here is for backward compatibility for RNG
+    //C5 doesn't support ADC2, here is for backward compatibility for RNG
     if (adc_n == ADC_UNIT_1) {
         REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_EN_TOUT_ADDR, en);
     } else {
