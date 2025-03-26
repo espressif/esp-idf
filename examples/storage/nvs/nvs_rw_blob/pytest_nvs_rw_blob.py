@@ -16,4 +16,4 @@ def test_examples_nvs_rw_blob(dut: Dut) -> None:
     dut.expect('Reading test data blob:', timeout=20)
     # Verify array data reading
     dut.expect('Reading array data blob:', timeout=20)
-    dut.expect('Blob operations completed. Monitoring GPIO for reset...', timeout=20)
+    dut.expect('Blob operations completed.', timeout=20)

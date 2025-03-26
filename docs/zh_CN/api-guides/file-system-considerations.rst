@@ -181,8 +181,8 @@ NVS 具有如下特性：
 
 **示例:**
 
-- :example:`storage/nvs_rw_value` 演示了如何写入和读取一个整数值。
-- :example:`storage/nvs_rw_blob` 演示如何写入和读取一个 blob。
+- :example:`storage/nvs/nvs_rw_value` 演示了如何写入和读取一个整数值。
+- :example:`storage/nvs/nvs_rw_blob` 演示如何写入和读取一个 blob。
 - :example:`security/nvs_encryption_hmac` 演示了如何用 HMAC 外设进行 NVS 加密，并通过 efuse 中的 HMAC 密钥生成加密密钥。
 - :example:`security/flash_encryption` 演示了如何进行 flash 加密，包括创建和使用 NVS 分区。
 

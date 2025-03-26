@@ -25,15 +25,8 @@
 #include "driver/gpio.h"
 
 #define STORAGE_NAMESPACE "storage"
-#define BLOB_EXAMPLE_DATA_SIZE 256
 
 static const char *TAG = "nvs_blob_example";
-
-#if CONFIG_IDF_TARGET_ESP32C3
-#define BOOT_MODE_PIN GPIO_NUM_9
-#else
-#define BOOT_MODE_PIN GPIO_NUM_0
-#endif //CONFIG_IDF_TARGET_ESP32C3
 
 /* Test data structure to demonstrate different data types in blob */
 typedef struct {
@@ -217,20 +210,5 @@ void app_main(void)
         ESP_LOGE(TAG, "Error (%s) reading updated data!", esp_err_to_name(err));
     }
 
-    ESP_LOGI(TAG, "\nBlob operations completed. Monitoring GPIO for reset...");
-
-    // Setup GPIO for reset monitoring
-    gpio_reset_pin(BOOT_MODE_PIN);
-    gpio_set_direction(BOOT_MODE_PIN, GPIO_MODE_INPUT);
-
-    while (1) {
-        if (gpio_get_level(BOOT_MODE_PIN) == 0) {
-            vTaskDelay(1000 / portTICK_PERIOD_MS);
-            if(gpio_get_level(BOOT_MODE_PIN) == 0) {
-                ESP_LOGI(TAG, "Reset button pressed, restarting...");
-                esp_restart();
-            }
-        }
-        vTaskDelay(200 / portTICK_PERIOD_MS);
-    }
+    ESP_LOGI(TAG, "\nBlob operations completed.");
 }

@@ -154,9 +154,9 @@ NVS 分区生成程序帮助生成 NVS 分区二进制文件，可使用烧录�
 应用示例
 -------------------
 
-ESP-IDF :example:`storage` 目录下提供了数个代码示例：
+ESP-IDF :example:`storage/nvs` 目录下提供了数个代码示例：
 
-:example:`storage/nvs_rw_value`
+:example:`storage/nvs/nvs_rw_value`
 
   演示如何读取及写入 NVS 单个整数值。
 
@@ -164,7 +164,7 @@ ESP-IDF :example:`storage` 目录下提供了数个代码示例：
 
   该示例也演示了如何检测读取/写入操作是否成功，以及某个特定值是否在 NVS 中尚未初始化。诊断程序以纯文本形式提供，有助于追踪程序流程，及时发现问题。
 
-:example:`storage/nvs_rw_blob`
+:example:`storage/nvs/nvs_rw_blob`
 
   演示如何读取及写入 NVS 单个整数值和 BLOB（二进制大对象），并在 NVS 中存储这一数值，即便 {IDF_TARGET_NAME} 模组重启也不会消失。
 
@@ -173,9 +173,9 @@ ESP-IDF :example:`storage` 目录下提供了数个代码示例：
 
   该示例也演示了如何执行诊断程序以检测读取/写入操作是否成功。
 
-:example:`storage/nvs_rw_value_cxx`
+:example:`storage/nvs/nvs_rw_value_cxx`
 
-  这个例子与 :example:`storage/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类。
+  这个例子与 :example:`storage/nvs/nvs_rw_value` 完全一样，只是使用了 C++ 的 NVS 句柄类。
 
 内部实现
 ---------

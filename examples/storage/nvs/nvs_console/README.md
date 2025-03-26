@@ -1,18 +1,9 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- |
-
-# NVS Console Example
-
-This example demonstrates how to use Non-Volatile Storage (NVS) through an interactive console interface. It provides a set of commands to read, write, and manage data in NVS.
+| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-H4 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
+| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- | -------- |
 
 ## Overview
 
-The example implements a command-line interface with the following features:
-- Interactive console with command history
-- Command auto-completion
-- Command hints
-- Persistent command history (optional)
-- Color-coded output (on supported terminals)
+This example demonstrates how to use Non-Volatile Storage (NVS) through an interactive console interface. It provides a set of commands to read, write, and manage data in NVS.
 
 ## Hardware Required
 
@@ -49,6 +40,7 @@ The following commands are available:
      - type can be: i8, u8, i16, u16 i32, u32 i64, u64, str, blob
      - Example: `nvs_set counter i32 -v 42`
      - Example: `nvs_set name str -v "esp"`
+     - Example: `nvs_set blob_val blob -v "657370"` - To set a blob value, provide the hex representation of the data you want to store. For example, 65 (e), 73 (s), 70 (p).
 
    - `nvs_get <key>` - Get a value from NVS
      - Example: `nvs_get counter`
@@ -56,7 +48,8 @@ The following commands are available:
    - `nvs_erase <key>` - Erase a key from NVS
      - Example: `nvs_erase counter`
 
-   - `nvs_list  <partition> [-n <namespace>] [-t <type>]` - List stored key-value pairs stored in NVS.
+   - `nvs_list  <partition> [-n <namespace>] [-t <type>]` - List stored key-value pairs stored in NVS. Use default partition name 'nvs' for listing the stored data.
+     - Example: `nvs_list nvs` - This command lists all namespaces and their stored key-value pairs in the 'nvs' partition.
      - Example: `nvs_list nvs -n storage -t i8`
 
    - `nvs_erase_namespace <namespace>` -  Erases specified namespace
@@ -66,7 +59,7 @@ The following commands are available:
    - `help` - List all commands
    - `free` - Get the current size of free heap memory
    - `restart` - Software reset of the chip
-   - `version` - Get version of chip and SDK
+   - `version` - Get the chip info together with ESP-IDF version used in the application
    - `heap` - Get minimum size of free heap memory that was available during program execution
 
 ### Example Output

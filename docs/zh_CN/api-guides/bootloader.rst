@@ -186,6 +186,6 @@ ESP-IDF 二级引导加载程序位于 flash 的 {IDF_TARGET_CONFIG_BOOTLOADER_O
 
 在引导加载程序的代码中，不能使用其他组件提供的驱动和函数，除非某个驱动或函数明确声明支持在引导加载程序中运行。如果确实需要，请将所需功能放在项目的 `bootloader_components` 目录中（注意，这会增加引导加载程序的大小）。以下是可以在引导加载程序中使用的组件示例：
 
-* :example:`storage/nvs_bootloader`
+* :example:`storage/nvs/nvs_bootloader`
 
 如果引导加载程序过大，则可能与内存中的分区表重叠，分区表默认烧录在偏移量 0x8000 处。增加 :ref:`分区表偏移量 <CONFIG_PARTITION_TABLE_OFFSET>` ，将分区表放在 flash 中靠后的区域，这样可以增加引导加载程序的可用空间。
