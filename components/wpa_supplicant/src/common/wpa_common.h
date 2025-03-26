@@ -289,7 +289,7 @@ struct rsn_error_kde {
 struct wpa_igtk_kde {
 	u8 keyid[2];
 	u8 pn[6];
-	u8 igtk[WPA_IGTK_LEN];
+	u8 igtk[WPA_IGTK_MAX_LEN];
 } STRUCT_PACKED;
 #endif /* CONFIG_IEEE80211W */
 
