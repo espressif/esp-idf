@@ -3,3 +3,7 @@
 components/esp_wifi/test_apps/:
   disable:
     - if: SOC_WIFI_SUPPORTED != 1
+
+components/esp_wifi/test_apps/wifi_nvs_config:
+  disable:
+    - if: SOC_WIFI_SUPPORTED != 1
