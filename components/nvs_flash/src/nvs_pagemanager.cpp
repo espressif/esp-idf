@@ -5,6 +5,8 @@
  */
 #include "nvs_pagemanager.hpp"
 
+using namespace std;
+
 namespace nvs
 {
 esp_err_t PageManager::load(Partition *partition, uint32_t baseSector, uint32_t sectorCount)
