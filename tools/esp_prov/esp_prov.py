@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 #
-# SPDX-FileCopyrightText: 2018-2022 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 #
-
 import argparse
 import asyncio
 import json
@@ -38,9 +37,9 @@ def on_except(err):
         print(err)
 
 
-def get_security(secver, username, password, pop='', verbose=False):
+def get_security(secver, sec_patch_ver, username, password, pop='', verbose=False):
     if secver == 2:
-        return security.Security2(username, password, verbose)
+        return security.Security2(sec_patch_ver, username, password, verbose)
     elif secver == 1:
         return security.Security1(pop, verbose)
     elif secver == 0:
@@ -146,6 +145,27 @@ async def get_version(tp):
         on_except(e)
         response = ''
     return response
+
+
+async def get_sec_patch_ver(tp, verbose=False):
+    response = await get_version(tp)
+
+    if verbose:
+        print('proto-ver response : ', response)
+
+    try:
+        # Interpret this as JSON structure containing
+        # information with security version information
+        info = json.loads(response)
+        try:
+            sec_patch_ver = info['prov']['sec_patch_ver']
+        except KeyError:
+            sec_patch_ver = 0
+        return sec_patch_ver
+
+    except ValueError:
+        # If decoding as JSON fails, we assume default patch level
+        return 0
 
 
 async def establish_session(tp, sec):
@@ -415,6 +435,7 @@ async def main():
         raise RuntimeError('Failed to establish connection')
 
     try:
+        sec_patch_ver = 0
         # If security version not specified check in capabilities
         if args.secver is None:
             # First check if capabilities are supported or not
@@ -436,13 +457,14 @@ async def main():
                 args.sec1_pop = ''
 
         if (args.secver == 2):
+            sec_patch_ver = await get_sec_patch_ver(obj_transport, args.verbose)
             if len(args.sec2_usr) == 0:
                 args.sec2_usr = input('Security Scheme 2 - SRP6a Username required: ')
             if len(args.sec2_pwd) == 0:
                 prompt_str = 'Security Scheme 2 - SRP6a Password required: '
                 args.sec2_pwd = getpass(prompt_str)
 
-        obj_security = get_security(args.secver, args.sec2_usr, args.sec2_pwd, args.sec1_pop, args.verbose)
+        obj_security = get_security(args.secver, sec_patch_ver, args.sec2_usr, args.sec2_pwd, args.sec1_pop, args.verbose)
         if obj_security is None:
             raise ValueError('Invalid Security Version')
 
@@ -459,7 +481,7 @@ async def main():
         print('==== Session Established ====')
 
         if args.reset:
-            print('==== Reseting WiFi====')
+            print('==== Resetting WiFi====')
             await reset_wifi(obj_transport, obj_security)
             sys.exit()
 
