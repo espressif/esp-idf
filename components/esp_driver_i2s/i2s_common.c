@@ -457,37 +457,39 @@ uint32_t i2s_get_buf_size(i2s_chan_handle_t handle, uint32_t data_bit_width, uin
 esp_err_t i2s_free_dma_desc(i2s_chan_handle_t handle)
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
-    if (!handle->dma.desc) {
-        return ESP_OK;
-    }
-    for (int i = 0; i < handle->dma.desc_num; i++) {
-        if (handle->dma.bufs[i]) {
-            free(handle->dma.bufs[i]);
-            handle->dma.bufs[i] = NULL;
-        }
-        if (handle->dma.desc[i]) {
-            free(handle->dma.desc[i]);
-            handle->dma.desc[i] = NULL;
-        }
-    }
-    if (handle->dma.bufs) {
-        free(handle->dma.bufs);
-        handle->dma.bufs = NULL;
-    }
+    handle->dma.buf_size = 0;
+
     if (handle->dma.desc) {
+        for (int i = 0; i < handle->dma.desc_num; i++) {
+            if (handle->dma.desc[i]) {
+                free(handle->dma.desc[i]);
+                handle->dma.desc[i] = NULL;
+            }
+        }
         free(handle->dma.desc);
         handle->dma.desc = NULL;
+    }
+
+    if (handle->dma.bufs) {
+        for (int i = 0; i < handle->dma.desc_num; i++) {
+            if (handle->dma.bufs[i]) {
+                free(handle->dma.bufs[i]);
+                handle->dma.bufs[i] = NULL;
+            }
+        }
+        free(handle->dma.bufs);
+        handle->dma.bufs = NULL;
     }
 
     return ESP_OK;
 }
 
-esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t num, uint32_t bufsize)
+esp_err_t i2s_alloc_dma_desc(i2s_chan_handle_t handle, uint32_t bufsize)
 {
     I2S_NULL_POINTER_CHECK(TAG, handle);
     esp_err_t ret = ESP_OK;
     ESP_RETURN_ON_FALSE(bufsize <= I2S_DMA_BUFFER_MAX_SIZE, ESP_ERR_INVALID_ARG, TAG, "dma buffer can't be bigger than %d", I2S_DMA_BUFFER_MAX_SIZE);
-    handle->dma.desc_num = num;
+    uint32_t num = handle->dma.desc_num;
     handle->dma.buf_size = bufsize;
 
     /* Descriptors must be in the internal RAM */
