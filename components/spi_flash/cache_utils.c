@@ -33,11 +33,11 @@
 #include "esp_memory_utils.h"
 #include "esp_intr_alloc.h"
 #include "spi_flash_override.h"
+#include "esp_private/esp_cache_private.h"
 #include "esp_private/cache_utils.h"
 #include "esp_private/spi_flash_os.h"
 #include "esp_private/freertos_idf_additions_priv.h"
 #include "esp_log.h"
-#include "esp_cpu.h"
 
 static __attribute__((unused)) const char *TAG = "cache";
 
@@ -343,12 +343,12 @@ void IRAM_ATTR spi_flash_disable_cache(uint32_t cpuid, uint32_t *saved_state)
     //branch predictor will start cache request as well
     esp_cpu_branch_prediction_disable();
 #endif
-    cache_hal_suspend(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    esp_cache_suspend_ext_mem_cache();
 }
 
 void IRAM_ATTR spi_flash_restore_cache(uint32_t cpuid, uint32_t saved_state)
 {
-    cache_hal_resume(CACHE_LL_LEVEL_EXT_MEM, CACHE_TYPE_ALL);
+    esp_cache_resume_ext_mem_cache();
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif
