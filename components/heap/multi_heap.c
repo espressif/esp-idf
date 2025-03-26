@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,7 +32,12 @@ void *multi_heap_aligned_alloc_offs(multi_heap_handle_t heap, size_t size, size_
     return multi_heap_aligned_alloc_impl_offs(heap, size, alignment, offset);
 }
 
-#if (!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
+size_t multi_heap_get_full_block_size(multi_heap_handle_t heap, void *p)
+{
+    return multi_heap_get_allocated_size_impl(heap, p);
+}
+
+#if(!defined CONFIG_HEAP_TLSF_USE_ROM_IMPL)
 /* if no heap poisoning, public API aliases directly to these implementations */
 void *multi_heap_malloc(multi_heap_handle_t heap, size_t size)
     __attribute__((alias("multi_heap_malloc_impl")));
@@ -73,7 +78,6 @@ void *multi_heap_get_block_address(multi_heap_block_handle_t block)
 #define ALIGN(X) ((X) & ~(sizeof(void *)-1))
 #define ALIGN_UP(X) ALIGN((X)+sizeof(void *)-1)
 #define ALIGN_UP_BY(num, align) (((num) + ((align) - 1)) & ~((align) - 1))
-
 
 typedef struct multi_heap_info {
     void *lock;
