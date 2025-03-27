@@ -1,0 +1,39 @@
+menu "I2S Test Configuration"
+
+    menu "I2S Audio Output Configuration"
+        config EXAMPLE_I2S_BCK_IO
+            int "I2S BCK GPIO"
+            default 2 if IDF_TARGET_ESP32S3
+            default 4
+            help
+                Set the GPIO number used for I2S bit clock.
+
+        config EXAMPLE_I2S_WS_IO
+            int "I2S WS GPIO"
+            default 3 if IDF_TARGET_ESP32S3
+            default 5
+            help
+                Set the GPIO number used for I2S word select.
+
+        config EXAMPLE_I2S_DO_IO
+            int "I2S DO GPIO"
+            default 4 if IDF_TARGET_ESP32S3
+            default 18
+            help
+                Set the GPIO number used for I2S data out.
+
+        config EXAMPLE_I2S_DI_IO
+            int "I2S DI GPIO"
+            default 5 if IDF_TARGET_ESP32S3
+            default 19
+            help
+                Set the GPIO number used for I2S data in.
+
+        config EXAMPLE_SAMPLE_RATE
+            int "Audio Sample Rate"
+            default 44100
+            help
+                Set the audio sample rate frequency. Usually 16000 or 44100 Hz.
+    endmenu
+
+endmenu

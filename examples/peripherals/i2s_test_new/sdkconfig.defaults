@@ -1,0 +1,5 @@
+# Target
+CONFIG_IDF_TARGET="esp32s3"
+
+# Disable PSRAM
+CONFIG_SPIRAM=n
