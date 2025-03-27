@@ -1334,3 +1334,7 @@ config SOC_BLE_MULTI_CONN_OPTIMIZATION
 config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
     bool
     default y
+
+config SOC_BLE_CTE_SUPPORTED
+    bool
+    default y
