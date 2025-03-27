@@ -208,7 +208,7 @@ void sdmmc_test_rw_highprio_task(sdmmc_card_t* card)
         .busy_time_us = 250000,
     };
 
-    TEST_ASSERT(xTaskCreate(highprio_busy_task, "highprio_busy_task", 4096, &args, 20, NULL));
+    TEST_ASSERT(xTaskCreatePinnedToCore(highprio_busy_task, "highprio_busy_task", 4096, &args, 20, NULL, 0));
 
     for (int i = 0; i < 4; ++i) {
         do_single_rw_perf_test(card, 0, 64, 0, NULL, 0);
