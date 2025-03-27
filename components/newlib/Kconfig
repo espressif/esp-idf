@@ -143,6 +143,23 @@ menu "LibC"
             select ESP_TIME_FUNCS_USE_NONE
     endchoice
 
+    config LIBC_OPTIMIZED_MISALIGNED_ACCESS
+        bool "Use performance-optimized memXXX/strXXX functions on misaligned memory access"
+        default n
+        depends on ESP_ROM_HAS_SUBOPTIMAL_NEWLIB_ON_MISALIGNED_MEMORY
+        help
+            Enables performance-optimized implementations of memory and string functions
+            when handling misaligned memory.
+
+            This increases the image size by ~1000 bytes.
+
+            Optimized functions include:
+                - memcpy
+                - memset
+                - memmove
+                - str[n]cpy
+                - str[n]cmp
+
 endmenu # LibC
 
 config STDATOMIC_S32C1I_SPIRAM_WORKAROUND

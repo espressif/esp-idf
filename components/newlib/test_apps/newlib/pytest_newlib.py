@@ -16,6 +16,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         ('psram_esp32', 'esp32'),
         ('release_esp32', 'esp32'),
         ('release_esp32c2', 'esp32c2'),
+        ('misaligned_mem', 'esp32c3'),
     ],
     indirect=['config', 'target'],
 )

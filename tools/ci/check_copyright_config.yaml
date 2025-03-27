@@ -79,8 +79,7 @@ newlib_component:
     - 'components/newlib/platform_include/**'
     - 'components/newlib/port/**'
     - 'components/newlib/priv_include/**'
-    - 'components/newlib/*.c'
-    - 'components/newlib/*.h'
+    - 'components/newlib/src/**'
   allowed_licenses:
     - Apache-2.0
     - BSD-2-Clause-FreeBSD AND Apache-2.0

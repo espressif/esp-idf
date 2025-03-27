@@ -1,17 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 esp_rom_newlib_init_common_mutexes = 0x400004a4;
 memset = 0x400004a8;
-memcpy = 0x400004ac;
-memmove = 0x400004b0;
-memcmp = 0x400004b4;
-strcpy = 0x400004b8;
-strncpy = 0x400004bc;
-strcmp = 0x400004c0;
-strncmp = 0x400004c4;
 strlen = 0x400004c8;
 strstr = 0x400004cc;
 bzero = 0x400004d0;
