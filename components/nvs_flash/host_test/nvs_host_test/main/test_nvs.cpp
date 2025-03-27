@@ -20,6 +20,8 @@
 #include "test_fixtures.hpp"
 #include "spi_flash_mmap.h"
 
+using namespace std;
+
 #define TEST_ESP_ERR(rc, res) CHECK((rc) == (res))
 #define TEST_ESP_OK(rc) CHECK((rc) == ESP_OK)
 

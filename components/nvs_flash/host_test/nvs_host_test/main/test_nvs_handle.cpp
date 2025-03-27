@@ -12,6 +12,8 @@
 #include <iostream>
 #include <string>
 
+using namespace std;
+
 #define TEMPORARILY_DISABLED(x)
 
 TEST_CASE("NVSHandleSimple closes its reference in PartitionManager", "[partition_mgr]")
