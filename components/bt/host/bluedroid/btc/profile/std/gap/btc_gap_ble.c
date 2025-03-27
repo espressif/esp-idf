@@ -1144,8 +1144,14 @@ static void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
         case BTA_DM_BLE_5_GAP_PERIODIC_ADV_REPORT_EVT: {
             msg.act = ESP_GAP_BLE_PERIODIC_ADV_REPORT_EVT;
-            memcpy(&param.period_adv_report, &params->period_adv_report,
-                   sizeof(esp_ble_gap_periodic_adv_report_t));
+            param.period_adv_report.params.sync_handle = params->period_adv_report.sync_handle;
+            param.period_adv_report.params.tx_power = params->period_adv_report.tx_power;
+            param.period_adv_report.params.rssi = params->period_adv_report.rssi;
+            #if (BLE_FEAT_CTE_EN == TRUE)
+            param.period_adv_report.params.cte_type = params->period_adv_report.cte_type;
+            #endif // #if (BLE_FEAT_CTE_EN == TRUE)
+            param.period_adv_report.params.data_status = params->period_adv_report.data_status;
+            param.period_adv_report.params.data_length = params->period_adv_report.data_length;
             if (params->period_adv_report.data) {
                 memcpy(param.period_adv_report.params.data, params->period_adv_report.data,
                     params->period_adv_report.data_length);

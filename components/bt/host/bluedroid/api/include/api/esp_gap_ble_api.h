@@ -1025,6 +1025,13 @@ typedef struct {
     uint16_t sync_handle;                          /*!< periodic advertising train handle */
     uint8_t tx_power;                              /*!< periodic advertising tx power*/
     int8_t rssi;                                   /*!< periodic advertising rssi */
+#if (CONFIG_BT_BLE_FEAT_CTE_EN) // #if (BLE_FEAT_CTE_EN == TRUE)
+    uint8_t cte_type;                              /*!< The type of Constant Tone Extension
+                                                    0x00: AoA Constant Tone Extension
+                                                    0x01: AoD Constant Tone Extension with 1 μs slots
+                                                    0x02: AoD Constant Tone Extension with 2 μs slots
+                                                    0xFF: No Constant Tone Extension */
+#endif // BT_BLE_FEAT_CTE_EN
     esp_ble_gap_ext_adv_data_status_t data_status; /*!< periodic advertising data type*/
     uint8_t data_length;                           /*!< periodic advertising data length */
     uint8_t data[251];                             /*!< periodic advertising data */
