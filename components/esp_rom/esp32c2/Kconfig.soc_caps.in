@@ -55,6 +55,10 @@ config ESP_ROM_HAS_SPI_FLASH
     bool
     default y
 
+config ESP_ROM_HAS_SPI_FLASH_MMAP
+    bool
+    default y
+
 config ESP_ROM_HAS_NEWLIB
     bool
     default y
