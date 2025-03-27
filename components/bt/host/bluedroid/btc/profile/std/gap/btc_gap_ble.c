@@ -1206,6 +1206,76 @@ void btc_ble_5_gap_callback(tBTA_DM_BLE_5_GAP_EVENT event,
             param.past_received.adv_clk_accuracy = params->past_recv.adv_clk_accuracy;
             break;
 #endif
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+        case BTA_BLE_GAP_ENH_READ_TRANS_POWER_LEVEL_EVT:
+            msg.act = ESP_GAP_BLE_ENH_READ_TRANS_PWR_LEVEL_EVT;
+            param.enh_trans_pwr_level_cmpl.status = btc_btm_status_to_esp_status(params->enh_trans_pwr_level_cmpl.status);
+            param.enh_trans_pwr_level_cmpl.conn_handle = params->enh_trans_pwr_level_cmpl.conn_handle;
+            param.enh_trans_pwr_level_cmpl.phy = params->enh_trans_pwr_level_cmpl.phy;
+            param.enh_trans_pwr_level_cmpl.cur_tx_pwr_level = params->enh_trans_pwr_level_cmpl.cur_tx_pwr_level;
+            param.enh_trans_pwr_level_cmpl.max_tx_pwr_level = params->enh_trans_pwr_level_cmpl.max_tx_pwr_level;
+            break;
+        case BTA_BLE_GAP_READ_REMOTE_TRANS_POWER_LEVEL_EVT:
+            msg.act = ESP_GAP_BLE_READ_REMOTE_TRANS_PWR_LEVEL_EVT;
+            param.read_remote_trans_pwr_level_cmpl.status = btc_btm_status_to_esp_status(params->remote_pwr_level_cmpl.status);
+            break;
+        case BTA_BLE_GAP_SET_PATH_LOSS_REPORTING_PARAMS_EVT:
+            msg.act = ESP_GAP_BLE_SET_PATH_LOSS_RPTING_PARAMS_EVT;
+            param.set_path_loss_rpting_params.status = btc_btm_status_to_esp_status(params->path_loss_rpting_params.status);
+            param.set_path_loss_rpting_params.conn_handle = params->path_loss_rpting_params.conn_handle;
+            break;
+        case BTA_BLE_GAP_SET_PATH_LOSS_REPORTING_ENABLE_EVT:
+            msg.act = ESP_GAP_BLE_SET_PATH_LOSS_RPTING_ENABLE_EVT;
+            param.set_path_loss_rpting_enable.status = btc_btm_status_to_esp_status(params->path_loss_rpting_enable.status);
+            param.set_path_loss_rpting_enable.conn_handle = params->path_loss_rpting_enable.conn_handle;
+            break;
+        case BTA_BLE_GAP_SET_TRANS_POWER_REPORTING_ENABLE_EVT:
+            msg.act = ESP_GAP_BLE_SET_TRANS_PWR_RPTING_ENABLE_EVT;
+            param.set_trans_pwr_rpting_enable.status = btc_btm_status_to_esp_status(params->trans_pwr_rpting_enable.status);
+            param.set_trans_pwr_rpting_enable.conn_handle = params->trans_pwr_rpting_enable.conn_handle;
+            break;
+        case BTA_BLE_GAP_PATH_LOSS_THRESHOLD_EVT:
+            msg.act = ESP_GAP_BLE_PATH_LOSS_THRESHOLD_EVT;
+            param.path_loss_thres_evt.conn_handle = params->path_loss_thres_evt.conn_handle;
+            param.path_loss_thres_evt.cur_path_loss = params->path_loss_thres_evt.cur_path_loss;
+            param.path_loss_thres_evt.zone_entered = params->path_loss_thres_evt.zone_entered;
+            break;
+        case BTA_BLE_GAP_TRANMIT_POWER_REPORTING_EVT:
+            msg.act = ESP_GAP_BLE_TRANS_PWR_RPTING_EVT;
+            param.trans_power_report_evt.status = btc_btm_status_to_esp_status(params->trans_pwr_report_evt.status);
+            param.trans_power_report_evt.conn_handle = params->trans_pwr_report_evt.conn_handle;
+            param.trans_power_report_evt.reason = params->trans_pwr_report_evt.reason;
+            param.trans_power_report_evt.phy = params->trans_pwr_report_evt.phy;
+            param.trans_power_report_evt.tx_power_level = params->trans_pwr_report_evt.tx_power_level;
+            param.trans_power_report_evt.tx_power_level_flag = params->trans_pwr_report_evt.tx_power_level_flag;
+            param.trans_power_report_evt.delta = params->trans_pwr_report_evt.delta;
+            break;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+        case BTA_BLE_GAP_SET_DEFAULT_SUBRATE_EVT:
+            msg.act = ESP_GAP_BLE_SET_DEFAULT_SUBRATE_COMPLETE_EVT;
+            param.set_default_subrate_evt.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        case BTA_BLE_GAP_SUBRATE_REQUEST_EVT:
+            msg.act = ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT;
+            param.subrate_req_cmpl_evt.status = btc_btm_status_to_esp_status(params->status);
+            break;
+        case BTA_BLE_GAP_SUBRATE_CHANGE_EVT:
+            msg.act = ESP_GAP_BLE_SUBRATE_CHANGE_EVT;
+            param.subrate_change_evt.status = btc_btm_status_to_esp_status(params->subrate_change_evt.status);
+            param.subrate_change_evt.conn_handle = params->subrate_change_evt.conn_handle;
+            param.subrate_change_evt.subrate_factor = params->subrate_change_evt.subrate_factor;
+            param.subrate_change_evt.peripheral_latency = params->subrate_change_evt.peripheral_latency;
+            param.subrate_change_evt.continuation_number = params->subrate_change_evt.continuation_number;
+            param.subrate_change_evt.supervision_timeout = params->subrate_change_evt.supervision_timeout;
+            break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+        case BTA_BLE_GAP_SET_HOST_FEATURE_EVT:
+            msg.act = ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT;
+            param.host_feature.status = btc_btm_status_to_esp_status(params->status);
+            break;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
         default:
             break;
     }
@@ -2529,6 +2599,39 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
     case BTC_GAP_BLE_ACT_SET_VENDOR_EVT_MASK:
         BTA_DmBleGapSetVendorEventMask(arg->set_vendor_evt_mask.evt_mask, btc_ble_set_vendor_evt_mask_callback);
         break;
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    case BTC_GAP_BLE_ENH_READ_TRANS_POWER_LEVEL:
+        BTA_DmBleGapEnhReadTransPwrLevel(arg_5->enh_read_trans_pwr_level.conn_handle, arg_5->enh_read_trans_pwr_level.phy);
+        break;
+    case BTC_GAP_BLE_READ_REM_TRANS_POWER_LEVEL:
+        BTA_DmBleGapReadRemoteTransPwrLevel(arg_5->read_rem_trans_pwr_level.conn_handle, arg_5->read_rem_trans_pwr_level.phy);
+        break;
+    case BTC_GAP_BLE_SET_PATH_LOSS_REPORT_PARAMS:
+        BTA_DmBleGapSetPathLossRptParams(arg_5->set_path_loss_rpt_params.conn_handle, arg_5->set_path_loss_rpt_params.high_threshold, arg_5->set_path_loss_rpt_params.high_hysteresis,
+                                        arg_5->set_path_loss_rpt_params.low_threshold, arg_5->set_path_loss_rpt_params.low_hysteresis, arg_5->set_path_loss_rpt_params.min_time_spent);
+        break;
+    case BTC_GAP_BLE_SET_PATH_LOSS_REPORTING_EN:
+        BTA_DmBleGapSetPathLossRptEnable(arg_5->set_path_loss_rpt_en.conn_handle, arg_5->set_path_loss_rpt_en.enable);
+        break;
+    case BTC_GAP_BLE_SET_TRANS_POWER_REPORTING_EN:
+        BTA_DmBleGapSetTransPwrRptEnable(arg_5->set_trans_pwr_rpting_en.conn_handle, arg_5->set_trans_pwr_rpting_en.local_enable, arg_5->set_trans_pwr_rpting_en.remote_enable);
+        break;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    case BTC_GAP_BLE_SET_DEFALT_SUBRATE:
+        BTA_DmBleGapSetDefaultSubrate(arg_5->default_subrate_param.subrate_min, arg_5->default_subrate_param.subrate_max, arg_5->default_subrate_param.max_latency,
+                                    arg_5->default_subrate_param.continuation_number, arg_5->default_subrate_param.supervision_timeout);
+        break;
+    case BTC_GAP_BLE_SUBRATE_REQUEST:
+        BTA_DmBleGapSubrateReqest(arg_5->subrate_req_param.conn_handle, arg_5->subrate_req_param.subrate_min, arg_5->subrate_req_param.subrate_max,
+                                arg_5->subrate_req_param.max_latency, arg_5->subrate_req_param.continuation_number, arg_5->subrate_req_param.supervision_timeout);
+        break;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    case BTC_GAP_ACT_SET_HOST_FEATURE:
+        BTA_DmBleGapSetHostFeature(arg_5->set_host_feature_params.bit_num, arg_5->set_host_feature_params.bit_val);
+        break;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     default:
         break;
     }

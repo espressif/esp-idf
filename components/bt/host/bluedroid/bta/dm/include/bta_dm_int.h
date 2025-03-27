@@ -278,6 +278,62 @@ enum {
     BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT,
     BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT,
 #endif
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    BTA_DM_API_ISO_BIG_CREATE_EVT,
+    BTA_DM_API_ISO_BIG_CREATE_TEST_EVT,
+    BTA_DM_API_ISO_BIG_TERMINATE_EVT,
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    BTA_DM_API_ISO_BIG_SYNC_CREATE_EVT,
+    BTA_DM_API_ISO_BIG_SYNC_TERMINATE_EVT,
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    BTA_DM_API_ISO_SET_DATA_PATH_EVT,
+    BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT,
+    BTA_DM_API_ISO_READ_TX_SYNC_EVT,
+    BTA_DM_API_ISO_READ_LINK_QUALITY_EVT,
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    BTA_DM_API_SET_CIG_PARAMS_EVT,
+    BTA_DM_API_SET_CIG_PARAMS_TEST_EVT,
+    BTA_DM_API_CREATE_CIS_EVT,
+    BTA_DM_API_REMOVE_CIG_PARAMS_EVT,
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    BTA_DM_API_ACCEPT_CIS_REQ_PARAMS_EVT,
+    BTA_DM_API_REJECT_CIS_REQ_PARAMS_EVT,
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    BTA_DM_API_DISCON_CIS_EVT,
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    BTA_DM_API_CTE_SET_TRANS_PARAMS,
+    BTA_DM_API_CTE_SET_TRANS_ENABLE,
+    BTA_DM_API_CTE_SET_IQ_SAMPLING_EN,
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS,
+    BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS,
+    BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN,
+    BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN,
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    BTA_DM_API_CTE_READ_ANTENNA_INFOR,
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    BTA_DM_API_ENH_READ_TRANS_POWER_LEVEL,
+    BTA_DM_API_READ_REM_TRANS_POWER_LEVEL,
+    BTA_DM_API_SET_PATH_LOSS_REPORT_PARAMS,
+    BTA_DM_API_SET_PATH_LOSS_REPORTING_EN,
+    BTA_DM_API_SET_TRANS_POWER_REPORTING_EN,
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    BTA_DM_API_SET_DEFALT_SUBRATE,
+    BTA_DM_API_SUBRATE_REQUEST,
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTA_DM_API_SET_HOST_FEATURE_EVT,
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1027,6 +1083,72 @@ typedef struct {
     tBTA_SET_VENDOR_EVT_MASK_CBACK      *p_cback;
 } tBTA_DM_API_BLE_SET_VENDOR_EVT_MASK;
 
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+typedef struct {
+    BT_HDR                              hdr;
+    UINT16                              conn_handle;
+    UINT8                               phy;
+} tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL;
+
+typedef struct {
+    BT_HDR                              hdr;
+    UINT16                              conn_handle;
+    UINT8                               phy;
+} tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             high_threshold;
+	UINT8                             high_hysteresis;
+	UINT8                             low_threshold;
+	UINT8                             low_hysteresis;
+	UINT16                            min_time_spent;
+} tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             enable;
+} tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE;
+
+typedef struct {
+    BT_HDR                            hdr;
+    UINT16                            conn_handle;
+	UINT8                             local_enable;
+    UINT8                             remote_enable;
+} tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+typedef struct {
+    BT_HDR hdr;
+    UINT16 subrate_min;
+    UINT16 subrate_max;
+    UINT16 max_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE;
+
+typedef struct {
+    BT_HDR hdr;
+    UINT16 conn_handle;
+    UINT16 subrate_min;
+    UINT16 subrate_max;
+    UINT16 max_latency;
+    UINT16 continuation_number;
+    UINT16 supervision_timeout;
+} tBTA_DM_API_BLE_SUBRATE_REQUEST;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    uint16_t                        bit_num;
+    uint8_t                         bit_val;
+} tBTA_DM_API_SET_HOST_FEATURE;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1274,6 +1396,215 @@ typedef struct {
 } tBTA_DM_API_SET_PAST_PARAMS;
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_BIG_CREATE_PARAMS big_creat_param;
+} tBTA_DM_API_BIG_CREATE;
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_BIG_CREATE_TEST_PARAMS big_creat_test_param;
+} tBTA_DM_API_BIG_CREATE_TEST;
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_BIG_TERMINATE_PARAMS big_terminate_param;
+} tBTA_DM_API_BIG_TERMINATE;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_BIG_SYNC_CREATE_PARAMS big_sync_param;
+} tBTA_DM_API_BIG_SYNC_CREATE;
+
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_BIG_SYNC_TERMINATE_PARAMS big_sync_terminate_param;
+} tBTA_DM_API_BIG_SYNC_TERMINATE;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_ISO_SET_DATA_PATH_PARAMS iso_data_path_param;
+} tBTA_DM_API_ISO_DATA_PATH;
+
+typedef struct {
+    BT_HDR                          hdr;
+    tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS iso_data_path_remove_param;
+} tBTA_DM_API_ISO_DATA_PATH_REMOVE;
+
+typedef struct {
+    BT_HDR                          hdr;
+    uint16_t                        iso_hdl;
+} tBTA_DM_API_ISO_READ_TX_SYNC;
+
+typedef struct {
+    BT_HDR                          hdr;
+    uint16_t                        iso_hdl;
+} tBTA_DM_API_ISO_READ_LINK_QUALITY;
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+struct bta_iso_cis_params {
+    UINT8 cis_id;
+    UINT16 max_sdu_c_to_p;
+    UINT16 max_sdu_p_to_c;
+    UINT8 phy_c_to_p;
+    UINT8 phy_p_to_c;
+    UINT8 rtn_c_to_p;
+    UINT8 rtn_p_to_c;
+} __attribute__((packed));
+
+struct bta_iso_cis_params_test {
+    UINT8 cis_id;
+    UINT8 nse;
+    UINT16 max_sdu_c_to_p;
+    UINT16 max_sdu_p_to_c;
+    UINT16 max_pdu_c_to_p;
+    UINT16 max_pdu_p_to_c;
+    UINT8 phy_c_to_p;
+    UINT8 phy_p_to_c;
+    UINT8 bn_c_to_p;
+    UINT8 bn_p_to_c;
+} __attribute__((packed));
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           cig_id;
+    UINT32                          sdu_int_c_to_p;
+    UINT32                          sdu_int_p_to_c;
+    UINT8                           worse_case_SCA;
+    UINT8                           packing;
+    UINT8                           framing;
+    UINT16                          mtl_c_to_p; // max_transport_latency_c_to_p
+    UINT16                          mtl_p_to_c; // max_transport_latency_p_to_c
+    UINT8                           cis_cnt;
+    struct bta_iso_cis_params       cis_params[BLE_ISO_CIS_MAX_COUNT];
+} tBTA_DM_API_SET_CIG_PARAM;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           cig_id;
+    UINT32                          sdu_int_c_to_p;
+    UINT32                          sdu_int_p_to_c;
+    UINT8                           ft_c_to_p;
+    UINT8                           ft_p_to_c;
+    UINT16                          iso_interval;
+    UINT8                           worse_case_SCA;
+    UINT8                           packing;
+    UINT8                           framing;
+    UINT8                           cis_cnt;
+    struct bta_iso_cis_params_test  cis_params_test[BLE_ISO_CIS_MAX_COUNT];
+} tBTA_DM_API_SET_CIG_PARAM_TEST;
+
+struct bta_iso_cis_hdls {
+    uint16_t cis_hdl;
+    uint16_t acl_hdl;
+}__attribute__((packed));
+
+typedef struct {
+    BT_HDR                          hdr;
+    uint8_t                         cis_count;
+    struct bta_iso_cis_hdls         cis_hdls[BLE_ISO_CIS_MAX_COUNT];
+} tBTA_DM_API_CREATE_CIS_PARAM;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT8                           cig_id;
+} tBTA_DM_API_REMOVE_CIG_PARAM;
+
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          cis_handle;
+} tBTA_DM_API_ACCEPT_CIS_REQ_PARAM;
+
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          cis_handle;
+    UINT8                           reason;
+} tBTA_DM_API_REJECT_CIS_REQ_PARAM;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    UINT16                          cis_handle;
+    UINT8                           reason;
+} tBTA_DM_API_DISCON_CIS_PARAM;
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+typedef struct {
+    BT_HDR  hdr;
+    UINT8 adv_handle;
+    UINT8 cte_len;
+    UINT8 cte_type;
+    UINT8 cte_count;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_SET_TRANS_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT8 adv_handle;
+    UINT8 cte_enable;
+} tBTA_DM_BLE_CTE_SET_TRANS_ENABLE;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 sync_handle;
+    UINT8 sampling_en;
+    UINT8 slot_dur;
+    UINT8 max_sampled_ctes;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_IQ_SAMP_EN;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 sampling_en;
+    UINT8 slot_dur;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_RECV_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 cte_types;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 enable;
+    UINT16 cte_req_interval;
+    UINT8 req_cte_len;
+    UINT8 req_cte_Type;
+} tBTA_DM_BLE_CONN_CTE_REQ_EN;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 enable;
+} tBTA_DM_BLE_CONN_CTE_RSP_EN;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+typedef struct {
+    BT_HDR  hdr;
+} tBTA_DM_BLE_READ_ANT_INFOR;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 /* union of all data types */
 typedef union {
     /* event buffer header */
@@ -1479,6 +1810,63 @@ typedef union {
     tBTA_DM_API_REMOVE_ALL_ACL          remove_all_acl;
 #endif // #if (BLE_HOST_REMOVE_ALL_ACL_EN == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    tBTA_DM_API_BIG_CREATE              big_creat;
+    tBTA_DM_API_BIG_CREATE_TEST         big_creat_test;
+    tBTA_DM_API_BIG_TERMINATE           big_terminate;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTA_DM_API_BIG_SYNC_CREATE         big_sync;
+    tBTA_DM_API_BIG_SYNC_TERMINATE      big_sync_terminate;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTA_DM_API_ISO_DATA_PATH           iso_set_data_path;
+    tBTA_DM_API_ISO_DATA_PATH_REMOVE    iso_remove_data_path;
+    tBTA_DM_API_ISO_READ_TX_SYNC        iso_read_tx_sync;
+    tBTA_DM_API_ISO_READ_LINK_QUALITY   iso_read_link_quality;
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    tBTA_DM_API_SET_CIG_PARAM           api_cig_params;
+    tBTA_DM_API_SET_CIG_PARAM_TEST      api_cig_params_test;
+    tBTA_DM_API_CREATE_CIS_PARAM        create_cis;
+    tBTA_DM_API_REMOVE_CIG_PARAM        remove_cig;
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    tBTA_DM_API_ACCEPT_CIS_REQ_PARAM    accept_cis_req;
+    tBTA_DM_API_REJECT_CIS_REQ_PARAM    reject_cis_req;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    tBTA_DM_API_DISCON_CIS_PARAM        discon_cis;
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTA_DM_BLE_CTE_SET_TRANS_PARAMS   set_cte_trans_params;
+    tBTA_DM_BLE_CTE_SET_TRANS_ENABLE   set_trans_en;
+    tBTA_DM_BLE_CTE_IQ_SAMP_EN         iq_samp_en;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTA_DM_BLE_CTE_RECV_PARAMS        recv_params;
+    tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS  conn_trans_params;
+    tBTA_DM_BLE_CONN_CTE_REQ_EN        conn_req_en;
+    tBTA_DM_BLE_CONN_CTE_RSP_EN        conn_rsp_en;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTA_DM_BLE_READ_ANT_INFOR         read_ant_infor;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+    tBTA_DM_API_BLE_ENH_READ_TANS_PWR_LEVEL      enh_read_trans_pwr_level;
+    tBTA_DM_API_BLE_READ_REMOTE_TANS_PWR_LEVEL   remote_trans_pwr_level;
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_PARAMS     path_loss_rpt_params;
+    tBTA_DM_API_BLE_SET_PATH_LOSS_RPT_ENABLE     path_loss_rpt_en;
+    tBTA_DM_API_BLE_SET_TRANS_PWR_RPT_ENABLE     trans_pwr_rpt_en;
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+    tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE  default_subrate;
+    tBTA_DM_API_BLE_SUBRATE_REQUEST      subrate_request;
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    tBTA_DM_API_SET_HOST_FEATURE    set_host_feat;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2085,4 +2473,64 @@ extern void bta_dm_ble_gap_periodic_adv_set_info_trans(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_gap_set_periodic_adv_sync_trans_params(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+extern void bta_dm_ble_big_create(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_big_create_test(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_big_terminate(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+extern void bta_dm_ble_big_sync_create(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_big_sync_terminate(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+extern void bta_dm_ble_iso_set_data_path(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_iso_remove_data_path(tBTA_DM_MSG *p_data);
+extern void bta_dm_ble_iso_read_tx_sync(tBTA_DM_MSG *p_data);
+void bta_dm_ble_iso_read_link_quality(tBTA_DM_MSG *p_data);
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+void bta_dm_ble_set_cig_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_cig_params_test(tBTA_DM_MSG *p_data);
+void bta_dm_ble_create_cis(tBTA_DM_MSG *p_data);
+void bta_dm_ble_remove_cig(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+void bta_dm_ble_accept_cis_req(tBTA_DM_MSG *p_data);
+void bta_dm_ble_reject_cis_req(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+void bta_dm_ble_discon_cis(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void bta_dm_ble_set_cte_trans_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_cte_trans_enable(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_iq_sampling_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void bta_dm_ble_set_conn_cte_recv_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_trans_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_cte_req_en(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_cte_rsp_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+void bta_dm_ble_read_cte_ant_infor(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void bta_dm_api_enh_read_trans_power_level(tBTA_DM_MSG *p_data);
+void bta_dm_api_read_rem_trans_power_level(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_path_loss_report_params(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_path_loss_reporting_en(tBTA_DM_MSG *p_data);
+void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void bta_dm_api_set_default_subrate(tBTA_DM_MSG *p_data);
+void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+extern void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif /* BTA_DM_INT_H */
