@@ -31,9 +31,12 @@ entries:
         rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
-    if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
-        pmu_init (noflash)
-        pmu_param (noflash)
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
+            pmu_init (noflash)
+            pmu_param (noflash)
+        elif PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
+            pmu_param:get_act_hp_dbias (noflash)
+            pmu_param:get_act_lp_dbias (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
     if PM_SLP_IRAM_OPT = y && SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD = y:
