@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -126,24 +126,14 @@ void vPortSetStackWatchpoint(void *pxStackStart)
 
 UBaseType_t ulPortSetInterruptMask(void)
 {
-    int ret;
-    unsigned old_xstatus;
-
-#if CONFIG_SECURE_ENABLE_TEE
-    old_xstatus = RV_CLEAR_CSR(ustatus, USTATUS_UIE);
+    UBaseType_t prev_int_level = 0, int_level = 0;
+#if !SOC_INT_CLIC_SUPPORTED
+    int_level = RVHAL_EXCM_LEVEL;
 #else
-    // For non-secure configuration
-    old_xstatus = RV_CLEAR_CSR(mstatus, MSTATUS_MIE);
+    int_level = RVHAL_EXCM_LEVEL_CLIC;
 #endif
 
-    ret = REG_READ(INTERRUPT_CURRENT_CORE_INT_THRESH_REG);
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, RVHAL_EXCM_LEVEL);
-
-#if CONFIG_SECURE_ENABLE_TEE
-    RV_SET_CSR(ustatus, old_xstatus & USTATUS_UIE);
-#else
-    RV_SET_CSR(mstatus, old_xstatus & MSTATUS_MIE);
-#endif
+    prev_int_level = rv_utils_set_intlevel_regval(int_level);
     /**
      * In theory, this function should not return immediately as there is a
      * delay between the moment we mask the interrupt threshold register and
@@ -155,12 +145,12 @@ UBaseType_t ulPortSetInterruptMask(void)
      * followed by two instructions: `ret` and `csrrs` (RV_SET_CSR).
      * That's why we don't need any additional nop instructions here.
      */
-    return ret;
+    return prev_int_level;
 }
 
 void vPortClearInterruptMask(UBaseType_t mask)
 {
-    REG_WRITE(INTERRUPT_CURRENT_CORE_INT_THRESH_REG, mask);
+    rv_utils_restore_intlevel_regval(mask);
     /**
      * The delay between the moment we unmask the interrupt threshold register
      * and the moment the potential requested interrupt is triggered is not
@@ -312,7 +302,7 @@ BaseType_t xPortStartScheduler(void)
     /* Setup the hardware to generate the tick. */
     vPortSetupTimer();
 
-    esprv_int_set_threshold(1); /* set global INTC masking level */
+    esprv_int_set_threshold(RVHAL_INTR_ENABLE_THRESH); /* set global interrupt masking level */
     rv_utils_intr_global_enable();
 
     vPortYield();
