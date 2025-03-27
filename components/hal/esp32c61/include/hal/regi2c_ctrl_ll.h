@@ -133,9 +133,9 @@ static inline void regi2c_ctrl_ll_i2c_periph_disable(void)
  *
  * @param enter True to reset mode, false to normal working mode
  */
-static inline void regi2c_ctrl_ll_reset(bool reset_on)
+static inline void regi2c_ctrl_ll_reset(bool enter)
 {
-    if (reset_on) {
+    if (enter) {
         // Reset mode
         CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
     } else {

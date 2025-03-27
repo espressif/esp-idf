@@ -30,11 +30,11 @@ void bootloader_random_enable(void)
     adc_digi_pattern_config_t pattern_config = {};
     pattern_config.unit = ADC_UNIT_1;
     pattern_config.atten = ADC_ATTEN_DB_12;
-    pattern_config.channel = ADC_CHANNEL_7;
+    pattern_config.channel = ADC_CHANNEL_7;     //Use reserved channel to get internal voltage
     adc_ll_digi_set_pattern_table(ADC_UNIT_1, 0, pattern_config);
     pattern_config.unit = ADC_UNIT_2;
     pattern_config.atten = ADC_ATTEN_DB_12;
-    pattern_config.channel = ADC_CHANNEL_1;
+    pattern_config.channel = ADC_CHANNEL_1;     //Use reserved ADC2 and reserved channel to get internal voltage
     adc_ll_digi_set_pattern_table(ADC_UNIT_2, 1, pattern_config);
     adc_ll_digi_set_pattern_table_len(ADC_UNIT_1, 2);
 

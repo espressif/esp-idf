@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -222,6 +222,15 @@ static inline void adc_ll_digi_set_pattern_table(adc_unit_t adc_n, uint32_t patt
         tab |= ((uint32_t)(pattern.val & 0x3F) << 18) >> offset;    // Fill in the new data
         APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = tab;         // Write back
     }
+}
+
+/**
+ * Rest pattern table to default value
+ */
+static inline void adc_ll_digi_reset_pattern_table(void)
+{
+    APB_SARADC.saradc_sar_patt_tab1.saradc_saradc_sar_patt_tab1 = 0xffffff;
+    APB_SARADC.saradc_sar_patt_tab2.saradc_saradc_sar_patt_tab2 = 0xffffff;
 }
 
 /**
@@ -846,8 +855,78 @@ static inline void adc_ll_set_calibration_param(adc_unit_t adc_n, uint32_t param
     uint8_t msb = param >> 8;
     uint8_t lsb = param & 0xFF;
 
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
-    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR1_INITIAL_CODE_LOW_ADDR, lsb);
+    } else {
+        //C5 doesn't support ADC2, here is for backward compatibility for RNG
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_HIGH_ADDR, msb);
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SAR2_INITIAL_CODE_LOW_ADDR, lsb);
+    }
+}
+
+/**
+ * Set the SAR DTEST param
+ *
+ * @param param DTEST value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_dtest_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_DTEST_RTC_ADDR, param);
+}
+
+/**
+ * Set the SAR ENT param
+ *
+ * @param param ENT value
+ */
+__attribute__((always_inline))
+static inline void adc_ll_set_ent_param(uint32_t param)
+{
+    REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC_ENT_PERIF_ADDR, param);
+}
+
+/**
+ * Enable/disable the calibration voltage reference for ADC unit.
+ *
+ * @param adc_n ADC index number.
+ * @param en true to enable, false to disable
+ */
+__attribute__((always_inline))
+static inline void adc_ll_enable_calibration_ref(adc_unit_t adc_n, bool en)
+{
+    //C5 doesn't support ADC2, here is for backward compatibility for RNG
+    if (adc_n == ADC_UNIT_1) {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC1_EN_TOUT_ADDR, en);
+    } else {
+        REGI2C_WRITE_MASK(I2C_SAR_ADC, ADC_SARADC2_EN_TOUT_ADDR, en);
+    }
+}
+
+/**
+ * Init regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_init(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(1);
+    // Config ADC circuit (Analog part) with I2C(HOST ID 0x69) and chose internal voltage as sampling source
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, true);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, true);
+}
+
+/**
+ * Deinit regi2c SARADC registers
+ */
+__attribute__((always_inline))
+static inline void adc_ll_regi2c_adc_deinit(void)
+{
+    adc_ll_set_dtest_param(0);
+    adc_ll_set_ent_param(0);
+    adc_ll_enable_calibration_ref(ADC_UNIT_1, false);
+    adc_ll_enable_calibration_ref(ADC_UNIT_2, false);
 }
 
 #ifdef __cplusplus
