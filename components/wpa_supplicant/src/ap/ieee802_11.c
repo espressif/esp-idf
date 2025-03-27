@@ -25,6 +25,13 @@
 #include "ap/wpa_auth_i.h"
 #define OWE_DH_GRP19 19
 #define OWE_DHIE_LEN 37
+/*
+OWE_DHIE_LEN = 1 byte   {WLAN_EID_EXTENSION}
+             + 1 byte   {len of DHIE (1(pub_key len) + 2(dh group) + 32(len of pub_key)) = 35)}
+             + 1 byte   {pub_key len}
+             + 2 bytes  {DH group}
+             + 32 bytes {public key}
+*/
 #endif
 
 #ifdef CONFIG_SAE
@@ -841,7 +848,6 @@ uint16_t owe_process_assoc_req(struct hostapd_data *hapd, struct sta_info *sta, 
                     "OWE: Try to reuse own previous DH key since the STA tried to go through OWE association again");
     } else {
 
-        crypto_ecdh_deinit(sta->owe_ecdh);
         sta->owe_ecdh = crypto_ecdh_init(OWE_DH_GRP19);
         if (!sta->owe_ecdh) {
             wpa_printf(MSG_ERROR, "OWE: Error initializing ECDH for STA");

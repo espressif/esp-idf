@@ -157,10 +157,17 @@ Enhanced Open™ is used for providing security and privacy to users connecting 
 
 .. note::
 
-  {IDF_TARGET_NAME} supports Wi-Fi Enhanced Open™ only in station mode.
+  {IDF_TARGET_NAME} supports Wi-Fi Enhanced Open™ (OWE Transition Mode + OWE Only) in station mode and (OWE Only) in softap mode.
 
 
 Setting up OWE with {IDF_TARGET_NAME}
 ++++++++++++++++++++++++++++++++++++++
 
+For station mode :
+
 A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_STA` and configuration parameter :cpp:type:`owe_enabled` in :cpp:type:`wifi_sta_config_t` is provided to enable OWE support for the station. To use OWE transition mode, along with the configuration provided above, `authmode` from :cpp:type:`wifi_scan_threshold_t` should be set to ``WIFI_AUTH_OPEN``.
+
+
+For softap mode :
+
+A configuration option :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_OWE_SOFTAP` from menuconfig and configuration parameter :cpp:type:`owe_enabled` in :cpp:type:`wifi_ap_config_t` should be enabled and configuration parameter `authmode` from :cpp:type:`wifi_ap_config_t` should be set to ``WIFI_AUTH_OWE``.
