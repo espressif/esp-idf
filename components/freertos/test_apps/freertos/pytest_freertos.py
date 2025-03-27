@@ -25,6 +25,7 @@ CONFIGS = [
             ),
         ],
     ),
+    pytest.param('tickless_idle', marks=[pytest.mark.supported_targets]),
 ]
 
 
@@ -34,6 +35,7 @@ CONFIGS = [
     [
         ('default', 'supported_targets'),
         ('freertos_options', 'supported_targets'),
+        ('tickless_idle', 'supported_targets'),
         ('psram', 'esp32'),
         ('psram', 'esp32c5'),
         ('psram', 'esp32p4'),
