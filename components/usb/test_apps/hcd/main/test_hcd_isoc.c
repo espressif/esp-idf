@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "unity.h"
 #include "dev_isoc.h"
 #include "usb/usb_types_ch9.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 #define NUM_URBS                3
 #define NUM_PACKETS_PER_URB     3

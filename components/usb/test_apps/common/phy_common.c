@@ -9,18 +9,18 @@
 #include "esp_err.h"
 #include "usb/usb_types_ch9.h"
 #include "esp_private/usb_phy.h"
-#include "test_usb_host_common.h"
+#include "phy_common.h"
 #include "unity.h"
 #include "sdkconfig.h"
 
-#ifdef CONFIG_USB_HOST_TEST_OTG_DRVVBUS_ENABLE
+#ifdef CONFIG_USB_PHY_TEST_OTG_DRVVBUS_ENABLE
 #define OTG_DRVVBUS_ENABLE
-#define OTG_DRVVBUS_GPIO CONFIG_USB_HOST_TEST_OTG_DRVVBUS_GPIO
+#define OTG_DRVVBUS_GPIO CONFIG_USB_PHY_TEST_OTG_DRVVBUS_GPIO
 #endif
 
 static usb_phy_handle_t phy_hdl = NULL;
 
-void test_usb_host_setup_phy(void)
+void test_setup_usb_phy(void)
 {
     // Deinitialize PHY from previous failed test
     if (phy_hdl != NULL) {
@@ -62,7 +62,7 @@ void test_usb_host_setup_phy(void)
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_new_phy(&phy_config, &phy_hdl), "Failed to init USB PHY");
 }
 
-void test_usb_host_delete_phy(void)
+void test_delete_usb_phy(void)
 {
     TEST_ASSERT_EQUAL_MESSAGE(ESP_OK, usb_del_phy(phy_hdl), "Failed to delete PHY");
     phy_hdl = NULL;

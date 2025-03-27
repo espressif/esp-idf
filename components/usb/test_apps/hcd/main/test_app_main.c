@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: CC0-1.0
  */
@@ -11,7 +11,7 @@
 #include "freertos/task.h"
 #include "dev_msc.h"
 #include "dev_hid.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 void setUp(void)
 {

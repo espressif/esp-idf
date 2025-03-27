@@ -9,7 +9,7 @@
 #include "freertos/semphr.h"
 #include "unity.h"
 #include "dev_hid.h"
-#include "test_hcd_common.h"
+#include "hcd_common.h"
 
 // --------------------------------------------------- Test Cases ------------------------------------------------------
 
