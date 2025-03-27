@@ -113,7 +113,7 @@ int wpa_config_bss(uint8_t *bssid)
     u8 mac[6];
 
     esp_wifi_get_macaddr_internal(0, mac);
-    ret = wpa_set_bss((char *)mac, (char *)bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
+    ret = wpa_set_bss(mac, bssid, esp_wifi_sta_get_pairwise_cipher_internal(), esp_wifi_sta_get_group_cipher_internal(),
                       (char *)esp_wifi_sta_get_prof_password_internal(), ssid->ssid, ssid->len);
     return ret;
 }
@@ -391,7 +391,7 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *assoc_req_ie, uint32_t as
     if (ieee802_11_parse_elems(assoc_req_ie, assoc_ie_len, &elems, 1) == ParseFailed) {
 		wpa_printf(MSG_INFO, "Failed to parse assoc req IEs");
 		return -1;
-	}
+    }
 
     if (elems.rsn_ie) {
 		elems.rsn_ie = elems.rsn_ie - 2;

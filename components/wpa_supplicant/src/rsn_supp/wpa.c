@@ -2320,16 +2320,17 @@ void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pm
     }
 }
 
-int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
+int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     bool use_pmk_cache = !esp_wifi_skip_supp_pmkcaching();
-    u8 assoc_rsnxe[20];
-    size_t assoc_rsnxe_len = sizeof(assoc_rsnxe);
+    u8 assoc_ie[128];
+    uint8_t assoc_ie_len = sizeof(assoc_ie);
     bool reassoc_same_ess = false;
     int try_opportunistic = 0;
     const u8 *ie = NULL;
+    uint8_t *pos = NULL;
 
     /* Incase AP has changed it's SSID, don't try with PMK caching for SAE connection */
     /* Ideally we should use network_ctx for this purpose however currently network profile block
@@ -2368,11 +2369,11 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         }
     }
     if (wpa_key_mgmt_supports_caching(sm->key_mgmt) && use_pmk_cache) {
-	if (reassoc_same_ess && wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
+        if (reassoc_same_ess && wpa_key_mgmt_wpa_ieee8021x(sm->key_mgmt)) {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, (void*)sm->network_ctx, try_opportunistic);
-	} else {
+        } else {
             pmksa_cache_set_current(sm, NULL, (const u8*) bssid, 0, try_opportunistic);
-	}
+        }
         wpa_sm_set_pmk_from_pmksa(sm);
     } else {
         if (pmksa) {
@@ -2421,7 +2422,7 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
 #ifdef CONFIG_IEEE80211R
     if (sm->key_mgmt == WPA_KEY_MGMT_FT_PSK) {
         const u8 *ie, *md = NULL;
-        struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, (uint8_t *)bssid);
+        struct wpa_bss *bss = wpa_bss_get_bssid(&g_wpa_supp, bssid);
         if (!bss) {
             return -1;
         }
@@ -2448,25 +2449,47 @@ int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher,
         return -1;
     sm->assoc_wpa_ie_len = res;
 
-    ie = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSN);
+    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
     wpa_sm_set_ap_rsn_ie(sm, ie, ie[1]+2);
-    ie = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSNX);
+    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSNX);
     wpa_sm_set_ap_rsnxe(sm, ie, ie ? (ie[1] + 2) : 0);
 
-    res = wpa_gen_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
+    pos = assoc_ie;
+    res = wpa_gen_rsnxe(sm, pos, assoc_ie_len);
     if (res < 0)
         return -1;
-    assoc_rsnxe_len = res;
-    res = wpa_sm_set_assoc_rsnxe(sm, assoc_rsnxe, assoc_rsnxe_len);
-    if (res < 0)
+
+    assoc_ie_len = res;
+    res = wpa_sm_set_assoc_rsnxe(sm, pos, assoc_ie_len);
+    if (res < 0) {
         return -1;
-    esp_set_assoc_ie((uint8_t *)bssid, assoc_rsnxe, assoc_rsnxe_len, true);
+    }
+    pos += assoc_ie_len;
+
+    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
+
+    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) &&
+            ie) {
+        u32 type = 0;
+        if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4)
+            type = WPA_GET_BE32(&ie[2]);
+
+        if (type) {
+            /* Indicate support for RSN overriding */
+            *pos++ = WLAN_EID_VENDOR_SPECIFIC;
+            *pos++ = 4;
+            WPA_PUT_BE32(pos, type);
+            assoc_ie_len += 2 + 4;
+        }
+    }
+
+    esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
     os_memset(sm->ssid, 0, sizeof(sm->ssid));
     os_memcpy(sm->ssid, ssid, ssid_len);
     sm->ssid_len = ssid_len;
     wpa_set_passphrase(passphrase, ssid, ssid_len);
 #ifdef CONFIG_MBO
-    if (!mbo_bss_profile_match((u8 *)bssid))
+    if (!mbo_bss_profile_match(bssid))
         return -1;
 #endif
 

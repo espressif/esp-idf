@@ -204,7 +204,7 @@ void eapol_txcb(uint8_t *eapol_payload, size_t len, bool tx_failure);
 
 void wpa_set_profile(u32 wpa_proto, u8 auth_mode);
 
-int wpa_set_bss(char *macddr, char * bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
+int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 

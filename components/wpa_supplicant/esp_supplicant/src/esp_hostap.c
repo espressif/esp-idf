@@ -10,7 +10,6 @@
 #include "utils/eloop.h"
 #include "crypto/sha1.h"
 #include "common/ieee802_11_defs.h"
-#include "common/ieee802_11_common.h"
 #include "common/eapol_common.h"
 #include "ap/wpa_auth.h"
 #include "ap/ap_config.h"
@@ -111,8 +110,7 @@ void *hostap_init(void)
         }
     }
 #endif /* CONFIG_IEEE80211W */
-//TODO how to set values
-    if (true) {
+    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
         hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
         hapd->conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
         hapd->conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;

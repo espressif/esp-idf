@@ -266,7 +266,6 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			elems->sae_pk_len = elen - 4;
 			break;
 #endif /* CONFIG_SAE_PK */
-//TODO think of way to ignore these
 		case P2P_OUI_TYPE:
 			/* Wi-Fi Alliance - P2P IE */
 			break;

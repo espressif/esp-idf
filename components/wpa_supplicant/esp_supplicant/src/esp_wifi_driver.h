@@ -302,7 +302,7 @@ bool esp_wifi_ap_notify_node_sae_auth_done(uint8_t *mac);
 bool esp_wifi_ap_is_sta_sae_reauth_node(uint8_t *mac);
 uint8_t* esp_wifi_sta_get_sae_identifier_internal(void);
 bool esp_wifi_eb_tx_status_success_internal(void *eb);
-uint8_t* esp_wifi_sta_get_rsnxe(u8 *bssid);
+uint8_t* esp_wifi_sta_get_ie(u8 *bssid, uint8_t elem_id);
 esp_err_t esp_wifi_sta_connect_internal(const uint8_t *bssid);
 void esp_wifi_enable_sae_pk_only_mode_internal(void);
 uint8_t esp_wifi_ap_get_transition_disable_internal(void);
@@ -310,4 +310,6 @@ int esp_wifi_softap_set_obss_overlap(bool overlap);
 void esp_wifi_set_sigma_internal(bool flag);
 void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
 uint8_t esp_wifi_op_class_supported_internal(uint8_t op_class, uint8_t min_chan, uint8_t max_chan, uint8_t inc, uint8_t bw, channel_bitmap_t *non_pref_channels);
+bool esp_wifi_wpa3_compatible_mode_enabled(uint8_t if_index);
+
 #endif /* _ESP_WIFI_DRIVER_H_ */
