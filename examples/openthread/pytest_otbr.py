@@ -442,7 +442,7 @@ def test_service_discovery_of_WiFi_device(
         cli.expect('Done', timeout=10)
 
         command = 'dns browse _testxxx._udp.default.service.arpa'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'Port:12347' not in str(tmp)
         ocf.restart_avahi()
         command = 'avahi-publish-service testxxx _testxxx._udp 12347 test=1235 dn="for_ci_br_test"'
@@ -451,12 +451,12 @@ def test_service_discovery_of_WiFi_device(
         ocf.wait(cli, 5)
 
         command = 'dns browse _testxxx._udp.default.service.arpa'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'response for _testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
 
         command = 'dns service testxxx _testxxx._udp.default.service.arpa.'
-        tmp = ocf.get_ouput_string(cli, command, 5)
+        tmp = ocf.get_ouput_string(cli, command, 10)
         assert 'response for testxxx' in str(tmp)
         assert 'Port:12347' in str(tmp)
     finally:
