@@ -4,7 +4,7 @@ set(srcs "test_app_main.c"
          "test_rmt_rx.c"
          "test_util_rmt_encoders.c")
 
-if(CONFIG_RMT_ISR_CACHE_SAFE)
+if(CONFIG_RMT_TX_ISR_CACHE_SAFE AND CONFIG_RMT_RX_ISR_CACHE_SAFE)
     list(APPEND srcs "test_rmt_cache_safe.c")
 endif()
 

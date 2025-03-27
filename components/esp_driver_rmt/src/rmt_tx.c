@@ -297,7 +297,7 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     bool priority_conflict = rmt_set_intr_priority_to_group(group, config->intr_priority);
     ESP_GOTO_ON_FALSE(!priority_conflict, ESP_ERR_INVALID_ARG, err, TAG, "intr_priority conflict");
     // 2-- Get interrupt allocation flag
-    int isr_flags = rmt_get_isr_flags(group);
+    int isr_flags = rmt_isr_priority_to_flags(group) | RMT_TX_INTR_ALLOC_FLAG;
     // 3-- Allocate interrupt using isr_flag
     ret = esp_intr_alloc_intrstatus(rmt_periph_signals.groups[group_id].irq, isr_flags,
                                     (uint32_t) rmt_ll_get_interrupt_status_reg(hal->regs),
@@ -499,7 +499,7 @@ esp_err_t rmt_tx_register_event_callbacks(rmt_channel_handle_t channel, const rm
     ESP_RETURN_ON_FALSE(channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel direction");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
 
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE
     if (cbs->on_trans_done) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_done), ESP_ERR_INVALID_ARG, TAG, "on_trans_done callback not in IRAM");
     }
@@ -520,7 +520,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
 #if !SOC_RMT_SUPPORT_TX_LOOP_COUNT
     ESP_RETURN_ON_FALSE(config->loop_count <= 0, ESP_ERR_NOT_SUPPORTED, TAG, "loop count is not supported");
 #endif // !SOC_RMT_SUPPORT_TX_LOOP_COUNT
-#if CONFIG_RMT_ISR_CACHE_SAFE
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE
     // payload is retrieved by the encoder, we should make sure it's still accessible even when the cache is disabled
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #endif
@@ -589,7 +589,7 @@ esp_err_t rmt_tx_wait_all_done(rmt_channel_handle_t channel, int timeout_ms)
     return ESP_OK;
 }
 
-static void IRAM_ATTR rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
+static void rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
 {
     rmt_channel_t *channel = &tx_chan->base;
     rmt_group_t *group = channel->group;
@@ -632,7 +632,7 @@ static void IRAM_ATTR rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
     }
 }
 
-static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
+size_t rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
 {
     rmt_encode_state_t encode_state = RMT_ENCODING_RESET;
     rmt_encoder_handle_t encoder = t->encoder;
@@ -657,7 +657,7 @@ static size_t IRAM_ATTR rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_t
     return encoded_symbols;
 }
 
-static void IRAM_ATTR rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
+static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
 {
     rmt_channel_t *channel = &tx_chan->base;
     rmt_group_t *group = channel->group;
@@ -892,7 +892,7 @@ static esp_err_t rmt_tx_modulate_carrier(rmt_channel_handle_t channel, const rmt
     return ESP_OK;
 }
 
-static bool IRAM_ATTR rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
+bool rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
 {
     // continue ping-pong transmission
     rmt_tx_trans_desc_t *t = tx_chan->cur_trans;
@@ -910,7 +910,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
     return false;
 }
 
-static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
+bool rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
 {
     rmt_channel_t *channel = &tx_chan->base;
     BaseType_t awoken = pdFALSE;
@@ -961,7 +961,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
 }
 
 #if SOC_RMT_SUPPORT_TX_LOOP_COUNT
-static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
+bool rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
 {
     rmt_channel_t *channel = &tx_chan->base;
     rmt_group_t *group = channel->group;

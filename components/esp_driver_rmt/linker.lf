@@ -1,13 +1,80 @@
 [mapping:rmt_driver]
 archive: libesp_driver_rmt.a
 entries:
-    if RMT_ISR_HANDLER_IN_IRAM = y:
+    if RMT_TX_ISR_HANDLER_IN_IRAM = y:
         rmt_tx: rmt_tx_default_isr (noflash)
-        rmt_rx: rmt_rx_default_isr (noflash)
+        rmt_tx: rmt_isr_handle_tx_done (noflash)
+        rmt_tx: rmt_isr_handle_tx_threshold (noflash)
+        rmt_tx: rmt_tx_do_transaction (noflash)
+        rmt_tx: rmt_encode_check_result (noflash)
+        rmt_tx: rmt_tx_mark_eof (noflash)
+        rmt_encoder_bytes: rmt_encode_bytes (noflash)
+        rmt_encoder_copy: rmt_encode_copy (noflash)
+        rmt_encoder_simple: rmt_encode_simple (noflash)
+
+        if SOC_RMT_SUPPORT_TX_LOOP_COUNT = y:
+            rmt_tx: rmt_isr_handle_tx_loop_end (noflash)
+
         if SOC_RMT_SUPPORT_DMA = y:
             rmt_tx: rmt_dma_tx_eof_cb (noflash)
+
+    if RMT_RX_ISR_HANDLER_IN_IRAM = y:
+        rmt_rx: rmt_rx_default_isr (noflash)
+        rmt_rx: rmt_isr_handle_rx_done (noflash)
+
+        if SOC_RMT_SUPPORT_RX_PINGPONG = y:
+            rmt_rx: rmt_isr_handle_rx_threshold (noflash)
+
+        if SOC_RMT_SUPPORT_DMA = y:
             rmt_rx: rmt_dma_rx_one_block_cb (noflash)
+
     if RMT_RECV_FUNC_IN_IRAM = y:
         rmt_rx: rmt_receive (noflash)
+
+[mapping:rmt_driver_gdma]
+archive: libesp_hw_support.a
+entries:
+    if RMT_TX_ISR_HANDLER_IN_IRAM = y && SOC_RMT_SUPPORT_DMA = y:
+        gdma: gdma_reset (noflash)
+        gdma: gdma_start (noflash)
+        gdma: gdma_append (noflash)
+
+    if RMT_RECV_FUNC_IN_IRAM = y && SOC_RMT_SUPPORT_DMA = y:
+        gdma: gdma_reset (noflash)
+        gdma: gdma_start (noflash)
+
+[mapping:rmt_driver_hal]
+archive: libhal.a
+entries:
+    if RMT_TX_ISR_HANDLER_IN_IRAM = y:
         if SOC_RMT_SUPPORT_DMA = y:
-            rmt_rx: rmt_rx_mount_dma_buffer (noflash)
+            gdma_hal_top: gdma_hal_append (noflash)
+            gdma_hal_top: gdma_hal_reset (noflash)
+            gdma_hal_top: gdma_hal_start_with_desc (noflash)
+
+            # GDMA implementation layer for AHB-DMA version 1
+            if SOC_AHB_GDMA_VERSION = 1:
+                gdma_hal_ahb_v1: gdma_ahb_hal_append (noflash)
+                gdma_hal_ahb_v1: gdma_ahb_hal_reset (noflash)
+                gdma_hal_ahb_v1: gdma_ahb_hal_start_with_desc (noflash)
+
+            # GDMA implementation layer for AHB-DMA version 2
+            if SOC_AHB_GDMA_VERSION = 2:
+                gdma_hal_ahb_v2: gdma_ahb_hal_append (noflash)
+                gdma_hal_ahb_v2: gdma_ahb_hal_reset (noflash)
+                gdma_hal_ahb_v2: gdma_ahb_hal_start_with_desc (noflash)
+
+    if RMT_RECV_FUNC_IN_IRAM = y:
+        if SOC_RMT_SUPPORT_DMA = y:
+            gdma_hal_top: gdma_hal_reset (noflash)
+            gdma_hal_top: gdma_hal_start_with_desc (noflash)
+
+            # GDMA implementation layer for AHB-DMA version 1
+            if SOC_AHB_GDMA_VERSION = 1:
+                gdma_hal_ahb_v1: gdma_ahb_hal_reset (noflash)
+                gdma_hal_ahb_v1: gdma_ahb_hal_start_with_desc (noflash)
+
+            # GDMA implementation layer for AHB-DMA version 2
+            if SOC_AHB_GDMA_VERSION = 2:
+                gdma_hal_ahb_v2: gdma_ahb_hal_reset (noflash)
+                gdma_hal_ahb_v2: gdma_ahb_hal_start_with_desc (noflash)

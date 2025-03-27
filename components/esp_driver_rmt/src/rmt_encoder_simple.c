@@ -29,8 +29,8 @@ static esp_err_t rmt_simple_encoder_reset(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static size_t IRAM_ATTR rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
-                                          const void *data, size_t data_size, rmt_encode_state_t *ret_state)
+static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
+                                const void *data, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_simple_encoder_t *simple_encoder = __containerof(encoder, rmt_simple_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
