@@ -1330,6 +1330,7 @@ typedef struct {
     UINT16 sync_handle;
     UINT8 tx_power;
     INT8 rssi;
+    UINT8 cte_type;
     tBTM_BLE_EXT_ADV_DATA_STATUS data_status;
     UINT8 data_length;
     UINT8 *data;
