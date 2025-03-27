@@ -66,7 +66,7 @@ endchoice
 config BT_CTRL_HCI_TL
     int
     default 0 if BT_CTRL_HCI_MODE_UART_H4
-    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1 if BT_CTRL_HCI_MODE_VHCI
     default 1
     help
         HCI mode as VHCI or UART(H4)
@@ -448,7 +448,7 @@ config BT_CTRL_SLEEP_CLOCK_EFF
 config BT_CTRL_HCI_TL_EFF
     int
     default 0 if BT_CTRL_HCI_MODE_UART_H4
-    default 1 if BT_CTRL_HCI_M0DE_VHCI
+    default 1 if BT_CTRL_HCI_MODE_VHCI
     default 1
 
 config BT_CTRL_AGC_RECORRECT_EN

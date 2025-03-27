@@ -55,7 +55,7 @@ extern "C" {
 *
 * @note Please do not modify this value.
 */
-#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20241024
+#define ESP_BT_CONTROLLER_CONFIG_MAGIC_VAL  0x20250318
 
 /**
  * @brief Bluetooth Controller mode
@@ -247,6 +247,7 @@ the adv packet will be discarded until the memory is restored. */
     .pcm_polar = CONFIG_BTDM_CTRL_PCM_POLAR_EFF,                           \
     .pcm_fsyncshp = 0,                                                     \
     .hli = BTDM_CTRL_HLI,                                                  \
+    .enc_key_sz_min = CONFIG_BTDM_CTRL_BR_EDR_MIN_ENC_KEY_SZ_DFT_EFF,      \
     .dup_list_refresh_period = SCAN_DUPL_CACHE_REFRESH_PERIOD,             \
     .ble_scan_backoff = BTDM_CTRL_SCAN_BACKOFF_UPPERLIMITMAX,              \
     .ble_llcp_disc_flag = BTDM_BLE_LLCP_DISC_FLAG,                         \
@@ -326,6 +327,9 @@ typedef struct {
                                                 - 1 - Mono Mode 1
                                                 - 2 - Mono Mode 2 */
     bool hli;                               /*!< True if using high-level (level 4) interrupt (default); false otherwise. Configurable in menuconfig */
+    uint8_t enc_key_sz_min;                 /*!< Minimum size of the encryption key
+                                                - Range: 7 - 16
+                                                - Default: 7 */
     uint16_t dup_list_refresh_period;       /*!< Scan duplicate filtering list refresh period in seconds. Configurable in menuconfig
                                                 - Range: 0 - 100 seconds
                                                 - Default: 0 second */

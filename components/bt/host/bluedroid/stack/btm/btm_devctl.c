@@ -831,7 +831,7 @@ void btm_vendor_specific_evt (UINT8 *p, UINT8 evt_len)
 
     STREAM_TO_UINT8(sub_event, p_evt);
     /* Check in subevent if authentication is through Legacy Authentication. */
-    if (sub_event == ESP_VS_REM_LEGACY_AUTH_CMP) {
+    if (sub_event == HCI_VENDOR_LEGACY_REM_AUTH_EVT_SUBCODE) {
         UINT16 hci_handle;
         STREAM_TO_UINT16(hci_handle, p_evt);
         btm_sec_handle_remote_legacy_auth_cmp(hci_handle);

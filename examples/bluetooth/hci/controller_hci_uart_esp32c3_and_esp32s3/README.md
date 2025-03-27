@@ -16,6 +16,9 @@ This example uses UHCI, GDMA together with UART to implement the HCI UART transp
 
 This example uses LL/register access directly, because the UHCI driver hasn't been implemented yet.
 
+When using Bluetooth HCI URAT, please make sure that the Espressif Vendor-specific HCI command is not enabled (Disabled by default).
+For detailed description information, please refer to `components/bt/include/esp32c3/include/esp_bt_vs.h`.
+
 ## How to use example
 
 ### Hardware Required
