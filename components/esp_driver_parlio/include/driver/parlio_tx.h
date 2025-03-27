@@ -157,6 +157,7 @@ typedef struct {
     uint32_t idle_value; /*!< The value on the data line when the parallel IO is in idle state */
     struct {
         uint32_t queue_nonblocking : 1; /*!< If set, when the transaction queue is full, driver will not block the thread but return directly */
+        uint32_t loop_transmission : 1; /*!< If set, the transmission will be repeated continuously, until the tx_unit is disabled by `parlio_tx_unit_disable` */
     } flags;                            /*!< Transmit specific config flags */
 } parlio_transmit_config_t;
 

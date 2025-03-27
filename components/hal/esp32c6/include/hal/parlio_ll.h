@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,6 +43,11 @@ typedef enum {
     PARLIO_LL_RX_EOF_COND_RX_FULL,     /*!< RX unit generates EOF event when it receives enough data */
     PARLIO_LL_RX_EOF_COND_EN_INACTIVE, /*!< RX unit generates EOF event when the external enable signal becomes inactive */
 } parlio_ll_rx_eof_cond_t;
+
+typedef enum {
+    PARLIO_LL_TX_EOF_COND_DATA_LEN,     /*!< TX unit generates EOF event when it transmits particular data bit length that specified in `tx_bitlen`. */
+    PARLIO_LL_TX_EOF_COND_DMA_EOF,      /*!< TX unit generates EOF event when the DMA EOF takes place */
+} parlio_ll_tx_eof_cond_t;
 
 /**
  * @brief Enable or disable the parlio peripheral APB clock
@@ -448,6 +453,19 @@ __attribute__((always_inline))
 static inline void parlio_ll_tx_set_trans_bit_len(parl_io_dev_t *dev, uint32_t bitlen)
 {
     HAL_FORCE_MODIFY_U32_REG_FIELD(dev->tx_cfg0, tx_bytelen, bitlen / 8);
+}
+
+/**
+ * @brief Set the condition to generate the TX EOF event (this chip does not support)
+ *
+ * @param dev Parallel IO register base address (not used)
+ * @param cond TX EOF condition (not used)
+ */
+__attribute__((always_inline))
+static inline void parlio_ll_tx_set_eof_condition(parl_io_dev_t *dev, parlio_ll_tx_eof_cond_t cond)
+{
+    (void) dev;
+    HAL_ASSERT(cond == PARLIO_LL_TX_EOF_COND_DATA_LEN);
 }
 
 /**

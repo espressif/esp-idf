@@ -1,0 +1,55 @@
+menu "Example Configuration"
+
+    config EXAMPLE_PIN_NUM_R1
+        int "Red Pin 1"
+        default 7
+
+    config EXAMPLE_PIN_NUM_G1
+        int "Green Pin 1"
+        default 4
+
+    config EXAMPLE_PIN_NUM_B1
+        int "Blue Pin 1"
+        default 1
+
+    config EXAMPLE_PIN_NUM_R2
+        int "Red Pin 2"
+        default 6
+
+    config EXAMPLE_PIN_NUM_G2
+        int "Green Pin 2"
+        default 3
+
+    config EXAMPLE_PIN_NUM_B2
+        int "Blue Pin 2"
+        default 0
+
+    config EXAMPLE_PIN_NUM_LATCH
+        int "Latch Pin"
+        default 5
+
+    config EXAMPLE_PIN_NUM_PCLK
+        int "PCLK Pin"
+        default 10
+
+    config EXAMPLE_PIN_NUM_OE
+        int "OE Pin"
+        default 2
+
+    config EXAMPLE_PIN_NUM_A
+        int "A Pin"
+        default 20
+
+    config EXAMPLE_PIN_NUM_B
+        int "B Pin"
+        default 21
+
+    config EXAMPLE_PIN_NUM_C
+        int "C Pin"
+        default 22
+
+    config EXAMPLE_PIN_NUM_D
+        int "D Pin"
+        default 23
+
+endmenu
