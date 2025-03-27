@@ -35,6 +35,7 @@
 #include "os/endian.h"
 
 #include "esp_bt.h"
+#include "ble_priv.h"
 #include "esp_intr_alloc.h"
 #include "esp_sleep.h"
 #include "esp_pm.h"
@@ -985,6 +986,12 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
 #if CONFIG_SW_COEXIST_ENABLE
     coex_enable();
 #endif
+
+    if (ble_stack_enable() != 0) {
+        ret = ESP_FAIL;
+        goto error;
+    }
+
     if (ble_controller_enable(mode) != 0) {
         ret = ESP_FAIL;
         goto error;
@@ -994,6 +1001,7 @@ esp_err_t esp_bt_controller_enable(esp_bt_mode_t mode)
     return ESP_OK;
 
 error:
+    ble_stack_disable();
 #if CONFIG_SW_COEXIST_ENABLE
     coex_disable();
 #endif
@@ -1016,7 +1024,7 @@ esp_err_t esp_bt_controller_disable(void)
     if (ble_controller_disable() != 0) {
         return ESP_FAIL;
     }
-
+    ble_stack_disable();
     if (s_ble_active) {
         esp_phy_disable(PHY_MODEM_BT);
 #if CONFIG_PM_ENABLE

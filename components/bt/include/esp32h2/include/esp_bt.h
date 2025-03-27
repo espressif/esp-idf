@@ -227,6 +227,7 @@ typedef struct {
                                                         - 0 - Disable (default)
                                                         - 1 - Enable */
     uint8_t vhci_enabled;                           /*!< VHCI is enabled  */
+    uint8_t ptr_check_enabled;                      /*!< Enable boundary check for internal memory. */
     uint32_t config_magic;                          /*!< Configuration magic value */
 } esp_bt_controller_config_t;
 
@@ -282,6 +283,7 @@ typedef struct {
     .ble_chan_ass_en            = DEFAULT_BT_LE_CTRL_CHAN_ASS_EN,                       \
     .ble_data_lenth_zero_aux    = DEFAULT_BT_LE_CTRL_ADV_DATA_LENGTH_ZERO_AUX,          \
     .vhci_enabled               = DEFAULT_BT_LE_VHCI_ENABLED,                           \
+    .ptr_check_enabled          = DEFAULT_BT_LE_PTR_CHECK_ENABLED,                      \
     .config_magic = CONFIG_MAGIC,                                                       \
 }
 
