@@ -380,6 +380,11 @@ void otPlatRadioSetMacKey(otInstance *aInstance, uint8_t aKeyIdMode, uint8_t aKe
 
 void otPlatRadioSetMacFrameCounter(otInstance *aInstance, uint32_t aMacFrameCounter)
 {
+    SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter, false));
+}
+
+void otPlatRadioSetMacFrameCounterIfLarger(otInstance *aInstance, uint32_t aMacFrameCounter)
+{
     SuccessOrDie(s_radio.SetMacFrameCounter(aMacFrameCounter, true));
 }
 

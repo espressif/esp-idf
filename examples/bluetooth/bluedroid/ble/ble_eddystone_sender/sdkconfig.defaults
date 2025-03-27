@@ -1,0 +1,11 @@
+# This file was generated using idf.py save-defconfig. It can be edited manually.
+# Espressif IoT Development Framework (ESP-IDF) Project Minimal Configuration
+#
+CONFIG_BT_ENABLED=y
+# CONFIG_BT_BLE_50_FEATURES_SUPPORTED is not set
+CONFIG_BT_BLE_42_FEATURES_SUPPORTED=y
+# CONFIG_BT_LE_50_FEATURE_SUPPORT is not used on ESP32, ESP32-C3 and ESP32-S3.
+# CONFIG_BT_LE_50_FEATURE_SUPPORT is not set
+CONFIG_EXMAPLE_EDDYSTONE_SEND_UID=y
+CONFIG_EXMAPLE_EDDYSTONE_SEND_URL=n
+CONFIG_EXMAPLE_EDDYSTONE_SEND_TLM=n

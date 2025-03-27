@@ -6,19 +6,34 @@
 
 #pragma once
 
+#include <stdlib.h>
+#include <string.h>
+#include <sys/cdefs.h>
+#include <sys/param.h>
+#include <sys/lock.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
+#if CONFIG_RMT_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for rmt driver
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#endif
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/queue.h"
 #include "freertos/idf_additions.h"
+#include "esp_log.h"
+#include "esp_check.h"
 #include "esp_err.h"
 #include "soc/soc_caps.h"
 #include "soc/gdma_channel.h"
+#include "soc/rmt_periph.h"
 #include "hal/rmt_types.h"
 #include "hal/rmt_hal.h"
+#include "hal/rmt_ll.h"
 #include "hal/dma_types.h"
 #include "hal/cache_ll.h"
+#include "hal/cache_hal.h"
 #include "hal/hal_utils.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
@@ -29,7 +44,9 @@
 #include "esp_private/esp_gpio_reserve.h"
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_retention.h"
-#include "driver/rmt_common.h"
+#include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk_tree_common.h"
+#include "driver/rmt_types.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +89,9 @@ typedef dma_descriptor_align4_t rmt_dma_descriptor_t;
 #define ALIGN_DOWN(num, align)  ((num) & ~((align) - 1))
 
 #define RMT_USE_RETENTION_LINK  (SOC_RMT_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP)
+
+///!< Logging settings
+#define TAG "rmt"
 
 typedef struct {
     struct {

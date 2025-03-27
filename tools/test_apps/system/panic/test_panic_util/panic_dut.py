@@ -165,17 +165,19 @@ class PanicTestDut(IdfDut):
 
     def process_coredump_uart(
         self, coredump_base64: Any, expected: Optional[List[Union[str, re.Pattern]]] = None,
-    ) -> None:
+    ) -> Any:
         with open(os.path.join(self.logdir, 'coredump_data.b64'), 'w') as coredump_file:
             logging.info('Writing UART base64 core dump to %s', coredump_file.name)
             coredump_file.write(coredump_base64)
 
         output_file_name = os.path.join(self.logdir, 'coredump_uart_result.txt')
+        coredump_elf_file = os.path.join(self.logdir, 'coredump_data.elf')
         self._call_espcoredump(
-            ['--core-format', 'b64', '--core', coredump_file.name], output_file_name
+            ['--core-format', 'b64', '--core', coredump_file.name, '--save-core', coredump_elf_file], output_file_name
         )
         if expected:
             self.expect_coredump(output_file_name, expected)
+        return coredump_elf_file
 
     def process_coredump_flash(self, expected: Optional[List[Union[str, re.Pattern]]] = None) -> Any:
         coredump_file_name = os.path.join(self.logdir, 'coredump_data.bin')

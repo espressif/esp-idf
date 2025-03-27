@@ -15,7 +15,7 @@
 
 #include <mbedtls/build_info.h>
 
-#if defined(MBEDTLS_SHA1_C) && defined(MBEDTLS_SHA1_ALT)
+#if defined(MBEDTLS_SHA1_ALT)
 
 #include "mbedtls/sha1.h"
 
@@ -241,4 +241,4 @@ int mbedtls_sha1_finish(mbedtls_sha1_context *ctx, unsigned char output[20])
     return ret;
 }
 
-#endif /* MBEDTLS_SHA1_C && MBEDTLS_SHA1_ALT */
+#endif /* MBEDTLS_SHA1_ALT */

@@ -14,20 +14,21 @@ from pytest_embedded_idf.utils import idf_parametrize
 def test_i2s_es8311_example_generic(dut: Dut) -> None:
     dut.expect('i2s es8311 codec example start')
     dut.expect('-----------------------------')
-    dut.expect('I \\(([0-9]+)\\) i2s_es8311: i2s driver init success')
+    dut.expect('i2s_es8311: i2s driver init success')
 
 
-@pytest.mark.generic
+@pytest.mark.es8311
 @pytest.mark.parametrize(
     'config',
     [
-        'bsp',
+        's3_korvo2_v3',
     ],
     indirect=True,
 )
 @idf_parametrize('target', ['esp32s3'], indirect=['target'])
-def test_i2s_es8311_example_bsp(dut: Dut) -> None:
-    dut.expect('i2s es8311 codec example start')
-    dut.expect('-----------------------------')
-    dut.expect('Using BSP for HW configuration')
-    dut.expect('I \\(([0-9]+)\\) i2s_es8311: i2s driver init success')
+def test_i2s_es8311_example_korvo2_v3(dut: Dut) -> None:
+    dut.expect(r'i2s es8311 codec example start')
+    dut.expect(r'-----------------------------')
+    dut.expect(r'i2s_es8311: i2s driver init success')
+    dut.expect(r'i2s_es8311: es8311 codec init success')
+    dut.expect(r'Returned from app_main\(\)')

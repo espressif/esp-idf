@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
+#include <string.h>
 #include "esp_log.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
@@ -372,5 +373,58 @@ esp_err_t usb_host_transfer_submit_timeout_mock_callback(usb_transfer_t *transfe
     // Check that transfer and target endpoint are valid
     MOCK_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   // Target device must be set
     MOCK_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) != 0, ESP_ERR_INVALID_ARG);
+    return ESP_OK;
+}
+
+esp_err_t usb_host_transfer_submit_control_success_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count)
+{
+    MOCK_CHECK(client_hdl != NULL && transfer != NULL, ESP_ERR_INVALID_ARG);
+    // Check that control transfer is valid
+    MOCK_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   // Target device must be set
+    // Control transfers must be targeted at EP 0
+    MOCK_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
+
+    transfer->status = USB_TRANSFER_STATUS_COMPLETED;
+    transfer->actual_num_bytes = transfer->num_bytes;
+    transfer->callback(transfer);
+    ESP_LOGD(MOCK_TAG_CB, "CTRL mocked transfer submitted, buff len: %d, buff: %s", transfer->num_bytes, transfer->data_buffer);
+    return ESP_OK;
+}
+
+esp_err_t usb_host_transfer_submit_control_invalid_response_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count)
+{
+    MOCK_CHECK(client_hdl != NULL && transfer != NULL, ESP_ERR_INVALID_ARG);
+    // Check that control transfer is valid
+    MOCK_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   // Target device must be set
+    // Control transfers must be targeted at EP 0
+    MOCK_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
+
+    transfer->status = USB_TRANSFER_STATUS_ERROR;
+    transfer->actual_num_bytes = 0;
+    transfer->callback(transfer);
+    ESP_LOGD(MOCK_TAG_CB, "CTRL mocked transfer submitted, buff len: %d, buff: %s", transfer->num_bytes, transfer->data_buffer);
+    ESP_LOGW(MOCK_TAG_CB, "CTRL mocked transfer error");
+    return ESP_OK;
+}
+
+esp_err_t usb_host_transfer_submit_control_timeout_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count)
+{
+    MOCK_CHECK(client_hdl != NULL && transfer != NULL, ESP_ERR_INVALID_ARG);
+    // Check that control transfer is valid
+    MOCK_CHECK(transfer->device_handle != NULL, ESP_ERR_INVALID_ARG);   // Target device must be set
+    // Control transfers must be targeted at EP 0
+    MOCK_CHECK((transfer->bEndpointAddress & USB_B_ENDPOINT_ADDRESS_EP_NUM_MASK) == 0, ESP_ERR_INVALID_ARG);
+    return ESP_OK;
+}
+
+esp_err_t usb_host_device_info_mock_callback(usb_device_handle_t dev_hdl, usb_device_info_t *dev_info, int call_count)
+{
+    MOCK_CHECK(dev_hdl != NULL && dev_info != NULL, ESP_ERR_INVALID_ARG);
+
+    const device_list_t *current_device = (const device_list_t *) dev_hdl;
+    memset(dev_info, 0, sizeof(usb_device_info_t));
+    dev_info->dev_addr = current_device->address;
+    dev_info->bMaxPacketSize0 = current_device->dev_desc->bMaxPacketSize0;
+    dev_info->bConfigurationValue = 1;
     return ESP_OK;
 }

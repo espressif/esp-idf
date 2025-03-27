@@ -92,7 +92,9 @@ CONFIGS_HW_STACK_GUARD_DUAL_CORE = list(
     )
 )
 
-CONFIG_CAPTURE_DRAM = list(itertools.chain(itertools.product(['coredump_flash_capture_dram'], TARGETS_ALL)))
+CONFIG_CAPTURE_DRAM = list(
+    itertools.chain(itertools.product(['coredump_flash_capture_dram', 'coredump_uart_capture_dram'], TARGETS_ALL))
+)
 
 CONFIG_COREDUMP_SUMMARY = list(itertools.chain(itertools.product(['coredump_flash_elf_sha'], TARGETS_ALL)))
 
@@ -1085,9 +1087,15 @@ def test_capture_dram(dut: PanicTestDut, config: str, test_func_name: str) -> No
     dut.expect_elf_sha256()
     dut.expect_none(['Guru Meditation', 'Re-entered core dump'])
 
-    expect_coredump_flash_write_logs(dut, config)
+    core_elf_file = None
+    if 'flash' in config:
+        expect_coredump_flash_write_logs(dut, config)
+        core_elf_file = dut.process_coredump_flash()
+    elif 'uart' in config:
+        coredump_base64 = expect_coredump_uart_write_logs(dut)
+        core_elf_file = dut.process_coredump_uart(coredump_base64)
+    assert core_elf_file is not None
 
-    core_elf_file = dut.process_coredump_flash()
     dut.start_gdb_for_coredump(core_elf_file)
 
     assert dut.gdb_data_eval_expr('g_data_var') == '43'

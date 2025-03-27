@@ -11,7 +11,7 @@ if(esp_tee_build)
                      "bootloader_flash/include")
 
     set(tee_srcs "src/flash_partitions.c"
-                 "src/${IDF_TARGET}/bootloader_sha.c"
+                 "src/bootloader_sha.c"
                  "src/bootloader_common_loader.c"
                  "src/esp_image_format.c"
                  "src/bootloader_utility.c"
@@ -64,6 +64,8 @@ if(CONFIG_APP_BUILD_TYPE_APP_2NDBOOT)
         )
 endif()
 
+list(APPEND srcs "src/bootloader_sha.c")
+
 if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     set(include_dirs "include" "bootloader_flash/include"
         "private_include")
@@ -73,7 +75,6 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
     "src/bootloader_clock_loader.c"
     "src/bootloader_console.c"
     "src/bootloader_console_loader.c"
-    "src/${IDF_TARGET}/bootloader_sha.c"
     "src/${IDF_TARGET}/bootloader_soc.c"
     "src/${IDF_TARGET}/bootloader_${IDF_TARGET}.c"
     )
@@ -86,8 +87,6 @@ if(BOOTLOADER_BUILD OR CONFIG_APP_BUILD_TYPE_RAM)
             "src/${IDF_TARGET}/bootloader_ecdsa.c")
     endif()
 else()
-    list(APPEND srcs
-        "src/idf/bootloader_sha.c")
     set(include_dirs "include" "bootloader_flash/include")
     set(priv_include_dirs "private_include")
     # heap is required for `heap_memory_layout.h` header

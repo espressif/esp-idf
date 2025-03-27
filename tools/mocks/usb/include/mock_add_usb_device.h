@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -288,6 +288,68 @@ esp_err_t usb_host_transfer_submit_invalid_response_mock_callback(usb_transfer_t
  *    - ESP_ERR_INVALID_ARG: Invalid input argument
  */
 esp_err_t usb_host_transfer_submit_timeout_mock_callback(usb_transfer_t *transfer, int call_count);
+
+/**
+ * @brief Submit CTRL transfer, success
+ * @note CMock callback function, registered to usb_host_transfer_submit_control()
+ *
+ * Transfer callback is called, transfer status marked as completed, correct number of transferred bytes
+ *
+ * @param[in] client_hdl Client handle
+ * @param[in] transfer Pointer to USB transfer
+ * @param[out] call_count Call count of the callback function (CMock mandatory argument)
+ *
+ * @return
+ *    - ESP_OK: Transfer submitted
+ *    - ESP_ERR_INVALID_ARG: Invalid input argument
+ */
+esp_err_t usb_host_transfer_submit_control_success_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count);
+
+/**
+ * @brief Submit CTRL transfer, error
+ * @note CMock callback function, registered to usb_host_transfer_submit_control()
+ *
+ * Transfer callback is called, transfer status marked as error, incorrect number of transferred bytes
+ *
+ * @param[in] client_hdl Client handle
+ * @param[in] transfer Pointer to USB transfer
+ * @param[out] call_count Call count of the callback function (CMock mandatory argument)
+ *
+ * @return
+ *    - ESP_OK: Transfer submitted
+ *    - ESP_ERR_INVALID_ARG: Invalid input argument
+ */
+esp_err_t usb_host_transfer_submit_control_invalid_response_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count);
+
+/**
+ * @brief Submit CTRL transfer, time the transfer out
+ * @note CMock callback function, registered to usb_host_transfer_submit_control()
+ *
+ * Transfer callback is not called, because transfer timeout is not implemented in the USB Host Library
+ *
+ * @param[in] client_hdl Client handle
+ * @param[in] transfer Pointer to USB transfer
+ * @param[out] call_count Call count of the callback function (CMock mandatory argument)
+ *
+ * @return
+ *    - ESP_OK: Transfer submitted
+ *    - ESP_ERR_INVALID_ARG: Invalid input argument
+ */
+esp_err_t usb_host_transfer_submit_control_timeout_mock_callback(usb_host_client_handle_t client_hdl, usb_transfer_t *transfer, int call_count);
+
+/**
+ * @brief USB Host device info mock callback
+ * @note CMock callback function registered to usb_host_device_info()
+ *
+ * @param[in]  dev_hdl    Device handle
+ * @param[out] dev_info   Device information
+ * @param[out] call_count Call count of the callback function (CMock mandatory argument)
+ *
+ * @return
+ *    - ESP_OK: Device information obtained successfully
+ *    - ESP_ERR_INVALID_ARG: Invalid argument
+ */
+esp_err_t usb_host_device_info_mock_callback(usb_device_handle_t dev_hdl, usb_device_info_t *dev_info, int call_count);
 
 #ifdef __cplusplus
 }

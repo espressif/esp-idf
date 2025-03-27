@@ -96,8 +96,21 @@ menu "Heap memory debugging"
         help
             Enables tracking the task responsible for each heap allocation.
 
-            This function depends on heap poisoning being enabled and adds four more bytes of overhead for each block
-            allocated.
+            Note: Allocating or freeing memory or using the task tracking API will lead to a crash when the
+            scheduler is not working (e.g, after calling vTaskSuspendAll).
+
+    config HEAP_TRACK_DELETED_TASKS
+        bool "Keep information about the memory usage of deleted tasks"
+        depends on HEAP_TASK_TRACKING
+        default n
+        help
+            When enabled, this configuration allows the user to keep trace of the memory usage
+            of a task that has been deleted.
+
+            This allows the user to verify that no memory allocated within a task remains unfreed
+            before terminating the task
+
+            Note that this feature cannot keep track of a task deletion if the task is allocated statically
 
     config HEAP_ABORT_WHEN_ALLOCATION_FAILS
         bool "Abort if memory allocation fails"

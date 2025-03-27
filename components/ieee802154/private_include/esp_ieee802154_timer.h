@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,6 +78,56 @@ esp_err_t ieee802154_timer1_set_threshold(uint32_t value);
  *
  */
 uint32_t ieee802154_timer1_get_value(void);
+
+/**
+ * @brief  Set timer0 to fire at specific time.
+ *
+ */
+void ieee802154_timer0_fire_at(uint32_t fire_time);
+
+/**
+ * @brief  Set timer1 to fire at specific time.
+ *
+ */
+void ieee802154_timer1_fire_at(uint32_t fire_time);
+
+typedef void (*timer_callback_t)(void* ctx);
+
+/**
+ * @brief  Set timer0 callback.
+ *
+ */
+void ieee802154_timer0_set_callback(timer_callback_t timer0_cb, void *timer0_ctx);
+
+/**
+ * @brief  Set timer1 callback.
+ *
+ */
+void ieee802154_timer1_set_callback(timer_callback_t timer1_cb, void *timer1_ctx);
+
+/**
+ * @brief  Set timer0 to fire at specific time with callback.
+ *
+ */
+void ieee802154_timer0_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer0_callback, void *timer0_ctx);
+
+/**
+ * @brief  Set timer1 to fire at specific time with callback.
+ *
+ */
+void ieee802154_timer1_fire_at_with_callback(uint32_t fire_time, timer_callback_t timer1_callback, void *timer1_ctx);
+
+/**
+ * @brief  ISR handle for timer0.
+ *
+ */
+void isr_handle_timer0_done(void);
+
+/**
+ * @brief  ISR handle for timer1.
+ *
+ */
+void isr_handle_timer1_done(void);
 
 #ifdef __cplusplus
 }

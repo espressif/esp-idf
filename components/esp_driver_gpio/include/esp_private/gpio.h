@@ -83,7 +83,7 @@ esp_err_t gpio_output_disable(gpio_num_t gpio_num);
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_ARG GPIO number error
  */
-esp_err_t gpio_od_disable(gpio_num_t gpio_num);
+esp_err_t gpio_od_enable(gpio_num_t gpio_num);
 
 /**
  * @brief Disable open-drain for an IO
@@ -94,7 +94,7 @@ esp_err_t gpio_od_disable(gpio_num_t gpio_num);
  *      - ESP_OK Success
  *      - ESP_ERR_INVALID_ARG GPIO number error
  */
-esp_err_t gpio_od_enable(gpio_num_t gpio_num);
+esp_err_t gpio_od_disable(gpio_num_t gpio_num);
 
 /**
  * @brief Configure the pin to be used for analog purpose (such as ADC, touch, etc.)
