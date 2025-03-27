@@ -14,6 +14,8 @@
 
 #include <stdbool.h>
 #include <stdlib.h>
+#include "hal/gpio_types.h"
+#include "hal/assert.h"
 #include "soc/rtc_io_struct.h"
 #include "soc/rtc_io_reg.h"
 #include "soc/rtc_periph.h"
@@ -28,12 +30,6 @@ typedef enum {
     RTCIO_LL_FUNC_RTC = 0x0,         /*!< The pin controlled by RTC module. */
     RTCIO_LL_FUNC_DIGITAL = 0x1,     /*!< The pin controlled by DIGITAL module. */
 } rtcio_ll_func_t;
-
-typedef enum {
-    RTCIO_LL_WAKEUP_DISABLE    = 0,    /*!< Disable GPIO interrupt                             */
-    RTCIO_LL_WAKEUP_LOW_LEVEL  = 0x4,  /*!< GPIO interrupt type : input low level trigger      */
-    RTCIO_LL_WAKEUP_HIGH_LEVEL = 0x5,  /*!< GPIO interrupt type : input high level trigger     */
-} rtcio_ll_wake_type_t;
 
 typedef enum {
     RTCIO_LL_OUTPUT_NORMAL = 0,    /*!< RTCIO output mode is normal. */
@@ -309,8 +305,9 @@ static inline void rtcio_ll_force_unhold_all(void)
  * @param rtcio_num The index of rtcio. 0 ~ MAX(rtcio).
  * @param type  Wakeup on high level or low level.
  */
-static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t type)
+static inline void rtcio_ll_wakeup_enable(int rtcio_num, gpio_int_type_t type)
 {
+    HAL_ASSERT(type == GPIO_INTR_LOW_LEVEL || type == GPIO_INTR_HIGH_LEVEL);
     RTCIO.pin[rtcio_num].wakeup_enable = 1;
     RTCIO.pin[rtcio_num].int_type = type;
 }
@@ -323,7 +320,7 @@ static inline void rtcio_ll_wakeup_enable(int rtcio_num, rtcio_ll_wake_type_t ty
 static inline void rtcio_ll_wakeup_disable(int rtcio_num)
 {
     RTCIO.pin[rtcio_num].wakeup_enable = 0;
-    RTCIO.pin[rtcio_num].int_type = RTCIO_LL_WAKEUP_DISABLE;
+    RTCIO.pin[rtcio_num].int_type = 0;
 }
 
 /**
