@@ -9,6 +9,7 @@ CONFIG_COMPILER_OPTIMIZATION_SIZE=y
 
 #  Options that will enable IRAM reduction option that are not necessarily safe for all use-cases
 CONFIG_RINGBUF_PLACE_ISR_FUNCTIONS_INTO_FLASH=y
+CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH=y
 
 # Options that will enable IRAM reduction option that are only usable together with flash auto-suspend
 CONFIG_SPI_FLASH_AUTO_SUSPEND=y

@@ -57,6 +57,19 @@ def test_freertos(dut: Dut) -> None:
 
 
 @pytest.mark.generic
+@pytest.mark.flash_suspend
+@idf_parametrize(
+    'config,target',
+    [
+        ('flash_auto_suspend', 'esp32c3'),
+    ],
+    indirect=['config', 'target'],
+)
+def test_freertos_flash_auto_suspend(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.generic
 @pytest.mark.parametrize('config', ['freertos_options'], indirect=True)
 @idf_parametrize('target', ['supported_targets'], indirect=['target'])
 def test_task_notify_too_high_index_fails(dut: Dut) -> None:

@@ -10,11 +10,14 @@ entries:
     #   - Default: Place all functions in internal RAM.
     #   - CONFIG_FREERTOS_PLACE_FUNCTIONS_INTO_FLASH: Place functions in flash if they are never called from an ISR
     #     context (directly or indirectly).
+    #   - xTaskIncrementTickOtherCores is always placed in internal RAM for better performance
     # Placement Rules (Task Snapshot):
     #   - Default: Place all functions in internal RAM.
     #   - CONFIG_FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH: Place functions in flash
     #   - vTaskGetSnapshot is omitted on purpose as it is used to by the Task Watchdog (TWDT) interrupt handler, we want
-    #     to always keep it in IRAM
+    #     to always keep it in IRAM unless CONFIG_FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH is enabled in which case
+    #     we can place it in flash.
+    #
     # ------------------------------------------------------------------------------------------------------------------
     if FREERTOS_PLACE_FUNCTIONS_INTO_FLASH = y:
         # Kernel Control
@@ -37,11 +40,21 @@ entries:
         # TLSP Deletion Callbacks
         if FREERTOS_TLSP_DELETION_CALLBACKS = y:
             tasks:vTaskSetThreadLocalStoragePointerAndDelCallback (default)
+        # Newlib re-entrancy
+        tasks:__getreent (default)
+        # Miscellaneous
+        tasks:pvTaskGetCurrentTCBForCore (default)
+        if SPIRAM = y:
+            # PSRAM
+            tasks:prvTaskCreateDynamicPinnedToCoreWithCaps (default)
     # Task Snapshot
     if FREERTOS_PLACE_SNAPSHOT_FUNS_INTO_FLASH = y:
         tasks:pxGetTaskListByIndex (default)
         tasks:xTaskGetNext (default)
         tasks:uxTaskGetSnapshotAll (default)
+        if FREERTOS_PLACE_ISR_FUNCTIONS_INTO_FLASH = y:
+            tasks:vTaskGetSnapshot (default)
+
 
     # ------------------------------------------------------------------------------------------------------------------
     # freertos_compatibility.c
@@ -54,6 +67,12 @@ entries:
     # Placement Rules: Functions always in flash as they are never called from an ISR
     # ------------------------------------------------------------------------------------------------------------------
     idf_additions (default)
+
+    # ------------------------------------------------------------------------------------------------------------------
+    # idf_additions_event_groups.c
+    # Placement Rules: Functions always in flash as they are never called from an ISR
+    # ------------------------------------------------------------------------------------------------------------------
+    idf_additions_event_groups (default)
 
     # ------------------------------------------------------------------------------------------------------------------
     # app_startup.c
@@ -74,6 +93,7 @@ entries:
         heap_idf:vPortFree (default)
         heap_idf:xPortGetFreeHeapSize (default)
         heap_idf:xPortGetMinimumEverFreeHeapSize (default)
+        heap_idf:xPortCheckValidListMem (default)
         if FREERTOS_SMP = n:
             heap_idf:xPortCheckValidTCBMem (default)
             heap_idf:xPortcheckValidStackMem (default)
