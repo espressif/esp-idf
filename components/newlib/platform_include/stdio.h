@@ -10,5 +10,7 @@
 #include_next <stdio.h>
 
 #if CONFIG_LIBC_PICOLIBC
+void flockfile(FILE *);
+void funlockfile(FILE *);
 FILE *open_memstream(char **, size_t *);
 #endif

@@ -5,6 +5,7 @@ set(srcs
     "test_misc.c"
     "test_memstream.c"
     "test_newlib.c"
+    "test_printf.c"
     "test_setjmp.c"
     "test_stdatomic.c"
     "test_time.c")
