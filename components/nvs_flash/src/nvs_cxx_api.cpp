@@ -17,6 +17,8 @@
 #include "nvs_handle_locked.hpp"
 #include "nvs_platform.hpp"
 
+using namespace std;
+
 namespace nvs {
 
 std::unique_ptr<NVSHandle> open_nvs_handle_from_partition(const char *partition_name,
