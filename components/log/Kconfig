@@ -50,4 +50,9 @@ menu "Log"
 
     orsource "./Kconfig.format"
 
+    config LOG_IN_IRAM
+        bool "Place logging functions in IRAM" if SPI_FLASH_AUTO_SUSPEND
+        default y
+        select ESP_ROM_PRINT_IN_IRAM
+
 endmenu
