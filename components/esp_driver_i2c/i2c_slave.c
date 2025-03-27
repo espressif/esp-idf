@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -202,6 +202,7 @@ esp_err_t i2c_new_slave_device(const i2c_slave_config_t *slave_config, i2c_slave
     ESP_RETURN_ON_FALSE(i2c_slave, ESP_ERR_NO_MEM, TAG, "no memory for i2c slave bus");
 
     ESP_GOTO_ON_ERROR(i2c_acquire_bus_handle(i2c_port_num, &i2c_slave->base, I2C_BUS_MODE_SLAVE), err, TAG, "I2C bus acquire failed");
+    i2c_port_num = i2c_slave->base->port_num;
 
     i2c_hal_context_t *hal = &i2c_slave->base->hal;
     i2c_slave->base->scl_num = slave_config->scl_io_num;
@@ -293,8 +294,10 @@ err:
 static esp_err_t i2c_slave_bus_destroy(i2c_slave_dev_handle_t i2c_slave)
 {
     if (i2c_slave) {
-        i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
-        i2c_common_deinit_pins(i2c_slave->base);
+        if (i2c_slave->base) {
+            i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
+            i2c_common_deinit_pins(i2c_slave->base);
+        }
         if (i2c_slave->slv_rx_mux) {
             vSemaphoreDeleteWithCaps(i2c_slave->slv_rx_mux);
             i2c_slave->slv_rx_mux = NULL;
