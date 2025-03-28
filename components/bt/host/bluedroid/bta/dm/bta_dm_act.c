@@ -5865,6 +5865,13 @@ void bta_dm_ble_gap_set_vendor_evt_mask(tBTA_DM_MSG *p_data)
     BTM_BleSetVendorEventMask(p_data->ble_set_vendor_evt_mask.evt_mask, p_data->ble_set_vendor_evt_mask.p_cback);
 }
 
+void bta_dm_read_ble_channel_map(tBTA_DM_MSG *p_data)
+{
+    if (p_data && p_data->ch_map.read_ch_map_cb) {
+        BTM_ReadChannelMap(p_data->ch_map.remote_addr, p_data->ch_map.read_ch_map_cb);
+    }
+}
+
 #if (BLE_50_DTM_TEST_EN == TRUE)
 void bta_dm_ble_gap_dtm_enhance_tx_start(tBTA_DM_MSG *p_data)
 {

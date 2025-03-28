@@ -811,6 +811,16 @@ typedef struct {
     BD_ADDR     rem_bda;
 } tBTM_RSSI_RESULTS;
 
+/* Structure returned with read channel map event (in tBTM_CMPL_CB callback function)
+** in response to BTM_ReadChannelMap call.
+*/
+typedef struct {
+    tBTM_STATUS status;                 /* BTM operation status */
+    UINT8       hci_status;              /* HCI command complete status */
+    UINT8       channel_map[5]; /* Channel map (5 bytes) */
+    BD_ADDR     rem_bda;                 /* Remote device Bluetooth address */
+} tBTM_BLE_CH_MAP_RESULTS;
+
 /* Structure returned with read current TX power event (in tBTM_CMPL_CB callback function)
 ** in response to BTM_ReadTxPower call.
 */
@@ -3024,6 +3034,18 @@ tBTM_STATUS BTM_SwitchRole (BD_ADDR remote_bd_addr,
 //extern
 tBTM_STATUS BTM_ReadRSSI (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_CMPL_CB *p_cb);
 
+/*******************************************************************************
+**
+** Function         BTM_ReadChannelMap
+**
+** Description      This function is called to read the current channel map
+**                  for the given connection. The results are returned via
+**                  the callback (tBTM_BLE_CH_MAP_RESULTS).
+**
+** Returns          BTM_CMD_STARTED if successfully initiated or error code
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb);
 #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
