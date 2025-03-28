@@ -2085,6 +2085,21 @@
 #endif
 
 /**
+ * \def MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+ *
+ * Caller: library/ssl_tls.c
+ *
+ * Allow weak certificate verification without a hostname.
+ * This option is not recommended for production use.
+ */
+
+#if CONFIG_MBEDTLS_ALLOW_WEAK_CERTIFICATE_VERIFICATION
+#define MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+#else
+#undef MBEDTLS_SSL_CLI_ALLOW_WEAK_CERTIFICATE_VERIFICATION_WITHOUT_HOSTNAME
+#endif
+
+/**
  * \def MBEDTLS_GCM_C
  *
  * Enable the Galois/Counter Mode (GCM).
