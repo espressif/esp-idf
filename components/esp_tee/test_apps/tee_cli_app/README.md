@@ -78,31 +78,33 @@ get_msg_sha256  "<msg>"
   Get the SHA256 digest for the given message
        "<msg>"  Message for SHA256 digest calculation
 
-tee_sec_stg_gen_key  <slot_id> <key_type>
-  Generate and store a new key of the specified type in the given TEE secure
-  storage slot
-     <slot_id>  TEE Secure storage slot for storing the key
-    <key_type>  Key type (0: ECDSA_SECP256R1, 1: AES256)
+tee_sec_stg_gen_key  <key_id> <key_type>
+  Generate and store a new key of the specified type with the given ID
+      <key_id>  TEE Secure storage key ID
+    <key_type>  Key type (0: AES256, 1: ECDSA_SECP256R1)
 
-tee_sec_stg_sign  <slot_id> <msg_sha256>
-  Sign a message using the ECDSA keypair stored in the given slot ID and verify
-  the signature
-     <slot_id>  TEE Secure storage slot storing the ecdsa-secp256r1 keypair
+tee_sec_stg_sign  <key_id> <msg_sha256>
+  Sign a message using the ECDSA keypair stored with the given key ID and
+  verify the signature
+      <key_id>  TEE Secure storage key ID
   <msg_sha256>  SHA256 digest of the message to be signed and verified
 
-tee_sec_stg_encrypt  <slot_id> <plaintext>
-  Encrypt data using AES-GCM with a key from secure storage
-     <slot_id>  TEE Secure storage slot storing the AES key
+tee_sec_stg_encrypt  <key_id> <plaintext>
+  Encrypt data using AES-GCM key with the given ID from secure storage
+      <key_id>  TEE Secure storage key ID
    <plaintext>  Plaintext to be encrypted
 
-tee_sec_stg_decrypt  <slot_id> <ciphertext> <tag>
-  Decrypt data using AES-GCM with a key from secure storage
-     <slot_id>  TEE Secure storage slot storing the AES key
+tee_sec_stg_decrypt  <key_id> <ciphertext> <tag>
+  Decrypt data using AES-GCM key with the given ID from secure storage
+      <key_id>  TEE Secure storage key ID
   <ciphertext>  Ciphertext to be decrypted
          <tag>  AES-GCM authentication tag
 
-help
-  Print the list of registered commands
+help  [<string>] [-v <0|1>]
+  Print the summary of all registered commands if no arguments are given,
+  otherwise print summary of given command.
+      <string>  Name of command
+  -v, --verbose=<0|1>  If specified, list console commands with given verbose level
 ```
 
 ## Secure Services
@@ -110,7 +112,7 @@ help
 ### Attestation
 
 - The `tee_att_info` command provided by the attestation service generates and dumps an Entity Attestation Token (EAT) signed by the TEE.
-- The token is signed using the ECDSA key (`secp256r1` curve) stored in the configured slot ID of the TEE Secure Storage.
+- The token is signed using the ECDSA key (`secp256r1` curve) stored in the TEE Secure Storage with the configured key ID.
 
 <details>
   <summary><b>Sample output:</b> <i>tee_att_info</i></summary>
@@ -128,22 +130,22 @@ I (8180) tee_attest: Attestation token - Data:
 ### Secure Storage
 
 - The TEE secure storage service provides the following commands:
-    - `tee_sec_stg_gen_key`: Generate and store a new key (ECDSA or AES) in a specified TEE secure storage slot
-    - `tee_sec_stg_sign`: Sign a message using an ECDSA `secp256r1` key pair stored in a specified slot and verify the signature
-    - `tee_sec_stg_encrypt`: Encrypt data with AES256-GCM using the key from the specified slot and outputs the ciphertext and tag
-    - `tee_sec_stg_decrypt`: Decrypt ciphertext using key from the specified slot and tag for integrity verification
+    - `tee_sec_stg_gen_key`: Generate and store a new key (ECDSA or AES) in the TEE secure storage with the specified ID
+    - `tee_sec_stg_sign`: Sign a message using an ECDSA `secp256r1` key pair with the specified ID and verify the signature
+    - `tee_sec_stg_encrypt`: Encrypt data with AES256-GCM using the key with the specified ID and outputs the ciphertext and tag
+    - `tee_sec_stg_decrypt`: Decrypt ciphertext using key with the specified ID and tag for integrity verification
 - The `get_msg_sha256` command computes the SHA256 hash of a given message, which can be used as input for the `tee_sec_stg_sign` command.
 
 <details>
   <summary><b>Sample output:</b> <i>tee_sec_stg_gen_key + get_msg_sha256 + tee_sec_stg_sign</i></summary>
 
 ```log
-esp32c6> tee_sec_stg_gen_key 7 0
-I (2964) tee_sec_stg: Generated ECDSA_SECP256R1 key in slot 7
+esp32c6> tee_sec_stg_gen_key ecdsa_p256_k0 1
+I (2964) tee_sec_stg: Generated ECDSA_SECP256R1 key with ID ecdsa_p256_k0
 esp32c6> get_msg_sha256 "hello world"
 I (3984) tee_sec_stg: Message digest (SHA256) -
 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
-esp32c6> tee_sec_stg_sign 7 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+esp32c6> tee_sec_stg_sign ecdsa_p256_k0 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 I (5384) tee_sec_stg: Generated signature -
 944684f6ddcf4c268ac6b65e34ccb8d95bd2849567a87867101bc1f09208f0885d935d7b3ba9d46014f28e4c7c988d68c775431fcb2cb2d4ca5c6862db771088
 I (6404) tee_sec_stg: Public key (Uncompressed) -
@@ -157,14 +159,14 @@ I (6444) tee_sec_stg: Signature verified successfully!
   <summary><b>Sample output:</b> <i>tee_sec_stg_gen_key + tee_sec_stg_encrypt + tee_sec_stg_decrypt</i></summary>
 
 ```log
-esp32c6> tee_sec_stg_gen_key 8 1
-I (2784) tee_sec_stg: Generated AES256 key in slot 8
-esp32c6> tee_sec_stg_encrypt 8 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
+esp32c6> tee_sec_stg_gen_key aes256_k0 0
+I (2784) tee_sec_stg: Generated AES256 key with ID key0
+esp32c6> tee_sec_stg_encrypt aes256_k0 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 I (3084) tee_sec_stg: Ciphertext -
 58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1
 I (3594) tee_sec_stg: Tag -
 caeedb43e08dc3b4e35a58b2412908cc
-esp32c6> tee_sec_stg_decrypt 8 58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1 caeedb43e08dc3b4e35a58b2412908cc
+esp32c6> tee_sec_stg_decrypt aes256_k0 58054310a96d48c2dccdf2e34005aa63b40817723d3ec3d597ab362efea084c1 caeedb43e08dc3b4e35a58b2412908cc
 I (4314) tee_sec_stg: Decrypted plaintext -
 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 ```

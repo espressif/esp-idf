@@ -1,7 +1,7 @@
 /*
  * TEE Secure Storage example
  *
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -21,20 +21,21 @@
 
 #include "esp_tee_sec_storage.h"
 #include "secure_service_num.h"
+#include "sdkconfig.h"
 
 #define SHA256_DIGEST_SZ         (32)
 #define ECDSA_SECP256R1_KEY_LEN  (32)
 #define AES256_GCM_TAG_LEN       (16)
 #define AES256_GCM_AAD_LEN       (16)
 
-#define KEY_SLOT_ID              (CONFIG_EXAMPLE_TEE_SEC_STG_SLOT_ID)
+#define KEY_STR_ID               (CONFIG_EXAMPLE_TEE_SEC_STG_KEY_STR_ID)
 #define MAX_AES_PLAINTEXT_LEN    (128)
 
 static const char *message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.";
 
 static const char *TAG = "example_tee_sec_stg";
 
-static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_pubkey_t *pubkey, const esp_tee_sec_storage_sign_t *sign)
+static esp_err_t verify_ecdsa_secp256r1_sign(const uint8_t *digest, size_t len, const esp_tee_sec_storage_ecdsa_pubkey_t *pubkey, const esp_tee_sec_storage_ecdsa_sign_t *sign)
 {
     if (pubkey == NULL || digest == NULL || sign == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -112,20 +113,25 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
         goto exit;
     }
 
-    esp_err_t err = esp_tee_sec_storage_clear_slot(KEY_SLOT_ID);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to clear slot %d!", KEY_SLOT_ID);
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = (const char *)(KEY_STR_ID),
+        .type = ESP_SEC_STG_KEY_ECDSA_SECP256R1
+    };
+
+    esp_err_t err = esp_tee_sec_storage_clear_key(cfg.id);
+    if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
+        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
         goto exit;
     }
 
-    err = esp_tee_sec_storage_gen_key(KEY_SLOT_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1);
+    err = esp_tee_sec_storage_gen_key(&cfg);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate keypair!");
         goto exit;
     }
 
-    esp_tee_sec_storage_sign_t sign = {};
-    err = esp_tee_sec_storage_get_signature(KEY_SLOT_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1, msg_digest, sizeof(msg_digest), &sign);
+    esp_tee_sec_storage_ecdsa_sign_t sign = {};
+    err = esp_tee_sec_storage_ecdsa_sign(&cfg, msg_digest, sizeof(msg_digest), &sign);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate signature!");
         goto exit;
@@ -133,8 +139,8 @@ static void example_tee_sec_stg_sign_verify(void *pvParameter)
 
     ESP_LOG_BUFFER_HEX("Signature", &sign, sizeof(sign));
 
-    esp_tee_sec_storage_pubkey_t pubkey = {};
-    err = esp_tee_sec_storage_get_pubkey(KEY_SLOT_ID, ESP_SEC_STG_KEY_ECDSA_SECP256R1, &pubkey);
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+    err = esp_tee_sec_storage_ecdsa_get_pubkey(&cfg, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
         goto exit;
@@ -175,19 +181,32 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
         goto exit;
     }
 
-    err = esp_tee_sec_storage_clear_slot(KEY_SLOT_ID);
-    if (err != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to clear slot %d!", KEY_SLOT_ID);
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = (const char *)(KEY_STR_ID),
+        .type = ESP_SEC_STG_KEY_AES256
+    };
+
+    err = esp_tee_sec_storage_clear_key(cfg.id);
+    if (err != ESP_OK && err != ESP_ERR_NOT_FOUND) {
+        ESP_LOGE(TAG, "Failed to clear key %d!", cfg.id);
         goto exit;
     }
 
-    err = esp_tee_sec_storage_gen_key(KEY_SLOT_ID, ESP_SEC_STG_KEY_AES256);
+    err = esp_tee_sec_storage_gen_key(&cfg);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate key!");
         goto exit;
     }
 
-    err = esp_tee_sec_storage_encrypt(KEY_SLOT_ID, (uint8_t *)plaintext, plaintext_len, aad_buf, sizeof(aad_buf), tag, sizeof(tag), ciphertext);
+    esp_tee_sec_storage_aead_ctx_t ctx = {
+        .key_id = cfg.id,
+        .aad = aad_buf,
+        .aad_len = sizeof(aad_buf),
+    };
+
+    ctx.input = (const uint8_t *)plaintext;
+    ctx.input_len = plaintext_len;
+    err = esp_tee_sec_storage_aead_encrypt(&ctx, tag, sizeof(tag), ciphertext);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to encrypt data!");
         goto exit;
@@ -195,7 +214,9 @@ static void example_tee_sec_stg_encrypt_decrypt(void *pvParameter)
 
     ESP_LOG_BUFFER_HEX("Encrypted data", ciphertext, plaintext_len);
 
-    err = esp_tee_sec_storage_decrypt(KEY_SLOT_ID, (uint8_t *)ciphertext, plaintext_len, aad_buf, sizeof(aad_buf), tag, sizeof(tag), ciphertext);
+    ctx.input = (const uint8_t *)ciphertext;
+    ctx.input_len = plaintext_len;
+    err = esp_tee_sec_storage_aead_decrypt(&ctx, tag, sizeof(tag), ciphertext);
     if (err != ESP_OK || memcmp(ciphertext, plaintext, plaintext_len) != 0) {
         ESP_LOGE(TAG, "Encryption verification failed!");
         err = ESP_FAIL;
@@ -215,8 +236,6 @@ exit:
 void app_main(void)
 {
     ESP_LOGI(TAG, "TEE Secure Storage");
-
-    ESP_ERROR_CHECK(esp_tee_sec_storage_init());
 
     xTaskCreate(example_tee_sec_stg_sign_verify, "tee_sec_stg_sign_verify", 4096, (void *)message, 5, NULL);
     xTaskCreate(example_tee_sec_stg_encrypt_decrypt, "tee_sec_stg_encrypt_decrypt", 4096, (void *)message, 5, NULL);
