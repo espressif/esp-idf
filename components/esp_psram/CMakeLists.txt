@@ -43,9 +43,11 @@ idf_component_register(SRCS ${srcs}
 
 if(CONFIG_SPIRAM)
     add_subdirectory(device)
-endif()
-if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
-    add_subdirectory(xip_impl)
+
+    if(CONFIG_SOC_SPIRAM_XIP_SUPPORTED)
+        add_subdirectory(xip_impl)
+    endif()
+
 endif()
 
 if(CONFIG_IDF_TARGET_ESP32 AND CONFIG_SPIRAM_CACHE_WORKAROUND AND NOT BOOTLOADER_BUILD)
