@@ -286,7 +286,7 @@ static int ws_connect(esp_transport_handle_t t, const char *host, int port, int 
     int header_len = 0;
     do {
         if ((len = esp_transport_read(ws->parent, ws->buffer + header_len, WS_BUFFER_SIZE - 1 - header_len, timeout_ms)) <= 0) {
-            ESP_LOGE(TAG, "Error read response for Upgrade header %s", ws->buffer);
+            ESP_LOGE(TAG, "Error read response for Upgrade header");
             return -1;
         }
         header_len += len;
