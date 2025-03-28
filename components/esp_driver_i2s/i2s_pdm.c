@@ -121,9 +121,8 @@ static esp_err_t i2s_pdm_tx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_tx_
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
-        handle->dma.buf_size = buf_size;
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
-        ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, handle->dma.desc_num, buf_size),
+        ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
     }
     /* Share bck and ws signal in full-duplex mode */
@@ -441,9 +440,8 @@ static esp_err_t i2s_pdm_rx_set_slot(i2s_chan_handle_t handle, const i2s_pdm_rx_
     uint32_t buf_size = i2s_get_buf_size(handle, slot_cfg->data_bit_width, handle->dma.frame_num);
     /* The DMA buffer need to re-allocate if the buffer size changed */
     if (handle->dma.buf_size != buf_size) {
-        handle->dma.buf_size = buf_size;
         ESP_RETURN_ON_ERROR(i2s_free_dma_desc(handle), TAG, "failed to free the old dma descriptor");
-        ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, handle->dma.desc_num, buf_size),
+        ESP_RETURN_ON_ERROR(i2s_alloc_dma_desc(handle, buf_size),
                             TAG, "allocate memory for dma descriptor failed");
     }
     /* Share bck and ws signal in full-duplex mode */
