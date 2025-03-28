@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "esp_log.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -112,4 +113,12 @@ TEST_CASE("esp_ota_get_partition_description", "[ota]")
             .size = not_app->size
     };
     TEST_ESP_ERR(ESP_ERR_NOT_FOUND, bootloader_common_get_partition_description(&not_app_pos, &app_desc1));
+}
+
+TEST_CASE("esp_ota_get_running_partition points to correct address", "[spi_flash]")
+{
+    const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, "factory");
+    const esp_partition_t* part = esp_ota_get_running_partition();
+    ESP_LOGI("running bin", "0x%p", (void*)part->address);
+    TEST_ASSERT_EQUAL_HEX32(factory->address, part->address);
 }

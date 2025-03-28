@@ -81,6 +81,8 @@ static LIST_HEAD(mmap_entries_head, mmap_entry_) s_mmap_entries_head =
 static uint8_t s_mmap_page_refcnt[SOC_MMU_REGIONS_COUNT * SOC_MMU_PAGES_PER_REGION] = {0};
 static uint32_t s_mmap_last_handle = 0;
 
+static uint32_t spi_flash_protected_read_mmu_entry(int index);
+
 
 static void IRAM_ATTR spi_flash_mmap_init(void)
 {
@@ -330,15 +332,6 @@ static void IRAM_ATTR NOINLINE_ATTR spi_flash_protected_mmap_init(void)
     spi_flash_enable_interrupts_caches_and_other_cpu();
 }
 
-static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
-{
-    uint32_t value;
-    spi_flash_disable_interrupts_caches_and_other_cpu();
-    value = mmu_ll_read_entry(MMU_TABLE_CORE0, index);
-    spi_flash_enable_interrupts_caches_and_other_cpu();
-    return value;
-}
-
 void spi_flash_mmap_dump(void)
 {
     spi_flash_protected_mmap_init();
@@ -374,6 +367,89 @@ uint32_t IRAM_ATTR spi_flash_mmap_get_free_pages(spi_flash_mmap_memory_t memory)
     return count;
 }
 
+static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
+{
+    int start[2], end[2];
+
+    *out_ptr = NULL;
+
+    /* SPI_FLASH_MMAP_DATA */
+    start[0] = SOC_MMU_DROM0_PAGES_START;
+    end[0] = SOC_MMU_DROM0_PAGES_END;
+
+    /* SPI_FLASH_MMAP_INST */
+    start[1] = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
+    end[1] = SOC_MMU_IROM0_PAGES_END;
+
+    for (int j = 0; j < 2; j++) {
+        for (int i = start[j]; i < end[j]; i++) {
+            uint32_t entry_pro = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
+            if (entry_pro == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
+#if !CONFIG_IDF_TARGET_ESP32
+                if (j == 0) { /* SPI_FLASH_MMAP_DATA */
+                    *out_ptr = (const void *)(SOC_MMU_VADDR0_START_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[0]));
+                } else { /* SPI_FLASH_MMAP_INST */
+                    *out_ptr = (const void *)(SOC_MMU_VADDR1_FIRST_USABLE_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[1]));
+                }
+#endif
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/* Validates if given flash address has corresponding cache mapping, if yes, flushes cache memories */
+IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
+{
+    bool ret = false;
+    /* align start_addr & length to full MMU pages */
+    uint32_t page_start_addr = start_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    length += (start_addr - page_start_addr);
+    length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
+    for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
+        uint32_t page = addr / SPI_FLASH_MMU_PAGE_SIZE;
+        // TODO: IDF-4969
+        if (page >= 256) {
+            return false; /* invalid address */
+        }
+
+        const void *vaddr = NULL;
+        if (is_page_mapped_in_cache(page, &vaddr)) {
+#if CONFIG_IDF_TARGET_ESP32
+#if CONFIG_SPIRAM
+            esp_psram_extram_writeback_cache();
+#endif
+            Cache_Flush(0);
+#ifndef CONFIG_FREERTOS_UNICORE
+            Cache_Flush(1);
+#endif
+            return true;
+#else // CONFIG_IDF_TARGET_ESP32
+            if (vaddr != NULL) {
+                Cache_Invalidate_Addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
+                ret = true;
+            }
+#endif // CONFIG_IDF_TARGET_ESP32
+
+        }
+    }
+    return ret;
+}
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL
+
+#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+static uint32_t IRAM_ATTR NOINLINE_ATTR spi_flash_protected_read_mmu_entry(int index)
+{
+    uint32_t value;
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    value = mmu_ll_read_entry(MMU_TABLE_CORE0, index);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+    return value;
+}
+
+//The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+//Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
 size_t spi_flash_cache2phys(const void *cached)
 {
     intptr_t c = (intptr_t)cached;
@@ -461,74 +537,4 @@ const void *IRAM_ATTR spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memo
     spi_flash_enable_interrupts_caches_and_other_cpu();
     return NULL;
 }
-
-static bool IRAM_ATTR is_page_mapped_in_cache(uint32_t phys_page, const void **out_ptr)
-{
-    int start[2], end[2];
-
-    *out_ptr = NULL;
-
-    /* SPI_FLASH_MMAP_DATA */
-    start[0] = SOC_MMU_DROM0_PAGES_START;
-    end[0] = SOC_MMU_DROM0_PAGES_END;
-
-    /* SPI_FLASH_MMAP_INST */
-    start[1] = SOC_MMU_PRO_IRAM0_FIRST_USABLE_PAGE;
-    end[1] = SOC_MMU_IROM0_PAGES_END;
-
-    for (int j = 0; j < 2; j++) {
-        for (int i = start[j]; i < end[j]; i++) {
-            uint32_t entry_pro = mmu_ll_read_entry(MMU_TABLE_CORE0, i);
-            if (entry_pro == SOC_MMU_PAGE_IN_FLASH(phys_page)) {
-#if !CONFIG_IDF_TARGET_ESP32
-                if (j == 0) { /* SPI_FLASH_MMAP_DATA */
-                    *out_ptr = (const void *)(SOC_MMU_VADDR0_START_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[0]));
-                } else { /* SPI_FLASH_MMAP_INST */
-                    *out_ptr = (const void *)(SOC_MMU_VADDR1_FIRST_USABLE_ADDR + SPI_FLASH_MMU_PAGE_SIZE * (i - start[1]));
-                }
-#endif
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-/* Validates if given flash address has corresponding cache mapping, if yes, flushes cache memories */
-IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
-{
-    bool ret = false;
-    /* align start_addr & length to full MMU pages */
-    uint32_t page_start_addr = start_addr & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
-    length += (start_addr - page_start_addr);
-    length = (length + SPI_FLASH_MMU_PAGE_SIZE - 1) & ~(SPI_FLASH_MMU_PAGE_SIZE-1);
-    for (uint32_t addr = page_start_addr; addr < page_start_addr + length; addr += SPI_FLASH_MMU_PAGE_SIZE) {
-        uint32_t page = addr / SPI_FLASH_MMU_PAGE_SIZE;
-        // TODO: IDF-4969
-        if (page >= 256) {
-            return false; /* invalid address */
-        }
-
-        const void *vaddr = NULL;
-        if (is_page_mapped_in_cache(page, &vaddr)) {
-#if CONFIG_IDF_TARGET_ESP32
-#if CONFIG_SPIRAM
-            esp_psram_extram_writeback_cache();
-#endif
-            Cache_Flush(0);
-#ifndef CONFIG_FREERTOS_UNICORE
-            Cache_Flush(1);
-#endif
-            return true;
-#else // CONFIG_IDF_TARGET_ESP32
-            if (vaddr != NULL) {
-                Cache_Invalidate_Addr((uint32_t)vaddr, SPI_FLASH_MMU_PAGE_SIZE);
-                ret = true;
-            }
-#endif // CONFIG_IDF_TARGET_ESP32
-
-        }
-    }
-    return ret;
-}
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL
+#endif //!CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA

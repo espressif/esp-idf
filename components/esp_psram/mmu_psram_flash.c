@@ -166,7 +166,8 @@ void instruction_flash_page_info_init(uint32_t psram_start_physical_page)
     instr_start_page = ((volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS0_MMU_START))[instr_mmu_offset];
 #elif CONFIG_IDF_TARGET_ESP32S3
     uint32_t instr_page_cnt = ((uint32_t)&_instruction_reserved_end - SOC_IROM_LOW + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-    instr_start_page = *((volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_IROM_MMU_START));
+    uint32_t instr_mmu_offset = ((uint32_t)&_instruction_reserved_start & MMU_VADDR_MASK) / MMU_PAGE_SIZE;
+    instr_start_page = *((volatile uint32_t *)(DR_REG_MMU_TABLE + instr_mmu_offset * 4));
 #endif
     instr_start_page &= MMU_VALID_VAL_MASK;
     instr_end_page = instr_start_page + instr_page_cnt - 1;
@@ -219,7 +220,8 @@ void rodata_flash_page_info_init(uint32_t psram_start_physical_page)
     rodata_start_page = ((volatile uint32_t *)(DR_REG_MMU_TABLE + PRO_CACHE_IBUS2_MMU_START))[rodata_mmu_offset];
 #elif CONFIG_IDF_TARGET_ESP32S3
     uint32_t rodata_page_cnt = ((uint32_t)&_rodata_reserved_end - ((uint32_t)&_rodata_reserved_start & ~ (MMU_PAGE_SIZE - 1)) + MMU_PAGE_SIZE - 1) / MMU_PAGE_SIZE;
-    rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + CACHE_DROM_MMU_START);
+    uint32_t rodata_mmu_offset = ((uint32_t)&_rodata_reserved_start & MMU_VADDR_MASK) / MMU_PAGE_SIZE;
+    rodata_start_page = *(volatile uint32_t *)(DR_REG_MMU_TABLE + rodata_mmu_offset * 4);
 #endif
     rodata_start_page &= MMU_VALID_VAL_MASK;
     rodata_end_page = rodata_start_page + rodata_page_cnt - 1;
