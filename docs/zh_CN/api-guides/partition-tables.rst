@@ -176,6 +176,7 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
         -  NVS API 还可以用于其他应用程序数据。
         -  强烈建议为 NVS 分区分配至少 0x3000 字节空间。
         -  如果使用 NVS API 存储大量数据，请增加 NVS 分区的大小（默认是 0x6000 字节）。
+        - 当 NVS 用于存储出厂设置时，建议将这些设置保存在单独的只读 NVS 分区中。只读 NVS 分区最小为 0x1000 字节。有关更多详情，请参阅 :ref:`read-only-nvs` 了解详情。ESP-IDF 提供了 :doc:`NVS 分区生成工具 </api-reference/storage/nvs_partition_gen>`，能够生成包含出厂设置的 NVS 分区，并与应用程序一起烧录。
     - ``nvs_keys`` (4) 是 NVS 秘钥分区。详细信息，请参考 :doc:`非易失性存储 (NVS) API <../api-reference/storage/nvs_flash>` 文档。
 
         -  用于存储加密密钥（如果启用了 `NVS 加密` 功能）。

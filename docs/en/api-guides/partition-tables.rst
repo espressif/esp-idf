@@ -176,6 +176,7 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
         - The NVS API can also be used for other application data.
         - It is strongly recommended that you include an NVS partition of at least 0x3000 bytes in your project.
         - If using NVS API to store a lot of data, increase the NVS partition size from the default 0x6000 bytes.
+        - When NVS is used to store factory settings, it is recommended to keep these settings in a separate read-only NVS partition. The minimal size of a read-only NVS partition is 0x1000 bytes. See :ref:`read-only-nvs` for more details. ESP-IDF provides :doc:`NVS Partition Generator Utility </api-reference/storage/nvs_partition_gen>` to generate NVS partitions with factory settings and to flash them along with the application.
     - ``nvs_keys`` (4) is for the NVS key partition. See :doc:`Non-Volatile Storage (NVS) API <../api-reference/storage/nvs_flash>` for more details.
 
         - It is used to store NVS encryption keys when `NVS Encryption` feature is enabled.

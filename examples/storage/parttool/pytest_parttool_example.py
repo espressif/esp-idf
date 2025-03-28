@@ -36,7 +36,7 @@ def test_examples_parttool(dut: Dut) -> None:
     cmds = [
         'read_partition --partition-type=data --partition-subtype=nvs --output custom1.bin',
         'erase_partition --partition-name=custom',
-        'write_partition --partition-name=custom --input custom.bin',
+        'write_partition --partition-name=custom --input custom.bin --ignore-readonly',
         'get_partition_info --partition-boot-default --info size',
     ]
 

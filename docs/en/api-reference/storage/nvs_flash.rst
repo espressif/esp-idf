@@ -369,6 +369,14 @@ To reduce the number of reads from flash memory, each member of the Page class m
 
 Each node in the hash list contains a 24-bit hash and 8-bit item index. Hash is calculated based on item namespace, key name, and ChunkIndex. CRC32 is used for calculation; the result is truncated to 24 bits. To reduce the overhead for storing 32-bit entries in a linked list, the list is implemented as a double-linked list of arrays. Each array holds 29 entries, for the total size of 128 bytes, together with linked list pointers and a 32-bit count field. The minimum amount of extra RAM usage per page is therefore 128 bytes; maximum is 640 bytes.
 
+.. _read-only-nvs:
+
+Read-only NVS
+^^^^^^^^^^^^^^
+
+The default minimal size for NVS to function properly is 12kiB (``0x3000``), meaning there have to be at least 3 pages with one of them being in Empty state. However if the NVS partition is flagged as ``readonly`` in the partition table CSV and is being opened in read-only mode, the partition can be as small as 4kiB (``0x1000``) with only one page in Active state and no Empty page. This is because the library does not need to write any data to the partition in this case. The partition can be used to store data that is not expected to change, such as calibration data or factory settings. Partitions of sizes 0x1000 and 0x2000 are always read-only and partitions of size 0x3000 and above are always read-write capable (still can be opened in read-only mode in the code).
+
+
 API Reference
 -------------
 
