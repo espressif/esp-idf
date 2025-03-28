@@ -486,7 +486,6 @@ components/mbedtls/port/include/sha256_alt.h
 components/mbedtls/port/include/sha512_alt.h
 components/mbedtls/port/sha/parallel_engine/sha.c
 components/nvs_flash/include/nvs_handle.hpp
-components/nvs_flash/src/nvs_cxx_api.cpp
 components/nvs_flash/src/nvs_encrypted_partition.hpp
 components/nvs_flash/src/nvs_item_hash_list.cpp
 components/nvs_flash/src/nvs_pagemanager.hpp

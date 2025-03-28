@@ -11,6 +11,8 @@
 #include "nvs_test_api.h"
 #include "test_fixtures.hpp"
 
+using namespace std;
+
 TEST_CASE("Partition manager initializes storage", "[partition_mgr]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;

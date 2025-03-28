@@ -10,6 +10,8 @@
 #include "test_fixtures.hpp"
 #include <iostream>
 
+using namespace std;
+
 TEST_CASE("Storage iterator recognizes blob with VerOffset::VER_1_OFFSET", "[nvs_storage]")
 {
     const uint32_t NVS_FLASH_SECTOR = 6;
