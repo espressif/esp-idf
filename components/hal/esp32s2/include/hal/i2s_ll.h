@@ -30,6 +30,8 @@ extern "C" {
 
 #define I2S_LL_BCK_MAX_PRESCALE  (64)
 
+#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (6)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 
