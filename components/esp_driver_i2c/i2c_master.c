@@ -1285,6 +1285,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
+    // 20ms is sufficient for stretch, since there is no device config on probe operation.
+    i2c_hal_master_set_scl_timeout_val(hal, 20 * 1000, bus_handle->base->clk_src_freq_hz);
     i2c_ll_update(hal->dev);
 
     s_i2c_send_commands(bus_handle, ticks_to_wait);
