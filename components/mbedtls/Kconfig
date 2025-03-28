@@ -1230,4 +1230,11 @@ menu "mbedTLS"
             which is added through vfs component for ESP32 based targets or by
             the host system when the target is Linux.
 
+    config MBEDTLS_ALLOW_WEAK_CERTIFICATE_VERIFICATION
+        bool "Allow weak certificate verification"
+        default n
+        help
+            This options allows weak certificate verification by skipping the hostname verification.
+            It is not recommended to use this option.
+
 endmenu  # mbedTLS
