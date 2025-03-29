@@ -15,8 +15,6 @@
 #include "sha256.h"
 
 #include "mbedtls/ecp.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
 #include "mbedtls/md.h"
 #include "mbedtls/aes.h"
 #include "mbedtls/bignum.h"
