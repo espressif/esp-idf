@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "esp_random.h"
+#include "mbedtls/esp_random.h"
 
 #include <entropy_poll.h>
 
@@ -21,5 +22,11 @@ int mbedtls_hardware_poll( void *data,
 {
     esp_fill_random(output, len);
     *olen = len;
+    return 0;
+}
+
+int mbedtls_esp_random(void *ctx, unsigned char *buf, size_t len)
+{
+    esp_fill_random(buf, len);
     return 0;
 }
