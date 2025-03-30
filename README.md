@@ -1,4 +1,4 @@
-# Espressif IoT Development Framework
+# Espssif IoT Development Framework
 
 * [中文版](./README_CN.md)
 
