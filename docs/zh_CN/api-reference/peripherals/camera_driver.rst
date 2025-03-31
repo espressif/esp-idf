@@ -184,8 +184,8 @@ Kconfig 选项
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`，详情请参阅 :ref:`cam-thread-safety`。
 
 .. _cam-iram-safe:
 
@@ -198,8 +198,8 @@ IRAM 安全
 
 .. list::
 
-    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_IRAM_SAFE`
-    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_IRAM_SAFE`
+    :SOC_MIPI_CSI_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_MIPI_CSI_ISR_CACHE_SAFE`
+    :SOC_ISP_DVP_SUPPORTED: - :ref:`CONFIG_CAM_CTLR_ISP_DVP_ISR_CACHE_SAFE`
 
 这些选项支持
 
