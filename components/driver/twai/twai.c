@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,8 +176,10 @@ static inline void twai_handle_tx_buffer_frame(twai_obj_t *p_twai_obj, BaseType_
     p_twai_obj->tx_msg_count--;
     assert(p_twai_obj->tx_msg_count >= 0);      //Sanity check
 
-    //Check if there are more frames to transmit
-    if (p_twai_obj->tx_msg_count > 0 && p_twai_obj->tx_queue != NULL) {
+    //If not bus-off, check if there are more frames to transmit
+    if (!twai_hal_check_state_flags(&p_twai_obj->hal, TWAI_HAL_STATE_FLAG_BUS_OFF)
+            && p_twai_obj->tx_msg_count > 0
+            && p_twai_obj->tx_queue != NULL) {
         twai_hal_frame_t frame;
         int res = xQueueReceiveFromISR(p_twai_obj->tx_queue, &frame, task_woken);
         if (res == pdTRUE) {
