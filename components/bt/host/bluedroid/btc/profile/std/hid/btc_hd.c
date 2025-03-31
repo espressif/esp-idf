@@ -903,14 +903,10 @@ void btc_hd_cb_handler(btc_msg_t *msg)
         btc_hd_cb_to_app(ESP_HIDD_INTR_DATA_EVT, &param);
         break;
     case BTA_HD_VC_UNPLUG_EVT: {
-        bt_bdaddr_t *bd_addr = (bt_bdaddr_t *)&p_data->conn.bda;
-        if (bta_dm_check_if_only_hd_connected(p_data->conn.bda)) {
-            BTC_TRACE_DEBUG("%s: Removing bonding as only HID profile connected", __func__);
-            BTA_DmRemoveDevice((uint8_t *)&p_data->conn.bda, BT_TRANSPORT_BR_EDR);
-        } else {
-            BTC_TRACE_DEBUG("%s: Only removing HID data as some other profiles connected", __func__);
-            btc_hd_remove_device(*bd_addr);
-        }
+#if BTC_HID_REMOVE_DEVICE_BONDING
+        BTC_TRACE_DEBUG("%s: Removing bonding information", __func__);
+        BTA_DmRemoveDevice((uint8_t *)&p_data->conn.bda, BT_TRANSPORT_BR_EDR);
+#endif
 
         if (btc_hd_cb.status == BTC_HD_DISCONNECTING || btc_hd_cb.status == BTC_HD_CONNECTING ||
             btc_hd_cb.status == BTC_HD_CONNECTED) {

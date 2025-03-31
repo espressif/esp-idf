@@ -1372,7 +1372,10 @@ void btc_hh_cb_handler(btc_msg_t *msg)
              */
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
+#endif
+                btc_hh_remove_device(p_dev->bd_addr);
             }
 
             btc_hh_cb.status = (BTC_HH_STATUS)BTC_HH_DEV_DISCONNECTED;
@@ -1406,8 +1409,9 @@ void btc_hh_cb_handler(btc_msg_t *msg)
             // [boblane]
             if (p_dev->local_vup) {
                 p_dev->local_vup = false;
+#if BTC_HID_REMOVE_DEVICE_BONDING
                 BTA_DmRemoveDevice(p_dev->bd_addr, BT_TRANSPORT_BR_EDR);
-            } else {
+#endif
                 btc_hh_remove_device(p_dev->bd_addr);
             }
             param.unplug.status = p_data->dev_status.status;
