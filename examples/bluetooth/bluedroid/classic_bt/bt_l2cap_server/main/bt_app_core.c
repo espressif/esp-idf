@@ -134,7 +134,7 @@ void bt_app_task_shut_down(void)
 
 void l2cap_wr_task_start_up(l2cap_wr_task_cb_t p_cback, int fd)
 {
-    xTaskCreate(p_cback, "write_read", 2048, (void *)fd, 5, NULL);
+    xTaskCreate(p_cback, "write_read", 4096, (void *)fd, 5, NULL);
 }
 
 void l2cap_wr_task_shut_down(void)
