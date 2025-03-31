@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import getpass
 import os
@@ -143,7 +143,6 @@ class BashShell(UnixShell):
     def spawn(self) -> None:
         self.init_file()
         new_env = os.environ.copy()
-        new_env.update(self.expanded_env())
         run([self.shell, '--init-file', str(self.script_file_path)], env=new_env)
 
 
@@ -188,7 +187,6 @@ class ZshShell(UnixShell):
         shutil.copy(str(self.script_file_path), str(zshrc_path))
 
         new_env = os.environ.copy()
-        new_env.update(self.expanded_env())
         # Set new ZDOTDIR in the new environment
         new_env['ZDOTDIR'] = str(tmpdir_path)
 
@@ -216,7 +214,6 @@ class FishShell(UnixShell):
     def spawn(self) -> None:
         self.init_file()
         new_env = os.environ.copy()
-        new_env.update(self.expanded_env())
         run([self.shell, f'--init-command=source {self.script_file_path}'], env=new_env)
 
 
@@ -262,7 +259,6 @@ class PowerShell(Shell):
     def spawn(self) -> None:
         self.init_file()
         new_env = os.environ.copy()
-        new_env.update(self.expanded_env())
         arguments = ['-NoExit', '-Command', f'{self.script_file_path}']
         cmd: Union[str, List[str]] = [self.shell] + arguments
         run(cmd, env=new_env)
@@ -315,7 +311,6 @@ class WinCmd(Shell):
     def spawn(self) -> None:
         self.init_file()
         new_env = os.environ.copy()
-        new_env.update(self.expanded_env())
         arguments = ['/k', f'{self.script_file_path}']
         cmd: Union[str, List[str]] = [self.shell] + arguments
         cmd = ' '.join(cmd)
