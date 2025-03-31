@@ -43,8 +43,12 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
             ESP_LOGW(TAG, "the current mclk multiple cannot perform integer division (slot_num: %"PRIu32", slot_bits: %"PRIu32")", handle->total_slot, slot_bits);
         }
     } else {
-        /* For slave mode, mclk >= bclk * 8, so fix bclk_div to 2 first */
-        clk_info->bclk_div = 8;
+        if (clk_cfg->bclk_div < 8) {
+            ESP_LOGW(TAG, "the current bclk division is too small, adjust the bclk division to 8");
+            clk_info->bclk_div = 8;
+        } else {
+            clk_info->bclk_div = clk_cfg->bclk_div;
+        }
         clk_info->bclk = rate * handle->total_slot * slot_bits;
         clk_info->mclk = clk_info->bclk * clk_info->bclk_div;
     }
@@ -60,7 +64,8 @@ static esp_err_t i2s_std_calculate_clock(i2s_chan_handle_t handle, const i2s_std
     clk_info->mclk_div = clk_info->sclk / clk_info->mclk;
 
     /* Check if the configuration is correct. Use float for check in case the mclk division might be carried up in the fine division calculation */
-    ESP_RETURN_ON_FALSE(clk_info->sclk / (float)clk_info->mclk > min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate or mclk_multiple is too large for the current clock source");
+    ESP_RETURN_ON_FALSE((float)clk_info->sclk > clk_info->mclk * min_mclk_div, ESP_ERR_INVALID_ARG, TAG, "sample rate is too large");
+    ESP_RETURN_ON_FALSE(clk_info->mclk_div < I2S_LL_CLK_FRAC_DIV_N_MAX, ESP_ERR_INVALID_ARG, TAG, "sample rate is too small");
 
     return ESP_OK;
 }
