@@ -38,11 +38,14 @@ extern "C" {
     (num) == 3 ? (&UART3) : \
     (num) == 4 ? (&UART4) : (&LP_UART))
 
-#define UART_LL_REG_FIELD_BIT_SHIFT(hw) (((hw) == &LP_UART) ? 3 : 0)
-#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) (((hw) == &LP_UART) ? LP_UART_ACTIVE_THRESHOLD_V : UART_ACTIVE_THRESHOLD_V )
-#define UART_LL_WAKEUP_FIFO_THRED_MAX(hw) (((hw) == &LP_UART) ? LP_UART_RX_WAKE_UP_THRHD_V : UART_RX_WAKE_UP_THRHD_V )
+#define UART_LL_REG_FIELD_BIT_SHIFT(hw)     (((hw) == &LP_UART) ? 3 : 0)
 
-#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
+#define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
+
+#define UART_LL_WAKEUP_EDGE_THRED_MIN       (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw)   (((hw) == &LP_UART) ? LP_UART_ACTIVE_THRESHOLD_V : UART_ACTIVE_THRESHOLD_V )
+#define UART_LL_WAKEUP_FIFO_THRED_MAX(hw)   (((hw) == &LP_UART) ? LP_UART_RX_WAKE_UP_THRHD_V : UART_RX_WAKE_UP_THRHD_V )
+
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
 
 #define UART_LL_FSM_IDLE                       (0x0)

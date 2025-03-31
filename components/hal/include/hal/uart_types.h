@@ -140,8 +140,6 @@ typedef struct {
     uint8_t xoff_thrd;       /*!< If the software flow control is enabled and the data amount in rxfifo is more than xoff_thrd, an xoff_char will be sent*/
 } uart_sw_flowctrl_t;
 
-
-
 /**
  * @brief Enumeration of UART wake-up modes.
  */

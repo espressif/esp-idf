@@ -29,9 +29,12 @@ extern "C" {
 // Get UART hardware instance with giving uart num
 #define UART_LL_GET_HW(num) (((num) == UART_NUM_0) ? (&UART0) : (&UART1))
 
-#define UART_LL_WAKEUP_EDGE_THRED_MIN (3)
+#define UART_LL_PULSE_TICK_CNT_MAX          UART_LOWPULSE_MIN_CNT_V
+
+#define UART_LL_WAKEUP_EDGE_THRED_MIN       (3)
+#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw)   UART_ACTIVE_THRESHOLD_V
+
 #define UART_LL_INTR_MASK         (0x7ffff) //All interrupt mask
-#define UART_LL_WAKEUP_EDGE_THRED_MAX(hw) UART_ACTIVE_THRESHOLD_V
 
 #define UART_LL_FSM_IDLE                       (0x0)
 #define UART_LL_FSM_TX_WAIT_SEND               (0xf)
@@ -108,12 +111,14 @@ static inline void uart_ll_reset_register(uart_port_t uart_num)
     // ESP32C3 requires a workaround: enable core reset before enabling uart module clock to prevent uart output garbage value
     switch (uart_num) {
     case 0:
+        SYSTEM.perip_rst_en0.reg_uart_rst = 0;
         UART0.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.reg_uart_rst = 1;
         SYSTEM.perip_rst_en0.reg_uart_rst = 0;
         UART0.clk_conf.rst_core = 0;
         break;
     case 1:
+        SYSTEM.perip_rst_en0.reg_uart1_rst = 0;
         UART1.clk_conf.rst_core = 1;
         SYSTEM.perip_rst_en0.reg_uart1_rst = 1;
         SYSTEM.perip_rst_en0.reg_uart1_rst = 0;
