@@ -76,3 +76,32 @@ def test_wifi_power_save_pd_top(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_wifi_power_save_esp32c2_26mhz(dut: Dut) -> None:
     _run_test(dut)
+
+
+@pytest.mark.wifi_ap
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2eco4
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('c2eco4_xtal26m', '74880'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_wifi_power_save_esp32c2eco4_26mhz(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap
+@pytest.mark.esp32c3eco7
+@pytest.mark.parametrize(
+    'config',
+    [
+        'c3eco7',
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_wifi_power_save_esp32c3eco7(dut: Dut) -> None:
+    _run_test(dut)

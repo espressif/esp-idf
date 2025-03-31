@@ -48,3 +48,43 @@ def test_wpa_supplicant_ut_psram(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if case.attributes.get('test_env') == 'wifi_two_dut':
             case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.esp32c2eco4
+@pytest.mark.xtal_26mhz
+@pytest.mark.parametrize(
+    'count, config, baud',
+    [
+        (
+            2,
+            'esp32c2eco4_xtal26m',
+            '74880',
+        ),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_wpa_supplicant_esp32c2eco4_xtal26mhz(case_tester: CaseTester) -> None:
+    for case in case_tester.test_menu:
+        if case.attributes.get('test_env') == 'wifi_two_dut':
+            case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.esp32c3eco7
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (
+            2,
+            'esp32c3eco7',
+        ),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_wpa_supplicant_esp32c3eco7(case_tester: CaseTester) -> None:
+    for case in case_tester.test_menu:
+        if case.attributes.get('test_env') == 'wifi_two_dut':
+            case_tester.run_multi_dev_case(case=case, reset=True)

@@ -187,3 +187,56 @@ def test_phy_tsens_coexist_c2_xtal26m(dut: Tuple[Dut, Dut]) -> None:
         _dut.expect('boot:')
         _dut.expect('esp>')
     run_phy_tsens_test_with_light_sleep(dut)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2eco4
+@pytest.mark.parametrize(
+    'count, config, baud',
+    [
+        (2, 'c2_eco4', '74880'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c2'], indirect=['target'])
+def test_phy_tsens_coexist_c2eco4_xtal26m(dut: Tuple[Dut, Dut]) -> None:
+    for _dut in dut:
+        _dut.expect('esp>')
+    run_phy_tsens_test(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_init_wifi_first(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_with_light_sleep(dut)
+
+
+@pytest.mark.wifi_two_dut
+@pytest.mark.esp32c3eco7
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (2, 'c3_eco7'),
+    ],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32c3'], indirect=['target'])
+def test_phy_tsens_coexist_c3eco7(dut: Tuple[Dut, Dut]) -> None:
+    for _dut in dut:
+        _dut.expect('esp>')
+    run_phy_tsens_test(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_init_wifi_first(dut)
+    for _dut in dut:
+        _dut.write('restart')
+        _dut.expect('boot:')
+        _dut.expect('esp>')
+    run_phy_tsens_test_with_light_sleep(dut)
