@@ -28,12 +28,21 @@ typedef enum {
 } axi_icm_ll_master_id_t;
 
 /**
+ * @brief AXI ICM has independent channels for read and write access.
+ */
+typedef enum {
+    AXI_ICM_ACCESS_READ = 0,
+    AXI_ICM_ACCESS_WRITE = 1,
+} axi_icm_ll_access_type_t;
+
+/**
  * @brief Set QoS burstiness for a master port, also enable the regulator
  *
  * @param mid Master port ID
  * @param burstiness Burstiness value. It represents the depth of the token bucket.
+ * @param access_type 0: read, 1: write
  */
-static inline void axi_icm_ll_set_qos_burstiness(axi_icm_ll_master_id_t mid, uint32_t burstiness)
+static inline void axi_icm_ll_set_qos_burstiness(axi_icm_ll_master_id_t mid, uint32_t burstiness, axi_icm_ll_access_type_t access_type)
 {
     HAL_ASSERT(burstiness >= 1 && burstiness <= 256);
     // wait for the previous command to finish
@@ -43,8 +52,8 @@ static inline void axi_icm_ll_set_qos_burstiness(axi_icm_ll_master_id_t mid, uin
     AXI_ICM_QOS.data.val = (burstiness - 1) << 16 | 0x1;
     // command write operation
     AXI_ICM_QOS.cmd.reg_axi_rd_wr_cmd = 1;
-    // write addr channel
-    AXI_ICM_QOS.cmd.reg_rd_wr_chan = 1;
+    // set the qos for read channel or write channel
+    AXI_ICM_QOS.cmd.reg_rd_wr_chan = access_type;
     // select master port
     AXI_ICM_QOS.cmd.reg_axi_master_port = mid;
     // set command type: burstiness regulator
@@ -69,8 +78,10 @@ static inline void axi_icm_ll_set_qos_burstiness(axi_icm_ll_master_id_t mid, uin
  * @param mid Master port ID
  * @param peak_level Peak level, lower value means higher rate
  * @param transaction_level Transaction level, lower value means higher rate
+ * @param access_type 0: read, 1: write
  */
-static inline void axi_icm_ll_set_qos_peak_transaction_rate(axi_icm_ll_master_id_t mid, uint32_t peak_level, uint32_t transaction_level)
+static inline void axi_icm_ll_set_qos_peak_transaction_rate(axi_icm_ll_master_id_t mid, uint32_t peak_level,
+                                                            uint32_t transaction_level, axi_icm_ll_access_type_t access_type)
 {
     HAL_ASSERT(peak_level < transaction_level && transaction_level <= 11);
     while (AXI_ICM_QOS.cmd.reg_axi_cmd_en);
@@ -79,8 +90,8 @@ static inline void axi_icm_ll_set_qos_peak_transaction_rate(axi_icm_ll_master_id
     AXI_ICM_QOS.data.val = (0x80000000 >> peak_level) + (0x8000 >> transaction_level);
     // command write operation
     AXI_ICM_QOS.cmd.reg_axi_rd_wr_cmd = 1;
-    // write addr channel
-    AXI_ICM_QOS.cmd.reg_rd_wr_chan = 1;
+    // set the qos for read channel or write channel
+    AXI_ICM_QOS.cmd.reg_rd_wr_chan = access_type;
     // select master port
     AXI_ICM_QOS.cmd.reg_axi_master_port = mid;
     // set command type: peak rate xct rate
