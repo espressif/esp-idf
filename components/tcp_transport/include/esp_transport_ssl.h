@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,7 +45,7 @@ void esp_transport_ssl_set_cert_data(esp_transport_handle_t t, const char *data,
 void esp_transport_ssl_set_cert_data_der(esp_transport_handle_t t, const char *data, int len);
 
 /**
- * @brief      Enable the use of certification bundle for server verfication for
+ * @brief      Enable the use of certification bundle for server verification for
  *             an SSL connection.
  *             It must be first enabled in menuconfig.
  *
@@ -210,6 +210,14 @@ void esp_transport_ssl_set_keep_alive(esp_transport_handle_t t, esp_transport_ke
  * @param[in]  if_name  The interface name
  */
 void esp_transport_ssl_set_interface_name(esp_transport_handle_t t, struct ifreq *if_name);
+
+/**
+ * @brief      Set addr family of transport
+ *
+ * @param[in]  t            The transport handle
+ * @param[in]  addr_family  The addr family
+ */
+void esp_transport_ssl_set_addr_family(esp_transport_handle_t t, esp_tls_addr_family_t addr_family);
 
 #ifdef __cplusplus
 }
