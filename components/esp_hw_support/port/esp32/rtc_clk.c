@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -112,6 +112,11 @@ void rtc_clk_32k_enable(bool enable)
 void rtc_clk_32k_enable_external(void)
 {
     rtc_clk_32k_enable_common(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    clk_ll_xtal32k_disable();
 }
 
 /* Helping external 32kHz crystal to start up.
