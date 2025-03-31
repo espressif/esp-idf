@@ -116,16 +116,26 @@ esp_err_t esp_bt_l2cap_stop_srv(uint16_t local_psm)
 
 esp_err_t esp_bt_l2cap_vfs_register(void)
 {
+    btc_msg_t msg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return btc_l2cap_vfs_register();
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_L2CAP;
+    msg.act = BTC_L2CAP_ACT_VFS_REGISTER;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_vfs_unregister(void)
 {
+    btc_msg_t msg;
     ESP_BLUEDROID_STATUS_CHECK(ESP_BLUEDROID_STATUS_ENABLED);
 
-    return btc_l2cap_vfs_unregister();
+    msg.sig = BTC_SIG_API_CALL;
+    msg.pid = BTC_PID_L2CAP;
+    msg.act = BTC_L2CAP_ACT_VFS_UNREGISTER;
+
+    return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
 }
 
 esp_err_t esp_bt_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *status)
