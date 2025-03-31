@@ -143,7 +143,7 @@ esp_err_t usb_phy_otg_set_mode(usb_phy_handle_t handle, usb_otg_mode_t mode);
  *     - ESP_ERR_INVALID_ARG Parameter error.
  *     - ESP_FAIL OTG set speed fail.
  */
-esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t speed);
+esp_err_t __attribute__((deprecated)) usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t speed);
 
 /**
  * @brief Take a action for a USB PHY
@@ -156,7 +156,7 @@ esp_err_t usb_phy_otg_dev_set_speed(usb_phy_handle_t handle, usb_phy_speed_t spe
  *     - ESP_ERR_INVALID_ARG Parameter error.
  *     - ESP_FAIL Action cannot be performed.
  */
-esp_err_t usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action);
+esp_err_t __attribute__((deprecated)) usb_phy_action(usb_phy_handle_t handle, usb_phy_action_t action);
 
 /**
  * @brief Delete a USB PHY
