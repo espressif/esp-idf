@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -18,6 +18,47 @@
 #include "test_board.h"
 
 #if SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
+
+TEST_CASE("I2C peripheral allocate slave all", "[i2c]")
+{
+    i2c_slave_dev_handle_t dev_handle[SOC_HP_I2C_NUM];
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        i2c_slave_config_t i2c_slv_config_1 = {
+            .clk_source = I2C_CLK_SRC_DEFAULT,
+            .i2c_port = -1,
+            .scl_io_num = I2C_SLAVE_SCL_IO,
+            .sda_io_num = I2C_SLAVE_SDA_IO,
+            .slave_addr = ESP_SLAVE_ADDR,
+            .send_buf_depth = DATA_LENGTH,
+            .receive_buf_depth = DATA_LENGTH,
+            .flags.enable_internal_pullup = true,
+        };
+
+        TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config_1, &dev_handle[i]));
+    }
+    i2c_slave_config_t i2c_slv_config_1 = {
+        .clk_source = I2C_CLK_SRC_DEFAULT,
+        .i2c_port = -1,
+        .scl_io_num = I2C_SLAVE_SCL_IO,
+        .sda_io_num = I2C_SLAVE_SDA_IO,
+        .slave_addr = ESP_SLAVE_ADDR,
+        .send_buf_depth = DATA_LENGTH,
+        .receive_buf_depth = DATA_LENGTH,
+        .flags.enable_internal_pullup = true,
+    };
+    i2c_slave_dev_handle_t dev_handle_2;
+
+    TEST_ESP_ERR(ESP_ERR_NOT_FOUND, i2c_new_slave_device(&i2c_slv_config_1, &dev_handle_2));
+
+    for (int i = 0; i < SOC_HP_I2C_NUM; i++) {
+        TEST_ESP_OK(i2c_del_slave_device(dev_handle[i]));
+    }
+
+    // Get another one
+
+    TEST_ESP_OK(i2c_new_slave_device(&i2c_slv_config_1, &dev_handle_2));
+    TEST_ESP_OK(i2c_del_slave_device(dev_handle_2));
+}
 
 static QueueHandle_t event_queue;
 static uint8_t *temp_data;
@@ -92,7 +133,7 @@ static void i2c_slave_read_test_v2(void)
     unity_wait_for_signal("master write");
 
     i2c_slave_event_t evt;
-    if (xQueueReceive(event_queue, &evt, 1) == pdTRUE) {
+    if (xQueueReceive(event_queue, &evt, portMAX_DELAY) == pdTRUE) {
         if (evt == I2C_SLAVE_EVT_RX) {
             disp_buf(temp_data, temp_len);
             printf("length is %x\n", temp_len);
@@ -296,7 +337,6 @@ static void i2c_master_write_test_with_customize_api(void)
 
     TEST_ESP_OK(i2c_del_master_bus(bus_handle));
 }
-
 TEST_CASE_MULTIPLE_DEVICES("I2C master write slave with customize api", "[i2c][test_env=generic_multi_device][timeout=150]", i2c_master_write_test_with_customize_api, i2c_slave_read_test_v2);
 
 #endif // SOC_I2C_SLAVE_CAN_GET_STRETCH_CAUSE
