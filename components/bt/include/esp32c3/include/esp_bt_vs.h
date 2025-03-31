@@ -158,6 +158,8 @@ struct bt_hci_vs_le_adv_lost_evt {
     #define ESP_BT_VS_CFG_TEST_GET_CTRL_COMPILE_VER_SUBCMD          (0X24)
     #define ESP_BT_VS_CFG_TEST_SET_AUX_ADV_OFFSET_SUBCMD            (0X25)
     #define ESP_BT_VS_CFG_TEST_SET_AUX_OFFSET_THRESHOLD_SUBCMD      (0X2b)
+    #define ESP_BT_VS_CFG_TEST_SET_RX_SENS_THRESH_SUBCMD            (0X31)
+    #define ESP_BT_VS_CFG_TEST_SET_AGC_MAX_GAIN_SUBCMD              (0X39)
     #define ESP_BT_VS_CFG_TEST_RELATED_SUBCMD_MAX                   (0Xff)
 
 //
