@@ -1,17 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp_check.h"
+#include <sys/lock.h>
 #include "esp_clk_tree.h"
-#include "esp_private/esp_clk_tree_common.h"
 #include "esp_private/gptimer.h"
 #include "gptimer_priv.h"
-#include "soc/soc_caps.h"
-
-static const char *TAG = "gptimer";
+#include "esp_private/esp_clk_tree_common.h"
 
 typedef struct gptimer_platform_t {
     _lock_t mutex;                             // platform level mutex lock
@@ -181,3 +178,11 @@ int gptimer_get_group_id(gptimer_handle_t timer, int *group_id)
     *group_id = timer->group->group_id;
     return ESP_OK;
 }
+
+#if CONFIG_GPTIMER_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void gptimer_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif
