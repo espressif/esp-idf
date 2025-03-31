@@ -4003,7 +4003,6 @@ static void btm_ble_stop_discover(void)
 
     if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
         /* Clear the inquiry callback if set */
-        btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
         btm_cb.ble_ctr_cb.inq_var.state &= ~BTM_BLE_SCANNING;
         /* stop discovery now */
         if(btsnd_hcic_ble_set_scan_enable (BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE)) {
