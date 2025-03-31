@@ -80,7 +80,12 @@ typedef struct {
     esp_vfs_id_t l2cap_vfs_id;
 } l2cap_local_param_t;
 
+#if L2CAP_DYNAMIC_MEMORY == FALSE
 static l2cap_local_param_t l2cap_local_param;
+#else
+static l2cap_local_param_t *l2cap_local_param_ptr;
+#define l2cap_local_param (*l2cap_local_param_ptr)
+#endif
 
 /* L2CAP default options for OBEX connections */
 static const tL2CAP_FCR_OPTS obex_l2c_fcr_opts_def =
