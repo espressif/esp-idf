@@ -94,9 +94,9 @@ examples/storage/perf_benchmark:
     - esp_partition
     - esp_driver_sdmmc
   disable:
-    - if: IDF_TARGET == "esp32h21"
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
-      reason: not supported yet # TODO: [esp32h21] IDF-11609
+      reason: not supported yet # TODO: [esp32h21] IDF-11609 [ESP32H4] IDF-12388
   disable_test:
     - if: IDF_TARGET == "esp32p4" and CONFIG_NAME in ["sdmmc_1line", "sdmmc_4line", "sdspi_1line"]
       temporary: true

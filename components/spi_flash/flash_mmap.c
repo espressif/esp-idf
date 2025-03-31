@@ -48,7 +48,7 @@ extern char _rodata_reserved_start;
 extern char _rodata_reserved_end;
 #endif
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL
+#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
 
 typedef struct mmap_block_t {
@@ -324,9 +324,9 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
     }
     return ret;
 }
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL
+#endif // !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
-#if !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
 //The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
 //Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
 size_t spi_flash_cache2phys(const void *cached)
@@ -401,4 +401,4 @@ const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memo
     assert(ret == ESP_OK);
     return (const void *)ptr;
 }
-#endif //!CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
+#endif //!ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA

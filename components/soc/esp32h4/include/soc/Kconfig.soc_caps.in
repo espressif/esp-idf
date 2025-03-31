@@ -203,10 +203,6 @@ config SOC_SPI_MEM_SUPPORT_AUTO_WAIT_IDLE
     bool
     default y
 
-config SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND
-    bool
-    default y
-
 config SOC_SPI_MEM_SUPPORT_AUTO_RESUME
     bool
     default y
@@ -271,10 +267,6 @@ config SOC_SYSTIMER_ALARM_MISS_COMPENSATE
     bool
     default y
 
-config SOC_SYSTIMER_SUPPORT_ETM
-    bool
-    default y
-
 config SOC_TIMER_GROUPS
     int
     default 2
@@ -328,6 +320,10 @@ config SOC_EFUSE_DIS_ICACHE
     default n
 
 config SOC_EFUSE_BLOCK9_KEY_PURPOSE_QUIRK
+    bool
+    default y
+
+config SOC_EFUSE_ECDSA_KEY
     bool
     default y
 
@@ -486,10 +482,6 @@ config SOC_PM_SUPPORT_RTC_PERIPH_PD
 config SOC_PM_PAU_LINK_NUM
     int
     default 4
-
-config SOC_CLK_RC_FAST_SUPPORT_CALIBRATION
-    bool
-    default y
 
 config SOC_MODEM_CLOCK_IS_INDEPENDENT
     bool

@@ -12,7 +12,6 @@
 #include "esp_private/vectors_const.h"
 #include "esp_private/panic_reason.h"
 
-
     .equ SAVE_REGS, 32
     .equ CONTEXT_SIZE, (SAVE_REGS * 4)
     .equ EXC_ILLEGAL_INSTRUCTION, 0x2
@@ -193,6 +192,16 @@
     .global rtos_int_exit
     .global rtos_save_fpu_coproc
     .global _global_interrupt_handler
+
+/* TODO: IDF-12727 */
+#if SOC_CPU_HAS_FPU
+    .weak rtos_save_fpu_coproc
+    .type rtos_save_fpu_coproc, @function
+
+rtos_save_fpu_coproc:
+    ret
+#endif
+
 #ifdef CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME
     .global gdbstub_handle_debug_int
 #endif

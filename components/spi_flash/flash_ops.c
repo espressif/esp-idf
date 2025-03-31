@@ -54,6 +54,7 @@
 #include "bootloader_flash_config.h"
 #include "esp_compiler.h"
 #include "esp_rom_efuse.h"
+#include "esp_rom_caps.h"
 #include "soc/chip_revision.h"
 #include "hal/efuse_hal.h"
 #if CONFIG_SPIRAM
@@ -129,12 +130,14 @@ void IRAM_ATTR spi_flash_rom_impl_init(void)
 {
     spi_flash_guard_set(&g_flash_guard_default_ops);
 
+#if ESP_ROM_HAS_SPI_FLASH_MMAP
     /* These two functions are in ROM only */
     extern void spi_flash_mmap_os_func_set(void *(*func1)(size_t size), void (*func2)(void *p));
     spi_flash_mmap_os_func_set(spi_flash_malloc_internal, heap_caps_free);
 
     extern esp_err_t spi_flash_mmap_page_num_init(uint32_t page_num);
     spi_flash_mmap_page_num_init(128);
+#endif // ESP_ROM_HAS_SPI_FLASH_MMAP
 }
 #endif
 
