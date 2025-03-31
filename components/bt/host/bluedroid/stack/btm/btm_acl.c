@@ -2060,6 +2060,7 @@ tBTM_STATUS BTM_ReadLinkQuality (BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
     return (BTM_UNKNOWN_ADDR);
 }
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_ReadTxPower
@@ -2116,6 +2117,7 @@ tBTM_STATUS BTM_ReadTxPower (BD_ADDR remote_bda, tBT_TRANSPORT transport, tBTM_C
     /* If here, no BD Addr found */
     return (BTM_UNKNOWN_ADDR);
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 tBTM_STATUS BTM_SetAclPktTypes(BD_ADDR remote_bda, UINT16 pkt_types, tBTM_CMPL_CB *p_cb)
 {
@@ -2182,6 +2184,7 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 }
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
 {
     BOOLEAN ret;
@@ -2208,6 +2211,7 @@ tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
         return BTM_CMD_STARTED;
     }
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 void BTM_BleGetWhiteListSize(uint16_t *length)
 {
@@ -2218,8 +2222,21 @@ void BTM_BleGetWhiteListSize(uint16_t *length)
     *length = p_cb->white_list_avail_size;
     return;
 }
+
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+void BTM_BleGetPeriodicAdvListSize(uint8_t *size)
+{
+    tBTM_BLE_CB *p_cb = &btm_cb.ble_ctr_cb;
+    if (p_cb->periodic_adv_list_size == 0) {
+        BTM_TRACE_WARNING("%s Periodic Adv list is full.", __func__);
+    }
+    *size = p_cb->periodic_adv_list_size;
+}
+#endif  //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+
 #endif  ///BLE_INCLUDED == TRUE
 
+#if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_read_tx_power_complete
@@ -2273,6 +2290,7 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
         (*p_cb)(&results);
     }
 }
+#endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 
 /*******************************************************************************
 **

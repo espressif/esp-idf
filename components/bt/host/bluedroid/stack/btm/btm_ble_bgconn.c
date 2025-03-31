@@ -423,6 +423,23 @@ void btm_ble_white_list_init(UINT8 white_list_size)
     btm_cb.ble_ctr_cb.white_list_avail_size = white_list_size;
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_periodic_adv_list_init
+**
+** Description      Initialize the periodic advertiser list size.
+**
+** Parameters       periodic_adv_size: The size of the periodic advertiser list to be initialized.
+**
+*******************************************************************************/
+void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size)
+{
+    BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, periodic_adv_size);
+    btm_cb.ble_ctr_cb.periodic_adv_list_size = periodic_adv_size;
+}
+#endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_add_2_white_list_complete
@@ -648,6 +665,7 @@ void btm_ble_initiate_select_conn(BD_ADDR bda)
         BTM_TRACE_ERROR("btm_ble_initiate_select_conn failed");
     }
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_suspend_bg_conn
@@ -672,6 +690,8 @@ BOOLEAN btm_ble_suspend_bg_conn(void)
 
     return FALSE;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_suspend_wl_activity
@@ -689,10 +709,11 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
     if (wl_state & BTM_BLE_WL_SCAN) {
         btm_ble_start_select_conn(FALSE, NULL);
     }
+#if (BLE_42_ADV_EN == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
         btm_ble_stop_adv();
     }
-
+#endif // #if (BLE_42_ADV_EN == TRUE)
 }
 /*******************************************************************************
 **
@@ -705,9 +726,13 @@ static void btm_suspend_wl_activity(tBTM_BLE_WL_STATE wl_state)
 *******************************************************************************/
 void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 {
+#if (tGATT_BG_CONN_DEV == TRUE)
     btm_ble_resume_bg_conn();
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     if (wl_state & BTM_BLE_WL_ADV) {
+#if (BLE_42_ADV_EN == TRUE)
         btm_ble_start_adv();
+#endif // #if (BLE_42_ADV_EN == TRUE)
     }
 
 }
@@ -724,12 +749,13 @@ void btm_resume_wl_activity(tBTM_BLE_WL_STATE wl_state)
 static void btm_wl_update_to_controller(void)
 {
     /* whitelist will be added in the btm_ble_resume_bg_conn(), we do not
-       support background connection now, so we nedd to use btm_execute_wl_dev_operation
+       support background connection now, so we need to use btm_execute_wl_dev_operation
        to add whitelist directly ,if we support background connection in the future,
        please delete btm_execute_wl_dev_operation(). */
     btm_execute_wl_dev_operation();
 
 }
+#if (tGATT_BG_CONN_DEV == TRUE)
 /*******************************************************************************
 **
 ** Function         btm_ble_resume_bg_conn
@@ -759,6 +785,8 @@ BOOLEAN btm_ble_resume_bg_conn(void)
 
     return ret;
 }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_get_conn_st

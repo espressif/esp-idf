@@ -764,8 +764,12 @@ void btsnd_hcic_vendor_spec_cmd (BT_HDR *buffer, UINT16 opcode,
 #define HCIC_PARAM_SIZE_BLE_READ_PHY                   2
 #define HCIC_PARAM_SIZE_BLE_SET_DEF_PHY                3
 #define HCIC_PARAM_SIZE_BLE_SET_PHY                    7
+#endif
+#if (BLE_50_DTM_TEST_EN == TRUE)
 #define HCIC_PARAM_SIZE_ENH_RX_TEST                    3
 #define HCIC_PARAM_SIZE_ENH_TX_TEST                    4
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
 #define HCIC_PARAM_SIZE_EXT_RAND_ADDR                  7
 #define HCIC_PARAM_SIZE_EXT_ADV_SET_PARAMS             25
 #define HCIC_PARAM_SIZE_EXT_ADV_WRITE_DATA             251
@@ -963,14 +967,17 @@ UINT8 btsnd_hcic_ble_set_prefered_default_phy(UINT8 all_phys,
 BOOLEAN btsnd_hcic_ble_set_phy(UINT16 conn_handle,
                                            UINT8 all_phys, UINT8 tx_phys,
                                            UINT8 rx_phys, UINT16 phy_options);
-
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
 UINT8 btsnd_hcic_ble_enhand_rx_test(UINT8 rx_channel, UINT8 phy,
                                                          UINT8 modulation_idx);
 
 UINT8 btsnd_hcic_ble_enhand_tx_test(UINT8 tx_channel, UINT8 len,
                                                          UINT8 packect,
                                                          UINT8 phy);
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
 UINT8 btsnd_hcic_ble_set_extend_rand_address(UINT8 adv_handle, BD_ADDR rand_addr);
 
 UINT8 btsnd_hcic_ble_set_ext_adv_params(UINT8 adv_handle, UINT16 properties, UINT32 interval_min,

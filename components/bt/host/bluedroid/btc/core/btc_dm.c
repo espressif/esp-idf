@@ -334,6 +334,7 @@ static void btc_dm_link_up_evt(tBTA_DM_LINK_UP *p_link_up)
     }
 }
 
+#if (SMP_INCLUDED == TRUE)
 static void btc_dm_auth_cmpl_evt (tBTA_DM_AUTH_CMPL *p_auth_cmpl)
 {
     /* Save link key, if not temporary */
@@ -493,6 +494,7 @@ static void btc_dm_pin_req_evt(tBTA_DM_PIN_REQ *p_pin_req)
     }
 #endif /// BTC_GAP_BT_INCLUDED == TRUE
 }
+#endif // #if (SMP_INCLUDED == TRUE)
 
 #if (CLASSIC_BT_INCLUDED == TRUE)
 static void btc_dm_sp_cfm_req_evt(tBTA_DM_SP_CFM_REQ *p_cfm_req)
@@ -814,6 +816,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
         btc_disable_bluetooth_evt();
         break;
     }
+#if (SMP_INCLUDED == TRUE)
     case BTA_DM_PIN_REQ_EVT:
         BTC_TRACE_DEBUG("BTA_DM_PIN_REQ_EVT");
         btc_dm_pin_req_evt(&p_data->pin_req);
@@ -827,6 +830,7 @@ void btc_dm_sec_cb_handler(btc_msg_t *msg)
     case BTA_DM_BOND_CANCEL_CMPL_EVT:
         BTC_TRACE_DEBUG("BTA_DM_BOND_CANCEL_CMPL_EVT");
         break;
+#endif // #if (SMP_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED == TRUE)
     case BTA_DM_SP_CFM_REQ_EVT:
         btc_dm_sp_cfm_req_evt(&p_data->cfm_req);

@@ -553,6 +553,7 @@ void BTM_BleSecureConnectionCreateOobData(void)
 #endif
 }
 
+#if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 /******************************************************************************
 **
 ** Function         BTM_BleSetConnScanParams
@@ -582,15 +583,17 @@ void BTM_BleSetConnScanParams (UINT32 scan_interval, UINT32 scan_window)
             p_ble_cb->scan_win = scan_window;
             new_param = TRUE;
         }
-
+#if (tGATT_BG_CONN_DEV == TRUE)
         if (new_param && p_ble_cb->conn_state == BLE_BG_CONN) {
             btm_ble_suspend_bg_conn();
         }
+#endif // #if (tGATT_BG_CONN_DEV == TRUE)
     } else {
         BTM_TRACE_ERROR("Illegal Connection Scan Parameters");
     }
 #endif
 }
+#endif // #if (BLE_HOST_CONN_SCAN_PARAM_EN == TRUE)
 
 /********************************************************
 **
@@ -766,6 +769,7 @@ BOOLEAN BTM_ReadConnectedTransportAddress(BD_ADDR remote_bda, tBT_TRANSPORT tran
 }
 
 #if (BLE_INCLUDED == TRUE)
+#if (BLE_42_DTM_TEST_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleReceiverTest
@@ -805,7 +809,8 @@ void BTM_BleTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
         BTM_TRACE_ERROR("%s: Unable to Trigger LE transmitter test", __FUNCTION__);
     }
 }
-
+#endif // #if (BLE_42_DTM_TEST_EN == TRUE)
+#if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 /*******************************************************************************
 **
 ** Function         BTM_BleTestEnd
@@ -837,9 +842,9 @@ void btm_ble_test_command_complete(UINT8 *p)
         (*p_cb)(p);
     }
 }
+#endif // #if ((BLE_42_DTM_TEST_EN == TRUE) || (BLE_50_DTM_TEST_EN == TRUE))
 
-
-#if (BLE_50_FEATURE_SUPPORT == TRUE)
+#if (BLE_50_DTM_TEST_EN == TRUE)
 /*******************************************************************************
 **
 ** Function         BTM_BleEnhancedReceiverTest
@@ -882,7 +887,7 @@ void BTM_BleEnhancedTransmitterTest(UINT8 tx_freq, UINT8 test_data_len,
         BTM_TRACE_ERROR("%s: Unable to Trigger LE enhanced transmitter test", __FUNCTION__);
     }
 }
-#endif // BLE_50_FEATURE_SUPPORT
+#endif // #if (BLE_50_DTM_TEST_EN == TRUE)
 
 /*******************************************************************************
 **

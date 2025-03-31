@@ -884,41 +884,6 @@ void bta_gatts_send_service_change_indication (tBTA_GATTS_DATA *p_msg)
 
 /*******************************************************************************
 **
-** Function         bta_gatts_listen
-**
-** Description      Start or stop listening for LE connection on a GATT server
-**
-** Returns          none.
-**
-*******************************************************************************/
-void bta_gatts_listen(tBTA_GATTS_CB *p_cb, tBTA_GATTS_DATA *p_msg)
-{
-    tBTA_GATTS_RCB     *p_rcb = bta_gatts_find_app_rcb_by_app_if(p_msg->api_listen.server_if);
-    tBTA_GATTS          cb_data;
-    UNUSED(p_cb);
-
-    cb_data.reg_oper.status = BTA_GATT_OK;
-    cb_data.reg_oper.server_if = p_msg->api_listen.server_if;
-
-    if (p_rcb == NULL) {
-        APPL_TRACE_ERROR("Unknown GATTS application");
-        return;
-    }
-
-    if (!GATT_Listen(p_msg->api_listen.server_if,
-                     p_msg->api_listen.start,
-                     p_msg->api_listen.remote_bda)) {
-        cb_data.status = BTA_GATT_ERROR;
-        APPL_TRACE_ERROR("bta_gatts_listen Listen failed");
-    }
-
-    if (p_rcb->p_cback) {
-        (*p_rcb->p_cback)(BTA_GATTS_LISTEN_EVT, &cb_data);
-    }
-}
-
-/*******************************************************************************
-**
 ** Function         bta_gatts_show_local_database
 **
 ** Description      print local service database
