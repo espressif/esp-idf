@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -946,22 +946,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sclk_div_b : R/W; bitpos: [5:0]; default: 0;
-         *  The  denominator of the frequency divider factor.'
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_b:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        /** sclk_div_a : R/W; bitpos: [11:6]; default: 0;
-         *  The numerator of the frequency divider factor.
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_a:6;                                      /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        /** sclk_div_num : R/W; bitpos: [19:12]; default: 1;
-         *  The integral part of the frequency divider factor.
-         *  Only available to LP UART instance
-         */
-        uint32_t sclk_div_num:8;                                    /* UART0/1 instance have this field reserved, configure in corresponding PCR registers */
-        uint32_t reserved_20:4;
+        uint32_t reserved_0:24;
         /** tx_sclk_en : R/W; bitpos: [24]; default: 1;
          *  Configures whether or not to enable UART TX clock.\\
          *  0: Disable\\
@@ -1338,11 +1323,11 @@ typedef struct uart_dev_s {
     volatile uart_mem_tx_status_reg_t mem_tx_status;
     volatile uart_mem_rx_status_reg_t mem_rx_status;
     volatile uart_fsm_status_reg_t fsm_status;
-    volatile uart_pospulse_reg_t pospulse;
-    volatile uart_negpulse_reg_t negpulse;
-    volatile uart_lowpulse_reg_t lowpulse;
-    volatile uart_highpulse_reg_t highpulse;
-    volatile uart_rxd_cnt_reg_t rxd_cnt;
+    volatile uart_pospulse_reg_t pospulse;      /* LP_UART instance has this register reserved */
+    volatile uart_negpulse_reg_t negpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_lowpulse_reg_t lowpulse;      /* LP_UART instance has this register reserved */
+    volatile uart_highpulse_reg_t highpulse;    /* LP_UART instance has this register reserved */
+    volatile uart_rxd_cnt_reg_t rxd_cnt;        /* LP_UART instance has this register reserved */
     volatile uart_clk_conf_reg_t clk_conf;
     volatile uart_date_reg_t date;
     volatile uart_afifo_status_reg_t afifo_status;
