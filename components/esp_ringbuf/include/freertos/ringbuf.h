@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -226,7 +226,8 @@ BaseType_t xRingbufferSendComplete(RingbufHandle_t xRingbuffer, void *pvItem);
  * @param[in]   xTicksToWait    Ticks to wait for items in the ring buffer.
  *
  * @note    A call to vRingbufferReturnItem() is required after this to free the item retrieved.
- * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split buffers.
+ * @note    To retrieve an item from an allow-split buffer, use `xRingbufferReceiveSplit()` instead.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
@@ -247,7 +248,8 @@ void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickTy
  * @note    A call to vRingbufferReturnItemFromISR() is required after this to free the item retrieved.
  * @note    Byte buffers do not allow multiple retrievals before returning an item
  * @note    Two calls to RingbufferReceiveFromISR() are required if the bytes wrap around the end of the ring buffer.
- * @note    It is possible to receive items with a pxItemSize of 0 on no-split/allow split buffers.
+ * @note    It is possible to receive items with a pxItemSize of 0 on no-split buffers.
+ * @note    To retrieve an item from an allow-split buffer, use `xRingbufferReceiveSplitFromISR()` instead.
  *
  * @return
  *      - Pointer to the retrieved item on success; *pxItemSize filled with the length of the item.
