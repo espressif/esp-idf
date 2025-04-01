@@ -469,6 +469,14 @@ typedef soc_xtal_freq_t rtc_xtal_freq_t;
 #define RTC_XTAL_FREQ_40M SOC_XTAL_FREQ_40M                 //!< 40 MHz XTAL
 #define RTC_XTAL_FREQ_48M SOC_XTAL_FREQ_48M                 //!< 48 MHz XTAL
 
+/**
+ * @brief Calculate the slow clock period value by slow clock frequency
+ *
+ * @param freq_hz Frequency of the slow clock in Hz
+ * @return Fixed point value of slow clock period in microseconds
+ */
+uint32_t rtc_clk_freq_to_period(uint32_t freq_hz);
+
 #ifdef __cplusplus
 }
 #endif
