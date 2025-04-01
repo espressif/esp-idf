@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,6 +59,28 @@ typedef struct hci_driver_uart_params_config
  * @note This function should be called before any UART communication is initiated.
  */
 int hci_driver_uart_config(hci_driver_uart_params_config_t *uart_config);
+
+/**
+ * @brief Update the UART pin configuration for the HCI driver.
+ *
+ * This function updates the TX, RX, CTS, and RTS pin assignments for the HCI driver operating over UART.
+ * It allows dynamic reconfiguration of UART pins as needed.
+ *
+ * @param tx_pin  The GPIO number assigned to the UART TX pin.
+ * @param rx_pin  The GPIO number assigned to the UART RX pin.
+ * @param cts_pin The GPIO number assigned to the UART CTS pin.
+ * @param rts_pin The GPIO number assigned to the UART RTS pin.
+ *
+ * @return 0 on success, or a negative error code on failure.
+ */
+int hci_driver_uart_pin_update(int tx_pin, int rx_pin, int cts_pin, int rts_pin);
+
+/**
+ * @brief Retrieves the current UART configuration parameters for the HCI driver.
+ *
+ * @return hci_driver_uart_params_config_t* Pointer to the structure with UART configuration parameters.
+ */
+hci_driver_uart_params_config_t * hci_driver_uart_config_param_get(void);
 
 #ifdef __cplusplus
 }

@@ -21,5 +21,5 @@ struct os_mbuf *hci_driver_mem_iso_alloc(void);
 struct os_mbuf *hci_driver_mem_iso_len_alloc(uint32_t len);
 
 extern const struct hci_h4_allocators s_hci_driver_mem_alloc;
-
+extern const struct hci_h4_frees s_hci_driver_mem_free;
 #endif // _H_HCI_DRIVER_MEM_
