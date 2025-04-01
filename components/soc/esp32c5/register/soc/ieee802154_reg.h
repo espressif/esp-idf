@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -514,9 +514,9 @@ extern "C" {
 
 #define ETM_EVENT_TIMER1_OVERFLOW  58
 #define ETM_EVENT_TIMER0_OVERFLOW  59
-#define ETM_TASK_ED_TRIG_TX        64
-#define ETM_TASK_RX_START          65
-#define ETM_TASK_TX_START          68
+#define ETM_TASK_ED_TRIG_TX        65
+#define ETM_TASK_RX_START          66
+#define ETM_TASK_TX_START          69
 
 #ifdef __cplusplus
 }

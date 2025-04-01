@@ -588,18 +588,24 @@ extern void esp_ieee802154_transmit_sfd_done(uint8_t *frame);
 extern void esp_ieee802154_energy_detect_done(int8_t power);
 
 /**
- * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time.
+ * @brief  The receive window for receive_at has finished.
  *
- * @note   Radio will start receiving after the timestamp, and continue receiving until it receives a valid frame.
- *         Refer to `esp_ieee802154_receive_done()`.
+ */
+extern void esp_ieee802154_receive_at_done(void);
+
+/**
+ * @brief  Set the IEEE 802.15.4 Radio to receive state at a specific time, for a specific duration.
  *
- * @param[in]  time  A specific timestamp for starting receiving.
+ * @note   Radio will start receiving after the timestamp, and continue receiving for the specific duration.
+ *
+ * @param[in]  time      A specific timestamp for starting receiving.
+ * @param[in]  duration  A specific duration after which to stop receiving. Set duration = 0 to rx indefinitely.
  * @return
  *      - ESP_OK on success
  *      - ESP_FAIL on failure due to invalid state.
  *
  */
-esp_err_t esp_ieee802154_receive_at(uint32_t time);
+esp_err_t esp_ieee802154_receive_at(uint32_t time, uint32_t duration);
 
 /**
  * @brief  Transmit the given frame at a specific time.
