@@ -102,7 +102,7 @@ uint32_t pmu_sleep_calculate_hp_hw_wait_time(uint32_t pd_flags, uint32_t slowclk
     return (uint32_t)hp_hw_wait_time_us;
 }
 
-uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, uint32_t slowclk_period, uint32_t fastclk_period)
+uint32_t pmu_sleep_calculate_hw_wait_time(uint32_t pd_flags, soc_rtc_slow_clk_src_t slowclk_src, uint32_t slowclk_period, uint32_t fastclk_period)
 {
     const uint32_t lp_hw_wait_time_us = pmu_sleep_calculate_lp_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
     const uint32_t hp_hw_wait_time_us = pmu_sleep_calculate_hp_hw_wait_time(pd_flags, slowclk_period, fastclk_period);
@@ -117,6 +117,7 @@ static inline pmu_sleep_param_config_t * pmu_sleep_param_config_default(
         pmu_sleep_power_config_t *power, /* We'll use the runtime power parameter to determine some hardware parameters */
         const uint32_t pd_flags,
         const uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         const uint32_t slowclk_period,
         const uint32_t fastclk_period
     )
@@ -146,6 +147,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
         pmu_sleep_config_t *config,
         uint32_t pd_flags,
         uint32_t adjustment,
+        soc_rtc_slow_clk_src_t slowclk_src,
         uint32_t slowclk_period,
         uint32_t fastclk_period,
         bool dslp
@@ -207,7 +209,7 @@ const pmu_sleep_config_t* pmu_sleep_config_default(
 
     config->power = power_default;
     pmu_sleep_param_config_t param_default = PMU_SLEEP_PARAM_CONFIG_DEFAULT(pd_flags);
-    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_period, fastclk_period);
+    config->param = *pmu_sleep_param_config_default(&param_default, &power_default, pd_flags, adjustment, slowclk_src, slowclk_period, fastclk_period);
 
     return config;
 }
