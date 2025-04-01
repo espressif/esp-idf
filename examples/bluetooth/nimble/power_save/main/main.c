@@ -58,6 +58,10 @@ static uint8_t own_addr_type;
 
 void ble_store_config_init(void);
 
+#if MYNEWT_VAL(BLE_HCI_VS)
+static struct ble_gap_event_listener vs_event_listener;
+#endif
+
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
 static struct ble_gap_event_listener power_control_event_listener;
 #endif
@@ -146,6 +150,13 @@ ext_bleprph_advertise(void)
     /* start advertising */
     rc = ble_gap_ext_adv_start(instance, 0, 0);
     assert (rc == 0);
+
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    rc = ble_hs_send_vs_event_mask(ESP_BLE_VENDOR_SLEEP_WAKEUP_EVT_MASK);
+
+    rc = ble_gap_event_listener_register(&vs_event_listener,
+		    bleprph_gap_event,NULL);
+#endif
 }
 #else
 /**
@@ -284,19 +295,19 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
     int rc;
 
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
         MODLOG_DFLT(INFO, "connection %s; status=%d ",
-                    event->link_estab.status == 0 ? "established" : "failed",
-                    event->link_estab.status);
-        if (event->link_estab.status == 0) {
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+                    event->connect.status == 0 ? "established" : "failed",
+                    event->connect.status);
+        if (event->connect.status == 0) {
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             bleprph_print_conn_desc(&desc);
         }
         MODLOG_DFLT(INFO, "\n");
 
-        if (event->link_estab.status != 0) {
+        if (event->connect.status != 0) {
             /* Connection failed; resume advertising. */
 #if CONFIG_EXAMPLE_EXTENDED_ADV
             ext_bleprph_advertise();
@@ -306,7 +317,7 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
         }
 
 #if MYNEWT_VAL(BLE_POWER_CONTROL)
-	bleprph_power_control(event->link_estab.conn_handle);
+	bleprph_power_control(event->connect.conn_handle);
 
 	ble_gap_event_listener_register(&power_control_event_listener,
                                         bleprph_gap_power_event, NULL);
@@ -444,6 +455,20 @@ bleprph_gap_event(struct ble_gap_event *event, void *arg)
             ESP_LOGI(tag, "ble_sm_inject_io result: %d", rc);
         }
         return 0;
+
+#if CONFIG_EXAMPLE_SLEEP_WAKEUP
+    case BLE_GAP_EVENT_VS_HCI:
+	const struct ble_hci_ev_vs *ev = event->vs_hci.ev;
+
+	switch(ev->id) {
+            case BLE_HCI_VS_SUBEV_LE_SLEEP_WAKE_UP:
+	        MODLOG_DFLT(INFO, "Got Sleep wake up ");
+		break;
+
+	    default:
+		break;
+	}
+#endif
 
     }
 

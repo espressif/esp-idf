@@ -608,6 +608,7 @@
 #define SOC_BLE_POWER_CONTROL_SUPPORTED (1)    /*!< Support Bluetooth Power Control */
 #define SOC_BLE_MULTI_CONN_OPTIMIZATION (1)    /*!< Support multiple connections optimization */
 #define SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED  (1)    /*!< Support For BLE Periodic Adv Enhancements */
+#define SOC_BLE_CTE_SUPPORTED           (1)    /*!< Support Bluetooth LE Constant Tone Extension (CTE) */
 
 /*------------------------------------- DEBUG CAPS -------------------------------------*/
 #define SOC_DEBUG_HAVE_OCD_STUB_BINS    (1)

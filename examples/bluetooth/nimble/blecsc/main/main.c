@@ -213,19 +213,19 @@ static int
 blecsc_gap_event(struct ble_gap_event *event, void *arg)
 {
     switch (event->type) {
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed */
         MODLOG_DFLT(INFO, "connection %s; status=%d\n",
-                    event->link_estab.status == 0 ? "established" : "failed",
-                    event->link_estab.status);
+                    event->connect.status == 0 ? "established" : "failed",
+                    event->connect.status);
 
-        if (event->link_estab.status != 0) {
+        if (event->connect.status != 0) {
             /* Connection failed; resume advertising */
             blecsc_advertise();
             conn_handle = 0;
         }
         else {
-          conn_handle = event->link_estab.conn_handle;
+          conn_handle = event->connect.conn_handle;
         }
         break;
 

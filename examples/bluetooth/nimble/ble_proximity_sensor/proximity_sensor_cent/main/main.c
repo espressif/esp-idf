@@ -405,13 +405,13 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         ble_prox_cent_connect_if_interesting(&event->disc);
         return 0;
 
-    case BLE_GAP_EVENT_LINK_ESTAB:
+    case BLE_GAP_EVENT_CONNECT:
         /* A new connection was established or a connection attempt failed. */
-        if (event->link_estab.status == 0) {
+        if (event->connect.status == 0) {
             /* Connection successfully established. */
             MODLOG_DFLT(INFO, "Connection established ");
 
-            rc = ble_gap_conn_find(event->link_estab.conn_handle, &desc);
+            rc = ble_gap_conn_find(event->connect.conn_handle, &desc);
             assert(rc == 0);
             print_conn_desc(&desc);
             MODLOG_DFLT(INFO, "\n");
@@ -419,7 +419,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
             link_supervision_timeout = 8 * desc.conn_itvl;
 
             /* Remember peer. */
-            rc = peer_add(event->link_estab.conn_handle);
+            rc = peer_add(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to add peer; rc=%d\n", rc);
                 return 0;
@@ -445,17 +445,17 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
              * Encryption (Enable encryption)
              * Will invoke event BLE_GAP_EVENT_ENC_CHANGE
              **/
-            rc = ble_gap_security_initiate(event->link_estab.conn_handle);
+            rc = ble_gap_security_initiate(event->connect.conn_handle);
             if (rc != 0) {
                 MODLOG_DFLT(INFO, "Security could not be initiated, rc = %d\n", rc);
-                return ble_gap_terminate(event->link_estab.conn_handle,
+                return ble_gap_terminate(event->connect.conn_handle,
                                          BLE_ERR_REM_USER_CONN_TERM);
             } else {
                 MODLOG_DFLT(INFO, "Connection secured\n");
             }
 #else
             /* Perform service discovery */
-            rc = peer_disc_all(event->link_estab.conn_handle,
+            rc = peer_disc_all(event->connect.conn_handle,
                                ble_prox_cent_on_disc_complete, NULL);
             if (rc != 0) {
                 MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
@@ -465,7 +465,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         } else {
             /* Connection attempt failed; resume scanning. */
             MODLOG_DFLT(ERROR, "Error: Connection failed; status=%d\n",
-                        event->link_estab.status);
+                        event->connect.status);
         }
         ble_prox_cent_scan();
         return 0;
@@ -514,7 +514,7 @@ ble_prox_cent_gap_event(struct ble_gap_event *event, void *arg)
         print_conn_desc(&desc);
 #if CONFIG_EXAMPLE_ENCRYPTION
         /*** Go for service discovery after encryption has been successfully enabled ***/
-        rc = peer_disc_all(event->link_estab.conn_handle,
+        rc = peer_disc_all(event->connect.conn_handle,
                            ble_prox_cent_on_disc_complete, NULL);
         if (rc != 0) {
             MODLOG_DFLT(ERROR, "Failed to discover services; rc=%d\n", rc);
