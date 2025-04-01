@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -10,6 +10,7 @@
 #include <stdatomic.h>
 #include <stdio.h>
 #include <pthread.h>
+#include "esp_heap_caps.h"
 #include "unity.h"
 #include "unity_fixture.h"
 
@@ -29,6 +30,18 @@ TEST_SETUP(stdatomic)
 TEST_TEAR_DOWN(stdatomic)
 {
 }
+
+TEST(stdatomic, test_atomic_flag)
+{
+    bool x8 = 0;
+
+    x8 = atomic_flag_test_and_set(&g_atomic8);
+    TEST_ASSERT_EQUAL_HEX8(0x00, x8);
+    TEST_ASSERT_EQUAL_HEX8(0x01, g_atomic8);
+    atomic_flag_clear(&g_atomic8);
+    TEST_ASSERT_EQUAL_HEX8(0x00, g_atomic8);
+}
+
 
 TEST(stdatomic, test_64bit_atomics)
 {
@@ -128,6 +141,7 @@ static void* exclusion_test_task(void *varg)
 
 TEST_GROUP_RUNNER(stdatomic)
 {
+    RUN_TEST_CASE(stdatomic, test_atomic_flag)
     RUN_TEST_CASE(stdatomic, test_64bit_atomics)
     RUN_TEST_CASE(stdatomic, test_32bit_atomics)
     RUN_TEST_CASE(stdatomic, test_16bit_atomics)
