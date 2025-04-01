@@ -290,7 +290,6 @@ enum {
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     BTA_DM_API_ISO_SET_DATA_PATH_EVT,
     BTA_DM_API_ISO_REMOVE_DATA_PATH_EVT,
-    BTA_DM_API_ISO_SET_HOST_FEATURE_EVT,
     BTA_DM_API_ISO_READ_TX_SYNC_EVT,
     BTA_DM_API_ISO_READ_LINK_QUALITY_EVT,
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -332,6 +331,9 @@ enum {
     BTA_DM_API_SET_DEFALT_SUBRATE,
     BTA_DM_API_SUBRATE_REQUEST,
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    BTA_DM_API_SET_HOST_FEATURE_EVT,
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1139,6 +1141,14 @@ typedef struct {
 } tBTA_DM_API_BLE_SUBRATE_REQUEST;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+typedef struct {
+    BT_HDR                          hdr;
+    uint16_t                        bit_num;
+    uint8_t                         bit_val;
+} tBTA_DM_API_SET_HOST_FEATURE;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
+
 #endif /* BLE_INCLUDED */
 
 #if (BLE_HOST_REMOVE_AN_ACL_EN == TRUE)
@@ -1421,12 +1431,6 @@ typedef struct {
     BT_HDR                          hdr;
     tBTA_DM_BLE_ISO_REMOVE_DATA_PATH_PARAMS iso_data_path_remove_param;
 } tBTA_DM_API_ISO_DATA_PATH_REMOVE;
-
-typedef struct {
-    BT_HDR                          hdr;
-    uint16_t                        bit_num;
-    uint8_t                         bit_val;
-} tBTA_DM_API_ISO_SET_HOST_FEATURE;
 
 typedef struct {
     BT_HDR                          hdr;
@@ -1818,7 +1822,6 @@ typedef union {
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     tBTA_DM_API_ISO_DATA_PATH           iso_set_data_path;
     tBTA_DM_API_ISO_DATA_PATH_REMOVE    iso_remove_data_path;
-    tBTA_DM_API_ISO_SET_HOST_FEATURE    iso_set_host_feat;
     tBTA_DM_API_ISO_READ_TX_SYNC        iso_read_tx_sync;
     tBTA_DM_API_ISO_READ_LINK_QUALITY   iso_read_link_quality;
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -1861,6 +1864,9 @@ typedef union {
     tBTA_DM_API_BLE_SET_DEFAULT_SUBRATE  default_subrate;
     tBTA_DM_API_BLE_SUBRATE_REQUEST      subrate_request;
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+    tBTA_DM_API_SET_HOST_FEATURE    set_host_feat;
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2479,7 +2485,6 @@ extern void bta_dm_ble_big_sync_terminate(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 extern void bta_dm_ble_iso_set_data_path(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_iso_remove_data_path(tBTA_DM_MSG *p_data);
-extern void bta_dm_ble_iso_set_host_feature(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_iso_read_tx_sync(tBTA_DM_MSG *p_data);
 void bta_dm_ble_iso_read_link_quality(tBTA_DM_MSG *p_data);
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -2525,4 +2530,7 @@ void bta_dm_api_set_trans_power_reporting_en(tBTA_DM_MSG *p_data);
 void bta_dm_api_set_default_subrate(tBTA_DM_MSG *p_data);
 void bta_dm_api_subrate_request(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#if (BLE_50_FEATURE_SUPPORT == TRUE)
+extern void bta_dm_ble_set_host_feature(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_50_FEATURE_SUPPORT == TRUE)
 #endif /* BTA_DM_INT_H */

@@ -26,7 +26,6 @@ typedef enum {
     ESP_BLE_ISO_BIG_SYNC_TERMINATE_CMPL_EVT,                 /*!< When BIG sync terminate complete, the event comes */
     ESP_BLE_ISO_BIGINFO_ADV_REPORT_EVT,                      /*!< When receiving an Advertising PDU that contained a BIGInfo field, the event comes */
     ESP_BLE_ISO_ISO_DATA_PATH_UPDATE_EVT,                    /*!< When ISO data path update complete, the event comes */
-    ESP_BLE_ISO_SET_HOST_FEATURE_CMPL_EVT,                   /*!< When host feature set complete, the event comes */
     ESP_BLE_ISO_READ_ISO_TX_SYNC_CMPL_EVT,                   /*!< When reading tx sync complete, the event comes */
     ESP_BLE_ISO_READ_LINK_QUALITY_CMPL_EVT,                  /*!< When reading link quality complete, the event comes */
     ESP_BLE_ISO_SET_CIG_PARAMS_CMPL_EVT,                     /*!< When CIG parameters set complete, the event comes */
@@ -296,12 +295,6 @@ typedef union {
         uint16_t iso_hdl;   /*!< Connection handle of the CIS or BIS */
     } data_path;            /*!< Event parameter of ESP_BLE_ISO_ISO_DATA_PATH_UPDATE_EVT */
     /**
-     * @brief ESP_BLE_ISO_SET_HOST_FEATURE_CMPL_EVT
-     */
-    struct ble_iso_set_host_feature_evt_param {
-        esp_bt_status_t status; /*!< Indicate host feature update success status */
-    } host_feature;     /*!< Event parameter of ESP_BLE_ISO_SET_HOST_FEATURE_CMPL_EVT */
-    /**
      * @brief ESP_BLE_ISO_READ_ISO_TX_SYNC_CMPL_EVT
      */
     struct ble_iso_read_tx_sync_evt_param {
@@ -528,19 +521,6 @@ esp_err_t esp_ble_iso_set_iso_data_path(esp_ble_iso_set_data_path_params_t *data
  *
  */
 esp_err_t esp_ble_iso_remove_iso_data_path(esp_ble_iso_remove_data_path_params_t *data_path_params);
-
-/**
- * @brief           This function is called to set host feature.
- *
- * @param[in]       bit_num: the bit position in the FeatureSet.
- * @param[in]       bit_val: the feature is enabled or disabled
- *
- * @return
- *                  - ESP_OK : success
- *                  - other  : failed
- *
- */
-esp_err_t esp_ble_iso_set_host_feature(uint16_t bit_num, uint8_t bit_val);
 
 /**
  * @brief           This function is called to read tx sync.

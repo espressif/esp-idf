@@ -52,7 +52,6 @@ typedef enum {
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
     BTC_ISO_ACT_SET_DATA_PATH,
     BTC_ISO_ACT_REMOVE_DATA_PATH,
-    BTC_ISO_ACT_SET_HOST_FEATURE,
     BTC_ISO_ACT_READ_ISO_TX_SYNC,
     BTC_ISO_ACT_READ_ISO_LINK_QUALITY,
 #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
@@ -145,11 +144,6 @@ typedef union {
         uint16_t conn_handle;
         uint8_t data_path_dir;
     } iso_remove_data_path_params;
-
-    struct iso_set_host_feature_arg {
-        uint16_t bit_num;
-        uint8_t bit_val;
-    } iso_set_host_feature_params;
 
     struct iso_read_tx_sync_arg {
         uint16_t iso_handle;
