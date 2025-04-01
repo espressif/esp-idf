@@ -31,7 +31,7 @@
 #define SOC_UART_SUPPORTED              1       // TODO: [ESP32H4] IDF-12398
 // #define SOC_GDMA_SUPPORTED              1    // TODO: [ESP32H4] IDF-12382
 // #define SOC_AHB_GDMA_SUPPORTED          1    // TODO: [ESP32H4] IDF-12382
-// #define SOC_GPTIMER_SUPPORTED           1    // TODO: [ESP32H4] IDF-12373
+#define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1    // TODO: [ESP32H4] IDF-12338
 // #define SOC_MCPWM_SUPPORTED             1    // TODO: [ESP32H4] IDF-12380
 // #define SOC_TWAI_SUPPORTED              1    // TODO: [ESP32H4] IDF-12352
@@ -435,7 +435,8 @@
 #define SOC_TIMER_GROUP_SUPPORT_XTAL      (1)
 #define SOC_TIMER_GROUP_SUPPORT_RC_FAST   (1)
 #define SOC_TIMER_GROUP_TOTAL_TIMERS      (2)
-// #define SOC_TIMER_SUPPORT_ETM             (1)
+// #define SOC_TIMER_SUPPORT_ETM             (1)     // TODO: [ESP32H4] IDF-12355
+#define SOC_TIMER_SUPPORT_SLEEP_RETENTION (1)
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
@@ -528,7 +529,7 @@
 #define SOC_PM_PAU_LINK_NUM             (4)
 
 /*-------------------------- CLOCK SUBSYSTEM CAPS ----------------------------------------*/
-// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)
+// #define SOC_CLK_RC_FAST_SUPPORT_CALIBRATION       (1)  // TODO: [ESP32H4] IDF-12285
 #define SOC_MODEM_CLOCK_IS_INDEPENDENT            (1)
 
 #define SOC_CLK_XTAL32K_SUPPORTED                 (1)     /*!< Support to connect an external low frequency crystal */

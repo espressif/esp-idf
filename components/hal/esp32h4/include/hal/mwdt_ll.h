@@ -286,7 +286,7 @@ FORCE_INLINE_ATTR void mwdt_ll_set_clock_source(timg_dev_t *hw, mwdt_clock_sourc
     case MWDT_CLK_SRC_XTAL:
         clk_id = 0;
         break;
-    case MWDT_CLK_SRC_PLL_F80M:
+    case MWDT_CLK_SRC_PLL_F48M:
         clk_id = 1;
         break;
     case MWDT_CLK_SRC_RC_FAST:

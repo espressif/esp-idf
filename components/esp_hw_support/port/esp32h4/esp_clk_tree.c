@@ -27,23 +27,22 @@ uint32_t *freq_value)
     uint32_t clk_src_freq = 0;
     switch (clk_src) {
     case SOC_MOD_CLK_XTAL:
-        clk_src_freq = 32 * MHZ;
+        clk_src_freq = SOC_XTAL_FREQ_32M * MHZ;
         break;
-    case SOC_MOD_CLK_PLL_F80M:
-        clk_src_freq = CLK_LL_PLL_80M_FREQ_MHZ * MHZ;
+    case SOC_MOD_CLK_PLL_F48M:
+        clk_src_freq = CLK_LL_PLL_48M_FREQ_MHZ * MHZ;
         break;
-    case SOC_MOD_CLK_PLL_F160M:
-        clk_src_freq = CLK_LL_PLL_160M_FREQ_MHZ * MHZ;
+    case SOC_MOD_CLK_PLL_F64M:
+        clk_src_freq = CLK_LL_PLL_64M_FREQ_MHZ * MHZ;
         break;
-    case SOC_MOD_CLK_PLL_F240M:
-        clk_src_freq = CLK_LL_PLL_240M_FREQ_MHZ * MHZ;
+    case SOC_MOD_CLK_PLL_F96M:
+        clk_src_freq = CLK_LL_PLL_96M_FREQ_MHZ * MHZ;
         break;
     default:
         break;
     }
 
-    ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG,
-                        "freq shouldn't be 0, calibration failed");
+    ESP_RETURN_ON_FALSE(clk_src_freq, ESP_FAIL, TAG, "freq shouldn't be 0, calibration failed");
     *freq_value = clk_src_freq;
     return ESP_OK;
 }

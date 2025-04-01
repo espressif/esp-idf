@@ -23,7 +23,7 @@
 
 static const char *TAG = "rtc_clk";
 
-// Current PLL frequency, in 480MHz. Zero if PLL is not enabled.
+// Current PLL frequency, in 96MHz. Zero if PLL is not enabled.
 static int s_cur_pll_freq;
 
 static uint32_t s_bbpll_digi_consumers_ref_count = 0; // Currently, it only tracks whether the 48MHz PHY clock is in-use by USB Serial/JTAG
@@ -57,7 +57,7 @@ void rtc_clk_32k_enable_external(void)
 
 void rtc_clk_32k_bootstrap(uint32_t cycle)
 {
-    /* No special bootstrapping needed for ESP32-C6, 'cycle' argument is to keep the signature
+    /* No special bootstrapping needed for ESP32-H4, 'cycle' argument is to keep the signature
      * same as for the ESP32. Just enable the XTAL here.
      */
     (void)cycle;
@@ -183,7 +183,7 @@ static void rtc_clk_cpu_freq_to_8m(void)
  */
 static void rtc_clk_cpu_freq_to_pll_mhz(int cpu_freq_mhz)
 {
-    clk_ll_cpu_set_hs_divider(CLK_LL_PLL_480M_FREQ_MHZ / cpu_freq_mhz);
+    clk_ll_cpu_set_hs_divider(CLK_LL_PLL_96M_FREQ_MHZ / cpu_freq_mhz);
     clk_ll_cpu_set_src(SOC_CPU_CLK_SRC_PLL);
     esp_rom_set_cpu_ticks_per_us(cpu_freq_mhz);
 }
@@ -206,20 +206,20 @@ bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t *ou
 
         source_freq_mhz = xtal_freq;
         source = SOC_CPU_CLK_SRC_XTAL;
-    } else if (freq_mhz == 80) {
+    } else if (freq_mhz == 16) {
         real_freq_mhz = freq_mhz;
         source = SOC_CPU_CLK_SRC_PLL;
-        source_freq_mhz = CLK_LL_PLL_480M_FREQ_MHZ;
+        source_freq_mhz = CLK_LL_PLL_96M_FREQ_MHZ;
         divider = 6;
-    } else if (freq_mhz == 120) {
+    } else if (freq_mhz == 24) {
         real_freq_mhz = freq_mhz;
         source = SOC_CPU_CLK_SRC_PLL;
-        source_freq_mhz = CLK_LL_PLL_480M_FREQ_MHZ;
+        source_freq_mhz = CLK_LL_PLL_96M_FREQ_MHZ;
         divider = 4;
-    } else if (freq_mhz == 160) {
+    } else if (freq_mhz == 32) {
         real_freq_mhz = freq_mhz;
         source = SOC_CPU_CLK_SRC_PLL;
-        source_freq_mhz = CLK_LL_PLL_480M_FREQ_MHZ;
+        source_freq_mhz = CLK_LL_PLL_96M_FREQ_MHZ;
         divider = 3;
     } else {
         // unsupported frequency
