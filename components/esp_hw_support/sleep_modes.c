@@ -950,7 +950,7 @@ static esp_err_t IRAM_ATTR esp_sleep_start(uint32_t sleep_flags, esp_sleep_mode_
 
     pmu_sleep_config_t config;
     pmu_sleep_init(pmu_sleep_config_default(&config, sleep_flags, s_config.sleep_time_adjustment,
-            s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
+            rtc_clk_slow_src_get(), s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period,
             deep_sleep), deep_sleep);
 #else
     rtc_sleep_config_t config;
@@ -1415,7 +1415,7 @@ esp_err_t esp_light_sleep_start(void)
      */
 #if SOC_PMU_SUPPORTED
     int sleep_time_sw_adjustment = LIGHT_SLEEP_TIME_OVERHEAD_US + sleep_time_overhead_in + s_config.sleep_time_overhead_out;
-    int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(sleep_flags, s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
+    int sleep_time_hw_adjustment = pmu_sleep_calculate_hw_wait_time(sleep_flags, rtc_clk_slow_src_get(), s_config.rtc_clk_cal_period, s_config.fast_clk_cal_period);
     s_config.sleep_time_adjustment = sleep_time_sw_adjustment + sleep_time_hw_adjustment;
 #if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD
     int sleep_time_sw_mmu_table_restore = (sleep_flags & PMU_SLEEP_PD_TOP) ? SLEEP_MMU_TABLE_RETENTION_OVERHEAD_US : 0;
