@@ -89,6 +89,15 @@ config BT_A2DP_ENABLE
     help
         Advanced Audio Distribution Profile
 
+config BT_A2DP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for A2DP"
+    depends on BT_A2DP_ENABLE
+    default n
+    help
+        If enable, user shall register audio codec capability to A2DP and encode/decode
+        audio data in application layer. The internal codec in A2DP will be remove in
+        the future, it is recommend to use external codec for new design.
+
 config BT_AVRCP_ENABLED
     bool
     depends on BT_A2DP_ENABLE
@@ -183,6 +192,15 @@ choice BT_HFP_AUDIO_DATA_PATH
     config BT_HFP_AUDIO_DATA_PATH_HCI
         bool "HCI"
 endchoice
+
+config BT_HFP_USE_EXTERNAL_CODEC
+    bool "Use External Codec for HFP"
+    depends on BT_HFP_ENABLE && BT_HFP_AUDIO_DATA_PATH_HCI
+    default n
+    help
+        If enable, user shall encode/decode audio data in application layer. The internal
+        codec in HFP will be remove in the future, it is recommend to use external codec
+        for new design.
 
 config BT_HFP_WBS_ENABLE
     bool "Wide Band Speech"

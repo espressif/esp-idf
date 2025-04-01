@@ -339,6 +339,73 @@ void BTA_AgCiData(UINT16 handle)
         bta_sys_sendmsg(p_buf);
     }
 }
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioBuffAlloc
+**
+** Description      Allocate an audio buffer with specific size, reserve enough
+**                  space and offset for lower layer to send the buffer directly.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioBuffAlloc(UINT16 size, UINT8 **pp_buff, UINT8 **pp_data)
+{
+    /* reserve 1 byte at last, when the size is mSBC frame size (57), then we got a buffer that can hold 60 bytes data */
+    BT_HDR *p_buf= (BT_HDR *)osi_calloc(sizeof(BT_HDR) + BTA_AG_BUFF_OFFSET_MIN + BTA_AG_H2_HEADER_LEN + size + 1);
+    if (p_buf != NULL) {
+        /* mSBC offset is large than CVSD, so this is also work in CVSD air mode */
+        p_buf->offset = BTA_AG_BUFF_OFFSET_MIN + BTA_AG_H2_HEADER_LEN;
+        *pp_buff = (UINT8 *)p_buf;
+        *pp_data = (UINT8 *)(p_buf + 1) + p_buf->offset;
+    }
+}
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioBuffFree
+**
+** Description      Free an audio buffer.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioBuffFree(UINT8 *p_buf)
+{
+    osi_free(p_buf);
+}
+
+/*******************************************************************************
+**
+** Function         BTA_AgAudioDataSend
+**
+** Description      Send audio data to lower level, whether success or not, buffer
+**                  is consumed.
+**
+**
+** Returns          void
+**
+*******************************************************************************/
+void BTA_AgAudioDataSend(UINT16 handle, UINT8 *p_buff_start, UINT8 *p_data, UINT16 data_len)
+{
+    BT_HDR *p_buf = (BT_HDR *)p_buff_start;
+    tBTA_AG_SCB *p_scb;
+    assert(p_data - (UINT8 *)(p_buf + 1) >= 0);
+    if ((p_scb = bta_ag_scb_by_idx(handle)) != NULL) {
+        p_buf->event = BTA_AG_API_SCO_DATA_SEND_EVT;
+        p_buf->layer_specific = handle;
+        p_buf->offset = p_data - (UINT8 *)(p_buf + 1);
+        p_buf->len = data_len;
+        bta_sys_sendmsg(p_buf);
+    }
+    else {
+        osi_free(p_buf);
+    }
+}
+
 #endif /* #if (BTM_SCO_HCI_INCLUDED == TRUE) */
 
 #endif /* #if (BTA_AG_INCLUDED == TRUE)*/

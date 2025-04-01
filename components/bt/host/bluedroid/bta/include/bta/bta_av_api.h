@@ -256,18 +256,19 @@ typedef UINT8 tBTA_AV_GET_TYPE;
 #define BTA_AV_META_MSG_EVT     17      /* metadata messages */
 #define BTA_AV_REJECT_EVT       18      /* incoming connection rejected */
 #define BTA_AV_RC_FEAT_EVT      19      /* remote control channel peer supported features update */
-#define BTA_AV_MEDIA_SINK_CFG_EVT    20      /* command to configure codec */
+#define BTA_AV_MEDIA_CFG_EVT    20      /* command to configure codec */
 #define BTA_AV_MEDIA_DATA_EVT   21      /* sending data to Media Task */
 #define BTA_AV_SET_DELAY_VALUE_EVT   22      /* set delay reporting value */
 #define BTA_AV_GET_DELAY_VALUE_EVT   23      /* get delay reporting value */
 #define BTA_AV_SNK_PSC_CFG_EVT  24      /* Protocol service capabilities. */
+#define BTA_AV_SEP_REG_EVT      25      /* stream endpoint registered */
 
 /* still keep Cover Art event here if Cover Art feature not enabled */
-#define BTA_AV_CA_STATUS_EVT    25  /* Cover Art Client status event */
-#define BTA_AV_CA_DATA_EVT      26  /* Cover Art response body data */
+#define BTA_AV_CA_STATUS_EVT    26  /* Cover Art Client status event */
+#define BTA_AV_CA_DATA_EVT      27  /* Cover Art response body data */
 
 /* Max BTA event */
-#define BTA_AV_MAX_EVT          27
+#define BTA_AV_MAX_EVT          28
 
 
 /* function types for call-out functions */
@@ -341,6 +342,12 @@ typedef struct {
     tBTA_AVRC_CO_FUNCTS *p_bta_avrc_cos;
 } tBTA_AV_REGISTER;
 
+/* Event associated with BTA_AV_SEP_REG_EVT */
+typedef struct {
+    UINT8           seid;
+    tBTA_AV_STATUS  reg_state;
+} tBTA_AV_SEP_REG;
+
 /* data associated with BTA_AV_OPEN_EVT */
 #define BTA_AV_EDR_2MBPS        0x01
 #define BTA_AV_EDR_3MBPS        0x02
@@ -354,6 +361,7 @@ typedef struct {
     BOOLEAN         starting;
     tBTA_AV_EDR     edr;        /* 0, if peer device does not support EDR */
     UINT8           sep;        /*  sep type of peer device */
+    UINT16          mtu;
 } tBTA_AV_OPEN;
 
 /* data associated with BTA_AV_CLOSE_EVT */
@@ -519,6 +527,7 @@ typedef union {
     tBTA_AV_CHNL        chnl;
     tBTA_AV_ENABLE      enable;
     tBTA_AV_REGISTER    registr;
+    tBTA_AV_SEP_REG     sep_reg;
     tBTA_AV_OPEN        open;
     tBTA_AV_CLOSE       close;
     tBTA_AV_START       start;
@@ -656,6 +665,8 @@ void BTA_AvRegister(tBTA_AV_CHNL chnl, const char *p_service_name,
                     UINT8 app_id, tBTA_AV_DATA_CBACK  *p_data_cback,
                     tBTA_AV_CO_FUNCTS *bta_av_cos, tBTA_AVRC_CO_FUNCTS *bta_avrc_cos,
                     UINT8 tsep);
+
+void BTA_AvRegSEP(tBTA_AV_CHNL chnl, UINT8 idx, UINT8 tsep, tBTA_AV_CODEC codec_type, UINT8 *p_codec_info, tBTA_AV_DATA_CBACK *p_data_cback);
 
 /*******************************************************************************
 **

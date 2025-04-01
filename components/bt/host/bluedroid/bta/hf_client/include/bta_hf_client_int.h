@@ -44,6 +44,19 @@
 #define BTA_HF_CLIENT_COLLISION_TIMER  2411
 #endif
 
+#if (BTM_SCO_HCI_INCLUDED == TRUE )
+/* 1 (offset can not be 0) + HCI_SCO_PREAMBLE */
+#define BTA_HF_CLIENT_BUFF_OFFSET_MIN           (1 + HCI_SCO_PREAMBLE_SIZE)
+/* mSBC H2 header length */
+#define BTA_HF_CLIENT_H2_HEADER_LEN             2
+/* mSBC frame size not include H1/H2 header */
+#define BTA_HF_CLIENT_MSBC_FRAME_SIZE           57
+/* max user data len of sco packet type EV3 */
+#define BTA_HF_CLIENT_SCO_OUT_PKT_LEN_EV3       30
+/* max user data len of sco packet type 2-EV3 */
+#define BTA_HF_CLIENT_SCO_OUT_PKT_LEN_2EV3      60
+#endif
+
 enum {
     /* these events are handled by the state machine */
     BTA_HF_CLIENT_API_REGISTER_EVT = BTA_SYS_EVT_START(BTA_ID_HS),
@@ -65,6 +78,7 @@ enum {
     BTA_HF_CLIENT_SEND_AT_CMD_EVT,
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
     BTA_HF_CLIENT_CI_SCO_DATA_EVT,
+    BTA_HF_CLIENT_SCO_DATA_SEND_EVT,
     BTA_HF_CLIENT_PKT_NUMS_GET_EVT,
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
     BTA_HF_CLIENT_MAX_EVT,
@@ -138,7 +152,6 @@ typedef union {
     tBTA_HF_CLIENT_RFC             rfc;
     tBTA_HF_CLIENT_DATA_VAL        val;
     tBTA_HF_CLIENT_PKT_STAT_GET    pkt_stat;
-
 } tBTA_HF_CLIENT_DATA;
 
 /* type for each service control block */
@@ -158,6 +171,7 @@ typedef struct {
     UINT16              sco_idx;        /* SCO handle */
     UINT8               sco_state;      /* SCO state variable */
     BOOLEAN             sco_close_rfc;   /* TRUE if also close RFCOMM after SCO */
+    BT_HDR              *p_sco_data;    /* remaining SCO data of last sending operation */
     BOOLEAN             retry_with_sco_only;
     BOOLEAN             deregister;     /* TRUE if service shutting down */
     BOOLEAN             svc_conn;       /* set to TRUE when service level connection is up */
@@ -312,5 +326,8 @@ extern void bta_hf_client_send_at_cmd(tBTA_HF_CLIENT_DATA *p_data);
 #if (BTM_SCO_HCI_INCLUDED == TRUE )
 extern void bta_hf_client_pkt_stat_nums(tBTA_HF_CLIENT_DATA *p_data);
 extern void bta_hf_client_ci_sco_data(tBTA_HF_CLIENT_DATA *p_data);
+extern void bta_hf_client_h2_header(UINT16 *p_buf);
+extern void bta_hf_client_sco_data_send(tBTA_HF_CLIENT_DATA *p_data);
+extern void bta_hf_client_sco_data_free(tBTA_HF_CLIENT_DATA *p_data);
 #endif /* (BTM_SCO_HCI_INCLUDED == TRUE ) */
 #endif /* #if (BTA_HF_INCLUDED == TRUE) */

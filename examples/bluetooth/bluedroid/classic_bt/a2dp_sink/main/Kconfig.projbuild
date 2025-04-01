@@ -61,4 +61,11 @@ menu "A2DP Example Configuration"
         help
             This enables the AVRCP Cover Art feature in example and try to get cover art image from peer device.
 
+    config EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC
+        bool "Use External Codec Instead of Internal"
+        default n
+        select BT_A2DP_USE_EXTERNAL_CODEC
+        help
+            If enable, Bluedroid stack will not decode A2DP audio data, user need to decode it in application layer.
+
 endmenu

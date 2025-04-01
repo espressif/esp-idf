@@ -98,6 +98,7 @@ enum {
     /* these events are handled outside of the state machine */
     BTA_AV_API_ENABLE_EVT,
     BTA_AV_API_REGISTER_EVT,
+    BTA_AV_API_REG_SEP_EVT,
     BTA_AV_API_DEREGISTER_EVT,
     BTA_AV_API_DISCONNECT_EVT,
     BTA_AV_CI_SRC_DATA_READY_EVT,
@@ -195,6 +196,15 @@ typedef struct {
     tBTA_AVRC_CO_FUNCTS *bta_avrc_cos;
 } tBTA_AV_API_REG;
 
+/* data type for BTA_AV_API_REG_SEP_EVT */
+typedef struct {
+    BT_HDR              hdr;
+    UINT8               seid;
+    UINT8               tsep;
+    tBTA_AV_CODEC       codec_type;
+    UINT8               codec_info[AVDT_CODEC_SIZE];
+    tBTA_AV_DATA_CBACK *p_data_cback;
+} tBTA_AV_API_REG_SEP;
 
 enum {
     BTA_AV_RS_NONE,     /* straight API call */
@@ -425,6 +435,7 @@ typedef union {
     BT_HDR                  hdr;
     tBTA_AV_API_ENABLE      api_enable;
     tBTA_AV_API_REG         api_reg;
+    tBTA_AV_API_REG_SEP     api_reg_sep;
     tBTA_AV_API_OPEN        api_open;
     tBTA_AV_API_STOP        api_stop;
     tBTA_AV_API_DISCNT      api_discnt;

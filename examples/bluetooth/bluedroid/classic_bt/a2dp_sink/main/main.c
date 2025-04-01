@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -164,8 +164,23 @@ static void bt_av_hdl_stack_evt(uint16_t event, void *p_param)
 
         assert(esp_a2d_sink_init() == ESP_OK);
         esp_a2d_register_callback(&bt_app_a2d_cb);
-        esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
 
+#if CONFIG_EXAMPLE_A2DP_SINK_USE_EXTERNAL_CODEC == FALSE
+        esp_a2d_sink_register_data_callback(bt_app_a2d_data_cb);
+#else
+        esp_a2d_mcc_t mcc = {0};
+        mcc.type = ESP_A2D_MCT_SBC;
+        mcc.cie.sbc_info.samp_freq = 0xf;
+        mcc.cie.sbc_info.ch_mode = 0xf;
+        mcc.cie.sbc_info.block_len = 0xf;
+        mcc.cie.sbc_info.num_subbands = 0x3;
+        mcc.cie.sbc_info.alloc_mthd = 0x3;
+        mcc.cie.sbc_info.max_bitpool = 250;
+        mcc.cie.sbc_info.min_bitpool = 2;
+        /* register stream end point, only support mSBC currently */
+        esp_a2d_sink_register_stream_endpoint(0, &mcc);
+        esp_a2d_sink_register_audio_data_callback(bt_app_a2d_audio_data_cb);
+#endif
         /* Get the default value of the delay value */
         esp_a2d_sink_get_delay_value();
         /* Get local device name */
