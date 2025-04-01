@@ -229,8 +229,10 @@ FORCE_INLINE_ATTR void usb_serial_jtag_ll_phy_select(unsigned int phy_idx)
     switch (phy_idx) {
     case 0:
         LP_SYS.usb_ctrl.sw_usb_phy_sel = false;
+        break;
     case 1:
         LP_SYS.usb_ctrl.sw_usb_phy_sel = true;
+        break;
     default:
         break;
     }
