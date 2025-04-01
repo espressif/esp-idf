@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,21 +164,6 @@ esp_err_t esp_wifi_get_tx_tb_statistics(esp_wifi_aci_t aci, esp_test_tx_tb_stati
 *  - others: failed
 */
 esp_err_t esp_wifi_softap_add_color_change_announcement(uint8_t color);
-
-/**
-* @brief Add bss max idle ie
-*
-* @attention This API should be called after esp_wifi_start().
-*
-* @param[in] bss_max_idle_enable enable bss max idle
-* @param[in] bss_max_idle_period_secs bss max idle period, unit seconds
-* @param[in] protected_keep_alive using protected/unprotected frame to keep alive
-*
-* @return
-*  - ESP_OK: succeed
-*  - others: failed
-*/
-esp_err_t esp_wifi_softap_set_bss_max_idle(bool bss_max_idle_enable, uint16_t bss_max_idle_period_secs, bool protected_keep_alive);
 
 /**
 * @brief Reset MU EDCA Timer
