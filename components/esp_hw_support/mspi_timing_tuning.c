@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,8 +164,17 @@ static void find_max_consecutive_success_points(uint8_t *array, uint32_t size, u
         i++;
     }
 
-    *out_length = match_num > max ? match_num : max;
-    *out_end_index = match_num == size ? size : end;
+    /**
+     * this is to deal with the case when the last points are consecutive 1, e.g.
+     * {1, 0, 0, 1, 1, 1, 1, 1, 1}
+     */
+    if (match_num > max) {
+        max = match_num;
+        end = i - 1;
+    }
+
+    *out_length = max;
+    *out_end_index = end;
 }
 
 #if (MSPI_TIMING_FLASH_DTR_MODE || MSPI_TIMING_PSRAM_DTR_MODE) && (MSPI_TIMING_CORE_CLOCK_MHZ == 240)
