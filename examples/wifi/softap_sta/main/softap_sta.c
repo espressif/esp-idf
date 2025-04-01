@@ -31,6 +31,14 @@
 #include "lwip/err.h"
 #include "lwip/sys.h"
 
+
+/*
+ * Example using ESP-IDF with APSTA + scan
+ * 1. After connecting to a STA and obtaining an IP (IP_EVENT_STA_GOT_IP),
+ *    scan for SSIDs and sort them by RSSI (from the strongest signal to lowest) and print them.
+ */
+
+
 /* The examples use WiFi configuration that you can set via project configuration menu.
 
    If you'd rather not, just change the below entries to strings with
