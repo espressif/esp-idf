@@ -208,6 +208,17 @@ static void btu_ble_cis_disconnected(UINT16 handle, UINT8 reason);
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+static void btu_ble_cte_connless_iq_report_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+static void btu_ble_cte_conn_iq_report_evt(UINT8 *p);
+static void btu_ble_cte_req_failed_evt(UINT8 *p);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 #if (BLE_42_ADV_EN == TRUE)
 extern osi_sem_t adv_enable_sem;
 extern osi_sem_t adv_data_sem;
@@ -536,6 +547,23 @@ void btu_hcif_process_event (UNUSED_ATTR UINT8 controller_id, BT_HDR *p_msg)
             break;
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+        case HCI_BLE_CONNLESS_IQ_REPORT_EVT:
+            btu_ble_cte_connless_iq_report_evt(p);
+            break;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+        case HCI_BLE_CONN_IQ_REPORT_EVT:
+            btu_ble_cte_conn_iq_report_evt(p);
+            break;
+        case HCI_BLE_CTE_REQUEST_FAILED_EVT:
+            btu_ble_cte_req_failed_evt(p);
+            break;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
         }
         break;
 #endif /* BLE_INCLUDED */
@@ -1325,6 +1353,11 @@ static void btu_hcif_hdl_command_complete (UINT16 opcode, UINT8 *p, UINT16 evt_l
 #endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+    case HCI_BLE_READ_ANT_INFOR:
+        btm_ble_cte_read_ant_infor_complete(p);
+        break;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 #endif /* (BLE_INCLUDED == TRUE) */
 
     default: {
@@ -2872,6 +2905,86 @@ static void btu_ble_biginfo_adv_report_evt(UINT8 *p)
 }
 #endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+static void btu_ble_cte_connless_iq_report_evt(UINT8 *p)
+{
+    tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT connless_iq_rpt = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(connless_iq_rpt.sync_handle, p);
+    STREAM_TO_UINT8(connless_iq_rpt.channel_idx, p);
+    STREAM_TO_UINT16(connless_iq_rpt.rssi, p);
+    STREAM_TO_UINT8(connless_iq_rpt.rssi_ant_id, p);
+    STREAM_TO_UINT8(connless_iq_rpt.cte_type, p);
+    STREAM_TO_UINT8(connless_iq_rpt.slot_dur, p);
+    STREAM_TO_UINT8(connless_iq_rpt.pkt_status, p);
+    STREAM_TO_UINT16(connless_iq_rpt.periodic_evt_counter, p);
+    STREAM_TO_UINT8(connless_iq_rpt.sample_count, p);
+
+    for (uint8_t i = 0; i < connless_iq_rpt.sample_count; i++)
+    {
+        STREAM_TO_UINT8(connless_iq_rpt.i_sample[i], p);
+        STREAM_TO_UINT8(connless_iq_rpt.q_sample[i], p);
+    }
+
+    btm_ble_connless_iq_report_evt(&connless_iq_rpt);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+static void btu_ble_cte_conn_iq_report_evt(UINT8 *p)
+{
+    tBTM_BLE_CTE_CONN_IQ_REPORT_EVT conn_iq_rpt = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT16(conn_iq_rpt.conn_handle, p);
+    STREAM_TO_UINT8(conn_iq_rpt.rx_phy, p);
+    STREAM_TO_UINT8(conn_iq_rpt.data_channel_idx, p);
+    STREAM_TO_UINT16(conn_iq_rpt.rssi, p);
+    STREAM_TO_UINT8(conn_iq_rpt.rssi_ant_id, p);
+    STREAM_TO_UINT8(conn_iq_rpt.cte_type, p);
+    STREAM_TO_UINT8(conn_iq_rpt.slot_dur, p);
+    STREAM_TO_UINT8(conn_iq_rpt.pkt_status, p);
+    STREAM_TO_UINT16(conn_iq_rpt.conn_evt_counter, p);
+    STREAM_TO_UINT8(conn_iq_rpt.sample_count, p);
+
+    for (uint8_t i = 0; i < conn_iq_rpt.sample_count; i++)
+    {
+        STREAM_TO_UINT8(conn_iq_rpt.i_sample[i], p);
+        STREAM_TO_UINT8(conn_iq_rpt.q_sample[i], p);
+    }
+
+    btm_ble_conn_iq_report_evt(&conn_iq_rpt);
+}
+
+static void btu_ble_cte_req_failed_evt(UINT8 *p)
+{
+    tBTM_BLE_CTE_REQ_FAILED_EVT cte_req_failed = {0};
+
+    if (!p) {
+        HCI_TRACE_ERROR("%s, Invalid params.", __func__);
+        return;
+    }
+
+    STREAM_TO_UINT8(cte_req_failed.status, p);
+    STREAM_TO_UINT16(cte_req_failed.conn_handle, p);
+
+    btm_ble_cte_req_failed_evt(&cte_req_failed);
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 /**********************************************
 ** End of BLE Events Handler
 ***********************************************/

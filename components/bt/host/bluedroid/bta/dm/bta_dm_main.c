@@ -316,6 +316,20 @@ const tBTA_DM_ACTION bta_dm_action[BTA_DM_MAX_EVT] = {
     bta_dm_ble_discon_cis,            /* BTA_DM_API_DISCON_CIS_EVT */
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    bta_dm_ble_set_cte_trans_params, /* BTA_DM_API_CTE_SET_TRANS_PARAMS */
+    bta_dm_ble_set_cte_trans_enable, /* BTA_DM_API_CTE_SET_TRANS_ENABLE */
+    bta_dm_ble_set_iq_sampling_en, /* BTA_DM_API_CTE_SET_IQ_SAMPLING_EN */
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    bta_dm_ble_set_conn_cte_recv_params, /* BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS */
+    bta_dm_ble_set_conn_trans_params, /* BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS */
+    bta_dm_ble_set_conn_cte_req_en, /* BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN */
+    bta_dm_ble_set_conn_cte_rsp_en, /* BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN */
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    bta_dm_ble_read_cte_ant_infor, /* BTA_DM_API_CTE_READ_ANTENNA_INFOR */
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 };
 
 

@@ -1106,6 +1106,25 @@ typedef UINT8 tBTM_BLE_5_GAP_EVENT;
 typedef UINT8 tBTM_BLE_ISO_EVENT;
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#define    BTM_BLE_CTE_SET_TRANS_PARAMS_EVT                        1
+#define    BTM_BLE_CTE_SET_TRANS_ENABLE_EVT                        2
+#define    BTM_BLE_CTE_SET_IQ_SAMP_ENABLE_EVT                      3
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define    BTM_BLE_CTE_SET_CONN_RECV_PARAMS_EVT                    4
+#define    BTM_BLE_CTE_SET_CONN_TRANS_PARAMS_EVT                   5
+#define    BTM_BLE_CTE_SET_CONN_REQ_ENABLE_EVT                     6
+#define    BTM_BLE_CTE_SET_CONN_RSP_ENABLE_EVT                     7
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+#define    BTM_BLE_CTE_READ_ANT_INFOR_EVT                          8
+#define    BTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT                      9
+#define    BTM_BLE_CTE_CONN_IQ_REPORT_EVT                          10
+#define    BTM_BLE_CTE_REQUEST_FAILED_EVT                          11
+typedef UINT8 tBTM_BLE_CTE_EVENT;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
 #define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
 #define BTM_BLE_EXT_ADV_DATA_INCOMPLETE        0x01
@@ -1557,6 +1576,108 @@ typedef union {
 
 typedef void (*tBTM_BLE_ISO_CBACK)(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *params);
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+} __attribute__((packed)) tBTM_BLE_CTE_SET_TRANS_EN_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 sync_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_IQ_SAMP_EN_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT8 supported_switching_sampling_rates;
+    UINT8 num_ant;
+    UINT8 max_switching_pattern_len;
+    UINT8 max_cte_len;
+} __attribute__((packed)) tBTM_BLE_CTE_READ_ANT_INFOR_CMPL;
+
+typedef struct {
+    UINT16 sync_handle;
+    UINT8 channel_idx;
+    INT16 rssi;
+    UINT8 rssi_ant_id;
+    UINT8 cte_type;
+    UINT8 slot_dur;
+    UINT8 pkt_status;
+    UINT16 periodic_evt_counter;
+    UINT8 sample_count;
+    UINT8 i_sample[0x52];
+    UINT8 q_sample[0x52];
+} __attribute__((packed)) tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT;
+
+typedef struct {
+    UINT16 conn_handle;
+    UINT8 rx_phy;
+    UINT8 data_channel_idx;
+    INT16 rssi;
+    UINT8 rssi_ant_id;
+    UINT8 cte_type;
+    UINT8 slot_dur;
+    UINT8 pkt_status;
+    UINT16 conn_evt_counter;
+    UINT8 sample_count;
+    UINT8 i_sample[0x52];
+    UINT8 q_sample[0x52];
+} __attribute__((packed)) tBTM_BLE_CTE_CONN_IQ_REPORT_EVT;
+
+typedef struct {
+    UINT8  status;
+    UINT16 conn_handle;
+} __attribute__((packed)) tBTM_BLE_CTE_REQ_FAILED_EVT;
+
+typedef union {
+    UINT8 status;
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTM_BLE_CTE_SET_TRANS_PARAMS_CMPL   cte_trans_params_cmpl;
+    tBTM_BLE_CTE_SET_TRANS_EN_CMPL       cte_trans_en_cmpl;
+    tBTM_BLE_CTE_IQ_SAMP_EN_CMPL         cte_iq_samp_en_cmpl;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_CONN_RECV_PARAMS_CMPL   cte_recv_params_cmpl;
+    tBTM_BLE_CTE_CONN_TRANS_PARAMS_CMPL  cte_conn_trans_params_cmpl;
+    tBTM_BLE_CTE_CONN_REQ_ENABLE_CMPL    cte_conn_req_en_cmpl;
+    tBTM_BLE_CTE_CONN_RSP_ENABLE_CMPL    cte_conn_rsp_en_cmpl;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_READ_ANT_INFOR_CMPL     cte_read_ant_infor_cmpl;
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTM_BLE_CTE_CONNLESS_IQ_REPORT_EVT  cte_connless_iq_rpt;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTM_BLE_CTE_CONN_IQ_REPORT_EVT      cte_conn_iq_rpt;
+    tBTM_BLE_CTE_REQ_FAILED_EVT          cte_req_failed;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+} tBTM_BLE_CTE_CB_PARAMS;
+
+typedef void (*tBTM_BLE_CTE_CBACK)(tBTM_BLE_CTE_EVENT event, tBTM_BLE_CTE_CB_PARAMS *params);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 
 typedef union {
     UINT8 status;
@@ -3114,4 +3235,25 @@ tBTM_STATUS BTM_BleRejectCisReq(uint16_t cis_handle, uint8_t reason);
 tBTM_STATUS BTM_BleDisconCis(uint16_t cis_handle, uint8_t reason);
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+void BTM_BleCteRegisterCallback(tBTM_BLE_CTE_CBACK cb);
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+tBTM_STATUS BTM_BleSetCteTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type, uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids);
+tBTM_STATUS BTM_BleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t cte_en);
+tBTM_STATUS BTM_BleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                                    uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *ant_ids);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+tBTM_STATUS BTM_BleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                            uint8_t switching_pattern_len, uint8_t *ant_ids);
+tBTM_STATUS BTM_BleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_types, uint8_t switching_pattern_len, uint8_t *ant_ids);
+tBTM_STATUS BTM_BleCteSetConnectionRequestEnable(uint16_t conn_handle, uint8_t enable, uint16_t cte_req_int,
+                                            uint8_t req_cte_len, uint8_t req_cte_type);
+tBTM_STATUS BTM_BleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enable);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+tBTM_STATUS BTM_BleCteReadAntInfor(void);
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 #endif

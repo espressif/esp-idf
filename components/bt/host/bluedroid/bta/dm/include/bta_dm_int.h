@@ -307,6 +307,20 @@ enum {
     BTA_DM_API_DISCON_CIS_EVT,
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    BTA_DM_API_CTE_SET_TRANS_PARAMS,
+    BTA_DM_API_CTE_SET_TRANS_ENABLE,
+    BTA_DM_API_CTE_SET_IQ_SAMPLING_EN,
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS,
+    BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS,
+    BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN,
+    BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN,
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    BTA_DM_API_CTE_READ_ANTENNA_INFOR,
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
     BTA_DM_MAX_EVT
 };
 
@@ -1449,6 +1463,75 @@ typedef struct {
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
+#if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+typedef struct {
+    BT_HDR  hdr;
+    UINT8 adv_handle;
+    UINT8 cte_len;
+    UINT8 cte_type;
+    UINT8 cte_count;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_SET_TRANS_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT8 adv_handle;
+    UINT8 cte_enable;
+} tBTA_DM_BLE_CTE_SET_TRANS_ENABLE;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 sync_handle;
+    UINT8 sampling_en;
+    UINT8 slot_dur;
+    UINT8 max_sampled_ctes;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_IQ_SAMP_EN;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 sampling_en;
+    UINT8 slot_dur;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CTE_RECV_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 cte_types;
+    UINT8 switching_pattern_len;
+    UINT8 *antenna_ids;
+} tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 enable;
+    UINT16 cte_req_interval;
+    UINT8 req_cte_len;
+    UINT8 req_cte_Type;
+} tBTA_DM_BLE_CONN_CTE_REQ_EN;
+
+typedef struct {
+    BT_HDR  hdr;
+    UINT16 conn_handle;
+    UINT8 enable;
+} tBTA_DM_BLE_CONN_CTE_RSP_EN;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+typedef struct {
+    BT_HDR  hdr;
+} tBTA_DM_BLE_READ_ANT_INFOR;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 /* union of all data types */
 typedef union {
     /* event buffer header */
@@ -1683,6 +1766,21 @@ typedef union {
     tBTA_DM_API_DISCON_CIS_PARAM        discon_cis;
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+    tBTA_DM_BLE_CTE_SET_TRANS_PARAMS   set_cte_trans_params;
+    tBTA_DM_BLE_CTE_SET_TRANS_ENABLE   set_trans_en;
+    tBTA_DM_BLE_CTE_IQ_SAMP_EN         iq_samp_en;
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTA_DM_BLE_CTE_RECV_PARAMS        recv_params;
+    tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS  conn_trans_params;
+    tBTA_DM_BLE_CONN_CTE_REQ_EN        conn_req_en;
+    tBTA_DM_BLE_CONN_CTE_RSP_EN        conn_rsp_en;
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+    tBTA_DM_BLE_READ_ANT_INFOR         read_ant_infor;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 } tBTA_DM_MSG;
 
 
@@ -2318,4 +2416,22 @@ void bta_dm_ble_reject_cis_req(tBTA_DM_MSG *p_data);
 void bta_dm_ble_discon_cis(tBTA_DM_MSG *p_data);
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void bta_dm_ble_set_cte_trans_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_cte_trans_enable(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_iq_sampling_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void bta_dm_ble_set_conn_cte_recv_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_trans_params(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_cte_req_en(tBTA_DM_MSG *p_data);
+void bta_dm_ble_set_conn_cte_rsp_en(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+
+void bta_dm_ble_read_cte_ant_infor(tBTA_DM_MSG *p_data);
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+
 #endif /* BTA_DM_INT_H */

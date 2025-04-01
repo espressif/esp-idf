@@ -3926,4 +3926,184 @@ void BTA_DmBleIsoDisconCis(uint16_t cis_handle, uint8_t reason)
 #endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
 
 #endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
+#if (BLE_FEAT_CTE_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+void BTA_DmBleCteSetConnectionlessTransParams(uint8_t adv_handle, uint8_t cte_len, uint8_t cte_type,
+                                                uint8_t cte_count, uint8_t switching_pattern_len, uint8_t *antenna_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_SET_TRANS_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_SET_TRANS_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_SET_TRANS_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_SET_TRANS_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_TRANS_PARAMS;
+
+        p_buf->adv_handle = adv_handle;
+        p_buf->cte_len = cte_len;
+        p_buf->cte_type = cte_type;
+        p_buf->cte_count = cte_count;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len) {
+            memcpy(p_buf->antenna_ids, antenna_ids, switching_pattern_len);
+        }
+        //start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionlessTransEnable(uint8_t adv_handle, uint8_t cte_en)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_SET_TRANS_ENABLE *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_SET_TRANS_ENABLE *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_SET_TRANS_ENABLE))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_SET_TRANS_ENABLE));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_TRANS_ENABLE;
+
+        p_buf->adv_handle = adv_handle;
+        p_buf->cte_enable = cte_en;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionlessIqSamplingEnable(uint16_t sync_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                                    uint8_t max_sampled_ctes, uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_IQ_SAMP_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_IQ_SAMP_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_IQ_SAMP_EN) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_IQ_SAMP_EN) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_IQ_SAMPLING_EN;
+
+        p_buf->sync_handle = sync_handle;
+        p_buf->sampling_en = sampling_en;
+        p_buf->slot_dur = slot_dur;
+        p_buf->max_sampled_ctes = max_sampled_ctes;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTIONLESS_EN == TRUE)
+
+#if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteSetConnectionReceiveParams(uint16_t conn_handle, uint8_t sampling_en, uint8_t slot_dur,
+                                            uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CTE_RECV_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CTE_RECV_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CTE_RECV_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CTE_RECV_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_RECV_PARAMS;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->sampling_en = sampling_en;
+        p_buf->slot_dur = slot_dur;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionTransParams(uint16_t conn_handle, uint8_t cte_types, uint8_t switching_pattern_len, uint8_t *ant_ids)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS) + switching_pattern_len)) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_TRANS_PARAMS) + switching_pattern_len);
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_TRANS_PARAMS;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->cte_types = cte_types;
+        p_buf->switching_pattern_len = switching_pattern_len;
+        p_buf->antenna_ids = (switching_pattern_len != 0) ? (UINT8 *)(p_buf + 1) : NULL;
+        if (switching_pattern_len) {
+            memcpy(p_buf->antenna_ids, ant_ids, switching_pattern_len);
+        }
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionRequestEnable(uint16_t conn_handle, uint8_t enable, uint16_t cte_req_interval,
+                                            uint8_t req_cte_len, uint8_t req_cte_Type)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_REQ_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_REQ_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_REQ_EN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_REQ_EN));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_REQUEST_EN;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->enable = enable;
+        p_buf->cte_req_interval = cte_req_interval;
+        p_buf->req_cte_len = req_cte_len;
+        p_buf->req_cte_Type = req_cte_Type;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+void BTA_DmBleCteSetConnectionRspEnable(uint16_t conn_handle, uint8_t enable)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_CONN_CTE_RSP_EN *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_CONN_CTE_RSP_EN *) osi_malloc(sizeof(tBTA_DM_BLE_CONN_CTE_RSP_EN))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_CONN_CTE_RSP_EN));
+        p_buf->hdr.event = BTA_DM_API_CTE_SET_CONN_CTE_RESPONSE_EN;
+
+        p_buf->conn_handle = conn_handle;
+        p_buf->enable = enable;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+#endif // #if (BLE_FEAT_CTE_CONNECTION_EN == TRUE)
+void BTA_DmBleCteReadAntInfor(void)
+{
+    APPL_TRACE_API("%s", __func__);
+
+    tBTA_DM_BLE_READ_ANT_INFOR *p_buf;
+    if ((p_buf = (tBTA_DM_BLE_READ_ANT_INFOR *) osi_malloc(sizeof(tBTA_DM_BLE_READ_ANT_INFOR))) != NULL) {
+        memset(p_buf, 0, sizeof(tBTA_DM_BLE_READ_ANT_INFOR));
+        p_buf->hdr.event = BTA_DM_API_CTE_READ_ANTENNA_INFOR;
+        // start sent the msg to the bta system control module
+        bta_sys_sendmsg(p_buf);
+    } else {
+        APPL_TRACE_ERROR("%s malloc failed", __func__);
+    }
+}
+
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
 #endif
