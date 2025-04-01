@@ -10,6 +10,6 @@
 #include "bt_common.h"
 
 void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mode, UINT8 status);
-void btm_acl_disconnected(UINT16 handle, UINT8 reason);
+BOOLEAN btm_acl_disconnected(UINT16 handle, UINT8 reason);
 
 #endif /* ACL_HCI_LINK_INTERFACE_H */

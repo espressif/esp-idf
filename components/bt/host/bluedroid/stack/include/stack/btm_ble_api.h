@@ -1072,8 +1072,40 @@ typedef void (tBTM_SET_VENDOR_EVT_MASK_CBACK) (tBTM_STATUS status);
 #define    BTM_BLE_GAP_PERIODIC_ADV_SYNC_TRANS_RECV_EVT            39
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 #define    BTM_BLE_GAP_SET_PRIVACY_MODE_COMPLETE_EVT               40
-#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               41
+#define    BTM_BLE_5_GAP_UNKNOWN_EVT                               50
 typedef UINT8 tBTM_BLE_5_GAP_EVENT;
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#define    BTM_BLE_ISO_BIG_CREATE_COMPLETE_EVT                     1
+#define    BTM_BLE_ISO_BIG_TERMINATE_COMPLETE_EVT                  2
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#define    BTM_BLE_ISO_BIG_SYNC_ESTABLISHED_EVT                    3
+#define    BTM_BLE_ISO_BIG_SYNC_LOST_EVT                           4
+#define    BTM_BLE_ISO_BIG_SYNC_TERMINATE_COMPLETE_EVT             5
+#define    BTM_BLE_ISO_BIGINFO_ADV_REPORT_EVT                      6
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+#define    BTM_BLE_ISO_DATA_PATH_UPFATE_EVT                        7
+#define    BTM_BLE_ISO_SET_HOST_FEATURE_EVT                        8
+#define    BTM_BLE_ISO_READ_TX_SYNC_EVT                            9
+#define    BTM_BLE_ISO_READ_LINK_QUALITY_EVT                       10
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#define    BTM_BLE_ISO_SET_CIG_PARAMS_EVT                          11
+#define    BTM_BLE_ISO_CREATE_CIS_EVT                              12
+#define    BTM_BLE_ISO_REMOVE_CIG_EVT                              13
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#define    BTM_BLE_ISO_ACCEPT_CIS_REQ_EVT                          14
+#define    BTM_BLE_ISO_REJECT_CIS_REQ_EVT                          15
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#define    BTM_BLE_ISO_CIS_ESTABLISHED_EVT                         16
+#define    BTM_BLE_ISO_CIS_REQUEST_EVT                             17
+#define    BTM_BLE_ISO_CIS_DISCONNECTED_EVT                        18
+#define    BTM_BLE_ISO_UNKNOWN_EVT                                 19
+typedef UINT8 tBTM_BLE_ISO_EVENT;
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
 
 #define BTM_BLE_EXT_ADV_DATA_COMPLETE          0x00
 #define BTM_BLE_EXT_ADV_DATA_INCOMPLETE        0x01
@@ -1327,6 +1359,204 @@ typedef struct {
     UINT8 adv_clk_accuracy;
 } tBTM_BLE_PERIOD_ADV_SYNC_TRANS_RECV;
 #endif //#if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
+
+#if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT32 big_sync_delay;
+    UINT32 transport_latency;
+    UINT8 phy;
+    UINT8 nse;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT16 iso_interval;
+    UINT8 num_bis;
+    UINT16 bis_handle[BLE_ISO_BIS_MAX_COUNT];
+} tBTM_BLE_BIG_CREATE_CMPL;
+
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT8 reason;
+} tBTM_BLE_BIG_TERMINATE_CMPL;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 big_handle;
+    UINT32 transport_latency_big;
+    UINT8 nse;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT16 iso_interval;
+    uint8_t num_bis;
+    uint16_t bis_handle[BLE_ISO_BIS_MAX_COUNT];
+} tBTM_BLE_BIG_SYNC_ESTAB_CMPL;
+
+typedef struct {
+    UINT8 big_handle;
+    UINT8 reason;
+} tBTM_BLE_BIG_SYNC_LOST_EVT;
+
+typedef struct {
+    UINT16 sync_handle;
+    UINT8 num_bis;
+    UINT8 nse;
+    UINT16 iso_interval;
+    UINT8 bn;
+    UINT8 pto;
+    UINT8 irc;
+    UINT16 max_pdu;
+    UINT32 sdu_interval;
+    UINT32 max_sdu;
+    UINT8 phy;
+    UINT8 framing;
+    UINT8 encryption;
+} tBTM_BLE_BIGINFO_ADV_REPORT_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 big_hdl;
+} tBTM_BLE_BIG_SYNC_TERMINATE_EVT;
+
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 conn_handle;
+    UINT32 cig_sync_delay;
+    UINT32 cis_sync_delay;
+    UINT32 trans_lat_c_to_p;
+    UINT32 trans_lat_p_to_c;
+    UINT8 phy_c_to_p;
+    UINT8 phy_p_to_c;
+    UINT8 nse;
+    UINT8 bn_c_to_p;
+    UINT8 bn_p_to_c;
+    UINT8 ft_c_to_p;
+    UINT8 ft_p_to_c;
+    UINT16 max_pdu_c_to_p;
+    UINT16 max_pdu_p_to_c;
+    UINT16 iso_interval;
+#if (BLE_FEAT_ISO_60_EN == TRUE)
+    UINT32 sub_interval;
+    UINT16 max_sdu_c_to_p;
+    UINT16 max_sdu_p_to_c;
+    UINT32 sdu_int_c_to_p;
+    UINT32 sdu_int_p_to_c;
+    UINT8 framing;
+#endif // #if (BLE_FEAT_ISO_60_EN == TRUE)
+} tBTM_BLE_CIS_ESTABLISHED_CMPL;
+
+typedef struct {
+    UINT16 cis_handle;
+    UINT8 reason;
+} tBTM_BLE_CIS_DISCON_CMPL;
+
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT16 cis_handle;
+} tBTM_BLE_ISO_REJECT_CIS_REQ_EVT;
+
+
+typedef struct {
+    UINT16 acl_handle;
+    UINT16 cis_handle;
+    UINT8 cig_id;
+    UINT8 cis_id;
+} tBTM_BLE_CIS_REQUEST_CMPL;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+
+typedef enum {
+    BTM_BLE_ISO_DATA_PATH_UNKNOWN = 0,
+    BTM_BLE_ISO_DATA_PATH_SETUP   = 1,
+    BTM_BLE_ISO_DATA_PATH_REMOVE  = 2,
+    BTM_BLE_ISO_DATA_PATH_MAX,
+} tBTM_BLE_ISO_DATA_PATH_UPDATE_TYPE;
+
+typedef struct {
+    UINT8 status;
+    tBTM_BLE_ISO_DATA_PATH_UPDATE_TYPE op_type;
+    UINT16 conn_hdl;
+} tBTM_BLE_ISO_DATA_PATH_UPDATE_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_hdl;
+    UINT16 pkt_seq_num;
+    UINT32 tx_time_stamp;
+    UINT32 time_offset;
+} tBTM_BLE_ISO_READ_TX_SYNC_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT16 conn_hdl;
+    UINT32 tx_unacked_pkts;
+    UINT32 tx_flushed_pkts;
+    UINT32 tx_last_subevt_pkts;
+    UINT32 retransmitted_pkts;
+    UINT32 crc_error_pkts;
+    UINT32 rx_unreceived_pkts;
+    UINT32 duplicate_pkts;
+} tBTM_BLE_ISO_READ_LINK_QUALITY_EVT;
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+typedef struct {
+    UINT8 status;
+    UINT8 cig_id;
+    UINT8 cis_count;
+    UINT16 conn_hdl[BLE_ISO_CIS_MAX_COUNT];
+} tBTM_BLE_ISO_SET_CIG_PARAMS_EVT;
+
+typedef struct {
+    UINT8 status;
+    UINT8 cig_id;
+} tBTM_BLE_ISO_REMOVE_CIG_EVT;
+
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+
+typedef union {
+    UINT8 status;
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+    tBTM_BLE_BIG_CREATE_CMPL           btm_big_cmpl;
+    tBTM_BLE_BIG_TERMINATE_CMPL        btm_big_term;
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTM_BLE_BIG_SYNC_ESTAB_CMPL       btm_big_sync_estab;
+    tBTM_BLE_BIG_SYNC_LOST_EVT         btm_big_sync_lost;
+    tBTM_BLE_BIGINFO_ADV_REPORT_EVT    btm_biginfo_report;
+    tBTM_BLE_BIG_SYNC_TERMINATE_EVT    btm_big_sync_ter;
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+    tBTM_BLE_ISO_DATA_PATH_UPDATE_EVT  btm_data_path_update;
+    tBTM_BLE_ISO_READ_TX_SYNC_EVT      btm_read_tx_sync;
+    tBTM_BLE_ISO_READ_LINK_QUALITY_EVT btm_read_link_quality;
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+    tBTM_BLE_ISO_SET_CIG_PARAMS_EVT    btm_set_cig_params;
+    tBTM_BLE_ISO_REMOVE_CIG_EVT        btm_remove_cig;
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+    tBTM_BLE_ISO_REJECT_CIS_REQ_EVT    btm_reject_cis_req;
+    tBTM_BLE_CIS_REQUEST_CMPL          btm_cis_request_evt;
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+    tBTM_BLE_CIS_ESTABLISHED_CMPL      btm_cis_established_evt;
+    tBTM_BLE_CIS_DISCON_CMPL           btm_cis_disconnectd_evt;
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+} tBTM_BLE_ISO_CB_PARAMS;
+
+typedef void (*tBTM_BLE_ISO_CBACK)(tBTM_BLE_ISO_EVENT event, tBTM_BLE_ISO_CB_PARAMS *params);
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 
 typedef union {
     UINT8 status;
@@ -2834,4 +3064,54 @@ void BTM_BlePeriodicAdvSetInfoTrans(BD_ADDR bd_addr, UINT16 service_data, UINT8 
 void BTM_BleSetPeriodicAdvSyncTransParams(BD_ADDR bd_addr, UINT8 mode, UINT16 skip, UINT16 sync_timeout, UINT8 cte_type);
 #endif // #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+void BTM_BleIsoRegisterCallback(tBTM_BLE_ISO_CBACK cb);
+#if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+tBTM_STATUS BTM_BleBigCreate(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                            uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
+                            uint8_t rtn, uint8_t phy, uint8_t packing, uint8_t framing,
+                            uint8_t encryption, uint8_t *broadcast_code);
+
+tBTM_STATUS BTM_BleBigCreateTest(uint8_t big_handle, uint8_t adv_handle, uint8_t num_bis,
+                        uint32_t sdu_interval, uint16_t iso_interval, uint8_t nse,
+                        uint16_t max_sdu, uint16_t max_pdu, uint8_t phy,
+                        uint8_t packing, uint8_t framing, uint8_t bn, uint8_t irc,
+                        uint8_t pto, uint8_t encryption, uint8_t *broadcast_code);
+
+tBTM_STATUS BTM_BleBigTerminate(UINT8 big_handle, UINT8 reason);
+#endif // #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
+#if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+tBTM_STATUS BTM_BleBigSyncCreate(uint8_t big_handle, uint16_t sync_handle,
+                                uint8_t encryption, uint8_t *bc_code,
+                                uint8_t mse, uint16_t big_sync_timeout,
+                                uint8_t num_bis, uint8_t *bis);
+
+tBTM_STATUS BTM_BleBigSyncTerminate(uint8_t big_handle);
+#endif // #if (BLE_FEAT_ISO_BIG_SYNCER_EN == TRUE)
+tBTM_STATUS BTM_BleIsoSetDataPath(uint16_t conn_handle, uint8_t data_path_dir, uint8_t data_path_id, uint8_t coding_fmt,
+                                    uint16_t company_id, uint16_t vs_codec_id, uint32_t controller_delay, uint8_t codec_len,
+                                    uint8_t *codec_cfg);
+tBTM_STATUS BTM_BleIsoRemoveDataPath(uint16_t conn_handle, uint8_t data_path_dir);
+
+tBTM_STATUS BTM_BleIsoSetHostFeature(uint16_t bit_num, uint8_t bit_val);
+
+tBTM_STATUS BTM_BleIsoReadTxSync(uint16_t iso_hdl);
+tBTM_STATUS BTM_BleIsoReadLinkQuality(uint16_t iso_hdl);
+
+#if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+tBTM_STATUS BTM_BleSetCigParams(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t worse_case_SCA, uint8_t packing,
+                                uint8_t framing, uint16_t mtl_c_to_p, uint16_t mtl_p_to_c, uint8_t cis_cnt, uint8_t *cis_params);
+tBTM_STATUS BTM_BleSetCigParamsTest(uint8_t cig_id, uint32_t sdu_int_c_to_p, uint32_t sdu_int_p_to_c, uint8_t ft_c_to_p, uint8_t ft_p_to_c, uint16_t iso_interval,
+                                uint8_t worse_case_SCA, uint8_t packing, uint8_t framing, uint8_t cis_cnt, uint8_t *cis_params);
+tBTM_STATUS BTM_BleCreateCis(uint8_t cis_count, uint8_t *cis_hdls);
+tBTM_STATUS BTM_BleRemoveCig(uint8_t cig_id);
+#endif // #if (BLE_FEAT_ISO_CIG_CENTRAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+tBTM_STATUS BTM_BleAcceptCisReq(uint16_t cis_handle);
+tBTM_STATUS BTM_BleRejectCisReq(uint16_t cis_handle, uint8_t reason);
+#endif // #if (BLE_FEAT_ISO_CIG_PERIPHERAL_EN == TRUE)
+#if (BLE_FEAT_ISO_CIG_EN == TRUE)
+tBTM_STATUS BTM_BleDisconCis(uint16_t cis_handle, uint8_t reason);
+#endif // #if (BLE_FEAT_ISO_CIG_EN == TRUE)
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
 #endif
