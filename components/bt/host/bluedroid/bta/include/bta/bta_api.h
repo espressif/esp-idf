@@ -1689,6 +1689,11 @@ typedef struct {
 #define BTA_BLE_GAP_PATH_LOSS_THRESHOLD_EVT                        BTM_BLE_GAP_PATH_LOSS_THRESHOLD_EVT
 #define BTA_BLE_GAP_TRANMIT_POWER_REPORTING_EVT                    BTM_BLE_GAP_TRANMIT_POWER_REPORTING_EVT
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+#define BTA_BLE_GAP_SET_DEFAULT_SUBRATE_EVT                        BTM_BLE_GAP_SET_DEFAULT_SUBRATE_EVT
+#define BTA_BLE_GAP_SUBRATE_REQUEST_EVT                            BTM_BLE_GAP_SUBRATE_REQUEST_EVT
+#define BTA_BLE_GAP_SUBRATE_CHANGE_EVT                             BTM_BLE_GAP_SUBRATE_CHANGE_EVT
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 #define BTA_DM_BLE_5_GAP_UNKNOWN_EVT                               BTM_BLE_5_GAP_UNKNOWN_EVT
 typedef tBTM_BLE_5_GAP_EVENT tBTA_DM_BLE_5_GAP_EVENT;
@@ -3072,6 +3077,12 @@ void BTA_DmBleGapSetPathLossRptParams(uint16_t conn_handle, uint8_t high_thresho
 void BTA_DmBleGapSetPathLossRptEnable(uint16_t conn_handle, uint8_t enable);
 void BTA_DmBleGapSetTransPwrRptEnable(uint16_t conn_handle, uint8_t local_enable, uint8_t remote_enable);
 #endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void BTA_DmBleGapSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
+                                    uint16_t continuation_number, uint16_t supervision_timeout);
+void BTA_DmBleGapSubrateReqest(uint16_t conn_handle, uint16_t subrate_min, uint16_t subrate_max,
+                                uint16_t max_latency, uint16_t continuation_number, uint16_t supervision_timeout);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
 
 /*******************************************************************************
 **
