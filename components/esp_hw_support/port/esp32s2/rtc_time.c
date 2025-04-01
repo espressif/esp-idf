@@ -256,3 +256,5 @@ uint32_t rtc_clk_freq_cal(uint32_t cal_val)
     }
     return 1000000ULL * (1 << RTC_CLK_CAL_FRACT) / cal_val;
 }
+
+uint32_t rtc_clk_freq_to_period(uint32_t) __attribute__((alias("rtc_clk_freq_cal")));
