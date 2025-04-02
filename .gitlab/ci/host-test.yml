@@ -316,7 +316,6 @@ test_pytest_qemu:
       --qemu-extra-args \"-global driver=timer.$IDF_TARGET.timg,property=wdt_disable,value=true\"
 
 test_pytest_linux:
-  allow_failure: true # IDFCI-2784 [v5.5, v5.4] test_pytest_linux fails on ubuntu 24.04
   extends:
     - .host_test_template
     - .before_script:build
