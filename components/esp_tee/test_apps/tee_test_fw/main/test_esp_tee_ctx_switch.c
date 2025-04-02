@@ -95,3 +95,8 @@ TEST_CASE("Task switching during secure service calls", "[basic]")
     world = esp_cpu_get_curr_privilege_level();
     TEST_ASSERT_MESSAGE((world == ESP_CPU_NS_MODE), "Current world is not NS");
 }
+
+TEST_CASE("Test TEE Heap: Malloc-write-free cycles", "[heap]")
+{
+    TEST_ASSERT_EQUAL(0, esp_tee_service_call(1, SS_ESP_TEE_TEST_HEAP_MALLOC_WRITE_FREE));
+}
