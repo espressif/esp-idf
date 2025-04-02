@@ -294,6 +294,13 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
             i2c_master->read_buf_pos = i2c_master->trans_idx;
         } else {
             i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
+            // If the read position has not been marked, that means the transaction doesn't contain read-ack
+            // operation, then mark the read position in read-nack operation.
+            // i2c_master->read_buf_pos will never be 0.
+            if (i2c_master->read_buf_pos == 0) {
+                i2c_master->read_buf_pos = i2c_master->trans_idx;
+                i2c_master->read_len_static = i2c_master->rx_cnt;
+            }
             i2c_master->cmd_idx++;
         }
         i2c_master->trans_idx++;
@@ -610,6 +617,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->cmd_idx = 0;
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
+    i2c_master->read_buf_pos = 0;
 
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
@@ -673,7 +681,10 @@ I2C_MASTER_ISR_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_ma
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
-        i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        // If the read command only contain nack marker, no read it for the second time.
+        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data) {
+            i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        }
         i2c_master->w_r_size = i2c_master->read_len_static + 1;
         i2c_master->contains_read = false;
         portEXIT_CRITICAL_ISR(&i2c_master->base->spinlock);
