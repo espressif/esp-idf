@@ -2,6 +2,8 @@
 archive: liblog.a
 entries:
     log_write:esp_log_write (noflash)
+    log_write:esp_log_writev (noflash)
+    tag_log_level:esp_log_level_get_timeout (noflash)
     log_timestamp:esp_log_timestamp (noflash)
     log_timestamp:esp_log_early_timestamp (noflash)
     log_lock (noflash)
