@@ -28,7 +28,7 @@ esp_err_t sdmmc_host_start_command(int slot, sdmmc_hw_cmd_t cmd, uint32_t arg);
 
 esp_err_t sdmmc_host_wait_for_event(int tick_count, sdmmc_event_t* out_event);
 
-void sdmmc_host_dma_prepare(sdmmc_desc_t* desc, size_t block_size, size_t data_size);
+void sdmmc_host_dma_prepare(void* data_ptr, size_t data_size, size_t block_size);
 
 void sdmmc_host_dma_stop(void);
 
