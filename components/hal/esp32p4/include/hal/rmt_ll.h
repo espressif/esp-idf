@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,6 +36,11 @@ extern "C" {
 #define RMT_LL_MAX_LOOP_COUNT_PER_BATCH   1023
 #define RMT_LL_MAX_FILTER_VALUE           255
 #define RMT_LL_MAX_IDLE_VALUE             32767
+
+// Maximum values due to limited register bit width
+#define RMT_LL_CHANNEL_CLOCK_MAX_PRESCALE 256
+#define RMT_LL_GROUP_CLOCK_MAX_INTEGER_PRESCALE 256
+#define RMT_LL_GROUP_CLOCK_MAX_FRACTAL_PRESCALE 64
 
 typedef enum {
     RMT_LL_MEM_OWNER_SW = 0,

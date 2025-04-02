@@ -144,7 +144,7 @@ Once the :cpp:type:`rmt_rx_channel_config_t` structure is populated with mandato
 
 .. note::
 
-    Due to a software limitation in the GPIO driver, when both TX and RX channels are bound to the same GPIO, ensure the RX Channel is initialized before the TX Channel. If the TX Channel was set up first, then during the RX Channel setup, the previous RMT TX Channel signal will be overridden by the GPIO control signal.
+    When multiple RMT channels are allocated at the same time, the group’s prescale is determined based on the resolution of the first channel. The driver then selects the appropriate prescale from low to high. To avoid prescale conflicts when allocating multiple channels, allocate channels in order of their target resolution, either from highest to lowest or lowest to highest.
 
 Uninstall RMT Channel
 ~~~~~~~~~~~~~~~~~~~~~
