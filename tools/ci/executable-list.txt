@@ -2,6 +2,8 @@ components/app_update/otatool.py
 components/efuse/efuse_table_gen.py
 components/efuse/test_efuse_host/efuse_tests.py
 components/esp_coex/test_md5/test_md5.sh
+components/esp_wifi/regulatory/reg2fw.py
+components/esp_wifi/regulatory/reg_parse.py
 components/esp_wifi/test_md5/test_md5.sh
 components/espcoredump/espcoredump.py
 components/fatfs/fatfsgen.py
