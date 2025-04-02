@@ -18,7 +18,7 @@
 #include "esp_openthread_types.h"
 #include "esp_openthread_uart.h"
 #include "esp_vfs_dev.h"
-#include "core/common/code_utils.hpp"
+#include "include/common/code_utils.hpp"
 #include "core/common/logging.hpp"
 #include "driver/uart.h"
 #include "lib/platform/exit_code.h"
