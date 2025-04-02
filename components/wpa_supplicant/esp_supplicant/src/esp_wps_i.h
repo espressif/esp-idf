@@ -71,7 +71,8 @@ struct wps_sm {
     struct wps_credential creds[MAX_CRED_COUNT];
     u8 ap_cred_cnt;
     struct wps_device_data *dev;
-    u8 uuid[16];
+    u8 uuid[WPS_UUID_LEN];
+    u8 uuid_r[WPS_UUID_LEN];
     u8 current_identifier;
     bool is_wps_scan;
     u8 channel;
