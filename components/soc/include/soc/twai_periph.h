@@ -23,6 +23,7 @@ extern "C" {
 typedef struct {
     struct {
         const periph_module_t module;  // peripheral module
+        const char *module_name;       // peripheral name
         const int irq_id;              // interrupt source ID
 #if SOC_TWAI_SUPPORT_TIMESTAMP
         const int timer_irq_id;

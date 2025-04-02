@@ -69,6 +69,7 @@ typedef struct {
     twai_soc_handle_t dev; // TWAI SOC layer handle (i.e. register base address)
     uint32_t state_flags;
     uint32_t clock_source_hz;
+    bool enable_listen_only;
 #if defined(CONFIG_TWAI_ERRATA_FIX_RX_FRAME_INVALID) || defined(CONFIG_TWAI_ERRATA_FIX_RX_FIFO_CORRUPT)
     twai_hal_frame_t tx_frame_save;
     twai_ll_reg_save_t reg_save;
@@ -81,6 +82,8 @@ typedef struct {
 typedef struct {
     int controller_id;
     uint32_t clock_source_hz;
+    uint32_t intr_mask;
+    bool enable_listen_only;
 } twai_hal_config_t;
 
 /**

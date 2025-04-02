@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,8 +20,8 @@ extern "C" {
 #define TWAI_EXT_ID_MASK    0x1FFFFFFFU /* Mask of the ID fields in an extended frame */
 
 /* TWAI payload length and DLC definitions */
-#define TWAI_FRAME_MAX_DLC  8
-#define TWAI_FRAME_MAX_LEN  8
+#define TWAI_FRAME_MAX_DLC      8
+#define TWAI_FRAME_MAX_LEN      8
 
 /* TWAI FD payload length and DLC definitions */
 #define TWAIFD_FRAME_MAX_DLC    15
@@ -31,20 +31,11 @@ extern "C" {
  * @brief TWAI error states
  */
 typedef enum {
-    TWAI_ERROR_ACTIVE,              /**< Error active state: TEC/REC < 96 */
-    TWAI_ERROR_WARNING,             /**< Error warning state: TEC/REC >= 96 and < 128 */
-    TWAI_ERROR_PASSIVE,             /**< Error passive state: TEC/REC >= 128 and < 256 */
-    TWAI_ERROR_BUS_OFF,             /**< Bus-off state: TEC >= 256 (node disconnected from bus) */
+    TWAI_ERROR_ACTIVE,          /**< Error active state: TEC/REC < 96 */
+    TWAI_ERROR_WARNING,         /**< Error warning state: TEC/REC >= 96 and < 128 */
+    TWAI_ERROR_PASSIVE,         /**< Error passive state: TEC/REC >= 128 and < 256 */
+    TWAI_ERROR_BUS_OFF,         /**< Bus-off state: TEC >= 256 (node offline) */
 } twai_error_state_t;
-
-/**
- * @brief   TWAI Controller operating modes
- */
-typedef enum {
-    TWAI_MODE_NORMAL,               /**< Normal operating mode where TWAI controller can send/receive/acknowledge messages */
-    TWAI_MODE_NO_ACK,               /**< Transmission does not require acknowledgment. Use this mode for self testing */
-    TWAI_MODE_LISTEN_ONLY,          /**< The TWAI controller will not influence the bus (No transmissions or acknowledgments) but can receive messages */
-} twai_mode_t;
 
 /**
  * @brief TWAI group clock source
@@ -57,7 +48,7 @@ typedef int twai_clock_source_t;
 #endif
 
 /**
- * @brief TWAI baud rate timing config advanced mode
+ * @brief TWAI bitrate timing config advanced mode
  * @note  Setting one of `quanta_resolution_hz` and `brp` is enough, otherwise, `brp` is not used.
  */
 typedef struct {
@@ -68,35 +59,33 @@ typedef struct {
     uint8_t  tseg_1;                /**< Seg_1 length, in quanta time */
     uint8_t  tseg_2;                /**< Seg_2 length, in quanta time */
     uint8_t  sjw;                   /**< Sync jump width, in quanta time */
-    union {
-        bool en_multi_samp;   /**< Enable multi-sampling for one bit to avoid noise and detect errors */
-        bool triple_sampling; /**< Deprecated, in favor of `en_multi_samp` */
-    };
+    uint8_t  ssp_offset;            /**< Secondary sample point offset refet to Sync seg, in quanta time, set 0 to disable ssp */
+    bool triple_sampling;           /**< Deprecated, in favor of `ssp_offset` */
 } twai_timing_config_t;
+
+/**
+ * @brief TWAI bitrate timing config advanced mode for esp_driver_twai
+ * @note  `quanta_resolution_hz` is not supported in this driver
+ */
+typedef twai_timing_config_t twai_timing_advanced_config_t;
 
 /**
  * @brief TWAI frame header/format struct type
  */
 typedef struct {
-    union {
-        struct {
-            uint32_t ide:1;         /**< Extended Frame Format (29bit ID) */
-            uint32_t rtr:1;         /**< Message is a Remote Frame */
-            uint32_t fdf:1;         /**< TWAI 2.0: Reserved, FD: FD Frames. */
-            uint32_t brs:1;         /**< TWAI 2.0: Reserved, FD: Bit Rate Shift. */
-            uint32_t esi:1;         /**< Transmit side error indicator for received frame */
-            uint32_t loopback:1;    /**< Temporary transmit as loop back for this trans, if setting `TWAI_MODE_LOOP_BACK`, all transmit is loop back */
-            int8_t   retrans_count; /**< Re-trans count on transfer fail, -1: infinite, 0: no re-trans, others: re-trans times. */
-            uint32_t reserved:18;   /**< Reserved */
-        };
-        uint32_t format_val;        /**< Frame format/type integrate value */
+    uint32_t id;                    /**< message arbitration identification */
+    uint16_t dlc;                   /**< message data length code */
+    struct {
+        uint32_t ide: 1;            /**< Extended Frame Format (29bit ID) */
+        uint32_t rtr: 1;            /**< Message is a Remote Frame */
+        uint32_t fdf: 1;            /**< Message is FD format, allow max 64 byte of data */
+        uint32_t brs: 1;            /**< Transmit message with Bit Rate Shift. */
+        uint32_t esi: 1;            /**< Transmit side error indicator for received frame */
     };
     union {
         uint64_t timestamp;         /**< Timestamp for received message */
         uint64_t trigger_time;      /**< Trigger time for transmitting message*/
     };
-    uint32_t id;                    /**< message arbitration identification */
-    uint8_t dlc;                    /**< message data length code */
 } twai_frame_header_t;
 
 #ifdef __cplusplus

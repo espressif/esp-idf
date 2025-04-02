@@ -1,0 +1,18 @@
+menu "ESP-Driver:TWAI Configurations"
+    depends on SOC_TWAI_SUPPORTED
+
+    config TWAI_ISR_INTO_IRAM
+        bool "Place TWAI ISR in IRAM to reduce latency"
+        default n
+        help
+            Place ISR functions to IRAM to increase performance
+
+    config TWAI_ISR_CACHE_SAFE
+        bool "Allow TWAI ISR to execute when cache is disabled"
+        select TWAI_ISR_INTO_IRAM
+        default n
+        help
+            Allow TWAI works under Cache disabled, to enabled this config,
+            all callbacks and user_ctx should also place in IRAM
+
+endmenu # TWAI Configuration
