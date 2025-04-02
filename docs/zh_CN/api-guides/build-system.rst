@@ -1536,7 +1536,7 @@ JSON 配置服务器
 
 你可以通过 ``idf.py confserver`` 或 ``ninja kconfserver`` 从项目中运行 ``kconfserver``，也可以使用不同的构建生成器来触发类似的目标。
 
-有关 kconfserver 的更多信息，请参阅 `esp-idf-kconfig 文档 <https://github.com/espressif/esp-idf-kconfig/blob/master/docs/DOCUMENTATION.md>`_。
+有关 kconfserver 的更多信息，请参阅 `esp-idf-kconfig 文档 <https://docs.espressif.com/projects/esp-idf-kconfig/en/latest/kconfserver/index.html>`_。
 
 
 构建系统内部
