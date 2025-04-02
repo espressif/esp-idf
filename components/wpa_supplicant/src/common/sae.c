@@ -594,9 +594,7 @@ static struct crypto_ec_point * sswu(struct crypto_ec *ec, int group,
 
 	prime = crypto_ec_get_prime(ec);
 	prime_len = crypto_ec_prime_len(ec);
-	/* Value of 'a' defined for curve secp256r1 in 'y^2 = x^3 + ax + b' */
-	uint8_t buf[32] = {0xff,0xff,0xff,0xff,0x00,0x00,0x00,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xff,0xfc};
-	a = crypto_bignum_init_set(buf, 32);
+	a = crypto_ec_get_a(ec);
 	b = crypto_ec_get_b(ec);
 
 	u2 = crypto_bignum_init();
@@ -615,7 +613,7 @@ static struct crypto_ec_point * sswu(struct crypto_ec *ec, int group,
 	gx2 = crypto_bignum_init();
 	tmp = crypto_bignum_init();
 	if (!u2 || !t1 || !t2 || !z || !t || !zero || !one || !two || !three ||
-	    !x1a || !x1b || !x2 || !gx1 || !gx2 || !tmp)
+	    !x1a || !x1b || !x2 || !gx1 || !gx2 || !a || !tmp)
 		goto fail;
 
 	if (z_int < 0 && crypto_bignum_sub(prime, z, z) < 0)
