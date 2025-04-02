@@ -5,6 +5,7 @@
  */
 
 #include "esp_private/sleep_clock.h"
+#include "soc/lp_analog_peri_reg.h"
 #include "soc/pcr_reg.h"
 #include "soc/pmu_reg.h"
 #include "soc/rtc.h"
@@ -37,6 +38,8 @@ esp_err_t sleep_clock_system_retention_init(void *arg)
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
         [9] = { .config = REGDMA_LINK_ADDR_MAP_INIT(REGDMA_PCR_LINK(9), DR_REG_PCR_BASE,            DR_REG_PCR_BASE,    75, 0, 0,   0xffffffff, 0xffffffff, 0x200007f7, 0x0), .owner = ENTRY(0) | ENTRY(1) },
 #endif
+        [10] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(10), LP_ANA_POWER_GLITCH_CNTL_REG,      0,                      LP_ANA_PWR_GLITCH_RESET_ENA_M,  0, 1),  .owner = ENTRY(0) | ENTRY(1)}, /* Disable power glitch detector on sleep backup */
+        [11] = {.config = REGDMA_LINK_WRITE_INIT   (REGDMA_PCR_LINK(11), LP_ANA_POWER_GLITCH_CNTL_REG,      0xF,                    LP_ANA_PWR_GLITCH_RESET_ENA_M,  1, 0),  .owner = ENTRY(0) | ENTRY(1)}, /* Enable power glitch detector on wakeup restore */
     };
     esp_err_t err = sleep_retention_entries_create(pcr_regs_retention, ARRAY_SIZE(pcr_regs_retention), REGDMA_LINK_PRI_SYS_CLK, SLEEP_RETENTION_MODULE_CLOCK_SYSTEM);
     ESP_RETURN_ON_ERROR(err, TAG, "failed to allocate memory for system (PCR) retention");
