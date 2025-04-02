@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -276,12 +276,12 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _uart_ll_sclk_disable(&UART4);
 
         _timer_ll_enable_bus_clock(0, false);
-        _timer_ll_enable_clock(&TIMERG0, 0, false);
-        _timer_ll_enable_clock(&TIMERG0, 1, false);
+        _timer_ll_enable_clock(0, 0, false);
+        _timer_ll_enable_clock(0, 1, false);
 
         _timer_ll_enable_bus_clock(1, false);
-        _timer_ll_enable_clock(&TIMERG1, 0, false);
-        _timer_ll_enable_clock(&TIMERG1, 1, false);
+        _timer_ll_enable_clock(1, 0, false);
+        _timer_ll_enable_clock(1, 1, false);
 
         mipi_dsi_brg_ll_enable_ref_clock(&MIPI_DSI_BRIDGE, false);
         _mipi_csi_ll_enable_host_bus_clock(0, false);

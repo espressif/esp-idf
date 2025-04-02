@@ -90,7 +90,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
 {
     uint32_t counter_src_hz = 0;
     int timer_id = timer->timer_id;
-
+    int group_id = timer->group->group_id;
     // TODO: [clk_tree] to use a generic clock enable/disable or acquire/release function for all clock source
 #if SOC_TIMER_GROUP_SUPPORT_RC_FAST
     if (src_clk == GPTIMER_CLK_SRC_RC_FAST) {
@@ -134,7 +134,7 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
 #endif // CONFIG_IDF_TARGET_ESP32C2
 
     if (need_pm_lock) {
-        sprintf(timer->pm_lock_name, "gptimer_%d_%d", timer->group->group_id, timer_id); // e.g. gptimer_0_0
+        sprintf(timer->pm_lock_name, "gptimer_%d_%d", group_id, timer_id); // e.g. gptimer_0_0
         ESP_RETURN_ON_ERROR(esp_pm_lock_create(pm_lock_type, 0, timer->pm_lock_name, &timer->pm_lock),
                             TAG, "create pm lock failed");
     }
@@ -145,8 +145,8 @@ esp_err_t gptimer_select_periph_clock(gptimer_t *timer, gptimer_clock_source_t s
     // on some ESP chip, different peripheral's clock source setting are mixed in the same register
     // so we need to make this done in an atomic way
     GPTIMER_CLOCK_SRC_ATOMIC() {
-        timer_ll_set_clock_source(timer->hal.dev, timer_id, src_clk);
-        timer_ll_enable_clock(timer->hal.dev, timer_id, true);
+        timer_ll_set_clock_source(group_id, timer_id, src_clk);
+        timer_ll_enable_clock(group_id, timer_id, true);
     }
     timer->clk_src = src_clk;
     uint32_t prescale = counter_src_hz / resolution_hz; // potential resolution loss here

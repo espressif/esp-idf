@@ -195,7 +195,7 @@ esp_err_t gptimer_del_timer(gptimer_handle_t timer)
     ESP_LOGD(TAG, "del timer (%d,%d)", group_id, timer_id);
     // disable the source clock
     GPTIMER_CLOCK_SRC_ATOMIC() {
-        timer_ll_enable_clock(hal->dev, hal->timer_id, false);
+        timer_ll_enable_clock(group_id, hal->timer_id, false);
     }
     timer_hal_deinit(hal);
     // recycle memory resource
