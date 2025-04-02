@@ -201,6 +201,8 @@ typedef void (tBTM_SET_LOCAL_PRIVACY_CBACK) (UINT8 status);
 typedef void (tBTM_SET_RPA_TIMEOUT_CMPL_CBACK) (UINT8 status);
 
 typedef void (tBTM_ADD_DEV_TO_RESOLVING_LIST_CMPL_CBACK) (UINT8 status);
+
+typedef void (tBTM_BLE_VENDOR_HCI_EVT_CBACK) (UINT8 subevt_code, UINT8 param_len, UINT8 *params);
 /*******************************
 **  Device Coexist status
 ********************************/
