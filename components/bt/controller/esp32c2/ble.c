@@ -12,9 +12,14 @@
  ************************************************************************
  */
 #if (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
-void adv_stack_enableClearLegacyAdvVsCmd(bool en);
 void scan_stack_enableAdvFlowCtrlVsCmd(bool en);
+void adv_stack_enableClearLegacyAdvVsCmd(bool en);
 void chanSel_stack_enableSetCsaVsCmd(bool en);
+void hci_stack_enableSetVsEvtMaskVsCmd(bool en);
+
+void adv_stack_enableScanReqRxdVsEvent(bool en);
+void conn_stack_enableChanMapUpdCompVsEvent(bool en);
+void sleep_stack_enableWakeupVsEvent(bool en);
 #endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 
 /* Local functions definition
@@ -32,10 +37,18 @@ void ble_stack_enableVsCmds(bool en)
 #endif // DEFAULT_BT_LE_ROLE_OBSERVER
 
     chanSel_stack_enableSetCsaVsCmd(en);
+    hci_stack_enableSetVsEvtMaskVsCmd(en);
 }
 
 void ble_stack_enableVsEvents(bool en)
 {
+#if DEFAULT_BT_LE_ROLE_BROADCASTER
+    adv_stack_enableScanReqRxdVsEvent(en);
+#endif // DEFAULT_BT_LE_ROLE_BROADCASTER
+    conn_stack_enableChanMapUpdCompVsEvent(en);
+#if CONFIG_BT_LE_SLEEP_ENABLE
+    sleep_stack_enableWakeupVsEvent(en);
+#endif // CONFIG_BT_LE_SLEEP_ENABLE
 }
 #endif // (CONFIG_BT_NIMBLE_ENABLED || CONFIG_BT_BLUEDROID_ENABLED)
 
