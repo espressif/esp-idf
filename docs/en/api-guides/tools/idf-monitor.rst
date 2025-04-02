@@ -349,7 +349,13 @@ For more details on the configuration file, see the `IDF Monitor documentation`_
 Known Issues with IDF Monitor
 =============================
 
-If you encounter any issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
+The following issues are currently known:
+
+- On Windows, if the terminal is closed without first closing the IDF Monitor, some drivers may fail to release the serial port. To release the port, you may need to unplug and replug the USB cable, or in some cases even restart the computer. This issue has been observed with the CH9102 USB-to-UART bridge. Other drivers, such as CP210x and CH340, should work fine.
+
+  To prevent this issue, make sure to close the IDF Monitor properly before exiting the terminal, or consider using an alternative USB-to-UART bridge.
+
+If you experience any other issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _IDF Monitor documentation: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation
