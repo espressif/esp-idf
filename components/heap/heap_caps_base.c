@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,7 +62,8 @@ HEAP_IRAM_ATTR void heap_caps_free( void *ptr)
         return;
     }
 
-    if (esp_ptr_in_diram_iram(ptr) || esp_ptr_in_rtc_iram_fast(ptr)) {
+    if ((!esp_dram_match_iram() && esp_ptr_in_diram_iram(ptr)) ||
+        (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_iram_fast(ptr))) {
         //Memory allocated here is actually allocated in the DRAM alias region and
         //cannot be de-allocated as usual. dram_alloc_to_iram_addr stores a pointer to
         //the equivalent DRAM address, though; free that.
@@ -137,8 +138,9 @@ HEAP_IRAM_ATTR NOINLINE_ATTR void *heap_caps_aligned_alloc_base(size_t alignment
                     //This heap can satisfy all the requested capabilities. See if we can grab some memory using it.
                     // If MALLOC_CAP_EXEC is requested but the DRAM and IRAM are on the same addresses (like on esp32c6)
                     // proceed as for a default allocation.
-                    if (((caps & MALLOC_CAP_EXEC) && !esp_dram_match_iram()) &&
-                        (esp_ptr_in_diram_dram((void *)heap->start) || esp_ptr_in_rtc_dram_fast((void *)heap->start))) {
+                    if ((caps & MALLOC_CAP_EXEC) &&
+                        ((!esp_dram_match_iram() && esp_ptr_in_diram_dram((void *)heap->start)) ||
+                         (!esp_rtc_dram_match_rtc_iram() && esp_ptr_in_rtc_dram_fast((void *)heap->start)))) {
                         //This is special, insofar that what we're going to get back is a DRAM address. If so,
                         //we need to 'invert' it (lowest address in DRAM == highest address in IRAM and vice-versa) and
                         //add a pointer to the DRAM equivalent before the address we're going to return.
