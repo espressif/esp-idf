@@ -29,7 +29,7 @@ TEST(esp_app_format, esp_app_get_elf_sha256_test)
     int res;
     size_t len;
 
-    char ref_sha256[sha256_hex_len + 1];
+    char ref_sha256[sha256_hex_len + 2];
     const esp_app_desc_t* desc = esp_app_get_description();
     for (int i = 0; i < sizeof(ref_sha256) / 2; ++i) {
         snprintf(ref_sha256 + 2 * i, 3, "%02x", desc->app_elf_sha256[i]);
