@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,22 @@ uint32_t efuse_hal_blk_version(void);
  * @return true if flash encryption is enabled.
  */
 bool efuse_hal_flash_encryption_enabled(void);
+
+/**
+ * @brief Returns the status of whether the bootloader (and OTA)
+ *        will check the maximum chip version or not.
+ *
+ * @return true - Skip the maximum chip version check.
+ */
+bool efuse_hal_get_disable_wafer_version_major(void);
+
+/**
+ * @brief Returns the status of whether the app start-up (and OTA)
+ *        will check the efuse block version or not.
+ *
+ * @return true - Skip the efuse block version check.
+ */
+bool efuse_hal_get_disable_blk_version_major(void);
 
 /**
  * @brief Returns major chip version
