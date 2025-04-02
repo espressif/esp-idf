@@ -8,17 +8,20 @@ endif()
 
 
 if(BOOTLOADER_BUILD)
-    set(priv_requires soc)
+    set(priv_requires soc hal)
+    set(srcs "rv_utils.c")
 elseif(esp_tee_build)
-    set(priv_requires soc)
+    set(priv_requires soc hal)
+    set(srcs "rv_utils.c")
     if(CONFIG_SOC_INT_PLIC_SUPPORTED)
-        set(srcs "interrupt_plic.c")
+        list(APPEND srcs "interrupt_plic.c")
     endif()
 else()
-    set(priv_requires soc)
+    set(priv_requires soc hal)
     set(srcs
         "instruction_decode.c"
         "interrupt.c"
+        "rv_utils.c"
         "vectors.S")
 
     if(CONFIG_SOC_INT_CLIC_SUPPORTED)

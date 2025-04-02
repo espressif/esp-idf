@@ -93,6 +93,7 @@ SECTIONS
     *libesp_hw_support.a:rtc_time.*(.literal .text .literal.* .text.*)
     *libesp_hw_support.a:regi2c_ctrl.*(.literal .text .literal.* .text.*)
     *libefuse.a:*.*(.literal .text .literal.* .text.*)
+    *libriscv.a:rv_utils.*(.literal .text .literal.* .text.*)
     *(.fini.literal)
     *(.fini)
     *(.gnu.version)

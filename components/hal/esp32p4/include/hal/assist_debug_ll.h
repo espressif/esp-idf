@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -138,6 +138,11 @@ FORCE_INLINE_ATTR void _assist_debug_ll_reset_register(void)
 }
 #define assist_debug_ll_reset_register(...) \
     (void)__DECLARE_RCC_ATOMIC_ENV; _assist_debug_ll_reset_register(__VA_ARGS__)
+
+FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+{
+    return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
+}
 
 #ifdef __cplusplus
 }

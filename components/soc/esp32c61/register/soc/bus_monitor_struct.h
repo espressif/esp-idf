@@ -559,7 +559,7 @@ typedef struct {
     volatile bus_monitor_date_reg_t date;
 } bus_monitor_dev_t;
 
-extern bus_monitor_dev_t ASSIST_DEBUG;
+extern bus_monitor_dev_t BUS_MONITOR;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(bus_monitor_dev_t) == 0x400, "Invalid size of bus_monitor_dev_t structure");
