@@ -349,7 +349,7 @@ is_wps_pbc_overlap(struct wps_sm *sm, const u8 *sel_uuid)
 {
     if (!sel_uuid) {
         wpa_printf(MSG_DEBUG, "WPS: null uuid field");
-        return false;
+        return true;
     }
 
     if (os_memcmp(sel_uuid, sm->uuid_r, WPS_UUID_LEN) != 0) {
@@ -370,7 +370,7 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
     struct wps_sm *sm = gWpsSm;
     wifi_mode_t op_mode = 0;
 
-    if(sm->wps_pbc_overlap) {
+    if (sm->wps_pbc_overlap) {
         return false;
     }
 
@@ -445,11 +445,13 @@ wps_parse_scan_result(struct wps_scan_ie *scan)
                 os_memcpy(sm->bssid, scan->bssid, ETH_ALEN);
 
                 scan_uuid = wps_get_uuid_e(buf);
+                if (sm->discover_ssid_cnt > 1 && wps_get_type() == WPS_TYPE_PBC && is_wps_pbc_overlap(sm, scan_uuid) == true) {
+                    wpa_printf(MSG_INFO, "pbc_overlap flag is true");
+                    sm->wps_pbc_overlap = true;
+                    wpabuf_free(buf);
+                    return false;
+                }
                 if (scan_uuid) {
-                    if (sm->discover_ssid_cnt > 1 && wps_get_type() == WPS_TYPE_PBC && is_wps_pbc_overlap(sm, scan_uuid) == true) {
-                        wpa_printf(MSG_INFO, "pbc_overlap flag is true");
-                        sm->wps_pbc_overlap = true;
-                    }
                     os_memcpy(sm->uuid_r, scan_uuid, WPS_UUID_LEN);
                 }
 
