@@ -43,7 +43,7 @@ The protocomm component provides a project configuration menu to enable/disable 
     * Support ``protocomm_security2`` with SRP6a-based key exchange + AES-GCM encryption/decryption: :ref:`CONFIG_ESP_PROTOCOMM_SUPPORT_SECURITY_VERSION_2`.
 
 .. note::
-    
+
     Enabling multiple security versions at once offers the ability to control them dynamically but also increases the firmware size.
 
 .. only:: SOC_WIFI_SUPPORTED
@@ -299,5 +299,7 @@ API Reference
 .. include-build-file:: inc/protocomm_security.inc
 .. include-build-file:: inc/protocomm_security0.inc
 .. include-build-file:: inc/protocomm_security1.inc
+.. include-build-file:: inc/protocomm_security2.inc
+.. include-build-file:: inc/esp_srp.inc
 .. include-build-file:: inc/protocomm_httpd.inc
 .. include-build-file:: inc/protocomm_ble.inc
