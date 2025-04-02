@@ -402,7 +402,12 @@ int wpa_parse_wpa_ie_rsnxe(const u8 *rsnxe_ie, size_t rsnxe_ie_len,
 	if (rsnxe_ie_len < 1) {
 		return -1;
 	}
-	rsnxe_capa = rsnxe_ie[2];
+	if (rsnxe_ie && rsnxe_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
+		rsnxe_ie[1] >= 1 + 4) {
+		rsnxe_capa = rsnxe_ie[2 + 4];
+	} else {
+		rsnxe_capa = rsnxe_ie[2];
+	}
 	if (sae_pwe == 1 && !(rsnxe_capa & BIT(WLAN_RSNX_CAPAB_SAE_H2E))){
 		wpa_printf(MSG_ERROR, "SAE H2E required, but not supported by the AP");
 		return -1;

@@ -389,17 +389,17 @@ static bool hostap_sta_join(void **sta, u8 *bssid, u8 *assoc_req_ie, uint32_t as
     }
 
     if (ieee802_11_parse_elems(assoc_req_ie, assoc_ie_len, &elems, 1) == ParseFailed) {
-		wpa_printf(MSG_INFO, "Failed to parse assoc req IEs");
-		return -1;
+        wpa_printf(MSG_INFO, "Failed to parse assoc req IEs");
+        return -1;
     }
 
     if (elems.rsn_ie) {
-		elems.rsn_ie = elems.rsn_ie - 2;
-		elems.rsn_ie_len = elems.rsn_ie_len + 2;
+        elems.rsn_ie = elems.rsn_ie - 2;
+        elems.rsn_ie_len = elems.rsn_ie_len + 2;
     }
     if (elems.rsnxe) {
-		elems.rsnxe = elems.rsnxe - 2;
-		elems.rsnxe_len = elems.rsnxe_len + 2;
+        elems.rsnxe = elems.rsnxe - 2;
+        elems.rsnxe_len = elems.rsnxe_len + 2;
     }
 
     if (*sta) {

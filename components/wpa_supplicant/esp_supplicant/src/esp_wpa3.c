@@ -53,7 +53,7 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         rsnxe = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSNX);
     }
     if (rsnxe && rsnxe[0] == WLAN_EID_VENDOR_SPECIFIC &&
-        rsnxe[1] >= 1 + 4) {
+            rsnxe[1] >= 1 + 4) {
         rsnxe_capa = rsnxe[2 + 4];
     } else if (rsnxe && rsnxe[1] >= 1) {
         rsnxe_capa = rsnxe[2];

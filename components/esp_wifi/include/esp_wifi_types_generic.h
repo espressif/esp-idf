@@ -533,8 +533,6 @@ typedef struct {
     bool ftm_responder;                       /**< Enable FTM Responder mode */
     wifi_pmf_config_t pmf_cfg;                /**< Configuration for Protected Management Frame */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
-    uint8_t transition_disable;               /**< Whether to enable transition disable feature */
-    uint8_t sae_ext;                          /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
     uint8_t transition_disable: 1;            /**< Whether to enable transition disable feature */
     uint8_t sae_ext: 1;                       /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
     uint8_t wpa3_compatible_mode: 1;          /**< Whether to enable wpa3 compatible authmode feature */
@@ -565,7 +563,8 @@ typedef struct {
     uint32_t ft_enabled: 1;                   /**< Whether FT is enabled for the connection */
     uint32_t owe_enabled: 1;                  /**< Whether OWE is enabled for the connection */
     uint32_t transition_disable: 1;           /**< Whether to enable transition disable feature */
-    uint32_t reserved1: 26;                   /**< Reserved for future feature set */
+    uint32_t wpa3_compatible_mode: 1;         /**< Whether to enable wpa3 compatible authmode feature */
+    uint32_t reserved1: 25;                    /**< Reserved for future feature set */
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     wifi_sae_pk_mode_t sae_pk_mode;           /**< Configuration for SAE-PK (Public Key) Authentication method */
     uint8_t failure_retry_cnt;                /**< Number of connection retries station will do before moving to next AP. scan_method should be set as WIFI_ALL_CHANNEL_SCAN to use this config.

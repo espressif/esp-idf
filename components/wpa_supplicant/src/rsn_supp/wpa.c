@@ -2601,7 +2601,7 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
             esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA));
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
             RSN_OVERRIDE_NOT_USED);
-    ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSN);
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
 
     if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) &&
             ie && ie[0] != WLAN_EID_RSN) {

@@ -84,7 +84,6 @@ void *hostap_init(void)
     }
 
     hapd->conf->sae_pwe = esp_wifi_get_config_sae_pwe_h2e_internal(WIFI_IF_AP);
-    auth_conf->sae_pwe = hapd->conf->sae_pwe;
     auth_conf->wpa_group_rekey = esp_wifi_ap_get_gtk_rekeying_config_internal();
 #define MIN_GTK_REKEYING_INTERVAL 60
     if (auth_conf->wpa_group_rekey && auth_conf->wpa_group_rekey < MIN_GTK_REKEYING_INTERVAL) {
@@ -111,6 +110,9 @@ void *hostap_init(void)
     }
 #endif /* CONFIG_IEEE80211W */
     if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
+        //TODO check sae_pwe
+        hapd->conf->sae_pwe = SAE_PWE_HASH_TO_ELEMENT;
+        auth_conf->rsn_override_omit_rsnxe = 1;
         hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
         hapd->conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
         hapd->conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
@@ -144,6 +146,7 @@ void *hostap_init(void)
         auth_conf->rsn_pairwise = WPA_CIPHER_CCMP | WPA_CIPHER_TKIP;
     }
 
+    auth_conf->sae_pwe = hapd->conf->sae_pwe;
     auth_conf->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
     auth_conf->eapol_version = EAPOL_VERSION;
 
@@ -200,7 +203,8 @@ void *hostap_init(void)
 
 #ifdef CONFIG_SAE
     if (authmode == WIFI_AUTH_WPA3_PSK ||
-            authmode == WIFI_AUTH_WPA2_WPA3_PSK) {
+            authmode == WIFI_AUTH_WPA2_WPA3_PSK ||
+            esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
         if (wpa3_hostap_auth_init(hapd) != 0) {
             goto fail;
         }

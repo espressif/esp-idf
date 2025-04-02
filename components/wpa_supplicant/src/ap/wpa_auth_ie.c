@@ -506,7 +506,7 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 			return res;
 		pos += res;
 	}
-	
+
     if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
 	    (wpa_auth->conf.rsn_override_key_mgmt)) {
 		res = wpa_write_rsnxe_override(&wpa_auth->conf, pos,
@@ -661,11 +661,6 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		return WPA_INVALID_AKMP;
 	}
 
-	if (!key_mgmt) {
-		wpa_printf( MSG_DEBUG, "Invalid WPA key mgmt (0x%x) from "
-			   MACSTR, data.key_mgmt, MAC2STR(sm->addr));
-		return WPA_INVALID_AKMP;
-	}
 	if (0) {
 	}
 #ifdef CONFIG_IEEE80211R_AP
