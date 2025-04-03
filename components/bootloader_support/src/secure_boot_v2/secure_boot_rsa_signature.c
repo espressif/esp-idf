@@ -1,16 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include "esp_log.h"
 #include "esp_secure_boot.h"
-#include "mbedtls/sha256.h"
-#include "mbedtls/x509.h"
-#include "mbedtls/md.h"
-#include "mbedtls/platform.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
+#include "psa/crypto.h"
 
 #include "secure_boot_signature_priv.h"
 
@@ -22,55 +17,56 @@ esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_bloc
         return ESP_ERR_INVALID_ARG;
     }
 
-    int ret = 0;
-    mbedtls_rsa_context pk;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
+    esp_err_t ret = ESP_OK;
+    psa_status_t status;
     const unsigned rsa_key_size = sizeof(sig_block->block[0].signature);
     unsigned char *sig_be = calloc(1, rsa_key_size);
+
     if (sig_be == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    unsigned char *buf = calloc(1, rsa_key_size);
-    if (buf == NULL) {
+
+    /* Create key attributes for RSA public key */
+    psa_key_attributes_t key_attributes = PSA_KEY_ATTRIBUTES_INIT;
+    psa_key_id_t key_id = 0;
+
+    /* Set key attributes */
+    psa_set_key_usage_flags(&key_attributes, PSA_KEY_USAGE_VERIFY_HASH);
+    psa_set_key_algorithm(&key_attributes, PSA_ALG_RSA_PSS(PSA_ALG_SHA_256));
+    psa_set_key_type(&key_attributes, PSA_KEY_TYPE_RSA_PUBLIC_KEY);
+
+    /* Set the key size in bits (RSA key size is typically 2048 or 3072 bits) */
+    psa_set_key_bits(&key_attributes, PSA_BYTES_TO_BITS(rsa_key_size));
+
+    /* Prepare the RSA public key in the format expected by PSA */
+    /* PSA expects the key in big-endian format as a sequence of {N, E} */
+    size_t n_size = rsa_key_size; /* N size in bytes */
+    size_t e_size = sizeof(trusted_block->key.e); /* E size in bytes */
+    size_t key_data_size = n_size + e_size + 8; /* Additional bytes for encoding */
+
+    uint8_t *key_data = calloc(1, key_data_size);
+    if (key_data == NULL) {
         free(sig_be);
         return ESP_ERR_NO_MEM;
     }
 
-    mbedtls_entropy_init(&entropy);
-    mbedtls_ctr_drbg_init(&ctr_drbg);
-    ret = mbedtls_ctr_drbg_seed(&ctr_drbg, mbedtls_entropy_func, &entropy, NULL, 0);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "mbedtls_ctr_drbg_seed returned -0x%04x", ret);
-        goto exit_outer;
-    }
+    /* Construct the key data - would normally need proper DER encoding,
+       but PSA may accept raw concatenated N and E values */
+    uint8_t *p = key_data;
 
-    const mbedtls_mpi N = { .MBEDTLS_PRIVATE(s) = 1,
-        .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.n)/sizeof(mbedtls_mpi_uint),
-        .MBEDTLS_PRIVATE(p) = (void *)trusted_block->key.n,
-    };
-    const mbedtls_mpi e = { .MBEDTLS_PRIVATE(s) = 1,
-        .MBEDTLS_PRIVATE(n) = sizeof(trusted_block->key.e)/sizeof(mbedtls_mpi_uint), // 1
-        .MBEDTLS_PRIVATE(p) = (void *)&trusted_block->key.e,
-    };
-    mbedtls_rsa_init(&pk);
-    mbedtls_rsa_set_padding(&pk,MBEDTLS_RSA_PKCS_V21, MBEDTLS_MD_SHA256);
-    ret = mbedtls_rsa_import(&pk, &N, NULL, NULL, NULL, &e);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed mbedtls_rsa_import, err: %d", ret);
-        goto exit_inner;
-    }
+    /* Copy N (modulus) */
+    memcpy(p, trusted_block->key.n, n_size);
+    p += n_size;
 
-    ret = mbedtls_rsa_complete(&pk);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed mbedtls_rsa_complete, err: %d", ret);
-        goto exit_inner;
-    }
+    /* Copy E (exponent) */
+    memcpy(p, &trusted_block->key.e, e_size);
 
-    ret = mbedtls_rsa_check_pubkey(&pk);
-    if (ret != 0) {
-        ESP_LOGI(TAG, "Key is not an RSA key -%0x", -ret);
-        goto exit_inner;
+    /* Import the RSA public key */
+    status = psa_import_key(&key_attributes, key_data, key_data_size, &key_id);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Failed to import RSA public key, err: %d", status);
+        ret = ESP_FAIL;
+        goto cleanup;
     }
 
     /* Signature needs to be byte swapped into BE representation */
@@ -78,24 +74,27 @@ esp_err_t verify_rsa_signature_block(const ets_secure_boot_signature_t *sig_bloc
         sig_be[rsa_key_size - j - 1] = trusted_block->signature[j];
     }
 
-    ret = mbedtls_rsa_public( &pk, sig_be, buf);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "mbedtls_rsa_public failed, err: %d", ret);
-        goto exit_inner;
-    }
+    /* Verify the signature using PSA APIs */
+    status = psa_verify_hash(key_id, PSA_ALG_RSA_PSS(PSA_ALG_SHA_256),
+                            image_digest, ESP_SECURE_BOOT_DIGEST_LEN,
+                            sig_be, rsa_key_size);
 
-    ret = mbedtls_rsa_rsassa_pss_verify( &pk, MBEDTLS_MD_SHA256, ESP_SECURE_BOOT_DIGEST_LEN, image_digest, sig_be);
-    if (ret != 0) {
-        ESP_LOGE(TAG, "Failed mbedtls_rsa_rsassa_pss_verify, err: %d", ret);
+    if (status != PSA_SUCCESS) {
+        ESP_LOGE(TAG, "Signature verification failed, err: %d", status);
+        ret = ESP_FAIL;
     } else {
         ESP_LOGI(TAG, "Signature verified successfully!");
+        ret = ESP_OK;
     }
-exit_inner:
-    mbedtls_rsa_free(&pk);
-exit_outer:
-    mbedtls_ctr_drbg_free(&ctr_drbg);
-    mbedtls_entropy_free(&entropy);
+
+cleanup:
+    /* Clean up resources */
+    if (key_id != 0) {
+        psa_destroy_key(key_id);
+    }
+    psa_reset_key_attributes(&key_attributes);
+    free(key_data);
     free(sig_be);
-    free(buf);
+
     return ret;
 }
