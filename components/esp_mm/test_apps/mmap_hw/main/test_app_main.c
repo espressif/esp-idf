@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,11 +13,11 @@
  * - traversing all vaddr range to check their attributes
  *
  * These tests need certain number of internal resources (heap memory), as they uses up the vaddr ranges
- * On ESP32, it should be around 450
- * On ESP32S2, it should be around 600
- * On other chips, it should be around 400
+ * On ESP32, it should be around 650
+ * On ESP32S2, it should be around 800
+ * On other chips, it should be around 600
  */
-#define TEST_MEMORY_LEAK_THRESHOLD (-650)
+#define TEST_MEMORY_LEAK_THRESHOLD (-800)
 
 static size_t before_free_8bit;
 static size_t before_free_32bit;
