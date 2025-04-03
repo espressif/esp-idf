@@ -94,6 +94,7 @@ static void echo_task(void *arg)
 
     // Allocate buffers for UART
     uint8_t* data = (uint8_t*) malloc(BUF_SIZE);
+    assert(data);
 
     ESP_LOGI(TAG, "UART start receive loop.\r");
     echo_send(uart_num, "Start RS485 UART test.\r\n", 24);
