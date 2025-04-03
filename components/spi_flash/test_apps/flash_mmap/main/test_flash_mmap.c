@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include "esp_log.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include <freertos/semphr.h>
@@ -492,4 +493,15 @@ TEST_CASE("no stale data read post mmap and write partition", "[spi_flash][mmap]
     esp_partition_munmap(handle);
     TEST_ASSERT_EQUAL(0, memcmp(buf, read_data, sizeof(buf)));
 #endif
+}
+
+TEST_CASE("spi_flash_cache2phys points to correct address", "[spi_flash]")
+{
+    //_rodata_start, which begins with appdesc, is always the first segment of the bin.
+    extern int _rodata_start;
+    size_t addr = spi_flash_cache2phys(&_rodata_start);
+
+    const esp_partition_t *factory = esp_partition_find_first(ESP_PARTITION_TYPE_APP, ESP_PARTITION_SUBTYPE_ANY, "factory");
+    ESP_LOGI("running bin", "0x%p", (void*)addr);
+    TEST_ASSERT_HEX32_WITHIN(CONFIG_MMU_PAGE_SIZE/2, factory->address + CONFIG_MMU_PAGE_SIZE/2, addr);
 }
