@@ -28,7 +28,7 @@
     ledc
     :SOC_MIPI_CSI_SUPPORTED: camera_driver
     :SOC_MCPWM_SUPPORTED: mcpwm
-    :SOC_PARLIO_SUPPORTED: parlio
+    :SOC_PARLIO_SUPPORTED: parlio/index
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_PPA_SUPPORTED: ppa
     :SOC_RMT_SUPPORTED: rmt

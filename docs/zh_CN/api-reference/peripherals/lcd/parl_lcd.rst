@@ -1,13 +1,13 @@
-Parallel IO 模拟 SPI 或 I80 接口的 LCD
+并行 IO 模拟 SPI 或 I80 接口的 LCD
 --------------------------------------------------------------
 
 :link_to_translation:`en:[English]`
 
-Parallel IO 并不是总线型的外设，驱动直接为 LCD 创建 Parallel IO 设备。目前驱动支持 SPI (1 bit 数据位宽) 和 I80 (8 bit 数据位宽 )模式。
+并行 IO 并不是总线型的外设，驱动直接为 LCD 创建并行 IO 设备。目前驱动支持 SPI (1 bit 数据位宽) 和 I80 (8 bit 数据位宽 )模式。
 
-#. 调用 :cpp:func:`esp_lcd_new_panel_io_parl` 创建 Parallel IO 设备。请设置以下参数：
+#. 调用 :cpp:func:`esp_lcd_new_panel_io_parl` 创建并行 IO 设备。请设置以下参数：
 
-    - :cpp:member:`esp_lcd_panel_io_parl_config_t::clk_src` 设置 Parallel IO 设备的时钟源。请注意，不同的 ESP 芯片可能有不同的默认时钟源。
+    - :cpp:member:`esp_lcd_panel_io_parl_config_t::clk_src` 设置并行 IO 设备的时钟源。请注意，不同的 ESP 芯片可能有不同的默认时钟源。
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::clk_gpio_num` 设置像素时钟的 GPIO 编号（在某些 LCD 规格书中也被称为 ``WR`` 或者 ``SCLK``）
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::dc_gpio_num` 设置数据或命令选择管脚的 GPIO 编号（在某些 LCD 规格书中也被称为 ``RS``）
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::cs_gpio_num` 设置 CS 信号线的 GPIO 编号。（注意，Parallel IO LCD 驱动仅支持单个 LCD 设备）。
@@ -18,7 +18,7 @@ Parallel IO 并不是总线型的外设，驱动直接为 LCD 创建 Parallel IO
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::pclk_hz` 设置像素时钟的频率 (Hz)。较高的像素时钟频率会带来较高的刷新率，但如果 DMA 带宽不足或 LCD 控制器芯片不支持高像素时钟频率，则可能会导致显示异常。
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::dc_levels` 设置 DC 数据选择和命令选择的有效电平。
     - :cpp:member:`esp_lcd_panel_io_parl_config_t::lcd_cmd_bits` 和 :cpp:member:`esp_lcd_panel_io_spi_config_t::lcd_param_bits` 分别设置 LCD 控制器芯片可识别的命令及参数的位宽。不同芯片对位宽要求不同，请提前参阅 LCD 规格书。
-    - :cpp:member:`esp_lcd_panel_io_parl_config_t::trans_queue_depth` 设置 Parallel IO 传输队列的深度。该值越大，可以排队的传输越多，但消耗的内存也越多。
+    - :cpp:member:`esp_lcd_panel_io_parl_config_t::trans_queue_depth` 设置并行 IO 传输队列的深度。该值越大，可以排队的传输越多，但消耗的内存也越多。
 
     .. code-block:: c
 
@@ -50,9 +50,9 @@ Parallel IO 并不是总线型的外设，驱动直接为 LCD 创建 Parallel IO
 
         .. note::
 
-            注意，由于硬件限制，{IDF_TARGET_NAME} 不能通过 Parallel IO 模拟驱动 I80 接口 LCD。
+            注意，由于硬件限制，{IDF_TARGET_NAME} 不能通过并行 IO 模拟驱动 I80 接口 LCD。
 
-#. 安装 LCD 控制器驱动程序。LCD 控制器驱动程序负责向 LCD 控制器芯片发送命令和参数。在此步骤中，需要指定上一步骤中分配到的 Parallel IO 设备句柄以及一些面板特定配置：
+#. 安装 LCD 控制器驱动程序。LCD 控制器驱动程序负责向 LCD 控制器芯片发送命令和参数。在此步骤中，需要指定上一步骤中分配到的并行 IO 设备句柄以及一些面板特定配置：
 
     - :cpp:member:`esp_lcd_panel_dev_config_t::reset_gpio_num` 设置 LCD 的硬件复位 GPIO 编号。如果 LCD 没有硬件复位管脚，则将此设置为 ``-1``。
     - :cpp:member:`esp_lcd_panel_dev_config_t::rgb_ele_order` 设置每个颜色数据的 RGB 元素顺序。
@@ -67,7 +67,7 @@ Parallel IO 并不是总线型的外设，驱动直接为 LCD 创建 Parallel IO
             .rgb_ele_order = LCD_RGB_ELEMENT_ORDER_BGR,
             .bits_per_pixel = 16,
         };
-        // 为 ST7789 创建 LCD 面板句柄，并指定 Parallel IO 设备句柄
+        // 为 ST7789 创建 LCD 面板句柄，并指定并行 IO 设备句柄
         ESP_ERROR_CHECK(esp_lcd_new_panel_st7789(io_handle, &panel_config, &panel_handle));
 
 API 参考

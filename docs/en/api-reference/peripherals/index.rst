@@ -29,7 +29,7 @@ Peripherals API
     :SOC_GP_LDO_SUPPORTED: ldo_regulator
     ledc
     :SOC_MCPWM_SUPPORTED: mcpwm
-    :SOC_PARLIO_SUPPORTED: parlio
+    :SOC_PARLIO_SUPPORTED: parlio/index
     :SOC_PCNT_SUPPORTED: pcnt
     :SOC_PPA_SUPPORTED: ppa
     :SOC_RMT_SUPPORTED: rmt

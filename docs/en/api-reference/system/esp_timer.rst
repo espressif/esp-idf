@@ -128,7 +128,7 @@ If the minimum timeout values slightly exceed the requirements, the Interrupt Di
 
 .. only:: SOC_PARLIO_SUPPORTED
 
-    For even smaller timeout values, for example, to generate or receive waveforms or do bit banging, the resolution of ESP Timer may be insufficient. In this case, it is recommended to use dedicated peripherals, such as :doc:`Parallel IO </api-reference/peripherals/parlio>`, and their DMA features if available.
+    For even smaller timeout values, for example, to generate or receive waveforms or do bit banging, the resolution of ESP Timer may be insufficient. In this case, it is recommended to use dedicated peripherals, such as :doc:`Parallel IO </api-reference/peripherals/parlio/index>`, and their DMA features if available.
 
 
 Sleep Mode Considerations

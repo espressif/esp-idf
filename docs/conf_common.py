@@ -115,7 +115,11 @@ MCPWM_DOCS = ['api-reference/peripherals/mcpwm.rst']
 
 DEDIC_GPIO_DOCS = ['api-reference/peripherals/dedic_gpio.rst']
 
-PARLIO_DOCS = ['api-reference/peripherals/parlio.rst']
+PARLIO_DOCS = [
+    'api-reference/peripherals/parlio/index.rst',
+    'api-reference/peripherals/parlio/parlio_tx.rst',
+    'api-reference/peripherals/parlio/parlio_rx.rst',
+]
 
 PCNT_DOCS = ['api-reference/peripherals/pcnt.rst']
 
