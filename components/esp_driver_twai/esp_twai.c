@@ -4,13 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sys/param.h>
-#include "esp_check.h"
 #include "esp_twai.h"
 #include "esp_private/twai_interface.h"
-#include "esp_private/twai_priv.h"
-
-static const char *TAG = "esp_twai";
+#include "esp_private/twai_utils.h"
+#include "twai_private.h"
 
 /**
  * @brief Calculate twai timing param by giving bitrate and hardware limit.
@@ -44,7 +41,7 @@ uint32_t twai_node_timing_calc_param(const uint32_t source_freq, const twai_timi
     }
 
     uint16_t default_point = (in_param->bitrate >= 800000) ? 750 : ((in_param->bitrate >= 500000) ? 800 : 875);
-    uint16_t sample_point = in_param->sample_point ? in_param->sample_point : default_point;  // default sample point based on bitrate if not configured
+    uint16_t sample_point = in_param->sp_permill ? in_param->sp_permill : default_point;  // default sample point based on bitrate if not configured
     uint16_t tseg_1 = (tseg * sample_point) / 1000;
     tseg_1 = MAX(hw_limit->tseg1_min, MIN(tseg_1, hw_limit->tseg1_max));
     uint16_t tseg_2 = tseg - tseg_1 - 1;
@@ -107,9 +104,9 @@ esp_err_t twai_node_config_range_filter(twai_node_handle_t node, uint8_t filter_
 esp_err_t twai_node_reconfig_timing(twai_node_handle_t node, const twai_timing_advanced_config_t *bit_timing, const twai_timing_advanced_config_t *data_timing)
 {
     ESP_RETURN_ON_FALSE(node && (bit_timing || data_timing), ESP_ERR_INVALID_ARG, TAG, "invalid argument: null");
-    ESP_RETURN_ON_FALSE(node->timing_reconfig, ESP_ERR_NOT_SUPPORTED, TAG, "timing_reconfig func null");
+    ESP_RETURN_ON_FALSE(node->reconfig_timing, ESP_ERR_NOT_SUPPORTED, TAG, "reconfig_timing func null");
 
-    return node->timing_reconfig(node, bit_timing, data_timing);
+    return node->reconfig_timing(node, bit_timing, data_timing);
 }
 
 esp_err_t twai_node_register_event_callbacks(twai_node_handle_t node, const twai_event_callbacks_t *cbs, void *user_data)
@@ -151,3 +148,11 @@ esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_header_
 
     return node->receive_isr(node, header, rx_buffer, buf_sz, received_len);
 }
+
+#if CONFIG_TWAI_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void twai_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

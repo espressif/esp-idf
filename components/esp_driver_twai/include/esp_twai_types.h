@@ -21,9 +21,9 @@ typedef struct twai_node_base *twai_node_handle_t;
  * @brief TWAI bitrate timing config basic (simple) mode
  */
 typedef struct {
-    uint32_t bitrate;               /**< Expected TWAI bus baud_rate/bitrate in bits/second */
-    uint16_t sample_point;          /**< Optional, sampling point in permill (1/1000) of the entire bit time */
-    uint16_t ssp_permill;           /**< Optional, secondary sample point(ssp) in permill (1/1000) of the entire bit time */
+    uint32_t bitrate;     /**< Expected TWAI bus baud_rate/bitrate in bits/second */
+    uint16_t sp_permill;  /**< Optional, sampling point in permill (1/1000) of the entire bit time */
+    uint16_t ssp_permill; /**< Optional, secondary sample point(ssp) in permill (1/1000) of the entire bit time */
 } twai_timing_basic_config_t;
 
 /**
@@ -52,8 +52,6 @@ typedef struct {
 
 /**
  * @brief Range-based filter configuration structure
- *
- * @note Set both range_low and range_high to `0` to receive ALL frames, both `0xFFFFFFFF` to receive NONE frames
  */
 typedef struct {
     uint32_t range_low;             /**< Lower bound of the filtering range */
@@ -87,7 +85,7 @@ typedef struct {
  * @brief TWAI "TX done" event data
  */
 typedef struct {
-    twai_frame_t *done_trans_tx;
+    const twai_frame_t *done_tx_frame;  /**< Pointer to the frame that has been transmitted */
 } twai_tx_done_event_data_t;
 
 /**
@@ -122,7 +120,7 @@ typedef union {
  * @brief TWAI "error" event data
  */
 typedef struct {
-    twai_error_code_t err_type;
+    twai_error_code_t err_code; /**< Error code indicating the type of the error */
 } twai_error_event_data_t;
 
 /**

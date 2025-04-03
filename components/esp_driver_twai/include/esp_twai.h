@@ -60,6 +60,8 @@ esp_err_t twai_node_register_event_callbacks(twai_node_handle_t node, const twai
 /**
  * @brief Reconfigure the timing settings of the TWAI node
  *
+ * @note You can reconfigure the timing for the arbitration and data phase, separately or together.
+ *
  * @param node Handle to the TWAI node
  * @param bit_timing Optional,pointer to new twai cc(classic) or arbitration phase of twai fd timing configuration
  * @param data_timing Optional, pointer to new twai fd timing configuration
@@ -110,7 +112,9 @@ esp_err_t twai_node_get_info(twai_node_handle_t node, twai_node_status_t *status
 esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame, int timeout_ms);
 
 /**
- * @brief Receive a TWAI frame from 'rx_done_cb' (ONLY FROM 'rx_done_cb')
+ * @brief Receive a TWAI frame from 'rx_done_cb'
+ *
+ * @note This function can only be called from the `rx_done_cb` callback, you can't call it from a task.
  *
  * @param[in] node Handle to the TWAI node
  * @param[out] header Where to store frame header

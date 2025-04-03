@@ -10,8 +10,7 @@ set(priv_req esp_driver_gpio esp_pm)
 
 # Currently support only FD targets
 if(CONFIG_SOC_TWAI_SUPPORT_FD)
-    list(APPEND srcs "onchip/esp_twai_onchip.c")
-    list(APPEND public_include "onchip/include")
+    list(APPEND srcs "esp_twai_onchip.c")
 endif()
 
 idf_component_register(

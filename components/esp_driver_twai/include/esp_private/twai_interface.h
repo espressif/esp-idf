@@ -77,7 +77,7 @@ struct twai_node_base {
      *      - ESP_OK: Success
      *      - ESP_ERR_INVALID_ARG: Invalid timing configuration
      */
-    esp_err_t (*timing_reconfig)(struct twai_node_base *node, const twai_timing_advanced_config_t *bit_timing, const twai_timing_advanced_config_t *data_timing);
+    esp_err_t (*reconfig_timing)(struct twai_node_base *node, const twai_timing_advanced_config_t *bit_timing, const twai_timing_advanced_config_t *data_timing);
 
     /**
      * @brief Transmit a TWAI frame through the TWAI node
