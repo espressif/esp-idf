@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2026 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -278,6 +278,12 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define WIFI_TX_HETB_QUEUE_NUM 1
 #endif
 
+#if CONFIG_ESP_WIFI_PASSIVE_HIDDEN_AP_SUPPORT
+#define WIFI_ENABLE_PASSIVE_HIDDEN_AP (1<<8)
+#else
+#define WIFI_ENABLE_PASSIVE_HIDDEN_AP 0
+#endif
+
 #define CONFIG_FEATURE_WPA3_SAE_BIT     (1<<0)
 #define CONFIG_FEATURE_CACHE_TX_BUF_BIT (1<<1)
 #define CONFIG_FEATURE_FTM_INITIATOR_BIT (1<<2)
@@ -286,6 +292,7 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
 #define CONFIG_FEATURE_GMAC_BIT (1<<5)
 #define CONFIG_FEATURE_11R_BIT (1<<6)
 #define CONFIG_FEATURE_WIFI_ENT_BIT (1<<7)
+#define CONFIG_FEATURE_WIFI_PASSIVE_HIDDEN_AP_BIT (1<<8)
 
 /* Set additional WiFi features and capabilities */
 #define WIFI_FEATURE_CAPS (WIFI_ENABLE_WPA3_SAE | \
@@ -295,7 +302,8 @@ extern wifi_osi_funcs_t g_wifi_osi_funcs;
                            WIFI_ENABLE_GCMP | \
                            WIFI_ENABLE_GMAC | \
                            WIFI_ENABLE_11R  | \
-                           WIFI_ENABLE_ENTERPRISE)
+                           WIFI_ENABLE_ENTERPRISE | \
+                           WIFI_ENABLE_PASSIVE_HIDDEN_AP)
 
 #define WIFI_INIT_CONFIG_DEFAULT() { \
     .osi_funcs = &g_wifi_osi_funcs, \
