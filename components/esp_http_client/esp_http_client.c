@@ -357,7 +357,7 @@ static int http_on_chunk_header(http_parser *parser)
 
 esp_err_t esp_http_client_set_header(esp_http_client_handle_t client, const char *key, const char *value)
 {
-    if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL || value == NULL) {
+    if (client == NULL || client->request == NULL || client->request->headers == NULL || key == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
