@@ -19,7 +19,10 @@ extern "C" {
 /**
  * @brief Suspend external memory cache
  *
+ * @note CPU branch predictor should be disabled before calling this API
  * @note This API is only for internal usage, no thread safety guaranteed
+ * @note This API is Non-Nestable and Non-Reentrant
+ * @note Call to this API must be followed by a `esp_cache_resume_ext_mem_cache`
  */
 void esp_cache_suspend_ext_mem_cache(void);
 
@@ -27,6 +30,8 @@ void esp_cache_suspend_ext_mem_cache(void);
  * @brief Resume external memory cache
  *
  * @note This API is only for internal usage, no thread safety guaranteed
+ * @note This API is Non-Nestable and Non-Reentrant
+ * @note This API must be called after a `esp_cache_suspend_ext_mem_cache`
  */
 void esp_cache_resume_ext_mem_cache(void);
 
@@ -35,6 +40,8 @@ void esp_cache_resume_ext_mem_cache(void);
  * @brief Freeze external memory cache
  *
  * @note This API is only for internal usage, no thread safety guaranteed
+ * @note This API is Non-Nestable and Non-Reentrant
+ * @note Call to this API must be followed by a `esp_cache_unfreeze_ext_mem_cache`
  */
 void esp_cache_freeze_ext_mem_cache(void);
 
@@ -42,6 +49,8 @@ void esp_cache_freeze_ext_mem_cache(void);
  * @brief Unfreeze external memory cache
  *
  * @note This API is only for internal usage, no thread safety guaranteed
+ * @note This API is Non-Nestable and Non-Reentrant
+ * @note This API must be called after a `esp_cache_freeze_ext_mem_cache`
  */
 void esp_cache_unfreeze_ext_mem_cache(void);
 #endif
