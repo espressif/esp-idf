@@ -19,9 +19,9 @@ repos:
         files: 'pytest_.*\.py$'
         require_serial: true
         additional_dependencies:
-          - pytest-embedded-idf[serial]~=1.14
-          - pytest-embedded-jtag~=1.14
-          - pytest-embedded-qemu~=1.14
+          - pytest-embedded-idf[serial]~=1.16
+          - pytest-embedded-jtag~=1.16
+          - pytest-embedded-qemu~=1.16
           - pytest-ignore-test-results~=0.3
           - pytest-rerunfailures
           - pytest-timeout

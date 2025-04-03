@@ -9,7 +9,8 @@
 #include "unity_test_utils_memory.h"
 #include "esp_heap_caps.h"
 
-#define LEAKS (200)
+// lazy install of mutex and pm_lock occupied memorys
+#define LEAKS (250)
 
 void setUp(void)
 {
