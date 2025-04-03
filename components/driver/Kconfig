@@ -256,6 +256,7 @@ menu "Driver Configurations"
         config I2S_ISR_IRAM_SAFE
             bool "I2S ISR IRAM-Safe"
             default n
+            select GDMA_ISR_IRAM_SAFE if SOC_GDMA_SUPPORTED
             help
                 Ensure the I2S interrupt is IRAM-Safe by allowing the interrupt handler to be
                 executable when the cache is disabled (e.g. SPI Flash write).
