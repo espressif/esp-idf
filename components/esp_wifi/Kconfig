@@ -311,9 +311,16 @@ menu "Wi-Fi"
         config ESP_WIFI_ENABLE_SAE_PK
             bool "Enable SAE-PK"
             default y
-            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            depends on (ESP_WIFI_ENABLE_WPA3_SAE && ESP_WIFI_ENABLE_SAE_H2E)
             help
                 Select this option to enable SAE-PK
+
+        config ESP_WIFI_ENABLE_SAE_H2E
+            bool "Enable SAE-H2E"
+            default y
+            depends on ESP_WIFI_ENABLE_WPA3_SAE
+            help
+                Select this option to enable SAE-H2E
 
         config ESP_WIFI_SOFTAP_SAE_SUPPORT
             bool "Enable WPA3 Personal(SAE) SoftAP"

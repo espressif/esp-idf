@@ -111,6 +111,7 @@ ESP-IDF 构建系统会编译项目和 ESP-IDF 中所有源文件，但只有程
     - 如果不需要启用 WPA3 支持，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_WPA3_SAE` 可以减小 Wi-Fi 二进制文件的大小。请注意，WPA3 支持是目前认证新 Wi-Fi 设备的必要标准。
     - 如果不需要启用 soft-AP 支持，禁用 :ref:`CONFIG_ESP_WIFI_SOFTAP_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
     - 如不需要启用企业支持，禁用 :ref:`CONFIG_ESP_WIFI_ENTERPRISE_SUPPORT` 可以减小 Wi-Fi 二进制文件的大小。
+    - 如果不需要启用 WPA3-SAE 的哈希到元素（hash-to-element）认证方法，禁用 :ref:`CONFIG_ESP_WIFI_ENABLE_SAE_H2E` 可以减少 Wi-Fi 二进制文件的大小。请注意，与默认的 “hunting-and-pecking” 认证方法相比，哈希到元素方法更快、更安全，并且对侧信道攻击更具有免疫能力。
 
 .. only:: esp32
 
