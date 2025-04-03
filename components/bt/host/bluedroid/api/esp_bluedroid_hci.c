@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,10 @@
 #include "hci_log/bt_hci_log.h"
 
 #define LOG_TAG "HCI_API"
+
+#if CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
+#include "ble_log/ble_log_spi_out.h"
+#endif // CONFIG_BT_BLE_LOG_SPI_OUT_HCI_ENABLED
 
 static esp_bluedroid_hci_driver_operations_t s_hci_driver_ops = { 0 };
 
@@ -63,6 +67,9 @@ void hci_host_send_packet(uint8_t *data, uint16_t len)
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_record_hci_data(data[0], &data[1], len - 1);
 #endif
+#if (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
+    ble_log_spi_out_write_with_ts(BLE_LOG_SPI_OUT_SOURCE_HCI_DOWNSTREAM, data, len);
+#endif // (BT_BLE_LOG_SPI_OUT_HCI_ENABLED && !SOC_ESP_NIMBLE_CONTROLLER)
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     esp_vhci_host_send_packet(data, len);
 #else /* BT_CONTROLLER_INCLUDED == TRUE */
