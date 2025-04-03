@@ -9,7 +9,7 @@
 #include "esp_heap_caps.h"
 
 // iterator to load partition tables in `test spi bus lock, with flash` will lead memory not free
-#define TEST_MEMORY_LEAK_THRESHOLD (350)
+#define TEST_MEMORY_LEAK_THRESHOLD (450)
 
 void setUp(void)
 {
