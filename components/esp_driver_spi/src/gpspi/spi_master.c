@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -115,8 +115,8 @@ We have two bits to control the interrupt:
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/spi_common_internal.h"
 #include "esp_private/spi_master_internal.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "driver/spi_master.h"
-#include "esp_clk_tree.h"
 #include "clk_ctrl_os.h"
 #include "esp_log.h"
 #include "esp_check.h"
@@ -415,12 +415,10 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
         SPI_CHECK(periph_rtc_dig_clk8m_enable(), "the selected clock not available", ESP_ERR_INVALID_STATE);
     }
 #endif
-    spi_clock_source_t clk_src = SPI_CLK_SRC_DEFAULT;
+    spi_clock_source_t clk_src = dev_config->clock_source ? dev_config->clock_source : SPI_CLK_SRC_DEFAULT;
     uint32_t clock_source_hz = 0;
     uint32_t clock_source_div = 1;
-    if (dev_config->clock_source) {
-        clk_src = dev_config->clock_source;
-    }
+    esp_clk_tree_enable_src(clk_src, true);
     esp_clk_tree_src_get_freq_hz(clk_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_source_hz);
 #if SPI_LL_SUPPORT_CLK_SRC_PRE_DIV
     SPI_CHECK((dev_config->clock_speed_hz > 0) && (dev_config->clock_speed_hz <= MIN(clock_source_hz / 2, (80 * 1000000))), "invalid sclk speed", ESP_ERR_INVALID_ARG);
@@ -584,7 +582,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
     }
 
 #if SOC_SPI_SUPPORT_CLK_RC_FAST
-    if (handle->cfg.clock_source == SPI_CLK_SRC_RC_FAST) {
+    if (handle->hal_dev.timing_conf.clock_source == SPI_CLK_SRC_RC_FAST) {
         // If no transactions from other device, acquire the bus to switch module clock to `SPI_CLK_SRC_DEFAULT`
         // because `SPI_CLK_SRC_RC_FAST` will be disabled then, which block following transactions
         if (handle->host->cur_cs == DEV_NUM_MAX) {
@@ -597,6 +595,7 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
         periph_rtc_dig_clk8m_disable();
     }
 #endif
+    esp_clk_tree_enable_src(handle->hal_dev.timing_conf.clock_source, false);
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;

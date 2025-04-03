@@ -292,6 +292,7 @@ TEST_CASE("spi_master: test_sct_dma_desc_oob_on_tail", "[spi]")
     TEST_ESP_OK(spi_bus_free(SPI2_HOST));
 }
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 /*-----------------------------------------------------------
  * Sleep Retention Test
  *-----------------------------------------------------------*/
@@ -416,3 +417,4 @@ static void sleep_slave(void)
     TEST_ESP_OK(spi_slave_hd_deinit(SPI2_HOST));
 }
 TEST_CASE_MULTIPLE_DEVICES("test_spi_master_sct_sleep_retention", "[spi_ms]", sleep_master, sleep_slave);
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

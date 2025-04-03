@@ -282,11 +282,18 @@ void spitest_gpio_input_sel(uint32_t gpio_num, int func, uint32_t signal_idx);
 
 //Note this cs_num is the ID of the connected devices' ID, e.g. if 2 devices are connected to the bus,
 //then the cs_num of the 1st and 2nd devices are 0 and 1 respectively.
-void same_pin_func_sel(spi_bus_config_t bus, spi_device_interface_config_t dev, uint8_t cs_num);
+//Enable `soft_master` to connect to soft spi master instead of hardware master.
+void same_pin_func_sel(spi_bus_config_t bus, uint8_t cs_pin, uint8_t cs_dev_id, bool soft_master);
 
 // Soft simulated spi master host for slave testing
-// TODO: `speed_hz` is not implemented yet, temp to max 500Hz
+// `speed_hz` max 500kHz
 // TODO: mode 0 only
-void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint8_t speed_hz, void *tx, void *rx, uint32_t len);
+void spi_master_trans_impl_gpio(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, uint8_t *tx, uint8_t *rx, uint32_t len, bool hold_cs);
+
+// Send/Receive long buffer by soft spi master in segments to the slave_hd through its DMA, refer to `essl_spi_wrdma/essl_spi_rddma`
+void essl_sspi_hd_dma_trans_seg(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, bool is_rx, void *buffer, int len, int seg_len);
+
+// Write/Read the shared buffer of the slave_hd by soft spi master, refer to `essl_spi_wrbuf/essl_spi_rdbuf`
+void essl_sspi_hd_buffer_trans(spi_bus_config_t bus, uint8_t cs_pin, uint32_t speed_hz, spi_command_t cmd, uint8_t addr, void *buffer, uint32_t len);
 
 #endif  //_TEST_COMMON_SPI_H_

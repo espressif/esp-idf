@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,8 +19,6 @@
 #include "esp_private/sleep_cpu.h"
 #include "esp_private/esp_sleep_internal.h"
 #include "esp_private/esp_pmu.h"
-
-#if (TEST_SPI_PERIPH_NUM >= 2) //These will be only enabled on chips with 2 or more SPI peripherals
 #include "esp_rom_gpio.h"
 
 #define TEST_BUFFER_SIZE    256     ///< buffer size of each wrdma buffer in fifo mode
@@ -42,65 +40,6 @@ typedef struct {
     spi_slave_hd_data_t rx_data;
 } testhd_context_t;
 
-static uint32_t get_hd_flags(void)
-{
-#if !defined(SLAVE_SUPPORT_QIO)
-    return 0;
-#endif
-    int flag_id = rand() % 5;
-    ESP_LOGI("io mode", "%d", flag_id);
-
-    switch (flag_id) {
-    case 1:
-        return SPI_TRANS_MODE_DIO;
-    case 2:
-        return SPI_TRANS_MODE_DIO | SPI_TRANS_MODE_DIOQIO_ADDR;
-    case 3:
-        return SPI_TRANS_MODE_QIO;
-    case 4:
-        return SPI_TRANS_MODE_QIO | SPI_TRANS_MODE_DIOQIO_ADDR;
-    default:
-        return 0;
-    }
-}
-
-void config_single_board_test_pin(void)
-{
-    esp_rom_gpio_connect_out_signal(PIN_NUM_MOSI, spi_periph_signal[TEST_SPI_HOST].spid_out, 0, 0);
-    esp_rom_gpio_connect_in_signal(PIN_NUM_MOSI, spi_periph_signal[TEST_SLAVE_HOST].spid_in, 0);
-
-    esp_rom_gpio_connect_out_signal(PIN_NUM_MISO, spi_periph_signal[TEST_SLAVE_HOST].spiq_out, 0, 0);
-    esp_rom_gpio_connect_in_signal(PIN_NUM_MISO, spi_periph_signal[TEST_SPI_HOST].spiq_in, 0);
-
-    esp_rom_gpio_connect_out_signal(PIN_NUM_CS, spi_periph_signal[TEST_SPI_HOST].spics_out[0], 0, 0);
-    esp_rom_gpio_connect_in_signal(PIN_NUM_CS, spi_periph_signal[TEST_SLAVE_HOST].spics_in, 0);
-
-    esp_rom_gpio_connect_out_signal(PIN_NUM_CLK, spi_periph_signal[TEST_SPI_HOST].spiclk_out, 0, 0);
-    esp_rom_gpio_connect_in_signal(PIN_NUM_CLK, spi_periph_signal[TEST_SLAVE_HOST].spiclk_in, 0);
-}
-
-static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* config, int freq)
-{
-    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE * 30;
-    bus_cfg.quadhd_io_num = PIN_NUM_HD;
-    bus_cfg.quadwp_io_num = PIN_NUM_WP;
-#if defined(TEST_MASTER_GPIO_MATRIX) && CONFIG_IDF_TARGET_ESP32S2
-    bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
-#endif
-
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
-    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
-    dev_cfg.command_bits = 8;
-    dev_cfg.address_bits = 8;
-    dev_cfg.dummy_bits = 8;
-    dev_cfg.clock_speed_hz = freq;
-    dev_cfg.mode = config->mode;
-    dev_cfg.input_delay_ns = config->slave_tv_ns;
-    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, spi));
-}
-
 static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callback_config_t* callback)
 {
     spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
@@ -121,6 +60,29 @@ static void init_slave_hd(int mode, bool append_mode, const spi_slave_hd_callbac
         slave_hd_cfg.cb_config = (spi_slave_hd_callback_config_t) {};
     }
     TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
+}
+
+#if (TEST_SPI_PERIPH_NUM >= 2) //These will be only enabled on chips with 2 or more SPI peripherals
+static void init_master_hd(spi_device_handle_t* spi, const spitest_param_set_t* config, int freq)
+{
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    bus_cfg.max_transfer_sz = TEST_DMA_MAX_SIZE * 30;
+    bus_cfg.quadhd_io_num = PIN_NUM_HD;
+    bus_cfg.quadwp_io_num = PIN_NUM_WP;
+#if defined(TEST_MASTER_GPIO_MATRIX) && CONFIG_IDF_TARGET_ESP32S2
+    bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
+#endif
+
+    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
+    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
+    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
+    dev_cfg.command_bits = 8;
+    dev_cfg.address_bits = 8;
+    dev_cfg.dummy_bits = 8;
+    dev_cfg.clock_speed_hz = freq;
+    dev_cfg.mode = config->mode;
+    dev_cfg.input_delay_ns = config->slave_tv_ns;
+    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, spi));
 }
 
 static void test_hd_init(void** arg)
@@ -206,7 +168,9 @@ static void test_hd_start(spi_device_handle_t *spi, int freq, const spitest_para
     init_slave_hd(cfg->mode, 0, &callback);
 
     //when test with single board via same set of mosi, miso, clk and cs pins.
-    config_single_board_test_pin();
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    same_pin_func_sel(bus_cfg, slave_hd_cfg.spics_io_num, 0, false);
 
     wait_wrbuf_sig(ctx, 0);
     wait_rdbuf_sig(ctx, 0);
@@ -254,6 +218,28 @@ void check_no_signal(testhd_context_t* context)
     TEST_ASSERT(wait_rdbuf_sig(context, 0) == ESP_ERR_TIMEOUT);
     check_no_rx(context);
     check_no_tx(context);
+}
+
+static uint32_t get_hd_flags(void)
+{
+#if !defined(SLAVE_SUPPORT_QIO)
+    return 0;
+#endif
+    int flag_id = rand() % 5;
+    ESP_LOGI("io mode", "%d", flag_id);
+
+    switch (flag_id) {
+    case 1:
+        return SPI_TRANS_MODE_DIO;
+    case 2:
+        return SPI_TRANS_MODE_DIO | SPI_TRANS_MODE_DIOQIO_ADDR;
+    case 3:
+        return SPI_TRANS_MODE_QIO;
+    case 4:
+        return SPI_TRANS_MODE_QIO | SPI_TRANS_MODE_DIOQIO_ADDR;
+    default:
+        return 0;
+    }
 }
 
 void test_wrdma(testhd_context_t* ctx, const spitest_param_set_t *cfg, spi_device_handle_t spi)
@@ -459,14 +445,12 @@ static const ptest_func_t hd_test_func = {
     TEST_SINGLE_BOARD(name, test_set, "[spi][timeout=120]", &hd_test_func)
 
 static int test_freq_hd[] = {
-    // 100*1000,
-    // 10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
+    500 * 1000,
+    10 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     20 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     // 40 * 1000 * 1000, //maximum freq MISO stable before next latch edge
     0,
 };
-
-#define TEST_HD_IN_CONTINUOUS_MODE  true
 
 static spitest_param_set_t hd_conf[] = {
     {
@@ -507,6 +491,7 @@ static spitest_param_set_t hd_conf[] = {
     },
 };
 TEST_SPI_HD(HD, hd_conf);
+#endif //#if (TEST_SPI_PERIPH_NUM >= 2)
 
 /*
  * When the previous transaction of master exceeds the length of slave prepared too long, the
@@ -517,20 +502,15 @@ TEST_SPI_HD(HD, hd_conf);
  */
 TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]")
 {
-    spi_device_handle_t spi;
-    spitest_param_set_t *cfg = &hd_conf[0];
-    int freq = 100 * 1000; // the frequency should be small enough for the slave to prepare new trans
-
-    init_master_hd(&spi, cfg, freq);
-
     //no callback needed
-    init_slave_hd(cfg->mode, 0, NULL);
+    init_slave_hd(0, false, NULL);
 
     //Use GPIO matrix to connect signal of master and slave via same set of pins on one board.
-    config_single_board_test_pin();
+    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
+    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
+    same_pin_func_sel(bus_cfg, slave_hd_cfg.spics_io_num, 0, true);
 
     const int send_buf_size = 1024;
-
     WORD_ALIGNED_ATTR uint8_t* slave_send_buf = malloc(send_buf_size * 2);
     WORD_ALIGNED_ATTR uint8_t* master_send_buf = malloc(send_buf_size * 2);
     WORD_ALIGNED_ATTR uint8_t* slave_recv_buf = malloc(send_buf_size * 2);
@@ -578,11 +558,11 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
         TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &slave_trans[i], portMAX_DELAY));
     }
 
-    essl_spi_wrdma(spi, master_send_buf, send_buf_size, -1, 0);
-    essl_spi_wrdma(spi, master_send_buf + send_buf_size, send_buf_size, 5, 0);
+    essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, false, master_send_buf, send_buf_size, -1);
+    essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, false, master_send_buf + send_buf_size, send_buf_size, 5);
 
-    essl_spi_rddma(spi, master_recv_buf, send_buf_size, -1, 0);
-    essl_spi_rddma(spi, master_recv_buf + send_buf_size, send_buf_size, 5, 0);
+    essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, true, master_recv_buf, send_buf_size, -1);
+    essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, true, master_recv_buf + send_buf_size, send_buf_size, 5);
 
     for (int i = 0; i < 2; i ++) {
         spi_slave_hd_data_t *ret_trans;
@@ -590,7 +570,6 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
         TEST_ASSERT(ret_trans == &slave_trans[i]);
         TEST_ASSERT_EQUAL(slave_trans[i].len, ret_trans->trans_len);
     }
-
     for (int i = 2; i < 4; i ++) {
         spi_slave_hd_data_t *ret_trans;
         TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
@@ -608,148 +587,8 @@ TEST_CASE("test spi slave hd segment mode, master too long", "[spi][spi_slv_hd]"
     free(master_send_buf);
     free(slave_send_buf);
     spi_slave_hd_deinit(TEST_SLAVE_HOST);
-    master_free_device_bus(spi);
+    ESP_LOGI(SLAVE_TAG, "test passed.");
 }
-
-#endif //#if (TEST_SPI_PERIPH_NUM >= 2)
-
-#if (TEST_SPI_PERIPH_NUM == 1)
-//These tests are for chips which only have 1 SPI controller
-/********************************************************************************
- *      Test By Master & Slave (2 boards)
- *
- * Master (C3, C2, H2) && Slave (C3, C2, H2):
- *      PIN | Master     | Slave      |
- *      ----| ---------  | ---------  |
- *      CS  | 10         | 10         |
- *      CLK | 6          | 6          |
- *      MOSI| 7          | 7          |
- *      MISO| 2          | 2          |
- *      GND | GND        | GND        |
- *
- ********************************************************************************/
-
-static void hd_master(void)
-{
-    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_bus_initialize(TEST_SPI_HOST, &bus_cfg, SPI_DMA_CH_AUTO));
-
-    spi_device_handle_t spi;
-    spi_device_interface_config_t dev_cfg = SPI_DEVICE_TEST_DEFAULT_CONFIG();
-    dev_cfg.flags = SPI_DEVICE_HALFDUPLEX;
-    dev_cfg.command_bits = 8;
-    dev_cfg.address_bits = 8;
-    dev_cfg.dummy_bits = 8;
-    dev_cfg.clock_speed_hz = 100 * 1000;
-    TEST_ESP_OK(spi_bus_add_device(TEST_SPI_HOST, &dev_cfg, &spi));
-
-    const int send_buf_size = 1024;
-
-    WORD_ALIGNED_ATTR uint8_t *master_send_buf = malloc(send_buf_size * 2);
-    WORD_ALIGNED_ATTR uint8_t *master_recv_buf = calloc(1, send_buf_size * 2);
-    //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_slave`` does.
-    WORD_ALIGNED_ATTR uint8_t *slave_send_buf = malloc(send_buf_size * 2);
-    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, send_buf_size * 2);
-
-    //This is the same as the ``hd_slave`` sets.
-    int trans_len[] = {5, send_buf_size};
-
-    unity_send_signal("master ready");
-    unity_wait_for_signal("slave ready");
-    essl_spi_wrdma(spi, master_send_buf, send_buf_size, -1, 0);
-
-    unity_wait_for_signal("slave ready");
-    essl_spi_wrdma(spi, master_send_buf + send_buf_size, send_buf_size, 5, 0);
-
-    unity_wait_for_signal("slave ready");
-    essl_spi_rddma(spi, master_recv_buf, send_buf_size, -1, 0);
-    spitest_cmp_or_dump(slave_send_buf, master_recv_buf, trans_len[0]);
-
-    unity_wait_for_signal("slave ready");
-    essl_spi_rddma(spi, master_recv_buf + send_buf_size, send_buf_size, 5, 0);
-    spitest_cmp_or_dump(slave_send_buf + send_buf_size, master_recv_buf + send_buf_size, trans_len[1]);
-
-    free(master_recv_buf);
-    free(master_send_buf);
-    free(slave_send_buf);
-
-    master_free_device_bus(spi);
-}
-
-static void hd_slave(void)
-{
-    spi_bus_config_t bus_cfg = SPI_BUS_TEST_DEFAULT_CONFIG();
-    bus_cfg.max_transfer_sz = 14000 * 30;
-
-    spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
-    TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
-
-    unity_wait_for_signal("master ready");
-    const int send_buf_size = 1024;
-
-    WORD_ALIGNED_ATTR uint8_t *slave_send_buf = malloc(send_buf_size * 2);
-    WORD_ALIGNED_ATTR uint8_t *slave_recv_buf = calloc(1, send_buf_size * 2);
-    //This buffer is used for 2-board test and should be assigned totally the same as the ``hd_master`` does.
-    WORD_ALIGNED_ATTR uint8_t *master_send_buf = malloc(send_buf_size * 2);
-    test_fill_random_to_buffers_dualboard(199, master_send_buf, slave_send_buf, send_buf_size * 2);
-
-    //make the first transaction shorter than the actual trans length of the master, so that the second one will be loaded while the master is still doing the first transaction.
-    int trans_len[] = {5, send_buf_size};
-    spi_slave_hd_data_t slave_trans[4] = {
-        //recv, the buffer size should be aligned to 4
-        {
-            .data = slave_recv_buf,
-            .len = (trans_len[0] + 3) & (~3),
-        },
-        {
-            .data = slave_recv_buf + send_buf_size,
-            .len = (trans_len[1] + 3) & (~3),
-        },
-        //send
-        {
-            .data = slave_send_buf,
-            .len = trans_len[0],
-        },
-        {
-            .data = slave_send_buf + send_buf_size,
-            .len = trans_len[1],
-        },
-    };
-
-    for (int i = 0; i < 2; i ++) {
-        TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &slave_trans[i], portMAX_DELAY));
-        unity_send_signal("slave ready");
-    }
-    for (int i = 2; i < 4; i ++) {
-        TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &slave_trans[i], portMAX_DELAY));
-        unity_send_signal("slave ready");
-    }
-
-    for (int i = 0; i < 2; i ++) {
-        spi_slave_hd_data_t *ret_trans;
-        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &ret_trans, portMAX_DELAY));
-        TEST_ASSERT(ret_trans == &slave_trans[i]);
-        TEST_ASSERT_EQUAL(slave_trans[i].len, ret_trans->trans_len);
-    }
-
-    for (int i = 2; i < 4; i ++) {
-        spi_slave_hd_data_t *ret_trans;
-        TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
-        TEST_ASSERT(ret_trans == &slave_trans[i]);
-    }
-
-    spitest_cmp_or_dump(master_send_buf, slave_recv_buf, trans_len[0]);
-    spitest_cmp_or_dump(master_send_buf + send_buf_size, slave_recv_buf + send_buf_size, trans_len[1]);
-
-    free(slave_recv_buf);
-    free(slave_send_buf);
-    free(master_send_buf);
-
-    spi_slave_hd_deinit(TEST_SLAVE_HOST);
-}
-
-TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: segment mode, master sends too long", "[spi_ms][test_env=generic_multi_device]", hd_master, hd_slave);
-#endif  //#if (TEST_SPI_PERIPH_NUM == 1)
 
 /**
  *  TODO IDF-5483
@@ -1063,6 +902,7 @@ void master_run_essl(void)
 }
 TEST_CASE_MULTIPLE_DEVICES("SPI Slave HD: Append mode", "[spi_ms]", master_run_essl, slave_run_append);
 
+#if SOC_LIGHT_SLEEP_SUPPORTED
 #define TEST_SLP_BUF_ID                 12
 #define TEST_SLP_BUF_VAL                0xDEADBEEF
 TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
@@ -1075,12 +915,9 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
 
-    uint32_t slave_hd_cmd[2][2] = {{SPI_LL_BASE_CMD_HD_WRDMA, SPI_LL_BASE_CMD_HD_WR_END}, {SPI_LL_BASE_CMD_HD_RDDMA, SPI_LL_BASE_CMD_HD_INT0}};
-    uint32_t slave_share_sig = TEST_SLP_BUF_VAL;
+    uint32_t slave_share_sig = TEST_SLP_BUF_VAL, read_share_sig;
     uint8_t slv_send[14] = "I'm slave  x\n", slv_rexcv[14];
-    uint8_t mst_txbuff[17] = "   I'm master x\n", mst_rxbuff[17];  //more than 3 byte to hold cmd,addrs,dummy
-    uint8_t share_sig_buff[7] = {0};    // cmd + addr + dummy + uint32_t
-    uint8_t *mst_send = &mst_txbuff[3], *mst_rexcv = &mst_rxbuff[3];
+    uint8_t mst_send[14] = "I'm master x\n", mst_rexcv[14];
     spi_slave_hd_data_t *ret_trans, tx_data = {
         .data = slv_send,
         .len = sizeof(slv_send),
@@ -1097,7 +934,7 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
         bus_cfg.flags |= SPICOMMON_BUSFLAG_GPIO_PINS;
         spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
         TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
-        gpio_pullup_en(slave_hd_cfg.spics_io_num);
+        same_pin_func_sel(bus_cfg, slave_hd_cfg.spics_io_num, 0, true);
         vTaskDelay(1);
 
         for (uint8_t cnt = 0; cnt < 3; cnt ++) {
@@ -1121,12 +958,8 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
             TEST_ESP_OK(spi_slave_hd_queue_trans(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_RX, &rx_data, portMAX_DELAY));
 
             // tx rx transaction
-            mst_txbuff[0] = slave_hd_cmd[0][0];
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_txbuff, NULL, sizeof(mst_txbuff));
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[0][1], NULL, 3);
-            mst_rxbuff[0] = slave_hd_cmd[1][0];
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_rxbuff, mst_rxbuff, sizeof(mst_rxbuff));
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
+            essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, false, mst_send, sizeof(mst_send), -1);
+            essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, true, mst_rexcv, sizeof(mst_rexcv), -1);
 
             // check trans result
             TEST_ESP_OK(spi_slave_hd_get_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
@@ -1139,12 +972,10 @@ TEST_CASE("test_spi_slave_hd_sleep_retention", "[spi]")
             // test slave hd share registers
             slave_share_sig += cnt;
             spi_slave_hd_write_buffer(TEST_SLAVE_HOST, TEST_SLP_BUF_ID, (uint8_t *)&slave_share_sig, sizeof(uint32_t));
-            memset(share_sig_buff, 0, sizeof(share_sig_buff));
-            share_sig_buff[0] = SPI_LL_BASE_CMD_HD_RDBUF;   // cmd
-            share_sig_buff[1] = TEST_SLP_BUF_ID;            // addr
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, share_sig_buff, share_sig_buff, sizeof(share_sig_buff));
-            printf("slave reg %lX\n", *((uint32_t *)&share_sig_buff[3]));
-            TEST_ASSERT_EQUAL_UINT32(slave_share_sig, *((uint32_t *)&share_sig_buff[3]));
+            read_share_sig = 0;
+            essl_sspi_hd_buffer_trans(bus_cfg, slave_hd_cfg.spics_io_num, 0, SPI_CMD_HD_RDBUF, TEST_SLP_BUF_ID, &read_share_sig, sizeof(uint32_t));
+            printf("slave reg %lX\n", read_share_sig);
+            TEST_ASSERT_EQUAL_UINT32(slave_share_sig, read_share_sig);
         }
         spi_slave_hd_deinit(TEST_SLAVE_HOST);
     }
@@ -1166,10 +997,8 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     esp_sleep_context_t sleep_ctx;
     esp_sleep_set_sleep_context(&sleep_ctx);
 
-    uint32_t slave_hd_cmd[2][2] = {{SPI_LL_BASE_CMD_HD_WRDMA, SPI_LL_BASE_CMD_HD_WR_END}, {SPI_LL_BASE_CMD_HD_RDDMA, SPI_LL_BASE_CMD_HD_INT0}};
     uint8_t slv_rexcv[14], slv_send[TEST_SLP_TRANS_NUM][14] = {{"I'm append x\n"}, {"I'm append x\n"}, {"I'm append x\n"}};
-    uint8_t mst_txbuff[17] = "   I'm master x\n", mst_rxbuff[17];  //more than 3 byte to hold cmd,addrs,dummy
-    uint8_t *mst_send = &mst_txbuff[3], *mst_rexcv = &mst_rxbuff[3];
+    uint8_t mst_send[14] = "I'm master x\n", mst_rexcv[14];
     spi_slave_hd_data_t *ret_trans, tx_data[TEST_SLP_TRANS_NUM], rx_data = {
         .data = slv_rexcv,
         .len = sizeof(slv_rexcv),
@@ -1183,7 +1012,7 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     spi_slave_hd_slot_config_t slave_hd_cfg = SPI_SLOT_TEST_DEFAULT_CONFIG();
     slave_hd_cfg.flags |= SPI_SLAVE_HD_APPEND_MODE;
     TEST_ESP_OK(spi_slave_hd_init(TEST_SLAVE_HOST, &bus_cfg, &slave_hd_cfg));
-    gpio_pullup_en(slave_hd_cfg.spics_io_num);
+    same_pin_func_sel(bus_cfg, slave_hd_cfg.spics_io_num, 0, true);
     vTaskDelay(1);
 
     for (uint8_t i = 0; i < 2; i++) {
@@ -1216,12 +1045,8 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
             memset(slv_rexcv, 0, sizeof(slv_rexcv));
 
             // tx rx append transaction
-            mst_txbuff[0] = slave_hd_cmd[0][0];
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_txbuff, NULL, sizeof(mst_txbuff));
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[0][1], NULL, 3);
-            mst_rxbuff[0] = slave_hd_cmd[1][0];
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, mst_rxbuff, mst_rxbuff, sizeof(mst_rxbuff));
-            spi_master_trans_impl_gpio(bus_cfg, slave_hd_cfg.spics_io_num, 0, &slave_hd_cmd[1][1], NULL, 3);
+            essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, false, mst_send, sizeof(mst_send), -1);
+            essl_sspi_hd_dma_trans_seg(bus_cfg, slave_hd_cfg.spics_io_num, 0, true, mst_rexcv, sizeof(mst_rexcv), -1);
 
             // check append trans result
             TEST_ESP_OK(spi_slave_hd_get_append_trans_res(TEST_SLAVE_HOST, SPI_SLAVE_CHAN_TX, &ret_trans, portMAX_DELAY));
@@ -1238,3 +1063,4 @@ TEST_CASE("test_spi_slave_hd_append_sleep_retention", "[spi]")
     TEST_ESP_OK(sleep_cpu_configure(false));
 #endif
 }
+#endif  //SOC_LIGHT_SLEEP_SUPPORTED

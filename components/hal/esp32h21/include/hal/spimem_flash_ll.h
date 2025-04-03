@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -521,11 +521,8 @@ static inline void spimem_flash_ll_set_mosi_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_command(spi_mem_dev_t *dev, uint32_t command, uint32_t bitlen)
 {
     dev->user.usr_command = 1;
-    typeof(dev->user2) user2 = {
-        .usr_command_value = command,
-        .usr_command_bitlen = (bitlen - 1),
-    };
-    dev->user2.val = user2.val;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_value, command);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->user2, usr_command_bitlen, (bitlen - 1));
 }
 
 /**
@@ -560,7 +557,7 @@ static inline void spimem_flash_ll_set_addr_bitlen(spi_mem_dev_t *dev, uint32_t 
 static inline void spimem_flash_ll_set_extra_address(spi_mem_dev_t *dev, uint32_t extra_addr)
 {
     dev->cache_fctrl.usr_addr_4byte = 0;
-    dev->rd_status.wb_mode = extra_addr;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(dev->rd_status, wb_mode, extra_addr);
 }
 
 /**

@@ -75,7 +75,7 @@ TEST_CASE("SPI Single Board Test SIO", "[spi]")
     spi_slave_interface_config_t slv_cfg = SPI_SLAVE_TEST_DEFAULT_CONFIG();
     TEST_ESP_OK(spi_slave_initialize(TEST_SLAVE_HOST, &bus_cfg, &slv_cfg, SPI_DMA_DISABLED));
 
-    same_pin_func_sel(bus_cfg, dev_cfg, 0);
+    same_pin_func_sel(bus_cfg, dev_cfg.spics_io_num, 0, false);
     inner_connect(bus_cfg);
 
     WORD_ALIGNED_ATTR uint8_t master_rx_buffer[320];
@@ -178,7 +178,7 @@ void test_sio_master_trans(bool sio_master_in)
     uint8_t *master_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL_MESSAGE(master_tx_max, "malloc failed, exit.\n");
 
-    // write somethin to a long buffer for test long transmission
+    // write something to a long buffer for test long transmission
     for (uint16_t i = 0; i < TRANS_LEN; i++) {
         master_tx_max[i] = i;
         master_tx_max[TRANS_LEN * 2 - i - 1] = i;
@@ -252,7 +252,7 @@ void test_sio_slave_emulate(bool sio_master_in)
     uint8_t *slave_tx_max = heap_caps_calloc(TRANS_LEN * 2, 1, MALLOC_CAP_DMA);
     TEST_ASSERT_NOT_NULL_MESSAGE(slave_tx_max, "malloc failed, exit.\n");
 
-    // write somethin to a long buffer for test long transmission
+    // write something to a long buffer for test long transmission
     for (uint16_t i = 0; i < TRANS_LEN; i++) {
         slave_tx_max[i] = i;
         slave_tx_max[TRANS_LEN * 2 - i - 1] = i;
