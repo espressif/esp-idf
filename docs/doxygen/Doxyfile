@@ -269,6 +269,7 @@ INPUT = \
     $(PROJECT_PATH)/components/hal/include/hal/lp_core_types.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps_init.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_caps.h \
+    $(PROJECT_PATH)/components/heap/include/esp_heap_task_info.h \
     $(PROJECT_PATH)/components/heap/include/esp_heap_trace.h \
     $(PROJECT_PATH)/components/heap/include/multi_heap.h \
     $(PROJECT_PATH)/components/ieee802154/include/esp_ieee802154_types.h \

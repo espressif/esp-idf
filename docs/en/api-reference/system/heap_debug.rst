@@ -200,10 +200,142 @@ Calls to :cpp:func:`heap_caps_check_integrity` or :cpp:func:`heap_caps_check_int
 Heap Task Tracking
 ------------------
 
-Heap Task Tracking can be used to get per-task info for heap memory allocation. The application has to specify the heap capabilities for which the heap allocation is to be tracked.
+The Heap Task Tracking can be enabled via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Enable heap task tracking`` (see :ref:`CONFIG_HEAP_TASK_TRACKING`).
 
-Example applications are provided in :example:`system/heap_task_tracking/basic` and :example:`system/heap_task_tracking/advanced`.
+The feature allows users to track the heap memory usage of each task created since startup and provides a series of statistics that can be accessed via getter functions or simply dumped into the stream of the user's choosing. This feature is useful for identifying memory usage patterns and potential memory leaks.
 
+An additional configuration can be enabled by the user via the menuconfig: ``Component config`` > ``Heap memory debugging`` > ``Keep information about the memory usage of deleted tasks`` (see :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS`) to keep the statistics collected for a given task even after it is deleted.
+
+.. note::
+  Note that the Heap Task Tracking cannot detect the deletion of statically allocated tasks. Therefore, users will have to keep in mind while reading the following section that statically allocated tasks will always be considered alive in the scope of the Heap Task Tracking feature.
+
+It is important to mention that its usage is strongly discouraged for other purposes than debugging for the following reasons:
+
+.. list::
+  - Tracking the allocations and storing the resulting statistics for each task requires a non-negligible RAM usage overhead.
+  - The overall performance of the heap allocator is severely impacted due to the additional processing required for each allocation and free operation.
+
+.. note::
+  Note that the memory allocated by the heap task tracking feature will not be visible when dumping or accessing the statistics.
+
+Structure of the statistics and information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For a given task, the heap task tracking feature categorizes statistics on three different levels:
+
+.. list::
+  - The task level statistics
+  - The heap level statistics
+  - The allocation level statistics
+
+The task level statistics provides the following information:
+
+.. list::
+  - Name of the given task
+  - Task handle of the given task
+  - Status of the given task (if the task is running or deleted)
+  - Peak memory usage of the given task (the maximum amount of memory used by the given task during the task lifetime)
+  - Current memory usage of the given task
+  - Number of heaps in which the task has allocated memory
+
+The heap level statistics provides the following information for each heap used by the given task:
+
+.. list::
+  - Name of the given heap
+  - Caps the capabilities of the given heap (without priority)
+  - Size the total size of the given heap
+  - Current usage of the given task on the given heap
+  - Peak usage of the given task on the given heap
+  - Number of allocations done by the given task for on the given heap
+
+The allocation level statistics provides the following information for each allocation done by the given task on the given heap:
+
+.. list::
+  - Address of the given allocation
+  - Size of the given allocation
+
+Dumping the statistics and information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The :cpp:func:`heap_caps_print_single_task_stat_overview` API prints an overview of heap usage for a specific task to the provided output stream.
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ ALIVE   │                    0 │              7152 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+:cpp:func:`heap_caps_print_all_task_stat_overview` prints an overview of heap usage for all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled).
+
+.. code-block:: text
+
+  ┌────────────────────┬─────────┬──────────────────────┬───────────────────┬─────────────────┐
+  │ TASK               │ STATUS  │ CURRENT MEMORY USAGE │ PEAK MEMORY USAGE │ TOTAL HEAP USED │
+  ├────────────────────┼─────────┼──────────────────────┼───────────────────┼─────────────────┤
+  │          task_name │ DELETED │                11392 │             11616 │               1 │
+  │    other_task_name │ ALIVE   │                    0 │              9408 │               2 │
+  │               main │ ALIVE   │                 3860 │              7412 │               2 │
+  │               ipc1 │ ALIVE   │                   32 │                44 │               1 │
+  │               ipc0 │ ALIVE   │                10080 │             10092 │               1 │
+  │      Pre-scheduler │ ALIVE   │                 2236 │              2236 │               1 │
+  └────────────────────┴─────────┴──────────────────────┴───────────────────┴─────────────────┘
+
+.. note::
+  Note that the task named “Pre-scheduler” represents allocations that occurred before the scheduler was started. It is not an actual task, so the "status" field (which is shown as "ALIVE") is not meaningful and should be ignored.
+
+Use :cpp:func:`heap_caps_print_single_task_stat` to dump the complete set of statistics for a specific task, or :cpp:func:`heap_caps_print_all_task_stat` to dump statistics for all tasks:
+
+.. code-block:: text
+
+  [...]
+  ├ ALIVE: main, CURRENT MEMORY USAGE 308, PEAK MEMORY USAGE 7412, TOTAL HEAP USED 2:
+  │    ├ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 220 (0%), PEAK 220 (0%), ALLOC COUNT: 2
+  │    │    ├ ALLOC 0x3fc99024, SIZE 88
+  │    │    ├ ALLOC 0x3fc99124, SIZE 132
+  │    └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 22308, USAGE: CURRENT 88 (0%), PEAK 7192 (32%), ALLOC COUNT: 5
+  │         ├ ALLOC 0x3fce99f8, SIZE 20
+  │         ├ ALLOC 0x3fce9a10, SIZE 12
+  │         ├ ALLOC 0x3fce9a20, SIZE 16
+  │         ├ ALLOC 0x3fce9a34, SIZE 20
+  │         ├ ALLOC 0x3fce9a4c, SIZE 20
+  [...]
+  └ ALIVE: Pre-scheduler, CURRENT MEMORY USAGE 2236, PEAK MEMORY USAGE 2236, TOTAL HEAP USED 1:
+      └ HEAP: RAM, CAPS: 0x0010580e, SIZE: 344400, USAGE: CURRENT 2236 (0%), PEAK 2236 (0%), ALLOC COUNT: 11
+            ├ ALLOC 0x3fc95cb0, SIZE 164
+            ├ ALLOC 0x3fc95dd8, SIZE 12
+            ├ ALLOC 0x3fc95dfc, SIZE 12
+            ├ ALLOC 0x3fc95e20, SIZE 16
+            ├ ALLOC 0x3fc95e48, SIZE 24
+            ├ ALLOC 0x3fc95e78, SIZE 88
+            ├ ALLOC 0x3fc95ee8, SIZE 88
+            ├ ALLOC 0x3fc95f58, SIZE 88
+            ├ ALLOC 0x3fc95fc8, SIZE 88
+            ├ ALLOC 0x3fc96038, SIZE 1312
+            ├ ALLOC 0x3fc96570, SIZE 344
+
+.. note::
+  The dump shown above has been truncated (see "[...]") for readability reasons and only displays the statistics and information of the **main** task and the **Pre-scheduler**. The goal here is only to demonstrate the information displayed when calling the :cpp:func:`heap_caps_print_all_task_stat` (resp. :cpp:func:`heap_caps_print_single_task_stat`) API functions.
+
+.. note::
+  Detailed use of the API functions described in this section can be found in :example:`system/heap_task_tracking/basic`.
+
+Getting the statistics and information
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+:cpp:func:`heap_caps_get_single_task_stat` allows the user to access information of a specific task. The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_single_task_stat`.
+
+:cpp:func:`heap_caps_get_all_task_stat` allows the user to access an overview of the information of all tasks (including the deleted tasks if :ref:`CONFIG_HEAP_TRACK_DELETED_TASKS` is enabled). The information retrieved by calling this API is identical to the one dumped using :cpp:func:`heap_caps_print_all_task_stat`.
+
+Each getter function requires a pointer to the data structure that will be used by the heap task tracking to gather the statistics and information of a given task (or all tasks). This data structure contains pointers to arrays that the user can allocate statically or dynamically.
+
+Due to the difficulty of estimating the size of the arrays used to store information — since it's hard to determine the number of allocations per task, the number of heaps used by each task, and the number of tasks created since startup — the heap task tracking also provides :cpp:func:`heap_caps_alloc_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_alloc_all_task_stat_arrays`) to dynamically allocate the required amount of memory for those arrays.
+
+Similarly, the heap task tracking also provides :cpp:func:`heap_caps_free_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_free_all_task_stat_arrays`) to free the memory dynamically allocated when calling :cpp:func:`heap_caps_alloc_single_task_stat_arrays` (resp. :cpp:func:`heap_caps_alloc_all_task_stat_arrays`).
+
+.. note::
+  Detailed use of the API functions described in this section can be found in :example:`system/heap_task_tracking/advanced`.
 
 .. _heap-tracing:
 
@@ -631,6 +763,11 @@ Application Examples
 
 - :example:`system/heap_task_tracking/basic` demonstrates the use of the overview feature of the heap task tracking, dumping per-task summary statistics on heap memory usage.
 - :example:`system/heap_task_tracking/advanced` demonstrates the use of the statistics getter functions of the heap task tracking, accessing per-task complete statistic on the heap memory usage.
+
+API Reference - Heap Task Tracking
+----------------------------------
+
+.. include-build-file:: inc/esp_heap_task_info.inc
 
 API Reference - Heap Tracing
 ----------------------------

@@ -7,7 +7,7 @@
 
 #include "sdkconfig.h"
 
-#ifdef CONFIG_HEAP_TASK_TRACKING
+#if CONFIG_HEAP_TASK_TRACKING || __DOXYGEN__
 
 #include <stdint.h>
 #include <stdio.h>
@@ -104,9 +104,9 @@ typedef struct {
 typedef struct {
     task_stat_t stat; ///< Statistics of the task
     size_t heap_count; ///< size of user defined heap_stat array
-    heap_stat_t *heap_stat_start; ///> Pointer to the start to the user defined heap_stat array
+    heap_stat_t *heap_stat_start; ///< Pointer to the start to the user defined heap_stat array
     size_t alloc_count; ///< size of user defined alloc_stat array
-    heap_task_block_t *alloc_stat_start; ///> Pointer to the start to the user defined alloc_stat array
+    heap_task_block_t *alloc_stat_start; ///< Pointer to the start to the user defined alloc_stat array
 } heap_single_task_stat_t;
 
 /**
@@ -117,9 +117,9 @@ typedef struct {
     size_t task_count; ///< user defined size of heap_single_task_stat_t array
     task_stat_t *stat_arr; ///< Pointer to the user defined array of heap_single_task_stat_t
     size_t heap_count; ///< size of user defined heap_stat array
-    heap_stat_t *heap_stat_start; ///> Pointer to the start to the user defined heap_stat array
+    heap_stat_t *heap_stat_start; ///< Pointer to the start to the user defined heap_stat array
     size_t alloc_count; ///< size of user defined alloc_stat array
-    heap_task_block_t *alloc_stat_start; ///> Pointer to the start to the user defined alloc_stat array
+    heap_task_block_t *alloc_stat_start; ///< Pointer to the start to the user defined alloc_stat array
 } heap_all_tasks_stat_t;
 
 /**
@@ -169,7 +169,7 @@ esp_err_t heap_caps_get_single_task_stat(heap_single_task_stat_t *task_stat, Tas
  * @note This function is an alternative to heap_caps_get_all_task_stat if the goal is just to print information
  * and not manipulate them.
  *
- * @param steam The stream to dump to, if NULL then stdout is used
+ * @param stream The stream to dump to, if NULL then stdout is used
  */
 void heap_caps_print_all_task_stat(FILE *stream);
 
@@ -179,7 +179,7 @@ void heap_caps_print_all_task_stat(FILE *stream);
  * @note The information printed by this function is an array formatted log of task_stat_t content for each running
  * task (and deleted ones if HEAP_TRACK_DELETED_TASKS is enabled)
  *
- * @param steam The stream to dump to, if NULL then stdout is used
+ * @param stream The stream to dump to, if NULL then stdout is used
  */
 void heap_caps_print_all_task_stat_overview(FILE *stream);
 
@@ -189,7 +189,7 @@ void heap_caps_print_all_task_stat_overview(FILE *stream);
  * @note This function is an alternative to heap_caps_get_single_task_stat if the goal is just to print information
  * and not manipulate them.
  *
- * @param steam The stream to dump to, if NULL then stdout is used
+ * @param stream The stream to dump to, if NULL then stdout is used
  * @param task_handle The task handle of the task to get memory usage and associated allocation information from.
  */
 void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle);
@@ -201,7 +201,7 @@ void heap_caps_print_single_task_stat(FILE *stream, TaskHandle_t task_handle);
  * task. This function will not print the task summary information if the given task is deleted and
  * HEAP_TRACK_DELETED_TASKS is disabled.
  *
- * @param steam The stream to dump to, if NULL then stdout is used
+ * @param stream The stream to dump to, if NULL then stdout is used
  * @param task_handle The task handle of the task to get memory usage and associated allocation information from.
  */
 void heap_caps_print_single_task_stat_overview(FILE *stream, TaskHandle_t task_handle);
@@ -256,4 +256,4 @@ void heap_caps_free_all_task_stat_arrays(heap_all_tasks_stat_t *tasks_stat);
 }
 #endif
 
-#endif // CONFIG_HEAP_TASK_TRACKING
+#endif // CONFIG_HEAP_TASK_TRACKING || __DOXYGEN__
