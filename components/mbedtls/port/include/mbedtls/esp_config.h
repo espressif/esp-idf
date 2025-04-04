@@ -2504,8 +2504,11 @@
  *            on it, and considering stronger message digests instead.
  *
  */
+#if CONFIG_MBEDTLS_SHA1_C
 #define MBEDTLS_SHA1_C
-
+#else
+#undef MBEDTLS_SHA1_C
+#endif
 /**
  * \def MBEDTLS_SHA224_C
  *
