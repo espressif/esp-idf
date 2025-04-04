@@ -10,7 +10,12 @@
 #include <sys/time.h>
 
 // Some resources are lazy allocated (newlib locks) in the console code, the threshold is left for that case
-#define TEST_MEMORY_LEAK_THRESHOLD (150)
+#define TEST_MEMORY_LEAK_THRESHOLD_DEFAULT (150)
+static int leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
+void set_leak_threshold(int threshold)
+{
+    leak_threshold = threshold;
+}
 
 void setUp(void)
 {
@@ -19,7 +24,8 @@ void setUp(void)
 
 void tearDown(void)
 {
-    unity_utils_evaluate_leaks_direct(TEST_MEMORY_LEAK_THRESHOLD);
+    unity_utils_evaluate_leaks_direct(leak_threshold);
+    leak_threshold = TEST_MEMORY_LEAK_THRESHOLD_DEFAULT;
 }
 
 void app_main(void)

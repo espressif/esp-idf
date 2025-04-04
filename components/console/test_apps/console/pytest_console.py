@@ -12,6 +12,11 @@ def do_test_quit(dut: Dut) -> None:
     dut.confirm_write('quit', expect_str='ByeBye')
 
 
+def do_test_repl_deinit(dut: Dut) -> None:
+    dut.expect_exact('Press ENTER to see the list of tests')
+    dut.confirm_write('"esp console repl deinit"', expect_str='esp>')
+
+
 def do_test_help_generic(dut: Dut, registration_order: str) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
     dut.confirm_write('"esp console help command - {} registration"'.format(registration_order), expect_str='esp>')

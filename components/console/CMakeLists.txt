@@ -2,15 +2,17 @@ idf_build_get_property(target IDF_TARGET)
 
 set(srcs "commands.c"
          "esp_console_common.c"
+         "esp_console_repl_internal.c"
          "split_argv.c"
          "linenoise/linenoise.c")
 
+set(requires vfs)
+
 if(${target} STREQUAL "linux")
     list(APPEND srcs "esp_console_repl_linux.c")
-    set(requires "")
 else()
     list(APPEND srcs "esp_console_repl_chip.c")
-    set(requires vfs esp_vfs_console)
+    list(APPEND requires esp_vfs_console)
 endif()
 
 set(argtable_srcs argtable3/arg_cmd.c
