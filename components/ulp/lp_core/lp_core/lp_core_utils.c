@@ -190,6 +190,16 @@ void ulp_lp_core_sw_intr_clear(void)
     pmu_ll_lp_clear_sw_intr_status(&PMU);
 }
 
+void ulp_lp_core_timer_intr_enable(bool enable)
+{
+    lp_timer_ll_lp_alarm_intr_enable(&LP_TIMER, enable);
+}
+
+void ulp_lp_core_timer_intr_clear(void)
+{
+    lp_timer_ll_clear_lp_alarm_intr_status(&LP_TIMER);
+}
+
 void ulp_lp_core_wait_for_intr(void)
 {
     asm volatile("wfi");
