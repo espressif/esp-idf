@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -164,6 +164,26 @@ TEST_CASE("esp_http_client_get_url() should return URL in the correct format", "
     esp_http_client_cleanup(client);
 
     TEST_ASSERT_EQUAL_STRING(url, client_url);
+}
+
+TEST_CASE("esp_http_client_set_header() should not return error if header value is NULL", "[esp_http_client]")
+{
+    esp_http_client_config_t config = {
+        .url = "http://httpbin.org:8080/post",
+    };
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+    TEST_ASSERT_NOT_NULL(client);
+
+    // First, set a valid header
+    esp_err_t err = esp_http_client_set_header(client, "Test-Header", "dummy_value");
+    TEST_ASSERT_EQUAL(ESP_OK, err);
+
+    // Now, delete the header by passing value = NULL
+    err = esp_http_client_set_header(client, "Test-Header", NULL);
+    TEST_ASSERT_EQUAL(ESP_OK, err);  // Ensure it does NOT return ESP_ERR_INVALID_ARG
+
+    esp_http_client_cleanup(client);
 }
 
 void app_main(void)
