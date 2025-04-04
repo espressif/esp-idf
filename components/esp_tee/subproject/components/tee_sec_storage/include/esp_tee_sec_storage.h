@@ -25,7 +25,8 @@ extern "C" {
  */
 typedef enum {
     ESP_SEC_STG_KEY_ECDSA_SECP256R1 = 0,
-    ESP_SEC_STG_KEY_AES256,
+    ESP_SEC_STG_KEY_AES256 = 1,
+    ESP_SEC_STG_KEY_ECDSA_SECP192R1 = 2,
     ESP_SEC_STG_MAX,
 } esp_tee_sec_storage_type_t;
 
@@ -71,23 +72,25 @@ esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type
  *        the key pair located in the given secure storage slot.
  *
  * @param[in]   slot_id   secure storage slot ID
+ * @param[in]   key_type  secure storage key type
  * @param[in]   hash      Message digest
  * @param[in]   hlen      Digest length
  * @param[out]  out_sign  Output context holding the signature
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
-esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign);
+esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign);
 
 /**
  * @brief  Return the public key for the given secure storage slot
  *
  * @param[in]   slot_id  secure storage slot ID
+ * @param[in]   key_type secure storage key type
  * @param[out]  pubkey   Output context holding the public key
  *
  * @return esp_err_t ESP_OK on success, appropriate error code otherwise.
  */
-esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey);
+esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey);
 
 /**
  * @brief Check whether the given slot in the secure storage is empty or not

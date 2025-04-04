@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,7 @@
 #define AES256_GCM_AAD_LEN                  16
 
 #define ECDSA_SECP256R1_KEY_LEN             32
+#define ECDSA_SECP192R1_KEY_LEN             24
 
 /* Structure to hold metadata for secure storage slots */
 typedef struct {
@@ -58,6 +59,12 @@ typedef struct {
     uint8_t pub_key[2 * ECDSA_SECP256R1_KEY_LEN];  /* Public key for ECDSA SECP256R1 (X and Y coordinates) */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp256r1_t;
 
+/* Structure to hold ECDSA SECP192R1 key pair */
+typedef struct {
+    uint8_t priv_key[ECDSA_SECP192R1_KEY_LEN];     /* Private key for ECDSA SECP192R1 */
+    uint8_t pub_key[2 * ECDSA_SECP192R1_KEY_LEN];  /* Public key for ECDSA SECP192R1 (X and Y coordinates) */
+} __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_ecdsa_secp192r1_t;
+
 /* Structure to hold AES-256 GCM key and IV */
 typedef struct {
     uint8_t key[AES256_GCM_KEY_LEN];  /* Key for AES-256 GCM */
@@ -67,6 +74,7 @@ typedef struct {
 /* Union to hold different types of cryptographic keys */
 typedef union {
     sec_stg_ecdsa_secp256r1_t ecdsa_secp256r1;  /* ECDSA SECP256R1 key pair */
+    sec_stg_ecdsa_secp192r1_t ecdsa_secp192r1;  /* ECDSA SECP192R1 key pair */
     sec_stg_aes256_gcm_t aes256_gcm;            /* AES-256 GCM key and IV */
 } __attribute__((aligned(4))) __attribute__((__packed__)) sec_stg_key_t;
 
@@ -348,39 +356,69 @@ esp_err_t esp_tee_sec_storage_init(void)
     return ESP_OK;
 }
 
-static int generate_ecdsa_secp256r1_key(sec_stg_key_t *keyctx)
+static int generate_ecdsa_key(sec_stg_key_t *keyctx, esp_tee_sec_storage_type_t key_type)
 {
     if (keyctx == NULL) {
         return -1;
     }
 
-    ESP_LOGI(TAG, "Generating ECDSA-SECP256R1 private key...");
+    mbedtls_ecp_group_id curve_id = MBEDTLS_ECP_DP_SECP256R1;
+    size_t key_len = ECDSA_SECP256R1_KEY_LEN;
+
+    if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+        curve_id = MBEDTLS_ECP_DP_SECP192R1;
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+#else
+        ESP_LOGE(TAG, "Unsupported key type!");
+        return -1;
+#endif
+    }
+
+    ESP_LOGI(TAG, "Generating ECDSA key for curve %d...", curve_id);
 
     mbedtls_ecdsa_context ctxECDSA;
     mbedtls_ecdsa_init(&ctxECDSA);
 
-    int ret = mbedtls_ecdsa_genkey(&ctxECDSA, MBEDTLS_ECP_DP_SECP256R1, rand_func, NULL);
+    int ret = mbedtls_ecdsa_genkey(&ctxECDSA, curve_id, rand_func, NULL);
     if (ret != 0) {
         ESP_LOGE(TAG, "Failed to generate ECDSA key");
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), keyctx->ecdsa_secp256r1.priv_key, ECDSA_SECP256R1_KEY_LEN);
+    uint8_t *priv_key = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ?
+                        keyctx->ecdsa_secp256r1.priv_key :
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                        keyctx->ecdsa_secp192r1.priv_key;
+#else
+                        NULL;
+#endif
+
+    uint8_t *pub_key = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ?
+                       keyctx->ecdsa_secp256r1.pub_key :
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                       keyctx->ecdsa_secp192r1.pub_key;
+#else
+                       NULL;
+#endif
+
+    ret = mbedtls_mpi_write_binary(&ctxECDSA.MBEDTLS_PRIVATE(d), priv_key, key_len);
     if (ret != 0) {
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), &keyctx->ecdsa_secp256r1.pub_key[0], ECDSA_SECP256R1_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(X)), pub_key, key_len);
     if (ret != 0) {
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), &keyctx->ecdsa_secp256r1.pub_key[ECDSA_SECP256R1_KEY_LEN], ECDSA_SECP256R1_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&(ctxECDSA.MBEDTLS_PRIVATE(Q).MBEDTLS_PRIVATE(Y)), pub_key + key_len, key_len);
     if (ret != 0) {
         goto exit;
     }
 
-    buffer_hexdump("Private key", keyctx->ecdsa_secp256r1.priv_key, sizeof(keyctx->ecdsa_secp256r1.priv_key));
+    buffer_hexdump("Private key", priv_key, key_len);
+    buffer_hexdump("Public key", pub_key, key_len * 2);
 
 exit:
     mbedtls_ecdsa_free(&ctxECDSA);
@@ -418,7 +456,10 @@ esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type
 
     switch (key_type) {
     case ESP_SEC_STG_KEY_ECDSA_SECP256R1:
-        if (generate_ecdsa_secp256r1_key(&keyctx) != 0) {
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    case ESP_SEC_STG_KEY_ECDSA_SECP192R1:
+#endif
+        if (generate_ecdsa_key(&keyctx, key_type) != 0) {
             ESP_LOGE(TAG, "Failed to generate ECDSA keypair (%d)", ret);
             return ESP_FAIL;
         }
@@ -437,7 +478,7 @@ esp_err_t esp_tee_sec_storage_gen_key(uint16_t slot_id, esp_tee_sec_storage_type
     return secure_storage_write(slot_id, (uint8_t *)&keyctx, sizeof(keyctx), key_type);
 }
 
-esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
+esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
 {
     if (slot_id > MAX_SEC_STG_SLOT_ID || hash == NULL || out_sign == NULL) {
         return ESP_ERR_INVALID_ARG;
@@ -447,9 +488,15 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
         return ESP_ERR_INVALID_SIZE;
     }
 
-    sec_stg_key_t keyctx;
+#if !CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        ESP_LOGE(TAG, "Unsupported key type!");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
 
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), ESP_SEC_STG_KEY_ECDSA_SECP256R1);
+    sec_stg_key_t keyctx;
+    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), key_type);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch key from slot");
         return err;
@@ -464,7 +511,19 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
     mbedtls_ecp_keypair_init(&priv_key);
     mbedtls_ecdsa_init(&sign_ctx);
 
-    int ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &priv_key, keyctx.ecdsa_secp256r1.priv_key, sizeof(keyctx.ecdsa_secp256r1.priv_key));
+    int ret = -1;
+    if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) {
+        ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &priv_key, keyctx.ecdsa_secp256r1.priv_key, sizeof(keyctx.ecdsa_secp256r1.priv_key));
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    } else if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP192R1, &priv_key, keyctx.ecdsa_secp192r1.priv_key, sizeof(keyctx.ecdsa_secp192r1.priv_key));
+#endif
+    } else {
+        ESP_LOGE(TAG, "Unsupported key type for signature generation");
+        err = ESP_ERR_NOT_SUPPORTED;
+        goto exit;
+    }
+
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
@@ -476,7 +535,7 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
         goto exit;
     }
 
-    ESP_LOGI(TAG, "Generating ECDSA-SECP256R1 signature...");
+    ESP_LOGI(TAG, "Generating ECDSA signature...");
 
     ret = mbedtls_ecdsa_sign(&sign_ctx.MBEDTLS_PRIVATE(grp), &r, &s, &sign_ctx.MBEDTLS_PRIVATE(d), hash, hlen,
                              rand_func, NULL);
@@ -486,13 +545,21 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, uint8_t *hash, siz
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, ECDSA_SECP256R1_KEY_LEN);
+    memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_sign_t));
+
+    size_t key_len = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ? ECDSA_SECP256R1_KEY_LEN :
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+                     ECDSA_SECP192R1_KEY_LEN;
+#else
+                     0;
+#endif
+    ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
     }
 
-    ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, ECDSA_SECP256R1_KEY_LEN);
+    ret = mbedtls_mpi_write_binary(&s, out_sign->sign_s, key_len);
     if (ret != 0) {
         err = ESP_FAIL;
         goto exit;
@@ -508,22 +575,38 @@ exit:
     return err;
 }
 
-esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_pubkey_t *pubkey)
+esp_err_t esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey)
 {
     if (slot_id > MAX_SEC_STG_SLOT_ID || pubkey == NULL) {
         return ESP_ERR_INVALID_ARG;
     }
 
     sec_stg_key_t keyctx;
+    size_t key_len;
+    uint8_t *pub_key_src;
 
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), ESP_SEC_STG_KEY_ECDSA_SECP256R1);
+    if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) {
+        key_len = ECDSA_SECP256R1_KEY_LEN;
+        pub_key_src = keyctx.ecdsa_secp256r1.pub_key;
+#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
+    } else if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
+        key_len = ECDSA_SECP192R1_KEY_LEN;
+        pub_key_src = keyctx.ecdsa_secp192r1.pub_key;
+#endif
+    } else {
+        ESP_LOGE(TAG, "Unsupported key type");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(sec_stg_key_t), key_type);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch key from slot");
         return err;
     }
 
-    memcpy(pubkey->pub_x, &keyctx.ecdsa_secp256r1.pub_key[0], ECDSA_SECP256R1_KEY_LEN);
-    memcpy(pubkey->pub_y, &keyctx.ecdsa_secp256r1.pub_key[ECDSA_SECP256R1_KEY_LEN], ECDSA_SECP256R1_KEY_LEN);
+    // Copy public key components in one shot
+    memcpy(pubkey->pub_x, pub_key_src, key_len);
+    memcpy(pubkey->pub_y, pub_key_src + key_len, key_len);
 
     return ESP_OK;
 }
@@ -618,7 +701,7 @@ static esp_err_t tee_sec_storage_crypt_common(uint16_t slot_id, uint8_t *input, 
     }
 
     sec_stg_key_t keyctx;
-    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(keyctx), 1);
+    esp_err_t err = secure_storage_read(slot_id, (uint8_t *)&keyctx, sizeof(keyctx), ESP_SEC_STG_KEY_AES256);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch key from slot");
         return err;

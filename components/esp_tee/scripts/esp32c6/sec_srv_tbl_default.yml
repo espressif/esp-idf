@@ -248,11 +248,11 @@ secure_services:
       - id: 177
         type: custom
         function: esp_tee_sec_storage_get_signature
-        args: 4
+        args: 5
       - id: 178
         type: custom
         function: esp_tee_sec_storage_get_pubkey
-        args: 2
+        args: 3
       - id: 179
         type: custom
         function: esp_tee_sec_storage_encrypt

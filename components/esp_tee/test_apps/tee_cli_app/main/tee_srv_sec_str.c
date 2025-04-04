@@ -289,7 +289,7 @@ static int tee_sec_stg_sign(int argc, char **argv)
     }
 
     esp_tee_sec_storage_sign_t sign = {};
-    err = esp_tee_sec_storage_get_signature(slot_id, digest, sizeof(digest), &sign);
+    err = esp_tee_sec_storage_get_signature(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1, digest, sizeof(digest), &sign);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to generate signature!");
         goto exit;
@@ -307,7 +307,7 @@ static int tee_sec_stg_sign(int argc, char **argv)
     free(sign_hexstr);
 
     esp_tee_sec_storage_pubkey_t pubkey = {};
-    err = esp_tee_sec_storage_get_pubkey(slot_id, &pubkey);
+    err = esp_tee_sec_storage_get_pubkey(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1, &pubkey);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to fetch public-key!");
         goto exit;
