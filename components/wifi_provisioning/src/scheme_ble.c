@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -176,19 +176,27 @@ static esp_err_t set_config_service(void *config, const char *service_name, cons
     }
     /* Set manufacturer data if it is provided by app */
     if (custom_manufacturer_data) {
-        size_t mfg_data_len = custom_manufacturer_data_len;
         /* Manufacturer Data Length + 2 Byte header + BLE Device name + 2 Byte
          * header <= 31 Bytes */
-        if (mfg_data_len > (MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2)) {
-            ESP_LOGE(TAG, "Manufacturer data length is more than the max allowed size; expect truncated mfg_data ");
-            /* XXX Does it even make any sense to set truncated mfg_data ? The
-             * only reason to not return failure from here is provisioning
-             * should continue as it is with error prints for mfg_data length */
-            mfg_data_len = MAX_BLE_MANUFACTURER_DATA_LEN - sizeof(ble_config->device_name) - 2;
-        }
 
-        ble_config->manufacturer_data = custom_manufacturer_data;
-        ble_config->manufacturer_data_len = mfg_data_len;
+	size_t mfg_data_len = custom_manufacturer_data_len;
+	size_t dev_name_len = strnlen(ble_config->device_name, MAX_BLE_DEVNAME_LEN);
+
+	if ((dev_name_len + 2) >= MAX_BLE_MANUFACTURER_DATA_LEN) {
+            /* No space left for manufacturer data */
+            ESP_LOGE(TAG, "No space left for Manufacturer data ");
+            ble_config->manufacturer_data = NULL;
+            ble_config->manufacturer_data_len = 0;
+        } else {
+            if ((mfg_data_len + (dev_name_len ? (dev_name_len + 2) : 0)) > MAX_BLE_MANUFACTURER_DATA_LEN) {
+                ESP_LOGE(TAG, "Manufacturer data length is more than the max allowed size; expect truncated mfg_data ");
+                /* Truncate the mfg_data to fit in the available length */
+                mfg_data_len = MAX_BLE_MANUFACTURER_DATA_LEN - (dev_name_len ? (dev_name_len + 2) : 0);
+            }
+
+            ble_config->manufacturer_data = custom_manufacturer_data;
+            ble_config->manufacturer_data_len = mfg_data_len;
+        }
     } else {
         ble_config->manufacturer_data = NULL;
         ble_config->manufacturer_data_len = 0;
