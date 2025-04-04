@@ -102,6 +102,10 @@ void ulp_lp_core_sw_intr_enable(bool enable);
  */
 void ulp_lp_core_sw_intr_clear(void);
 
+void ulp_lp_core_lp_timer_intr_enable(bool enable);
+
+void ulp_lp_core_lp_timer_intr_clear(void);
+
 /**
  * @brief Puts the CPU into a wait state until an interrupt is triggered
  *
