@@ -7,6 +7,8 @@ if(${target} STREQUAL "linux")
     return()
 endif()
 
+set(sources "")
+
 list(APPEND sources "vfs.c"
                     "vfs_eventfd.c"
                     "vfs_semihost.c"
