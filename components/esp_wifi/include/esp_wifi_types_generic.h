@@ -199,7 +199,8 @@ typedef enum {
     .scan_time.active.min = WIFI_ACTIVE_SCAN_MIN_DEFAULT_TIME, \
     .scan_time.active.max = WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME, \
     .scan_time.passive = WIFI_PASSIVE_SCAN_DEFAULT_TIME, \
-    .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME\
+    .home_chan_dwell_time = WIFI_SCAN_HOME_CHANNEL_DWELL_DEFAULT_TIME, \
+    .max_offchan_duration_ms = 0 \
 }
 
 /**
@@ -265,6 +266,7 @@ typedef struct {
 typedef struct {
     wifi_scan_time_t scan_time;  /**< Scan time per channel */
     uint8_t home_chan_dwell_time;/**< Time spent at home channel between scanning consecutive channels.*/
+    uint16_t max_offchan_duration_ms; /**< Maximum accumulated off-channel scan duration before returning to home channel (0 = use WIFI_ACTIVE_SCAN_MAX_DEFAULT_TIME, range: 1-4500ms). */
 } wifi_scan_default_params_t;
 
 /**
