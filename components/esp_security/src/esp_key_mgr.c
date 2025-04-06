@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,7 +8,7 @@
 #include <sys/lock.h>
 #include "assert.h"
 #include "esp_key_mgr.h"
-#include "esp_private/periph_ctrl.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_crypto_lock.h"
 #include "esp_log.h"
 #include "esp_err.h"
@@ -31,8 +31,6 @@
 #endif
 
 static const char *TAG = "esp_key_mgr";
-
-#define KEY_MANAGER_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
 
 static _lock_t s_key_mgr_ecdsa_key_lock;
 static _lock_t s_key_mgr_xts_aes_key_lock;
@@ -80,11 +78,7 @@ static void esp_key_mgr_acquire_hardware(bool deployment_mode)
         esp_crypto_key_manager_lock_acquire();
     }
     // Reset the Key Manager Clock
-    KEY_MANAGER_RCC_ATOMIC() {
-        key_mgr_ll_enable_bus_clock(true);
-        key_mgr_ll_enable_peripheral_clock(true);
-        key_mgr_ll_reset_register();
-    }
+    esp_crypto_key_mgr_enable_periph_clk(true);
 }
 
 static void esp_key_mgr_release_hardware(bool deployment_mode)
@@ -96,11 +90,7 @@ static void esp_key_mgr_release_hardware(bool deployment_mode)
     }
 
     // Reset the Key Manager Clock
-    KEY_MANAGER_RCC_ATOMIC() {
-        key_mgr_ll_enable_peripheral_clock(false);
-        key_mgr_ll_enable_bus_clock(false);
-        key_mgr_ll_reset_register();
-    }
+    esp_crypto_key_mgr_enable_periph_clk(false);
 }
 
 static void key_mgr_wait_for_state(esp_key_mgr_state_t state)

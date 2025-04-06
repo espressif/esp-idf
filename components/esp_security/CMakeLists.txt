@@ -29,8 +29,12 @@ if(NOT non_os_build)
         list(APPEND srcs "src/esp_dpa_protection.c")
     endif()
 
-    list(APPEND srcs "src/esp_crypto_lock.c")
+    list(APPEND srcs "src/esp_crypto_lock.c" "src/esp_crypto_periph_clk.c")
     list(APPEND priv_requires efuse esp_hw_support esp_system esp_timer)
+elseif(esp_tee_build)
+    list(APPEND srcs "src/esp_crypto_periph_clk.c")
+    list(APPEND includes "src/${IDF_TARGET}")
+    list(APPEND priv_requires esp_hw_support)
 endif()
 
 idf_component_register(SRCS ${srcs}

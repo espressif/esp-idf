@@ -13,7 +13,7 @@
 #include <stdio.h>
 
 #include "esp_crypto_lock.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "esp_log.h"
 #include "sha/sha_core.h"
 #include "esp_sha_internal.h"
@@ -56,7 +56,6 @@
 #define SHA_LOCK()    esp_crypto_sha_aes_lock_acquire()
 #define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
 #else
-#define SHA_RCC_ATOMIC()
 #define SHA_LOCK()
 #define SHA_RELEASE()
 #endif
@@ -101,13 +100,13 @@ void esp_sha_acquire_hardware(void)
 {
     /* Released when releasing hw with esp_sha_release_hardware() */
     SHA_LOCK();
-    esp_sha_enable_periph_clk(true);
+    esp_crypto_sha_enable_periph_clk(true);
 }
 
 /* Disable SHA peripheral block and then release it */
 void esp_sha_release_hardware(void)
 {
-    esp_sha_enable_periph_clk(false);
+    esp_crypto_sha_enable_periph_clk(false);
     SHA_RELEASE();
 }
 

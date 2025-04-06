@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,29 +8,21 @@
 #include <stdio.h>
 
 #include "esp_crypto_lock.h"
-#include "esp_private/esp_crypto_lock_internal.h"
+#include "esp_crypto_periph_clk.h"
 #include "ecc_impl.h"
 #include "hal/ecc_hal.h"
-#include "hal/ecc_ll.h"
 #include "soc/soc_caps.h"
 
 static void esp_ecc_acquire_hardware(void)
 {
     esp_crypto_ecc_lock_acquire();
 
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(true);
-        ecc_ll_power_up();
-        ecc_ll_reset_register();
-    }
+    esp_crypto_ecc_enable_periph_clk(true);
 }
 
 static void esp_ecc_release_hardware(void)
 {
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(false);
-        ecc_ll_power_down();
-    }
+    esp_crypto_ecc_enable_periph_clk(false);
 
     esp_crypto_ecc_lock_release();
 }

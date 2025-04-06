@@ -13,8 +13,7 @@
 #include "soc/soc_caps.h"
 
 #include "esp_crypto_lock.h"
-#include "esp_private/esp_crypto_lock_internal.h"
-
+#include "esp_crypto_periph_clk.h"
 #include "mbedtls/error.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/asn1.h"
@@ -69,43 +68,26 @@ static void esp_ecdsa_acquire_hardware(void)
 {
     esp_crypto_ecdsa_lock_acquire();
 
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(true);
-        ecdsa_ll_reset_register();
-    }
+    esp_crypto_ecdsa_enable_periph_clk(true);
 
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(true);
-        ecc_ll_power_up();
-        ecc_ll_reset_register();
-    }
+    esp_crypto_ecc_enable_periph_clk(true);
 
 #if SOC_ECDSA_USES_MPI
     /* We need to reset the MPI peripheral because ECDSA peripheral
      * of some targets use the MPI peripheral as well.
      */
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(true);
-        mpi_ll_reset_register();
-    }
+    esp_crypto_mpi_enable_periph_clk(true);
 #endif /* SOC_ECDSA_USES_MPI */
 }
 
 static void esp_ecdsa_release_hardware(void)
 {
-    ECDSA_RCC_ATOMIC() {
-        ecdsa_ll_enable_bus_clock(false);
-    }
+    esp_crypto_ecdsa_enable_periph_clk(false);
 
-    ECC_RCC_ATOMIC() {
-        ecc_ll_enable_bus_clock(false);
-        ecc_ll_power_down();
-    }
+    esp_crypto_ecc_enable_periph_clk(false);
 
 #if SOC_ECDSA_USES_MPI
-    MPI_RCC_ATOMIC() {
-        mpi_ll_enable_bus_clock(false);
-    }
+    esp_crypto_mpi_enable_periph_clk(false);
 #endif /* SOC_ECDSA_USES_MPI */
 
     esp_crypto_ecdsa_lock_release();
