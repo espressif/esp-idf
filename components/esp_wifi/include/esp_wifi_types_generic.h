@@ -1446,6 +1446,35 @@ typedef struct {
     bool dcm;                                /**< Using dcm rate to send frame */
 } wifi_tx_rate_config_t;
 
+#define WIFI_MAX_SUPPORT_COUNTRY_NUM 175 /**< max number of supported countries */
+#ifdef CONFIG_SOC_WIFI_SUPPORT_5G
+#define WIFI_MAX_REGULATORY_RULE_NUM  7 /**< max number of regulatory rules */
+#else
+#define WIFI_MAX_REGULATORY_RULE_NUM  2 /**< max number of regulatory rules */
+#endif
+
+/** Argument structure for regulatory rule */
+typedef struct {
+    uint8_t start_channel;      /**< start channel of regulatory rule */
+    uint8_t end_channel;        /**< end channel of regulatory rule */
+    uint16_t max_bandwidth : 3; /**< max bandwidth(MHz) of regulatory rule, 1:20M, 2:40M, 3:80M, 4:160M */
+    uint16_t max_eirp : 6;      /**< indicates the maximum Equivalent Isotropically Radiated Power (EIRP), typically measured in dBm */
+    uint16_t is_dfs : 1;        /**< flag to identify dfs channel */
+    uint16_t reserved : 6;      /**< reserved */
+} wifi_reg_rule_t;
+
+/** Argument structure for regdomain */
+typedef struct {
+    uint8_t n_reg_rules;                                     /**< number of regulatory rules */
+    wifi_reg_rule_t reg_rules[WIFI_MAX_REGULATORY_RULE_NUM]; /**< array of regulatory rules*/
+} wifi_regulatory_t;
+
+/** Argument structure for regdomain */
+typedef struct {
+    char cn[2];              /**< country code string */
+    uint8_t regulatory_type; /**< regulatory type of country */
+} wifi_regdomain_t;
+
 #ifdef __cplusplus
 }
 #endif

@@ -40,6 +40,9 @@ if(CONFIG_ESP_WIFI_ENABLED OR CONFIG_ESP_HOST_WIFI_ENABLED)
         "src/wifi_default_ap.c"
         "${idf_target}/esp_adapter.c")
 
+
+    list(APPEND srcs "regulatory/esp_wifi_regulatory.c")
+
     if(CONFIG_ESP_NETIF_USES_TCPIP_WITH_BSD_API AND CONFIG_LWIP_IPV4)
         list(APPEND srcs
             "src/smartconfig_ack.c")
