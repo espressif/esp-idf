@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,7 @@
 #include "esp_err.h"
 #include "esp_ipc.h"
 #include "esp_private/esp_ipc_isr.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_cpu.h"
 
 #include "freertos/FreeRTOS.h"
@@ -21,7 +21,7 @@
 
 #define IPC_MAX_PRIORITY (configMAX_PRIORITIES - 1)
 
-#if !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#if CONFIG_ESP_IPC_ENABLE
 
 #if CONFIG_COMPILER_OPTIMIZATION_NONE
 #define IPC_STACK_SIZE (CONFIG_ESP_IPC_TASK_STACK_SIZE + 0x100)
@@ -49,7 +49,7 @@ static volatile esp_ipc_func_t s_no_block_func[portNUM_PROCESSORS] = { 0 };
 static volatile bool s_no_block_func_and_arg_are_ready[portNUM_PROCESSORS] = { 0 };
 static void * volatile s_no_block_func_arg[portNUM_PROCESSORS];
 
-static void IRAM_ATTR ipc_task(void* arg)
+static void ESP_SYSTEM_IRAM_ATTR ipc_task(void* arg)
 {
     const int cpuid = (int) arg;
 
@@ -198,4 +198,4 @@ esp_err_t esp_ipc_call_nonblocking(uint32_t cpu_id, esp_ipc_func_t func, void* a
     return ESP_FAIL;
 }
 
-#endif // !defined(CONFIG_FREERTOS_UNICORE) || defined(CONFIG_APPTRACE_GCOV_ENABLE)
+#endif // CONFIG_ESP_IPC_ENABLE

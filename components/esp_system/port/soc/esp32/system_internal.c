@@ -28,7 +28,7 @@
 #include "esp32/rom/cache.h"
 #include "esp32/rom/rtc.h"
 
-void IRAM_ATTR esp_system_reset_modules_on_exit(void)
+void esp_system_reset_modules_on_exit(void)
 {
     // Flush any data left in UART FIFOs before reset the UART peripheral
     for (int i = 0; i < SOC_UART_HP_NUM; ++i) {
@@ -63,7 +63,7 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
  * core are already stopped. Stalls other core, resets hardware,
  * triggers restart.
 */
-void IRAM_ATTR esp_restart_noos(void)
+void esp_restart_noos(void)
 {
     // Disable interrupts
     esp_cpu_intr_disable(0xFFFFFFFF);

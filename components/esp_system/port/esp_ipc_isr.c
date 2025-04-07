@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2017-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2017-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <string.h>
 #include <assert.h>
 #include "esp_err.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/portmacro.h"
@@ -63,14 +63,14 @@ void esp_ipc_isr_init(void)
 
 /* Public API functions */
 
-void IRAM_ATTR esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_call(esp_ipc_isr_func_t func, void* arg)
 {
     IPC_ISR_ENTER_CRITICAL();
     esp_ipc_isr_call_and_wait(func, arg, IPC_ISR_WAIT_FOR_START);
     IPC_ISR_EXIT_CRITICAL();
 }
 
-void IRAM_ATTR esp_ipc_isr_call_blocking(esp_ipc_isr_func_t func, void* arg)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_call_blocking(esp_ipc_isr_func_t func, void* arg)
 {
     IPC_ISR_ENTER_CRITICAL();
     esp_ipc_isr_call_and_wait(func, arg, IPC_ISR_WAIT_FOR_END);
@@ -90,7 +90,7 @@ void esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd);
  * When cpu1 already in high-priority interrupt, cpu0 can access DPORT register.
  * Currently, cpu1 will wait for cpu0 finish access and exit high-priority interrupt.
  */
-void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
 {
 #if CONFIG_FREERTOS_SMP
     /*
@@ -123,7 +123,7 @@ void IRAM_ATTR esp_ipc_isr_stall_other_cpu(void)
     }
 }
 
-void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
 {
     if (s_stall_state == STALL_STATE_RUNNING) {
         const uint32_t cpu_id = xPortGetCoreID();
@@ -150,20 +150,20 @@ void IRAM_ATTR esp_ipc_isr_release_other_cpu(void)
 #endif
 }
 
-void IRAM_ATTR esp_ipc_isr_stall_pause(void)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_stall_pause(void)
 {
     IPC_ISR_ENTER_CRITICAL();
     s_stall_state = STALL_STATE_IDLE;
     IPC_ISR_EXIT_CRITICAL();
 }
 
-void IRAM_ATTR esp_ipc_isr_stall_abort(void)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_stall_abort(void)
 {
     //Note: We don't enter a critical section here as we are calling this from a panic.
     s_stall_state = STALL_STATE_IDLE;
 }
 
-void IRAM_ATTR esp_ipc_isr_stall_resume(void)
+void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_stall_resume(void)
 {
     IPC_ISR_ENTER_CRITICAL();
     s_stall_state = STALL_STATE_RUNNING;
@@ -174,7 +174,7 @@ void IRAM_ATTR esp_ipc_isr_stall_resume(void)
 
 /* Private functions*/
 
-static void IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ipc_isr_wait_t wait_for)
+static void ESP_SYSTEM_IRAM_ATTR esp_ipc_isr_call_and_wait(esp_ipc_isr_func_t func, void* arg, esp_ipc_isr_wait_t wait_for)
 {
     const uint32_t cpu_id = xPortGetCoreID();
 

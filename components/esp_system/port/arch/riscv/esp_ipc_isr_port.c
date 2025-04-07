@@ -12,7 +12,7 @@
 #include "riscv/interrupt.h"
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "sdkconfig.h"
 
 void esp_ipc_isr_port_init(const int cpuid)
@@ -36,7 +36,7 @@ void esp_ipc_isr_port_init(const int cpuid)
     esp_intr_enable_source(ETS_IPC_ISR_INUM);
 }
 
-IRAM_ATTR void esp_ipc_isr_port_int_trigger(const int cpuid)
+ESP_SYSTEM_IRAM_ATTR void esp_ipc_isr_port_int_trigger(const int cpuid)
 {
     if (cpuid == 0) {
         // it runs an interrupt on cpu0

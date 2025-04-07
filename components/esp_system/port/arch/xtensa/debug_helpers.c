@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 #include <sys/param.h>
 #include "soc/soc_memory_layout.h"
 #include "esp_types.h"
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_err.h"
 #include "esp_check.h"
 #include "esp_ipc.h"
@@ -24,7 +24,7 @@
 
 const char *DEBUG_HELPER_TAG = "DBG HLPR";
 
-bool IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
+bool ESP_SYSTEM_IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
 {
     //Use frame(i-1)'s BS area located below frame(i)'s sp to get frame(i-1)'s sp and frame(i-2)'s pc
     void *base_save = (void *)frame->sp;     //Base save area consists of 4 words under SP
@@ -36,7 +36,7 @@ bool IRAM_ATTR esp_backtrace_get_next_frame(esp_backtrace_frame_t *frame)
     return (esp_stack_ptr_is_sane(frame->sp) && esp_ptr_executable((void*)esp_cpu_process_stack_pc(frame->pc)));
 }
 
-static void IRAM_ATTR print_entry(uint32_t pc, uint32_t sp, bool panic)
+static void ESP_SYSTEM_IRAM_ATTR print_entry(uint32_t pc, uint32_t sp, bool panic)
 {
     if (panic) {
         panic_print_str(" 0x");
@@ -48,7 +48,7 @@ static void IRAM_ATTR print_entry(uint32_t pc, uint32_t sp, bool panic)
     }
 }
 
-static void IRAM_ATTR print_str(const char* str, bool panic)
+static void ESP_SYSTEM_IRAM_ATTR print_str(const char* str, bool panic)
 {
     if (panic) {
         panic_print_str(str);
@@ -57,7 +57,7 @@ static void IRAM_ATTR print_str(const char* str, bool panic)
     }
 }
 
-esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t* frame, bool panic)
+esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrace_frame_t* frame, bool panic)
 {
     //Check arguments
     if (depth <= 0) {
@@ -97,7 +97,7 @@ esp_err_t IRAM_ATTR esp_backtrace_print_from_frame(int depth, const esp_backtrac
     return ret;
 }
 
-esp_err_t IRAM_ATTR esp_backtrace_print(int depth)
+esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print(int depth)
 {
     //Initialize stk_frame with first frame of stack
     esp_backtrace_frame_t start = { 0 };
@@ -149,7 +149,7 @@ static void backtrace_other_cores_ipc_func(void *arg)
 }
 #endif // !CONFIG_FREERTOS_UNICORE
 
-esp_err_t IRAM_ATTR esp_backtrace_print_all_tasks(int depth)
+esp_err_t ESP_SYSTEM_IRAM_ATTR esp_backtrace_print_all_tasks(int depth)
 {
     esp_err_t ret = ESP_OK;
     TaskSnapshot_t *task_snapshots;

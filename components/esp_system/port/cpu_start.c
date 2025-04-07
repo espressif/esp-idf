@@ -8,7 +8,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#include "esp_attr.h"
+#include "esp_private/esp_system_attr.h"
 #include "esp_err.h"
 
 #include "esp_log.h"
@@ -194,7 +194,7 @@ void startup_resume_other_cores(void)
     s_resume_cores = true;
 }
 
-void IRAM_ATTR call_start_cpu1(void)
+void ESP_SYSTEM_IRAM_ATTR call_start_cpu1(void)
 {
 #ifdef __riscv
     // Configure the global pointer register
@@ -325,7 +325,7 @@ static void restore_app_mmu_from_pro_mmu(void)
 }
 #endif
 // This function is needed to make the multicore app runnable on a unicore bootloader (built with FREERTOS UNICORE).
-// It does some cache settings for other CPUs.
+// It does some cache settings for other CPUs, so it must be in IRAM.
 void IRAM_ATTR do_multicore_settings(void)
 {
     // We intentionally do not check the cache settings before changing them,
