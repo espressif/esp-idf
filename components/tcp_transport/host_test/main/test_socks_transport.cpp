@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,17 +37,27 @@ using namespace std::literals;
 
 namespace  {
 
-/*
- * Makes possible to pass a capturing lambda as a callback
- */
-decltype(auto) capture_lambda(auto callable)
-{
-    // make a static copy of the lambda to extend it's lifetime and avoid the capture.
-    [[maybe_unused]]static auto call = callable;
-    return []<typename... Args>(Args... args) {
-        return call(args...);
-    };
-}
+struct CallbackContext {
+    esp_transport_handle_t test_parent;
+    std::array<char, 9> expected_request;
+    int timeout;
+};
+static CallbackContext context;
+
+struct CallbackContextGuard {
+    CallbackContext &context;
+
+    // Constructor to initialize the context
+    CallbackContextGuard(CallbackContext &context): context(context) {}
+
+    // Destructor to clean up the context
+    ~CallbackContextGuard() {
+        // Reset the context to avoid residual state
+        context.test_parent = nullptr;
+        context.expected_request.fill(0);
+        context.timeout = 0;
+    }
+};
 
 auto make_response(socks_transport_error_t response)
 {
@@ -140,14 +150,23 @@ TEST_CASE("Requests to Proxy", "[Requests]")
             auto *p_addr_info = &addr_info;
             lwip_getaddrinfo_ReturnThruPtr_res(&p_addr_info);
             auto expected_request = std::array<char,9>{0x04, 0x01, 0x00, 0x50, 0x5a, 0x5a, 0x5a, 0x5a, 0x00 };
-            mock_write_Stub(capture_lambda([&test_parent, expected_request, &timeout](esp_transport_handle_t transport, const char *request_sent, int len, int timeout_ms, [[maybe_unused]]int num_call) {
+
+            // Create and initialize the callback context
+            context = {
+                .test_parent = test_parent.get(),
+                .expected_request = expected_request,
+                .timeout = timeout,
+            };
+            CallbackContextGuard guard(context);
+
+            mock_write_Stub([](esp_transport_handle_t transport, const char *request_sent, int len, int timeout_ms, [[maybe_unused]]int num_call) {
                 using namespace Catch::Matchers;
-                REQUIRE(transport == test_parent.get());
-                REQUIRE(len == expected_request.size());
-                REQUIRE(timeout_ms == timeout);
-                REQUIRE(std::equal(request_sent,request_sent+len, std::begin(expected_request), std::end(expected_request)));
+                REQUIRE(transport == context.test_parent);
+                REQUIRE(len == context.expected_request.size());
+                REQUIRE(timeout_ms == context.timeout);
+                REQUIRE(std::equal(request_sent, request_sent + len, std::begin(context.expected_request), std::end(context.expected_request)));
                 return len;
-            }));
+            });
 
             SECTION("Successful connection request") {
 
