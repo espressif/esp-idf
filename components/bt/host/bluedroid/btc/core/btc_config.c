@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,17 @@ static const period_ms_t CONFIG_SETTLE_PERIOD_MS = 3000;
 static void btc_key_value_to_string(uint8_t *key_value, char *value_str, int key_length);
 static osi_mutex_t lock;  // protects operations on |config|.
 static config_t *config;
+
+
+int btc_config_file_path_get(char *file_path)
+{
+    if (file_path == NULL) {
+        return -1;
+    }
+
+    strcpy(file_path, CONFIG_FILE_PATH);
+    return 0;
+}
 
 int btc_config_file_path_update(const char *file_path)
 {
