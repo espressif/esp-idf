@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -261,6 +261,12 @@ esp_err_t jpeg_encoder_process(jpeg_encoder_handle_t encoder_engine, const jpeg_
             goto err1;
         }
 
+        if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_DESC_EMPTY) {
+            ESP_LOGE(TAG, "Due to image quality issues, the generated image is larger than the buffer provided by the user. You can increase the buffer or ignore this information");
+            ret = ESP_ERR_INVALID_STATE;
+            goto err2; // dma2d will freeup this channel in this event, so goto err2
+        }
+
         if (s_rcv_event.dma_evt & JPEG_DMA2D_RX_EOF) {
             ESP_GOTO_ON_ERROR(esp_cache_msync((void*)encoder_engine->rxlink, encoder_engine->dma_desc_size, ESP_CACHE_MSYNC_FLAG_DIR_M2C), err1, TAG, "sync memory to cache failed");
             compressed_size = s_dma_desc_get_len(encoder_engine->rxlink);
@@ -367,6 +373,19 @@ static bool s_jpeg_rx_eof(dma2d_channel_handle_t dma2d_chan, dma2d_event_data_t 
     return higher_priority_task_awoken;
 }
 
+static bool s_jpeg_rx_desc_empty(dma2d_channel_handle_t dma2d_chan, dma2d_event_data_t *event_data, void *user_data)
+{
+    jpeg_encoder_handle_t encoder_engine = (jpeg_encoder_handle_t) user_data;
+    portBASE_TYPE higher_priority_task_awoken = pdFALSE;
+    jpeg_enc_dma2d_evt_t s_event = {
+        .dma_evt = JPEG_DMA2D_RX_DESC_EMPTY,
+        .encoder_status = 0,
+    };
+    xQueueSendFromISR(encoder_engine->evt_queue, &s_event, &higher_priority_task_awoken);
+
+    return higher_priority_task_awoken;
+}
+
 static void jpeg_enc_config_dma_trans_ability(jpeg_encoder_handle_t encoder_engine)
 {
     // set transfer ability
@@ -442,6 +461,7 @@ static bool s_jpeg_enc_transaction_on_job_picked(uint32_t channel_num, const dma
 
     static dma2d_rx_event_callbacks_t jpeg_dec_cbs = {
         .on_recv_eof = s_jpeg_rx_eof,
+        .on_desc_empty = s_jpeg_rx_desc_empty,
     };
 
     dma2d_register_rx_event_callbacks(rx_chan, &jpeg_dec_cbs, encoder_engine);
