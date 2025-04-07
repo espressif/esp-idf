@@ -133,4 +133,5 @@ int owe_process_assoc_resp(const u8 *rsn_ie, size_t rsn_len, const uint8_t *dh_i
 
 struct wpabuf *owe_build_assoc_req(struct wpa_sm *sm, u16 group);
 
+void wpa_sm_pmksa_cache_flush(struct wpa_sm *sm, void *network_ctx);
 #endif /* WPA_H */
