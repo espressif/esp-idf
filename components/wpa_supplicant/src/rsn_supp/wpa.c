@@ -2181,11 +2181,13 @@ void wpa_sm_deinit(void)
 {
     struct wpa_sm *sm = &gWpaSm;
     pmksa_cache_deinit(sm->pmksa);
+    sm->pmksa = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
     os_free(sm->assoc_rsnxe);
     wpa_sm_drop_sa(sm);
     sm->assoc_rsnxe = NULL;
+    memset(sm, 0, sizeof(*sm));
 }
 
 
@@ -2476,7 +2478,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
         return;
 
     /* This is really SLOW, so just re cacl while reset param */
-    if (esp_wifi_sta_get_reset_param_internal() != 0) {
+    if (esp_wifi_sta_get_reset_nvs_pmk_internal() != 0) {
         // check it's psk
         if (strlen((char *)esp_wifi_sta_get_prof_password_internal()) == 64) {
             if (hexstr2bin((char *)esp_wifi_sta_get_prof_password_internal(),
@@ -2487,7 +2489,7 @@ wpa_set_passphrase(char * passphrase, u8 *ssid, size_t ssid_len)
                         4096, esp_wifi_sta_get_ap_info_prof_pmk_internal(), PMK_LEN);
         }
         esp_wifi_sta_update_ap_info_internal();
-        esp_wifi_sta_set_reset_param_internal(0);
+        esp_wifi_sta_set_reset_nvs_pmk_internal(0);
     }
 
     if (sm->key_mgmt == WPA_KEY_MGMT_IEEE8021X) {
@@ -3001,4 +3003,12 @@ fail:
     return -1;
 }
 #endif // CONFIG_OWE_STA
+
+
+void wpa_sm_pmksa_cache_flush(struct wpa_sm *sm, void *network_ctx)
+{
+    if (sm->pmksa) {
+        pmksa_cache_flush(sm->pmksa, network_ctx, NULL, 0);
+    }
+}
 #endif // ESP_SUPPLICANT

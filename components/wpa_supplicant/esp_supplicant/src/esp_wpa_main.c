@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -40,6 +40,7 @@
 #include "ap/sta_info.h"
 #include "wps/wps_defs.h"
 #include "wps/wps.h"
+#include "rsn_supp/pmksa_cache.h"
 
 bool g_wpa_pmk_caching_disabled = 0;
 const wifi_osi_funcs_t *wifi_funcs;
@@ -406,6 +407,12 @@ fail:
 }
 #endif
 
+static void wpa_config_reload(void)
+{
+    struct wpa_sm *sm = &gWpaSm;
+    wpa_sm_pmksa_cache_flush(sm, NULL);
+}
+
 int esp_supplicant_init(void)
 {
     int ret = ESP_OK;
@@ -443,6 +450,7 @@ int esp_supplicant_init(void)
     wpa_cb->wpa_michael_mic_failure = wpa_michael_mic_failure;
     wpa_cb->wpa_config_done = wpa_config_done;
     wpa_cb->wpa_sta_clear_curr_pmksa = wpa_sta_clear_curr_pmksa;
+    wpa_cb->wpa_config_reload = wpa_config_reload;
 
     esp_wifi_register_wpa3_ap_cb(wpa_cb);
     esp_wifi_register_wpa3_cb(wpa_cb);
