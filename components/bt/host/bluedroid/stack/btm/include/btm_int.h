@@ -191,6 +191,10 @@ tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  
 TIMER_LIST_ENT       rssi_timer;
 tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
 /* read rssi function completes         */
+
+tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
+/* read channel map function completes */
+
 TIMER_LIST_ENT       lnk_quality_timer;
 tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
 /* read link quality function completes */
@@ -1066,6 +1070,7 @@ void         btm_cont_rswitch (tACL_CONN *p,
 tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
 void         btm_read_rssi_complete (UINT8 *p);
+void         btm_read_channel_map_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);
 void         btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types);
 void         btm_read_link_quality_complete (UINT8 *p);
