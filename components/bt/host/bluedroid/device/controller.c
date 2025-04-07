@@ -101,6 +101,7 @@ static controller_local_param_t *controller_param_ptr;
 
 #define AWAIT_COMMAND(command) future_await(controller_param.hci->transmit_command_futured(command))
 
+static bool loaded = false;
 // Module lifecycle functions
 
 static void start_up(void)
@@ -347,6 +348,17 @@ static void shut_down(void)
 {
     controller_param.readable = false;
 }
+
+#if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
+void free_controller_param(void)
+{
+    if (controller_param_ptr) {
+        osi_free(controller_param_ptr);
+        controller_param_ptr = NULL;
+        loaded = false;
+    }
+}
+#endif
 
 static bool get_is_ready(void)
 {
@@ -632,7 +644,6 @@ static const controller_t interface = {
 
 const controller_t *controller_get_interface(void)
 {
-    static bool loaded = false;
     if (!loaded) {
         loaded = true;
 #if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
