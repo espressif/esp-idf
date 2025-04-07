@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 from typing import Dict
 from typing import List
@@ -21,10 +21,10 @@ blobs: Dict = {}
 blob_chunks: List[NVS_Entry] = []
 
 
-def check_partition_size(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> bool:
+def check_partition_size(nvs_partition: NVS_Partition, nvs_log: NVS_Logger, read_only: bool=False) -> bool:
     """ Checks if the partition is large enough and has enough pages
     """
-    if len(nvs_partition.raw_data) / 0x1000 < 3:
+    if len(nvs_partition.raw_data) // 0x1000 < 3 and not read_only:
         nvs_log.info(
             nvs_log.yellow(
                 'NVS Partition size must be at least 0x3000 (4kiB * 3 pages == 12kiB)!'
@@ -38,7 +38,7 @@ def check_partition_size(nvs_partition: NVS_Partition, nvs_log: NVS_Logger) -> b
             )
         )
         return False
-    if len(nvs_partition.pages) < 3:
+    if len(nvs_partition.pages) < 3 and not read_only:
         nvs_log.info(
             nvs_log.yellow(
                 'NVS Partition must contain 3 pages (sectors) at least to function properly!'
