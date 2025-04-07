@@ -2578,7 +2578,7 @@ static void btu_ble_periodic_adv_report_evt(UINT8 *p, UINT8 evt_len)
     STREAM_TO_UINT16(adv_report.sync_handle, p);
     STREAM_TO_UINT8(adv_report.tx_power, p);
     STREAM_TO_UINT8(adv_report.rssi, p);
-    STREAM_TO_UINT8(unused, p);
+    STREAM_TO_UINT8(adv_report.cte_type, p);
     STREAM_TO_UINT8(adv_report.data_status, p);
     STREAM_TO_UINT8(adv_report.data_length, p);
 
