@@ -5,7 +5,7 @@
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to use the NVS image generation tool [nvs_partition_gen.py](../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) to automatically create a NVS partition image from the contents of a CSV file during build, with an option of automatically flashing the created image on invocation of `idf.py -p PORT flash`. For more information, see description of `nvs_partition_gen.py` on the ESP-IDF Programming Guide under API Reference > Storage API > NVS Partition Generator Utility.
+This example demonstrates how to use the NVS image generation tool [nvs_partition_gen.py](../../../../components/nvs_flash/nvs_partition_generator/nvs_partition_gen.py) to automatically create a NVS partition image from the contents of a CSV file during build, with an option of automatically flashing the created image on invocation of `idf.py -p PORT flash`. For more information, see description of `nvs_partition_gen.py` on the ESP-IDF Programming Guide under API Reference > Storage API > NVS Partition Generator Utility.
 
 The following gives an overview of the example:
 

@@ -181,8 +181,8 @@ Points to keep in mind when developing NVS related code:
 
 **Examples:**
 
-- :example:`storage/nvs_rw_value` demonstrates how to use NVS to write and read a single integer value.
-- :example:`storage/nvs_rw_blob` demonstrates how to use NVS to write and read a blob.
+- :example:`storage/nvs/nvs_rw_value` demonstrates how to use NVS to write and read a single integer value.
+- :example:`storage/nvs/nvs_rw_blob` demonstrates how to use NVS to write and read a blob.
 - :example:`security/nvs_encryption_hmac` demonstrates NVS encryption using the HMAC peripheral, where the encryption keys are derived from the HMAC key burnt in eFuse.
 - :example:`security/flash_encryption` demonstrates the flash encryption workflow including NVS partition creation and usage.
 

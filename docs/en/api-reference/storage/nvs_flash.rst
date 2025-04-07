@@ -154,9 +154,9 @@ If ``FLASH_IN_PROJECT`` is not specified, the image will still be generated, but
 Application Example
 -------------------
 
-You can find code examples in the :example:`storage` directory of ESP-IDF examples:
+You can find code examples in the :example:`storage/nvs` directory of ESP-IDF examples:
 
-:example:`storage/nvs_rw_value`
+:example:`storage/nvs/nvs_rw_value`
 
   Demonstrates how to read a single integer value from, and write it to NVS.
 
@@ -164,7 +164,7 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
 
   The example also shows how to check if a read/write operation was successful, or if a certain value has not been initialized in NVS. The diagnostic procedure is provided in plain text to help you track the program flow and capture any issues on the way.
 
-:example:`storage/nvs_rw_blob`
+:example:`storage/nvs/nvs_rw_blob`
 
   Demonstrates how to read a single integer value and a blob (binary large object), and write them to NVS to preserve this value between {IDF_TARGET_NAME} module restarts.
 
@@ -173,9 +173,9 @@ You can find code examples in the :example:`storage` directory of ESP-IDF exampl
 
   The example also shows how to implement the diagnostic procedure to check if the read/write operation was successful.
 
-:example:`storage/nvs_rw_value_cxx`
+:example:`storage/nvs/nvs_rw_value_cxx`
 
-  This example does exactly the same as :example:`storage/nvs_rw_value`, except that it uses the C++ NVS handle class.
+  This example does exactly the same as :example:`storage/nvs/nvs_rw_value`, except that it uses the C++ NVS handle class.
 
 Internals
 ---------

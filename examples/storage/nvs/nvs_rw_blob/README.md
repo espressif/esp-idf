@@ -14,7 +14,7 @@ Example also shows how to implement diagnostics if read / write operation was su
 
 Detailed functional description of NVS and API is provided in [documentation](https://docs.espressif.com/projects/esp-idf/en/latest/api-reference/storage/nvs_flash.html).
 
-If not done already, consider checking simpler example *storage/nvs_rw_value*, that has been used as a starting point for preparing this one.
+If not done already, consider checking simpler example *storage/nvs/nvs_rw_value*, that has been used as a starting point for preparing this one.
 
 ## How to use example
 
@@ -36,34 +36,27 @@ See the Getting Started Guide for full steps to configure and use ESP-IDF to bui
 
 ## Example Output
 
-First run:
 ```
-Restart counter = 0
-Run time:
-Nothing saved yet!
-```
-
-At this point, press "Boot" button and hold it for a second. The board will perform software restart, printing:
-
-```
-Restarting...
-```
-
-After booting again, restart counter and run time array will be printed:
-
-```
-Restart counter = 1
-Run time:
-1: 5110
-```
-
-After pressing "Boot" once more:
-
-```
-Restart counter = 2
-Run time:
-1: 5110
-2: 5860
+...
+I (288) main_task: Calling app_main()
+I (298) nvs_blob_example: Saving test data blob...
+I (308) nvs_blob_example:
+Reading updated blob data:
+I (308) nvs_blob_example: Reading test data blob:
+I (308) nvs_blob_example: ID: 123
+I (308) nvs_blob_example: Name: Test Sample
+I (308) nvs_blob_example: Values: 3.140, 2.718, -0.000, 0.000
+I (318) nvs_blob_example: Flags: 0xABCD1234
+I (318) nvs_blob_example: Counts: -100, 100
+I (328) nvs_blob_example: Active: true
+I (328) nvs_blob_example:
+Reading array data blob:
+I (338) nvs_blob_example: Array[0] = 30
+I (338) nvs_blob_example: Array[1] = 20
+I (338) nvs_blob_example:
+Blob operations completed. Monitoring GPIO for reset...
+I (348) gpio: GPIO[0]| InputEn: 0| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0
+...
 ```
 
-To reset the counter and run time array, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.
+To reset nvs data, erase the contents of flash memory using `idf.py erase-flash`, then upload the program again as described above.

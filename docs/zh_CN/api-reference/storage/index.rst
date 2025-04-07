@@ -47,16 +47,18 @@
 
     * - **例程**
       - **描述**
-    * - :example:`nvs_rw_blob <storage/nvs_rw_blob>`
+    * - :example:`nvs_rw_blob <storage/nvs/nvs_rw_blob>`
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写 blob 数据类型。
-    * - :example:`nvs_rw_value <storage/nvs_rw_value>`
+    * - :example:`nvs_rw_value <storage/nvs/nvs_rw_value>`
       - 演示了如何在 NVS flash 中使用 C 语言 API 读写整数数据类型。
-    * - :example:`nvs_rw_value <storage/nvs_rw_value>`
+    * - :example:`nvs_rw_value <storage/nvs/nvs_rw_value_cxx>`
       - 演示了如何在 NVS flash 中使用 C++ 语言 API 读写整数数据类型。
-    * - :example:`nvs_bootloader <storage/nvs_bootloader>`
+    * - :example:`nvs_bootloader <storage/nvs/nvs_bootloader>`
       - 演示了如何使用引导加载程序代码中可用的 API 来读取 NVS 数据。
-    * - :example:`nvsgen <storage/nvsgen>`
+    * - :example:`nvsgen <storage/nvs/nvsgen>`
       - 演示了如何使用基于 Python 的 NVS 镜像生成工具，根据 CSV 文件内容创建 NVS 分区镜像。
+    * - :example:`nvs_console <storage/nvs/nvs_console>`
+      - 演示了如何通过交互式控制台界面使用 NVS。
 
 .. list-table:: 常用文件系统 API
     :widths: 25 75

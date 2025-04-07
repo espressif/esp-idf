@@ -1,0 +1,47 @@
+# Documentation: .gitlab/ci/README.md#manifest-file-to-control-the-buildtest-apps
+
+examples/storage/nvs/nvs_bootloader:
+  depends_components:
+    - nvs_flash
+    - nvs_sec_provider
+  disable:
+    - if: CONFIG_NAME == "nvs_enc_flash_enc" and (SOC_AES_SUPPORTED != 1 and ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB != 1)
+    - if: CONFIG_NAME == "nvs_enc_hmac" and (SOC_HMAC_SUPPORTED != 1 or (SOC_HMAC_SUPPORTED == 1 and (SOC_AES_SUPPORTED != 1 and ESP_ROM_HAS_MBEDTLS_CRYPTO_LIB != 1)))
+      reason: As of now in such cases, we do not have any way to perform AES operations in the bootloader build
+
+examples/storage/nvs/nvs_console:
+  depends_components:
+    - nvs_flash
+    - console
+    - vfs
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+examples/storage/nvs/nvs_rw_blob:
+  depends_components:
+    - nvs_flash
+    - driver
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+
+examples/storage/nvs/nvs_rw_value:
+  depends_components:
+    - nvs_flash
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+
+examples/storage/nvs/nvs_rw_value_cxx:
+  depends_components:
+    - nvs_flash
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      reason: only one target per arch needed
+
+examples/storage/nvs/nvsgen:
+  depends_components:
+    - nvs_flash
+  disable_test:
+    - if: IDF_TARGET != "esp32"
+      reason: only one target needed

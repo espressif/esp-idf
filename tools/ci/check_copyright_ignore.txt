@@ -908,9 +908,6 @@ examples/protocols/static_ip/main/static_ip_example_main.c
 examples/provisioning/wifi_prov_mgr/main/app_main.c
 examples/security/flash_encryption/main/flash_encrypt_main.c
 examples/storage/custom_flash_driver/main/main.c
-examples/storage/nvs_rw_blob/main/nvs_blob_example_main.c
-examples/storage/nvs_rw_value/main/nvs_value_example_main.c
-examples/storage/nvs_rw_value_cxx/main/nvs_value_example_main.cpp
 examples/storage/partition_api/partition_find/main/main.c
 examples/storage/partition_api/partition_mmap/main/main.c
 examples/storage/partition_api/partition_ops/main/main.c

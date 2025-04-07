@@ -37,7 +37,7 @@
 应用示例
 -----------
 
-代码示例请参阅 ESP-IDF 示例 :example:`storage` 目录下的 :example:`storage/nvs_bootloader`。
+代码示例请参阅 ESP-IDF 示例 :example:`storage/nvs` 目录下的 :example:`storage/nvs/nvs_bootloader`。
 
 本节演示了如何在输入/输出结构中准备数据，以支持不同的数据类型、命名空间和键。此外，还包含从 NVS 读取字符串数据的示例。
 

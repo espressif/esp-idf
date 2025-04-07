@@ -37,7 +37,7 @@ Applications are expected to follow the steps below in order to enable decryptio
 Application Example
 -------------------
 
-You can find code examples in :example:`storage/nvs_bootloader` (in the :example:`storage` directory of ESP-IDF examples).
+You can find code examples in :example:`storage/nvs/nvs_bootloader` (in the :example:`storage/nvs` directory of ESP-IDF examples).
 
 This section demonstrates how to prepare data in the input-output structure for various data types, namespaces, and keys. It includes an example of reading string data from NVS.
 
