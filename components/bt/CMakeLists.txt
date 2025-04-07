@@ -461,6 +461,19 @@ if(CONFIG_BT_ENABLED)
             list(APPEND srcs "esp_ble_mesh/core/bluedroid_host/adapter.c")
         endif()
 
+        if(CONFIG_BT_BLE_FEAT_ISO_EN)
+            list(APPEND srcs "host/bluedroid/stack/btm/btm_ble_iso.c"
+                            "host/bluedroid/btc/profile/std/iso/btc_iso_ble.c"
+                            "host/bluedroid/api/esp_ble_iso_api.c"
+                            "host/bluedroid/hci/ble_hci_iso.c")
+        endif()
+
+        if(CONFIG_BT_BLE_FEAT_CTE_EN)
+            list(APPEND srcs "host/bluedroid/stack/btm/btm_ble_cte.c"
+                            "host/bluedroid/btc/profile/std/cte/btc_ble_cte.c"
+                            "host/bluedroid/api/esp_ble_cte_api.c")
+        endif()
+
     endif()
 
     if(CONFIG_BLE_MESH)

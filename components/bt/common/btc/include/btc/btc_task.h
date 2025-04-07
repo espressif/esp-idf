@@ -105,6 +105,12 @@ typedef enum {
     BTC_PID_MBT_SERVER,
     BTC_PID_BLE_MESH_BLE_COEX,
 #endif /* CONFIG_BLE_MESH */
+#if (BLE_FEAT_ISO_EN == TRUE)
+    BTC_PID_ISO_BLE,
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+#if (BLE_FEAT_CTE_EN == TRUE)
+    BTC_PID_BLE_CTE,
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
     BTC_PID_NUM,
 } btc_pid_t; //btc profile id
 
