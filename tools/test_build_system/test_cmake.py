@@ -16,6 +16,9 @@ from test_build_system_helpers import run_cmake
 from test_build_system_helpers import run_cmake_and_build
 
 
+# This test checks multiple targets in one test function. It would be better to have each target
+# tested in a isolated test case, but that would mean doing idf_copy each time, and copying takes most of the time
+@pytest.mark.usefixtures('idf_copy')
 def test_build_custom_cmake_project(test_app_copy: Path) -> None:
     # Test is compatible with any target. Random targets in the list are selected for performance reasons
     idf_path = Path(os.environ['IDF_PATH'])
@@ -30,12 +33,15 @@ def test_build_custom_cmake_project(test_app_copy: Path) -> None:
         )
         assert file_contains((test_app_copy / 'build' / 'compile_commands.json'), '"command"')
         shutil.rmtree(test_app_copy / 'build')
+        os.remove(idf_path / 'examples' / 'build_system' / 'cmake' / 'idf_as_lib' / 'sdkconfig')
 
 
 @pytest.mark.skipif(
     sys.platform == 'win32',
     reason='On Win project is not buildable without system compiler on the host machine. (Win CI runners)',
 )
+@pytest.mark.usefixtures('idf_copy')
+@pytest.mark.usefixtures('test_app_copy')
 def test_build_custom_cmake_project_host() -> None:
     logging.info('Test build ESP-IDF as a library to a custom CMake projects for host')
     idf_path = Path(os.environ['IDF_PATH'])
