@@ -163,7 +163,7 @@ extern hf_client_local_param_t *hf_client_local_param_ptr;
 #endif
 
 /*******************************************************************************
-**  BTC HF AG API
+**  BTC HF CLIENT API
 ********************************************************************************/
 
 void btc_hf_client_call_handler(btc_msg_t *msg);
@@ -175,6 +175,8 @@ void btc_hf_client_audio_data_cb_to_app(uint8_t *buf, uint8_t *data, uint16_t le
 void btc_hf_client_incoming_data_cb_to_app(const uint8_t *data, uint32_t len);
 
 uint32_t btc_hf_client_outgoing_data_cb_to_app(uint8_t *data, uint32_t len);
+
+void btc_hf_client_get_profile_status(esp_hf_client_profile_status_t *param);
 #endif  ///BTC_HF_CLIENT_INCLUDED == TRUE
 
 #endif /* __BTC_HF_CLIENT_H__ */

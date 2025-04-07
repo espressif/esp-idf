@@ -128,6 +128,8 @@ void btc_a2dp_call_handler(btc_msg_t *msg);
 
 void btc_a2dp_cb_handler(btc_msg_t *msg);
 
+void btc_a2dp_get_profile_status(esp_a2d_profile_status_t *param);
+
 void btc_a2dp_sink_reg_data_cb(esp_a2d_sink_data_cb_t callback);
 
 /*******************************************************************************

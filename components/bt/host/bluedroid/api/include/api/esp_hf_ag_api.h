@@ -75,6 +75,13 @@ typedef enum
     ESP_HF_DIAL_MEM,                          /*!< Dial with a memory position */
 } esp_hf_dial_type_t;
 
+
+/// HFP AG profile status parameters
+typedef struct {
+    bool hfp_ag_inited;                        /*!< hfp ag initialization */
+    uint8_t conn_num;                          /*!< Number of connections */
+} esp_hf_profile_status_t;
+
 /// HFP AG callback parameters
 typedef union
 {
@@ -734,6 +741,17 @@ esp_err_t esp_hf_ag_audio_data_send(esp_hf_sync_conn_hdl_t sync_conn_hdl, esp_hf
  *
  */
 esp_err_t esp_hf_ag_pkt_stat_nums_get(uint16_t sync_conn_handle);
+
+/**
+ * @brief       This function is used to get the status of hfp ag
+ *
+ * @param[out]  profile_status - hfp ag status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_hf_ag_get_profile_status(esp_hf_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

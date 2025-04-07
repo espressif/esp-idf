@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1250,6 +1250,22 @@ esp_err_t btc_l2cap_vfs_unregister(void)
     } while (0);
 
     return ret;
+}
+
+void btc_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *param)
+{
+    if (is_l2cap_init()) {
+        param->l2cap_inited = true;
+        osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
+        for (size_t i = 1; i <= BTA_JV_MAX_L2C_CONN; i++) {
+            if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected) {
+                param->conn_num++;
+            }
+        }
+        osi_mutex_unlock(&l2cap_local_param.l2cap_slot_mutex);
+    } else {
+        param->l2cap_inited = false;
+    }
 }
 
 #endif ///defined BTC_L2CAP_INCLUDED && BTC_L2CAP_INCLUDED == TRUE

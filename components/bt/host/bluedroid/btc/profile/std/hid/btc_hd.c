@@ -959,4 +959,16 @@ void btc_hd_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
+void btc_hd_get_profile_status(esp_hidd_profile_status_t *param)
+{
+    if (is_hidd_init()) {
+        param->hidd_inited = true;
+        if (btc_hd_cb.status == BTC_HD_CONNECTED) {
+            param->conn_num++;
+        }
+    } else {
+        param->hidd_inited = false;
+    }
+}
+
 #endif // HID_DEV_INCLUDED==TRUE

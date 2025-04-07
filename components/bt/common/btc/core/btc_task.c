@@ -536,6 +536,9 @@ bt_status_t btc_init(void)
         return BT_STATUS_NOMEM;
     }
 #endif
+#if BTC_GAP_BT_INCLUDED
+    btc_gap_bt_init();
+#endif
 
 #if (BLE_INCLUDED == TRUE)
     btc_gap_callback_init();
@@ -554,6 +557,9 @@ bt_status_t btc_init(void)
 
 void btc_deinit(void)
 {
+#if BTC_GAP_BT_INCLUDED
+    btc_gap_bt_deinit();
+#endif
 #if BTC_DYNAMIC_MEMORY
     btc_deinit_mem();
 #endif
