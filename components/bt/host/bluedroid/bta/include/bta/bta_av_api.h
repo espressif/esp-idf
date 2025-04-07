@@ -43,14 +43,14 @@
 #define BTA_AV_FAIL_STREAM      3       /* stream connection failed */
 #define BTA_AV_FAIL_RESOURCES   4       /* no resources */
 #define BTA_AV_FAIL_ROLE        5       /* failed due to role management related issues */
-#define BTA_AV_FAIL_GET_CAP     6       /* get capability failed due to no SEP availale on the peer  */
+#define BTA_AV_FAIL_GET_CAP     6       /* get capability failed due to no SEP available on the peer  */
 
 typedef UINT8 tBTA_AV_STATUS;
 
 /* AV features masks */
 #define BTA_AV_FEAT_RCTG        0x0001  /* remote control target */
 #define BTA_AV_FEAT_RCCT        0x0002  /* remote control controller */
-#define BTA_AV_FEAT_PROTECT     0x0004  /* streaming media contect protection */
+#define BTA_AV_FEAT_PROTECT     0x0004  /* streaming media content protection */
 #define BTA_AV_FEAT_VENDOR      0x0008  /* remote control vendor dependent commands */
 #define BTA_AV_FEAT_REPORT      0x0020  /* use reporting service for VDP */
 #define BTA_AV_FEAT_METADATA    0x0040  /* remote control Metadata Transfer command/response */
@@ -486,7 +486,7 @@ typedef struct {
 typedef union {
     tBTA_AV_CHNL        chnl;
     tBTA_AV_ENABLE      enable;
-    tBTA_AV_REGISTER    registr;
+    tBTA_AV_REGISTER    registered;
     tBTA_AV_OPEN        open;
     tBTA_AV_CLOSE       close;
     tBTA_AV_START       start;

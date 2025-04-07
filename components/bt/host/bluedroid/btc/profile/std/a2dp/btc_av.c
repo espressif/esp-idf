@@ -324,7 +324,7 @@ static BOOLEAN btc_av_state_idle_handler(btc_sm_event_t event, void *p_data)
         break;
 
     case BTA_AV_REGISTER_EVT:
-        btc_av_cb.bta_handle = ((tBTA_AV *)p_data)->registr.hndl;
+        btc_av_cb.bta_handle = ((tBTA_AV *)p_data)->registered.hndl;
         break;
 
     case BTA_AV_PENDING_EVT:
