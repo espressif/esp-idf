@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,9 +51,9 @@ const static uint32_t s_test_data[MSPI_TIMING_TEST_DATA_LEN] = {0x7f786655, 0xa5
                                                                 0x80786655, 0x00a5ff5a, 0xc03c33aa, 0x00a55aff, 0xe01e9355, 0x00ff5aa5, 0xf00fccaa, 0x005affa5,
                                                                 0xf8876655, 0x5aa5ff00, 0xfcc333aa, 0x5affa500, 0xfee19955, 0x5a00a5ff, 0x11f0ccaa, 0x5a00ffa5};
 const static mspi_timing_config_t s_test_delayline_config = {
-        .delayline_table = {{15, 0}, {14, 0}, {13, 0}, {12, 0}, {11, 0}, {10, 0}, {9, 0}, {8, 0}, {7, 0}, {6, 0}, {5, 0}, {4, 0}, {3, 0}, {2, 0}, {1, 0}, {0, 0},
-                            {0, 0}, {0, 1}, {0, 2}, {0, 3}, {0, 4}, {0, 5}, {0, 6}, {0, 7}, {0, 8}, {0, 9}, {0, 10}, {0, 11}, {0, 12}, {0, 13}, {0, 14}, {0, 15}},
-        .available_config_num = 32,
+        .delayline_table = {{0, 15}, {0, 14}, {0, 13}, {0, 12}, {0, 11}, {0, 10}, {0, 9}, {0, 8}, {0, 7}, {0, 6}, {0, 5}, {0, 4}, {0, 3}, {0, 2}, {0, 1},
+                            {0, 0}, {1, 0}, {2, 0}, {3, 0}, {4, 0}, {5, 0}, {6, 0}, {7, 0}, {8, 0}, {9, 0}, {10, 0}, {11, 0}, {12, 0}, {13, 0}, {14, 0}, {15, 0}},
+        .available_config_num = 31,
     };
 static mspi_ll_dqs_phase_t s_psram_best_phase = MSPI_LL_DQS_PHASE_MAX;
 static delayline_config_t s_psram_best_delayline = {WRONG_DELAYLINE, WRONG_DELAYLINE};
@@ -134,12 +134,8 @@ uint32_t mspi_timing_psram_select_best_tuning_phase(const void *configs, uint32_
     if (consecutive_length == 0) {
         best_phase_id = 0;
         success = false;
-    } else if (consecutive_length == 1) {
-        best_phase_id = end;
-    } else if (consecutive_length == 2 || consecutive_length == 3){
-        best_phase_id = end - 1;
     } else {
-        best_phase_id = end - 2;
+        best_phase_id = (end - consecutive_length + 1);
     }
 
     if (success) {
