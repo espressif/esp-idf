@@ -8,13 +8,16 @@
 #include <xtensa/corebits.h>
 #include <xtensa/config/system.h>
 #include <xtensa/hal.h>
+#include "sdkconfig.h"
 
 /* esp_ipc_isr_waiting_for_finish_cmd(void* finish_cmd)
  *
  * It should be called by the CALLX0 command from the handler of High-priority interrupt.
  * Only these registers [a2, a3, a4] can be used here.
  */
+#if CONFIG_ESP_SYSTEM_IN_IRAM
     .section    .iram1, "ax"
+#endif
     .align      4
     .global     esp_ipc_isr_waiting_for_finish_cmd
     .type       esp_ipc_isr_waiting_for_finish_cmd, @function
