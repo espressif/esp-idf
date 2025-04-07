@@ -155,6 +155,26 @@ static void parse_ble_read_buffer_size_response(
     osi_free(response);
 }
 
+#if (BLE_FEAT_ISO_EN == TRUE)
+static void parse_ble_read_buffer_size_response_v2 (
+    BT_HDR *response,
+    uint16_t *data_size_ptr,
+    uint8_t *acl_buffer_count_ptr,
+    uint16_t *iso_pkt_len_ptr,
+    uint8_t *iso_pkt_num_ptr)
+{
+
+    uint8_t *stream = read_command_complete_header(response, HCI_BLE_READ_BUFFER_SZIE_V2, 3 /* bytes after */);
+    assert(stream != NULL);
+    STREAM_TO_UINT16(*data_size_ptr, stream);
+    STREAM_TO_UINT8(*acl_buffer_count_ptr, stream);
+    STREAM_TO_UINT16(*iso_pkt_len_ptr, stream);
+    STREAM_TO_UINT8(*iso_pkt_num_ptr, stream);
+
+    osi_free(response);
+}
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
+
 static void parse_ble_read_supported_states_response(
     BT_HDR *response,
     uint8_t *supported_states,
@@ -294,6 +314,9 @@ static const hci_packet_parser_t interface = {
     parse_read_local_extended_features_response,
     parse_ble_read_white_list_size_response,
     parse_ble_read_buffer_size_response,
+#if (BLE_FEAT_ISO_EN == TRUE)
+    parse_ble_read_buffer_size_response_v2,
+#endif // #if (BLE_FEAT_ISO_EN == TRUE)
     parse_ble_read_supported_states_response,
     parse_ble_read_local_supported_features_response,
     parse_ble_read_resolving_list_size_response,
