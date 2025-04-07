@@ -190,12 +190,38 @@ esp_tls_client_session_t *esp_mbedtls_get_client_session(esp_tls_t *tls)
         return NULL;
     }
 
-    esp_tls_client_session_t *client_session = (esp_tls_client_session_t*)calloc(1, sizeof(esp_tls_client_session_t));
+    esp_tls_client_session_t *client_session = NULL;
+
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+    /* For TLS 1.3, check if the session ticket is saved in the esp-tls context */
+    if (mbedtls_ssl_get_version_number(&tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
+        if (tls->client_session == NULL) {
+            return NULL;
+        } else {
+            client_session = calloc(1, sizeof(esp_tls_client_session_t));
+            if (client_session == NULL) {
+                ESP_LOGE(TAG, "Failed to allocate memory for client session ctx");
+                return NULL;
+            }
+            /* If the session ticket is saved in the esp-tls context, load it into the client session */
+            int ret = mbedtls_ssl_session_load(&client_session->saved_session, tls->client_session, tls->client_session_len);
+            if (ret != 0) {
+                ESP_LOGE(TAG, "Error in loading the client ssl session");
+                free(client_session);
+                return NULL;
+            }
+            return client_session;
+        }
+    }
+#endif
+    /* In case of TLS 1.2, the session context is available as long as the connection is active */
+    client_session = (esp_tls_client_session_t*)calloc(1, sizeof(esp_tls_client_session_t));
     if (client_session == NULL) {
         ESP_LOGE(TAG, "Failed to allocate memory for client session ctx");
         return NULL;
     }
 
+    /* Get the session ticket from the mbedtls context and load it into the client session */
     int ret = mbedtls_ssl_get_session(&tls->ssl, &(client_session->saved_session));
     if (ret != 0) {
         ESP_LOGE(TAG, "Error in obtaining the client ssl session");
@@ -259,18 +285,81 @@ ssize_t esp_mbedtls_read(esp_tls_t *tls, char *data, size_t datalen)
 {
 
     ssize_t ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
-#if CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
-    // If a post-handshake message is received, connection state is changed to `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET`
-    // Call mbedtls_ssl_read() till state is `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET` or return code is `MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET`
-    // to process session tickets in TLS 1.3 connection
+#if defined(CONFIG_MBEDTLS_SSL_PROTO_TLS1_3)
+    /*
+     * As per RFC 8446, section 4.6.1 the server may send a NewSessionTicket message at any time after the
+     * client Finished message.
+     * If a post-handshake message is received, connection state is changed to `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET`
+     * Call mbedtls_ssl_read() till state is `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET` or return code is `MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET`
+     * to process session tickets in TLS 1.3 connection.
+     * This handshake message should be processed by mbedTLS and not by the application.
+     */
     if (mbedtls_ssl_get_version_number(&tls->ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
         while (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET || tls->ssl.MBEDTLS_PRIVATE(state) == MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET) {
             ESP_LOGD(TAG, "got session ticket in TLS 1.3 connection, retry read");
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+            if (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+                esp_tls_client_session_t *tls13_saved_client_session = calloc(1, sizeof(esp_tls_client_session_t));
+                if (tls13_saved_client_session == NULL) {
+                    ESP_LOGE(TAG, "Failed to allocate memory for client session ctx");
+                    return ESP_ERR_NO_MEM;
+                }
+
+                ret = mbedtls_ssl_get_session(&tls->ssl, &tls13_saved_client_session->saved_session);
+                if (ret != 0) {
+                    ESP_LOGE(TAG, "Error in getting the client ssl session");
+                    free(tls13_saved_client_session);
+                    tls13_saved_client_session = NULL;
+                    return ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED;
+                }
+                ESP_LOGD(TAG, "Session ticket received");
+
+                size_t session_ticket_len = 0;
+                ret = mbedtls_ssl_session_save(&tls13_saved_client_session->saved_session, NULL, 0, &session_ticket_len);
+                if (ret != MBEDTLS_ERR_SSL_BUFFER_TOO_SMALL) {
+                    ESP_LOGE(TAG, "Error in getting the client ssl session length");
+                    free(tls13_saved_client_session);
+                    tls13_saved_client_session = NULL;
+                    return ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED;
+                }
+
+                ESP_LOGD(TAG, "Session ticket length: %zu", session_ticket_len);
+                if (tls->client_session != NULL) {
+                    free(tls->client_session);
+                    tls->client_session = NULL;
+                }
+                /* Allocate memory for the session ticket */
+                tls->client_session = calloc(1, session_ticket_len);
+                if (tls->client_session == NULL) {
+                    ESP_LOGE(TAG, "Failed to allocate memory for client session ctx");
+                    free(tls13_saved_client_session);
+                    tls13_saved_client_session = NULL;
+                    return ESP_ERR_NO_MEM;
+                }
+                ret = mbedtls_ssl_session_save(&tls13_saved_client_session->saved_session, (unsigned char *)tls->client_session, session_ticket_len, &session_ticket_len);
+                if (ret != 0) {
+                    ESP_LOGE(TAG, "Error in saving the client ssl session");
+                    mbedtls_print_error_msg(ret);
+                    free(tls->client_session);
+                    tls->client_session = NULL;
+                    free(tls13_saved_client_session);
+                    tls13_saved_client_session = NULL;
+                    return ESP_ERR_MBEDTLS_SSL_HANDSHAKE_FAILED;
+                }
+
+                ESP_LOGD(TAG, "Session ticket saved in the client session context");
+                tls->client_session_len = session_ticket_len;
+                mbedtls_ssl_session_free(&tls13_saved_client_session->saved_session);
+                free(tls13_saved_client_session);
+                tls13_saved_client_session = NULL;
+            }
+#endif // CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+            /* After handling the session ticket, we need to attempt to read again
+             * to either get application data or process another ticket */
             ret = mbedtls_ssl_read(&tls->ssl, (unsigned char *)data, datalen);
         }
     }
-#endif // CONFIG_MBEDTLS_CLIENT_SSL_SESSION_TICKETS
-
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
     if (ret < 0) {
         if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return 0;
@@ -762,8 +851,13 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
     ESP_LOGD(TAG, "Enabling client-side tls session ticket support");
     mbedtls_ssl_conf_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
     mbedtls_ssl_conf_renegotiation(&tls->conf, MBEDTLS_SSL_RENEGOTIATION_ENABLED);
-
 #endif /* CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
+
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+#if CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS || CONFIG_MBEDTLS_DYNAMIC_BUFFER
+    mbedtls_ssl_conf_tls13_enable_signal_new_session_tickets(&tls->conf, MBEDTLS_SSL_SESSION_TICKETS_ENABLED);
+#endif
+#endif
 
     if (cfg->crt_bundle_attach != NULL) {
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
