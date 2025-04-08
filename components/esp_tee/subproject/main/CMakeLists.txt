@@ -46,6 +46,9 @@ list(APPEND include "${heap_dir}/tlsf")
 # esp_app_desc_t configuration structure for TEE
 list(APPEND srcs "common/esp_app_desc_tee.c")
 
+# Newlib syscalls stub implementation
+list(APPEND srcs "common/syscall_stubs.c")
+
 idf_component_register(SRCS ${srcs}
                        INCLUDE_DIRS ${include})
 
@@ -56,6 +59,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/ld/esp_tee_ld.cmake)
 
 # esp_app_desc_t configuration structure for TEE: Linking symbol and trimming project version and name
 target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_app_desc_tee_include_impl")
+
+# Newlib syscalls stub implementation: Linking symbol
+target_link_libraries(${COMPONENT_LIB} PRIVATE "-u esp_tee_include_syscalls_impl")
 
 # cut PROJECT_VER and PROJECT_NAME to required 32 characters.
 idf_build_get_property(project_ver PROJECT_VER)

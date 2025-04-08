@@ -32,7 +32,7 @@ elseif(esp_tee_build)
              "src/nvs_platform.cpp")
 
     set(requires esp_partition mbedtls)
-    set(priv_requires spi_flash newlib)
+    set(priv_requires spi_flash newlib cxx)
 
     idf_component_register(SRCS "${srcs}"
                     REQUIRES "${requires}"

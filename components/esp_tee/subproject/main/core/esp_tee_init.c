@@ -187,19 +187,3 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* App entry function should not return here. */
     ESP_INFINITE_LOOP(); /* WDT will reset us */
 }
-
-// NOTE: Remove compile-time warnings for the below newlib-provided functions
-struct _reent *__getreent(void)
-{
-    return _GLOBAL_REENT;
-}
-
-void _fstat_r(void) {}
-
-void _close_r(void) {}
-
-void _lseek_r(void) {}
-
-void _read_r(void) {}
-
-void _write_r(void) {}
