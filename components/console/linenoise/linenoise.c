@@ -238,7 +238,7 @@ static void flushWrite(void) {
     fsync(fileno(stdout));
 }
 
-static linenoise_read_bytes_fn read_func = NULL;
+static linenoise_read_bytes_fn read_func = read;
 void linenoiseSetReadFunction(linenoise_read_bytes_fn read_fn)
 {
     read_func = read_fn;
