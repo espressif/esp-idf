@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,19 @@ typedef enum {
     ESP_IMAGE_BOOTLOADER,
     ESP_IMAGE_APPLICATION
 } esp_image_type;
+
+/**
+ * @brief Check if the chip revision meets the image requirements.
+ *
+ * This function verifies whether the actual chip revision satisfies the minimum
+ * and optionally the maximum chip revision requirements specified in the image.
+ *
+ * @param image_header Pointer to the image header containing revision details.
+ * @param check_max_revision If true, also checks the maximum chip revision requirements.
+ *
+ * @return true if the chip revision meets the requirements, false otherwise.
+ */
+bool bootloader_common_check_chip_revision_validity(const esp_image_header_t *image_header, bool check_max_revision);
 
 /**
  * @brief Read ota_info partition and fill array from two otadata structures.
