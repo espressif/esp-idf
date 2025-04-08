@@ -106,6 +106,41 @@ RESTful API
 
 :example:`protocols/http_server/restful_server` 演示了如何实现 RESTful API 服务器和 HTTP 服务器，并结合前端浏览器 UI，设计了多个 API 来获取资源，使用 mDNS 解析域名，并通过半主机技术将网页部署到主机 PC、SPI flash 或 SD 卡上。
 
+URI 处理程序
+------------
+
+HTTP 服务器可以注册 URI 处理程序以处理不同的 HTTP 请求。每个 URI 处理程序都与特定的 URI 和 HTTP 方法（如 GET、POST 等）相关联。当接收到与 URI 和 HTTP 方法相匹配的请求时，会调用相应的处理程序函数。
+
+处理程序函数应返回 :cpp:type:`esp_err_t` 值。
+
+.. code-block:: c
+
+    esp_err_t my_uri_handler(httpd_req_t *req)
+    {
+        // 处理请求
+        // ……
+
+        // 如果请求处理成功，则返回 ESP_OK
+        return ESP_OK;
+
+        // 返回错误代码以关闭连接
+        // 返回 ESP_FAIL
+    }
+
+    void register_uri_handlers(httpd_handle_t server)
+    {
+        httpd_uri_t my_uri = {
+            .uri       = "/my_uri",
+            .method    = HTTP_GET,
+            .handler   = my_uri_handler,
+            .user_ctx  = NULL
+        };
+
+        httpd_register_uri_handler(server, &my_uri);
+    }
+
+在此示例中，`my_uri_handler` 函数用于处理对 `/my_uri` URI 的请求。如果处理程序返回 :c:macro:`ESP_OK`，则连接保持打开状态。如果返回其他值，则连接关闭。因此，应用程序可以根据特定事件或条件来管理连接的状态。
+
 API 参考
 --------
 
