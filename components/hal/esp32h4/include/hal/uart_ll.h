@@ -388,7 +388,7 @@ FORCE_INLINE_ATTR uint32_t uart_ll_get_intr_ena_status(uart_dev_t *hw)
 FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_t rd_len)
 {
     for (int i = 0; i < (int)rd_len; i++) {
-        buf[i] = hw->fifo.rxfifo_rd_byte;
+        buf[i] = hw->fifo.val;
     }
 }
 
@@ -404,7 +404,7 @@ FORCE_INLINE_ATTR void uart_ll_read_rxfifo(uart_dev_t *hw, uint8_t *buf, uint32_
 FORCE_INLINE_ATTR void uart_ll_write_txfifo(uart_dev_t *hw, const uint8_t *buf, uint32_t wr_len)
 {
     for (int i = 0; i < (int)wr_len; i++) {
-        hw->fifo.rxfifo_rd_byte = buf[i];
+        hw->fifo.val = buf[i];
     }
 }
 
