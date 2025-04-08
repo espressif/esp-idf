@@ -173,7 +173,9 @@ TEST_CASE("twai transmit stop resume (loopback)", "[TWAI]")
     TEST_ESP_OK(twai_node_enable(node_hdl));
 
     //waiting pkg receive finish
-    while (rx_frame.buffer < recv_pkg_ptr + TEST_TRANS_LEN);
+    while (rx_frame.buffer < recv_pkg_ptr + TEST_TRANS_LEN) {
+        vTaskDelay(1);
+    }
     free(tx_msgs);
 
     // check if pkg receive correct
