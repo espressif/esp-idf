@@ -75,9 +75,6 @@ typedef struct {
 
 _Static_assert(sizeof(sec_stg_key_t) == 256, "Incorrect sec_stg_key_t size");
 
-#define TEE_SEC_STG_PART_LABEL    "tee_nvs"
-#define TEE_SEC_STG_NVS_NAMESPACE "tee_sec_stg"
-
 static nvs_handle_t tee_nvs_hdl;
 
 static const char *TAG = "secure_storage";
@@ -217,12 +214,12 @@ esp_err_t esp_tee_sec_storage_init(void)
         return err;
     }
 
-    err = nvs_flash_secure_init_partition(TEE_SEC_STG_PART_LABEL, &cfg);
+    err = nvs_flash_secure_init_partition(ESP_TEE_SEC_STG_PART_LABEL, &cfg);
     if (err != ESP_OK) {
         return err;
     }
 
-    err = nvs_open_from_partition(TEE_SEC_STG_PART_LABEL, TEE_SEC_STG_NVS_NAMESPACE, NVS_READWRITE, &tee_nvs_hdl);
+    err = nvs_open_from_partition(ESP_TEE_SEC_STG_PART_LABEL, ESP_TEE_SEC_STG_NVS_NAMESPACE, NVS_READWRITE, &tee_nvs_hdl);
     if (err != ESP_OK) {
         return err;
     }

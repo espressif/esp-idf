@@ -39,6 +39,10 @@ extern "C" {
 #error "CONFIG_SECURE_TEE_INTR_STACK_SIZE must be 16-byte (0x10) aligned"
 #endif
 
+/* TEE Secure Storage partition label and NVS namespace */
+#define ESP_TEE_SEC_STG_PART_LABEL    "secure_storage"
+#define ESP_TEE_SEC_STG_NVS_NAMESPACE "tee_sec_stg_ns"
+
 /* NOTE: ESP32-C6 - TEE/REE memory regions */
 /* TEE I/DRAM */
 #define SOC_S_IRAM_START      (SOC_IRAM_LOW)
