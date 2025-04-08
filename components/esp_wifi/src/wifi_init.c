@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -472,7 +472,12 @@ esp_err_t ieee80211_ftm_attach(void)
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
     return ESP_OK;
 }
-#endif
+
+void ftm_initiator_cleanup(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif /* CONFIG_ESP_WIFI_FTM_ENABLE */
 
 #ifndef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 void net80211_softap_funcs_init(void)
@@ -548,7 +553,29 @@ void * ieee80211_alloc_proberesp(void *p, int arg)
     return NULL;
 }
 
-#endif
+bool hostap_query_mac_in_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return false;
+}
+
+int hostap_add_in_mac_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+int hostap_del_mac_info_from_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void create_new_bss_for_sa_query_failed_sta(uint8_t arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif /* CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
 #ifndef CONFIG_ESP_WIFI_NAN_ENABLE
 
@@ -575,7 +602,39 @@ void nan_sm_handle_event(void *p1, int p2)
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
 
-#endif
+int wifi_create_nan(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+int wifi_nan_set_config_local(wifi_nan_config_t *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void nan_dp_post_tx(void *p1, void *p2)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+void nan_dp_delete_peer(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+
+void *nan_dp_search_node(const uint8_t *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return NULL;
+}
+
+void nan_ndp_resp_timeout_process(void *p)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif /* CONFIG_ESP_WIFI_NAN_ENABLE */
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #if CONFIG_ESP32C2_REV_MIN_FULL < 200
