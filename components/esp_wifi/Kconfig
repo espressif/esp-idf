@@ -363,14 +363,24 @@ menu "Wi-Fi"
                 during this period, the time will be refreshed. If the time is up, but the station still has packets
                 to receive or send, the time will also be refreshed. unit: milliseconds.
 
+        config ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+            bool "Enable bss max idle support"
+            default y if (SOC_WIFI_HE_SUPPORT || ESP_WIFI_WNM_SUPPORT)
+            help
+                Enables bss max idle support for Station and SoftAP. BSS max idle period enables an SoftAP to indicate
+                a time period during which the AP does not disassociate a STA due to nonreceipt of frames from the STA.
+                For station, max idle period is default 10 (1000TUs) and can be set through
+                ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME. For softap, bss max idle parameters will be set through
+                bss_max_idle_cfg in wifi_ap_config_t.
+
         config ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME
             int "Maximum keep alive time"
             range 10 60
             default 10
             help
-                Only for station in WIFI_PS_MIN_MODEM or WIFI_PS_MAX_MODEM. If no packet has been
-                sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data packet will be sent
-                to maintain the connection with the AP. unit: seconds.
+                Only for station. If no packet has been sent within ESP_WIFI_SLP_DEFAULT_MAX_ACTIVE_TIME, a null data
+                packet will be sent to maintain the connection with the AP. If ESP_WIFI_BSS_MAX_IDLE_SUPPORT is set,
+                it will be sent as bss max idle period in association request. unit: seconds.
 
         config ESP_WIFI_SLP_DEFAULT_WAIT_BROADCAST_DATA_TIME
             int "Minimum wait broadcast data time"

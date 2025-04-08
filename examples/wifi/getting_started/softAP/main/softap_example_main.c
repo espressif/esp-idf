@@ -75,6 +75,12 @@ void wifi_init_softap(void)
             .pmf_cfg = {
                     .required = true,
             },
+#ifdef CONFIG_ESP_WIFI_BSS_MAX_IDLE_SUPPORT
+            .bss_max_idle_cfg = {
+                .period = WIFI_AP_DEFAULT_MAX_IDLE_PERIOD,
+                .protected_keep_alive = 1,
+            },
+#endif
         },
     };
     if (strlen(EXAMPLE_ESP_WIFI_PASS) == 0) {

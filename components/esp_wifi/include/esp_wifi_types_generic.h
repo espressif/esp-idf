@@ -17,6 +17,8 @@
 extern "C" {
 #endif
 
+#define WIFI_AP_DEFAULT_MAX_IDLE_PERIOD  292 /**< Default timeout for SoftAP BSS Max Idle. Unit: 1000TUs >**/
+
 /**
   * @brief Wi-Fi mode type
   */
@@ -508,6 +510,14 @@ typedef enum {
 } wifi_sae_pk_mode_t;
 
 /**
+  * @brief Configuration structure for BSS max idle
+  */
+typedef struct {
+    uint16_t period;                /**< Sets BSS Max idle period (1 Unit = 1000TUs OR 1.024 Seconds). If there are no frames for this period from a STA, SoftAP will disassociate due to inactivity. Setting it to 0 disables the feature */
+    bool protected_keep_alive;      /**< Requires clients to use protected keep alive frames for BSS Max Idle period */
+} wifi_bss_max_idle_config_t;
+
+/**
   * @brief Soft-AP configuration settings for the device
   */
 typedef struct {
@@ -527,6 +537,7 @@ typedef struct {
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     uint8_t transition_disable;               /**< Whether to enable transition disable feature */
     uint8_t sae_ext;                          /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
+    wifi_bss_max_idle_config_t bss_max_idle_cfg;  /**< Configuration for bss max idle, effective if CONFIG_WIFI_BSS_MAX_IDLE_SUPPORT is enabled */
 } wifi_ap_config_t;
 
 #define SAE_H2E_IDENTIFIER_LEN 32    /**< Length of the password identifier for H2E */
