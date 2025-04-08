@@ -34,11 +34,11 @@ extern "C" {
 #define TEST_SYNC_GPIO   13
 #endif
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
 #define TEST_MCPWM_CALLBACK_ATTR IRAM_ATTR
 #else
 #define TEST_MCPWM_CALLBACK_ATTR
-#endif // CONFIG_MCPWM_ISR_IRAM_SAFE
+#endif // CONFIG_MCPWM_ISR_CACHE_SAFE
 
 void check_mcpwm_timer_phase(mcpwm_timer_handle_t *timers, size_t num_timers,
                              uint32_t expected_count, mcpwm_timer_direction_t expected_direction);

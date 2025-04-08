@@ -989,7 +989,7 @@ IRAM 安全
 
 默认情况下，禁用 cache 时，写入/擦除 flash 等原因将导致 MCPWM 中断延迟，事件回调函数也将延迟执行。在实时应用程序中，应避免此类情况。
 
-因此，可以启用 Kconfig 选项 :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE`，该选项：
+因此，可以启用 Kconfig 选项 :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE`，该选项：
 
 * 支持在禁用 cache 时启用所需中断
 * 支持将 ISR 使用的所有函数存放在 IRAM 中 [2]_
@@ -1023,7 +1023,7 @@ IRAM 安全
 Kconfig 选项
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_MCPWM_ISR_IRAM_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息请参见 :ref:`mcpwm-iram-safe`。
+- :ref:`CONFIG_MCPWM_ISR_CACHE_SAFE` 控制默认 ISR 处理程序能否在禁用 cache 的情况下工作。更多信息请参见 :ref:`mcpwm-iram-safe`。
 - :ref:`CONFIG_MCPWM_CTRL_FUNC_IN_IRAM` 控制 MCPWM 控制函数的存放位置（IRAM 或 flash）。更多信息请参见 :ref:`mcpwm-iram-safe`。
 - :ref:`CONFIG_MCPWM_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
 
