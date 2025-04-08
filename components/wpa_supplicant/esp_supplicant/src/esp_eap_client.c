@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1204,12 +1204,12 @@ esp_err_t esp_eap_client_set_domain_match(const char *domain_match)
     if (len > MAX_DOMAIN_MATCH_LEN) {
         return ESP_ERR_INVALID_ARG;
     }
-    g_wpa_domain_match = (char *)os_zalloc(len+1);
+    g_wpa_domain_match = (char *)os_zalloc(len + 1);
     if (g_wpa_domain_match == NULL) {
         return ESP_ERR_NO_MEM;
     }
 
-    os_strlcpy(g_wpa_domain_match, domain_match, len+1);
+    os_strlcpy(g_wpa_domain_match, domain_match, len + 1);
 
     return ESP_OK;
 }
