@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -520,18 +520,24 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
         }
     }
 
-    /* Usages of default ciphersuites can take a lot of time on low end device
-     * and can cause watchdog. Enabling the ciphers which are secured enough
-     * but doesn't take that much processing power */
+    /* The use of default ciphersuites may take a lot of time on low-end devices
+     * and may trigger the watchdog timer. Enable ciphers that are secure enough
+     * but require less processing power. */
     tls_set_ciphersuite(cfg, tls);
 
 #ifdef CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK
     mbedtls_ssl_set_verify(&tls->ssl, tls_disable_key_usages, NULL);
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
+    ret = mbedtls_ssl_set_hostname(&tls->ssl, cfg->domain_match);
+    if (ret != 0) {
+        wpa_printf(MSG_ERROR, "Failed to set hostname");
+        return ret;
+    }
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
     if (cfg->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE) {
         wpa_printf(MSG_INFO, "Using default cert bundle");
+        mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
         if (esp_crt_bundle_attach_fn) {
             ret = (*esp_crt_bundle_attach_fn)(&tls->conf);
         }
