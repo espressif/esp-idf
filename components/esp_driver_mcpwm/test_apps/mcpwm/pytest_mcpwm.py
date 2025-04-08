@@ -10,7 +10,7 @@ from pytest_embedded_idf.utils import idf_parametrize
     'config',
     [
         'release',
-        'iram_safe',
+        'cache_safe',
     ],
     indirect=True,
 )

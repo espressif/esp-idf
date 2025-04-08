@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,14 +7,28 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <sys/cdefs.h>
+#include <sys/lock.h>
 #include "sdkconfig.h"
+#if CONFIG_MCPWM_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for this source file
+#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
+#endif
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
+#include "esp_log.h"
+#include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_pm.h"
-#include "soc/soc_caps.h"
+#include "soc/io_mux_reg.h"
+#include "soc/mcpwm_periph.h"
 #include "hal/mcpwm_hal.h"
+#include "hal/mcpwm_ll.h"
 #include "hal/mcpwm_types.h"
 #include "driver/mcpwm_types.h"
 #include "esp_private/sleep_retention.h"
@@ -23,13 +37,13 @@
 extern "C" {
 #endif
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE || CONFIG_MCPWM_CTRL_FUNC_IN_IRAM
+#if CONFIG_MCPWM_OBJ_CACHE_SAFE
 #define MCPWM_MEM_ALLOC_CAPS      (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
 #else
 #define MCPWM_MEM_ALLOC_CAPS      MALLOC_CAP_DEFAULT
 #endif
 
-#if CONFIG_MCPWM_ISR_IRAM_SAFE
+#if CONFIG_MCPWM_ISR_CACHE_SAFE
 #define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_IRAM)
 #else
 #define MCPWM_INTR_ALLOC_FLAG     (ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_INTRDISABLED)
@@ -41,7 +55,9 @@ extern "C" {
 #define MCPWM_ALLOW_INTR_PRIORITY_MASK ESP_INTR_FLAG_LOWMED
 
 #define MCPWM_GROUP_CLOCK_DEFAULT_PRESCALE 2
-#define MCPWM_PM_LOCK_NAME_LEN_MAX 16
+
+///!< Logging settings
+#define TAG "mcpwm"
 
 typedef struct mcpwm_group_t mcpwm_group_t;
 typedef struct mcpwm_timer_t mcpwm_timer_t;
@@ -74,9 +90,6 @@ struct mcpwm_group_t {
     mcpwm_oper_t *operators[SOC_MCPWM_OPERATORS_PER_GROUP]; // mcpwm operator array
     mcpwm_gpio_fault_t *gpio_faults[SOC_MCPWM_GPIO_FAULTS_PER_GROUP]; // mcpwm fault detectors array
     mcpwm_gpio_sync_src_t *gpio_sync_srcs[SOC_MCPWM_GPIO_SYNCHROS_PER_GROUP];  // mcpwm gpio sync array
-#if CONFIG_PM_ENABLE
-    char pm_lock_name[MCPWM_PM_LOCK_NAME_LEN_MAX]; // pm lock name
-#endif
 };
 
 typedef enum {

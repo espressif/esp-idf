@@ -21,7 +21,7 @@ extern "C" {
 #if SOC_MCPWM_SUPPORTED
 typedef struct {
     struct {
-        const periph_module_t module; // Peripheral module
+        const char *module_name;
         const int irq_id;
         struct {
             struct {

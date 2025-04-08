@@ -12,7 +12,7 @@
 const mcpwm_signal_conn_t mcpwm_periph_signals = {
     .groups = {
         [0] = {
-            .module = PERIPH_MCPWM0_MODULE,
+            .module_name = "MCPWM0",
             .irq_id = ETS_PWM0_INTR_SOURCE,
             .operators = {
                 [0] = {
@@ -81,7 +81,7 @@ const mcpwm_signal_conn_t mcpwm_periph_signals = {
             }
         },
         [1] = {
-            .module = PERIPH_MCPWM1_MODULE,
+            .module_name = "MCPWM1",
             .irq_id = ETS_PWM1_INTR_SOURCE,
             .operators = {
                 [0] = {
