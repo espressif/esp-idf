@@ -443,6 +443,20 @@ A configuration structure :cpp:type:`rmt_simple_encoder_config_t` should be prov
 
 While the functionality of an encoding process using the simple callback encoder can usually also realized by chaining other encoders, the simple callback can be more easy to understand and maintain than an encoder chain.
 
+.. only:: SOC_BITSCRAMBLER_SUPPORTED and SOC_RMT_SUPPORT_DMA
+
+    BitScrambler Encoder
+    ~~~~~~~~~~~~~~~~~~~~
+
+    When the RMT transmit channel has DMA enabled, we can control the data on the DMA path by writing :doc:`BitScrambler </api-reference/peripherals/bitscrambler>` assembly code, which implements simple encoding operations. Compared to CPU-based encoding, the BitScrambler offers higher performance without consuming CPU resources. However, due to the limited instruction memory space of the BitScrambler, it cannot implement complex encoding operations. Additionally, the output data format from the BitScrambler program must conform to the :cpp:type:`rmt_symbol_word_t` structure.
+
+    A BitScrambler encoder can be created by calling :cpp:func:`rmt_new_bitscrambler_encoder`. This function takes a configuration parameter of type :cpp:type:`rmt_bs_encoder_config_t`, which includes the following configuration items:
+        - :cpp:member:`rmt_bs_encoder_config_t::program_bin` points to the binary file of the BitScrambler program. This binary file must comply with the BitScrambler assembly language specification and will be loaded into the BitScrambler's instruction memory at runtime. For information on how to write and compile BitScrambler programs, please refer to the :doc:`BitScrambler Programming Guide </api-reference/peripherals/bitscrambler>`.
+
+    .. note::
+
+        The BitScrambler encoder **must** be used with an RMT channel that has DMA enabled.
+
 Customize RMT Encoder for NEC Protocol
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 

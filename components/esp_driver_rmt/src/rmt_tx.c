@@ -589,39 +589,43 @@ esp_err_t rmt_tx_wait_all_done(rmt_channel_handle_t channel, int timeout_ms)
     return ESP_OK;
 }
 
-static void rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
+static size_t rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan, bool need_eof_marker)
 {
     rmt_channel_t *channel = &tx_chan->base;
     rmt_group_t *group = channel->group;
     int channel_id = channel->channel_id;
-    rmt_symbol_word_t *mem_to_nc = NULL;
     rmt_tx_trans_desc_t *cur_trans = tx_chan->cur_trans;
     rmt_dma_descriptor_t *desc_nc = NULL;
-    if (channel->dma_chan) {
-        mem_to_nc = tx_chan->dma_mem_base_nc;
-    } else {
-        mem_to_nc = channel->hw_mem_base;
-    }
 
-    // a RMT word whose duration is zero means a "stop" pattern
-    mem_to_nc[tx_chan->mem_off++] = (rmt_symbol_word_t) {
-        .duration0 = 0,
-        .level0 = cur_trans->flags.eot_level,
-        .duration1 = 0,
-        .level1 = cur_trans->flags.eot_level,
-    };
+    if (need_eof_marker) {
+        rmt_symbol_word_t *mem_to_nc = NULL;
+        if (channel->dma_chan) {
+            mem_to_nc = tx_chan->dma_mem_base_nc;
+        } else {
+            mem_to_nc = channel->hw_mem_base;
+        }
+        size_t symbol_off = tx_chan->mem_off_bytes / sizeof(rmt_symbol_word_t);
+        // a RMT word whose duration is zero means a "stop" pattern
+        mem_to_nc[symbol_off] = (rmt_symbol_word_t) {
+            .duration0 = 0,
+            .level0 = cur_trans->flags.eot_level,
+            .duration1 = 0,
+            .level1 = cur_trans->flags.eot_level,
+        };
+        tx_chan->mem_off_bytes += sizeof(rmt_symbol_word_t);
+    }
 
     size_t off = 0;
     if (channel->dma_chan) {
-        if (tx_chan->mem_off <= tx_chan->ping_pong_symbols) {
+        if (tx_chan->mem_off_bytes <= tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t)) {
             desc_nc = &tx_chan->dma_nodes_nc[0];
-            off = tx_chan->mem_off;
+            off = tx_chan->mem_off_bytes;
         } else {
             desc_nc = &tx_chan->dma_nodes_nc[1];
-            off = tx_chan->mem_off - tx_chan->ping_pong_symbols;
+            off = tx_chan->mem_off_bytes - tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
         }
         desc_nc->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
-        desc_nc->dw0.length = off * sizeof(rmt_symbol_word_t);
+        desc_nc->dw0.length = off;
         // break down the DMA descriptor link
         desc_nc->next = NULL;
     } else {
@@ -630,6 +634,8 @@ static void rmt_tx_mark_eof(rmt_tx_channel_t *tx_chan)
         rmt_ll_enable_interrupt(group->hal.regs, RMT_LL_EVENT_TX_THRES(channel_id), false);
         portEXIT_CRITICAL_ISR(&group->spinlock);
     }
+
+    return need_eof_marker ? 1 : 0;
 }
 
 size_t rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t)
@@ -639,12 +645,13 @@ size_t rmt_encode_check_result(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t *t
     size_t encoded_symbols = encoder->encode(encoder, &tx_chan->base, t->payload, t->payload_bytes, &encode_state);
 
     if (encode_state & RMT_ENCODING_COMPLETE) {
-        t->flags.encoding_done = true;
+        bool need_eof_mark = (encode_state & RMT_ENCODING_WITH_EOF) == 0;
         // inserting EOF symbol if there's extra space
         if (!(encode_state & RMT_ENCODING_MEM_FULL)) {
-            rmt_tx_mark_eof(tx_chan);
-            encoded_symbols += 1;
+            encoded_symbols += rmt_tx_mark_eof(tx_chan, need_eof_mark);
         }
+        t->flags.encoding_done = true;
+        t->flags.need_eof_mark = need_eof_mark;
     }
 
     // for loop transaction, the memory block should accommodate all encoded RMT symbols
@@ -666,6 +673,9 @@ static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t
 
     // update current transaction
     tx_chan->cur_trans = t;
+
+    // reset RMT encoder before starting a new transaction
+    rmt_encoder_reset(t->encoder);
 
 #if SOC_RMT_SUPPORT_DMA
     if (channel->dma_chan) {
@@ -717,7 +727,7 @@ static void rmt_tx_do_transaction(rmt_tx_channel_t *tx_chan, rmt_tx_trans_desc_t
 
     // at the beginning of a new transaction, encoding memory offset should start from zero.
     // It will increase in the encode function e.g. `rmt_encode_copy()`
-    tx_chan->mem_off = 0;
+    tx_chan->mem_off_bytes = 0;
     // use the full memory block for the beginning encoding session
     tx_chan->mem_end = tx_chan->ping_pong_symbols * 2;
     // perform the encoding session, return the number of encoded symbols
@@ -838,8 +848,6 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     // recycle the interrupted transaction
     if (tx_chan->cur_trans) {
         xQueueSend(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &tx_chan->cur_trans, 0);
-        // reset corresponding encoder
-        rmt_encoder_reset(tx_chan->cur_trans->encoder);
     }
     tx_chan->cur_trans = NULL;
 
@@ -899,8 +907,7 @@ bool rmt_isr_handle_tx_threshold(rmt_tx_channel_t *tx_chan)
     size_t encoded_symbols = t->transmitted_symbol_num;
     // encoding finished, only need to send the EOF symbol
     if (t->flags.encoding_done) {
-        rmt_tx_mark_eof(tx_chan);
-        encoded_symbols += 1;
+        encoded_symbols += rmt_tx_mark_eof(tx_chan, t->flags.need_eof_mark);
     } else {
         encoded_symbols += rmt_encode_check_result(tx_chan, t);
     }
@@ -1101,8 +1108,7 @@ static bool rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_event_data_t 
     rmt_tx_trans_desc_t *t = tx_chan->cur_trans;
     size_t encoded_symbols = t->transmitted_symbol_num;
     if (t->flags.encoding_done) {
-        rmt_tx_mark_eof(tx_chan);
-        encoded_symbols += 1;
+        encoded_symbols += rmt_tx_mark_eof(tx_chan, t->flags.need_eof_mark);
     } else {
         encoded_symbols += rmt_encode_check_result(tx_chan, t);
     }

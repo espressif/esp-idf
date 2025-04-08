@@ -20,11 +20,11 @@ static esp_err_t rmt_copy_encoder_reset(rmt_encoder_t *encoder)
 }
 
 static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
-                              const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
+                              const void *input_symbols, size_t data_size, rmt_encode_state_t *ret_state)
 {
     rmt_copy_encoder_t *copy_encoder = __containerof(encoder, rmt_copy_encoder_t, base);
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
-    rmt_symbol_word_t *symbols = (rmt_symbol_word_t *)primary_data;
+    rmt_symbol_word_t *symbols = (rmt_symbol_word_t *)input_symbols;
     rmt_encode_state_t state = RMT_ENCODING_RESET;
     rmt_dma_descriptor_t *desc0 = NULL;
     rmt_dma_descriptor_t *desc1 = NULL;
@@ -33,7 +33,8 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
     // how many symbols will be copied by the encoder
     size_t mem_want = (data_size / 4 - symbol_index);
     // how many symbols we can save for this round
-    size_t mem_have = tx_chan->mem_end - tx_chan->mem_off;
+    size_t symbol_off = tx_chan->mem_off_bytes / sizeof(rmt_symbol_word_t);
+    size_t mem_have = tx_chan->mem_end - symbol_off;
     // where to put the encoded symbols? DMA buffer or RMT HW memory
     rmt_symbol_word_t *mem_to_nc = NULL;
     if (channel->dma_chan) {
@@ -48,7 +49,7 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
 
     if (channel->dma_chan) {
         // mark the start descriptor
-        if (tx_chan->mem_off < tx_chan->ping_pong_symbols) {
+        if (symbol_off < tx_chan->ping_pong_symbols) {
             desc0 = &tx_chan->dma_nodes_nc[0];
         } else {
             desc0 = &tx_chan->dma_nodes_nc[1];
@@ -57,13 +58,13 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
 
     size_t len = encode_len;
     while (len > 0) {
-        mem_to_nc[tx_chan->mem_off++] = symbols[symbol_index++];
+        mem_to_nc[symbol_off++] = symbols[symbol_index++];
         len--;
     }
 
     if (channel->dma_chan) {
         // mark the end descriptor
-        if (tx_chan->mem_off < tx_chan->ping_pong_symbols) {
+        if (symbol_off < tx_chan->ping_pong_symbols) {
             desc1 = &tx_chan->dma_nodes_nc[0];
         } else {
             desc1 = &tx_chan->dma_nodes_nc[1];
@@ -91,12 +92,14 @@ static size_t rmt_encode_copy(rmt_encoder_t *encoder, rmt_channel_handle_t chann
     }
 
     // reset offset pointer when exceeds maximum range
-    if (tx_chan->mem_off >= tx_chan->ping_pong_symbols * 2) {
+    if (symbol_off >= tx_chan->ping_pong_symbols * 2) {
         if (channel->dma_chan) {
             desc1->dw0.length = tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
             desc1->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
         }
-        tx_chan->mem_off = 0;
+        tx_chan->mem_off_bytes = 0;
+    } else {
+        tx_chan->mem_off_bytes = symbol_off * sizeof(rmt_symbol_word_t);
     }
 
     *ret_state = state;

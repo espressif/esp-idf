@@ -37,6 +37,7 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
     rmt_encode_state_t state = RMT_ENCODING_RESET;
     rmt_dma_descriptor_t *desc0 = NULL;
     rmt_dma_descriptor_t *desc1 = NULL;
+    size_t symbol_off = tx_chan->mem_off_bytes / sizeof(rmt_symbol_word_t);
 
     // where to put the encoded symbols? DMA buffer or RMT HW memory
     rmt_symbol_word_t *mem_to_nc = NULL;
@@ -48,7 +49,7 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
 
     if (channel->dma_chan) {
         // mark the start descriptor
-        if (tx_chan->mem_off < tx_chan->ping_pong_symbols) {
+        if (symbol_off < tx_chan->ping_pong_symbols) {
             desc0 = &tx_chan->dma_nodes_nc[0];
         } else {
             desc0 = &tx_chan->dma_nodes_nc[1];
@@ -69,11 +70,11 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
     // when then called with a larger buffer.
     size_t encode_len = 0; //total amount of symbols written to rmt memory
     bool is_done = false;
-    while (tx_chan->mem_off < tx_chan->mem_end) {
+    while (symbol_off < tx_chan->mem_end) {
         if (simple_encoder->ovf_buf_parsed_pos < simple_encoder->ovf_buf_fill_len) {
             // Overflow buffer has data from the previous encoding call. Copy one entry
             // from that.
-            mem_to_nc[tx_chan->mem_off++] = simple_encoder->ovf_buf[simple_encoder->ovf_buf_parsed_pos++];
+            mem_to_nc[symbol_off++] = simple_encoder->ovf_buf[simple_encoder->ovf_buf_parsed_pos++];
             encode_len++;
         } else {
             // Overflow buffer is empty, so we don't need to empty that first.
@@ -87,11 +88,11 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
             // Try to have the callback write the data directly into RMT memory.
             size_t enc_size = simple_encoder->callback(data, data_size,
                                                        simple_encoder->last_symbol_index,
-                                                       tx_chan->mem_end - tx_chan->mem_off,
-                                                       &mem_to_nc[tx_chan->mem_off],
+                                                       tx_chan->mem_end - symbol_off,
+                                                       &mem_to_nc[symbol_off],
                                                        &is_done, simple_encoder->arg);
             encode_len += enc_size;
-            tx_chan->mem_off += enc_size;
+            symbol_off += enc_size;
             simple_encoder->last_symbol_index += enc_size;
             if (is_done) {
                 break;    // we're done, no more data to write to RMT memory.
@@ -130,7 +131,7 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
 
     if (channel->dma_chan) {
         // mark the end descriptor
-        if (tx_chan->mem_off < tx_chan->ping_pong_symbols) {
+        if (symbol_off < tx_chan->ping_pong_symbols) {
             desc1 = &tx_chan->dma_nodes_nc[0];
         } else {
             desc1 = &tx_chan->dma_nodes_nc[1];
@@ -153,12 +154,14 @@ static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t cha
     }
 
     // reset offset pointer when exceeds maximum range
-    if (tx_chan->mem_off >= tx_chan->ping_pong_symbols * 2) {
+    if (symbol_off >= tx_chan->ping_pong_symbols * 2) {
         if (channel->dma_chan) {
             desc1->dw0.length = tx_chan->ping_pong_symbols * sizeof(rmt_symbol_word_t);
             desc1->dw0.owner = DMA_DESCRIPTOR_BUFFER_OWNER_DMA;
         }
-        tx_chan->mem_off = 0;
+        tx_chan->mem_off_bytes = 0;
+    } else {
+        tx_chan->mem_off_bytes = symbol_off * sizeof(rmt_symbol_word_t);
     }
 
     *ret_state = state;

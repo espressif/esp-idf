@@ -6,12 +6,19 @@
 #include <string.h>
 #include <stdatomic.h>
 #include "esp_log.h"
+#include "esp_heap_caps.h"
 #include "driver/bitscrambler.h"
 #include "bitscrambler_private.h"
 #include "hal/bitscrambler_ll.h"
 #include "esp_private/periph_ctrl.h"
 
 static const char *TAG = "bitscrambler";
+
+#if CONFIG_BITSCRAMBLER_OBJ_CACHE_SAFE
+#define BITSCRAMBLER_MEM_ALLOC_CAPS  (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define BITSCRAMBLER_MEM_ALLOC_CAPS  MALLOC_CAP_DEFAULT
+#endif
 
 #define BITSCRAMBLER_BINARY_VER 1 //max version we're compatible with
 #define BITSCRAMBLER_HW_REV 0
@@ -153,8 +160,8 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
     if (!handle) {
         return ESP_ERR_INVALID_ARG;
     }
-    // Allocate memory for private data
-    bitscrambler_t *bs = calloc(1, sizeof(bitscrambler_t));
+    // Allocate memory for the BitScrambler object from internal memory
+    bitscrambler_t *bs = heap_caps_calloc(1, sizeof(bitscrambler_t), BITSCRAMBLER_MEM_ALLOC_CAPS);
     if (!bs) {
         return ESP_ERR_NO_MEM;
     }
@@ -173,7 +180,7 @@ esp_err_t bitscrambler_new(const bitscrambler_config_t *config, bitscrambler_han
         return r;
     }
 
-    // Done.
+    // Return the handle
     *handle = bs;
     return ESP_OK;
 }
