@@ -335,15 +335,11 @@ TX 单元可以选择各种不同的时钟源，其中外部时钟源较为特�
 
     .. note::
 
-        启用以下选项：
+        当启用了以下选项时，系统在进行 Flash 读写操作时不会自动禁用 Cache, 因此无需启用 :ref:`CONFIG_PARLIO_TX_ISR_CACHE_SAFE`。
 
         .. list::
             :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
             :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
-
-        可以让 Cache 不被自动禁用， CPU 在擦写文件系统的同时访问 Cache 是安全的，此时 :ref:`CONFIG_PARLIO_TX_ISR_CACHE_SAFE` 选项可以不用打开。
-
-这样，在 Cache 被禁用时，中断也可运行，但是这也会增加 IRAM 的消耗。
 
 关于性能
 ^^^^^^^^
