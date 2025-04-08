@@ -144,6 +144,10 @@ struct wpa_auth_config {
 #ifdef CONFIG_IEEE80211W
 	enum mfp_options ieee80211w;
 #endif /* CONFIG_IEEE80211W */
+	int group_mgmt_cipher;
+#ifdef CONFIG_SAE
+	int sae_require_mfp;
+#endif /* CONFIG_SAE */
 #ifdef CONFIG_IEEE80211R
 #define SSID_LEN 32
 	u8 ssid[SSID_LEN];
@@ -163,6 +167,7 @@ struct wpa_auth_config {
 	int ap_mlme;
 	enum sae_pwe sae_pwe;
 	struct rsn_sppamsdu_sup spp_sup;
+	u8 transition_disable;
 };
 
 typedef enum {
