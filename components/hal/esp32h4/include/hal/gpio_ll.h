@@ -515,7 +515,7 @@ static inline void gpio_ll_iomux_set_clk_src(soc_module_clk_t src)
     case SOC_MOD_CLK_XTAL:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 3;
         break;
-    case SOC_MOD_CLK_PLL_F80M:
+    case SOC_MOD_CLK_PLL_F48M:
         PCR.iomux_clk_conf.iomux_func_clk_sel = 1;
         break;
     default:

@@ -123,7 +123,7 @@ typedef enum {
     // For RTC domain
     SOC_MOD_CLK_RTC_FAST,                      /*!< RTC_FAST_CLK can be sourced from XTAL_D2, RC_FAST, or LP_PLL by configuring soc_rtc_fast_clk_src_t */
     SOC_MOD_CLK_RTC_SLOW,                      /*!< RTC_SLOW_CLK can be sourced from RC_SLOW, XTAL32K, OSC_SLOW, or RC32K by configuring soc_rtc_slow_clk_src_t */
-    // For digital domain: peripherals, WIFI, BLE
+    // For digital domain: peripherals, BLE
     SOC_MOD_CLK_PLL_F48M,                      /*!< PLL_F48M_CLK is derived from PLL (clock gating + fixed divider of 2), it has a fixed frequency of 48MHz */
     SOC_MOD_CLK_PLL_F64M,                      /*!< PLL_F64M_CLK is derived from FLASH_PLL (clock gating), it has a fixed frequency of 64MHz */
     SOC_MOD_CLK_PLL_F96M,                      /*!< PLL_F96M_CLK is derived from PLL (clock gating), it has a fixed frequency of 96MHz */

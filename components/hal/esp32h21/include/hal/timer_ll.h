@@ -92,14 +92,13 @@ static inline void _timer_ll_reset_register(int group_id)
 /**
  * @brief Set clock source for timer
  *
- * @param hw Timer Group register base address
+ * @param group_id Group ID
  * @param timer_num Timer number in the group
  * @param clk_src Clock source
  */
-static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num, gptimer_clock_source_t clk_src)
+static inline void timer_ll_set_clock_source(int group_id, uint32_t timer_num, gptimer_clock_source_t clk_src)
 {
     (void)timer_num; // only one timer in each group
-    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
     switch (clk_src) {
     case GPTIMER_CLK_SRC_XTAL:
         PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_sel = 0;
@@ -119,15 +118,13 @@ static inline void timer_ll_set_clock_source(timg_dev_t *hw, uint32_t timer_num,
 /**
  * @brief Enable Timer Group (GPTimer) module clock
  *
- * @param hw Timer Group register base address
+ * @param group_id Group ID
  * @param timer_num Timer index in the group
  * @param en true to enable, false to disable
  */
-static inline void timer_ll_enable_clock(timg_dev_t *hw, uint32_t timer_num, bool en)
+static inline void timer_ll_enable_clock(int group_id, uint32_t timer_num, bool en)
 {
     (void)timer_num; // only one timer in each group
-    uint8_t group_id = (hw == &TIMERG0) ? 0 : 1;
-
     PCR.timergroup[group_id].timergroup_timer_clk_conf.tg_timer_clk_en = en;
 }
 

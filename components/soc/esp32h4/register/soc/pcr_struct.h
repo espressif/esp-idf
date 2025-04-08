@@ -54,7 +54,7 @@ typedef union {
          *  Configures the clock source of UART0.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t uart0_sclk_sel:2;
         /** uart0_sclk_en : R/W; bitpos: [22]; default: 1;
@@ -135,7 +135,7 @@ typedef union {
          *  Configures the clock source of UART1.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t uart1_sclk_sel:2;
         /** uart1_sclk_en : R/W; bitpos: [22]; default: 1;
@@ -214,7 +214,7 @@ typedef union {
          *  Configures the clock source for MSPI.
          *  0(default): XTAL_CLK
          *  1 RC_FAST_CLK
-         *  2: PLL_F480M_CLK
+         *  2: PLL_F96M_CLK
          */
         uint32_t mspi_func_clk_sel:2;
         /** mspi_func_clk_en : R/W; bitpos: [10]; default: 1;
@@ -412,7 +412,7 @@ typedef union {
          *  Configures the clock source of RMT.
          *  0: XTAL_CLK
          *  1 (default): RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t rmt_sclk_sel:1;
         /** rmt_sclk_en : R/W; bitpos: [21]; default: 0;
@@ -482,7 +482,7 @@ typedef union {
          *  Configures the clock source of LEDC.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t ledc_sclk_sel:2;
         /** ledc_sclk_en : R/W; bitpos: [22]; default: 0;
@@ -534,7 +534,7 @@ typedef union {
          *  Configures the clock source of general-purpose timers in Timer Group 0.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t tg0_timer_clk_sel:2;
         /** tg0_timer_clk_en : R/W; bitpos: [22]; default: 1;
@@ -556,7 +556,7 @@ typedef union {
          *  Configures the clock source of WDT in Timer Group 0.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t tg0_wdt_clk_sel:2;
         /** tg0_wdt_clk_en : R/W; bitpos: [22]; default: 1;
@@ -608,7 +608,7 @@ typedef union {
          *  Configures the clock source of general-purpose timers in Timer Group 1.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t tg1_timer_clk_sel:2;
         /** tg1_timer_clk_en : R/W; bitpos: [22]; default: 1;
@@ -630,7 +630,7 @@ typedef union {
          *  Configures the clock source of WDT in Timer Group 1.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t tg1_wdt_clk_sel:2;
         /** tg1_wdt_clk_en : R/W; bitpos: [22]; default: 1;
@@ -1482,7 +1482,7 @@ typedef union {
          *  Configures the clock source of IO MUX.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t iomux_func_clk_sel:2;
         /** iomux_func_clk_en : R/W; bitpos: [22]; default: 1;
@@ -2549,7 +2549,7 @@ typedef union {
          *  Configures the clock source of ZERO DETECT.
          *  0 (default): XTAL_CLK
          *  1: RC_FAST_CLK
-         *  2: PLL_F80M_CLK
+         *  2: PLL_F48M_CLK
          */
         uint32_t zero_det_func_clk_sel:2;
         /** zero_det_func_clk_en : R/W; bitpos: [22]; default: 0;

@@ -27,12 +27,10 @@ extern "C" {
 
 #define MHZ                 (1000000)
 
-#define CLK_LL_PLL_80M_FREQ_MHZ    (80)
-#define CLK_LL_PLL_120M_FREQ_MHZ   (120)
-#define CLK_LL_PLL_160M_FREQ_MHZ   (160)
-#define CLK_LL_PLL_240M_FREQ_MHZ   (240)
-
-#define CLK_LL_PLL_480M_FREQ_MHZ   (480)
+#define CLK_LL_PLL_8M_FREQ_MHZ    (8)
+#define CLK_LL_PLL_48M_FREQ_MHZ   (48)
+#define CLK_LL_PLL_64M_FREQ_MHZ   (64)
+#define CLK_LL_PLL_96M_FREQ_MHZ   (96)
 
 #define CLK_LL_XTAL32K_CONFIG_DEFAULT() { \
     .dac = 3, \
@@ -273,8 +271,8 @@ static inline __attribute__((always_inline)) bool clk_ll_rc32k_digi_is_enabled(v
  */
 static inline __attribute__((always_inline)) uint32_t clk_ll_bbpll_get_freq_mhz(void)
 {
-    // The target has a fixed 480MHz SPLL
-    return CLK_LL_PLL_480M_FREQ_MHZ;
+    // The target has a fixed 96MHz SPLL
+    return CLK_LL_PLL_96M_FREQ_MHZ;
 }
 
 /**
@@ -284,9 +282,9 @@ static inline __attribute__((always_inline)) uint32_t clk_ll_bbpll_get_freq_mhz(
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint32_t pll_freq_mhz)
 {
-    // The target SPLL is fixed to 480MHz
+    // The target SPLL is fixed to 96MHz
     // Do nothing
-    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_480M_FREQ_MHZ);
+    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
 }
 
 /**
@@ -297,7 +295,7 @@ static inline __attribute__((always_inline)) void clk_ll_bbpll_set_freq_mhz(uint
  */
 static inline __attribute__((always_inline)) void clk_ll_bbpll_set_config(uint32_t pll_freq_mhz, uint32_t xtal_freq_mhz)
 {
-    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_480M_FREQ_MHZ);
+    HAL_ASSERT(pll_freq_mhz == CLK_LL_PLL_96M_FREQ_MHZ);
     uint8_t div_ref;
     uint8_t div7_0;
     uint8_t dr1;

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +23,7 @@
 #define TIMER_ALARM_PERIOD_S  0.10     // sample test interval for the first timer
 
 /* TEE uses Group0 Timer0 */
+#define TEE_SECURE_GROUP 0
 #define TEE_SECURE_TIMER 0
 
 static const char *TAG = "esp_tee_intr_test";
@@ -56,16 +57,17 @@ static void tee_timer_enable(void)
     ESP_LOGI(TAG, "Enabling test timer from secure world");
 
     /* Enable TG0 peripheral module */
-    periph_ll_enable_clk_clear_rst(PERIPH_TIMG0_MODULE);
+    _timer_ll_enable_bus_clock(TEE_SECURE_GROUP, true);
+    _timer_ll_reset_register(TEE_SECURE_GROUP);
 
     /* Stop counter, alarm, auto-reload at first place */
-    timer_ll_enable_clock(timg_hw, TEE_SECURE_TIMER, true);
+    timer_ll_enable_clock(TEE_SECURE_GROUP, TEE_SECURE_TIMER, true);
     timer_ll_enable_counter(timg_hw, TEE_SECURE_TIMER, false);
     timer_ll_enable_auto_reload(timg_hw, TEE_SECURE_TIMER, false);
     timer_ll_enable_alarm(timg_hw, TEE_SECURE_TIMER, false);
 
     // Set clock source
-    timer_ll_set_clock_source(timg_hw, TEE_SECURE_TIMER, GPTIMER_CLK_SRC_DEFAULT);
+    timer_ll_set_clock_source(TEE_SECURE_GROUP, TEE_SECURE_TIMER, GPTIMER_CLK_SRC_DEFAULT);
     timer_ll_set_clock_prescale(timg_hw, TEE_SECURE_TIMER, TIMER_DIVIDER);
 
     // Initialize counter value to zero
