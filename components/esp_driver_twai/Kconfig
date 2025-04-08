@@ -3,6 +3,7 @@ menu "ESP-Driver:TWAI Configurations"
 
     config TWAI_ISR_INTO_IRAM
         bool "Place TWAI ISR in IRAM to reduce latency"
+        select TWAI_OBJ_CACHE_SAFE
         default n
         help
             Place ISR functions to IRAM to increase performance
@@ -14,5 +15,22 @@ menu "ESP-Driver:TWAI Configurations"
         help
             Allow TWAI works under Cache disabled, to enabled this config,
             all callbacks and user_ctx should also place in IRAM
+
+    config TWAI_OBJ_CACHE_SAFE
+        bool
+        default n
+        help
+            This will ensure the TWAI driver object will not be allocated from a memory region
+            where its cache can be disabled.
+
+    config TWAI_ENABLE_DEBUG_LOG
+        bool "Force enable debug log"
+        default n
+        help
+            If enabled, TWAI driver component will:
+            1. ignore the global logging settings
+            2. compile all log messages into the binary
+            3. set the runtime log level to VERBOSE
+            Please enable this option by caution, as it will increase the binary size.
 
 endmenu # TWAI Configuration

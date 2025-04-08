@@ -241,7 +241,7 @@ static inline void twaifd_ll_enable_time_trig_trans_mode(twaifd_dev_t* hw, bool 
 static inline void twaifd_ll_set_operate_cmd(twaifd_dev_t *hw, uint32_t commands)
 {
     hw->command.val = commands;
-    while(hw->command.val & commands);
+    while (hw->command.val & commands);
 }
 
 /* -------------------------- Interrupt Register ---------------------------- */
@@ -293,7 +293,7 @@ static inline void twaifd_ll_clr_intr_status(twaifd_dev_t *hw, uint32_t intr_mas
 static inline void twaifd_ll_set_nominal_bitrate(twaifd_dev_t *hw, const twai_timing_advanced_config_t *timing_param)
 {
     twaifd_btr_reg_t reg_w = {.val = 0};
-    reg_w.brp = timing_param->brp;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(reg_w, brp, timing_param->brp);
     reg_w.prop = timing_param->prop_seg;
     reg_w.ph1 = timing_param->tseg_1;
     reg_w.ph2 = timing_param->tseg_2;
@@ -311,7 +311,7 @@ static inline void twaifd_ll_set_nominal_bitrate(twaifd_dev_t *hw, const twai_ti
 static inline void twaifd_ll_set_fd_bitrate(twaifd_dev_t *hw, const twai_timing_advanced_config_t *timing_param_fd)
 {
     twaifd_btr_fd_reg_t reg_w = {.val = 0};
-    reg_w.brp_fd = timing_param_fd->brp;
+    HAL_FORCE_MODIFY_U32_REG_FIELD(reg_w, brp_fd, timing_param_fd->brp);
     reg_w.prop_fd = timing_param_fd->prop_seg;
     reg_w.ph1_fd = timing_param_fd->tseg_1;
     reg_w.ph2_fd = timing_param_fd->tseg_2;
@@ -325,7 +325,7 @@ static inline void twaifd_ll_set_fd_bitrate(twaifd_dev_t *hw, const twai_timing_
  *
  * @param hw Start address of the TWAI registers
  * @param ssp_src_code Secondary point mode config, see TWAIFD_LL_SSP_SRC_xxx.
- * @param offset_val Secondary point offset based on Sync_Seg, in time quanta.
+ * @param offset_val Secondary sampling point position is configured as delay from Sync_Seg in multiples of System clock
  */
 static inline void twaifd_ll_config_secondary_sample_point(twaifd_dev_t *hw, uint8_t ssp_src_code, uint8_t offset_val)
 {
@@ -875,7 +875,7 @@ static inline void twaifd_ll_timer_clr_count(twaifd_dev_t *hw, bool clear)
  */
 static inline void twaifd_ll_timer_set_preload_value(twaifd_dev_t *hw, uint64_t load_value)
 {
-    hw->timer_ld_val_h.val = (uint32_t) (load_value >> 32);
+    hw->timer_ld_val_h.val = (uint32_t)(load_value >> 32);
     hw->timer_ld_val_l.val = (uint32_t) load_value;
 }
 
@@ -897,7 +897,7 @@ static inline void twaifd_ll_timer_apply_preload_value(twaifd_dev_t *hw)
  */
 static inline void twaifd_ll_timer_set_alarm_value(twaifd_dev_t *hw, uint64_t alarm_value)
 {
-    hw->timer_ct_val_h.val = (uint32_t) (alarm_value >> 32);
+    hw->timer_ct_val_h.val = (uint32_t)(alarm_value >> 32);
     hw->timer_ct_val_l.val = (uint32_t) alarm_value;
 }
 
