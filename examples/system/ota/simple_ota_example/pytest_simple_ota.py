@@ -16,11 +16,14 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 try:
-    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+    from common_test_methods import get_env_config_variable
+    from common_test_methods import get_host_ip4_by_dest_ip
 except ModuleNotFoundError:
     idf_path = os.environ['IDF_PATH']
+    sys.path.append(idf_path + '/tools/ci')
     sys.path.insert(0, idf_path + '/tools/ci/python_packages')
-    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+    from common_test_methods import get_env_config_variable
+    from common_test_methods import get_host_ip4_by_dest_ip
 
 server_cert = (
     '-----BEGIN CERTIFICATE-----\n'
@@ -122,18 +125,20 @@ def start_tls1_3_server(ota_image_dir: str, server_port: int) -> subprocess.Pope
     key_file_handle.write(server_key)
     key_file_handle.close()
 
-    chunked_server = subprocess.Popen([
-        'openssl',
-        's_server',
-        '-tls1_3',
-        '-WWW',
-        '-key',
-        key_file,
-        '-cert',
-        server_file,
-        '-port',
-        str(server_port),
-    ])
+    chunked_server = subprocess.Popen(
+        [
+            'openssl',
+            's_server',
+            '-tls1_3',
+            '-WWW',
+            '-key',
+            key_file,
+            '-cert',
+            server_file,
+            '-port',
+            str(server_port),
+        ]
+    )
     return chunked_server
 
 
