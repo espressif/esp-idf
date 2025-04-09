@@ -822,6 +822,7 @@ typedef struct {
     BD_ADDR addr;
     UINT16 skip;
     UINT16 sync_timeout;
+    UINT8  sync_cte_type;
 } tBTM_BLE_Periodic_Sync_Params;
 
 typedef struct {
