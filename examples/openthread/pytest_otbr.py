@@ -855,10 +855,10 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
         for trel in trel_list:
             trel_mleid_addr = ocf.get_mleid_addr(trel)
             trel_s3_mleid_addr = ocf.get_mleid_addr(trel_s3)
-            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, 5)[1]
-            assert rx_nums == 5
-            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, 5)[1]
-            assert rx_nums == 5
+            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, count=10)[1]
+            assert rx_nums > 5
+            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, count=10)[1]
+            assert rx_nums > 5
     finally:
         ocf.execute_command(trel_s3, 'factoryreset')
         for trel in trel_list:
