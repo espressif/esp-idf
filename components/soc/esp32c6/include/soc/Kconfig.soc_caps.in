@@ -247,6 +247,10 @@ config SOC_XTAL_SUPPORT_40M
     bool
     default y
 
+config SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
+    bool
+    default y
+
 config SOC_AES_SUPPORT_DMA
     bool
     default y
