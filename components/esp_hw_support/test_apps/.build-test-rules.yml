@@ -32,9 +32,7 @@ components/esp_hw_support/test_apps/rtc_8md256:
 
 components/esp_hw_support/test_apps/rtc_clk:
   disable:
-    - if: IDF_TARGET in ["esp32c6", "esp32h2", "esp32p4", "esp32c5", "esp32c61", "esp32h21", "esp32h4"]
-      temporary: true
-      reason: Unsupported on C6 for now. #TODO IDF-5645, TODO IDF-7514, TODO C5 IDF-8667, TODO C61 IDF-9274, TODO H21 IDF-11548  [ESP32H4] IDF-12313
+    - if: SOC_CLK_TREE_SUPPORTED != 1
 
 components/esp_hw_support/test_apps/rtc_power_modes:
   enable:
