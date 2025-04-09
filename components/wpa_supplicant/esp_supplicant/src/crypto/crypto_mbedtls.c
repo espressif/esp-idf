@@ -7,6 +7,7 @@
 #include "esp_system.h"
 #endif
 
+#include <errno.h>
 #include "utils/includes.h"
 #include "utils/common.h"
 #include "crypto.h"
