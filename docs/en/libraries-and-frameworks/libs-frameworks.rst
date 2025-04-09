@@ -15,7 +15,7 @@ The ESP-ADF is a comprehensive framework for audio applications including:
 * Bluetooth speakers
 * Internet radios
 * Hands-free devices
-* Speech decognition
+* Speech recognition
 
 This framework is available on GitHub: `ESP-ADF <https://github.com/espressif/esp-adf>`_.
 

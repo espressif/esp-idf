@@ -84,7 +84,16 @@ Introduction
     * Rich set of peripherals including MIPI, USB, SDIO, and Ethernet
     * Built-in security hardware
 
-Powered by 40 nm technology, {IDF_TARGET_NAME} provides a robust, highly integrated platform, which helps meet the continuous demands for efficient power usage, compact design, security, high performance, and reliability.
+
+.. only:: esp32p4
+
+    Powered by 40 nm technology, {IDF_TARGET_NAME} offers excellent power efficiency, security, and reliability, making it suitable for a wide range of application scenarios and power consumption requirements.
+
+
+.. only:: not esp32p4
+
+    Powered by 40 nm technology, {IDF_TARGET_NAME} offers excellent power efficiency, RF performance, security, and reliability, making it suitable for a wide range of application scenarios and power consumption requirements.
+
 
 Espressif provides basic hardware and software resources to help application developers realize their ideas using the {IDF_TARGET_NAME} series hardware. The software development framework by Espressif is intended for development of Internet-of-Things (IoT) applications with Wi-Fi, Bluetooth, power management and several other system features.
 
