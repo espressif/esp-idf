@@ -94,7 +94,7 @@ def test_esp_tee_apm_violation(dut: IdfDut) -> None:
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test APM violation interrupt: {check}"')
         exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if exc != 'Authority exception':
+        if exc != 'APM - Authority exception':
             raise RuntimeError('Incorrect exception received!')
 
 
@@ -141,7 +141,7 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
         actual_exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
         if actual_exc != expected_exc:
             raise RuntimeError('Incorrect exception received!')
-        dut.expect('Exception origin: U-mode')
+        dut.expect('Origin: U-mode')
 
 
 # ---------------- TEE Flash Protection Tests ----------------
@@ -158,7 +158,7 @@ class TeeFlashAccessApi(Enum):
 def check_panic_or_reset(dut: IdfDut) -> None:
     try:
         exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=5).group(2).decode()
-        if exc not in {'Cache error', 'Authority exception'}:
+        if exc not in {'Cache error', 'APM - Authority exception'}:
             raise RuntimeError('Flash operation incorrect exception')
     except Exception:
         rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=5).group(2).decode()

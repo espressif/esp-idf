@@ -120,7 +120,7 @@ SECTIONS
 
   .dram.tee.heap :
   {
-    . = ALIGN (8);
+    . = ALIGN (16);
     _tee_heap_start = ABSOLUTE(.);
     . = ORIGIN(dram_tee_seg) + LENGTH(dram_tee_seg);
     _tee_heap_end = ABSOLUTE(.);
@@ -128,19 +128,17 @@ SECTIONS
 
   .dram.tee.stack :
   {
-    . = ALIGN (8);
+    . = ALIGN (16);
     _tee_stack_bottom = ABSOLUTE(.);
     . = ORIGIN(stack_tee_seg) + LENGTH(stack_tee_seg);
-    . = ALIGN (8);
     _tee_stack = ABSOLUTE(.);
   } > stack_tee_seg
 
   .dram.tee.intr_stack :
   {
-    . = ALIGN (8);
+    . = ALIGN (16);
     _tee_intr_stack_bottom = ABSOLUTE(.);
     . = ORIGIN(intr_stack_tee_seg) + LENGTH(intr_stack_tee_seg);
-    . = ALIGN (8);
     _tee_intr_stack = ABSOLUTE(.);
   } > intr_stack_tee_seg
 
@@ -222,7 +220,6 @@ SECTIONS
 
   .iram.tee.text :
   {
-    . = ALIGN(4);
     /* Vectors go to start of IRAM */
     ASSERT(ABSOLUTE(.) % 0x100 == 0, "vector address must be 256 byte aligned");
     _tee_vec_start = ABSOLUTE(.);

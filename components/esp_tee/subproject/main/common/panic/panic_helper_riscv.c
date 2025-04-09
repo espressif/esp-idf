@@ -13,8 +13,8 @@
 #include "riscv/rvruntime-frames.h"
 
 #include "esp_tee.h"
-
-#define tee_panic_print(format, ...) esp_rom_printf(DRAM_STR(format), ##__VA_ARGS__)
+#include "panic_helper.h"
+#include "sdkconfig.h"
 
 void panic_print_backtrace(const void *f, int depth)
 {
@@ -55,23 +55,47 @@ void panic_print_registers(const void *f, int core)
         }
     }
 
-    tee_panic_print("MIE     : 0x%08x  ", RV_READ_CSR(mie));
-    tee_panic_print("MIP     : 0x%08x  ", RV_READ_CSR(mip));
-    tee_panic_print("MSCRATCH: 0x%08x\n", RV_READ_CSR(mscratch));
-    tee_panic_print("UEPC    : 0x%08x  ", RV_READ_CSR(uepc));
-    tee_panic_print("USTATUS : 0x%08x  ", RV_READ_CSR(ustatus));
-    tee_panic_print("UTVEC   : 0x%08x  ", RV_READ_CSR(utvec));
-    tee_panic_print("UCAUSE  : 0x%08x\n", RV_READ_CSR(ucause));
-    tee_panic_print("UTVAL   : 0x%08x  ", RV_READ_CSR(utval));
-    tee_panic_print("UIE     : 0x%08x  ", RV_READ_CSR(uie));
-    tee_panic_print("UIP     : 0x%08x\n", RV_READ_CSR(uip));
+#if CONFIG_SECURE_TEE_TEST_MODE
+    struct {
+        const char *name;
+        uint32_t value;
+    } csr_regs[] = {
+        { "MIE     ", RV_READ_CSR(mie)      },
+        { "MIP     ", RV_READ_CSR(mip)      },
+        { "MSCRATCH", RV_READ_CSR(mscratch) },
+        { "UEPC    ", RV_READ_CSR(uepc)     },
+        { "USTATUS ", RV_READ_CSR(ustatus)  },
+        { "UTVEC   ", RV_READ_CSR(utvec)    },
+        { "UCAUSE  ", RV_READ_CSR(ucause)   },
+        { "UTVAL   ", RV_READ_CSR(utval)    },
+        { "UIE     ", RV_READ_CSR(uie)      },
+        { "UIP     ", RV_READ_CSR(uip)      },
+    };
+
+    tee_panic_print("\n\n");
+
+    for (int i = 0; i < sizeof(csr_regs) / sizeof(csr_regs[0]); i++) {
+        tee_panic_print("%s: 0x%08x  ", csr_regs[i].name, csr_regs[i].value);
+        if ((i + 1) % 4 == 0 || i == sizeof(csr_regs) / sizeof(csr_regs[0]) - 1) {
+            tee_panic_print("\n");
+        }
+    }
+#endif
+}
+
+void panic_print_rsn(const void *f, int core, const char *rsn)
+{
+    const RvExcFrame *regs = (const RvExcFrame *)f;
+    const void *addr = (const void *)regs->mepc;
+
+    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). Exception was unhandled.\n", core, rsn);
+    tee_panic_print("Fault addr: %p | Origin: %s\n", addr, (regs->mstatus & MSTATUS_MPP) ? "M-mode" : "U-mode");
 }
 
 void panic_print_exccause(const void *f, int core)
 {
-    RvExcFrame *regs = (RvExcFrame *) f;
+    const RvExcFrame *regs = (const RvExcFrame *)f;
 
-    //Please keep in sync with PANIC_RSN_* defines
     static const char *reason[] = {
         "Instruction address misaligned",
         "Instruction access fault",
@@ -98,27 +122,14 @@ void panic_print_exccause(const void *f, int core)
         }
     }
 
-    const char *desc = "Exception was unhandled.";
-    const void *addr = (void *) regs->mepc;
-    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). %s\n", core, rsn, desc);
-
-    const char *exc_origin = "U-mode";
-    if (regs->mstatus & MSTATUS_MPP) {
-        exc_origin = "M-mode";
-    }
-    tee_panic_print("Fault addr: %p | Exception origin: %s\n", addr, exc_origin);
+    panic_print_rsn(f, core, rsn);
 }
 
 void panic_print_isrcause(const void *f, int core)
 {
-    RvExcFrame *regs = (RvExcFrame *) f;
-
-    const void *addr = (void *) regs->mepc;
+    const RvExcFrame *regs = (const RvExcFrame *)f;
     const char *rsn = "Unknown reason";
 
-    /* The mcause has been set by the CPU when the panic occurred.
-     * All SoC-level panic will call this function, thus, this register
-     * lets us know which error was triggered. */
     switch (regs->mcause) {
     case ETS_CACHEERR_INUM:
         rsn = "Cache error";
@@ -131,16 +142,7 @@ void panic_print_isrcause(const void *f, int core)
         rsn = "Interrupt wdt timeout on CPU1";
         break;
 #endif
-    default:
-        break;
     }
 
-    const char *desc = "Exception was unhandled.";
-    tee_panic_print("Guru Meditation Error: Core %d panic'ed (%s). %s\n", core, rsn, desc);
-
-    const char *exc_origin = "U-mode";
-    if (regs->mstatus & MSTATUS_MPP) {
-        exc_origin = "M-mode";
-    }
-    tee_panic_print("Fault addr: %p | Exception origin: %s\n", addr, exc_origin);
+    panic_print_rsn(f, core, rsn);
 }
