@@ -74,7 +74,7 @@ IRAM_ATTR static void rtc_brownout_isr_handler(void *arg)
 }
 #endif // CONFIG_ESP_BROWNOUT_USE_INTR
 
-void esp_brownout_init(void)
+__attribute__((weak)) void esp_brownout_init(void)
 {
 #if CONFIG_ESP_BROWNOUT_USE_INTR
     brownout_hal_config_t cfg = {
