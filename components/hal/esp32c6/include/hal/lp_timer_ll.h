@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -71,6 +71,11 @@ FORCE_INLINE_ATTR uint32_t lp_timer_ll_get_lp_intr_raw(lp_timer_dev_t *dev)
 FORCE_INLINE_ATTR void lp_timer_ll_clear_lp_intsts_mask(lp_timer_dev_t *dev, uint32_t mask)
 {
     dev->lp_int_clr.val = mask;
+}
+
+FORCE_INLINE_ATTR void lp_timer_ll_lp_alarm_intr_enable(lp_timer_dev_t *dev, bool enable)
+{
+    dev->lp_int_en.alarm = enable;
 }
 
 #ifdef __cplusplus
