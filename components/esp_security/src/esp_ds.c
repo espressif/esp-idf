@@ -8,10 +8,15 @@
 #include <string.h>
 #include <assert.h>
 
+#if !ESP_TEE_BUILD
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
-
 #include "esp_timer.h"
+#else
+#include "esp_rom_sys.h"
+#include "esp_cpu.h"
+#endif
+
 #include "esp_ds.h"
 #include "esp_crypto_lock.h"
 #include "esp_crypto_periph_clk.h"
@@ -31,42 +36,6 @@
 #include "hal/hmac_ll.h"
 #include "hal/sha_ll.h"
 #endif /* !CONFIG_IDF_TARGET_ESP32S2 */
-
-#if CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32H21
-#include "esp32h21/rom/digital_signature.h"
-#endif
-
-#if CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/digital_signature.h"
-#endif
-
-struct esp_ds_context {
-    const ets_ds_data_t *data;
-};
 
 /**
  * The vtask delay \c esp_ds_sign() is using while waiting for completion of the signing operation.
@@ -263,6 +232,15 @@ esp_err_t esp_ds_encrypt_params(esp_ds_data_t *data,
 
 #else /* !CONFIG_IDF_TARGET_ESP32S2 (targets other than esp32s2) */
 
+static inline int64_t get_time_us(void)
+{
+#if !ESP_TEE_BUILD
+    return esp_timer_get_time();
+#else
+    return (int64_t)esp_cpu_get_cycle_count() / (int64_t)esp_rom_get_cpu_ticks_per_us();
+#endif
+}
+
 static void ds_acquire_enable(void)
 {
     esp_crypto_ds_lock_acquire();
@@ -301,14 +279,23 @@ esp_err_t esp_ds_sign(const void *message,
         return ESP_ERR_INVALID_ARG;
     }
 
-    esp_ds_context_t *context;
+    esp_ds_context_t *context = NULL;
+#if ESP_TEE_BUILD
+    esp_ds_context_t ctx;
+    context = &ctx;
+#endif
+
     esp_err_t result = esp_ds_start_sign(message, data, key_id, &context);
     if (result != ESP_OK) {
         return result;
     }
 
     while (esp_ds_is_busy()) {
+#if !ESP_TEE_BUILD
         vTaskDelay(ESP_DS_SIGN_TASK_DELAY_MS / portTICK_PERIOD_MS);
+#else
+        esp_rom_delay_us(1);
+#endif
     }
 
     return esp_ds_finish_sign(signature, context);
@@ -349,16 +336,18 @@ esp_err_t esp_ds_start_sign(const void *message,
     ds_hal_start();
 
     // check encryption key from HMAC
-    int64_t start_time = esp_timer_get_time();
+    int64_t start_time = get_time_us();
     while (ds_ll_busy() != 0) {
-        if ((esp_timer_get_time() - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
+        if ((get_time_us() - start_time) > SOC_DS_KEY_CHECK_MAX_WAIT_US) {
             ds_disable_release();
             return ESP_ERR_HW_CRYPTO_DS_INVALID_KEY;
         }
     }
 
-    esp_ds_context_t *context = malloc(sizeof(esp_ds_context_t));
-    if (!context) {
+#if !ESP_TEE_BUILD
+    *esp_ds_ctx = malloc(sizeof(esp_ds_context_t));
+#endif
+    if (!*esp_ds_ctx) {
         ds_disable_release();
         return ESP_ERR_NO_MEM;
     }
@@ -371,8 +360,7 @@ esp_err_t esp_ds_start_sign(const void *message,
     // initiate signing
     ds_hal_start_sign();
 
-    context->data = (const ets_ds_data_t *)data;
-    *esp_ds_ctx = context;
+    (*esp_ds_ctx)->data = (const ets_ds_data_t *)data;
 
     return ESP_OK;
 }
@@ -405,7 +393,9 @@ esp_err_t esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
         return_value = ESP_ERR_HW_CRYPTO_DS_INVALID_PADDING;
     }
 
+#if !ESP_TEE_BUILD
     free(esp_ds_ctx);
+#endif
 
     hmac_hal_clean();
 

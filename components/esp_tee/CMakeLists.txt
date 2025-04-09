@@ -73,7 +73,7 @@ else()
 
     idf_component_register(INCLUDE_DIRS include
                            SRCS ${srcs}
-                           PRIV_REQUIRES efuse esp_system spi_flash)
+                           PRIV_REQUIRES efuse esp_security esp_system spi_flash)
 
     if(CONFIG_SECURE_ENABLE_TEE)
         set(EXTRA_LINK_FLAGS)

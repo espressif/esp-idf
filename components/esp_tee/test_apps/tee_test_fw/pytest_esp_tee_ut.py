@@ -39,9 +39,7 @@ REE_ISOLATION_TEST_EXC_RSN: Dict[str, Any] = {
     }
 }
 
-TEE_APM_VIOLATION_EXC_CHK = ['AES', 'eFuse', 'MMU']
-
-TEST_PARTITION_LABEL = 'test'
+TEE_APM_VIOLATION_EXC_CHK = ['eFuse', 'MMU', 'AES', 'HMAC', 'DS', 'SHA PCR', 'DS PCR']
 
 # ---------------- TEE default tests ----------------
 

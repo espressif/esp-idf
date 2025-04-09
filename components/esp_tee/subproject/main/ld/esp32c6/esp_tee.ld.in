@@ -175,6 +175,8 @@ SECTIONS
  * | APM       | text          | Flash  |
  * | AES       | text          | Flash  |
  * | SHA       | text          | Flash  |
+ * | HMAC      | text          | Flash  |
+ * | DS        | text          | Flash  |
  * | BROWNOUT  | text          | Flash  |
  * | EFUSE     | text          | Flash  |
  * | LPTIMER   | text          | Flash  |
@@ -192,6 +194,8 @@ SECTIONS
     /* HAL */
     *libhal.a:aes_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:sha_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:hmac_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:ds_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:brownout_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)
@@ -201,6 +205,8 @@ SECTIONS
     /* Mbedtls for TEE */
     *libmbedtls.a:*(.literal .text .literal.* .text.*)
     *libmbedcrypto.a:*(.literal .text .literal.* .text.*)
+    /* HMAC-DS layer */
+    *libesp_security.a:*(.literal .text .literal.* .text.*)
     /* TEE attestation module */
     *libattestation.a:*(.literal .text .literal.* .text.*)
     *json_generator.a:*(.literal .text .literal.* .text.*)

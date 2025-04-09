@@ -12,7 +12,10 @@
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "hal/apm_hal.h"
-#include "hal/clk_gate_ll.h"
+#include "hal/aes_ll.h"
+#include "hal/sha_ll.h"
+#include "hal/hmac_ll.h"
+#include "hal/ds_ll.h"
 
 #include "esp_tee.h"
 #include "esp_tee_intr.h"
@@ -93,9 +96,11 @@ void esp_tee_soc_secure_sys_init(void)
     esp_tee_protect_intr_src(ETS_AES_INTR_SOURCE);          // AES
     esp_tee_protect_intr_src(ETS_SHA_INTR_SOURCE);          // SHA
 
-    /* Disable AES/SHA peripheral clocks; they will be toggled as needed when the peripheral is in use */
-    periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
-    periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
+    /* Disable protected crypto peripheral clocks; they will be toggled as needed when the peripheral is in use */
+    aes_ll_enable_bus_clock(false);
+    sha_ll_enable_bus_clock(false);
+    hmac_ll_enable_bus_clock(false);
+    ds_ll_enable_bus_clock(false);
 }
 
 IRAM_ATTR inline void esp_tee_switch_to_ree(uint32_t ree_entry_addr)

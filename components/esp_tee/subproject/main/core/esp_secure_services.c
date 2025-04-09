@@ -26,6 +26,8 @@
 #include "soc/soc_caps.h"
 #include "aes/esp_aes.h"
 #include "sha/sha_core.h"
+#include "esp_hmac.h"
+#include "esp_ds.h"
 #include "esp_crypto_periph_clk.h"
 
 #include "esp_tee.h"
@@ -329,6 +331,117 @@ void _ss_esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_fi
 void _ss_esp_crypto_sha_enable_periph_clk(bool enable)
 {
     esp_crypto_sha_enable_periph_clk(enable);
+}
+
+/* ---------------------------------------------- HMAC ------------------------------------------------- */
+
+esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
+{
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)message) && esp_tee_ptr_in_ree((void *)hmac)) &&
+                       esp_tee_ptr_in_ree((void *)((char *)message + message_len)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_hmac_calculate(key_id, message, message_len, hmac);
+}
+
+esp_err_t _ss_esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)token));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_hmac_jtag_enable(key_id, token);
+}
+
+esp_err_t _ss_esp_hmac_jtag_disable(void)
+{
+    return esp_hmac_jtag_disable();
+}
+
+esp_err_t _ss_esp_ds_sign(const void *message,
+                          const esp_ds_data_t *data,
+                          hmac_key_id_t key_id,
+                          void *signature)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)message) &&
+                       esp_tee_ptr_in_ree((void *)data) &&
+                       esp_tee_ptr_in_ree((void *)signature));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_sign(message, data, key_id, signature);
+}
+
+esp_err_t _ss_esp_ds_start_sign(const void *message,
+                                const esp_ds_data_t *data,
+                                hmac_key_id_t key_id,
+                                esp_ds_context_t **esp_ds_ctx)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)message) &&
+                       esp_tee_ptr_in_ree((void *)data) &&
+                       esp_tee_ptr_in_ree((void *)esp_ds_ctx));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_start_sign(message, data, key_id, esp_ds_ctx);
+}
+
+bool _ss_esp_ds_is_busy(void)
+{
+    return esp_ds_is_busy();
+}
+
+esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)signature) &&
+                       esp_tee_ptr_in_ree((void *)esp_ds_ctx));
+
+    valid_addr &= esp_tee_ptr_in_ree((void *)((char *)esp_ds_ctx + sizeof(esp_ds_data_t)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_finish_sign(signature, esp_ds_ctx);
+}
+
+esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
+                                    const void *iv,
+                                    const esp_ds_p_data_t *p_data,
+                                    const void *key)
+{
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)data) && esp_tee_ptr_in_ree((void *)p_data)) &&
+                       (esp_tee_ptr_in_ree((void *)iv) && esp_tee_ptr_in_ree((void *)key)));
+
+    valid_addr &= esp_tee_ptr_in_ree((void *)((char *)data + sizeof(esp_ds_data_t)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_encrypt_params(data, iv, p_data, key);
+}
+
+/* ---------------------------------------------- MPI ------------------------------------------------- */
+
+void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
+{
+    esp_crypto_mpi_enable_periph_clk(enable);
 }
 
 /* ---------------------------------------------- OTA ------------------------------------------------- */
