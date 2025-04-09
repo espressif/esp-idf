@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,8 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+#define IEEE802154_FRAME_MAX_LEN                127
 
 #define IEEE802154_FRAME_INVALID_OFFSET         0xff
 #define IEEE802154_FRAME_INVALID_ADDR_MODE      0xff
@@ -139,9 +141,9 @@ bool ieee802154_frame_is_ack_required(const uint8_t *frame);
  * @param[out] addr   The pointer to the address.
  *
  * @return
- *      - IEEE802154_FRAME_DST_MODE_NONE    if destination adress mode is none.
- *      - IEEE802154_FRAME_DST_MODE_SHORT   if destination adress mode is short.
- *      - IEEE802154_FRAME_DST_MODE_EXT     if destination adress mode is extended.
+ *      - IEEE802154_FRAME_DST_MODE_NONE    if destination address mode is none.
+ *      - IEEE802154_FRAME_DST_MODE_SHORT   if destination address mode is short.
+ *      - IEEE802154_FRAME_DST_MODE_EXT     if destination address mode is extended.
  *
  */
 uint8_t ieee802154_frame_get_dst_addr(const uint8_t *frame, uint8_t *addr);
@@ -153,9 +155,9 @@ uint8_t ieee802154_frame_get_dst_addr(const uint8_t *frame, uint8_t *addr);
  * @param[out] addr   The pointer to the address.
  *
  * @return
- *      - IEEE802154_FRAME_SRC_MODE_NONE    if source adress mode is none.
- *      - IEEE802154_FRAME_SRC_MODE_SHORT   if source adress mode is short.
- *      - IEEE802154_FRAME_SRC_MODE_EXT     if source adress mode is extended.
+ *      - IEEE802154_FRAME_SRC_MODE_NONE    if source address mode is none.
+ *      - IEEE802154_FRAME_SRC_MODE_SHORT   if source address mode is short.
+ *      - IEEE802154_FRAME_SRC_MODE_EXT     if source address mode is extended.
  *
  */
 uint8_t ieee802154_frame_get_src_addr(const uint8_t *frame, uint8_t *addr);
