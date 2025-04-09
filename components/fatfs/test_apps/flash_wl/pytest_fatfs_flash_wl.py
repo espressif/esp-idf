@@ -13,7 +13,7 @@ from pytest_embedded_idf.utils import idf_parametrize
         'release',
         'fastseek',
         'auto_fsync',
-        'no_dyn_buffers',
+        'dyn_buffers',
     ],
 )
 @idf_parametrize('target', ['esp32', 'esp32c3'], indirect=['target'])
