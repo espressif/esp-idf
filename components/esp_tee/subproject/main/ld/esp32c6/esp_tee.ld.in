@@ -106,7 +106,7 @@ SECTIONS
     *libtee_flash_mgr.a:*(.rodata .srodata .rodata.* .srodata.*)
     *libbootloader_support.a:bootloader_flash.*(.rodata .srodata .rodata.* .srodata.*)
     /* Secure services */
-    *libmain.a:esp_secure_services.c.*(.rodata .srodata .rodata.* .srodata.*)
+    *libmain.a:esp_secure_services_iram.c.*(.rodata .srodata .rodata.* .srodata.*)
     *libmain.a:esp_secure_dispatcher.c.*(.rodata .srodata .rodata.* .srodata.*)
     /* Panic handler */
     *libmain.a:panic_helper_riscv.*(.rodata .srodata .rodata.* .srodata.*)
@@ -192,6 +192,8 @@ SECTIONS
   .flash.text :
   {
     _tee_xip_text_start = ABSOLUTE(.);
+    /* Secure Services */
+    *libmain.a:esp_secure_services.c*(.literal .text .literal.* .text.*)
     /* HAL */
     *libhal.a:aes_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:sha_hal.c*(.literal .text .literal.* .text.*)
