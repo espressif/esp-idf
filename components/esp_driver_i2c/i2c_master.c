@@ -294,6 +294,13 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
             i2c_master->read_buf_pos = i2c_master->trans_idx;
         } else {
             i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
+            // If the read position has not been marked, that means the transaction doesn't contain read-ack
+            // operation, then mark the read position in read-nack operation.
+            // i2c_master->read_buf_pos will never be 0.
+            if (i2c_master->read_buf_pos == 0) {
+                i2c_master->read_buf_pos = i2c_master->trans_idx;
+                i2c_master->read_len_static = i2c_master->rx_cnt;
+            }
             i2c_master->cmd_idx++;
         }
         i2c_master->trans_idx++;
@@ -331,7 +338,7 @@ static bool s_i2c_read_command(i2c_master_bus_handle_t i2c_master, i2c_operation
     i2c_ll_master_write_cmd_reg(hal->dev, hw_cmd, i2c_master->cmd_idx);
     i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
     portEXIT_CRITICAL_SAFE(&handle->spinlock);
-    i2c_master->status = I2C_STATUS_READ;
+    atomic_store(&i2c_master->status, I2C_STATUS_READ);
     portENTER_CRITICAL_SAFE(&handle->spinlock);
     if (i2c_master->async_trans == false) {
         i2c_hal_master_trans_start(hal);
@@ -472,15 +479,15 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
     while (i2c_master->i2c_trans.cmd_count) {
         if (xSemaphoreTake(i2c_master->cmd_semphr, ticks_to_wait) != pdTRUE) {
             // Software timeout, clear the command link and finish this transaction.
+            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
-            atomic_store(&i2c_master->status, I2C_STATUS_TIMEOUT);
             ESP_LOGE(TAG, "I2C software timeout");
             xSemaphoreGive(i2c_master->cmd_semphr);
             return;
         }
 
-        if (i2c_master->status == I2C_STATUS_TIMEOUT) {
+        if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT) {
             s_i2c_hw_fsm_reset(i2c_master);
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
@@ -489,7 +496,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
             return;
         }
 
-        if (i2c_master->status == I2C_STATUS_ACK_ERROR) {
+        if (atomic_load(&i2c_master->status) == I2C_STATUS_ACK_ERROR) {
             ESP_LOGE(TAG, "I2C hardware NACK detected");
             const i2c_ll_hw_cmd_t hw_stop_cmd = {
                 .op_code = I2C_LL_CMD_STOP,
@@ -596,7 +603,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     TickType_t ticks_to_wait = (xfer_timeout_ms == -1) ? portMAX_DELAY : pdMS_TO_TICKS(xfer_timeout_ms);
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
     esp_err_t ret = ESP_OK;
-    if (i2c_master->status == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(hal->dev)) {
+    if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(hal->dev)) {
         ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master), TAG, "reset hardware failed");
     }
 
@@ -610,6 +617,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     i2c_master->cmd_idx = 0;
     i2c_master->rx_cnt = 0;
     i2c_master->read_len_static = 0;
+    i2c_master->read_buf_pos = 0;
 
     I2C_CLOCK_SRC_ATOMIC() {
         i2c_hal_set_bus_timing(hal, i2c_dev->scl_speed_hz, i2c_master->base->clk_src, i2c_master->base->clk_src_freq_hz);
@@ -630,7 +638,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     } else {
         s_i2c_send_commands(i2c_master, ticks_to_wait);
         // Wait event bits
-        if (i2c_master->status != I2C_STATUS_DONE) {
+        if (atomic_load(&i2c_master->status) != I2C_STATUS_DONE) {
             ret = ESP_ERR_INVALID_STATE;
         }
         // Interrupt can be disabled when on transaction finishes.
@@ -650,7 +658,7 @@ IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
 {
     i2c_hal_context_t *hal = &i2c_master->base->hal;
 
-    if (i2c_master->status == I2C_STATUS_READ) {
+    if (atomic_load(&i2c_master->status) == I2C_STATUS_READ) {
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->trans_idx];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->rx_cnt);
@@ -673,7 +681,10 @@ IRAM_ATTR static void i2c_isr_receive_handler(i2c_master_bus_t *i2c_master)
         i2c_operation_t *i2c_operation = &i2c_master->i2c_trans.ops[i2c_master->read_buf_pos];
         portENTER_CRITICAL_ISR(&i2c_master->base->spinlock);
         i2c_ll_read_rxfifo(hal->dev, i2c_operation->data + i2c_operation->bytes_used, i2c_master->read_len_static);
-        i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        // If the read command only contain nack marker, no read it for the second time.
+        if (i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data) {
+            i2c_ll_read_rxfifo(hal->dev, i2c_master->i2c_trans.ops[i2c_master->read_buf_pos + 1].data, 1);
+        }
         i2c_master->w_r_size = i2c_master->read_len_static + 1;
         i2c_master->contains_read = false;
         portEXIT_CRITICAL_ISR(&i2c_master->base->spinlock);
@@ -1278,6 +1289,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
     }
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
+    // 20ms is sufficient for stretch, since there is no device config on probe operation.
+    i2c_hal_master_set_scl_timeout_val(hal, 20 * 1000, bus_handle->base->clk_src_freq_hz);
     i2c_ll_update(hal->dev);
 
     s_i2c_send_commands(bus_handle, ticks_to_wait);
