@@ -132,7 +132,7 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     tee_init_app_config();
 
     /* TEE Secure World heap initialization. */
-    assert(tee_heap_register(((void *)&_tee_heap_start), TEE_HEAP_SIZE) == 0);
+    assert(esp_tee_heap_init(((void *)&_tee_heap_start), TEE_HEAP_SIZE) == ESP_OK);
 
     /* SoC specific secure initialization. */
     esp_tee_soc_secure_sys_init();

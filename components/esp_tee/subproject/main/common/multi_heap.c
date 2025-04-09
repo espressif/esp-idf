@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
-#include "tlsf.h"
+#include <stdbool.h>
+#include "esp_rom_tlsf.h"
 #include "tlsf_block_functions.h"
 #include "multi_heap.h"
 
@@ -34,36 +35,33 @@ static void assert_valid_block(const heap_t *heap, const block_header_t *block)
                       (uintptr_t)ptr);
 }
 
-int tee_heap_register(void *start_ptr, size_t size)
+esp_err_t esp_tee_heap_init(void *start_ptr, size_t size)
 {
     assert(start_ptr);
-    if (size < (sizeof(heap_t))) {
-        //Region too small to be a heap.
-        return -1;
+    if (size < (tlsf_size() + tlsf_block_size_min() + sizeof(heap_t))) {
+        // Region too small to be a heap.
+        return ESP_ERR_INVALID_SIZE;
     }
 
     heap_t *result = (heap_t *)start_ptr;
     size -= sizeof(heap_t);
 
-    /* Do not specify any maximum size for the allocations so that the default configuration is used */
-    const size_t max_bytes = 0;
-
-    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size, max_bytes);
+    result->heap_data = tlsf_create_with_pool(start_ptr + sizeof(heap_t), size);
     if (result->heap_data == NULL) {
-        return -1;
+        return ESP_FAIL;
     }
 
     result->lock = NULL;
-    result->free_bytes = size - tlsf_size(result->heap_data);
+    result->free_bytes = size - tlsf_size();
     result->pool_size = size;
     result->minimum_free_bytes = result->free_bytes;
 
     tee_heap = (multi_heap_handle_t)result;
 
-    return 0;
+    return ESP_OK;
 }
 
-void *tee_heap_malloc(size_t size)
+void *esp_tee_heap_malloc(size_t size)
 {
     if (tee_heap == NULL || size == 0) {
         return NULL;
@@ -81,17 +79,17 @@ void *tee_heap_malloc(size_t size)
     return result;
 }
 
-void *tee_heap_calloc(size_t n, size_t size)
+void *esp_tee_heap_calloc(size_t n, size_t size)
 {
     size_t reg_size = n * size;
-    void *ptr = tee_heap_malloc(reg_size);
+    void *ptr = esp_tee_heap_malloc(reg_size);
     if (ptr != NULL) {
         memset(ptr, 0x00, reg_size);
     }
     return ptr;
 }
 
-void *tee_heap_aligned_alloc(size_t size, size_t alignment)
+void *esp_tee_heap_aligned_alloc(size_t size, size_t alignment)
 {
     if (tee_heap == NULL || size == 0) {
         return NULL;
@@ -114,7 +112,7 @@ void *tee_heap_aligned_alloc(size_t size, size_t alignment)
     return result;
 }
 
-void tee_heap_free(void *p)
+void esp_tee_heap_free(void *p)
 {
     if (tee_heap == NULL || p == NULL) {
         return;
@@ -129,45 +127,42 @@ void tee_heap_free(void *p)
 
 void *malloc(size_t size)
 {
-    return tee_heap_malloc(size);
+    return esp_tee_heap_malloc(size);
 }
 
 void *calloc(size_t n, size_t size)
 {
-    return tee_heap_calloc(n, size);
+    return esp_tee_heap_calloc(n, size);
 }
 
 void free(void *ptr)
 {
-    tee_heap_free(ptr);
+    esp_tee_heap_free(ptr);
 }
 
-void tee_heap_dump_free_size(void)
+size_t esp_tee_heap_get_free_size(void)
 {
-    if (tee_heap == NULL) {
-        return;
-    }
-    printf("Free: %uB | Minimum free: %uB\n", tee_heap->free_bytes, tee_heap->minimum_free_bytes);
+    return tee_heap->free_bytes;
 }
 
-static bool tee_heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
+size_t esp_tee_heap_get_min_free_size(void)
+{
+    return tee_heap->minimum_free_bytes;
+}
+
+static void heap_dump_tlsf(void* ptr, size_t size, int used, void* user)
 {
     (void)user;
     printf("Block %p data, size: %d bytes, Free: %s\n",
            (void *)ptr,
            size,
            used ? "No" : "Yes");
-    return true;
 }
 
-void tee_heap_dump_info(void)
+void esp_tee_heap_dump_info(void)
 {
-    if (tee_heap == NULL) {
-        return;
-    }
-    printf("Showing data for TEE heap: %p\n", (void *)tee_heap);
-    tee_heap_dump_free_size();
-    tlsf_walk_pool(tlsf_get_pool(tee_heap->heap_data), tee_heap_dump_tlsf, NULL);
+    printf("Showing data for TEE heap: %p (%uB)\n", (void *)tee_heap, tee_heap->pool_size);
+    tlsf_walk_pool(tlsf_get_pool(tee_heap->heap_data), heap_dump_tlsf, NULL);
 }
 
 /* Definitions for functions from the heap component, used in files shared with ESP-IDF */
@@ -175,13 +170,13 @@ void tee_heap_dump_info(void)
 void *heap_caps_malloc(size_t alignment, size_t size, uint32_t caps)
 {
     (void) caps;
-    return tee_heap_malloc(size);
+    return esp_tee_heap_malloc(size);
 }
 
 void *heap_caps_aligned_alloc(size_t alignment, size_t size, uint32_t caps)
 {
     (void) caps;
-    return tee_heap_aligned_alloc(size, alignment);
+    return esp_tee_heap_aligned_alloc(size, alignment);
 }
 
 void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t caps)
@@ -189,7 +184,7 @@ void *heap_caps_aligned_calloc(size_t alignment, size_t n, size_t size, uint32_t
     (void) caps;
     uint32_t reg_size = n * size;
 
-    void *ptr = tee_heap_aligned_alloc(reg_size, alignment);
+    void *ptr = esp_tee_heap_aligned_alloc(reg_size, alignment);
     if (ptr != NULL) {
         memset(ptr, 0x00, reg_size);
     }

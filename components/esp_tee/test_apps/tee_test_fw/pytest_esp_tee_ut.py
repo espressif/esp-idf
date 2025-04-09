@@ -51,6 +51,7 @@ TEST_PARTITION_LABEL = 'test'
 @idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_esp_tee(dut: IdfDut) -> None:
     dut.run_all_single_board_cases(group='basic')
+    dut.run_all_single_board_cases(group='heap')
 
 
 @pytest.mark.generic
@@ -104,7 +105,7 @@ def test_esp_tee_apm_violation(dut: IdfDut) -> None:
 @idf_parametrize('target', ['esp32c6'], indirect=['target'])
 def test_esp_tee_illegal_instruction(dut: IdfDut) -> None:
     dut.expect_exact('Press ENTER to see the list of tests')
-    dut.write(f'"Test TEE-TEE violation: Illegal Instruction"')
+    dut.write('"Test TEE-TEE violation: Illegal Instruction"')
     exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
     if exc != 'Illegal instruction':
         raise RuntimeError('Incorrect exception received!')

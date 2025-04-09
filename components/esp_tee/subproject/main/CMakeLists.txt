@@ -40,10 +40,7 @@ list(APPEND include "include"
 list(APPEND srcs "common/multi_heap.c")
 
 # TLSF implementation for heap
-list(APPEND include "${heap_dir}/tlsf"
-                    "${heap_dir}/tlsf/include")
-
-list(APPEND srcs "${heap_dir}/tlsf/tlsf.c")
+list(APPEND include "${heap_dir}/tlsf")
 
 # esp_app_desc_t configuration structure for TEE
 list(APPEND srcs "common/esp_app_desc_tee.c")

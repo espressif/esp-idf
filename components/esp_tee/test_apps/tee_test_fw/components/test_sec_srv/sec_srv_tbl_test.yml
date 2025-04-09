@@ -69,3 +69,7 @@ secure_services:
         type: custom
         function: add_in_loop
         args: 3
+      - id: 217
+        type: custom
+        function: esp_tee_test_heap_malloc_write_free
+        args: 0

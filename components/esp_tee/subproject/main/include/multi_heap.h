@@ -1,11 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #pragma once
 #include <string.h>
-#include "tlsf.h"
+#include "esp_err.h"
 
 /* multi_heap is a heap implementation for handling multiple
    heterogeneous heaps in a single program.
@@ -29,70 +29,89 @@ typedef struct multi_heap_info heap_t;
 /** @brief Opaque handle to a registered heap */
 typedef struct multi_heap_info *multi_heap_handle_t;
 
-/** @brief malloc() a buffer in a given heap
+/** @brief Initialize the TEE heap
  *
- * Semantics are the same as standard malloc(), only the returned buffer will be allocated in the TEE heap.
+ * This function initialises the TEE heap at the specified address, and
+ * sets up a handle for future heap operations.
  *
- * @param size Size of desired buffer.
+ * @param start Start address of the memory to use for the TEE heap.
+ * @param size Size (in bytes) of the TEE heap.
  *
- * @return Pointer to new memory, or NULL if allocation fails.
+ * @return ESP_OK on success, or an `esp_err_t` error code on failure.
  */
-void *tee_heap_malloc(size_t size);
-
-/** @brief calloc() a buffer in a given heap
- *
- * Semantics are the same as standard calloc(), only the returned buffer will be allocated in the TEE heap.
- *
- * @param size Size of desired buffer.
- *
- * @return Pointer to new memory, or NULL if allocation fails.
- */
-void *tee_heap_calloc(size_t n, size_t size);
+esp_err_t esp_tee_heap_init(void *start, size_t size);
 
 /**
- * @brief allocate a chunk of memory with specific alignment
+ * @brief Allocate a buffer (malloc) in the TEE heap
  *
- * @param heap  Handle to a registered heap.
- * @param size  size in bytes of memory chunk
- * @param alignment  how the memory must be aligned
+ * This function allocates a buffer of the specified size in the TEE heap.
+ * The semantics are the same as the standard malloc().
  *
- * @return pointer to the memory allocated, NULL on failure
+ * @param size The size of the desired buffer in bytes.
+ *
+ * @return A pointer to the newly allocated memory, or NULL if the allocation fails.
  */
-void *tee_heap_aligned_alloc(size_t size, size_t alignment);
-
-/** @brief free() a buffer in a given heap.
- *
- * Semantics are the same as standard free(), only the argument 'p' must be NULL or have been allocated in the TEE heap.
- *
- * @param p NULL, or a pointer previously returned from multi_heap_malloc() or multi_heap_realloc() for the same heap.
- */
-void tee_heap_free(void *p);
-
-/** @brief Register a new heap for use
- *
- * This function initialises a heap at the specified address, and returns a handle for future heap operations.
- *
- * There is no equivalent function for deregistering a heap - if all blocks in the heap are free, you can immediately start using the memory for other purposes.
- *
- * @param start Start address of the memory to use for a new heap.
- * @param size Size (in bytes) of the new heap.
- *
- * @return Handle of a new heap ready for use, or NULL if the heap region was too small to be initialised.
- */
-int tee_heap_register(void *start, size_t size);
+void *esp_tee_heap_malloc(size_t size);
 
 /**
- * @brief Dump free and minimum free TEE heap information to stdout
+ * @brief Allocate and zero-initialize (calloc) a buffer in the TEE heap
  *
+ * This function allocates a buffer for an array of 'n' elements, each of 'size' bytes,
+ * and initializes all bytes in the allocated storage to zero. The semantics are the same
+ * as the standard calloc().
+ *
+ * @param n The number of elements to allocate.
+ * @param size The size of each element in bytes.
+ *
+ * @return A pointer to the newly allocated and zero-initialized memory, or NULL if the allocation fails.
  */
-void tee_heap_dump_free_size(void);
+void *esp_tee_heap_calloc(size_t n, size_t size);
 
-/** @brief Dump TEE heap information to stdout
+/**
+ * @brief Allocate a memory chunk with specific alignment in the TEE heap
  *
- * For debugging purposes, this function dumps information about every block in the heap to stdout.
+ * This function allocates a chunk of memory of the specified size with the specified alignment
+ * in the TEE heap.
  *
+ * @param size The size in bytes of the memory chunk.
+ * @param alignment The alignment requirement for the memory chunk.
+ *
+ * @return A pointer to the allocated memory, or NULL if the allocation fails.
  */
-void tee_heap_dump_info(void);
+void *esp_tee_heap_aligned_alloc(size_t size, size_t alignment);
+
+/**
+ * @brief Free a buffer in the TEE heap
+ *
+ * This function frees a buffer that was previously allocated in the TEE heap.
+ * The semantics are the same as the standard free().
+ *
+ * @param p A pointer to the memory to be freed, or NULL. The pointer must have been
+ *          returned from esp_tee_heap_malloc(), esp_tee_heap_calloc(), or esp_tee_heap_aligned_alloc().
+ */
+void esp_tee_heap_free(void *p);
+
+/**
+ * @brief Get the size of available TEE heap
+ *
+ * @return Available TEE heap size, in bytes
+ */
+size_t esp_tee_heap_get_free_size(void);
+
+/**
+ * @brief Get the minimum TEE heap that has ever been available
+ *
+ * @return Minimum free TEE heap ever available, in bytes
+ */
+size_t esp_tee_heap_get_min_free_size(void);
+
+/**
+ * @brief Dump info about the entire structure of the TEE heap
+ *
+ * This function outputs detailed information about every block in the TEE heap to stdout.
+ * (Intended for debugging purposes)
+ */
+void esp_tee_heap_dump_info(void);
 
 #ifdef __cplusplus
 }

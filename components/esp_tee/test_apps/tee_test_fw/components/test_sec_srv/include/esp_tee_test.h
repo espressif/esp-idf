@@ -38,6 +38,8 @@ void NOINLINE_ATTR dummy_secure_service(int a, int b, int c, int d, int e, int f
 
 uint32_t add_in_loop(uint32_t a, uint32_t b, uint32_t iter);
 
+int _ss_esp_tee_test_heap_malloc_write_free(void);
+
 #ifdef __cplusplus
 }
 #endif
