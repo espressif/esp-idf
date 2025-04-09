@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,42 @@ const struct crypto_bignum *crypto_ec_get_prime(struct crypto_ec *e)
 const struct crypto_bignum *crypto_ec_get_order(struct crypto_ec *e)
 {
     return (const struct crypto_bignum *) & ((mbedtls_ecp_group *)e)->N;
+}
+
+struct crypto_bignum * crypto_ec_get_a(struct crypto_ec *e)
+{
+    int ret = -1;
+    struct crypto_bignum *a;
+    mbedtls_mpi *m_a;
+    mbedtls_ecp_group *grp = (mbedtls_ecp_group *)e;
+    if (mbedtls_ecp_get_type(grp) != MBEDTLS_ECP_TYPE_SHORT_WEIERSTRASS) {
+        return NULL;
+    }
+    a = crypto_bignum_init();
+    if (!a) {
+        return NULL;
+    }
+    m_a = (mbedtls_mpi *)a;
+    /* Handle Mbed TLS quirk.
+     *
+     * Mbed TLS default ECP implementation is using grp->A = NULL to represent A = -3 for
+     * Short Weierstrass curves(e.g. P-256) thus accessing A needs some tweaking.
+     *
+     * See mbedtls/ecp.h for details. */
+#ifdef MBEDTLS_ECP_SHORT_WEIERSTRASS_ENABLED
+    if (mbedtls_ecp_group_a_is_minus_3(grp)) {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_sub_int(m_a, &grp->P, 3));
+    } else {
+        MBEDTLS_MPI_CHK(mbedtls_mpi_copy(m_a, &grp->A));
+    }
+#else
+    goto cleanup;
+#endif
+    return a;
+
+cleanup:
+    crypto_bignum_deinit(a, 0);
+    return NULL;
 }
 
 const struct crypto_bignum * crypto_ec_get_b(struct crypto_ec *e)
