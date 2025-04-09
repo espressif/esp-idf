@@ -5,3 +5,4 @@ entries:
     interrupt:intr_handler_get (default)
     interrupt:intr_handler_set (default)
     vectors (noflash_text)
+    rv_utils (noflash_text)

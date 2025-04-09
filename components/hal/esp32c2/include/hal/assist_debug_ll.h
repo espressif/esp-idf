@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -123,6 +123,11 @@ FORCE_INLINE_ATTR void assist_debug_ll_reset_register(void)
 {
     SYSTEM.cpu_peri_rst_en.rst_en_assist_debug = true;
     SYSTEM.cpu_peri_rst_en.rst_en_assist_debug = false;
+}
+
+FORCE_INLINE_ATTR bool assist_debug_ll_is_debugger_active(void)
+{
+   return REG_GET_BIT(ASSIST_DEBUG_CORE_0_DEBUG_MODE_REG, ASSIST_DEBUG_CORE_0_DEBUG_MODULE_ACTIVE);
 }
 
 #ifdef __cplusplus
