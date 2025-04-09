@@ -552,7 +552,7 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
     s_csl_sample_time = aCslSampleTime;
 }
 
-static IRAM_ATTR uint16_t get_csl_phase()
+static IRAM_ATTR uint16_t get_csl_phase(void)
 {
     uint32_t cur_time = otPlatTimeGet();
     uint32_t csl_period_us = s_csl_period * OT_US_PER_TEN_SYMBOLS;
