@@ -166,10 +166,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
         rtc_clk_slow_src_set(rtc_slow_clk_src);
         // Disable unused clock sources after clock source switching is complete.
         // Regardless of the clock source selection, the internal 136K clock source will always keep on.
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
             rtc_clk_32k_enable(false);
-        }
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             rtc_clk_32k_disable_external();
         }
 
