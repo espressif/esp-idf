@@ -88,7 +88,9 @@ check_docs_lang_sync:
       artifacts: false
       optional: true
   script:
-    - if [ -n "${BREATHE_ALT_INSTALL_URL}" ]; then pip uninstall -y breathe && pip install -U ${BREATHE_ALT_INSTALL_URL}; fi
+    - if [ -n "${BREATHE_ALT_INSTALL_URL_PY39}" ]; then
+        pip uninstall -y breathe && pip install -U ${BREATHE_ALT_INSTALL_URL_PY39};
+      fi
     - cd docs
     - build-docs -t $DOCTGT -bs $DOC_BUILDERS -l $DOCLANG build
   parallel:
