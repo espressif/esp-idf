@@ -61,18 +61,18 @@ static void example_wifi_init(void)
 /* ESPNOW sending or receiving callback function is called in WiFi task.
  * Users should not do lengthy operations from this task. Instead, post
  * necessary data to a queue and handle it from a lower priority task. */
-static void example_espnow_send_cb(const uint8_t *mac_addr, esp_now_send_status_t status)
+static void example_espnow_send_cb(const esp_now_send_info_t *tx_info, esp_now_send_status_t status)
 {
     example_espnow_event_t evt;
     example_espnow_event_send_cb_t *send_cb = &evt.info.send_cb;
 
-    if (mac_addr == NULL) {
+    if (tx_info == NULL) {
         ESP_LOGE(TAG, "Send cb arg error");
         return;
     }
 
     evt.id = EXAMPLE_ESPNOW_SEND_CB;
-    memcpy(send_cb->mac_addr, mac_addr, ESP_NOW_ETH_ALEN);
+    memcpy(send_cb->mac_addr, tx_info->des_addr, ESP_NOW_ETH_ALEN);
     send_cb->status = status;
     if (xQueueSend(s_example_espnow_queue, &evt, ESPNOW_MAXDELAY) != pdTRUE) {
         ESP_LOGW(TAG, "Send send queue fail");

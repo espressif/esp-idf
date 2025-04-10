@@ -57,8 +57,8 @@ extern "C" {
  * @brief Status of sending ESPNOW data .
  */
 typedef enum {
-    ESP_NOW_SEND_SUCCESS = 0,       /**< Send ESPNOW data successfully */
-    ESP_NOW_SEND_FAIL,              /**< Send ESPNOW data fail */
+    ESP_NOW_SEND_SUCCESS = WIFI_SEND_SUCCESS,       /**< Send ESPNOW data successfully */
+    ESP_NOW_SEND_FAIL = WIFI_SEND_FAIL,             /**< Send ESPNOW data fail */
 } esp_now_send_status_t;
 
 /**
@@ -84,13 +84,18 @@ typedef struct esp_now_peer_num {
 } esp_now_peer_num_t;
 
 /**
- * @brief ESPNOW packet information
+ * @brief ESPNOW receive packet information
  */
 typedef struct esp_now_recv_info {
     uint8_t * src_addr;                      /**< Source address of ESPNOW packet */
     uint8_t * des_addr;                      /**< Destination address of ESPNOW packet */
     wifi_pkt_rx_ctrl_t * rx_ctrl;            /**< Rx control info of ESPNOW packet */
 } esp_now_recv_info_t;
+
+/**
+ * @brief ESPNOW sending packet information
+ */
+typedef wifi_tx_info_t esp_now_send_info_t;
 
 /**
  * @brief ESPNOW rate config
@@ -108,10 +113,10 @@ typedef void (*esp_now_recv_cb_t)(const esp_now_recv_info_t * esp_now_info, cons
 
 /**
   * @brief     Callback function of sending ESPNOW data
-  * @param     mac_addr peer MAC address
-  * @param     status status of sending ESPNOW data (succeed or fail)
+  * @param     esp_now_send_info_t Sending information for ESPNOW data
+  * @param     status status of sending ESPNOW data (succeed or fail). This is will be removed later, since the tx_info->tx_status also works.
   */
-typedef void (*esp_now_send_cb_t)(const uint8_t *mac_addr, esp_now_send_status_t status);
+typedef void (*esp_now_send_cb_t)(const esp_now_send_info_t *tx_info, esp_now_send_status_t status);
 
 /**
   * @brief     Initialize ESPNOW function

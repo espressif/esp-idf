@@ -9,3 +9,4 @@
     system
     peripherals
     protocols
+    wifi

@@ -1486,6 +1486,29 @@ typedef struct {
     uint8_t regulatory_type; /**< regulatory type of country */
 } wifi_regdomain_t;
 
+/**
+  * @brief Status of wifi sending data
+  */
+typedef enum {
+    WIFI_SEND_SUCCESS = 0,    /**< Sending Wi-Fi data successfully */
+    WIFI_SEND_FAIL,           /**< Sending Wi-Fi data fail */
+} wifi_tx_status_t;
+
+/**
+  * @brief Information of wifi sending data
+  */
+typedef struct {
+    uint8_t *des_addr;           /**< The address of the receive device */
+    uint8_t *src_addr;           /**< The address of the sending device */
+    wifi_interface_t ifidx;      /**< Interface of sending 80211 tx data */
+    uint8_t *data;               /**< The data for 80211 tx, start from the MAC header */
+    uint8_t data_len;            /**< The frame body length for 80211 tx, excluding the MAC header */
+    wifi_phy_rate_t rate;        /**< Data rate */
+    wifi_tx_status_t tx_status;  /**< Status of sending 80211 tx data */
+} wifi_tx_info_t;
+
+typedef wifi_tx_info_t esp_80211_tx_info_t;
+
 #ifdef __cplusplus
 }
 #endif
