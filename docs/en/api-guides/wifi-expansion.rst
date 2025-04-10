@@ -22,7 +22,7 @@ The principle of Wi-Fi Expansion operation is to add another ESP32 series, Wi-Fi
   idf.py add-dependency esp_wifi_remote
 
 
-Please follow the instructions described in the `esp_wifi_remote documentation <https://github.com/espressif/esp-protocols/blob/master/components/esp_wifi_remote/README.md>`_.
+Please follow the instructions described in the component documentation which is linked in the above paragraph.
 
 .. only:: not SOC_WIFI_SUPPORTED
 
