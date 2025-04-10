@@ -162,7 +162,12 @@ TEST_CASE("Test HCD control pipe STALL", "[ctrl][full_speed][high_speed]")
 
     // Call the pipe abort command to retire all URBs then dequeue them all
     TEST_ASSERT_EQUAL(ESP_OK, hcd_pipe_command(default_pipe, HCD_PIPE_CMD_FLUSH));
-    test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    if (num_enqueued > 1) {
+        // We expect URB Done after pipe flush, only when more than one URB is enqueued,
+        // as the stalled (first) URB has been already dealt with by the HCD driver as done
+        printf("Expecting URB DONE\n");
+        test_hcd_expect_pipe_event(default_pipe, HCD_PIPE_EVENT_URB_DONE);
+    }
     for (int i = 0; i < num_enqueued; i++) {
         urb_t *urb = hcd_urb_dequeue(default_pipe);
         TEST_ASSERT_EQUAL(urb_list[i], urb);
