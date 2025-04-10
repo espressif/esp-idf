@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +15,18 @@
 #include "esp_rom_sys.h"
 #include "soc/soc_caps.h"
 #include "driver/ana_cmpr.h"
+#include "driver/ana_cmpr_etm.h"
+#include "driver/gpio.h"
 
 #if CONFIG_IDF_TARGET_ESP32P4
-// The pin of unit 0 is used for other purpose on P4 runner, use unit 1 instead
+// The pin of unit 0 is not exposed on some ESP32-P4 runner, so test unit 1 by default
 #define TEST_ANA_CMPR_UNIT_ID           1
 #else
 #define TEST_ANA_CMPR_UNIT_ID           0
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 /**
@@ -50,3 +56,6 @@ int test_init_src_chan_gpio(int unit_id);
  * @param val       0 to set low, others to set high
  */
 void test_simulate_src_signal(int src_chan, uint32_t val);
+#ifdef __cplusplus
+}
+#endif

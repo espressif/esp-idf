@@ -1,11 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "test_ana_cmpr.h"
-#include "unity_test_utils.h"
 #include "unity_test_utils_cache.h"
 
 typedef struct {
@@ -33,7 +32,7 @@ static void IRAM_ATTR test_ana_cmpr_iram_safety(void *args)
     ana_cmpr_set_cross_type(data->handle, ANA_CMPR_CROSS_POS);
 }
 
-TEST_CASE("ana_cmpr_internal_reference_iram_safe", "[ana_cmpr]")
+TEST_CASE("ana_cmpr works with cache disabled", "[ana_cmpr]")
 {
     test_ana_cmpr_data_t test_data = {
         .handle = NULL,
