@@ -7,9 +7,9 @@ examples/wifi/ftm:
 
 examples/wifi/getting_started:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET in ["esp32s2", "esp32s3"]
       temporary: true
-      reason: lack of runners
+      reason: lack of runners for other chips
 
 examples/wifi/iperf:
   disable_test:
