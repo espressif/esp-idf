@@ -1,0 +1,9 @@
+#kapa-widget-container {
+    z-index: 10000 !important;
+    position: absolute !important;
+  }
+
+  .mantine-Modal-root {
+    z-index: 10000;
+    position: absolute;
+  }

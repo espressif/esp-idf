@@ -450,6 +450,7 @@ with open('../page_redirects.txt') as f:
 html_redirect_pages = [tuple(line.split(' ')) for line in lines]
 
 html_static_path = ['../_static']
+html_css_files = ['js/chatbot_widget.css']
 
 idf_build_system = {
     'doxygen_component_info': True,
