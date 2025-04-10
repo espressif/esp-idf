@@ -15,7 +15,7 @@ Frame Format
 
 ESP-NOW uses a vendor-specific action frame to transmit ESP-NOW data. The default ESP-NOW bit rate is 1 Mbps.
 
-Currently, ESP-NOW supports two versions: v1.0 and v2.0. The maximum packet length supported by v2.0 devices is 1490 (``ESP_NOW_MAX_DATA_LEN_V2``) bytes, while the maximum packet length supported by v1.0 devices is 250 (``ESP_NOW_MAX_DATA_LEN``)  bytes.
+Currently, ESP-NOW supports two versions: v1.0 and v2.0. The maximum packet length supported by v2.0 devices is 1470 (``ESP_NOW_MAX_DATA_LEN_V2``) bytes, while the maximum packet length supported by v1.0 devices is 250 (``ESP_NOW_MAX_DATA_LEN``)  bytes.
 
 The v2.0 devices are capable of receiving packets from both v2.0 and v1.0 devices. In contrast, v1.0 devices can only receive packets from other v1.0 devices.
 
@@ -37,7 +37,7 @@ The format of the vendor-specific action frame is as follows:
 - Category Code: The Category Code field is set to the value (127) indicating the vendor-specific category.
 - Organization Identifier: The Organization Identifier contains a unique identifier (0x18fe34), which is the first three bytes of MAC address applied by Espressif.
 - Random Value: The Random Value filed is used to prevents relay attacks.
-- Vendor Specific Content: The Vendor Specific Content contains several (at least one) vendor-specific element fields. For version v2.0, x = 1532(1490 + 6*7), for version v1.0, x = 257(250 + 7).
+- Vendor Specific Content: The Vendor Specific Content contains several (at least one) vendor-specific element fields. For version v2.0, x = 1512(1470 + 6*7), for version v1.0, x = 257(250 + 7).
 
 The format of the vendor-specific element frame is as follows:
 
@@ -109,7 +109,7 @@ Send ESP-NOW Data
 
 Call :cpp:func:`esp_now_send()` to send ESP-NOW data and :cpp:func:`esp_now_register_send_cb()` to register sending callback function. It will return `ESP_NOW_SEND_SUCCESS` in sending callback function if the data is received successfully on the MAC layer. Otherwise, it will return `ESP_NOW_SEND_FAIL`. Several reasons can lead to ESP-NOW fails to send data. For example, the destination device does not exist; the channels of the devices are not the same; the action frame is lost when transmitting on the air, etc. It is not guaranteed that application layer can receive the data. If necessary, send back ack data when receiving ESP-NOW data. If receiving ack data timeouts, retransmit the ESP-NOW data. A sequence number can also be assigned to ESP-NOW data to drop the duplicate data.
 
-If there is a lot of ESP-NOW data to send, call :cpp:func:`esp_now_send()` to send less than or equal to 250 bytes of data once a time. Note that too short interval between sending two ESP-NOW data may lead to disorder of sending callback function. So, it is recommended that sending the next ESP-NOW data after the sending callback function of the previous sending has returned. The sending callback function runs from a high-priority Wi-Fi task. So, do not do lengthy operations in the callback function. Instead, post the necessary data to a queue and handle it from a lower priority task.
+If there is a lot of ESP-NOW data to send, call :cpp:func:`esp_now_send()` to send less than or equal to the maximum packet length (v1.0 is 250 bytes, v2.0 is 1470 bytes) of data once a time. Note that too short interval between sending two ESP-NOW data may lead to disorder of sending callback function. So, it is recommended that sending the next ESP-NOW data after the sending callback function of the previous sending has returned. The sending callback function runs from a high-priority Wi-Fi task. So, do not do lengthy operations in the callback function. Instead, post the necessary data to a queue and handle it from a lower priority task.
 
 Receiving ESP-NOW Data
 ----------------------
