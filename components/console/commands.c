@@ -19,24 +19,9 @@
 #define ANSI_COLOR_DEFAULT      39      /** Default foreground color */
 
 typedef struct cmd_item_ {
-    /**
-     * Command name (statically allocated by application)
-     */
-    const char *command;
-    /**
-     * Help text (statically allocated by application), may be NULL.
-     */
-    const char *help;
-    /**
-     * Hint text, usually lists possible arguments, dynamically allocated.
-     * May be NULL.
-     */
+    esp_console_cmd_t def;
     char *hint;
-    esp_console_cmd_func_t func;                        //!< pointer to the command handler (without user context)
-    esp_console_cmd_func_with_context_t func_w_context; //!< pointer to the command handler (with user context)
-    void *argtable;                                     //!< optional pointer to arg table
-    void *context;                                      //!< optional pointer to user context
-    SLIST_ENTRY(cmd_item_) next;                        //!< next command in the list
+    SLIST_ENTRY(cmd_item_) next;    //!< next command in the list
 } cmd_item_t;
 
 typedef void (*const fn_print_arg_t)(cmd_item_t*);
@@ -55,6 +40,29 @@ static char *s_tmp_line_buf;
 static const cmd_item_t *find_command_by_name(const char *name);
 
 static esp_console_help_verbose_level_e s_verbose_level = ESP_CONSOLE_HELP_VERBOSE_LEVEL_1;
+
+const esp_console_cmd_t *esp_console_get_by_name(const char *name)
+{
+    const cmd_item_t *cmd =  find_command_by_name(name);
+    if (cmd) {
+        return &cmd->def;
+    }
+    return NULL;
+}
+
+const esp_console_cmd_t *esp_console_get_iterate(const esp_console_cmd_t *prev)
+{
+    const cmd_item_t *cmd = NULL;
+    if (prev == NULL) {
+        cmd = SLIST_FIRST(&s_cmd_list);
+    } else {
+        cmd = SLIST_NEXT((cmd_item_t *)prev, next);
+    }
+    if (cmd) {
+        return &cmd->def;
+    }
+    return NULL;
+}
 
 esp_err_t esp_console_init(const esp_console_config_t *config)
 {
@@ -135,14 +143,14 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         // remove from list and free the old hint, because we will alloc new hint for the command
         esp_console_rm_item_free_hint(item);
     }
-    item->command = cmd->command;
-    item->help = cmd->help;
+
+    item->def = *cmd;
     if (cmd->hint) {
         /* Prepend a space before the hint. It separates command name and
          * the hint. arg_print_syntax below adds this space as well.
          */
         int unused __attribute__((unused));
-        unused = asprintf(&item->hint, " %s", cmd->hint);
+        unused = asprintf((char **)&item->hint, " %s", cmd->hint);
     } else if (cmd->argtable) {
         /* Generate hint based on cmd->argtable */
         arg_dstr_t ds = arg_dstr_create();
@@ -150,22 +158,13 @@ esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd)
         item->hint = strdup(arg_dstr_cstr(ds));
         arg_dstr_destroy(ds);
     }
-    item->argtable = cmd->argtable;
-
-    if (cmd->func) {
-        item->func = cmd->func;
-    } else {
-        // cmd->func_w_context is valid here according to check above
-        item->func_w_context = cmd->func_w_context;
-        item->context = cmd->context;
-    }
 
     cmd_item_t *last;
     cmd_item_t *it;
 #if CONFIG_CONSOLE_SORTED_HELP
     last = NULL;
     SLIST_FOREACH(it, &s_cmd_list, next) {
-        if (strcmp(it->command, item->command) > 0) {
+        if (strcmp(it->def.command, item->def.command) > 0) {
             break;
         }
         last = it;
@@ -195,8 +194,8 @@ void esp_console_get_completion(const char *buf, linenoiseCompletions *lc)
     cmd_item_t *it;
     SLIST_FOREACH(it, &s_cmd_list, next) {
         /* Check if command starts with buf */
-        if (strncmp(buf, it->command, len) == 0) {
-            linenoiseAddCompletion(lc, it->command);
+        if (strncmp(buf, it->def.command, len) == 0) {
+            linenoiseAddCompletion(lc, it->def.command);
         }
     }
 }
@@ -206,8 +205,8 @@ const char *esp_console_get_hint(const char *buf, int *color, int *bold)
     size_t len = strlen(buf);
     cmd_item_t *it;
     SLIST_FOREACH(it, &s_cmd_list, next) {
-        if (strlen(it->command) == len &&
-                strncmp(buf, it->command, len) == 0) {
+        if (strlen(it->def.command) == len &&
+                strncmp(buf, it->def.command, len) == 0) {
             *color = s_config.hint_color;
             *bold = s_config.hint_bold;
             return it->hint;
@@ -222,8 +221,8 @@ static const cmd_item_t *find_command_by_name(const char *name)
     cmd_item_t *it;
     size_t len = strlen(name);
     SLIST_FOREACH(it, &s_cmd_list, next) {
-        if (strlen(it->command) == len &&
-                strcmp(name, it->command) == 0) {
+        if (strlen(it->def.command) == len &&
+                strcmp(name, it->def.command) == 0) {
             cmd = it;
             break;
         }
@@ -253,11 +252,11 @@ esp_err_t esp_console_run(const char *cmdline, int *cmd_ret)
         free(argv);
         return ESP_ERR_NOT_FOUND;
     }
-    if (cmd->func) {
-        *cmd_ret = (*cmd->func)(argc, argv);
+    if (cmd->def.func) {
+        *cmd_ret = (*cmd->def.func)(argc, argv);
     }
-    if (cmd->func_w_context) {
-        *cmd_ret = (*cmd->func_w_context)(cmd->context, argc, argv);
+    if (cmd->def.func_w_context) {
+        *cmd_ret = (*cmd->def.func_w_context)(cmd->def.context, argc, argv);
     }
     free(argv);
     return ESP_OK;
@@ -275,16 +274,16 @@ static void print_arg_help(cmd_item_t *it)
      * Pad all the hints to the same column
      */
     const char *hint = (it->hint) ? it->hint : "";
-    printf("%-s %s\n", it->command, hint);
+    printf("%-s %s\n", it->def.command, hint);
     /* Second line: print help.
      * Argtable has a nice helper function for this which does line
      * wrapping.
      */
     printf("  "); // arg_print_formatted does not indent the first line
-    arg_print_formatted(stdout, 2, 78, it->help);
+    arg_print_formatted(stdout, 2, 78, it->def.help);
     /* Finally, print the list of arguments */
-    if (it->argtable) {
-        arg_print_glossary(stdout, (void **) it->argtable, "  %12s  %s\n");
+    if (it->def.argtable) {
+        arg_print_glossary(stdout, (void **) it->def.argtable, "  %12s  %s\n");
     }
     printf("\n");
 }
@@ -292,7 +291,7 @@ static void print_arg_help(cmd_item_t *it)
 static void print_arg_command(cmd_item_t *it)
 {
     const char *hint = (it->hint) ? it->hint : "";
-    printf("%-s %s\n\n", it->command, hint);
+    printf("%-s %s\n\n", it->def.command, hint);
 }
 
 static fn_print_arg_t print_verbose_level_arr[ESP_CONSOLE_HELP_VERBOSE_LEVEL_MAX_NUM] = {
@@ -330,7 +329,7 @@ static int help_command(int argc, char **argv)
 
         /* Print info of each command based on verbose level */
         SLIST_FOREACH(it, &s_cmd_list, next) {
-            if (it->help == NULL) {
+            if (it->def.help == NULL) {
                 continue;
             }
             print_verbose_level_arr[verbose_level](it);
@@ -340,10 +339,10 @@ static int help_command(int argc, char **argv)
         /* Print summary of given command, verbose option will be ignored */
         bool found_command = false;
         SLIST_FOREACH(it, &s_cmd_list, next) {
-            if (it->help == NULL) {
+            if (it->def.help == NULL) {
                 continue;
             }
-            if (strcmp(help_args.help_cmd->sval[0], it->command) == 0) {
+            if (strcmp(help_args.help_cmd->sval[0], it->def.command) == 0) {
                 print_arg_help(it);
                 found_command = true;
                 ret_value = 0;

@@ -237,6 +237,29 @@ typedef struct {
 esp_err_t esp_console_cmd_register(const esp_console_cmd_t *cmd);
 
 /**
+ * @brief Retrieve a registered console command by its name.
+ *
+ * This function searches for a console command that matches the given name
+ * and returns a pointer to its description structure.
+ *
+ * @param name Name of the command to search for.
+ * @return Pointer to the `esp_console_cmd_t` structure if the command is found,
+ *         or NULL if no command with the given name is registered.
+ */
+const esp_console_cmd_t *esp_console_get_by_name(const char *name);
+
+/**
+ * @brief Iterate through registered console commands.
+ *
+ * This function retrieves the next registered console command in the list.
+ * If `prev` is NULL, it returns the first registered command.
+ *
+ * @param prev Pointer to the previous command. Pass NULL to get the first command.
+ * @return Pointer to the next `esp_console_cmd_t` structure, or NULL if no more commands are available.
+ */
+const esp_console_cmd_t *esp_console_get_iterate(const esp_console_cmd_t *prev);
+
+/**
  * @brief Deregister console command
  * @param cmd_name Name of the command to be deregistered. Must not be NULL, must not contain spaces.
  *
