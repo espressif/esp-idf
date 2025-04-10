@@ -511,12 +511,15 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storag
     mbedtls_ecp_keypair_init(&priv_key);
     mbedtls_ecdsa_init(&sign_ctx);
 
+    size_t key_len = 0;
     int ret = -1;
     if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) {
         ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP256R1, &priv_key, keyctx.ecdsa_secp256r1.priv_key, sizeof(keyctx.ecdsa_secp256r1.priv_key));
+        key_len = ECDSA_SECP256R1_KEY_LEN;
 #if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
     } else if (key_type == ESP_SEC_STG_KEY_ECDSA_SECP192R1) {
         ret = mbedtls_ecp_read_key(MBEDTLS_ECP_DP_SECP192R1, &priv_key, keyctx.ecdsa_secp192r1.priv_key, sizeof(keyctx.ecdsa_secp192r1.priv_key));
+        key_len = ECDSA_SECP192R1_KEY_LEN;
 #endif
     } else {
         ESP_LOGE(TAG, "Unsupported key type for signature generation");
@@ -547,12 +550,6 @@ esp_err_t esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storag
 
     memset(out_sign, 0x00, sizeof(esp_tee_sec_storage_sign_t));
 
-    size_t key_len = (key_type == ESP_SEC_STG_KEY_ECDSA_SECP256R1) ? ECDSA_SECP256R1_KEY_LEN :
-#if CONFIG_SECURE_TEE_SEC_STG_SUPPORT_SECP192R1_SIGN
-                     ECDSA_SECP192R1_KEY_LEN;
-#else
-                     0;
-#endif
     ret = mbedtls_mpi_write_binary(&r, out_sign->sign_r, key_len);
     if (ret != 0) {
         err = ESP_FAIL;

@@ -258,7 +258,9 @@ int esp_ecdsa_privkey_load_pk_context(mbedtls_pk_context *key_ctx, int efuse_blk
 
     mbedtls_pk_init(key_ctx);
     pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECDSA);
-    mbedtls_pk_setup(key_ctx, pk_info);
+    if (mbedtls_pk_setup(key_ctx, pk_info) != 0) {
+        return -1;
+    }
     keypair = mbedtls_pk_ec(*key_ctx);
 
     return esp_ecdsa_privkey_load_mpi(&(keypair->MBEDTLS_PRIVATE(d)), efuse_blk);
@@ -466,7 +468,11 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
 
     mbedtls_pk_init(key_ctx);
     pk_info = mbedtls_pk_info_from_type(MBEDTLS_PK_ECDSA);
-    mbedtls_pk_setup(key_ctx, pk_info);
+    ret = mbedtls_pk_setup(key_ctx, pk_info);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Failed to setup pk context, mbedtls_pk_setup() returned %d", ret);
+        return ret;
+    }
     keypair = mbedtls_pk_ec(*key_ctx);
 
     mbedtls_mpi_init(&(keypair->MBEDTLS_PRIVATE(d)));
