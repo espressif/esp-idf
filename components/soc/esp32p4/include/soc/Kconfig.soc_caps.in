@@ -201,11 +201,11 @@ config SOC_ECC_EXTENDED_MODES_SUPPORTED
 
 config SOC_ECDSA_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_KEY_MANAGER_SUPPORTED
     bool
-    default n
+    default y
 
 config SOC_FLASH_ENC_SUPPORTED
     bool
