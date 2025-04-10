@@ -1546,12 +1546,7 @@ typedef union {
          *  1: Triggered
          */
         uint32_t adc_task_sample0_st:1;
-        /** adc_task_sample1_st : R/WTC/SS; bitpos: [5]; default: 0;
-         *  Represents ADC_TASK_SAMPLE1 trigger status.
-         *  0: Not triggered
-         *  1: Triggered
-         */
-        uint32_t adc_task_sample1_st:1;
+        uint32_t reserved_5:1;
         /** adc_task_start0_st : R/WTC/SS; bitpos: [6]; default: 0;
          *  Represents ADC_TASK_START0 trigger status.
          *  0: Not triggered
@@ -3532,12 +3527,7 @@ typedef union {
          *  1: Clear
          */
         uint32_t adc_task_sample0_st_clr:1;
-        /** adc_task_sample1_st_clr : WT; bitpos: [5]; default: 0;
-         *  Configures whether or not to clear ADC_TASK_SAMPLE1 trigger status.
-         *  0: Invalid. No effect
-         *  1: Clear
-         */
-        uint32_t adc_task_sample1_st_clr:1;
+        uint32_t reserved_5:1;
         /** adc_task_start0_st_clr : WT; bitpos: [6]; default: 0;
          *  Configures whether or not to clear ADC_TASK_START0 trigger status.
          *  0: Invalid. No effect
