@@ -141,7 +141,7 @@
 
 .. note::
 
-    当启用 :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` 时，应添加属性 ``IRAM_ATTR``，确保回调上下文和涉及的数据位于内部 RAM 中（详情请参阅 :ref:`anacmpr-iram-safe`）。
+    当启用 :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` 时，应添加属性 ``IRAM_ATTR``，确保回调上下文和涉及的数据位于内部 RAM 中（详情请参阅 :ref:`anacmpr-iram-safe`）。
 
 .. _anacmpr-enable-and-disable-unit:
 
@@ -171,7 +171,7 @@ IRAM 安全
 
 默认情况下，当 cache 因写入或擦除 flash 等原因而被禁用时，模拟比较器的中断服务将会延迟，造成警报中断无法及时执行。在实时应用程序中通常需要避免这一情况发生。
 
-Kconfig 选项 :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` 支持：
+Kconfig 选项 :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` 支持：
 
 1. 即使 cache 被禁用也能启用中断服务。
 2. 将 ISR 使用的所有函数放入 IRAM。 [1]_
@@ -205,7 +205,7 @@ Kconfig 选项 :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` 支持：
 Kconfig 选项
 ^^^^^^^^^^^^
 
-- :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` 控制默认的 ISR 句柄在 cache 被禁用时是否可以正常工作，详见 :ref:`anacmpr-iram-safe`。
+- :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` 控制默认的 ISR 句柄在 cache 被禁用时是否可以正常工作，详见 :ref:`anacmpr-iram-safe`。
 - :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` 控制模拟比较器控制函数的存放位置（IRAM 或 flash），详见 :ref:`anacmpr-iram-safe`。
 - :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` 用于启用调试日志输出。启用此选项将增加固件的二进制文件大小。
 

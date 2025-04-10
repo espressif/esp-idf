@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,11 +12,13 @@ const ana_cmpr_periph_t ana_cmpr_periph[SOC_ANA_CMPR_NUM] = {
         .src_gpio = ANA_CMPR0_SRC_GPIO,
         .ext_ref_gpio = ANA_CMPR0_EXT_REF_GPIO,
         .intr_src = ETS_GPIO_PAD_COMP_INTR_SOURCE,
+        .module_name = "ANA_CMPR_U0",
     },
     [1] = {
         .src_gpio = ANA_CMPR1_SRC_GPIO,
         .ext_ref_gpio = ANA_CMPR1_EXT_REF_GPIO,
         .intr_src = ETS_GPIO_PAD_COMP_INTR_SOURCE,
+        .module_name = "ANA_CMPR_U1",
     },
 };
 

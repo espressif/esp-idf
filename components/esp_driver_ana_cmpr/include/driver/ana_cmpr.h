@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@ extern "C" {
 
 /**
  * @brief Analog comparator unit configuration
- *
  */
 typedef struct {
     ana_cmpr_unit_t         unit;               /*!< Analog comparator unit */
@@ -28,17 +27,15 @@ typedef struct {
                                                  *   for external reference, the reference signal should be connect to `ANA_CMPRx_EXT_REF_GPIO`
                                                  */
     ana_cmpr_cross_type_t   cross_type;         /*!< The crossing types that can trigger interrupt */
-    int                     intr_priority;      /*!< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
-                                                 *   otherwise the larger the higher, 7 is NMI */
+    int                     intr_priority;      /*!< The interrupt priority, range 1~3.
+                                                     If set to 0, the driver will automatically select a relative low priority (1,2,3) */
     struct {
-        uint32_t            io_loop_back: 1;     /*!< Enable this field when the other signals that output on the comparison pins are supposed to be fed back.
-                                                 *   Normally used for debug/test scenario */
+        uint32_t            io_loop_back: 1;    /*!< Deprecated. For debug/test, a signal output from other peripheral can work as comparator input. */
     } flags;                                    /*!< Analog comparator driver flags */
 } ana_cmpr_config_t;
 
 /**
  * @brief Analog comparator internal reference configuration
- *
  */
 typedef struct {
     ana_cmpr_ref_voltage_t  ref_volt;           /*!< The internal reference voltage. It can be specified to a certain fixed percentage of
@@ -48,21 +45,18 @@ typedef struct {
 
 /**
  * @brief Analog comparator debounce filter configuration
- *
  */
 typedef struct {
-    uint32_t                   wait_us;         /*!< The wait time of re-enabling the interrupt after the last triggering,
-                                                 *   it is used to avoid the spurious triggering while the source signal crossing the reference signal.
-                                                 *   The value should regarding how fast the source signal changes, e.g., a rapid signal requires
-                                                 *   a small wait time, otherwise the next crosses may be missed.
-                                                 *   (Unit: micro second)
-                                                 */
+    uint32_t                wait_us;         /*!< The wait time to prevent frequent interrupts caused by signal noise or bouncing.
+                                                  During the specified wait_us period, no new interrupts will be triggered.
+                                                  Set the value according to the signal characteristics. A rapid signal requires a small wait time,
+                                                  otherwise the next cross event may be missed. */
 } ana_cmpr_debounce_config_t;
 
 /**
  * @brief Group of Analog Comparator callbacks
  * @note The callbacks are all running under ISR environment
- * @note When CONFIG_ANA_CMPR_ISR_IRAM_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
+ * @note When CONFIG_ANA_CMPR_ISR_CACHE_SAFE is enabled, the callback itself and functions called by it should be placed in IRAM.
  *       The variables used in the function should be in the SRAM as well.
  */
 typedef struct {
@@ -95,9 +89,8 @@ esp_err_t ana_cmpr_del_unit(ana_cmpr_handle_t cmpr);
 
 /**
  * @brief Set internal reference configuration
- * @note  This function only need to be called when `ana_cmpr_config_t::ref_src`
- *        is ANA_CMPR_REF_SRC_INTERNAL.
- * @note This function is allowed to run within ISR context including intr callbacks
+ * @note This function only need to be called when `ana_cmpr_config_t::ref_src` is set to `ANA_CMPR_REF_SRC_INTERNAL`.
+ * @note This function is allowed to run within ISR context including interrupt callbacks
  * @note This function will be placed into IRAM if `CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` is on,
  *       so that it's allowed to be executed when Cache is disabled
  *
@@ -112,7 +105,7 @@ esp_err_t ana_cmpr_set_internal_reference(ana_cmpr_handle_t cmpr, const ana_cmpr
 
 /**
  * @brief Set debounce configuration to the analog comparator
- * @note This function is allowed to run within ISR context including intr callbacks
+ * @note This function is allowed to run within ISR context including interrupt callbacks
  * @note This function will be placed into IRAM if `CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` is on,
  *       so that it's allowed to be executed when Cache is disabled
  *
@@ -127,9 +120,8 @@ esp_err_t ana_cmpr_set_debounce(ana_cmpr_handle_t cmpr, const ana_cmpr_debounce_
 /**
  * @brief Set the source signal cross type
  * @note The initial cross type is configured in `ana_cmpr_new_unit`, this function can update the cross type
- * @note This function is allowed to run within ISR context including intr callbacks
- * @note This function will be placed into IRAM if `CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` is on,
- *       so that it's allowed to be executed when Cache is disabled
+ * @note This function is allowed to run within ISR context including interrupt callbacks
+ * @note This function must be called before `ana_cmpr_register_event_callbacks`
  *
  * @param[in]  cmpr         The handle of analog comparator unit
  * @param[in]  cross_type   The source signal cross type that can trigger the interrupt

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
 #include "soc/soc_caps.h"
 #include "soc/interrupts.h"
 #if SOC_ANA_CMPR_SUPPORTED
-#include "soc/ana_cmpr_channel.h"
+#include "soc/ana_cmpr_pins.h"
 #endif
 
 #ifdef __cplusplus
@@ -22,6 +22,7 @@ typedef struct {
     int src_gpio;
     int ext_ref_gpio;
     int intr_src;
+    const char *module_name;
 } ana_cmpr_periph_t;
 
 extern const ana_cmpr_periph_t ana_cmpr_periph[SOC_ANA_CMPR_NUM];
