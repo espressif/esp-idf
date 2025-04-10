@@ -1,10 +1,11 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/gdma_periph.h"
+#include "soc/ahb_dma_reg.h"
 
 const gdma_signal_conn_t gdma_periph_signals = {
     .groups = {
@@ -29,7 +30,7 @@ const gdma_signal_conn_t gdma_periph_signals = {
                 [4]  = {
                     .rx_irq_id = ETS_DMA_IN_CH4_INTR_SOURCE,
                     .tx_irq_id = ETS_DMA_OUT_CH4_INTR_SOURCE,
-                }
+                },
             }
         }
     }

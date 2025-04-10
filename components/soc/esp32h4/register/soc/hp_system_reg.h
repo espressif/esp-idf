@@ -54,7 +54,7 @@ extern "C" {
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_CONF_REG register
  *  CPU_PERI_TIMEOUT configuration register
  */
-#define HP_SYSTEM_CPU_PERI_TIMEOUT_CONF_REG (DR_REG_HP_BASE + 0xc)
+#define HP_SYSTEM_CPU_PERI_TIMEOUT_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0xc)
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_THRES : R/W; bitpos: [15:0]; default: 65535;
  *  Configures the timeout threshold for bus access for accessing CPU peripheral
  *  register in the number of clock cycles of the clock domain.
@@ -84,7 +84,7 @@ extern "C" {
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_ADDR_REG register
  *  CPU_PERI_TIMEOUT_ADDR register
  */
-#define HP_SYSTEM_CPU_PERI_TIMEOUT_ADDR_REG (DR_REG_HP_BASE + 0x10)
+#define HP_SYSTEM_CPU_PERI_TIMEOUT_ADDR_REG (DR_REG_HP_SYSTEM_BASE + 0x10)
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Represents the address information of abnormal access.
  */
@@ -96,7 +96,7 @@ extern "C" {
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_UID_REG register
  *  CPU_PERI_TIMEOUT_UID register
  */
-#define HP_SYSTEM_CPU_PERI_TIMEOUT_UID_REG (DR_REG_HP_BASE + 0x14)
+#define HP_SYSTEM_CPU_PERI_TIMEOUT_UID_REG (DR_REG_HP_SYSTEM_BASE + 0x14)
 /** HP_SYSTEM_CPU_PERI_TIMEOUT_UID : RO; bitpos: [6:0]; default: 0;
  *  Represents the master id[4:0] and master permission[6:5] when trigger timeout. This
  *  register will be cleared after the interrupt is cleared.
@@ -109,7 +109,7 @@ extern "C" {
 /** HP_SYSTEM_HP_PERI_TIMEOUT_CONF_REG register
  *  HP_PERI_TIMEOUT configuration register
  */
-#define HP_SYSTEM_HP_PERI_TIMEOUT_CONF_REG (DR_REG_HP_BASE + 0x18)
+#define HP_SYSTEM_HP_PERI_TIMEOUT_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0x18)
 /** HP_SYSTEM_HP_PERI_TIMEOUT_THRES : R/W; bitpos: [15:0]; default: 65535;
  *  Configures the timeout threshold for bus access for accessing HP peripheral
  *  register, corresponding to the number of clock cycles of the clock domain.
@@ -141,7 +141,7 @@ extern "C" {
 /** HP_SYSTEM_HP_PERI_TIMEOUT_ADDR_REG register
  *  HP_PERI_TIMEOUT_ADDR register
  */
-#define HP_SYSTEM_HP_PERI_TIMEOUT_ADDR_REG (DR_REG_HP_BASE + 0x1c)
+#define HP_SYSTEM_HP_PERI_TIMEOUT_ADDR_REG (DR_REG_HP_SYSTEM_BASE + 0x1c)
 /** HP_SYSTEM_HP_PERI_TIMEOUT_ADDR : RO; bitpos: [31:0]; default: 0;
  *  Represents the address information of abnormal access.
  */
@@ -153,7 +153,7 @@ extern "C" {
 /** HP_SYSTEM_HP_PERI_TIMEOUT_UID_REG register
  *  HP_PERI_TIMEOUT_UID register
  */
-#define HP_SYSTEM_HP_PERI_TIMEOUT_UID_REG (DR_REG_HP_BASE + 0x20)
+#define HP_SYSTEM_HP_PERI_TIMEOUT_UID_REG (DR_REG_HP_SYSTEM_BASE + 0x20)
 /** HP_SYSTEM_HP_PERI_TIMEOUT_UID : RO; bitpos: [6:0]; default: 0;
  *  Represents the master id[4:0] and master permission[6:5] when trigger timeout. This
  *  register will be cleared after the interrupt is cleared.
@@ -166,7 +166,7 @@ extern "C" {
 /** HP_SYSTEM_SDIO_CTRL_REG register
  *  SDIO Control configuration register
  */
-#define HP_SYSTEM_SDIO_CTRL_REG (DR_REG_HP_BASE + 0x30)
+#define HP_SYSTEM_SDIO_CTRL_REG (DR_REG_HP_SYSTEM_BASE + 0x30)
 /** HP_SYSTEM_DIS_SDIO_PROB : R/W; bitpos: [0]; default: 1;
  *  Set this bit as 1 to disable SDIO_PROB function. disable by default.
  */
@@ -185,7 +185,7 @@ extern "C" {
 /** HP_SYSTEM_ROM_TABLE_LOCK_REG register
  *  ROM-Table lock register
  */
-#define HP_SYSTEM_ROM_TABLE_LOCK_REG (DR_REG_HP_BASE + 0x38)
+#define HP_SYSTEM_ROM_TABLE_LOCK_REG (DR_REG_HP_SYSTEM_BASE + 0x38)
 /** HP_SYSTEM_ROM_TABLE_LOCK : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to lock the value contained in HP_SYSTEM_ROM_TABLE.
  *  0: Unlock
@@ -199,7 +199,7 @@ extern "C" {
 /** HP_SYSTEM_ROM_TABLE_REG register
  *  ROM-Table register
  */
-#define HP_SYSTEM_ROM_TABLE_REG (DR_REG_HP_BASE + 0x3c)
+#define HP_SYSTEM_ROM_TABLE_REG (DR_REG_HP_SYSTEM_BASE + 0x3c)
 /** HP_SYSTEM_ROM_TABLE : R/W; bitpos: [31:0]; default: 0;
  *  Software ROM-Table register, whose content can be modified only when
  *  HP_SYSTEM_ROM_TABLE_LOCK is 0.
@@ -212,7 +212,7 @@ extern "C" {
 /** HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG register
  *  Core Debug RunStall configurion register
  */
-#define HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG (DR_REG_HP_BASE + 0x40)
+#define HP_SYSTEM_CORE_DEBUG_RUNSTALL_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0x40)
 /** HP_SYSTEM_CORE_DEBUG_RUNSTALL_ENABLE : R/W; bitpos: [0]; default: 0;
  *  Configures whether or not to enable debug RunStall functionality between HP CPU and
  *  LP CPU.
@@ -243,7 +243,7 @@ extern "C" {
 /** HP_SYSTEM_SPROM_CTRL_REG register
  *  reserved
  */
-#define HP_SYSTEM_SPROM_CTRL_REG (DR_REG_HP_BASE + 0x70)
+#define HP_SYSTEM_SPROM_CTRL_REG (DR_REG_HP_SYSTEM_BASE + 0x70)
 /** HP_SYSTEM_SPROM_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 80;
  *  reserved
  */
@@ -255,7 +255,7 @@ extern "C" {
 /** HP_SYSTEM_SPRAM_CTRL_REG register
  *  reserved
  */
-#define HP_SYSTEM_SPRAM_CTRL_REG (DR_REG_HP_BASE + 0x74)
+#define HP_SYSTEM_SPRAM_CTRL_REG (DR_REG_HP_SYSTEM_BASE + 0x74)
 /** HP_SYSTEM_SPRAM_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 10320;
  *  reserved
  */
@@ -267,7 +267,7 @@ extern "C" {
 /** HP_SYSTEM_SPRF_CTRL_REG register
  *  reserved
  */
-#define HP_SYSTEM_SPRF_CTRL_REG (DR_REG_HP_BASE + 0x78)
+#define HP_SYSTEM_SPRF_CTRL_REG (DR_REG_HP_SYSTEM_BASE + 0x78)
 /** HP_SYSTEM_SPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 10320;
  *  reserved
  */
@@ -279,7 +279,7 @@ extern "C" {
 /** HP_SYSTEM_BITSCRAMBLER_PERI_SEL_REG register
  *  reserved
  */
-#define HP_SYSTEM_BITSCRAMBLER_PERI_SEL_REG (DR_REG_HP_BASE + 0x80)
+#define HP_SYSTEM_BITSCRAMBLER_PERI_SEL_REG (DR_REG_HP_SYSTEM_BASE + 0x80)
 /** HP_SYSTEM_BITSCRAMBLER_RX_SEL : R/W; bitpos: [3:0]; default: 0;
  *  select peri that will be connected to bitscrambler,dir : receive data from bs
  */
@@ -298,7 +298,7 @@ extern "C" {
 /** HP_SYSTEM_APPCPU_BOOT_ADDR_REG register
  *  reserved
  */
-#define HP_SYSTEM_APPCPU_BOOT_ADDR_REG (DR_REG_HP_BASE + 0x84)
+#define HP_SYSTEM_APPCPU_BOOT_ADDR_REG (DR_REG_HP_SYSTEM_BASE + 0x84)
 /** HP_SYSTEM_APPCPU_BOOT_ADDR : R/W; bitpos: [31:0]; default: 0;
  *  reserved
  */
@@ -310,7 +310,7 @@ extern "C" {
 /** HP_SYSTEM_AXI_MST_PRI_REG register
  *  AXI mst priority configuration register
  */
-#define HP_SYSTEM_AXI_MST_PRI_REG (DR_REG_HP_BASE + 0x88)
+#define HP_SYSTEM_AXI_MST_PRI_REG (DR_REG_HP_SYSTEM_BASE + 0x88)
 /** HP_SYSTEM_DMA_PRIORITY : R/W; bitpos: [0]; default: 0;
  *  AHB-DMA arbitration priority for command channels between masters connected to
  *  ext_mem_DW_axi
@@ -331,7 +331,7 @@ extern "C" {
 /** HP_SYSTEM_CPU_PERI_PMS_CONF_REG register
  *  CPU Peripherals PMS configuration register
  */
-#define HP_SYSTEM_CPU_PERI_PMS_CONF_REG (DR_REG_HP_BASE + 0x90)
+#define HP_SYSTEM_CPU_PERI_PMS_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0x90)
 /** HP_SYSTEM_CPU_PERI_PMS_EXCEPTION_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear cpu peri_pms_record_reg.
  *  0: No clear
@@ -345,7 +345,7 @@ extern "C" {
 /** HP_SYSTEM_CPU_PERI_PMS_EXCEPTION_INFO_REG register
  *  CPU Peripherals PMS exception info record register
  */
-#define HP_SYSTEM_CPU_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_BASE + 0x94)
+#define HP_SYSTEM_CPU_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_SYSTEM_BASE + 0x94)
 /** HP_SYSTEM_CPU_PERI_PMS_EXCEPTION_DET : RO; bitpos: [0]; default: 0;
  *  Represents whether the cpu peripheral pms has been triggered.
  *  0: No triggered
@@ -381,7 +381,7 @@ extern "C" {
 /** HP_SYSTEM_HP_PERI_PMS_CONF_REG register
  *  HP Peripherals PMS configuration register
  */
-#define HP_SYSTEM_HP_PERI_PMS_CONF_REG (DR_REG_HP_BASE + 0x98)
+#define HP_SYSTEM_HP_PERI_PMS_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0x98)
 /** HP_SYSTEM_HP_PERI_PMS_EXCEPTION_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear hp peri_pms_record_reg.
  *  0: No clear
@@ -395,7 +395,7 @@ extern "C" {
 /** HP_SYSTEM_HP_PERI_PMS_EXCEPTION_INFO_REG register
  *  HP Peripherals PMS exception info record register
  */
-#define HP_SYSTEM_HP_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_BASE + 0x9c)
+#define HP_SYSTEM_HP_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_SYSTEM_BASE + 0x9c)
 /** HP_SYSTEM_HP_PERI_PMS_EXCEPTION_DET : RO; bitpos: [0]; default: 0;
  *  Represents whether the hp peripheral pms has been triggered.
  *  0: No triggered
@@ -431,7 +431,7 @@ extern "C" {
 /** HP_SYSTEM_MODEM_PERI_PMS_CONF_REG register
  *  MODEM Peripherals PMS configuration register
  */
-#define HP_SYSTEM_MODEM_PERI_PMS_CONF_REG (DR_REG_HP_BASE + 0xa0)
+#define HP_SYSTEM_MODEM_PERI_PMS_CONF_REG (DR_REG_HP_SYSTEM_BASE + 0xa0)
 /** HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_CLR : WT; bitpos: [0]; default: 0;
  *  Configures whether or not to clear modem peri_pms_record_reg.
  *  0: No clear
@@ -445,7 +445,7 @@ extern "C" {
 /** HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_INFO_REG register
  *  MODEM Peripherals PMS exception info record register
  */
-#define HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_BASE + 0xa4)
+#define HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_INFO_REG (DR_REG_HP_SYSTEM_BASE + 0xa4)
 /** HP_SYSTEM_MODEM_PERI_PMS_EXCEPTION_DET : RO; bitpos: [0]; default: 0;
  *  Represents whether the modem peripheral pms has been triggered.
  *  0: No triggered
@@ -481,7 +481,7 @@ extern "C" {
 /** HP_SYSTEM_ID_REG register
  *  ID register
  */
-#define HP_SYSTEM_ID_REG (DR_REG_HP_BASE + 0x3dc)
+#define HP_SYSTEM_ID_REG (DR_REG_HP_SYSTEM_BASE + 0x3dc)
 /** HP_SYSTEM_ROM_ID : RO; bitpos: [27:12]; default: 0;
  *  Represents the ROM ID of chip
  */
@@ -493,7 +493,7 @@ extern "C" {
 /** HP_SYSTEM_RST_EN_REG register
  *  PCR clock gating configure register
  */
-#define HP_SYSTEM_RST_EN_REG (DR_REG_HP_BASE + 0x3f0)
+#define HP_SYSTEM_RST_EN_REG (DR_REG_HP_SYSTEM_BASE + 0x3f0)
 /** HP_SYSTEM_HPSYSREG_RST_EN : R/W; bitpos: [0]; default: 0;
  *  Set 0 to reset hp_system_reg module
  */
@@ -505,7 +505,7 @@ extern "C" {
 /** HP_SYSTEM_DATE_REG register
  *  Date control and version control register
  */
-#define HP_SYSTEM_DATE_REG (DR_REG_HP_BASE + 0x3fc)
+#define HP_SYSTEM_DATE_REG (DR_REG_HP_SYSTEM_BASE + 0x3fc)
 /** HP_SYSTEM_DATE : R/W; bitpos: [27:0]; default: 37823056;
  *  Version control register.
  */
