@@ -178,11 +178,8 @@ static void select_rtc_slow_clk(slow_clk_sel_t slow_clk)
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
         if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
-            if (slow_clk == SLOW_CLK_32K_XTAL) {
-                rtc_clk_32k_enable(false);
-            } else if (slow_clk == SLOW_CLK_32K_EXT_OSC) {
-                rtc_clk_32k_disable_external();
-            }
+            rtc_clk_32k_enable(false);
+            rtc_clk_32k_disable_external();
         }
         if (SLOW_CLK_CAL_CYCLES > 0) {
             /* TODO: 32k XTAL oscillator has some frequency drift at startup.
