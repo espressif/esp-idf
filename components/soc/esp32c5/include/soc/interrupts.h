@@ -85,6 +85,8 @@ typedef enum {
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_TX_INTR_SOURCE,
     ETS_PARL_IO_RX_INTR_SOURCE,
+    ETS_SLC0_INTR_SOURCE,
+    ETS_SLC1_INTR_SOURCE,
     ETS_DMA_IN_CH0_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 0, LEVEL*/
     ETS_DMA_IN_CH1_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 1, LEVEL*/
     ETS_DMA_IN_CH2_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 2, LEVEL*/

@@ -119,7 +119,7 @@ mainmenu "Espressif IoT Development Framework Configuration"
         select FREERTOS_UNICORE
         select IDF_TARGET_ARCH_RISCV
         # TODO: [ESPTOOL-1044] remove when stub supported
-        select ESPTOOLPY_NO_STUB
+        select IDF_ENV_BRINGUP
 
     config IDF_TARGET_ESP32P4
         bool

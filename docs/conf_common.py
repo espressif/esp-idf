@@ -285,7 +285,7 @@ ESP32C3_DOCS = ['hw-reference/esp32c3/**', 'api-guides/RF_calibration.rst', 'api
 
 ESP32C2_DOCS = ['api-guides/RF_calibration.rst', 'api-guides/phy.rst']
 
-ESP32C5_DOCS = ['api-guides/phy.rst']
+ESP32C5_DOCS = []  # TODO: [ESP32C5 ECO2] IDF-12823 add back 'api-guides/phy.rst'
 
 ESP32C61_DOCS = ['api-guides/phy.rst']
 
