@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -212,3 +212,15 @@ struct spi_flash_chip_t {
    This pointer can be overwritten with a pointer to a new array, to update the list of known flash chips.
  */
 extern const spi_flash_chip_t **esp_flash_registered_chips;
+
+/**
+* @brief Helper function to check if a specific flash chip driver is linked.
+ *
+ * Logs a warning if the driver for the detected chip is not linked.
+ *
+ * @param chip       Pointer to an `esp_flash_t` structure representing the flash chip instance.
+ *                   This structure typically contains information about the chip's characteristics and state.
+ * @param device_id  A 24-bit value representing the unique identifier (ID) of the flash chip.
+ *                   This ID is used to match the chip against known drivers.
+ */
+void spi_flash_chip_list_check(esp_flash_t *chip, uint32_t device_id);
