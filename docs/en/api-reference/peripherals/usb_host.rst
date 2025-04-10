@@ -403,7 +403,7 @@ UVC
 """
 
 * A host class driver for the USB Video Device Class is distributed as a managed component via the `ESP Component Registry <https://components.espressif.com/component/espressif/usb_host_uvc>`__.
-* :example:`peripherals/usb/host/uvc` demonstrates how to capture video from a USB camera using the `libuvc` library and stream the video over Wi-Fi by hosting a TCP server, with the option to visualize the captured video on a PC using the provided `player.py` script.
+* :example:`peripherals/usb/host/uvc` demonstrates how to capture video frames from a USB camera using the UVC driver.
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
