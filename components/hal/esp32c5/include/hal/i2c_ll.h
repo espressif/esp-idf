@@ -82,11 +82,11 @@ typedef enum {
 
 // Record for Pins usage logs
 
-#define LP_I2C_SCL_PIN_ERR_LOG   "SCL pin can only be configured as GPIO#7"
-#define LP_I2C_SDA_PIN_ERR_LOG   "SDA pin can only be configured as GPIO#6"
+#define LP_I2C_SCL_PIN_ERR_LOG   "SCL pin can only be configured as GPIO#3"
+#define LP_I2C_SDA_PIN_ERR_LOG   "SDA pin can only be configured as GPIO#2"
 
-#define LP_I2C_SDA_IOMUX_PAD 6
-#define LP_I2C_SCL_IOMUX_PAD 7
+#define LP_I2C_SDA_IOMUX_PAD 2
+#define LP_I2C_SCL_IOMUX_PAD 3
 
 /**
  * @brief  Calculate I2C bus frequency
