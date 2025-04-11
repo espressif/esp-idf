@@ -1,7 +1,6 @@
 api-guides/low-power-mode.rst
 api-guides/RF_calibration.rst
 api-guides/deep-sleep-stub.rst
-api-guides/coexist.rst
 api-guides/wifi.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/inc/external-ram-esp32-notes.rst
