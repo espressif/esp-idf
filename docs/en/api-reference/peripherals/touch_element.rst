@@ -34,7 +34,7 @@ The features in relation to the Touch Element library in {IDF_TARGET_NAME} are g
     :align: center
 
     * - Features
-      - ESP32S2
+      - {IDF_TARGET_NAME}
     * - Touch Element waterproof
       - ✔
     * - Touch Element button

@@ -46,7 +46,7 @@
     :SOC_TEMP_SENSOR_SUPPORTED: temp_sensor
     :SOC_TOUCH_SENSOR_SUPPORTED and not esp32p4: touch_pad
     :esp32p4: cap_touch_sens
-    :esp32s2: touch_element
+    :esp32s2 or esp32s3: touch_element
     :SOC_TWAI_SUPPORTED: twai
     uart
     :SOC_USB_OTG_SUPPORTED: usb_device
