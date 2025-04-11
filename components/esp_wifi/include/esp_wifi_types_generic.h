@@ -246,6 +246,7 @@ typedef struct {
     wifi_scan_channel_bitmap_t channel_bitmap;         /**< Channel bitmap for setting specific channels to be scanned.
                                                             Please note that the 'channel' parameter above needs to be set to 0 to allow scanning by bitmap.
                                                             Also, note that only allowed channels configured by wifi_country_t can be scanned. */
+    bool coex_background_scan;                         /**< Enable it to scan return home channel under coexist */
 } wifi_scan_config_t;
 
 /**
