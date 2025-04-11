@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,7 +86,8 @@ typedef enum {
 typedef enum {
     TOUCH_PAD_TIE_OPT_LOW = 0,    /*!<Initial level of charging voltage, low level */
     TOUCH_PAD_TIE_OPT_HIGH = 1,   /*!<Initial level of charging voltage, high level */
-    TOUCH_PAD_TIE_OPT_MAX,
+    TOUCH_PAD_TIE_OPT_FLOAT = 2,  /*!<Initial level of charging voltage, float */
+    TOUCH_PAD_TIE_OPT_MAX,        /*!<The max tie options */
 } touch_tie_opt_t;
 
 /** Touch sensor FSM mode */
@@ -113,7 +114,7 @@ typedef enum {
 /********************************/
 #define TOUCH_PAD_BIT_MASK_ALL              ((1<<SOC_TOUCH_SENSOR_NUM)-1)
 #define TOUCH_PAD_SLOPE_DEFAULT             (TOUCH_PAD_SLOPE_7)
-#define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_LOW)
+#define TOUCH_PAD_TIE_OPT_DEFAULT           (TOUCH_PAD_TIE_OPT_FLOAT)
 #define TOUCH_PAD_BIT_MASK_MAX              (TOUCH_PAD_BIT_MASK_ALL)
 #define TOUCH_PAD_HIGH_VOLTAGE_THRESHOLD    (TOUCH_HVOLT_2V7)
 #define TOUCH_PAD_LOW_VOLTAGE_THRESHOLD     (TOUCH_LVOLT_0V5)

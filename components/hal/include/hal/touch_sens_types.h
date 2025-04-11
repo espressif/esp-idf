@@ -108,8 +108,10 @@ typedef enum {
  * @brief Touch sensor initial voltage before charging
  */
 typedef enum {
-    TOUCH_INIT_CHARGE_VOLT_LOW = 0,         /*!< Tie the initial charge voltage to low */
-    TOUCH_INIT_CHARGE_VOLT_HIGH = 1,        /*!< Tie the initial charge voltage to high */
+    TOUCH_INIT_CHARGE_VOLT_LOW = 0,         /*!< Tie the initial charge voltage to low. */
+    TOUCH_INIT_CHARGE_VOLT_HIGH = 1,        /*!< Tie the initial charge voltage to high. */
+    TOUCH_INIT_CHARGE_VOLT_FLOAT = 2,       /*!< The initial charge voltage will be float. The touch pad will be powered off between two measurements */
+    TOUCH_INIT_CHARGE_VOLT_DEFAULT = TOUCH_INIT_CHARGE_VOLT_FLOAT,       /*!< The initial charge voltage is default to be float. */
 } touch_init_charge_volt_t;
 
 /**

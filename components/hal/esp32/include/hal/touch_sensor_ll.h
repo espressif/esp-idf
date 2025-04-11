@@ -305,7 +305,12 @@ static inline void touch_ll_set_init_charge_voltage(uint32_t touch_num, touch_in
 {
     // Workaround: swap chan 8 and chan 9
     touch_num = TOUCH_LL_CHAN_SWAP(touch_num);
-    RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    if (init_charge_volt == TOUCH_INIT_CHARGE_VOLT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = init_charge_volt;
+    }
 }
 
 /**
@@ -613,7 +618,12 @@ static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *
 static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_t opt)
 {
     touch_pad_t touch_pad_wrap = touch_ll_num_wrap(touch_num);
-    RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
+    if (opt == TOUCH_PAD_TIE_OPT_FLOAT) {
+        RTCIO.touch_pad[touch_pad_wrap].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_pad_wrap].xpd = 1;
+        RTCIO.touch_pad[touch_pad_wrap].tie_opt = opt;
+    }
 }
 
 /**
@@ -625,7 +635,11 @@ static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_
 static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_t *opt)
 {
     touch_pad_t touch_pad_wrap = touch_ll_num_wrap(touch_num);
-    *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_pad_wrap].tie_opt;
+    if (RTCIO.touch_pad[touch_pad_wrap].xpd) {
+        *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_pad_wrap].tie_opt;
+    } else {
+        *opt = TOUCH_PAD_TIE_OPT_FLOAT;
+    }
 }
 
 /**
