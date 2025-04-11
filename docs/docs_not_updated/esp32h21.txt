@@ -149,7 +149,6 @@ api-reference/peripherals/mcpwm.rst
 api-reference/peripherals/usb_host.rst
 api-reference/peripherals/clk_tree.rst
 api-reference/peripherals/camera_driver.rst
-api-reference/peripherals/touch_element.rst
 api-reference/peripherals/adc_oneshot.rst
 api-reference/peripherals/twai.rst
 api-reference/peripherals/etm.rst
