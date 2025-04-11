@@ -121,7 +121,7 @@ TEST_CASE("twai transmit stop resume (loopback)", "[TWAI]")
     twai_onchip_node_config_t node_config = {
         .io_cfg.tx = TEST_TX_GPIO,
         .io_cfg.rx = TEST_TX_GPIO,  // Using same pin for test without transceiver
-        .bit_timing.bitrate = 1000000,
+        .bit_timing.bitrate = 20000,
         .data_timing.bitrate = 4000000,
         .data_timing.ssp_permill = 700, // ssp 70.0%
         .tx_queue_depth = TEST_TWAI_QUEUE_DEPTH,
@@ -130,14 +130,14 @@ TEST_CASE("twai transmit stop resume (loopback)", "[TWAI]")
     };
     TEST_ESP_OK(twai_new_node_onchip(&node_config, &node_hdl));
 
-    // reconfig fd timing to 48M/(12+5+6+1)=2MHz, ssp=20/(12+5+6+1)=83%
+    // reconfig fd timing to 80M/(4+3+2+1)=8MHz, ssp=8/(4+3+2+1)=80%
     twai_timing_advanced_config_t timing_fd = {
         .brp = 1,
-        .prop_seg = 12,
-        .tseg_1 = 5,
-        .tseg_2 = 6,
-        .sjw = 3,
-        .ssp_offset = 20,
+        .prop_seg = 4,
+        .tseg_1 = 3,
+        .tseg_2 = 2,
+        .sjw = 2,
+        .ssp_offset = 8,
     };
     TEST_ESP_OK(twai_node_reconfig_timing(node_hdl, NULL, &timing_fd));
 

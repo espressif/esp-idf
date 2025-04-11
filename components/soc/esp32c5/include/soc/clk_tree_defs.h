@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -422,15 +422,15 @@ typedef enum {
 /**
  * @brief Array initializer for all supported clock sources of TWAI
  */
-#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_RC_FAST}
+#define SOC_TWAI_CLKS {SOC_MOD_CLK_XTAL, SOC_MOD_CLK_PLL_F80M}
 
 /**
  * @brief TWAI clock source
  */
 typedef enum {
     TWAI_CLK_SRC_XTAL = SOC_MOD_CLK_XTAL,           /*!< Select XTAL as the source clock */
-    TWAI_CLK_SRC_RC_FAST = SOC_MOD_CLK_RC_FAST,     /*!< Select RC_FAST as the source clock */
-    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_XTAL,        /*!< Select XTAL as the default clock choice */
+    TWAI_CLK_SRC_PLL_F80M = SOC_MOD_CLK_PLL_F80M,   /*!< Select PLL_80M as the source clock */
+    TWAI_CLK_SRC_DEFAULT = SOC_MOD_CLK_PLL_F80M,    /*!< Select PLL_80M as the default clock choice */
 } soc_periph_twai_clk_src_t;
 
 //////////////////////////////////////////////////ADC///////////////////////////////////////////////////////////////////
