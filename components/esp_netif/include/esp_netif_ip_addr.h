@@ -144,7 +144,7 @@ typedef enum {
  *
  * @return IPv6 type in form of enum esp_ip6_addr_type_t
  */
-esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr);
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(const esp_ip6_addr_t* ip6_addr);
 
 /**
  * @brief  Copy IP addresses

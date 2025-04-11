@@ -2133,7 +2133,7 @@ static void netif_unset_mldv6_flag(esp_netif_t *esp_netif)
 
 #endif
 
-esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(esp_ip6_addr_t* ip6_addr)
+esp_ip6_addr_type_t esp_netif_ip6_get_addr_type(const esp_ip6_addr_t* ip6_addr)
 {
     ip6_addr_t* lwip_ip6_info = (ip6_addr_t*)ip6_addr;
 
