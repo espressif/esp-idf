@@ -63,7 +63,8 @@ TEST_CASE("Test APM violation interrupt: AES", "[apm_violation]")
 TEST_CASE("Test APM violation interrupt: HMAC", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
-    REG_WRITE(HMAC_SET_PARA_KEY_REG, val);
+    val = REG_READ(HMAC_SET_PARA_KEY_REG);
+    TEST_ASSERT_EQUAL(0, val);
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
 }
 
@@ -77,16 +78,15 @@ TEST_CASE("Test APM violation interrupt: DS", "[apm_violation]")
 
 TEST_CASE("Test APM violation interrupt: SHA PCR", "[apm_violation]")
 {
-    uint32_t val = UINT32_MAX;
-    val = REG_READ(PCR_SHA_CONF_REG);
-    TEST_ASSERT_EQUAL(0, val);
+    uint32_t val = 0;
+    REG_WRITE(PCR_SHA_CONF_REG, val);
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
 }
 
-TEST_CASE("Test APM violation interrupt: DS PCR", "[apm_violation]")
+TEST_CASE("Test APM violation interrupt: ECC PCR", "[apm_violation]")
 {
-    uint32_t val = UINT32_MAX;
-    REG_WRITE(PCR_DS_CONF_REG, val);
+    uint32_t val = 0;
+    REG_WRITE(PCR_ECC_CONF_REG, val);
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
 }
 

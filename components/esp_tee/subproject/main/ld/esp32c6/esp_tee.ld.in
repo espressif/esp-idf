@@ -177,6 +177,7 @@ SECTIONS
  * | SHA       | text          | Flash  |
  * | HMAC      | text          | Flash  |
  * | DS        | text          | Flash  |
+ * | ECC       | text          | Flash  |
  * | BROWNOUT  | text          | Flash  |
  * | EFUSE     | text          | Flash  |
  * | LPTIMER   | text          | Flash  |
@@ -196,6 +197,7 @@ SECTIONS
     *libhal.a:sha_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:hmac_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:ds_hal.c*(.literal .text .literal.* .text.*)
+    *libhal.a:ecc_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:brownout_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)

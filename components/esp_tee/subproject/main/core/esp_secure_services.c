@@ -29,6 +29,7 @@
 #include "esp_hmac.h"
 #include "esp_ds.h"
 #include "esp_crypto_periph_clk.h"
+#include "ecc_impl.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -442,6 +443,26 @@ esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
 void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
 {
     esp_crypto_mpi_enable_periph_clk(enable);
+}
+
+/* ---------------------------------------------- ECC ------------------------------------------------- */
+
+int _ss_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)result)) &&
+                      esp_tee_ptr_in_ree((void *)((char *)result + sizeof(ecc_point_t)));
+
+    if (!valid_addr) {
+        return -1;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ecc_point_multiply(point, scalar, result, verify_first);
+}
+
+int _ss_esp_ecc_point_verify(const ecc_point_t *point)
+{
+    return esp_ecc_point_verify(point);
 }
 
 /* ---------------------------------------------- OTA ------------------------------------------------- */

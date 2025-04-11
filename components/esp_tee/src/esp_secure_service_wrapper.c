@@ -342,6 +342,33 @@ void __wrap_esp_crypto_mpi_enable_periph_clk(bool enable)
     esp_tee_service_call(2, SS_ESP_CRYPTO_MPI_ENABLE_PERIPH_CLK, enable);
 }
 
+/* ---------------------------------------------- ECC ------------------------------------------------- */
+
+#define P256_LEN        (256/8)
+#define P192_LEN        (192/8)
+
+typedef struct {
+    uint8_t x[P256_LEN]; /* Little endian order */
+    uint8_t y[P256_LEN]; /* Little endian order */
+    unsigned len;        /* P192_LEN or P256_LEN */
+} ecc_point_t;
+
+int __wrap_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
+{
+    esp_crypto_ecc_lock_acquire();
+    esp_err_t err = esp_tee_service_call(5, SS_ESP_ECC_POINT_MULTIPLY, point, scalar, result, verify_first);
+    esp_crypto_ecc_lock_release();
+    return err;
+}
+
+int __wrap_esp_ecc_point_verify(const ecc_point_t *point)
+{
+    esp_crypto_ecc_lock_acquire();
+    esp_err_t err = esp_tee_service_call(2, SS_ESP_ECC_POINT_VERIFY, point);
+    esp_crypto_ecc_lock_release();
+    return err;
+}
+
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */
 
 void IRAM_ATTR __wrap_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vaddr, uint32_t paddr, uint32_t len, uint32_t *out_len)

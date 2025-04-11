@@ -52,7 +52,8 @@ if(esp_tee_build)
                      "aes_hal.c"
                      "sha_hal.c"
                      "hmac_hal.c"
-                     "ds_hal.c")
+                     "ds_hal.c"
+                     "ecc_hal.c")
 
     if(CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1)
         list(APPEND srcs "spi_flash_hal.c")

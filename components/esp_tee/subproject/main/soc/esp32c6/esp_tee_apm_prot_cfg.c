@@ -107,7 +107,7 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
         .filter_enable   = 1,
     },
     /* Region 6/7: Peripherals [H/W Lock - HMAC] (RW) */
-    /* Protected: AES, SHA, DS, HMAC */
+    /* Protected: AES, SHA, ECC, DS, HMAC */
     {
         .regn_num = 6,
         .regn_start_addr = DR_REG_ATOMIC_BASE,
@@ -118,12 +118,12 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
     {
         .regn_num = 7,
         .regn_start_addr = DR_REG_RSA_BASE,
-        .regn_end_addr   = (DR_REG_DS_BASE - 0x4),
+        .regn_end_addr   = (DR_REG_ECC_MULT_BASE - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
-    /* Region 8/9/10: Peripherals [DS - TEE Controller & APM] (RW) */
-    /* Protected: AES, SHA, DS, HMAC PCR, APM, TEE Controller */
+    /* Region 8/9/10: Peripherals [IO_MUX - TEE Controller & APM] (RW) */
+    /* Protected: AES, SHA, ECC, DS and HMAC PCRs, APM, TEE Controller */
     {
         .regn_num = 8,
         .regn_start_addr = DR_REG_IO_MUX_BASE,
@@ -134,7 +134,7 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
     {
         .regn_num = 9,
         .regn_start_addr = PCR_RSA_CONF_REG,
-        .regn_end_addr   = (PCR_DS_CONF_REG - 0x4),
+        .regn_end_addr   = (PCR_ECC_CONF_REG - 0x4),
         .regn_pms        = 0x6,
         .filter_enable   = 1,
     },
