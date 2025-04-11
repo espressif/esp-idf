@@ -211,6 +211,16 @@ int wpa_auth_for_each_sta(struct wpa_authenticator *wpa_auth,
               int (*cb)(struct wpa_state_machine *sm, void *ctx),
               void *cb_ctx)
 {
+    struct hostapd_data *hapd = hostapd_get_hapd_data();
+    struct sta_info *sta;
+
+    if (hapd == NULL)
+        return 1;
+
+    for (sta = hapd->sta_list; sta; sta = sta->next) {
+         if (sta->wpa_sm && cb(sta->wpa_sm, cb_ctx))
+             return 1;
+    }
     return 0;
 }
 
@@ -395,6 +405,11 @@ struct wpa_authenticator * wpa_init(const u8 *addr,
         os_free(wpa_auth->wpa_ie);
         os_free(wpa_auth);
         return NULL;
+    }
+
+    if (wpa_auth->conf.wpa_group_rekey) {
+        eloop_register_timeout(wpa_auth->conf.wpa_group_rekey,
+                       0, wpa_rekey_gtk, wpa_auth, NULL);
     }
 
 #ifdef CONFIG_IEEE80211R_AP
@@ -2565,6 +2580,7 @@ static int wpa_sm_step(struct wpa_state_machine *sm)
 void wpa_deinit(struct wpa_authenticator *wpa_auth)
 {
     struct wpa_group *group, *prev;
+    eloop_cancel_timeout(wpa_rekey_gtk, wpa_auth, NULL);
 	pmksa_cache_auth_deinit(wpa_auth->pmksa);
     if (wpa_auth->wpa_ie != NULL) {
         os_free(wpa_auth->wpa_ie);
