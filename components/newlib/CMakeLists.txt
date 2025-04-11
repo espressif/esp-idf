@@ -66,6 +66,7 @@ else()
          "src/picolibc/open_memstream.c")
 endif()
 
+set(ldfragments "")
 list(APPEND ldfragments "src/newlib.lf" "src/system_libs.lf")
 
 if(CONFIG_SPIRAM_CACHE_WORKAROUND)
