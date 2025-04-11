@@ -826,7 +826,7 @@
       "description": "Ccache (compiler cache)",
       "export_paths": [
         [
-          "ccache-4.10.2-windows-x86_64"
+          "ccache-4.11.2-windows-x86_64"
         ]
       ],
       "export_vars": {
@@ -854,12 +854,12 @@
       "version_regex": "ccache version ([0-9.]+)",
       "versions": [
         {
-          "name": "4.10.2",
+          "name": "4.11.2",
           "status": "recommended",
           "win64": {
-            "sha256": "6252f081876a9a9f700fae13a5aec5d0d486b28261d7f1f72ac11c7ad9df4da9",
-            "size": 1610890,
-            "url": "https://github.com/ccache/ccache/releases/download/v4.10.2/ccache-4.10.2-windows-x86_64.zip"
+            "sha256": "1f39f3ad5aae3fe915e99ad1302633bc8f6718e58fa7c0de2b0ba7e080f0f08c",
+            "size": 1642225,
+            "url": "https://github.com/ccache/ccache/releases/download/v4.11.2/ccache-4.11.2-windows-x86_64.zip"
           }
         }
       ]
