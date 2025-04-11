@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -383,10 +383,17 @@ static void _buffer_exec(pipe_t *pipe);
  */
 static inline bool _buffer_check_done(pipe_t *pipe)
 {
+    // Only control transfers need to be continued
     if (pipe->ep_char.type != USB_DWC_XFER_TYPE_CTRL) {
         return true;
     }
-    // Only control transfers need to be continued
+#if (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3)
+    // The HW can't handle two transactions with preamble in one frame.
+    // TODO: IDF-15060
+    if (pipe->ep_char.ls_via_fs_hub) {
+        esp_rom_delay_us(1000);
+    }
+#endif // CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3
     dma_buffer_block_t *buffer_inflight = pipe->buffers[pipe->multi_buffer_control.rd_idx];
     return (buffer_inflight->flags.ctrl.cur_stg == 2);
 }
@@ -1616,7 +1623,13 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         ep_char->mps = USB_EP_DESC_GET_MPS(pipe_config->ep_desc);
     }
     ep_char->dev_addr = pipe_config->dev_addr;
-    ep_char->ls_via_fs_hub = (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW);
+    if (pipe_idx > 0) {
+        // TODO: remove warning after IDF-15060
+        if (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW) {
+            ESP_LOGW(HCD_DWC_TAG, "Low-speed, extra delay will be applied in ISR");
+            ep_char->ls_via_fs_hub = 1;
+        }
+    }
     // Calculate the pipe's interval in terms of USB frames
     // @see USB-OTG programming guide chapter 6.5 for more information
     if (type == USB_TRANSFER_TYPE_INTR || type == USB_TRANSFER_TYPE_ISOCHRONOUS) {
