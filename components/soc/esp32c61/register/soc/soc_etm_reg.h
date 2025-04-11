@@ -6022,15 +6022,6 @@ extern "C" {
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_M  (SOC_ETM_ADC_TASK_SAMPLE0_ST_V << SOC_ETM_ADC_TASK_SAMPLE0_ST_S)
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_V  0x00000001U
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_S  4
-/** SOC_ETM_ADC_TASK_SAMPLE1_ST : R/WTC/SS; bitpos: [5]; default: 0;
- *  Represents ADC_TASK_SAMPLE1 trigger status.
- *  0: Not triggered
- *  1: Triggered
- */
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST    (BIT(5))
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_M  (SOC_ETM_ADC_TASK_SAMPLE1_ST_V << SOC_ETM_ADC_TASK_SAMPLE1_ST_S)
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_V  0x00000001U
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_S  5
 /** SOC_ETM_ADC_TASK_START0_ST : R/WTC/SS; bitpos: [6]; default: 0;
  *  Represents ADC_TASK_START0 trigger status.
  *  0: Not triggered
@@ -6180,15 +6171,6 @@ extern "C" {
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_CLR_M  (SOC_ETM_ADC_TASK_SAMPLE0_ST_CLR_V << SOC_ETM_ADC_TASK_SAMPLE0_ST_CLR_S)
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_CLR_V  0x00000001U
 #define SOC_ETM_ADC_TASK_SAMPLE0_ST_CLR_S  4
-/** SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR : WT; bitpos: [5]; default: 0;
- *  Configures whether or not to clear ADC_TASK_SAMPLE1 trigger status.
- *  0: Invalid. No effect
- *  1: Clear
- */
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR    (BIT(5))
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR_M  (SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR_V << SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR_S)
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR_V  0x00000001U
-#define SOC_ETM_ADC_TASK_SAMPLE1_ST_CLR_S  5
 /** SOC_ETM_ADC_TASK_START0_ST_CLR : WT; bitpos: [6]; default: 0;
  *  Configures whether or not to clear ADC_TASK_START0 trigger status.
  *  0: Invalid. No effect
