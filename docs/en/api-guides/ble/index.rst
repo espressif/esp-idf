@@ -26,6 +26,15 @@ Get Started
    get-started/ble-connection
    get-started/ble-data-exchange
 
+***************
+Security
+***************
+
+.. toctree::
+   :maxdepth: 2
+
+   smp
+
 **********
 Profile
 **********

@@ -41,7 +41,7 @@ Bluetooth Channels
 
 Similar to Bluetooth Classic, the Bluetooth SIG has adopted Adaptive Frequency Hopping (AFH) in Bluetooth LE to address data collision issues. This technology can assess the congestion of RF channels and avoid crowded channels through frequency hopping to improve communication quality. However, unlike Bluetooth Classic, Bluetooth LE uses the 2.4 GHz ISM band divided into 40 RF channels, each with a 2 MHz bandwidth, ranging from 2402 MHz to 2480 MHz, while Bluetooth Classic uses 79 RF channels, each with a 1 MHz bandwidth.
 
-In the Bluetooth LE 4.2 standard, RF channels are categorized into two types, as follows:
+In Bluetooth Core Specification 4.2, RF channels are categorized into two types, as follows:
 
 .. list-table::
     :align: center
@@ -67,7 +67,7 @@ During advertising, the advertiser will send advertising packets on the three ad
 Extended Advertising Features
 ##################################
 
-In the Bluetooth LE 4.2 standard, advertising packets are limited to a maximum of 31 bytes, which restricts the functionality of advertising. To enhance the capability of advertising, Bluetooth 5.0 introduced the Extended Advertising feature. This feature divides advertising packets into:
+In Bluetooth Core Specification 4.2, advertising packets are limited to a maximum of 31 bytes, which restricts the functionality of advertising. To enhance the capability of advertising, Bluetooth 5.0 introduced the Extended Advertising feature. This feature divides advertising packets into:
 
 .. list-table::
     :align: center
@@ -124,7 +124,7 @@ What information is included in the advertising packet?
 Advertising Packet Structure
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-For the third question, regarding the information contained in the advertising packet, the Bluetooth LE 4.2 standard defines the format of the advertising packet, as shown in the diagram below:
+For the third question, regarding the information contained in the advertising packet, Bluetooth Core Specification 4.2 defines the format of the advertising packet, as shown in the diagram below:
 
 
 .. _adv_packet_structure:
@@ -134,7 +134,7 @@ For the third question, regarding the information contained in the advertising p
     :scale: 35%
     :alt: Advertising Packet Structure
 
-    Bluetooth LE 4.2 Advertising Packet Structure
+    Advertising Packet Structure in Bluetooth Core Specification 4.2
 
 
 Let’s break it down step by step. The outer layer of an advertising packet contains four parts, which are:
@@ -336,7 +336,7 @@ For devices using random private addresses to communicate with trusted devices, 
     *   -   Non-resolvable Random Private Address
         -   Completely random and rarely used, as it cannot be resolved and is only meant to prevent tracking
 
-Let's look at the **advertising data**. The format of an advertising data structure is defined as follows:
+Let's look at the advertising data. The format of an advertising data structure is defined as follows:
 
 .. list-table::
     :align: center
@@ -361,6 +361,148 @@ Let's look at the **advertising data**. The format of an advertising data struct
         -
 
 
+Advertising Process
+^^^^^^^^^^^^^^^^^^^^^
+
+Advertising With a Public Address
+####################################
+
+When using a public address for advertising, set the ``own_addr_type`` of ``esp_ble_adv_params_t`` to ``BLE_ADDR_TYPE_PUBLIC``. The advertising process flowchart is as follows (*click to enlarge*):
+
+
+.. seqdiag::
+    :caption: Advertising With a Public Address
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-public-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 14;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_public"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
+Advertising With a Resolvable Random Private Address
+##########################################################
+
+When using a resolvable random private address for advertising, the underlying protocol stack updates the advertising address when the resolvable random private address times out. The default timeout is set to 15 minutes. The timeout duration for the resolvable random private address can be configured using the ``BT_BLE_RPA_TIMEOUT`` option in menuconfig. Set the ``own_addr_type`` of ``esp_ble_adv_params_t`` to ``BLE_ADDR_TYPE_RPA_PUBLIC`` or ``BLE_ADDR_TYPE_RPA_RANDOM``. The advertising process flowchart is as follows (*click to enlarge*):
+
+
+.. seqdiag::
+    :caption: Advertising With a Resolvable Random Private Address
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-resolvable-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 14;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_local_privacy"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_rpa_public or ble_addr_type_rpa_random"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
+.. note::
+
+   When advertising with a resolvable random private address, advertising should start only after the ``esp_ble_gap_config_local_privacy`` event returns. Set ``own_addr_type`` to ``BLE_ADDR_TYPE_RPA_PUBLIC`` or ``BLE_ADDR_TYPE_RPA_RANDOM``.
+
+   To use ``BLE_ADDR_TYPE_RPA_RANDOM``, a random static address must be set through the ``esp_ble_gap_set_rand_addr`` API. This step is not required for ``BLE_ADDR_TYPE_RPA_PUBLIC``.
+
+   ``BLE_ADDR_TYPE_RPA_PUBLIC`` operates as follows: The controller generates a Resolvable Random Private Address (RPA) based on the local Identity Resolving Key (IRK) from the resolving list. If no matching entry is found in the resolving list, the public address is used.
+
+   For ``BLE_ADDR_TYPE_RPA_RANDOM``, If no matching entry is found in the resolving list, a random static address is used.
+
+
+Advertising with a Random Static Address
+###########################################
+
+Similar to advertising with a resolvable random private address, advertising with a random static address requires setting the ``own_addr_type`` of ``esp_ble_adv_params_t`` to ``BLE_ADDR_TYPE_RANDOM``. The advertising process flowchart is as follows (*click to enlarge*):
+
+
+.. seqdiag::
+    :caption: Advertising With a Random Static Address
+    :align: center
+    :scale: 200%
+
+    seqdiag adv-random-addr {
+        activation = none;
+        edge_length = 160;
+        span_height = 20;
+        default_shape = roundedbox;
+        default_fontsize = 14;
+
+        "Input\n[Advertiser]";
+        "API\n[Advertiser]";
+        "LLM\n[Advertiser]";
+        "LLM\n[Scanner]";
+        "API\n[Scanner]";
+        "Output\n[Scanner]";
+
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_device_name"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_set_rand_addr"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends set rand address HCI command to LL layer"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns set rand address event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_set_static_rand_addr_evt"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends config adv data HCI command to LL layer"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_config_adv_data"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="return set adv data event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="calls\n esp_gap_ble_adv_data_set_complete_evt"];
+        "Input\n[Advertiser]" -> "API\n[Advertiser]" [label="calls\n esp_ble_gap_start_advertising to start advertising; sets the own_addr_type parameter to ble_addr_type_random"];
+        "API\n[Advertiser]" -> "LLM\n[Advertiser]" [label="sends start adv HCI command to LL layer"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "LLM\n[Advertiser]" -> "LLM\n[Scanner]" [label="advertising event"];
+        "API\n[Advertiser]" <- "LLM\n[Advertiser]" [label="returns start adv event"];
+        "Input\n[Advertiser]" <- "API\n[Advertiser]" [label="returns\n esp_gap_ble_adv_start_complete_evt"];
+        "LLM\n[Scanner]" -> "API\n[Scanner]";
+        "API\n[Scanner]" -> "Output\n[Scanner]" [label="esp_gap_ble_scan_result_evt"];
+    }
+
+
 Basic Concepts of Scanning
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -370,8 +512,7 @@ Similar to the advertising process, scanning also raises three questions:
 2. When to scan and for how long? (When?)
 3. What to do during scanning? (What?)
 
-For Bluetooth LE 4.2 devices, the advertiser only sends data on the advertising channels, which are channels 37-39. For Bluetooth LE 5.0 devices, if the advertiser has enabled extended advertising, it sends `ADV_EXT_IND` on the primary advertising channels and `AUX_ADV_IND` on the secondary advertising channels.
-Thus, for Bluetooth LE 4.2 devices, scanners only need to receive advertising data on advertising channels. For Bluetooth LE 5.0 devices, scanners must first receive the `ADV_EXT_IND` on the primary advertising channels and, if it indicates a secondary channel, move to the corresponding secondary channel to receive the `AUX_ADV_IND`.
+For Bluetooth LE 4.2 devices, the advertiser only sends data on the advertising channels, which are channels 37-39. For Bluetooth LE 5.0 devices, if the advertiser has enabled extended advertising, it sends `ADV_EXT_IND` on the primary advertising channels and `AUX_ADV_IND` on the secondary advertising channels. Thus, for Bluetooth LE 4.2 devices, scanners only need to receive advertising data on advertising channels. For Bluetooth LE 5.0 devices, scanners must first receive the `ADV_EXT_IND` on the primary advertising channels and, if it indicates a secondary channel, move to the corresponding secondary channel to receive the `AUX_ADV_IND`.
 
 
 Scan Window and Scan Interval

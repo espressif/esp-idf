@@ -3,7 +3,7 @@
 
 :link_to_translation:`en:[English]`
 
-本文档为低功耗蓝牙 (Bluetooth Low Energy, Bluetooth LE) 入门教程其四，旨在对 Bluetooth LE 连接中的数据交换过程进行简要介绍。随后，本教程会结合 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，基于 NimBLE 主机层协议栈，对 GATT 服务器的代码实现进行介绍。
+本文档为低功耗蓝牙 (Bluetooth LE) 入门教程其四，旨在对低功耗蓝牙连接中的数据交换过程进行简要介绍。随后，本教程会结合 :example:`NimBLE_GATT_Server <bluetooth/ble_get_started/nimble/NimBLE_GATT_Server>` 例程，基于 NimBLE 主机层协议栈，对 GATT 服务器的代码实现进行介绍。
 
 
 学习目标
@@ -17,7 +17,7 @@
 GATT 数据特征与服务
 ----------------------------------
 
-GATT 服务是 Bluetooth LE 连接中两个设备进行数据交换的基础设施，其最小数据单元是属性。在 :ref:`数据表示与交换 <gatt_att_introduction>` 中，我们对 ATT 层的属性以及 GATT 层的特征数据、服务与规范进行了简要介绍。下面我们对基于属性的数据结构细节进行说明。
+GATT 服务是低功耗蓝牙连接中两个设备进行数据交换的基础设施，其最小数据单元是属性。在 :ref:`数据表示与交换 <gatt_att_introduction>` 中，我们对 ATT 层的属性以及 GATT 层的特征数据、服务与规范进行了简要介绍。下面我们对基于属性的数据结构细节进行说明。
 
 
 属性
@@ -46,7 +46,7 @@ GATT 服务是 Bluetooth LE 连接中两个设备进行数据交换的基础设�
         -   值
         -   实际用户数据或另一属性的元数据
 
-Bluetooth LE 中存在两种类型的 UUID ，如下
+低功耗蓝牙中存在两种类型的 UUID ，如下
 
 1. SIG 定义的 16 位 UUID
 2. 厂商自定义的 128 位 UUID
@@ -74,7 +74,7 @@ Bluetooth LE 中存在两种类型的 UUID ，如下
         -   外观 (Appearance)
         -   `0x2A01`
 
-事实上，这些服务和特征数据的定义也由 SIG 一并给出。例如心率测量值 (Heart Rate Measurement) 的值中必须含有标志位、心率测量值场，可以含有能量拓展场、 RR-间隔场以及传输间隔场等。所以，使用 SIG 定义的 UUID 使得不同厂商的 Bluetooth LE 设备之间可以识别对方的服务或特征数据，实现跨厂商的 Bluetooth LE 设备通信。
+事实上，这些服务和特征数据的定义也由 SIG 一并给出。例如心率测量值 (Heart Rate Measurement) 的值中必须含有标志位、心率测量值场，可以含有能量拓展场、 RR-间隔场以及传输间隔场等。所以，使用 SIG 定义的 UUID 使得不同厂商的低功耗蓝牙设备之间可以识别对方的服务或特征数据，实现跨厂商的低功耗蓝牙设备通信。
 
 厂商自定义的 128 位 UUID 则用于满足厂商开发私有服务或数据特征的需求，例如本例程中 LED 特征数据的 UUID 为 `0x00001525-1212-EFDE-1523-785FEABCD123`，是一个厂商自定义的 128 位 UUID 。
 

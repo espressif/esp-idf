@@ -7,6 +7,7 @@ API Guides
 
    app_trace
    startup
+   :SOC_BT_SUPPORTED: bt-architecture/index
    :SOC_BT_CLASSIC_SUPPORTED: classic-bt/index
    :SOC_BLE_SUPPORTED: ble/index
    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh/ble-mesh-index

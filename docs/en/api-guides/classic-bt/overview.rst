@@ -1,4 +1,4 @@
-Introduction
+Overview
 =============
 
 :link_to_translation:`zh_CN:[中文]`
@@ -9,7 +9,7 @@ This document provides an architecture overview of the Bluetooth Classic stack i
 
     {IDF_TARGET_NAME} supports Dual-Mode Bluetooth 4.2.
 
-The Bluetooth Classic stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The table below shows its architecture.
+The Bluetooth Classic stack in ESP-IDF is a layered architecture that enables Bluetooth functionality on {IDF_TARGET_NAME} chip series. The figure below shows its architecture.
 
 .. only:: esp32
 
@@ -20,29 +20,6 @@ The Bluetooth Classic stack in ESP-IDF is a layered architecture that enables Bl
 
         {IDF_TARGET_NAME} Bluetooth Classic Stack Architecture
 
-The table below shows whether the Bluetooth Classic Controller are supported in a specific chip series.
-
-.. list-table::
-    :width: 100%
-    :widths: auto
-    :header-rows: 1
-
-    * - Chip Series
-      - Controller
-    * - ESP32
-      - Y
-    * - ESP32-S2
-      - \–
-    * - ESP32-S3
-      - \–
-    * - ESP32-C2
-      - \–
-    * - ESP32-C3
-      - \-
-    * - ESP32-C6
-      - \-
-    * - ESP32-H2
-      - \-
 
 The following sections briefly describe each layer and provide quick links to the related documents and application examples.
 

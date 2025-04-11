@@ -26,6 +26,15 @@
    get-started/ble-connection
    get-started/ble-data-exchange
 
+***************
+安全
+***************
+
+.. toctree::
+   :maxdepth: 2
+
+   smp
+
 **********
 蓝牙规范
 **********
