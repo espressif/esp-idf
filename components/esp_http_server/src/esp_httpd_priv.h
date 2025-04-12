@@ -132,6 +132,15 @@ struct httpd_data {
     httpd_err_handler_func_t *err_handler_fns;
 };
 
+/**
+ * @brief Options for receiving HTTP request data
+ */
+typedef enum {
+    HTTPD_RECV_OPT_NONE               = 0,
+    HTTPD_RECV_OPT_HALT_AFTER_PENDING = 1,   /*!< Halt immediately after receiving from pending buffer */
+    HTTPD_RECV_OPT_BLOCKING           = 2,   /*!< Receive blocking (don't return partial length) */
+} httpd_recv_opt_t;
+
 /******************* Group : Session Management ********************/
 /** @name Session Management
  * Functions related to HTTP session management
@@ -422,22 +431,27 @@ int httpd_send(httpd_req_t *req, const char *buf, size_t buf_len);
  *
  * @note    The exposed API httpd_recv() is simply this function with last parameter
  *          set as false. This function is used internally during reception and
- *          processing of a new request. The option to halt after receiving pending
- *          data prevents the server from requesting more data than is needed for
- *          completing a packet in case when all the remaining part of the packet is
- *          in the pending buffer.
+ *          processing of a new request.
+ *
+ *          There are 2 options available that affect the behavior of the function:
+ *          - HTTPD_RECV_OPT_HALT_AFTER_PENDING
+ *            The option to halt after receiving pending data prevents the server from
+ *            requesting more data than is needed for completing a packet in case when
+ *            all the remaining part of the packet is in the pending buffer.
+ *
+ *          - HTTPD_RECV_OPT_BLOCKING
+ *            The option to not return until the `buf_len` bytes have been read.
  *
  * @param[in]  req    Pointer to new HTTP request which only has the socket descriptor
  * @param[out] buf    Pointer to the buffer which will be filled with the received data
  * @param[in] buf_len Length of the buffer
- * @param[in] halt_after_pending When set true, halts immediately after receiving from
- *                               pending buffer
+ * @param[in] opt     Receive option
  *
  * @return
  *  - Length of data : if successful
  *  - ESP_FAIL       : if failed
  */
-int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, bool halt_after_pending);
+int httpd_recv_with_opt(httpd_req_t *r, char *buf, size_t buf_len, httpd_recv_opt_t opt);
 
 /**
  * @brief   For un-receiving HTTP request data
@@ -510,7 +524,7 @@ int httpd_default_recv(httpd_handle_t hd, int sockfd, char *buf, size_t buf_len,
  * @param[in] req                       Pointer to handshake request that will be handled
  * @param[in] supported_subprotocol     Pointer to the subprotocol supported by this URI
  * @return
- *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_OK                        : When handshake is successful
  *  - ESP_ERR_NOT_FOUND             : When some headers (Sec-WebSocket-*) are not found
  *  - ESP_ERR_INVALID_VERSION       : The WebSocket version is not "13"
  *  - ESP_ERR_INVALID_STATE         : Handshake was done beforehand
@@ -525,7 +539,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
  *
  * @param[in] req    Pointer to handshake request that will be handled
  * @return
- *  - ESP_OK                        : When handshake is sucessful
+ *  - ESP_OK                        : When handshake is successful
  *  - ESP_ERR_INVALID_ARG           : Argument is invalid (null or non-WebSocket)
  *  - ESP_ERR_INVALID_STATE         : Received only some parts of a control frame
  *  - ESP_FAIL                      : Socket failures
