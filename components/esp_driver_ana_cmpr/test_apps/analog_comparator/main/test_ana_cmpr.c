@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "test_ana_cmpr.h"
 
-TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
+TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
 {
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
@@ -45,10 +45,11 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     config.ref_src = ANA_CMPR_REF_SRC_EXTERNAL;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_del_unit(NULL));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
 
-TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
+TEST_CASE("ana_cmpr internal reference", "[ana_cmpr]")
 {
     uint32_t cnt = 0;
     ana_cmpr_handle_t cmpr = NULL;
@@ -57,28 +58,29 @@ TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
         .cross_type = ANA_CMPR_CROSS_ANY,
-        .flags.io_loop_back = 1,
     };
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
-    int src_chan = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID);
+    int src_chan_io = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID, 0);
     ana_cmpr_internal_ref_config_t ref_cfg = {
         .ref_volt = ANA_CMPR_REF_VOLT_50_PCT_VDD,
     };
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ana_cmpr_debounce_config_t dbc_cfg = {
-        .wait_us = 10.0,
+        .wait_us = 10,
     };
     TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
     ana_cmpr_event_callbacks_t cbs = {
         .on_cross = test_ana_cmpr_on_cross_callback,
     };
 
+    printf("register ana_cmpr event callbacks\r\n");
     TEST_ESP_OK(ana_cmpr_register_event_callbacks(cmpr, &cbs, &cnt));
     TEST_ESP_OK(ana_cmpr_enable(cmpr));
     cnt = 0;
     for (uint32_t i = 1; i <= 10; i++) {
-        test_simulate_src_signal(src_chan, i % 2);
-        esp_rom_delay_us(100);
+        gpio_set_level(src_chan_io, i % 2);
+        esp_rom_delay_us(100); // must be larger than the debounce time
+        // we assume the cross event was triggered already, and the value of cnt should be updated
         TEST_ASSERT_EQUAL_UINT32(i, cnt);
     }
     TEST_ESP_OK(ana_cmpr_disable(cmpr));

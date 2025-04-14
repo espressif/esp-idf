@@ -5,3 +5,5 @@ entries:
         ana_cmpr: ana_cmpr_set_internal_reference (noflash)
         ana_cmpr: ana_cmpr_set_debounce (noflash)
         ana_cmpr: ana_cmpr_set_cross_type (noflash)
+    if ANA_CMPR_ISR_HANDLER_IN_IRAM = y:
+        ana_cmpr: ana_cmpr_default_intr_handler (noflash)

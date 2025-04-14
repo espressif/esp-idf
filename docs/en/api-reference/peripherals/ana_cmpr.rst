@@ -141,7 +141,7 @@ Currently it supports :cpp:member:`ana_cmpr_event_callbacks_t::on_cross`, and it
 
 .. note::
 
-    When :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` is enabled, you should guarantee that the callback context and involved data are in internal RAM by adding the attribute ``IRAM_ATTR`` (See more in :ref:`anacmpr-iram-safe`).
+    When :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` is enabled, you should guarantee that the callback context and involved data are in internal RAM by adding the attribute ``IRAM_ATTR`` (See more in :ref:`anacmpr-iram-safe`).
 
 .. _anacmpr-enable-and-disable-unit:
 
@@ -171,7 +171,7 @@ IRAM Safe
 
 By default, the analog comparator interrupt will be deferred when the cache is disabled for reasons like programming or erasing the flash. Thus the alarm interrupt will not get executed in time, which is not expected in a real-time application.
 
-There is a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` that:
+There is a Kconfig option :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` that:
 
 1. Enables the interrupt being serviced even when cache is disabled.
 2. Places all functions that used by the ISR into IRAM. [1]_
@@ -205,7 +205,7 @@ Other functions that take :cpp:type:`ana_cmpr_handle_t` as the first positional 
 Kconfig Options
 ^^^^^^^^^^^^^^^
 
-- :ref:`CONFIG_ANA_CMPR_ISR_IRAM_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`anacmpr-iram-safe` for more information.
+- :ref:`CONFIG_ANA_CMPR_ISR_CACHE_SAFE` controls whether the default ISR handler can work when cache is disabled. See :ref:`anacmpr-iram-safe` for more information.
 - :ref:`CONFIG_ANA_CMPR_CTRL_FUNC_IN_IRAM` controls where to place the analog comparator control functions (IRAM or flash). See :ref:`anacmpr-iram-safe` for more information.
 - :ref:`CONFIG_ANA_CMPR_ENABLE_DEBUG_LOG` is used to enable the debug log output. Enabling this option increases the firmware binary size.
 

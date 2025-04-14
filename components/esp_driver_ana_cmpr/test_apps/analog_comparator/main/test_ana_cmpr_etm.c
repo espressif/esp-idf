@@ -1,22 +1,18 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <stdio.h>
 #include <inttypes.h>
-#include "unity.h"
-#include "unity_test_utils.h"
 #include "esp_attr.h"
 #include "esp_etm.h"
 #include "driver/gpio.h"
 #include "driver/gptimer.h"
-#include "driver/ana_cmpr.h"
 #include "driver/gptimer_etm.h"
-#include "driver/ana_cmpr_etm.h"
+#include "test_ana_cmpr.h"
 
-#define TEST_ANA_CMPR_UNIT  0
 #define TEST_TIME_US        5000
 
 static gptimer_handle_t test_ana_cmpr_gptimer_init(void)
@@ -44,7 +40,7 @@ static ana_cmpr_handle_t test_ana_cmpr_init(void)
     ana_cmpr_handle_t cmpr = NULL;
 
     ana_cmpr_config_t config = {
-        .unit = TEST_ANA_CMPR_UNIT,
+        .unit = TEST_ANA_CMPR_UNIT_ID,
         .clk_src = ANA_CMPR_CLK_SRC_DEFAULT,
         .ref_src = ANA_CMPR_REF_SRC_INTERNAL,
         .cross_type = ANA_CMPR_CROSS_ANY,
@@ -69,22 +65,6 @@ static void test_ana_cmpr_deinit(ana_cmpr_handle_t cmpr)
 {
     TEST_ESP_OK(ana_cmpr_disable(cmpr));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
-}
-
-static int test_ana_cmpr_src_gpio_init(void)
-{
-    int gpio_num = -1;
-    TEST_ESP_OK(ana_cmpr_get_gpio(TEST_ANA_CMPR_UNIT, ANA_CMPR_SOURCE_CHAN, &gpio_num));
-    gpio_config_t io_conf = {
-        .intr_type = GPIO_INTR_DISABLE,
-        .mode = GPIO_MODE_OUTPUT,
-        .pin_bit_mask = (1ULL << gpio_num),
-        .pull_down_en = false,
-        .pull_up_en = false,
-    };
-    gpio_config(&io_conf);
-    gpio_set_level(gpio_num, 1);
-    return gpio_num;
 }
 
 typedef struct {
@@ -145,14 +125,17 @@ static void test_ana_cmpr_deinit_etm(test_ana_cmpr_etm_handles_t handles)
     TEST_ESP_OK(esp_etm_del_channel(handles.etm_neg_handle));
 }
 
-TEST_CASE("analog_comparator_etm_event", "[etm]")
+TEST_CASE("ana_cmpr etm event", "[ana_cmpr][etm]")
 {
     gptimer_handle_t gptimer = test_ana_cmpr_gptimer_init();
     ana_cmpr_handle_t cmpr = test_ana_cmpr_init();
-    int src_gpio = test_ana_cmpr_src_gpio_init();
+    int src_gpio = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID, 1);
     test_ana_cmpr_etm_handles_t handles = test_ana_cmpr_init_etm(cmpr, gptimer);
 
     // triggers a negative pulse, whose duration is ~TEST_TIME_US
+    // negedge triggers the gptimer to start task
+    // posedge triggers the gptimer to stop task
+    // gptimer will record the time between the negedge and posedge
     gpio_set_level(src_gpio, 0);
     esp_rom_delay_us(TEST_TIME_US);
     gpio_set_level(src_gpio, 1);

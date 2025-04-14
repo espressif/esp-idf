@@ -23,7 +23,7 @@ void example_init_monitor_gpio(void)
 
 void app_main(void)
 {
-#if CONFIG_EXAMPLE_USE_ETM
+#if CONFIG_EXAMPLE_MONITOR_IO_FROM_ETM
     example_analog_comparator_etm_app();
 #else
     example_analog_comparator_intr_app();

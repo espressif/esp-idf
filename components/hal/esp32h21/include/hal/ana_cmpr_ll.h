@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,23 +11,19 @@
 #include "hal/assert.h"
 #include "hal/ana_cmpr_types.h"
 #include "soc/ana_cmpr_struct.h"
-#include "soc/soc_etm_source.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
-#define ANALOG_CMPR_LL_GET_UNIT(hw)     ((hw) == (&ANALOG_CMPR[0]) ? 0 : 1)
+#define ANALOG_CMPR_LL_GET_UNIT(hw)     (0)
 
 #define ANALOG_CMPR_LL_NEG_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 0))
 #define ANALOG_CMPR_LL_POS_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 1))
 #define ANALOG_CMPR_LL_ANY_CROSS_MASK(unit)   (1UL << ((int)unit * 3 + 2))
 
 #define ANALOG_CMPR_LL_ALL_INTR_MASK(unit)   (ANALOG_CMPR_LL_NEG_CROSS_MASK(unit) | ANALOG_CMPR_LL_POS_CROSS_MASK(unit) | ANALOG_CMPR_LL_ANY_CROSS_MASK(unit))
-
-#define ANALOG_CMPR_LL_ETM_SOURCE(unit, type)   (GPIO_EVT_ZERO_DET_POS0 + (unit) * 2 + (type))
-
 
 /**
  * @brief Enable analog comparator
@@ -37,7 +33,7 @@ extern "C" {
  */
 static inline void analog_cmpr_ll_enable(analog_cmpr_dev_t *hw, bool en)
 {
-    hw->pad_comp_config->xpd_comp = en;
+    hw->pad_comp_config->ext_xpd_comp_0 = en;
 }
 
 /**
@@ -49,7 +45,7 @@ static inline void analog_cmpr_ll_enable(analog_cmpr_dev_t *hw, bool en)
 __attribute__((always_inline))
 static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw, uint32_t volt_level)
 {
-    hw->pad_comp_config->dref_comp = volt_level;
+    hw->pad_comp_config->ext_dref_comp_0 = volt_level;
 }
 
 /**
@@ -60,7 +56,7 @@ static inline void analog_cmpr_ll_set_internal_ref_voltage(analog_cmpr_dev_t *hw
  */
 static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *hw)
 {
-    return hw->pad_comp_config->dref_comp * 0.1F;
+    return hw->pad_comp_config->ext_dref_comp_0 * 0.1F;
 }
 
 /**
@@ -73,7 +69,7 @@ static inline float analog_cmpr_ll_get_internal_ref_voltage(analog_cmpr_dev_t *h
  */
 static inline void analog_cmpr_ll_set_ref_source(analog_cmpr_dev_t *hw, ana_cmpr_ref_voltage_t ref_src)
 {
-    hw->pad_comp_config->mode_comp = ref_src;
+    hw->pad_comp_config->ext_mode_comp_0 = ref_src;
 }
 
 /**
@@ -112,7 +108,7 @@ static inline uint32_t analog_cmpr_ll_get_intr_mask_by_type(analog_cmpr_dev_t *h
 __attribute__((always_inline))
 static inline void analog_cmpr_ll_set_debounce_cycle(analog_cmpr_dev_t *hw, uint32_t cycle)
 {
-    hw->pad_comp_filter->zero_det_filter_cnt = cycle;
+    hw->pad_comp_filter->ext_zero_det_filter_cnt_0 = cycle;
 }
 
 /**
