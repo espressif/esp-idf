@@ -476,6 +476,9 @@ static esp_err_t s_parlio_rx_unit_init_dma(parlio_rx_unit_handle_t rx_unit)
     /* Allocate and connect the GDMA channel */
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_PARLIO_ISR_IRAM_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &rx_unit->dma_chan), TAG, "allocate RX DMA channel failed");
     gdma_connect(rx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));
@@ -974,7 +977,7 @@ esp_err_t parlio_rx_unit_receive(parlio_rx_unit_handle_t rx_unit,
         ESP_RETURN_ON_FALSE(payload_size >= 2 * alignment, ESP_ERR_INVALID_ARG, TAG, "The payload size should greater than %"PRIu32, 2 * alignment);
     }
 #endif
-#if CONFIG_GDMA_ISR_IRAM_SAFE
+#if CONFIG_PARLIO_ISR_IRAM_SAFE
     ESP_RETURN_ON_FALSE(esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");
 #else
     ESP_RETURN_ON_FALSE(recv_cfg->flags.indirect_mount || esp_ptr_internal(payload), ESP_ERR_INVALID_ARG, TAG, "payload not in internal RAM");

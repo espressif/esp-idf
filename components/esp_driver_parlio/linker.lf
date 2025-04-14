@@ -1,4 +1,4 @@
-[mapping:parlio_driver_gdma]
+[mapping:parlio_driver_gdma_link]
 archive: libesp_hw_support.a
 entries:
     if PARLIO_ISR_IRAM_SAFE:
