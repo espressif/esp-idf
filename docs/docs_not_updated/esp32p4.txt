@@ -5,7 +5,6 @@ api-guides/wifi.rst
 api-guides/usb-otg-console.rst
 api-guides/esp-wifi-mesh.rst
 api-guides/wifi-security.rst
-api-reference/peripherals/touch_element.rst
 api-reference/peripherals/touch_pad.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/sd_pullup_requirements.rst

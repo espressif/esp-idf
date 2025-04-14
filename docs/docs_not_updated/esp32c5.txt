@@ -25,7 +25,6 @@ api-reference/storage/index.rst
 api-reference/storage/nvs_partition_parse.rst
 api-reference/peripherals/twai.rst
 api-reference/peripherals/gptimer.rst
-api-reference/peripherals/touch_element.rst
 api-reference/peripherals/lcd.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/spi_features.rst

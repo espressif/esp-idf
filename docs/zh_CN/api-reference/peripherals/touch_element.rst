@@ -34,7 +34,7 @@
     :align: center
 
     * - 功能
-      - ESP32S2
+      - {IDF_TARGET_NAME}
     * - 防水
       - ✔
     * - 按键
