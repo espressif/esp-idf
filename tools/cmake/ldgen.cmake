@@ -33,6 +33,10 @@ endfunction()
 # recursively, and append it to the out_list. The 'target' argument is
 # typically an executable.
 #
+# TODO: In CMake 4.1 and later, LINK_LIBRARIES property is evaluated recursively,
+# so this logic can be skipped if we are running a recent-enough CMake.
+# https://gitlab.kitware.com/cmake/cmake/-/commit/b3da9c6d6054711c5075cc3405fb95aa065ea014
+#
 function(__ldgen_get_lib_deps_of_target target out_list_var)
     set(out_list ${${out_list_var}})
     if(target IN_LIST out_list)
@@ -45,7 +49,16 @@ function(__ldgen_get_lib_deps_of_target target out_list_var)
     list(APPEND out_list ${target})
     set(${out_list_var} ${out_list} PARENT_SCOPE)
 
-    get_target_property(target_deps ${target} LINK_LIBRARIES)
+    get_target_property(lib_type ${target} TYPE)
+    set(library_prop_name "LINK_LIBRARIES")
+    if(lib_type STREQUAL "INTERFACE_LIBRARY")
+        # CMake didn't allow setting or querying non-whitelisted properties on
+        # INTERFACE_LIBRARY targets until version 3.19:
+        # https://gitlab.kitware.com/cmake/cmake/-/commit/afb998704e67d3d3ce5b24c112cb06e770fca78d
+        set(library_prop_name "INTERFACE_LINK_LIBRARIES")
+    endif()
+
+    get_target_property(target_deps ${target} ${library_prop_name})
     if(NOT target_deps)
         # This target has no dependencies, nothing to do.
         return()
