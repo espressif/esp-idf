@@ -13,7 +13,7 @@ def test_usb_host_msc_example(dut: Dut) -> None:
     max_packet_size = int(dut.expect(r'wMaxPacketSize (\d{2,3})')[1].decode())
 
     # Check result of file_operations()
-    dut.expect_exact("example: Read from file '/usb/esp/test.txt': 'Hello World!'")
+    dut.expect(r"example: Read from file '/usb[0-9]/esp/test.txt': 'Hello World!'")
 
     # Check result of speed_test()
     write_throughput = float(dut.expect(r'example: Write speed ([0-9]*[.]?[0-9]+) MiB')[1].decode())
