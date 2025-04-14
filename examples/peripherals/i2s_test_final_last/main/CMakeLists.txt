@@ -5,7 +5,7 @@
 idf_component_register(
     SRCS "main_client.c"
     INCLUDE_DIRS "."
-    REQUIRES esp_http_client fatfs json esp_wifi driver audio_player wifi_manager nvs_flash esp_timer vfs
+    REQUIRES esp_http_client fatfs json esp_wifi driver audio_player wifi_manager
 )
 
 # # 数学関数（sin関数など）を使うためにリンク
