@@ -37,7 +37,6 @@ api-reference/peripherals/usb_host/usb_host_notes_usbh.rst
 api-reference/peripherals/usb_host/usb_host_notes_design.rst
 api-reference/peripherals/usb_device.rst
 api-reference/peripherals/dac.rst
-api-reference/peripherals/touch_element.rst
 api-reference/peripherals/ppa.rst
 api-reference/peripherals/camera_driver.rst
 api-reference/peripherals/spi_features.rst
