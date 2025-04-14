@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -535,9 +535,15 @@ static int set_client_config(const struct tls_connection_params *cfg, tls_contex
 #ifdef CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK
 	mbedtls_ssl_set_verify( &tls->ssl, tls_disable_key_usages, NULL );
 #endif /*CONFIG_ESP_WIFI_DISABLE_KEY_USAGE_CHECK*/
+	ret = mbedtls_ssl_set_hostname(&tls->ssl, cfg->domain_match);
+	if (ret != 0) {
+		wpa_printf(MSG_ERROR, "Failed to set hostname");
+		return ret;
+	}
 
 #ifdef CONFIG_MBEDTLS_CERTIFICATE_BUNDLE
 	if (cfg->flags & TLS_CONN_USE_DEFAULT_CERT_BUNDLE) {
+		mbedtls_ssl_conf_authmode(&tls->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
 		wpa_printf(MSG_INFO, "Using default cert bundle");
 		if (esp_crt_bundle_attach_fn) {
 			ret = (*esp_crt_bundle_attach_fn)(&tls->conf);
