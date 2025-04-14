@@ -27,6 +27,9 @@
 #include "console/console.h"
 #include "services/gap/ble_svc_gap.h"
 #include "blecent.h"
+#if MYNEWT_VAL(BLE_GATT_CACHING)
+#include "host/ble_esp_gattc_cache.h"
+#endif
 
 #if CONFIG_EXAMPLE_USE_CI_ADDRESS
 #ifdef CONFIG_IDF_TARGET_ESP32
@@ -1052,9 +1055,13 @@ app_main(void)
     ble_hs_cfg.store_status_cb = ble_store_util_status_rr;
 
     /* Initialize data structures to track connected peers. */
+#if MYNEWT_VAL(BLE_INCL_SVC_DISCOVERY) || MYNEWT_VAL(BLE_GATT_CACHING_INCLUDE_SERVICES)
+    rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64, 64);
+    assert(rc == 0);
+#else
     rc = peer_init(MYNEWT_VAL(BLE_MAX_CONNECTIONS), 64, 64, 64);
     assert(rc == 0);
-
+#endif
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-blecent");
     assert(rc == 0);
