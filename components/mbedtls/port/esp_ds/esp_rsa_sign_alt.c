@@ -1,9 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPDX-FileContributor: The Mbed TLS Contributors
  */
 
+#include "sdkconfig.h"
 #include "esp_ds.h"
 #include "rsa_sign_alt.h"
 #include "esp_memory_utils.h"
@@ -225,35 +228,272 @@ static int rsa_rsassa_pkcs1_v15_encode( mbedtls_md_type_t md_alg,
     return ( 0 );
 }
 
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+static int mgf_mask(unsigned char *dst, size_t dlen, unsigned char *src,
+                    size_t slen, mbedtls_md_type_t md_alg)
+{
+    unsigned char counter[4];
+    unsigned char *p;
+    unsigned int hlen;
+    size_t i, use_len;
+    unsigned char mask[MBEDTLS_MD_MAX_SIZE];
+    int ret = 0;
+    const mbedtls_md_info_t *md_info;
+    mbedtls_md_context_t md_ctx;
+
+    mbedtls_md_init(&md_ctx);
+    md_info = mbedtls_md_info_from_type(md_alg);
+    if (md_info == NULL) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    mbedtls_md_init(&md_ctx);
+    if ((ret = mbedtls_md_setup(&md_ctx, md_info, 0)) != 0) {
+        goto exit;
+    }
+
+    hlen = mbedtls_md_get_size(md_info);
+
+    memset(mask, 0, sizeof(mask));
+    memset(counter, 0, 4);
+
+    /* Generate and apply dbMask */
+    p = dst;
+
+    while (dlen > 0) {
+        use_len = hlen;
+        if (dlen < hlen) {
+            use_len = dlen;
+        }
+
+        if ((ret = mbedtls_md_starts(&md_ctx)) != 0) {
+            goto exit;
+        }
+        if ((ret = mbedtls_md_update(&md_ctx, src, slen)) != 0) {
+            goto exit;
+        }
+        if ((ret = mbedtls_md_update(&md_ctx, counter, 4)) != 0) {
+            goto exit;
+        }
+        if ((ret = mbedtls_md_finish(&md_ctx, mask)) != 0) {
+            goto exit;
+        }
+
+        for (i = 0; i < use_len; ++i) {
+            *p++ ^= mask[i];
+        }
+
+        counter[3]++;
+
+        dlen -= use_len;
+    }
+
+exit:
+    mbedtls_platform_zeroize(mask, sizeof(mask));
+    mbedtls_md_free(&md_ctx);
+
+    return ret;
+}
+
+static int hash_mprime(const unsigned char *hash, size_t hlen,
+                    const unsigned char *salt, size_t slen,
+                    unsigned char *out, mbedtls_md_type_t md_alg)
+{
+    const unsigned char zeros[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    mbedtls_md_context_t md_ctx;
+    int ret = MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+
+    const mbedtls_md_info_t *md_info = mbedtls_md_info_from_type(md_alg);
+    if (md_info == NULL) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    mbedtls_md_init(&md_ctx);
+    if ((ret = mbedtls_md_setup(&md_ctx, md_info, 0)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_starts(&md_ctx)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_update(&md_ctx, zeros, sizeof(zeros))) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_update(&md_ctx, hash, hlen)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_update(&md_ctx, salt, slen)) != 0) {
+        goto exit;
+    }
+    if ((ret = mbedtls_md_finish(&md_ctx, out)) != 0) {
+        goto exit;
+    }
+
+exit:
+    mbedtls_md_free(&md_ctx);
+
+    return ret;
+}
+
+static int rsa_rsassa_pss_pkcs1_v21_encode( int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+                                            mbedtls_md_type_t md_alg,
+                                            unsigned int hashlen,
+                                            const unsigned char *hash,
+                                            int saltlen,
+                                            unsigned char *sig, size_t dst_len)
+{
+    size_t olen;
+    unsigned char *p = sig;
+    unsigned char *salt = NULL;
+    size_t slen, min_slen, hlen, offset = 0;
+    int ret = MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    size_t msb;
+
+    if ((md_alg != MBEDTLS_MD_NONE || hashlen != 0) && hash == NULL) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    if (f_rng == NULL) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    olen = dst_len;
+
+    if (md_alg != MBEDTLS_MD_NONE) {
+        /* Gather length of hash to sign */
+        size_t exp_hashlen = mbedtls_md_get_size_from_type(md_alg);
+        if (exp_hashlen == 0) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+
+        if (hashlen != exp_hashlen) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        }
+    }
+
+    hlen = mbedtls_md_get_size_from_type(md_alg);
+    if (hlen == 0) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    }
+
+    if (saltlen == MBEDTLS_RSA_SALT_LEN_ANY) {
+        /* Calculate the largest possible salt length, up to the hash size.
+        * Normally this is the hash length, which is the maximum salt length
+        * according to FIPS 185-4 �5.5 (e) and common practice. If there is not
+        * enough room, use the maximum salt length that fits. The constraint is
+        * that the hash length plus the salt length plus 2 bytes must be at most
+        * the key length. This complies with FIPS 186-4 �5.5 (e) and RFC 8017
+        * (PKCS#1 v2.2) �9.1.1 step 3. */
+        min_slen = hlen - 2;
+        if (olen < hlen + min_slen + 2) {
+            return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+        } else if (olen >= hlen + hlen + 2) {
+            slen = hlen;
+        } else {
+            slen = olen - hlen - 2;
+        }
+    } else if ((saltlen < 0) || (saltlen + hlen + 2 > olen)) {
+        return MBEDTLS_ERR_RSA_BAD_INPUT_DATA;
+    } else {
+        slen = (size_t) saltlen;
+    }
+
+    memset(sig, 0, olen);
+
+    /* Note: EMSA-PSS encoding is over the length of N - 1 bits */
+    msb = dst_len * 8 - 1;
+    p += olen - hlen - slen - 2;
+    *p++ = 0x01;
+
+
+    /* Generate salt of length slen in place in the encoded message */
+    salt = p;
+    if ((ret = f_rng(p_rng, salt, slen)) != 0) {
+        return MBEDTLS_ERR_RSA_RNG_FAILED;
+    }
+    p += slen;
+
+    /* Generate H = Hash( M' ) */
+    ret = hash_mprime(hash, hashlen, salt, slen, p, md_alg);
+    if (ret != 0) {
+        return ret;
+    }
+
+    /* Compensate for boundary condition when applying mask */
+    if (msb % 8 == 0) {
+        offset = 1;
+    }
+
+    /* maskedDB: Apply dbMask to DB */
+    ret = mgf_mask(sig + offset, olen - hlen - 1 - offset, p, hlen, md_alg);
+    if (ret != 0) {
+        return ret;
+    }
+
+    msb = dst_len * 8 - 1;
+    sig[0] &= 0xFF >> (olen * 8 - msb);
+
+    p += hlen;
+    *p++ = 0xBC;
+    return ret;
+}
+
+static int rsa_rsassa_pkcs1_v21_encode(int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+                                    mbedtls_md_type_t md_alg,
+                                        unsigned int hashlen,
+                                        const unsigned char *hash,
+                                        size_t dst_len,
+                                        unsigned char *dst )
+{
+    return rsa_rsassa_pss_pkcs1_v21_encode(f_rng, p_rng, md_alg, hashlen, hash, MBEDTLS_RSA_SALT_LEN_ANY, dst, dst_len);
+}
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
 
 int esp_ds_rsa_sign( void *ctx,
-                     int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
-                     mbedtls_md_type_t md_alg, unsigned int hashlen,
-                     const unsigned char *hash, unsigned char *sig )
+                    int (*f_rng)(void *, unsigned char *, size_t), void *p_rng,
+                    mbedtls_md_type_t md_alg, unsigned int hashlen,
+                    const unsigned char *hash, unsigned char *sig )
 {
     esp_ds_context_t *esp_ds_ctx;
     esp_err_t ds_r;
     int ret = -1;
-    uint32_t *signature = heap_caps_malloc_prefer((s_ds_data->rsa_length + 1) * FACTOR_KEYLEN_IN_BYTES, 2, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
+
+    mbedtls_rsa_context *pk = (mbedtls_rsa_context *)ctx;
+
+    const size_t data_len = s_ds_data->rsa_length + 1;
+    const size_t sig_len = data_len * FACTOR_KEYLEN_IN_BYTES;
+
+    if (pk->MBEDTLS_PRIVATE(padding) == MBEDTLS_RSA_PKCS_V21) {
+#ifdef CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+        if ((ret = (rsa_rsassa_pkcs1_v21_encode(f_rng, p_rng ,md_alg, hashlen, hash, sig_len, sig ))) != 0) {
+            ESP_LOGE(TAG, "Error in pkcs1_v21 encoding, returned %d", ret);
+            return -1;
+        }
+#else /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
+        ESP_LOGE(TAG, "RSA PKCS#1 v2.1 padding is not supported. Please enable CONFIG_MBEDTLS_SSL_PROTO_TLS1_3");
+        return -1;
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 */
+    } else {
+        if ((ret = (rsa_rsassa_pkcs1_v15_encode(md_alg, hashlen, hash, sig_len, sig ))) != 0) {
+            ESP_LOGE(TAG, "Error in pkcs1_v15 encoding, returned %d", ret);
+            return -1;
+        }
+    }
+
+    uint32_t *signature = heap_caps_malloc_prefer(sig_len, 2, MALLOC_CAP_32BIT | MALLOC_CAP_INTERNAL, MALLOC_CAP_DEFAULT | MALLOC_CAP_INTERNAL);
     if (signature == NULL) {
         ESP_LOGE(TAG, "Could not allocate memory for internal DS operations");
         return -1;
     }
 
-    if ((ret = (rsa_rsassa_pkcs1_v15_encode( md_alg, hashlen, hash, ((s_ds_data->rsa_length + 1) * FACTOR_KEYLEN_IN_BYTES), sig ))) != 0) {
-        ESP_LOGE(TAG, "Error in pkcs1_v15 encoding, returned %d", ret);
-        heap_caps_free(signature);
-        return -1;
-    }
-
-    for (unsigned int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
-        signature[i] = SWAP_INT32(((uint32_t *)sig)[(s_ds_data->rsa_length + 1) - (i + 1)]);
+    for (unsigned int i = 0; i < (data_len); i++) {
+        signature[i] = SWAP_INT32(((uint32_t *)sig)[(data_len) - (i + 1)]);
     }
 
     ds_r = esp_ds_start_sign((const void *)signature,
-                             s_ds_data,
-                             s_esp_ds_hmac_key_id,
-                             &esp_ds_ctx);
+                            s_ds_data,
+                            s_esp_ds_hmac_key_id,
+                            &esp_ds_ctx);
     if (ds_r != ESP_OK) {
         ESP_LOGE(TAG, "Error in esp_ds_start_sign, returned %d ", ds_r);
         heap_caps_free(signature);
@@ -271,8 +511,8 @@ int esp_ds_rsa_sign( void *ctx,
         return -1;
     }
 
-    for (unsigned int i = 0; i < (s_ds_data->rsa_length + 1); i++) {
-        ((uint32_t *)sig)[i] = SWAP_INT32(((uint32_t *)signature)[(s_ds_data->rsa_length + 1) - (i + 1)]);
+    for (unsigned int i = 0; i < (data_len); i++) {
+        ((uint32_t *)sig)[i] = SWAP_INT32(((uint32_t *)signature)[(data_len) - (i + 1)]);
     }
     heap_caps_free(signature);
     return 0;
