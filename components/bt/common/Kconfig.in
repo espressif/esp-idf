@@ -9,7 +9,6 @@ config BT_ALARM_MAX_NUM
 config BT_BLE_LOG_SPI_OUT_ENABLED
     bool "Output ble logs to SPI bus (Experimental)"
     default n
-    select SPI_MASTER_IN_IRAM
     help
         Output ble logs to SPI bus
 

@@ -140,14 +140,16 @@ static int spi_out_init_trans(spi_out_trans_cb_t **trans_cb, uint16_t buf_size)
     if (!(*trans_cb)) {
         return -1;
     }
+    memset(*trans_cb, 0, sizeof(spi_out_trans_cb_t));
+
     uint8_t *buf = (uint8_t *)spi_bus_dma_memory_alloc(SPI_OUT_BUS, (size_t)buf_size, 0);
     if (!buf) {
         free(*trans_cb);
+        *trans_cb = NULL;
         return -1;
     }
 
     // Initialization
-    memset(*trans_cb, 0, sizeof(spi_out_trans_cb_t));
     (*trans_cb)->buf_size = buf_size;
     (*trans_cb)->trans.tx_buffer = buf;
     return 0;
@@ -158,8 +160,13 @@ static void spi_out_deinit_trans(spi_out_trans_cb_t **trans_cb)
     if (!(*trans_cb)) {
         return;
     }
+    if ((*trans_cb)->trans.tx_buffer) {
+        // Do not free buffer until recycled
+        while ((*trans_cb)->flag == SPI_OUT_TRANS_CB_FLAG_IN_QUEUE) {}
+        free((uint8_t *)(*trans_cb)->trans.tx_buffer);
+        (*trans_cb)->trans.tx_buffer = NULL;
+    }
 
-    free((uint8_t *)(*trans_cb)->trans.tx_buffer);
     free(*trans_cb);
     *trans_cb = NULL;
     return;
@@ -174,7 +181,7 @@ IRAM_ATTR static void spi_out_tx_done_cb(spi_transaction_t *ret_trans)
 
 IRAM_ATTR static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
 {
-    if (trans_cb->flag != SPI_OUT_TRANS_CB_FLAG_NEED_QUEUE) {
+    if (trans_cb->flag != SPI_OUT_TRANS_CB_FLAG_NEED_QUEUE || !trans_cb->length) {
         return -1;
     }
 
@@ -185,6 +192,8 @@ IRAM_ATTR static inline int spi_out_append_trans(spi_out_trans_cb_t *trans_cb)
         trans_cb->flag = SPI_OUT_TRANS_CB_FLAG_IN_QUEUE;
         return 0;
     } else {
+        trans_cb->length = 0;
+        trans_cb->flag = SPI_OUT_TRANS_CB_FLAG_AVAILABLE;
         return -1;
     }
 }
@@ -224,6 +233,7 @@ static void spi_out_log_cb_deinit(spi_out_log_cb_t **log_cb)
         }
     }
     free(*log_cb);
+    *log_cb = NULL;
     return;
 }
 
@@ -578,7 +588,7 @@ static void spi_out_ts_sync_deinit(void)
 }
 
 // CRITICAL: This function is called in ESP Timer task
-IRAM_ATTR static void esp_timer_cb_ts_sync(void)
+static void esp_timer_cb_ts_sync(void)
 {
     // Initialize variables
     uint32_t lc_ts = 0;
@@ -627,7 +637,9 @@ int ble_log_spi_out_init(void)
         .quadwp_io_num = -1,
         .quadhd_io_num = -1,
         .max_transfer_sz = SPI_OUT_MAX_TRANSFER_SIZE,
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM
         .intr_flags = ESP_INTR_FLAG_IRAM
+#endif // CONFIG_SPI_MASTER_ISR_IN_IRAM
     };
     spi_device_interface_config_t dev_config = {
         .clock_speed_hz = SPI_MASTER_FREQ_20M,
@@ -782,7 +794,7 @@ IRAM_ATTR void ble_log_spi_out_ll_log_ev_proc(void)
 }
 #endif // CONFIG_BT_BLE_LOG_SPI_OUT_LL_ENABLED
 
-IRAM_ATTR int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
+int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_t len)
 {
     if (!ul_log_inited) {
         return -1;
@@ -798,7 +810,7 @@ IRAM_ATTR int ble_log_spi_out_write(uint8_t source, const uint8_t *addr, uint16_
     return ret;
 }
 
-IRAM_ATTR int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
+int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
 {
     if (!ul_log_inited) {
         return -1;
@@ -845,7 +857,7 @@ IRAM_ATTR int ble_log_spi_out_printf(uint8_t source, const char *format, ...)
     return ret;
 }
 
-IRAM_ATTR int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
+int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const char *tag, const char *format, ...)
 {
     if (!ul_log_inited) {
         return -1;
@@ -897,7 +909,7 @@ IRAM_ATTR int ble_log_spi_out_printf_enh(uint8_t source, uint8_t level, const ch
     return ret;
 }
 
-IRAM_ATTR int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
+int ble_log_spi_out_write_with_ts(uint8_t source, const uint8_t *addr, uint16_t len)
 {
     if (!ul_log_inited) {
         return -1;
