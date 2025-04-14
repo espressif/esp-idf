@@ -285,6 +285,28 @@ This section introduces the recommended configuration and configuration steps fo
 
           Due to the shared power pins between flash and PSRAM, cutting power to PSRAM would result in data loss. Therefore, to ensure light sleep does not disrupt program execution, enabling this option requires that the system does not utilize PSRAM.
 
+.. only:: esp32c2
+
+    - To reduce the on-chip RAM usage of the Power Management module (:ref:CONFIG_PM_SLEEP_FUNC_IN_IRAM), the options in the table below are used to control whether individual components of the Power Management module enable or disable on-chip RAM optimization when :ref:CONFIG_PM_SLEEP_FUNC_IN_IRAM is disabled.
+
+    .. list-table::
+      :header-rows: 1
+      :widths: 30 60
+
+      * - Configuration Name
+        - Configuration Description
+
+      * - :ref:`CONFIG_PM_SLP_IRAM_OPT`
+        - When this option is enabled, the software flow for entering and exiting light/deep sleep is linked to on-chip RAM, which shortens the sleep transition time but consumes more on-chip RAM resources. When this option is disabled, the light/deep sleep software flow is compiled into flash memory instead, resulting in longer sleep transition time but saving on-chip RAM resources.
+
+      * - :ref:`CONFIG_PM_RTOS_IDLE_OPT`
+        - In auto light sleep mode, when this option is enabled, the FreeRTOS system tick, IDLE task hook functions, and the FreeRTOS tickless idle software context are linked to on-chip RAM. Otherwise, they will be linked to flash memory.
+
+      * - :ref:`CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM`
+        - When this option is enabled, the software implementation related to peripheral clock and reset control will be linked to on-chip RAM.  Otherwise, it will be linked to flash memory.
+
+      * - :ref:`CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM`
+        - When this option is enabled, the software implementation related to Analog I2C read/write access will be linked to on-chip RAM. Otherwise, it will be linked to flash memory.
 
 Configuration Steps:
 
