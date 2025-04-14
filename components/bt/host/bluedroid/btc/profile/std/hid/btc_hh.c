@@ -1571,4 +1571,16 @@ void btc_hh_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src)
     }
 }
 
+void btc_hh_get_profile_status(esp_hidh_profile_status_t *param)
+{
+    if (is_hidh_init()) {
+        param->hidh_inited = true;
+        if (btc_hh_cb.status == BTC_HH_DEV_CONNECTED) {
+            param->conn_num++;
+        }
+    } else {
+        param->hidh_inited = false;
+    }
+}
+
 #endif // HID_HOST_INCLUDED == TRUE
