@@ -794,7 +794,11 @@ esp_err_t i2s_init_dma_intr(i2s_chan_handle_t handle, int intr_flag)
     }
 
     /* Set GDMA config */
-    gdma_channel_alloc_config_t dma_cfg = {};
+    gdma_channel_alloc_config_t dma_cfg = {
+#if CONFIG_I2S_ISR_IRAM_SAFE
+        .flags.isr_cache_safe = true,
+#endif
+    };
     if (handle->dir == I2S_DIR_TX) {
         dma_cfg.direction = GDMA_CHANNEL_DIRECTION_TX;
         /* Register a new GDMA tx channel */

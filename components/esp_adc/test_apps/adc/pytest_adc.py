@@ -30,16 +30,3 @@ def test_adc(dut: Dut) -> None:
 @idf_parametrize('target', ['esp32c2'], indirect=['target'])
 def test_adc_esp32c2_xtal_26mhz(dut: Dut) -> None:
     dut.run_all_single_board_cases(timeout=120, reset=True)
-
-
-@pytest.mark.adc
-@pytest.mark.parametrize(
-    'config',
-    [
-        'gdma_iram_safe',
-    ],
-    indirect=True,
-)
-@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2', 'esp32c5', 'esp32p4'], indirect=['target'])
-def test_adc_gdma_iram(dut: Dut) -> None:
-    dut.run_all_single_board_cases(timeout=120, reset=True)

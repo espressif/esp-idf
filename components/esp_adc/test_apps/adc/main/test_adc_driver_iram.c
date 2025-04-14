@@ -142,7 +142,7 @@ TEST_CASE("ADC oneshot fast work with ISR and Flash", "[adc_oneshot]")
 }
 #endif  //#if CONFIG_ADC_ONESHOT_CTRL_FUNC_IN_IRAM && CONFIG_GPTIMER_ISR_CACHE_SAFE
 
-#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE || CONFIG_GDMA_ISR_IRAM_SAFE
+#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE
 #include "esp_adc/adc_continuous.h"
 /*---------------------------------------------------------------
         ADC continuous work with cache safe ISR
@@ -249,7 +249,7 @@ TEST_CASE("ADC continuous work with ISR and Flash", "[adc_continuous]")
     TEST_ESP_OK(adc_continuous_deinit(handle));
 
 }
-#endif  //#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE || CONFIG_GDMA_ISR_IRAM_SAFE
+#endif  //#if CONFIG_ADC_CONTINUOUS_ISR_IRAM_SAFE
 
 static void IRAM_ATTR NOINLINE_ATTR s_test_cache_disable_period_us(test_adc_iram_ctx_t *ctx, uint32_t period_us)
 {
