@@ -145,10 +145,8 @@ static void select_rtc_slow_clk(soc_rtc_slow_clk_src_t rtc_slow_clk_src)
             rtc_clk_rc32k_enable(true);
         }
         rtc_clk_slow_src_set(rtc_slow_clk_src);
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) {
+        if ((rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_XTAL32K) && (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW)) {
             rtc_clk_32k_enable(false);
-        }
-        if (rtc_slow_clk_src != SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             rtc_clk_32k_disable_external();
         }
         if (SLOW_CLK_CAL_CYCLES > 0) {
