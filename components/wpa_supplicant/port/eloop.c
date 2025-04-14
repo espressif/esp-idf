@@ -18,6 +18,7 @@
 #include "eloop.h"
 #include "esp_wifi_driver.h"
 #include "rom/ets_sys.h"
+#include <stdatomic.h>
 
 bool current_task_is_wifi_task(void);
 
@@ -39,7 +40,8 @@ struct eloop_timeout {
 struct eloop_data {
     struct dl_list timeout;
     ETSTimer eloop_timer;
-    bool eloop_started;
+    atomic_bool eloop_started;
+    atomic_bool timeout_running;
     void *eloop_semph;
 };
 
@@ -80,7 +82,8 @@ int eloop_init(void)
         wpa_printf(MSG_ERROR, "failed to create eloop data loop");
         return -1;
     }
-    eloop.eloop_started = true;
+    atomic_store(&eloop.eloop_started, true);
+    atomic_store(&eloop.timeout_running, false);
 
     return 0;
 }
@@ -101,6 +104,9 @@ int eloop_register_timeout(unsigned int secs, unsigned int usecs,
     int count = 0;
 #endif
 
+    if (!atomic_load(&eloop.eloop_started)) {
+        return -1;
+    }
     timeout = os_zalloc(sizeof(*timeout));
     if (timeout == NULL) {
         return -1;
@@ -186,6 +192,10 @@ int eloop_register_timeout_blocking(eloop_blocking_timeout_handler handler,
 
     if (current_task_is_wifi_task()) {
         assert(false);
+        return -1;
+    }
+
+    if (!atomic_load(&eloop.eloop_started)) {
         return -1;
     }
     timeout = os_zalloc(sizeof(*timeout));
@@ -429,6 +439,11 @@ void eloop_run(void)
 {
     struct os_reltime tv, now;
 
+    if (!atomic_load(&eloop.eloop_started)) {
+        return;
+    }
+    atomic_store(&eloop.timeout_running, true);
+
     while (!dl_list_empty(&eloop.timeout)) {
         struct eloop_timeout *timeout;
 
@@ -446,15 +461,7 @@ void eloop_run(void)
                 os_timer_arm(&eloop.eloop_timer, ms, 0);
                 ELOOP_UNLOCK();
                 goto out;
-            }
-        }
-
-        /* check if some registered timeouts have occurred */
-        timeout = dl_list_first(&eloop.timeout, struct eloop_timeout,
-                                list);
-        if (timeout) {
-            os_get_reltime(&now);
-            if (!os_reltime_before(&now, &timeout->time)) {
+            } else {
                 void *eloop_data = timeout->eloop_data;
                 void *user_data = timeout->user_data;
                 void *sync_semaphr = timeout->sync_semph;
@@ -491,20 +498,28 @@ void eloop_run(void)
         }
     }
 out:
+    atomic_store(&eloop.timeout_running, false);
     return;
 }
 
 void eloop_destroy(void)
 {
     struct eloop_timeout *timeout, *prev;
-    struct os_reltime now;
 
-    if (!eloop.eloop_started) {
+    if (!atomic_load(&eloop.eloop_started)) {
         return;
     }
-    os_get_reltime(&now);
+
+    atomic_store(&eloop.eloop_started, false);
+
+    while (atomic_load(&eloop.timeout_running)) {
+        vTaskDelay(100 / portTICK_PERIOD_MS);  // Yield CPU
+    }
     dl_list_for_each_safe(timeout, prev, &eloop.timeout,
                           struct eloop_timeout, list) {
+#ifdef ELOOP_DEBUG
+        struct os_reltime now;
+        os_get_reltime(&now);
         int sec, usec;
         sec = timeout->time.sec - now.sec;
         usec = timeout->time.usec - now.usec;
@@ -516,11 +531,16 @@ void eloop_destroy(void)
                    "eloop_data=%p user_data=%p handler=%p",
                    sec, usec, timeout->eloop_data, timeout->user_data,
                    timeout->handler);
+#endif
         eloop_remove_timeout(timeout);
     }
     if (eloop_data_lock) {
         os_mutex_delete(eloop_data_lock);
         eloop_data_lock = NULL;
+    }
+    if (eloop.eloop_semph) {
+        os_semphr_delete(eloop.eloop_semph);
+        eloop.eloop_semph = NULL;
     }
     os_timer_disarm(&eloop.eloop_timer);
     os_timer_done(&eloop.eloop_timer);
