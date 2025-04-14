@@ -97,12 +97,10 @@ void btc_hd_call_handler(btc_msg_t *msg);
 
 void btc_hd_cb_handler(btc_msg_t *msg);
 
-// extern btc_hd_cb_t btc_hd_cb;
-// extern void btc_hd_remove_device(bt_bdaddr_t bd_addr);
-// extern void btc_hd_service_registration();
-
 void btc_hd_arg_deep_copy(btc_msg_t *msg, void *p_dest, void *p_src);
 void btc_hd_cb_arg_deep_free(btc_msg_t *msg);
+
+void btc_hd_get_profile_status(esp_hidd_profile_status_t *param);
 
 #ifdef __cplusplus
 }
