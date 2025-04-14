@@ -170,7 +170,7 @@ SECTIONS
  * | MMU       | text+rodata   | SRAM   |
  * | CACHE     | text+rodata   | SRAM   |
  * | WDT       | text          | SRAM   |
- * | APM       | text          | Flash  |
+ * | APM       | text          | Flash* |
  * | AES       | text          | Flash  |
  * | SHA       | text          | Flash  |
  * | HMAC      | text          | Flash  |
@@ -198,7 +198,11 @@ SECTIONS
     *libhal.a:hmac_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:ds_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:ecc_hal.c*(.literal .text .literal.* .text.*)
+    /* NOTE: There is a possibility of APM violations (SPI1 flash protection)
+     * being triggered with the flash cache disabled */
+#if !CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
     *libhal.a:apm_hal.c*(.literal .text .literal.* .text.*)
+#endif
     *libhal.a:brownout_hal.c*(.literal .text .literal.* .text.*)
     *libhal.a:spi_flash_hal.c*(.literal .text .literal.* .text.*)
     /* These HAL modules have functions marked with the IRAM_ATTR attribute which get placed in the SRAM */
