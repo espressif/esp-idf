@@ -548,7 +548,7 @@ config BT_CTRL_BLE_SCAN
     default y
 
 config BT_CTRL_BLE_SECURITY_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY && BT_CONTROLLER_ONLY
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE security feature"
     default y
 
