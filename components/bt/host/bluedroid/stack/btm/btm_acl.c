@@ -531,10 +531,11 @@ void btm_acl_device_down (void)
 *******************************************************************************/
 void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
 {
-    tBTM_BL_UPDATE_DATA  evt;
-    UINT8 busy_level;
-    BTM_TRACE_DEBUG ("btm_acl_update_busy_level\n");
+    UINT8 busy_level_flags = 0;
     BOOLEAN old_inquiry_state = btm_cb.is_inquiry;
+
+    BTM_TRACE_DEBUG ("btm_acl_update_busy_level\n");
+
     switch (event) {
     case BTM_BLI_ACL_UP_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_ACL_UP_EVT\n");
@@ -545,30 +546,31 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     case BTM_BLI_PAGE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_PAGE_EVT\n");
         btm_cb.is_paging = TRUE;
-        evt.busy_level_flags = BTM_BL_PAGING_STARTED;
+        busy_level_flags = BTM_BL_PAGING_STARTED;
         break;
     case BTM_BLI_PAGE_DONE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_PAGE_DONE_EVT\n");
         btm_cb.is_paging = FALSE;
-        evt.busy_level_flags = BTM_BL_PAGING_COMPLETE;
+        busy_level_flags = BTM_BL_PAGING_COMPLETE;
         break;
     case BTM_BLI_INQ_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_EVT\n");
         btm_cb.is_inquiry = TRUE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_STARTED;
+        busy_level_flags = BTM_BL_INQUIRY_STARTED;
         break;
     case BTM_BLI_INQ_CANCEL_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_CANCEL_EVT\n");
         btm_cb.is_inquiry = FALSE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
+        busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
         break;
     case BTM_BLI_INQ_DONE_EVT:
         BTM_TRACE_DEBUG ("BTM_BLI_INQ_DONE_EVT\n");
         btm_cb.is_inquiry = FALSE;
-        evt.busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
+        busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
         break;
     }
 
+    UINT8 busy_level;
     if (btm_cb.is_paging || btm_cb.is_inquiry) {
         busy_level = 10;
     } else {
@@ -576,8 +578,11 @@ void btm_acl_update_busy_level (tBTM_BLI_EVENT event)
     }
 
     if ((busy_level != btm_cb.busy_level) || (old_inquiry_state != btm_cb.is_inquiry)) {
-        evt.event         = BTM_BL_UPDATE_EVT;
-        evt.busy_level    = busy_level;
+        tBTM_BL_UPDATE_DATA evt = {
+            .event = BTM_BL_UPDATE_EVT,
+            .busy_level = busy_level,
+            .busy_level_flags = busy_level_flags,
+        };
         btm_cb.busy_level = busy_level;
         if (btm_cb.p_bl_changed_cb && (btm_cb.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
             (*btm_cb.p_bl_changed_cb)((tBTM_BL_EVENT_DATA *)&evt);
