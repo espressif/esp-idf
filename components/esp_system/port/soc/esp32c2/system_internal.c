@@ -44,8 +44,10 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
     SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN0_REG,
                       SYSTEM_SPI01_RST | SYSTEM_UART_RST | SYSTEM_SYSTIMER_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN0_REG, 0);
-    // Reset dma
-    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST);
+
+    // Reset dma and crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
+    // and hence avoiding any possibility with crypto failure in ROM security workflows.
+    SET_PERI_REG_MASK(SYSTEM_PERIP_RST_EN1_REG, SYSTEM_DMA_RST | SYSTEM_CRYPTO_ECC_RST | SYSTEM_CRYPTO_SHA_RST);
     REG_WRITE(SYSTEM_PERIP_RST_EN1_REG, 0);
 }
 
