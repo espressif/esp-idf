@@ -59,6 +59,7 @@ typedef struct parlio_tx_unit_t {
 #endif
     portMUX_TYPE spinlock;     // prevent resource accessing by user and interrupt concurrently
     uint32_t out_clk_freq_hz;  // output clock frequency
+    parlio_clock_source_t clk_src;  // Parallel IO internal clock source
     size_t max_transfer_bits;  // maximum transfer size in bits
     size_t queue_depth;        // size of transaction queue
     size_t num_trans_inflight; // indicates the number of transactions that are undergoing but not recycled to ready_queue
@@ -267,6 +268,7 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
     if (tx_unit->out_clk_freq_hz != config->output_clk_freq_hz) {
         ESP_LOGW(TAG, "precision loss, real output frequency: %"PRIu32, tx_unit->out_clk_freq_hz);
     }
+    tx_unit->clk_src = clk_src;
 
     return ESP_OK;
 }
@@ -427,6 +429,18 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
 
     tx_unit->cur_trans = t;
 
+    // If the external clock is a non-free-running clock, it needs to be switched to the internal free-running clock first.
+    // And then switched back to the actual clock after the reset is completed.
+    bool switch_clk = tx_unit->clk_src == PARLIO_CLK_SRC_EXTERNAL ? true : false;
+    if (switch_clk) {
+        PARLIO_CLOCK_SRC_ATOMIC() {
+            parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_XTAL);
+        }
+    }
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_tx_reset_clock(hal->regs);
+    }
+
     // DMA transfer data based on bytes not bits, so convert the bit length to bytes, round up
     gdma_buffer_mount_config_t mount_config = {
         .buffer = (void *)t->payload,
@@ -436,12 +450,21 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
             .mark_final = true, // singly link list, mark final descriptor
         }
     };
+    // Since the threshold of the clock divider counter is not updated simultaneously with the clock source switching.
+    // The update of the threshold relies on the moment when the counter reaches the threshold each time.
+    // We place gdma_link_mount_buffers between reset clock and disable clock to ensure enough time for updating the threshold of the clock divider counter.
     gdma_link_mount_buffers(tx_unit->dma_link, 0, &mount_config, 1, NULL);
 
-    parlio_ll_tx_reset_fifo(hal->regs);
-    PARLIO_RCC_ATOMIC() {
-        parlio_ll_tx_reset_clock(hal->regs);
+    if (switch_clk) {
+        PARLIO_CLOCK_SRC_ATOMIC() {
+            parlio_ll_tx_set_clock_source(hal->regs, PARLIO_CLK_SRC_EXTERNAL);
+        }
     }
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
+    }
+    // reset tx fifo after disabling tx core clk to avoid unexpected rempty interrupt
+    parlio_ll_tx_reset_fifo(hal->regs);
     parlio_ll_tx_set_idle_data_value(hal->regs, t->idle_value);
     parlio_ll_tx_set_trans_bit_len(hal->regs, t->payload_bits);
 
@@ -457,6 +480,7 @@ static void IRAM_ATTR parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio
 
 esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
 {
+    parlio_hal_context_t *hal = &tx_unit->base.group->hal;
     ESP_RETURN_ON_FALSE(tx_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     parlio_tx_fsm_t expected_fsm = PARLIO_TX_FSM_INIT;
     if (atomic_compare_exchange_strong(&tx_unit->fsm, &expected_fsm, PARLIO_TX_FSM_ENABLE_WAIT)) {
@@ -464,11 +488,14 @@ esp_err_t parlio_tx_unit_enable(parlio_tx_unit_handle_t tx_unit)
         if (tx_unit->pm_lock) {
             esp_pm_lock_acquire(tx_unit->pm_lock);
         }
-        parlio_hal_context_t *hal = &tx_unit->base.group->hal;
         parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, true);
         atomic_store(&tx_unit->fsm, PARLIO_TX_FSM_ENABLE);
     } else {
         ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
+    }
+
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, true);
     }
 
     // check if we need to start one pending transaction
@@ -511,9 +538,18 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     }
     ESP_RETURN_ON_FALSE(valid_state, ESP_ERR_INVALID_STATE, TAG, "unit can't be disabled in state %d", expected_fsm);
 
-    // stop the TX engine
+    // stop the DMA engine, reset the peripheral state
     parlio_hal_context_t *hal = &tx_unit->base.group->hal;
+    // to stop the undergoing transaction, disable and reset clock
+    PARLIO_CLOCK_SRC_ATOMIC() {
+        parlio_ll_tx_enable_clock(hal->regs, false);
+    }
+    PARLIO_RCC_ATOMIC() {
+        parlio_ll_tx_reset_clock(hal->regs);
+    }
     gdma_stop(tx_unit->dma_chan);
+    gdma_reset(tx_unit->dma_chan);
+    parlio_ll_tx_reset_fifo(hal->regs);
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_EOF, false);
 
@@ -603,9 +639,6 @@ static void IRAM_ATTR parlio_tx_default_isr(void *args)
 
     if (status & PARLIO_LL_EVENT_TX_EOF) {
         parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_EOF);
-        PARLIO_CLOCK_SRC_ATOMIC() {
-            parlio_ll_tx_enable_clock(hal->regs, false);
-        }
         parlio_ll_tx_start(hal->regs, false);
 
         parlio_tx_trans_desc_t *trans_desc = NULL;
