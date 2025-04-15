@@ -22,6 +22,7 @@ void fastpbkdf2_hmac_sha1(const uint8_t *pw, size_t npw,
 
 int64_t esp_timer_get_time(void);
 
+#if defined(CONFIG_MBEDTLS_SHA1_C) || defined(CONFIG_MBEDTLS_HARDWARE_SHA)
 TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
 {
     set_leak_threshold(130);
@@ -105,3 +106,4 @@ TEST_CASE("Test pbkdf2", "[crypto-pbkdf2]")
     ESP_LOGI("Timing", "Average time for fast_pbkdf2_sha1: %lld microseconds", avg_time_fast);
     ESP_LOGI("Timing", "Average time for mbedtls_pkcs5_pbkdf2_hmac_ext: %lld microseconds", avg_time_mbedtls);
 }
+#endif
