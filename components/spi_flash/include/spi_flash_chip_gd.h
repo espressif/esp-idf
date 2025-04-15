@@ -1,22 +1,15 @@
-// Copyright 2015-2019 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 #pragma once
 
 #include <stdint.h>
 #include "esp_flash.h"
 #include "spi_flash_chip_driver.h"
+#include "sdkconfig.h"
 
 
 /**
@@ -33,4 +26,8 @@ esp_err_t spi_flash_chip_gd_probe(esp_flash_t *chip, uint32_t flash_id);
 esp_err_t spi_flash_chip_gd_set_io_mode(esp_flash_t *chip);
 esp_err_t spi_flash_chip_gd_get_io_mode(esp_flash_t *chip, esp_flash_io_mode_t* out_io_mode);
 
+#ifdef CONFIG_SPI_FLASH_SUPPORT_GD_CHIP
 extern const spi_flash_chip_t esp_flash_chip_gd;
+#else
+extern __attribute__((weak)) const spi_flash_chip_t esp_flash_chip_gd;
+#endif
