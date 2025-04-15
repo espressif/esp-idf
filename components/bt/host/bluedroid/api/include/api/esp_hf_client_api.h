@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -41,6 +41,14 @@ typedef enum {
     ESP_HF_CLIENT_IN_BAND_RINGTONE_NOT_PROVIDED = 0,
     ESP_HF_CLIENT_IN_BAND_RINGTONE_PROVIDED,
 } esp_hf_client_in_band_ring_state_t;
+
+/**
+ * @brief HF client profile status parameters
+ */
+typedef struct {
+    bool hf_client_inited;                             /*!< hf client initialization */
+    uint8_t conn_num;                                  /*!< Number of connections */
+} esp_hf_client_profile_status_t;
 
 /* features masks of AG */
 #define ESP_HF_CLIENT_PEER_FEAT_3WAY       0x01        /* Three-way calling */
@@ -737,6 +745,17 @@ void esp_hf_client_pcm_resample_deinit(void);
  * @return          number of samples converted
  */
 int32_t esp_hf_client_pcm_resample(void *src, uint32_t in_bytes, void *dst);
+
+/**
+ * @brief       This function is used to get the status of hf client
+ *
+ * @param[out]  profile_status - hf client status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_hf_client_get_profile_status(esp_hf_client_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

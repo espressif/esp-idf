@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -39,6 +39,14 @@ typedef enum {
 #define ESP_BT_L2CAP_SEC_AUTHENTICATE    0x0012    /*!< Authentication required */
 #define ESP_BT_L2CAP_SEC_ENCRYPT         0x0024    /*!< Encryption required */
 typedef uint32_t esp_bt_l2cap_cntl_flags_t;
+
+/**
+ * @brief L2CAP status parameters
+ */
+typedef struct {
+    bool l2cap_inited;                   /*!< l2cap initialization */
+    uint8_t conn_num;                    /*!< Number of connections */
+} esp_bt_l2cap_protocol_status_t;
 
 /**
  * @brief L2CAP callback function events
@@ -243,6 +251,17 @@ esp_err_t esp_bt_l2cap_vfs_register(void);
  *              - other: failed
  */
 esp_err_t esp_bt_l2cap_vfs_unregister(void);
+
+/**
+ * @brief       This function is used to get the status of L2CAP
+ *
+ * @param[out]  status - l2cap status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_bt_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *status);
 
 #ifdef __cplusplus
 }

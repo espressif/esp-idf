@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,13 @@ typedef enum {
     ESP_SPP_VFS_UNREGISTER_EVT          = 37,               /*!< When SPP VFS unregister, the event comes */
 } esp_spp_cb_event_t;
 
+/**
+ * @brief SPP profile status parameters
+ */
+typedef struct {
+    bool spp_inited;                     /*!< spp initialization */
+    uint8_t conn_num;                    /*!< Number of connections */
+} esp_spp_profile_status_t;
 
 /**
  * @brief SPP callback parameters union
@@ -431,6 +438,17 @@ esp_err_t esp_spp_vfs_register(void);
  *              - other: failed
  */
 esp_err_t esp_spp_vfs_unregister(void);
+
+/**
+ * @brief       This function is used to get the status of SPP
+ *
+ * @param[out]  profile_status - SPP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_spp_get_profile_status(esp_spp_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

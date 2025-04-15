@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -110,6 +110,15 @@ typedef enum {
     ESP_A2D_SET_SUCCESS = 0,                /*!< A2DP profile set delay report value successful */
     ESP_A2D_SET_INVALID_PARAMS              /*!< A2DP profile set delay report value is invalid parameter */
 } esp_a2d_set_delay_value_state_t;
+
+/**
+ * @brief A2DP profile status parameters
+ */
+typedef struct {
+    bool a2d_snk_inited;                   /*!< A2DP sink initialization */
+    bool a2d_src_inited;                   /*!< A2DP source initialization */
+    uint8_t conn_num;                      /*!< Number of connections */
+} esp_a2d_profile_status_t;
 
 /**
  * @brief A2DP callback events
@@ -377,6 +386,18 @@ esp_err_t esp_a2d_media_ctrl(esp_a2d_media_ctrl_t ctrl);
 
 
 /**
+ * @brief       This function is used to get the status of A2DP
+ *
+ * @param[out]  profile_status - A2DP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_a2d_get_profile_status(esp_a2d_profile_status_t *profile_status);
+
+
+/**
  *
  * @brief           Initialize the bluetooth A2DP source module. A2DP can work independently.
  *                  If you want to use AVRC together, you should initiate AVRC first. This function should be called
@@ -409,7 +430,7 @@ esp_err_t esp_a2d_source_deinit(void);
 
 
 /**
- * @brief           Register A2DP source data input function. For now, the input shoule be PCM data stream.
+ * @brief           Register A2DP source data input function. For now, the input should be PCM data stream.
  *                  This function should be called only after esp_bluedroid_enable() completes
  *                  successfully. The callback is invoked in the context of A2DP source task whose
  *                  stack size is configurable through menuconfig.

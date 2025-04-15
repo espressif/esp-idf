@@ -67,6 +67,7 @@ void btc_l2cap_call_handler(btc_msg_t *msg);
 void btc_l2cap_cb_handler(btc_msg_t *msg);
 esp_err_t btc_l2cap_vfs_register(void);
 esp_err_t btc_l2cap_vfs_unregister(void);
+void btc_l2cap_get_protocol_status(esp_bt_l2cap_protocol_status_t *param);
 
 #endif ///defined BTC_L2CAP_INCLUDED && BTC_L2CAP_INCLUDED == TRUE
 #endif ///__BTC_L2CAP_H__
