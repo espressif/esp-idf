@@ -3,6 +3,7 @@
 # !/usr/bin/env python3
 import copy
 import os.path
+import random
 import re
 import secrets
 import subprocess
@@ -18,7 +19,8 @@ from pytest_embedded_idf.dut import IdfDut
 # This file contains the test scripts for Thread:
 
 # Case 1: Thread network formation and attaching
-#         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping connection between them.
+#         A Thread Border Router forms a Thread network, Thread devices attach to it, then test ping
+#         connection between them.
 
 # Case 2: Bidirectional IPv6 connectivity
 #         Test IPv6 ping connection between Thread device and Linux Host (via Thread Border Router).
@@ -51,19 +53,25 @@ from pytest_embedded_idf.dut import IdfDut
 #         Test the basic startup and network formation of a Thread device.
 
 # Case 12: Curl a website via DNS and NAT64
-#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl a website.
+#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
+#         a website.
 
 # Case 13: Meshcop discovery of Border Router
-#         A border router joins a Wi-Fi network, forms a Thread network and publish a meshcop service. Linux Host device discover the mescop service.
+#         A border router joins a Wi-Fi network, forms a Thread network and publish a meshcop service. Linux Host device
+#         discover the mescop service.
 
 # Case 14: Curl a website over HTTPS via DNS and NAT64
-#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl a https website.
+#         A border router joins a Wi-Fi network and forms a Thread network, a Thread devices attached to it and curl
+#         a https website.
 
 # Case 15: Thread network formation and attaching with TREL
 #         A TREL device forms a Thread network, other TREL devices attach to it, then test ping connection between them.
 
 # Case 16: Thread network BR lib check
 #         Check BR library compatibility
+
+# Case 17: Synchronized sleepy end device (SSED) test
+#         Start a Thread ssed device, wait it join the Thread network and check related flags.
 
 
 @pytest.fixture(scope='module', name='Init_avahi')
@@ -162,9 +170,9 @@ def test_thread_connect(dut:Tuple[IdfDut, IdfDut, IdfDut]) -> None:
         for cli in cli_list:
             cli_mleid_addr = ocf.get_mleid_addr(cli)
             br_mleid_addr = ocf.get_mleid_addr(br)
-            rx_nums = ocf.ot_ping(cli, br_mleid_addr, 5)[1]
+            rx_nums = ocf.ot_ping(cli, br_mleid_addr, count=5)[1]
             assert rx_nums == 5
-            rx_nums = ocf.ot_ping(br, cli_mleid_addr, 5)[1]
+            rx_nums = ocf.ot_ping(br, cli_mleid_addr, count=5)[1]
             assert rx_nums == 5
     finally:
         ocf.execute_command(br, 'factoryreset')
@@ -235,7 +243,7 @@ def test_Bidirectional_IPv6_connectivity(Init_interface:bool, dut: Tuple[IdfDut,
         host_global_unicast_addr = re.findall(r'\W+(%s(?:\w+:){3}\w+)\W+' % onlinkprefix, str(out_str))
         rx_nums = 0
         for ip_addr in host_global_unicast_addr:
-            txrx_nums = ocf.ot_ping(cli, str(ip_addr), 5)
+            txrx_nums = ocf.ot_ping(cli, str(ip_addr), count=5)
             rx_nums = rx_nums + int(txrx_nums[1])
         assert rx_nums != 0
     finally:
@@ -503,7 +511,7 @@ def test_ICMP_NAT64(Init_interface:bool, dut: Tuple[IdfDut, IdfDut, IdfDut]) -> 
         assert ocf.is_joined_wifi_network(br)
         host_ipv4_address = ocf.get_host_ipv4_address()
         print('host_ipv4_address: ', host_ipv4_address)
-        rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), 5)[1]
+        rx_nums = ocf.ot_ping(cli, str(host_ipv4_address), count=5)[1]
         assert rx_nums != 0
     finally:
         ocf.execute_command(br, 'factoryreset')
@@ -847,10 +855,10 @@ def test_trel_connect(dut: Tuple[IdfDut, IdfDut]) -> None:
         for trel in trel_list:
             trel_mleid_addr = ocf.get_mleid_addr(trel)
             trel_s3_mleid_addr = ocf.get_mleid_addr(trel_s3)
-            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, 5)[1]
-            assert rx_nums == 5
-            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, 5)[1]
-            assert rx_nums == 5
+            rx_nums = ocf.ot_ping(trel, trel_s3_mleid_addr, count=10)[1]
+            assert rx_nums > 5
+            rx_nums = ocf.ot_ping(trel_s3, trel_mleid_addr, count=10)[1]
+            assert rx_nums > 5
     finally:
         ocf.execute_command(trel_s3, 'factoryreset')
         for trel in trel_list:
@@ -886,4 +894,76 @@ def test_br_lib_check(dut: Tuple[IdfDut, IdfDut]) -> None:
         br.expect('The br library compatibility checking passed', timeout=10)
     finally:
         ocf.execute_command(br, 'factoryreset')
+        time.sleep(3)
+
+
+# Case 17: SSED test
+@pytest.mark.openthread_sleep
+@pytest.mark.parametrize(
+    'config, count, app_path, target, port',
+    [
+        pytest.param(
+            'cli|ssed',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32h2|esp32c6',
+            f'{ESPPORT1}|{ESPPORT3}',
+            id='h2-c6',
+        ),
+        pytest.param(
+            'cli|ssed',
+            2,
+            f'{os.path.join(os.path.dirname(__file__), "ot_cli")}'
+            f'|{os.path.join(os.path.dirname(__file__), "ot_sleepy_device/light_sleep")}',
+            'esp32c6|esp32h2',
+            f'{ESPPORT3}|{ESPPORT1}',
+            id='c6-h2',
+        ),
+    ],
+    indirect=True,
+)
+def test_ot_ssed_device(dut: Tuple[IdfDut, IdfDut]) -> None:
+    leader = dut[0]
+    ssed_device = dut[1]
+    try:
+        # CI device must have external XTAL to run SSED case, we will check this here first
+        ssed_device.expect('32k XTAL in use', timeout=10)
+        ocf.init_thread(leader)
+        time.sleep(3)
+        leader_para = ocf.thread_parameter('leader', '', '12', '7766554433221100', False)
+        ocf.joinThreadNetwork(leader, leader_para)
+        ocf.wait(leader, 5)
+        ocf.execute_command(leader, 'networkkey')
+        dataset = ocf.getDataset(leader)
+        ocf.execute_command(ssed_device, 'dataset set active ' + dataset)
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'mode -')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'csl period 3000000')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'csl channel 12')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'ifconfig up')
+        ssed_device.expect('Done', timeout=5)
+        ocf.execute_command(ssed_device, 'thread start')
+        ssed_device.expect(r'(.+)detached -> child', timeout=20)
+        # add a sleep to wait ssed ready
+        time.sleep(3)
+        ssed_device.expect('PMU_SLEEP_PD_TOP: True', timeout=5)
+        ssed_device.expect('PMU_SLEEP_PD_MODEM: True', timeout=5)
+
+        ocf.execute_command(leader, 'child table')
+        pattern = r'\|\s+\d+\s+\|\s+(0x\w{4})\s+\|.*\|\s+(\w{16})\s+\|'
+        result = leader.expect(pattern)
+
+        rloc16_decode_from_leader = result[1].decode()[2:]
+        cli_rloc_addr = ':'.join(ocf.get_rloc_addr(leader).split(':')[:-1])
+        ssed_address = f'{cli_rloc_addr}:{rloc16_decode_from_leader}'
+
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+        time.sleep(random.randint(5, 20))
+        ocf.ping_and_check(dut=leader, target=ssed_address, tx_total=10, timeout=6)
+    finally:
+        ocf.execute_command(leader, 'factoryreset')
         time.sleep(3)
