@@ -26,6 +26,10 @@ Build a project located in the current directory using `idf.py build` command:
 docker run --rm -v $PWD:/project -w /project espressif/idf:latest idf.py build
 ```
 
+## Environment Variables
+
+- EXEC_IN_SAME_SHELL: Setting this variable one forces entrypoint to execute commands in the same shell
+
 ## Documentation
 
 For more information about this image and the detailed usage instructions, please refer to the ESP-IDF Programming Guide page: [IDF Docker Image](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/tools/idf-docker-image.html).
