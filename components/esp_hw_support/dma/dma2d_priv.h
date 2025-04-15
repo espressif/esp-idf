@@ -86,6 +86,7 @@ struct dma2d_rx_channel_t {
     void *user_data;                           // User registered DMA event data
     dma2d_event_callback_t on_recv_eof;        // RX EOF event callback
     dma2d_event_callback_t on_desc_done;       // RX DONE event callback
+    dma2d_event_callback_t on_desc_empty;      // RX desc empty callback, trigger when buffer on dma is not sufficient.
     uint32_t bundled_tx_channel_mask;          // Bit mask indicating the TX channels together with the RX channel to do the transaction
 };
 
