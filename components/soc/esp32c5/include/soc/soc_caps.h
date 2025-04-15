@@ -86,8 +86,9 @@
 #define SOC_BITSCRAMBLER_SUPPORTED      1
 
 /*-------------------------- XTAL CAPS ---------------------------------------*/
-#define SOC_XTAL_SUPPORT_40M            1
-#define SOC_XTAL_SUPPORT_48M            1
+#define SOC_XTAL_SUPPORT_40M                        1
+#define SOC_XTAL_SUPPORT_48M                        1
+#define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 /*-------------------------- AES CAPS -----------------------------------------*/
 #define SOC_AES_SUPPORT_DMA     (1)
