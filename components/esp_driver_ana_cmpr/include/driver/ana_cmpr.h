@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,6 @@ extern "C" {
 
 /**
  * @brief Analog comparator unit configuration
- *
  */
 typedef struct {
     ana_cmpr_unit_t         unit;               /*!< Analog comparator unit */
@@ -28,8 +27,8 @@ typedef struct {
                                                  *   for external reference, the reference signal should be connect to `ANA_CMPRx_EXT_REF_GPIO`
                                                  */
     ana_cmpr_cross_type_t   cross_type;         /*!< The crossing types that can trigger interrupt */
-    int                     intr_priority;      /*!< The interrupt priority, range 0~7, if set to 0, the driver will try to allocate an interrupt with a relative low priority (1,2,3)
-                                                 *   otherwise the larger the higher, 7 is NMI */
+    int                     intr_priority;      /*!< The interrupt priority, range 1~3.
+                                                     If set to 0, the driver will automatically select a relative low priority (1,2,3) */
     struct {
         uint32_t            io_loop_back: 1;     /*!< Enable this field when the other signals that output on the comparison pins are supposed to be fed back.
                                                  *   Normally used for debug/test scenario */
@@ -38,7 +37,6 @@ typedef struct {
 
 /**
  * @brief Analog comparator internal reference configuration
- *
  */
 typedef struct {
     ana_cmpr_ref_voltage_t  ref_volt;           /*!< The internal reference voltage. It can be specified to a certain fixed percentage of
@@ -48,15 +46,12 @@ typedef struct {
 
 /**
  * @brief Analog comparator debounce filter configuration
- *
  */
 typedef struct {
-    uint32_t                   wait_us;         /*!< The wait time of re-enabling the interrupt after the last triggering,
-                                                 *   it is used to avoid the spurious triggering while the source signal crossing the reference signal.
-                                                 *   The value should regarding how fast the source signal changes, e.g., a rapid signal requires
-                                                 *   a small wait time, otherwise the next crosses may be missed.
-                                                 *   (Unit: micro second)
-                                                 */
+    uint32_t                wait_us;         /*!< The wait time to prevent frequent interrupts caused by signal noise or bouncing.
+                                                  During the specified wait_us period, no new interrupts will be triggered.
+                                                  Set the value according to the signal characteristics. A rapid signal requires a small wait time,
+                                                  otherwise the next cross event may be missed. */
 } ana_cmpr_debounce_config_t;
 
 /**

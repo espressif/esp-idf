@@ -1,12 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "test_ana_cmpr.h"
 
-TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
+TEST_CASE("ana_cmpr unit install/uninstall", "[ana_cmpr]")
 {
     ana_cmpr_handle_t cmpr = NULL;
     ana_cmpr_config_t config = {
@@ -45,10 +45,11 @@ TEST_CASE("ana_cmpr_unit_install_uninstall", "[ana_cmpr]")
     config.ref_src = ANA_CMPR_REF_SRC_EXTERNAL;
     TEST_ESP_OK(ana_cmpr_new_unit(&config, &cmpr));
     TEST_ESP_ERR(ESP_ERR_INVALID_STATE, ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
+    TEST_ESP_ERR(ESP_ERR_INVALID_ARG, ana_cmpr_del_unit(NULL));
     TEST_ESP_OK(ana_cmpr_del_unit(cmpr));
 }
 
-TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
+TEST_CASE("ana_cmpr internal reference", "[ana_cmpr]")
 {
     int src_chan = test_init_src_chan_gpio(TEST_ANA_CMPR_UNIT_ID);
 
@@ -67,7 +68,7 @@ TEST_CASE("ana_cmpr_internal_reference", "[ana_cmpr]")
     };
     TEST_ESP_OK(ana_cmpr_set_internal_reference(cmpr, &ref_cfg));
     ana_cmpr_debounce_config_t dbc_cfg = {
-        .wait_us = 10.0,
+        .wait_us = 10,
     };
     TEST_ESP_OK(ana_cmpr_set_debounce(cmpr, &dbc_cfg));
     ana_cmpr_event_callbacks_t cbs = {
