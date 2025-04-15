@@ -14,11 +14,14 @@ from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
 
 try:
-    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+    from common_test_methods import get_env_config_variable
+    from common_test_methods import get_host_ip4_by_dest_ip
 except ModuleNotFoundError:
     idf_path = os.environ['IDF_PATH']
+    sys.path.append(idf_path + '/tools/ci')
     sys.path.insert(0, idf_path + '/tools/ci/python_packages')
-    from common_test_methods import get_env_config_variable, get_host_ip4_by_dest_ip
+    from common_test_methods import get_env_config_variable
+    from common_test_methods import get_host_ip4_by_dest_ip
 
 server_cert = (
     '-----BEGIN CERTIFICATE-----\n'
