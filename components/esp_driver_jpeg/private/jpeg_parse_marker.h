@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -117,6 +117,26 @@ esp_err_t jpeg_parse_sos_marker(jpeg_dec_header_info_t *header_info);
  * @return    ESP_OK on success, or an appropriate error code if an error occurred.
  */
 esp_err_t jpeg_parse_dri_marker(jpeg_dec_header_info_t *header_info);
+
+/**
+ * @brief Parses with an invalid marker in a JPEG file.
+ *
+ * This function is called when the decoder encounters an invalid (0xFFFF) marker.
+ * In the baseline JPEG specification, 0xFF is always used as the "marker prefix," and the byte that follows determines
+ * the marker type (e.g., 0xD8 for SOI, 0xD9 for EOI, 0xDA for SOS, etc.).
+ * A 0xFFFF sequence, however, does not correspond to any valid, standard JPEG marker.
+ * In JPEG-compressed data, any single 0xFF in the entropy-coded segment is supposed to be followed by 0x00 if it is not a marker.
+ * Sometimes, encoders or hardware incorrectly insert repeated 0xFF bytes without the 0x00 "stuffing" byte.
+ * This confuses decoders that strictly follow the JPEG standard.
+ *
+ * The function handles the invalid data contained within the marker and performs
+ * any necessary processing or actions based on the restart interval information.
+ *
+ * @param[in] header_info Pointer to the JPEG picture information.
+ *
+ * @return    ESP_OK on success, or an appropriate error code if an error occurred.
+ */
+esp_err_t jpeg_parse_inv_marker(jpeg_dec_header_info_t *header_info);
 
 #ifdef __cplusplus
 }
