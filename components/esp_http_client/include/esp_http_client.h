@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -150,10 +150,20 @@ typedef struct {
     esp_http_client_auth_type_t auth_type;           /*!< Http authentication type, see `esp_http_client_auth_type_t` */
     const char                  *path;               /*!< HTTP Path, if not set, default is `/` */
     const char                  *query;              /*!< HTTP query */
-    const char                  *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
-    size_t                      cert_len;            /*!< Length of the buffer pointed to by cert_pem. May be 0 for null-terminated pem */
-    const char                  *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
-    size_t                      client_cert_len;     /*!< Length of the buffer pointed to by client_cert_pem. May be 0 for null-terminated pem */
+    union {
+        const char              *cert_pem;           /*!< SSL server certification, PEM format as string, if the client requires to verify server */
+        const char              *cert_der;           /*!< SSL server certification, DER format as binary, if the client requires to verify server */
+    };
+    size_t                      cert_len;            /*!< Length of the buffer pointed to by cert_pem or cert_der.
+                                                     PEM Certificate - Length of the buffer pointed to by cert_pem. Length should be the length of the certificate including NULL terminator or 0.
+                                                     DER Certificate - Length of the buffer pointed to by cert_der. Should be the length of the certificate. */
+    union {
+        const char              *client_cert_pem;    /*!< SSL client certification, PEM format as string, if the server requires to verify client */
+        const char              *client_cert_der;    /*!< SSL client certification, DER format as binary, if the server requires to verify client */
+    };
+    size_t                      client_cert_len;     /*!< Length of the buffer pointed to by client_cert_pem or client_cert_der.
+                                                     PEM Certificate - Length of the buffer pointed to by client_cert_pem. Length should be the length of the certificate including NULL terminator or 0.
+                                                     DER Certificate - Length of the buffer pointed to by client_cert_der. Should be the length of the certificate. */
     const char                  *client_key_pem;     /*!< SSL client key, PEM format as string, if the server requires to verify client */
     size_t                      client_key_len;      /*!< Length of the buffer pointed to by client_key_pem. May be 0 for null-terminated pem */
     const char                  *client_key_password;      /*!< Client key decryption password string */
