@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,7 +19,6 @@
 #include "common/hci_driver_mem.h"
 #include "hci_driver_uart.h"
 
-#include "ble_hci_trans.h"
 #include "esp_private/periph_ctrl.h"
 #include "esp_private/gdma.h"
 #include "hal/uhci_ll.h"
@@ -81,7 +80,7 @@ typedef struct {
 /* The number of lldescs pool */
 #define HCI_LLDESCS_POOL_NUM                (CONFIG_BT_LE_HCI_LLDESCS_POOL_NUM)
 /* Default block size for HCI RX data  */
-#define HCI_RX_DATA_BLOCK_SIZE              (DEFAULT_BT_LE_ACL_BUF_SIZE + BLE_HCI_TRANS_CMD_SZ)
+#define HCI_RX_DATA_BLOCK_SIZE              (DEFAULT_BT_LE_ACL_BUF_SIZE + HCI_TRANSPORT_CMD_SZ)
 #define HCI_RX_DATA_POOL_NUM                (CONFIG_BT_LE_HCI_TRANS_RX_MEM_NUM)
 #define HCI_RX_INFO_POOL_NUM                (CONFIG_BT_LE_HCI_TRANS_RX_MEM_NUM + 1)
 
@@ -114,7 +113,6 @@ int hci_driver_uart_dma_tx_start(esp_bt_hci_tl_callback_t callback, void *arg);
 static const char *TAG = "uart_dma";
 static hci_driver_uart_dma_env_t s_hci_driver_uart_dma_env;
 static struct hci_h4_sm s_hci_driver_uart_h4_sm;
-static hci_driver_uart_params_config_t hci_driver_uart_dma_params = BT_HCI_DRIVER_UART_CONFIG_DEFAULT();
 
 /* The list for hci_rx_data */
 STAILQ_HEAD(g_hci_rxinfo_list, hci_message);
@@ -609,7 +607,7 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     memset(&s_hci_driver_uart_dma_env, 0, sizeof(hci_driver_uart_dma_env_t));
 
     s_hci_driver_uart_dma_env.h4_sm = &s_hci_driver_uart_h4_sm;
-    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, hci_driver_uart_dma_h4_frame_cb);
+    hci_h4_sm_init(s_hci_driver_uart_dma_env.h4_sm, &s_hci_driver_mem_alloc, &s_hci_driver_mem_free, hci_driver_uart_dma_h4_frame_cb);
 
     rc = hci_driver_util_init();
     if (rc) {
@@ -627,8 +625,8 @@ hci_driver_uart_dma_init(hci_driver_forward_fn *cb)
     }
 
     s_hci_driver_uart_dma_env.forward_cb = cb;
-    s_hci_driver_uart_dma_env.hci_uart_params = &hci_driver_uart_dma_params;
-    hci_driver_uart_config(&hci_driver_uart_dma_params);
+    s_hci_driver_uart_dma_env.hci_uart_params = hci_driver_uart_config_param_get();
+    hci_driver_uart_config(s_hci_driver_uart_dma_env.hci_uart_params);
 
     ESP_LOGI(TAG, "uart attach uhci!");
     hci_driver_uart_dma_install();
@@ -655,12 +653,7 @@ error:
 int
 hci_driver_uart_dma_reconfig_pin(int tx_pin, int rx_pin, int cts_pin, int rts_pin)
 {
-    hci_driver_uart_params_config_t *uart_param = s_hci_driver_uart_dma_env.hci_uart_params;
-    uart_param->hci_uart_tx_pin = tx_pin;
-    uart_param->hci_uart_rx_pin = rx_pin;
-    uart_param->hci_uart_rts_pin = rts_pin;
-    uart_param->hci_uart_cts_pin = cts_pin;
-    return hci_driver_uart_config(uart_param);
+    return hci_driver_uart_pin_update(tx_pin, rx_pin, cts_pin, rts_pin);
 }
 
 
