@@ -182,7 +182,7 @@ static esp_err_t wifi_deinit_internal(void)
     esp_supplicant_deinit();
 
 #if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    deinit_roaming_app();
+    roam_deinit_app();
 #endif
 
     err = esp_wifi_deinit_internal();
@@ -447,7 +447,7 @@ esp_err_t esp_wifi_init(const wifi_init_config_t *config)
         }
 
 #if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-        init_roaming_app();
+        roam_init_app();
 #endif
 
     } else {
@@ -485,7 +485,7 @@ esp_err_t esp_wifi_connect(void)
     ret = esp_wifi_connect_internal();
 
 #if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    roaming_app_enable_reconnect();
+    roam_enable_reconnect();
 #endif
     return ret;
 }
@@ -493,11 +493,11 @@ esp_err_t esp_wifi_connect(void)
 esp_err_t esp_wifi_disconnect(void)
 {
     esp_err_t ret = ESP_OK;
+#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
+    roam_disable_reconnect();
+#endif
     ret = esp_wifi_disconnect_internal();
 
-#if CONFIG_ESP_WIFI_ENABLE_ROAMING_APP
-    roaming_app_disable_reconnect();
-#endif
     return ret;
 }
 
