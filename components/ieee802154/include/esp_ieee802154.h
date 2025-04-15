@@ -59,17 +59,17 @@ uint8_t esp_ieee802154_get_channel(void);
 esp_err_t esp_ieee802154_set_channel(uint8_t channel);
 
 /**
- * @brief  Get the transmit power.
+ * @brief  Get the transmission power for the current channel.
  *
- * @return The transmit power in dBm.
+ * @return The transmission power in dBm.
  *
  */
 int8_t esp_ieee802154_get_txpower(void);
 
 /**
- * @brief  Set the transmit power.
+ * @brief  Set the transmission power for all channels.
  *
- * @param[in]  power  The transmit power in dBm.
+ * @param[in]  power  The transmission power in dBm.
  *
  * @return
  *      - ESP_OK on success.
