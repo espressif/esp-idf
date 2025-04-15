@@ -2189,6 +2189,54 @@ void btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types)
 }
 
 #if (BLE_INCLUDED == TRUE)
+
+/*******************************************************************************
+**
+** Function         BTM_ReadChannelMap
+**
+** Description      This function is called to read the current channel map
+**                  for the given connection. The results are returned via
+**                  the callback (tBTM_BLE_CH_MAP_RESULTS).
+**
+** Returns          BTM_CMD_STARTED if successfully initiated or error code
+**
+*******************************************************************************/
+tBTM_STATUS BTM_ReadChannelMap(BD_ADDR remote_bda, tBTM_CMPL_CB *p_cb)
+{
+    tACL_CONN *p;
+    tBTM_BLE_CH_MAP_RESULTS result;
+
+    BTM_TRACE_DEBUG("BTM_ReadChannelMap: RemBdAddr: %02x%02x%02x%02x%02x%02x\n",
+                  remote_bda[0], remote_bda[1], remote_bda[2],
+                  remote_bda[3], remote_bda[4], remote_bda[5]);
+
+    memset(result.channel_map, 0, sizeof(result.channel_map));  // Clear channel map data
+    /* If someone already waiting for the channel map, do not allow another */
+    if (btm_cb.devcb.p_ble_ch_map_cmpl_cb) {
+        result.status = BTM_BUSY;
+        (*p_cb)(&result);
+        return BTM_BUSY;
+    }
+    p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+    if (p != NULL) {
+        btm_cb.devcb.p_ble_ch_map_cmpl_cb = p_cb;
+
+        if (!btsnd_hcic_ble_read_chnl_map(p->hci_handle)) {
+            btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
+            result.status = BTM_NO_RESOURCES;
+            (*p_cb)(&result);
+            return BTM_NO_RESOURCES;
+        } else {
+            return BTM_CMD_STARTED;
+        }
+    }
+
+    /* If here, no BD Addr found */
+    result.status = BTM_UNKNOWN_ADDR;
+    (*p_cb)(&result);
+    return BTM_UNKNOWN_ADDR;
+}
+
 #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
 tBTM_STATUS BTM_BleReadAdvTxPower(tBTM_CMPL_CB *p_cb)
 {
@@ -2284,6 +2332,62 @@ void btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble)
     }
 }
 #endif // #if (BLE_HOST_READ_TX_POWER_EN == TRUE)
+
+/*******************************************************************************
+**
+** Function         btm_read_channel_map_complete
+**
+** Description      This function is called when the command complete message
+**                  is received from the HCI for the read channel map request.
+**                  It processes the received channel map data and invokes the
+**                  registered callback function with the results.
+**
+** Returns          void
+**
+*******************************************************************************/
+void btm_read_channel_map_complete(UINT8 *p)
+{
+    tBTM_CMPL_CB *p_cb = btm_cb.devcb.p_ble_ch_map_cmpl_cb;
+    tBTM_BLE_CH_MAP_RESULTS results;
+    UINT16 handle;
+    tACL_CONN *p_acl_cb = NULL;
+
+    BTM_TRACE_DEBUG("btm_read_channel_map_complete\n");
+
+    /* Reset the callback pointer to prevent duplicate calls */
+    btm_cb.devcb.p_ble_ch_map_cmpl_cb = NULL;
+
+    if (p_cb) {
+        /* Extract HCI status from the response */
+        STREAM_TO_UINT8(results.hci_status, p);
+
+        if (results.hci_status == HCI_SUCCESS) {
+            results.status = BTM_SUCCESS;
+
+            /* Extract the connection handle and channel map */
+            STREAM_TO_UINT16(handle, p);
+            STREAM_TO_ARRAY(results.channel_map, p, 5);
+
+            BTM_TRACE_DEBUG("BTM Channel Map Complete: handle 0x%04x, hci status 0x%02x", handle, results.hci_status);
+            BTM_TRACE_DEBUG("Channel Map: %02x %02x %02x %02x %02x",
+                            results.channel_map[0], results.channel_map[1], results.channel_map[2],
+                            results.channel_map[3], results.channel_map[4]);
+
+            /* Retrieve the remote BD address using the connection handle */
+            p_acl_cb = btm_handle_to_acl(handle);
+            if (p_acl_cb) {
+                memcpy(results.rem_bda, p_acl_cb->remote_addr, BD_ADDR_LEN);
+            }
+        } else {
+            results.status = BTM_ERR_PROCESSING;
+            BTM_TRACE_ERROR("BTM Channel Map Read Failed: hci status 0x%02x", results.hci_status);
+        }
+
+        /* Invoke the registered callback with the results */
+        (*p_cb)(&results);
+    }
+}
+
 
 /*******************************************************************************
 **
@@ -2732,9 +2836,10 @@ void btm_acl_connected(BD_ADDR bda, UINT16 handle, UINT8 link_type, UINT8 enc_mo
 ** Description      Handle ACL disconnection complete event
 **
 *******************************************************************************/
-void btm_acl_disconnected(UINT16 handle, UINT8 reason)
+BOOLEAN btm_acl_disconnected(UINT16 handle, UINT8 reason)
 {
-
+    BOOLEAN status = FALSE;
+    BOOLEAN dis_status;
     /* Report BR/EDR ACL disconnection result to upper layer */
     tACL_CONN *conn = btm_handle_to_acl(handle);
     if (conn) {
@@ -2742,6 +2847,7 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
         if (conn->transport == BT_TRANSPORT_BR_EDR)
 #endif
         {
+            status = TRUE;
             tBTM_ACL_LINK_STAT_EVENT_DATA evt_data = {
                 .event = BTM_ACL_DISCONN_CMPL_EVT,
                 .link_act.disconn_cmpl.reason = reason,
@@ -2753,16 +2859,29 @@ void btm_acl_disconnected(UINT16 handle, UINT8 reason)
     }
 
 #if BTM_SCO_INCLUDED == TRUE
+    dis_status = l2c_link_hci_disc_comp (handle, reason);
     /* If L2CAP doesn't know about it, send it to SCO */
-    if (!l2c_link_hci_disc_comp (handle, reason)) {
-        btm_sco_removed (handle, reason);
+    if (!dis_status) {
+        dis_status = btm_sco_removed (handle, reason);
+    } else {
+        status = TRUE;
     }
 #else
-    l2c_link_hci_disc_comp(handle, reason);
+    dis_status = l2c_link_hci_disc_comp(handle, reason);
 #endif /* BTM_SCO_INCLUDED */
+    if (dis_status) {
+        // find tL2C_LCB
+        status = TRUE;
+    }
 
 #if (SMP_INCLUDED == TRUE)
     /* Notify security manager */
-    btm_sec_disconnected(handle, reason);
+    if (btm_sec_disconnected(handle, reason)) {
+        // find tBTM_SEC_DEV_REC
+        status = TRUE;
+    }
+
 #endif  /* SMP_INCLUDED == TRUE */
+
+    return status;
 }

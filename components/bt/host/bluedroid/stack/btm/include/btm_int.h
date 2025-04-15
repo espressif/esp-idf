@@ -191,6 +191,10 @@ tBTM_CMPL_CB        *p_rln_cmpl_cb;     /* Callback function to be called when  
 TIMER_LIST_ENT       rssi_timer;
 tBTM_CMPL_CB        *p_rssi_cmpl_cb;    /* Callback function to be called when  */
 /* read rssi function completes         */
+
+tBTM_CMPL_CB        *p_ble_ch_map_cmpl_cb; /* Callback function to be called when */
+/* read channel map function completes */
+
 TIMER_LIST_ENT       lnk_quality_timer;
 tBTM_CMPL_CB        *p_lnk_qual_cmpl_cb;/* Callback function to be called when  */
 /* read link quality function completes */
@@ -1068,6 +1072,7 @@ void         btm_cont_rswitch (tACL_CONN *p,
 tACL_CONN    *btm_handle_to_acl (UINT16 hci_handle);
 void         btm_read_link_policy_complete (UINT8 *p);
 void         btm_read_rssi_complete (UINT8 *p);
+void         btm_read_channel_map_complete (UINT8 *p);
 void         btm_read_tx_power_complete (UINT8 *p, BOOLEAN is_ble);
 void         btm_acl_pkt_types_changed(UINT8 status, UINT16 handle, UINT16 pkt_types);
 void         btm_read_link_quality_complete (UINT8 *p);
@@ -1118,6 +1123,17 @@ void btm_read_phy_callback(uint8_t hci_status, uint16_t conn_handle, uint8_t tx_
 #if (BLE_FEAT_PERIODIC_ADV_SYNC_TRANSFER == TRUE)
 void btm_ble_periodic_adv_sync_trans_complete(UINT16 op_code, UINT8 hci_status, UINT16 conn_handle);
 #endif
+void btm_ble_big_sync_terminate_complete(UINT8 hci_status, UINT8 big_handle);
+
+#if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+void btm_enh_read_trans_pwr_level_cmpl_evt(uint8_t *p);
+void btm_read_remote_trans_pwr_level_cmpl(UINT8 status);
+#endif // #if (BLE_FEAT_POWER_CONTROL_EN == TRUE)
+
+#if (BLE_FEAT_CONN_SUBRATING == TRUE)
+void btm_subrate_req_cmd_status(UINT8 status);
+#endif // #if (BLE_FEAT_CONN_SUBRATING == TRUE)
+
 /* Internal functions provided by btm_sco.c
 ********************************************
 */
@@ -1129,7 +1145,7 @@ void btm_esco_proc_conn_chg (UINT8 status, UINT16 handle, UINT8 tx_interval,
                              UINT8 retrans_window, UINT16 rx_pkt_len,
                              UINT16 tx_pkt_len);
 void btm_sco_conn_req (BD_ADDR bda,  DEV_CLASS dev_class, UINT8 link_type);
-void btm_sco_removed (UINT16 hci_handle, UINT8 reason);
+BOOLEAN btm_sco_removed (UINT16 hci_handle, UINT8 reason);
 void btm_sco_acl_removed (BD_ADDR bda);
 void btm_route_sco_data (BT_HDR *p_msg);
 BOOLEAN btm_is_sco_active (UINT16 handle);
@@ -1209,7 +1225,7 @@ void  btm_sec_auth_complete (UINT16 handle, UINT8 status);
 void  btm_sec_encrypt_change (UINT16 handle, UINT8 status, UINT8 encr_enable);
 void  btm_sec_connected (UINT8 *bda, UINT16 handle, UINT8 status, UINT8 enc_mode);
 tBTM_STATUS btm_sec_disconnect (UINT16 handle, UINT8 reason);
-void  btm_sec_disconnected (UINT16 handle, UINT8 reason);
+BOOLEAN  btm_sec_disconnected (UINT16 handle, UINT8 reason);
 void  btm_sec_rmt_name_request_complete (UINT8 *bd_addr, UINT8 *bd_name, UINT8 status);
 void  btm_sec_rmt_host_support_feat_evt (UINT8 *p);
 void  btm_io_capabilities_req (UINT8 *p);
