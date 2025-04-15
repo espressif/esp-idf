@@ -5,5 +5,5 @@ set(public_include "include")
 idf_component_register(
      SRCS ${srcs}
      INCLUDE_DIRS ${public_include}
-     PRIV_REQUIRES sdmmc unity test_utils
+     PRIV_REQUIRES sdmmc unity test_utils esp_timer
 )
