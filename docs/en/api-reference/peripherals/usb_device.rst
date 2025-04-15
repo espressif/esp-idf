@@ -289,11 +289,11 @@ This approach ensures that USB transactions remain fast while avoiding potential
           - Read Speed
           - Write Speed
 
-        * - 512B
+        * - 512 B
           - 0.566 MB/s
           - 0.236 MB/s
 
-        * - 8192B
+        * - 8192 B
           - 0.925 MB/s
           - 0.928 MB/s
 
@@ -307,21 +307,23 @@ This approach ensures that USB transactions remain fast while avoiding potential
           - Read Speed
           - Write Speed
 
-        * - 512B
+        * - 512 B
           - 1.174 MB/s
           - 0.238 MB/s
 
-        * - 8192B
+        * - 8192 B
           - 4.744 MB/s
           - 2.157 MB/s
 
-        * - 32768B
+        * - 32768 B
           - 5.998 MB/s
           - 4.485 MB/s
 
 .. only:: esp32s2
 
-    *Note: SD card support is not available for ESP32-S2 in MSC device mode.*
+    .. note::
+
+        SD card support is not available for ESP32-S2 in MSC device mode.
 
     **SPI Flash Performance:**
 
@@ -332,10 +334,10 @@ This approach ensures that USB transactions remain fast while avoiding potential
         * - FIFO Size
           - Write Speed
 
-        * - 512B
+        * - 512 B
           - 5.59 KB/s
 
-        * - 8192B
+        * - 8192 B
           - 21.54 KB/s
 
 Performance Limitations:
