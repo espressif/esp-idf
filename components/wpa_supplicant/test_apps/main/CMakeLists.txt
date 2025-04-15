@@ -5,6 +5,7 @@ idf_component_register(SRCS
                         "test_fast_pbkdf2.c"
                         "test_offchannel.c"
                         "test_sae.c"
+                        "test_sae_h2e.c"
                         "test_wpa_supplicant_main.c"
                         "test_wifi_external_bss.c"
                     PRIV_INCLUDE_DIRS "."
