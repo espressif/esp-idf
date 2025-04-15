@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -351,7 +351,12 @@ void ieee80211_ftm_attach(void)
 {
     /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
 }
-#endif
+
+void ftm_initiator_cleanup(void)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif /* CONFIG_ESP_WIFI_FTM_ENABLE */
 
 #ifndef CONFIG_ESP_WIFI_SOFTAP_SUPPORT
 void net80211_softap_funcs_init(void)
@@ -427,7 +432,29 @@ void * ieee80211_alloc_proberesp(void *p, int arg)
     return NULL;
 }
 
-#endif
+bool hostap_query_mac_in_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return false;
+}
+
+int hostap_add_in_mac_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+int hostap_del_mac_info_from_list(const uint8_t *p, int arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+    return 0;
+}
+
+void create_new_bss_for_sa_query_failed_sta(uint8_t arg)
+{
+    /* Do not remove, stub to overwrite weak link in Wi-Fi Lib */
+}
+#endif /* CONFIG_ESP_WIFI_SOFTAP_SUPPORT */
 
 #if CONFIG_IDF_TARGET_ESP32C2
 #if CONFIG_ESP32C2_REV_MIN_FULL < 200
