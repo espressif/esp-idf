@@ -1110,6 +1110,7 @@ typedef enum {
 
     WIFI_EVENT_AP_WRONG_PASSWORD,        /**< a station tried to connect with wrong password */
 
+    WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE,  /**< Station sampled beacon offset unstable */
     WIFI_EVENT_MAX,                      /**< Invalid Wi-Fi event ID */
 } wifi_event_t;
 
@@ -1508,6 +1509,11 @@ typedef struct {
 } wifi_tx_info_t;
 
 typedef wifi_tx_info_t esp_80211_tx_info_t;
+
+/** Argument structure for WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE event */
+typedef struct {
+    float beacon_success_rate;                  /**< Received beacon success rate */
+} wifi_event_sta_beacon_offset_unstable_t;
 
 #ifdef __cplusplus
 }

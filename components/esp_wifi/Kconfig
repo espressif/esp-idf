@@ -462,8 +462,9 @@ menu "Wi-Fi"
             default 3
             depends on ESP_WIFI_SLP_BEACON_LOST_OPT
             help
-                Maximum number of consecutive lost beacons allowed, WiFi keeps Rx state when
-                the number of consecutive beacons lost is greater than the given threshold.
+                Maximum number of consecutive lost beacons allowed, the WiFi Rx state behaviour
+                will be determined by ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_POLICY
+                when the number of consecutive beacons lost is greater than the given threshold.
 
         config ESP_WIFI_SLP_PHY_ON_DELTA_EARLY_TIME
             int "Delta early time for RF PHY on"
@@ -482,6 +483,77 @@ menu "Wi-Fi"
             help
                 Delta timeout time for rf phy off, When the beacon is lost, the next rf phy off will
                 be delayed for the time specified by the configuration item. Unit: 1024 microsecond.
+
+        choice ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_POLICY
+            prompt "Beacon strategy when beacon loss exceeds threshold"
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT
+            default ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_AUTO
+            help
+                Select the strategy to apply when the number of lost beacons exceeds the threshold.
+
+                - "Receive beacon": Keep RF on until a beacon is successfully received.
+
+                - "Drop beacon": Turn off RF and skip beacon reception during this period.
+
+                - "Auto": Beacon will been dropped only if ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE enabled
+                          and expected rx beacon probability stays below the standard.
+
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_RECEIVE
+                bool "Receive beacon"
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_DROP
+                bool "Drop beacon"
+            config ESP_WIFI_SLP_BEACON_LOST_OVER_THRESHOLD_AUTO
+                bool "Auto"
+        endchoice
+
+        config ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+            bool "Sample beacon to calculate beacon offset"
+            default n
+            depends on ESP_WIFI_SLP_BEACON_LOST_OPT && !ESP_WIFI_ENHANCED_LIGHT_SLEEP
+            help
+                Select to enable feature sampling beacons to calculate beacon offset.
+
+        menu "Beacon Sample Configuration Options"
+            visible if ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+            config ESP_WIFI_SLP_SAMPLE_BEACON_COUNT
+                int "Sample beacons at wifi connected to adjust beacon parameters"
+                range 100 1200
+                default 300
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Numble of sampled beacons at wifi connected to adjust beacon parameters.
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_DIFFERENCE_PERCENT
+                int "Difference percentage triggers unstable event"
+                range 0 100
+                default 20
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Difference triggers event WIFI_EVENT_STA_BEACON_OFFSET_UNSTABLE
+                    when the actual rx beacon probability continuously falls below
+                    the expected probability by this value.
+                    unit: percentage
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_STANDARD_PERCENT
+                int "Standard percentage triggers beacon drop"
+                range 0 100
+                default 55
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Standard triggers beacon drop when the expected rx beacon probability
+                    falls below this value under ESP_WIFI_SLP_BEACON_LOST_DROP_BEACON_AUTO mode.
+                    unit: percentage
+
+            config ESP_WIFI_SLP_SAMPLE_BEACON_RESAMPLE_PERIOD
+                int "Resample period"
+                range 0 255
+                default 3
+                depends on ESP_WIFI_SLP_SAMPLE_BEACON_FEATURE
+                help
+                    Resample period if beacon drop is active under ESP_WIFI_SLP_BEACON_LOST_DROP_BEACON_AUTO mode.
+                    It means never resample if setting this value to 0.
+                    unit: hours
+        endmenu # "Beacon Sample Configuration Options"
 
         config ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM
             int "Maximum espnow encrypt peers number"
