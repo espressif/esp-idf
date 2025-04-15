@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,7 +34,8 @@
 #define OCT_PSRAM_RD_REG_DUMMY_BITLEN   (2*(5-1))
 #define OCT_PSRAM_WR_DUMMY_BITLEN       (2*(5-1))
 #define OCT_PSRAM_CS1_IO                SPI_CS1_GPIO_NUM
-#define OCT_PSRAM_VENDOR_ID             0xD
+#define OCT_PSRAM_VENDOR_ID_AP          0xD
+#define OCT_PSRAM_VENDOR_ID_UNILC       0x1A
 
 #define OCT_PSRAM_CS_SETUP_TIME         3
 #define OCT_PSRAM_CS_HOLD_TIME          3
@@ -223,7 +224,7 @@ static void s_get_psram_mode_reg(int spi_num, opi_psram_mode_reg_t *out_reg)
 
 static void s_print_psram_info(opi_psram_mode_reg_t *reg_val)
 {
-    ESP_EARLY_LOGI(TAG, "vendor id    : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : "UNKNOWN");
+    ESP_EARLY_LOGI(TAG, "vendor id    : 0x%02x (%s)", reg_val->mr1.vendor_id, reg_val->mr1.vendor_id == 0x0d ? "AP" : (reg_val->mr1.vendor_id == 0x1a ? "UnilC" : "UNKNOWN"));
     ESP_EARLY_LOGI(TAG, "dev id       : 0x%02x (generation %d)", reg_val->mr2.dev_id, reg_val->mr2.dev_id + 1);
     ESP_EARLY_LOGI(TAG, "density      : 0x%02x (%d Mbit)", reg_val->mr2.density, reg_val->mr2.density == 0x1 ? 32 :
                    reg_val->mr2.density == 0X3 ? 64 :
@@ -317,7 +318,7 @@ esp_err_t esp_psram_impl_enable(void)
     s_init_psram_mode_reg(1, &mode_reg);
     //Print PSRAM info
     s_get_psram_mode_reg(1, &mode_reg);
-    if (mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID) {
+    if (mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_AP && mode_reg.mr1.vendor_id != OCT_PSRAM_VENDOR_ID_UNILC) {
         ESP_EARLY_LOGE(TAG, "PSRAM ID read error: 0x%08x, PSRAM chip not found or not supported, or wrong PSRAM line mode", mode_reg.mr1.vendor_id);
         return ESP_ERR_NOT_SUPPORTED;
     }
