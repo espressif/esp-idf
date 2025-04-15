@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -119,7 +119,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     ANA_CMPR_NULL_POINTER_CHECK(ret_cmpr);
     ana_cmpr_unit_t unit = config->unit;
     ANA_CMPR_UNIT_CHECK(unit);
-    ESP_RETURN_ON_FALSE(config->intr_priority >= 0 && config->intr_priority <= 7, ESP_ERR_INVALID_ARG, TAG, "interrupt priority should be within 0~7");
+    ESP_RETURN_ON_FALSE(config->intr_priority >= 0 && config->intr_priority <= 3, ESP_ERR_INVALID_ARG, TAG, "interrupt priority should be within 0~3");
     ESP_RETURN_ON_FALSE(!s_ana_cmpr[unit], ESP_ERR_INVALID_STATE, TAG,
                         "unit has been allocated already");
     esp_err_t ret = ESP_OK;
@@ -134,6 +134,7 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
     s_ana_cmpr[unit]->intr_priority = config->intr_priority;
     s_ana_cmpr[unit]->is_enabled = false;
     s_ana_cmpr[unit]->pm_lock = NULL;
+    s_ana_cmpr[unit]->unit = unit;
 
 #if CONFIG_PM_ENABLE
     /* Create PM lock */
@@ -163,6 +164,9 @@ esp_err_t ana_cmpr_new_unit(const ana_cmpr_config_t *config, ana_cmpr_handle_t *
 #endif  // SOC_ANA_CMPR_CAN_DISTINGUISH_EDGE
     /* Record the interrupt mask, the interrupt will be lazy installed when register the callbacks */
     s_ana_cmpr[unit]->intr_mask = analog_cmpr_ll_get_intr_mask_by_type(s_ana_cmpr[unit]->dev, config->cross_type);
+    // disable the interrupt by default, and clear pending status
+    analog_cmpr_ll_enable_intr(s_ana_cmpr[unit]->dev, ANALOG_CMPR_LL_ALL_INTR_MASK(unit), false);
+    analog_cmpr_ll_clear_intr(s_ana_cmpr[unit]->dev, ANALOG_CMPR_LL_ALL_INTR_MASK(unit));
     portEXIT_CRITICAL(&s_spinlock);
 
     if (config->ref_src == ANA_CMPR_REF_SRC_INTERNAL) {

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,6 +13,11 @@
 #include "esp_rom_sys.h"
 #include "soc/soc_caps.h"
 #include "driver/ana_cmpr.h"
+#include "driver/gpio.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Test default on cross callback
@@ -41,3 +46,7 @@ int test_init_src_chan_gpio(void);
  * @param val       0 to set low, others to set high
  */
 void test_simulate_src_signal(int src_chan, uint32_t val);
+
+#ifdef __cplusplus
+}
+#endif
