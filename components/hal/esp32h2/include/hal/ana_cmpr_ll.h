@@ -14,6 +14,8 @@
 #define ANALOG_CMPR_LL_GET_HW(unit)     (&ANALOG_CMPR[unit])
 #define ANALOG_CMPR_LL_EVENT_CROSS      (1 << 0)
 
+#define ANALOG_CMPR_LL_ALL_INTR_MASK(unit) (ANALOG_CMPR_LL_EVENT_CROSS)
+
 #ifdef __cplusplus
 extern "C" {
 #endif
