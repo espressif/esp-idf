@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,11 +42,15 @@
 
 extern int _invalid_pc_placeholder;
 
-extern void esp_panic_handler_reconfigure_wdts(uint32_t timeout_ms);
-
 extern void esp_panic_handler(panic_info_t *);
 
-static wdt_hal_context_t wdt0_context = {.inst = WDT_MWDT0, .mwdt_dev = &TIMERG0};
+extern void esp_panic_handler_increment_entry_count(void);
+
+extern void esp_panic_handler_feed_wdts(void);
+
+extern void esp_panic_handler_enable_rtc_wdt(uint32_t timeout_ms);
+
+extern void esp_panic_handler_disable_timg_wdts(void);
 
 void *g_exc_frames[SOC_CPU_CORES_NUM] = {NULL};
 
@@ -130,12 +134,52 @@ void busy_wait(void)
 
 static void panic_handler(void *frame, bool pseudo_excause)
 {
+    /* If watchdogs are enabled, the panic handler runs the risk of getting aborted pre-emptively because
+     * an overzealous watchdog decides to reset it. On the other hand, if we disable all watchdogs, we run
+     * the risk of somehow halting in the panic handler and not resetting.
+     *
+     * We have to do this before we do anything that might cause issues in the WDT interrupt handlers,
+     * for example stalling the other core on ESP32 may cause the ESP32_ECO3_CACHE_LOCK_FIX
+     * handler to get stuck.
+     *
+     * We do this before we increment the panic handler entry count to ensure that the WDTs are fed.
+     */
+    esp_panic_handler_feed_wdts();
+
+    /* Increment the panic handler entry count */
+    esp_panic_handler_increment_entry_count();
+
+    /* Configuring the RTC WDT as early as possible in the panic handler
+     * is critical for system safety.
+     *
+     * The RTC WDT is relied upon for a complete system reset, as it is the only
+     * watchdog timer capable of resetting both the main system and the RTC subsystem.
+     * In contrast, the Timer Group Watchdog Timers can only reset the main system
+     * but not the RTC module.
+     *
+     * The timeout value for the RTC WDT is set to 10 seconds. The primary reason for
+     * choosing a 10 second timeout is to allow the panic handler to run to completion
+     * which may include core dump collection and apptrace flushing.
+     *
+     * Explanation for why the core dump takes time:
+     * 64KB of core dump data (stacks of about 30 tasks) will produce ~85KB base64 data.
+     * @ 115200 UART speed it will take more than 6 sec to print them out.
+     *
+     * TODO: Make the timeout configurable or more intelligent based on the panic reason and the
+     * config options.
+     */
+#if CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS
+    esp_panic_handler_enable_rtc_wdt((CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS + 10) * 1000);
+#else
+    esp_panic_handler_enable_rtc_wdt(10000);
+#endif /* CONFIG_ESP_SYSTEM_PANIC_REBOOT_DELAY_SECONDS */
+
     panic_info_t info = { 0 };
 
     /*
      * Setup environment and perform necessary architecture/chip specific
      * steps here prior to the system panic handler.
-     * */
+     */
     int core_id = esp_cpu_get_core_id();
 
     // If multiple cores arrive at panic handler, save frames for all of them
@@ -176,8 +220,12 @@ static void panic_handler(void *frame, bool pseudo_excause)
 #endif // CONFIG_ESP_SYSTEM_HW_STACK_GUARD
     }
 
-    // Need to reconfigure WDTs before we stall any other CPU
-    esp_panic_handler_reconfigure_wdts(1000);
+    /* Before we stall the other CPU, we need to disable all WDTs except the RTC WDT.
+     * This is because the TIMG WDTs cannot reset the RTC subsystem, which stores the CPU stalling
+     * configuration. If the other CPU is stalled and the TIMG WDTs trigger before we can unstall the
+     * CPU then we have a chance of locking up the system without rebooting it.
+     */
+    esp_panic_handler_disable_timg_wdts();
 
     esp_rom_delay_us(1);
     // Stall all other cores
@@ -186,6 +234,12 @@ static void panic_handler(void *frame, bool pseudo_excause)
             esp_cpu_stall(i);
         }
     }
+#else
+    /* In single core mode, we don't need to disable the TIMG WDTs,
+     * but we do it anyway to keep the code consistent and to avoid
+     * managing the state of multiple WDTs.
+     */
+    esp_panic_handler_disable_timg_wdts();
 #endif // !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
 
     esp_ipc_isr_stall_abort();
@@ -200,15 +254,6 @@ static void panic_handler(void *frame, bool pseudo_excause)
             panic_set_address(frame, (uint32_t)&_invalid_pc_placeholder);
         }
 #endif
-        if (panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU0
-#if !CONFIG_ESP_SYSTEM_SINGLE_CORE_MODE
-                || panic_get_cause(frame) == PANIC_RSN_INTWDT_CPU1
-#endif
-           ) {
-            wdt_hal_write_protect_disable(&wdt0_context);
-            wdt_hal_handle_intr(&wdt0_context);
-            wdt_hal_write_protect_enable(&wdt0_context);
-        }
     }
 
     // Convert architecture exception frame into abstracted panic info
