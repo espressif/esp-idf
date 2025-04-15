@@ -708,6 +708,8 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED;
         }
         free(use_host);
+    } else {
+        mbedtls_ssl_set_hostname(&tls->ssl, NULL);
     }
 
     if ((ret = mbedtls_ssl_config_defaults(&tls->conf,

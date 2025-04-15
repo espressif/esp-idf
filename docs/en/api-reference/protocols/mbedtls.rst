@@ -94,3 +94,4 @@ Reducing Binary Size
 ^^^^^^^^^^^^^^^^^^^^
 
 Under ``Component Config -> mbedTLS``, there are multiple Mbed TLS features which are enabled by default but can be disabled if not needed to save code size. More information can be about this can be found in :ref:`Minimizing Binary Size <minimizing_binary_mbedtls>` docs.
+
