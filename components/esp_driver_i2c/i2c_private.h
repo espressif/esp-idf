@@ -81,11 +81,6 @@ typedef struct i2c_master_dev_t i2c_master_dev_t;
 typedef struct i2c_slave_dev_t i2c_slave_dev_t;
 
 typedef enum {
-    I2C_BUS_MODE_MASTER = 0,
-    I2C_BUS_MODE_SLAVE = 1,
-} i2c_bus_mode_t;
-
-typedef enum {
     I2C_SLAVE_FIFO = 0,
     I2C_SLAVE_NONFIFO = 1,
 } i2c_slave_fifo_mode_t;

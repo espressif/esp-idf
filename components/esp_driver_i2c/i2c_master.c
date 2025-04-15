@@ -130,6 +130,10 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     }
 
     i2c_hal_master_init(hal);
+    // Restore the clock source here.
+    I2C_CLOCK_SRC_ATOMIC() {
+        i2c_ll_set_source_clk(hal->dev, i2c_master->base->clk_src);
+    }
     i2c_ll_enable_fifo_mode(hal->dev, true);
     i2c_ll_disable_intr_mask(hal->dev, I2C_LL_INTR_MASK);
     i2c_ll_clear_intr_mask(hal->dev, I2C_LL_INTR_MASK);
