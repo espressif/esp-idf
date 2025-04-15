@@ -259,6 +259,7 @@ menu "OpenThread"
         config OPENTHREAD_LINK_METRICS
             bool "Enable link metrics feature"
             default n
+            select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
             help
                 Select this option to enable link metrics feature
 
@@ -271,20 +272,20 @@ menu "OpenThread"
         config OPENTHREAD_CSL_ENABLE
             bool "Enable CSL feature"
             default n
+            select IEEE802154_TIMING_OPTIMIZATION if IEEE802154_ENABLED
             help
                 Select this option to enable CSL feature
         menu "CSL Configurations"
-            depends on OPENTHREAD_CSL_ENABLE
             config OPENTHREAD_CSL_ACCURACY
                 int "The current CSL rx/tx scheduling drift, in units of ± ppm"
 
-                default 1
+                default 20
                 help
                     The current accuracy of the clock used for scheduling CSL operations
 
             config OPENTHREAD_CSL_UNCERTAIN
                 int "The CSL Uncertainty in units of 10 us."
-                default 1
+                default 0
                 help
                     The fixed uncertainty of the Device for scheduling CSL Transmissions in units of 10 microseconds.
 
@@ -374,7 +375,7 @@ menu "OpenThread"
 
             config OPENTHREAD_XTAL_ACCURACY
                 int "The accuracy of the XTAL"
-                default 130
+                default 10
                 help
                     The device's XTAL accuracy, in ppm.
 

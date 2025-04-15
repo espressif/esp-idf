@@ -726,11 +726,21 @@
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
- * Define as 1 to set the ahead time for CSL transmit timing.
+ * Define how many microseconds ahead should MAC deliver CSL frame to SubMac.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US 20000
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (2 * 1000000 / CONFIG_FREERTOS_HZ)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Reception scheduling and ramp up time needed for the CSL receiver to be ready, in units of microseconds.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD (OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US + 320)
 #endif
 
 /**

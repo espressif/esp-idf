@@ -211,8 +211,7 @@ esp_err_t esp_ieee802154_set_multipan_enable(uint8_t mask)
     ieee802154_ll_set_multipan_enable_mask(mask);
     return ESP_OK;
 }
-
-#else
+#endif // CONFIG_IEEE802154_MULTI_PAN_ENABLE
 
 esp_err_t esp_ieee802154_set_ack_timeout(uint32_t timeout)
 {
@@ -264,8 +263,6 @@ esp_err_t esp_ieee802154_set_extended_address(const uint8_t *ext_addr)
     return ESP_OK;
 }
 
-#endif // CONFIG_IEEE802154_MULTI_PAN_ENABLE
-
 esp_ieee802154_pending_mode_t esp_ieee802154_get_pending_mode(void)
 {
     return ieee802154_pib_get_pending_mode();
@@ -308,9 +305,9 @@ esp_err_t esp_ieee802154_receive(void)
     return ieee802154_receive();
 }
 
-esp_err_t esp_ieee802154_receive_at(uint32_t time)
+esp_err_t esp_ieee802154_receive_at(uint32_t time, uint32_t duration)
 {
-    return ieee802154_receive_at(time);
+    return ieee802154_receive_at(time, duration);
 }
 
 esp_err_t esp_ieee802154_energy_detect(uint32_t duration)
@@ -337,6 +334,7 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
 
     case IEEE802154_STATE_RX:
     case IEEE802154_STATE_TX_ACK:
+    case IEEE802154_STATE_TX_ENH_ACK:
     case IEEE802154_STATE_ED:
         return ESP_IEEE802154_RADIO_RECEIVE;
 
@@ -344,7 +342,6 @@ esp_ieee802154_state_t esp_ieee802154_get_state(void)
     case IEEE802154_STATE_CCA:
     case IEEE802154_STATE_TX:
     case IEEE802154_STATE_RX_ACK:
-    case IEEE802154_STATE_TX_ENH_ACK:
         return ESP_IEEE802154_RADIO_TRANSMIT;
 
     default:
@@ -434,21 +431,15 @@ __attribute__((weak)) void esp_ieee802154_ed_failed(uint16_t error)
 {
 
 }
+__attribute__((weak)) void esp_ieee802154_receive_at_done(void)
+{
+
+}
 
 __attribute__((weak)) esp_err_t esp_ieee802154_enh_ack_generator(uint8_t *frame, esp_ieee802154_frame_info_t *frame_info, uint8_t* enhack_frame)
 {
     ESP_EARLY_LOGE(IEEE802154_TAG, "Not implement for the enh-ack generating handler");
     return ESP_FAIL;
-}
-
-__attribute__((weak)) void esp_ieee802154_timer0_done(void)
-{
-
-}
-
-__attribute__((weak)) void esp_ieee802154_timer1_done(void)
-{
-
 }
 
 #if CONFIG_IEEE802154_TXRX_STATISTIC
