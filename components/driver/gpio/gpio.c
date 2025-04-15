@@ -77,7 +77,7 @@ static gpio_context_t gpio_context = {
 
 esp_err_t gpio_pullup_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error (input-only pad has no internal PU)", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
@@ -115,7 +115,7 @@ esp_err_t gpio_pullup_dis(gpio_num_t gpio_num)
 
 esp_err_t gpio_pulldown_en(gpio_num_t gpio_num)
 {
-    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error", ESP_ERR_INVALID_ARG);
+    GPIO_CHECK(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), "GPIO number error (input-only pad has no internal PD)", ESP_ERR_INVALID_ARG);
 
     if (!rtc_gpio_is_valid_gpio(gpio_num) || SOC_GPIO_SUPPORT_RTC_INDEPENDENT) {
         portENTER_CRITICAL(&gpio_context.gpio_spinlock);
