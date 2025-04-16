@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -294,7 +294,7 @@ ssize_t esp_mbedtls_write(esp_tls_t *tls, const char *data, size_t datalen)
                 return ret;
             } else {
                 // Exiting the tls-write process as less than desired datalen are writable
-                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04zX, already written %zu, exitting...", -ret, written);
+                ESP_LOGD(TAG, "mbedtls_ssl_write() returned -0x%04zX, already written %zu, exiting...", -ret, written);
                 mbedtls_print_error_msg(ret);
                 return (written > 0) ? written : ret;
             }
@@ -702,6 +702,8 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED;
         }
         free(use_host);
+    } else {
+        mbedtls_ssl_set_hostname(&tls->ssl, NULL);
     }
 
     if ((ret = mbedtls_ssl_config_defaults(&tls->conf,
