@@ -279,7 +279,7 @@ menu "OpenThread"
             config OPENTHREAD_CSL_ACCURACY
                 int "The current CSL rx/tx scheduling drift, in units of ± ppm"
 
-                default 20
+                default 50
                 help
                     The current accuracy of the clock used for scheduling CSL operations
 
