@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -439,7 +439,18 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param target_duty Target duty of fading [0, (2**duty_resolution)]
- * @param max_fade_time_ms The maximum time of the fading ( ms ).
+ * @param desired_fade_time_ms The intended time of the fading ( ms ).
+ *                             Note that the actual time it takes to complete the fade could vary by a factor of up to 2x shorter
+ *                             or longer than the expected time due to internal rounding errors in calculations.
+ *                             Specifically:
+ *                             * The total number of cycles (total_cycle_num = desired_fade_time_ms * freq / 1000)
+ *                             * The difference in duty cycle (duty_delta = |target_duty - current_duty|)
+ *                             The fade may complete faster than expected if total_cycle_num larger than duty_delta. Conversely,
+ *                             it may take longer than expected if total_cycle_num is less than duty_delta.
+ *                             The closer the ratio of total_cycle_num/duty_delta (or its inverse) is to a whole number (the floor value),
+ *                             the more accurately the actual fade duration will match the intended time.
+ *                             If an exact fade time is expected, please consider to split the entire fade into several smaller linear fades.
+ *                             The split should make each fade step has a divisible total_cycle_num/duty_delta (or its inverse) ratio.
  *
  * @return
  *     - ESP_OK Success
@@ -447,7 +458,7 @@ esp_err_t ledc_set_fade_with_step(ledc_mode_t speed_mode, ledc_channel_t channel
  *     - ESP_ERR_INVALID_STATE Channel not initialized
  *     - ESP_FAIL Fade function init error
  */
-esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int max_fade_time_ms);
+esp_err_t ledc_set_fade_with_time(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, int desired_fade_time_ms);
 
 /**
  * @brief Install LEDC fade function. This function will occupy interrupt of LEDC module.
@@ -538,7 +549,18 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
  * @param speed_mode Select the LEDC channel group with specified speed mode. Note that not all targets support high speed mode.
  * @param channel LEDC channel index (0 - LEDC_CHANNEL_MAX-1), select from ledc_channel_t
  * @param target_duty Target duty of fading [0, (2**duty_resolution)]
- * @param max_fade_time_ms The maximum time of the fading ( ms ).
+ * @param desired_fade_time_ms The intended time of the fading ( ms ).
+ *                             Note that the actual time it takes to complete the fade could vary by a factor of up to 2x shorter
+ *                             or longer than the expected time due to internal rounding errors in calculations.
+ *                             Specifically:
+ *                             * The total number of cycles (total_cycle_num = desired_fade_time_ms * freq / 1000)
+ *                             * The difference in duty cycle (duty_delta = |target_duty - current_duty|)
+ *                             The fade may complete faster than expected if total_cycle_num larger than duty_delta. Conversely,
+ *                             it may take longer than expected if total_cycle_num is less than duty_delta.
+ *                             The closer the ratio of total_cycle_num/duty_delta (or its inverse) is to a whole number (the floor value),
+ *                             the more accurately the actual fade duration will match the intended time.
+ *                             If an exact fade time is expected, please consider to split the entire fade into several smaller linear fades.
+ *                             The split should make each fade step has a divisible total_cycle_num/duty_delta (or its inverse) ratio.
  * @param fade_mode choose blocking or non-blocking mode
  *
  * @return
@@ -547,7 +569,7 @@ esp_err_t ledc_set_duty_and_update(ledc_mode_t speed_mode, ledc_channel_t channe
  *     - ESP_ERR_INVALID_STATE Channel not initialized
  *     - ESP_FAIL Fade function init error
  */
-esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, uint32_t max_fade_time_ms, ledc_fade_mode_t fade_mode);
+esp_err_t ledc_set_fade_time_and_start(ledc_mode_t speed_mode, ledc_channel_t channel, uint32_t target_duty, uint32_t desired_fade_time_ms, ledc_fade_mode_t fade_mode);
 
 /**
  * @brief A thread-safe API to set and start LEDC fade function.

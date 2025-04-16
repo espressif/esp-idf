@@ -256,6 +256,10 @@ LEDC 驱动提供了一个辅助函数 :cpp:func:`ledc_find_suitable_duty_resolu
 
         在 {IDF_TARGET_NAME} 上，当通道绑定的定时器配置了其最大 PWM 占空比分辨率（ ``MAX_DUTY_RES`` ），通道的占空比不能被设置到 ``(2 ** MAX_DUTY_RES)`` 。否则，硬件内部占空比计数器会溢出，并导致占空比计算错误。
 
+    .. only:: esp32h2
+
+        以上硬件限制仅在芯片版本低于 v1.2 的 ESP32H2 上存在。
+
 
 使用硬件改变 PWM 占空比
 """"""""""""""""""""""""""""""""""""
