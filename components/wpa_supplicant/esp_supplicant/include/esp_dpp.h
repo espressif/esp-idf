@@ -16,7 +16,6 @@
 extern "C" {
 #endif
 
-#define ESP_DPP_AUTH_TIMEOUT_SECS 1
 #define ESP_DPP_MAX_CHAN_COUNT 5
 
 #define ESP_ERR_DPP_FAILURE         (ESP_ERR_WIFI_BASE + 151)   /*!< Generic failure during DPP Operation */
@@ -24,6 +23,7 @@ extern "C" {
 #define ESP_ERR_DPP_INVALID_ATTR    (ESP_ERR_WIFI_BASE + 153)   /*!< Encountered invalid DPP Attribute */
 #define ESP_ERR_DPP_AUTH_TIMEOUT    (ESP_ERR_WIFI_BASE + 154)   /*!< DPP Auth response was not received in time */
 #define ESP_ERR_DPP_INVALID_LIST    (ESP_ERR_WIFI_BASE + 155)   /*!< Channel list given in esp_supp_dpp_bootstrap_gen() is not valid or too big */
+#define ESP_ERR_DPP_CONF_TIMEOUT    (ESP_ERR_WIFI_BASE + 156)   /*!< DPP Configuration was not received in time */
 
 /** @brief Types of Bootstrap Methods for DPP. */
 typedef enum dpp_bootstrap_type {
