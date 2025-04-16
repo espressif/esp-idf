@@ -5,7 +5,7 @@
   artifacts:
     paths:
       - target_test_report.html
-    expire_in: 1 week
+    expire_in: 2 week
     when: always
 
 fast_pipeline:pipeline_ended:always_failed:

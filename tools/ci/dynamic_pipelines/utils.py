@@ -58,7 +58,7 @@ def parse_testcases_from_filepattern(junit_report_filepattern: str) -> t.List[Te
     """
     Parses test cases from XML files matching the provided file pattern.
 
-    >>> test_cases = parse_testcases_from_filepattern("path/to/your/junit/reports/*.xml")
+    >>> test_cases = parse_testcases_from_filepattern('path/to/your/junit/reports/*.xml')
 
     :param junit_report_filepattern: The file pattern to match XML files containing JUnit test reports.
     :return: List[TestCase]: A list of TestCase objects parsed from the XML files.
@@ -124,7 +124,10 @@ def fetch_failed_jobs(commit_id: str) -> t.List[GitlabJob]:
     response = requests.post(
         f'{CI_DASHBOARD_API}/jobs/failure_ratio',
         headers={'CI-Job-Token': CI_JOB_TOKEN},
-        json={'job_names': failed_job_names, 'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')]},
+        json={
+            'job_names': failed_job_names,
+            'exclude_branches': [os.getenv('CI_MERGE_REQUEST_SOURCE_BRANCH_NAME', '')],
+        },
     )
     if response.status_code != 200:
         print(f'Failed to fetch jobs failure rate data: {response.status_code} with error: {response.text}')
@@ -185,15 +188,14 @@ def fetch_app_metrics(
         json={
             'source_commit_sha': source_commit_sha,
             'target_commit_sha': target_commit_sha,
-        }
+        },
     )
     if response.status_code != 200:
         print(f'Failed to fetch build info: {response.status_code} - {response.text}')
     else:
         response_data = response.json()
         build_info_map = {
-            f"{info['app_path']}_{info['config_name']}_{info['target']}": info
-            for info in response_data.get('data', [])
+            f'{info["app_path"]}_{info["config_name"]}_{info["target"]}': info for info in response_data.get('data', [])
         }
 
     return build_info_map
@@ -253,7 +255,7 @@ def get_repository_file_url(file_path: str) -> str:
 
 def known_failure_issue_jira_fast_link(_item: TestCase) -> str:
     """
-       Generate a JIRA fast link for known issues with relevant test case details.
+    Generate a JIRA fast link for known issues with relevant test case details.
     """
     jira_url = os.getenv('JIRA_SERVER')
     jira_pid = os.getenv('JIRA_KNOWN_FAILURE_PID', '10514')
@@ -269,14 +271,14 @@ def known_failure_issue_jira_fast_link(_item: TestCase) -> str:
         'issuetype': jira_issuetype,
         'summary': f'[Test Case]{_item.name}',
         'description': (
-            f"job_url: {quote(_item.ci_job_url, safe=':/')}\n\n"
-            f"dut_log_url: {quote(_item.dut_log_url, safe=':/')}\n\n"
+            f'job_url: {quote(_item.ci_job_url, safe=":/")}\n\n'
+            f'dut_log_url: {quote(_item.dut_log_url, safe=":/")}\n\n'
             f'ci_dashboard_url: {_item.ci_dashboard_url}\n\n'
         ),
         'components': jira_component,
         'priority': jira_priority,
         'assignee': jira_assignee,
-        'versions': jira_affected_versions
+        'versions': jira_affected_versions,
     }
     query_string = urlencode(params)
     return f'<a href="{base_url}{query_string}">Create</a>'

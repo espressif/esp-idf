@@ -1,8 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
     <head>
         <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Build Report</title>
+        <link
+            rel="shortcut icon"
+            href="https://www.espressif.com/sites/all/themes/espressif/favicon.ico"
+            type="image/vnd.microsoft.icon"
+        />
+        <!-- External CSS libraries -->
         <link
             href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
             rel="stylesheet"
@@ -19,42 +26,1179 @@
             href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
             rel="stylesheet"
         />
+        <!-- CSS content will be injected here during template rendering -->
         <style>
-            .text-toggle,
-            .full-text {
-                cursor: pointer;
+            /* /**
+ * Espressif Report Template Styles
+ * Optimized for desktop-only application
+ */
+
+/* Variables and base settings */
+:root {
+    /* Color palette */
+    --esp-primary: #e83711;
+    --esp-secondary: #f3c300;
+    --esp-dark: #282430;
+    --esp-light: #f8f9fa;
+    --esp-blue: #3a86ff;
+    --esp-gray: #707070;
+    --esp-success: #25be7b;
+    --esp-warning: #f3c300;
+    --esp-danger: #e83711;
+
+    /* UI elements */
+    --body-bg: #f5f7fa;
+    --card-bg: #ffffff;
+    --text-color: #282430;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+    --transition-speed: 0.3s;
+
+    /* Fixed desktop layout variables */
+    --container-width: 1600px;
+    --sidebar-width: 280px;
+    --header-height: 60px;
+}
+
+/* ---------------------------------- */
+/* Base styles */
+/* ---------------------------------- */
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+        "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--body-bg);
+    transition: background-color var(--transition-speed);
+    min-width: 1024px;
+    overflow-y: scroll;
+}
+
+.container-fluid {
+    max-width: 100% !important;
+    padding: 20px !important;
+    margin: 0 auto;
+}
+
+/* Typography */
+h2 {
+    padding-top: 3rem;
+    margin-bottom: 0px;
+    color: var(--esp-dark);
+    font-weight: 600;
+    background-color: #f5f7fa;
+}
+
+/* ---------------------------------- */
+/* Performance Optimizations */
+/* ---------------------------------- */
+/* Hardware acceleration utility class */
+.hw-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+/* Reduced motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto;
+    }
+
+    .bootstrap-table,
+    .section-body,
+    .sticky-header-container,
+    .section-header {
+        transition: none !important;
+    }
+}
+
+/* ---------------------------------- */
+/* Navigation and Header */
+/* ---------------------------------- */
+
+/* Header styling */
+.report-header {
+    display: flex;
+    align-items: center;
+    padding: 1.2rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    position: relative;
+    justify-content: space-between;
+    background-color: #f8f9fa;
+}
+
+.report-header .logo {
+    height: 30px;
+    margin-bottom: 0;
+    padding-left: 15px;
+}
+
+.report-header .title-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    margin: 0 auto;
+}
+
+.report-header h1 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.8rem;
+    line-height: 1.2;
+    display: inline-block;
+    text-align: center;
+}
+
+.report-header p {
+    margin-bottom: 0;
+    font-size: 0.85rem;
+    text-align: center;
+    color: #707070;
+}
+
+.report-header::after {
+    content: "";
+    position: absolute;
+    bottom: -3px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background-color: var(--esp-primary);
+}
+
+.logo-container {
+    width: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.spacer {
+    width: 180px; /* Same as logo-container for balance */
+}
+
+/* Navigation progress bar */
+.nav-progress-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: transparent;
+    z-index: 1001;
+}
+
+.nav-progress-bar {
+    height: 100%;
+    width: 0;
+    background-color: var(--esp-primary);
+    transition: width 0.2s ease-out;
+}
+
+/* ---------------------------------- */
+/* Tables - Complete Reset & Rebuild */
+/* ---------------------------------- */
+
+/* Base table appearance */
+.table {
+    width: 100%;
+    margin-bottom: 0;
+    background-color: var(--card-bg);
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+/* Table header cells */
+.table > thead > tr > th {
+    padding: 12px 15px;
+    font-weight: 600;
+    color: var(--esp-dark);
+    background-color: var(--esp-light);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Table data cells */
+.table > tbody > tr > td {
+    padding: 12px 15px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Striped rows */
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.table-striped > tbody > tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Bootstrap Table container */
+.bootstrap-table {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    margin-bottom: 1rem;
+}
+
+/* Bootstrap Table scrollable body */
+.bootstrap-table .fixed-table-body {
+    max-height: 800px;
+    overflow-y: auto;
+    border: none !important;
+}
+
+/* Remove any borders from the fixed-table-container */
+.bootstrap-table .fixed-table-container {
+    border: none !important;
+}
+
+/* Override Bootstrap's fixed header styles to avoid conflicts */
+.bootstrap-table .fixed-table-header table {
+    background-color: var(--esp-light);
+}
+
+.bootstrap-table .fixed-table-header {
+    background-color: var(--esp-light);
+}
+
+/* Column width settings for better layout */
+.table > thead > tr > th:nth-child(1),
+.table > tbody > tr > td:nth-child(1) {
+    width: 20%;
+    min-width: 150px;
+}
+
+.table > thead > tr > th:nth-child(2),
+.table > tbody > tr > td:nth-child(2) {
+    width: 20%;
+    min-width: 150px;
+}
+
+.table > thead > tr > th:nth-child(3),
+.table > tbody > tr > td:nth-child(3) {
+    width: 20%;
+    min-width: 150px;
+}
+
+.table > thead > tr > th:nth-child(n + 4),
+.table > tbody > tr > td:nth-child(n + 4) {
+    width: auto;
+    min-width: 100px;
+}
+
+/* Ensure sticky section headers are above table headers */
+.sticky-section-header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background-color: #f5f7fa;
+}
+
+/* Test case names */
+td.test-case-name {
+    white-space: normal;
+    overflow: visible;
+    word-break: break-word;
+}
+
+/* Bootstrap table customizations */
+.bootstrap-table {
+    margin-bottom: 0;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    background-color: var(--card-bg);
+    overflow: hidden;
+    max-height: 2000px;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    opacity: 1;
+    width: 100% !important;
+    position: relative;
+}
+
+.bootstrap-table.expanded {
+    max-height: 2000px;
+    opacity: 1;
+}
+
+/* Main container setup */
+.bootstrap-table .fixed-table-container {
+    position: relative !important;
+    overflow: visible !important;
+}
+
+/* Table headers - sticky relative to .fixed-table-body */
+.bootstrap-table .table thead th {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10;
+    background-color: var(--esp-light);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    padding: 12px 15px !important;
+}
+
+/* Fixed-table-header should be hidden when scrolling */
+.bootstrap-table .fixed-table-header {
+    display: none !important;
+}
+
+/* Handle Bootstrap Table sticky header container */
+.bootstrap-table .sticky-header-container {
+    display: none !important; /* Use our own sticky headers instead */
+}
+
+/* Ensure th-inner elements are visible */
+.bootstrap-table .fixed-table-container .table thead th .th-inner {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    height: auto !important;
+    min-height: 20px;
+    line-height: 1.4;
+    padding: 8px;
+    background-color: var(--esp-light);
+    display: block !important;
+}
+
+/* Table container shouldn't have overflow-x at the top level */
+.table-container {
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    position: relative;
+}
+
+/* Fix for table header rendering in the sticky context */
+.bootstrap-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+/* Table controls */
+.table-controls {
+    background-color: var(--esp-light);
+    border-top-left-radius: var(--border-radius);
+    border-top-right-radius: var(--border-radius);
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.table-controls .row-count {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.table-controls .btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+/* Table toolbar */
+.fixed-table-toolbar {
+    padding: 10px;
+    background-color: var(--esp-light);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.fixed-table-toolbar .search {
+    display: flex;
+    align-items: center;
+}
+
+.fixed-table-toolbar .search input {
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 5px 10px;
+    margin-right: 10px;
+}
+
+.fixed-table-toolbar .columns {
+    margin-left: auto;
+}
+
+.fixed-table-toolbar .btn {
+    border-radius: var(--border-radius);
+    padding: 5px 10px;
+    margin-left: 5px;
+}
+
+.fixed-table-toolbar .dropdown-menu {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 8px;
+    border: none;
+}
+
+/* Table pagination */
+.fixed-table-pagination {
+    padding: 10px;
+    background-color: var(--esp-light);
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.fixed-table-pagination .pagination {
+    float: none !important;
+    order: 1;
+    flex: 1 1 auto;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.fixed-table-pagination .pagination-detail .pagination-info {
+    display: none;
+    float: none !important;
+    order: 2;
+    flex: 0 0 auto;
+}
+
+.fixed-table-pagination .pagination li a {
+    border-radius: 4px;
+    margin: 0 2px;
+    border: 1px solid #dee2e6;
+    min-width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--esp-dark);
+    transition: all 0.2s ease;
+}
+
+.fixed-table-pagination .pagination li.active a {
+    background-color: var(--esp-primary);
+    border-color: var(--esp-primary);
+    color: white;
+}
+
+.fixed-table-pagination .pagination li a:hover:not(.active) {
+    background-color: #e9ecef;
+    color: var(--esp-primary);
+}
+
+/* Pagination options */
+.pagination-options .form-select-sm {
+    border-radius: var(--border-radius);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    height: 31px;
+    padding: 0.25rem 2rem 0.25rem 0.5rem;
+    font-size: 0.875rem;
+    background-color: var(--esp-light);
+    color: var(--esp-dark);
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.pagination-options .form-select-sm:hover {
+    border-color: var(--esp-primary);
+}
+
+.pagination-options .form-select-sm:focus {
+    border-color: var(--esp-primary);
+    box-shadow: 0 0 0 0.15rem rgba(232, 55, 17, 0.25);
+    outline: none;
+}
+
+/* ---------------------------------- */
+/* Collapsible Sections */
+/* ---------------------------------- */
+.section-collapsible {
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+    background-color: var(--card-bg);
+    transition: transform var(--transition-speed);
+}
+
+.section-collapsible:hover {
+    transform: translateY(-2px);
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background-color: #f5f7fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background-color var(--transition-speed),
+        box-shadow var(--transition-speed);
+}
+
+.section-header:hover {
+    background-color: #e9ecef;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    flex-grow: 1;
+    background-color: transparent;
+    position: relative;
+    z-index: 2;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+}
+
+.section-header h2 .heading-text {
+    margin-right: 6px;
+}
+
+.section-header .collapse-indicator {
+    margin-left: 10px;
+    font-size: 1.5rem;
+    transition: transform var(--transition-speed);
+    color: var(--esp-primary);
+    position: relative;
+    z-index: 2;
+}
+
+.section-header[aria-expanded="false"] .collapse-indicator {
+    transform: rotate(-90deg);
+}
+
+.copy-link-icon {
+    margin-left: 8px;
+    font-size: 1.5rem;
+    color: var(--esp-gray);
+    opacity: 0.7;
+    cursor: pointer;
+    transition: opacity 0.2s ease, color 0.2s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.copy-link-icon:hover {
+    opacity: 1;
+    color: var(--esp-primary);
+}
+
+.sticky-section-header {
+    position: sticky;
+    top: 0;
+    z-index: 99;
+    background-color: #f5f7fa;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
+.section-body {
+    padding: 1.5rem;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-in-out, padding 0.3s ease-in-out,
+        opacity 0.3s ease-in-out;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+
+.section-body.expanded {
+    max-height: 5000px;
+    padding: 1.5rem;
+    opacity: 1;
+}
+
+.section-body.collapsed {
+    display: none;
+}
+
+/* ---------------------------------- */
+/* Status Badges */
+/* ---------------------------------- */
+.status-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-align: center;
+    min-width: 80px;
+    transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.status-badge.success {
+    background-color: rgba(37, 190, 123, 0.1);
+    color: var(--esp-success);
+    border: 1px solid rgba(37, 190, 123, 0.2);
+}
+
+.status-badge.warning {
+    background-color: rgba(243, 195, 0, 0.1);
+    color: var(--esp-warning);
+    border: 1px solid rgba(243, 195, 0, 0.2);
+}
+
+.status-badge.danger {
+    background-color: rgba(232, 55, 17, 0.1);
+    color: var(--esp-danger);
+    border: 1px solid rgba(232, 55, 17, 0.2);
+}
+
+.status-badge:hover {
+    transform: translateY(-1px);
+}
+
+/* ---------------------------------- */
+/* Buttons */
+/* ---------------------------------- */
+.btn-outline-secondary {
+    border-color: #ced4da;
+    color: var(--esp-dark);
+}
+
+.btn-outline-secondary:hover {
+    background-color: var(--esp-light);
+    border-color: var(--esp-gray);
+    color: var(--esp-dark);
+}
+
+.btn-esp {
+    background-color: var(--esp-primary);
+    border: none;
+    color: #fff;
+    transition: all var(--transition-speed);
+}
+
+.btn-esp:hover {
+    background-color: #cf3110;
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(232, 55, 17, 0.2);
+}
+
+.btn-esp-secondary {
+    background-color: var(--esp-secondary);
+    border: none;
+    color: var(--esp-dark);
+    transition: all var(--transition-speed);
+}
+
+.btn-esp-secondary:hover {
+    background-color: #dab000;
+    color: var(--esp-dark);
+    box-shadow: 0 4px 8px rgba(243, 195, 0, 0.2);
+}
+
+/* Table collapse button - updated to appear on the right */
+.table-collapse-btn {
+    background-color: var(--esp-light);
+    border: none;
+    color: var(--esp-gray);
+    padding: 6px 12px;
+    border-radius: var(--border-radius);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    margin-left: auto; /* Push to the right side */
+}
+
+.table-collapse-btn:hover {
+    background-color: #e9ecef;
+    color: var(--esp-primary);
+}
+
+.table-collapse-btn i {
+    margin-right: 5px;
+}
+
+.clear-filter-btn {
+    transition: all 0.2s ease;
+    margin-top: 10px;
+}
+
+.clear-filter-btn:hover {
+    background-color: var(--esp-light);
+    color: var(--esp-primary);
+}
+
+.close-alert {
+    background: none;
+    border: none;
+    color: #856404;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 4px;
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.close-alert:hover {
+    opacity: 1;
+}
+
+/* Floating action buttons */
+.floating-actions {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.floating-action-btn {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: var(--esp-primary);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        background-color 0.3s ease, box-shadow 0.3s ease;
+    font-size: 1.2rem;
+}
+
+.floating-action-btn:hover {
+    transform: scale(1.1) translateY(-2px);
+}
+
+.back-to-top {
+    background-color: var(--esp-secondary);
+    color: var(--esp-dark);
+}
+
+/* ---------------------------------- */
+/* Utilities */
+/* ---------------------------------- */
+/* Text toggles */
+.text-toggle,
+.full-text {
+    cursor: pointer;
+}
+
+.toggle-link {
+    display: inline-block;
+    margin-left: 8px;
+    font-size: 0.8rem;
+    color: var(--esp-blue);
+    text-decoration: none;
+}
+
+.toggle-link:hover {
+    text-decoration: underline;
+    color: var(--esp-primary);
+}
+
+/* Row count label */
+.row-count {
+    font-size: 0.8rem;
+    color: var(--esp-gray);
+    margin-bottom: 15px;
+    display: block;
+}
+
+/* Table state indicators */
+.table-empty-state,
+.table-loading-state {
+    text-align: center;
+    padding: 50px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-empty-state {
+    color: var(--esp-gray);
+    background-color: rgba(0, 0, 0, 0.01);
+    border-radius: var(--border-radius);
+}
+
+.table-empty-state p {
+    margin-top: 10px;
+    font-size: 1.1rem;
+}
+
+.table-filtered-indicator {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--esp-warning);
+    background-color: rgba(243, 195, 0, 0.05);
+    border-radius: var(--border-radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px dashed rgba(243, 195, 0, 0.3);
+    margin: 20px;
+}
+
+.table-filtered-indicator p {
+    margin: 10px 0;
+    font-size: 1rem;
+}
+
+.table-loading-indicator {
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: var(--border-radius);
+    margin: 10px;
+    text-align: center;
+    color: var(--esp-gray);
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* Dropdown and other UI elements */
+.dropdown-menu {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border: none;
+    padding: 0.5rem;
+}
+
+.dropdown-item {
+    border-radius: 4px;
+    padding: 8px 12px;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(232, 55, 17, 0.1);
+}
+
+/* Column visibility controls */
+.column-visibility-controls {
+    margin-right: 10px;
+}
+
+.column-visibility-menu {
+    max-height: 350px;
+    overflow-y: auto;
+    padding: 8px 0;
+    min-width: 220px;
+}
+
+.column-visibility-menu .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 8px 16px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.column-visibility-menu .dropdown-item:hover {
+    background-color: rgba(232, 55, 17, 0.05);
+}
+
+.column-visibility-menu .dropdown-header {
+    font-weight: 600;
+    color: var(--esp-dark);
+    padding: 8px 16px;
+}
+
+.column-visibility-menu .dropdown-divider {
+    margin: 5px 0;
+}
+
+.column-toggle .column-hidden {
+    width: 16px;
+    color: var(--esp-primary);
+}
+
+.column-toggle .column-hidden {
+    color: var(--esp-gray);
+}
+
+/* Active filters */
+#active-filters {
+    margin-top: 10px;
+    margin-bottom: 15px !important;
+    display: flex;
+    align-items: center;
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: var(--border-radius);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+#filter-badges .badge {
+    margin-right: 5px;
+    padding: 6px 10px;
+    font-weight: normal;
+}
+
+#clear-all-filters {
+    margin-left: auto;
+    color: var(--esp-primary);
+    text-decoration: none;
+    font-size: 0.9rem;
+    padding: 4px 8px;
+}
+
+#clear-all-filters:hover {
+    text-decoration: underline;
+    background-color: rgba(232, 55, 17, 0.05);
+    border-radius: 4px;
+}
+
+/* Tooltip actions */
+.tooltip-actions {
+    position: absolute;
+    right: 60px;
+    background-color: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 10px;
+    width: 200px;
+    display: none;
+}
+
+.tooltip-actions.show {
+    display: block;
+    animation: fadeIn var(--transition-speed);
+}
+
+/* Smooth scrolling */
+html.scrolling-top {
+    scroll-behavior: smooth;
+}
+
+/* ---------------------------------- */
+/* Responsive Styles */
+/* ---------------------------------- */
+@media (max-width: 1200px) {
+    .bootstrap-table .fixed-table-body {
+        overflow-x: auto;
+        max-height: 600px;
+    }
+
+    .table-container {
+        width: 100% !important;
+        padding: 0 !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .container-fluid {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .bootstrap-table .fixed-table-body {
+        max-height: 500px;
+    }
+
+    .table-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .table-controls-right {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .logo-container,
+    .spacer {
+        width: 100px;
+    }
+}
+
+/* ---------------------------------- */
+/* Bootstrap Table Sticky Header Specific Styles */
+/* ---------------------------------- */
+
+/* Make sure sticky header container is visible and properly positioned */
+.bootstrap-table .sticky-header-container {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--esp-light);
+}
+
+/* Ensure the sticky header is properly styled and visible */
+.bootstrap-table .sticky-header {
+    overflow: visible;
+    position: relative;
+}
+
+/* Styles for the headers in the sticky container */
+.bootstrap-table .sticky-header-container thead th {
+    background-color: var(--esp-light);
+    color: var(--esp-dark);
+    font-weight: 600;
+    padding: 12px 15px;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.1);
+    text-align: left;
+    position: static !important; /* Important to avoid double sticky behavior */
+}
+
+/* Styles for header cells inner content */
+.bootstrap-table .sticky-header-container th .th-inner {
+    padding: 0 !important;
+    line-height: 1.4;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-weight: inherit !important;
+}
+ */
+            /* Additional styles for disabled tabs */
+            .report-nav-tabs .nav-tab.disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+                pointer-events: none;
             }
-            th:nth-child(1),
-            td:nth-child(1) {
-                width: 5%;
+
+            /* Loading animation for tabs */
+            .report-nav-tabs .nav-tab.loading:after {
+                content: "";
+                display: inline-block;
+                width: 1em;
+                height: 1em;
+                border: 2px solid rgba(0, 0, 0, 0.2);
+                border-left-color: #333;
+                border-radius: 50%;
+                margin-left: 8px;
+                animation: spin 1s linear infinite;
             }
-            th:nth-child(2),
-            td:nth-child(2),
-            th:nth-child(3),
-            td:nth-child(3) {
-                width: 30%;
-            }
-            th,
-            td {
-                overflow: hidden;
-                text-overflow: ellipsis;
-            }
-            h2 {
-                margin-top: 10px;
-            }
-            .copy-link-icon {
-                font-size: 20px;
-                margin-left: 10px;
-                color: #8f8f97;
-                cursor: pointer;
-            }
-            .copy-link-icon:hover {
-                color: #282b2c;
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg);
+                }
             }
         </style>
     </head>
-    <body>
-        <div class="container-fluid"><h2 id="failed-apps">Failed Apps<i class="fas fa-link copy-link-icon"
+    <body data-pipeline-id="456">
+        <!-- Navigation progress bar -->
+        <div class="nav-progress-container">
+            <div class="nav-progress-bar" id="nav-progress-bar"></div>
+        </div>
+
+        <div class="container-fluid">
+            <!-- Report header section -->
+            <header class="report-header">
+                <div class="logo-container">
+                    <img
+                        src="https://www.espressif.com/sites/all/themes/espressif/logo-black.svg"
+                        alt="Espressif Logo"
+                        class="logo"
+                    />
+                </div>
+                <div class="title-container">
+                    <h1>
+                        <span style="color: #333">Dynamic Pipeline Report</span>
+                    </h1>
+                </div>
+                <div class="spacer"></div>
+            </header>
+
+            <!-- Search and controls section -->
+            <div class="row mb-4">
+                <div class="col-md-8">
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="action-buttons">
+                        <button
+                            class="btn btn-esp btn-sm"
+                            id="expand-all-tables"
+                        >
+                            <i class="fas fa-table"></i> Expand All
+                        </button>
+                        <button
+                            class="btn btn-outline-secondary btn-sm ms-2"
+                            id="collapse-all-tables"
+                        >
+                            <i class="fas fa-minus"></i> Collapse All
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <div class="table-container"><h2 id="failed-apps">Failed Apps<i class="fas fa-link copy-link-icon"
         onclick="copyPermalink('#failed-apps')"></i></h2><table data-toggle="table" data-search-align="left" data-search="true" data-sticky-header="true">
     <thead>
         <tr>
@@ -169,78 +1313,1155 @@
         </tr>
     </tbody>
 </table></div>
+            </div>
+        </div>
+
+        <!-- Floating action buttons -->
+        <div class="floating-actions">
+            <div class="floating-action-btn back-to-top" id="back-to-top">
+                <i class="fas fa-arrow-up"></i>
+            </div>
+        </div>
+
+        <!-- JavaScript libraries -->
         <script src="https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
         <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/bootstrap-table.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/bootstrap-table@1.23.0/dist/extensions/sticky-header/bootstrap-table-sticky-header.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/export/bootstrap-table-export.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/tableexport.jquery.plugin@1.10.21/tableExport.min.js"></script>
+        <script src="https://unpkg.com/bootstrap-table@1.22.1/dist/extensions/filter-control/bootstrap-table-filter-control.min.js"></script>
+
+        <!-- Custom scripts -->
         <script>
-            $(window).on("load", function () {
-                var hash = window.location.hash;
-                if (hash) {
-                    setTimeout(function () {
-                        $("html, body").animate(
-                            { scrollTop: $(hash).offset().top },
-                            100
-                        );
-                    }, 100);
+            function debounce(func, wait) {
+    let timeout;
+    return function () {
+        const context = this;
+        const args = arguments;
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(context, args), wait);
+    };
+}
+
+function extractPipelineId() {
+    return $("body").data("pipeline-id");
+}
+
+function updateTabsAvailability(jobs) {
+    $("#build-report-tab, #job-report-tab, #test-report-tab").each(function () {
+        const $tab = $(this);
+        if (!$tab.hasClass("active")) {
+            $tab.addClass("disabled");
+            $tab.attr("title", "This report is not available yet");
+            $tab.css("opacity", "0.5");
+            $tab.css("cursor", "not-allowed");
+            $tab.on("click", function (e) {
+                if ($(this).hasClass("disabled")) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return false;
                 }
             });
-        </script>
-        <script>
-            $(document).ready(function () {
-                scrollToHashLocation();
-                setupTextToggles();
-                setupEventHandlers();
-            });
+        }
+    });
 
-            function setupEventHandlers() {
-                $(window).on("load", scrollToHashLocation);
-                $("body").on("click", ".toggle-link", toggleText);
+    const buildReportPatterns = [
+        "generate_pytest_build_report",
+        "built_apps",
+        "build_report",
+        "skipped_apps",
+        "failed_apps",
+    ];
+
+    const jobReportPatterns = [
+        "generate_failed_jobs_report",
+        "job_report",
+        "pipeline_jobs",
+    ];
+
+    const testReportPatterns = [
+        "generate_pytest_report",
+        "target_test_report",
+        "test_report",
+        "pytest_report",
+    ];
+
+    let buildReportJob = jobs.find((job) =>
+        buildReportPatterns.some((pattern) => job.name.includes(pattern))
+    );
+
+    let jobReportJob = jobs.find((job) =>
+        jobReportPatterns.some((pattern) => job.name.includes(pattern))
+    );
+
+    let testReportJob = jobs.find((job) =>
+        testReportPatterns.some((pattern) => job.name.includes(pattern))
+    );
+
+    if (buildReportJob) reportJobIds.build = buildReportJob.job_id;
+    if (jobReportJob) reportJobIds.job = jobReportJob.job_id;
+    if (testReportJob) reportJobIds.test = testReportJob.job_id;
+
+    const hasBuildReport = buildReportJob !== undefined;
+    const hasJobReport = jobReportJob !== undefined;
+    const hasTestReport = testReportJob !== undefined;
+
+    if (hasBuildReport && !$("#build-report-tab").hasClass("active")) {
+        $("#build-report-tab").removeClass("disabled");
+        $("#build-report-tab").attr(
+            "title",
+            "View application build results including binary sizes and downloads"
+        );
+        $("#build-report-tab").css("opacity", "1");
+        $("#build-report-tab").css("cursor", "pointer");
+    }
+
+    if (hasJobReport && !$("#job-report-tab").hasClass("active")) {
+        $("#job-report-tab").removeClass("disabled");
+        $("#job-report-tab").attr(
+            "title",
+            "View CI job results and failed jobs"
+        );
+        $("#job-report-tab").css("opacity", "1");
+        $("#job-report-tab").css("cursor", "pointer");
+    }
+
+    if (hasTestReport && !$("#test-report-tab").hasClass("active")) {
+        $("#test-report-tab").removeClass("disabled");
+        $("#test-report-tab").attr(
+            "title",
+            "View test results including success, failure, and skipped tests"
+        );
+        $("#test-report-tab").css("opacity", "1");
+        $("#test-report-tab").css("cursor", "pointer");
+    }
+}
+
+$(document).ready(function () {
+    const currentPath = window.location.pathname;
+    const currentFile = currentPath.substring(currentPath.lastIndexOf("/") + 1);
+
+    $(".report-nav-tabs .nav-tab").removeClass("active");
+
+    if (currentFile.includes("built_apps")) {
+        $("#build-report-tab").addClass("active");
+    } else if (currentFile.includes("job_report")) {
+        $("#job-report-tab").addClass("active");
+    } else if (currentFile.includes("target_test_report")) {
+        $("#test-report-tab").addClass("active");
+    }
+
+    wrapTablesInCollapsibleSections();
+    makeTablesCollapsible();
+    setupScrollProgressBar();
+    setupFloatingActions();
+    enhanceTableStatusDisplay();
+    markTestCaseColumns();
+    setupResponsiveText();
+    setupTextToggles();
+    setupEventHandlers();
+    scrollToHashLocation();
+    initBootstrapTable();
+    fixStickyHeaderAlignment();
+    forceEnableStickyHeaders();
+    fixTableHeaderText();
+    lazyLoadVisibleImages();
+    setupPagination();
+    optimizeScrollPerformance();
+});
+
+function fixStickyHeaderAlignment() {
+    if (window.isScrolling) return;
+
+    $(".sticky-header-container").each(function () {
+        const $container = $(this);
+        const $table = $container
+            .closest(".bootstrap-table")
+            .find(".fixed-table-body table");
+
+        let tableWidth = "100%";
+        if ($table.length) {
+            const actualWidth = $table.width();
+            if (actualWidth > 0) {
+                tableWidth = actualWidth + "px";
             }
+        }
 
-            function scrollToHashLocation() {
-                const hash = window.location.hash;
-                if (hash) {
-                    setTimeout(() => {
-                        $("html, body").animate(
-                            { scrollTop: $(hash).offset().top },
-                            100
-                        );
-                    }, 100);
+        $container.css({
+            left: "0",
+            "margin-left": "0",
+            "padding-left": "0",
+            width: tableWidth,
+            "z-index": "100",
+            transform: "translateZ(0)",
+        });
+
+        this.style.setProperty("left", "0", "important");
+        this.style.setProperty("margin-left", "0", "important");
+        this.style.setProperty("padding-left", "0", "important");
+        this.style.setProperty("width", tableWidth, "important");
+        this.style.setProperty("z-index", "100", "important");
+        this.style.setProperty("transform", "translateZ(0)", "important");
+
+        const $headerTable = $container.find("table");
+        if ($headerTable.length) {
+            $headerTable.css("width", tableWidth);
+            $headerTable[0].style.setProperty("width", tableWidth, "important");
+        }
+
+        if (!window.isScrolling) {
+            if ($headerTable.length && $table.length) {
+                const $headerCols = $headerTable.find("th");
+                const $bodyCols = $table.find("tr:first-child td");
+
+                if ($headerCols.length === $bodyCols.length) {
+                    $headerCols.each(function (i) {
+                        if (i < $bodyCols.length) {
+                            const bodyColWidth = $($bodyCols[i]).outerWidth();
+                            if (bodyColWidth > 0) {
+                                $(this).css("min-width", bodyColWidth + "px");
+                                $(this).css("width", bodyColWidth + "px");
+
+                                const $thInner = $(this).find(".th-inner");
+                                if ($thInner.length) {
+                                    $thInner.css({
+                                        "white-space": "normal",
+                                        overflow: "visible",
+                                        "text-overflow": "clip",
+                                        height: "auto",
+                                        display: "block",
+                                    });
+                                }
+                            }
+                        }
+                    });
                 }
             }
+        }
+    });
 
-            function copyPermalink(anchorId) {
-                const fullUrl = `${window.location.origin}${window.location.pathname}${anchorId}`;
-                history.pushState(null, null, anchorId);
-                navigator.clipboard.writeText(fullUrl);
-                scrollToHashLocation();
+    $(".fixed-table-container").each(function () {
+        if ($(this).css("left") === "20px") {
+            $(this).css("left", "0");
+            this.style.setProperty("left", "0", "important");
+        }
+    });
+
+    $(".bootstrap-table .table thead th").css({
+        position: "sticky",
+        top: "0",
+        "z-index": "100",
+        "background-color": "var(--esp-light)",
+        transform: "translateZ(0)",
+        "white-space": "normal",
+        overflow: "visible",
+        "text-overflow": "clip",
+        height: "auto",
+    });
+
+    $(
+        ".bootstrap-table .table thead th .th-inner, .sticky-header-container th .th-inner"
+    ).css({
+        "white-space": "normal",
+        overflow: "visible",
+        "text-overflow": "clip",
+        height: "auto",
+        "min-height": "20px",
+        display: "block",
+        "line-height": "1.4",
+    });
+}
+
+function setupScrollProgressBar() {
+    const progressBar = $("#nav-progress-bar");
+    let lastScrollPosition = 0;
+    let ticking = false;
+
+    $(window).on("scroll", function () {
+        if (ticking) return;
+
+        const scrollPosition = window.scrollY;
+
+        if (Math.abs(scrollPosition - lastScrollPosition) < 5) {
+            return;
+        }
+
+        lastScrollPosition = scrollPosition;
+
+        window.requestAnimationFrame(function () {
+            const windowHeight = $(document).height() - $(window).height();
+            const scrollPercentage = (scrollPosition / windowHeight) * 100;
+            progressBar.css("width", scrollPercentage + "%");
+            ticking = false;
+        });
+        ticking = true;
+    });
+}
+
+function setupFloatingActions() {
+    $("#back-to-top").on("click", function () {
+        $("html, body").animate({ scrollTop: 0 }, 300);
+    });
+}
+
+function enhanceTableStatusDisplay() {
+    $("table.table th").each(function (index) {
+        const $header = $(this);
+        const headerText = $header.text().trim().toLowerCase();
+
+        if (
+            headerText.includes("status") ||
+            headerText.includes("result") ||
+            headerText.includes("state")
+        ) {
+            const colIndex = index + 1;
+
+            $(`table.table td:nth-child(${colIndex})`).each(function () {
+                const $cell = $(this);
+                const cellText = $cell.text().trim().toLowerCase();
+
+                if (cellText.includes("pass") || cellText.includes("success")) {
+                    $cell.html(
+                        `<div class="status-badge success">${$cell.text()}</div>`
+                    );
+                } else if (
+                    cellText.includes("fail") ||
+                    cellText.includes("error")
+                ) {
+                    $cell.html(
+                        `<div class="status-badge danger">${$cell.text()}</div>`
+                    );
+                } else if (
+                    cellText.includes("warn") ||
+                    cellText.includes("skip")
+                ) {
+                    $cell.html(
+                        `<div class="status-badge warning">${$cell.text()}</div>`
+                    );
+                }
+            });
+        }
+    });
+}
+
+function setupTextToggles() {
+    setupResponsiveText();
+
+    $(".toggle-link").off("click").on("click", toggleText);
+}
+
+function setupResponsiveText() {
+    $("table.table td").each(function () {
+        const $cell = $(this);
+        const text = $cell.text();
+
+        if (
+            text.length > 100 &&
+            !$cell.hasClass("test-case-name") &&
+            !$cell.find(".text-toggle").length
+        ) {
+            const displayText = text.substring(0, 100) + "...";
+            $cell.html(
+                `<span class="text-toggle">${displayText}</span>` +
+                    `<span class="full-text" style="display: none;">${text}</span>` +
+                    `<a href="#" class="toggle-link"><i class="fas fa-plus-circle"></i> Show More</a>`
+            );
+        }
+    });
+}
+
+function makeTablesCollapsible() {
+    $("table.table").each(function (index) {
+        const table = $(this);
+        const tableId = `table-${index}`;
+        table.attr("id", tableId);
+
+        const bootstrapTableWrapper = table.closest(".bootstrap-table");
+
+        let container = bootstrapTableWrapper.parent(".table-container");
+        if (!container.length) {
+            container = $('<div class="table-container"></div>');
+        }
+
+        let tableControls = bootstrapTableWrapper.prev(".table-controls");
+
+        if (!tableControls.length) {
+            const initialButtonHtml =
+                '<i class="fas fa-minus"></i> <span>Collapse Table</span>';
+
+            const toggleButton = $(`
+                <button class="table-collapse-btn" data-table="${tableId}">
+                    ${initialButtonHtml}
+                </button>
+            `);
+
+            tableControls = $('<div class="table-controls"></div>').append(
+                toggleButton
+            );
+
+            bootstrapTableWrapper.before(tableControls);
+        } else {
+            const existingButton = tableControls.find(".table-collapse-btn");
+            if (existingButton.length) {
+                existingButton.detach();
+                tableControls.append(existingButton);
+            }
+        }
+
+        if (!bootstrapTableWrapper.parent().hasClass("table-container")) {
+            bootstrapTableWrapper.wrap(container);
+        }
+
+        bootstrapTableWrapper.show();
+        bootstrapTableWrapper.addClass("expanded");
+
+        const toggleButton = tableControls.find(".table-collapse-btn");
+        toggleButton.off("click").on("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const tableId = $(this).data("table");
+
+            const targetTable = $(`#${tableId}`);
+            if (!targetTable.length) {
+                console.error("Target table not found:", tableId);
+                return;
             }
 
-            function toggleText(e) {
-                e.preventDefault();
-                const link = $(this),
-                    textSpan = link.siblings(".full-text"),
-                    toggleSpan = link.siblings(".text-toggle");
-                const visible = textSpan.is(":visible");
-                link.text(visible ? "Show More" : "Show Less");
-                textSpan.toggle();
-                toggleSpan.toggle();
+            const bootstrapWrapper = targetTable.closest(".bootstrap-table");
+            if (!bootstrapWrapper.length) {
+                console.error(
+                    "Bootstrap wrapper not found for table:",
+                    tableId
+                );
+                return;
             }
 
-            function setupTextToggles() {
-                $("table.table td").each(function () {
-                    var cell = $(this);
-                    if (cell.text().length > 100) {
-                        var originalText = cell.text();
-                        var displayText =
-                            originalText.substring(0, 100) + "...";
-                        cell.html(
-                            `<span class="text-toggle">${displayText}</span><span class="full-text" style="display: none;">${originalText}</span><a href="#" class="toggle-link">Show More</a>`
-                        );
+            const isVisible = bootstrapWrapper.is(":visible");
+
+            if (isVisible) {
+                bootstrapWrapper.slideUp(300);
+                bootstrapWrapper.removeClass("expanded");
+                $(this).html(
+                    '<i class="fas fa-plus"></i> <span>Expand Table</span>'
+                );
+            } else {
+                bootstrapWrapper.slideDown(300);
+                bootstrapWrapper.addClass("expanded");
+                $(this).html(
+                    '<i class="fas fa-minus"></i> <span>Collapse Table</span>'
+                );
+            }
+        });
+    });
+
+    setTimeout(function () {
+        $(".bootstrap-table[data-auto-collapse='true']").each(function () {
+            const bootstrapWrapper = $(this);
+            const tableId = bootstrapWrapper.find("table").attr("id");
+            const toggleButton = $(`button[data-table="${tableId}"]`);
+
+            bootstrapWrapper.slideUp(300);
+            bootstrapWrapper.removeClass("expanded");
+
+            if (toggleButton.length) {
+                toggleButton.html(
+                    '<i class="fas fa-plus"></i> <span>Expand Table</span>'
+                );
+            }
+        });
+    }, 500);
+}
+
+function expandAllTables() {
+    $(".bootstrap-table").slideDown(300);
+    $(".bootstrap-table").addClass("expanded");
+
+    $(".table-collapse-btn").each(function () {
+        $(this).html(
+            '<i class="fas fa-minus"></i> <span>Collapse Table</span>'
+        );
+    });
+
+    $(".section-header").attr("aria-expanded", "true");
+    $(".section-body").slideDown(300);
+}
+
+function collapseAllTables() {
+    $(".bootstrap-table").slideUp(300);
+    $(".bootstrap-table").removeClass("expanded");
+
+    $(".table-collapse-btn").each(function () {
+        $(this).html('<i class="fas fa-plus"></i> <span>Expand Table</span>');
+    });
+}
+
+function initBootstrapTable() {
+    $("table.table").each(function () {
+        const $table = $(this);
+
+        $table.bootstrapTable({
+            classes: "table table-bordered table-striped",
+            height: 800,
+            pagination: false,
+            showColumns: true,
+            showColumnsToggleAll: true,
+            showToggle: false,
+            clickToSelect: false,
+            minimumCountColumns: 2,
+            stickyHeader: true,
+            stickyHeaderOffsetY: 0,
+            theadClasses: "thead-light",
+            toolbar: "#toolbar",
+            resizable: true,
+            checkOnInit: false,
+            fixedColumns: true,
+            fixedNumber: 0,
+            sortStable: true,
+            undefinedText: "-",
+            showFullscreen: true,
+            widthUnit: "%",
+            headerStyle: function () {
+                return {
+                    css: {
+                        "white-space": "normal",
+                        overflow: "visible",
+                        "text-overflow": "clip",
+                        height: "auto",
+                        "min-height": "50px",
+                    },
+                };
+            },
+        });
+
+        $table.closest(".bootstrap-table").css({
+            width: "100%",
+            "max-width": "100%",
+        });
+
+        $table.closest(".fixed-table-body").css({
+            "overflow-x": "auto",
+        });
+
+        $table.css({
+            width: "100%",
+            "min-width": "100%",
+        });
+
+        $table.find("thead th").each(function () {
+            const $th = $(this);
+            const $thInner = $th.find(".th-inner");
+
+            if ($thInner.length) {
+                $thInner.css({
+                    "white-space": "normal",
+                    overflow: "visible",
+                    "text-overflow": "clip",
+                    height: "auto",
+                    "min-height": "20px",
+                    display: "block",
+                });
+            }
+        });
+    });
+
+    $(window).on(
+        "resize",
+        debounce(function () {
+            $("table.table").bootstrapTable("resetView");
+        }, 100)
+    );
+}
+
+function wrapTablesInCollapsibleSections() {
+    $("h2").each(function (index) {
+        if ($(this).closest(".section-header").length > 0) {
+            return;
+        }
+
+        const header = $(this);
+        const headerText = header.text();
+        const headerId = header.attr("id") || `section-header-${index}`;
+
+        const nextTable = header.nextAll("table.table:first");
+
+        if (nextTable.length) {
+            if (nextTable.closest(".section-body").length > 0) {
+                return;
+            }
+
+            const wrapper = $('<div class="section-collapsible"></div>');
+
+            const sectionHeader = $(`
+                <div class="section-header sticky-section-header" aria-expanded="true" data-target="#section-body-${index}">
+                    <h2 id="${headerId}">
+                        <span class="heading-text">${headerText}</span>
+                        <i class="fas fa-link copy-link-icon" onclick="copyPermalink('#${headerId}')"></i>
+                    </h2>
+                    <span class="collapse-indicator"><i class="fas fa-chevron-down"></i></span>
+                </div>
+            `);
+
+            const sectionBody = $(
+                `<div id="section-body-${index}" class="section-body"></div>`
+            );
+
+            const bootstrapTable = nextTable.closest(".bootstrap-table");
+            const tableContainer = bootstrapTable.closest(".table-container");
+
+            if (tableContainer.length) {
+                tableContainer.detach().appendTo(sectionBody);
+            } else if (bootstrapTable.length) {
+                bootstrapTable.detach().appendTo(sectionBody);
+            } else {
+                nextTable.detach().appendTo(sectionBody);
+            }
+
+            wrapper.append(sectionHeader).append(sectionBody);
+
+            header.replaceWith(wrapper);
+        }
+    });
+
+    $(".section-header")
+        .off("click")
+        .on("click", function (e) {
+            if (
+                $(e.target).hasClass("copy-link-icon") ||
+                $(e.target).closest(".copy-link-icon").length ||
+                $(e.target).hasClass("table-collapse-btn") ||
+                $(e.target).closest(".table-collapse-btn").length
+            ) {
+                return;
+            }
+
+            const header = $(this);
+            const targetId = header.data("target");
+            const sectionBody = $(targetId);
+            const isExpanded = header.attr("aria-expanded") === "true";
+
+            if (isExpanded) {
+                header.attr("aria-expanded", "false");
+                sectionBody.slideUp(300);
+            } else {
+                header.attr("aria-expanded", "true");
+                sectionBody.slideDown(300);
+            }
+        });
+}
+
+function markTestCaseColumns() {
+    $("table.table th").each(function (index) {
+        const headerText = $(this).text().trim().toLowerCase();
+        if (
+            headerText.includes("test") &&
+            (headerText.includes("case") || headerText.includes("name"))
+        ) {
+            const colIndex = index + 1;
+            $(`table.table td:nth-child(${colIndex})`).addClass(
+                "test-case-name"
+            );
+        }
+    });
+}
+
+function setupEventHandlers() {
+    $(window).on("load", scrollToHashLocation);
+    $("body").on("click", ".toggle-link", toggleText);
+
+    $("#expand-all-tables")
+        .off("click")
+        .on("click", function (e) {
+            e.preventDefault();
+            expandAllTables();
+        });
+
+    $("#collapse-all-tables")
+        .off("click")
+        .on("click", function (e) {
+            e.preventDefault();
+            collapseAllTables();
+        });
+
+    $("#pagination-size").on("change", function () {
+        const pageSize = parseInt($(this).val(), 10);
+        applyPaginationToTables(pageSize);
+    });
+
+    $("#show-all-columns").on("click", function (e) {
+        e.preventDefault();
+        $("table.table").bootstrapTable("showAllColumns");
+    });
+
+    $("#show-failed-only").on("click", function (e) {
+        e.preventDefault();
+        filterByStatus("fail");
+    });
+
+    $("#show-passed-only").on("click", function (e) {
+        e.preventDefault();
+        filterByStatus("pass");
+    });
+
+    $("#export-csv").on("click", function (e) {
+        e.preventDefault();
+        $("table.table:visible").bootstrapTable("exportTable", {
+            type: "csv",
+            fileName: "report_export_" + new Date().toISOString().slice(0, 10),
+        });
+    });
+
+    $("#clear-all-filters").on("click", function () {
+        clearAllFilters();
+    });
+}
+
+function filterByStatus(status) {
+    $("#active-filters").show();
+    $("#filter-badges").html(
+        `<span class="badge bg-primary me-2">Status: ${status}</span>`
+    );
+
+    $("table.table").each(function () {
+        const $table = $(this);
+
+        let statusColIndex = -1;
+        $table.find("th").each(function (index) {
+            const headerText = $(this).text().trim().toLowerCase();
+            if (
+                headerText.includes("status") ||
+                headerText.includes("result") ||
+                headerText.includes("state")
+            ) {
+                statusColIndex = index;
+                return false;
+            }
+        });
+
+        if (statusColIndex >= 0) {
+            $table.bootstrapTable(
+                "filterBy",
+                {
+                    [statusColIndex]: status,
+                },
+                {
+                    filterAlgorithm: function (row, filters) {
+                        const cellText = $(row[statusColIndex])
+                            .text()
+                            .trim()
+                            .toLowerCase();
+                        return cellText.includes(status);
+                    },
+                }
+            );
+        }
+    });
+}
+
+function clearAllFilters() {
+    $("table.table").each(function () {
+        const $table = $(this);
+        $table.bootstrapTable("clearFilterControl");
+        $table.bootstrapTable("resetSearch");
+    });
+
+    $("#active-filters").hide();
+    $("#filter-badges").empty();
+}
+
+function scrollToHashLocation() {
+    const hash = window.location.hash;
+    if (hash) {
+        setTimeout(() => {
+            const target = $(hash);
+            if (target.length) {
+                const sectionBody = target.closest(".section-body");
+                if (sectionBody.length) {
+                    const sectionHeader = sectionBody.prev(".section-header");
+                    if (sectionHeader.attr("aria-expanded") !== "true") {
+                        sectionHeader.attr("aria-expanded", "true");
+                        sectionBody.slideDown(0);
+                    }
+
+                    const containingTable = target.closest("table.table");
+                    if (containingTable.length) {
+                        const bootstrapWrapper =
+                            containingTable.closest(".bootstrap-table");
+                        if (!bootstrapWrapper.is(":visible")) {
+                            bootstrapWrapper.show();
+                            const tableBtn = bootstrapWrapper
+                                .parent()
+                                .find(".table-controls")
+                                .find(".table-collapse-btn");
+                            tableBtn.html(
+                                '<i class="fas fa-minus"></i> <span>Collapse Table</span>'
+                            );
+                        }
+                    }
+                }
+
+                $("html, body").animate(
+                    { scrollTop: target.offset().top - 20 },
+                    100
+                );
+            }
+        }, 300);
+    }
+}
+
+function copyPermalink(anchorId) {
+    const fullUrl = `${window.location.origin}${window.location.pathname}${anchorId}`;
+    history.pushState(null, null, anchorId);
+    navigator.clipboard.writeText(fullUrl);
+
+    const tooltip = $(`
+        <div class="alert alert-success position-fixed"
+             style="top: 20px; right: 20px; z-index: 9999; animation: fadeIn 0.3s, fadeOut 0.3s 1.7s forwards;">
+            <i class="fas fa-check-circle me-2"></i>Link copied to clipboard!
+        </div>
+    `);
+
+    const icon = $(event.target).closest(".copy-link-icon");
+    if (icon.length) {
+        const originalClass = icon.attr("class");
+
+        icon.removeClass()
+            .addClass("fas fa-check copy-link-icon")
+            .css("color", "var(--esp-success)");
+
+        setTimeout(() => {
+            icon.attr("class", originalClass).css("color", "");
+        }, 1500);
+    }
+
+    $("body").append(tooltip);
+    setTimeout(() => tooltip.remove(), 2000);
+    scrollToHashLocation();
+}
+
+function toggleText(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const link = $(this);
+    const textSpan = link.siblings(".full-text");
+    const toggleSpan = link.siblings(".text-toggle");
+
+    const visible = textSpan.is(":visible");
+
+    if (visible) {
+        link.html('<i class="fas fa-plus-circle"></i> Show More');
+        textSpan.hide();
+        toggleSpan.show();
+    } else {
+        link.html('<i class="fas fa-minus-circle"></i> Show Less');
+        textSpan.show();
+        toggleSpan.hide();
+    }
+}
+
+function setupPagination() {
+    applyPaginationToTables(25);
+}
+
+function applyPaginationToTables(pageSize) {
+    localStorage.setItem("paginationSize", pageSize);
+
+    $("table.table").each(function () {
+        const $table = $(this);
+
+        if (pageSize > 0) {
+            $table.bootstrapTable("refreshOptions", {
+                pagination: true,
+                pageSize: pageSize,
+                pageList: [10, 25, 50, "All"],
+            });
+
+            $table
+                .closest(".bootstrap-table")
+                .find(".fixed-table-pagination")
+                .css({
+                    display: "block",
+                    visibility: "visible",
+                    "background-color": "var(--esp-light)",
+                    padding: "10px",
+                    "border-top": "1px solid rgba(0, 0, 0, 0.05)",
+                });
+        } else {
+            $table.bootstrapTable("refreshOptions", {
+                pagination: false,
+            });
+
+            $table
+                .closest(".bootstrap-table")
+                .find(".fixed-table-pagination")
+                .css({
+                    display: "none",
+                    visibility: "hidden",
+                });
+        }
+    });
+}
+
+function optimizeScrollPerformance() {
+    window.isScrolling = false;
+    let scrollTimer = null;
+    let lastScrollTop = 0;
+
+    cacheAndFixDomElements();
+
+    const progressBar = document.getElementById("nav-progress-bar");
+    const backToTop = document.getElementById("back-to-top");
+
+    window.addEventListener(
+        "scroll",
+        function () {
+            window.isScrolling = true;
+
+            const scrollTop = window.scrollY;
+
+            if (Math.abs(scrollTop - lastScrollTop) > 5) {
+                lastScrollTop = scrollTop;
+
+                handleEssentialScrollUpdates(scrollTop, progressBar, backToTop);
+            }
+
+            clearTimeout(scrollTimer);
+            scrollTimer = setTimeout(function () {
+                window.isScrolling = false;
+                requestAnimationFrame(function () {
+                    fixStickyHeaderAlignment();
+                    fixTableHeaderText();
+                });
+            }, 150);
+        },
+        { passive: true }
+    );
+
+    lazyLoadVisibleImages();
+}
+
+function handleEssentialScrollUpdates(scrollTop, progressBar, backToTop) {
+    requestAnimationFrame(function () {
+        const docHeight =
+            Math.max(
+                document.body.scrollHeight,
+                document.body.offsetHeight,
+                document.documentElement.clientHeight,
+                document.documentElement.scrollHeight,
+                document.documentElement.offsetHeight
+            ) - window.innerHeight;
+        const scrollPercentage = (scrollTop / docHeight) * 100;
+        progressBar.style.width = scrollPercentage + "%";
+
+        if (scrollTop > 200) {
+            backToTop.classList.add("visible");
+        } else {
+            backToTop.classList.remove("visible");
+        }
+    });
+}
+
+function cacheAndFixDomElements() {
+    const stickyElements = document.querySelectorAll(
+        ".sticky-header-container, .section-header, .bootstrap-table thead, .fixed-table-header"
+    );
+
+    for (let i = 0; i < stickyElements.length; i++) {
+        const elem = stickyElements[i];
+        elem.style.transform = "translateZ(0)";
+        elem.style.willChange = "transform";
+        elem.style.backfaceVisibility = "hidden";
+    }
+
+    document.body.style.willChange = "scroll-position";
+    document.body.style.backfaceVisibility = "hidden";
+
+    const headers = document.querySelectorAll(
+        ".bootstrap-table .table thead th, .sticky-header-container th"
+    );
+    for (let i = 0; i < headers.length; i++) {
+        const header = headers[i];
+        header.style.position = "sticky";
+        header.style.top = "0";
+        header.style.zIndex = "100";
+        header.style.transform = "translateZ(0)";
+
+        const thInners = header.querySelectorAll(".th-inner");
+        for (let j = 0; j < thInners.length; j++) {
+            const inner = thInners[j];
+            inner.style.whiteSpace = "normal";
+            inner.style.overflow = "visible";
+            inner.style.textOverflow = "clip";
+            inner.style.height = "auto";
+            inner.style.minHeight = "20px";
+            inner.style.display = "block";
+        }
+    }
+}
+
+function lazyLoadVisibleImages() {
+    const lazyImages = document.querySelectorAll("img[data-src]");
+    if (lazyImages.length === 0) return;
+
+    const loadImage = function (img) {
+        if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.removeAttribute("data-src");
+        }
+    };
+
+    lazyImages.forEach((img) => {
+        if (isElementInViewport(img)) {
+            loadImage(img);
+        }
+    });
+
+    document.addEventListener(
+        "scroll",
+        debounce(function () {
+            lazyImages.forEach((img) => {
+                if (img.dataset.src && isElementInViewport(img)) {
+                    loadImage(img);
+                }
+            });
+        }, 200),
+        { passive: true }
+    );
+}
+
+function isElementInViewport(el) {
+    const rect = el.getBoundingClientRect();
+    return (
+        rect.top >= 0 &&
+        rect.left >= 0 &&
+        rect.bottom <=
+            (window.innerHeight || document.documentElement.clientHeight) &&
+        rect.right <=
+            (window.innerWidth || document.documentElement.clientWidth)
+    );
+}
+
+function fixTableHeaderText() {
+    if (window.isScrolling) return;
+
+    $(".bootstrap-table .table thead th, .sticky-header-container th").each(
+        function () {
+            const $th = $(this);
+
+            $th.css({
+                "white-space": "normal",
+                overflow: "visible",
+                "text-overflow": "clip",
+                height: "auto",
+                "min-height": "50px",
+            });
+
+            const $thInner = $th.find(".th-inner");
+            if ($thInner.length) {
+                $thInner.css({
+                    "white-space": "normal",
+                    overflow: "visible",
+                    "text-overflow": "clip",
+                    height: "auto",
+                    "min-height": "20px",
+                    display: "block",
+                    "line-height": "1.4",
+                });
+
+                $thInner.find("span, div").css({
+                    "white-space": "normal",
+                    overflow: "visible",
+                });
+            }
+        }
+    );
+}
+
+function forceEnableStickyHeaders() {
+    if (!window.isScrolling) {
+        $("table.table thead th").css({
+            position: "sticky",
+            top: "0",
+            "z-index": "100",
+            "background-color": "var(--esp-light)",
+            transform: "translateZ(0)",
+            "will-change": "transform",
+            "backface-visibility": "hidden",
+            "white-space": "normal",
+            overflow: "visible",
+            "text-overflow": "clip",
+            height: "auto",
+            "min-height": "50px",
+        });
+
+        $("table.table").each(function () {
+            const $table = $(this);
+            const bootstrapTable = $table.closest(".bootstrap-table");
+
+            if (
+                bootstrapTable.length &&
+                bootstrapTable.find(".sticky-header-container").length === 0
+            ) {
+                const $thead = $table.find("thead").clone();
+                const $stickyContainer = $(
+                    '<div class="sticky-header-container"></div>'
+                );
+                const $stickyTable = $('<table class="table"></table>').append(
+                    $thead
+                );
+
+                $stickyContainer.append($stickyTable);
+                bootstrapTable.prepend($stickyContainer);
+
+                const tableWidth = $table.width();
+                $stickyContainer.css({
+                    position: "sticky",
+                    top: "0",
+                    "z-index": "100",
+                    width: tableWidth + "px",
+                    overflow: "hidden",
+                    "background-color": "var(--esp-light)",
+                    "will-change": "transform",
+                    "backface-visibility": "hidden",
+                    transform: "translateZ(0)",
+                });
+
+                const $originalThs = $table.find("thead th");
+                const $stickyThs = $stickyTable.find("th");
+
+                $originalThs.each(function (i) {
+                    if (i < $stickyThs.length) {
+                        const width = $(this).outerWidth();
+                        $($stickyThs[i]).css({
+                            width: width + "px",
+                            "white-space": "normal",
+                            overflow: "visible",
+                            "text-overflow": "clip",
+                            height: "auto",
+                            "min-height": "50px",
+                        });
+
+                        const $inner = $($stickyThs[i]).find(".th-inner");
+                        if ($inner.length) {
+                            $inner.css({
+                                "white-space": "normal",
+                                overflow: "visible",
+                                "text-overflow": "clip",
+                                height: "auto",
+                                "min-height": "20px",
+                                display: "block",
+                                "line-height": "1.4",
+                            });
+                        }
                     }
                 });
             }
+        });
+    }
+}
+
         </script>
     </body>
 </html>

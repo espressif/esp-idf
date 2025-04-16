@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import os
 
@@ -34,6 +34,8 @@ TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME = 'test_related_apps_download_urls.yml'
 REPORT_TEMPLATE_FILEPATH = os.path.join(
     IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'report.template.html'
 )
+CSS_STYLES_FILEPATH = os.path.join(IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'styles.css')
+JS_SCRIPTS_FILEPATH = os.path.join(IDF_PATH, 'tools', 'ci', 'dynamic_pipelines', 'templates', 'scripts.js')
 TOP_N_APPS_BY_SIZE_DIFF = 10
 SIZE_DIFFERENCE_BYTES_THRESHOLD = 500
 BINARY_SIZE_METRIC_NAME = 'binary_size'

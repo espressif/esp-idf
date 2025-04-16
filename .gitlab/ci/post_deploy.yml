@@ -9,7 +9,7 @@ generate_failed_jobs_report:
   when: always
   dependencies: []  # Do not download artifacts from the previous stages
   artifacts:
-    expire_in: 1 week
+    expire_in: 2 week
     when: always
     paths:
       - job_report.html
