@@ -32,8 +32,8 @@ typedef time_t os_time_t;
 void os_sleep(os_time_t sec, os_time_t usec);
 
 struct os_time {
-	os_time_t sec;
-	suseconds_t usec;
+    os_time_t sec;
+    suseconds_t usec;
 };
 
 #define os_reltime os_time
@@ -58,17 +58,17 @@ int os_get_time(struct os_time *t);
 /* Helper macros for handling struct os_time */
 
 #define os_time_before(a, b) \
-	((a)->sec < (b)->sec || \
-	 ((a)->sec == (b)->sec && (a)->usec < (b)->usec))
+    ((a)->sec < (b)->sec || \
+     ((a)->sec == (b)->sec && (a)->usec < (b)->usec))
 
 #define os_reltime_before os_time_before
 #define os_time_sub(a, b, res) do { \
-	(res)->sec = (a)->sec - (b)->sec; \
-	(res)->usec = (a)->usec - (b)->usec; \
-	if ((res)->usec < 0) { \
-		(res)->sec--; \
-		(res)->usec += 1000000; \
-	} \
+    (res)->sec = (a)->sec - (b)->sec; \
+    (res)->usec = (a)->usec - (b)->usec; \
+    if ((res)->usec < 0) { \
+        (res)->sec--; \
+        (res)->usec += 1000000; \
+    } \
 } while (0)
 #define os_reltime_sub os_time_sub
 
@@ -88,7 +88,7 @@ int os_get_time(struct os_time *t);
  * which is used by POSIX mktime().
  */
 int os_mktime(int year, int month, int day, int hour, int min, int sec,
-	      os_time_t *t);
+              os_time_t *t);
 
 int os_gmtime(os_time_t t, struct os_tm *tm);
 
@@ -189,7 +189,7 @@ int os_unsetenv(const char *name);
 /* We don't support file reading support */
 static inline char *os_readfile(const char *name, size_t *len)
 {
-	return NULL;
+    return NULL;
 }
 
 /*
@@ -229,7 +229,6 @@ static inline char *os_readfile(const char *name, size_t *len)
 #define os_bzero(s, n) bzero(s, n)
 #endif
 
-
 #ifndef os_strdup
 #ifdef _MSC_VER
 #define os_strdup(s) _strdup(s)
@@ -257,6 +256,9 @@ char * ets_strdup(const char *s);
 
 #ifndef os_strlen
 #define os_strlen(s) strlen(s)
+#endif
+#ifndef os_strnlen
+#define os_strnlen(s, n) strnlen((s), (n))
 #endif
 #ifndef os_strcasecmp
 #ifdef _MSC_VER
@@ -307,14 +309,15 @@ char * ets_strdup(const char *s);
 
 static inline int os_snprintf_error(size_t size, int res)
 {
-        return res < 0 || (unsigned int) res >= size;
+    return res < 0 || (unsigned int) res >= size;
 }
 
 static inline void * os_realloc_array(void *ptr, size_t nmemb, size_t size)
 {
-	if (size && nmemb > (~(size_t) 0) / size)
-		return NULL;
-	return os_realloc(ptr, nmemb * size);
+    if (size && nmemb > (~(size_t) 0) / size) {
+        return NULL;
+    }
+    return os_realloc(ptr, nmemb * size);
 }
 
 #ifdef CONFIG_CRYPTO_MBEDTLS
@@ -333,10 +336,10 @@ static uint8_t forced_memzero_val;
 
 static inline void forced_memzero(void *ptr, size_t len)
 {
-	memset_func(ptr, 0, len);
-	if (len) {
-		forced_memzero_val = ((uint8_t *) ptr)[0];
-	}
+    memset_func(ptr, 0, len);
+    if (len) {
+        forced_memzero_val = ((uint8_t *) ptr)[0];
+    }
 }
 #endif
 
@@ -376,23 +379,23 @@ extern const wifi_osi_funcs_t *wifi_funcs;
 
 static inline void os_timer_setfn(void *ptimer, void *pfunction, void *parg)
 {
-       return wifi_funcs->_timer_setfn(ptimer, pfunction, parg);
+    return wifi_funcs->_timer_setfn(ptimer, pfunction, parg);
 }
 static inline void os_timer_disarm(void *ptimer)
 {
-       return wifi_funcs->_timer_disarm(ptimer);
+    return wifi_funcs->_timer_disarm(ptimer);
 }
-static inline void os_timer_arm_us(void *ptimer,uint32_t u_seconds,bool repeat_flag)
+static inline void os_timer_arm_us(void *ptimer, uint32_t u_seconds, bool repeat_flag)
 {
-       return wifi_funcs->_timer_arm_us(ptimer, u_seconds, repeat_flag);
+    return wifi_funcs->_timer_arm_us(ptimer, u_seconds, repeat_flag);
 }
-static inline void os_timer_arm(void *ptimer,uint32_t milliseconds,bool repeat_flag)
+static inline void os_timer_arm(void *ptimer, uint32_t milliseconds, bool repeat_flag)
 {
-       return wifi_funcs->_timer_arm(ptimer, milliseconds, repeat_flag);
+    return wifi_funcs->_timer_arm(ptimer, milliseconds, repeat_flag);
 }
 static inline void os_timer_done(void *ptimer)
 {
-       return wifi_funcs->_timer_done(ptimer);
+    return wifi_funcs->_timer_done(ptimer);
 }
 
 #endif /* OS_H */
