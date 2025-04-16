@@ -594,7 +594,6 @@ components/soc/esp32c3/include/soc/boot_mode.h
 components/soc/esp32c3/include/soc/extmem_reg.h
 components/soc/esp32c3/include/soc/fe_reg.h
 components/soc/esp32c3/include/soc/gpio_reg.h
-components/soc/esp32c3/include/soc/gpio_struct.h
 components/soc/esp32c3/include/soc/i2c_reg.h
 components/soc/esp32c3/include/soc/interrupt_core0_reg.h
 components/soc/esp32c3/include/soc/ledc_reg.h
