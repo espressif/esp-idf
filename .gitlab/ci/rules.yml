@@ -408,6 +408,8 @@
       when: never
     - <<: *if-schedule-test-build-system-windows
     - <<: *if-label-windows
+    - <<: *if-dev-push
+      changes: *patterns-build_system
 
 .rules:test:host_test:
   rules:
