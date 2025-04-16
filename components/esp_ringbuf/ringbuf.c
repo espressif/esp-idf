@@ -1124,6 +1124,7 @@ void *xRingbufferReceive(RingbufHandle_t xRingbuffer, size_t *pxItemSize, TickTy
 
     //Check arguments
     configASSERT(pxRingbuffer && pxItemSize);
+    configASSERT((pxRingbuffer->uxRingbufferFlags & rbALLOW_SPLIT_FLAG) == 0);    // This function must not be called for allow-split buffers
 
     //Attempt to retrieve an item
     void *pvTempItem;
@@ -1140,6 +1141,7 @@ void *xRingbufferReceiveFromISR(RingbufHandle_t xRingbuffer, size_t *pxItemSize)
 
     //Check arguments
     configASSERT(pxRingbuffer && pxItemSize);
+    configASSERT((pxRingbuffer->uxRingbufferFlags & rbALLOW_SPLIT_FLAG) == 0);    // This function must not be called for allow-split buffers
 
     //Attempt to retrieve an item
     void *pvTempItem;
