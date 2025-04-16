@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -713,6 +713,8 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
             return ESP_ERR_MBEDTLS_SSL_SET_HOSTNAME_FAILED;
         }
         free(use_host);
+    } else {
+        mbedtls_ssl_set_hostname(&tls->ssl, NULL);
     }
 
     if ((ret = mbedtls_ssl_config_defaults(&tls->conf,
@@ -789,7 +791,7 @@ esp_err_t set_client_config(const char *hostname, size_t hostlen, esp_tls_cfg_t 
 #endif
 #ifdef CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     } else if (cfg->client_session != NULL) {
-        ESP_LOGD(TAG, "Resuing the saved client session");
+        ESP_LOGD(TAG, "Reusing the saved client session");
 #endif
     } else {
 #ifdef CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY
