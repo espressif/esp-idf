@@ -24,6 +24,7 @@ static uint32_t lp_wakeup_cause = 0;
 
 void ulp_lp_core_update_wakeup_cause(void)
 {
+    lp_wakeup_cause = 0;
     if ((REG_GET_FIELD(PMU_LP_CPU_PWR1_REG, PMU_LP_CPU_WAKEUP_EN) & ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU) \
         && (pmu_ll_lp_get_interrupt_raw(&PMU) & PMU_HP_SW_TRIGGER_INT_RAW)) {
         lp_wakeup_cause |= ULP_LP_CORE_WAKEUP_SOURCE_HP_CPU;
