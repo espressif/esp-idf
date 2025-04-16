@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -119,10 +119,7 @@ static esp_err_t uart_initialization(void)
 
 static esp_err_t uart_wakeup_config(void)
 {
-    /* UART will wakeup the chip up from light sleep if the edges that RX pin received has reached the threshold
-     * Besides, the Rx pin need extra configuration to enable it can work during light sleep */
-    ESP_RETURN_ON_ERROR(gpio_sleep_set_direction(EXAMPLE_UART_RX_IO_NUM, GPIO_MODE_INPUT), TAG, "Set uart sleep gpio failed");
-    ESP_RETURN_ON_ERROR(gpio_sleep_set_pull_mode(EXAMPLE_UART_RX_IO_NUM, GPIO_PULLUP_ONLY), TAG, "Set uart sleep gpio failed");
+    /* UART will wakeup the chip up from light sleep if the edges that RX pin received has reached the threshold */
     ESP_RETURN_ON_ERROR(uart_set_wakeup_threshold(EXAMPLE_UART_NUM, EXAMPLE_UART_WAKEUP_THRESHOLD),
                         TAG, "Set uart wakeup threshold failed");
     /* Only uart0 and uart1 (if has) support to be configured as wakeup source */

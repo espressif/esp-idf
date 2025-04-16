@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -24,6 +24,7 @@
 #include "esp_private/gpio.h"
 #include "esp_private/sleep_gpio.h"
 #include "esp_private/spi_flash_os.h"
+#include "soc/uart_channel.h"
 
 static const char *TAG = "sleep";
 
@@ -86,6 +87,18 @@ void esp_sleep_enable_gpio_switch(bool enable)
     ESP_EARLY_LOGI(TAG, "%s automatic switching of GPIO sleep configuration", enable ? "Enable" : "Disable");
     for (gpio_num_t gpio_num = GPIO_NUM_0; gpio_num < GPIO_NUM_MAX; gpio_num++) {
         if (GPIO_IS_VALID_GPIO(gpio_num)) {
+#if CONFIG_ESP_CONSOLE_UART
+#if CONFIG_ESP_CONSOLE_UART_CUSTOM
+            const int uart_tx_gpio = (CONFIG_ESP_CONSOLE_UART_TX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_TX_GPIO : UART_NUM_0_TXD_DIRECT_GPIO_NUM;
+            const int uart_rx_gpio = (CONFIG_ESP_CONSOLE_UART_RX_GPIO >= 0) ? CONFIG_ESP_CONSOLE_UART_RX_GPIO : UART_NUM_0_RXD_DIRECT_GPIO_NUM;
+            if ((gpio_num == uart_tx_gpio) || (gpio_num == uart_rx_gpio)) {
+#else
+            if ((gpio_num == UART_NUM_0_TXD_DIRECT_GPIO_NUM) || (gpio_num == UART_NUM_0_RXD_DIRECT_GPIO_NUM)) {
+#endif
+                gpio_sleep_sel_dis(gpio_num);
+                continue;
+            }
+#endif
             if (enable) {
                 gpio_sleep_sel_en(gpio_num);
             } else {
