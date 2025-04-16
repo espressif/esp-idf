@@ -327,8 +327,12 @@ IRAM_ATTR bool spi_flash_check_and_flush_cache(size_t start_addr, size_t length)
 #endif // !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL
 
 #if !ESP_ROM_HAS_SPI_FLASH_MMAP || !CONFIG_SPI_FLASH_ROM_IMPL || CONFIG_SPIRAM_FETCH_INSTRUCTIONS || CONFIG_SPIRAM_RODATA
-//The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
-//Always patch it when SPIRAM_FETCH_INSTRUCTIONS or SPIRAM_RODATA is set.
+/* ROM and patch information
+ * Latest: Add the mapping from psram physical address to flash when CONFIG_SPIRAM_FETCH_INSTRUCTIONS or CONFIG_SPIRAM_RODATA enabled
+ * V1 (Latest): added to ROM
+ */
+// The ROM implementation returns physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+// Patched when XIP from PSRAM (partially) enabled.
 size_t spi_flash_cache2phys(const void *cached)
 {
     if (cached == NULL) {
@@ -370,6 +374,12 @@ size_t spi_flash_cache2phys(const void *cached)
     return paddr + offset * CONFIG_MMU_PAGE_SIZE;
 }
 
+/* ROM and patch information
+ * Latest: Add the mapping from flash physical address to psram when CONFIG_SPIRAM_FETCH_INSTRUCTIONS or CONFIG_SPIRAM_RODATA enabled
+ * V1 (Latest): added to ROM
+ */
+// The ROM implementation takes physical address of the PSRAM when the .text or .rodata is in the PSRAM.
+// Patched when XIP from PSRAM (partially) enabled.
 const void * spi_flash_phys2cache(size_t phys_offs, spi_flash_mmap_memory_t memory)
 {
     esp_err_t ret = ESP_FAIL;

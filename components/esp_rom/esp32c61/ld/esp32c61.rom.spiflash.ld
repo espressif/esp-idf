@@ -38,8 +38,8 @@ spi_flash_munmap = 0x40000228;
 spi_flash_mmap_dump = 0x4000022c;
 spi_flash_check_and_flush_cache = 0x40000230;
 spi_flash_mmap_get_free_pages = 0x40000234;
-spi_flash_cache2phys = 0x40000238;
-spi_flash_phys2cache = 0x4000023c;
+PROVIDE(spi_flash_cache2phys = 0x40000238); /* patched when XIP */
+PROVIDE(spi_flash_phys2cache = 0x4000023c); /* patched when XIP */
 
 
 /***************************************

@@ -4,10 +4,13 @@ components/app_update/test_apps:
   enable:
     - if: CONFIG_NAME == "defaults" and IDF_TARGET in ["esp32", "esp32c2", "esp32c3", "esp32c5", "esp32c6", "esp32c61", "esp32h2", "esp32p4", "esp32s2", "esp32s3"]
     - if: CONFIG_NAME == "rollback" and IDF_TARGET in ["esp32", "esp32c3", "esp32s3", "esp32p4"]
-    - if: CONFIG_NAME == "xip_psram" and IDF_TARGET in ["esp32s2", "esp32s3", "esp32p4"]
+    - if: CONFIG_NAME == "xip_psram" and SOC_SPIRAM_XIP_SUPPORTED == 1
     # S2 doesn't have ROM for flash
-    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and IDF_TARGET in ["esp32s3", "esp32p4"]
+    - if: CONFIG_NAME == "xip_psram_with_rom_impl" and (SOC_SPIRAM_XIP_SUPPORTED == 1 and IDF_TARGET != "esp32s2")
   disable:
-    - if: IDF_TARGET in ["esp32c61", "esp32h21", "esp32h4"]
+    - if: IDF_TARGET in ["esp32h21", "esp32h4"]
       temporary: true
-      reason: not supported yet  # TODO: [ESP32C61] IDF-9245, [ESP32H21] IDF-11515, [ESP32H4] IDF-12279
+      reason: not supported yet  # TODO: [ESP32H21] IDF-11515, [ESP32H4] IDF-12279
+    - if: IDF_TARGET == "esp32c61" and CONFIG_NAME == "xip_psram_with_rom_impl"
+      temporary: true
+      reason: not supported yet  # TODO: [ESP32C61] IDF-12784
