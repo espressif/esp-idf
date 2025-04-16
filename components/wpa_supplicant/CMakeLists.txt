@@ -119,6 +119,9 @@ if(CONFIG_ESP_WIFI_MBEDTLS_CRYPTO)
     "esp_supplicant/src/crypto/crypto_mbedtls-bignum.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-rsa.c"
     "esp_supplicant/src/crypto/crypto_mbedtls-ec.c")
+    if(NOT CONFIG_IDF_TARGET_ESP32)
+        list(APPEND crypto_src "esp_supplicant/src/crypto/fastpsk.c")
+    endif()
     # Add internal RC4 as RC4 has been removed from mbedtls
     set(crypto_src ${crypto_src} "src/crypto/rc4.c")
     if(NOT CONFIG_MBEDTLS_DES_C)
