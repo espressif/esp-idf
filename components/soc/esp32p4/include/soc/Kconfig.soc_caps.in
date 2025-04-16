@@ -2190,3 +2190,7 @@ config SOC_LP_CORE_SUPPORT_LP_ADC
 config SOC_LP_CORE_SUPPORT_LP_VAD
     bool
     default y
+
+config SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
+    bool
+    default y

@@ -273,6 +273,10 @@ examples/system/ulp/lp_core/build_system:
 examples/system/ulp/lp_core/debugging:
   enable:
     - if: SOC_LP_CORE_SUPPORTED == 1
+  disable:
+    - if: IDF_TARGET == "esp32c5"
+      temporary: true
+      reason: binary size too large TODO IDF-13063
   depends_components:
     - ulp
 

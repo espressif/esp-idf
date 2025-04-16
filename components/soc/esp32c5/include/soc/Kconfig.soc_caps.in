@@ -1606,3 +1606,7 @@ config SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR
 config SOC_LP_CORE_SUPPORT_ETM
     bool
     default y
+
+config SOC_LP_CORE_SUPPORT_STORE_LOAD_EXCEPTIONS
+    bool
+    default y
