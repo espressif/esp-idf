@@ -1,14 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /* ROM function interface esp32c5.rom.ld for esp32c5
  *
  *
- * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum f5c146321f24f88ad1f27234da5aed11
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 4dfe6ccc311ca3575012c23e3753353c
  *
- * Compatible with ROM where ECO version equal or greater to 0.
+ * Compatible with ROM where ECO version equal or greater to 2.
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -429,3 +429,60 @@ usb_serial_device_rx_one_char = 0x40000ab8;
 usb_serial_device_rx_one_char_block = 0x40000abc;
 usb_serial_device_tx_flush = 0x40000ac0;
 usb_serial_device_tx_one_char = 0x40000ac4;
+
+
+/***************************************
+ Group recovery_bootloader
+ ***************************************/
+
+/* Functions */
+ets_get_bootloader_offset = 0x40001544;
+ets_set_bootloader_offset = 0x40001548;
+
+
+/***************************************
+ Group lldesc
+ ***************************************/
+
+/* Functions */
+lldesc_build_chain = 0x4000154c;
+
+
+/***************************************
+ Group sip
+ ***************************************/
+
+/* Functions */
+sip_after_tx_complete = 0x40001550;
+sip_alloc_to_host_evt = 0x40001554;
+sip_download_begin = 0x40001558;
+sip_get_ptr = 0x4000155c;
+sip_get_state = 0x40001560;
+sip_init_attach = 0x40001564;
+sip_install_rx_ctrl_cb = 0x40001568;
+sip_install_rx_data_cb = 0x4000156c;
+sip_is_active = 0x40001570;
+sip_post_init = 0x40001574;
+sip_reclaim_from_host_cmd = 0x40001578;
+sip_reclaim_tx_data_pkt = 0x4000157c;
+sip_send = 0x40001580;
+sip_to_host_chain_append = 0x40001584;
+sip_to_host_evt_send_done = 0x40001588;
+
+
+/***************************************
+ Group slc
+ ***************************************/
+
+/* Functions */
+slc_add_credits = 0x4000158c;
+slc_enable = 0x40001590;
+slc_from_host_chain_fetch = 0x40001594;
+slc_from_host_chain_recycle = 0x40001598;
+slc_has_pkt_to_host = 0x4000159c;
+slc_init_attach = 0x400015a0;
+slc_init_credit = 0x400015a4;
+slc_reattach = 0x400015a8;
+slc_send_to_host_chain = 0x400015ac;
+slc_set_host_io_max_window = 0x400015b0;
+slc_to_host_chain_recycle = 0x400015b4;

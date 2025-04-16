@@ -1,14 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 /* ROM function interface esp32c5.rom.pp.ld for esp32c5
  *
  *
- * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum f5c146321f24f88ad1f27234da5aed11
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 4dfe6ccc311ca3575012c23e3753353c
  *
- * Compatible with ROM where ECO version equal or greater to 0.
+ * Compatible with ROM where ECO version equal or greater to 2.
  *
  * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
  */
@@ -27,14 +27,14 @@ esf_buf_recycle = 0x40000bfc;
 GetAccess = 0x40000c00;
 hal_mac_is_low_rate_enabled = 0x40000c04;
 hal_mac_tx_get_blockack = 0x40000c08;
-/*hal_mac_tx_set_ppdu = 0x40000c0c;*/
+hal_mac_tx_set_ppdu = 0x40000c0c;
 hal_mac_tx_clr_mplen = 0x40000c10;
 hal_mac_get_txq_state = 0x40000c14;
 hal_mac_clr_txq_state = 0x40000c18;
 hal_mac_get_txq_complete = 0x40000c1c;
 hal_mac_deinit_twt_tx = 0x40000c20;
 hal_mac_is_dma_enable = 0x40000c24;
-/*hal_he_get_bss_color = 0x40000c28;*/
+hal_he_get_bss_color = 0x40000c28;
 hal_he_set_ersu = 0x40000c2c;
 hal_he_get_mplen_addr_start = 0x40000c30;
 hal_he_get_mplen_addr_end = 0x40000c34;
@@ -51,11 +51,9 @@ hal_tsf_timer_set_target = 0x40000c5c;
 hal_tsf_clear_soc_wakeup_request = 0x40000c60;
 hal_get_tsf_time = 0x40000c64;
 hal_get_sta_tsf = 0x40000c68;
-dbg_hal_check_clr_mplen_bitmap = 0x40000c6c;
-dbg_hal_check_set_mplen_bitmap = 0x40000c70;
 ic_get_trc = 0x40000c74;
 ic_mac_deinit = 0x40000c78;
-/* ic_mac_init = 0x40000c7c; */
+ic_mac_init = 0x40000c7c;
 ic_interface_enabled = 0x40000c80;
 is_lmac_idle = 0x40000c84;
 ic_get_he_rts_threshold_bytes = 0x40000c88;
@@ -101,7 +99,7 @@ mac_tx_set_plcp2 = 0x40000d24;
 mac_tx_set_len = 0x40000d28;
 mac_tx_set_htsig = 0x40000d2c;
 mac_tx_set_vhtsig = 0x40000d30;
-/*mac_tx_set_hesig = 0x40000d34;*/
+mac_tx_set_hesig = 0x40000d34;
 mac_tx_set_tb = 0x40000d38;
 mac_tx_set_mplen = 0x40000d3c;
 mac_tx_set_txop_q = 0x40000d40;
@@ -109,17 +107,17 @@ mac_tx_set_pti = 0x40000d44;
 pm_check_state = 0x40000d48;
 pm_disable_dream_timer = 0x40000d4c;
 pm_disable_sleep_delay_timer = 0x40000d50;
-/*pm_dream = 0x40000d54;*/
+pm_dream = 0x40000d54;
 pm_mac_wakeup = 0x40000d58;
 pm_mac_sleep = 0x40000d5c;
-/*pm_enable_active_timer = 0x40000d60;*/
+pm_enable_active_timer = 0x40000d60;
 pm_enable_sleep_delay_timer = 0x40000d64;
 pm_local_tsf_process = 0x40000d68;
 pm_set_beacon_filter = 0x40000d6c;
 /*pm_is_in_wifi_slice_threshold = 0x40000d70;*/
 pm_is_waked = 0x40000d74;
-/*pm_keep_alive = 0x40000d78;*/
-/*pm_on_beacon_rx = 0x40000d7c;*/
+pm_keep_alive = 0x40000d78;
+pm_on_beacon_rx = 0x40000d7c;
 pm_on_data_rx = 0x40000d80;
 pm_on_data_tx = 0x40000d84;
 pm_on_tbtt = 0x40000d88;
@@ -129,31 +127,31 @@ pm_on_isr_set_twt_target = 0x40000d94;
 pm_on_isr_twt_wake = 0x40000d98;
 pm_on_tsf_timer = 0x40000d9c;
 pm_on_twt_force_tx = 0x40000da0;
-/*pm_parse_beacon = 0x40000da4;*/
-/*pm_process_tim = 0x40000da8;*/
+pm_parse_beacon = 0x40000da4;
+pm_process_tim = 0x40000da8;
 pm_rx_beacon_process = 0x40000dac;
 pm_rx_data_process = 0x40000db0;
-/*pm_sleep = 0x40000db4;*/
+pm_sleep = 0x40000db4;
 pm_sleep_for = 0x40000db8;
-/*pm_tbtt_process = 0x40000dbc;*/
-/*pm_tx_data_done_process = 0x40000dc0;*/
+pm_tbtt_process = 0x40000dbc;
+pm_tx_data_done_process = 0x40000dc0;
 pm_allow_tx = 0x40000dc4;
 pm_extend_tbtt_adaptive_servo = 0x40000dc8;
-/*pm_scale_listen_interval = 0x40000dcc;*/
+pm_scale_listen_interval = 0x40000dcc;
 pm_parse_mbssid_element = 0x40000dd0;
 pm_disconnected_wake = 0x40000dd4;
-/*pm_tx_data_process = 0x40000dd8;*/
+pm_tx_data_process = 0x40000dd8;
 pm_is_twt_awake = 0x40000ddc;
 pm_enable_twt_keep_alive = 0x40000de0;
 pm_twt_on_tsf_timer = 0x40000de4;
-/*pm_twt_process = 0x40000de8;*/
+pm_twt_process = 0x40000de8;
 pm_is_twt_start = 0x40000dec;
 pm_twt_set_target_wdev_time = 0x40000df0;
 pm_twt_set_target_tsf = 0x40000df4;
 pm_enable_twt_keep_alive_timer = 0x40000df8;
 /*pm_mac_try_enable_modem_state = 0x40000dfc;*/
 pm_beacon_monitor_tbtt_timeout_process = 0x40000e00;
-/*pm_update_next_tbtt = 0x40000e04;*/
+pm_update_next_tbtt = 0x40000e04;
 pm_twt_disallow_tx = 0x40000e08;
 pm_clear_wakeup_signal = 0x40000e0c;
 /*pm_mac_disable_tsf_tbtt_soc_wakeup = 0x40000e10;
@@ -180,7 +178,7 @@ ppGetTxframe = 0x40000e60;
 ppMapTxQueue = 0x40000e64;
 ppProcTxSecFrame = 0x40000e68;
 ppProcessRxPktHdr = 0x40000e6c;
-/*ppProcessTxQ = 0x40000e70;*/
+ppProcessTxQ = 0x40000e70;
 ppRecordBarRRC = 0x40000e74;
 ppRecycleAmpdu = 0x40000e78;
 ppRecycleRxPkt = 0x40000e7c;
@@ -222,7 +220,7 @@ pp_coex_tx_release = 0x40000f08;
 ppAdd2AMPDUTail = 0x40000f0c;
 ppDirectRecycleAmpdu = 0x40000f10;
 ppRegressAmpdu = 0x40000f14;
-/*pp_timer_do_process = 0x40000f18;*/
+pp_timer_do_process = 0x40000f18;
 rcGetAmpduSched = 0x40000f1c;
 rcUpdateRxDone = 0x40000f20;
 rc_get_trc = 0x40000f24;
@@ -232,14 +230,14 @@ rcampduuprate = 0x40000f30;
 rcClearCurAMPDUSched = 0x40000f34;
 rcClearCurSched = 0x40000f38;
 rcClearCurStat = 0x40000f3c;
-/* rcGetSched = 0x40000f40; */
+rcGetSched = 0x40000f40;
 rcLowerSched = 0x40000f44;
 rcSetTxAmpduLimit = 0x40000f48;
 rcTxUpdatePer = 0x40000f4c;
-/*rcUpdateAckSnr = 0x40000f50;*/
+rcUpdateAckSnr = 0x40000f50;
 rcUpdateRate = 0x40000f54;
-/*rcUpdateTxDone = 0x40000f58;*/
-/*rcUpdateTxDoneAmpdu2 = 0x40000f5c;*/
+rcUpdateTxDone = 0x40000f58;
+rcUpdateTxDoneAmpdu2 = 0x40000f5c;
 rcUpSched = 0x40000f60;
 rcReachRetryLimit = 0x40000f64;
 rcGetDCMMaxRate = 0x40000f68;
@@ -264,7 +262,7 @@ wDev_AppendRxBlocks = 0x40000fb0;
 wDev_DiscardFrame = 0x40000fb4;
 wDev_GetNoiseFloor = 0x40000fb8;
 wDev_IndicateAmpdu = 0x40000fbc;
-/*wDev_IndicateFrame = 0x40000fc0;*/
+wDev_IndicateFrame = 0x40000fc0;
 wdev_mac_reg_load = 0x40000fc4;
 wdev_mac_reg_store = 0x40000fc8;
 wdev_mac_special_reg_load = 0x40000fcc;
@@ -272,7 +270,7 @@ wdev_mac_special_reg_store = 0x40000fd0;
 wdev_mac_wakeup = 0x40000fd4;
 wdev_mac_sleep = 0x40000fd8;
 wDev_ProcessFiq = 0x40000fdc;
-/*wDev_ProcessRxSucData = 0x40000fe0;*/
+wDev_ProcessRxSucData = 0x40000fe0;
 wdevProcessRxSucDataAll = 0x40000fe4;
 wdev_csi_len_align = 0x40000fe8;
 wDev_IndicateBeaconMemoryFrame = 0x40000fec;
@@ -284,8 +282,6 @@ wdev_process_tsf_timer = 0x40001000;
 wdev_process_beacon_filter = 0x40001004;
 wdev_process_mac_modem_beacon_miss = 0x40001008;
 config_is_cache_tx_buf_enabled = 0x4000100c;
-config_get_wifi_feature_capabilities = 0x40001010;
-config_get_wifi_ampdu_tx_hetb_tid_limit = 0x40001014;
 esp_test_disable_tx_statistics = 0x40001018;
 esp_test_enable_tx_statistics = 0x4000101c;
 esp_test_clr_tx_statistics = 0x40001020;
@@ -335,12 +331,6 @@ is_use_muedca = 0x400010cc;
 pwr_hal_clear_mac_modem_state_wakeup_protect_signal = 0x400010d0;
 get_estimated_batime = 0x400010d4;
 get_sublen_offset = 0x400010d8;
-pm_coex_schm_overall_period_get = 0x40001504;
-ppRemoveHEAMPDUflags = 0x4000150c;
-tsf_hal_get_tbtt_interval = 0x40001510;
-/*pm_get_tbtt_count = 0x4000151c;*/
-tsf_hal_get_time = 0x40001520;
-tsf_hal_get_counter_value = 0x40001524;
 /* Data (.data, .bss, .rodata) */
 our_instances_ptr = 0x4004ffe0;
 pTxRx = 0x4085ff74;
@@ -452,3 +442,57 @@ he_max_apep_length = 0x4004fd40;
 g_pp_timer_info_ptr = 0x4085fc94;
 g_rts_threshold_bytes_ptr = 0x4085fc90;
 g_he_max_apep_length_tab_ptr = 0x4085fc8c;
+
+/* ROM function interface esp32c5.rom.eco1.ld for esp32c5
+ *
+ *
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 4dfe6ccc311ca3575012c23e3753353c
+ *
+ * Compatible with ROM where ECO version equal or greater to 2.
+ *
+ * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
+ */
+
+/***************************************
+ Group rom_pp_eco1
+ ***************************************/
+
+/* Functions */
+pm_coex_schm_overall_period_get = 0x40001504;
+pm_coex_pwr_update = 0x40001508;
+ppRemoveHEAMPDUflags = 0x4000150c;
+tsf_hal_get_tbtt_interval = 0x40001510;
+pm_beacon_monitor_tbtt_start = 0x40001514;
+pm_save_tbtt_info = 0x40001518;
+pm_get_tbtt_count = 0x4000151c;
+tsf_hal_get_time = 0x40001520;
+tsf_hal_get_counter_value = 0x40001524;
+
+/* ROM function interface esp32c5.rom.eco2.ld for esp32c5
+ *
+ *
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum 4dfe6ccc311ca3575012c23e3753353c
+ *
+ * Compatible with ROM where ECO version equal or greater to 2.
+ *
+ * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
+ */
+
+/***************************************
+ Group rom_pp_eco2
+ ***************************************/
+
+/* Functions */
+pm_enable_max_idle_timer = 0x400015b8;
+pm_beacon_offset_is_enabled = 0x400015bc;
+pm_beacon_offset_is_sampling = 0x400015c0;
+pm_beacon_offset_add_total_counter = 0x400015c4;
+pm_beacon_offset_add_loss_counter = 0x400015c8;
+pm_beacon_offset_check = 0x400015cc;
+pm_beacon_offset_get_average = 0x400015d0;
+pm_beacon_offset_get_expect = 0x400015d4;
+pm_beacon_offset_get_params = 0x400015d8;
+/* Data (.data, .bss, .rodata) */
+s_tbttstart_ptr = 0x4085fc68;
+s_pm_beacon_offset_ptr = 0x4085fc64;
+s_pm_beacon_offset_config_ptr = 0x4085fc60;

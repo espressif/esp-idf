@@ -3,6 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+/* ROM function interface esp32c5.rom.libc.ld for esp32c5
+ *
+ *
+ * Generated from ./target/esp32c5/interface-esp32c5.yml md5sum e68b5b3e3d244713e5743335f3857c57
+ *
+ * Compatible with ROM where ECO version equal or greater to 0.
+ *
+ * THIS FILE WAS AUTOMATICALLY GENERATED. DO NOT EDIT.
+ */
+
+/***************************************
+ Group libc
+ ***************************************/
+
+/* Functions */
 esp_rom_newlib_init_common_mutexes = 0x400004b4;
 memset = 0x400004b8;
 strlen = 0x400004d8;

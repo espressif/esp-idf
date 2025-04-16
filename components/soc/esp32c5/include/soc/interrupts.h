@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -57,6 +57,8 @@ typedef enum {
     ETS_HP_APM_M3_INTR_SOURCE,
     ETS_HP_APM_M4_INTR_SOURCE,
     ETS_LP_APM0_INTR_SOURCE,
+    ETS_CPU_APM_M0_INTR_SOURCE,
+    ETS_CPU_APM_M1_INTR_SOURCE,
     ETS_MSPI_INTR_SOURCE,
     ETS_I2S0_INTR_SOURCE,                       /**< interrupt of I2S0, level*/
     ETS_UHCI0_INTR_SOURCE,                      /**< interrupt of UHCI0, level*/
@@ -77,12 +79,14 @@ typedef enum {
     ETS_SYSTIMER_TARGET0_INTR_SOURCE,           /**< interrupt of system timer 0 */
     ETS_SYSTIMER_TARGET1_INTR_SOURCE,           /**< interrupt of system timer 1 */
     ETS_SYSTIMER_TARGET2_INTR_SOURCE,           /**< interrupt of system timer 2 */
-    ETS_APB_ADC_INTR_SOURCE = 62,               /**< interrupt of APB ADC, LEVEL*/
+    ETS_APB_ADC_INTR_SOURCE = 64,               /**< interrupt of APB ADC, LEVEL*/
     ETS_TEMPERATURE_SENSOR_INTR_SOURCE = ETS_APB_ADC_INTR_SOURCE,
-    ETS_MCPWM0_INTR_SOURCE = 63,                /**< interrupt of MCPWM0, LEVEL*/
+    ETS_MCPWM0_INTR_SOURCE = 65,                /**< interrupt of MCPWM0, LEVEL*/
     ETS_PCNT_INTR_SOURCE,
     ETS_PARL_IO_TX_INTR_SOURCE,
     ETS_PARL_IO_RX_INTR_SOURCE,
+    ETS_SLC0_INTR_SOURCE,
+    ETS_SLC1_INTR_SOURCE,
     ETS_DMA_IN_CH0_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 0, LEVEL*/
     ETS_DMA_IN_CH1_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 1, LEVEL*/
     ETS_DMA_IN_CH2_INTR_SOURCE,                    /**< interrupt of general DMA IN channel 2, LEVEL*/
