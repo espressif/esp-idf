@@ -115,6 +115,14 @@ Note: IDF v5.1.5 and v5.3.2 are compatible with C2 v2.0. However the chip revisi
 
 Supported since ESP-IDF v5.1.
 
+#### v0.2
+
+| Release branch         | Recommended | Required |
+|------------------------|-------------|----------|
+| release/v5.1           | v5.1.4+     | v5.1     |
+| release/v5.2           | v5.2.2+     | v5.2     |
+| release/v5.3 and above | v5.3+       | v5.3     |
+
 ### ESP32-H2
 
 #### v0.1, v0.2
