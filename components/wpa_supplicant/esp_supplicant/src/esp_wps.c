@@ -1457,7 +1457,7 @@ static int wifi_station_wps_init(const esp_wps_config_t *config)
     }
 
     sm = gWpsSm;
-
+    esp_wifi_disconnect();
     esp_wifi_get_macaddr_internal(WIFI_IF_STA, sm->ownaddr);
     os_memcpy(gWpaSm.own_addr, sm->ownaddr, ETH_ALEN);
 
