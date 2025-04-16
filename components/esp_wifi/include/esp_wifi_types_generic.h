@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -799,7 +799,32 @@ typedef struct {
 #define ESP_WIFI_MAX_SVC_NAME_LEN       256    /**< Maximum length of NAN service name */
 #define ESP_WIFI_MAX_FILTER_LEN         256    /**< Maximum length of NAN service filter */
 #define ESP_WIFI_MAX_SVC_INFO_LEN       64     /**< Maximum length of NAN service info */
+#define ESP_WIFI_MAX_FUP_SSI_LEN        2048   /**< Maximum length of NAN Service Specific Info in a Follow-up frame */
+#define ESP_WIFI_MAX_SVC_SSI_LEN        512    /**< Maximum length of NAN Service Specific Info in Publish/Subscribe SDF's */
 #define ESP_WIFI_MAX_NEIGHBOR_REP_LEN   64     /**< Maximum length of NAN Neighbor Report */
+#define WIFI_OUI_LEN                    3      /**< Length of OUI bytes in IE or attributes */
+
+/**
+  * @brief Protocol types in NAN service specific info attribute
+  *
+  */
+typedef enum {
+    WIFI_SVC_PROTO_RESERVED     = 0,    /**< Value 0 Reserved */
+    WIFI_SVC_PROTO_BONJOUR      = 1,    /**< Bonjour Protocol */
+    WIFI_SVC_PROTO_GENERIC      = 2,    /**< Generic Service Protocol */
+    WIFI_SVC_PROTO_CSA_MATTER   = 3,    /**< CSA Matter specific protocol */
+    WIFI_SVC_PROTO_MAX,                 /**< Values 4-255 Reserved */
+} wifi_nan_svc_proto_t;
+
+/**
+  * @brief WFA defined Protocol types in NAN service specific info attribute
+  *
+  */
+typedef struct {
+    uint8_t wfa_oui[WIFI_OUI_LEN];  /**< WFA OUI - 0x50, 0x6F, 0x9A */
+    wifi_nan_svc_proto_t proto;     /**< WFA defined protocol types */
+    uint8_t payload[0];             /**< Service Info payload */
+} wifi_nan_wfa_ssi_t;
 
 /**
   * @brief NAN Services types
@@ -820,10 +845,14 @@ typedef struct {
     char service_name[ESP_WIFI_MAX_SVC_NAME_LEN];   /**< Service name identifier */
     wifi_nan_service_type_t type;                   /**< Service type */
     char matching_filter[ESP_WIFI_MAX_FILTER_LEN];  /**< Comma separated filters for filtering services */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< Service info shared in Publish frame */
+    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
     uint8_t single_replied_event: 1;                /**< Give single Replied event or every time */
     uint8_t datapath_reqd: 1;                       /**< NAN Datapath required for the service */
-    uint8_t reserved: 6;                            /**< Reserved */
+    uint8_t fsd_reqd: 1;                            /**< Further Service Discovery(FSD) required */
+    uint8_t fsd_gas: 1;                             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
+    uint8_t reserved: 4;                            /**< Reserved */
+    uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
+    uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_publish_cfg_t;
 
 /**
@@ -834,9 +863,14 @@ typedef struct {
     char service_name[ESP_WIFI_MAX_SVC_NAME_LEN];   /**< Service name identifier */
     wifi_nan_service_type_t type;                   /**< Service type */
     char matching_filter[ESP_WIFI_MAX_FILTER_LEN];  /**< Comma separated filters for filtering services */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< Service info shared in Subscribe frame */
-    uint8_t single_match_event: 1;                  /**< Give single Match event or every time */
-    uint8_t reserved: 7;                            /**< Reserved */
+    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
+    uint8_t single_match_event: 1;                  /**< Give single Match event(per SSI update)  or every time */
+    uint8_t datapath_reqd: 1;                       /**< NAN Datapath required for the service */
+    uint8_t fsd_reqd: 1;                            /**< Further Service Discovery(FSD) required */
+    uint8_t fsd_gas: 1;                             /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
+    uint8_t reserved: 4;                            /**< Reserved */
+    uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_SVC_SSI_LEN */
+    uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_subscribe_cfg_t;
 
 /**
@@ -844,10 +878,12 @@ typedef struct {
   *
   */
 typedef struct {
-    uint8_t inst_id;                         /**< Own service instance id */
-    uint8_t peer_inst_id;                    /**< Peer's service instance id */
-    uint8_t peer_mac[6];                     /**< Peer's MAC address */
-    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Service info(or message) to be shared */
+    uint8_t inst_id;                                /**< Own service instance id */
+    uint8_t peer_inst_id;                           /**< Peer's service instance id */
+    uint8_t peer_mac[6];                            /**< Peer's MAC address */
+    char svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];       /**< To be deprecated in next major release, use ssi instead */
+    uint16_t ssi_len;                               /**< Length of service specific info, maximum allowed length - ESP_WIFI_MAX_FUP_SSI_LEN */
+    uint8_t *ssi;                                   /**< Service Specific Info of type wifi_nan_wfa_ssi_t for WFA defined protocols, otherwise proprietary and defined by Applications */
 } wifi_nan_followup_params_t;
 
 /**
@@ -1255,6 +1291,15 @@ typedef struct {
     uint8_t publish_id;         /**< Publish Service Identifier */
     uint8_t pub_if_mac[6];      /**< NAN Interface MAC of the Publisher */
     bool update_pub_id;         /**< Indicates whether publisher's service ID needs to be updated */
+    uint8_t datapath_reqd: 1;   /**< NAN Datapath required for the service */
+    uint8_t fsd_reqd: 1;        /**< Further Service Discovery(FSD) required */
+    uint8_t fsd_gas: 1;         /**< 0 - Follow-up used for FSD, 1 - GAS used for FSD */
+    uint8_t reserved: 5;        /**< Reserved */
+    uint32_t reserved_1;        /**< Reserved */
+    uint32_t reserved_2;        /**< Reserved */
+    uint8_t ssi_version;        /**< Indicates version of SSI in Publish instance, 0 if not available */
+    uint16_t ssi_len;           /**< Length of service specific info */
+    uint8_t ssi[];              /**< Service specific info of Publisher */
 } wifi_event_nan_svc_match_t;
 
 /**
@@ -1264,6 +1309,10 @@ typedef struct {
     uint8_t publish_id;         /**< Publish Service Identifier */
     uint8_t subscribe_id;       /**< Subscribe Service Identifier */
     uint8_t sub_if_mac[6];      /**< NAN Interface MAC of the Subscriber */
+    uint32_t reserved_1;        /**< Reserved */
+    uint32_t reserved_2;        /**< Reserved */
+    uint16_t ssi_len;           /**< Length of service specific info */
+    uint8_t ssi[];              /**< Service specific info of Subscriber */
 } wifi_event_nan_replied_t;
 
 /**
@@ -1273,7 +1322,11 @@ typedef struct {
     uint8_t inst_id;                                 /**< Our Service Identifier */
     uint8_t peer_inst_id;                            /**< Peer's Service Identifier */
     uint8_t peer_if_mac[6];                          /**< Peer's NAN Interface MAC */
-    uint8_t peer_svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Peer Service Info */
+    uint8_t peer_svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
+    uint32_t reserved_1;                             /**< Reserved */
+    uint32_t reserved_2;                             /**< Reserved */
+    uint16_t ssi_len;                                /**< Length of service specific info */
+    uint8_t ssi[];                                   /**< Service specific info from Follow-up */
 } wifi_event_nan_receive_t;
 
 /**
@@ -1284,7 +1337,11 @@ typedef struct {
     uint8_t ndp_id;                             /**< NDP instance id */
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
     uint8_t peer_ndi[6];                        /**< Peer's NAN Data Interface MAC */
-    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Service Specific Info */
+    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
+    uint32_t reserved_1;                        /**< Reserved */
+    uint32_t reserved_2;                        /**< Reserved */
+    uint16_t ssi_len;                           /**< Length of service specific info */
+    uint8_t ssi[];                              /**< Service specific info from NDP/NDPE Attribute */
 } wifi_event_ndp_indication_t;
 
 /**
@@ -1296,7 +1353,11 @@ typedef struct {
     uint8_t peer_nmi[6];                        /**< Peer's NAN Management Interface MAC */
     uint8_t peer_ndi[6];                        /**< Peer's NAN Data Interface MAC */
     uint8_t own_ndi[6];                         /**< Own NAN Data Interface MAC */
-    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< Service Specific Info */
+    uint8_t svc_info[ESP_WIFI_MAX_SVC_INFO_LEN];/**< To be deprecated in next major release, use ssi instead */
+    uint32_t reserved_1;                        /**< Reserved */
+    uint32_t reserved_2;                        /**< Reserved */
+    uint16_t ssi_len;                           /**< Length of Service Specific Info */
+    uint8_t ssi[];                              /**< Service specific info from NDP/NDPE Attribute */
 } wifi_event_ndp_confirm_t;
 
 /**
