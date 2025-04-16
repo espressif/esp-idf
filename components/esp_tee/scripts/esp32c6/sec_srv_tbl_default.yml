@@ -135,25 +135,9 @@ secure_services:
     entries:
       - id: 54
         type: IDF
-        function: efuse_hal_chip_revision
-        args: 0
-      - id: 55
-        type: IDF
-        function: efuse_hal_get_chip_ver_pkg
-        args: 1
-      - id: 56
-        type: IDF
-        function: efuse_hal_get_disable_wafer_version_major
-        args: 0
-      - id: 57
-        type: IDF
-        function: efuse_hal_get_mac
-        args: 1
-      - id: 58
-        type: IDF
         function: wdt_hal_init
         args: 4
-      - id: 59
+      - id: 55
         type: IDF
         function: wdt_hal_deinit
         args: 1
@@ -256,22 +240,7 @@ secure_services:
         type: IDF
         function: esp_ecc_point_verify
         args: 1
-  # ID: 134-149 (16) - eFuse
-  - family: efuse
-    entries:
-      - id: 134
-        type: IDF
-        function: esp_efuse_check_secure_version
-        args: 1
-      - id: 135
-        type: IDF
-        function: esp_efuse_read_field_blob
-        args: 3
-      - id: 136
-        type: IDF
-        function: esp_flash_encryption_enabled
-        args: 0
-  # ID: 150-169 (20) - Reserved for future use
+  # ID: 134-169 (36) - Reserved for future use
   - family: attestation
     entries:
       - id: 170

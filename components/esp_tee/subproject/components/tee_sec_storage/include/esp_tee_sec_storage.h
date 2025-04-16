@@ -12,6 +12,7 @@ extern "C" {
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include "esp_err.h"
 
 #define MIN_SEC_STG_SLOT_ID                 0    /*!< Minimum secure storage slot ID */
 #define MAX_SEC_STG_SLOT_ID                 14   /*!< Maximum secure storage slot ID */

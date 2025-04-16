@@ -6,7 +6,6 @@
 #include <stdarg.h>
 
 #include "esp_err.h"
-#include "esp_efuse.h"
 #include "esp_random.h"
 
 #include "hal/sha_types.h"
@@ -30,43 +29,6 @@
 void IRAM_ATTR __wrap_esp_rom_route_intr_matrix(int cpu_no, uint32_t model_num, uint32_t intr_num)
 {
     esp_tee_service_call(4, SS_ESP_ROM_ROUTE_INTR_MATRIX, cpu_no, model_num, intr_num);
-}
-
-/* ---------------------------------------------- eFuse ------------------------------------------------- */
-
-uint32_t __wrap_efuse_hal_chip_revision(void)
-{
-    return esp_tee_service_call(1, SS_EFUSE_HAL_CHIP_REVISION);
-}
-
-uint32_t __wrap_efuse_hal_get_chip_ver_pkg(void)
-{
-    return esp_tee_service_call(1, SS_EFUSE_HAL_GET_CHIP_VER_PKG);
-}
-
-bool __wrap_efuse_hal_get_disable_wafer_version_major(void)
-{
-    return esp_tee_service_call(1, SS_EFUSE_HAL_GET_DISABLE_WAFER_VERSION_MAJOR);
-}
-
-void __wrap_efuse_hal_get_mac(uint8_t *mac)
-{
-    esp_tee_service_call(2, SS_EFUSE_HAL_GET_MAC, mac);
-}
-
-bool __wrap_esp_efuse_check_secure_version(uint32_t secure_version)
-{
-    return esp_tee_service_call(4, SS_ESP_EFUSE_CHECK_SECURE_VERSION, secure_version);
-}
-
-esp_err_t __wrap_esp_efuse_read_field_blob(const esp_efuse_desc_t *field[], void *dst, size_t dst_size_bits)
-{
-    return esp_tee_service_call(4, SS_ESP_EFUSE_READ_FIELD_BLOB, (uint32_t)field, (uint32_t)dst, (uint32_t)dst_size_bits);
-}
-
-bool __wrap_esp_flash_encryption_enabled(void)
-{
-    return esp_tee_service_call(1, SS_ESP_FLASH_ENCRYPTION_ENABLED);
 }
 
 /* ---------------------------------------------- RTC_WDT ------------------------------------------------- */

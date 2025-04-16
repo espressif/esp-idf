@@ -5,10 +5,10 @@
  */
 #include <stdarg.h>
 
+#include "esp_err.h"
 #include "esp_log.h"
 #include "esp_fault.h"
 
-#include "hal/efuse_hal.h"
 #include "hal/mmu_types.h"
 #include "hal/mmu_hal.h"
 #include "hal/wdt_hal.h"
@@ -69,23 +69,6 @@ void _ss_rv_utils_intr_edge_ack(uint32_t intr_num)
 void _ss_rv_utils_intr_global_enable(void)
 {
     rv_utils_tee_intr_global_enable();
-}
-
-/* ---------------------------------------------- eFuse ------------------------------------------------- */
-
-uint32_t _ss_efuse_hal_chip_revision(void)
-{
-    return efuse_hal_chip_revision();
-}
-
-uint32_t _ss_efuse_hal_get_chip_ver_pkg(void)
-{
-    return efuse_hal_get_chip_ver_pkg();
-}
-
-bool _ss_efuse_hal_get_disable_wafer_version_major(void)
-{
-    return efuse_hal_get_disable_wafer_version_major();
 }
 
 /* ---------------------------------------------- RTC_WDT ------------------------------------------------- */

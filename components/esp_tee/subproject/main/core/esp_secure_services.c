@@ -8,12 +8,7 @@
 #include "esp_fault.h"
 #include "soc/soc_caps.h"
 
-#include "esp_efuse.h"
-#include "esp_flash_encrypt.h"
-
-#include "hal/efuse_hal.h"
 #include "hal/sha_hal.h"
-
 #include "aes/esp_aes.h"
 #include "sha/sha_core.h"
 #include "esp_hmac.h"
@@ -33,54 +28,6 @@ static __attribute__((unused)) const char *TAG = "esp_tee_sec_srv";
 void _ss_invalid_secure_service(void)
 {
     assert(0);
-}
-
-/* ---------------------------------------------- eFuse ------------------------------------------------- */
-
-void _ss_efuse_hal_get_mac(uint8_t *mac)
-{
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)mac)) &
-                       (esp_tee_ptr_in_ree((void *)(mac + 6))));
-
-    if (!valid_addr) {
-        return;
-    }
-    ESP_FAULT_ASSERT(valid_addr);
-
-    efuse_hal_get_mac(mac);
-}
-
-bool _ss_esp_efuse_check_secure_version(uint32_t secure_version)
-{
-    return esp_efuse_check_secure_version(secure_version);
-}
-
-esp_err_t _ss_esp_efuse_read_field_blob(const esp_efuse_desc_t *field[], void *dst, size_t dst_size_bits)
-{
-    if ((field != NULL) && (field[0]->efuse_block >= EFUSE_BLK4)) {
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    return esp_efuse_read_field_blob(field, dst, dst_size_bits);
-}
-
-bool _ss_esp_flash_encryption_enabled(void)
-{
-    uint32_t flash_crypt_cnt = 0;
-#ifndef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
-    flash_crypt_cnt = efuse_ll_get_flash_crypt_cnt();
-#else
-    esp_efuse_read_field_blob(ESP_EFUSE_SPI_BOOT_CRYPT_CNT, &flash_crypt_cnt, ESP_EFUSE_SPI_BOOT_CRYPT_CNT[0]->bit_count)    ;
-#endif
-    /* __builtin_parity is in flash, so we calculate parity inline */
-    bool enabled = false;
-    while (flash_crypt_cnt) {
-        if (flash_crypt_cnt & 1) {
-            enabled = !enabled;
-        }
-        flash_crypt_cnt >>= 1;
-    }
-    return enabled;
 }
 
 /* ---------------------------------------------- AES ------------------------------------------------- */
