@@ -67,6 +67,9 @@ esp_err_t esp_cam_ctlr_dvp_dma_init(esp_cam_ctlr_dvp_dma_t *dma, uint32_t burst_
 
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
+#if CONFIG_CAM_CTLR_DVP_CAM_ISR_CACHE_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
 
     ESP_RETURN_ON_ERROR(esp_cache_get_alignment(MALLOC_CAP_SPIRAM | MALLOC_CAP_DMA, &alignment_size), TAG, "failed to get cache alignment");

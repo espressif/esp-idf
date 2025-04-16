@@ -206,6 +206,9 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
 {
     gdma_channel_alloc_config_t dma_chan_config = {
         .direction = GDMA_CHANNEL_DIRECTION_TX,
+#if CONFIG_PARLIO_TX_ISR_CACHE_SAFE
+        .flags.isr_cache_safe = true,
+#endif
     };
     ESP_RETURN_ON_ERROR(PARLIO_GDMA_NEW_CHANNEL(&dma_chan_config, &tx_unit->dma_chan), TAG, "allocate TX DMA channel failed");
     gdma_connect(tx_unit->dma_chan, GDMA_MAKE_TRIGGER(GDMA_TRIG_PERIPH_PARLIO, 0));

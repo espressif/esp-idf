@@ -1,27 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include "sdkconfig.h"
-#include "soc/gdma_periph.h"
-#include "soc/soc_caps.h"
-
-#include "esp_err.h"
-#if CONFIG_GDMA_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
+#include "gdma_priv.h"
 #include "esp_private/sleep_retention.h"
 #include "esp_private/esp_regdma.h"
-
-static const char *TAG = "gdma";
 
 typedef struct {
     int group_id;

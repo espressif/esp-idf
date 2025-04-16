@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,32 +26,13 @@
  * - We're not using a global spin lock, instead, we created different spin locks at different level (group, pair).
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#if CONFIG_GDMA_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "soc/soc_caps.h"
-#include "soc/periph_defs.h"
-#include "esp_log.h"
-#include "esp_check.h"
+#include "gdma_priv.h"
 #include "esp_memory_utils.h"
 #include "esp_flash_encrypt.h"
-#include "esp_private/periph_ctrl.h"
-#include "gdma_priv.h"
 
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 #include "esp_private/gdma_sleep_retention.h"
 #endif
-
-static const char *TAG = "gdma";
 
 #if !SOC_RCC_IS_INDEPENDENT
 // Reset and Clock Control registers are mixing with other peripherals, so we need to use a critical section
@@ -94,9 +75,6 @@ typedef struct {
 
 static esp_err_t do_allocate_gdma_channel(const gdma_channel_search_info_t *search_info, const gdma_channel_alloc_config_t *config, gdma_channel_handle_t *ret_chan)
 {
-#if CONFIG_GDMA_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     gdma_tx_channel_t *alloc_tx_channel = NULL;
     gdma_rx_channel_t *alloc_rx_channel = NULL;
@@ -170,6 +148,12 @@ search_done:
         alloc_tx_channel->base.pair = pair;
         alloc_tx_channel->base.direction = GDMA_CHANNEL_DIRECTION_TX;
         alloc_tx_channel->base.periph_id = GDMA_INVALID_PERIPH_TRIG;
+        // for backward compatibility, `CONFIG_GDMA_ISR_IRAM_SAFE` can still force ALL GDMA ISRs to be cache safe
+#if CONFIG_GDMA_ISR_IRAM_SAFE
+        alloc_tx_channel->base.flags.isr_cache_safe = true;
+#else
+        alloc_tx_channel->base.flags.isr_cache_safe = config->flags.isr_cache_safe;
+#endif
         alloc_tx_channel->base.del = gdma_del_tx_channel; // set channel deletion function
         *ret_chan = &alloc_tx_channel->base; // return the installed channel
     }
@@ -180,6 +164,12 @@ search_done:
         alloc_rx_channel->base.pair = pair;
         alloc_rx_channel->base.direction = GDMA_CHANNEL_DIRECTION_RX;
         alloc_rx_channel->base.periph_id = GDMA_INVALID_PERIPH_TRIG;
+        // for backward compatibility, `CONFIG_GDMA_ISR_IRAM_SAFE` can still force ALL GDMA ISRs to be cache safe
+#if CONFIG_GDMA_ISR_IRAM_SAFE
+        alloc_rx_channel->base.flags.isr_cache_safe = true;
+#else
+        alloc_rx_channel->base.flags.isr_cache_safe = config->flags.isr_cache_safe;
+#endif
         alloc_rx_channel->base.del = gdma_del_rx_channel; // set channel deletion function
         *ret_chan = &alloc_rx_channel->base; // return the installed channel
     }
@@ -455,20 +445,20 @@ esp_err_t gdma_register_tx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     gdma_hal_context_t *hal = &group->hal;
     gdma_tx_channel_t *tx_chan = __containerof(dma_chan, gdma_tx_channel_t, base);
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-    if (cbs->on_trans_eof) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG,
-                            TAG, "on_trans_eof not in IRAM");
+    if (dma_chan->flags.isr_cache_safe) {
+        if (cbs->on_trans_eof) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_trans_eof), ESP_ERR_INVALID_ARG,
+                                TAG, "on_trans_eof not in IRAM");
+        }
+        if (cbs->on_descr_err) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG,
+                                TAG, "on_descr_err not in IRAM");
+        }
+        if (user_data) {
+            ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG,
+                                TAG, "user context not in internal RAM");
+        }
     }
-    if (cbs->on_descr_err) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG,
-                            TAG, "on_descr_err not in IRAM");
-    }
-    if (user_data) {
-        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG,
-                            TAG, "user context not in internal RAM");
-    }
-#endif // CONFIG_GDMA_ISR_IRAM_SAFE
 
     // lazy install interrupt service
     ESP_RETURN_ON_ERROR(gdma_install_tx_interrupt(tx_chan), TAG, "install interrupt service failed");
@@ -495,24 +485,24 @@ esp_err_t gdma_register_rx_event_callbacks(gdma_channel_handle_t dma_chan, gdma_
     gdma_hal_context_t *hal = &group->hal;
     gdma_rx_channel_t *rx_chan = __containerof(dma_chan, gdma_rx_channel_t, base);
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-    if (cbs->on_recv_eof) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_eof), ESP_ERR_INVALID_ARG,
-                            TAG, "on_recv_eof not in IRAM");
+    if (dma_chan->flags.isr_cache_safe) {
+        if (cbs->on_recv_eof) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_eof), ESP_ERR_INVALID_ARG,
+                                TAG, "on_recv_eof not in IRAM");
+        }
+        if (cbs->on_descr_err) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG,
+                                TAG, "on_descr_err not in IRAM");
+        }
+        if (cbs->on_recv_done) {
+            ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG,
+                                TAG, "on_recv_done not in IRAM");
+        }
+        if (user_data) {
+            ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG,
+                                TAG, "user context not in internal RAM");
+        }
     }
-    if (cbs->on_descr_err) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_descr_err), ESP_ERR_INVALID_ARG,
-                            TAG, "on_descr_err not in IRAM");
-    }
-    if (cbs->on_recv_done) {
-        ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_recv_done), ESP_ERR_INVALID_ARG,
-                            TAG, "on_recv_done not in IRAM");
-    }
-    if (user_data) {
-        ESP_RETURN_ON_FALSE(esp_ptr_internal(user_data), ESP_ERR_INVALID_ARG,
-                            TAG, "user context not in internal RAM");
-    }
-#endif // CONFIG_GDMA_ISR_IRAM_SAFE
 
     // lazy install interrupt service
     ESP_RETURN_ON_ERROR(gdma_install_rx_interrupt(rx_chan), TAG, "install interrupt service failed");
@@ -870,9 +860,12 @@ static esp_err_t gdma_install_rx_interrupt(gdma_rx_channel_t *rx_chan)
     gdma_hal_context_t *hal = &group->hal;
     int pair_id = pair->pair_id;
     // pre-alloc a interrupt handle, with handler disabled
-    int isr_flags = GDMA_INTR_ALLOC_FLAGS;
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_LOWMED;
+    if (rx_chan->base.flags.isr_cache_safe) {
+        isr_flags |= ESP_INTR_FLAG_IRAM;
+    }
 #if GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT
-    isr_flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
+    isr_flags |= ESP_INTR_FLAG_SHARED;
 #endif
     intr_handle_t intr = NULL;
     ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair_id].rx_irq_id, isr_flags,
@@ -899,9 +892,12 @@ static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
     gdma_hal_context_t *hal = &group->hal;
     int pair_id = pair->pair_id;
     // pre-alloc a interrupt handle, with handler disabled
-    int isr_flags = GDMA_INTR_ALLOC_FLAGS;
+    int isr_flags = ESP_INTR_FLAG_INTRDISABLED | ESP_INTR_FLAG_LOWMED;
+    if (tx_chan->base.flags.isr_cache_safe) {
+        isr_flags |= ESP_INTR_FLAG_IRAM;
+    }
 #if GDMA_LL_AHB_TX_RX_SHARE_INTERRUPT
-    isr_flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_LOWMED;
+    isr_flags |= ESP_INTR_FLAG_SHARED;
 #endif
     intr_handle_t intr = NULL;
     ret = esp_intr_alloc_intrstatus(gdma_periph_signals.groups[group->group_id].pairs[pair_id].tx_irq_id, isr_flags,
@@ -919,3 +915,11 @@ static esp_err_t gdma_install_tx_interrupt(gdma_tx_channel_t *tx_chan)
 err:
     return ret;
 }
+
+#if CONFIG_GDMA_ENABLE_DEBUG_LOG
+__attribute__((constructor))
+static void gdma_override_default_log_level(void)
+{
+    esp_log_level_set(TAG, ESP_LOG_VERBOSE);
+}
+#endif

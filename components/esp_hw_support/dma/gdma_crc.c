@@ -1,28 +1,10 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#if CONFIG_GDMA_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "soc/soc_caps.h"
-#include "soc/periph_defs.h"
-#include "esp_log.h"
-#include "esp_check.h"
 #include "gdma_priv.h"
-
-static const char *TAG = "gdma";
 
 esp_err_t gdma_config_crc_calculator(gdma_channel_handle_t dma_chan, const gdma_crc_calculator_config_t *config)
 {

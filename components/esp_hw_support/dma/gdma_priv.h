@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -7,18 +7,32 @@
 #pragma once
 
 #include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/cdefs.h>
+#include <sys/param.h>
 #include "sdkconfig.h"
+#if CONFIG_GDMA_ENABLE_DEBUG_LOG
+// The local log level must be defined before including esp_log.h
+// Set the maximum log level for gdma driver
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+#endif
+#include "soc/soc_caps.h"
 #include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "esp_err.h"
+#include "esp_log.h"
+#include "esp_check.h"
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
-#include "soc/soc_caps.h"
 #include "hal/gdma_hal.h"
 #include "hal/gdma_ll.h"
 #include "hal/gdma_hal_ahb.h"
 #include "hal/gdma_hal_axi.h"
 #include "soc/gdma_periph.h"
+#include "soc/periph_defs.h"
 #include "esp_private/gdma.h"
+#include "esp_private/periph_ctrl.h"
 
 #if CONFIG_GDMA_OBJ_DRAM_SAFE
 #define GDMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
@@ -26,13 +40,10 @@
 #define GDMA_MEM_ALLOC_CAPS    MALLOC_CAP_DEFAULT
 #endif
 
-#if CONFIG_GDMA_ISR_IRAM_SAFE
-#define GDMA_INTR_ALLOC_FLAGS  (ESP_INTR_FLAG_IRAM | ESP_INTR_FLAG_INTRDISABLED)
-#else
-#define GDMA_INTR_ALLOC_FLAGS  ESP_INTR_FLAG_INTRDISABLED
-#endif
-
 #define GDMA_ACCESS_ENCRYPTION_MEM_ALIGNMENT 16 /*!< The alignment of the memory and size when DMA accesses the encryption memory */
+
+///!< Logging settings
+#define TAG "gdma"
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,6 +85,7 @@ struct gdma_channel_t {
     esp_err_t (*del)(gdma_channel_t *channel); // channel deletion function, it's polymorphic, see `gdma_del_tx_channel` or `gdma_del_rx_channel`
     struct {
         uint32_t start_stop_by_etm: 1; // whether the channel is started/stopped by ETM
+        uint32_t isr_cache_safe: 1; // whether the interrupt of this channel need to be cache safe
     } flags;
 };
 

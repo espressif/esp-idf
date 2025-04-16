@@ -1,27 +1,13 @@
 /*
- * SPDX-FileCopyrightText: 2020-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-
-#include <stdlib.h>
-#include <sys/cdefs.h>
-#include "sdkconfig.h"
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_heap_caps.h"
-#include "hal/gdma_hal.h"
-#include "hal/gdma_ll.h"
-#include "soc/gdma_periph.h"
-#include "esp_private/gdma.h"
-#include "esp_private/etm_interface.h"
 #include "gdma_priv.h"
+#include "esp_private/etm_interface.h"
 
 #define ETM_MEM_ALLOC_CAPS   MALLOC_CAP_DEFAULT
-
-static const char *TAG = "gdma-etm";
 
 typedef struct gdma_etm_task_t {
     esp_etm_task_t base;

@@ -5,6 +5,7 @@ menu "ESP-Driver:Parallel IO Configurations"
         bool "Place Parallel IO TX ISR handler in IRAM to reduce latency"
         default y
         select PARLIO_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM
         help
             Place Parallel IO TX ISR handler in IRAM to reduce latency caused by cache miss.
 
@@ -12,13 +13,14 @@ menu "ESP-Driver:Parallel IO Configurations"
         bool "Place Parallel IO RX ISR handler in IRAM to reduce latency"
         default y
         select PARLIO_OBJ_CACHE_SAFE
+        select GDMA_CTRL_FUNC_IN_IRAM
         help
             Place Parallel IO RX ISR handler in IRAM to reduce latency caused by cache miss.
 
     config PARLIO_TX_ISR_CACHE_SAFE
         bool "Allow Parallel IO TX ISR to execute when cache is disabled"
         select PARLIO_TX_ISR_HANDLER_IN_IRAM
-        select GDMA_ISR_IRAM_SAFE
+        select GDMA_ISR_HANDLER_IN_IRAM
         default n
         help
             Enable this option to allow the Parallel IO TX Interrupt Service Routine (ISR)
@@ -28,7 +30,7 @@ menu "ESP-Driver:Parallel IO Configurations"
     config PARLIO_RX_ISR_CACHE_SAFE
         bool "Allow Parallel IO RX ISR to execute when cache is disabled"
         select PARLIO_RX_ISR_HANDLER_IN_IRAM
-        select GDMA_ISR_IRAM_SAFE
+        select GDMA_ISR_HANDLER_IN_IRAM
         default n
         help
             Enable this option to allow the Parallel IO RX Interrupt Service Routine (ISR)
