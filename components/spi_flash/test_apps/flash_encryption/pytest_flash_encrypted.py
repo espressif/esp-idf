@@ -11,6 +11,7 @@ from pytest_embedded import Dut
     'config',
     [
         'release',
+        'verify',
     ],
     indirect=True,
 )
@@ -38,6 +39,7 @@ def test_flash_encryption_rom_impl(dut: Dut) -> None:
     [
         'release_f4r8',
         'rom_impl',
+        'verify',
     ],
     indirect=True,
 )
