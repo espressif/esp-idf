@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -528,7 +528,7 @@ esp_err_t rmt_transmit(rmt_channel_handle_t channel, rmt_encoder_t *encoder, con
 
     // check if we need to start one pending transaction
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         // check if we need to start one transaction
         if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
             atomic_store(&channel->fsm, RMT_FSM_RUN);
@@ -713,7 +713,7 @@ static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel)
 {
     // can enable the channel when it's in "init" state
     rmt_fsm_t expected_fsm = RMT_FSM_INIT;
-    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT),
+    ESP_RETURN_ON_FALSE(atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT),
                         ESP_ERR_INVALID_STATE, TAG, "channel not in init state");
     rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
 
@@ -741,7 +741,7 @@ static esp_err_t rmt_tx_enable(rmt_channel_handle_t channel)
     // check if we need to start one pending transaction
     rmt_tx_trans_desc_t *t = NULL;
     expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         if (xQueueReceive(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &t, 0) == pdTRUE) {
             // sanity check
             assert(t);
@@ -765,11 +765,11 @@ static esp_err_t rmt_tx_disable(rmt_channel_handle_t channel)
     // can disable the channel when it's in `enable` or `run` state
     bool valid_state = false;
     rmt_fsm_t expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
     }
     expected_fsm = RMT_FSM_RUN;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_INIT_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         valid_state = true;
         // disable the hardware
         portENTER_CRITICAL(&channel->spinlock);
@@ -888,7 +888,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
     bool need_yield = false;
 
     rmt_fsm_t expected_fsm = RMT_FSM_RUN;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         trans_desc = tx_chan->cur_trans;
         // move current finished transaction to the complete queue
         xQueueSendFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &trans_desc, &awoken);
@@ -912,7 +912,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_done(rmt_tx_channel_t *tx_chan)
 
     // let's try start the next pending transaction
     expected_fsm = RMT_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
         if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
             // sanity check
             assert(trans_desc);
@@ -966,7 +966,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
 
         // loop transaction finished
         rmt_fsm_t expected_fsm = RMT_FSM_RUN;
-        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_ENABLE_WAIT)) {
+        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
             // move current finished transaction to the complete queue
             xQueueSendFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_COMPLETE], &trans_desc, &awoken);
             if (awoken == pdTRUE) {
@@ -989,7 +989,7 @@ static bool IRAM_ATTR rmt_isr_handle_tx_loop_end(rmt_tx_channel_t *tx_chan)
 
         // let's try start the next pending transaction
         expected_fsm = RMT_FSM_ENABLE;
-        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_RUN_WAIT)) {
+        if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
             if (xQueueReceiveFromISR(tx_chan->trans_queues[RMT_TX_QUEUE_PROGRESS], &trans_desc, &awoken) == pdTRUE) {
                 // sanity check
                 assert(trans_desc);
@@ -1080,3 +1080,38 @@ static bool IRAM_ATTR rmt_dma_tx_eof_cb(gdma_channel_handle_t dma_chan, gdma_eve
     return false;
 }
 #endif // SOC_RMT_SUPPORT_DMA
+
+esp_err_t rmt_tx_switch_gpio(rmt_channel_handle_t channel, gpio_num_t gpio_num, bool invert_out)
+{
+    ESP_RETURN_ON_FALSE(channel && channel->direction == RMT_CHANNEL_DIRECTION_TX, ESP_ERR_INVALID_ARG, TAG, "invalid channel");
+    ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", gpio_num);
+
+    // only can switch the GPIO when it's in INIT state
+    rmt_fsm_t expected_fsm = RMT_FSM_INIT;
+    if (atomic_compare_exchange_strong(&channel->fsm, &expected_fsm, RMT_FSM_WAIT)) {
+
+        rmt_tx_channel_t *tx_chan = __containerof(channel, rmt_tx_channel_t, base);
+        rmt_group_t *group = channel->group;
+        int group_id = group->group_id;
+        int channel_id = channel->channel_id;
+
+        // Disable the old GPIO
+        if (tx_chan->base.gpio_num >= 0) {
+            gpio_ll_output_disable(&GPIO, tx_chan->base.gpio_num);
+        }
+
+        // Configure the new GPIO
+        gpio_ll_func_sel(&GPIO, gpio_num, PIN_FUNC_GPIO);
+        esp_rom_gpio_connect_out_signal(gpio_num,
+                                        rmt_periph_signals.groups[group_id].channels[channel_id + RMT_TX_CHANNEL_OFFSET_IN_GROUP].tx_sig,
+                                        invert_out, false);
+        tx_chan->base.gpio_num = gpio_num;
+
+        // finally we return to the INIT state
+        atomic_store(&channel->fsm, RMT_FSM_INIT);
+        ESP_LOGD(TAG, "switch tx channel(%d,%d) gpio to %d", group_id, channel_id, gpio_num);
+    } else {
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "channel is not in init state");
+    }
+    return ESP_OK;
+}

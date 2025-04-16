@@ -82,12 +82,10 @@ typedef enum {
 } rmt_channel_direction_t;
 
 typedef enum {
-    RMT_FSM_INIT_WAIT,
     RMT_FSM_INIT,
-    RMT_FSM_ENABLE_WAIT,
     RMT_FSM_ENABLE,
-    RMT_FSM_RUN_WAIT,
     RMT_FSM_RUN,
+    RMT_FSM_WAIT,
 } rmt_fsm_t;
 
 enum {
