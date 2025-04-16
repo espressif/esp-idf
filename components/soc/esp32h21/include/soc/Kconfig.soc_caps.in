@@ -71,6 +71,10 @@ config SOC_ECC_EXTENDED_MODES_SUPPORTED
     bool
     default y
 
+config SOC_ECDSA_SUPPORTED
+    bool
+    default y
+
 config SOC_FLASH_ENC_SUPPORTED
     bool
     default y
@@ -707,7 +711,15 @@ config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y
 
-config SOC_ECDSA_USES_MPI
+config SOC_ECDSA_SUPPORT_EXPORT_PUBKEY
+    bool
+    default y
+
+config SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+    bool
+    default y
+
+config SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
     bool
     default y
 

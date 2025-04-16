@@ -1,6 +1,6 @@
 /* mbedTLS Elliptic Curve Digital Signature performance tests
  *
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,9 @@
 #include <mbedtls/ecdsa.h>
 #include <mbedtls/error.h>
 
+#include "hal/efuse_ll.h"
+#include "esp_efuse.h"
+#include "esp_efuse_table.h"
 #include "soc/soc_caps.h"
 #include "test_utils.h"
 #include "ccomp_timer.h"
@@ -35,6 +38,8 @@
 #define NEWLIB_NANO_COMPAT_FORMAT             PRId64
 #define NEWLIB_NANO_COMPAT_CAST(int64_t_var)  int64_t_var
 #endif
+
+__attribute__((unused)) static const char * TAG = "mbedtls_test";
 
 /*
  * All the following values are in big endian format, as required by the mbedTLS APIs
@@ -141,8 +146,15 @@ void test_ecdsa_verify(mbedtls_ecp_group_id id, const uint8_t *hash, const uint8
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP192R1", "[mbedtls]")
 {
-    test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
+#if SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+    if (!esp_efuse_is_ecdsa_p192_curve_supported()) {
+        ESP_LOGI(TAG, "Skipping test because ECDSA 192-curve operations are disabled.");
+    } else
+#endif
+    {
+        test_ecdsa_verify(MBEDTLS_ECP_DP_SECP192R1, sha, ecdsa192_r, ecdsa192_s,
                  ecdsa192_pub_x, ecdsa192_pub_y);
+    }
 }
 
 TEST_CASE("mbedtls ECDSA signature verification performance on SECP256R1", "[mbedtls]")

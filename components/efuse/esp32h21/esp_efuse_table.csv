@@ -39,7 +39,8 @@ WR_DIS.SEC_DPA_LEVEL,                            EFUSE_BLK0,  14,   1, [] wr_dis
 WR_DIS.CRYPT_DPA_ENABLE,                         EFUSE_BLK0,  14,   1, [] wr_dis of CRYPT_DPA_ENABLE
 WR_DIS.SECURE_BOOT_EN,                           EFUSE_BLK0,  15,   1, [] wr_dis of SECURE_BOOT_EN
 WR_DIS.SECURE_BOOT_AGGRESSIVE_REVOKE,            EFUSE_BLK0,  16,   1, [] wr_dis of SECURE_BOOT_AGGRESSIVE_REVOKE
-WR_DIS.ECDSA_FORCE_USE_HARDWARE_K,               EFUSE_BLK0,  17,   1, [] wr_dis of ECDSA_FORCE_USE_HARDWARE_K
+WR_DIS.ECDSA_CURVE_MODE,                         EFUSE_BLK0,  17,   1, [] wr_dis of ECDSA_CURVE_MODE
+WR_DIS.ECC_FORCE_CONST_TIME,                     EFUSE_BLK0,  17,   1, [] wr_dis of ECC_FORCE_CONST_TIME
 WR_DIS.FLASH_TPUW,                               EFUSE_BLK0,  18,   1, [] wr_dis of FLASH_TPUW
 WR_DIS.DIS_DOWNLOAD_MODE,                        EFUSE_BLK0,  18,   1, [] wr_dis of DIS_DOWNLOAD_MODE
 WR_DIS.DIS_DIRECT_BOOT,                          EFUSE_BLK0,  18,   1, [] wr_dis of DIS_DIRECT_BOOT
