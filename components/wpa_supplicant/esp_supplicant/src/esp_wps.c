@@ -919,15 +919,16 @@ int wps_start_msg_timer(void)
     }
 
     if (sm->wps->state == WPS_FINISHED) {
+        msg_timeout = 5;
         wpa_printf(MSG_DEBUG, "start msg timer WPS_FINISHED %" PRId32 " ms", msg_timeout);
-	eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
-	eloop_register_timeout(5, 0, wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
         ret = 0;
     } else if (sm->wps->state == RECV_M2) {
         msg_timeout = 20;
         wpa_printf(MSG_DEBUG, "start msg timer RECV_M2 %" PRId32 " s", msg_timeout);
-	eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
-	eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_cancel_timeout(wifi_station_wps_msg_timeout, NULL, NULL);
+        eloop_register_timeout(msg_timeout, 0, wifi_station_wps_msg_timeout, NULL, NULL);
         ret = 0;
     }
     return ret;
