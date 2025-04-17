@@ -65,7 +65,8 @@
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_SPIRAM_SUPPORTED            1
 /*-------------------------- XTAL CAPS ---------------------------------------*/
-#define SOC_XTAL_SUPPORT_40M            1
+#define SOC_XTAL_SUPPORT_40M                        1
+#define SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN   1
 
 //TODO: [ESP32C61] IDF-9302, IDF-9303, IDF-9304
 /*-------------------------- ADC CAPS -------------------------------*/
