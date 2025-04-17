@@ -198,7 +198,8 @@ esp_err_t esp_test_clr_rx_ctrls(void);
 esp_err_t esp_test_get_rx_ctrls(esp_test_rx_ctrl_t* rx);
 
 void hal_set_tx_pwr(wifi_phy_rate_t rate,  int8_t max_pwr);
-int8_t hal_get_tx_pwr(wifi_phy_rate_t rate);
+void esp_wifi_disable_obss_narrow_bw_ru(bool disable);
+void esp_wifi_set_bmfmee_nsts(bool he, uint8_t bmfmee_sts);
 
 #ifdef __cplusplus
 }
