@@ -673,7 +673,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(bool deep_sleep, uint32_t pd_f
 #endif
     }
 
-    if (!(deep_sleep && s_adc_tsen_enabled)){
+    if (!s_adc_tsen_enabled){
         // TODO: IDF-7370
         sar_periph_ctrl_power_disable();
     }
@@ -703,7 +703,9 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t pd_flags)
         sleep_usb_otg_phy_restore();
     }
 #endif
-    sar_periph_ctrl_power_enable();
+    if (!s_adc_tsen_enabled) {
+        sar_periph_ctrl_power_enable();
+    }
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
 #endif
