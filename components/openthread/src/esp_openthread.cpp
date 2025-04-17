@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -187,9 +187,6 @@ esp_err_t esp_openthread_launch_mainloop(void)
         if (select(mainloop.max_fd + 1, &mainloop.read_fds, &mainloop.write_fds, &mainloop.error_fds,
                    &mainloop.timeout) >= 0) {
             esp_openthread_lock_acquire(portMAX_DELAY);
-#if CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE
-            esp_openthread_wakeup_process();
-#endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE && CONFIG_OPENTHREAD_RADIO_NATIVE */
             error = esp_openthread_platform_process(instance, &mainloop);
             while (otTaskletsArePending(instance)) {
                 otTaskletsProcess(instance);
