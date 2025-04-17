@@ -259,6 +259,11 @@ void rtc_clk_32k_enable(bool en);
 void rtc_clk_32k_enable_external(void);
 
 /**
+ * @brief Disable 32 kHz XTAL oscillator input.
+ */
+void rtc_clk_32k_disable_external(void);
+
+/**
  * @brief Get the state of 32k XTAL oscillator
  * @return true if 32k XTAL oscillator has been enabled
  */

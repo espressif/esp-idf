@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,6 +53,13 @@ void rtc_clk_32k_enable_external(void)
     PIN_INPUT_ENABLE(IO_MUX_GPIO0_REG);
     SET_PERI_REG_MASK(RTC_CNTL_PAD_HOLD_REG, RTC_CNTL_GPIO_PIN0_HOLD);
     clk_ll_xtal32k_enable(CLK_LL_XTAL32K_ENABLE_MODE_EXTERNAL);
+}
+
+void rtc_clk_32k_disable_external(void)
+{
+    PIN_INPUT_DISABLE(IO_MUX_GPIO0_REG);
+    CLEAR_PERI_REG_MASK(RTC_CNTL_PAD_HOLD_REG, RTC_CNTL_GPIO_PIN0_HOLD);
+    clk_ll_xtal32k_disable();
 }
 
 void rtc_clk_32k_bootstrap(uint32_t cycle)
