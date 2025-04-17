@@ -243,11 +243,11 @@ OpenOCD 安装完成后就可以配置 {IDF_TARGET_NAME} 目标（即带 JTAG �
 
 {IDF_TARGET_NAME} 的工具链中带有 GNU 调试器（简称 GDB），它和其它工具链软件共同存放于 {IDF_TARGET_TOOLCHAIN_PREFIX}-gdb 中。除了直接在命令行终端中调用并操作 GDB 外，也可以在 IDE（例如 Eclipse、Visual Studio Code 等）中进行调用，使用图形用户界面间接操作 GDB，这一方法无需在终端中输入任何命令。
 
-关于调试器的使用方法，详见以下链接。
+关于调试器的使用方法，详见以下链接：
 
 * :ref:`jtag-debugging-using-debugger-eclipse`
 * :ref:`jtag-debugging-using-debugger-command-line`
-* `使用 VS Code 调试 <https://github.com/espressif/vscode-esp-idf-extension/blob/master/docs/DEBUGGING.md>`__
+* `使用 VS Code 调试 <https://docs.espressif.com/projects/vscode-esp-idf-extension/zh_CN/latest/debugproject.html>`__
 
 建议首先检查调试器能否在 :ref:`命令行终端 <jtag-debugging-using-debugger-command-line>` 下正常工作，然后再使用 Eclipse :ref:`集成开发环境 <jtag-debugging-using-debugger-eclipse>` 进行调试工作。
 
