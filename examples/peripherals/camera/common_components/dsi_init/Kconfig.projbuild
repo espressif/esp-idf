@@ -45,4 +45,11 @@ menu "Example DSI Configuration"
         int
         default 600 if EXAMPLE_MIPI_DSI_DISP_VRES_600
         default 1280 if EXAMPLE_MIPI_DSI_DISP_VRES_1280
+
+    config EXAMPLE_MIPI_DSI_DISP_USE_DMA2D
+        bool "Use DMA2D to copy data to frame buffer"
+        default n
+        help
+            Enable this option, DMA2D will be used to copy data to the target frame buffer.
+            This can save some CPU time and improve the performance.
 endmenu

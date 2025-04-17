@@ -81,6 +81,10 @@ void example_sensor_init(example_sensor_config_t *sensor_config, i2c_master_bus_
             cam_cur_fmt = (esp_cam_sensor_format_t *) & (parray[i]);
         }
     }
+    if (!cam_cur_fmt) {
+        ESP_LOGE(TAG, "Unsupported format");
+        ESP_ERROR_CHECK(ESP_ERR_INVALID_ARG);
+    }
 
     ret = esp_cam_sensor_set_format(cam, (const esp_cam_sensor_format_t *) cam_cur_fmt);
     if (ret != ESP_OK) {
