@@ -967,6 +967,10 @@ config SOC_APM_CTRL_FILTER_SUPPORTED
     bool
     default y
 
+config SOC_APM_SUPPORT_CTRL_CFG_LOCK
+    bool
+    default y
+
 config SOC_CRYPTO_DPA_PROTECTION_SUPPORTED
     bool
     default y

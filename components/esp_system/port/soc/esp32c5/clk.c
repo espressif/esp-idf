@@ -311,12 +311,13 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         ecc_ll_enable_bus_clock(false);
         hmac_ll_enable_bus_clock(false);
         ds_ll_enable_bus_clock(false);
-        apm_tee_ll_clk_gating_enable(false);
+        apm_ll_hp_tee_enable_clk_gating(true);
+        apm_ll_lp_tee_enable_clk_gating(true);
         uhci_ll_enable_bus_clock(0, false);
+        apm_ll_hp_apm_enable_ctrl_clk_gating(true);
+        apm_ll_cpu_apm_enable_ctrl_clk_gating(true);
 
         // TODO: Replace with hal implementation
-        REG_CLR_BIT(HP_APM_CLOCK_GATE_REG, HP_APM_CLK_EN);
-        REG_CLR_BIT(LP_TEE_CLOCK_GATE_REG, LP_TEE_CLK_EN);
         REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
         REG_CLR_BIT(PCR_TCM_MEM_MONITOR_CONF_REG, PCR_TCM_MEM_MONITOR_CLK_EN);
         REG_CLR_BIT(PCR_PSRAM_MEM_MONITOR_CONF_REG, PCR_PSRAM_MEM_MONITOR_CLK_EN);
@@ -346,8 +347,8 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _lp_clkrst_ll_enable_lp_ana_i2c_clock(false);
         _lp_clkrst_ll_enable_lp_ext_i2c_clock(false);
 
-        REG_CLR_BIT(LP_APM_CLOCK_GATE_REG, LP_APM_CLK_EN);
-        REG_CLR_BIT(LP_APM0_CLOCK_GATE_REG, LP_APM0_CLK_EN);
+        apm_ll_lp_apm_enable_ctrl_clk_gating(true);
+        apm_ll_lp_apm0_enable_ctrl_clk_gating(true);
         WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
     }
 }

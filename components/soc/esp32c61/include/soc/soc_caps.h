@@ -402,6 +402,7 @@
 
 /*-------------------------- APM CAPS ----------------------------------------*/
 #define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
+#define SOC_APM_SUPPORT_CTRL_CFG_LOCK   1 /*!< Support for APM controller configuration lock */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1

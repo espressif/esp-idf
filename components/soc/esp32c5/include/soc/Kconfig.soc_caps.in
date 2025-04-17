@@ -1443,6 +1443,18 @@ config SOC_APM_LP_APM0_SUPPORTED
     bool
     default y
 
+config SOC_APM_CPU_APM_SUPPORTED
+    bool
+    default y
+
+config SOC_APM_SUPPORT_LP_TEE_CTRL
+    bool
+    default y
+
+config SOC_APM_SUPPORT_CTRL_CFG_LOCK
+    bool
+    default y
+
 config SOC_APM_SUPPORT_TEE_PERI_ACCESS_CTRL
     bool
     default y

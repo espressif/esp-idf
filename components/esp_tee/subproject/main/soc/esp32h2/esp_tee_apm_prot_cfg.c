@@ -3,15 +3,21 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include "esp_log.h"
-#include "esp_tee.h"
-#include "esp_tee_intr.h"
+#include <stdbool.h>
 
-#include "hal/apm_hal.h"
 #include "soc/soc.h"
+#include "soc/soc_caps.h"
 #include "soc/spi_mem_reg.h"
 #include "soc/efuse_reg.h"
 #include "soc/pcr_reg.h"
+
+#include "soc/apm_defs.h"
+#include "hal/apm_types.h"
+#include "hal/apm_hal.h"
+
+#include "esp_log.h"
+#include "esp_tee.h"
+#include "esp_tee_intr.h"
 
 extern void tee_apm_violation_isr(void *arg);
 
@@ -44,125 +50,6 @@ static const char *TAG = "esp_tee_apm_prot_cfg";
 #define HP_APM_SPI1_REG_END      HP_APM_SPI1_REG_START
 #endif
 
-/*----------------------- HP APM range and filter configuration -----------------------*/
-
-/* HP_APM: TEE mode accessible regions */
-apm_ctrl_region_config_data_t hp_apm_pms_data_tee[] = {
-    /* Region 0: Entire memory region (RWX)*/
-    {
-        .regn_num = 0,
-        .regn_start_addr = 0x0,
-        .regn_end_addr   = ~0x0,
-        .regn_pms        = 0x7,
-        .filter_enable   = 1,
-    },
-};
-
-/* HP_APM: REE0 mode accessible regions */
-apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
-    /* NOTE: Without this entry, the REE SRAM region becomes inaccessible to
-     * the MODEM master, resulting in an APM violation during Wi-Fi initialization.
-     */
-    /* Region 1: REE SRAM region (RW) */
-    {
-        .regn_num = 1,
-        .regn_start_addr = SOC_NS_IRAM_START,
-        .regn_end_addr   = SOC_IRAM_HIGH,
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 2: RTC memory (RWX) */
-    {
-        .regn_num = 2,
-        .regn_start_addr = SOC_RTC_IRAM_LOW,
-        .regn_end_addr   = SOC_RTC_IRAM_HIGH,
-        .regn_pms        = 0x7,
-        .filter_enable   = 1,
-    },
-    /* Region 3: Peripherals [Start - MMU] (RW) */
-    /* Protected: MMU */
-    {
-        .regn_num = 3,
-        .regn_start_addr = SOC_PERIPHERAL_LOW,
-        .regn_end_addr   = (SPI_MEM_MMU_ITEM_CONTENT_REG(0) - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 4: Peripherals [MMU - SPI1] (RW) */
-    /* Protected: SPI1 */
-    {
-        .regn_num = 4,
-        .regn_start_addr = SPI_MEM_MMU_POWER_CTRL_REG(0),
-        .regn_end_addr   = (HP_APM_SPI1_REG_START - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 5: Peripherals [SPI1 - Interrupt Matrix] (RW) */
-    /* Protected: Interrupt Matrix */
-    {
-        .regn_num = 5,
-        .regn_start_addr = HP_APM_SPI1_REG_END,
-        .regn_end_addr   = (DR_REG_INTMTX_BASE - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 6/7: Peripherals [H/W Lock - HMAC] (RW) */
-    /* Protected: AES, SHA, ECC, DS, HMAC */
-    {
-        .regn_num = 6,
-        .regn_start_addr = DR_REG_PCNT_BASE,
-        .regn_end_addr   = (DR_REG_AES_BASE - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    {
-        .regn_num = 7,
-        .regn_start_addr = DR_REG_RSA_BASE,
-        .regn_end_addr   = (DR_REG_ECC_MULT_BASE - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 8/9/10: Peripherals [IO_MUX - TEE Controller & APM] (RW) */
-    /* Protected: AES, SHA, ECC, DS and HMAC PCRs, APM, TEE Controller */
-    {
-        .regn_num = 8,
-        .regn_start_addr = DR_REG_ECDSA_BASE,
-        .regn_end_addr   = (PCR_AES_CONF_REG - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    {
-        .regn_num = 9,
-        .regn_start_addr = PCR_RSA_CONF_REG,
-        .regn_end_addr   = (PCR_ECC_CONF_REG - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    {
-        .regn_num = 10,
-        .regn_start_addr = PCR_ECDSA_CONF_REG,
-        .regn_end_addr   = (DR_REG_TEE_BASE - 0x4),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 11: Peripherals [Miscellaneous - PMU] (RW) */
-    {
-        .regn_num = 11,
-        .regn_start_addr = DR_REG_MISC_BASE,
-        .regn_end_addr   = (DR_REG_PMU_BASE - 0x04),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 12: Peripherals [DEBUG - PWDET] (RW) */
-    {
-        .regn_num = 12,
-        .regn_start_addr = DR_REG_TRACE_BASE,
-        .regn_end_addr   = 0x600D0000,
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-};
-
 /* NOTE: Following are the master IDs for setting the security mode and access through APM:
  * +---------+-------------+
  * |   Bit   |   Source    |
@@ -189,115 +76,154 @@ apm_ctrl_region_config_data_t hp_apm_pms_data[] = {
  * +---------+-------------+
  */
 
-/* HP_APM: TEE mode masters' configuration */
-apm_ctrl_secure_mode_config_t hp_apm_sec_mode_data_tee = {
-    .apm_ctrl   = HP_APM_CTRL,
-    .apm_m_cnt  = HP_APM_MAX_ACCESS_PATH,
-    .sec_mode   = APM_LL_SECURE_MODE_TEE,
-    /* Crypto DMA (AES/SHA) and HP_CPU */
-    .master_ids = 0xC00001,
-    .pms_data   = hp_apm_pms_data_tee,
+#define APM_MASTERS_ALL               (0xFFFFFFFFU)
+#define APM_MASTERS_HP_CPU            (BIT(APM_MASTER_HPCORE))
+#define APM_MASTERS_LP_CPU            (BIT(APM_MASTER_LPCORE))
+#define APM_MASTERS_GDMA_CRYPTO       (BIT(APM_MASTER_GDMA_AES) | BIT(APM_MASTER_GDMA_SHA))
+#define APM_MASTERS_TEE               (APM_MASTERS_HP_CPU | APM_MASTERS_GDMA_CRYPTO)
+#define APM_MASTERS_REE               (APM_MASTERS_ALL & ~(APM_MASTERS_TEE))
+
+/*----------------------- TEE mode configuration -----------------------*/
+
+/**
+ * NOTE: Fixes APM filter behavior to allow unrestricted access for TEE mode.
+ *
+ * By default, TEE mode should have unrestricted access to the entire CPU address space.
+ * However, it has been observed that when APM filters are enabled, TEE mode
+ * accesses are incorrectly being filtered based on the region configurations and
+ * access attributes set for REE[0..2] modes.
+ */
+static void enable_tee_mode_access(void)
+{
+    uint32_t regn_num = 0;
+    uint32_t regn_start_addr = 0x00;
+    uint32_t regn_end_addr = UINT32_MAX;
+
+    /* HP_APM */
+    apm_ll_hp_apm_set_region_start_addr(regn_num, regn_start_addr);
+    apm_ll_hp_apm_set_region_end_addr(regn_num, regn_end_addr);
+    apm_ll_hp_apm_enable_region_filter(regn_num, true);
+}
+
+/*----------------------- REE0 mode configuration -----------------------*/
+
+/*----------------------- HP_APM configuration -----------------------*/
+
+/* HP_APM: REE0 mode accessible regions */
+static apm_hal_ctrl_region_cfg_t hp_apm_regn_cfg_ree0[] = {
+    /* Region 1: CPU peripherals (RW) */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M0, 1, DR_REG_TRACE_BASE, 0x600D0000, APM_PERM_R | APM_PERM_W),
+
+    /* Region 2: RTC memory (RWX) */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M1, 2, SOC_RTC_IRAM_LOW, SOC_RTC_IRAM_HIGH, APM_PERM_ALL),
+
+    /* NOTE: Without this entry, the REE SRAM region becomes inaccessible to
+     * the MODEM master, resulting in an APM violation during Wi-Fi initialization.
+     */
+    /* Region 3: REE SRAM region (RW) */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M2, 3, SOC_NS_IRAM_START, SOC_IRAM_HIGH, APM_PERM_R | APM_PERM_W),
+
+    /* Region 4: Peripherals [Start - MMU] (RW) */
+    /* Protected: MMU */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 4, SOC_PERIPHERAL_LOW, SPI_MEM_MMU_ITEM_CONTENT_REG(0), APM_PERM_R | APM_PERM_W),
+
+    /* Region 5: Peripherals [MMU - SPI1] (RW) */
+    /* Protected: SPI1 */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 5, SPI_MEM_MMU_POWER_CTRL_REG(0), HP_APM_SPI1_REG_START, APM_PERM_R | APM_PERM_W),
+
+    /* Region 6: Peripherals [SPI1 - Interrupt Matrix] (RW) */
+    /* Protected: Interrupt Matrix */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 6, HP_APM_SPI1_REG_END, DR_REG_INTMTX_BASE, APM_PERM_R | APM_PERM_W),
+
+    /* Region 7/8: Peripherals [PCNT - HMAC] (RW) */
+    /* Protected: AES, SHA, ECC, DS, HMAC */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 7, DR_REG_PCNT_BASE, DR_REG_AES_BASE, APM_PERM_R | APM_PERM_W),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 8, DR_REG_RSA_BASE, DR_REG_ECC_MULT_BASE, APM_PERM_R | APM_PERM_W),
+
+    /* Region 8/9/10: Peripherals [ECDSA - TEE Controller & APM] (RW) */
+    /* Protected: AES, SHA, ECC, DS and HMAC PCRs, APM, TEE Controller */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 9, DR_REG_ECDSA_BASE, PCR_AES_CONF_REG, APM_PERM_R | APM_PERM_W),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 10, PCR_RSA_CONF_REG, PCR_ECC_CONF_REG, APM_PERM_R | APM_PERM_W),
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 11, PCR_ECDSA_CONF_REG, DR_REG_TEE_BASE, APM_PERM_R | APM_PERM_W),
+
+    /* Region 11: Peripherals [Miscellaneous - PMU] (RW) */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M3, 12, DR_REG_MISC_BASE, DR_REG_PMU_BASE, APM_PERM_R | APM_PERM_W),
 };
 
 /* HP_APM: REE0 mode masters' configuration */
-apm_ctrl_secure_mode_config_t hp_apm_sec_mode_data = {
-    .apm_ctrl   = HP_APM_CTRL,
-    .apm_m_cnt  = HP_APM_MAX_ACCESS_PATH,
-    .sec_mode   = APM_LL_SECURE_MODE_REE0,
-    /* All masters except crypto DMA (AES/SHA) and HP CPU */
-    .master_ids = 0xFF3FFFFE,
-    .pms_data   = hp_apm_pms_data,
-};
+static apm_hal_ctrl_sec_mode_cfg_t hp_apm_ctrl_sec_mode_cfg_ree0 =
+    APM_HAL_SEC_MODE_CFG(APM_CTRL_HP_APM, APM_SEC_MODE_REE0, hp_apm_regn_cfg_ree0);
 
-/*----------------------- LP_APM range and filter configuration -----------------------*/
+/*----------------------- LP_APM configuration -----------------------*/
 
 /* NOTE: Due to ESP32-H2's limited LP_APM module regions, neither TEE nor REE can directly
  * access the protected eFuse region. However, since the HMAC peripheral can access the
  * key stored in eFuse for TEE secure storage, this access restriction does not impact
  * functionality.
  */
-/* LP_APM: REE0 mode accessible regions */
-apm_ctrl_region_config_data_t lp_apm_pms_data[] = {
+static apm_hal_ctrl_region_cfg_t lp_apm_regn_cfg_ree0[] = {
     /* Region 0: LP Peripherals [PMU - eFuse BLK x] (RW) */
     /* Protected: eFuse BLK x */
-    {
-        .regn_num = 0,
-        .regn_start_addr = DR_REG_PMU_BASE,
-        .regn_end_addr   = (LP_APM_EFUSE_REG_START - 0x04),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-    /* Region 1: LP Peripherals [eFuse - END] (RW) */
-    {
-        .regn_num = 1,
-        .regn_start_addr = LP_APM_EFUSE_REG_END,
-        .regn_end_addr   = (DR_REG_TRACE_BASE - 0x04),
-        .regn_pms        = 0x6,
-        .filter_enable   = 1,
-    },
-};
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M0, 0, DR_REG_PMU_BASE, LP_APM_EFUSE_REG_START, APM_PERM_R | APM_PERM_W),
 
-/* LP_APM: REE0 mode masters' configuration */
-apm_ctrl_secure_mode_config_t lp_apm_sec_mode_data = {
-    .apm_ctrl   = LP_APM_CTRL,
-    .apm_m_cnt  = LP_APM_MAX_ACCESS_PATH,
-    .sec_mode   = APM_LL_SECURE_MODE_REE0,
-    /* HP_CPU */
-    .master_ids = 0x1,
-    .pms_data   = lp_apm_pms_data,
+    /* Region 1: LP Peripherals [eFuse - END] (RW) */
+    APM_HAL_REGION_ENTRY(APM_CTRL_ACCESS_PATH_M0, 1, LP_APM_EFUSE_REG_END, DR_REG_TRACE_BASE, APM_PERM_R | APM_PERM_W),
 };
 
 /*---------------- TEE APM API-----------------------*/
 
-void esp_tee_apm_int_enable(apm_ctrl_secure_mode_config_t *sec_mode_data)
+static void enable_apm_intr(apm_ctrl_module_t ctrl_mod, uint32_t path_count)
 {
-    for (int i = 0; i < sec_mode_data->apm_m_cnt; i++) {
-        apm_ctrl_path_t *apm_excp_data = calloc(1, sizeof(apm_ctrl_path_t));
-        assert(apm_excp_data != NULL);
+    for (uint32_t i = 0; i < path_count; i++) {
+        apm_hal_ctrl_info_t *ctrl_info = calloc(1, sizeof(apm_hal_ctrl_info_t));
+        assert(ctrl_info != NULL);
 
-        apm_excp_data->apm_ctrl = sec_mode_data->apm_ctrl;
-        apm_excp_data->apm_m_path = i;
+        ctrl_info->ctrl_mod = ctrl_mod;
+        ctrl_info->path = i;
 
-        int intr_src_num = apm_hal_apm_ctrl_get_int_src_num(apm_excp_data);
+        int intr_src_num = apm_hal_get_intr_src_num(ctrl_info);
 
         struct vector_desc_t apm_vd = {0};
         apm_vd.source = intr_src_num;
         apm_vd.isr = tee_apm_violation_isr;
-        apm_vd.arg = (void *)apm_excp_data;
+        apm_vd.arg = (void *)ctrl_info;
 
         /* Register interrupt handler with TEE. */
         esp_tee_intr_register((void *)&apm_vd);
 
-        /* Enable APM Ctrl intewrrupt for access path(M[0:n]) */
-        apm_hal_apm_ctrl_exception_clear(apm_excp_data);
-        apm_hal_apm_ctrl_interrupt_enable(apm_excp_data, true);
+        /* Enable APM Ctrl interrupt for access path(M[0:n]) */
+        apm_hal_clear_exception_status(ctrl_info);
+        apm_hal_enable_intr(ctrl_info, true);
     }
 }
 
 void esp_tee_configure_apm_protection(void)
 {
     /* Disable all control filter first to have full access of address rage. */
-    apm_hal_apm_ctrl_filter_enable_all(false);
+    apm_hal_enable_ctrl_filter_all(false);
 
-    /* Switch HP_CPU to TEE mode */
-    apm_tee_hal_set_master_secure_mode(HP_APM_CTRL, APM_LL_MASTER_HPCORE, APM_LL_SECURE_MODE_TEE);
+    /* Enable TEE mode access for all APM modules */
+    enable_tee_mode_access();
 
-    /* LP APM TEE configuration. */
-    lp_apm_sec_mode_data.regn_count = sizeof(lp_apm_pms_data) / sizeof(apm_ctrl_region_config_data_t);
-    apm_hal_apm_ctrl_master_sec_mode_config(&lp_apm_sec_mode_data);
-    /* LP APM interrupt configuration. */
-    esp_tee_apm_int_enable(&lp_apm_sec_mode_data);
-    ESP_LOGD(TAG, "[REE0] LP_APM configured");
+    /* HP_APM REE0 configuration. */
+    apm_hal_set_ctrl_sec_mode_cfg(&hp_apm_ctrl_sec_mode_cfg_ree0);
+    /* HP_APM interrupt configuration. */
+    enable_apm_intr(APM_CTRL_HP_APM, APM_CTRL_HP_APM_PATH_NUM);
+    ESP_LOGD(TAG, "[HP_APM] Configured for REE0");
 
-    /* HP APM TEE configuration. */
-    hp_apm_sec_mode_data_tee.regn_count = sizeof(hp_apm_pms_data_tee) / sizeof(apm_ctrl_region_config_data_t);
-    apm_hal_apm_ctrl_master_sec_mode_config(&hp_apm_sec_mode_data_tee);
-    ESP_LOGD(TAG, "[TEE] HP_APM configured");
+    /* LP_APM REE0 configuration. */
+    size_t regn_count = sizeof(lp_apm_regn_cfg_ree0) / sizeof(lp_apm_regn_cfg_ree0[0]);
+    for (uint32_t regn_idx = 0; regn_idx < regn_count; regn_idx++) {
+        const apm_hal_ctrl_region_cfg_t *region = &lp_apm_regn_cfg_ree0[regn_idx];
+        apm_hal_set_region_filter_cfg(APM_CTRL_LP_APM, APM_SEC_MODE_REE0, region);
+        apm_hal_enable_region_filter(APM_CTRL_LP_APM, region->regn_num, region->filter_en);
+    }
+    apm_hal_enable_ctrl_filter(APM_CTRL_LP_APM, APM_CTRL_ACCESS_PATH_M0, true);
+    /* LP_APM interrupt configuration. */
+    enable_apm_intr(APM_CTRL_LP_APM, APM_CTRL_LP_APM_PATH_NUM);
+    ESP_LOGD(TAG, "[LP_APM] Configured for REE0");
 
-    /* HP APM configuration. */
-    hp_apm_sec_mode_data.regn_count = sizeof(hp_apm_pms_data) / sizeof(apm_ctrl_region_config_data_t);
-    apm_hal_apm_ctrl_master_sec_mode_config(&hp_apm_sec_mode_data);
-    /* HP APM interrupt configuration. */
-    esp_tee_apm_int_enable(&hp_apm_sec_mode_data);
-    ESP_LOGD(TAG, "[REE0] HP_APM configured");
+    /* Switch HP_CPU to TEE mode and rest of the masters to REE0 mode */
+    apm_hal_set_master_sec_mode(APM_MASTERS_TEE, APM_SEC_MODE_TEE);
+    apm_hal_set_master_sec_mode(APM_MASTERS_REE, APM_SEC_MODE_REE0);
 }
