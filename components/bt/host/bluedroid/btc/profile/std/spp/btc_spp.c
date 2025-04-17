@@ -1109,7 +1109,7 @@ void btc_spp_cb_handler(btc_msg_t *msg)
         break;
     case BTA_JV_RFCOMM_WRITE_EVT:
         osi_mutex_lock(&spp_local_param.spp_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
-        slot = spp_find_slot_by_handle(p_data->rfc_write.handle);
+        slot = spp_find_slot_by_id(p_data->rfc_write.req_id);
         if (!slot) {
             BTC_TRACE_ERROR("%s unable to find RFCOMM slot!, handle:%d", __func__, p_data->rfc_write.handle);
         }
