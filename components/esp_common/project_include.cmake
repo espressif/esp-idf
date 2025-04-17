@@ -1,6 +1,8 @@
 #
 # Warn if the toolchain version doesn't match
 #
+idf_build_get_property(target IDF_TARGET)
+
 if(NOT (${target} STREQUAL "linux" OR CMAKE_C_COMPILER_ID MATCHES "Clang"))
     execute_process(
         COMMAND ${CMAKE_C_COMPILER} -dumpmachine
