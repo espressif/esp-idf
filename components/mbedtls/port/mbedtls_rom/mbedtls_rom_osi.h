@@ -38,6 +38,7 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509_crt.h"
 #include "mbedtls/x509.h"
+#include "soc/soc_caps.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -676,9 +677,7 @@ STRUCT_OFFSET_CHECK(mbedtls_sha1_context, first_block, 92);
 STRUCT_OFFSET_CHECK(mbedtls_sha1_context, mode, 96);
 STRUCT_OFFSET_CHECK(mbedtls_sha1_context, sha_state, 100);
 STRUCT_SIZE_CHECK(mbedtls_sha1_context, 104);
-#if (!defined(MBEDTLS_SHA1_C)) || \
-    (!defined(MBEDTLS_SHA1_ALT)) || \
-    (defined(MBEDTLS_SHA1_PROCESS_ALT))
+#if !(defined(MBEDTLS_SHA1_C) || (defined(MBEDTLS_SHA1_ALT) && SOC_SHA_SUPPORT_SHA1))
 #error "MBEDTLS_SHA1_C"
 #endif
 
@@ -690,11 +689,8 @@ STRUCT_OFFSET_CHECK(mbedtls_sha256_context, first_block, 104);
 STRUCT_OFFSET_CHECK(mbedtls_sha256_context, mode, 108);
 STRUCT_OFFSET_CHECK(mbedtls_sha256_context, sha_state, 112);
 STRUCT_SIZE_CHECK(mbedtls_sha256_context, 116);
-#if (!defined(MBEDTLS_SHA256_C)) || \
-    (!defined(MBEDTLS_SHA256_ALT)) || \
-    (defined(MBEDTLS_SHA256_PROCESS_ALT)) || \
-    (defined(MBEDTLS_SHA256_SMALLER))
-#error "!MBEDTLS_SHA256_C"
+#if !(defined(MBEDTLS_SHA256_C) || (defined(MBEDTLS_SHA256_ALT) && SOC_SHA_SUPPORT_SHA256))
+#error "MBEDTLS_SHA256_C"
 #endif
 
 /* sha512.c */
@@ -703,10 +699,8 @@ STRUCT_OFFSET_CHECK(mbedtls_sha512_context, MBEDTLS_PRIVATE(state), 16);
 STRUCT_OFFSET_CHECK(mbedtls_sha512_context, MBEDTLS_PRIVATE(buffer), 80);
 STRUCT_OFFSET_CHECK(mbedtls_sha512_context, MBEDTLS_PRIVATE(is384), 208);
 STRUCT_SIZE_CHECK(mbedtls_sha512_context, 216);
-#if (!defined(MBEDTLS_SHA512_C)) || \
-    (defined(MBEDTLS_SHA512_ALT)) || \
-    (defined(MBEDTLS_SHA512_PROCESS_ALT))
-#error "MBEDTLS_SHA256_C"
+#if !(defined(MBEDTLS_SHA512_C) || (defined(MBEDTLS_SHA512_ALT) && SOC_SHA_SUPPORT_SHA512))
+#error "MBEDTLS_SHA512_C"
 #endif
 
 /* aes.c */
