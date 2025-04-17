@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,26 +16,26 @@ extern "C" {
  */
 #define MEM_MONITOR_LOG_SETTING_REG (DR_REG_MEM_MONITOR_BASE + 0x0)
 /** MEM_MONITOR_LOG_MODE : R/W; bitpos: [3:0]; default: 0;
- *  Configures monitoring modes.bit[0]: Configures write monitoring. \\
- *  0: Disable \\
- *  1: Enable\\
- *  bit[1]: Configures word monitoring. \\
- *  0: Disable \\
- *  1: Enable\\
- *  bit[2]: Configures halfword monitoring. \\
- *  0: Disable \\
- *  1: Enable\\
- *  bit[3]: Configures byte monitoring. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  Configures monitoring modes.bit[0]: Configures write monitoring.
+ *  0: Disable
+ *  1: Enable
+ *  bit[1]: Configures word monitoring.
+ *  0: Disable
+ *  1: Enable
+ *  bit[2]: Configures halfword monitoring.
+ *  0: Disable
+ *  1: Enable
+ *  bit[3]: Configures byte monitoring.
+ *  0: Disable
+ *  1: Enable
  */
 #define MEM_MONITOR_LOG_MODE    0x0000000FU
 #define MEM_MONITOR_LOG_MODE_M  (MEM_MONITOR_LOG_MODE_V << MEM_MONITOR_LOG_MODE_S)
 #define MEM_MONITOR_LOG_MODE_V  0x0000000FU
 #define MEM_MONITOR_LOG_MODE_S  0
 /** MEM_MONITOR_LOG_MEM_LOOP_ENABLE : R/W; bitpos: [4]; default: 1;
- *  Configures the writing mode for recorded data.1: Loop mode\\
- *  0: Non-loop mode\\
+ *  Configures the writing mode for recorded data.1: Loop mode
+ *  0: Non-loop mode
  */
 #define MEM_MONITOR_LOG_MEM_LOOP_ENABLE    (BIT(4))
 #define MEM_MONITOR_LOG_MEM_LOOP_ENABLE_M  (MEM_MONITOR_LOG_MEM_LOOP_ENABLE_V << MEM_MONITOR_LOG_MEM_LOOP_ENABLE_S)
@@ -43,9 +43,9 @@ extern "C" {
 #define MEM_MONITOR_LOG_MEM_LOOP_ENABLE_S  4
 /** MEM_MONITOR_LOG_CORE_ENA : R/W; bitpos: [15:8]; default: 0;
  *  Configures whether to enable  CPU bus access logging.bit[0]: Configures whether to
- *  enable HP CPU bus access logging. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  enable HP CPU bus access logging.
+ *  0: Disable
+ *  1: Enable
  *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_CORE_ENA    0x000000FFU
@@ -54,9 +54,9 @@ extern "C" {
 #define MEM_MONITOR_LOG_CORE_ENA_S  8
 /** MEM_MONITOR_LOG_DMA_0_ENA : R/W; bitpos: [23:16]; default: 0;
  *  Configures whether to enable  DMA_0 bus access logging.bit[0]: Configures whether
- *  to enable DMA_0 bus access logging. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  to enable DMA_0 bus access logging.
+ *  0: Disable
+ *  1: Enable
  *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_DMA_0_ENA    0x000000FFU
@@ -65,9 +65,9 @@ extern "C" {
 #define MEM_MONITOR_LOG_DMA_0_ENA_S  16
 /** MEM_MONITOR_LOG_DMA_1_ENA : R/W; bitpos: [31:24]; default: 0;
  *  Configures whether to enable  DMA_1 bus access logging.bit[0]: Configures whether
- *  to enable DMA_1 bus access logging. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  to enable DMA_1 bus access logging.
+ *  0: Disable
+ *  1: Enable
  *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_DMA_1_ENA    0x000000FFU
@@ -81,9 +81,9 @@ extern "C" {
 #define MEM_MONITOR_LOG_SETTING1_REG (DR_REG_MEM_MONITOR_BASE + 0x4)
 /** MEM_MONITOR_LOG_DMA_2_ENA : R/W; bitpos: [7:0]; default: 0;
  *  Configures whether to enable  DMA_2 bus access logging.bit[0]: Configures whether
- *  to enable DMA_2 bus access logging. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  to enable DMA_2 bus access logging.
+ *  0: Disable
+ *  1: Enable
  *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_DMA_2_ENA    0x000000FFU
@@ -92,9 +92,9 @@ extern "C" {
 #define MEM_MONITOR_LOG_DMA_2_ENA_S  0
 /** MEM_MONITOR_LOG_DMA_3_ENA : R/W; bitpos: [15:8]; default: 0;
  *  Configures whether to enable  DMA_3 bus access logging.bit[0]: Configures whether
- *  to enable DMA_3 bus access logging. \\
- *  0: Disable \\
- *  1: Enable\\
+ *  to enable DMA_3 bus access logging.
+ *  0: Disable
+ *  1: Enable
  *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_DMA_3_ENA    0x000000FFU
@@ -121,21 +121,21 @@ extern "C" {
 /** MEM_MONITOR_LOG_DATA_MASK : R/W; bitpos: [3:0]; default: 0;
  *  Configures which byte(s) in MEM_MONITOR_LOG_CHECK_DATA_REG to mask.bit[0]:
  *  Configures whether to mask the least significant byte of
- *  MEM_MONITOR_LOG_CHECK_DATA_REG.\\
- *  0: Not mask \\
- *  1: Mask\\
+ *  MEM_MONITOR_LOG_CHECK_DATA_REG.
+ *  0: Not mask
+ *  1: Mask
  *  bit[1]: Configures whether to mask the second least significant byte of
- *  MEM_MONITOR_LOG_CHECK_DATA_REG. \\
- *  0: Not mask \\
- *  1: Mask\\
+ *  MEM_MONITOR_LOG_CHECK_DATA_REG.
+ *  0: Not mask
+ *  1: Mask
  *  bit[2]: Configures whether to mask the second most significant byte of
- *  MEM_MONITOR_LOG_CHECK_DATA_REG. \\
- *  0: Not mask \\
- *  1: Mask\\
+ *  MEM_MONITOR_LOG_CHECK_DATA_REG.
+ *  0: Not mask
+ *  1: Mask
  *  bit[3]: Configures whether to mask the most significant byte of
- *  MEM_MONITOR_LOG_CHECK_DATA_REG. \\
- *  0: Not mask \\
- *  1: Mask\\
+ *  MEM_MONITOR_LOG_CHECK_DATA_REG.
+ *  0: Not mask
+ *  1: Mask
  */
 #define MEM_MONITOR_LOG_DATA_MASK    0x0000000FU
 #define MEM_MONITOR_LOG_DATA_MASK_M  (MEM_MONITOR_LOG_DATA_MASK_V << MEM_MONITOR_LOG_DATA_MASK_S)
@@ -174,9 +174,9 @@ extern "C" {
 /** MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE : WT; bitpos: [7:0]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
- *  monitored address space of the HP CPU bus.1: Update\\
- *  0: Not update\\
- *  Bit[7:1]: Reserved\\
+ *  monitored address space of the HP CPU bus.1: Update
+ *  0: Not update
+ *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE    0x000000FFU
 #define MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE_S)
@@ -184,8 +184,8 @@ extern "C" {
 #define MEM_MONITOR_LOG_MON_ADDR_CORE_UPDATE_S  0
 /** MEM_MONITOR_LOG_MON_ADDR_ALL_UPDATE : WT; bitpos: [31]; default: 0;
  *  Configures the address space of from MEM_MONITOR_LOG_MIN_REG to
- *  MEM_MONITOR_LOG_MAX_REG as the monitored address space of all masters.1: Update\\
- *  0: Not update\\
+ *  MEM_MONITOR_LOG_MAX_REG as the monitored address space of all masters.1: Update
+ *  0: Not update
  */
 #define MEM_MONITOR_LOG_MON_ADDR_ALL_UPDATE    (BIT(31))
 #define MEM_MONITOR_LOG_MON_ADDR_ALL_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_ALL_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_ALL_UPDATE_S)
@@ -200,9 +200,9 @@ extern "C" {
 /** MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE : WT; bitpos: [7:0]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
- *  monitored address space of the DMA_0 bus.1: Update\\
- *  0: Not update\\
- *  Bit[7:1]: Reserved\\
+ *  monitored address space of the DMA_0 bus.1: Update
+ *  0: Not update
+ *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE    0x000000FFU
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_DMA_0_UPDATE_S)
@@ -211,9 +211,9 @@ extern "C" {
 /** MEM_MONITOR_LOG_MON_ADDR_DMA_1_UPDATE : WT; bitpos: [15:8]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
- *  monitored address space of the DMA_1 bus.1: Update\\
- *  0: Not update\\
- *  Bit[7:1]: Reserved\\
+ *  monitored address space of the DMA_1 bus.1: Update
+ *  0: Not update
+ *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_1_UPDATE    0x000000FFU
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_1_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_DMA_1_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_DMA_1_UPDATE_S)
@@ -222,9 +222,9 @@ extern "C" {
 /** MEM_MONITOR_LOG_MON_ADDR_DMA_2_UPDATE : WT; bitpos: [23:16]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
- *  monitored address space of the DMA_2 bus.1: Update\\
- *  0: Not update\\
- *  Bit[7:1]: Reserved\\
+ *  monitored address space of the DMA_2 bus.1: Update
+ *  0: Not update
+ *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_2_UPDATE    0x000000FFU
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_2_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_DMA_2_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_DMA_2_UPDATE_S)
@@ -233,9 +233,9 @@ extern "C" {
 /** MEM_MONITOR_LOG_MON_ADDR_DMA_3_UPDATE : WT; bitpos: [31:24]; default: 0;
  *  Configures the monitored address space of the certain master. Bit[0]: Configures
  *  the address space of from MEM_MONITOR_LOG_MIN_REG to MEM_MONITOR_LOG_MAX_REG as the
- *  monitored address space of the DMA_3 bus.1: Update\\
- *  0: Not update\\
- *  Bit[7:1]: Reserved\\
+ *  monitored address space of the DMA_3 bus.1: Update
+ *  0: Not update
+ *  Bit[7:1]: Reserved
  */
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_3_UPDATE    0x000000FFU
 #define MEM_MONITOR_LOG_MON_ADDR_DMA_3_UPDATE_M  (MEM_MONITOR_LOG_MON_ADDR_DMA_3_UPDATE_V << MEM_MONITOR_LOG_MON_ADDR_DMA_3_UPDATE_S)
@@ -285,8 +285,8 @@ extern "C" {
 #define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_REG (DR_REG_MEM_MONITOR_BASE + 0x2c)
 /** MEM_MONITOR_LOG_MEM_ADDR_UPDATE : WT; bitpos: [0]; default: 0;
  *  Configures whether to update the value in MEM_MONITOR_LOG_MEM_START_REG to
- *  MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG.\raggedright1: Update \\
- *  0: Not update (default) \\
+ *  MEM_MONITOR_LOG_MEM_CURRENT_ADDR_REG.\raggedright1: Update
+ *  0: Not update (default)
  */
 #define MEM_MONITOR_LOG_MEM_ADDR_UPDATE    (BIT(0))
 #define MEM_MONITOR_LOG_MEM_ADDR_UPDATE_M  (MEM_MONITOR_LOG_MEM_ADDR_UPDATE_V << MEM_MONITOR_LOG_MEM_ADDR_UPDATE_S)
@@ -298,17 +298,16 @@ extern "C" {
  */
 #define MEM_MONITOR_LOG_MEM_FULL_FLAG_REG (DR_REG_MEM_MONITOR_BASE + 0x30)
 /** MEM_MONITOR_LOG_MEM_FULL_FLAG : RO; bitpos: [0]; default: 0;
- *  Represents whether data overflows the storage space.0: Not Overflow\\
- *  1: Overflow\\
+ *  Represents whether data overflows the storage space.0: Not Overflow
+ *  1: Overflow
  */
 #define MEM_MONITOR_LOG_MEM_FULL_FLAG    (BIT(0))
 #define MEM_MONITOR_LOG_MEM_FULL_FLAG_M  (MEM_MONITOR_LOG_MEM_FULL_FLAG_V << MEM_MONITOR_LOG_MEM_FULL_FLAG_S)
 #define MEM_MONITOR_LOG_MEM_FULL_FLAG_V  0x00000001U
 #define MEM_MONITOR_LOG_MEM_FULL_FLAG_S  0
 /** MEM_MONITOR_CLR_LOG_MEM_FULL_FLAG : WT; bitpos: [1]; default: 0;
- *  Configures whether to clear the  MEM_MONITOR_LOG_MEM_FULL_FLAG flag bit.0: Not
- *  clear\\
- *  1: Clear\\
+ *  Configures whether to clear the  MEM_MONITOR_LOG_MEM_FULL_FLAG flag bit.0: Not clear
+ *  1: Clear
  */
 #define MEM_MONITOR_CLR_LOG_MEM_FULL_FLAG    (BIT(1))
 #define MEM_MONITOR_CLR_LOG_MEM_FULL_FLAG_M  (MEM_MONITOR_CLR_LOG_MEM_FULL_FLAG_V << MEM_MONITOR_CLR_LOG_MEM_FULL_FLAG_S)
@@ -320,8 +319,8 @@ extern "C" {
  */
 #define MEM_MONITOR_CLOCK_GATE_REG (DR_REG_MEM_MONITOR_BASE + 0x34)
 /** MEM_MONITOR_CLK_EN : R/W; bitpos: [0]; default: 0;
- *  Configures whether to enable the register clock gating.0: Disable\\
- *  1: Enable\\
+ *  Configures whether to enable the register clock gating.0: Disable
+ *  1: Enable
  */
 #define MEM_MONITOR_CLK_EN    (BIT(0))
 #define MEM_MONITOR_CLK_EN_M  (MEM_MONITOR_CLK_EN_V << MEM_MONITOR_CLK_EN_S)

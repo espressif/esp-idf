@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -160,10 +160,13 @@ extern "C" {
 
 /** LP_AON_GPIO_HOLD1_REG register
  *  reserved
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_GPIO_HOLD1_REG (DR_REG_LP_AON_BASE + 0x30)
 /** LP_AON_GPIO_HOLD1 : R/W; bitpos: [31:0]; default: 0;
  *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_GPIO_HOLD1    0xFFFFFFFFU
 #define LP_AON_GPIO_HOLD1_M  (LP_AON_GPIO_HOLD1_V << LP_AON_GPIO_HOLD1_S)
@@ -174,22 +177,28 @@ extern "C" {
  *  configure system register
  */
 #define LP_AON_SYS_CFG_REG (DR_REG_LP_AON_BASE + 0x34)
-/** LP_AON_FORCE_DOWNLOAD_BOOT_STATUS : RO; bitpos: [29]; default: 0;
- *  get force download mode status
+/** LP_AON_FORCE_DOWNLOAD_BOOT_STATUS : RO; bitpos: [28:27]; default: 0;
+ *  get force download mode status,
+ *  bit1:download boot1
+ *  bit0:download boot0
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
-#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS    (BIT(29))
+#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS    0x00000003U
 #define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_M  (LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_V << LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_S)
-#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_V  0x00000001U
-#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_S  29
-/** LP_AON_FORCE_DOWNLOAD_BOOT : R/W; bitpos: [30]; default: 0;
+#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_V  0x00000003U
+#define LP_AON_FORCE_DOWNLOAD_BOOT_STATUS_S  27
+/** LP_AON_FORCE_DOWNLOAD_BOOT : R/W; bitpos: [30:29]; default: 0;
  *  enable chip entry download mode or not
- *  1: enable
- *  0: no operation
+ *  00: no operation
+ *  01:force download boot0(uart/usb)
+ *  10:force download boot1(uart/sdio)
+ *  11: no operation
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
-#define LP_AON_FORCE_DOWNLOAD_BOOT    (BIT(30))
+#define LP_AON_FORCE_DOWNLOAD_BOOT    0x00000003U
 #define LP_AON_FORCE_DOWNLOAD_BOOT_M  (LP_AON_FORCE_DOWNLOAD_BOOT_V << LP_AON_FORCE_DOWNLOAD_BOOT_S)
-#define LP_AON_FORCE_DOWNLOAD_BOOT_V  0x00000001U
-#define LP_AON_FORCE_DOWNLOAD_BOOT_S  30
+#define LP_AON_FORCE_DOWNLOAD_BOOT_V  0x00000003U
+#define LP_AON_FORCE_DOWNLOAD_BOOT_S  29
 /** LP_AON_HPSYS_SW_RESET : WT; bitpos: [31]; default: 0;
  *  enable hp system reset by software or not
  *  1: reset
@@ -224,6 +233,7 @@ extern "C" {
 #define LP_AON_CPU_CORE0_SW_RESET_S  28
 /** LP_AON_CPU_CORE0_OCD_HALT_ON_RESET : R/W; bitpos: [29]; default: 0;
  *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_CPU_CORE0_OCD_HALT_ON_RESET    (BIT(29))
 #define LP_AON_CPU_CORE0_OCD_HALT_ON_RESET_M  (LP_AON_CPU_CORE0_OCD_HALT_ON_RESET_V << LP_AON_CPU_CORE0_OCD_HALT_ON_RESET_S)
@@ -233,6 +243,7 @@ extern "C" {
  *  configure core boot address
  *  1: ROM
  *  0: lp memory
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_CPU_CORE0_STAT_VECTOR_SEL    (BIT(30))
 #define LP_AON_CPU_CORE0_STAT_VECTOR_SEL_M  (LP_AON_CPU_CORE0_STAT_VECTOR_SEL_V << LP_AON_CPU_CORE0_STAT_VECTOR_SEL_S)
@@ -242,6 +253,7 @@ extern "C" {
  *  disable bypass core dreset
  *  1: enable bypass
  *  0: disable bypass
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_CPU_CORE0_DRESET_MASK    (BIT(31))
 #define LP_AON_CPU_CORE0_DRESET_MASK_M  (LP_AON_CPU_CORE0_DRESET_MASK_V << LP_AON_CPU_CORE0_DRESET_MASK_S)
@@ -363,10 +375,13 @@ extern "C" {
 
 /** LP_AON_SDIO_ACTIVE_REG register
  *  configure sdio act dnum
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_SDIO_ACTIVE_REG (DR_REG_LP_AON_BASE + 0x4c)
 /** LP_AON_SDIO_ACT_DNUM : R/W; bitpos: [31:22]; default: 10;
  *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_SDIO_ACT_DNUM    0x000003FFU
 #define LP_AON_SDIO_ACT_DNUM_M  (LP_AON_SDIO_ACT_DNUM_V << LP_AON_SDIO_ACT_DNUM_S)
@@ -403,10 +418,13 @@ extern "C" {
 
 /** LP_AON_SAR_CCT_REG register
  *  configure sar cct
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_SAR_CCT_REG (DR_REG_LP_AON_BASE + 0x54)
 /** LP_AON_SAR2_PWDET_CCT : R/W; bitpos: [31:29]; default: 0;
  *  configure sar cct
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_SAR2_PWDET_CCT    0x00000007U
 #define LP_AON_SAR2_PWDET_CCT_M  (LP_AON_SAR2_PWDET_CCT_V << LP_AON_SAR2_PWDET_CCT_S)
@@ -415,12 +433,15 @@ extern "C" {
 
 /** LP_AON_MODEM_BUS_REG register
  *  configure modem sync bridge
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_MODEM_BUS_REG (DR_REG_LP_AON_BASE + 0x58)
 /** LP_AON_MODEM_SYNC_BRIDGE_EN : R/W; bitpos: [31]; default: 0;
  *  enable modem sync bridge or not
  *  1: enable
  *  0: disable
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_MODEM_SYNC_BRIDGE_EN    (BIT(31))
 #define LP_AON_MODEM_SYNC_BRIDGE_EN_M  (LP_AON_MODEM_SYNC_BRIDGE_EN_V << LP_AON_MODEM_SYNC_BRIDGE_EN_S)
@@ -429,10 +450,13 @@ extern "C" {
 
 /** LP_AON_SPRAM_CTRL_REG register
  *  configure lp memory power status
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_SPRAM_CTRL_REG (DR_REG_LP_AON_BASE + 0x60)
 /** LP_AON_SPRAM_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
  *  configure lp memory power status
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_SPRAM_MEM_AUX_CTRL    0xFFFFFFFFU
 #define LP_AON_SPRAM_MEM_AUX_CTRL_M  (LP_AON_SPRAM_MEM_AUX_CTRL_V << LP_AON_SPRAM_MEM_AUX_CTRL_S)
@@ -441,10 +465,13 @@ extern "C" {
 
 /** LP_AON_SPRF_CTRL_REG register
  *  configure memory in lp system power status
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_SPRF_CTRL_REG (DR_REG_LP_AON_BASE + 0x64)
 /** LP_AON_SPRF_MEM_AUX_CTRL : R/W; bitpos: [31:0]; default: 8304;
  *  configure memory in lp system power status
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_SPRF_MEM_AUX_CTRL    0xFFFFFFFFU
 #define LP_AON_SPRF_MEM_AUX_CTRL_M  (LP_AON_SPRF_MEM_AUX_CTRL_V << LP_AON_SPRF_MEM_AUX_CTRL_S)
@@ -453,10 +480,13 @@ extern "C" {
 
 /** LP_AON_DEBUG_SEL0_REG register
  *  reserved
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_DEBUG_SEL0_REG (DR_REG_LP_AON_BASE + 0x68)
 /** LP_AON_LP_DEBUG_SEL0 : R/W; bitpos: [6:0]; default: 0;
  *  need des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_LP_DEBUG_SEL0    0x0000007FU
 #define LP_AON_LP_DEBUG_SEL0_M  (LP_AON_LP_DEBUG_SEL0_V << LP_AON_LP_DEBUG_SEL0_S)
@@ -464,6 +494,7 @@ extern "C" {
 #define LP_AON_LP_DEBUG_SEL0_S  0
 /** LP_AON_LP_DEBUG_SEL1 : R/W; bitpos: [13:7]; default: 0;
  *  need des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_LP_DEBUG_SEL1    0x0000007FU
 #define LP_AON_LP_DEBUG_SEL1_M  (LP_AON_LP_DEBUG_SEL1_V << LP_AON_LP_DEBUG_SEL1_S)
@@ -471,6 +502,7 @@ extern "C" {
 #define LP_AON_LP_DEBUG_SEL1_S  7
 /** LP_AON_LP_DEBUG_SEL2 : R/W; bitpos: [20:14]; default: 0;
  *  need des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_LP_DEBUG_SEL2    0x0000007FU
 #define LP_AON_LP_DEBUG_SEL2_M  (LP_AON_LP_DEBUG_SEL2_V << LP_AON_LP_DEBUG_SEL2_S)
@@ -478,6 +510,7 @@ extern "C" {
 #define LP_AON_LP_DEBUG_SEL2_S  14
 /** LP_AON_LP_DEBUG_SEL3 : R/W; bitpos: [27:21]; default: 0;
  *  need des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_LP_DEBUG_SEL3    0x0000007FU
 #define LP_AON_LP_DEBUG_SEL3_M  (LP_AON_LP_DEBUG_SEL3_V << LP_AON_LP_DEBUG_SEL3_S)
@@ -486,10 +519,13 @@ extern "C" {
 
 /** LP_AON_DEBUG_SEL1_REG register
  *  need des
+ *  This register is only for internal debugging purposes. Do not use it in
+ *  applications.
  */
 #define LP_AON_DEBUG_SEL1_REG (DR_REG_LP_AON_BASE + 0x6c)
 /** LP_AON_LP_DEBUG_SEL4 : R/W; bitpos: [6:0]; default: 0;
  *  need des
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_LP_DEBUG_SEL4    0x0000007FU
 #define LP_AON_LP_DEBUG_SEL4_M  (LP_AON_LP_DEBUG_SEL4_V << LP_AON_LP_DEBUG_SEL4_S)
@@ -549,6 +585,7 @@ extern "C" {
 #define LP_AON_LINK_BACKUP_TOUT_THRES_AON_S  20
 /** LP_AON_AON_BYPASS : R/W; bitpos: [31]; default: 0;
  *  reserved
+ *  This field is only for internal debugging purposes. Do not use it in applications.
  */
 #define LP_AON_AON_BYPASS    (BIT(31))
 #define LP_AON_AON_BYPASS_M  (LP_AON_AON_BYPASS_V << LP_AON_AON_BYPASS_S)
@@ -600,11 +637,47 @@ extern "C" {
 #define LP_AON_HUK_MEM_FORCE_PU_V  0x00000001U
 #define LP_AON_HUK_MEM_FORCE_PU_S  3
 
+/** LP_AON_PUF_MEM_SW_REG register
+ *  configure the power switch of PUFMEM
+ */
+#define LP_AON_PUF_MEM_SW_REG (DR_REG_LP_AON_BASE + 0x80)
+/** LP_AON_PUF_MEM_SW : R/W; bitpos: [0]; default: 1;
+ *  power switch of PD_LPPUFMEM
+ */
+#define LP_AON_PUF_MEM_SW    (BIT(0))
+#define LP_AON_PUF_MEM_SW_M  (LP_AON_PUF_MEM_SW_V << LP_AON_PUF_MEM_SW_S)
+#define LP_AON_PUF_MEM_SW_V  0x00000001U
+#define LP_AON_PUF_MEM_SW_S  0
+
+/** LP_AON_PUF_MEM_ISO_REG register
+ *  configure the iso of PD_PUFMEM
+ */
+#define LP_AON_PUF_MEM_ISO_REG (DR_REG_LP_AON_BASE + 0x84)
+/** LP_AON_PUF_MEM_ISO : R/W; bitpos: [0]; default: 0;
+ *  ISO enable of PD_LPPUFMEM to PD_SYS
+ */
+#define LP_AON_PUF_MEM_ISO    (BIT(0))
+#define LP_AON_PUF_MEM_ISO_M  (LP_AON_PUF_MEM_ISO_V << LP_AON_PUF_MEM_ISO_S)
+#define LP_AON_PUF_MEM_ISO_V  0x00000001U
+#define LP_AON_PUF_MEM_ISO_S  0
+
+/** LP_AON_PUF_MEM_DISCHARGE_REG register
+ *  configure the discharge gate of PUFMEM
+ */
+#define LP_AON_PUF_MEM_DISCHARGE_REG (DR_REG_LP_AON_BASE + 0x88)
+/** LP_AON_PUF_MEM_DISCHARGE : R/W; bitpos: [0]; default: 0;
+ *  discharge gate of LPPUFMEM
+ */
+#define LP_AON_PUF_MEM_DISCHARGE    (BIT(0))
+#define LP_AON_PUF_MEM_DISCHARGE_M  (LP_AON_PUF_MEM_DISCHARGE_V << LP_AON_PUF_MEM_DISCHARGE_S)
+#define LP_AON_PUF_MEM_DISCHARGE_V  0x00000001U
+#define LP_AON_PUF_MEM_DISCHARGE_S  0
+
 /** LP_AON_DATE_REG register
  *  reserved
  */
 #define LP_AON_DATE_REG (DR_REG_LP_AON_BASE + 0x3fc)
-/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 36774512;
+/** LP_AON_DATE : R/W; bitpos: [30:0]; default: 37818656;
  *  version register
  */
 #define LP_AON_DATE    0x7FFFFFFFU

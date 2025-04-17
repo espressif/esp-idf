@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -64,9 +64,9 @@ extern "C" {
  */
 #define RSA_QUERY_CLEAN_REG (DR_REG_RSA_BASE + 0x808)
 /** RSA_QUERY_CLEAN : RO; bitpos: [0]; default: 0;
- *  Represents whether or not the RSA memory completes initialization.\\
- *  0: Not complete\\
- *  1: Completed\\
+ *  Represents whether or not the RSA memory completes initialization.
+ *  0: Not complete
+ *  1: Completed
  */
 #define RSA_QUERY_CLEAN    (BIT(0))
 #define RSA_QUERY_CLEAN_M  (RSA_QUERY_CLEAN_V << RSA_QUERY_CLEAN_S)
@@ -78,9 +78,9 @@ extern "C" {
  */
 #define RSA_SET_START_MODEXP_REG (DR_REG_RSA_BASE + 0x80c)
 /** RSA_SET_START_MODEXP : WT; bitpos: [0]; default: 0;
- *  Configures whether or not to starts the modular exponentiation. \\
- *  0: No effect\\
- *  1: Start\\
+ *  Configures whether or not to starts the modular exponentiation.
+ *  0: No effect
+ *  1: Start
  */
 #define RSA_SET_START_MODEXP    (BIT(0))
 #define RSA_SET_START_MODEXP_M  (RSA_SET_START_MODEXP_V << RSA_SET_START_MODEXP_S)
@@ -92,9 +92,9 @@ extern "C" {
  */
 #define RSA_SET_START_MODMULT_REG (DR_REG_RSA_BASE + 0x810)
 /** RSA_SET_START_MODMULT : WT; bitpos: [0]; default: 0;
- *  Configures whether or not to start the modular multiplication.\\
- *  0: No effect\\
- *  1: Start\\
+ *  Configures whether or not to start the modular multiplication.
+ *  0: No effect
+ *  1: Start
  */
 #define RSA_SET_START_MODMULT    (BIT(0))
 #define RSA_SET_START_MODMULT_M  (RSA_SET_START_MODMULT_V << RSA_SET_START_MODMULT_S)
@@ -106,9 +106,9 @@ extern "C" {
  */
 #define RSA_SET_START_MULT_REG (DR_REG_RSA_BASE + 0x814)
 /** RSA_SET_START_MULT : WT; bitpos: [0]; default: 0;
- *  Configures whether or not to start the multiplication.\\
- *  0: No effect\\
- *  1: Start\\
+ *  Configures whether or not to start the multiplication.
+ *  0: No effect
+ *  1: Start
  */
 #define RSA_SET_START_MULT    (BIT(0))
 #define RSA_SET_START_MULT_M  (RSA_SET_START_MULT_V << RSA_SET_START_MULT_S)
@@ -120,9 +120,9 @@ extern "C" {
  */
 #define RSA_QUERY_IDLE_REG (DR_REG_RSA_BASE + 0x818)
 /** RSA_QUERY_IDLE : RO; bitpos: [0]; default: 0;
- *  Represents the RSA status.\\
- *  0: Busy\\
- *  1: Idle\\
+ *  Represents the RSA status.
+ *  0: Busy
+ *  1: Idle
  */
 #define RSA_QUERY_IDLE    (BIT(0))
 #define RSA_QUERY_IDLE_M  (RSA_QUERY_IDLE_V << RSA_QUERY_IDLE_S)
@@ -146,9 +146,9 @@ extern "C" {
  */
 #define RSA_CONSTANT_TIME_REG (DR_REG_RSA_BASE + 0x820)
 /** RSA_CONSTANT_TIME : R/W; bitpos: [0]; default: 1;
- *  Configures the constant_time option. \\
- *  0: Acceleration\\
- *  1: No acceleration (default)\\
+ *  Configures the constant_time option.
+ *  0: Acceleration
+ *  1: No acceleration (default)
  */
 #define RSA_CONSTANT_TIME    (BIT(0))
 #define RSA_CONSTANT_TIME_M  (RSA_CONSTANT_TIME_V << RSA_CONSTANT_TIME_S)
@@ -160,9 +160,9 @@ extern "C" {
  */
 #define RSA_SEARCH_ENABLE_REG (DR_REG_RSA_BASE + 0x824)
 /** RSA_SEARCH_ENABLE : R/W; bitpos: [0]; default: 0;
- *  Configures the search option. \\
- *  0: No acceleration (default)\\
- *  1: Acceleration\\
+ *  Configures the search option.
+ *  0: No acceleration (default)
+ *  1: Acceleration
  *  This option should be used together with RSA_SEARCH_POS_REG.
  */
 #define RSA_SEARCH_ENABLE    (BIT(0))

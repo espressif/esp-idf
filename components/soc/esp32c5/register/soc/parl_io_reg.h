@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -447,6 +447,25 @@ extern "C" {
 #define PARL_IO_TX_CLK_O_INV_V  0x00000001U
 #define PARL_IO_TX_CLK_O_INV_S  31
 
+/** PARL_IO_TX_CS_CFG_REG register
+ *  Parallel IO tx_cs_o generate configuration
+ */
+#define PARL_IO_TX_CS_CFG_REG (DR_REG_PARL_IO_BASE + 0x4c)
+/** PARL_IO_TX_CS_STOP_DELAY : R/W; bitpos: [15:0]; default: 0;
+ *  configure the delay between data tx end and tx_cs_o posedge
+ */
+#define PARL_IO_TX_CS_STOP_DELAY    0x0000FFFFU
+#define PARL_IO_TX_CS_STOP_DELAY_M  (PARL_IO_TX_CS_STOP_DELAY_V << PARL_IO_TX_CS_STOP_DELAY_S)
+#define PARL_IO_TX_CS_STOP_DELAY_V  0x0000FFFFU
+#define PARL_IO_TX_CS_STOP_DELAY_S  0
+/** PARL_IO_TX_CS_START_DELAY : R/W; bitpos: [31:16]; default: 0;
+ *  configure the delay between tx_cs_o negedge and data tx start
+ */
+#define PARL_IO_TX_CS_START_DELAY    0x0000FFFFU
+#define PARL_IO_TX_CS_START_DELAY_M  (PARL_IO_TX_CS_START_DELAY_V << PARL_IO_TX_CS_START_DELAY_S)
+#define PARL_IO_TX_CS_START_DELAY_V  0x0000FFFFU
+#define PARL_IO_TX_CS_START_DELAY_S  16
+
 /** PARL_IO_CLK_REG register
  *  Parallel IO clk configuration register
  */
@@ -463,7 +482,7 @@ extern "C" {
  *  Version register.
  */
 #define PARL_IO_VERSION_REG (DR_REG_PARL_IO_BASE + 0x3fc)
-/** PARL_IO_DATE : R/W; bitpos: [27:0]; default: 35725920;
+/** PARL_IO_DATE : R/W; bitpos: [27:0]; default: 37786160;
  *  Version of this register file
  */
 #define PARL_IO_DATE    0x0FFFFFFFU

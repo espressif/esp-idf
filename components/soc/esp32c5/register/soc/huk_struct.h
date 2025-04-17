@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -191,7 +191,12 @@ typedef union {
          *  are in the PUF SRAM. 7: Error Level, HUK is invalid.
          */
         uint32_t risk_level:3;
-        uint32_t reserved_5:27;
+        /** update_req : RO; bitpos: [5]; default: 0;
+         *  The update request of HUK info. 0: User can update HUK info according to the risk
+         *  level. 1: The HUK info is expired, and user need to update it.
+         */
+        uint32_t update_req:1;
+        uint32_t reserved_6:26;
     };
     uint32_t val;
 } huk_status_reg_t;
@@ -203,7 +208,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 36720704;
+        /** date : R/W; bitpos: [27:0]; default: 37765232;
          *  HUK Generator version control register.
          */
         uint32_t date:28;
