@@ -437,7 +437,7 @@ inline static void IRAM_ATTR misc_modules_sleep_prepare(bool deep_sleep)
         regi2c_analog_cali_reg_read();
 #endif
     }
-    if (!(deep_sleep && s_adc_tsen_enabled)) {
+    if (!s_adc_tsen_enabled) {
         sar_periph_ctrl_power_disable();
     }
 }
@@ -450,7 +450,9 @@ inline static void IRAM_ATTR misc_modules_wake_prepare(void)
 #if SOC_USB_SERIAL_JTAG_SUPPORTED && !SOC_USB_SERIAL_JTAG_SUPPORT_LIGHT_SLEEP
     sleep_console_usj_pad_restore();
 #endif
-    sar_periph_ctrl_power_enable();
+    if (!s_adc_tsen_enabled) {
+        sar_periph_ctrl_power_enable();
+    }
 #if SOC_PM_SUPPORT_CPU_PD || SOC_PM_SUPPORT_TAGMEM_PD
     sleep_disable_memory_retention();
 #endif
