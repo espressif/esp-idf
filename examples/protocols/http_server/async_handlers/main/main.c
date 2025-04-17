@@ -95,7 +95,42 @@ static esp_err_t queue_request(httpd_req_t *req, httpd_req_handler_t handler)
 /* handle long request (on async thread) */
 static esp_err_t long_async(httpd_req_t *req)
 {
-    ESP_LOGI(TAG, "running: /long");
+    char*  buf;
+    size_t buf_len;
+
+    /* Get URI */
+    ESP_LOGI(TAG, "Request URI: %s", req->uri);
+
+    /* Get header value string length and allocate memory for length + 1,
+     * extra byte for null termination */
+    buf_len = httpd_req_get_hdr_value_len(req, "Host") + 1;
+    if (buf_len > 1) {
+        buf = malloc(buf_len);
+        if (buf == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for headers");
+            return ESP_FAIL;
+        }
+        /* Copy null terminated value string into buffer */
+        if (httpd_req_get_hdr_value_str(req, "Host", buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Found header => Host: %s", buf);
+        }
+        free(buf);
+    }
+    /* Get query string length and allocate memory for length + 1,
+     * extra byte for null termination */
+    buf_len = httpd_req_get_url_query_len(req) + 1;
+    if (buf_len > 1) {
+        buf = malloc(buf_len);
+        if (buf == NULL) {
+            ESP_LOGE(TAG, "Failed to allocate memory for query string");
+            return ESP_FAIL;
+        }
+        /* Copy null terminated query string into buffer */
+        if (httpd_req_get_url_query_str(req, buf, buf_len) == ESP_OK) {
+            ESP_LOGI(TAG, "Found query string => %s", buf);
+        }
+        free(buf);
+    }
 
     // track the number of long requests
     static uint8_t req_count = 0;
