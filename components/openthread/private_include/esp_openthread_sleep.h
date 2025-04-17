@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,16 +25,10 @@ extern "C" {
 esp_err_t esp_openthread_sleep_init(void);
 
 /**
- * @brief This function performs the OpenThread sleep process.
+ * @brief This function performs the OpenThread sleep and wake process.
  *
  */
 void esp_openthread_sleep_process(void);
-
-/**
- * @brief This function performs the OpenThread wakeup process.
- *
- */
-void esp_openthread_wakeup_process(void);
 #endif
 
 #ifdef __cplusplus
