@@ -700,7 +700,7 @@ FORCE_INLINE_ATTR void misc_modules_sleep_prepare(uint32_t sleep_flags, bool dee
 
 #if !CONFIG_IDF_TARGET_ESP32C61
     // TODO: IDF-7370
-    if (!(deep_sleep && (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] != 0))){
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] == 0) {
         sar_periph_ctrl_power_disable();
     }
 #endif
@@ -731,7 +731,9 @@ FORCE_INLINE_ATTR void misc_modules_wake_prepare(uint32_t sleep_flags)
     }
 #endif
 #if !CONFIG_IDF_TARGET_ESP32C61 // TODO: IDF-9304
-    sar_periph_ctrl_power_enable();
+    if (s_sleep_sub_mode_ref_cnt[ESP_SLEEP_USE_ADC_TSEN_MONITOR_MODE] == 0) {
+        sar_periph_ctrl_power_enable();
+    }
 #endif
 #if CONFIG_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && SOC_PM_CPU_RETENTION_BY_RTCCNTL
     sleep_disable_cpu_retention();
