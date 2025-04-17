@@ -589,8 +589,10 @@ app_main(void)
     ble_hs_cfg.sm_their_key_dist |= BLE_SM_PAIR_KEY_DIST_ID;
 #endif
 
+#if MYNEWT_VAL(BLE_GATTS)
     rc = gatt_svr_init();
     assert(rc == 0);
+#endif
 
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set("nimble-bleprph");

@@ -211,9 +211,11 @@ esp_err_t esp_blufi_host_init(void)
     rc = esp_blufi_gatt_svr_init();
     assert(rc == 0);
 
+#if CONFIG_BT_NIMBLE_GAP_SERVICE
     /* Set the default device name. */
     rc = ble_svc_gap_device_name_set(BLUFI_DEVICE_NAME);
     assert(rc == 0);
+#endif
 
     /* XXX Need to have template for store */
     ble_store_config_init();
