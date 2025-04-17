@@ -457,7 +457,7 @@ static int wpa_write_rsnxe_override(struct wpa_auth_config *conf, u8 *buf,
 
 int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 {
-	u8 *pos, buf[256];
+	u8 *pos, buf[128];
 	int res;
 
 	pos = buf;
@@ -475,8 +475,6 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 			res = wpa_write_rsnxe(&wpa_auth->conf, pos,
 						buf + sizeof(buf) - pos);
 
-		res = wpa_write_rsnxe(&wpa_auth->conf, pos,
-					buf + sizeof(buf) - pos);
 		if (res < 0)
 			return res;
 		pos += res;
@@ -507,7 +505,7 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 		pos += res;
 	}
 
-    if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
+	if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
 	    (wpa_auth->conf.rsn_override_key_mgmt)) {
 		res = wpa_write_rsnxe_override(&wpa_auth->conf, pos,
 					       buf + sizeof(buf) - pos);

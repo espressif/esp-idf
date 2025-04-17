@@ -535,7 +535,7 @@ typedef struct {
     wifi_sae_pwe_method_t sae_pwe_h2e;        /**< Configuration for SAE PWE derivation method */
     uint8_t transition_disable: 1;            /**< Whether to enable transition disable feature */
     uint8_t sae_ext: 1;                       /**< Enable SAE EXT feature. SOC_GCMP_SUPPORT is required for this feature. */
-    uint8_t wpa3_compatible_mode: 1;          /**< Whether to enable wpa3 compatible authmode feature */
+    uint8_t wpa3_compatible_mode: 1;          /**< Enable WPA3 compatible authmode feature. Note: Enabling this will override the AP configuration's authmode and pairwise_cipher. The AP will operate as a WPA2 access point for legacy stations and as a WPA3 access point for WPA3 compatible stations. */
     uint8_t reserved: 5;                      /**< Reserved for future feature set */
     wifi_bss_max_idle_config_t bss_max_idle_cfg;  /**< Configuration for bss max idle, effective if CONFIG_WIFI_BSS_MAX_IDLE_SUPPORT is enabled */
     uint16_t gtk_rekey_interval;              /**< GTK rekeying interval in seconds. If set to 0, GTK rekeying is disabled. Range: 60 ~ 65535 including 0. */

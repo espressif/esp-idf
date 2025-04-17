@@ -2282,14 +2282,14 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
         return -1;
 
     switch (param) {
-        case WPA_PARAM_RSN_OVERRIDE:
-            sm->rsn_override = value;
-            break;
-        case WPA_PARAM_RSN_OVERRIDE_SUPPORT:
-            sm->rsn_override_support = value;
-            break;
-        default:
-            break;
+    case WPA_PARAM_RSN_OVERRIDE:
+        sm->rsn_override = value;
+        break;
+    case WPA_PARAM_RSN_OVERRIDE_SUPPORT:
+        sm->rsn_override_support = value;
+        break;
+    default:
+        break;
     }
     return ret;
 }

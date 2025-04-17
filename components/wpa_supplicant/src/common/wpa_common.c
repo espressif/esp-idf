@@ -1700,7 +1700,7 @@ int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie)
 	const u8 *pos, *end;
 	int ret = 0;
 
-	memset(ie, 0, sizeof(*ie));
+	os_memset(ie, 0, sizeof(*ie));
 	for (pos = buf, end = pos + len; pos + 1 < end; pos += 2 + pos[1]) {
 		if (pos[0] == 0xdd &&
 		    ((pos == buf + len - 1) || pos[1] == 0)) {
