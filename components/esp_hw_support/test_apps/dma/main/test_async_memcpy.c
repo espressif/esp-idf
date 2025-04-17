@@ -247,9 +247,9 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     printf("Testing memcpy by AHB GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_ahb(&driver_config, &driver));
     test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if SOC_AHB_GDMA_SUPPORT_PSRAM
+#if SOC_AHB_GDMA_SUPPORT_PSRAM && SOC_SPIRAM_SUPPORTED
     test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // SOC_AHB_GDMA_SUPPORT_PSRAM
+#endif // SOC_AHB_GDMA_SUPPORT_PSRAM && SOC_SPIRAM_SUPPORTED
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_AHB_GDMA_SUPPORTED
 
@@ -257,9 +257,9 @@ TEST_CASE("memory copy with dest address unaligned", "[async mcp]")
     printf("Testing memcpy by AXI GDMA\r\n");
     TEST_ESP_OK(esp_async_memcpy_install_gdma_axi(&driver_config, &driver));
     test_memcpy_with_dest_addr_unaligned(driver, false, false);
-#if SOC_AXI_GDMA_SUPPORT_PSRAM
+#if SOC_AXI_GDMA_SUPPORT_PSRAM && SOC_SPIRAM_SUPPORTED
     test_memcpy_with_dest_addr_unaligned(driver, true, true);
-#endif // SOC_AXI_GDMA_SUPPORT_PSRAM
+#endif // SOC_AXI_GDMA_SUPPORT_PSRAM && SOC_SPIRAM_SUPPORTED
     TEST_ESP_OK(esp_async_memcpy_uninstall(driver));
 #endif // SOC_AXI_GDMA_SUPPORTED
 }

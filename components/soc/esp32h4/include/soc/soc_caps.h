@@ -29,8 +29,8 @@
 // #define SOC_ANA_CMPR_SUPPORTED          1    // TODO: [ESP32H4] IDF-12395 big change!!
 // #define SOC_DEDICATED_GPIO_SUPPORTED    1    // TODO: [ESP32H4] IDF-12401
 #define SOC_UART_SUPPORTED              1       // TODO: [ESP32H4] IDF-12398
-// #define SOC_GDMA_SUPPORTED              1    // TODO: [ESP32H4] IDF-12382
-// #define SOC_AHB_GDMA_SUPPORTED          1    // TODO: [ESP32H4] IDF-12382
+#define SOC_GDMA_SUPPORTED              1
+#define SOC_AHB_GDMA_SUPPORTED          1
 #define SOC_GPTIMER_SUPPORTED           1
 // #define SOC_PCNT_SUPPORTED              1    // TODO: [ESP32H4] IDF-12338
 // #define SOC_MCPWM_SUPPORTED             1    // TODO: [ESP32H4] IDF-12380
@@ -39,7 +39,7 @@
 // #define SOC_PARLIO_SUPPORTED            1    // TODO: [ESP32H4] IDF-12345 IDF-12347
 // #define SOC_BT_SUPPORTED                1
 // #define SOC_IEEE802154_SUPPORTED        1
-// #define SOC_ASYNC_MEMCPY_SUPPORTED      1    // TODO: [ESP32H4] IDF-12382
+#define SOC_ASYNC_MEMCPY_SUPPORTED      1
 // #define SOC_USB_SERIAL_JTAG_SUPPORTED   1    // TODO: [ESP32H4] IDF-12396
 // #define SOC_TEMP_SENSOR_SUPPORTED       1    // TODO: [ESP32H4] IDF-12404
 // #define SOC_SUPPORTS_SECURE_DL_MODE     1
@@ -177,11 +177,16 @@
     See TRM DS chapter for more details */
 // #define SOC_DS_KEY_CHECK_MAX_WAIT_US (1100)
 
+/*-------------------------- DMA Common CAPS ----------------------------------------*/
+#define SOC_DMA_CAN_ACCESS_FLASH 1 /*!< DMA can access Flash memory */
+
 /*-------------------------- GDMA CAPS -------------------------------------*/
-// #define SOC_AHB_GDMA_VERSION            1U
-// #define SOC_GDMA_NUM_GROUPS_MAX         1U
-// #define SOC_GDMA_PAIRS_PER_GROUP_MAX    4
-// #define SOC_GDMA_SUPPORT_ETM            1  // Support ETM submodule
+#define SOC_AHB_GDMA_VERSION                2
+#define SOC_GDMA_NUM_GROUPS_MAX             1U
+#define SOC_GDMA_PAIRS_PER_GROUP_MAX        5
+// #define SOC_GDMA_SUPPORT_ETM                1  // Support ETM submodule  TODO: [ESP32H4] IDF-12383
+#define SOC_GDMA_SUPPORT_SLEEP_RETENTION    1
+#define SOC_AHB_GDMA_SUPPORT_PSRAM 1
 
 /*-------------------------- ETM CAPS --------------------------------------*/
 // #define SOC_ETM_GROUPS                  1U  // Number of ETM groups
@@ -470,6 +475,9 @@
 #define SOC_FLASH_ENCRYPTED_XTS_AES_BLOCK_MAX   (64)
 #define SOC_FLASH_ENCRYPTION_XTS_AES        1
 #define SOC_FLASH_ENCRYPTION_XTS_AES_128    1
+
+/*-------------------------- APM CAPS ----------------------------------------*/
+#define SOC_APM_CTRL_FILTER_SUPPORTED   1 /*!< Support for APM control filter */
 
 /*------------------------ Anti DPA (Security) CAPS --------------------------*/
 // #define SOC_CRYPTO_DPA_PROTECTION_SUPPORTED     1
