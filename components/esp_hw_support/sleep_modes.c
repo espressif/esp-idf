@@ -2195,7 +2195,9 @@ FORCE_INLINE_ATTR bool top_domain_pd_allowed(void) {
 #if SOC_PM_SUPPORT_MODEM_PD
     top_pd_allowed &= modem_domain_pd_allowed();
 #endif
+#if SOC_XTAL_CLOCK_PATH_DEPENDS_ON_TOP_DOMAIN
     top_pd_allowed &= (s_config.domain[ESP_PD_DOMAIN_XTAL].pd_option != ESP_PD_OPTION_ON);
+#endif
 
     return top_pd_allowed;
 }
