@@ -682,6 +682,11 @@ config BT_LE_PLACE_CONN_RELATED_INTO_IRAM
     depends on BT_CTRL_RUN_IN_FLASH_ONLY
     default n
 
+config BT_LE_PLACE_SLEEP_RELATED_INTO_IRAM
+    bool
+    depends on BT_CTRL_RUN_IN_FLASH_ONLY && BT_LE_SLEEP_ENABLE
+    default y
+
 config BT_LE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
     bool "Enable enhanced Access Address check in CONNECT_IND"
     default n
