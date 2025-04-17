@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Unlicense OR CC0-1.0
 import pytest
 from pytest_embedded import Dut
@@ -26,4 +26,33 @@ def test_wifi_unit_test(dut: Dut) -> None:
     indirect=True,
 )
 def test_wifi_unit_test_esp32c2_xtal26m(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32c2
+@pytest.mark.esp32c2eco4
+@pytest.mark.xtal_26mhz
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('esp32c2eco4_xtal26m', '74880'),
+    ],
+    indirect=True,
+)
+def test_wifi_unit_test_esp32c2eco4_xtal26m(dut: Dut) -> None:
+    dut.run_all_single_board_cases()
+
+
+@pytest.mark.esp32c3
+@pytest.mark.esp32c3eco7
+@pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    [
+        'esp32c3eco7'
+    ],
+    indirect=True,
+)
+def test_wifi_unit_test_esp32c3eco7(dut: Dut) -> None:
     dut.run_all_single_board_cases()
