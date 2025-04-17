@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,12 +37,7 @@ void esp_openthread_sleep_process(void)
     if (s_ot_sleep == false && esp_ieee802154_get_state() == ESP_IEEE802154_RADIO_SLEEP) {
         esp_pm_lock_release(s_pm_lock);
         s_ot_sleep = true;
-    }
-}
-
-void esp_openthread_wakeup_process(void)
-{
-    if (s_ot_sleep) {
+    } else if (s_ot_sleep && esp_ieee802154_get_state() != ESP_IEEE802154_RADIO_SLEEP) {
         esp_pm_lock_acquire(s_pm_lock);
         s_ot_sleep = false;
     }
