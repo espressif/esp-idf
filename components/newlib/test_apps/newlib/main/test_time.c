@@ -1,11 +1,12 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <unistd.h>
 #include "unity.h"
 #include <time.h>
 #include <sys/time.h>
@@ -76,6 +77,27 @@ TEST_CASE("Reading RTC registers on APP CPU doesn't affect clock", "[newlib]")
 }
 
 #endif // (CONFIG_FREERTOS_NUMBER_OF_CORES == 2) && CONFIG_IDF_TARGET_ARCH_XTENSA
+
+TEST_CASE("test usleep basic functionality", "[newlib]")
+{
+    const int us_per_tick = portTICK_PERIOD_MS * 1000;
+
+    // Test sub-tick sleep such that usleep() uses ROM delay path
+    const int short_sleep_us = us_per_tick / 4;
+    int64_t start = esp_timer_get_time();
+    TEST_ASSERT_EQUAL(0, usleep(short_sleep_us));
+    int64_t end = esp_timer_get_time();
+    printf("short sleep: %lld us\n", end - start);
+    TEST_ASSERT_GREATER_OR_EQUAL(short_sleep_us, end - start);
+
+    // Test multi-tick sleep using vTaskDelay path
+    const int long_sleep_us = us_per_tick * 2;
+    start = esp_timer_get_time();
+    TEST_ASSERT_EQUAL(0, usleep(long_sleep_us));
+    end = esp_timer_get_time();
+    printf("long sleep: %lld us\n", end - start);
+    TEST_ASSERT_GREATER_OR_EQUAL(long_sleep_us, end - start);
+}
 
 TEST_CASE("test adjtime function", "[newlib]")
 {
