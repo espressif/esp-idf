@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -256,6 +256,11 @@ void rtc_clk_xtal_freq_update(soc_xtal_freq_t xtal_freq);
  * @brief Enable 32KHz external oscillator
  */
 void rtc_clk_32k_enable_external(void);
+
+/**
+ * @brief Disable 32KHz external oscillator
+ */
+void rtc_clk_32k_disable_external(void);
 
 /**
  * @brief Enable or disable 8 MHz internal oscillator
