@@ -9,6 +9,7 @@ set(include)
 set(srcs "core/esp_tee_init.c"
          "core/esp_tee_intr.c"
          "core/esp_secure_services.c"
+         "core/esp_secure_services_iram.c"
          "core/esp_secure_dispatcher.c"
          "core/esp_secure_service_table.c")
 

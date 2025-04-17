@@ -94,7 +94,7 @@ def test_esp_tee_apm_violation(dut: IdfDut) -> None:
         dut.expect_exact('Press ENTER to see the list of tests')
         dut.write(f'"Test APM violation interrupt: {check}"')
         exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
-        if exc != 'Authority exception':
+        if exc != 'APM - Authority exception':
             raise RuntimeError('Incorrect exception received!')
 
 
@@ -141,7 +141,7 @@ def test_esp_tee_isolation_checks(dut: IdfDut) -> None:
         actual_exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=30).group(2).decode()
         if actual_exc != expected_exc:
             raise RuntimeError('Incorrect exception received!')
-        dut.expect('Exception origin: U-mode')
+        dut.expect('Origin: U-mode')
 
 
 # ---------------- TEE Flash Protection Tests ----------------
@@ -155,47 +155,45 @@ class TeeFlashAccessApi(Enum):
     ESP_ROM_SPIFLASH = 5
 
 
-def check_panic_or_reset(dut: IdfDut) -> None:
-    try:
-        exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=5).group(2).decode()
-        if exc not in {'Cache error', 'Authority exception'}:
-            raise RuntimeError('Flash operation incorrect exception')
-    except Exception:
-        rst_rsn = dut.expect(r'rst:(0x[0-9A-Fa-f]+) \(([^)]+)\)', timeout=5).group(2).decode()
-        # Fault assert check produces this reset reason
-        if rst_rsn != 'LP_SW_HPSYS':
-            raise RuntimeError('Flash operation incorrect reset reason')
+def expect_panic_rsn(dut: IdfDut, expected_rsn: str) -> None:
+    actual_rsn = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=10).group(2).decode()
+    if actual_rsn != expected_rsn:
+        raise RuntimeError(f'Incorrect exception: {actual_rsn} (expected: {expected_rsn})')
 
 
 def run_multiple_stages(dut: IdfDut, test_case_num: int, stages: int, api: TeeFlashAccessApi) -> None:
-    exp_seq = {
+    expected_ops = {
         TeeFlashAccessApi.ESP_PARTITION: ['read', 'program_page', 'program_page', 'erase_sector'],
         TeeFlashAccessApi.ESP_FLASH: ['program_page', 'read', 'erase_sector', 'program_page'],
     }
+
+    flash_enc_enabled = dut.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True)
 
     for stage in range(1, stages + 1):
         dut.write(str(test_case_num))
         dut.expect(r'\s+\((\d+)\)\s+"([^"]+)"\r?\n', timeout=30)
         dut.write(str(stage))
 
-        if 1 < stage <= stages:
-            if api in exp_seq:
-                try:
-                    match = dut.expect(
-                        r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)', timeout=5
-                    )
-                    fault_api = match.group(1).decode()
-                    if fault_api != exp_seq[api][stage - 2]:
-                        raise RuntimeError('Flash operation address check failed')
-                except Exception:
+        if stage > 1:
+            if api in {TeeFlashAccessApi.ESP_PARTITION_MMAP, TeeFlashAccessApi.SPI_FLASH_MMAP}:
+                expect_panic_rsn(dut, 'Cache error')
+            elif api in {TeeFlashAccessApi.ESP_PARTITION, TeeFlashAccessApi.ESP_FLASH}:
+                op_index = stage - 2
+                curr_op = expected_ops[api][op_index]
+                if api == TeeFlashAccessApi.ESP_PARTITION and curr_op == 'read' and flash_enc_enabled:
                     # NOTE: The esp_partition_read API handles both decrypted
                     # and plaintext reads. When flash encryption is enabled,
                     # it uses the MMU HAL instead of the SPI flash HAL.
-                    exc = dut.expect(r'Core ([01]) panic\'ed \(([^)]+)\)', timeout=5).group(2).decode()
-                    if exc != 'Cache error':
-                        raise RuntimeError('Flash operation incorrect exception')
-            else:
-                check_panic_or_reset(dut)
+                    expect_panic_rsn(dut, 'Cache error')
+                else:
+                    match = dut.expect(
+                        r'\[_ss_spi_flash_hal_(\w+)\] Illegal flash access at \s*(0x[0-9a-fA-F]+)', timeout=10
+                    )
+                    actual_op = match.group(1).decode()
+                    if actual_op != curr_op:
+                        raise RuntimeError(f'Unexpected flash operation: {actual_op} (expected: {curr_op})')
+            elif api == TeeFlashAccessApi.ESP_ROM_SPIFLASH:
+                expect_panic_rsn(dut, 'APM - Authority exception')
 
         if stage != stages:
             dut.expect_exact('Press ENTER to see the list of tests.')

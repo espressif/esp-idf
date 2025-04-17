@@ -41,7 +41,9 @@ static void setup_console(void)
     register_cmd_wifi();
     register_srv_tee_ota();
     register_srv_user_ota();
+#if CONFIG_SECURE_TEE_ATTESTATION
     register_srv_attestation();
+#endif
     register_cmd_msg_sha256();
     register_srv_sec_stg_gen_key();
     register_srv_sec_stg_sign();
