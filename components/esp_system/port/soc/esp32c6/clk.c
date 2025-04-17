@@ -295,10 +295,10 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         // NOTE: [ESP-TEE] The TEE is responsible for the AES and SHA peripherals
         periph_ll_disable_clk_set_rst(PERIPH_AES_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_SHA_MODULE);
-#endif
-        periph_ll_disable_clk_set_rst(PERIPH_ECC_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_HMAC_MODULE);
         periph_ll_disable_clk_set_rst(PERIPH_DS_MODULE);
+        periph_ll_disable_clk_set_rst(PERIPH_ECC_MODULE);
+#endif
 
         // TODO: Replace with hal implementation
         REG_CLR_BIT(PCR_CTRL_TICK_CONF_REG, PCR_TICK_ENABLE);

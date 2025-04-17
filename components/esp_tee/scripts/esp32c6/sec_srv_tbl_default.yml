@@ -212,6 +212,50 @@ secure_services:
         type: IDF
         function: esp_crypto_sha_enable_periph_clk
         args: 1
+      - id: 99
+        type: IDF
+        function: esp_hmac_calculate
+        args: 4
+      - id: 100
+        type: IDF
+        function: esp_hmac_jtag_enable
+        args: 2
+      - id: 101
+        type: IDF
+        function: esp_hmac_jtag_disable
+        args: 0
+      - id: 102
+        type: IDF
+        function: esp_ds_sign
+        args: 4
+      - id: 103
+        type: IDF
+        function: esp_ds_start_sign
+        args: 4
+      - id: 104
+        type: IDF
+        function: esp_ds_is_busy
+        args: 0
+      - id: 105
+        type: IDF
+        function: esp_ds_finish_sign
+        args: 2
+      - id: 106
+        type: IDF
+        function: esp_ds_encrypt_params
+        args: 4
+      - id: 107
+        type: IDF
+        function: esp_crypto_mpi_enable_periph_clk
+        args: 1
+      - id: 108
+        type: IDF
+        function: esp_ecc_point_multiply
+        args: 4
+      - id: 109
+        type: IDF
+        function: esp_ecc_point_verify
+        args: 1
   # ID: 134-149 (16) - eFuse
   - family: efuse
     entries:

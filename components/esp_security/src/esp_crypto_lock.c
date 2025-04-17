@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,6 +18,7 @@ DS: needs HMAC (which needs SHA), AES and MPI
 ECDSA: needs ECC and MPI
 */
 
+#if !NON_OS_BUILD
 #ifdef SOC_DIG_SIGN_SUPPORTED
 /* Lock for DS peripheral */
 static _lock_t s_crypto_ds_lock;
@@ -162,3 +163,52 @@ void esp_crypto_key_manager_lock_release(void)
     _lock_release(&s_crypto_key_manager_lock);
 }
 #endif /* SOC_KEY_MANAGER_SUPPORTED */
+#else /* NON_OS_BUILD */
+#ifdef SOC_HMAC_SUPPORTED
+void esp_crypto_hmac_lock_acquire(void) {}
+
+void esp_crypto_hmac_lock_release(void) {}
+#endif /* SOC_HMAC_SUPPORTED */
+
+#ifdef SOC_DIG_SIGN_SUPPORTED
+void esp_crypto_ds_lock_acquire(void) {}
+
+void esp_crypto_ds_lock_release(void) {}
+#endif /* SOC_DIG_SIGN_SUPPORTED */
+
+#if defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED)
+void esp_crypto_sha_aes_lock_acquire(void) {}
+
+void esp_crypto_sha_aes_lock_release(void) {}
+#endif /* defined(SOC_SHA_SUPPORTED) || defined(SOC_AES_SUPPORTED) */
+
+#if defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA)
+void esp_crypto_dma_lock_acquire(void) {}
+
+void esp_crypto_dma_lock_release(void) {}
+#endif /* defined(SOC_SHA_CRYPTO_DMA) || defined(SOC_AES_CRYPTO_DMA) */
+
+#ifdef SOC_MPI_SUPPORTED
+void esp_crypto_mpi_lock_acquire(void) {}
+
+void esp_crypto_mpi_lock_release(void) {}
+#endif /* SOC_MPI_SUPPORTED */
+
+#ifdef SOC_ECC_SUPPORTED
+void esp_crypto_ecc_lock_acquire(void) {}
+
+void esp_crypto_ecc_lock_release(void) {}
+#endif /* SOC_ECC_SUPPORTED */
+
+#ifdef SOC_ECDSA_SUPPORTED
+void esp_crypto_ecdsa_lock_acquire(void) {}
+
+void esp_crypto_ecdsa_lock_release(void) {}
+#endif /* SOC_ECDSA_SUPPORTED */
+
+#ifdef SOC_KEY_MANAGER_SUPPORTED
+void esp_crypto_key_manager_lock_acquire(void) {}
+
+void esp_crypto_key_manager_lock_release(void) {}
+#endif /* SOC_KEY_MANAGER_SUPPORTED */
+#endif /* !NON_OS_BUILD */

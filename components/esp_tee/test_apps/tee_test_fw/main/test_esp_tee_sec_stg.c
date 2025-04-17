@@ -88,7 +88,6 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp256r1) with all key-
     TEST_ESP_OK(esp_tee_sec_storage_init());
 
     for (uint16_t slot_id = 0; slot_id <= MAX_SEC_STG_SLOT_ID; slot_id++) {
-        ESP_LOGI(TAG, "Slot ID: %u", slot_id);
         TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
         TEST_ESP_OK(esp_tee_sec_storage_gen_key(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1));
 
@@ -98,7 +97,6 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp256r1) with all key-
         esp_tee_sec_storage_pubkey_t pubkey = {};
         TEST_ESP_OK(esp_tee_sec_storage_get_pubkey(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP256R1, &pubkey));
 
-        ESP_LOGI(TAG, "Verifying generated signature...");
         TEST_ESP_OK(verify_ecdsa_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign, false));
 
         TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
@@ -122,7 +120,6 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp192r1) with all key-
     TEST_ESP_OK(esp_tee_sec_storage_init());
 
     for (uint16_t slot_id = 0; slot_id <= MAX_SEC_STG_SLOT_ID; slot_id++) {
-        ESP_LOGI(TAG, "Slot ID: %u", slot_id);
         TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
         TEST_ESP_OK(esp_tee_sec_storage_gen_key(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP192R1));
 
@@ -132,7 +129,6 @@ TEST_CASE("Test TEE Secure Storage - Sign-verify (ecdsa_secp192r1) with all key-
         esp_tee_sec_storage_pubkey_t pubkey = {};
         TEST_ESP_OK(esp_tee_sec_storage_get_pubkey(slot_id, ESP_SEC_STG_KEY_ECDSA_SECP192R1, &pubkey));
 
-        ESP_LOGI(TAG, "Verifying generated signature...");
         TEST_ESP_OK(verify_ecdsa_sign(msg_digest, sizeof(msg_digest), &pubkey, &sign, true));
 
         TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
@@ -161,7 +157,6 @@ TEST_CASE("Test TEE Secure Storage - Encrypt-decrypt (aes256_gcm) with all key-s
     TEST_ESP_OK(esp_tee_sec_storage_init());
 
     for (uint16_t slot_id = 0; slot_id <= MAX_SEC_STG_SLOT_ID; slot_id++) {
-        ESP_LOGI(TAG, "Slot ID: %u", slot_id);
         TEST_ESP_OK(esp_tee_sec_storage_clear_slot(slot_id));
         TEST_ESP_OK(esp_tee_sec_storage_gen_key(slot_id, ESP_SEC_STG_KEY_AES256));
 
@@ -380,7 +375,6 @@ static void test_ecdsa_sign(mbedtls_ecp_group_id gid, const uint8_t *hash, int s
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&r, sign.sign_r, key_len));
     TEST_ASSERT_MBEDTLS_OK(mbedtls_mpi_write_binary(&s, sign.sign_s, key_len));
 
-    ESP_LOGI(TAG, "Verifying generated signature...");
     TEST_ESP_OK(verify_ecdsa_sign(sha, sizeof(sha), &pubkey, &sign, is_crv_p192));
 
     mbedtls_pk_free(&key_ctx);

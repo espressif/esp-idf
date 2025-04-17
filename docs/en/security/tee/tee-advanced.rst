@@ -164,6 +164,9 @@ The following peripherals are protected using the APM module and accessible only
 
     - Access Permission Management (APM) peripheral
     - AES, SHA accelerators
+    - ECC accelerator
+    - Hash-Based Message Authentication Code (HMAC) module
+    - Digital Signature module
     - eFuse Controller
     - Interrupt Controller
     - Brownout Detector
@@ -174,9 +177,6 @@ The following peripherals are protected using the APM module and accessible only
   -  The following peripherals will be secured in future releases -
 
      - MPI accelerator (RSA)
-     - ECC accelerator
-     - Digital Signature module
-     - Hash-Based Message Authentication Code (HMAC) module
 
 Firmware
 ^^^^^^^^

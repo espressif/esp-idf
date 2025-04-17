@@ -52,14 +52,6 @@
 #endif
 #endif /* SOC_SHA_SUPPORT_DMA */
 
-#if !ESP_TEE_BUILD
-#define SHA_LOCK()    esp_crypto_sha_aes_lock_acquire()
-#define SHA_RELEASE() esp_crypto_sha_aes_lock_release()
-#else
-#define SHA_LOCK()
-#define SHA_RELEASE()
-#endif
-
 void esp_sha_write_digest_state(esp_sha_type sha_type, void *digest_state)
 {
     sha_hal_write_digest(sha_type, digest_state);
@@ -99,7 +91,7 @@ inline static size_t block_length(esp_sha_type type)
 void esp_sha_acquire_hardware(void)
 {
     /* Released when releasing hw with esp_sha_release_hardware() */
-    SHA_LOCK();
+    esp_crypto_sha_aes_lock_acquire();
     esp_crypto_sha_enable_periph_clk(true);
 }
 
@@ -107,7 +99,7 @@ void esp_sha_acquire_hardware(void)
 void esp_sha_release_hardware(void)
 {
     esp_crypto_sha_enable_periph_clk(false);
-    SHA_RELEASE();
+    esp_crypto_sha_aes_lock_release();
 }
 
 void esp_sha_block(esp_sha_type sha_type, const void *data_block, bool is_first_block)

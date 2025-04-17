@@ -61,3 +61,6 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/esp_sha1.c"
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/sha/core/sha.c"
                                   "${COMPONENT_DIR}/port/sha/esp_sha.c")
+
+target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/ecc/esp_ecc.c"
+                                  "${COMPONENT_DIR}/port/ecc/ecc_alt.c")

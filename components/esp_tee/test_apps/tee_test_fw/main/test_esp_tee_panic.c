@@ -1,11 +1,14 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include "soc/aes_reg.h"
+#include "soc/hmac_reg.h"
+#include "soc/ds_reg.h"
 #include "soc/efuse_reg.h"
+#include "soc/pcr_reg.h"
 #include "soc/lp_analog_peri_reg.h"
 #include "soc/lp_wdt_reg.h"
 #include "soc/spi_mem_reg.h"
@@ -32,14 +35,6 @@ extern uint32_t _instruction_reserved_start;
 #define TEST_APM_EFUSE_PROT_REG EFUSE_RD_KEY5_DATA0_REG
 #endif
 
-TEST_CASE("Test APM violation interrupt: AES", "[apm_violation]")
-{
-    uint32_t val = UINT32_MAX;
-    val = REG_READ(AES_DATE_REG);
-    TEST_ASSERT_EQUAL(0, val);
-    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
-}
-
 TEST_CASE("Test APM violation interrupt: eFuse", "[apm_violation]")
 {
     uint32_t val = UINT32_MAX;
@@ -54,6 +49,44 @@ TEST_CASE("Test APM violation interrupt: MMU", "[apm_violation]")
     REG_WRITE(SPI_MEM_MMU_ITEM_INDEX_REG(0), SOC_MMU_ENTRY_NUM - 2);
     val = REG_READ(SPI_MEM_MMU_ITEM_CONTENT_REG(0));
     TEST_ASSERT_EQUAL(0, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: AES", "[apm_violation]")
+{
+    uint32_t val = UINT32_MAX;
+    val = REG_READ(AES_KEY_2_REG);
+    TEST_ASSERT_EQUAL(0, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: HMAC", "[apm_violation]")
+{
+    uint32_t val = UINT32_MAX;
+    val = REG_READ(HMAC_SET_PARA_KEY_REG);
+    TEST_ASSERT_EQUAL(0, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: DS", "[apm_violation]")
+{
+    uint32_t val = UINT32_MAX;
+    val = REG_READ(DS_Z_MEM);
+    TEST_ASSERT_EQUAL(0, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: SHA PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_SHA_CONF_REG, val);
+    TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
+}
+
+TEST_CASE("Test APM violation interrupt: ECC PCR", "[apm_violation]")
+{
+    uint32_t val = 0;
+    REG_WRITE(PCR_ECC_CONF_REG, val);
     TEST_FAIL_MESSAGE("APM violation interrupt should have been generated");
 }
 

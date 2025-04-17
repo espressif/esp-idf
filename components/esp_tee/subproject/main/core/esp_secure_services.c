@@ -26,7 +26,10 @@
 #include "soc/soc_caps.h"
 #include "aes/esp_aes.h"
 #include "sha/sha_core.h"
+#include "esp_hmac.h"
+#include "esp_ds.h"
 #include "esp_crypto_periph_clk.h"
+#include "ecc_impl.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -177,7 +180,7 @@ int _ss_esp_aes_crypt_cbc(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
@@ -196,7 +199,7 @@ int _ss_esp_aes_crypt_cfb128(esp_aes_context *ctx,
                              const unsigned char *input,
                              unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
@@ -214,7 +217,7 @@ int _ss_esp_aes_crypt_cfb8(esp_aes_context *ctx,
                            const unsigned char *input,
                            unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
@@ -233,7 +236,7 @@ int _ss_esp_aes_crypt_ctr(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
@@ -249,7 +252,7 @@ int _ss_esp_aes_crypt_ecb(esp_aes_context *ctx,
                           const unsigned char input[16],
                           unsigned char output[16])
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + 16)) && esp_tee_ptr_in_ree((void *)(output + 16))));
 
     if (!valid_addr) {
@@ -267,7 +270,7 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
                           const unsigned char *input,
                           unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + length)) && esp_tee_ptr_in_ree((void *)(output + length))));
 
     if (!valid_addr) {
@@ -282,7 +285,7 @@ int _ss_esp_aes_crypt_ofb(esp_aes_context *ctx,
 
 void _ss_esp_sha(esp_sha_type sha_type, const unsigned char *input, size_t ilen, unsigned char *output)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)input) && esp_tee_ptr_in_ree((void *)output)) &&
                        (esp_tee_ptr_in_ree((void *)(input + ilen))));
 
     if (!valid_addr) {
@@ -331,6 +334,137 @@ void _ss_esp_crypto_sha_enable_periph_clk(bool enable)
     esp_crypto_sha_enable_periph_clk(enable);
 }
 
+/* ---------------------------------------------- HMAC ------------------------------------------------- */
+
+esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
+{
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)message) && esp_tee_ptr_in_ree((void *)hmac)) &&
+                       esp_tee_ptr_in_ree((void *)((char *)message + message_len)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_hmac_calculate(key_id, message, message_len, hmac);
+}
+
+esp_err_t _ss_esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)token));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_hmac_jtag_enable(key_id, token);
+}
+
+esp_err_t _ss_esp_hmac_jtag_disable(void)
+{
+    return esp_hmac_jtag_disable();
+}
+
+esp_err_t _ss_esp_ds_sign(const void *message,
+                          const esp_ds_data_t *data,
+                          hmac_key_id_t key_id,
+                          void *signature)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)message) &&
+                       esp_tee_ptr_in_ree((void *)data) &&
+                       esp_tee_ptr_in_ree((void *)signature));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_sign(message, data, key_id, signature);
+}
+
+esp_err_t _ss_esp_ds_start_sign(const void *message,
+                                const esp_ds_data_t *data,
+                                hmac_key_id_t key_id,
+                                esp_ds_context_t **esp_ds_ctx)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)message) &&
+                       esp_tee_ptr_in_ree((void *)data) &&
+                       esp_tee_ptr_in_ree((void *)esp_ds_ctx));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_start_sign(message, data, key_id, esp_ds_ctx);
+}
+
+bool _ss_esp_ds_is_busy(void)
+{
+    return esp_ds_is_busy();
+}
+
+esp_err_t _ss_esp_ds_finish_sign(void *signature, esp_ds_context_t *esp_ds_ctx)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)signature) &&
+                       esp_tee_ptr_in_ree((void *)esp_ds_ctx));
+
+    valid_addr &= esp_tee_ptr_in_ree((void *)((char *)esp_ds_ctx + sizeof(esp_ds_data_t)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_finish_sign(signature, esp_ds_ctx);
+}
+
+esp_err_t _ss_esp_ds_encrypt_params(esp_ds_data_t *data,
+                                    const void *iv,
+                                    const esp_ds_p_data_t *p_data,
+                                    const void *key)
+{
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)data) && esp_tee_ptr_in_ree((void *)p_data)) &&
+                       (esp_tee_ptr_in_ree((void *)iv) && esp_tee_ptr_in_ree((void *)key)));
+
+    valid_addr &= esp_tee_ptr_in_ree((void *)((char *)data + sizeof(esp_ds_data_t)));
+
+    if (!valid_addr) {
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ds_encrypt_params(data, iv, p_data, key);
+}
+
+/* ---------------------------------------------- MPI ------------------------------------------------- */
+
+void _ss_esp_crypto_mpi_enable_periph_clk(bool enable)
+{
+    esp_crypto_mpi_enable_periph_clk(enable);
+}
+
+/* ---------------------------------------------- ECC ------------------------------------------------- */
+
+int _ss_esp_ecc_point_multiply(const ecc_point_t *point, const uint8_t *scalar, ecc_point_t *result, bool verify_first)
+{
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)result)) &&
+                      esp_tee_ptr_in_ree((void *)((char *)result + sizeof(ecc_point_t)));
+
+    if (!valid_addr) {
+        return -1;
+    }
+    ESP_FAULT_ASSERT(valid_addr);
+
+    return esp_ecc_point_multiply(point, scalar, result, verify_first);
+}
+
+int _ss_esp_ecc_point_verify(const ecc_point_t *point)
+{
+    return esp_ecc_point_verify(point);
+}
+
 /* ---------------------------------------------- OTA ------------------------------------------------- */
 
 int _ss_esp_tee_ota_begin(void)
@@ -340,7 +474,7 @@ int _ss_esp_tee_ota_begin(void)
 
 int _ss_esp_tee_ota_write(uint32_t rel_offset, void *data, size_t size)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)data)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)data)) &&
                        (esp_tee_ptr_in_ree((void *)((char *)data + size))));
 
     if (!valid_addr) {
@@ -370,7 +504,7 @@ esp_err_t _ss_esp_tee_sec_storage_gen_key(uint16_t slot_id, uint8_t key_type)
 
 esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &&
                        (esp_tee_ptr_in_ree((void *)(hash + hlen)) &&
                         esp_tee_ptr_in_ree((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_sign_t)))));
 
@@ -384,7 +518,7 @@ esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_st
 
 esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)pubkey)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)pubkey)) &&
                        (esp_tee_ptr_in_ree((void *)((char *)pubkey + sizeof(esp_tee_sec_storage_pubkey_t)))));
 
     if (!valid_addr) {
