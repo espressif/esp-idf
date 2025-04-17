@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -529,6 +529,22 @@ esp_err_t esp_bt_gap_get_device_name(void)
     msg.act = BTC_GAP_BT_ACT_GET_DEV_NAME;
 
     return (btc_transfer_context(&msg, NULL, 0, NULL, NULL) == BT_STATUS_SUCCESS ? ESP_OK : ESP_FAIL);
+}
+
+esp_err_t esp_bt_gap_get_profile_status(esp_bt_gap_profile_status_t *profile_status)
+{
+    if (profile_status == NULL) {
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (esp_bluedroid_get_status() != ESP_BLUEDROID_STATUS_ENABLED) {
+        return ESP_ERR_INVALID_STATE;
+    }
+
+    memset(profile_status, 0, sizeof(esp_bt_gap_profile_status_t));
+    btc_gap_bt_status_get(profile_status);
+
+    return ESP_OK;
 }
 
 #endif /* #if BTC_GAP_BT_INCLUDED == TRUE */
