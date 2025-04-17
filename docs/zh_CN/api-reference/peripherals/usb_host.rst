@@ -403,7 +403,7 @@ UVC
 """
 
 * USB 视频设备 Class 的主机 Class 驱动程序作为托管组件通过 `乐鑫组件注册表 <https://components.espressif.com/component/espressif/usb_host_uvc>`__ 分发。
-* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 `libuvc` 库从 USB 摄像头捕获视频，并通过托管 TCP 服务器将视频流通过 Wi-Fi 传输，同时提供了使用 ``player.py`` 脚本在 PC 上查看捕获视频的选项。
+* 示例 :example:`peripherals/usb/host/uvc` 演示了如何使用 UVC 驱动程序从 USB 摄像头捕获视频帧。
 
 .. ---------------------------------------------- USB Host Menuconfig --------------------------------------------------
 
