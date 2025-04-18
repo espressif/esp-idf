@@ -70,9 +70,8 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> 
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
 @pytest.mark.esp32c2
 @pytest.mark.parametrize(
     'count, config, baud, app_path',
@@ -102,8 +101,7 @@ def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: Tuple[IdfDut, IdfDut])
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
-@pytest.mark.esp32c3eco7
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.esp32c3
 @pytest.mark.parametrize(
     'count, config, app_path',

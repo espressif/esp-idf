@@ -17,6 +17,7 @@ def test_wifi_unit_test(dut: Dut) -> None:
 
 @pytest.mark.esp32c2
 @pytest.mark.xtal_26mhz
+@pytest.mark.generic
 @pytest.mark.parametrize(
     'config, baud',
     [
@@ -29,13 +30,12 @@ def test_wifi_connect_cases_esp32c2_xtal26m(dut: Dut) -> None:
 
 
 @pytest.mark.esp32c2
-@pytest.mark.esp32c2eco4
 @pytest.mark.xtal_26mhz
-@pytest.mark.generic
+@pytest.mark.generic_eco
 @pytest.mark.parametrize(
-    'config, target, baud',
+    'config, baud',
     [
-        ('esp32c2eco4_xtal26m', 'esp32c2', '74880'),
+        ('esp32c2eco4_xtal26m', '74880'),
     ],
     indirect=True,
 )
@@ -44,12 +44,11 @@ def test_wifi_unit_test_esp32c2eco4_xtal26m(dut: Dut) -> None:
 
 
 @pytest.mark.esp32c3
-@pytest.mark.esp32c3eco7
-@pytest.mark.generic
+@pytest.mark.generic_eco
 @pytest.mark.parametrize(
-    'config, target',
+    'config',
     [
-        ('esp32c3eco7','esp32c3')
+        ('esp32c3eco7')
     ],
     indirect=True,
 )

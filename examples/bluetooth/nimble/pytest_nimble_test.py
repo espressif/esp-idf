@@ -63,12 +63,11 @@ def test_power_save_conn_esp32c2_26mhz(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C2ECO4
-@pytest.mark.wifi_two_dut
-@pytest.mark.xtal_26mhz
 @pytest.mark.esp32c2
-@pytest.mark.esp32c2eco4
+@pytest.mark.wifi_two_dut_eco
+@pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
-    'config, count, app_path, baud',
+    'config, count, app_path, baud,',
     [
         (
             'esp32c2eco4_xtal26m',
@@ -94,9 +93,8 @@ def test_power_save_conn_esp32c2eco4(dut: Tuple[IdfDut, IdfDut]) -> None:
 
 
 # Case 2: BLE power save test for ESP32C3ECO7
-@pytest.mark.wifi_two_dut
 @pytest.mark.esp32c3
-@pytest.mark.esp32c3eco7
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.parametrize(
     'config, count, app_path',
     [

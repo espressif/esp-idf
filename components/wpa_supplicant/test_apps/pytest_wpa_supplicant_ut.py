@@ -32,8 +32,7 @@ def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
 
 
 @pytest.mark.esp32c2
-@pytest.mark.wifi_two_dut
-@pytest.mark.esp32c2eco4
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.xtal_26mhz
 @pytest.mark.parametrize(
     'count, config, baud',
@@ -53,10 +52,9 @@ def test_wpa_supplicant_esp32c2eco4_xtal26mhz(case_tester: CaseTester) -> None:
 
 
 @pytest.mark.esp32c3
-@pytest.mark.wifi_two_dut
-@pytest.mark.esp32c3eco7
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.parametrize(
-    'count, config,',
+    'count, config',
     [
         (
             2,
