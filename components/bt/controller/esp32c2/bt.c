@@ -45,6 +45,7 @@
 #include "soc/syscon_reg.h"
 #include "soc/modem_clkrst_reg.h"
 #include "esp_private/periph_ctrl.h"
+#include "esp_private/esp_clk_tree_common.h"
 #include "bt_osi_mem.h"
 
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
@@ -151,6 +152,9 @@ extern void r_ble_rtc_wake_up_state_clr(void);
 #if CONFIG_FREERTOS_USE_TICKLESS_IDLE
 extern void esp_ble_set_wakeup_overhead(uint32_t overhead);
 #endif /* CONFIG_FREERTOS_USE_TICKLESS_IDLE */
+#if CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE
+extern void r_ble_ll_customize_peer_sca_set(uint16_t peer_sca);
+#endif  // CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE
 extern int os_msys_init(void);
 extern void os_msys_buf_free(void);
 extern int ble_sm_alg_gen_dhkey(const uint8_t *peer_pub_key_x,
@@ -468,7 +472,13 @@ static bool s_ble_active = false;
 static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #define BTDM_MIN_TIMER_UNCERTAINTY_US      (200)
 #endif // CONFIG_PM_ENABLE
+#ifdef CONFIG_XTAL_FREQ_26
+#define MAIN_XTAL_FREQ_HZ                 (26000000)
+#else
+#define MAIN_XTAL_FREQ_HZ                 (40000000)
+#endif
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
+static DRAM_ATTR uint32_t s_bt_lpclk_freq = 100000;
 
 #define BLE_RTC_DELAY_US                    (1800)
 
@@ -599,11 +609,36 @@ modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void)
 
 void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src)
 {
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return;
+    }
+
     if (clk_src >= MODEM_CLOCK_LPCLK_SRC_MAX) {
         return;
     }
 
     s_bt_lpclk_src = clk_src;
+}
+
+uint32_t esp_bt_get_lpclk_freq(void)
+{
+    return s_bt_lpclk_freq;
+}
+
+void esp_bt_set_lpclk_freq(uint32_t clk_freq)
+{
+    if (ble_controller_status != ESP_BT_CONTROLLER_STATUS_IDLE) {
+        return;
+    }
+    if (!clk_freq) {
+        return;
+    }
+
+    if (MAIN_XTAL_FREQ_HZ % clk_freq) {
+        return;
+    }
+
+    s_bt_lpclk_freq = clk_freq;
 }
 
 void controller_sleep_cb(uint32_t enable_tick, void *arg)
@@ -624,11 +659,18 @@ void controller_wakeup_cb(void *arg)
     if (s_ble_active) {
         return;
     }
-    esp_phy_enable(PHY_MODEM_BT);
-    // need to check if need to call pm lock here
 #ifdef CONFIG_PM_ENABLE
+    esp_pm_config_t pm_config;
     esp_pm_lock_acquire(s_pm_lock);
+    esp_pm_get_configuration(&pm_config);
+    assert(esp_rom_get_cpu_ticks_per_us() == pm_config.max_freq_mhz);
 #endif //CONFIG_PM_ENABLE
+    esp_phy_enable(PHY_MODEM_BT);
+    if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
+        uint32_t *clk_freq = (uint32_t *)arg;
+        *clk_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+    }
+    // need to check if need to call pm lock here
     s_ble_active = true;
 }
 
@@ -705,11 +747,7 @@ static void esp_bt_rtc_slow_clk_select(modem_clock_lpclk_src_t slow_clk_src)
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
-#ifdef CONFIG_XTAL_FREQ_26
-            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 129, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
-#else
-            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 249, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
-#endif // CONFIG_XTAL_FREQ_26
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, (MAIN_XTAL_FREQ_HZ/(5 * s_bt_lpclk_freq) - 1), MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
             break;
         case MODEM_CLOCK_LPCLK_SRC_EXT32K:
             ESP_LOGI(NIMBLE_PORT_LOG_TAG, "Using external 32.768 kHz XTAL as clock source");
@@ -717,6 +755,14 @@ static void esp_bt_rtc_slow_clk_select(modem_clock_lpclk_src_t slow_clk_src)
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 0, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
+            break;
+        case MODEM_CLOCK_LPCLK_SRC_RC_SLOW:
+            ESP_LOGW(NIMBLE_PORT_LOG_TAG, "Using 136 kHz RC as clock source, use with caution as it may not maintain ACL or Sync process due to low clock accuracy!");
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL32K_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_XTAL_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 0, MODEM_CLKRST_LP_TIMER_SEL_8M_S);
+            SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, 1, 1, MODEM_CLKRST_LP_TIMER_SEL_RTC_SLOW_S);
             SET_PERI_REG_BITS(MODEM_CLKRST_MODEM_LP_TIMER_CONF_REG, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM, 0, MODEM_CLKRST_LP_TIMER_CLK_DIV_NUM_S);
             break;
         default:
@@ -734,23 +780,26 @@ static modem_clock_lpclk_src_t ble_rtc_clk_init(esp_bt_controller_config_t *cfg)
 #if CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
         s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
 #else
+#if CONFIG_RTC_CLK_SRC_INT_RC
+        s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_RC_SLOW;
+#elif CONFIG_RTC_CLK_SRC_EXT_OSC
         if (rtc_clk_slow_src_get() == SOC_RTC_SLOW_CLK_SRC_OSC_SLOW) {
             s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_EXT32K;
         } else {
             ESP_LOGW(NIMBLE_PORT_LOG_TAG, "32.768kHz XTAL not detected, fall back to main XTAL as Bluetooth sleep clock");
             s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL;
         }
+#endif  // CONFIG_RTC_CLK_SRC_INT_RC
 #endif // CONFIG_BT_LE_LP_CLK_SRC_MAIN_XTAL
     }
 
     if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_EXT32K) {
         cfg->rtc_freq = 32768;
     } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL) {
-#ifdef CONFIG_XTAL_FREQ_26
-        cfg->rtc_freq = 40000;
-#else
-        cfg->rtc_freq = 32000;
-#endif // CONFIG_XTAL_FREQ_26
+        cfg->rtc_freq = s_bt_lpclk_freq;
+    } else if (s_bt_lpclk_src == MODEM_CLOCK_LPCLK_SRC_RC_SLOW) {
+        cfg->rtc_freq = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED) / 5;
+        cfg->ble_ll_sca = 3000;
     }
     esp_bt_rtc_slow_clk_select(s_bt_lpclk_src);
     return s_bt_lpclk_src;
@@ -852,6 +901,10 @@ esp_err_t esp_bt_controller_init(esp_bt_controller_config_t *cfg)
         ESP_LOGW(NIMBLE_PORT_LOG_TAG, "ble_controller_init failed %d", ret);
         goto modem_deint;
     }
+
+#if CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE
+    r_ble_ll_customize_peer_sca_set(CONFIG_BT_LE_LL_PEER_SCA);
+#endif // CONFIG_BT_LE_LL_PEER_SCA_SET_ENABLE
 
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble controller commit:[%s]", ble_controller_get_compile_version());
     ESP_LOGI(NIMBLE_PORT_LOG_TAG, "ble rom commit:[%s]", r_ble_controller_get_rom_compile_version());
