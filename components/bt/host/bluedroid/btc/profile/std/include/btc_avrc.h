@@ -179,6 +179,7 @@ uint16_t btc_avrc_tg_get_rn_supported_evt(void);
 bool btc_avrc_tg_check_rn_supported_evt(uint16_t evt_set);
 bool btc_avrc_tg_rn_evt_supported(uint8_t event_id);
 bool btc_avrc_ct_rn_evt_supported(uint8_t event_id);
+void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param);
 
 #endif  ///BTC_AV_INCLUDED == TRUE
 
