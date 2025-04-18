@@ -20,26 +20,33 @@
 #include "driver/gpio.h"
 #include "driver/sdmmc_host.h"
 #include "cJSON.h"
+#include "audio_player.h"
+#include "wifi_manager.h"
 
 static const char *TAG = "buzz-client";
-
-/* WiFi設定 */
-#define WIFI_SSID       "ORBI01"
-#define WIFI_PASSWORD   "araishogoだ"
-#define WIFI_MAXIMUM_RETRY  5
-
+// 192.168.1.24
 /* APIサーバーの設定 */
-#define API_SERVER_HOST "192.168.1.100"  // ⚠️ 実際のサーバーIPアドレスに変更してください
-#define API_SERVER_PORT 8000             // APIサーバーのポート
+#define API_SERVER_HOST "192.168.1.24"  // APIサーバーのIPアドレス
+#define API_SERVER_PORT 8080             // APIサーバーのポート
 
 /* I2S設定 - マイク用 */
-#define I2S_BCK_IO      GPIO_NUM_6       // ビットクロック 
-#define I2S_WS_IO       GPIO_NUM_5       // ワードセレクト
-#define I2S_DI_IO       GPIO_NUM_4       // データイン（マイク入力）
-#define I2S_DO_IO       GPIO_NUM_16      // データアウト（スピーカー出力）
+// #define I2S_BCK_IO      GPIO_NUM_6       // ビットクロック 
+// #define I2S_WS_IO       GPIO_NUM_5       // ワードセレクト
+// #define I2S_DI_IO       GPIO_NUM_4       // データイン（マイク入力）
+// #define I2S_DO_IO       GPIO_NUM_16      // データアウト（スピーカー出力）
+
+/* I2S設定 - マイク用 */
+#define I2S_MIC_BCK_IO      GPIO_NUM_6  // ビットクロック（マイク用）
+#define I2S_MIC_WS_IO       GPIO_NUM_5  // ワードセレクト（マイク用）
+#define I2S_MIC_DI_IO       GPIO_NUM_4  // データイン（マイク入力）
+
+/* I2S設定 - スピーカー用 */
+#define I2S_SPK_BCK_IO      GPIO_NUM_3  // ビットクロック（スピーカー用）
+#define I2S_SPK_WS_IO       GPIO_NUM_2  // ワードセレクト（スピーカー用）
+#define I2S_SPK_DO_IO       GPIO_NUM_1  // データアウト（スピーカー出力）
 
 /* オーディオ設定 */
-#define SAMPLE_RATE     16000            // サンプリングレート (Hz)
+#define SAMPLE_RATE     44100            // サンプリングレート (Hz)
 #define SAMPLE_BITS     16               // サンプルビット数
 #define AUDIO_CHANNELS  1                // モノラル
 #define BUFFER_SIZE     1024             // バッファサイズ
@@ -53,16 +60,11 @@ static const char *TAG = "buzz-client";
 #define RECORD_FILENAME "/spiffs/rec.wav"
 #define DOWNLOAD_FILENAME "/spiffs/response.wav"
 
-/* FreeRTOSイベントグループビット */
-#define WIFI_CONNECTED_BIT BIT0
-#define WIFI_FAIL_BIT      BIT1
-
 /* グローバル変数 */
-static EventGroupHandle_t s_wifi_event_group;
-static int s_retry_num = 0;
 static i2s_chan_handle_t i2s_handle = NULL;
 static QueueHandle_t button_event_queue;
 static bool recording_active = false;
+// static bool emergency_stop = false;
 
 /* 関数プロトタイプ */
 void record_audio(void);
@@ -70,116 +72,11 @@ void send_audio_to_api(void);
 void play_audio_file(const char *filename);
 void download_and_play_audio(const char *audio_path);
 void get_proactive_message(void);
+// static void auto_record_task(void *pvParameters);
 
-/* WAVファイルヘッダー構造体 */
-typedef struct {
-    // RIFF chunk
-    char riff_header[4];     // "RIFF"
-    uint32_t wav_size;       // ファイルサイズ - 8
-    char wave_header[4];     // "WAVE"
-    
-    // fmt chunk
-    char fmt_header[4];      // "fmt "
-    uint32_t fmt_chunk_size;
-    uint16_t audio_format;
-    uint16_t num_channels;
-    uint32_t sample_rate;
-    uint32_t byte_rate;
-    uint16_t block_align;
-    uint16_t bits_per_sample;
-    
-    // data chunk
-    char data_header[4];     // "data"
-    uint32_t data_bytes;
-} wav_header_t;
+/* 関数プロトタイプ - 追加 */
+static void led_blink_task(void *arg);
 
-/* WAVヘッダーを初期化する関数 */
-void init_wav_header(wav_header_t *header, uint32_t data_size) {
-    // RIFF チャンク
-    memcpy(header->riff_header, "RIFF", 4);
-    header->wav_size = data_size + sizeof(wav_header_t) - 8;
-    memcpy(header->wave_header, "WAVE", 4);
-    
-    // fmt チャンク
-    memcpy(header->fmt_header, "fmt ", 4);
-    header->fmt_chunk_size = 16;
-    header->audio_format = 1; // PCM = 1
-    header->num_channels = AUDIO_CHANNELS;
-    header->sample_rate = SAMPLE_RATE;
-    header->byte_rate = SAMPLE_RATE * AUDIO_CHANNELS * (SAMPLE_BITS / 8);
-    header->block_align = AUDIO_CHANNELS * (SAMPLE_BITS / 8);
-    header->bits_per_sample = SAMPLE_BITS;
-    
-    // data チャンク
-    memcpy(header->data_header, "data", 4);
-    header->data_bytes = data_size;
-}
-
-/* WiFiイベントハンドラ */
-static void event_handler(void* arg, esp_event_base_t event_base,
-                          int32_t event_id, void* event_data) {
-    if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        esp_wifi_connect();
-    } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        if (s_retry_num < WIFI_MAXIMUM_RETRY) {
-            esp_wifi_connect();
-            s_retry_num++;
-            ESP_LOGI(TAG, "WiFi接続をリトライ中...");
-        } else {
-            xEventGroupSetBits(s_wifi_event_group, WIFI_FAIL_BIT);
-        }
-        ESP_LOGI(TAG, "WiFi接続に失敗しました");
-    } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
-        ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
-        ESP_LOGI(TAG, "IPアドレス取得: " IPSTR, IP2STR(&event->ip_info.ip));
-        s_retry_num = 0;
-        xEventGroupSetBits(s_wifi_event_group, WIFI_CONNECTED_BIT);
-    }
-}
-
-/* WiFi初期化関数 */
-void wifi_init_sta(void) {
-    s_wifi_event_group = xEventGroupCreate();
-
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_sta();
-
-    wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&cfg));
-
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &event_handler, NULL));
-
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASSWORD,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-        },
-    };
-    
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-
-    ESP_LOGI(TAG, "WiFi初期化完了");
-
-    /* WiFiイベントビットを待機 */
-    EventBits_t bits = xEventGroupWaitBits(s_wifi_event_group,
-            WIFI_CONNECTED_BIT | WIFI_FAIL_BIT,
-            pdFALSE,
-            pdFALSE,
-            portMAX_DELAY);
-
-    if (bits & WIFI_CONNECTED_BIT) {
-        ESP_LOGI(TAG, "WiFi接続成功: %s", WIFI_SSID);
-    } else if (bits & WIFI_FAIL_BIT) {
-        ESP_LOGI(TAG, "WiFi接続失敗: %s", WIFI_SSID);
-    } else {
-        ESP_LOGE(TAG, "予期せぬイベント");
-    }
-}
 
 /* I2S初期化関数 */
 esp_err_t i2s_init(void) {
@@ -195,10 +92,10 @@ esp_err_t i2s_init(void) {
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .mclk = GPIO_NUM_NC,
-            .bclk = I2S_BCK_IO,
-            .ws = I2S_WS_IO,
-            .dout = I2S_DO_IO,
-            .din = I2S_DI_IO,
+            .bclk = I2S_MIC_BCK_IO,  // 新しいマイク用ピン定義
+            .ws = I2S_MIC_WS_IO,     // 新しいマイク用ピン定義
+            .dout = GPIO_NUM_NC,     // マイクでは出力を使わないのでNC
+            .din = I2S_MIC_DI_IO,    // 新しいマイク用ピン定義
             .invert_flags = {
                 .mclk_inv = false,
                 .bclk_inv = false,
@@ -214,7 +111,6 @@ esp_err_t i2s_init(void) {
     return ESP_OK;
 }
 
-/* FAT初期化関数 */
 esp_err_t spiffs_init(void) {
     ESP_LOGI(TAG, "FATファイルシステムを初期化しています...");
     
@@ -226,7 +122,10 @@ esp_err_t spiffs_init(void) {
     };
     
     wl_handle_t wl_handle;
+    
     esp_err_t ret = esp_vfs_fat_spiflash_mount_rw_wl("/spiffs", "storage", &mount_config, &wl_handle);
+    
+    
     if (ret != ESP_OK) {
         if (ret == ESP_FAIL) {
             ESP_LOGE(TAG, "FATファイルシステムのマウントに失敗しました。パーティションが見つからないか、すでにマウントされています。");
@@ -283,85 +182,88 @@ static void button_task(void* arg) {
     }
 }
 
-/* 録音関数 */
-void record_audio(void) {
-    ESP_LOGI(TAG, "録音を開始します...");
-    
-    // 録音ファイルを開く
-    FILE *f = fopen(RECORD_FILENAME, "wb");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "録音ファイルを開けませんでした");
-        return;
-    }
-    
-    // WAVヘッダー用にスペースを確保
-    wav_header_t header = {0};
-    fseek(f, sizeof(wav_header_t), SEEK_SET);
-    
-    // 録音バッファ
-    int16_t *samples = malloc(BUFFER_SIZE * sizeof(int16_t));
-    if (samples == NULL) {
-        ESP_LOGE(TAG, "メモリ割り当てに失敗しました");
-        fclose(f);
-        return;
-    }
-    
-    size_t bytes_written = 0;
-    uint32_t record_start_time = esp_timer_get_time() / 1000; // 現在時刻（ミリ秒）
-    
-    // 録音ループ
-    while ((esp_timer_get_time() / 1000) - record_start_time < RECORD_TIME_MS) {
-        // LEDを点滅（録音中の視覚的フィードバック）
-        if (((esp_timer_get_time() / 1000) - record_start_time) % 500 < 250) {
+/* LED点滅タスク */
+static void led_blink_task(void *arg) {
+    uint32_t start_time = esp_timer_get_time() / 1000;
+    while ((esp_timer_get_time() / 1000) - start_time < RECORD_TIME_MS) {
+        // LEDを点滅
+        if (((esp_timer_get_time() / 1000) - start_time) % 500 < 250) {
             gpio_set_level(LED_PIN, 1);
         } else {
             gpio_set_level(LED_PIN, 0);
         }
-        
-        // I2Sからデータを読み込む
-        size_t bytes_read = 0;
-        esp_err_t ret = i2s_channel_read(i2s_handle, samples, BUFFER_SIZE * sizeof(int16_t), &bytes_read, portMAX_DELAY);
-        
-        if (ret == ESP_OK && bytes_read > 0) {
-            // マイクの音量レベルを計算
-            int16_t max_sample = 0;
-            for (int i = 0; i < bytes_read / 2; i++) {
-                if (abs(samples[i]) > abs(max_sample)) {
-                    max_sample = samples[i];
-                }
-            }
-            
-            // 音量レベルを0-100%で表示
-            int volume_percent = (abs(max_sample) * 100) / 32768;
-            if (volume_percent > 5) { // 小さすぎる音は表示しない
-                ESP_LOGI(TAG, "音量: %d%%", volume_percent);
-            }
-            
-            // ファイルに書き込む
-            size_t written = fwrite(samples, 1, bytes_read, f);
-            if (written != bytes_read) {
-                ESP_LOGE(TAG, "ファイルへの書き込みエラー");
-            }
-            bytes_written += written;
-        }
+        vTaskDelay(pdMS_TO_TICKS(50));
     }
-    
-    // 録音終了
-    gpio_set_level(LED_PIN, 1); // 処理中は点灯
-    ESP_LOGI(TAG, "録音完了");
-    
-    // WAVヘッダーを準備して書き込む
-    init_wav_header(&header, bytes_written);
-    fseek(f, 0, SEEK_SET);
-    fwrite(&header, sizeof(wav_header_t), 1, f);
-    
-    fclose(f);
-    free(samples);
-    
-    ESP_LOGI(TAG, "録音完了: %u バイトを保存しました", bytes_written);
+    vTaskDelete(NULL);
 }
 
-/* HTTPイベントハンドラ */
+/* 録音関数 */
+void record_audio(void) {
+    ESP_LOGI(TAG, "録音を開始します...");
+    
+    // LEDを点滅させて録音中であることを示す
+    for (int i = 0; i < 3; i++) {
+        gpio_set_level(LED_PIN, 1);
+        vTaskDelay(pdMS_TO_TICKS(100));
+        gpio_set_level(LED_PIN, 0);
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+    
+    // タスクを作成して録音中のLED点滅を処理
+    TaskHandle_t led_task_handle = NULL;
+    xTaskCreate(led_blink_task, "led_blink_task", 2048, NULL, 5, &led_task_handle);
+    
+    // audio_playerコンポーネントを使用して録音
+    esp_err_t ret = record_to_file(RECORD_FILENAME, RECORD_TIME_MS);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "録音に失敗しました");
+    } else {
+        ESP_LOGI(TAG, "録音完了");
+    }
+    
+    // LED点灯（処理中）
+    gpio_set_level(LED_PIN, 1);
+}
+
+// /* HTTPイベントハンドラ */
+// esp_err_t http_event_handler(esp_http_client_event_t *evt) {
+//     switch(evt->event_id) {
+//         case HTTP_EVENT_ERROR:
+//             ESP_LOGI(TAG, "HTTP_EVENT_ERROR");
+//             break;
+//         case HTTP_EVENT_ON_CONNECTED:
+//             ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
+//             break;
+//         case HTTP_EVENT_HEADER_SENT:
+//             ESP_LOGI(TAG, "HTTP_EVENT_HEADER_SENT");
+//             break;
+//         case HTTP_EVENT_ON_HEADER:
+//             ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
+//             break;
+//         case HTTP_EVENT_ON_DATA:
+//             // ここでデータ受信処理
+//             if (!esp_http_client_is_chunked_response(evt->client)) {
+//                 ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+//             }
+//             break;
+//         case HTTP_EVENT_ON_FINISH:
+//             ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+//             break;
+//         case HTTP_EVENT_DISCONNECTED:
+//             ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+//             break;
+//         case HTTP_EVENT_REDIRECT:
+//             ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
+//             break;
+//     }
+//     return ESP_OK;
+// }
+
+/* HTTPイベントハンドラ - データ収集機能付き */
+static char *output_buffer = NULL;  // レスポンス用のバッファ
+static int output_len = 0;          // バッファの現在の長さ
+static char next_audio_to_download[256] = {0}; // ダウンロード予定の音声ファイルパス
+
 esp_err_t http_event_handler(esp_http_client_event_t *evt) {
     switch(evt->event_id) {
         case HTTP_EVENT_ERROR:
@@ -369,6 +271,12 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt) {
             break;
         case HTTP_EVENT_ON_CONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_CONNECTED");
+            // 新しいリクエストの開始時にバッファをリセット
+            if (output_buffer != NULL) {
+                free(output_buffer);
+            }
+            output_buffer = NULL;
+            output_len = 0;
             break;
         case HTTP_EVENT_HEADER_SENT:
             ESP_LOGI(TAG, "HTTP_EVENT_HEADER_SENT");
@@ -377,16 +285,81 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt) {
             ESP_LOGI(TAG, "HTTP_EVENT_ON_HEADER, key=%s, value=%s", evt->header_key, evt->header_value);
             break;
         case HTTP_EVENT_ON_DATA:
-            // ここでデータ受信処理
+            // データ受信時にバッファに追加
+            ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
             if (!esp_http_client_is_chunked_response(evt->client)) {
-                ESP_LOGI(TAG, "HTTP_EVENT_ON_DATA, len=%d", evt->data_len);
+                // バッファが未初期化なら確保
+                if (output_buffer == NULL) {
+                    output_buffer = (char *)malloc(evt->data_len + 1);
+                    if (output_buffer == NULL) {
+                        ESP_LOGE(TAG, "メモリ割り当て失敗");
+                        return ESP_FAIL;
+                    }
+                    memcpy(output_buffer, evt->data, evt->data_len);
+                    output_len = evt->data_len;
+                    output_buffer[output_len] = 0; // NULL終端
+                } else {
+                    // バッファを拡張して新しいデータを追加
+                    char *tmp = (char *)realloc(output_buffer, output_len + evt->data_len + 1);
+                    if (tmp == NULL) {
+                        ESP_LOGE(TAG, "メモリ再割り当て失敗");
+                        free(output_buffer);
+                        output_buffer = NULL;
+                        output_len = 0;
+                        return ESP_FAIL;
+                    }
+                    output_buffer = tmp;
+                    memcpy(output_buffer + output_len, evt->data, evt->data_len);
+                    output_len += evt->data_len;
+                    output_buffer[output_len] = 0; // NULL終端
+                }
             }
             break;
         case HTTP_EVENT_ON_FINISH:
             ESP_LOGI(TAG, "HTTP_EVENT_ON_FINISH");
+            if (output_buffer != NULL && output_len > 0) {
+                // レスポンスデータを表示
+                ESP_LOGI(TAG, "レスポンスデータ: %s", output_buffer);
+                
+                // JSONの解析
+                cJSON *json = cJSON_Parse(output_buffer);
+                if (json) {
+                    cJSON *success = cJSON_GetObjectItem(json, "success");
+                    cJSON *message = cJSON_GetObjectItem(json, "message");
+                    cJSON *audio_path = cJSON_GetObjectItem(json, "audio_path");
+                    
+                    if (cJSON_IsTrue(success)) {
+                        if (message) {
+                            ESP_LOGI(TAG, "バズの自発的なメッセージ: %s", message->valuestring);
+                        }
+                        
+                        if (audio_path) {
+                            ESP_LOGI(TAG, "音声ファイルのパス: %s", audio_path->valuestring);
+                            // 音声ファイルのパスを保存
+                            strncpy(next_audio_to_download, audio_path->valuestring, sizeof(next_audio_to_download) - 1);
+                            next_audio_to_download[sizeof(next_audio_to_download) - 1] = 0; // 念のためNULL終端を確保
+                        }
+                    } else {
+                        ESP_LOGE(TAG, "サーバーからエラーレスポンスを受信しました");
+                    }
+                    cJSON_Delete(json);
+                } else {
+                    ESP_LOGE(TAG, "JSONの解析に失敗しました");
+                }
+                
+                // バッファをクリーンアップ
+                free(output_buffer);
+                output_buffer = NULL;
+                output_len = 0;
+            }
             break;
         case HTTP_EVENT_DISCONNECTED:
             ESP_LOGI(TAG, "HTTP_EVENT_DISCONNECTED");
+            if (output_buffer != NULL) {
+                free(output_buffer);
+                output_buffer = NULL;
+                output_len = 0;
+            }
             break;
         case HTTP_EVENT_REDIRECT:
             ESP_LOGI(TAG, "HTTP_EVENT_REDIRECT");
@@ -399,12 +372,7 @@ esp_err_t http_event_handler(esp_http_client_event_t *evt) {
 void send_audio_to_api(void) {
     ESP_LOGI(TAG, "APIに音声を送信しています...");
     
-    // APIサーバーが設定されていない場合は、ローカルで再生する
-    if (strcmp(API_SERVER_HOST, "192.168.1.100") == 0) {
-        ESP_LOGW(TAG, "APIサーバーのIPアドレスが設定されていません。ローカルで録音した音声を再生します。");
-        play_audio_file(RECORD_FILENAME);
-        return;
-    }
+    // APIサーバーを使用して音声を送信
     
     // ファイルを開く
     FILE *file = fopen(RECORD_FILENAME, "rb");
@@ -486,6 +454,7 @@ void send_audio_to_api(void) {
         .event_handler = http_event_handler,
         .method = HTTP_METHOD_POST,
         .buffer_size = 2048, // バッファサイズを増やす
+        .timeout_ms = 30000, // タイムアウト時間
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -638,75 +607,206 @@ void send_audio_to_api(void) {
     free(content_type);
 }
 
-/* 音声ファイルをダウンロードして再生する関数 */
+// /* 音声ファイルをダウンロードして再生する関数 */
+// void download_and_play_audio(const char *audio_path) {
+//     ESP_LOGI(TAG, "音声ファイルをダウンロードしています: %s", audio_path);
+    
+//     // 完全なURLを構築
+//     char url[256];
+//     sprintf(url, "http://%s:%d%s", API_SERVER_HOST, API_SERVER_PORT, audio_path);
+    
+//     // HTTPクライアント設定
+//     esp_http_client_config_t config = {
+//         .url = url,
+//         .event_handler = http_event_handler,
+//         .method = HTTP_METHOD_GET,
+//         .timeout_ms = 30000, // タイムアウト時間
+//     };
+    
+//     esp_http_client_handle_t client = esp_http_client_init(&config);
+    
+//     // GETリクエストの実行
+//     esp_err_t err = esp_http_client_perform(client);
+//     if (err == ESP_OK) {
+//         int status_code = esp_http_client_get_status_code(client);
+//         int content_length = esp_http_client_get_content_length(client);
+        
+//         ESP_LOGI(TAG, "HTTP GET ステータスコード = %d, コンテンツ長 = %d", status_code, content_length);
+        
+//         if (status_code == 200) {
+//             // ダウンロードファイルを開く
+//             FILE *f = fopen(DOWNLOAD_FILENAME, "wb");
+//             if (f != NULL) {
+//                 // ダウンロードバッファ
+//                 char *buffer = malloc(1024);
+//                 if (buffer != NULL) {
+//                     // ファイルに書き込む
+//                     esp_http_client_set_url(client, url);
+//                     err = esp_http_client_open(client, 0);
+//                     if (err == ESP_OK) {
+//                         int read_len;
+//                         while ((read_len = esp_http_client_read(client, buffer, 1024)) > 0) {
+//                             fwrite(buffer, 1, read_len, f);
+//                         }
+//                     }
+//                     free(buffer);
+//                 }
+//                 fclose(f);
+                
+//                 ESP_LOGI(TAG, "ダウンロード完了");
+                
+//                 // ダウンロードした音声ファイルを再生
+//                 play_audio_file(DOWNLOAD_FILENAME);
+//             } else {
+//                 ESP_LOGE(TAG, "ダウンロードファイルを作成できませんでした");
+//             }
+//         }
+//     } else {
+//         ESP_LOGE(TAG, "HTTP GETリクエストに失敗: %s", esp_err_to_name(err));
+//     }
+    
+//     esp_http_client_cleanup(client);
+// }
+
 void download_and_play_audio(const char *audio_path) {
     ESP_LOGI(TAG, "音声ファイルをダウンロードしています: %s", audio_path);
     
     // 完全なURLを構築
     char url[256];
     sprintf(url, "http://%s:%d%s", API_SERVER_HOST, API_SERVER_PORT, audio_path);
+    ESP_LOGI(TAG, "ダウンロードURL: %s", url);
+    
+    // ダウンロードファイルを開く
+    FILE *f = fopen(DOWNLOAD_FILENAME, "wb");
+    if (f == NULL) {
+        ESP_LOGE(TAG, "ダウンロードファイルを作成できませんでした");
+        return;
+    }
     
     // HTTPクライアント設定
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = http_event_handler,
         .method = HTTP_METHOD_GET,
+        .timeout_ms = 30000,
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);
     
-    // GETリクエストの実行
-    esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        int status_code = esp_http_client_get_status_code(client);
-        int content_length = esp_http_client_get_content_length(client);
-        
-        ESP_LOGI(TAG, "HTTP GET ステータスコード = %d, コンテンツ長 = %d", status_code, content_length);
-        
-        if (status_code == 200) {
-            // ダウンロードファイルを開く
-            FILE *f = fopen(DOWNLOAD_FILENAME, "wb");
-            if (f != NULL) {
-                // ダウンロードバッファ
-                char *buffer = malloc(1024);
-                if (buffer != NULL) {
-                    // ファイルに書き込む
-                    esp_http_client_set_url(client, url);
-                    err = esp_http_client_open(client, 0);
-                    if (err == ESP_OK) {
-                        int read_len;
-                        while ((read_len = esp_http_client_read(client, buffer, 1024)) > 0) {
-                            fwrite(buffer, 1, read_len, f);
-                        }
-                    }
-                    free(buffer);
-                }
-                fclose(f);
-                
-                ESP_LOGI(TAG, "ダウンロード完了");
-                
-                // ダウンロードした音声ファイルを再生
-                play_audio_file(DOWNLOAD_FILENAME);
-            } else {
-                ESP_LOGE(TAG, "ダウンロードファイルを作成できませんでした");
-            }
-        }
-    } else {
-        ESP_LOGE(TAG, "HTTP GETリクエストに失敗: %s", esp_err_to_name(err));
-    }
-    
-    esp_http_client_cleanup(client);
-}
-
-/* 自発的なメッセージを取得して再生する関数 */
-void get_proactive_message(void) {
-    ESP_LOGI(TAG, "自発的なメッセージを取得しています...");
-    
-    // APIサーバーが設定されていない場合は何もしない
-    if (strcmp(API_SERVER_HOST, "192.168.1.100") == 0) {
-        ESP_LOGW(TAG, "APIサーバーのIPアドレスが設定されていません。自発的なメッセージの取得をスキップします。");
+    // クライアントを直接開いてデータを読み込む
+    esp_err_t err = esp_http_client_open(client, 0);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "HTTPクライアントを開くのに失敗しました: %s", esp_err_to_name(err));
+        fclose(f);
+        esp_http_client_cleanup(client);
         return;
     }
+    
+    // レスポンスヘッダーを読み取る
+    int content_length = esp_http_client_fetch_headers(client);
+    ESP_LOGI(TAG, "音声ファイルのサイズ: %d バイト", content_length);
+    
+    if (content_length > 0) {
+        // データを読み込んでファイルに書き込む
+        char *buffer = malloc(1024);
+        if (buffer != NULL) {
+            int read_len;
+            size_t total_read = 0;
+            while ((read_len = esp_http_client_read(client, buffer, 1024)) > 0) {
+                fwrite(buffer, 1, read_len, f);
+                total_read += read_len;
+                ESP_LOGI(TAG, "ダウンロード進捗: %d / %d バイト", total_read, content_length);
+            }
+            ESP_LOGI(TAG, "合計 %d バイトをダウンロードしました", total_read);
+            free(buffer);
+        } else {
+            ESP_LOGE(TAG, "バッファのメモリ割り当てに失敗しました");
+        }
+    } else {
+        ESP_LOGE(TAG, "コンテンツ長が無効です: %d", content_length);
+    }
+    
+    fclose(f);
+    esp_http_client_close(client);
+    esp_http_client_cleanup(client);
+    
+    ESP_LOGI(TAG, "ダウンロード完了、ファイル: %s", DOWNLOAD_FILENAME);
+    
+    // ダウンロードした音声ファイルを再生
+    play_audio_file(DOWNLOAD_FILENAME);
+}
+
+// /* 自発的なメッセージを取得して再生する関数 */
+// void get_proactive_message(void) {
+//     ESP_LOGI(TAG, "自発的なメッセージを取得しています...");
+    
+//     // APIサーバーから自発的なメッセージを取得
+    
+//     // URLを構築
+//     char url[128];
+//     sprintf(url, "http://%s:%d/generate_proactive", API_SERVER_HOST, API_SERVER_PORT);
+    
+//     ESP_LOGI(TAG, "自発的メッセージURL: %s", url);
+    
+//     // HTTPクライアント設定
+//     esp_http_client_config_t config = {
+//         .url = url,
+//         .event_handler = http_event_handler,
+//         .method = HTTP_METHOD_GET,
+//         .timeout_ms = 30000, 
+//     };
+    
+//     esp_http_client_handle_t client = esp_http_client_init(&config);
+    
+//     // GETリクエストの実行
+//     esp_err_t err = esp_http_client_perform(client);
+//     if (err == ESP_OK) {
+//         int status_code = esp_http_client_get_status_code(client);
+//         int content_length = esp_http_client_get_content_length(client);
+        
+//         ESP_LOGI(TAG, "HTTP GET ステータスコード = %d, コンテンツ長 = %d", status_code, content_length);
+        
+//         if (status_code == 200 && content_length > 0) {
+//             // レスポンスを読み取る
+//             char *response_buffer = malloc(content_length + 1);
+//             if (response_buffer) {
+//                 int read_len = esp_http_client_read_response(client, response_buffer, content_length);
+//                 if (read_len > 0) {
+//                     response_buffer[read_len] = 0;
+                    
+//                     // JSONレスポンスの解析
+//                     cJSON *json = cJSON_Parse(response_buffer);
+//                     if (json) {
+//                         cJSON *success = cJSON_GetObjectItem(json, "success");
+//                         cJSON *message = cJSON_GetObjectItem(json, "message");
+//                         cJSON *audio_path = cJSON_GetObjectItem(json, "audio_path");
+                        
+//                         if (cJSON_IsTrue(success)) {
+//                             ESP_LOGI(TAG, "バズの自発的なメッセージ: %s", message->valuestring);
+                            
+//                             if (audio_path) {
+//                                 // 音声ファイルをダウンロードして再生
+//                                 download_and_play_audio(audio_path->valuestring);
+//                             }
+//                         }
+                        
+//                         cJSON_Delete(json);
+//                     } else {
+//                         ESP_LOGE(TAG, "JSONの解析に失敗しました");
+//                     }
+//                 }
+//                 free(response_buffer);
+//             }
+//         }
+//     } else {
+//         ESP_LOGE(TAG, "HTTP GETリクエストに失敗: %s", esp_err_to_name(err));
+//     }
+    
+//     esp_http_client_cleanup(client);
+// }
+
+void get_proactive_message(void) {
+    ESP_LOGI(TAG, "自発的なメッセージを取得しています...");
     
     // URLを構築
     char url[128];
@@ -714,157 +814,59 @@ void get_proactive_message(void) {
     
     ESP_LOGI(TAG, "自発的メッセージURL: %s", url);
     
+    // 念のためパスをクリア
+    next_audio_to_download[0] = 0;
+    
     // HTTPクライアント設定
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = http_event_handler,
         .method = HTTP_METHOD_GET,
+        .timeout_ms = 30000, 
     };
     
     esp_http_client_handle_t client = esp_http_client_init(&config);
     
-    // GETリクエストの実行
+    // GETリクエストの実行（レスポンスはイベントハンドラで処理）
     esp_err_t err = esp_http_client_perform(client);
-    if (err == ESP_OK) {
-        int status_code = esp_http_client_get_status_code(client);
-        int content_length = esp_http_client_get_content_length(client);
-        
-        ESP_LOGI(TAG, "HTTP GET ステータスコード = %d, コンテンツ長 = %d", status_code, content_length);
-        
-        if (status_code == 200 && content_length > 0) {
-            // レスポンスを読み取る
-            char *response_buffer = malloc(content_length + 1);
-            if (response_buffer) {
-                int read_len = esp_http_client_read_response(client, response_buffer, content_length);
-                if (read_len > 0) {
-                    response_buffer[read_len] = 0;
-                    
-                    // JSONレスポンスの解析
-                    cJSON *json = cJSON_Parse(response_buffer);
-                    if (json) {
-                        cJSON *success = cJSON_GetObjectItem(json, "success");
-                        cJSON *message = cJSON_GetObjectItem(json, "message");
-                        cJSON *audio_path = cJSON_GetObjectItem(json, "audio_path");
-                        
-                        if (cJSON_IsTrue(success)) {
-                            ESP_LOGI(TAG, "バズの自発的なメッセージ: %s", message->valuestring);
-                            
-                            if (audio_path) {
-                                // 音声ファイルをダウンロードして再生
-                                download_and_play_audio(audio_path->valuestring);
-                            }
-                        }
-                        
-                        cJSON_Delete(json);
-                    } else {
-                        ESP_LOGE(TAG, "JSONの解析に失敗しました");
-                    }
-                }
-                free(response_buffer);
-            }
-        }
-    } else {
+    if (err != ESP_OK) {
         ESP_LOGE(TAG, "HTTP GETリクエストに失敗: %s", esp_err_to_name(err));
     }
     
     esp_http_client_cleanup(client);
+    
+    // イベントハンドラで音声ファイルのパスが設定された場合、ダウンロードして再生
+    if (strlen(next_audio_to_download) > 0) {
+        ESP_LOGI(TAG, "音声ファイルのダウンロードを開始します: %s", next_audio_to_download);
+        download_and_play_audio(next_audio_to_download);
+    } else {
+        ESP_LOGI(TAG, "ダウンロードする音声ファイルがありません");
+    }
 }
 
 /* 音声ファイルを再生する関数 */
 void play_audio_file(const char *filename) {
     ESP_LOGI(TAG, "音声ファイルを再生します: %s", filename);
     
-    // ここでは、I2S出力を使った実際の再生処理を実装します
-    // この実装はハードウェア依存となるため、必要に応じて調整してください
-    
-    // ファイルを開く
-    FILE *f = fopen(filename, "rb");
-    if (f == NULL) {
-        ESP_LOGE(TAG, "ファイルを開けませんでした");
-        return;
-    }
-    
-    // WAVヘッダーをスキップ
-    wav_header_t header;
-    fread(&header, 1, sizeof(wav_header_t), f);
-    
-    // I2Sチャンネルを送信モードに設定
-    // 注: 実際の実装では、既存のI2Sチャンネルを閉じて新しく設定し直す必要があるかもしれません
-    i2s_chan_config_t tx_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
-    i2s_chan_handle_t tx_handle;
-    ESP_ERROR_CHECK(i2s_new_channel(&tx_chan_cfg, &tx_handle, NULL));
-    
-    i2s_std_config_t tx_std_cfg = {
-        .clk_cfg = I2S_STD_CLK_DEFAULT_CONFIG(header.sample_rate),
-        .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(header.bits_per_sample, 
-                                                        header.num_channels == 1 ? I2S_SLOT_MODE_MONO : I2S_SLOT_MODE_STEREO),
-        .gpio_cfg = {
-            .mclk = GPIO_NUM_NC,
-            .bclk = I2S_BCK_IO,
-            .ws = I2S_WS_IO,
-            .dout = I2S_DO_IO,
-            .din = GPIO_NUM_NC,
-            .invert_flags = {
-                .mclk_inv = false,
-                .bclk_inv = false,
-                .ws_inv = false,
-            },
-        },
-    };
-    
-    ESP_ERROR_CHECK(i2s_channel_init_std_mode(tx_handle, &tx_std_cfg));
-    ESP_ERROR_CHECK(i2s_channel_enable(tx_handle));
-    
-    // バッファの割り当て
-    const size_t buf_size = 1024;
-    uint8_t *buffer = malloc(buf_size);
-    if (!buffer) {
-        ESP_LOGE(TAG, "メモリ割り当てに失敗しました");
-        fclose(f);
-        i2s_channel_disable(tx_handle);
-        i2s_del_channel(tx_handle);
-        return;
-    }
-    
     // LED点灯（再生中）
     gpio_set_level(LED_PIN, 1);
     
-    // ファイルを読み込み、I2Sに送信
-    size_t bytes_read;
-    size_t bytes_written;
-    while ((bytes_read = fread(buffer, 1, buf_size, f)) > 0) {
-        ESP_ERROR_CHECK(i2s_channel_write(tx_handle, buffer, bytes_read, &bytes_written, portMAX_DELAY));
-        if (bytes_written != bytes_read) {
-            ESP_LOGE(TAG, "I2S書き込みエラー");
-        }
+    // audio_playerコンポーネントを使用して再生
+    esp_err_t ret = play_from_file(filename);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "再生に失敗しました");
+    } else {
+        ESP_LOGI(TAG, "再生完了");
     }
-    
-    // クリーンアップ
-    fclose(f);
-    free(buffer);
-    
-    // 少し待機して、すべてのデータがI2Sバッファから送信されるのを待つ
-    vTaskDelay(pdMS_TO_TICKS(500));
-    
-    // I2Sチャンネルの無効化と削除
-    i2s_channel_disable(tx_handle);
-    i2s_del_channel(tx_handle);
     
     // LEDを消灯
     gpio_set_level(LED_PIN, 0);
-    
-    ESP_LOGI(TAG, "再生完了");
 }
 
 /* メインタスク - 自発的なメッセージを定期的に取得 */
 static void main_task(void *pvParameters) {
-    // APIサーバーが設定されていない場合は、自発的なメッセージの取得をスキップ
-    if (strcmp(API_SERVER_HOST, "192.168.1.100") != 0) {
-        // 最初の自発的なメッセージを取得
-        get_proactive_message();
-    } else {
-        ESP_LOGW(TAG, "APIサーバーのIPアドレスが設定されていません。自発的なメッセージの取得をスキップします。");
-    }
+    // 最初の自発的なメッセージを取得
+    get_proactive_message();
     
     uint32_t last_proactive_check = 0;
     
@@ -872,13 +874,10 @@ static void main_task(void *pvParameters) {
         // 現在の時間を取得
         uint32_t current_time = esp_timer_get_time() / 1000000; // 秒単位
         
-        // APIサーバーが設定されている場合のみ、自発的なメッセージを取得
-        if (strcmp(API_SERVER_HOST, "192.168.1.100") != 0) {
-            // 10分ごとに自発的なメッセージをチェック（600秒 = 10分）
-            if (current_time - last_proactive_check > 600) {
-                get_proactive_message();
-                last_proactive_check = current_time;
-            }
+        // 10分ごとに自発的なメッセージをチェック（600秒 = 10分）
+        if (current_time - last_proactive_check > 600) {
+            get_proactive_message();
+            last_proactive_check = current_time;
         }
         
         // 少し待機
@@ -921,11 +920,12 @@ void app_main(void) {
     gpio_install_isr_service(0);
     gpio_isr_handler_add(BUTTON_PIN, button_isr_handler, (void*)BUTTON_PIN);
     
-    // WiFi初期化と接続はスキップ（APIサーバーがないため）
-    ESP_LOGI(TAG, "ESP32-S3 バズ・ライトイヤーローカルテスト");
+    // WiFi初期化と接続 (wifi_manager コンポーネントを使用)
+    ESP_LOGI(TAG, "ESP32-S3 バズ・ライトイヤー WiFi接続中...");
+    ESP_ERROR_CHECK(wifi_init_sta());
     
-    // I2S初期化
-    i2s_init();
+    // オーディオプレーヤー初期化
+    ESP_ERROR_CHECK(audio_player_init());
     
     // SPIFFSの初期化
     spiffs_init();
@@ -941,8 +941,8 @@ void app_main(void) {
     // ボタンタスクの作成
     xTaskCreate(button_task, "button_task", 4096, NULL, 10, NULL);
     
-    // メインタスクの作成 - APIサーバーがないため、自発的なメッセージ取得はスキップ
-    // xTaskCreate(main_task, "main_task", 8192, NULL, 5, NULL);
+    // メインタスクの作成 - APIサーバーからの自発的なメッセージを取得
+    xTaskCreate(main_task, "main_task", 8192, NULL, 5, NULL);
     
     ESP_LOGI(TAG, "バズライトイヤーボット準備完了！ボタンを押して録音と再生を開始してください。");
 }

@@ -13,7 +13,7 @@ static const char *TAG = "wifi_manager";
 
 /* WiFi設定 */
 #define WIFI_SSID       "ORBI01"
-#define WIFI_PASSWORD   "araishogoだ"
+#define WIFI_PASSWORD   "araishogo"
 
 /* FreeRTOSイベントグループビット */
 #define WIFI_CONNECTED_BIT BIT0

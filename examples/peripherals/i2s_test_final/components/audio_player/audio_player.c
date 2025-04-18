@@ -8,13 +8,23 @@
 static const char *TAG = "audio-player";
 
 /* I2S設定 - マイク用 */
-#define I2S_BCK_IO      GPIO_NUM_6  // ビットクロック 
-#define I2S_WS_IO       GPIO_NUM_5  // ワードセレクト
-#define I2S_DI_IO       GPIO_NUM_4  // データイン（マイク入力）
-#define I2S_DO_IO       GPIO_NUM_16 // データアウト（スピーカー出力）
+// #define I2S_BCK_IO      GPIO_NUM_6  // ビットクロック 
+// #define I2S_WS_IO       GPIO_NUM_5  // ワードセレクト
+// #define I2S_DI_IO       GPIO_NUM_4  // データイン（マイク入力）
+// #define I2S_DO_IO       GPIO_NUM_16 // データアウト（スピーカー出力）
+
+/* I2S設定 - マイク用 */
+#define I2S_MIC_BCK_IO      GPIO_NUM_6  // ビットクロック（マイク用）
+#define I2S_MIC_WS_IO       GPIO_NUM_5  // ワードセレクト（マイク用）
+#define I2S_MIC_DI_IO       GPIO_NUM_4  // データイン（マイク入力）
+
+/* I2S設定 - スピーカー用 */
+#define I2S_SPK_BCK_IO      GPIO_NUM_3  // ビットクロック（スピーカー用）
+#define I2S_SPK_WS_IO       GPIO_NUM_2  // ワードセレクト（スピーカー用）
+#define I2S_SPK_DO_IO       GPIO_NUM_1  // データアウト（スピーカー出力）
 
 /* オーディオ設定 */
-#define SAMPLE_RATE     16000       // サンプリングレート (Hz)
+#define SAMPLE_RATE     44100        // サンプリングレート (Hz)
 #define SAMPLE_BITS     16          // サンプルビット数
 #define AUDIO_CHANNELS  1           // モノラル
 #define BUFFER_SIZE     1024        // バッファサイズ
@@ -55,7 +65,7 @@ esp_err_t audio_player_init(void) {
     
     // I2S送信チャンネル設定
     i2s_chan_config_t tx_chan_cfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_1, I2S_ROLE_MASTER);
-    ESP_ERROR_CHECK(i2s_new_channel(&tx_chan_cfg, NULL, &i2s_tx_handle));
+    ESP_ERROR_CHECK(i2s_new_channel(&tx_chan_cfg, &i2s_tx_handle, NULL));
     
     // I2S標準モード設定（受信用）
     i2s_std_config_t rx_std_cfg = {
@@ -63,10 +73,10 @@ esp_err_t audio_player_init(void) {
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .mclk = GPIO_NUM_NC,
-            .bclk = I2S_BCK_IO,
-            .ws = I2S_WS_IO,
+            .bclk = I2S_MIC_BCK_IO,
+            .ws = I2S_MIC_WS_IO,
             .dout = GPIO_NUM_NC,
-            .din = I2S_DI_IO,
+            .din = I2S_MIC_DI_IO,
             .invert_flags = {
                 .mclk_inv = false,
                 .bclk_inv = false,
@@ -81,9 +91,9 @@ esp_err_t audio_player_init(void) {
         .slot_cfg = I2S_STD_PHILIPS_SLOT_DEFAULT_CONFIG(SAMPLE_BITS, I2S_SLOT_MODE_MONO),
         .gpio_cfg = {
             .mclk = GPIO_NUM_NC,
-            .bclk = I2S_BCK_IO,
-            .ws = I2S_WS_IO,
-            .dout = I2S_DO_IO,
+            .bclk = I2S_SPK_BCK_IO,
+            .ws = I2S_SPK_WS_IO,
+            .dout = I2S_SPK_DO_IO,
             .din = GPIO_NUM_NC,
             .invert_flags = {
                 .mclk_inv = false,
@@ -190,6 +200,8 @@ esp_err_t play_from_file(const char *filename) {
     // WAVヘッダーを読み込む
     wav_header_t header;
     fread(&header, 1, sizeof(wav_header_t), f);
+    ESP_LOGI(TAG, "音声ファイル情報: サンプルレート=%u Hz, チャンネル数=%u, ビット数=%u", 
+          header.sample_rate, header.num_channels, header.bits_per_sample);
     
     // I2S送信チャンネルを有効化
     ESP_ERROR_CHECK(i2s_channel_enable(i2s_tx_handle));
