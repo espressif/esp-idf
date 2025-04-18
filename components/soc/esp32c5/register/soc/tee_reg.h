@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -16,11 +16,11 @@ extern "C" {
  */
 #define TEE_M0_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x0)
 /** TEE_M0_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M0 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M0 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M0_MODE    0x00000003U
 #define TEE_M0_MODE_M  (TEE_M0_MODE_V << TEE_M0_MODE_S)
@@ -39,11 +39,11 @@ extern "C" {
  */
 #define TEE_M1_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x4)
 /** TEE_M1_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M1 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M1 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M1_MODE    0x00000003U
 #define TEE_M1_MODE_M  (TEE_M1_MODE_V << TEE_M1_MODE_S)
@@ -62,11 +62,11 @@ extern "C" {
  */
 #define TEE_M2_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x8)
 /** TEE_M2_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M2 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M2 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M2_MODE    0x00000003U
 #define TEE_M2_MODE_M  (TEE_M2_MODE_V << TEE_M2_MODE_S)
@@ -85,11 +85,11 @@ extern "C" {
  */
 #define TEE_M3_MODE_CTRL_REG (DR_REG_TEE_BASE + 0xc)
 /** TEE_M3_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M3 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M3 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M3_MODE    0x00000003U
 #define TEE_M3_MODE_M  (TEE_M3_MODE_V << TEE_M3_MODE_S)
@@ -108,11 +108,11 @@ extern "C" {
  */
 #define TEE_M4_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x10)
 /** TEE_M4_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M4 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M4 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M4_MODE    0x00000003U
 #define TEE_M4_MODE_M  (TEE_M4_MODE_V << TEE_M4_MODE_S)
@@ -131,11 +131,11 @@ extern "C" {
  */
 #define TEE_M5_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x14)
 /** TEE_M5_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M5 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M5 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M5_MODE    0x00000003U
 #define TEE_M5_MODE_M  (TEE_M5_MODE_V << TEE_M5_MODE_S)
@@ -154,11 +154,11 @@ extern "C" {
  */
 #define TEE_M6_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x18)
 /** TEE_M6_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M6 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M6 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M6_MODE    0x00000003U
 #define TEE_M6_MODE_M  (TEE_M6_MODE_V << TEE_M6_MODE_S)
@@ -177,11 +177,11 @@ extern "C" {
  */
 #define TEE_M7_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x1c)
 /** TEE_M7_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M7 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M7 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M7_MODE    0x00000003U
 #define TEE_M7_MODE_M  (TEE_M7_MODE_V << TEE_M7_MODE_S)
@@ -200,11 +200,11 @@ extern "C" {
  */
 #define TEE_M8_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x20)
 /** TEE_M8_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M8 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M8 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M8_MODE    0x00000003U
 #define TEE_M8_MODE_M  (TEE_M8_MODE_V << TEE_M8_MODE_S)
@@ -223,11 +223,11 @@ extern "C" {
  */
 #define TEE_M9_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x24)
 /** TEE_M9_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M9 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M9 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M9_MODE    0x00000003U
 #define TEE_M9_MODE_M  (TEE_M9_MODE_V << TEE_M9_MODE_S)
@@ -246,11 +246,11 @@ extern "C" {
  */
 #define TEE_M10_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x28)
 /** TEE_M10_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M10 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M10 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M10_MODE    0x00000003U
 #define TEE_M10_MODE_M  (TEE_M10_MODE_V << TEE_M10_MODE_S)
@@ -269,11 +269,11 @@ extern "C" {
  */
 #define TEE_M11_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x2c)
 /** TEE_M11_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M11 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M11 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M11_MODE    0x00000003U
 #define TEE_M11_MODE_M  (TEE_M11_MODE_V << TEE_M11_MODE_S)
@@ -292,11 +292,11 @@ extern "C" {
  */
 #define TEE_M12_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x30)
 /** TEE_M12_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M12 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M12 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M12_MODE    0x00000003U
 #define TEE_M12_MODE_M  (TEE_M12_MODE_V << TEE_M12_MODE_S)
@@ -315,11 +315,11 @@ extern "C" {
  */
 #define TEE_M13_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x34)
 /** TEE_M13_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M13 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M13 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M13_MODE    0x00000003U
 #define TEE_M13_MODE_M  (TEE_M13_MODE_V << TEE_M13_MODE_S)
@@ -338,11 +338,11 @@ extern "C" {
  */
 #define TEE_M14_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x38)
 /** TEE_M14_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M14 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M14 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M14_MODE    0x00000003U
 #define TEE_M14_MODE_M  (TEE_M14_MODE_V << TEE_M14_MODE_S)
@@ -361,11 +361,11 @@ extern "C" {
  */
 #define TEE_M15_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x3c)
 /** TEE_M15_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M15 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M15 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M15_MODE    0x00000003U
 #define TEE_M15_MODE_M  (TEE_M15_MODE_V << TEE_M15_MODE_S)
@@ -384,11 +384,11 @@ extern "C" {
  */
 #define TEE_M16_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x40)
 /** TEE_M16_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M16 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M16 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M16_MODE    0x00000003U
 #define TEE_M16_MODE_M  (TEE_M16_MODE_V << TEE_M16_MODE_S)
@@ -407,11 +407,11 @@ extern "C" {
  */
 #define TEE_M17_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x44)
 /** TEE_M17_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M17 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M17 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M17_MODE    0x00000003U
 #define TEE_M17_MODE_M  (TEE_M17_MODE_V << TEE_M17_MODE_S)
@@ -430,11 +430,11 @@ extern "C" {
  */
 #define TEE_M18_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x48)
 /** TEE_M18_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M18 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M18 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M18_MODE    0x00000003U
 #define TEE_M18_MODE_M  (TEE_M18_MODE_V << TEE_M18_MODE_S)
@@ -453,11 +453,11 @@ extern "C" {
  */
 #define TEE_M19_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x4c)
 /** TEE_M19_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M19 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M19 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M19_MODE    0x00000003U
 #define TEE_M19_MODE_M  (TEE_M19_MODE_V << TEE_M19_MODE_S)
@@ -476,11 +476,11 @@ extern "C" {
  */
 #define TEE_M20_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x50)
 /** TEE_M20_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M20 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M20 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M20_MODE    0x00000003U
 #define TEE_M20_MODE_M  (TEE_M20_MODE_V << TEE_M20_MODE_S)
@@ -499,11 +499,11 @@ extern "C" {
  */
 #define TEE_M21_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x54)
 /** TEE_M21_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M21 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M21 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M21_MODE    0x00000003U
 #define TEE_M21_MODE_M  (TEE_M21_MODE_V << TEE_M21_MODE_S)
@@ -522,11 +522,11 @@ extern "C" {
  */
 #define TEE_M22_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x58)
 /** TEE_M22_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M22 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M22 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M22_MODE    0x00000003U
 #define TEE_M22_MODE_M  (TEE_M22_MODE_V << TEE_M22_MODE_S)
@@ -545,11 +545,11 @@ extern "C" {
  */
 #define TEE_M23_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x5c)
 /** TEE_M23_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M23 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M23 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M23_MODE    0x00000003U
 #define TEE_M23_MODE_M  (TEE_M23_MODE_V << TEE_M23_MODE_S)
@@ -568,11 +568,11 @@ extern "C" {
  */
 #define TEE_M24_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x60)
 /** TEE_M24_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M24 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M24 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M24_MODE    0x00000003U
 #define TEE_M24_MODE_M  (TEE_M24_MODE_V << TEE_M24_MODE_S)
@@ -591,11 +591,11 @@ extern "C" {
  */
 #define TEE_M25_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x64)
 /** TEE_M25_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M25 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M25 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M25_MODE    0x00000003U
 #define TEE_M25_MODE_M  (TEE_M25_MODE_V << TEE_M25_MODE_S)
@@ -614,11 +614,11 @@ extern "C" {
  */
 #define TEE_M26_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x68)
 /** TEE_M26_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M26 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M26 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M26_MODE    0x00000003U
 #define TEE_M26_MODE_M  (TEE_M26_MODE_V << TEE_M26_MODE_S)
@@ -637,11 +637,11 @@ extern "C" {
  */
 #define TEE_M27_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x6c)
 /** TEE_M27_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M27 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M27 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M27_MODE    0x00000003U
 #define TEE_M27_MODE_M  (TEE_M27_MODE_V << TEE_M27_MODE_S)
@@ -660,11 +660,11 @@ extern "C" {
  */
 #define TEE_M28_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x70)
 /** TEE_M28_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M28 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M28 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M28_MODE    0x00000003U
 #define TEE_M28_MODE_M  (TEE_M28_MODE_V << TEE_M28_MODE_S)
@@ -683,11 +683,11 @@ extern "C" {
  */
 #define TEE_M29_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x74)
 /** TEE_M29_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M29 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M29 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M29_MODE    0x00000003U
 #define TEE_M29_MODE_M  (TEE_M29_MODE_V << TEE_M29_MODE_S)
@@ -706,11 +706,11 @@ extern "C" {
  */
 #define TEE_M30_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x78)
 /** TEE_M30_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M30 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M30 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M30_MODE    0x00000003U
 #define TEE_M30_MODE_M  (TEE_M30_MODE_V << TEE_M30_MODE_S)
@@ -729,11 +729,11 @@ extern "C" {
  */
 #define TEE_M31_MODE_CTRL_REG (DR_REG_TEE_BASE + 0x7c)
 /** TEE_M31_MODE : R/W; bitpos: [1:0]; default: 0;
- *  Configures M31 security level mode.\\
- *  0: tee_mode \\
- *  1: ree_mode0 \\
- *  2: ree_mode1 \\
- *  3: ree_mode2  \\
+ *  Configures M31 security level mode.
+ *  0: tee_mode
+ *  1: ree_mode0
+ *  2: ree_mode1
+ *  3: ree_mode2
  */
 #define TEE_M31_MODE    0x00000003U
 #define TEE_M31_MODE_M  (TEE_M31_MODE_V << TEE_M31_MODE_S)
@@ -747,14 +747,3493 @@ extern "C" {
 #define TEE_M31_LOCK_V  0x00000001U
 #define TEE_M31_LOCK_S  2
 
+/** TEE_UART0_CTRL_REG register
+ *  uart0 read/write control register
+ */
+#define TEE_UART0_CTRL_REG (DR_REG_TEE_BASE + 0x88)
+/** TEE_READ_TEE_UART0 : R/W; bitpos: [0]; default: 1;
+ *  Configures uart0 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_UART0    (BIT(0))
+#define TEE_READ_TEE_UART0_M  (TEE_READ_TEE_UART0_V << TEE_READ_TEE_UART0_S)
+#define TEE_READ_TEE_UART0_V  0x00000001U
+#define TEE_READ_TEE_UART0_S  0
+/** TEE_READ_REE0_UART0 : R/W; bitpos: [1]; default: 0;
+ *  Configures uart0 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_UART0    (BIT(1))
+#define TEE_READ_REE0_UART0_M  (TEE_READ_REE0_UART0_V << TEE_READ_REE0_UART0_S)
+#define TEE_READ_REE0_UART0_V  0x00000001U
+#define TEE_READ_REE0_UART0_S  1
+/** TEE_READ_REE1_UART0 : R/W; bitpos: [2]; default: 0;
+ *  Configures uart0 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_UART0    (BIT(2))
+#define TEE_READ_REE1_UART0_M  (TEE_READ_REE1_UART0_V << TEE_READ_REE1_UART0_S)
+#define TEE_READ_REE1_UART0_V  0x00000001U
+#define TEE_READ_REE1_UART0_S  2
+/** TEE_READ_REE2_UART0 : R/W; bitpos: [3]; default: 0;
+ *  Configures uart0 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_UART0    (BIT(3))
+#define TEE_READ_REE2_UART0_M  (TEE_READ_REE2_UART0_V << TEE_READ_REE2_UART0_S)
+#define TEE_READ_REE2_UART0_V  0x00000001U
+#define TEE_READ_REE2_UART0_S  3
+/** TEE_WRITE_TEE_UART0 : R/W; bitpos: [4]; default: 1;
+ *  Configures uart0 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_UART0    (BIT(4))
+#define TEE_WRITE_TEE_UART0_M  (TEE_WRITE_TEE_UART0_V << TEE_WRITE_TEE_UART0_S)
+#define TEE_WRITE_TEE_UART0_V  0x00000001U
+#define TEE_WRITE_TEE_UART0_S  4
+/** TEE_WRITE_REE0_UART0 : R/W; bitpos: [5]; default: 0;
+ *  Configures uart0 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_UART0    (BIT(5))
+#define TEE_WRITE_REE0_UART0_M  (TEE_WRITE_REE0_UART0_V << TEE_WRITE_REE0_UART0_S)
+#define TEE_WRITE_REE0_UART0_V  0x00000001U
+#define TEE_WRITE_REE0_UART0_S  5
+/** TEE_WRITE_REE1_UART0 : R/W; bitpos: [6]; default: 0;
+ *  Configures uart0 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_UART0    (BIT(6))
+#define TEE_WRITE_REE1_UART0_M  (TEE_WRITE_REE1_UART0_V << TEE_WRITE_REE1_UART0_S)
+#define TEE_WRITE_REE1_UART0_V  0x00000001U
+#define TEE_WRITE_REE1_UART0_S  6
+/** TEE_WRITE_REE2_UART0 : R/W; bitpos: [7]; default: 0;
+ *  Configures uart0 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_UART0    (BIT(7))
+#define TEE_WRITE_REE2_UART0_M  (TEE_WRITE_REE2_UART0_V << TEE_WRITE_REE2_UART0_S)
+#define TEE_WRITE_REE2_UART0_V  0x00000001U
+#define TEE_WRITE_REE2_UART0_S  7
+
+/** TEE_UART1_CTRL_REG register
+ *  uart1 read/write control register
+ */
+#define TEE_UART1_CTRL_REG (DR_REG_TEE_BASE + 0x8c)
+/** TEE_READ_TEE_UART1 : R/W; bitpos: [0]; default: 1;
+ *  Configures uart1 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_UART1    (BIT(0))
+#define TEE_READ_TEE_UART1_M  (TEE_READ_TEE_UART1_V << TEE_READ_TEE_UART1_S)
+#define TEE_READ_TEE_UART1_V  0x00000001U
+#define TEE_READ_TEE_UART1_S  0
+/** TEE_READ_REE0_UART1 : R/W; bitpos: [1]; default: 0;
+ *  Configures uart1 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_UART1    (BIT(1))
+#define TEE_READ_REE0_UART1_M  (TEE_READ_REE0_UART1_V << TEE_READ_REE0_UART1_S)
+#define TEE_READ_REE0_UART1_V  0x00000001U
+#define TEE_READ_REE0_UART1_S  1
+/** TEE_READ_REE1_UART1 : R/W; bitpos: [2]; default: 0;
+ *  Configures uart1 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_UART1    (BIT(2))
+#define TEE_READ_REE1_UART1_M  (TEE_READ_REE1_UART1_V << TEE_READ_REE1_UART1_S)
+#define TEE_READ_REE1_UART1_V  0x00000001U
+#define TEE_READ_REE1_UART1_S  2
+/** TEE_READ_REE2_UART1 : R/W; bitpos: [3]; default: 0;
+ *  Configures uart1 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_UART1    (BIT(3))
+#define TEE_READ_REE2_UART1_M  (TEE_READ_REE2_UART1_V << TEE_READ_REE2_UART1_S)
+#define TEE_READ_REE2_UART1_V  0x00000001U
+#define TEE_READ_REE2_UART1_S  3
+/** TEE_WRITE_TEE_UART1 : R/W; bitpos: [4]; default: 1;
+ *  Configures uart1 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_UART1    (BIT(4))
+#define TEE_WRITE_TEE_UART1_M  (TEE_WRITE_TEE_UART1_V << TEE_WRITE_TEE_UART1_S)
+#define TEE_WRITE_TEE_UART1_V  0x00000001U
+#define TEE_WRITE_TEE_UART1_S  4
+/** TEE_WRITE_REE0_UART1 : R/W; bitpos: [5]; default: 0;
+ *  Configures uart1 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_UART1    (BIT(5))
+#define TEE_WRITE_REE0_UART1_M  (TEE_WRITE_REE0_UART1_V << TEE_WRITE_REE0_UART1_S)
+#define TEE_WRITE_REE0_UART1_V  0x00000001U
+#define TEE_WRITE_REE0_UART1_S  5
+/** TEE_WRITE_REE1_UART1 : R/W; bitpos: [6]; default: 0;
+ *  Configures uart1 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_UART1    (BIT(6))
+#define TEE_WRITE_REE1_UART1_M  (TEE_WRITE_REE1_UART1_V << TEE_WRITE_REE1_UART1_S)
+#define TEE_WRITE_REE1_UART1_V  0x00000001U
+#define TEE_WRITE_REE1_UART1_S  6
+/** TEE_WRITE_REE2_UART1 : R/W; bitpos: [7]; default: 0;
+ *  Configures uart1 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_UART1    (BIT(7))
+#define TEE_WRITE_REE2_UART1_M  (TEE_WRITE_REE2_UART1_V << TEE_WRITE_REE2_UART1_S)
+#define TEE_WRITE_REE2_UART1_V  0x00000001U
+#define TEE_WRITE_REE2_UART1_S  7
+
+/** TEE_UHCI0_CTRL_REG register
+ *  uhci0 read/write control register
+ */
+#define TEE_UHCI0_CTRL_REG (DR_REG_TEE_BASE + 0x90)
+/** TEE_READ_TEE_UHCI0 : R/W; bitpos: [0]; default: 1;
+ *  Configures uhci0 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_UHCI0    (BIT(0))
+#define TEE_READ_TEE_UHCI0_M  (TEE_READ_TEE_UHCI0_V << TEE_READ_TEE_UHCI0_S)
+#define TEE_READ_TEE_UHCI0_V  0x00000001U
+#define TEE_READ_TEE_UHCI0_S  0
+/** TEE_READ_REE0_UHCI0 : R/W; bitpos: [1]; default: 0;
+ *  Configures uhci0 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_UHCI0    (BIT(1))
+#define TEE_READ_REE0_UHCI0_M  (TEE_READ_REE0_UHCI0_V << TEE_READ_REE0_UHCI0_S)
+#define TEE_READ_REE0_UHCI0_V  0x00000001U
+#define TEE_READ_REE0_UHCI0_S  1
+/** TEE_READ_REE1_UHCI0 : R/W; bitpos: [2]; default: 0;
+ *  Configures uhci0 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_UHCI0    (BIT(2))
+#define TEE_READ_REE1_UHCI0_M  (TEE_READ_REE1_UHCI0_V << TEE_READ_REE1_UHCI0_S)
+#define TEE_READ_REE1_UHCI0_V  0x00000001U
+#define TEE_READ_REE1_UHCI0_S  2
+/** TEE_READ_REE2_UHCI0 : R/W; bitpos: [3]; default: 0;
+ *  Configures uhci0 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_UHCI0    (BIT(3))
+#define TEE_READ_REE2_UHCI0_M  (TEE_READ_REE2_UHCI0_V << TEE_READ_REE2_UHCI0_S)
+#define TEE_READ_REE2_UHCI0_V  0x00000001U
+#define TEE_READ_REE2_UHCI0_S  3
+/** TEE_WRITE_TEE_UHCI0 : R/W; bitpos: [4]; default: 1;
+ *  Configures uhci0 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_UHCI0    (BIT(4))
+#define TEE_WRITE_TEE_UHCI0_M  (TEE_WRITE_TEE_UHCI0_V << TEE_WRITE_TEE_UHCI0_S)
+#define TEE_WRITE_TEE_UHCI0_V  0x00000001U
+#define TEE_WRITE_TEE_UHCI0_S  4
+/** TEE_WRITE_REE0_UHCI0 : R/W; bitpos: [5]; default: 0;
+ *  Configures uhci0 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_UHCI0    (BIT(5))
+#define TEE_WRITE_REE0_UHCI0_M  (TEE_WRITE_REE0_UHCI0_V << TEE_WRITE_REE0_UHCI0_S)
+#define TEE_WRITE_REE0_UHCI0_V  0x00000001U
+#define TEE_WRITE_REE0_UHCI0_S  5
+/** TEE_WRITE_REE1_UHCI0 : R/W; bitpos: [6]; default: 0;
+ *  Configures uhci0 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_UHCI0    (BIT(6))
+#define TEE_WRITE_REE1_UHCI0_M  (TEE_WRITE_REE1_UHCI0_V << TEE_WRITE_REE1_UHCI0_S)
+#define TEE_WRITE_REE1_UHCI0_V  0x00000001U
+#define TEE_WRITE_REE1_UHCI0_S  6
+/** TEE_WRITE_REE2_UHCI0 : R/W; bitpos: [7]; default: 0;
+ *  Configures uhci0 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_UHCI0    (BIT(7))
+#define TEE_WRITE_REE2_UHCI0_M  (TEE_WRITE_REE2_UHCI0_V << TEE_WRITE_REE2_UHCI0_S)
+#define TEE_WRITE_REE2_UHCI0_V  0x00000001U
+#define TEE_WRITE_REE2_UHCI0_S  7
+
+/** TEE_I2C_EXT0_CTRL_REG register
+ *  i2c_ext0 read/write control register
+ */
+#define TEE_I2C_EXT0_CTRL_REG (DR_REG_TEE_BASE + 0x94)
+/** TEE_READ_TEE_I2C_EXT0 : R/W; bitpos: [0]; default: 1;
+ *  Configures i2c_ext0 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_I2C_EXT0    (BIT(0))
+#define TEE_READ_TEE_I2C_EXT0_M  (TEE_READ_TEE_I2C_EXT0_V << TEE_READ_TEE_I2C_EXT0_S)
+#define TEE_READ_TEE_I2C_EXT0_V  0x00000001U
+#define TEE_READ_TEE_I2C_EXT0_S  0
+/** TEE_READ_REE0_I2C_EXT0 : R/W; bitpos: [1]; default: 0;
+ *  Configures i2c_ext0 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_I2C_EXT0    (BIT(1))
+#define TEE_READ_REE0_I2C_EXT0_M  (TEE_READ_REE0_I2C_EXT0_V << TEE_READ_REE0_I2C_EXT0_S)
+#define TEE_READ_REE0_I2C_EXT0_V  0x00000001U
+#define TEE_READ_REE0_I2C_EXT0_S  1
+/** TEE_READ_REE1_I2C_EXT0 : R/W; bitpos: [2]; default: 0;
+ *  Configures i2c_ext0 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_I2C_EXT0    (BIT(2))
+#define TEE_READ_REE1_I2C_EXT0_M  (TEE_READ_REE1_I2C_EXT0_V << TEE_READ_REE1_I2C_EXT0_S)
+#define TEE_READ_REE1_I2C_EXT0_V  0x00000001U
+#define TEE_READ_REE1_I2C_EXT0_S  2
+/** TEE_READ_REE2_I2C_EXT0 : R/W; bitpos: [3]; default: 0;
+ *  Configures i2c_ext0 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_I2C_EXT0    (BIT(3))
+#define TEE_READ_REE2_I2C_EXT0_M  (TEE_READ_REE2_I2C_EXT0_V << TEE_READ_REE2_I2C_EXT0_S)
+#define TEE_READ_REE2_I2C_EXT0_V  0x00000001U
+#define TEE_READ_REE2_I2C_EXT0_S  3
+/** TEE_WRITE_TEE_I2C_EXT0 : R/W; bitpos: [4]; default: 1;
+ *  Configures i2c_ext0 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_I2C_EXT0    (BIT(4))
+#define TEE_WRITE_TEE_I2C_EXT0_M  (TEE_WRITE_TEE_I2C_EXT0_V << TEE_WRITE_TEE_I2C_EXT0_S)
+#define TEE_WRITE_TEE_I2C_EXT0_V  0x00000001U
+#define TEE_WRITE_TEE_I2C_EXT0_S  4
+/** TEE_WRITE_REE0_I2C_EXT0 : R/W; bitpos: [5]; default: 0;
+ *  Configures i2c_ext0 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_I2C_EXT0    (BIT(5))
+#define TEE_WRITE_REE0_I2C_EXT0_M  (TEE_WRITE_REE0_I2C_EXT0_V << TEE_WRITE_REE0_I2C_EXT0_S)
+#define TEE_WRITE_REE0_I2C_EXT0_V  0x00000001U
+#define TEE_WRITE_REE0_I2C_EXT0_S  5
+/** TEE_WRITE_REE1_I2C_EXT0 : R/W; bitpos: [6]; default: 0;
+ *  Configures i2c_ext0 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_I2C_EXT0    (BIT(6))
+#define TEE_WRITE_REE1_I2C_EXT0_M  (TEE_WRITE_REE1_I2C_EXT0_V << TEE_WRITE_REE1_I2C_EXT0_S)
+#define TEE_WRITE_REE1_I2C_EXT0_V  0x00000001U
+#define TEE_WRITE_REE1_I2C_EXT0_S  6
+/** TEE_WRITE_REE2_I2C_EXT0 : R/W; bitpos: [7]; default: 0;
+ *  Configures i2c_ext0 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_I2C_EXT0    (BIT(7))
+#define TEE_WRITE_REE2_I2C_EXT0_M  (TEE_WRITE_REE2_I2C_EXT0_V << TEE_WRITE_REE2_I2C_EXT0_S)
+#define TEE_WRITE_REE2_I2C_EXT0_V  0x00000001U
+#define TEE_WRITE_REE2_I2C_EXT0_S  7
+
+/** TEE_I2S_CTRL_REG register
+ *  i2s read/write control register
+ */
+#define TEE_I2S_CTRL_REG (DR_REG_TEE_BASE + 0x9c)
+/** TEE_READ_TEE_I2S : R/W; bitpos: [0]; default: 1;
+ *  Configures i2s registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_I2S    (BIT(0))
+#define TEE_READ_TEE_I2S_M  (TEE_READ_TEE_I2S_V << TEE_READ_TEE_I2S_S)
+#define TEE_READ_TEE_I2S_V  0x00000001U
+#define TEE_READ_TEE_I2S_S  0
+/** TEE_READ_REE0_I2S : R/W; bitpos: [1]; default: 0;
+ *  Configures i2s registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_I2S    (BIT(1))
+#define TEE_READ_REE0_I2S_M  (TEE_READ_REE0_I2S_V << TEE_READ_REE0_I2S_S)
+#define TEE_READ_REE0_I2S_V  0x00000001U
+#define TEE_READ_REE0_I2S_S  1
+/** TEE_READ_REE1_I2S : R/W; bitpos: [2]; default: 0;
+ *  Configures i2s registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_I2S    (BIT(2))
+#define TEE_READ_REE1_I2S_M  (TEE_READ_REE1_I2S_V << TEE_READ_REE1_I2S_S)
+#define TEE_READ_REE1_I2S_V  0x00000001U
+#define TEE_READ_REE1_I2S_S  2
+/** TEE_READ_REE2_I2S : R/W; bitpos: [3]; default: 0;
+ *  Configures i2s registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_I2S    (BIT(3))
+#define TEE_READ_REE2_I2S_M  (TEE_READ_REE2_I2S_V << TEE_READ_REE2_I2S_S)
+#define TEE_READ_REE2_I2S_V  0x00000001U
+#define TEE_READ_REE2_I2S_S  3
+/** TEE_WRITE_TEE_I2S : R/W; bitpos: [4]; default: 1;
+ *  Configures i2s registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_I2S    (BIT(4))
+#define TEE_WRITE_TEE_I2S_M  (TEE_WRITE_TEE_I2S_V << TEE_WRITE_TEE_I2S_S)
+#define TEE_WRITE_TEE_I2S_V  0x00000001U
+#define TEE_WRITE_TEE_I2S_S  4
+/** TEE_WRITE_REE0_I2S : R/W; bitpos: [5]; default: 0;
+ *  Configures i2s registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_I2S    (BIT(5))
+#define TEE_WRITE_REE0_I2S_M  (TEE_WRITE_REE0_I2S_V << TEE_WRITE_REE0_I2S_S)
+#define TEE_WRITE_REE0_I2S_V  0x00000001U
+#define TEE_WRITE_REE0_I2S_S  5
+/** TEE_WRITE_REE1_I2S : R/W; bitpos: [6]; default: 0;
+ *  Configures i2s registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_I2S    (BIT(6))
+#define TEE_WRITE_REE1_I2S_M  (TEE_WRITE_REE1_I2S_V << TEE_WRITE_REE1_I2S_S)
+#define TEE_WRITE_REE1_I2S_V  0x00000001U
+#define TEE_WRITE_REE1_I2S_S  6
+/** TEE_WRITE_REE2_I2S : R/W; bitpos: [7]; default: 0;
+ *  Configures i2s registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_I2S    (BIT(7))
+#define TEE_WRITE_REE2_I2S_M  (TEE_WRITE_REE2_I2S_V << TEE_WRITE_REE2_I2S_S)
+#define TEE_WRITE_REE2_I2S_V  0x00000001U
+#define TEE_WRITE_REE2_I2S_S  7
+
+/** TEE_PARL_IO_CTRL_REG register
+ *  parl_io read/write control register
+ */
+#define TEE_PARL_IO_CTRL_REG (DR_REG_TEE_BASE + 0xa0)
+/** TEE_READ_TEE_PARL_IO : R/W; bitpos: [0]; default: 1;
+ *  Configures parl_io registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PARL_IO    (BIT(0))
+#define TEE_READ_TEE_PARL_IO_M  (TEE_READ_TEE_PARL_IO_V << TEE_READ_TEE_PARL_IO_S)
+#define TEE_READ_TEE_PARL_IO_V  0x00000001U
+#define TEE_READ_TEE_PARL_IO_S  0
+/** TEE_READ_REE0_PARL_IO : R/W; bitpos: [1]; default: 0;
+ *  Configures parl_io registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PARL_IO    (BIT(1))
+#define TEE_READ_REE0_PARL_IO_M  (TEE_READ_REE0_PARL_IO_V << TEE_READ_REE0_PARL_IO_S)
+#define TEE_READ_REE0_PARL_IO_V  0x00000001U
+#define TEE_READ_REE0_PARL_IO_S  1
+/** TEE_READ_REE1_PARL_IO : R/W; bitpos: [2]; default: 0;
+ *  Configures parl_io registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PARL_IO    (BIT(2))
+#define TEE_READ_REE1_PARL_IO_M  (TEE_READ_REE1_PARL_IO_V << TEE_READ_REE1_PARL_IO_S)
+#define TEE_READ_REE1_PARL_IO_V  0x00000001U
+#define TEE_READ_REE1_PARL_IO_S  2
+/** TEE_READ_REE2_PARL_IO : R/W; bitpos: [3]; default: 0;
+ *  Configures parl_io registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PARL_IO    (BIT(3))
+#define TEE_READ_REE2_PARL_IO_M  (TEE_READ_REE2_PARL_IO_V << TEE_READ_REE2_PARL_IO_S)
+#define TEE_READ_REE2_PARL_IO_V  0x00000001U
+#define TEE_READ_REE2_PARL_IO_S  3
+/** TEE_WRITE_TEE_PARL_IO : R/W; bitpos: [4]; default: 1;
+ *  Configures parl_io registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PARL_IO    (BIT(4))
+#define TEE_WRITE_TEE_PARL_IO_M  (TEE_WRITE_TEE_PARL_IO_V << TEE_WRITE_TEE_PARL_IO_S)
+#define TEE_WRITE_TEE_PARL_IO_V  0x00000001U
+#define TEE_WRITE_TEE_PARL_IO_S  4
+/** TEE_WRITE_REE0_PARL_IO : R/W; bitpos: [5]; default: 0;
+ *  Configures parl_io registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PARL_IO    (BIT(5))
+#define TEE_WRITE_REE0_PARL_IO_M  (TEE_WRITE_REE0_PARL_IO_V << TEE_WRITE_REE0_PARL_IO_S)
+#define TEE_WRITE_REE0_PARL_IO_V  0x00000001U
+#define TEE_WRITE_REE0_PARL_IO_S  5
+/** TEE_WRITE_REE1_PARL_IO : R/W; bitpos: [6]; default: 0;
+ *  Configures parl_io registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PARL_IO    (BIT(6))
+#define TEE_WRITE_REE1_PARL_IO_M  (TEE_WRITE_REE1_PARL_IO_V << TEE_WRITE_REE1_PARL_IO_S)
+#define TEE_WRITE_REE1_PARL_IO_V  0x00000001U
+#define TEE_WRITE_REE1_PARL_IO_S  6
+/** TEE_WRITE_REE2_PARL_IO : R/W; bitpos: [7]; default: 0;
+ *  Configures parl_io registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PARL_IO    (BIT(7))
+#define TEE_WRITE_REE2_PARL_IO_M  (TEE_WRITE_REE2_PARL_IO_V << TEE_WRITE_REE2_PARL_IO_S)
+#define TEE_WRITE_REE2_PARL_IO_V  0x00000001U
+#define TEE_WRITE_REE2_PARL_IO_S  7
+
+/** TEE_PWM_CTRL_REG register
+ *  pwm read/write control register
+ */
+#define TEE_PWM_CTRL_REG (DR_REG_TEE_BASE + 0xa4)
+/** TEE_READ_TEE_PWM : R/W; bitpos: [0]; default: 1;
+ *  Configures pwm registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PWM    (BIT(0))
+#define TEE_READ_TEE_PWM_M  (TEE_READ_TEE_PWM_V << TEE_READ_TEE_PWM_S)
+#define TEE_READ_TEE_PWM_V  0x00000001U
+#define TEE_READ_TEE_PWM_S  0
+/** TEE_READ_REE0_PWM : R/W; bitpos: [1]; default: 0;
+ *  Configures pwm registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PWM    (BIT(1))
+#define TEE_READ_REE0_PWM_M  (TEE_READ_REE0_PWM_V << TEE_READ_REE0_PWM_S)
+#define TEE_READ_REE0_PWM_V  0x00000001U
+#define TEE_READ_REE0_PWM_S  1
+/** TEE_READ_REE1_PWM : R/W; bitpos: [2]; default: 0;
+ *  Configures pwm registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PWM    (BIT(2))
+#define TEE_READ_REE1_PWM_M  (TEE_READ_REE1_PWM_V << TEE_READ_REE1_PWM_S)
+#define TEE_READ_REE1_PWM_V  0x00000001U
+#define TEE_READ_REE1_PWM_S  2
+/** TEE_READ_REE2_PWM : R/W; bitpos: [3]; default: 0;
+ *  Configures pwm registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PWM    (BIT(3))
+#define TEE_READ_REE2_PWM_M  (TEE_READ_REE2_PWM_V << TEE_READ_REE2_PWM_S)
+#define TEE_READ_REE2_PWM_V  0x00000001U
+#define TEE_READ_REE2_PWM_S  3
+/** TEE_WRITE_TEE_PWM : R/W; bitpos: [4]; default: 1;
+ *  Configures pwm registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PWM    (BIT(4))
+#define TEE_WRITE_TEE_PWM_M  (TEE_WRITE_TEE_PWM_V << TEE_WRITE_TEE_PWM_S)
+#define TEE_WRITE_TEE_PWM_V  0x00000001U
+#define TEE_WRITE_TEE_PWM_S  4
+/** TEE_WRITE_REE0_PWM : R/W; bitpos: [5]; default: 0;
+ *  Configures pwm registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PWM    (BIT(5))
+#define TEE_WRITE_REE0_PWM_M  (TEE_WRITE_REE0_PWM_V << TEE_WRITE_REE0_PWM_S)
+#define TEE_WRITE_REE0_PWM_V  0x00000001U
+#define TEE_WRITE_REE0_PWM_S  5
+/** TEE_WRITE_REE1_PWM : R/W; bitpos: [6]; default: 0;
+ *  Configures pwm registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PWM    (BIT(6))
+#define TEE_WRITE_REE1_PWM_M  (TEE_WRITE_REE1_PWM_V << TEE_WRITE_REE1_PWM_S)
+#define TEE_WRITE_REE1_PWM_V  0x00000001U
+#define TEE_WRITE_REE1_PWM_S  6
+/** TEE_WRITE_REE2_PWM : R/W; bitpos: [7]; default: 0;
+ *  Configures pwm registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PWM    (BIT(7))
+#define TEE_WRITE_REE2_PWM_M  (TEE_WRITE_REE2_PWM_V << TEE_WRITE_REE2_PWM_S)
+#define TEE_WRITE_REE2_PWM_V  0x00000001U
+#define TEE_WRITE_REE2_PWM_S  7
+
+/** TEE_LEDC_CTRL_REG register
+ *  ledc read/write control register
+ */
+#define TEE_LEDC_CTRL_REG (DR_REG_TEE_BASE + 0xac)
+/** TEE_READ_TEE_LEDC : R/W; bitpos: [0]; default: 1;
+ *  Configures ledc registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_LEDC    (BIT(0))
+#define TEE_READ_TEE_LEDC_M  (TEE_READ_TEE_LEDC_V << TEE_READ_TEE_LEDC_S)
+#define TEE_READ_TEE_LEDC_V  0x00000001U
+#define TEE_READ_TEE_LEDC_S  0
+/** TEE_READ_REE0_LEDC : R/W; bitpos: [1]; default: 0;
+ *  Configures ledc registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_LEDC    (BIT(1))
+#define TEE_READ_REE0_LEDC_M  (TEE_READ_REE0_LEDC_V << TEE_READ_REE0_LEDC_S)
+#define TEE_READ_REE0_LEDC_V  0x00000001U
+#define TEE_READ_REE0_LEDC_S  1
+/** TEE_READ_REE1_LEDC : R/W; bitpos: [2]; default: 0;
+ *  Configures ledc registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_LEDC    (BIT(2))
+#define TEE_READ_REE1_LEDC_M  (TEE_READ_REE1_LEDC_V << TEE_READ_REE1_LEDC_S)
+#define TEE_READ_REE1_LEDC_V  0x00000001U
+#define TEE_READ_REE1_LEDC_S  2
+/** TEE_READ_REE2_LEDC : R/W; bitpos: [3]; default: 0;
+ *  Configures ledc registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_LEDC    (BIT(3))
+#define TEE_READ_REE2_LEDC_M  (TEE_READ_REE2_LEDC_V << TEE_READ_REE2_LEDC_S)
+#define TEE_READ_REE2_LEDC_V  0x00000001U
+#define TEE_READ_REE2_LEDC_S  3
+/** TEE_WRITE_TEE_LEDC : R/W; bitpos: [4]; default: 1;
+ *  Configures ledc registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_LEDC    (BIT(4))
+#define TEE_WRITE_TEE_LEDC_M  (TEE_WRITE_TEE_LEDC_V << TEE_WRITE_TEE_LEDC_S)
+#define TEE_WRITE_TEE_LEDC_V  0x00000001U
+#define TEE_WRITE_TEE_LEDC_S  4
+/** TEE_WRITE_REE0_LEDC : R/W; bitpos: [5]; default: 0;
+ *  Configures ledc registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_LEDC    (BIT(5))
+#define TEE_WRITE_REE0_LEDC_M  (TEE_WRITE_REE0_LEDC_V << TEE_WRITE_REE0_LEDC_S)
+#define TEE_WRITE_REE0_LEDC_V  0x00000001U
+#define TEE_WRITE_REE0_LEDC_S  5
+/** TEE_WRITE_REE1_LEDC : R/W; bitpos: [6]; default: 0;
+ *  Configures ledc registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_LEDC    (BIT(6))
+#define TEE_WRITE_REE1_LEDC_M  (TEE_WRITE_REE1_LEDC_V << TEE_WRITE_REE1_LEDC_S)
+#define TEE_WRITE_REE1_LEDC_V  0x00000001U
+#define TEE_WRITE_REE1_LEDC_S  6
+/** TEE_WRITE_REE2_LEDC : R/W; bitpos: [7]; default: 0;
+ *  Configures ledc registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_LEDC    (BIT(7))
+#define TEE_WRITE_REE2_LEDC_M  (TEE_WRITE_REE2_LEDC_V << TEE_WRITE_REE2_LEDC_S)
+#define TEE_WRITE_REE2_LEDC_V  0x00000001U
+#define TEE_WRITE_REE2_LEDC_S  7
+
+/** TEE_CAN0_CTRL_REG register
+ *  can read/write control register
+ */
+#define TEE_CAN0_CTRL_REG (DR_REG_TEE_BASE + 0xb0)
+/** TEE_READ_TEE_CAN0 : R/W; bitpos: [0]; default: 1;
+ *  Configures can0 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CAN0    (BIT(0))
+#define TEE_READ_TEE_CAN0_M  (TEE_READ_TEE_CAN0_V << TEE_READ_TEE_CAN0_S)
+#define TEE_READ_TEE_CAN0_V  0x00000001U
+#define TEE_READ_TEE_CAN0_S  0
+/** TEE_READ_REE0_CAN0 : R/W; bitpos: [1]; default: 0;
+ *  Configures can0 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CAN0    (BIT(1))
+#define TEE_READ_REE0_CAN0_M  (TEE_READ_REE0_CAN0_V << TEE_READ_REE0_CAN0_S)
+#define TEE_READ_REE0_CAN0_V  0x00000001U
+#define TEE_READ_REE0_CAN0_S  1
+/** TEE_READ_REE1_CAN0 : R/W; bitpos: [2]; default: 0;
+ *  Configures can0 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CAN0    (BIT(2))
+#define TEE_READ_REE1_CAN0_M  (TEE_READ_REE1_CAN0_V << TEE_READ_REE1_CAN0_S)
+#define TEE_READ_REE1_CAN0_V  0x00000001U
+#define TEE_READ_REE1_CAN0_S  2
+/** TEE_READ_REE2_CAN0 : R/W; bitpos: [3]; default: 0;
+ *  Configures can0 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CAN0    (BIT(3))
+#define TEE_READ_REE2_CAN0_M  (TEE_READ_REE2_CAN0_V << TEE_READ_REE2_CAN0_S)
+#define TEE_READ_REE2_CAN0_V  0x00000001U
+#define TEE_READ_REE2_CAN0_S  3
+/** TEE_WRITE_TEE_CAN0 : R/W; bitpos: [4]; default: 1;
+ *  Configures can0 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CAN0    (BIT(4))
+#define TEE_WRITE_TEE_CAN0_M  (TEE_WRITE_TEE_CAN0_V << TEE_WRITE_TEE_CAN0_S)
+#define TEE_WRITE_TEE_CAN0_V  0x00000001U
+#define TEE_WRITE_TEE_CAN0_S  4
+/** TEE_WRITE_REE0_CAN0 : R/W; bitpos: [5]; default: 0;
+ *  Configures can0 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CAN0    (BIT(5))
+#define TEE_WRITE_REE0_CAN0_M  (TEE_WRITE_REE0_CAN0_V << TEE_WRITE_REE0_CAN0_S)
+#define TEE_WRITE_REE0_CAN0_V  0x00000001U
+#define TEE_WRITE_REE0_CAN0_S  5
+/** TEE_WRITE_REE1_CAN0 : R/W; bitpos: [6]; default: 0;
+ *  Configures can0 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CAN0    (BIT(6))
+#define TEE_WRITE_REE1_CAN0_M  (TEE_WRITE_REE1_CAN0_V << TEE_WRITE_REE1_CAN0_S)
+#define TEE_WRITE_REE1_CAN0_V  0x00000001U
+#define TEE_WRITE_REE1_CAN0_S  6
+/** TEE_WRITE_REE2_CAN0 : R/W; bitpos: [7]; default: 0;
+ *  Configures can0 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CAN0    (BIT(7))
+#define TEE_WRITE_REE2_CAN0_M  (TEE_WRITE_REE2_CAN0_V << TEE_WRITE_REE2_CAN0_S)
+#define TEE_WRITE_REE2_CAN0_V  0x00000001U
+#define TEE_WRITE_REE2_CAN0_S  7
+
+/** TEE_USB_DEVICE_CTRL_REG register
+ *  usb_device read/write control register
+ */
+#define TEE_USB_DEVICE_CTRL_REG (DR_REG_TEE_BASE + 0xb4)
+/** TEE_READ_TEE_USB_DEVICE : R/W; bitpos: [0]; default: 1;
+ *  Configures usb_device registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_USB_DEVICE    (BIT(0))
+#define TEE_READ_TEE_USB_DEVICE_M  (TEE_READ_TEE_USB_DEVICE_V << TEE_READ_TEE_USB_DEVICE_S)
+#define TEE_READ_TEE_USB_DEVICE_V  0x00000001U
+#define TEE_READ_TEE_USB_DEVICE_S  0
+/** TEE_READ_REE0_USB_DEVICE : R/W; bitpos: [1]; default: 0;
+ *  Configures usb_device registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_USB_DEVICE    (BIT(1))
+#define TEE_READ_REE0_USB_DEVICE_M  (TEE_READ_REE0_USB_DEVICE_V << TEE_READ_REE0_USB_DEVICE_S)
+#define TEE_READ_REE0_USB_DEVICE_V  0x00000001U
+#define TEE_READ_REE0_USB_DEVICE_S  1
+/** TEE_READ_REE1_USB_DEVICE : R/W; bitpos: [2]; default: 0;
+ *  Configures usb_device registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_USB_DEVICE    (BIT(2))
+#define TEE_READ_REE1_USB_DEVICE_M  (TEE_READ_REE1_USB_DEVICE_V << TEE_READ_REE1_USB_DEVICE_S)
+#define TEE_READ_REE1_USB_DEVICE_V  0x00000001U
+#define TEE_READ_REE1_USB_DEVICE_S  2
+/** TEE_READ_REE2_USB_DEVICE : R/W; bitpos: [3]; default: 0;
+ *  Configures usb_device registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_USB_DEVICE    (BIT(3))
+#define TEE_READ_REE2_USB_DEVICE_M  (TEE_READ_REE2_USB_DEVICE_V << TEE_READ_REE2_USB_DEVICE_S)
+#define TEE_READ_REE2_USB_DEVICE_V  0x00000001U
+#define TEE_READ_REE2_USB_DEVICE_S  3
+/** TEE_WRITE_TEE_USB_DEVICE : R/W; bitpos: [4]; default: 1;
+ *  Configures usb_device registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_USB_DEVICE    (BIT(4))
+#define TEE_WRITE_TEE_USB_DEVICE_M  (TEE_WRITE_TEE_USB_DEVICE_V << TEE_WRITE_TEE_USB_DEVICE_S)
+#define TEE_WRITE_TEE_USB_DEVICE_V  0x00000001U
+#define TEE_WRITE_TEE_USB_DEVICE_S  4
+/** TEE_WRITE_REE0_USB_DEVICE : R/W; bitpos: [5]; default: 0;
+ *  Configures usb_device registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_USB_DEVICE    (BIT(5))
+#define TEE_WRITE_REE0_USB_DEVICE_M  (TEE_WRITE_REE0_USB_DEVICE_V << TEE_WRITE_REE0_USB_DEVICE_S)
+#define TEE_WRITE_REE0_USB_DEVICE_V  0x00000001U
+#define TEE_WRITE_REE0_USB_DEVICE_S  5
+/** TEE_WRITE_REE1_USB_DEVICE : R/W; bitpos: [6]; default: 0;
+ *  Configures usb_device registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_USB_DEVICE    (BIT(6))
+#define TEE_WRITE_REE1_USB_DEVICE_M  (TEE_WRITE_REE1_USB_DEVICE_V << TEE_WRITE_REE1_USB_DEVICE_S)
+#define TEE_WRITE_REE1_USB_DEVICE_V  0x00000001U
+#define TEE_WRITE_REE1_USB_DEVICE_S  6
+/** TEE_WRITE_REE2_USB_DEVICE : R/W; bitpos: [7]; default: 0;
+ *  Configures usb_device registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_USB_DEVICE    (BIT(7))
+#define TEE_WRITE_REE2_USB_DEVICE_M  (TEE_WRITE_REE2_USB_DEVICE_V << TEE_WRITE_REE2_USB_DEVICE_S)
+#define TEE_WRITE_REE2_USB_DEVICE_V  0x00000001U
+#define TEE_WRITE_REE2_USB_DEVICE_S  7
+
+/** TEE_RMT_CTRL_REG register
+ *  rmt read/write control register
+ */
+#define TEE_RMT_CTRL_REG (DR_REG_TEE_BASE + 0xb8)
+/** TEE_READ_TEE_RMT : R/W; bitpos: [0]; default: 1;
+ *  Configures rmt registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_RMT    (BIT(0))
+#define TEE_READ_TEE_RMT_M  (TEE_READ_TEE_RMT_V << TEE_READ_TEE_RMT_S)
+#define TEE_READ_TEE_RMT_V  0x00000001U
+#define TEE_READ_TEE_RMT_S  0
+/** TEE_READ_REE0_RMT : R/W; bitpos: [1]; default: 0;
+ *  Configures rmt registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_RMT    (BIT(1))
+#define TEE_READ_REE0_RMT_M  (TEE_READ_REE0_RMT_V << TEE_READ_REE0_RMT_S)
+#define TEE_READ_REE0_RMT_V  0x00000001U
+#define TEE_READ_REE0_RMT_S  1
+/** TEE_READ_REE1_RMT : R/W; bitpos: [2]; default: 0;
+ *  Configures rmt registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_RMT    (BIT(2))
+#define TEE_READ_REE1_RMT_M  (TEE_READ_REE1_RMT_V << TEE_READ_REE1_RMT_S)
+#define TEE_READ_REE1_RMT_V  0x00000001U
+#define TEE_READ_REE1_RMT_S  2
+/** TEE_READ_REE2_RMT : R/W; bitpos: [3]; default: 0;
+ *  Configures rmt registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_RMT    (BIT(3))
+#define TEE_READ_REE2_RMT_M  (TEE_READ_REE2_RMT_V << TEE_READ_REE2_RMT_S)
+#define TEE_READ_REE2_RMT_V  0x00000001U
+#define TEE_READ_REE2_RMT_S  3
+/** TEE_WRITE_TEE_RMT : R/W; bitpos: [4]; default: 1;
+ *  Configures rmt registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_RMT    (BIT(4))
+#define TEE_WRITE_TEE_RMT_M  (TEE_WRITE_TEE_RMT_V << TEE_WRITE_TEE_RMT_S)
+#define TEE_WRITE_TEE_RMT_V  0x00000001U
+#define TEE_WRITE_TEE_RMT_S  4
+/** TEE_WRITE_REE0_RMT : R/W; bitpos: [5]; default: 0;
+ *  Configures rmt registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_RMT    (BIT(5))
+#define TEE_WRITE_REE0_RMT_M  (TEE_WRITE_REE0_RMT_V << TEE_WRITE_REE0_RMT_S)
+#define TEE_WRITE_REE0_RMT_V  0x00000001U
+#define TEE_WRITE_REE0_RMT_S  5
+/** TEE_WRITE_REE1_RMT : R/W; bitpos: [6]; default: 0;
+ *  Configures rmt registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_RMT    (BIT(6))
+#define TEE_WRITE_REE1_RMT_M  (TEE_WRITE_REE1_RMT_V << TEE_WRITE_REE1_RMT_S)
+#define TEE_WRITE_REE1_RMT_V  0x00000001U
+#define TEE_WRITE_REE1_RMT_S  6
+/** TEE_WRITE_REE2_RMT : R/W; bitpos: [7]; default: 0;
+ *  Configures rmt registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_RMT    (BIT(7))
+#define TEE_WRITE_REE2_RMT_M  (TEE_WRITE_REE2_RMT_V << TEE_WRITE_REE2_RMT_S)
+#define TEE_WRITE_REE2_RMT_V  0x00000001U
+#define TEE_WRITE_REE2_RMT_S  7
+
+/** TEE_GDMA_CTRL_REG register
+ *  gdma read/write control register
+ */
+#define TEE_GDMA_CTRL_REG (DR_REG_TEE_BASE + 0xbc)
+/** TEE_READ_TEE_GDMA : R/W; bitpos: [0]; default: 1;
+ *  Configures gdma registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_GDMA    (BIT(0))
+#define TEE_READ_TEE_GDMA_M  (TEE_READ_TEE_GDMA_V << TEE_READ_TEE_GDMA_S)
+#define TEE_READ_TEE_GDMA_V  0x00000001U
+#define TEE_READ_TEE_GDMA_S  0
+/** TEE_READ_REE0_GDMA : R/W; bitpos: [1]; default: 0;
+ *  Configures gdma registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_GDMA    (BIT(1))
+#define TEE_READ_REE0_GDMA_M  (TEE_READ_REE0_GDMA_V << TEE_READ_REE0_GDMA_S)
+#define TEE_READ_REE0_GDMA_V  0x00000001U
+#define TEE_READ_REE0_GDMA_S  1
+/** TEE_READ_REE1_GDMA : R/W; bitpos: [2]; default: 0;
+ *  Configures gdma registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_GDMA    (BIT(2))
+#define TEE_READ_REE1_GDMA_M  (TEE_READ_REE1_GDMA_V << TEE_READ_REE1_GDMA_S)
+#define TEE_READ_REE1_GDMA_V  0x00000001U
+#define TEE_READ_REE1_GDMA_S  2
+/** TEE_READ_REE2_GDMA : R/W; bitpos: [3]; default: 0;
+ *  Configures gdma registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_GDMA    (BIT(3))
+#define TEE_READ_REE2_GDMA_M  (TEE_READ_REE2_GDMA_V << TEE_READ_REE2_GDMA_S)
+#define TEE_READ_REE2_GDMA_V  0x00000001U
+#define TEE_READ_REE2_GDMA_S  3
+/** TEE_WRITE_TEE_GDMA : R/W; bitpos: [4]; default: 1;
+ *  Configures gdma registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_GDMA    (BIT(4))
+#define TEE_WRITE_TEE_GDMA_M  (TEE_WRITE_TEE_GDMA_V << TEE_WRITE_TEE_GDMA_S)
+#define TEE_WRITE_TEE_GDMA_V  0x00000001U
+#define TEE_WRITE_TEE_GDMA_S  4
+/** TEE_WRITE_REE0_GDMA : R/W; bitpos: [5]; default: 0;
+ *  Configures gdma registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_GDMA    (BIT(5))
+#define TEE_WRITE_REE0_GDMA_M  (TEE_WRITE_REE0_GDMA_V << TEE_WRITE_REE0_GDMA_S)
+#define TEE_WRITE_REE0_GDMA_V  0x00000001U
+#define TEE_WRITE_REE0_GDMA_S  5
+/** TEE_WRITE_REE1_GDMA : R/W; bitpos: [6]; default: 0;
+ *  Configures gdma registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_GDMA    (BIT(6))
+#define TEE_WRITE_REE1_GDMA_M  (TEE_WRITE_REE1_GDMA_V << TEE_WRITE_REE1_GDMA_S)
+#define TEE_WRITE_REE1_GDMA_V  0x00000001U
+#define TEE_WRITE_REE1_GDMA_S  6
+/** TEE_WRITE_REE2_GDMA : R/W; bitpos: [7]; default: 0;
+ *  Configures gdma registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_GDMA    (BIT(7))
+#define TEE_WRITE_REE2_GDMA_M  (TEE_WRITE_REE2_GDMA_V << TEE_WRITE_REE2_GDMA_S)
+#define TEE_WRITE_REE2_GDMA_V  0x00000001U
+#define TEE_WRITE_REE2_GDMA_S  7
+
+/** TEE_REGDMA_CTRL_REG register
+ *  regdma read/write control register
+ */
+#define TEE_REGDMA_CTRL_REG (DR_REG_TEE_BASE + 0xc0)
+/** TEE_READ_TEE_REGDMA : R/W; bitpos: [0]; default: 1;
+ *  Configures regdma registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_REGDMA    (BIT(0))
+#define TEE_READ_TEE_REGDMA_M  (TEE_READ_TEE_REGDMA_V << TEE_READ_TEE_REGDMA_S)
+#define TEE_READ_TEE_REGDMA_V  0x00000001U
+#define TEE_READ_TEE_REGDMA_S  0
+/** TEE_READ_REE0_REGDMA : R/W; bitpos: [1]; default: 0;
+ *  Configures regdma registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_REGDMA    (BIT(1))
+#define TEE_READ_REE0_REGDMA_M  (TEE_READ_REE0_REGDMA_V << TEE_READ_REE0_REGDMA_S)
+#define TEE_READ_REE0_REGDMA_V  0x00000001U
+#define TEE_READ_REE0_REGDMA_S  1
+/** TEE_READ_REE1_REGDMA : R/W; bitpos: [2]; default: 0;
+ *  Configures regdma registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_REGDMA    (BIT(2))
+#define TEE_READ_REE1_REGDMA_M  (TEE_READ_REE1_REGDMA_V << TEE_READ_REE1_REGDMA_S)
+#define TEE_READ_REE1_REGDMA_V  0x00000001U
+#define TEE_READ_REE1_REGDMA_S  2
+/** TEE_READ_REE2_REGDMA : R/W; bitpos: [3]; default: 0;
+ *  Configures regdma registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_REGDMA    (BIT(3))
+#define TEE_READ_REE2_REGDMA_M  (TEE_READ_REE2_REGDMA_V << TEE_READ_REE2_REGDMA_S)
+#define TEE_READ_REE2_REGDMA_V  0x00000001U
+#define TEE_READ_REE2_REGDMA_S  3
+/** TEE_WRITE_TEE_REGDMA : R/W; bitpos: [4]; default: 1;
+ *  Configures regdma registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_REGDMA    (BIT(4))
+#define TEE_WRITE_TEE_REGDMA_M  (TEE_WRITE_TEE_REGDMA_V << TEE_WRITE_TEE_REGDMA_S)
+#define TEE_WRITE_TEE_REGDMA_V  0x00000001U
+#define TEE_WRITE_TEE_REGDMA_S  4
+/** TEE_WRITE_REE0_REGDMA : R/W; bitpos: [5]; default: 0;
+ *  Configures regdma registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_REGDMA    (BIT(5))
+#define TEE_WRITE_REE0_REGDMA_M  (TEE_WRITE_REE0_REGDMA_V << TEE_WRITE_REE0_REGDMA_S)
+#define TEE_WRITE_REE0_REGDMA_V  0x00000001U
+#define TEE_WRITE_REE0_REGDMA_S  5
+/** TEE_WRITE_REE1_REGDMA : R/W; bitpos: [6]; default: 0;
+ *  Configures regdma registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_REGDMA    (BIT(6))
+#define TEE_WRITE_REE1_REGDMA_M  (TEE_WRITE_REE1_REGDMA_V << TEE_WRITE_REE1_REGDMA_S)
+#define TEE_WRITE_REE1_REGDMA_V  0x00000001U
+#define TEE_WRITE_REE1_REGDMA_S  6
+/** TEE_WRITE_REE2_REGDMA : R/W; bitpos: [7]; default: 0;
+ *  Configures regdma registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_REGDMA    (BIT(7))
+#define TEE_WRITE_REE2_REGDMA_M  (TEE_WRITE_REE2_REGDMA_V << TEE_WRITE_REE2_REGDMA_S)
+#define TEE_WRITE_REE2_REGDMA_V  0x00000001U
+#define TEE_WRITE_REE2_REGDMA_S  7
+
+/** TEE_ETM_CTRL_REG register
+ *  etm read/write control register
+ */
+#define TEE_ETM_CTRL_REG (DR_REG_TEE_BASE + 0xc4)
+/** TEE_READ_TEE_ETM : R/W; bitpos: [0]; default: 1;
+ *  Configures etm registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_ETM    (BIT(0))
+#define TEE_READ_TEE_ETM_M  (TEE_READ_TEE_ETM_V << TEE_READ_TEE_ETM_S)
+#define TEE_READ_TEE_ETM_V  0x00000001U
+#define TEE_READ_TEE_ETM_S  0
+/** TEE_READ_REE0_ETM : R/W; bitpos: [1]; default: 0;
+ *  Configures etm registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_ETM    (BIT(1))
+#define TEE_READ_REE0_ETM_M  (TEE_READ_REE0_ETM_V << TEE_READ_REE0_ETM_S)
+#define TEE_READ_REE0_ETM_V  0x00000001U
+#define TEE_READ_REE0_ETM_S  1
+/** TEE_READ_REE1_ETM : R/W; bitpos: [2]; default: 0;
+ *  Configures etm registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_ETM    (BIT(2))
+#define TEE_READ_REE1_ETM_M  (TEE_READ_REE1_ETM_V << TEE_READ_REE1_ETM_S)
+#define TEE_READ_REE1_ETM_V  0x00000001U
+#define TEE_READ_REE1_ETM_S  2
+/** TEE_READ_REE2_ETM : R/W; bitpos: [3]; default: 0;
+ *  Configures etm registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_ETM    (BIT(3))
+#define TEE_READ_REE2_ETM_M  (TEE_READ_REE2_ETM_V << TEE_READ_REE2_ETM_S)
+#define TEE_READ_REE2_ETM_V  0x00000001U
+#define TEE_READ_REE2_ETM_S  3
+/** TEE_WRITE_TEE_ETM : R/W; bitpos: [4]; default: 1;
+ *  Configures etm registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_ETM    (BIT(4))
+#define TEE_WRITE_TEE_ETM_M  (TEE_WRITE_TEE_ETM_V << TEE_WRITE_TEE_ETM_S)
+#define TEE_WRITE_TEE_ETM_V  0x00000001U
+#define TEE_WRITE_TEE_ETM_S  4
+/** TEE_WRITE_REE0_ETM : R/W; bitpos: [5]; default: 0;
+ *  Configures etm registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_ETM    (BIT(5))
+#define TEE_WRITE_REE0_ETM_M  (TEE_WRITE_REE0_ETM_V << TEE_WRITE_REE0_ETM_S)
+#define TEE_WRITE_REE0_ETM_V  0x00000001U
+#define TEE_WRITE_REE0_ETM_S  5
+/** TEE_WRITE_REE1_ETM : R/W; bitpos: [6]; default: 0;
+ *  Configures etm registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_ETM    (BIT(6))
+#define TEE_WRITE_REE1_ETM_M  (TEE_WRITE_REE1_ETM_V << TEE_WRITE_REE1_ETM_S)
+#define TEE_WRITE_REE1_ETM_V  0x00000001U
+#define TEE_WRITE_REE1_ETM_S  6
+/** TEE_WRITE_REE2_ETM : R/W; bitpos: [7]; default: 0;
+ *  Configures etm registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_ETM    (BIT(7))
+#define TEE_WRITE_REE2_ETM_M  (TEE_WRITE_REE2_ETM_V << TEE_WRITE_REE2_ETM_S)
+#define TEE_WRITE_REE2_ETM_V  0x00000001U
+#define TEE_WRITE_REE2_ETM_S  7
+
+/** TEE_INTMTX_CTRL_REG register
+ *  intmtx read/write control register
+ */
+#define TEE_INTMTX_CTRL_REG (DR_REG_TEE_BASE + 0xc8)
+/** TEE_READ_TEE_INTMTX_CORE : R/W; bitpos: [0]; default: 1;
+ *  Configures intmtx registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_INTMTX_CORE    (BIT(0))
+#define TEE_READ_TEE_INTMTX_CORE_M  (TEE_READ_TEE_INTMTX_CORE_V << TEE_READ_TEE_INTMTX_CORE_S)
+#define TEE_READ_TEE_INTMTX_CORE_V  0x00000001U
+#define TEE_READ_TEE_INTMTX_CORE_S  0
+/** TEE_READ_REE0_INTMTX_CORE : R/W; bitpos: [1]; default: 0;
+ *  Configures intmtx registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_INTMTX_CORE    (BIT(1))
+#define TEE_READ_REE0_INTMTX_CORE_M  (TEE_READ_REE0_INTMTX_CORE_V << TEE_READ_REE0_INTMTX_CORE_S)
+#define TEE_READ_REE0_INTMTX_CORE_V  0x00000001U
+#define TEE_READ_REE0_INTMTX_CORE_S  1
+/** TEE_READ_REE1_INTMTX_CORE : R/W; bitpos: [2]; default: 0;
+ *  Configures intmtx registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_INTMTX_CORE    (BIT(2))
+#define TEE_READ_REE1_INTMTX_CORE_M  (TEE_READ_REE1_INTMTX_CORE_V << TEE_READ_REE1_INTMTX_CORE_S)
+#define TEE_READ_REE1_INTMTX_CORE_V  0x00000001U
+#define TEE_READ_REE1_INTMTX_CORE_S  2
+/** TEE_READ_REE2_INTMTX_CORE : R/W; bitpos: [3]; default: 0;
+ *  Configures intmtx registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_INTMTX_CORE    (BIT(3))
+#define TEE_READ_REE2_INTMTX_CORE_M  (TEE_READ_REE2_INTMTX_CORE_V << TEE_READ_REE2_INTMTX_CORE_S)
+#define TEE_READ_REE2_INTMTX_CORE_V  0x00000001U
+#define TEE_READ_REE2_INTMTX_CORE_S  3
+/** TEE_WRITE_TEE_INTMTX_CORE : R/W; bitpos: [4]; default: 1;
+ *  Configures intmtx registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_INTMTX_CORE    (BIT(4))
+#define TEE_WRITE_TEE_INTMTX_CORE_M  (TEE_WRITE_TEE_INTMTX_CORE_V << TEE_WRITE_TEE_INTMTX_CORE_S)
+#define TEE_WRITE_TEE_INTMTX_CORE_V  0x00000001U
+#define TEE_WRITE_TEE_INTMTX_CORE_S  4
+/** TEE_WRITE_REE0_INTMTX_CORE : R/W; bitpos: [5]; default: 0;
+ *  Configures intmtx registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_INTMTX_CORE    (BIT(5))
+#define TEE_WRITE_REE0_INTMTX_CORE_M  (TEE_WRITE_REE0_INTMTX_CORE_V << TEE_WRITE_REE0_INTMTX_CORE_S)
+#define TEE_WRITE_REE0_INTMTX_CORE_V  0x00000001U
+#define TEE_WRITE_REE0_INTMTX_CORE_S  5
+/** TEE_WRITE_REE1_INTMTX_CORE : R/W; bitpos: [6]; default: 0;
+ *  Configures intmtx registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_INTMTX_CORE    (BIT(6))
+#define TEE_WRITE_REE1_INTMTX_CORE_M  (TEE_WRITE_REE1_INTMTX_CORE_V << TEE_WRITE_REE1_INTMTX_CORE_S)
+#define TEE_WRITE_REE1_INTMTX_CORE_V  0x00000001U
+#define TEE_WRITE_REE1_INTMTX_CORE_S  6
+/** TEE_WRITE_REE2_INTMTX_CORE : R/W; bitpos: [7]; default: 0;
+ *  Configures intmtx registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_INTMTX_CORE    (BIT(7))
+#define TEE_WRITE_REE2_INTMTX_CORE_M  (TEE_WRITE_REE2_INTMTX_CORE_V << TEE_WRITE_REE2_INTMTX_CORE_S)
+#define TEE_WRITE_REE2_INTMTX_CORE_V  0x00000001U
+#define TEE_WRITE_REE2_INTMTX_CORE_S  7
+
+/** TEE_APB_ADC_CTRL_REG register
+ *  apb_adc read/write control register
+ */
+#define TEE_APB_ADC_CTRL_REG (DR_REG_TEE_BASE + 0xd0)
+/** TEE_READ_TEE_APB_ADC : R/W; bitpos: [0]; default: 1;
+ *  Configures apb_adc registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_APB_ADC    (BIT(0))
+#define TEE_READ_TEE_APB_ADC_M  (TEE_READ_TEE_APB_ADC_V << TEE_READ_TEE_APB_ADC_S)
+#define TEE_READ_TEE_APB_ADC_V  0x00000001U
+#define TEE_READ_TEE_APB_ADC_S  0
+/** TEE_READ_REE0_APB_ADC : R/W; bitpos: [1]; default: 0;
+ *  Configures apb_adc registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_APB_ADC    (BIT(1))
+#define TEE_READ_REE0_APB_ADC_M  (TEE_READ_REE0_APB_ADC_V << TEE_READ_REE0_APB_ADC_S)
+#define TEE_READ_REE0_APB_ADC_V  0x00000001U
+#define TEE_READ_REE0_APB_ADC_S  1
+/** TEE_READ_REE1_APB_ADC : R/W; bitpos: [2]; default: 0;
+ *  Configures apb_adc registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_APB_ADC    (BIT(2))
+#define TEE_READ_REE1_APB_ADC_M  (TEE_READ_REE1_APB_ADC_V << TEE_READ_REE1_APB_ADC_S)
+#define TEE_READ_REE1_APB_ADC_V  0x00000001U
+#define TEE_READ_REE1_APB_ADC_S  2
+/** TEE_READ_REE2_APB_ADC : R/W; bitpos: [3]; default: 0;
+ *  Configures apb_adc registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_APB_ADC    (BIT(3))
+#define TEE_READ_REE2_APB_ADC_M  (TEE_READ_REE2_APB_ADC_V << TEE_READ_REE2_APB_ADC_S)
+#define TEE_READ_REE2_APB_ADC_V  0x00000001U
+#define TEE_READ_REE2_APB_ADC_S  3
+/** TEE_WRITE_TEE_APB_ADC : R/W; bitpos: [4]; default: 1;
+ *  Configures apb_adc registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_APB_ADC    (BIT(4))
+#define TEE_WRITE_TEE_APB_ADC_M  (TEE_WRITE_TEE_APB_ADC_V << TEE_WRITE_TEE_APB_ADC_S)
+#define TEE_WRITE_TEE_APB_ADC_V  0x00000001U
+#define TEE_WRITE_TEE_APB_ADC_S  4
+/** TEE_WRITE_REE0_APB_ADC : R/W; bitpos: [5]; default: 0;
+ *  Configures apb_adc registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_APB_ADC    (BIT(5))
+#define TEE_WRITE_REE0_APB_ADC_M  (TEE_WRITE_REE0_APB_ADC_V << TEE_WRITE_REE0_APB_ADC_S)
+#define TEE_WRITE_REE0_APB_ADC_V  0x00000001U
+#define TEE_WRITE_REE0_APB_ADC_S  5
+/** TEE_WRITE_REE1_APB_ADC : R/W; bitpos: [6]; default: 0;
+ *  Configures apb_adc registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_APB_ADC    (BIT(6))
+#define TEE_WRITE_REE1_APB_ADC_M  (TEE_WRITE_REE1_APB_ADC_V << TEE_WRITE_REE1_APB_ADC_S)
+#define TEE_WRITE_REE1_APB_ADC_V  0x00000001U
+#define TEE_WRITE_REE1_APB_ADC_S  6
+/** TEE_WRITE_REE2_APB_ADC : R/W; bitpos: [7]; default: 0;
+ *  Configures apb_adc registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_APB_ADC    (BIT(7))
+#define TEE_WRITE_REE2_APB_ADC_M  (TEE_WRITE_REE2_APB_ADC_V << TEE_WRITE_REE2_APB_ADC_S)
+#define TEE_WRITE_REE2_APB_ADC_V  0x00000001U
+#define TEE_WRITE_REE2_APB_ADC_S  7
+
+/** TEE_TIMERGROUP0_CTRL_REG register
+ *  timergroup0 read/write control register
+ */
+#define TEE_TIMERGROUP0_CTRL_REG (DR_REG_TEE_BASE + 0xd4)
+/** TEE_READ_TEE_TIMERGROUP0 : R/W; bitpos: [0]; default: 1;
+ *  Configures timergroup0 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_TIMERGROUP0    (BIT(0))
+#define TEE_READ_TEE_TIMERGROUP0_M  (TEE_READ_TEE_TIMERGROUP0_V << TEE_READ_TEE_TIMERGROUP0_S)
+#define TEE_READ_TEE_TIMERGROUP0_V  0x00000001U
+#define TEE_READ_TEE_TIMERGROUP0_S  0
+/** TEE_READ_REE0_TIMERGROUP0 : R/W; bitpos: [1]; default: 0;
+ *  Configures timergroup0 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_TIMERGROUP0    (BIT(1))
+#define TEE_READ_REE0_TIMERGROUP0_M  (TEE_READ_REE0_TIMERGROUP0_V << TEE_READ_REE0_TIMERGROUP0_S)
+#define TEE_READ_REE0_TIMERGROUP0_V  0x00000001U
+#define TEE_READ_REE0_TIMERGROUP0_S  1
+/** TEE_READ_REE1_TIMERGROUP0 : R/W; bitpos: [2]; default: 0;
+ *  Configures timergroup0 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_TIMERGROUP0    (BIT(2))
+#define TEE_READ_REE1_TIMERGROUP0_M  (TEE_READ_REE1_TIMERGROUP0_V << TEE_READ_REE1_TIMERGROUP0_S)
+#define TEE_READ_REE1_TIMERGROUP0_V  0x00000001U
+#define TEE_READ_REE1_TIMERGROUP0_S  2
+/** TEE_READ_REE2_TIMERGROUP0 : R/W; bitpos: [3]; default: 0;
+ *  Configures timergroup0 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_TIMERGROUP0    (BIT(3))
+#define TEE_READ_REE2_TIMERGROUP0_M  (TEE_READ_REE2_TIMERGROUP0_V << TEE_READ_REE2_TIMERGROUP0_S)
+#define TEE_READ_REE2_TIMERGROUP0_V  0x00000001U
+#define TEE_READ_REE2_TIMERGROUP0_S  3
+/** TEE_WRITE_TEE_TIMERGROUP0 : R/W; bitpos: [4]; default: 1;
+ *  Configures timergroup0 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_TIMERGROUP0    (BIT(4))
+#define TEE_WRITE_TEE_TIMERGROUP0_M  (TEE_WRITE_TEE_TIMERGROUP0_V << TEE_WRITE_TEE_TIMERGROUP0_S)
+#define TEE_WRITE_TEE_TIMERGROUP0_V  0x00000001U
+#define TEE_WRITE_TEE_TIMERGROUP0_S  4
+/** TEE_WRITE_REE0_TIMERGROUP0 : R/W; bitpos: [5]; default: 0;
+ *  Configures timergroup0 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_TIMERGROUP0    (BIT(5))
+#define TEE_WRITE_REE0_TIMERGROUP0_M  (TEE_WRITE_REE0_TIMERGROUP0_V << TEE_WRITE_REE0_TIMERGROUP0_S)
+#define TEE_WRITE_REE0_TIMERGROUP0_V  0x00000001U
+#define TEE_WRITE_REE0_TIMERGROUP0_S  5
+/** TEE_WRITE_REE1_TIMERGROUP0 : R/W; bitpos: [6]; default: 0;
+ *  Configures timergroup0 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_TIMERGROUP0    (BIT(6))
+#define TEE_WRITE_REE1_TIMERGROUP0_M  (TEE_WRITE_REE1_TIMERGROUP0_V << TEE_WRITE_REE1_TIMERGROUP0_S)
+#define TEE_WRITE_REE1_TIMERGROUP0_V  0x00000001U
+#define TEE_WRITE_REE1_TIMERGROUP0_S  6
+/** TEE_WRITE_REE2_TIMERGROUP0 : R/W; bitpos: [7]; default: 0;
+ *  Configures timergroup0 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_TIMERGROUP0    (BIT(7))
+#define TEE_WRITE_REE2_TIMERGROUP0_M  (TEE_WRITE_REE2_TIMERGROUP0_V << TEE_WRITE_REE2_TIMERGROUP0_S)
+#define TEE_WRITE_REE2_TIMERGROUP0_V  0x00000001U
+#define TEE_WRITE_REE2_TIMERGROUP0_S  7
+
+/** TEE_TIMERGROUP1_CTRL_REG register
+ *  timergroup1 read/write control register
+ */
+#define TEE_TIMERGROUP1_CTRL_REG (DR_REG_TEE_BASE + 0xd8)
+/** TEE_READ_TEE_TIMERGROUP1 : R/W; bitpos: [0]; default: 1;
+ *  Configures timergroup1 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_TIMERGROUP1    (BIT(0))
+#define TEE_READ_TEE_TIMERGROUP1_M  (TEE_READ_TEE_TIMERGROUP1_V << TEE_READ_TEE_TIMERGROUP1_S)
+#define TEE_READ_TEE_TIMERGROUP1_V  0x00000001U
+#define TEE_READ_TEE_TIMERGROUP1_S  0
+/** TEE_READ_REE0_TIMERGROUP1 : R/W; bitpos: [1]; default: 0;
+ *  Configures timergroup1 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_TIMERGROUP1    (BIT(1))
+#define TEE_READ_REE0_TIMERGROUP1_M  (TEE_READ_REE0_TIMERGROUP1_V << TEE_READ_REE0_TIMERGROUP1_S)
+#define TEE_READ_REE0_TIMERGROUP1_V  0x00000001U
+#define TEE_READ_REE0_TIMERGROUP1_S  1
+/** TEE_READ_REE1_TIMERGROUP1 : R/W; bitpos: [2]; default: 0;
+ *  Configures timergroup1 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_TIMERGROUP1    (BIT(2))
+#define TEE_READ_REE1_TIMERGROUP1_M  (TEE_READ_REE1_TIMERGROUP1_V << TEE_READ_REE1_TIMERGROUP1_S)
+#define TEE_READ_REE1_TIMERGROUP1_V  0x00000001U
+#define TEE_READ_REE1_TIMERGROUP1_S  2
+/** TEE_READ_REE2_TIMERGROUP1 : R/W; bitpos: [3]; default: 0;
+ *  Configures timergroup1 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_TIMERGROUP1    (BIT(3))
+#define TEE_READ_REE2_TIMERGROUP1_M  (TEE_READ_REE2_TIMERGROUP1_V << TEE_READ_REE2_TIMERGROUP1_S)
+#define TEE_READ_REE2_TIMERGROUP1_V  0x00000001U
+#define TEE_READ_REE2_TIMERGROUP1_S  3
+/** TEE_WRITE_TEE_TIMERGROUP1 : R/W; bitpos: [4]; default: 1;
+ *  Configures timergroup1 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_TIMERGROUP1    (BIT(4))
+#define TEE_WRITE_TEE_TIMERGROUP1_M  (TEE_WRITE_TEE_TIMERGROUP1_V << TEE_WRITE_TEE_TIMERGROUP1_S)
+#define TEE_WRITE_TEE_TIMERGROUP1_V  0x00000001U
+#define TEE_WRITE_TEE_TIMERGROUP1_S  4
+/** TEE_WRITE_REE0_TIMERGROUP1 : R/W; bitpos: [5]; default: 0;
+ *  Configures timergroup1 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_TIMERGROUP1    (BIT(5))
+#define TEE_WRITE_REE0_TIMERGROUP1_M  (TEE_WRITE_REE0_TIMERGROUP1_V << TEE_WRITE_REE0_TIMERGROUP1_S)
+#define TEE_WRITE_REE0_TIMERGROUP1_V  0x00000001U
+#define TEE_WRITE_REE0_TIMERGROUP1_S  5
+/** TEE_WRITE_REE1_TIMERGROUP1 : R/W; bitpos: [6]; default: 0;
+ *  Configures timergroup1 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_TIMERGROUP1    (BIT(6))
+#define TEE_WRITE_REE1_TIMERGROUP1_M  (TEE_WRITE_REE1_TIMERGROUP1_V << TEE_WRITE_REE1_TIMERGROUP1_S)
+#define TEE_WRITE_REE1_TIMERGROUP1_V  0x00000001U
+#define TEE_WRITE_REE1_TIMERGROUP1_S  6
+/** TEE_WRITE_REE2_TIMERGROUP1 : R/W; bitpos: [7]; default: 0;
+ *  Configures timergroup1 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_TIMERGROUP1    (BIT(7))
+#define TEE_WRITE_REE2_TIMERGROUP1_M  (TEE_WRITE_REE2_TIMERGROUP1_V << TEE_WRITE_REE2_TIMERGROUP1_S)
+#define TEE_WRITE_REE2_TIMERGROUP1_V  0x00000001U
+#define TEE_WRITE_REE2_TIMERGROUP1_S  7
+
+/** TEE_SYSTIMER_CTRL_REG register
+ *  systimer read/write control register
+ */
+#define TEE_SYSTIMER_CTRL_REG (DR_REG_TEE_BASE + 0xdc)
+/** TEE_READ_TEE_SYSTIMER : R/W; bitpos: [0]; default: 1;
+ *  Configures systimer registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_SYSTIMER    (BIT(0))
+#define TEE_READ_TEE_SYSTIMER_M  (TEE_READ_TEE_SYSTIMER_V << TEE_READ_TEE_SYSTIMER_S)
+#define TEE_READ_TEE_SYSTIMER_V  0x00000001U
+#define TEE_READ_TEE_SYSTIMER_S  0
+/** TEE_READ_REE0_SYSTIMER : R/W; bitpos: [1]; default: 0;
+ *  Configures systimer registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_SYSTIMER    (BIT(1))
+#define TEE_READ_REE0_SYSTIMER_M  (TEE_READ_REE0_SYSTIMER_V << TEE_READ_REE0_SYSTIMER_S)
+#define TEE_READ_REE0_SYSTIMER_V  0x00000001U
+#define TEE_READ_REE0_SYSTIMER_S  1
+/** TEE_READ_REE1_SYSTIMER : R/W; bitpos: [2]; default: 0;
+ *  Configures systimer registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_SYSTIMER    (BIT(2))
+#define TEE_READ_REE1_SYSTIMER_M  (TEE_READ_REE1_SYSTIMER_V << TEE_READ_REE1_SYSTIMER_S)
+#define TEE_READ_REE1_SYSTIMER_V  0x00000001U
+#define TEE_READ_REE1_SYSTIMER_S  2
+/** TEE_READ_REE2_SYSTIMER : R/W; bitpos: [3]; default: 0;
+ *  Configures systimer registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_SYSTIMER    (BIT(3))
+#define TEE_READ_REE2_SYSTIMER_M  (TEE_READ_REE2_SYSTIMER_V << TEE_READ_REE2_SYSTIMER_S)
+#define TEE_READ_REE2_SYSTIMER_V  0x00000001U
+#define TEE_READ_REE2_SYSTIMER_S  3
+/** TEE_WRITE_TEE_SYSTIMER : R/W; bitpos: [4]; default: 1;
+ *  Configures systimer registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_SYSTIMER    (BIT(4))
+#define TEE_WRITE_TEE_SYSTIMER_M  (TEE_WRITE_TEE_SYSTIMER_V << TEE_WRITE_TEE_SYSTIMER_S)
+#define TEE_WRITE_TEE_SYSTIMER_V  0x00000001U
+#define TEE_WRITE_TEE_SYSTIMER_S  4
+/** TEE_WRITE_REE0_SYSTIMER : R/W; bitpos: [5]; default: 0;
+ *  Configures systimer registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_SYSTIMER    (BIT(5))
+#define TEE_WRITE_REE0_SYSTIMER_M  (TEE_WRITE_REE0_SYSTIMER_V << TEE_WRITE_REE0_SYSTIMER_S)
+#define TEE_WRITE_REE0_SYSTIMER_V  0x00000001U
+#define TEE_WRITE_REE0_SYSTIMER_S  5
+/** TEE_WRITE_REE1_SYSTIMER : R/W; bitpos: [6]; default: 0;
+ *  Configures systimer registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_SYSTIMER    (BIT(6))
+#define TEE_WRITE_REE1_SYSTIMER_M  (TEE_WRITE_REE1_SYSTIMER_V << TEE_WRITE_REE1_SYSTIMER_S)
+#define TEE_WRITE_REE1_SYSTIMER_V  0x00000001U
+#define TEE_WRITE_REE1_SYSTIMER_S  6
+/** TEE_WRITE_REE2_SYSTIMER : R/W; bitpos: [7]; default: 0;
+ *  Configures systimer registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_SYSTIMER    (BIT(7))
+#define TEE_WRITE_REE2_SYSTIMER_M  (TEE_WRITE_REE2_SYSTIMER_V << TEE_WRITE_REE2_SYSTIMER_S)
+#define TEE_WRITE_REE2_SYSTIMER_V  0x00000001U
+#define TEE_WRITE_REE2_SYSTIMER_S  7
+
+/** TEE_MISC_CTRL_REG register
+ *  misc read/write control register
+ */
+#define TEE_MISC_CTRL_REG (DR_REG_TEE_BASE + 0xe0)
+/** TEE_READ_TEE_MISC : R/W; bitpos: [0]; default: 1;
+ *  Configures misc registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_MISC    (BIT(0))
+#define TEE_READ_TEE_MISC_M  (TEE_READ_TEE_MISC_V << TEE_READ_TEE_MISC_S)
+#define TEE_READ_TEE_MISC_V  0x00000001U
+#define TEE_READ_TEE_MISC_S  0
+/** TEE_READ_REE0_MISC : R/W; bitpos: [1]; default: 0;
+ *  Configures misc registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_MISC    (BIT(1))
+#define TEE_READ_REE0_MISC_M  (TEE_READ_REE0_MISC_V << TEE_READ_REE0_MISC_S)
+#define TEE_READ_REE0_MISC_V  0x00000001U
+#define TEE_READ_REE0_MISC_S  1
+/** TEE_READ_REE1_MISC : R/W; bitpos: [2]; default: 0;
+ *  Configures misc registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_MISC    (BIT(2))
+#define TEE_READ_REE1_MISC_M  (TEE_READ_REE1_MISC_V << TEE_READ_REE1_MISC_S)
+#define TEE_READ_REE1_MISC_V  0x00000001U
+#define TEE_READ_REE1_MISC_S  2
+/** TEE_READ_REE2_MISC : R/W; bitpos: [3]; default: 0;
+ *  Configures misc registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_MISC    (BIT(3))
+#define TEE_READ_REE2_MISC_M  (TEE_READ_REE2_MISC_V << TEE_READ_REE2_MISC_S)
+#define TEE_READ_REE2_MISC_V  0x00000001U
+#define TEE_READ_REE2_MISC_S  3
+/** TEE_WRITE_TEE_MISC : R/W; bitpos: [4]; default: 1;
+ *  Configures misc registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_MISC    (BIT(4))
+#define TEE_WRITE_TEE_MISC_M  (TEE_WRITE_TEE_MISC_V << TEE_WRITE_TEE_MISC_S)
+#define TEE_WRITE_TEE_MISC_V  0x00000001U
+#define TEE_WRITE_TEE_MISC_S  4
+/** TEE_WRITE_REE0_MISC : R/W; bitpos: [5]; default: 0;
+ *  Configures misc registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_MISC    (BIT(5))
+#define TEE_WRITE_REE0_MISC_M  (TEE_WRITE_REE0_MISC_V << TEE_WRITE_REE0_MISC_S)
+#define TEE_WRITE_REE0_MISC_V  0x00000001U
+#define TEE_WRITE_REE0_MISC_S  5
+/** TEE_WRITE_REE1_MISC : R/W; bitpos: [6]; default: 0;
+ *  Configures misc registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_MISC    (BIT(6))
+#define TEE_WRITE_REE1_MISC_M  (TEE_WRITE_REE1_MISC_V << TEE_WRITE_REE1_MISC_S)
+#define TEE_WRITE_REE1_MISC_V  0x00000001U
+#define TEE_WRITE_REE1_MISC_S  6
+/** TEE_WRITE_REE2_MISC : R/W; bitpos: [7]; default: 0;
+ *  Configures misc registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_MISC    (BIT(7))
+#define TEE_WRITE_REE2_MISC_M  (TEE_WRITE_REE2_MISC_V << TEE_WRITE_REE2_MISC_S)
+#define TEE_WRITE_REE2_MISC_V  0x00000001U
+#define TEE_WRITE_REE2_MISC_S  7
+
+/** TEE_PVT_MONITOR_CTRL_REG register
+ *  pvt_monitor read/write control register
+ */
+#define TEE_PVT_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0xf0)
+/** TEE_READ_TEE_PVT_MONITOR : R/W; bitpos: [0]; default: 1;
+ *  Configures pvt_monitor registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PVT_MONITOR    (BIT(0))
+#define TEE_READ_TEE_PVT_MONITOR_M  (TEE_READ_TEE_PVT_MONITOR_V << TEE_READ_TEE_PVT_MONITOR_S)
+#define TEE_READ_TEE_PVT_MONITOR_V  0x00000001U
+#define TEE_READ_TEE_PVT_MONITOR_S  0
+/** TEE_READ_REE0_PVT_MONITOR : R/W; bitpos: [1]; default: 0;
+ *  Configures pvt_monitor registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PVT_MONITOR    (BIT(1))
+#define TEE_READ_REE0_PVT_MONITOR_M  (TEE_READ_REE0_PVT_MONITOR_V << TEE_READ_REE0_PVT_MONITOR_S)
+#define TEE_READ_REE0_PVT_MONITOR_V  0x00000001U
+#define TEE_READ_REE0_PVT_MONITOR_S  1
+/** TEE_READ_REE1_PVT_MONITOR : R/W; bitpos: [2]; default: 0;
+ *  Configures pvt_monitor registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PVT_MONITOR    (BIT(2))
+#define TEE_READ_REE1_PVT_MONITOR_M  (TEE_READ_REE1_PVT_MONITOR_V << TEE_READ_REE1_PVT_MONITOR_S)
+#define TEE_READ_REE1_PVT_MONITOR_V  0x00000001U
+#define TEE_READ_REE1_PVT_MONITOR_S  2
+/** TEE_READ_REE2_PVT_MONITOR : R/W; bitpos: [3]; default: 0;
+ *  Configures pvt_monitor registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PVT_MONITOR    (BIT(3))
+#define TEE_READ_REE2_PVT_MONITOR_M  (TEE_READ_REE2_PVT_MONITOR_V << TEE_READ_REE2_PVT_MONITOR_S)
+#define TEE_READ_REE2_PVT_MONITOR_V  0x00000001U
+#define TEE_READ_REE2_PVT_MONITOR_S  3
+/** TEE_WRITE_TEE_PVT_MONITOR : R/W; bitpos: [4]; default: 1;
+ *  Configures pvt_monitor registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PVT_MONITOR    (BIT(4))
+#define TEE_WRITE_TEE_PVT_MONITOR_M  (TEE_WRITE_TEE_PVT_MONITOR_V << TEE_WRITE_TEE_PVT_MONITOR_S)
+#define TEE_WRITE_TEE_PVT_MONITOR_V  0x00000001U
+#define TEE_WRITE_TEE_PVT_MONITOR_S  4
+/** TEE_WRITE_REE0_PVT_MONITOR : R/W; bitpos: [5]; default: 0;
+ *  Configures pvt_monitor registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PVT_MONITOR    (BIT(5))
+#define TEE_WRITE_REE0_PVT_MONITOR_M  (TEE_WRITE_REE0_PVT_MONITOR_V << TEE_WRITE_REE0_PVT_MONITOR_S)
+#define TEE_WRITE_REE0_PVT_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE0_PVT_MONITOR_S  5
+/** TEE_WRITE_REE1_PVT_MONITOR : R/W; bitpos: [6]; default: 0;
+ *  Configures pvt_monitor registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PVT_MONITOR    (BIT(6))
+#define TEE_WRITE_REE1_PVT_MONITOR_M  (TEE_WRITE_REE1_PVT_MONITOR_V << TEE_WRITE_REE1_PVT_MONITOR_S)
+#define TEE_WRITE_REE1_PVT_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE1_PVT_MONITOR_S  6
+/** TEE_WRITE_REE2_PVT_MONITOR : R/W; bitpos: [7]; default: 0;
+ *  Configures pvt_monitor registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PVT_MONITOR    (BIT(7))
+#define TEE_WRITE_REE2_PVT_MONITOR_M  (TEE_WRITE_REE2_PVT_MONITOR_V << TEE_WRITE_REE2_PVT_MONITOR_S)
+#define TEE_WRITE_REE2_PVT_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE2_PVT_MONITOR_S  7
+
+/** TEE_PCNT_CTRL_REG register
+ *  pcnt read/write control register
+ */
+#define TEE_PCNT_CTRL_REG (DR_REG_TEE_BASE + 0xf4)
+/** TEE_READ_TEE_PCNT : R/W; bitpos: [0]; default: 1;
+ *  Configures pcnt registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PCNT    (BIT(0))
+#define TEE_READ_TEE_PCNT_M  (TEE_READ_TEE_PCNT_V << TEE_READ_TEE_PCNT_S)
+#define TEE_READ_TEE_PCNT_V  0x00000001U
+#define TEE_READ_TEE_PCNT_S  0
+/** TEE_READ_REE0_PCNT : R/W; bitpos: [1]; default: 0;
+ *  Configures pcnt registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PCNT    (BIT(1))
+#define TEE_READ_REE0_PCNT_M  (TEE_READ_REE0_PCNT_V << TEE_READ_REE0_PCNT_S)
+#define TEE_READ_REE0_PCNT_V  0x00000001U
+#define TEE_READ_REE0_PCNT_S  1
+/** TEE_READ_REE1_PCNT : R/W; bitpos: [2]; default: 0;
+ *  Configures pcnt registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PCNT    (BIT(2))
+#define TEE_READ_REE1_PCNT_M  (TEE_READ_REE1_PCNT_V << TEE_READ_REE1_PCNT_S)
+#define TEE_READ_REE1_PCNT_V  0x00000001U
+#define TEE_READ_REE1_PCNT_S  2
+/** TEE_READ_REE2_PCNT : R/W; bitpos: [3]; default: 0;
+ *  Configures pcnt registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PCNT    (BIT(3))
+#define TEE_READ_REE2_PCNT_M  (TEE_READ_REE2_PCNT_V << TEE_READ_REE2_PCNT_S)
+#define TEE_READ_REE2_PCNT_V  0x00000001U
+#define TEE_READ_REE2_PCNT_S  3
+/** TEE_WRITE_TEE_PCNT : R/W; bitpos: [4]; default: 1;
+ *  Configures pcnt registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PCNT    (BIT(4))
+#define TEE_WRITE_TEE_PCNT_M  (TEE_WRITE_TEE_PCNT_V << TEE_WRITE_TEE_PCNT_S)
+#define TEE_WRITE_TEE_PCNT_V  0x00000001U
+#define TEE_WRITE_TEE_PCNT_S  4
+/** TEE_WRITE_REE0_PCNT : R/W; bitpos: [5]; default: 0;
+ *  Configures pcnt registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PCNT    (BIT(5))
+#define TEE_WRITE_REE0_PCNT_M  (TEE_WRITE_REE0_PCNT_V << TEE_WRITE_REE0_PCNT_S)
+#define TEE_WRITE_REE0_PCNT_V  0x00000001U
+#define TEE_WRITE_REE0_PCNT_S  5
+/** TEE_WRITE_REE1_PCNT : R/W; bitpos: [6]; default: 0;
+ *  Configures pcnt registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PCNT    (BIT(6))
+#define TEE_WRITE_REE1_PCNT_M  (TEE_WRITE_REE1_PCNT_V << TEE_WRITE_REE1_PCNT_S)
+#define TEE_WRITE_REE1_PCNT_V  0x00000001U
+#define TEE_WRITE_REE1_PCNT_S  6
+/** TEE_WRITE_REE2_PCNT : R/W; bitpos: [7]; default: 0;
+ *  Configures pcnt registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PCNT    (BIT(7))
+#define TEE_WRITE_REE2_PCNT_M  (TEE_WRITE_REE2_PCNT_V << TEE_WRITE_REE2_PCNT_S)
+#define TEE_WRITE_REE2_PCNT_V  0x00000001U
+#define TEE_WRITE_REE2_PCNT_S  7
+
+/** TEE_IOMUX_CTRL_REG register
+ *  iomux read/write control register
+ */
+#define TEE_IOMUX_CTRL_REG (DR_REG_TEE_BASE + 0xf8)
+/** TEE_READ_TEE_IOMUX : R/W; bitpos: [0]; default: 1;
+ *  Configures iomux registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_IOMUX    (BIT(0))
+#define TEE_READ_TEE_IOMUX_M  (TEE_READ_TEE_IOMUX_V << TEE_READ_TEE_IOMUX_S)
+#define TEE_READ_TEE_IOMUX_V  0x00000001U
+#define TEE_READ_TEE_IOMUX_S  0
+/** TEE_READ_REE0_IOMUX : R/W; bitpos: [1]; default: 0;
+ *  Configures iomux registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_IOMUX    (BIT(1))
+#define TEE_READ_REE0_IOMUX_M  (TEE_READ_REE0_IOMUX_V << TEE_READ_REE0_IOMUX_S)
+#define TEE_READ_REE0_IOMUX_V  0x00000001U
+#define TEE_READ_REE0_IOMUX_S  1
+/** TEE_READ_REE1_IOMUX : R/W; bitpos: [2]; default: 0;
+ *  Configures iomux registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_IOMUX    (BIT(2))
+#define TEE_READ_REE1_IOMUX_M  (TEE_READ_REE1_IOMUX_V << TEE_READ_REE1_IOMUX_S)
+#define TEE_READ_REE1_IOMUX_V  0x00000001U
+#define TEE_READ_REE1_IOMUX_S  2
+/** TEE_READ_REE2_IOMUX : R/W; bitpos: [3]; default: 0;
+ *  Configures iomux registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_IOMUX    (BIT(3))
+#define TEE_READ_REE2_IOMUX_M  (TEE_READ_REE2_IOMUX_V << TEE_READ_REE2_IOMUX_S)
+#define TEE_READ_REE2_IOMUX_V  0x00000001U
+#define TEE_READ_REE2_IOMUX_S  3
+/** TEE_WRITE_TEE_IOMUX : R/W; bitpos: [4]; default: 1;
+ *  Configures iomux registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_IOMUX    (BIT(4))
+#define TEE_WRITE_TEE_IOMUX_M  (TEE_WRITE_TEE_IOMUX_V << TEE_WRITE_TEE_IOMUX_S)
+#define TEE_WRITE_TEE_IOMUX_V  0x00000001U
+#define TEE_WRITE_TEE_IOMUX_S  4
+/** TEE_WRITE_REE0_IOMUX : R/W; bitpos: [5]; default: 0;
+ *  Configures iomux registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_IOMUX    (BIT(5))
+#define TEE_WRITE_REE0_IOMUX_M  (TEE_WRITE_REE0_IOMUX_V << TEE_WRITE_REE0_IOMUX_S)
+#define TEE_WRITE_REE0_IOMUX_V  0x00000001U
+#define TEE_WRITE_REE0_IOMUX_S  5
+/** TEE_WRITE_REE1_IOMUX : R/W; bitpos: [6]; default: 0;
+ *  Configures iomux registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_IOMUX    (BIT(6))
+#define TEE_WRITE_REE1_IOMUX_M  (TEE_WRITE_REE1_IOMUX_V << TEE_WRITE_REE1_IOMUX_S)
+#define TEE_WRITE_REE1_IOMUX_V  0x00000001U
+#define TEE_WRITE_REE1_IOMUX_S  6
+/** TEE_WRITE_REE2_IOMUX : R/W; bitpos: [7]; default: 0;
+ *  Configures iomux registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_IOMUX    (BIT(7))
+#define TEE_WRITE_REE2_IOMUX_M  (TEE_WRITE_REE2_IOMUX_V << TEE_WRITE_REE2_IOMUX_S)
+#define TEE_WRITE_REE2_IOMUX_V  0x00000001U
+#define TEE_WRITE_REE2_IOMUX_S  7
+
+/** TEE_PSRAM_MEM_MONITOR_CTRL_REG register
+ *  psram_mem_monitor read/write control register
+ */
+#define TEE_PSRAM_MEM_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0xfc)
+/** TEE_READ_TEE_PSRAM_MEM_MONITOR : R/W; bitpos: [0]; default: 1;
+ *  Configures psram_mem_monitor registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PSRAM_MEM_MONITOR    (BIT(0))
+#define TEE_READ_TEE_PSRAM_MEM_MONITOR_M  (TEE_READ_TEE_PSRAM_MEM_MONITOR_V << TEE_READ_TEE_PSRAM_MEM_MONITOR_S)
+#define TEE_READ_TEE_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_READ_TEE_PSRAM_MEM_MONITOR_S  0
+/** TEE_READ_REE0_PSRAM_MEM_MONITOR : R/W; bitpos: [1]; default: 0;
+ *  Configures psram_mem_monitor registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PSRAM_MEM_MONITOR    (BIT(1))
+#define TEE_READ_REE0_PSRAM_MEM_MONITOR_M  (TEE_READ_REE0_PSRAM_MEM_MONITOR_V << TEE_READ_REE0_PSRAM_MEM_MONITOR_S)
+#define TEE_READ_REE0_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_READ_REE0_PSRAM_MEM_MONITOR_S  1
+/** TEE_READ_REE1_PSRAM_MEM_MONITOR : R/W; bitpos: [2]; default: 0;
+ *  Configures psram_mem_monitor registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PSRAM_MEM_MONITOR    (BIT(2))
+#define TEE_READ_REE1_PSRAM_MEM_MONITOR_M  (TEE_READ_REE1_PSRAM_MEM_MONITOR_V << TEE_READ_REE1_PSRAM_MEM_MONITOR_S)
+#define TEE_READ_REE1_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_READ_REE1_PSRAM_MEM_MONITOR_S  2
+/** TEE_READ_REE2_PSRAM_MEM_MONITOR : R/W; bitpos: [3]; default: 0;
+ *  Configures psram_mem_monitor registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PSRAM_MEM_MONITOR    (BIT(3))
+#define TEE_READ_REE2_PSRAM_MEM_MONITOR_M  (TEE_READ_REE2_PSRAM_MEM_MONITOR_V << TEE_READ_REE2_PSRAM_MEM_MONITOR_S)
+#define TEE_READ_REE2_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_READ_REE2_PSRAM_MEM_MONITOR_S  3
+/** TEE_WRITE_TEE_PSRAM_MEM_MONITOR : R/W; bitpos: [4]; default: 1;
+ *  Configures psram_mem_monitor registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PSRAM_MEM_MONITOR    (BIT(4))
+#define TEE_WRITE_TEE_PSRAM_MEM_MONITOR_M  (TEE_WRITE_TEE_PSRAM_MEM_MONITOR_V << TEE_WRITE_TEE_PSRAM_MEM_MONITOR_S)
+#define TEE_WRITE_TEE_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_WRITE_TEE_PSRAM_MEM_MONITOR_S  4
+/** TEE_WRITE_REE0_PSRAM_MEM_MONITOR : R/W; bitpos: [5]; default: 0;
+ *  Configures psram_mem_monitor registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PSRAM_MEM_MONITOR    (BIT(5))
+#define TEE_WRITE_REE0_PSRAM_MEM_MONITOR_M  (TEE_WRITE_REE0_PSRAM_MEM_MONITOR_V << TEE_WRITE_REE0_PSRAM_MEM_MONITOR_S)
+#define TEE_WRITE_REE0_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE0_PSRAM_MEM_MONITOR_S  5
+/** TEE_WRITE_REE1_PSRAM_MEM_MONITOR : R/W; bitpos: [6]; default: 0;
+ *  Configures psram_mem_monitor registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PSRAM_MEM_MONITOR    (BIT(6))
+#define TEE_WRITE_REE1_PSRAM_MEM_MONITOR_M  (TEE_WRITE_REE1_PSRAM_MEM_MONITOR_V << TEE_WRITE_REE1_PSRAM_MEM_MONITOR_S)
+#define TEE_WRITE_REE1_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE1_PSRAM_MEM_MONITOR_S  6
+/** TEE_WRITE_REE2_PSRAM_MEM_MONITOR : R/W; bitpos: [7]; default: 0;
+ *  Configures psram_mem_monitor registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PSRAM_MEM_MONITOR    (BIT(7))
+#define TEE_WRITE_REE2_PSRAM_MEM_MONITOR_M  (TEE_WRITE_REE2_PSRAM_MEM_MONITOR_V << TEE_WRITE_REE2_PSRAM_MEM_MONITOR_S)
+#define TEE_WRITE_REE2_PSRAM_MEM_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE2_PSRAM_MEM_MONITOR_S  7
+
+/** TEE_MEM_ACS_MONITOR_CTRL_REG register
+ *  mem_acs_monitor read/write control register
+ */
+#define TEE_MEM_ACS_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0x100)
+/** TEE_READ_TEE_MEM_ACS_MONITOR : R/W; bitpos: [0]; default: 1;
+ *  Configures mem_acs_monitor registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_MEM_ACS_MONITOR    (BIT(0))
+#define TEE_READ_TEE_MEM_ACS_MONITOR_M  (TEE_READ_TEE_MEM_ACS_MONITOR_V << TEE_READ_TEE_MEM_ACS_MONITOR_S)
+#define TEE_READ_TEE_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_READ_TEE_MEM_ACS_MONITOR_S  0
+/** TEE_READ_REE0_MEM_ACS_MONITOR : R/W; bitpos: [1]; default: 0;
+ *  Configures mem_acs_monitor registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_MEM_ACS_MONITOR    (BIT(1))
+#define TEE_READ_REE0_MEM_ACS_MONITOR_M  (TEE_READ_REE0_MEM_ACS_MONITOR_V << TEE_READ_REE0_MEM_ACS_MONITOR_S)
+#define TEE_READ_REE0_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_READ_REE0_MEM_ACS_MONITOR_S  1
+/** TEE_READ_REE1_MEM_ACS_MONITOR : R/W; bitpos: [2]; default: 0;
+ *  Configures mem_acs_monitor registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_MEM_ACS_MONITOR    (BIT(2))
+#define TEE_READ_REE1_MEM_ACS_MONITOR_M  (TEE_READ_REE1_MEM_ACS_MONITOR_V << TEE_READ_REE1_MEM_ACS_MONITOR_S)
+#define TEE_READ_REE1_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_READ_REE1_MEM_ACS_MONITOR_S  2
+/** TEE_READ_REE2_MEM_ACS_MONITOR : R/W; bitpos: [3]; default: 0;
+ *  Configures mem_acs_monitor registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_MEM_ACS_MONITOR    (BIT(3))
+#define TEE_READ_REE2_MEM_ACS_MONITOR_M  (TEE_READ_REE2_MEM_ACS_MONITOR_V << TEE_READ_REE2_MEM_ACS_MONITOR_S)
+#define TEE_READ_REE2_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_READ_REE2_MEM_ACS_MONITOR_S  3
+/** TEE_WRITE_TEE_MEM_ACS_MONITOR : R/W; bitpos: [4]; default: 1;
+ *  Configures mem_acs_monitor registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_MEM_ACS_MONITOR    (BIT(4))
+#define TEE_WRITE_TEE_MEM_ACS_MONITOR_M  (TEE_WRITE_TEE_MEM_ACS_MONITOR_V << TEE_WRITE_TEE_MEM_ACS_MONITOR_S)
+#define TEE_WRITE_TEE_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_WRITE_TEE_MEM_ACS_MONITOR_S  4
+/** TEE_WRITE_REE0_MEM_ACS_MONITOR : R/W; bitpos: [5]; default: 0;
+ *  Configures mem_acs_monitor registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_MEM_ACS_MONITOR    (BIT(5))
+#define TEE_WRITE_REE0_MEM_ACS_MONITOR_M  (TEE_WRITE_REE0_MEM_ACS_MONITOR_V << TEE_WRITE_REE0_MEM_ACS_MONITOR_S)
+#define TEE_WRITE_REE0_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE0_MEM_ACS_MONITOR_S  5
+/** TEE_WRITE_REE1_MEM_ACS_MONITOR : R/W; bitpos: [6]; default: 0;
+ *  Configures mem_acs_monitor registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_MEM_ACS_MONITOR    (BIT(6))
+#define TEE_WRITE_REE1_MEM_ACS_MONITOR_M  (TEE_WRITE_REE1_MEM_ACS_MONITOR_V << TEE_WRITE_REE1_MEM_ACS_MONITOR_S)
+#define TEE_WRITE_REE1_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE1_MEM_ACS_MONITOR_S  6
+/** TEE_WRITE_REE2_MEM_ACS_MONITOR : R/W; bitpos: [7]; default: 0;
+ *  Configures mem_acs_monitor registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_MEM_ACS_MONITOR    (BIT(7))
+#define TEE_WRITE_REE2_MEM_ACS_MONITOR_M  (TEE_WRITE_REE2_MEM_ACS_MONITOR_V << TEE_WRITE_REE2_MEM_ACS_MONITOR_S)
+#define TEE_WRITE_REE2_MEM_ACS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE2_MEM_ACS_MONITOR_S  7
+
+/** TEE_HP_SYSTEM_REG_CTRL_REG register
+ *  hp_system_reg read/write control register
+ */
+#define TEE_HP_SYSTEM_REG_CTRL_REG (DR_REG_TEE_BASE + 0x104)
+/** TEE_READ_TEE_HP_SYSTEM_REG : R/W; bitpos: [0]; default: 1;
+ *  Configures hp_system_reg registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_HP_SYSTEM_REG    (BIT(0))
+#define TEE_READ_TEE_HP_SYSTEM_REG_M  (TEE_READ_TEE_HP_SYSTEM_REG_V << TEE_READ_TEE_HP_SYSTEM_REG_S)
+#define TEE_READ_TEE_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_READ_TEE_HP_SYSTEM_REG_S  0
+/** TEE_READ_REE0_HP_SYSTEM_REG : R/W; bitpos: [1]; default: 0;
+ *  Configures hp_system_reg registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_HP_SYSTEM_REG    (BIT(1))
+#define TEE_READ_REE0_HP_SYSTEM_REG_M  (TEE_READ_REE0_HP_SYSTEM_REG_V << TEE_READ_REE0_HP_SYSTEM_REG_S)
+#define TEE_READ_REE0_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_READ_REE0_HP_SYSTEM_REG_S  1
+/** TEE_READ_REE1_HP_SYSTEM_REG : R/W; bitpos: [2]; default: 0;
+ *  Configures hp_system_reg registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_HP_SYSTEM_REG    (BIT(2))
+#define TEE_READ_REE1_HP_SYSTEM_REG_M  (TEE_READ_REE1_HP_SYSTEM_REG_V << TEE_READ_REE1_HP_SYSTEM_REG_S)
+#define TEE_READ_REE1_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_READ_REE1_HP_SYSTEM_REG_S  2
+/** TEE_READ_REE2_HP_SYSTEM_REG : R/W; bitpos: [3]; default: 0;
+ *  Configures hp_system_reg registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_HP_SYSTEM_REG    (BIT(3))
+#define TEE_READ_REE2_HP_SYSTEM_REG_M  (TEE_READ_REE2_HP_SYSTEM_REG_V << TEE_READ_REE2_HP_SYSTEM_REG_S)
+#define TEE_READ_REE2_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_READ_REE2_HP_SYSTEM_REG_S  3
+/** TEE_WRITE_TEE_HP_SYSTEM_REG : R/W; bitpos: [4]; default: 1;
+ *  Configures hp_system_reg registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_HP_SYSTEM_REG    (BIT(4))
+#define TEE_WRITE_TEE_HP_SYSTEM_REG_M  (TEE_WRITE_TEE_HP_SYSTEM_REG_V << TEE_WRITE_TEE_HP_SYSTEM_REG_S)
+#define TEE_WRITE_TEE_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_WRITE_TEE_HP_SYSTEM_REG_S  4
+/** TEE_WRITE_REE0_HP_SYSTEM_REG : R/W; bitpos: [5]; default: 0;
+ *  Configures hp_system_reg registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_HP_SYSTEM_REG    (BIT(5))
+#define TEE_WRITE_REE0_HP_SYSTEM_REG_M  (TEE_WRITE_REE0_HP_SYSTEM_REG_V << TEE_WRITE_REE0_HP_SYSTEM_REG_S)
+#define TEE_WRITE_REE0_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_WRITE_REE0_HP_SYSTEM_REG_S  5
+/** TEE_WRITE_REE1_HP_SYSTEM_REG : R/W; bitpos: [6]; default: 0;
+ *  Configures hp_system_reg registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_HP_SYSTEM_REG    (BIT(6))
+#define TEE_WRITE_REE1_HP_SYSTEM_REG_M  (TEE_WRITE_REE1_HP_SYSTEM_REG_V << TEE_WRITE_REE1_HP_SYSTEM_REG_S)
+#define TEE_WRITE_REE1_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_WRITE_REE1_HP_SYSTEM_REG_S  6
+/** TEE_WRITE_REE2_HP_SYSTEM_REG : R/W; bitpos: [7]; default: 0;
+ *  Configures hp_system_reg registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_HP_SYSTEM_REG    (BIT(7))
+#define TEE_WRITE_REE2_HP_SYSTEM_REG_M  (TEE_WRITE_REE2_HP_SYSTEM_REG_V << TEE_WRITE_REE2_HP_SYSTEM_REG_S)
+#define TEE_WRITE_REE2_HP_SYSTEM_REG_V  0x00000001U
+#define TEE_WRITE_REE2_HP_SYSTEM_REG_S  7
+
+/** TEE_PCR_REG_CTRL_REG register
+ *  pcr_reg read/write control register
+ */
+#define TEE_PCR_REG_CTRL_REG (DR_REG_TEE_BASE + 0x108)
+/** TEE_READ_TEE_PCR_REG : R/W; bitpos: [0]; default: 1;
+ *  Configures pcr_reg registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_PCR_REG    (BIT(0))
+#define TEE_READ_TEE_PCR_REG_M  (TEE_READ_TEE_PCR_REG_V << TEE_READ_TEE_PCR_REG_S)
+#define TEE_READ_TEE_PCR_REG_V  0x00000001U
+#define TEE_READ_TEE_PCR_REG_S  0
+/** TEE_READ_REE0_PCR_REG : R/W; bitpos: [1]; default: 0;
+ *  Configures pcr_reg registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_PCR_REG    (BIT(1))
+#define TEE_READ_REE0_PCR_REG_M  (TEE_READ_REE0_PCR_REG_V << TEE_READ_REE0_PCR_REG_S)
+#define TEE_READ_REE0_PCR_REG_V  0x00000001U
+#define TEE_READ_REE0_PCR_REG_S  1
+/** TEE_READ_REE1_PCR_REG : R/W; bitpos: [2]; default: 0;
+ *  Configures pcr_reg registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_PCR_REG    (BIT(2))
+#define TEE_READ_REE1_PCR_REG_M  (TEE_READ_REE1_PCR_REG_V << TEE_READ_REE1_PCR_REG_S)
+#define TEE_READ_REE1_PCR_REG_V  0x00000001U
+#define TEE_READ_REE1_PCR_REG_S  2
+/** TEE_READ_REE2_PCR_REG : R/W; bitpos: [3]; default: 0;
+ *  Configures pcr_reg registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_PCR_REG    (BIT(3))
+#define TEE_READ_REE2_PCR_REG_M  (TEE_READ_REE2_PCR_REG_V << TEE_READ_REE2_PCR_REG_S)
+#define TEE_READ_REE2_PCR_REG_V  0x00000001U
+#define TEE_READ_REE2_PCR_REG_S  3
+/** TEE_WRITE_TEE_PCR_REG : R/W; bitpos: [4]; default: 1;
+ *  Configures pcr_reg registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_PCR_REG    (BIT(4))
+#define TEE_WRITE_TEE_PCR_REG_M  (TEE_WRITE_TEE_PCR_REG_V << TEE_WRITE_TEE_PCR_REG_S)
+#define TEE_WRITE_TEE_PCR_REG_V  0x00000001U
+#define TEE_WRITE_TEE_PCR_REG_S  4
+/** TEE_WRITE_REE0_PCR_REG : R/W; bitpos: [5]; default: 0;
+ *  Configures pcr_reg registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_PCR_REG    (BIT(5))
+#define TEE_WRITE_REE0_PCR_REG_M  (TEE_WRITE_REE0_PCR_REG_V << TEE_WRITE_REE0_PCR_REG_S)
+#define TEE_WRITE_REE0_PCR_REG_V  0x00000001U
+#define TEE_WRITE_REE0_PCR_REG_S  5
+/** TEE_WRITE_REE1_PCR_REG : R/W; bitpos: [6]; default: 0;
+ *  Configures pcr_reg registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_PCR_REG    (BIT(6))
+#define TEE_WRITE_REE1_PCR_REG_M  (TEE_WRITE_REE1_PCR_REG_V << TEE_WRITE_REE1_PCR_REG_S)
+#define TEE_WRITE_REE1_PCR_REG_V  0x00000001U
+#define TEE_WRITE_REE1_PCR_REG_S  6
+/** TEE_WRITE_REE2_PCR_REG : R/W; bitpos: [7]; default: 0;
+ *  Configures pcr_reg registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_PCR_REG    (BIT(7))
+#define TEE_WRITE_REE2_PCR_REG_M  (TEE_WRITE_REE2_PCR_REG_V << TEE_WRITE_REE2_PCR_REG_S)
+#define TEE_WRITE_REE2_PCR_REG_V  0x00000001U
+#define TEE_WRITE_REE2_PCR_REG_S  7
+
+/** TEE_MSPI_CTRL_REG register
+ *  mspi read/write control register
+ */
+#define TEE_MSPI_CTRL_REG (DR_REG_TEE_BASE + 0x10c)
+/** TEE_READ_TEE_MSPI : R/W; bitpos: [0]; default: 1;
+ *  Configures mspi registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_MSPI    (BIT(0))
+#define TEE_READ_TEE_MSPI_M  (TEE_READ_TEE_MSPI_V << TEE_READ_TEE_MSPI_S)
+#define TEE_READ_TEE_MSPI_V  0x00000001U
+#define TEE_READ_TEE_MSPI_S  0
+/** TEE_READ_REE0_MSPI : R/W; bitpos: [1]; default: 0;
+ *  Configures mspi registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_MSPI    (BIT(1))
+#define TEE_READ_REE0_MSPI_M  (TEE_READ_REE0_MSPI_V << TEE_READ_REE0_MSPI_S)
+#define TEE_READ_REE0_MSPI_V  0x00000001U
+#define TEE_READ_REE0_MSPI_S  1
+/** TEE_READ_REE1_MSPI : R/W; bitpos: [2]; default: 0;
+ *  Configures mspi registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_MSPI    (BIT(2))
+#define TEE_READ_REE1_MSPI_M  (TEE_READ_REE1_MSPI_V << TEE_READ_REE1_MSPI_S)
+#define TEE_READ_REE1_MSPI_V  0x00000001U
+#define TEE_READ_REE1_MSPI_S  2
+/** TEE_READ_REE2_MSPI : R/W; bitpos: [3]; default: 0;
+ *  Configures mspi registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_MSPI    (BIT(3))
+#define TEE_READ_REE2_MSPI_M  (TEE_READ_REE2_MSPI_V << TEE_READ_REE2_MSPI_S)
+#define TEE_READ_REE2_MSPI_V  0x00000001U
+#define TEE_READ_REE2_MSPI_S  3
+/** TEE_WRITE_TEE_MSPI : R/W; bitpos: [4]; default: 1;
+ *  Configures mspi registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_MSPI    (BIT(4))
+#define TEE_WRITE_TEE_MSPI_M  (TEE_WRITE_TEE_MSPI_V << TEE_WRITE_TEE_MSPI_S)
+#define TEE_WRITE_TEE_MSPI_V  0x00000001U
+#define TEE_WRITE_TEE_MSPI_S  4
+/** TEE_WRITE_REE0_MSPI : R/W; bitpos: [5]; default: 0;
+ *  Configures mspi registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_MSPI    (BIT(5))
+#define TEE_WRITE_REE0_MSPI_M  (TEE_WRITE_REE0_MSPI_V << TEE_WRITE_REE0_MSPI_S)
+#define TEE_WRITE_REE0_MSPI_V  0x00000001U
+#define TEE_WRITE_REE0_MSPI_S  5
+/** TEE_WRITE_REE1_MSPI : R/W; bitpos: [6]; default: 0;
+ *  Configures mspi registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_MSPI    (BIT(6))
+#define TEE_WRITE_REE1_MSPI_M  (TEE_WRITE_REE1_MSPI_V << TEE_WRITE_REE1_MSPI_S)
+#define TEE_WRITE_REE1_MSPI_V  0x00000001U
+#define TEE_WRITE_REE1_MSPI_S  6
+/** TEE_WRITE_REE2_MSPI : R/W; bitpos: [7]; default: 0;
+ *  Configures mspi registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_MSPI    (BIT(7))
+#define TEE_WRITE_REE2_MSPI_M  (TEE_WRITE_REE2_MSPI_V << TEE_WRITE_REE2_MSPI_S)
+#define TEE_WRITE_REE2_MSPI_V  0x00000001U
+#define TEE_WRITE_REE2_MSPI_S  7
+
+/** TEE_HP_APM_CTRL_REG register
+ *  hp_apm read/write control register
+ */
+#define TEE_HP_APM_CTRL_REG (DR_REG_TEE_BASE + 0x110)
+/** TEE_READ_TEE_HP_APM : R/W; bitpos: [0]; default: 1;
+ *  Configures hp_apm registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_HP_APM    (BIT(0))
+#define TEE_READ_TEE_HP_APM_M  (TEE_READ_TEE_HP_APM_V << TEE_READ_TEE_HP_APM_S)
+#define TEE_READ_TEE_HP_APM_V  0x00000001U
+#define TEE_READ_TEE_HP_APM_S  0
+/** TEE_READ_REE0_HP_APM : HRO; bitpos: [1]; default: 0;
+ *  Configures hp_apm registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_HP_APM    (BIT(1))
+#define TEE_READ_REE0_HP_APM_M  (TEE_READ_REE0_HP_APM_V << TEE_READ_REE0_HP_APM_S)
+#define TEE_READ_REE0_HP_APM_V  0x00000001U
+#define TEE_READ_REE0_HP_APM_S  1
+/** TEE_READ_REE1_HP_APM : HRO; bitpos: [2]; default: 0;
+ *  Configures hp_apm registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_HP_APM    (BIT(2))
+#define TEE_READ_REE1_HP_APM_M  (TEE_READ_REE1_HP_APM_V << TEE_READ_REE1_HP_APM_S)
+#define TEE_READ_REE1_HP_APM_V  0x00000001U
+#define TEE_READ_REE1_HP_APM_S  2
+/** TEE_READ_REE2_HP_APM : HRO; bitpos: [3]; default: 0;
+ *  Configures hp_apm registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_HP_APM    (BIT(3))
+#define TEE_READ_REE2_HP_APM_M  (TEE_READ_REE2_HP_APM_V << TEE_READ_REE2_HP_APM_S)
+#define TEE_READ_REE2_HP_APM_V  0x00000001U
+#define TEE_READ_REE2_HP_APM_S  3
+/** TEE_WRITE_TEE_HP_APM : R/W; bitpos: [4]; default: 1;
+ *  Configures hp_apm registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_HP_APM    (BIT(4))
+#define TEE_WRITE_TEE_HP_APM_M  (TEE_WRITE_TEE_HP_APM_V << TEE_WRITE_TEE_HP_APM_S)
+#define TEE_WRITE_TEE_HP_APM_V  0x00000001U
+#define TEE_WRITE_TEE_HP_APM_S  4
+/** TEE_WRITE_REE0_HP_APM : HRO; bitpos: [5]; default: 0;
+ *  Configures hp_apm registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_HP_APM    (BIT(5))
+#define TEE_WRITE_REE0_HP_APM_M  (TEE_WRITE_REE0_HP_APM_V << TEE_WRITE_REE0_HP_APM_S)
+#define TEE_WRITE_REE0_HP_APM_V  0x00000001U
+#define TEE_WRITE_REE0_HP_APM_S  5
+/** TEE_WRITE_REE1_HP_APM : HRO; bitpos: [6]; default: 0;
+ *  Configures hp_apm registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_HP_APM    (BIT(6))
+#define TEE_WRITE_REE1_HP_APM_M  (TEE_WRITE_REE1_HP_APM_V << TEE_WRITE_REE1_HP_APM_S)
+#define TEE_WRITE_REE1_HP_APM_V  0x00000001U
+#define TEE_WRITE_REE1_HP_APM_S  6
+/** TEE_WRITE_REE2_HP_APM : HRO; bitpos: [7]; default: 0;
+ *  Configures hp_apm registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_HP_APM    (BIT(7))
+#define TEE_WRITE_REE2_HP_APM_M  (TEE_WRITE_REE2_HP_APM_V << TEE_WRITE_REE2_HP_APM_S)
+#define TEE_WRITE_REE2_HP_APM_V  0x00000001U
+#define TEE_WRITE_REE2_HP_APM_S  7
+
+/** TEE_CPU_APM_CTRL_REG register
+ *  cpu_apm read/write control register
+ */
+#define TEE_CPU_APM_CTRL_REG (DR_REG_TEE_BASE + 0x114)
+/** TEE_READ_TEE_CPU_APM : R/W; bitpos: [0]; default: 1;
+ *  Configures cpu_apm registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CPU_APM    (BIT(0))
+#define TEE_READ_TEE_CPU_APM_M  (TEE_READ_TEE_CPU_APM_V << TEE_READ_TEE_CPU_APM_S)
+#define TEE_READ_TEE_CPU_APM_V  0x00000001U
+#define TEE_READ_TEE_CPU_APM_S  0
+/** TEE_READ_REE0_CPU_APM : HRO; bitpos: [1]; default: 0;
+ *  Configures cpu_apm registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CPU_APM    (BIT(1))
+#define TEE_READ_REE0_CPU_APM_M  (TEE_READ_REE0_CPU_APM_V << TEE_READ_REE0_CPU_APM_S)
+#define TEE_READ_REE0_CPU_APM_V  0x00000001U
+#define TEE_READ_REE0_CPU_APM_S  1
+/** TEE_READ_REE1_CPU_APM : HRO; bitpos: [2]; default: 0;
+ *  Configures cpu_apm registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CPU_APM    (BIT(2))
+#define TEE_READ_REE1_CPU_APM_M  (TEE_READ_REE1_CPU_APM_V << TEE_READ_REE1_CPU_APM_S)
+#define TEE_READ_REE1_CPU_APM_V  0x00000001U
+#define TEE_READ_REE1_CPU_APM_S  2
+/** TEE_READ_REE2_CPU_APM : HRO; bitpos: [3]; default: 0;
+ *  Configures cpu_apm registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CPU_APM    (BIT(3))
+#define TEE_READ_REE2_CPU_APM_M  (TEE_READ_REE2_CPU_APM_V << TEE_READ_REE2_CPU_APM_S)
+#define TEE_READ_REE2_CPU_APM_V  0x00000001U
+#define TEE_READ_REE2_CPU_APM_S  3
+/** TEE_WRITE_TEE_CPU_APM : R/W; bitpos: [4]; default: 1;
+ *  Configures cpu_apm registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CPU_APM    (BIT(4))
+#define TEE_WRITE_TEE_CPU_APM_M  (TEE_WRITE_TEE_CPU_APM_V << TEE_WRITE_TEE_CPU_APM_S)
+#define TEE_WRITE_TEE_CPU_APM_V  0x00000001U
+#define TEE_WRITE_TEE_CPU_APM_S  4
+/** TEE_WRITE_REE0_CPU_APM : HRO; bitpos: [5]; default: 0;
+ *  Configures cpu_apm registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CPU_APM    (BIT(5))
+#define TEE_WRITE_REE0_CPU_APM_M  (TEE_WRITE_REE0_CPU_APM_V << TEE_WRITE_REE0_CPU_APM_S)
+#define TEE_WRITE_REE0_CPU_APM_V  0x00000001U
+#define TEE_WRITE_REE0_CPU_APM_S  5
+/** TEE_WRITE_REE1_CPU_APM : HRO; bitpos: [6]; default: 0;
+ *  Configures cpu_apm registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CPU_APM    (BIT(6))
+#define TEE_WRITE_REE1_CPU_APM_M  (TEE_WRITE_REE1_CPU_APM_V << TEE_WRITE_REE1_CPU_APM_S)
+#define TEE_WRITE_REE1_CPU_APM_V  0x00000001U
+#define TEE_WRITE_REE1_CPU_APM_S  6
+/** TEE_WRITE_REE2_CPU_APM : HRO; bitpos: [7]; default: 0;
+ *  Configures cpu_apm registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CPU_APM    (BIT(7))
+#define TEE_WRITE_REE2_CPU_APM_M  (TEE_WRITE_REE2_CPU_APM_V << TEE_WRITE_REE2_CPU_APM_S)
+#define TEE_WRITE_REE2_CPU_APM_V  0x00000001U
+#define TEE_WRITE_REE2_CPU_APM_S  7
+
+/** TEE_TEE_CTRL_REG register
+ *  tee read/write control register
+ */
+#define TEE_TEE_CTRL_REG (DR_REG_TEE_BASE + 0x118)
+/** TEE_READ_TEE_TEE : R/W; bitpos: [0]; default: 1;
+ *  Configures tee registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_TEE    (BIT(0))
+#define TEE_READ_TEE_TEE_M  (TEE_READ_TEE_TEE_V << TEE_READ_TEE_TEE_S)
+#define TEE_READ_TEE_TEE_V  0x00000001U
+#define TEE_READ_TEE_TEE_S  0
+/** TEE_READ_REE0_TEE : HRO; bitpos: [1]; default: 0;
+ *  Configures tee registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_TEE    (BIT(1))
+#define TEE_READ_REE0_TEE_M  (TEE_READ_REE0_TEE_V << TEE_READ_REE0_TEE_S)
+#define TEE_READ_REE0_TEE_V  0x00000001U
+#define TEE_READ_REE0_TEE_S  1
+/** TEE_READ_REE1_TEE : HRO; bitpos: [2]; default: 0;
+ *  Configures tee registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_TEE    (BIT(2))
+#define TEE_READ_REE1_TEE_M  (TEE_READ_REE1_TEE_V << TEE_READ_REE1_TEE_S)
+#define TEE_READ_REE1_TEE_V  0x00000001U
+#define TEE_READ_REE1_TEE_S  2
+/** TEE_READ_REE2_TEE : HRO; bitpos: [3]; default: 0;
+ *  Configures tee registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_TEE    (BIT(3))
+#define TEE_READ_REE2_TEE_M  (TEE_READ_REE2_TEE_V << TEE_READ_REE2_TEE_S)
+#define TEE_READ_REE2_TEE_V  0x00000001U
+#define TEE_READ_REE2_TEE_S  3
+/** TEE_WRITE_TEE_TEE : R/W; bitpos: [4]; default: 1;
+ *  Configures tee registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_TEE    (BIT(4))
+#define TEE_WRITE_TEE_TEE_M  (TEE_WRITE_TEE_TEE_V << TEE_WRITE_TEE_TEE_S)
+#define TEE_WRITE_TEE_TEE_V  0x00000001U
+#define TEE_WRITE_TEE_TEE_S  4
+/** TEE_WRITE_REE0_TEE : HRO; bitpos: [5]; default: 0;
+ *  Configures tee registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_TEE    (BIT(5))
+#define TEE_WRITE_REE0_TEE_M  (TEE_WRITE_REE0_TEE_V << TEE_WRITE_REE0_TEE_S)
+#define TEE_WRITE_REE0_TEE_V  0x00000001U
+#define TEE_WRITE_REE0_TEE_S  5
+/** TEE_WRITE_REE1_TEE : HRO; bitpos: [6]; default: 0;
+ *  Configures tee registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_TEE    (BIT(6))
+#define TEE_WRITE_REE1_TEE_M  (TEE_WRITE_REE1_TEE_V << TEE_WRITE_REE1_TEE_S)
+#define TEE_WRITE_REE1_TEE_V  0x00000001U
+#define TEE_WRITE_REE1_TEE_S  6
+/** TEE_WRITE_REE2_TEE : HRO; bitpos: [7]; default: 0;
+ *  Configures tee registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_TEE    (BIT(7))
+#define TEE_WRITE_REE2_TEE_M  (TEE_WRITE_REE2_TEE_V << TEE_WRITE_REE2_TEE_S)
+#define TEE_WRITE_REE2_TEE_V  0x00000001U
+#define TEE_WRITE_REE2_TEE_S  7
+
+/** TEE_CRYPT_CTRL_REG register
+ *  crypt read/write control register
+ */
+#define TEE_CRYPT_CTRL_REG (DR_REG_TEE_BASE + 0x11c)
+/** TEE_READ_TEE_CRYPT : R/W; bitpos: [0]; default: 1;
+ *  Configures crypt registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CRYPT    (BIT(0))
+#define TEE_READ_TEE_CRYPT_M  (TEE_READ_TEE_CRYPT_V << TEE_READ_TEE_CRYPT_S)
+#define TEE_READ_TEE_CRYPT_V  0x00000001U
+#define TEE_READ_TEE_CRYPT_S  0
+/** TEE_READ_REE0_CRYPT : R/W; bitpos: [1]; default: 0;
+ *  Configures crypt registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CRYPT    (BIT(1))
+#define TEE_READ_REE0_CRYPT_M  (TEE_READ_REE0_CRYPT_V << TEE_READ_REE0_CRYPT_S)
+#define TEE_READ_REE0_CRYPT_V  0x00000001U
+#define TEE_READ_REE0_CRYPT_S  1
+/** TEE_READ_REE1_CRYPT : R/W; bitpos: [2]; default: 0;
+ *  Configures crypt registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CRYPT    (BIT(2))
+#define TEE_READ_REE1_CRYPT_M  (TEE_READ_REE1_CRYPT_V << TEE_READ_REE1_CRYPT_S)
+#define TEE_READ_REE1_CRYPT_V  0x00000001U
+#define TEE_READ_REE1_CRYPT_S  2
+/** TEE_READ_REE2_CRYPT : R/W; bitpos: [3]; default: 0;
+ *  Configures crypt registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CRYPT    (BIT(3))
+#define TEE_READ_REE2_CRYPT_M  (TEE_READ_REE2_CRYPT_V << TEE_READ_REE2_CRYPT_S)
+#define TEE_READ_REE2_CRYPT_V  0x00000001U
+#define TEE_READ_REE2_CRYPT_S  3
+/** TEE_WRITE_TEE_CRYPT : R/W; bitpos: [4]; default: 1;
+ *  Configures crypt registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CRYPT    (BIT(4))
+#define TEE_WRITE_TEE_CRYPT_M  (TEE_WRITE_TEE_CRYPT_V << TEE_WRITE_TEE_CRYPT_S)
+#define TEE_WRITE_TEE_CRYPT_V  0x00000001U
+#define TEE_WRITE_TEE_CRYPT_S  4
+/** TEE_WRITE_REE0_CRYPT : R/W; bitpos: [5]; default: 0;
+ *  Configures crypt registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CRYPT    (BIT(5))
+#define TEE_WRITE_REE0_CRYPT_M  (TEE_WRITE_REE0_CRYPT_V << TEE_WRITE_REE0_CRYPT_S)
+#define TEE_WRITE_REE0_CRYPT_V  0x00000001U
+#define TEE_WRITE_REE0_CRYPT_S  5
+/** TEE_WRITE_REE1_CRYPT : R/W; bitpos: [6]; default: 0;
+ *  Configures crypt registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CRYPT    (BIT(6))
+#define TEE_WRITE_REE1_CRYPT_M  (TEE_WRITE_REE1_CRYPT_V << TEE_WRITE_REE1_CRYPT_S)
+#define TEE_WRITE_REE1_CRYPT_V  0x00000001U
+#define TEE_WRITE_REE1_CRYPT_S  6
+/** TEE_WRITE_REE2_CRYPT : R/W; bitpos: [7]; default: 0;
+ *  Configures crypt registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CRYPT    (BIT(7))
+#define TEE_WRITE_REE2_CRYPT_M  (TEE_WRITE_REE2_CRYPT_V << TEE_WRITE_REE2_CRYPT_S)
+#define TEE_WRITE_REE2_CRYPT_V  0x00000001U
+#define TEE_WRITE_REE2_CRYPT_S  7
+
+/** TEE_TRACE_CTRL_REG register
+ *  trace read/write control register
+ */
+#define TEE_TRACE_CTRL_REG (DR_REG_TEE_BASE + 0x120)
+/** TEE_READ_TEE_TRACE : R/W; bitpos: [0]; default: 1;
+ *  Configures trace registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_TRACE    (BIT(0))
+#define TEE_READ_TEE_TRACE_M  (TEE_READ_TEE_TRACE_V << TEE_READ_TEE_TRACE_S)
+#define TEE_READ_TEE_TRACE_V  0x00000001U
+#define TEE_READ_TEE_TRACE_S  0
+/** TEE_READ_REE0_TRACE : R/W; bitpos: [1]; default: 0;
+ *  Configures trace registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_TRACE    (BIT(1))
+#define TEE_READ_REE0_TRACE_M  (TEE_READ_REE0_TRACE_V << TEE_READ_REE0_TRACE_S)
+#define TEE_READ_REE0_TRACE_V  0x00000001U
+#define TEE_READ_REE0_TRACE_S  1
+/** TEE_READ_REE1_TRACE : R/W; bitpos: [2]; default: 0;
+ *  Configures trace registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_TRACE    (BIT(2))
+#define TEE_READ_REE1_TRACE_M  (TEE_READ_REE1_TRACE_V << TEE_READ_REE1_TRACE_S)
+#define TEE_READ_REE1_TRACE_V  0x00000001U
+#define TEE_READ_REE1_TRACE_S  2
+/** TEE_READ_REE2_TRACE : R/W; bitpos: [3]; default: 0;
+ *  Configures trace registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_TRACE    (BIT(3))
+#define TEE_READ_REE2_TRACE_M  (TEE_READ_REE2_TRACE_V << TEE_READ_REE2_TRACE_S)
+#define TEE_READ_REE2_TRACE_V  0x00000001U
+#define TEE_READ_REE2_TRACE_S  3
+/** TEE_WRITE_TEE_TRACE : R/W; bitpos: [4]; default: 1;
+ *  Configures trace registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_TRACE    (BIT(4))
+#define TEE_WRITE_TEE_TRACE_M  (TEE_WRITE_TEE_TRACE_V << TEE_WRITE_TEE_TRACE_S)
+#define TEE_WRITE_TEE_TRACE_V  0x00000001U
+#define TEE_WRITE_TEE_TRACE_S  4
+/** TEE_WRITE_REE0_TRACE : R/W; bitpos: [5]; default: 0;
+ *  Configures trace registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_TRACE    (BIT(5))
+#define TEE_WRITE_REE0_TRACE_M  (TEE_WRITE_REE0_TRACE_V << TEE_WRITE_REE0_TRACE_S)
+#define TEE_WRITE_REE0_TRACE_V  0x00000001U
+#define TEE_WRITE_REE0_TRACE_S  5
+/** TEE_WRITE_REE1_TRACE : R/W; bitpos: [6]; default: 0;
+ *  Configures trace registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_TRACE    (BIT(6))
+#define TEE_WRITE_REE1_TRACE_M  (TEE_WRITE_REE1_TRACE_V << TEE_WRITE_REE1_TRACE_S)
+#define TEE_WRITE_REE1_TRACE_V  0x00000001U
+#define TEE_WRITE_REE1_TRACE_S  6
+/** TEE_WRITE_REE2_TRACE : R/W; bitpos: [7]; default: 0;
+ *  Configures trace registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_TRACE    (BIT(7))
+#define TEE_WRITE_REE2_TRACE_M  (TEE_WRITE_REE2_TRACE_V << TEE_WRITE_REE2_TRACE_S)
+#define TEE_WRITE_REE2_TRACE_V  0x00000001U
+#define TEE_WRITE_REE2_TRACE_S  7
+
+/** TEE_CPU_BUS_MONITOR_CTRL_REG register
+ *  cpu_bus_monitor read/write control register
+ */
+#define TEE_CPU_BUS_MONITOR_CTRL_REG (DR_REG_TEE_BASE + 0x128)
+/** TEE_READ_TEE_CPU_BUS_MONITOR : R/W; bitpos: [0]; default: 1;
+ *  Configures cpu_bus_monitor registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CPU_BUS_MONITOR    (BIT(0))
+#define TEE_READ_TEE_CPU_BUS_MONITOR_M  (TEE_READ_TEE_CPU_BUS_MONITOR_V << TEE_READ_TEE_CPU_BUS_MONITOR_S)
+#define TEE_READ_TEE_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_READ_TEE_CPU_BUS_MONITOR_S  0
+/** TEE_READ_REE0_CPU_BUS_MONITOR : R/W; bitpos: [1]; default: 0;
+ *  Configures cpu_bus_monitor registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CPU_BUS_MONITOR    (BIT(1))
+#define TEE_READ_REE0_CPU_BUS_MONITOR_M  (TEE_READ_REE0_CPU_BUS_MONITOR_V << TEE_READ_REE0_CPU_BUS_MONITOR_S)
+#define TEE_READ_REE0_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_READ_REE0_CPU_BUS_MONITOR_S  1
+/** TEE_READ_REE1_CPU_BUS_MONITOR : R/W; bitpos: [2]; default: 0;
+ *  Configures cpu_bus_monitor registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CPU_BUS_MONITOR    (BIT(2))
+#define TEE_READ_REE1_CPU_BUS_MONITOR_M  (TEE_READ_REE1_CPU_BUS_MONITOR_V << TEE_READ_REE1_CPU_BUS_MONITOR_S)
+#define TEE_READ_REE1_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_READ_REE1_CPU_BUS_MONITOR_S  2
+/** TEE_READ_REE2_CPU_BUS_MONITOR : R/W; bitpos: [3]; default: 0;
+ *  Configures cpu_bus_monitor registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CPU_BUS_MONITOR    (BIT(3))
+#define TEE_READ_REE2_CPU_BUS_MONITOR_M  (TEE_READ_REE2_CPU_BUS_MONITOR_V << TEE_READ_REE2_CPU_BUS_MONITOR_S)
+#define TEE_READ_REE2_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_READ_REE2_CPU_BUS_MONITOR_S  3
+/** TEE_WRITE_TEE_CPU_BUS_MONITOR : R/W; bitpos: [4]; default: 1;
+ *  Configures cpu_bus_monitor registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CPU_BUS_MONITOR    (BIT(4))
+#define TEE_WRITE_TEE_CPU_BUS_MONITOR_M  (TEE_WRITE_TEE_CPU_BUS_MONITOR_V << TEE_WRITE_TEE_CPU_BUS_MONITOR_S)
+#define TEE_WRITE_TEE_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_WRITE_TEE_CPU_BUS_MONITOR_S  4
+/** TEE_WRITE_REE0_CPU_BUS_MONITOR : R/W; bitpos: [5]; default: 0;
+ *  Configures cpu_bus_monitor registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CPU_BUS_MONITOR    (BIT(5))
+#define TEE_WRITE_REE0_CPU_BUS_MONITOR_M  (TEE_WRITE_REE0_CPU_BUS_MONITOR_V << TEE_WRITE_REE0_CPU_BUS_MONITOR_S)
+#define TEE_WRITE_REE0_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE0_CPU_BUS_MONITOR_S  5
+/** TEE_WRITE_REE1_CPU_BUS_MONITOR : R/W; bitpos: [6]; default: 0;
+ *  Configures cpu_bus_monitor registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CPU_BUS_MONITOR    (BIT(6))
+#define TEE_WRITE_REE1_CPU_BUS_MONITOR_M  (TEE_WRITE_REE1_CPU_BUS_MONITOR_V << TEE_WRITE_REE1_CPU_BUS_MONITOR_S)
+#define TEE_WRITE_REE1_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE1_CPU_BUS_MONITOR_S  6
+/** TEE_WRITE_REE2_CPU_BUS_MONITOR : R/W; bitpos: [7]; default: 0;
+ *  Configures cpu_bus_monitor registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CPU_BUS_MONITOR    (BIT(7))
+#define TEE_WRITE_REE2_CPU_BUS_MONITOR_M  (TEE_WRITE_REE2_CPU_BUS_MONITOR_V << TEE_WRITE_REE2_CPU_BUS_MONITOR_S)
+#define TEE_WRITE_REE2_CPU_BUS_MONITOR_V  0x00000001U
+#define TEE_WRITE_REE2_CPU_BUS_MONITOR_S  7
+
+/** TEE_INTPRI_REG_CTRL_REG register
+ *  intpri_reg read/write control register
+ */
+#define TEE_INTPRI_REG_CTRL_REG (DR_REG_TEE_BASE + 0x12c)
+/** TEE_READ_TEE_INTPRI_REG : R/W; bitpos: [0]; default: 1;
+ *  Configures intpri_reg registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_INTPRI_REG    (BIT(0))
+#define TEE_READ_TEE_INTPRI_REG_M  (TEE_READ_TEE_INTPRI_REG_V << TEE_READ_TEE_INTPRI_REG_S)
+#define TEE_READ_TEE_INTPRI_REG_V  0x00000001U
+#define TEE_READ_TEE_INTPRI_REG_S  0
+/** TEE_READ_REE0_INTPRI_REG : R/W; bitpos: [1]; default: 0;
+ *  Configures intpri_reg registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_INTPRI_REG    (BIT(1))
+#define TEE_READ_REE0_INTPRI_REG_M  (TEE_READ_REE0_INTPRI_REG_V << TEE_READ_REE0_INTPRI_REG_S)
+#define TEE_READ_REE0_INTPRI_REG_V  0x00000001U
+#define TEE_READ_REE0_INTPRI_REG_S  1
+/** TEE_READ_REE1_INTPRI_REG : R/W; bitpos: [2]; default: 0;
+ *  Configures intpri_reg registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_INTPRI_REG    (BIT(2))
+#define TEE_READ_REE1_INTPRI_REG_M  (TEE_READ_REE1_INTPRI_REG_V << TEE_READ_REE1_INTPRI_REG_S)
+#define TEE_READ_REE1_INTPRI_REG_V  0x00000001U
+#define TEE_READ_REE1_INTPRI_REG_S  2
+/** TEE_READ_REE2_INTPRI_REG : R/W; bitpos: [3]; default: 0;
+ *  Configures intpri_reg registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_INTPRI_REG    (BIT(3))
+#define TEE_READ_REE2_INTPRI_REG_M  (TEE_READ_REE2_INTPRI_REG_V << TEE_READ_REE2_INTPRI_REG_S)
+#define TEE_READ_REE2_INTPRI_REG_V  0x00000001U
+#define TEE_READ_REE2_INTPRI_REG_S  3
+/** TEE_WRITE_TEE_INTPRI_REG : R/W; bitpos: [4]; default: 1;
+ *  Configures intpri_reg registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_INTPRI_REG    (BIT(4))
+#define TEE_WRITE_TEE_INTPRI_REG_M  (TEE_WRITE_TEE_INTPRI_REG_V << TEE_WRITE_TEE_INTPRI_REG_S)
+#define TEE_WRITE_TEE_INTPRI_REG_V  0x00000001U
+#define TEE_WRITE_TEE_INTPRI_REG_S  4
+/** TEE_WRITE_REE0_INTPRI_REG : R/W; bitpos: [5]; default: 0;
+ *  Configures intpri_reg registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_INTPRI_REG    (BIT(5))
+#define TEE_WRITE_REE0_INTPRI_REG_M  (TEE_WRITE_REE0_INTPRI_REG_V << TEE_WRITE_REE0_INTPRI_REG_S)
+#define TEE_WRITE_REE0_INTPRI_REG_V  0x00000001U
+#define TEE_WRITE_REE0_INTPRI_REG_S  5
+/** TEE_WRITE_REE1_INTPRI_REG : R/W; bitpos: [6]; default: 0;
+ *  Configures intpri_reg registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_INTPRI_REG    (BIT(6))
+#define TEE_WRITE_REE1_INTPRI_REG_M  (TEE_WRITE_REE1_INTPRI_REG_V << TEE_WRITE_REE1_INTPRI_REG_S)
+#define TEE_WRITE_REE1_INTPRI_REG_V  0x00000001U
+#define TEE_WRITE_REE1_INTPRI_REG_S  6
+/** TEE_WRITE_REE2_INTPRI_REG : R/W; bitpos: [7]; default: 0;
+ *  Configures intpri_reg registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_INTPRI_REG    (BIT(7))
+#define TEE_WRITE_REE2_INTPRI_REG_M  (TEE_WRITE_REE2_INTPRI_REG_V << TEE_WRITE_REE2_INTPRI_REG_S)
+#define TEE_WRITE_REE2_INTPRI_REG_V  0x00000001U
+#define TEE_WRITE_REE2_INTPRI_REG_S  7
+
+/** TEE_CACHE_CFG_CTRL_REG register
+ *  cache_cfg read/write control register
+ */
+#define TEE_CACHE_CFG_CTRL_REG (DR_REG_TEE_BASE + 0x130)
+/** TEE_READ_TEE_CACHE_CFG : R/W; bitpos: [0]; default: 1;
+ *  Configures cache_cfg registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CACHE_CFG    (BIT(0))
+#define TEE_READ_TEE_CACHE_CFG_M  (TEE_READ_TEE_CACHE_CFG_V << TEE_READ_TEE_CACHE_CFG_S)
+#define TEE_READ_TEE_CACHE_CFG_V  0x00000001U
+#define TEE_READ_TEE_CACHE_CFG_S  0
+/** TEE_READ_REE0_CACHE_CFG : R/W; bitpos: [1]; default: 0;
+ *  Configures cache_cfg registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CACHE_CFG    (BIT(1))
+#define TEE_READ_REE0_CACHE_CFG_M  (TEE_READ_REE0_CACHE_CFG_V << TEE_READ_REE0_CACHE_CFG_S)
+#define TEE_READ_REE0_CACHE_CFG_V  0x00000001U
+#define TEE_READ_REE0_CACHE_CFG_S  1
+/** TEE_READ_REE1_CACHE_CFG : R/W; bitpos: [2]; default: 0;
+ *  Configures cache_cfg registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CACHE_CFG    (BIT(2))
+#define TEE_READ_REE1_CACHE_CFG_M  (TEE_READ_REE1_CACHE_CFG_V << TEE_READ_REE1_CACHE_CFG_S)
+#define TEE_READ_REE1_CACHE_CFG_V  0x00000001U
+#define TEE_READ_REE1_CACHE_CFG_S  2
+/** TEE_READ_REE2_CACHE_CFG : R/W; bitpos: [3]; default: 0;
+ *  Configures cache_cfg registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CACHE_CFG    (BIT(3))
+#define TEE_READ_REE2_CACHE_CFG_M  (TEE_READ_REE2_CACHE_CFG_V << TEE_READ_REE2_CACHE_CFG_S)
+#define TEE_READ_REE2_CACHE_CFG_V  0x00000001U
+#define TEE_READ_REE2_CACHE_CFG_S  3
+/** TEE_WRITE_TEE_CACHE_CFG : R/W; bitpos: [4]; default: 1;
+ *  Configures cache_cfg registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CACHE_CFG    (BIT(4))
+#define TEE_WRITE_TEE_CACHE_CFG_M  (TEE_WRITE_TEE_CACHE_CFG_V << TEE_WRITE_TEE_CACHE_CFG_S)
+#define TEE_WRITE_TEE_CACHE_CFG_V  0x00000001U
+#define TEE_WRITE_TEE_CACHE_CFG_S  4
+/** TEE_WRITE_REE0_CACHE_CFG : R/W; bitpos: [5]; default: 0;
+ *  Configures cache_cfg registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CACHE_CFG    (BIT(5))
+#define TEE_WRITE_REE0_CACHE_CFG_M  (TEE_WRITE_REE0_CACHE_CFG_V << TEE_WRITE_REE0_CACHE_CFG_S)
+#define TEE_WRITE_REE0_CACHE_CFG_V  0x00000001U
+#define TEE_WRITE_REE0_CACHE_CFG_S  5
+/** TEE_WRITE_REE1_CACHE_CFG : R/W; bitpos: [6]; default: 0;
+ *  Configures cache_cfg registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CACHE_CFG    (BIT(6))
+#define TEE_WRITE_REE1_CACHE_CFG_M  (TEE_WRITE_REE1_CACHE_CFG_V << TEE_WRITE_REE1_CACHE_CFG_S)
+#define TEE_WRITE_REE1_CACHE_CFG_V  0x00000001U
+#define TEE_WRITE_REE1_CACHE_CFG_S  6
+/** TEE_WRITE_REE2_CACHE_CFG : R/W; bitpos: [7]; default: 0;
+ *  Configures cache_cfg registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CACHE_CFG    (BIT(7))
+#define TEE_WRITE_REE2_CACHE_CFG_M  (TEE_WRITE_REE2_CACHE_CFG_V << TEE_WRITE_REE2_CACHE_CFG_S)
+#define TEE_WRITE_REE2_CACHE_CFG_V  0x00000001U
+#define TEE_WRITE_REE2_CACHE_CFG_S  7
+
+/** TEE_MODEM_CTRL_REG register
+ *  modem read/write control register
+ */
+#define TEE_MODEM_CTRL_REG (DR_REG_TEE_BASE + 0x134)
+/** TEE_READ_TEE_MODEM : R/W; bitpos: [0]; default: 1;
+ *  Configures modem registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_MODEM    (BIT(0))
+#define TEE_READ_TEE_MODEM_M  (TEE_READ_TEE_MODEM_V << TEE_READ_TEE_MODEM_S)
+#define TEE_READ_TEE_MODEM_V  0x00000001U
+#define TEE_READ_TEE_MODEM_S  0
+/** TEE_READ_REE0_MODEM : R/W; bitpos: [1]; default: 0;
+ *  Configures modem registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_MODEM    (BIT(1))
+#define TEE_READ_REE0_MODEM_M  (TEE_READ_REE0_MODEM_V << TEE_READ_REE0_MODEM_S)
+#define TEE_READ_REE0_MODEM_V  0x00000001U
+#define TEE_READ_REE0_MODEM_S  1
+/** TEE_READ_REE1_MODEM : R/W; bitpos: [2]; default: 0;
+ *  Configures modem registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_MODEM    (BIT(2))
+#define TEE_READ_REE1_MODEM_M  (TEE_READ_REE1_MODEM_V << TEE_READ_REE1_MODEM_S)
+#define TEE_READ_REE1_MODEM_V  0x00000001U
+#define TEE_READ_REE1_MODEM_S  2
+/** TEE_READ_REE2_MODEM : R/W; bitpos: [3]; default: 0;
+ *  Configures modem registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_MODEM    (BIT(3))
+#define TEE_READ_REE2_MODEM_M  (TEE_READ_REE2_MODEM_V << TEE_READ_REE2_MODEM_S)
+#define TEE_READ_REE2_MODEM_V  0x00000001U
+#define TEE_READ_REE2_MODEM_S  3
+/** TEE_WRITE_TEE_MODEM : R/W; bitpos: [4]; default: 1;
+ *  Configures modem registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_MODEM    (BIT(4))
+#define TEE_WRITE_TEE_MODEM_M  (TEE_WRITE_TEE_MODEM_V << TEE_WRITE_TEE_MODEM_S)
+#define TEE_WRITE_TEE_MODEM_V  0x00000001U
+#define TEE_WRITE_TEE_MODEM_S  4
+/** TEE_WRITE_REE0_MODEM : R/W; bitpos: [5]; default: 0;
+ *  Configures modem registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_MODEM    (BIT(5))
+#define TEE_WRITE_REE0_MODEM_M  (TEE_WRITE_REE0_MODEM_V << TEE_WRITE_REE0_MODEM_S)
+#define TEE_WRITE_REE0_MODEM_V  0x00000001U
+#define TEE_WRITE_REE0_MODEM_S  5
+/** TEE_WRITE_REE1_MODEM : R/W; bitpos: [6]; default: 0;
+ *  Configures modem registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_MODEM    (BIT(6))
+#define TEE_WRITE_REE1_MODEM_M  (TEE_WRITE_REE1_MODEM_V << TEE_WRITE_REE1_MODEM_S)
+#define TEE_WRITE_REE1_MODEM_V  0x00000001U
+#define TEE_WRITE_REE1_MODEM_S  6
+/** TEE_WRITE_REE2_MODEM : R/W; bitpos: [7]; default: 0;
+ *  Configures modem registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_MODEM    (BIT(7))
+#define TEE_WRITE_REE2_MODEM_M  (TEE_WRITE_REE2_MODEM_V << TEE_WRITE_REE2_MODEM_S)
+#define TEE_WRITE_REE2_MODEM_V  0x00000001U
+#define TEE_WRITE_REE2_MODEM_S  7
+
+/** TEE_CAN1_CTRL_REG register
+ *  can1 read/write control register
+ */
+#define TEE_CAN1_CTRL_REG (DR_REG_TEE_BASE + 0x138)
+/** TEE_READ_TEE_CAN1 : R/W; bitpos: [0]; default: 1;
+ *  Configures can1 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_CAN1    (BIT(0))
+#define TEE_READ_TEE_CAN1_M  (TEE_READ_TEE_CAN1_V << TEE_READ_TEE_CAN1_S)
+#define TEE_READ_TEE_CAN1_V  0x00000001U
+#define TEE_READ_TEE_CAN1_S  0
+/** TEE_READ_REE0_CAN1 : R/W; bitpos: [1]; default: 0;
+ *  Configures can1 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_CAN1    (BIT(1))
+#define TEE_READ_REE0_CAN1_M  (TEE_READ_REE0_CAN1_V << TEE_READ_REE0_CAN1_S)
+#define TEE_READ_REE0_CAN1_V  0x00000001U
+#define TEE_READ_REE0_CAN1_S  1
+/** TEE_READ_REE1_CAN1 : R/W; bitpos: [2]; default: 0;
+ *  Configures can1 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_CAN1    (BIT(2))
+#define TEE_READ_REE1_CAN1_M  (TEE_READ_REE1_CAN1_V << TEE_READ_REE1_CAN1_S)
+#define TEE_READ_REE1_CAN1_V  0x00000001U
+#define TEE_READ_REE1_CAN1_S  2
+/** TEE_READ_REE2_CAN1 : R/W; bitpos: [3]; default: 0;
+ *  Configures can1 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_CAN1    (BIT(3))
+#define TEE_READ_REE2_CAN1_M  (TEE_READ_REE2_CAN1_V << TEE_READ_REE2_CAN1_S)
+#define TEE_READ_REE2_CAN1_V  0x00000001U
+#define TEE_READ_REE2_CAN1_S  3
+/** TEE_WRITE_TEE_CAN1 : R/W; bitpos: [4]; default: 1;
+ *  Configures can1 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_CAN1    (BIT(4))
+#define TEE_WRITE_TEE_CAN1_M  (TEE_WRITE_TEE_CAN1_V << TEE_WRITE_TEE_CAN1_S)
+#define TEE_WRITE_TEE_CAN1_V  0x00000001U
+#define TEE_WRITE_TEE_CAN1_S  4
+/** TEE_WRITE_REE0_CAN1 : R/W; bitpos: [5]; default: 0;
+ *  Configures can1 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_CAN1    (BIT(5))
+#define TEE_WRITE_REE0_CAN1_M  (TEE_WRITE_REE0_CAN1_V << TEE_WRITE_REE0_CAN1_S)
+#define TEE_WRITE_REE0_CAN1_V  0x00000001U
+#define TEE_WRITE_REE0_CAN1_S  5
+/** TEE_WRITE_REE1_CAN1 : R/W; bitpos: [6]; default: 0;
+ *  Configures can1 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_CAN1    (BIT(6))
+#define TEE_WRITE_REE1_CAN1_M  (TEE_WRITE_REE1_CAN1_V << TEE_WRITE_REE1_CAN1_S)
+#define TEE_WRITE_REE1_CAN1_V  0x00000001U
+#define TEE_WRITE_REE1_CAN1_S  6
+/** TEE_WRITE_REE2_CAN1 : R/W; bitpos: [7]; default: 0;
+ *  Configures can1 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_CAN1    (BIT(7))
+#define TEE_WRITE_REE2_CAN1_M  (TEE_WRITE_REE2_CAN1_V << TEE_WRITE_REE2_CAN1_S)
+#define TEE_WRITE_REE2_CAN1_V  0x00000001U
+#define TEE_WRITE_REE2_CAN1_S  7
+
+/** TEE_SPI2_CTRL_REG register
+ *  spi2 read/write control register
+ */
+#define TEE_SPI2_CTRL_REG (DR_REG_TEE_BASE + 0x13c)
+/** TEE_READ_TEE_SPI2 : R/W; bitpos: [0]; default: 1;
+ *  Configures spi2 registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_SPI2    (BIT(0))
+#define TEE_READ_TEE_SPI2_M  (TEE_READ_TEE_SPI2_V << TEE_READ_TEE_SPI2_S)
+#define TEE_READ_TEE_SPI2_V  0x00000001U
+#define TEE_READ_TEE_SPI2_S  0
+/** TEE_READ_REE0_SPI2 : R/W; bitpos: [1]; default: 0;
+ *  Configures spi2 registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_SPI2    (BIT(1))
+#define TEE_READ_REE0_SPI2_M  (TEE_READ_REE0_SPI2_V << TEE_READ_REE0_SPI2_S)
+#define TEE_READ_REE0_SPI2_V  0x00000001U
+#define TEE_READ_REE0_SPI2_S  1
+/** TEE_READ_REE1_SPI2 : R/W; bitpos: [2]; default: 0;
+ *  Configures spi2 registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_SPI2    (BIT(2))
+#define TEE_READ_REE1_SPI2_M  (TEE_READ_REE1_SPI2_V << TEE_READ_REE1_SPI2_S)
+#define TEE_READ_REE1_SPI2_V  0x00000001U
+#define TEE_READ_REE1_SPI2_S  2
+/** TEE_READ_REE2_SPI2 : R/W; bitpos: [3]; default: 0;
+ *  Configures spi2 registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_SPI2    (BIT(3))
+#define TEE_READ_REE2_SPI2_M  (TEE_READ_REE2_SPI2_V << TEE_READ_REE2_SPI2_S)
+#define TEE_READ_REE2_SPI2_V  0x00000001U
+#define TEE_READ_REE2_SPI2_S  3
+/** TEE_WRITE_TEE_SPI2 : R/W; bitpos: [4]; default: 1;
+ *  Configures spi2 registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_SPI2    (BIT(4))
+#define TEE_WRITE_TEE_SPI2_M  (TEE_WRITE_TEE_SPI2_V << TEE_WRITE_TEE_SPI2_S)
+#define TEE_WRITE_TEE_SPI2_V  0x00000001U
+#define TEE_WRITE_TEE_SPI2_S  4
+/** TEE_WRITE_REE0_SPI2 : R/W; bitpos: [5]; default: 0;
+ *  Configures spi2 registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_SPI2    (BIT(5))
+#define TEE_WRITE_REE0_SPI2_M  (TEE_WRITE_REE0_SPI2_V << TEE_WRITE_REE0_SPI2_S)
+#define TEE_WRITE_REE0_SPI2_V  0x00000001U
+#define TEE_WRITE_REE0_SPI2_S  5
+/** TEE_WRITE_REE1_SPI2 : R/W; bitpos: [6]; default: 0;
+ *  Configures spi2 registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_SPI2    (BIT(6))
+#define TEE_WRITE_REE1_SPI2_M  (TEE_WRITE_REE1_SPI2_V << TEE_WRITE_REE1_SPI2_S)
+#define TEE_WRITE_REE1_SPI2_V  0x00000001U
+#define TEE_WRITE_REE1_SPI2_S  6
+/** TEE_WRITE_REE2_SPI2 : R/W; bitpos: [7]; default: 0;
+ *  Configures spi2 registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_SPI2    (BIT(7))
+#define TEE_WRITE_REE2_SPI2_M  (TEE_WRITE_REE2_SPI2_V << TEE_WRITE_REE2_SPI2_S)
+#define TEE_WRITE_REE2_SPI2_V  0x00000001U
+#define TEE_WRITE_REE2_SPI2_S  7
+
+/** TEE_BS_CTRL_REG register
+ *  bs read/write control register
+ */
+#define TEE_BS_CTRL_REG (DR_REG_TEE_BASE + 0x140)
+/** TEE_READ_TEE_BS : R/W; bitpos: [0]; default: 1;
+ *  Configures bs registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_BS    (BIT(0))
+#define TEE_READ_TEE_BS_M  (TEE_READ_TEE_BS_V << TEE_READ_TEE_BS_S)
+#define TEE_READ_TEE_BS_V  0x00000001U
+#define TEE_READ_TEE_BS_S  0
+/** TEE_READ_REE0_BS : R/W; bitpos: [1]; default: 0;
+ *  Configures bs registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_BS    (BIT(1))
+#define TEE_READ_REE0_BS_M  (TEE_READ_REE0_BS_V << TEE_READ_REE0_BS_S)
+#define TEE_READ_REE0_BS_V  0x00000001U
+#define TEE_READ_REE0_BS_S  1
+/** TEE_READ_REE1_BS : R/W; bitpos: [2]; default: 0;
+ *  Configures bs registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_BS    (BIT(2))
+#define TEE_READ_REE1_BS_M  (TEE_READ_REE1_BS_V << TEE_READ_REE1_BS_S)
+#define TEE_READ_REE1_BS_V  0x00000001U
+#define TEE_READ_REE1_BS_S  2
+/** TEE_READ_REE2_BS : R/W; bitpos: [3]; default: 0;
+ *  Configures bs registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_BS    (BIT(3))
+#define TEE_READ_REE2_BS_M  (TEE_READ_REE2_BS_V << TEE_READ_REE2_BS_S)
+#define TEE_READ_REE2_BS_V  0x00000001U
+#define TEE_READ_REE2_BS_S  3
+/** TEE_WRITE_TEE_BS : R/W; bitpos: [4]; default: 1;
+ *  Configures bs registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_BS    (BIT(4))
+#define TEE_WRITE_TEE_BS_M  (TEE_WRITE_TEE_BS_V << TEE_WRITE_TEE_BS_S)
+#define TEE_WRITE_TEE_BS_V  0x00000001U
+#define TEE_WRITE_TEE_BS_S  4
+/** TEE_WRITE_REE0_BS : R/W; bitpos: [5]; default: 0;
+ *  Configures bs registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_BS    (BIT(5))
+#define TEE_WRITE_REE0_BS_M  (TEE_WRITE_REE0_BS_V << TEE_WRITE_REE0_BS_S)
+#define TEE_WRITE_REE0_BS_V  0x00000001U
+#define TEE_WRITE_REE0_BS_S  5
+/** TEE_WRITE_REE1_BS : R/W; bitpos: [6]; default: 0;
+ *  Configures bs registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_BS    (BIT(6))
+#define TEE_WRITE_REE1_BS_M  (TEE_WRITE_REE1_BS_V << TEE_WRITE_REE1_BS_S)
+#define TEE_WRITE_REE1_BS_V  0x00000001U
+#define TEE_WRITE_REE1_BS_S  6
+/** TEE_WRITE_REE2_BS : R/W; bitpos: [7]; default: 0;
+ *  Configures bs registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_BS    (BIT(7))
+#define TEE_WRITE_REE2_BS_M  (TEE_WRITE_REE2_BS_V << TEE_WRITE_REE2_BS_S)
+#define TEE_WRITE_REE2_BS_V  0x00000001U
+#define TEE_WRITE_REE2_BS_S  7
+
+/** TEE_KM_CTRL_REG register
+ *  km read/write control register
+ */
+#define TEE_KM_CTRL_REG (DR_REG_TEE_BASE + 0x144)
+/** TEE_READ_TEE_KM : R/W; bitpos: [0]; default: 1;
+ *  Configures km registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_KM    (BIT(0))
+#define TEE_READ_TEE_KM_M  (TEE_READ_TEE_KM_V << TEE_READ_TEE_KM_S)
+#define TEE_READ_TEE_KM_V  0x00000001U
+#define TEE_READ_TEE_KM_S  0
+/** TEE_READ_REE0_KM : R/W; bitpos: [1]; default: 0;
+ *  Configures km registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_KM    (BIT(1))
+#define TEE_READ_REE0_KM_M  (TEE_READ_REE0_KM_V << TEE_READ_REE0_KM_S)
+#define TEE_READ_REE0_KM_V  0x00000001U
+#define TEE_READ_REE0_KM_S  1
+/** TEE_READ_REE1_KM : R/W; bitpos: [2]; default: 0;
+ *  Configures km registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_KM    (BIT(2))
+#define TEE_READ_REE1_KM_M  (TEE_READ_REE1_KM_V << TEE_READ_REE1_KM_S)
+#define TEE_READ_REE1_KM_V  0x00000001U
+#define TEE_READ_REE1_KM_S  2
+/** TEE_READ_REE2_KM : R/W; bitpos: [3]; default: 0;
+ *  Configures km registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_KM    (BIT(3))
+#define TEE_READ_REE2_KM_M  (TEE_READ_REE2_KM_V << TEE_READ_REE2_KM_S)
+#define TEE_READ_REE2_KM_V  0x00000001U
+#define TEE_READ_REE2_KM_S  3
+/** TEE_WRITE_TEE_KM : R/W; bitpos: [4]; default: 1;
+ *  Configures km registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_KM    (BIT(4))
+#define TEE_WRITE_TEE_KM_M  (TEE_WRITE_TEE_KM_V << TEE_WRITE_TEE_KM_S)
+#define TEE_WRITE_TEE_KM_V  0x00000001U
+#define TEE_WRITE_TEE_KM_S  4
+/** TEE_WRITE_REE0_KM : R/W; bitpos: [5]; default: 0;
+ *  Configures km registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_KM    (BIT(5))
+#define TEE_WRITE_REE0_KM_M  (TEE_WRITE_REE0_KM_V << TEE_WRITE_REE0_KM_S)
+#define TEE_WRITE_REE0_KM_V  0x00000001U
+#define TEE_WRITE_REE0_KM_S  5
+/** TEE_WRITE_REE1_KM : R/W; bitpos: [6]; default: 0;
+ *  Configures km registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_KM    (BIT(6))
+#define TEE_WRITE_REE1_KM_M  (TEE_WRITE_REE1_KM_V << TEE_WRITE_REE1_KM_S)
+#define TEE_WRITE_REE1_KM_V  0x00000001U
+#define TEE_WRITE_REE1_KM_S  6
+/** TEE_WRITE_REE2_KM : R/W; bitpos: [7]; default: 0;
+ *  Configures km registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_KM    (BIT(7))
+#define TEE_WRITE_REE2_KM_M  (TEE_WRITE_REE2_KM_V << TEE_WRITE_REE2_KM_S)
+#define TEE_WRITE_REE2_KM_V  0x00000001U
+#define TEE_WRITE_REE2_KM_S  7
+
+/** TEE_MODEM_PWR_CTRL_REG register
+ *  modem_pwr read/write control register
+ */
+#define TEE_MODEM_PWR_CTRL_REG (DR_REG_TEE_BASE + 0x148)
+/** TEE_READ_TEE_MODEM_PWR : R/W; bitpos: [0]; default: 1;
+ *  Configures modem_pwr registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_MODEM_PWR    (BIT(0))
+#define TEE_READ_TEE_MODEM_PWR_M  (TEE_READ_TEE_MODEM_PWR_V << TEE_READ_TEE_MODEM_PWR_S)
+#define TEE_READ_TEE_MODEM_PWR_V  0x00000001U
+#define TEE_READ_TEE_MODEM_PWR_S  0
+/** TEE_READ_REE0_MODEM_PWR : R/W; bitpos: [1]; default: 0;
+ *  Configures modem_pwr registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_MODEM_PWR    (BIT(1))
+#define TEE_READ_REE0_MODEM_PWR_M  (TEE_READ_REE0_MODEM_PWR_V << TEE_READ_REE0_MODEM_PWR_S)
+#define TEE_READ_REE0_MODEM_PWR_V  0x00000001U
+#define TEE_READ_REE0_MODEM_PWR_S  1
+/** TEE_READ_REE1_MODEM_PWR : R/W; bitpos: [2]; default: 0;
+ *  Configures modem_pwr registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_MODEM_PWR    (BIT(2))
+#define TEE_READ_REE1_MODEM_PWR_M  (TEE_READ_REE1_MODEM_PWR_V << TEE_READ_REE1_MODEM_PWR_S)
+#define TEE_READ_REE1_MODEM_PWR_V  0x00000001U
+#define TEE_READ_REE1_MODEM_PWR_S  2
+/** TEE_READ_REE2_MODEM_PWR : R/W; bitpos: [3]; default: 0;
+ *  Configures modem_pwr registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_MODEM_PWR    (BIT(3))
+#define TEE_READ_REE2_MODEM_PWR_M  (TEE_READ_REE2_MODEM_PWR_V << TEE_READ_REE2_MODEM_PWR_S)
+#define TEE_READ_REE2_MODEM_PWR_V  0x00000001U
+#define TEE_READ_REE2_MODEM_PWR_S  3
+/** TEE_WRITE_TEE_MODEM_PWR : R/W; bitpos: [4]; default: 1;
+ *  Configures modem_pwr registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_MODEM_PWR    (BIT(4))
+#define TEE_WRITE_TEE_MODEM_PWR_M  (TEE_WRITE_TEE_MODEM_PWR_V << TEE_WRITE_TEE_MODEM_PWR_S)
+#define TEE_WRITE_TEE_MODEM_PWR_V  0x00000001U
+#define TEE_WRITE_TEE_MODEM_PWR_S  4
+/** TEE_WRITE_REE0_MODEM_PWR : R/W; bitpos: [5]; default: 0;
+ *  Configures modem_pwr registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_MODEM_PWR    (BIT(5))
+#define TEE_WRITE_REE0_MODEM_PWR_M  (TEE_WRITE_REE0_MODEM_PWR_V << TEE_WRITE_REE0_MODEM_PWR_S)
+#define TEE_WRITE_REE0_MODEM_PWR_V  0x00000001U
+#define TEE_WRITE_REE0_MODEM_PWR_S  5
+/** TEE_WRITE_REE1_MODEM_PWR : R/W; bitpos: [6]; default: 0;
+ *  Configures modem_pwr registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_MODEM_PWR    (BIT(6))
+#define TEE_WRITE_REE1_MODEM_PWR_M  (TEE_WRITE_REE1_MODEM_PWR_V << TEE_WRITE_REE1_MODEM_PWR_S)
+#define TEE_WRITE_REE1_MODEM_PWR_V  0x00000001U
+#define TEE_WRITE_REE1_MODEM_PWR_S  6
+/** TEE_WRITE_REE2_MODEM_PWR : R/W; bitpos: [7]; default: 0;
+ *  Configures modem_pwr registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_MODEM_PWR    (BIT(7))
+#define TEE_WRITE_REE2_MODEM_PWR_M  (TEE_WRITE_REE2_MODEM_PWR_V << TEE_WRITE_REE2_MODEM_PWR_S)
+#define TEE_WRITE_REE2_MODEM_PWR_V  0x00000001U
+#define TEE_WRITE_REE2_MODEM_PWR_S  7
+
+/** TEE_HINF_CTRL_REG register
+ *  hinf read/write control register
+ */
+#define TEE_HINF_CTRL_REG (DR_REG_TEE_BASE + 0x14c)
+/** TEE_READ_TEE_HINF : R/W; bitpos: [0]; default: 1;
+ *  Configures hinf registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_HINF    (BIT(0))
+#define TEE_READ_TEE_HINF_M  (TEE_READ_TEE_HINF_V << TEE_READ_TEE_HINF_S)
+#define TEE_READ_TEE_HINF_V  0x00000001U
+#define TEE_READ_TEE_HINF_S  0
+/** TEE_READ_REE0_HINF : R/W; bitpos: [1]; default: 0;
+ *  Configures hinf registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_HINF    (BIT(1))
+#define TEE_READ_REE0_HINF_M  (TEE_READ_REE0_HINF_V << TEE_READ_REE0_HINF_S)
+#define TEE_READ_REE0_HINF_V  0x00000001U
+#define TEE_READ_REE0_HINF_S  1
+/** TEE_READ_REE1_HINF : R/W; bitpos: [2]; default: 0;
+ *  Configures hinf registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_HINF    (BIT(2))
+#define TEE_READ_REE1_HINF_M  (TEE_READ_REE1_HINF_V << TEE_READ_REE1_HINF_S)
+#define TEE_READ_REE1_HINF_V  0x00000001U
+#define TEE_READ_REE1_HINF_S  2
+/** TEE_READ_REE2_HINF : R/W; bitpos: [3]; default: 0;
+ *  Configures hinf registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_HINF    (BIT(3))
+#define TEE_READ_REE2_HINF_M  (TEE_READ_REE2_HINF_V << TEE_READ_REE2_HINF_S)
+#define TEE_READ_REE2_HINF_V  0x00000001U
+#define TEE_READ_REE2_HINF_S  3
+/** TEE_WRITE_TEE_HINF : R/W; bitpos: [4]; default: 1;
+ *  Configures hinf registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_HINF    (BIT(4))
+#define TEE_WRITE_TEE_HINF_M  (TEE_WRITE_TEE_HINF_V << TEE_WRITE_TEE_HINF_S)
+#define TEE_WRITE_TEE_HINF_V  0x00000001U
+#define TEE_WRITE_TEE_HINF_S  4
+/** TEE_WRITE_REE0_HINF : R/W; bitpos: [5]; default: 0;
+ *  Configures hinf registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_HINF    (BIT(5))
+#define TEE_WRITE_REE0_HINF_M  (TEE_WRITE_REE0_HINF_V << TEE_WRITE_REE0_HINF_S)
+#define TEE_WRITE_REE0_HINF_V  0x00000001U
+#define TEE_WRITE_REE0_HINF_S  5
+/** TEE_WRITE_REE1_HINF : R/W; bitpos: [6]; default: 0;
+ *  Configures hinf registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_HINF    (BIT(6))
+#define TEE_WRITE_REE1_HINF_M  (TEE_WRITE_REE1_HINF_V << TEE_WRITE_REE1_HINF_S)
+#define TEE_WRITE_REE1_HINF_V  0x00000001U
+#define TEE_WRITE_REE1_HINF_S  6
+/** TEE_WRITE_REE2_HINF : R/W; bitpos: [7]; default: 0;
+ *  Configures hinf registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_HINF    (BIT(7))
+#define TEE_WRITE_REE2_HINF_M  (TEE_WRITE_REE2_HINF_V << TEE_WRITE_REE2_HINF_S)
+#define TEE_WRITE_REE2_HINF_V  0x00000001U
+#define TEE_WRITE_REE2_HINF_S  7
+
+/** TEE_SLC_CTRL_REG register
+ *  slc read/write control register
+ */
+#define TEE_SLC_CTRL_REG (DR_REG_TEE_BASE + 0x150)
+/** TEE_READ_TEE_SLC : R/W; bitpos: [0]; default: 1;
+ *  Configures slc registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_SLC    (BIT(0))
+#define TEE_READ_TEE_SLC_M  (TEE_READ_TEE_SLC_V << TEE_READ_TEE_SLC_S)
+#define TEE_READ_TEE_SLC_V  0x00000001U
+#define TEE_READ_TEE_SLC_S  0
+/** TEE_READ_REE0_SLC : R/W; bitpos: [1]; default: 0;
+ *  Configures slc registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_SLC    (BIT(1))
+#define TEE_READ_REE0_SLC_M  (TEE_READ_REE0_SLC_V << TEE_READ_REE0_SLC_S)
+#define TEE_READ_REE0_SLC_V  0x00000001U
+#define TEE_READ_REE0_SLC_S  1
+/** TEE_READ_REE1_SLC : R/W; bitpos: [2]; default: 0;
+ *  Configures slc registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_SLC    (BIT(2))
+#define TEE_READ_REE1_SLC_M  (TEE_READ_REE1_SLC_V << TEE_READ_REE1_SLC_S)
+#define TEE_READ_REE1_SLC_V  0x00000001U
+#define TEE_READ_REE1_SLC_S  2
+/** TEE_READ_REE2_SLC : R/W; bitpos: [3]; default: 0;
+ *  Configures slc registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_SLC    (BIT(3))
+#define TEE_READ_REE2_SLC_M  (TEE_READ_REE2_SLC_V << TEE_READ_REE2_SLC_S)
+#define TEE_READ_REE2_SLC_V  0x00000001U
+#define TEE_READ_REE2_SLC_S  3
+/** TEE_WRITE_TEE_SLC : R/W; bitpos: [4]; default: 1;
+ *  Configures slc registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_SLC    (BIT(4))
+#define TEE_WRITE_TEE_SLC_M  (TEE_WRITE_TEE_SLC_V << TEE_WRITE_TEE_SLC_S)
+#define TEE_WRITE_TEE_SLC_V  0x00000001U
+#define TEE_WRITE_TEE_SLC_S  4
+/** TEE_WRITE_REE0_SLC : R/W; bitpos: [5]; default: 0;
+ *  Configures slc registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_SLC    (BIT(5))
+#define TEE_WRITE_REE0_SLC_M  (TEE_WRITE_REE0_SLC_V << TEE_WRITE_REE0_SLC_S)
+#define TEE_WRITE_REE0_SLC_V  0x00000001U
+#define TEE_WRITE_REE0_SLC_S  5
+/** TEE_WRITE_REE1_SLC : R/W; bitpos: [6]; default: 0;
+ *  Configures slc registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_SLC    (BIT(6))
+#define TEE_WRITE_REE1_SLC_M  (TEE_WRITE_REE1_SLC_V << TEE_WRITE_REE1_SLC_S)
+#define TEE_WRITE_REE1_SLC_V  0x00000001U
+#define TEE_WRITE_REE1_SLC_S  6
+/** TEE_WRITE_REE2_SLC : R/W; bitpos: [7]; default: 0;
+ *  Configures slc registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_SLC    (BIT(7))
+#define TEE_WRITE_REE2_SLC_M  (TEE_WRITE_REE2_SLC_V << TEE_WRITE_REE2_SLC_S)
+#define TEE_WRITE_REE2_SLC_V  0x00000001U
+#define TEE_WRITE_REE2_SLC_S  7
+
+/** TEE_SLC_HOST_CTRL_REG register
+ *  slc_host read/write control register
+ */
+#define TEE_SLC_HOST_CTRL_REG (DR_REG_TEE_BASE + 0x158)
+/** TEE_READ_TEE_SLC_HOST : R/W; bitpos: [0]; default: 1;
+ *  Configures slc_host registers read permission in tee mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_TEE_SLC_HOST    (BIT(0))
+#define TEE_READ_TEE_SLC_HOST_M  (TEE_READ_TEE_SLC_HOST_V << TEE_READ_TEE_SLC_HOST_S)
+#define TEE_READ_TEE_SLC_HOST_V  0x00000001U
+#define TEE_READ_TEE_SLC_HOST_S  0
+/** TEE_READ_REE0_SLC_HOST : R/W; bitpos: [1]; default: 0;
+ *  Configures slc_host registers read permission in ree0 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE0_SLC_HOST    (BIT(1))
+#define TEE_READ_REE0_SLC_HOST_M  (TEE_READ_REE0_SLC_HOST_V << TEE_READ_REE0_SLC_HOST_S)
+#define TEE_READ_REE0_SLC_HOST_V  0x00000001U
+#define TEE_READ_REE0_SLC_HOST_S  1
+/** TEE_READ_REE1_SLC_HOST : R/W; bitpos: [2]; default: 0;
+ *  Configures slc_host registers read permission in ree1 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE1_SLC_HOST    (BIT(2))
+#define TEE_READ_REE1_SLC_HOST_M  (TEE_READ_REE1_SLC_HOST_V << TEE_READ_REE1_SLC_HOST_S)
+#define TEE_READ_REE1_SLC_HOST_V  0x00000001U
+#define TEE_READ_REE1_SLC_HOST_S  2
+/** TEE_READ_REE2_SLC_HOST : R/W; bitpos: [3]; default: 0;
+ *  Configures slc_host registers read permission in ree2 mode.
+ *  0: can not be read
+ *  1: can be read
+ */
+#define TEE_READ_REE2_SLC_HOST    (BIT(3))
+#define TEE_READ_REE2_SLC_HOST_M  (TEE_READ_REE2_SLC_HOST_V << TEE_READ_REE2_SLC_HOST_S)
+#define TEE_READ_REE2_SLC_HOST_V  0x00000001U
+#define TEE_READ_REE2_SLC_HOST_S  3
+/** TEE_WRITE_TEE_SLC_HOST : R/W; bitpos: [4]; default: 1;
+ *  Configures slc_host registers write permission in tee mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_TEE_SLC_HOST    (BIT(4))
+#define TEE_WRITE_TEE_SLC_HOST_M  (TEE_WRITE_TEE_SLC_HOST_V << TEE_WRITE_TEE_SLC_HOST_S)
+#define TEE_WRITE_TEE_SLC_HOST_V  0x00000001U
+#define TEE_WRITE_TEE_SLC_HOST_S  4
+/** TEE_WRITE_REE0_SLC_HOST : R/W; bitpos: [5]; default: 0;
+ *  Configures slc_host registers write permission in ree0 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE0_SLC_HOST    (BIT(5))
+#define TEE_WRITE_REE0_SLC_HOST_M  (TEE_WRITE_REE0_SLC_HOST_V << TEE_WRITE_REE0_SLC_HOST_S)
+#define TEE_WRITE_REE0_SLC_HOST_V  0x00000001U
+#define TEE_WRITE_REE0_SLC_HOST_S  5
+/** TEE_WRITE_REE1_SLC_HOST : R/W; bitpos: [6]; default: 0;
+ *  Configures slc_host registers write permission in ree1 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE1_SLC_HOST    (BIT(6))
+#define TEE_WRITE_REE1_SLC_HOST_M  (TEE_WRITE_REE1_SLC_HOST_V << TEE_WRITE_REE1_SLC_HOST_S)
+#define TEE_WRITE_REE1_SLC_HOST_V  0x00000001U
+#define TEE_WRITE_REE1_SLC_HOST_S  6
+/** TEE_WRITE_REE2_SLC_HOST : R/W; bitpos: [7]; default: 0;
+ *  Configures slc_host registers write permission in ree2 mode.
+ *  0: can not be write
+ *  1: can be write
+ */
+#define TEE_WRITE_REE2_SLC_HOST    (BIT(7))
+#define TEE_WRITE_REE2_SLC_HOST_M  (TEE_WRITE_REE2_SLC_HOST_V << TEE_WRITE_REE2_SLC_HOST_S)
+#define TEE_WRITE_REE2_SLC_HOST_V  0x00000001U
+#define TEE_WRITE_REE2_SLC_HOST_S  7
+
+/** TEE_BUS_ERR_CONF_REG register
+ *  Clock gating register
+ */
+#define TEE_BUS_ERR_CONF_REG (DR_REG_TEE_BASE + 0xff0)
+/** TEE_BUS_ERR_RESP_EN : R/W; bitpos: [0]; default: 0;
+ *  Configures whether return error response to cpu when access blocked
+ *  0: disable error response
+ *  1: enable error response
+ */
+#define TEE_BUS_ERR_RESP_EN    (BIT(0))
+#define TEE_BUS_ERR_RESP_EN_M  (TEE_BUS_ERR_RESP_EN_V << TEE_BUS_ERR_RESP_EN_S)
+#define TEE_BUS_ERR_RESP_EN_V  0x00000001U
+#define TEE_BUS_ERR_RESP_EN_S  0
+
 /** TEE_CLOCK_GATE_REG register
  *  Clock gating register
  */
-#define TEE_CLOCK_GATE_REG (DR_REG_TEE_BASE + 0x80)
+#define TEE_CLOCK_GATE_REG (DR_REG_TEE_BASE + 0xff8)
 /** TEE_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Configures whether to keep the clock always on.\\
- *  0: enable automatic clock gating \\
- *  1: keep the clock always on  \\
+ *  Configures whether to keep the clock always on.
+ *  0: enable automatic clock gating
+ *  1: keep the clock always on
  */
 #define TEE_CLK_EN    (BIT(0))
 #define TEE_CLK_EN_M  (TEE_CLK_EN_V << TEE_CLK_EN_S)
@@ -765,7 +4244,7 @@ extern "C" {
  *  Version control register
  */
 #define TEE_DATE_REG (DR_REG_TEE_BASE + 0xffc)
-/** TEE_DATE : R/W; bitpos: [27:0]; default: 35725664;
+/** TEE_DATE : R/W; bitpos: [27:0]; default: 37773824;
  *  Version control register
  */
 #define TEE_DATE    0x0FFFFFFFU

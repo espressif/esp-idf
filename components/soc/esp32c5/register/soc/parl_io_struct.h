@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -436,6 +436,25 @@ typedef union {
 } parl_io_tx_clk_cfg_reg_t;
 
 
+/** Group: PARL_TX_CS Configuration */
+/** Type of tx_cs_cfg register
+ *  Parallel IO tx_cs_o generate configuration
+ */
+typedef union {
+    struct {
+        /** tx_cs_stop_delay : R/W; bitpos: [15:0]; default: 0;
+         *  configure the delay between data tx end and tx_cs_o posedge
+         */
+        uint32_t tx_cs_stop_delay:16;
+        /** tx_cs_start_delay : R/W; bitpos: [31:16]; default: 0;
+         *  configure the delay between tx_cs_o negedge and data tx start
+         */
+        uint32_t tx_cs_start_delay:16;
+    };
+    uint32_t val;
+} parl_io_tx_cs_cfg_reg_t;
+
+
 /** Group: PARL_IO Clock Configuration */
 /** Type of clk register
  *  Parallel IO clk configuration register
@@ -458,7 +477,7 @@ typedef union {
  */
 typedef union {
     struct {
-        /** date : R/W; bitpos: [27:0]; default: 35725920;
+        /** date : R/W; bitpos: [27:0]; default: 37786160;
          *  Version of this register file
          */
         uint32_t date:28;
@@ -488,7 +507,8 @@ typedef struct parl_io_dev_t {
     volatile parl_io_tx_st0_reg_t tx_st0;
     volatile parl_io_rx_clk_cfg_reg_t rx_clk_cfg;
     volatile parl_io_tx_clk_cfg_reg_t tx_clk_cfg;
-    uint32_t reserved_04c[53];
+    volatile parl_io_tx_cs_cfg_reg_t tx_cs_cfg;
+    uint32_t reserved_050[52];
     volatile parl_io_clk_reg_t clk;
     uint32_t reserved_124[182];
     volatile parl_io_version_reg_t version;

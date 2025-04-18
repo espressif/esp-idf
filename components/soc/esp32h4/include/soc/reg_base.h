@@ -51,7 +51,7 @@
 #define DR_REG_INTMTX1_BASE                       0x6009B000
 #define DR_REG_HP_SYSTEM_BASE                     0x6009C000
 #define DR_REG_HP_APM_BASE                        0x6009D000
-#define DR_REG_CPU_APM_REG_BASE                   0x6009E000
+#define DR_REG_CPU_APM_BASE                       0x6009E000
 #define DR_REG_TEE_BASE                           0x6009F000
 #define DR_REG_KEYMNG_BASE                        0x600A5000
 #define DR_REG_AES_BASE                           0x600A6000

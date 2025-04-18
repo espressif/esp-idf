@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -198,12 +198,20 @@ extern "C" {
 #define HUK_RISK_LEVEL_M  (HUK_RISK_LEVEL_V << HUK_RISK_LEVEL_S)
 #define HUK_RISK_LEVEL_V  0x00000007U
 #define HUK_RISK_LEVEL_S  2
+/** HUK_UPDATE_REQ : RO; bitpos: [5]; default: 0;
+ *  The update request of HUK info. 0: User can update HUK info according to the risk
+ *  level. 1: The HUK info is expired, and user need to update it.
+ */
+#define HUK_UPDATE_REQ    (BIT(5))
+#define HUK_UPDATE_REQ_M  (HUK_UPDATE_REQ_V << HUK_UPDATE_REQ_S)
+#define HUK_UPDATE_REQ_V  0x00000001U
+#define HUK_UPDATE_REQ_S  5
 
 /** HUK_DATE_REG register
  *  Version control register
  */
 #define HUK_DATE_REG (DR_REG_HUK_BASE + 0xfc)
-/** HUK_DATE : R/W; bitpos: [27:0]; default: 36720704;
+/** HUK_DATE : R/W; bitpos: [27:0]; default: 37765232;
  *  HUK Generator version control register.
  */
 #define HUK_DATE    0x0FFFFFFFU

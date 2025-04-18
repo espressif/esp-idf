@@ -1,5 +1,5 @@
 /**
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  *  SPDX-License-Identifier: Apache-2.0
  */
@@ -15,14 +15,14 @@ extern "C" {
  *  Region filter enable register
  */
 #define LP_APM0_REGION_FILTER_EN_REG (DR_REG_LP_APM0_BASE + 0x0)
-/** LP_APM0_REGION_FILTER_EN : R/W; bitpos: [3:0]; default: 1;
- *  Configure bit $n(0-3) to enable region $n.\\
- *  0: disable \\
- *  1: enable  \\
+/** LP_APM0_REGION_FILTER_EN : R/W; bitpos: [7:0]; default: 1;
+ *  Configure bit $n(0-7) to enable region $n.
+ *  0: disable
+ *  1: enable
  */
-#define LP_APM0_REGION_FILTER_EN    0x0000000FU
+#define LP_APM0_REGION_FILTER_EN    0x000000FFU
 #define LP_APM0_REGION_FILTER_EN_M  (LP_APM0_REGION_FILTER_EN_V << LP_APM0_REGION_FILTER_EN_S)
-#define LP_APM0_REGION_FILTER_EN_V  0x0000000FU
+#define LP_APM0_REGION_FILTER_EN_V  0x000000FFU
 #define LP_APM0_REGION_FILTER_EN_S  0
 
 /** LP_APM0_REGION0_ADDR_START_REG register
@@ -421,6 +421,402 @@ extern "C" {
 #define LP_APM0_REGION3_LOCK_V  0x00000001U
 #define LP_APM0_REGION3_LOCK_S  11
 
+/** LP_APM0_REGION4_ADDR_START_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION4_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x34)
+/** LP_APM0_REGION4_ADDR_START : R/W; bitpos: [31:0]; default: 0;
+ *  Configures start address of region 4
+ */
+#define LP_APM0_REGION4_ADDR_START    0xFFFFFFFFU
+#define LP_APM0_REGION4_ADDR_START_M  (LP_APM0_REGION4_ADDR_START_V << LP_APM0_REGION4_ADDR_START_S)
+#define LP_APM0_REGION4_ADDR_START_V  0xFFFFFFFFU
+#define LP_APM0_REGION4_ADDR_START_S  0
+
+/** LP_APM0_REGION4_ADDR_END_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION4_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x38)
+/** LP_APM0_REGION4_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures end address of region 4
+ */
+#define LP_APM0_REGION4_ADDR_END    0xFFFFFFFFU
+#define LP_APM0_REGION4_ADDR_END_M  (LP_APM0_REGION4_ADDR_END_V << LP_APM0_REGION4_ADDR_END_S)
+#define LP_APM0_REGION4_ADDR_END_V  0xFFFFFFFFU
+#define LP_APM0_REGION4_ADDR_END_S  0
+
+/** LP_APM0_REGION4_ATTR_REG register
+ *  Region access authority attribute register
+ */
+#define LP_APM0_REGION4_ATTR_REG (DR_REG_LP_APM0_BASE + 0x3c)
+/** LP_APM0_REGION4_R0_X : R/W; bitpos: [0]; default: 0;
+ *  Configures the execution authority of REE_MODE 0 in region 4.
+ */
+#define LP_APM0_REGION4_R0_X    (BIT(0))
+#define LP_APM0_REGION4_R0_X_M  (LP_APM0_REGION4_R0_X_V << LP_APM0_REGION4_R0_X_S)
+#define LP_APM0_REGION4_R0_X_V  0x00000001U
+#define LP_APM0_REGION4_R0_X_S  0
+/** LP_APM0_REGION4_R0_W : R/W; bitpos: [1]; default: 0;
+ *  Configures the write authority of REE_MODE 0 in region 4.
+ */
+#define LP_APM0_REGION4_R0_W    (BIT(1))
+#define LP_APM0_REGION4_R0_W_M  (LP_APM0_REGION4_R0_W_V << LP_APM0_REGION4_R0_W_S)
+#define LP_APM0_REGION4_R0_W_V  0x00000001U
+#define LP_APM0_REGION4_R0_W_S  1
+/** LP_APM0_REGION4_R0_R : R/W; bitpos: [2]; default: 0;
+ *  Configures the read authority of REE_MODE 0 in region 4.
+ */
+#define LP_APM0_REGION4_R0_R    (BIT(2))
+#define LP_APM0_REGION4_R0_R_M  (LP_APM0_REGION4_R0_R_V << LP_APM0_REGION4_R0_R_S)
+#define LP_APM0_REGION4_R0_R_V  0x00000001U
+#define LP_APM0_REGION4_R0_R_S  2
+/** LP_APM0_REGION4_R1_X : R/W; bitpos: [4]; default: 0;
+ *  Configures the execution authority of REE_MODE 1 in region 4.
+ */
+#define LP_APM0_REGION4_R1_X    (BIT(4))
+#define LP_APM0_REGION4_R1_X_M  (LP_APM0_REGION4_R1_X_V << LP_APM0_REGION4_R1_X_S)
+#define LP_APM0_REGION4_R1_X_V  0x00000001U
+#define LP_APM0_REGION4_R1_X_S  4
+/** LP_APM0_REGION4_R1_W : R/W; bitpos: [5]; default: 0;
+ *  Configures the write authority of REE_MODE 1 in region 4.
+ */
+#define LP_APM0_REGION4_R1_W    (BIT(5))
+#define LP_APM0_REGION4_R1_W_M  (LP_APM0_REGION4_R1_W_V << LP_APM0_REGION4_R1_W_S)
+#define LP_APM0_REGION4_R1_W_V  0x00000001U
+#define LP_APM0_REGION4_R1_W_S  5
+/** LP_APM0_REGION4_R1_R : R/W; bitpos: [6]; default: 0;
+ *  Configures the read authority of REE_MODE 1 in region 4.
+ */
+#define LP_APM0_REGION4_R1_R    (BIT(6))
+#define LP_APM0_REGION4_R1_R_M  (LP_APM0_REGION4_R1_R_V << LP_APM0_REGION4_R1_R_S)
+#define LP_APM0_REGION4_R1_R_V  0x00000001U
+#define LP_APM0_REGION4_R1_R_S  6
+/** LP_APM0_REGION4_R2_X : R/W; bitpos: [8]; default: 0;
+ *  Configures the execution authority of REE_MODE 2 in region 4.
+ */
+#define LP_APM0_REGION4_R2_X    (BIT(8))
+#define LP_APM0_REGION4_R2_X_M  (LP_APM0_REGION4_R2_X_V << LP_APM0_REGION4_R2_X_S)
+#define LP_APM0_REGION4_R2_X_V  0x00000001U
+#define LP_APM0_REGION4_R2_X_S  8
+/** LP_APM0_REGION4_R2_W : R/W; bitpos: [9]; default: 0;
+ *  Configures the write authority of REE_MODE 2 in region 4.
+ */
+#define LP_APM0_REGION4_R2_W    (BIT(9))
+#define LP_APM0_REGION4_R2_W_M  (LP_APM0_REGION4_R2_W_V << LP_APM0_REGION4_R2_W_S)
+#define LP_APM0_REGION4_R2_W_V  0x00000001U
+#define LP_APM0_REGION4_R2_W_S  9
+/** LP_APM0_REGION4_R2_R : R/W; bitpos: [10]; default: 0;
+ *  Configures the read authority of REE_MODE 2 in region 4.
+ */
+#define LP_APM0_REGION4_R2_R    (BIT(10))
+#define LP_APM0_REGION4_R2_R_M  (LP_APM0_REGION4_R2_R_V << LP_APM0_REGION4_R2_R_S)
+#define LP_APM0_REGION4_R2_R_V  0x00000001U
+#define LP_APM0_REGION4_R2_R_S  10
+/** LP_APM0_REGION4_LOCK : R/W; bitpos: [11]; default: 0;
+ *  Set 1 to lock region0 configuration
+ */
+#define LP_APM0_REGION4_LOCK    (BIT(11))
+#define LP_APM0_REGION4_LOCK_M  (LP_APM0_REGION4_LOCK_V << LP_APM0_REGION4_LOCK_S)
+#define LP_APM0_REGION4_LOCK_V  0x00000001U
+#define LP_APM0_REGION4_LOCK_S  11
+
+/** LP_APM0_REGION5_ADDR_START_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION5_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x40)
+/** LP_APM0_REGION5_ADDR_START : R/W; bitpos: [31:0]; default: 0;
+ *  Configures start address of region 5
+ */
+#define LP_APM0_REGION5_ADDR_START    0xFFFFFFFFU
+#define LP_APM0_REGION5_ADDR_START_M  (LP_APM0_REGION5_ADDR_START_V << LP_APM0_REGION5_ADDR_START_S)
+#define LP_APM0_REGION5_ADDR_START_V  0xFFFFFFFFU
+#define LP_APM0_REGION5_ADDR_START_S  0
+
+/** LP_APM0_REGION5_ADDR_END_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION5_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x44)
+/** LP_APM0_REGION5_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures end address of region 5
+ */
+#define LP_APM0_REGION5_ADDR_END    0xFFFFFFFFU
+#define LP_APM0_REGION5_ADDR_END_M  (LP_APM0_REGION5_ADDR_END_V << LP_APM0_REGION5_ADDR_END_S)
+#define LP_APM0_REGION5_ADDR_END_V  0xFFFFFFFFU
+#define LP_APM0_REGION5_ADDR_END_S  0
+
+/** LP_APM0_REGION5_ATTR_REG register
+ *  Region access authority attribute register
+ */
+#define LP_APM0_REGION5_ATTR_REG (DR_REG_LP_APM0_BASE + 0x48)
+/** LP_APM0_REGION5_R0_X : R/W; bitpos: [0]; default: 0;
+ *  Configures the execution authority of REE_MODE 0 in region 5.
+ */
+#define LP_APM0_REGION5_R0_X    (BIT(0))
+#define LP_APM0_REGION5_R0_X_M  (LP_APM0_REGION5_R0_X_V << LP_APM0_REGION5_R0_X_S)
+#define LP_APM0_REGION5_R0_X_V  0x00000001U
+#define LP_APM0_REGION5_R0_X_S  0
+/** LP_APM0_REGION5_R0_W : R/W; bitpos: [1]; default: 0;
+ *  Configures the write authority of REE_MODE 0 in region 5.
+ */
+#define LP_APM0_REGION5_R0_W    (BIT(1))
+#define LP_APM0_REGION5_R0_W_M  (LP_APM0_REGION5_R0_W_V << LP_APM0_REGION5_R0_W_S)
+#define LP_APM0_REGION5_R0_W_V  0x00000001U
+#define LP_APM0_REGION5_R0_W_S  1
+/** LP_APM0_REGION5_R0_R : R/W; bitpos: [2]; default: 0;
+ *  Configures the read authority of REE_MODE 0 in region 5.
+ */
+#define LP_APM0_REGION5_R0_R    (BIT(2))
+#define LP_APM0_REGION5_R0_R_M  (LP_APM0_REGION5_R0_R_V << LP_APM0_REGION5_R0_R_S)
+#define LP_APM0_REGION5_R0_R_V  0x00000001U
+#define LP_APM0_REGION5_R0_R_S  2
+/** LP_APM0_REGION5_R1_X : R/W; bitpos: [4]; default: 0;
+ *  Configures the execution authority of REE_MODE 1 in region 5.
+ */
+#define LP_APM0_REGION5_R1_X    (BIT(4))
+#define LP_APM0_REGION5_R1_X_M  (LP_APM0_REGION5_R1_X_V << LP_APM0_REGION5_R1_X_S)
+#define LP_APM0_REGION5_R1_X_V  0x00000001U
+#define LP_APM0_REGION5_R1_X_S  4
+/** LP_APM0_REGION5_R1_W : R/W; bitpos: [5]; default: 0;
+ *  Configures the write authority of REE_MODE 1 in region 5.
+ */
+#define LP_APM0_REGION5_R1_W    (BIT(5))
+#define LP_APM0_REGION5_R1_W_M  (LP_APM0_REGION5_R1_W_V << LP_APM0_REGION5_R1_W_S)
+#define LP_APM0_REGION5_R1_W_V  0x00000001U
+#define LP_APM0_REGION5_R1_W_S  5
+/** LP_APM0_REGION5_R1_R : R/W; bitpos: [6]; default: 0;
+ *  Configures the read authority of REE_MODE 1 in region 5.
+ */
+#define LP_APM0_REGION5_R1_R    (BIT(6))
+#define LP_APM0_REGION5_R1_R_M  (LP_APM0_REGION5_R1_R_V << LP_APM0_REGION5_R1_R_S)
+#define LP_APM0_REGION5_R1_R_V  0x00000001U
+#define LP_APM0_REGION5_R1_R_S  6
+/** LP_APM0_REGION5_R2_X : R/W; bitpos: [8]; default: 0;
+ *  Configures the execution authority of REE_MODE 2 in region 5.
+ */
+#define LP_APM0_REGION5_R2_X    (BIT(8))
+#define LP_APM0_REGION5_R2_X_M  (LP_APM0_REGION5_R2_X_V << LP_APM0_REGION5_R2_X_S)
+#define LP_APM0_REGION5_R2_X_V  0x00000001U
+#define LP_APM0_REGION5_R2_X_S  8
+/** LP_APM0_REGION5_R2_W : R/W; bitpos: [9]; default: 0;
+ *  Configures the write authority of REE_MODE 2 in region 5.
+ */
+#define LP_APM0_REGION5_R2_W    (BIT(9))
+#define LP_APM0_REGION5_R2_W_M  (LP_APM0_REGION5_R2_W_V << LP_APM0_REGION5_R2_W_S)
+#define LP_APM0_REGION5_R2_W_V  0x00000001U
+#define LP_APM0_REGION5_R2_W_S  9
+/** LP_APM0_REGION5_R2_R : R/W; bitpos: [10]; default: 0;
+ *  Configures the read authority of REE_MODE 2 in region 5.
+ */
+#define LP_APM0_REGION5_R2_R    (BIT(10))
+#define LP_APM0_REGION5_R2_R_M  (LP_APM0_REGION5_R2_R_V << LP_APM0_REGION5_R2_R_S)
+#define LP_APM0_REGION5_R2_R_V  0x00000001U
+#define LP_APM0_REGION5_R2_R_S  10
+/** LP_APM0_REGION5_LOCK : R/W; bitpos: [11]; default: 0;
+ *  Set 1 to lock region0 configuration
+ */
+#define LP_APM0_REGION5_LOCK    (BIT(11))
+#define LP_APM0_REGION5_LOCK_M  (LP_APM0_REGION5_LOCK_V << LP_APM0_REGION5_LOCK_S)
+#define LP_APM0_REGION5_LOCK_V  0x00000001U
+#define LP_APM0_REGION5_LOCK_S  11
+
+/** LP_APM0_REGION6_ADDR_START_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION6_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x4c)
+/** LP_APM0_REGION6_ADDR_START : R/W; bitpos: [31:0]; default: 0;
+ *  Configures start address of region 6
+ */
+#define LP_APM0_REGION6_ADDR_START    0xFFFFFFFFU
+#define LP_APM0_REGION6_ADDR_START_M  (LP_APM0_REGION6_ADDR_START_V << LP_APM0_REGION6_ADDR_START_S)
+#define LP_APM0_REGION6_ADDR_START_V  0xFFFFFFFFU
+#define LP_APM0_REGION6_ADDR_START_S  0
+
+/** LP_APM0_REGION6_ADDR_END_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION6_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x50)
+/** LP_APM0_REGION6_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures end address of region 6
+ */
+#define LP_APM0_REGION6_ADDR_END    0xFFFFFFFFU
+#define LP_APM0_REGION6_ADDR_END_M  (LP_APM0_REGION6_ADDR_END_V << LP_APM0_REGION6_ADDR_END_S)
+#define LP_APM0_REGION6_ADDR_END_V  0xFFFFFFFFU
+#define LP_APM0_REGION6_ADDR_END_S  0
+
+/** LP_APM0_REGION6_ATTR_REG register
+ *  Region access authority attribute register
+ */
+#define LP_APM0_REGION6_ATTR_REG (DR_REG_LP_APM0_BASE + 0x54)
+/** LP_APM0_REGION6_R0_X : R/W; bitpos: [0]; default: 0;
+ *  Configures the execution authority of REE_MODE 0 in region 6.
+ */
+#define LP_APM0_REGION6_R0_X    (BIT(0))
+#define LP_APM0_REGION6_R0_X_M  (LP_APM0_REGION6_R0_X_V << LP_APM0_REGION6_R0_X_S)
+#define LP_APM0_REGION6_R0_X_V  0x00000001U
+#define LP_APM0_REGION6_R0_X_S  0
+/** LP_APM0_REGION6_R0_W : R/W; bitpos: [1]; default: 0;
+ *  Configures the write authority of REE_MODE 0 in region 6.
+ */
+#define LP_APM0_REGION6_R0_W    (BIT(1))
+#define LP_APM0_REGION6_R0_W_M  (LP_APM0_REGION6_R0_W_V << LP_APM0_REGION6_R0_W_S)
+#define LP_APM0_REGION6_R0_W_V  0x00000001U
+#define LP_APM0_REGION6_R0_W_S  1
+/** LP_APM0_REGION6_R0_R : R/W; bitpos: [2]; default: 0;
+ *  Configures the read authority of REE_MODE 0 in region 6.
+ */
+#define LP_APM0_REGION6_R0_R    (BIT(2))
+#define LP_APM0_REGION6_R0_R_M  (LP_APM0_REGION6_R0_R_V << LP_APM0_REGION6_R0_R_S)
+#define LP_APM0_REGION6_R0_R_V  0x00000001U
+#define LP_APM0_REGION6_R0_R_S  2
+/** LP_APM0_REGION6_R1_X : R/W; bitpos: [4]; default: 0;
+ *  Configures the execution authority of REE_MODE 1 in region 6.
+ */
+#define LP_APM0_REGION6_R1_X    (BIT(4))
+#define LP_APM0_REGION6_R1_X_M  (LP_APM0_REGION6_R1_X_V << LP_APM0_REGION6_R1_X_S)
+#define LP_APM0_REGION6_R1_X_V  0x00000001U
+#define LP_APM0_REGION6_R1_X_S  4
+/** LP_APM0_REGION6_R1_W : R/W; bitpos: [5]; default: 0;
+ *  Configures the write authority of REE_MODE 1 in region 6.
+ */
+#define LP_APM0_REGION6_R1_W    (BIT(5))
+#define LP_APM0_REGION6_R1_W_M  (LP_APM0_REGION6_R1_W_V << LP_APM0_REGION6_R1_W_S)
+#define LP_APM0_REGION6_R1_W_V  0x00000001U
+#define LP_APM0_REGION6_R1_W_S  5
+/** LP_APM0_REGION6_R1_R : R/W; bitpos: [6]; default: 0;
+ *  Configures the read authority of REE_MODE 1 in region 6.
+ */
+#define LP_APM0_REGION6_R1_R    (BIT(6))
+#define LP_APM0_REGION6_R1_R_M  (LP_APM0_REGION6_R1_R_V << LP_APM0_REGION6_R1_R_S)
+#define LP_APM0_REGION6_R1_R_V  0x00000001U
+#define LP_APM0_REGION6_R1_R_S  6
+/** LP_APM0_REGION6_R2_X : R/W; bitpos: [8]; default: 0;
+ *  Configures the execution authority of REE_MODE 2 in region 6.
+ */
+#define LP_APM0_REGION6_R2_X    (BIT(8))
+#define LP_APM0_REGION6_R2_X_M  (LP_APM0_REGION6_R2_X_V << LP_APM0_REGION6_R2_X_S)
+#define LP_APM0_REGION6_R2_X_V  0x00000001U
+#define LP_APM0_REGION6_R2_X_S  8
+/** LP_APM0_REGION6_R2_W : R/W; bitpos: [9]; default: 0;
+ *  Configures the write authority of REE_MODE 2 in region 6.
+ */
+#define LP_APM0_REGION6_R2_W    (BIT(9))
+#define LP_APM0_REGION6_R2_W_M  (LP_APM0_REGION6_R2_W_V << LP_APM0_REGION6_R2_W_S)
+#define LP_APM0_REGION6_R2_W_V  0x00000001U
+#define LP_APM0_REGION6_R2_W_S  9
+/** LP_APM0_REGION6_R2_R : R/W; bitpos: [10]; default: 0;
+ *  Configures the read authority of REE_MODE 2 in region 6.
+ */
+#define LP_APM0_REGION6_R2_R    (BIT(10))
+#define LP_APM0_REGION6_R2_R_M  (LP_APM0_REGION6_R2_R_V << LP_APM0_REGION6_R2_R_S)
+#define LP_APM0_REGION6_R2_R_V  0x00000001U
+#define LP_APM0_REGION6_R2_R_S  10
+/** LP_APM0_REGION6_LOCK : R/W; bitpos: [11]; default: 0;
+ *  Set 1 to lock region0 configuration
+ */
+#define LP_APM0_REGION6_LOCK    (BIT(11))
+#define LP_APM0_REGION6_LOCK_M  (LP_APM0_REGION6_LOCK_V << LP_APM0_REGION6_LOCK_S)
+#define LP_APM0_REGION6_LOCK_V  0x00000001U
+#define LP_APM0_REGION6_LOCK_S  11
+
+/** LP_APM0_REGION7_ADDR_START_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION7_ADDR_START_REG (DR_REG_LP_APM0_BASE + 0x58)
+/** LP_APM0_REGION7_ADDR_START : R/W; bitpos: [31:0]; default: 0;
+ *  Configures start address of region 7
+ */
+#define LP_APM0_REGION7_ADDR_START    0xFFFFFFFFU
+#define LP_APM0_REGION7_ADDR_START_M  (LP_APM0_REGION7_ADDR_START_V << LP_APM0_REGION7_ADDR_START_S)
+#define LP_APM0_REGION7_ADDR_START_V  0xFFFFFFFFU
+#define LP_APM0_REGION7_ADDR_START_S  0
+
+/** LP_APM0_REGION7_ADDR_END_REG register
+ *  Region address register
+ */
+#define LP_APM0_REGION7_ADDR_END_REG (DR_REG_LP_APM0_BASE + 0x5c)
+/** LP_APM0_REGION7_ADDR_END : R/W; bitpos: [31:0]; default: 4294967295;
+ *  Configures end address of region 7
+ */
+#define LP_APM0_REGION7_ADDR_END    0xFFFFFFFFU
+#define LP_APM0_REGION7_ADDR_END_M  (LP_APM0_REGION7_ADDR_END_V << LP_APM0_REGION7_ADDR_END_S)
+#define LP_APM0_REGION7_ADDR_END_V  0xFFFFFFFFU
+#define LP_APM0_REGION7_ADDR_END_S  0
+
+/** LP_APM0_REGION7_ATTR_REG register
+ *  Region access authority attribute register
+ */
+#define LP_APM0_REGION7_ATTR_REG (DR_REG_LP_APM0_BASE + 0x60)
+/** LP_APM0_REGION7_R0_X : R/W; bitpos: [0]; default: 0;
+ *  Configures the execution authority of REE_MODE 0 in region 7.
+ */
+#define LP_APM0_REGION7_R0_X    (BIT(0))
+#define LP_APM0_REGION7_R0_X_M  (LP_APM0_REGION7_R0_X_V << LP_APM0_REGION7_R0_X_S)
+#define LP_APM0_REGION7_R0_X_V  0x00000001U
+#define LP_APM0_REGION7_R0_X_S  0
+/** LP_APM0_REGION7_R0_W : R/W; bitpos: [1]; default: 0;
+ *  Configures the write authority of REE_MODE 0 in region 7.
+ */
+#define LP_APM0_REGION7_R0_W    (BIT(1))
+#define LP_APM0_REGION7_R0_W_M  (LP_APM0_REGION7_R0_W_V << LP_APM0_REGION7_R0_W_S)
+#define LP_APM0_REGION7_R0_W_V  0x00000001U
+#define LP_APM0_REGION7_R0_W_S  1
+/** LP_APM0_REGION7_R0_R : R/W; bitpos: [2]; default: 0;
+ *  Configures the read authority of REE_MODE 0 in region 7.
+ */
+#define LP_APM0_REGION7_R0_R    (BIT(2))
+#define LP_APM0_REGION7_R0_R_M  (LP_APM0_REGION7_R0_R_V << LP_APM0_REGION7_R0_R_S)
+#define LP_APM0_REGION7_R0_R_V  0x00000001U
+#define LP_APM0_REGION7_R0_R_S  2
+/** LP_APM0_REGION7_R1_X : R/W; bitpos: [4]; default: 0;
+ *  Configures the execution authority of REE_MODE 1 in region 7.
+ */
+#define LP_APM0_REGION7_R1_X    (BIT(4))
+#define LP_APM0_REGION7_R1_X_M  (LP_APM0_REGION7_R1_X_V << LP_APM0_REGION7_R1_X_S)
+#define LP_APM0_REGION7_R1_X_V  0x00000001U
+#define LP_APM0_REGION7_R1_X_S  4
+/** LP_APM0_REGION7_R1_W : R/W; bitpos: [5]; default: 0;
+ *  Configures the write authority of REE_MODE 1 in region 7.
+ */
+#define LP_APM0_REGION7_R1_W    (BIT(5))
+#define LP_APM0_REGION7_R1_W_M  (LP_APM0_REGION7_R1_W_V << LP_APM0_REGION7_R1_W_S)
+#define LP_APM0_REGION7_R1_W_V  0x00000001U
+#define LP_APM0_REGION7_R1_W_S  5
+/** LP_APM0_REGION7_R1_R : R/W; bitpos: [6]; default: 0;
+ *  Configures the read authority of REE_MODE 1 in region 7.
+ */
+#define LP_APM0_REGION7_R1_R    (BIT(6))
+#define LP_APM0_REGION7_R1_R_M  (LP_APM0_REGION7_R1_R_V << LP_APM0_REGION7_R1_R_S)
+#define LP_APM0_REGION7_R1_R_V  0x00000001U
+#define LP_APM0_REGION7_R1_R_S  6
+/** LP_APM0_REGION7_R2_X : R/W; bitpos: [8]; default: 0;
+ *  Configures the execution authority of REE_MODE 2 in region 7.
+ */
+#define LP_APM0_REGION7_R2_X    (BIT(8))
+#define LP_APM0_REGION7_R2_X_M  (LP_APM0_REGION7_R2_X_V << LP_APM0_REGION7_R2_X_S)
+#define LP_APM0_REGION7_R2_X_V  0x00000001U
+#define LP_APM0_REGION7_R2_X_S  8
+/** LP_APM0_REGION7_R2_W : R/W; bitpos: [9]; default: 0;
+ *  Configures the write authority of REE_MODE 2 in region 7.
+ */
+#define LP_APM0_REGION7_R2_W    (BIT(9))
+#define LP_APM0_REGION7_R2_W_M  (LP_APM0_REGION7_R2_W_V << LP_APM0_REGION7_R2_W_S)
+#define LP_APM0_REGION7_R2_W_V  0x00000001U
+#define LP_APM0_REGION7_R2_W_S  9
+/** LP_APM0_REGION7_R2_R : R/W; bitpos: [10]; default: 0;
+ *  Configures the read authority of REE_MODE 2 in region 7.
+ */
+#define LP_APM0_REGION7_R2_R    (BIT(10))
+#define LP_APM0_REGION7_R2_R_M  (LP_APM0_REGION7_R2_R_V << LP_APM0_REGION7_R2_R_S)
+#define LP_APM0_REGION7_R2_R_V  0x00000001U
+#define LP_APM0_REGION7_R2_R_S  10
+/** LP_APM0_REGION7_LOCK : R/W; bitpos: [11]; default: 0;
+ *  Set 1 to lock region0 configuration
+ */
+#define LP_APM0_REGION7_LOCK    (BIT(11))
+#define LP_APM0_REGION7_LOCK_M  (LP_APM0_REGION7_LOCK_V << LP_APM0_REGION7_LOCK_S)
+#define LP_APM0_REGION7_LOCK_V  0x00000001U
+#define LP_APM0_REGION7_LOCK_S  11
+
 /** LP_APM0_FUNC_CTRL_REG register
  *  APM function control register
  */
@@ -438,9 +834,9 @@ extern "C" {
  */
 #define LP_APM0_M0_STATUS_REG (DR_REG_LP_APM0_BASE + 0xc8)
 /** LP_APM0_M0_EXCEPTION_STATUS : RO; bitpos: [1:0]; default: 0;
- *  Represents exception status.\\
- *  bit0: 1 represents authority_exception \\
- *  bit1: 1 represents space_exception  \\
+ *  Represents exception status.
+ *  bit0: 1 represents authority_exception
+ *  bit1: 1 represents space_exception
  */
 #define LP_APM0_M0_EXCEPTION_STATUS    0x00000003U
 #define LP_APM0_M0_EXCEPTION_STATUS_M  (LP_APM0_M0_EXCEPTION_STATUS_V << LP_APM0_M0_EXCEPTION_STATUS_S)
@@ -463,12 +859,12 @@ extern "C" {
  *  M0 exception_info0 register
  */
 #define LP_APM0_M0_EXCEPTION_INFO0_REG (DR_REG_LP_APM0_BASE + 0xd0)
-/** LP_APM0_M0_EXCEPTION_REGION : RO; bitpos: [3:0]; default: 0;
+/** LP_APM0_M0_EXCEPTION_REGION : RO; bitpos: [7:0]; default: 0;
  *  Represents exception region
  */
-#define LP_APM0_M0_EXCEPTION_REGION    0x0000000FU
+#define LP_APM0_M0_EXCEPTION_REGION    0x000000FFU
 #define LP_APM0_M0_EXCEPTION_REGION_M  (LP_APM0_M0_EXCEPTION_REGION_V << LP_APM0_M0_EXCEPTION_REGION_S)
-#define LP_APM0_M0_EXCEPTION_REGION_V  0x0000000FU
+#define LP_APM0_M0_EXCEPTION_REGION_V  0x000000FFU
 #define LP_APM0_M0_EXCEPTION_REGION_S  0
 /** LP_APM0_M0_EXCEPTION_MODE : RO; bitpos: [17:16]; default: 0;
  *  Represents exception mode
@@ -502,9 +898,9 @@ extern "C" {
  */
 #define LP_APM0_INT_EN_REG (DR_REG_LP_APM0_BASE + 0xd8)
 /** LP_APM0_M0_APM_INT_EN : R/W; bitpos: [0]; default: 0;
- *  Configures APM M0 interrupt enable.\\
- *  0: disable \\
- *  1: enable  \\
+ *  Configures APM M0 interrupt enable.
+ *  0: disable
+ *  1: enable
  */
 #define LP_APM0_M0_APM_INT_EN    (BIT(0))
 #define LP_APM0_M0_APM_INT_EN_M  (LP_APM0_M0_APM_INT_EN_V << LP_APM0_M0_APM_INT_EN_S)
@@ -516,9 +912,9 @@ extern "C" {
  */
 #define LP_APM0_CLOCK_GATE_REG (DR_REG_LP_APM0_BASE + 0xdc)
 /** LP_APM0_CLK_EN : R/W; bitpos: [0]; default: 1;
- *  Configures whether to keep the clock always on.\\
- *  0: enable automatic clock gating \\
- *  1: keep the clock always on  \\
+ *  Configures whether to keep the clock always on.
+ *  0: enable automatic clock gating
+ *  1: keep the clock always on
  */
 #define LP_APM0_CLK_EN    (BIT(0))
 #define LP_APM0_CLK_EN_M  (LP_APM0_CLK_EN_V << LP_APM0_CLK_EN_S)

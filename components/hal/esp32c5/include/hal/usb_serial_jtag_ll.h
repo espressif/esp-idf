@@ -116,7 +116,7 @@ static inline int usb_serial_jtag_ll_read_rxfifo(uint8_t *buf, uint32_t rd_len)
     int i;
     for (i = 0; i < (int)rd_len; i++) {
         if (!USB_SERIAL_JTAG.ep1_conf.serial_out_ep_data_avail) break;
-        buf[i] = USB_SERIAL_JTAG.ep1.rdwr_byte;
+        buf[i] = USB_SERIAL_JTAG.ep1.val;
     }
     return i;
 }
@@ -135,7 +135,7 @@ static inline int usb_serial_jtag_ll_write_txfifo(const uint8_t *buf, uint32_t w
     int i;
     for (i = 0; i < (int)wr_len; i++) {
         if (!USB_SERIAL_JTAG.ep1_conf.serial_in_ep_data_free) break;
-        USB_SERIAL_JTAG.ep1.rdwr_byte = buf[i];
+        USB_SERIAL_JTAG.ep1.val = buf[i];
     }
     return i;
 }
