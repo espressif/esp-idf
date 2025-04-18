@@ -10,6 +10,10 @@ entries:
 entries:
     .conn_iram1+
 
+[sections:bt_sleep_iram_text]
+entries:
+    .sleep_iram1+
+
 [sections:bt_bss]
 entries:
     .bss+
@@ -39,6 +43,10 @@ entries:
         else:
             bt_conn_iram_text -> flash_text
             bt_isr_iram_text -> flash_text
+        if BT_LE_PLACE_SLEEP_RELATED_INTO_IRAM = y:
+            bt_sleep_iram_text -> iram0_bt_text
+        else:
+            bt_sleep_iram_text -> flash_text
     else:
         bt_iram_text -> iram0_bt_text
         bt_bss -> dram0_bt_bss
@@ -47,6 +55,7 @@ entries:
 
         bt_conn_iram_text -> iram0_bt_text
         bt_isr_iram_text -> iram0_bt_text
+        bt_sleep_iram_text -> iram0_bt_text
 
 # For the following fragments, order matters for
 # 'ALIGN(4) ALIGN(4, post) SURROUND(sym)', which generates:
