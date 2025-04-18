@@ -158,7 +158,11 @@ PCNT 单元可被设置为观察几个特定的数值，这些被观察的数值
 
     PCNT 单元可被设置为观察一个特定的数值增量（可以是正方向或负方向），这个观察数值增量的功能被称为 **观察步进**。启用观察步进需要使能 :cpp:member:`pcnt_unit_config_t::en_step_notify_up` 或 :cpp:member:`pcnt_unit_config_t::en_step_notify_down` 选项。 步进间隔不能超过 :cpp:type:`pcnt_unit_config_t` 设置的范围，最小值和最大值分别为 :cpp:member:`pcnt_unit_config_t::low_limit` 和 :cpp:member:`pcnt_unit_config_t::high_limit`。当计数器增量到达步进间隔时，会触发一个观察事件，如果在 :cpp:func:`pcnt_unit_register_event_callbacks` 注册过事件回调函数，该事件就会通过中断发送通知。关于如何注册事件回调函数，请参考 :ref:`pcnt-register-event-callbacks`。
 
-    观察步进分别可以通过 :cpp:func:`pcnt_unit_add_watch_step` 和 :cpp:func:`pcnt_unit_remove_watch_step` 进行添加和删除。不能同时添加多个观察步进，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
+    观察步进分别可以通过 :cpp:func:`pcnt_unit_add_watch_step` 和 :cpp:func:`pcnt_unit_remove_watch_step` 进行添加和删除。参数 ``step_interval`` 的为正数表示正方向的步进（例如 [N]->[N+1]->[N+2]->...），为负数表示负方向的步进（例如 [N]->[N-1]->[N-2]->...）。同一个方向只能添加一个观察步进，否则将返回错误 :c:macro:`ESP_ERR_INVALID_STATE`。
+
+    .. note::
+
+        由于硬件上的限制，部分芯片可能只能支持添加一个方向的观察步进，请检查 :cpp:func:`pcnt_unit_add_watch_step` 的返回值。
 
     建议通过 :cpp:func:`pcnt_unit_remove_watch_step` 删除未使用的观察步进来回收资源。
 
@@ -318,8 +322,7 @@ PCNT 内部的硬件计数器会在计数达到高/低门限的时候自动清�
 .. list::
 
     1. 在安装 PCNT 计数单元的时候使能 :cpp:member:`pcnt_unit_config_t::accum_count` 选项。
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points` 或添加观察步进 :ref:`pcnt-step-notify`
-    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`。
+    2. 将高/低计数门限设置为 :ref:`pcnt-watch-points`。
     3. 现在，:cpp:func:`pcnt_unit_get_count` 函数返回的计数值就会包含硬件计数器当前的计数值，累加上计数器溢出造成的损失。
 
 .. note::

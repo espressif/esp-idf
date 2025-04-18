@@ -92,6 +92,16 @@ typedef struct {
     int watch_point_value;             // value to be watched
 } pcnt_watch_point_t;
 
+typedef struct {
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    int step_interval;          // step interval
+    int step_limit;             // step limit value
+#else
+    int step_interval_forward;  // step interval for forward direction
+    int step_interval_backward; // step interval for backward direction
+#endif
+} pcnt_step_interval_t;
+
 typedef enum {
     PCNT_UNIT_FSM_INIT,
     PCNT_UNIT_FSM_ENABLE,
@@ -103,10 +113,9 @@ struct pcnt_unit_t {
     int unit_id;                                          // allocated unit numerical ID
     int low_limit;                                        // low limit value
     int high_limit;                                       // high limit value
-    int step_limit;                                       // step limit value
     int clear_signal_gpio_num;                            // which gpio clear signal input
     int accum_value;                                      // accumulated count value
-    int step_interval;                             // PCNT step notify interval value
+    pcnt_step_interval_t step_info;                       // step interval info
     pcnt_chan_t *channels[SOC_PCNT_CHANNELS_PER_UNIT];    // array of PCNT channels
     pcnt_watch_point_t watchers[PCNT_LL_WATCH_EVENT_MAX]; // array of PCNT watchers
     intr_handle_t intr;                                   // interrupt handle
@@ -281,11 +290,11 @@ esp_err_t pcnt_new_unit(const pcnt_unit_config_t *config, pcnt_unit_handle_t *re
     unit->flags.en_step_notify_up = config->flags.en_step_notify_up;
 #if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
     if (config->flags.en_step_notify_up) {
-        unit->step_limit = config->high_limit;
+        unit->step_info.step_limit = config->high_limit;
     } else if (config->flags.en_step_notify_down) {
-        unit->step_limit = config->low_limit;
+        unit->step_info.step_limit = config->low_limit;
     }
-    pcnt_ll_set_step_limit_value(group->hal.dev, unit_id, unit->step_limit);
+    pcnt_ll_set_step_limit_value(group->hal.dev, unit_id, unit->step_info.step_limit);
 #endif
 #endif
 
@@ -679,11 +688,26 @@ esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
                         ESP_ERR_INVALID_ARG, TAG, "invalid step interval");
     ESP_RETURN_ON_FALSE(step_interval >= unit->low_limit && step_interval <= unit->high_limit,
                         ESP_ERR_INVALID_ARG, TAG, "step interval out of range [%d,%d]", unit->low_limit, unit->high_limit);
-    ESP_RETURN_ON_FALSE(unit->step_interval == 0,
-                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_interval);
 
-    unit->step_interval = step_interval;
-    pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval);
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    ESP_RETURN_ON_FALSE(unit->step_info.step_interval == 0,
+                        ESP_ERR_INVALID_STATE, TAG, "watch step has been set to %d already", unit->step_info.step_interval);
+    pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, step_interval > 0 ? PCNT_STEP_FORWARD : PCNT_STEP_BACKWARD, (uint16_t)step_interval);
+    unit->step_info.step_interval = step_interval;
+#else
+    if (step_interval > 0) {
+        ESP_RETURN_ON_FALSE(unit->step_info.step_interval_forward == 0,
+                            ESP_ERR_INVALID_STATE, TAG, "watch step in forward has been set to %d already", unit->step_info.step_interval_forward);
+        pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, PCNT_STEP_FORWARD, (uint16_t)step_interval);
+        unit->step_info.step_interval_forward = step_interval;
+    } else {
+        ESP_RETURN_ON_FALSE(unit->step_info.step_interval_backward == 0,
+                            ESP_ERR_INVALID_STATE, TAG, "watch step in backward has been set to %d already", unit->step_info.step_interval_backward);
+        pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, PCNT_STEP_BACKWARD, (uint16_t)step_interval);
+        unit->step_info.step_interval_backward = step_interval;
+    }
+#endif //PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+
     // different units are mixing in the same register, so we use the group's spinlock here
     portENTER_CRITICAL(&group->spinlock);
     pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, true);
@@ -692,19 +716,55 @@ esp_err_t pcnt_unit_add_watch_step(pcnt_unit_handle_t unit, int step_interval)
     return ESP_OK;
 }
 
-esp_err_t pcnt_unit_remove_watch_step(pcnt_unit_handle_t unit)
+esp_err_t pcnt_unit_remove_all_watch_step(pcnt_unit_handle_t unit)
 {
     pcnt_group_t *group = NULL;
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     group = unit->group;
-    ESP_RETURN_ON_FALSE(unit->step_interval != 0, ESP_ERR_INVALID_STATE, TAG, "watch step not added yet");
-
-    unit->step_interval = 0;
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    ESP_RETURN_ON_FALSE(unit->step_info.step_interval != 0, ESP_ERR_INVALID_STATE, TAG, "watch step not added yet");
+    unit->step_info.step_interval = 0;
+#else
+    ESP_RETURN_ON_FALSE(unit->step_info.step_interval_forward != 0 || unit->step_info.step_interval_backward != 0,
+                        ESP_ERR_INVALID_STATE, TAG, "watch step in forward or backward not added yet");
+    unit->step_info.step_interval_forward = 0;
+    unit->step_info.step_interval_backward = 0;
+#endif
 
     portENTER_CRITICAL(&group->spinlock);
     pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, false);
     portEXIT_CRITICAL(&group->spinlock);
 
+    return ESP_OK;
+}
+
+esp_err_t pcnt_unit_remove_single_watch_step(pcnt_unit_handle_t unit, int step_interval)
+{
+    pcnt_group_t *group = NULL;
+    ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    group = unit->group;
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
+    ESP_RETURN_ON_FALSE(unit->step_info.step_interval == step_interval, ESP_ERR_INVALID_STATE, TAG, "watch step %d not added yet", step_interval);
+    unit->step_info.step_interval = 0;
+    portENTER_CRITICAL(&group->spinlock);
+    pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, false);
+    portEXIT_CRITICAL(&group->spinlock);
+#else
+    if (step_interval > 0) {
+        ESP_RETURN_ON_FALSE(unit->step_info.step_interval_forward == step_interval, ESP_ERR_INVALID_STATE, TAG, "watch step %d not added yet", step_interval);
+        pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, PCNT_STEP_FORWARD, 0);
+        unit->step_info.step_interval_forward = 0;
+    } else {
+        ESP_RETURN_ON_FALSE(unit->step_info.step_interval_backward == step_interval, ESP_ERR_INVALID_STATE, TAG, "watch step %d not added yet", step_interval);
+        pcnt_ll_set_step_value(group->hal.dev, unit->unit_id, PCNT_STEP_BACKWARD, 0);
+        unit->step_info.step_interval_backward = 0;
+    }
+    if (unit->step_info.step_interval_forward == 0 && unit->step_info.step_interval_backward == 0) {
+        portENTER_CRITICAL(&group->spinlock);
+        pcnt_ll_enable_step_notify(group->hal.dev, unit->unit_id, false);
+        portEXIT_CRITICAL(&group->spinlock);
+    }
+#endif
     return ESP_OK;
 }
 #endif //SOC_PCNT_SUPPORT_STEP_NOTIFY
@@ -962,6 +1022,7 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
         // using while loop so that we don't miss any event
         while (event_status) {
 #if SOC_PCNT_SUPPORT_STEP_NOTIFY
+#if PCNT_LL_STEP_NOTIFY_DIR_LIMIT
             // step event has higher priority than pointer event
             if (event_status & (BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL) | BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT))) {
                 if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL)) {
@@ -972,13 +1033,27 @@ IRAM_ATTR static void pcnt_default_isr(void *args)
                 if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT)) {
                     event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_LIMIT);
                     // adjust current count value to the step limit
-                    count_value = unit->step_limit;
+                    count_value = unit->step_info.step_limit;
                     if (unit->flags.accum_count) {
                         portENTER_CRITICAL_ISR(&unit->spinlock);
-                        unit->accum_value += unit->step_limit;
+                        unit->accum_value += unit->step_info.step_limit;
                         portEXIT_CRITICAL_ISR(&unit->spinlock);
                     }
                 }
+#else
+            // step event has higher priority than pointer event
+            if (event_status & (BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD) | BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD))) {
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_FORWARD);
+                    // align current count value to the step interval
+                    count_value = pcnt_ll_get_count(group->hal.dev, unit_id);
+                }
+                if (event_status & BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD)) {
+                    event_status &= ~BIT(PCNT_LL_STEP_EVENT_REACH_INTERVAL_BACKWARD);
+                    // align current count value to the step interval
+                    count_value = pcnt_ll_get_count(group->hal.dev, unit_id);
+                }
+#endif // PCNT_LL_STEP_NOTIFY_DIR_LIMIT
                 // step event may happen with other pointer event at the same time, we don't need to process them again
                 event_status &= ~(BIT(PCNT_LL_WATCH_EVENT_LOW_LIMIT) | BIT(PCNT_LL_WATCH_EVENT_HIGH_LIMIT) |
                                   BIT(PCNT_LL_WATCH_EVENT_THRES0) | BIT(PCNT_LL_WATCH_EVENT_THRES1));

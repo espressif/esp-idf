@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,6 +38,14 @@ typedef enum {
     PCNT_UNIT_ZERO_CROSS_POS_NEG,  /*!< start from positive value, end to negative value, i.e. +N->-M */
     PCNT_UNIT_ZERO_CROSS_INVALID,  /*!< invalid zero cross mode */
 } pcnt_unit_zero_cross_mode_t;
+
+/**
+ * @brief PCNT step direction
+ */
+typedef enum {
+    PCNT_STEP_FORWARD,  /*!< step forward, e.g., [N]->[N+1]->[N+2]->... */
+    PCNT_STEP_BACKWARD, /*!< step backward, e.g., [N]->[N-1]->[N-2]->... */
+} pcnt_step_direction_t;
 
 #ifdef __cplusplus
 }
