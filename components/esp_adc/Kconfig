@@ -10,7 +10,7 @@ menu "ADC and ADC Calibration"
         depends on SOC_ADC_DMA_SUPPORTED
         bool "ADC continuous mode driver ISR IRAM-Safe"
         default n
-        select GDMA_ISR_IRAM_SAFE if SOC_ADC_DMA_SUPPORTED && SOC_GDMA_SUPPORTED
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_ADC_DMA_SUPPORTED && SOC_GDMA_SUPPORTED
         help
             Ensure the ADC continuous mode ISR is IRAM-Safe. When enabled, the ISR handler
             will be available when the cache is disabled.
