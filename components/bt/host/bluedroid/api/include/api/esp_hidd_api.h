@@ -151,6 +151,8 @@ typedef enum {
 typedef struct {
     bool hidd_inited;                      /*!< HID device initialization */
     uint8_t conn_num;                      /*!< Number of connections */
+    uint8_t plug_vc_dev_num;               /*!< Number of plugged virtual cable devices */
+    uint8_t reg_app_num;                   /*!< Number of HID device application registrations */
 } esp_hidd_profile_status_t;
 
 /**

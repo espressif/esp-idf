@@ -211,6 +211,7 @@ typedef struct
 {
     bool                               initialized;
     UINT16                             handle;
+    UINT16                             sync_conn_hdl;
     bt_bdaddr_t                        connected_bda;
     tBTA_AG_PEER_FEAT                  peer_feat;
     tBTA_AG_CHLD_FEAT                  chld_feat;
