@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -293,6 +293,15 @@ typedef struct {
     uint8_t   attr_id;                       /*!< player application attribute id */
     uint8_t   attr_val;                      /*!< player application attribute value */
 } esp_avrc_set_app_value_param_t;
+
+/**
+ * @brief AVRCP profile status parameters
+ */
+typedef struct {
+    bool avrc_ct_inited;                   /*!< AVRCP CT initialization */
+    bool avrc_tg_inited;                   /*!< AVRCP TG initialization */
+    uint8_t ct_cover_art_conn_num;         /*!< Number of cover art client connections */
+} esp_avrc_profile_status_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -849,6 +858,16 @@ esp_err_t esp_avrc_ct_cover_art_get_image(uint8_t *image_handle, uint8_t *image_
  */
 esp_err_t esp_avrc_ct_cover_art_get_linked_thumbnail(uint8_t *image_handle);
 
+/**
+ * @brief       This function is used to get the status of AVRCP
+ *
+ * @param[out]  profile_status - AVRCP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_avrc_get_profile_status(esp_avrc_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

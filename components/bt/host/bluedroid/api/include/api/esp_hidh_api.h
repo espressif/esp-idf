@@ -139,6 +139,7 @@ typedef struct {
 typedef struct {
     bool hidh_inited;                         /*!< HID host initialization */
     uint8_t conn_num;                         /*!< Number of connections */
+    uint8_t plug_vc_dev_num;                  /*!< Number of plugged virtual cable devices*/
 } esp_hidh_profile_status_t;
 
 /**
