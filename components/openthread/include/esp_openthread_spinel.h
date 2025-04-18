@@ -30,6 +30,16 @@ void esp_openthread_register_rcp_failure_handler(esp_openthread_rcp_failure_hand
 void esp_openthread_set_compatibility_error_callback(esp_openthread_compatibility_error_callback callback);
 
 /**
+ * @brief   Registers the callback for co-processor reset failure.
+ *
+ * @note This function should be called before esp_openthread_init.
+ *
+ * @param[in]  callback   The callback.
+ *
+ */
+void esp_openthread_set_coprocessor_reset_failure_callback(esp_openthread_coprocessor_reset_failure_callback callback);
+
+/**
  * @brief   Deinitializes the connection to RCP.
  *
  * @return
