@@ -54,11 +54,9 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_SLEEP_TO_TX);
 
 static const char *radiospinel_workflow = "radio_spinel";
-
 static const esp_openthread_radio_config_t *s_esp_openthread_radio_config = NULL;
-
 static esp_openthread_compatibility_error_callback s_compatibility_error_callback = NULL;
-
+static esp_openthread_coprocessor_reset_failure_callback s_coprocessor_reset_failure_callback = NULL;
 static char s_internal_rcp_version[OT_SPINEL_RCP_VERSION_MAX_SIZE] = {'\0'};
 
 static void esp_openthread_radio_config_set(const esp_openthread_radio_config_t *config)
@@ -74,17 +72,25 @@ static const esp_openthread_radio_config_t *esp_openthread_radio_config_get(void
 static void ot_spinel_compatibility_error_callback(void *context)
 {
     OT_UNUSED_VARIABLE(context);
-    if (s_compatibility_error_callback) {
-        s_compatibility_error_callback();
-    } else {
-        ESP_LOGE(OT_PLAT_LOG_TAG, "None callback to handle compatibility error of openthread spinel");
-        assert(false);
-    }
+    assert(s_compatibility_error_callback);
+    s_compatibility_error_callback();
+}
+
+static void ot_spinel_coprocessor_reset_failure_callback(void *context)
+{
+    OT_UNUSED_VARIABLE(context);
+    assert(s_coprocessor_reset_failure_callback);
+    s_coprocessor_reset_failure_callback();
 }
 
 void esp_openthread_set_compatibility_error_callback(esp_openthread_compatibility_error_callback callback)
 {
     s_compatibility_error_callback = callback;
+}
+
+void esp_openthread_set_coprocessor_reset_failure_callback(esp_openthread_coprocessor_reset_failure_callback callback)
+{
+    s_coprocessor_reset_failure_callback = callback;
 }
 
 esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *config)
@@ -112,6 +118,7 @@ esp_err_t esp_openthread_radio_init(const esp_openthread_platform_config_t *conf
     ESP_RETURN_ON_ERROR(s_spinel_interface.GetSpinelInterface().Enable(config->radio_config.radio_spi_config), OT_PLAT_LOG_TAG,
                         "Spinel interface init failed");
 #endif
+    s_spinel_driver.SetCoprocessorResetFailureCallback(ot_spinel_coprocessor_reset_failure_callback, esp_openthread_get_instance());
     s_spinel_driver.Init(s_spinel_interface.GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     if (strlen(s_internal_rcp_version) > 0) {
         const char *running_rcp_version = s_spinel_driver.GetVersion();
