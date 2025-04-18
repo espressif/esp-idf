@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -284,7 +284,10 @@ err:
 static esp_err_t i2c_slave_bus_destroy(i2c_slave_dev_handle_t i2c_slave)
 {
     if (i2c_slave) {
-        i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
+        if (i2c_slave->base) {
+            i2c_ll_disable_intr_mask(i2c_slave->base->hal.dev, I2C_LL_SLAVE_EVENT_INTR);
+            i2c_release_bus_handle(i2c_slave->base);
+        }
         if (i2c_slave->slv_rx_mux) {
             vSemaphoreDeleteWithCaps(i2c_slave->slv_rx_mux);
             i2c_slave->slv_rx_mux = NULL;
@@ -300,7 +303,6 @@ static esp_err_t i2c_slave_bus_destroy(i2c_slave_dev_handle_t i2c_slave)
         if (i2c_slave->slv_evt_queue) {
             vQueueDeleteWithCaps(i2c_slave->slv_evt_queue);
         }
-        i2c_release_bus_handle(i2c_slave->base);
     }
 
     free(i2c_slave);
