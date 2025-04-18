@@ -1,6 +1,14 @@
 Two-Wire Automotive Interface (TWAI)
 ====================================
 
+:link_to_translation:`zh_CN:[中文]`
+
+This programming guide is split into the following sections:
+
+.. contents::
+  :local:
+  :depth: 1
+
 .. -------------------------------- Overview -----------------------------------
 
 Overview
@@ -11,11 +19,6 @@ The Two-Wire Automotive Interface (TWAI) is a real-time serial communication pro
 .. warning::
 
     The TWAI controller is not compatible with ISO11898-1 FD Format frames, and will interpret such frames as errors.
-
-This programming guide is split into the following sections:
-
-.. contents:: Sections
-  :depth: 2
 
 .. --------------------------- Basic TWAI Concepts -----------------------------
 
@@ -401,6 +404,8 @@ The usage of macro initializers is not mandatory and each of the configuration s
 Install Multiple TWAI Instances
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+**Note:** You can create {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} functional TWAI instance(s) because the {IDF_TARGET_NAME} has {IDF_TARGET_CONFIG_SOC_TWAI_CONTROLLER_NUM} physical TWAI controller(s).
+
 The following code snippet demonstrates how to install multiple TWAI instances via the use of the :cpp:func:`twai_driver_install_v2` function.
 
 .. code-block:: c
@@ -576,7 +581,9 @@ Multiple ID Filter Configuration
 
 The acceptance mask in :cpp:type:`twai_filter_config_t` can be configured such that two or more IDs are accepted for a single filter. For a particular filter to accept multiple IDs, the conflicting bit positions amongst the IDs must be set in the acceptance mask. The acceptance code can be set to any one of the IDs.
 
-The following example shows how the calculate the acceptance mask given multiple IDs::
+The following example shows how the calculate the acceptance mask given multiple IDs:
+
+.. code-block::
 
     ID1 =  11'b101 1010 0000
     ID2 =  11'b101 1010 0001
@@ -594,6 +601,14 @@ Application Examples
 
 **Self Test Example:** This example uses the No Acknowledge Mode and Self Reception Request to cause the TWAI controller to send and simultaneously receive a series of messages. This example can be used to verify if the connections between the TWAI controller and the external transceiver are working correctly. The example can be found via :example:`peripherals/twai/twai_self_test`.
 
+.. only:: SOC_TWAI_SUPPORT_SLEEP_RETENTION
+
+    Sleep Retention
+    ^^^^^^^^^^^^^^^
+
+    {IDF_TARGET_NAME} supports to retain the TWAI register context before entering **light sleep** and restore them after waking up. This means you don't have to re-init the TWAI driver after the light sleep.
+
+    This feature can be enabled by setting the flag :cpp:member:`twai_general_config_t::sleep_allow_pd`. It will allow the system to power down the TWAI in light sleep, meanwhile saving the register context. It can help save more power consumption with some extra cost of the memory.
 
 .. ---------------------------- API Reference ----------------------------------
 
