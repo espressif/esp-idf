@@ -57,6 +57,11 @@ FORCE_INLINE_ATTR void lp_timer_ll_clear_overflow_intr_status(lp_timer_dev_t *de
     dev->int_clr.overflow = 1;
 }
 
+FORCE_INLINE_ATTR void lp_timer_ll_lp_alarm_intr_enable(lp_timer_dev_t *dev, bool enable)
+{
+    dev->lp_int_en.alarm = enable;
+}
+
 #ifdef __cplusplus
 }
 #endif
