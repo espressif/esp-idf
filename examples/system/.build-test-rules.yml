@@ -2,7 +2,7 @@
 
 examples/system/app_trace_basic:
   disable_test:
-    - if: IDF_TARGET in ["esp32p4", "esp32h21"]
+    - if: IDF_TARGET in ["esp32p4", "esp32h21", "esp32c5"]
       temporary: true
       reason: lack of runners.
 
