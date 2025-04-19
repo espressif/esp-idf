@@ -32,6 +32,12 @@
 #define TWDT_TIMER_GROUP        0
 #define TWDT_INTR_SOURCE        SYS_TG0_WDT_INTR_SOURCE
 
+#if CONFIG_PM_SLP_IRAM_OPT
+# define TASK_WDT_FN_ATTR   IRAM_ATTR
+#else
+# define TASK_WDT_FN_ATTR
+#endif
+
 /**
  * Context for the software implementation of the Task WatchDog Timer.
  * This will be passed as a parameter to public functions below. */
@@ -177,7 +183,7 @@ void esp_task_wdt_impl_timer_free(twdt_ctx_t obj)
     }
 }
 
-esp_err_t esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
+esp_err_t TASK_WDT_FN_ATTR esp_task_wdt_impl_timer_feed(twdt_ctx_t obj)
 {
     esp_err_t ret = ESP_OK;
     twdt_ctx_hard_t* ctx = (twdt_ctx_hard_t*) obj;

@@ -7,44 +7,45 @@ entries:
 
     if PM_SLP_IRAM_OPT = y:
         pm_impl:esp_pm_impl_get_cpu_freq (noflash)
+        if FREERTOS_USE_TICKLESS_IDLE = y:
+            pm_impl:vApplicationSleep (noflash)
 
 [mapping:esp_hw_support_pm]
 archive: libesp_hw_support.a
 entries:
     if PM_SLP_IRAM_OPT = y:
-        sleep_modes:esp_light_sleep_start (noflash)
-        sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
-        sleep_modes:timer_wakeup_prepare (noflash)
-        sleep_modes:get_power_down_flags (noflash)
-        sleep_modes:get_sleep_flags (noflash)
-        sleep_modes:get_sleep_clock_icg_flags (noflash)
+        if SOC_LIGHT_SLEEP_SUPPORTED = y:
+            sleep_modes:esp_light_sleep_start (noflash)
+            sleep_modes:esp_sleep_enable_timer_wakeup (noflash)
+            sleep_modem:modem_domain_pd_allowed (noflash)
+            sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
+            sleep_modem:sleep_modem_reject_triggers (noflash)
+            if ESP_PHY_MAC_BB_PD = y:
+                sleep_modem:mac_bb_power_down_cb_execute (noflash)
+                sleep_modem:mac_bb_power_up_cb_execute (noflash)
+            if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
+                sleep_gpio:gpio_sleep_mode_config_apply (noflash)
+            if SOC_PM_SUPPORT_TOP_PD = y:
+                sleep_clock:clock_domain_pd_allowed (noflash)
+                sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
+            if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
+                sleep_cpu:sleep_enable_cpu_retention (noflash)
+            if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (SOC_CPU_IN_TOP_DOMAIN = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
+                sleep_cpu:cpu_domain_pd_allowed (noflash)
+            if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y:
+                sleep_mmu:mmu_domain_pd_allowed (noflash)
         esp_clk:esp_clk_slowclk_cal_set (noflash)
         esp_clk:esp_clk_slowclk_cal_get (noflash)
         esp_clk:esp_rtc_get_time_us (noflash)
         esp_clk:esp_clk_private_lock (noflash)
         esp_clk:esp_clk_private_unlock (noflash)
-        if SOC_RTC_MEM_SUPPORTED = y:
-            esp_clk:calc_checksum (noflash)
         if SOC_SYSTIMER_SUPPORTED = y:
             systimer (noflash)
-        if GPIO_ESP32_SUPPORT_SWITCH_SLP_PULL = y:
-            sleep_gpio:gpio_sleep_mode_config_apply (noflash)
-        if SOC_PM_CPU_RETENTION_BY_RTCCNTL = y && (PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || SOC_PM_SUPPORT_TAGMEM_PD = y):
-            sleep_cpu:sleep_enable_cpu_retention (noflash)
-        if PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP = y || (SOC_CPU_IN_TOP_DOMAIN = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y):
-            sleep_cpu:cpu_domain_pd_allowed (noflash)
-        if SOC_PM_SUPPORT_TOP_PD = y:
-            sleep_clock:clock_domain_pd_allowed (noflash)
-            sleep_system_peripheral:peripheral_domain_pd_allowed (noflash)
-        if SOC_PM_MMU_TABLE_RETENTION_WHEN_TOP_PD = y && PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP = y:
-            sleep_mmu:mmu_domain_pd_allowed (noflash)
-        sleep_modem:modem_domain_pd_allowed (noflash)
-        sleep_modem:periph_inform_out_light_sleep_overhead (noflash)
-        sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
+        if IDF_TARGET_ESP32H21 != y && IDF_TARGET_ESP32H4 != y:
+            sar_periph_ctrl:sar_periph_ctrl_power_disable (noflash)
         if SOC_TEMP_SENSOR_SUPPORTED = y:
             sar_periph_ctrl_common:temperature_sensor_power_acquire (noflash)
             sar_periph_ctrl_common:temperature_sensor_power_release (noflash)
-            sar_periph_ctrl_common:temperature_sensor_get_raw_value (noflash)
             sar_periph_ctrl_common:temp_sensor_get_raw_value (noflash)
         regi2c_ctrl:regi2c_saradc_enable (noflash)
         regi2c_ctrl:regi2c_saradc_disable (noflash)
@@ -57,17 +58,6 @@ archive: libesp_system.a
 entries:
     if PM_RTOS_IDLE_OPT = y:
         freertos_hooks:esp_vApplicationIdleHook (noflash)
-    if PM_SLP_IRAM_OPT = y:
-        task_wdt:idle_hook_cb (noflash)
-        task_wdt:task_wdt_timer_feed (noflash)
-        task_wdt:find_entry_and_check_all_reset (noflash)
-        task_wdt:find_entry_from_task_handle_and_check_all_reset (noflash)
-        task_wdt:esp_task_wdt_reset (noflash)
-        task_wdt:esp_task_wdt_reset_user (noflash)
-        if ESP_TASK_WDT_USE_ESP_TIMER = y:
-            task_wdt_impl_esp_timer:esp_task_wdt_impl_timer_feed (noflash)
-        else:
-            task_wdt_impl_timergroup:esp_task_wdt_impl_timer_feed (noflash)
 
 [mapping:esp_timer_pm]
 archive: libesp_timer.a

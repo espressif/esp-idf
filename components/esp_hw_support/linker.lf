@@ -12,36 +12,61 @@ entries:
         cpu: esp_cpu_clear_watchpoint (noflash)
     cpu: esp_cpu_compare_and_set (noflash)
     esp_memory_utils (noflash)
-    rtc_clk (noflash)
     clk_utils (noflash)
+    if PM_SLP_IRAM_OPT = y:
+        rtc_clk (noflash)
+        rtc_time (noflash_text)
     if SOC_CONFIGURABLE_VDDSDIO_SUPPORTED = y:
         rtc_init:rtc_vddsdio_get_config (noflash)
         rtc_init:rtc_vddsdio_set_config (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y || IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
-        rtc_sleep (noflash_text)
-    rtc_time (noflash_text)
+        rtc_sleep:rtc_sleep_start (noflash)
+        if PM_SLP_IRAM_OPT = y:
+            rtc_sleep:rtc_sleep_get_default_config (noflash)
+            rtc_sleep:rtc_sleep_init (noflash)
+            rtc_sleep:rtc_sleep_low_init (noflash)
+    if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
+        rtc_sleep:rtc_sleep_pd (noflash)
+    if IDF_TARGET_ESP32S3 = y || IDF_TARGET_ESP32C2 = y || IDF_TARGET_ESP32C3 = y:
+        rtc_sleep:rtc_sleep_pu (noflash)
     if SOC_PMU_SUPPORTED = y && SOC_LIGHT_SLEEP_SUPPORTED = y:
         pmu_sleep (noflash)
-    if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
-        pmu_init (noflash)
-        pmu_param (noflash)
-    if SOC_USB_SERIAL_JTAG_SUPPORTED = y:
+        if SPIRAM_FLASH_LOAD_TO_PSRAM = y:
+            pmu_init (noflash)
+            pmu_param (noflash)
+        elif PM_SLP_IRAM_OPT = y && IDF_TARGET_ESP32P4 != y:
+            pmu_param:get_act_hp_dbias (noflash)
+            pmu_param:get_act_lp_dbias (noflash)
+    if PM_SLP_IRAM_OPT = y && SOC_USB_SERIAL_JTAG_SUPPORTED = y:
         sleep_console (noflash)
-    if SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD = y:
+    if PM_SLP_IRAM_OPT = y && SOC_USB_OTG_SUPPORTED && SOC_PM_SUPPORT_CNNT_PD = y:
         sleep_usb (noflash)
     if IDF_TARGET_ESP32 = y || IDF_TARGET_ESP32S2 = y:
         rtc_wdt (noflash_text)
-    if PERIPH_CTRL_FUNC_IN_IRAM = y:
-        periph_ctrl: periph_module_reset (noflash)
-    if PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
+    if ESP_PERIPH_CTRL_FUNC_IN_IRAM = y:
+        periph_ctrl:periph_module_reset (noflash)
+        periph_ctrl:periph_rcc_enter (noflash)
+        periph_ctrl:periph_rcc_exit (noflash)
+        periph_ctrl:periph_rcc_acquire_enter (noflash)
+        periph_ctrl:periph_rcc_acquire_exit (noflash)
+        periph_ctrl:periph_rcc_release_enter (noflash)
+        periph_ctrl:periph_rcc_release_exit (noflash)
+    if ESP_PERIPH_CTRL_FUNC_IN_IRAM = y && ESP_WIFI_ENABLED = y:
         periph_ctrl: wifi_module_enable (noflash)
         periph_ctrl: wifi_module_disable (noflash)
+    if ESP_REGI2C_CTRL_FUNC_IN_IRAM = y:
+        regi2c_ctrl:regi2c_ctrl_read_reg (noflash)
+        regi2c_ctrl:regi2c_ctrl_read_reg_mask (noflash)
+        regi2c_ctrl:regi2c_ctrl_write_reg (noflash)
+        regi2c_ctrl:regi2c_ctrl_write_reg_mask (noflash)
+        regi2c_ctrl:regi2c_enter_critical (noflash)
+        regi2c_ctrl:regi2c_exit_critical (noflash)
     if SOC_SYSTIMER_SUPPORTED = y:
         systimer (noflash)
     if SOC_ADC_SHARED_POWER = y:
         if ADC_ONESHOT_CTRL_FUNC_IN_IRAM = y:
             sar_periph_ctrl (noflash)
-        else:
+        elif PM_SLP_IRAM_OPT = y:
             sar_periph_ctrl: sar_periph_ctrl_power_enable (noflash)
 
 [mapping:soc_pm]

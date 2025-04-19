@@ -10,6 +10,7 @@ menu "ESP-Driver:LCD Controller Configurations"
         config LCD_RGB_ISR_IRAM_SAFE
             bool "RGB LCD ISR IRAM-Safe"
             select GDMA_ISR_HANDLER_IN_IRAM # bounce buffer mode relies on GDMA EOF interrupt
+            select ESP_PERIPH_CTRL_FUNC_IN_IRAM
             default n
             help
                 Ensure the LCD interrupt is IRAM-Safe by allowing the interrupt handler to be

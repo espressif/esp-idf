@@ -18,7 +18,7 @@ static portMUX_TYPE mux = portMUX_INITIALIZER_UNLOCKED;
 
 static DRAM_ATTR __attribute__((unused)) const char *TAG = "REGI2C";
 
-uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
+uint8_t regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t reg_add)
 {
     REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
@@ -28,7 +28,7 @@ uint8_t IRAM_ATTR regi2c_ctrl_read_reg(uint8_t block, uint8_t host_id, uint8_t r
     return value;
 }
 
-uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
+uint8_t regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb)
 {
     REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
@@ -38,7 +38,7 @@ uint8_t IRAM_ATTR regi2c_ctrl_read_reg_mask(uint8_t block, uint8_t host_id, uint
     return value;
 }
 
-void IRAM_ATTR regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
+void regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t data)
 {
     REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
@@ -47,7 +47,7 @@ void IRAM_ATTR regi2c_ctrl_write_reg(uint8_t block, uint8_t host_id, uint8_t reg
     REGI2C_CLOCK_DISABLE();
 }
 
-void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
+void regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_t reg_add, uint8_t msb, uint8_t lsb, uint8_t data)
 {
     REGI2C_CLOCK_ENABLE();
     portENTER_CRITICAL_SAFE(&mux);
@@ -56,12 +56,12 @@ void IRAM_ATTR regi2c_ctrl_write_reg_mask(uint8_t block, uint8_t host_id, uint8_
     REGI2C_CLOCK_DISABLE();
 }
 
-void IRAM_ATTR regi2c_enter_critical(void)
+void regi2c_enter_critical(void)
 {
     portENTER_CRITICAL_SAFE(&mux);
 }
 
-void IRAM_ATTR regi2c_exit_critical(void)
+void regi2c_exit_critical(void)
 {
     portEXIT_CRITICAL_SAFE(&mux);
 }

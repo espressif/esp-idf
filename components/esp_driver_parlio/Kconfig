@@ -6,6 +6,7 @@ menu "ESP-Driver:Parallel IO Configurations"
         default y
         select PARLIO_OBJ_CACHE_SAFE
         select GDMA_CTRL_FUNC_IN_IRAM
+        select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         help
             Place Parallel IO TX ISR handler in IRAM to reduce latency caused by cache miss.
 
