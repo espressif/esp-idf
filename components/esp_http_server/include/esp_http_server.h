@@ -1151,7 +1151,7 @@ esp_err_t httpd_resp_send_chunk(httpd_req_t *r, const char *buf, ssize_t buf_len
 /**
  * @brief   API to send a complete string as HTTP response.
  *
- * This API simply calls http_resp_send with buffer length
+ * This API simply calls httpd_resp_send with buffer length
  * set to string length assuming the buffer contains a null
  * terminated string
  *
@@ -1172,7 +1172,7 @@ static inline esp_err_t httpd_resp_sendstr(httpd_req_t *r, const char *str) {
 /**
  * @brief   API to send a string as an HTTP response chunk.
  *
- * This API simply calls http_resp_send_chunk with buffer length
+ * This API simply calls httpd_resp_send_chunk with buffer length
  * set to string length assuming the buffer contains a null
  * terminated string
  *
