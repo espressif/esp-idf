@@ -223,11 +223,11 @@
 #define SOC_GPIO_IN_RANGE_MAX           28
 #define SOC_GPIO_OUT_RANGE_MAX          28
 
-#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6 | BIT7)
-#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (8)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_VALID_GPIO_MASK        (0ULL | BIT0 | BIT1 | BIT2 | BIT3 | BIT4 | BIT5 | BIT6)
+#define SOC_GPIO_DEEP_SLEEP_WAKE_SUPPORTED_PIN_CNT      (7)
 
-// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_8~GPIO_NUM_28)
-#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000001FFFF00ULL
+// digital I/O pad powered by VDD3P3_CPU or VDD_SPI(GPIO_NUM_7~GPIO_NUM_28)
+#define SOC_GPIO_VALID_DIGITAL_IO_PAD_MASK 0x0000000001FFFF80ULL
 
 // Support to force hold all IOs
 #define SOC_GPIO_SUPPORT_FORCE_HOLD              (1)
@@ -241,7 +241,7 @@
 #define SOC_GPIO_CLOCKOUT_CHANNEL_NUM           (3)
 
 /*-------------------------- RTCIO CAPS --------------------------------------*/
-#define SOC_RTCIO_PIN_COUNT                 8
+#define SOC_RTCIO_PIN_COUNT                 7
 #define SOC_RTCIO_INPUT_OUTPUT_SUPPORTED    1  /* This macro indicates that the target has separate RTC IOMUX hardware feature,
                                                 * so it supports unique IOMUX configuration (including IE, OE, PU, PD, DRV etc.)
                                                 * when the pins are switched to RTC function.

@@ -101,7 +101,7 @@ static inline void rtcio_ll_function_select(int rtcio_num, rtcio_ll_func_t func)
  */
 static inline void rtcio_ll_output_enable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1ts, out_enable_w1ts, BIT(rtcio_num));
+    LP_GPIO.enable_w1ts.enable_w1ts = BIT(rtcio_num);
 }
 
 /**
@@ -111,7 +111,7 @@ static inline void rtcio_ll_output_enable(int rtcio_num)
  */
 static inline void rtcio_ll_output_disable(int rtcio_num)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.enable_w1tc, out_enable_w1tc, BIT(rtcio_num));
+    LP_GPIO.enable_w1tc.enable_w1tc = BIT(rtcio_num);
 }
 
 /**
@@ -123,9 +123,9 @@ static inline void rtcio_ll_output_disable(int rtcio_num)
 static inline void rtcio_ll_set_level(int rtcio_num, uint32_t level)
 {
     if (level) {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1ts, out_data_w1ts, BIT(rtcio_num));
+        LP_GPIO.out_w1ts.out_w1ts = BIT(rtcio_num);
     } else {
-        HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.out_w1tc, out_data_w1tc, BIT(rtcio_num));
+        LP_GPIO.out_w1tc.out_w1tc = BIT(rtcio_num);
     }
 }
 
@@ -157,7 +157,7 @@ static inline void rtcio_ll_input_disable(int rtcio_num)
  */
 static inline uint32_t rtcio_ll_get_level(int rtcio_num)
 {
-    return (uint32_t)(HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.in, in_data_next) >> rtcio_num) & 0x1;
+    return (LP_GPIO.in.in_data_next >> rtcio_num) & 0x1;
 }
 
 /**
@@ -428,7 +428,7 @@ static inline bool rtcio_ll_wakeup_is_enabled(int rtcio_num)
  */
 static inline  uint32_t rtcio_ll_get_interrupt_status(void)
 {
-    return (uint32_t)HAL_FORCE_READ_U32_REG_FIELD(LP_GPIO.status, status_interrupt);
+    return LP_GPIO.status.status_interrupt;
 }
 
 /**
@@ -436,7 +436,7 @@ static inline  uint32_t rtcio_ll_get_interrupt_status(void)
  */
 static inline  void rtcio_ll_clear_interrupt_status(void)
 {
-    HAL_FORCE_MODIFY_U32_REG_FIELD(LP_GPIO.status_w1tc, status_intr_w1tc, 0xff);
+    LP_GPIO.status_w1tc.status_w1tc = 0x7F;
 }
 
 #ifdef __cplusplus
