@@ -30,14 +30,11 @@ function(__generate_gdbinit)
 
     # Define paths
     set(gdbinit_dir ${BUILD_DIR}/gdbinit)
-    set(gdbinit_rom_in_path ${gdbinit_dir}/rom.gdbinit.in)
-    set(gdbinit_rom_path ${gdbinit_dir}/rom.gdbinit)
     set(symbols_gdbinit_path ${gdbinit_dir}/symbols)
     set(py_extensions_gdbinit_path ${gdbinit_dir}/py_extensions)
     set(connect_gdbinit_path ${gdbinit_dir}/connect)
     idf_build_get_property(PROJECT_EXECUTABLE EXECUTABLE)
     set(application_elf ${BUILD_DIR}/${PROJECT_EXECUTABLE})
-    file(TO_CMAKE_PATH $ENV{ESP_ROM_ELF_DIR} ESP_ROM_ELF_DIR)
 
     file(MAKE_DIRECTORY ${gdbinit_dir})
 
