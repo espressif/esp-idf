@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -460,7 +460,7 @@ r_llc_ver_proc_err_cb = 0x40003f90;
 r_llcp_pdu_handler_tab_p_get = 0x40003f9c;
 r_lld_aa_gen = 0x40003fa8;
 r_lld_adv_adv_data_set = 0x40003fb4;
-r_lld_adv_adv_data_update = 0x40003fc0;
+/* r_lld_adv_adv_data_update = 0x40003fc0; */
 r_lld_adv_aux_ch_idx_set = 0x40003fcc;
 r_lld_adv_aux_evt_canceled_cbk = 0x40003fd8;
 r_lld_adv_aux_evt_start_cbk = 0x40003fe4;
@@ -483,7 +483,7 @@ r_lld_adv_pkt_rx_connect_ind = 0x40004098;
 r_lld_adv_rand_addr_update = 0x400040b0;
 r_lld_adv_restart = 0x400040bc;
 r_lld_adv_scan_rsp_data_set = 0x400040c8;
-r_lld_adv_scan_rsp_data_update = 0x400040d4;
+/* r_lld_adv_scan_rsp_data_update = 0x400040d4; */
 r_lld_adv_set_tx_power = 0x400040e0;
 r_lld_adv_start = 0x400040ec;
 r_lld_adv_stop = 0x400040f8;
@@ -663,8 +663,8 @@ r_lld_test_start = 0x40004974;
 /* r_lld_test_stop = 0x40004980;*/
 r_lld_update_rxbuf = 0x4000498c;
 r_lld_update_rxbuf_isr = 0x40004998;
-r_lld_white_list_add = 0x400049a4;
-r_lld_white_list_rem = 0x400049b0;
+/* r_lld_white_list_add = 0x400049a4; */
+/* r_lld_white_list_rem = 0x400049b0; */
 r_llm_activity_free_get = 0x400049bc;
 r_llm_activity_free_set = 0x400049c8;
 r_llm_activity_syncing_get = 0x400049d4;
