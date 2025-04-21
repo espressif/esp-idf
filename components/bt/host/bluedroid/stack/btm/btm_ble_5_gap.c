@@ -860,7 +860,7 @@ tBTM_STATUS BTM_BlePeriodicAdvCreateSync(tBTM_BLE_Periodic_Sync_Params *params)
 #endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
 
     if (!btsnd_hcic_ble_periodic_adv_create_sync(option, params->sid, params->addr_type,
-                                            params->addr, params->sync_timeout, 0)) {
+                                            params->addr, params->sync_timeout, params->sync_cte_type)) {
         BTM_TRACE_ERROR("LE PA CreateSync cmd failed");
         status = BTM_ILLEGAL_VALUE;
     }

@@ -1642,12 +1642,12 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn)
 #if (BLE_50_EXTEND_SYNC_EN == TRUE)
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
-                                                                       UINT16 sync_timeout, UINT8 unused)
+                                                                       UINT16 sync_timeout, UINT8 sync_cte_type)
 {
     BT_HDR *p;
     UINT8 *pp;
-    HCI_TRACE_EVENT("%s, option = %d, adv_sid = %d, adv_addr_type = %d, sync_timeout = %d, unused = %d",
-                                   __func__, option, adv_sid, adv_addr_type, sync_timeout, unused);
+    HCI_TRACE_EVENT("%s, option = %d, adv_sid = %d, adv_addr_type = %d, sync_timeout = %d, sync_cte_type = %d",
+                                   __func__, option, adv_sid, adv_addr_type, sync_timeout, sync_cte_type);
 
     HCI_TRACE_EVENT("addr %02x %02x %02x %02x %02x %02x", adv_addr[0], adv_addr[1], adv_addr[2], adv_addr[3], adv_addr[4], adv_addr[5]);
     uint16_t skip = 0;
@@ -1661,7 +1661,7 @@ BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 option, UINT8 adv_sid,
     BDADDR_TO_STREAM(pp, adv_addr);
     UINT16_TO_STREAM(pp, skip);
     UINT16_TO_STREAM(pp, sync_timeout);
-    UINT8_TO_STREAM(pp, unused);
+    UINT8_TO_STREAM(pp, sync_cte_type);
 
     btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
     return TRUE;
