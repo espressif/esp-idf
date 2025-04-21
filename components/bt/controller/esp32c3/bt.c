@@ -312,6 +312,17 @@ extern void advFilter_stack_enableDupExcListVsCmd(bool en);
 extern void chanSel_stack_enableSetCsaVsCmd(bool en);
 #endif // (CONFIG_BT_BLUEDROID_ENABLED || CONFIG_BT_NIMBLE_ENABLED)
 
+extern void ble_dtm_funcs_reset(void);
+extern void ble_scan_funcs_reset(void);
+extern void ble_42_adv_funcs_reset(void);
+extern void ble_init_funcs_reset(void);
+extern void ble_con_funcs_reset(void);
+extern void ble_cca_funcs_reset(void);
+extern void ble_ext_adv_funcs_reset(void);
+extern void ble_ext_scan_funcs_reset(void);
+extern void ble_base_funcs_reset(void);
+extern void ble_enc_funcs_reset(void);
+
 extern uint32_t _bt_bss_start;
 extern uint32_t _bt_bss_end;
 extern uint32_t _bt_controller_bss_start;
@@ -1265,6 +1276,46 @@ static void btdm_funcs_table_ready_wrapper(void)
 #if BLE_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS_ENABLED
     btdm_aa_check_enhance_enable();
 #endif
+#if CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
+    // do nothing
+#else
+    ESP_LOGI(BT_LOG_TAG, "Feature Config, ADV:%d, BLE_50:%d, DTM:%d, SCAN:%d, CCA:%d, SMP:%d, CONNECT:%d",
+                        BT_CTRL_BLE_ADV, BT_CTRL_50_FEATURE_SUPPORT, BT_CTRL_DTM_ENABLE, BT_CTRL_BLE_SCAN,
+                        BT_BLE_CCA_MODE, BLE_SECURITY_ENABLE, BT_CTRL_BLE_MASTER);
+
+    ble_base_funcs_reset();
+#if CONFIG_BT_CTRL_BLE_ADV
+    ble_42_adv_funcs_reset();
+#if (BT_CTRL_50_FEATURE_SUPPORT == 1)
+    ble_ext_adv_funcs_reset();
+#endif //
+#endif // CONFIG_BT_CTRL_BLE_ADV
+
+#if CONFIG_BT_CTRL_DTM_ENABLE
+    ble_dtm_funcs_reset();
+#endif // CONFIG_BT_CTRL_DTM_ENABLE
+
+#if CONFIG_BT_CTRL_BLE_SCAN
+    ble_scan_funcs_reset();
+#if (BT_CTRL_50_FEATURE_SUPPORT == 1)
+    ble_ext_scan_funcs_reset();
+#endif // (BT_CTRL_50_FEATURE_SUPPORT == 1)
+#endif // CONFIG_BT_CTRL_BLE_SCAN
+
+#if (BT_BLE_CCA_MODE != 0)
+    ble_cca_funcs_reset();
+#endif // (BT_BLE_CCA_MODE != 0)
+
+#if CONFIG_BT_CTRL_BLE_SECURITY_ENABLE
+    ble_enc_funcs_reset();
+#endif // CONFIG_BT_CTRL_BLE_SECURITY_ENABLE
+
+#if CONFIG_BT_CTRL_BLE_MASTER
+    ble_init_funcs_reset();
+    ble_con_funcs_reset();
+#endif // CONFIG_BT_CTRL_BLE_MASTER
+
+#endif // CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY
 }
 
 bool bt_async_wakeup_request(void)
