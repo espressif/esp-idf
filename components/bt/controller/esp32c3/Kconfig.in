@@ -231,7 +231,7 @@ config BT_CTRL_DFT_TX_POWER_LEVEL_EFF
 
 config BT_CTRL_BLE_ADV_REPORT_FLOW_CTRL_SUPP
     bool "BLE adv report flow control supported"
-    depends on (!BT_CTRL_RUN_IN_FLASH_ONLY) || (BT_CTRL_RUN_IN_FLASH_ONLY && BT_CTRL_BLE_SCAN)
+    depends on BT_CTRL_BLE_SCAN
     default y
     help
         The function is mainly used to enable flow control for advertising reports. When it is enabled,
@@ -530,28 +530,29 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         impact on Bluetooth performance.
 
 config BT_CTRL_DTM_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable direct test mode feature"
-    default n
-
-config BT_CTRL_BLE_MASTER
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
-    bool "Enable BLE master role feature"
     default y
 
+config BT_CTRL_BLE_MASTER
+    bool "Enable BLE connection feature"
+    default y
+    help
+        If this option is disabled, it is not recommended to use connectable ADV.
+
 config BT_CTRL_BLE_TEST
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
-    bool "Enable BLE QA test feature"
+    bool "Enable BLE QA test feature (Not Used)"
     default n
 
 config BT_CTRL_BLE_SCAN
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE scan feature"
     default y
 
 config BT_CTRL_BLE_SECURITY_ENABLE
-    depends on BT_CTRL_RUN_IN_FLASH_ONLY
     bool "Enable BLE security feature"
+    default y
+
+config BT_CTRL_BLE_ADV
+    bool "Enable BLE ADV feature"
     default y
 
 config BT_CTRL_CHECK_CONNECT_IND_ACCESS_ADDRESS
