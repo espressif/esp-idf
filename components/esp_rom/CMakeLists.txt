@@ -189,7 +189,7 @@ else() # Regular app build
         rom_linker_script("newlib")
         rom_linker_script("version")
 
-        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+        if(NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
             if(NOT CONFIG_BT_CTRL_BLE_MASTER)
                 rom_linker_script("ble_master")
             endif()
@@ -229,7 +229,7 @@ else() # Regular app build
         rom_linker_script("newlib")
         rom_linker_script("version")
 
-        if(CONFIG_BT_CTRL_RUN_IN_FLASH_ONLY)
+        if(NOT CONFIG_BT_CTRL_HCI_MODE_UART_H4)
             if(NOT CONFIG_BT_CTRL_BLE_MASTER)
                 rom_linker_script("ble_master")
             endif()
