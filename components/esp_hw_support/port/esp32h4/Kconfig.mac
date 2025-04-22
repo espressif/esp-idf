@@ -1,0 +1,18 @@
+choice ESP32H4_UNIVERSAL_MAC_ADDRESSES
+    bool "Number of universally administered (by IEEE) MAC address"
+    default ESP32H4_UNIVERSAL_MAC_ADDRESSES_TWO
+    help
+        Configure the number of universally administered (by IEEE) MAC addresses.
+        During initialization, MAC addresses for each network interface are generated or derived from a
+        single base MAC address.
+
+    config ESP32H4_UNIVERSAL_MAC_ADDRESSES_TWO
+        bool "Two"
+        select ESP_MAC_UNIVERSAL_MAC_ADDRESSES_TWO
+        select ESP_MAC_ADDR_UNIVERSE_IEEE802154
+        select ESP_MAC_ADDR_UNIVERSE_BT
+endchoice
+
+config ESP32H4_UNIVERSAL_MAC_ADDRESSES
+    int
+    default 2 if ESP32H4_UNIVERSAL_MAC_ADDRESSES_TWO
