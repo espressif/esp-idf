@@ -276,8 +276,8 @@ static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param
         ESP_LOGI(COEX_TAG, "ESP_GAP_BLE_SCAN_STOP_COMPLETE_EVT, stop scan successfully\n");
         break;
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
-        ESP_LOGI(COEX_TAG, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT, set scan sparameters complete\n");
-        //the unit of the duration is second
+        ESP_LOGI(COEX_TAG, "ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT, set scan sparameters complete");
+        // the unit of the duration is second, 0 means scan permanently
         uint32_t duration = 120;
         esp_ble_gap_start_scanning(duration);
         break;
