@@ -1,14 +1,17 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#include <string.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_check.h"
+#include "esp_err.h"
 #include "esp_sleep.h"
 #include "soc/uart_pins.h"
 #include "driver/uart.h"
+#include "driver/uart_wakeup.h"
 #include "driver/gpio.h"
 #include "sdkconfig.h"
 
@@ -18,7 +21,10 @@
 #define EXAMPLE_UART_TX_IO_NUM  U0TXD_GPIO_NUM
 #define EXAMPLE_UART_RX_IO_NUM  U0RXD_GPIO_NUM
 
-#define EXAMPLE_UART_WAKEUP_THRESHOLD   3
+#define EXAMPLE_UART_WAKEUP_EDGE_THRESHOLD   3
+#define EXAMPLE_UART_WAKEUP_FIFO_THRESHOLD   8
+#define EXAMPLE_UART_WAKEUP_CHARS_SEQ        "ok"
+#define EXAMPLE_UART_WAKEUP_CHARS_SEQ_LEN    SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
 
 #define EXAMPLE_READ_BUF_SIZE   1024
 #define EXAMPLE_UART_BUF_SIZE   (EXAMPLE_READ_BUF_SIZE * 2)
@@ -123,12 +129,45 @@ static esp_err_t uart_initialization(void)
 
 static esp_err_t uart_wakeup_config(void)
 {
-    /* UART will wakeup the chip up from light sleep if the edges that RX pin received has reached the threshold */
-    ESP_RETURN_ON_ERROR(uart_set_wakeup_threshold(EXAMPLE_UART_NUM, EXAMPLE_UART_WAKEUP_THRESHOLD),
-                        TAG, "Set uart wakeup threshold failed");
-    /* Only uart0 and uart1 (if has) support to be configured as wakeup source */
-    ESP_RETURN_ON_ERROR(esp_sleep_enable_uart_wakeup(EXAMPLE_UART_NUM),
-                        TAG, "Configure uart as wakeup source failed");
+    uart_wakeup_cfg_t uart_wakeup_cfg = {};
+    uint8_t wakeup_mode = CONFIG_EXAMPLE_UART_WAKEUP_MODE_SELCTED;
+    switch (wakeup_mode) {
+    /* UART will wakeup the chip up from light sleep if the edges that RX pin received reaches the threshold */
+#if SOC_UART_WAKEUP_SUPPORT_ACTIVE_THRESH_MODE
+    case UART_WK_MODE_ACTIVE_THRESH:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_ACTIVE_THRESH;
+        uart_wakeup_cfg.rx_edge_threshold = EXAMPLE_UART_WAKEUP_EDGE_THRESHOLD;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if the number of chars that RX FIFO received reaches the threshold */
+#if SOC_UART_WAKEUP_SUPPORT_FIFO_THRESH_MODE
+    case UART_WK_MODE_FIFO_THRESH:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_FIFO_THRESH;
+        uart_wakeup_cfg.rx_fifo_threshold = EXAMPLE_UART_WAKEUP_FIFO_THRESHOLD;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if RX FIFO receives a start bit */
+#if SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
+    case UART_WK_MODE_START_BIT:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_START_BIT;
+        break;
+#endif
+    /* UART will wakeup the chip up from light sleep if the chars sequence that RX FIFO received matches the predefined value */
+#if SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
+    case UART_WK_MODE_CHAR_SEQ:
+        uart_wakeup_cfg.wakeup_mode = UART_WK_MODE_CHAR_SEQ;
+        // uart wakeup chars len need less than SOC_UART_WAKEUP_CHARS_SEQ_MAX_LEN
+        strncpy(uart_wakeup_cfg.wake_chars_seq, EXAMPLE_UART_WAKEUP_CHARS_SEQ, EXAMPLE_UART_WAKEUP_CHARS_SEQ_LEN);
+        break;
+#endif
+    default:
+        ESP_LOGE(TAG, "Unknown UART wakeup mode");
+        return ESP_FAIL;
+        break;
+    }
+
+    ESP_ERROR_CHECK(uart_wakeup_setup(EXAMPLE_UART_NUM, &uart_wakeup_cfg));
+    ESP_ERROR_CHECK(esp_sleep_enable_uart_wakeup(EXAMPLE_UART_NUM));
     return ESP_OK;
 }
 

@@ -10,11 +10,16 @@ if(CONFIG_SOC_UART_SUPPORT_SLEEP_RETENTION AND CONFIG_PM_ENABLE)
     list(APPEND srcs "test_uart_retention.c")
 endif()
 
+# Only if the target support uart wakeup
+if(CONFIG_SOC_LIGHT_SLEEP_SUPPORTED)
+    list(APPEND srcs "test_hp_uart_wakeup.c")
+endif()
+
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
 # the component can be registered as WHOLE_ARCHIVE
 idf_component_register(
     SRCS ${srcs}
-    REQUIRES esp_driver_uart unity esp_psram test_utils esp_driver_gpio esp_pm
+    REQUIRES esp_driver_uart unity esp_psram test_utils esp_driver_gpio esp_pm esp_timer
     PRIV_INCLUDE_DIRS .
     WHOLE_ARCHIVE
 )
