@@ -8,8 +8,8 @@
 
 :link_to_translation:`en:[English]`
 
-{IDF_TARGET_JTAG_PIN_Dneg:default="未更新!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26", esp32p4="GPIO25"}
-{IDF_TARGET_JTAG_PIN_Dpos:default="未更新!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27", esp32p4="GPIO24"}
+{IDF_TARGET_JTAG_PIN_Dneg:default="未更新!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26", esp32p4="GPIO24"}
+{IDF_TARGET_JTAG_PIN_Dpos:default="未更新!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27", esp32p4="GPIO25"}
 
 {IDF_TARGET_NAME} 内置了 JTAG 电路，无需额外的芯片即可进行调试。只需将 USB 线连接到 D+/D- 引脚即可。对于没有外露 USB 串行 JTAG 连接器的开发板，可以使用 USB 转接线。所需的连接方式将在下一节中介绍。
 

@@ -8,8 +8,8 @@ Configure {IDF_TARGET_NAME} Built-in JTAG Interface
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26", esp32p4="GPIO25"}
-{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27", esp32p4="GPIO24"}
+{IDF_TARGET_JTAG_PIN_Dneg:default="Not Updated!", esp32c3="GPIO18", esp32c6="GPIO12", esp32s3="GPIO19", esp32h2="GPIO26", esp32p4="GPIO24"}
+{IDF_TARGET_JTAG_PIN_Dpos:default="Not Updated!", esp32c3="GPIO19", esp32c6="GPIO13", esp32s3="GPIO20", esp32h2="GPIO27", esp32p4="GPIO25"}
 
 {IDF_TARGET_NAME} has built-in JTAG circuitry and can be debugged without any additional chip. Only a USB cable connected to the D+/D- pins is necessary. For dev kits without an exposed USB Serial Jtag connector, a USB breakout cable can be used. The necessary connections are shown in the following section.
 
