@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: CC0-1.0
-
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.unity_tester import CaseTester
@@ -27,6 +26,44 @@ def test_wpa_supplicant_ut(dut: Dut) -> None:
     indirect=True
 )
 def test_wpa_supplicant_ut_offchan(case_tester: CaseTester) -> None:
+    for case in case_tester.test_menu:
+        if case.attributes.get('test_env') == 'wifi_two_dut':
+            case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.esp32c2
+@pytest.mark.wifi_two_dut_eco
+@pytest.mark.xtal_26mhz
+@pytest.mark.parametrize(
+    'count, config, baud',
+    [
+        (
+            2,
+            'esp32c2eco4_xtal26m',
+            '74880',
+        ),
+    ],
+    indirect=True,
+)
+def test_wpa_supplicant_esp32c2eco4_xtal26mhz(case_tester: CaseTester) -> None:
+    for case in case_tester.test_menu:
+        if case.attributes.get('test_env') == 'wifi_two_dut':
+            case_tester.run_multi_dev_case(case=case, reset=True)
+
+
+@pytest.mark.esp32c3
+@pytest.mark.wifi_two_dut_eco
+@pytest.mark.parametrize(
+    'count, config',
+    [
+        (
+            2,
+            'esp32c3eco7',
+        ),
+    ],
+    indirect=True,
+)
+def test_wpa_supplicant_esp32c3eco7(case_tester: CaseTester) -> None:
     for case in case_tester.test_menu:
         if case.attributes.get('test_env') == 'wifi_two_dut':
             case_tester.run_multi_dev_case(case=case, reset=True)

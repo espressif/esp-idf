@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 """
 Pytest Related Constants. Don't import third-party packages here.
@@ -105,7 +105,10 @@ ENV_MARKERS = {
     'generic_multi_device': 'generic multiple devices whose corresponding gpio pins are connected to each other.',
     'twai_network': 'multiple runners form a TWAI network.',
     'sdio_master_slave': 'Test sdio multi board.',
-    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)'
+    'usj_device': 'Test usb_serial_jtag and usb_serial_jtag is used as serial only (not console)',
+    'wifi_ap_eco': 'a wifi AP in the environment for major version chips',
+    'generic_eco': 'tests should be run on generic runners for major version chips',
+    'wifi_two_dut_eco': 'tests should be run on runners which has two wifi duts connected for major version chips',
 }
 
 

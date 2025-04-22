@@ -1,6 +1,5 @@
-# SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import logging
 
 import pexpect
@@ -74,4 +73,31 @@ def test_wifi_power_save_pd_top(dut: Dut) -> None:
     ], indirect=True
 )
 def test_wifi_power_save_esp32c2_26mhz(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap_eco
+@pytest.mark.xtal_26mhz
+@pytest.mark.esp32c2
+@pytest.mark.parametrize(
+    'config, baud',
+    [
+        ('c2eco4_xtal26m', '74880'),
+    ],
+    indirect=True,
+)
+def test_wifi_power_save_esp32c2eco4_26mhz(dut: Dut) -> None:
+    _run_test(dut)
+
+
+@pytest.mark.wifi_ap_eco
+@pytest.mark.esp32c3
+@pytest.mark.parametrize(
+    'config',
+    [
+        ('c3eco7')
+    ],
+    indirect=True,
+)
+def test_wifi_power_save_esp32c3eco7(dut: Dut) -> None:
     _run_test(dut)

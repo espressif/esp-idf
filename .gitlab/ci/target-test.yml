@@ -328,6 +328,15 @@ pytest_examples_esp32c3_wifi_ap:
       artifacts: false
   tags: [ esp32c3, wifi_ap ]
 
+pytest_examples_esp32c3eco7_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
+  tags: [ wifi_ap_eco ,esp32c3]
+
 pytest_examples_esp32s3_wifi_ap:
   extends:
     - .pytest_examples_dir_template
@@ -363,6 +372,15 @@ pytest_examples_esp32c2_26m_wifi_ap:
     - job: build_pytest_examples_esp32c2
       artifacts: false
   tags: [ esp32c2, wifi_ap, xtal_26mhz ]
+
+pytest_examples_esp32c2eco4_26m_wifi_ap:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
+  tags: [ wifi_ap_eco, xtal_26mhz , esp32c2]
 
 pytest_examples_esp32c6_wifi_ap:
   extends:
@@ -519,6 +537,15 @@ pytest_examples_esp32c3_wifi_two_dut:
       artifacts: false
   tags: [ esp32c3, wifi_two_dut ]
 
+pytest_examples_esp32c3eco7_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c3-wifi
+  needs:
+    - job: build_pytest_examples_esp32c3
+      artifacts: false
+  tags: [ wifi_two_dut_eco, esp32c3 ]
+
 pytest_examples_esp32s3_wifi_two_dut:
   extends:
     - .pytest_examples_dir_template
@@ -536,6 +563,15 @@ pytest_examples_esp32c2_wifi_two_dut:
     - job: build_pytest_examples_esp32c2
       artifacts: false
   tags: [ esp32c2, wifi_two_dut, xtal_26mhz ]
+
+pytest_examples_esp32c2eco4_wifi_two_dut:
+  extends:
+    - .pytest_examples_dir_template
+    - .rules:test:example_test-esp32c2-wifi
+  needs:
+    - job: build_pytest_examples_esp32c2
+      artifacts: false
+  tags: [ wifi_two_dut_eco, xtal_26mhz , esp32c2]
 
 pytest_examples_esp32c3_flash_encryption:
   extends:
@@ -1455,6 +1491,15 @@ pytest_test_apps_esp32c2_generic:
       artifacts: false
   tags: [ esp32c2, generic, xtal_40mhz ]
 
+pytest_test_apps_esp32c2eco4_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2
+  needs:
+    - job: build_pytest_test_apps_esp32c2
+      artifacts: false
+  tags: [ generic_eco, xtal_26mhz , esp32c2]
+
 pytest_test_apps_esp32c3_generic:
   extends:
     - .pytest_test_apps_dir_template
@@ -1463,6 +1508,15 @@ pytest_test_apps_esp32c3_generic:
     - job: build_pytest_test_apps_esp32c3
       artifacts: false
   tags: [ esp32c3, generic ]
+
+pytest_test_apps_esp32c3eco7_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3
+  needs:
+    - job: build_pytest_test_apps_esp32c3
+      artifacts: false
+  tags: [ generic_eco , esp32c3]
 
 pytest_test_apps_esp32c6_generic:
   extends:
@@ -1544,3 +1598,21 @@ pytest_test_apps_esp32c3_wifi_two_dut:
     - job: build_pytest_test_apps_esp32c3
       artifacts: false
   tags: [ esp32c3, wifi_two_dut]
+
+pytest_test_apps_esp32c2eco4_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2-wifi
+  needs:
+    - job: build_pytest_test_apps_esp32c2
+      artifacts: false
+  tags: [ wifi_two_dut_eco, xtal_26mhz, esp32c2 ]
+
+pytest_test_apps_esp32c3eco7_wifi_two_dut:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3-wifi
+  needs:
+    - job: build_pytest_test_apps_esp32c3
+      artifacts: false
+  tags: [ wifi_two_dut_eco, esp32c3]
