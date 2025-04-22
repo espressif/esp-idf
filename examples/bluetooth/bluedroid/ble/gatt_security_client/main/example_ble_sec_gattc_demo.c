@@ -385,7 +385,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
         }
         break;
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
-        //the unit of the duration is second
+        // the unit of the duration is second, 0 means scan permanently
         uint32_t duration = 30;
         esp_ble_gap_start_scanning(duration);
         break;
