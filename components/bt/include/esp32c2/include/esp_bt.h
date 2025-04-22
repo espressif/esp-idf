@@ -438,11 +438,13 @@ extern int esp_ble_hw_get_static_addr(esp_ble_addr_t *addr);
 void esp_ble_controller_log_dump_all(bool output);
 #endif // CONFIG_BT_LE_CONTROLLER_LOG_ENABLED
 
-#if CONFIG_PM_ENABLE
 modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void);
 
 void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src);
-#endif // CONFIG_PM_ENABLE
+
+uint32_t esp_bt_get_lpclk_freq(void);
+
+void esp_bt_set_lpclk_freq(uint32_t clk_freq);
 
 #ifdef __cplusplus
 }
