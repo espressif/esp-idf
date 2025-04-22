@@ -497,7 +497,6 @@ config BTDM_BLE_PING_EN
         This option is used for some compatibility problems related to LE ping procedure.
 
 config BTDM_CTRL_CONTROLLER_DEBUG_MODE_1
-    visible if 0
     bool "Enable Bluetooth controller debugging mode 1 (for internal use only)"
     default n
     depends on BT_ENABLED
