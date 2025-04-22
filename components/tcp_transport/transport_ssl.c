@@ -385,6 +385,12 @@ void esp_transport_ssl_set_client_cert_data(esp_transport_handle_t t, const char
     ssl->cfg.clientcert_pem_bytes = len + 1;
 }
 
+void esp_transport_ssl_set_addr_family(esp_transport_handle_t t, esp_tls_addr_family_t addr_family)
+{
+    GET_SSL_FROM_TRANSPORT_OR_RETURN(ssl, t);
+    ssl->cfg.addr_family = addr_family;
+}
+
 #ifdef CONFIG_MBEDTLS_HARDWARE_ECDSA_SIGN
 void esp_transport_ssl_set_client_key_ecdsa_peripheral(esp_transport_handle_t t, uint8_t ecdsa_efuse_blk)
 {
