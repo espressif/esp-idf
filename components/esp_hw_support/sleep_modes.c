@@ -519,6 +519,12 @@ static int s_cache_suspend_cnt = 0;
 static void IRAM_ATTR suspend_cache(void) {
     s_cache_suspend_cnt++;
     if (s_cache_suspend_cnt == 1) {
+#if CONFIG_ESP_SLEEP_CACHE_SAFE_ASSERTION && CONFIG_IDF_TARGET_ESP32P4
+        // The implementation of P4 L2 cache suspend is to shut down MSPI AXI instead of shutting down Cache BUS.
+        // If the access to external memory hits in the cache, it will not trigger a cache error. So in order to
+        // fully check the access to external memory, writeback & invalidate is needed here.
+        Cache_WriteBack_Invalidate_All(CACHE_MAP_MASK);
+#endif
         spi_flash_disable_cache(esp_cpu_get_core_id(), NULL);
     }
 }
