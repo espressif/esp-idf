@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -38,9 +38,13 @@ static int process_sleep(int argc, char **argv)
 
     if (sleep_args.mode->count == 1) {
         if (sleep_args.mode->ival[0] == 0) {
+            ESP_LOGI(TAG, "enter light sleep");
+            fflush(stdout);
+            fsync(fileno(stdout));
             esp_light_sleep_start();
-            ESP_LOGI(TAG, "esp_light_sleep_start");
+            ESP_LOGI(TAG, "wakeup from lightsleep");
         } else if (sleep_args.mode->ival[0] == 1) {
+            ESP_LOGI(TAG, "enter deep sleep");
             esp_deep_sleep_start();
         } else {
             ESP_LOGE(TAG, "no valid arguments");
@@ -128,7 +132,7 @@ static void register_ext1_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "ext1",
-        .help = "configue ext1 wakeup",
+        .help = "configure ext1 wakeup",
         .hint = NULL,
         .func = &process_ext1_wakeup,
         .argtable = &ext1_wakeup_args
@@ -202,7 +206,7 @@ static void register_rtcio_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "rtcio",
-        .help = "configue rtcio wakeup",
+        .help = "configure rtcio wakeup",
         .hint = NULL,
         .func = &process_rtcio_wakeup,
         .argtable = &rtcio_wakeup_args
@@ -277,7 +281,7 @@ static void register_gpio_wakeup(void)
 
     const esp_console_cmd_t cmd = {
         .command = "gpio",
-        .help = "configue gpio wakeup",
+        .help = "configure gpio wakeup",
         .hint = NULL,
         .func = &process_gpio_wakeup,
         .argtable = &gpio_wakeup_args
@@ -336,7 +340,7 @@ static void register_gpio_control(void)
 
     const esp_console_cmd_t cmd = {
         .command = "gpio_control",
-        .help = "configue gpio control",
+        .help = "configure gpio control",
         .hint = NULL,
         .func = &process_gpio_control,
         .argtable = &gpio_control_args

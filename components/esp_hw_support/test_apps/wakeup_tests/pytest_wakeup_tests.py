@@ -113,14 +113,13 @@ def test_rtcio_deepsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             waker.expect(f'io_level = {sleep_level}', timeout=10)
 
             wakee.write('sleep -m 1')
+            wakee.expect('enter deep sleep', timeout=10)
+            sleep(2)
 
             waker.write(f'gpio_control -p {gpio_num} -l {wakeup_level}')
             waker.expect(f'io_num = {gpio_num}', timeout=10)
             waker.expect(f'io_level = {wakeup_level}', timeout=10)
-
             wakee.expect('io_wakeup_test>', timeout=10)
-
-            sleep(2)
 
             wakee.write('cause')
             wakee.expect('Wake up from GPIO', timeout=10)
@@ -156,12 +155,13 @@ def test_gpio_wakeup_enable_lightsleep(dut: Tuple[IdfDut, IdfDut]) -> None:
             waker.expect(f'io_level = {sleep_level}', timeout=10)
 
             wakee.write('sleep -m 0')
+            wakee.expect('enter light sleep', timeout=10)
+            sleep(1)
 
             waker.write(f'gpio_control -p {gpio_num} -l {wakeup_level}')
             waker.expect(f'io_num = {gpio_num}', timeout=10)
             waker.expect(f'io_level = {wakeup_level}', timeout=10)
-
-            wakee.expect('esp_light_sleep_start', timeout=10)
+            wakee.expect('wakeup from lightsleep', timeout=10)
 
             wakee.write('cause')
             wakee.expect('Wake up from GPIO', timeout=10)
