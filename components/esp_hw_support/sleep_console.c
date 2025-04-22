@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,9 +26,11 @@ void sleep_console_usj_pad_backup_and_disable(void)
         // Enable USJ clock and clear reset
         usb_serial_jtag_ll_enable_bus_clock(true);
         usb_serial_jtag_ll_reset_register();
+        usb_serial_jtag_ll_phy_enable_pad(false);
+        s_usj_state.usj_pad_enabled = false;
+    } else {
+        s_usj_state.usj_pad_enabled = usb_serial_jtag_ll_phy_is_pad_enabled();
     }
-    s_usj_state.usj_pad_enabled = usb_serial_jtag_ll_phy_is_pad_enabled();
-    usb_serial_jtag_ll_phy_enable_pad(false);
     // Disable USJ clock
     usb_serial_jtag_ll_enable_bus_clock(false);
 }
