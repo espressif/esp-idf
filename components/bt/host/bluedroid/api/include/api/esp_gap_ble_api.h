@@ -245,6 +245,7 @@ typedef enum {
     ESP_GAP_BLE_SUBRATE_REQUEST_COMPLETE_EVT,                    /*!< when subrate request command complete, the event comes */
     ESP_GAP_BLE_SUBRATE_CHANGE_EVT,                              /*!< when Connection Subrate Update procedure has completed and some parameters of the specified connection have changed, the event comes */
     ESP_GAP_BLE_SET_HOST_FEATURE_CMPL_EVT,                       /*!< When host feature set complete, the event comes */
+    ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT,                   /*!< When BLE channel map result is received, the event comes */
     ESP_GAP_BLE_EVT_MAX,                                         /*!< when maximum advertising event complete, the event comes */
 } esp_gap_ble_cb_event_t;
 
@@ -1332,6 +1333,14 @@ typedef union {
         esp_bd_addr_t remote_addr;                  /*!< The remote device address */
     } read_rssi_cmpl;                               /*!< Event parameter of ESP_GAP_BLE_READ_RSSI_COMPLETE_EVT */
     /**
+     * @brief ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT
+     */
+    struct ble_read_ble_channel_map_cmpl_evt_param {
+        esp_bt_status_t status;                     /*!< Status of the read channel map operation */
+        uint8_t channel_map[ESP_GAP_BLE_CHANNELS_LEN]; /*!< The BLE channel map, represented as a 5-byte array */
+        esp_bd_addr_t remote_addr;                  /*!< The remote device address */
+    } read_ble_channel_map_cmpl;                         /*!< Event parameter of ESP_GAP_BLE_READ_CHANNEL_MAP_COMPLETE_EVT */
+    /**
      * @brief ESP_GAP_BLE_UPDATE_WHITELIST_COMPLETE_EVT
      */
     struct ble_update_whitelist_cmpl_evt_param {
@@ -1857,7 +1866,8 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
 /**
  * @brief           This procedure keep the device scanning the peer device which advertising on the air
  *
- * @param[in]       duration: Keeping the scanning time, the unit is second.
+ * @param[in]       duration: The scanning duration in seconds.
+ *                            Set to 0 for continuous scanning until explicitly stopped.
  *
  * @return
  *                  - ESP_OK : success
@@ -2200,6 +2210,7 @@ esp_err_t esp_ble_gap_config_scan_rsp_data_raw(uint8_t *raw_data, uint32_t raw_d
  *                  - other  : failed
  */
 esp_err_t esp_ble_gap_read_rssi(esp_bd_addr_t remote_addr);
+
 #if (BLE_42_FEATURE_SUPPORT == TRUE)
 /**
  * @brief           This function is called to add a device info into the duplicate scan exceptional list.
@@ -2446,6 +2457,18 @@ esp_err_t esp_ble_get_current_conn_params(esp_bd_addr_t bd_addr, esp_gap_conn_pa
 *
 */
 esp_err_t esp_gap_ble_set_channels(esp_gap_ble_channels channels);
+
+/**
+* @brief           This function is used to read the current channel map
+*                  for the connection identified by remote address.
+*
+* @param[in]       bd_addr : BD address of the peer device
+*
+* @return            - ESP_OK : success
+*                    - other  : failed
+*
+*/
+esp_err_t esp_ble_gap_read_channel_map(esp_bd_addr_t bd_addr);
 
 /**
 * @brief           This function is called to authorized a link after Authentication(MITM protection)

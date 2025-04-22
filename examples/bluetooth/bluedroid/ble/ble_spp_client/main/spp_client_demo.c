@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -216,9 +216,8 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             ESP_LOGE(GATTC_TAG, "Scan param set failed: %s", esp_err_to_name(err));
             break;
         }
-        //the unit of the duration is second
-        uint32_t duration = 0xFFFF;
-        ESP_LOGI(GATTC_TAG, "Enable Ble Scan:during time %04" PRIx32 " minutes.",duration);
+        // the unit of the duration is second, 0 means scan permanently
+        uint32_t duration = 0;
         esp_ble_gap_start_scanning(duration);
         break;
     }
