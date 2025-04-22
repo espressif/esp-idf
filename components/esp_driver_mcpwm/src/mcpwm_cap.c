@@ -307,9 +307,13 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
         esp_rom_gpio_connect_in_signal(config->gpio_num, mcpwm_periph_signals.groups[group->group_id].captures[cap_chan_id].cap_sig, 0);
         if (config->flags.pull_down) {
             gpio_pulldown_en(config->gpio_num);
+        } else {
+            gpio_pulldown_dis(config->gpio_num);
         }
         if (config->flags.pull_up) {
             gpio_pullup_en(config->gpio_num);
+        } else {
+            gpio_pullup_dis(config->gpio_num);
         }
 
         // deprecated, to be removed in in esp-idf v6.0
