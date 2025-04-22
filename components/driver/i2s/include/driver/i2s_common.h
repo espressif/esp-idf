@@ -173,6 +173,7 @@ esp_err_t i2s_channel_disable(i2s_chan_handle_t handle);
  * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
  * @return
  *      - ESP_OK    Load data successful
+ *      - ESP_FAIL  Failed to push the message queue
  *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
  *      - ESP_ERR_INVALID_STATE This channel has not stated
  */
