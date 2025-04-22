@@ -423,6 +423,23 @@ void btm_ble_white_list_init(UINT8 white_list_size)
     btm_cb.ble_ctr_cb.white_list_avail_size = white_list_size;
 }
 
+#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+/*******************************************************************************
+**
+** Function         btm_ble_periodic_adv_list_init
+**
+** Description      Initialize the periodic advertiser list size.
+**
+** Parameters       periodic_adv_size: The size of the periodic advertiser list to be initialized.
+**
+*******************************************************************************/
+void btm_ble_periodic_adv_list_init(UINT8 periodic_adv_size)
+{
+    BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, periodic_adv_size);
+    btm_cb.ble_ctr_cb.periodic_adv_list_size = periodic_adv_size;
+}
+#endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
+
 /*******************************************************************************
 **
 ** Function         btm_ble_add_2_white_list_complete

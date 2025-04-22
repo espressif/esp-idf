@@ -199,6 +199,9 @@ static void reset_complete(void)
 
     if (controller->supports_ble()) {
         btm_ble_white_list_init(controller->get_ble_white_list_size());
+        #if (BLE_50_EXTEND_SYNC_EN == TRUE)
+        btm_ble_periodic_adv_list_init(controller->get_ble_periodic_adv_list_size());
+        #endif //#if (BLE_50_EXTEND_SYNC_EN == TRUE)
         l2c_link_processs_ble_num_bufs(controller->get_acl_buffer_count_ble());
     }
 #endif
