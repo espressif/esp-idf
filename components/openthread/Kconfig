@@ -327,6 +327,27 @@ menu "OpenThread"
                 commands in the OpenThread command line. These commands allow users to manipulate low-level
                 features of the storage and 15.4 radio.
 
+        config OPENTHREAD_PARENT_SEARCH_MTD
+            bool "Enable Parent Search"
+            depends on OPENTHREAD_MTD
+            default y
+            help
+                Select this option to enable "Periodic Parent Search" function for MTD. This checks the average
+                RSS to its current parent every periodically and starts a parent search process if the average
+                RSS is below OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD. This feature is always enabled for FTDs.
+        menu "Parent Search Configurations"
+            depends on OPENTHREAD_PARENT_SEARCH_MTD
+            config OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS
+                int "The interval in minutes for a child to check the trigger condition to perform a parent search"
+                default 9
+            config OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS
+                int "The backoff interval in minutes for a child to not perform a parent search after triggering one"
+                default 600
+            config OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
+                int "The RSS threshold used to trigger a parent search"
+                default -65
+        endmenu
+
         menu "Thread Memory Allocation"
             depends on (SPIRAM_USE_CAPS_ALLOC || SPIRAM_USE_MALLOC)
             config OPENTHREAD_PLATFORM_MALLOC_CAP_SPIRAM
