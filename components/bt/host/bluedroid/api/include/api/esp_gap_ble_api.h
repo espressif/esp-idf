@@ -1661,7 +1661,8 @@ esp_err_t esp_ble_gap_set_scan_params(esp_ble_scan_params_t *scan_params);
 /**
  * @brief           This procedure keep the device scanning the peer device which advertising on the air
  *
- * @param[in]       duration: Keeping the scanning time, the unit is second.
+ * @param[in]       duration: The scanning duration in seconds.
+ *                            Set to 0 for continuous scanning until explicitly stopped.
  *
  * @return
  *                  - ESP_OK : success

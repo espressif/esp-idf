@@ -64,6 +64,9 @@ static void bte_main_enable(void);
 bluedroid_init_done_cb_t bluedroid_init_done_cb;
 
 extern void osi_mem_dbg_init(void);
+#if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
+extern void free_controller_param(void);
+#endif
 /******************************************************************************
 **
 ** Function         bte_main_boot_entry
@@ -85,7 +88,7 @@ int bte_main_boot_entry(bluedroid_init_done_cb_t cb)
 
     osi_init();
 
-    //Enbale HCI
+    //Enable HCI
     bte_main_enable();
 
     return 0;
@@ -105,6 +108,11 @@ void bte_main_shutdown(void)
 #if (BLE_INCLUDED == TRUE)
     BTA_VendorCleanup();
 #endif
+
+#if (BT_BLE_DYNAMIC_ENV_MEMORY == TRUE)
+    free_controller_param();
+#endif
+
     bte_main_disable();
 
     osi_deinit();

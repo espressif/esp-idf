@@ -73,7 +73,7 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
     }
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
 #if (IBEACON_MODE == IBEACON_RECEIVER)
-        //the unit of the duration is second, 0 means scan permanently
+        // the unit of the duration is second, 0 means scan permanently
         uint32_t duration = 0;
         esp_ble_gap_start_scanning(duration);
 #endif
