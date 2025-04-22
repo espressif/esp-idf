@@ -1,6 +1,6 @@
 
 /*
- * SPDX-FileCopyrightText: 2015-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -61,7 +61,7 @@ extern "C" {
 #define DMA_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
 
 //Force data to be placed in DRAM and aligned according to DMA and cache's requirement
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#if CONFIG_SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #define DRAM_DMA_ALIGNED_ATTR __attribute__((aligned(CONFIG_CACHE_L1_CACHE_LINE_SIZE))) DRAM_ATTR
 #else
 #define DRAM_DMA_ALIGNED_ATTR WORD_ALIGNED_ATTR DRAM_ATTR
