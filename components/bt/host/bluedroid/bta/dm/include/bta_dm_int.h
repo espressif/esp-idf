@@ -274,6 +274,7 @@ enum {
     BTA_DM_API_SET_PRIVACY_MODE_EVT,
     BTA_DM_API_BLE_SET_CSA_SUPPORT_EVT,
     BTA_DM_API_BLE_SET_VENDOR_EVT_MASK_EVT,
+    BTA_DM_API_BLE_READ_CH_MAP_EVT,
 #endif
 #if (BLE_FEAT_ISO_EN == TRUE)
 #if (BLE_FEAT_ISO_BIG_BROCASTER_EN == TRUE)
@@ -477,6 +478,12 @@ typedef struct {
     tBTA_TRANSPORT  transport;
     tBTA_CMPL_CB  *read_rssi_cb;
 }tBTA_DM_API_READ_RSSI;
+
+typedef struct {
+    BT_HDR            hdr;
+    BD_ADDR          remote_addr;
+    tBTA_CMPL_CB    *read_ch_map_cb;
+} tBTA_DM_API_READ_CH_MAP;
 
 /* data type for BTA_DM_API_SET_VISIBILITY_EVT */
 typedef struct {
@@ -1624,6 +1631,8 @@ typedef union {
 #endif  ///BLE_INCLUDED == TRUE
     tBTA_DM_API_READ_RSSI rssi;
 
+    tBTA_DM_API_READ_CH_MAP ch_map;
+
     tBTA_DM_API_SET_VISIBILITY set_visibility;
 
     tBTA_DM_API_ADD_DEVICE  add_dev;
@@ -2232,6 +2241,7 @@ extern void bta_dm_update_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_clear_white_list(tBTA_DM_MSG *p_data);
 extern void bta_dm_ble_read_adv_tx_power(tBTA_DM_MSG *p_data);
 extern void bta_dm_read_rssi(tBTA_DM_MSG *p_data);
+extern void bta_dm_read_ble_channel_map(tBTA_DM_MSG *p_data);
 #if (CLASSIC_BT_INCLUDED == TRUE)
 extern void bta_dm_set_visibility (tBTA_DM_MSG *p_data);
 #endif // #if (CLASSIC_BT_INCLUDED == TRUE)

@@ -475,6 +475,20 @@ void BTA_DmBleReadAdvTxPower(tBTA_CMPL_CB *cmpl_cb)
 }
 #endif // BLE_HOST_READ_TX_POWER_EN
 
+void BTA_DmBleReadChannelMap(BD_ADDR remote_device, tBTA_CMPL_CB *p_callback)
+{
+    if (!remote_device || !p_callback) {
+        return;
+    }
+    tBTA_DM_API_READ_CH_MAP *p_msg;
+
+    if ((p_msg = (tBTA_DM_API_READ_CH_MAP *)osi_malloc(sizeof(tBTA_DM_API_READ_CH_MAP))) != NULL) {
+        p_msg->hdr.event = BTA_DM_API_BLE_READ_CH_MAP_EVT;
+        memcpy(p_msg->remote_addr, remote_device, sizeof(BD_ADDR));
+        p_msg->read_ch_map_cb = p_callback;
+        bta_sys_sendmsg(p_msg);
+    }
+}
 #endif  ///BLE_INCLUDED == TRUE
 
 void BTA_DmReadRSSI(BD_ADDR remote_addr, tBTA_TRANSPORT transport, tBTA_CMPL_CB *cmpl_cb)
