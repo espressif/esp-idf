@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -448,4 +448,48 @@
  */
 #ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
 #define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD (OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US + 320)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+ *
+ * Enable the periodic parent search feature.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE CONFIG_OPENTHREAD_PARENT_SEARCH_MTD
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+ *
+ * Specifies the interval in seconds for a child to check the trigger condition to perform a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_CHECK_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_CHECK_INTERVAL_MINS * 60
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+ *
+ * Specifies the backoff interval in seconds for a child to not perform a parent search after triggering one. This is
+ * used when device is an MTD child.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_BACKOFF_INTERVAL CONFIG_OPENTHREAD_PARENT_SEARCH_BACKOFF_INTERVAL_MINS * 60
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+ *
+ * Specifies the RSS threshold used to trigger a parent search.
+ *
+ * Applicable only if periodic parent search feature is enabled (see `OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE`).
+ */
+#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD
+#define OPENTHREAD_CONFIG_PARENT_SEARCH_RSS_THRESHOLD CONFIG_OPENTHREAD_PARENT_SEARCH_RSS_THRESHOLD
 #endif
