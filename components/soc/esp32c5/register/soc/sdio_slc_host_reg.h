@@ -14,7 +14,7 @@ extern "C" {
 /** SDIO_SLC_HOST_FUNC2_0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_FUNC2_0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x10)
+#define SDIO_SLC_HOST_FUNC2_0_REG (DR_REG_SLCHOST_BASE + 0x10)
 /** SDIO_SLC_HOST_SLC_FUNC2_INT : R/W; bitpos: [24]; default: 0;
  *  *******Description***********
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** SDIO_SLC_HOST_FUNC2_1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_FUNC2_1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x14)
+#define SDIO_SLC_HOST_FUNC2_1_REG (DR_REG_SLCHOST_BASE + 0x14)
 /** SDIO_SLC_HOST_SLC_FUNC2_INT_EN : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** SDIO_SLC_HOST_FUNC2_2_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_FUNC2_2_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x20)
+#define SDIO_SLC_HOST_FUNC2_2_REG (DR_REG_SLCHOST_BASE + 0x20)
 /** SDIO_SLC_HOST_SLC_FUNC1_MDSTAT : R/W; bitpos: [0]; default: 1;
  *  *******Description***********
  */
@@ -50,7 +50,7 @@ extern "C" {
 /** SDIO_SLC_HOST_GPIO_STATUS0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_GPIO_STATUS0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x34)
+#define SDIO_SLC_HOST_GPIO_STATUS0_REG (DR_REG_SLCHOST_BASE + 0x34)
 /** SDIO_SLC_HOST_GPIO_SDIO_INT0 : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -62,7 +62,7 @@ extern "C" {
 /** SDIO_SLC_HOST_GPIO_STATUS1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_GPIO_STATUS1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x38)
+#define SDIO_SLC_HOST_GPIO_STATUS1_REG (DR_REG_SLCHOST_BASE + 0x38)
 /** SDIO_SLC_HOST_GPIO_SDIO_INT1 : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -74,7 +74,7 @@ extern "C" {
 /** SDIO_SLC_HOST_GPIO_IN0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_GPIO_IN0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x3c)
+#define SDIO_SLC_HOST_GPIO_IN0_REG (DR_REG_SLCHOST_BASE + 0x3c)
 /** SDIO_SLC_HOST_GPIO_SDIO_IN0 : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -86,7 +86,7 @@ extern "C" {
 /** SDIO_SLC_HOST_GPIO_IN1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_GPIO_IN1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x40)
+#define SDIO_SLC_HOST_GPIO_IN1_REG (DR_REG_SLCHOST_BASE + 0x40)
 /** SDIO_SLC_HOST_GPIO_SDIO_IN1 : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -98,7 +98,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_TOKEN_RDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_TOKEN_RDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x44)
+#define SDIO_SLC_HOST_SLC0HOST_TOKEN_RDATA_REG (DR_REG_SLCHOST_BASE + 0x44)
 /** SDIO_SLC_HOST_SLC0_TOKEN0 : RO; bitpos: [11:0]; default: 0;
  *  *******Description***********
  */
@@ -131,7 +131,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0_HOST_PF_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0_HOST_PF_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x48)
+#define SDIO_SLC_HOST_SLC0_HOST_PF_REG (DR_REG_SLCHOST_BASE + 0x48)
 /** SDIO_SLC_HOST_SLC0_PF_DATA : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -143,7 +143,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1_HOST_PF_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1_HOST_PF_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x4c)
+#define SDIO_SLC_HOST_SLC1_HOST_PF_REG (DR_REG_SLCHOST_BASE + 0x4c)
 /** SDIO_SLC_HOST_SLC1_PF_DATA : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -155,7 +155,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_INT_RAW_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_INT_RAW_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x50)
+#define SDIO_SLC_HOST_SLC0HOST_INT_RAW_REG (DR_REG_SLCHOST_BASE + 0x50)
 /** SDIO_SLC_HOST_SLC0_TOHOST_BIT0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -342,7 +342,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_INT_RAW_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_INT_RAW_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x54)
+#define SDIO_SLC_HOST_SLC1HOST_INT_RAW_REG (DR_REG_SLCHOST_BASE + 0x54)
 /** SDIO_SLC_HOST_SLC1_TOHOST_BIT0_INT_RAW : R/WTC/SS; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -529,7 +529,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_INT_ST_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_INT_ST_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x58)
+#define SDIO_SLC_HOST_SLC0HOST_INT_ST_REG (DR_REG_SLCHOST_BASE + 0x58)
 /** SDIO_SLC_HOST_SLC0_TOHOST_BIT0_INT_ST : RO; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -716,7 +716,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_INT_ST_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_INT_ST_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x5c)
+#define SDIO_SLC_HOST_SLC1HOST_INT_ST_REG (DR_REG_SLCHOST_BASE + 0x5c)
 /** SDIO_SLC_HOST_SLC1_TOHOST_BIT0_INT_ST : RO; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -903,7 +903,7 @@ extern "C" {
 /** SDIO_SLC_HOST_PKT_LEN_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_PKT_LEN_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x60)
+#define SDIO_SLC_HOST_PKT_LEN_REG (DR_REG_SLCHOST_BASE + 0x60)
 /** SDIO_SLC_HOST_HOSTSLCHOST_SLC0_LEN : RO; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -922,7 +922,7 @@ extern "C" {
 /** SDIO_SLC_HOST_STATE_W0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_STATE_W0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x64)
+#define SDIO_SLC_HOST_STATE_W0_REG (DR_REG_SLCHOST_BASE + 0x64)
 /** SDIO_SLC_HOST_SLCHOST_STATE0 : RO; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -955,7 +955,7 @@ extern "C" {
 /** SDIO_SLC_HOST_STATE_W1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_STATE_W1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x68)
+#define SDIO_SLC_HOST_STATE_W1_REG (DR_REG_SLCHOST_BASE + 0x68)
 /** SDIO_SLC_HOST_SLCHOST_STATE4 : RO; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -988,7 +988,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x6c)
+#define SDIO_SLC_HOST_CONF_W0_REG (DR_REG_SLCHOST_BASE + 0x6c)
 /** SDIO_SLC_HOST_SLCHOST_CONF0 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1021,7 +1021,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x70)
+#define SDIO_SLC_HOST_CONF_W1_REG (DR_REG_SLCHOST_BASE + 0x70)
 /** SDIO_SLC_HOST_SLCHOST_CONF4 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1054,7 +1054,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W2_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W2_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x74)
+#define SDIO_SLC_HOST_CONF_W2_REG (DR_REG_SLCHOST_BASE + 0x74)
 /** SDIO_SLC_HOST_SLCHOST_CONF8 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1087,7 +1087,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W3_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W3_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x78)
+#define SDIO_SLC_HOST_CONF_W3_REG (DR_REG_SLCHOST_BASE + 0x78)
 /** SDIO_SLC_HOST_SLCHOST_CONF12 : R/W; bitpos: [7:0]; default: 192;
  *  *******Description***********
  */
@@ -1120,7 +1120,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W4_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W4_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x7c)
+#define SDIO_SLC_HOST_CONF_W4_REG (DR_REG_SLCHOST_BASE + 0x7c)
 /** SDIO_SLC_HOST_SLCHOST_CONF16 : R/W; bitpos: [7:0]; default: 255;
  *  *******Description***********
  */
@@ -1153,7 +1153,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W5_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W5_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x80)
+#define SDIO_SLC_HOST_CONF_W5_REG (DR_REG_SLCHOST_BASE + 0x80)
 /** SDIO_SLC_HOST_SLCHOST_CONF20 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1186,7 +1186,7 @@ extern "C" {
 /** SDIO_SLC_HOST_WIN_CMD_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_WIN_CMD_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x84)
+#define SDIO_SLC_HOST_WIN_CMD_REG (DR_REG_SLCHOST_BASE + 0x84)
 /** SDIO_SLC_HOST_SLCHOST_WIN_CMD : R/W; bitpos: [15:0]; default: 0;
  *  *******Description***********
  */
@@ -1198,7 +1198,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W6_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W6_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x88)
+#define SDIO_SLC_HOST_CONF_W6_REG (DR_REG_SLCHOST_BASE + 0x88)
 /** SDIO_SLC_HOST_SLCHOST_CONF24 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1231,7 +1231,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W7_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W7_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x8c)
+#define SDIO_SLC_HOST_CONF_W7_REG (DR_REG_SLCHOST_BASE + 0x8c)
 /** SDIO_SLC_HOST_SLCHOST_CONF28 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1264,7 +1264,7 @@ extern "C" {
 /** SDIO_SLC_HOST_PKT_LEN0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_PKT_LEN0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x90)
+#define SDIO_SLC_HOST_PKT_LEN0_REG (DR_REG_SLCHOST_BASE + 0x90)
 /** SDIO_SLC_HOST_HOSTSLCHOST_SLC0_LEN0 : RO; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -1283,7 +1283,7 @@ extern "C" {
 /** SDIO_SLC_HOST_PKT_LEN1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_PKT_LEN1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x94)
+#define SDIO_SLC_HOST_PKT_LEN1_REG (DR_REG_SLCHOST_BASE + 0x94)
 /** SDIO_SLC_HOST_HOSTSLCHOST_SLC0_LEN1 : RO; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -1302,7 +1302,7 @@ extern "C" {
 /** SDIO_SLC_HOST_PKT_LEN2_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_PKT_LEN2_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x98)
+#define SDIO_SLC_HOST_PKT_LEN2_REG (DR_REG_SLCHOST_BASE + 0x98)
 /** SDIO_SLC_HOST_HOSTSLCHOST_SLC0_LEN2 : RO; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -1321,7 +1321,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W8_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W8_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x9c)
+#define SDIO_SLC_HOST_CONF_W8_REG (DR_REG_SLCHOST_BASE + 0x9c)
 /** SDIO_SLC_HOST_SLCHOST_CONF32 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1354,7 +1354,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W9_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W9_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xa0)
+#define SDIO_SLC_HOST_CONF_W9_REG (DR_REG_SLCHOST_BASE + 0xa0)
 /** SDIO_SLC_HOST_SLCHOST_CONF36 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1387,7 +1387,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W10_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W10_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xa4)
+#define SDIO_SLC_HOST_CONF_W10_REG (DR_REG_SLCHOST_BASE + 0xa4)
 /** SDIO_SLC_HOST_SLCHOST_CONF40 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1420,7 +1420,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W11_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W11_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xa8)
+#define SDIO_SLC_HOST_CONF_W11_REG (DR_REG_SLCHOST_BASE + 0xa8)
 /** SDIO_SLC_HOST_SLCHOST_CONF44 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1453,7 +1453,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W12_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W12_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xac)
+#define SDIO_SLC_HOST_CONF_W12_REG (DR_REG_SLCHOST_BASE + 0xac)
 /** SDIO_SLC_HOST_SLCHOST_CONF48 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1486,7 +1486,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W13_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W13_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xb0)
+#define SDIO_SLC_HOST_CONF_W13_REG (DR_REG_SLCHOST_BASE + 0xb0)
 /** SDIO_SLC_HOST_SLCHOST_CONF52 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1519,7 +1519,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W14_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W14_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xb4)
+#define SDIO_SLC_HOST_CONF_W14_REG (DR_REG_SLCHOST_BASE + 0xb4)
 /** SDIO_SLC_HOST_SLCHOST_CONF56 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1552,7 +1552,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_W15_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_W15_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xb8)
+#define SDIO_SLC_HOST_CONF_W15_REG (DR_REG_SLCHOST_BASE + 0xb8)
 /** SDIO_SLC_HOST_SLCHOST_CONF60 : R/W; bitpos: [7:0]; default: 0;
  *  *******Description***********
  */
@@ -1585,7 +1585,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CHECK_SUM0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CHECK_SUM0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xbc)
+#define SDIO_SLC_HOST_CHECK_SUM0_REG (DR_REG_SLCHOST_BASE + 0xbc)
 /** SDIO_SLC_HOST_SLCHOST_CHECK_SUM0 : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -1597,7 +1597,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CHECK_SUM1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CHECK_SUM1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xc0)
+#define SDIO_SLC_HOST_CHECK_SUM1_REG (DR_REG_SLCHOST_BASE + 0xc0)
 /** SDIO_SLC_HOST_SLCHOST_CHECK_SUM1 : RO; bitpos: [31:0]; default: 319;
  *  *******Description***********
  */
@@ -1609,7 +1609,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_TOKEN_RDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_TOKEN_RDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xc4)
+#define SDIO_SLC_HOST_SLC1HOST_TOKEN_RDATA_REG (DR_REG_SLCHOST_BASE + 0xc4)
 /** SDIO_SLC_HOST_SLC1_TOKEN0 : RO; bitpos: [11:0]; default: 0;
  *  *******Description***********
  */
@@ -1642,7 +1642,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_TOKEN_WDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_TOKEN_WDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xc8)
+#define SDIO_SLC_HOST_SLC0HOST_TOKEN_WDATA_REG (DR_REG_SLCHOST_BASE + 0xc8)
 /** SDIO_SLC_HOST_SLC0HOST_TOKEN0_WD : R/W; bitpos: [11:0]; default: 0;
  *  *******Description***********
  */
@@ -1661,7 +1661,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_TOKEN_WDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_TOKEN_WDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xcc)
+#define SDIO_SLC_HOST_SLC1HOST_TOKEN_WDATA_REG (DR_REG_SLCHOST_BASE + 0xcc)
 /** SDIO_SLC_HOST_SLC1HOST_TOKEN0_WD : R/W; bitpos: [11:0]; default: 0;
  *  *******Description***********
  */
@@ -1680,7 +1680,7 @@ extern "C" {
 /** SDIO_SLC_HOST_TOKEN_CON_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_TOKEN_CON_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xd0)
+#define SDIO_SLC_HOST_TOKEN_CON_REG (DR_REG_SLCHOST_BASE + 0xd0)
 /** SDIO_SLC_HOST_SLC0HOST_TOKEN0_DEC : WT; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -1748,7 +1748,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_INT_CLR_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_INT_CLR_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xd4)
+#define SDIO_SLC_HOST_SLC0HOST_INT_CLR_REG (DR_REG_SLCHOST_BASE + 0xd4)
 /** SDIO_SLC_HOST_SLC0_TOHOST_BIT0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -1935,7 +1935,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_INT_CLR_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_INT_CLR_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xd8)
+#define SDIO_SLC_HOST_SLC1HOST_INT_CLR_REG (DR_REG_SLCHOST_BASE + 0xd8)
 /** SDIO_SLC_HOST_SLC1_TOHOST_BIT0_INT_CLR : WT; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -2122,7 +2122,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_FUNC1_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_FUNC1_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xdc)
+#define SDIO_SLC_HOST_SLC0HOST_FUNC1_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xdc)
 /** SDIO_SLC_HOST_FN1_SLC0_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -2309,7 +2309,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_FUNC1_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_FUNC1_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xe0)
+#define SDIO_SLC_HOST_SLC1HOST_FUNC1_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xe0)
 /** SDIO_SLC_HOST_FN1_SLC1_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -2496,7 +2496,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_FUNC2_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_FUNC2_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xe4)
+#define SDIO_SLC_HOST_SLC0HOST_FUNC2_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xe4)
 /** SDIO_SLC_HOST_FN2_SLC0_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -2683,7 +2683,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_FUNC2_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_FUNC2_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xe8)
+#define SDIO_SLC_HOST_SLC1HOST_FUNC2_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xe8)
 /** SDIO_SLC_HOST_FN2_SLC1_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -2870,7 +2870,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xec)
+#define SDIO_SLC_HOST_SLC0HOST_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xec)
 /** SDIO_SLC_HOST_SLC0_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -3057,7 +3057,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_INT_ENA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_INT_ENA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xf0)
+#define SDIO_SLC_HOST_SLC1HOST_INT_ENA_REG (DR_REG_SLCHOST_BASE + 0xf0)
 /** SDIO_SLC_HOST_SLC1_TOHOST_BIT0_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -3244,7 +3244,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_RX_INFOR_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_RX_INFOR_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xf4)
+#define SDIO_SLC_HOST_SLC0HOST_RX_INFOR_REG (DR_REG_SLCHOST_BASE + 0xf4)
 /** SDIO_SLC_HOST_SLC0HOST_RX_INFOR : R/W; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -3256,7 +3256,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_RX_INFOR_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_RX_INFOR_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xf8)
+#define SDIO_SLC_HOST_SLC1HOST_RX_INFOR_REG (DR_REG_SLCHOST_BASE + 0xf8)
 /** SDIO_SLC_HOST_SLC1HOST_RX_INFOR : R/W; bitpos: [19:0]; default: 0;
  *  *******Description***********
  */
@@ -3268,7 +3268,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_LEN_WD_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_LEN_WD_REG (DR_REG_SDIO_SLC_HOST_BASE + 0xfc)
+#define SDIO_SLC_HOST_SLC0HOST_LEN_WD_REG (DR_REG_SLCHOST_BASE + 0xfc)
 /** SDIO_SLC_HOST_SLC0HOST_LEN_WD : R/W; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -3280,7 +3280,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC_APBWIN_WDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC_APBWIN_WDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x100)
+#define SDIO_SLC_HOST_SLC_APBWIN_WDATA_REG (DR_REG_SLCHOST_BASE + 0x100)
 /** SDIO_SLC_HOST_SLC_APBWIN_WDATA : R/W; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -3292,7 +3292,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC_APBWIN_CONF_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC_APBWIN_CONF_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x104)
+#define SDIO_SLC_HOST_SLC_APBWIN_CONF_REG (DR_REG_SLCHOST_BASE + 0x104)
 /** SDIO_SLC_HOST_SLC_APBWIN_ADDR : R/W; bitpos: [27:0]; default: 0;
  *  *******Description***********
  */
@@ -3318,7 +3318,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC_APBWIN_RDATA_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC_APBWIN_RDATA_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x108)
+#define SDIO_SLC_HOST_SLC_APBWIN_RDATA_REG (DR_REG_SLCHOST_BASE + 0x108)
 /** SDIO_SLC_HOST_SLC_APBWIN_RDATA : RO; bitpos: [31:0]; default: 0;
  *  *******Description***********
  */
@@ -3330,7 +3330,7 @@ extern "C" {
 /** SDIO_SLC_HOST_RDCLR0_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_RDCLR0_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x10c)
+#define SDIO_SLC_HOST_RDCLR0_REG (DR_REG_SLCHOST_BASE + 0x10c)
 /** SDIO_SLC_HOST_SLCHOST_SLC0_BIT7_CLRADDR : R/W; bitpos: [8:0]; default: 68;
  *  *******Description***********
  */
@@ -3349,7 +3349,7 @@ extern "C" {
 /** SDIO_SLC_HOST_RDCLR1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_RDCLR1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x110)
+#define SDIO_SLC_HOST_RDCLR1_REG (DR_REG_SLCHOST_BASE + 0x110)
 /** SDIO_SLC_HOST_SLCHOST_SLC1_BIT7_CLRADDR : R/W; bitpos: [8:0]; default: 480;
  *  *******Description***********
  */
@@ -3368,7 +3368,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC0HOST_INT_ENA1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC0HOST_INT_ENA1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x114)
+#define SDIO_SLC_HOST_SLC0HOST_INT_ENA1_REG (DR_REG_SLCHOST_BASE + 0x114)
 /** SDIO_SLC_HOST_SLC0_TOHOST_BIT0_INT_ENA1 : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -3555,7 +3555,7 @@ extern "C" {
 /** SDIO_SLC_HOST_SLC1HOST_INT_ENA1_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_SLC1HOST_INT_ENA1_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x118)
+#define SDIO_SLC_HOST_SLC1HOST_INT_ENA1_REG (DR_REG_SLCHOST_BASE + 0x118)
 /** SDIO_SLC_HOST_SLC1_TOHOST_BIT0_INT_ENA1 : R/W; bitpos: [0]; default: 0;
  *  *******Description***********
  */
@@ -3742,7 +3742,7 @@ extern "C" {
 /** SDIO_SLC_HOST_DATE_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_DATE_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x178)
+#define SDIO_SLC_HOST_DATE_REG (DR_REG_SLCHOST_BASE + 0x178)
 /** SDIO_SLC_HOST_SLCHOST_DATE : R/W; bitpos: [31:0]; default: 554043136;
  *  *******Description***********
  */
@@ -3754,7 +3754,7 @@ extern "C" {
 /** SDIO_SLC_HOST_ID_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_ID_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x17c)
+#define SDIO_SLC_HOST_ID_REG (DR_REG_SLCHOST_BASE + 0x17c)
 /** SDIO_SLC_HOST_SLCHOST_ID : R/W; bitpos: [31:0]; default: 1536;
  *  *******Description***********
  */
@@ -3766,7 +3766,7 @@ extern "C" {
 /** SDIO_SLC_HOST_CONF_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_CONF_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x1f0)
+#define SDIO_SLC_HOST_CONF_REG (DR_REG_SLCHOST_BASE + 0x1f0)
 /** SDIO_SLC_HOST_FRC_SDIO11 : R/W; bitpos: [4:0]; default: 0;
  *  *******Description***********
  */
@@ -3827,7 +3827,7 @@ extern "C" {
 /** SDIO_SLC_HOST_INF_ST_REG register
  *  *******Description***********
  */
-#define SDIO_SLC_HOST_INF_ST_REG (DR_REG_SDIO_SLC_HOST_BASE + 0x1f4)
+#define SDIO_SLC_HOST_INF_ST_REG (DR_REG_SLCHOST_BASE + 0x1f4)
 /** SDIO_SLC_HOST_SDIO20_MODE : RO; bitpos: [4:0]; default: 0;
  *  *******Description***********
  */

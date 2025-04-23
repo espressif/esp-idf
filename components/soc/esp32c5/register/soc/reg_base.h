@@ -34,7 +34,7 @@
 #define DR_REG_PARL_IO_BASE                       0x60015000
 #define DR_REG_HINF_BASE                          0x60016000
 #define DR_REG_SLC_BASE                           0x60017000
-#define DR_REG_SLC_HOST_BASE                      0x60018000
+#define DR_REG_SLCHOST_BASE                       0x60018000
 #define DR_REG_PVT_MONITOR_BASE                   0x60019000
 #define DR_REG_PSRAM_MEM_MONITOR_BASE             0x6001A000
 
