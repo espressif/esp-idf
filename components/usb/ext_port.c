@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -102,6 +102,8 @@ typedef struct {
         void *proc_req_cb_arg;                  /**< External Port process callback argument */
         ext_port_event_cb_t event_cb;           /**< External Port event callback */
         void *event_cb_arg;                     /**< External Port event callback argument */
+        ext_hub_request_cb_t hub_request_cb;    /**< External Port Hub request callback */
+        void *hub_request_cb_arg;                /**< External Port Hub request callback argument */
     } constant;                                 /**< Constant members. Do not change after installation thus do not require a critical section or mutex */
 } ext_port_driver_t;
 
@@ -225,17 +227,25 @@ static inline bool port_has_finished_reset(ext_port_t *ext_port)
  *    - ESP_ERR_INVALID_ARG:    The parent hub handle couldn't be NULL
  *    - ESP_ERR_INVALID_SIZE:   The port number should be in a range: [1, .. , bNbrPort]
  *    - ESP_ERR_INVALID_STATE:  The parent hub device wasn't configured
+ *    - ESP_ERR_NOT_SUPPORTED:  The request type is not supported by the External Hub Driver
  *    - ESP_OK:                 Status has been requested
  */
 static esp_err_t port_request_status(ext_port_t* ext_port)
 {
-    esp_err_t ret = ext_hub_get_port_status(ext_port->constant.ext_hub_hdl, ext_port->constant.port_num);
+    ext_hub_request_data_t req_data = {
+        .request = USB_B_REQUEST_HUB_GET_PORT_STATUS,
+        .port_num = ext_port->constant.port_num,
+    };
+
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
+                                                               &req_data,
+                                                               p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
     }
     // Port is requesting status, lock the status
     ext_port->flags.status_lock = 1;
-    return ret;
+    return ESP_OK;
 }
 
 /**
@@ -254,9 +264,15 @@ static esp_err_t port_request_status(ext_port_t* ext_port)
  */
 static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_feature_t feature)
 {
-    esp_err_t ret = ext_hub_set_port_feature(ext_port->constant.ext_hub_hdl,
-                                             ext_port->constant.port_num,
-                                             feature);
+    ext_hub_request_data_t req_data = {
+        .request = USB_B_REQUEST_HUB_SET_PORT_FEATURE,
+        .port_num = ext_port->constant.port_num,
+        .feature = feature,
+    };
+
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
+                                                               &req_data,
+                                                               p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -293,9 +309,15 @@ static esp_err_t port_set_feature(ext_port_t *ext_port, const usb_hub_port_featu
  */
 static esp_err_t port_clear_feature(ext_port_t *ext_port, const usb_hub_port_feature_t feature)
 {
-    esp_err_t ret = ext_hub_clear_port_feature(ext_port->constant.ext_hub_hdl,
-                                               ext_port->constant.port_num,
-                                               feature);
+    ext_hub_request_data_t req_data = {
+        .request = USB_B_REQUEST_HUB_CLEAR_FEATURE,
+        .port_num = ext_port->constant.port_num,
+        .feature = feature,
+    };
+
+    esp_err_t ret = p_ext_port_driver->constant.hub_request_cb(ext_port->constant.ext_hub_hdl,
+                                                               &req_data,
+                                                               p_ext_port_driver->constant.hub_request_cb_arg);
     if (ret != ESP_OK) {
         return ret;
     }
@@ -684,7 +706,7 @@ static void handle_port_state(ext_port_t *ext_port)
     switch (curr_state) {
     case USB_PORT_STATE_NOT_CONFIGURED:
         new_state = USB_PORT_STATE_POWERED_OFF;
-        port_request_status(ext_port);
+        ESP_ERROR_CHECK(port_request_status(ext_port));
         need_handling = true;
         break;
     case USB_PORT_STATE_POWERED_OFF:
@@ -1302,6 +1324,10 @@ const ext_hub_port_driver_t ext_port_driver = {
 esp_err_t ext_port_install(const ext_port_driver_config_t *config)
 {
     EXT_PORT_CHECK(p_ext_port_driver == NULL, ESP_ERR_NOT_ALLOWED);
+    EXT_PORT_CHECK(config != NULL, ESP_ERR_INVALID_ARG);
+    EXT_PORT_CHECK(config->proc_req_cb != NULL, ESP_ERR_INVALID_ARG);
+    EXT_PORT_CHECK(config->event_cb != NULL, ESP_ERR_INVALID_ARG);
+    EXT_PORT_CHECK(config->hub_request_cb != NULL, ESP_ERR_INVALID_ARG);
 
     ext_port_driver_t *ext_port_drv = heap_caps_calloc(1, sizeof(ext_port_driver_t), MALLOC_CAP_DEFAULT);
     EXT_PORT_CHECK(ext_port_drv != NULL, ESP_ERR_NO_MEM);
@@ -1311,6 +1337,8 @@ esp_err_t ext_port_install(const ext_port_driver_config_t *config)
     ext_port_drv->constant.proc_req_cb_arg = config->proc_req_cb_arg;
     ext_port_drv->constant.event_cb = config->event_cb;
     ext_port_drv->constant.event_cb_arg = config->event_cb_arg;
+    ext_port_drv->constant.hub_request_cb = config->hub_request_cb;
+    ext_port_drv->constant.hub_request_cb_arg = config->hub_request_cb_arg;
     TAILQ_INIT(&ext_port_drv->single_thread.pending_tailq);
 
     p_ext_port_driver = ext_port_drv;

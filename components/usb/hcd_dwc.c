@@ -389,7 +389,7 @@ static inline bool _buffer_check_done(pipe_t *pipe)
     }
 #if (CONFIG_IDF_TARGET_ESP32S2 || CONFIG_IDF_TARGET_ESP32S3)
     // The HW can't handle two transactions with preamble in one frame.
-    // TODO: IDF-15060
+    // TODO: IDF-12986
     if (pipe->ep_char.ls_via_fs_hub) {
         esp_rom_delay_us(1000);
     }
@@ -1625,7 +1625,7 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
     ep_char->dev_addr = pipe_config->dev_addr;
     ep_char->ls_via_fs_hub = 0;
     if (pipe_idx > 0) {
-        // TODO: remove warning after IDF-15060
+        // TODO: remove warning after IDF-12986
         if (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW) {
             ESP_LOGW(HCD_DWC_TAG, "Low-speed, extra delay will be applied in ISR");
             ep_char->ls_via_fs_hub = 1;
