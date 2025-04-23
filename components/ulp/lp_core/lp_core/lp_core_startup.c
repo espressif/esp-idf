@@ -13,6 +13,7 @@
 #include "ulp_lp_core_print.h"
 
 extern void main();
+extern uint32_t lp_wakeup_cause;
 
 /* Initialize lp core related system functions before calling user's main*/
 void lp_core_startup()
@@ -22,7 +23,7 @@ void lp_core_startup()
     ets_install_putc1(lp_core_print_char);
 #endif
 
-    ulp_lp_core_update_wakeup_cause();
+    lp_wakeup_cause = (uint32_t) -1;
 
     main();
 

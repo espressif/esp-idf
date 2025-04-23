@@ -38,9 +38,11 @@
 #define LP_CORE_CPU_FREQUENCY_HZ 16000000
 #endif
 
-static uint32_t lp_wakeup_cause = 0;
+uint32_t lp_wakeup_cause = (uint32_t) -1;
 
-void ulp_lp_core_update_wakeup_cause(void)
+void ulp_lp_core_update_wakeup_cause(void) {}
+
+static void lp_core_ll_update_wakeup_cause(void)
 {
     lp_wakeup_cause = 0;
     if ((lp_core_ll_get_wakeup_source() & LP_CORE_LL_WAKEUP_SOURCE_HP_CPU) \
@@ -94,6 +96,9 @@ void ulp_lp_core_update_wakeup_cause(void)
 
 uint32_t ulp_lp_core_get_wakeup_cause()
 {
+    if (lp_wakeup_cause == (uint32_t) -1) {
+        lp_core_ll_update_wakeup_cause();
+    }
     return lp_wakeup_cause;
 }
 
