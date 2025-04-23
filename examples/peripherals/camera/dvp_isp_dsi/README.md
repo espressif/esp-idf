@@ -15,7 +15,7 @@ The subsections below give only absolutely necessary information. For full steps
 
 ### Hardware Required
 
-- OV2640 camera sensor, or other camera sensors with DVP port that can output raw format color data
+- OV2640 / SC030IOT camera sensor, or other camera sensors with DVP port that can output raw format color data
 - EK79007 or ILI9881C LCD screen
 - ESP32P4 devkit
 
@@ -106,7 +106,7 @@ Set CONFIG_CAMERA_OV2640 to y
 
 Remember to select the LCD screen model and set corresponding correct horizontal/vertical resolution in ``menuconfig`` > ``Example DSI Configuration``.
 
-Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``. Note that the horizontal resolution for the camera should be the same as the LCD screen horizontal resolution.
+Available options for the camera sensor output horizontal/vertical resolution can be seen in ``menuconfig`` > ``Example Configuration``.
 
 
 ### Build and Flash
