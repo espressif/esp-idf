@@ -109,7 +109,7 @@ BITSCRAMBLER_DOCS = ['api-reference/peripherals/bitscrambler.rst']
 
 CLK_TREE_DOCS = ['api-reference/peripherals/clk_tree.rst']
 
-UART_DOCS = ['api-reference/peripherals/uart.rst']
+UART_DOCS = ['api-reference/peripherals/uart.rst', 'api-reference/peripherals/uhci.rst']
 
 SDMMC_DOCS = ['api-reference/peripherals/sdmmc_host.rst']
 
