@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,6 +32,9 @@
 #include "driver/rtc_io.h"
 #include "soc/rtc_io_channel.h"
 #include "driver/lp_io.h"
+#if SOC_LP_GPIO_MATRIX_SUPPORTED
+#include "soc/lp_gpio_pins.h"
+#endif
 #endif
 #if I2C_USE_RETENTION_LINK
 #include "esp_private/sleep_retention.h"
@@ -427,8 +430,8 @@ esp_err_t i2c_common_deinit_pins(i2c_bus_handle_t handle)
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->sda_num), TAG, "deinit rtc gpio failed");
         ESP_RETURN_ON_ERROR(rtc_gpio_deinit(handle->scl_num), TAG, "deinit rtc gpio failed");
 #if SOC_LP_GPIO_MATRIX_SUPPORTED
-        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
-        lp_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
+        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].scl_in_sig, 0);
+        lp_gpio_connect_in_signal(LP_GPIO_MATRIX_CONST_ZERO_INPUT, i2c_periph_signal[port_id].sda_in_sig, 0);
 #endif
     }
 #endif
