@@ -1,19 +1,17 @@
 | Supported Targets | ESP32-C6 |
 | ----------------- | -------- |
 
-# BLE Periodic Advertiser Example
+## Important Note
+*This example currently requires an external Bluetooth controller supporting PAwR functionality, as the ESP chips listed above do not have native controller support for PAwR features and under development phase*
+
+# BLE Periodic Advertiser With Response (PAwR) Sync Connection Example
+
+(See the README.md file in the upper level 'examples' directory for more information about examples.)
+ BLE PAwR Advertiser Example
 
 (See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example starts periodic advertising with non resolvable private address.
-
-It uses Bluetooth controller and NimBLE stack based BLE host.
-
-This example aims at understanding periodic advertisement and  related NimBLE APIs.
-
-
-To test this demo, any BLE Periodic Sync app can be used.
-
+This example demonstrates PAwR connection functionality as PAwR Sync.
 
 Note :
 
@@ -49,26 +47,26 @@ Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
 See the [Getting Started Guide](https://idf.espressif.com/) for full steps to configure and use ESP-IDF to build projects.
 
 ## Example Output
-
-There is this console output when periodic_adv is started:
+```
+I (535) NimBLE: GAP procedure initiated: extended discovery;
+ 
+I (545) main_task: Returned from app_main()
+I (6595) NimBLE_BLE_PAwR: [Disc advertiser] addr 40:4c:ca:46:1f:e2, props: 0x0, rssi:-45
+I (6595) NimBLE_BLE_PAwR: Create sync
+I (6975) NimBLE_BLE_PAwR: [Periodic Sync Established] sync handle:0, num_subevents:0xa
+I (6975) NimBLE_BLE_PAwR: subevent_interval:0x34, slot_delay:0x5,slot_spacing:0xa
+I (6985) NimBLE_BLE_PAwR: [Subevent Sync OK] sync handle:0, sync_subevents:10
+I (7885) NimBLE_BLE_PAwR: [Periodic Adv Report] handle:0, event_counter(2), subevent(4)
+W (7885) NimBLE_BLE_PAwR: [RSP Data Set] sync handle: 0, subev(4), rsp_slot(2), rc(0x0)
+W (7955) NimBLE_BLE_PAwR: [Connection established], conn_handle = 0x00, sync handle = 0x0, status = 0x0
+ 
+I (7955) NimBLE_BLE_PAwR: handle=0 our_ota_addr_type=0 our_ota_addr=60:55:f9:f6:02:5e 
+I (7965) NimBLE_BLE_PAwR: our_id_addr_type=0 our_id_addr=60:55:f9:f6:02:5e 
+I (7965) NimBLE_BLE_PAwR: peer_ota_addr_type=0 peer_ota_addr=40:4c:ca:46:1f:e2 
+I (7975) NimBLE_BLE_PAwR: peer_id_addr_type=0 peer_id_addr=40:4c:ca:46:1f:e2 
+I (7985) NimBLE_BLE_PAwR: conn_itvl=40 conn_latency=0 supervision_timeout=256 encrypted=0 authenticated=0 bonded=0
 
 ```
-I (313) BTDM_INIT: BT controller compile version [2ee0168]
-I (313) phy_init: phy_version 912,d001756,Jun  2 2022,16:28:07
-I (353) system_api: Base MAC address is not set
-I (353) system_api: read default base MAC address from EFUSE
-I (353) BTDM_INIT: Bluetooth MAC: 84:f7:03:08:14:8e
-
-I (363) NimBLE_BLE_PERIODIC_ADV: BLE Host Task Started
-I (373) NimBLE: Device Address:
-I (373) NimBLE: d0:42:3a:95:84:05
-I (373) NimBLE:
-
-I (383) NimBLE: instance 1 started (periodic)
-```
-
-## Note
-* Periodic sync transfer is not implemented for now.
 
 ## Troubleshooting
 
