@@ -1,32 +1,81 @@
-Bluetooth® API
-**************
+Bluetooth\ :sup:`®` API
+*****************************
 
 :link_to_translation:`zh_CN:[中文]`
 
+This section provides the API reference for Bluetooth components supported in ESP-IDF. ESP-IDF supports two host stacks: **Bluedroid** and **NimBLE**.
+
+- **Bluedroid** (the default stack): Supports both Bluetooth Classic and Bluetooth LE. Recommended for applications that require both technologies.
+- **NimBLE**: A lightweight stack for Bluetooth LE only. Ideal for resource-constrained applications due to smaller code size and memory usage.
+
+Use the navigation links below to explore API documentation and application examples.
+
+----
+
+**Controller Interface API**
+
+The low-level interface between the Bluetooth host stack and the controller.
+
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
+
+    controller_vhci
+
+
+**Bluedroid Stack API**
+
+The default host stack in ESP-IDF, supporting both Bluetooth Classic and Bluetooth LE.
+
+.. toctree::
+    :maxdepth: 1
 
     bt_common
-    bt_le
     :SOC_BT_CLASSIC_SUPPORTED: classic_bt
-    controller_vhci
-    :SOC_BLE_MESH_SUPPORTED: esp-ble-mesh
+    bt_le
+
+For architecture and feature overviews, refer to the following documents in API Guides:
+
+.. only:: SOC_BT_CLASSIC_SUPPORTED
+
+    :doc:`../../api-guides/bt-architecture/index`, :doc:`../../api-guides/classic-bt/index`, :doc:`../../api-guides/ble/index`
+
+.. only:: not SOC_BT_CLASSIC_SUPPORTED
+
+    :doc:`../../api-guides/bt-architecture/index`, :doc:`../../api-guides/ble/index`
+
+**NimBLE Stack API**
+
+A lightweight host stack for Bluetooth LE.
+
+.. toctree::
+    :maxdepth: 1
+
     nimble/index
 
-ESP-IDF currently supports two host stacks. The Bluedroid based stack (default) supports classic Bluetooth as well as Bluetooth Low Energy (Bluetooth LE). On the other hand, Apache NimBLE based stack is Bluetooth Low Energy only. For users to make a choice:
+For additional details and API reference from the upstream documentation, refer to `Apache Mynewt NimBLE User Guide <https://mynewt.apache.org/latest/network/index.html>`_.
 
-* For usecases involving classic Bluetooth as well as Bluetooth Low Energy, Bluedroid should be used.
-* For Bluetooth Low Energy-only usecases, using NimBLE is recommended. It is less demanding in terms of code footprint and runtime memory, making it suitable for such scenarios.
+.. only:: SOC_BLE_MESH_SUPPORTED
 
-.. only:: esp32
+    **ESP-BLE-MESH API**
 
-    For the overview of the ESP32 Bluetooth stack architecture, follow the links below:
+    Implements Bluetooth LE Mesh networking.
 
-       * `ESP32 Bluetooth Architecture (PDF) <https://espressif.com/sites/default/files/documentation/esp32_bluetooth_architecture_en.pdf>`_
+    .. toctree::
+        :maxdepth: 1
 
-Code examples for this API section are provided in the :example:`bluetooth/bluedroid` directory of ESP-IDF examples.
+        esp-ble-mesh
 
-The following examples contain detailed walkthroughs:
+----
+
+Examples and Tutorials
+---------------------------
+
+Explore examples and tutorials in the ESP-IDF examples directory:
+
+- **Bluedroid**: :example:`bluetooth/bluedroid`
+- **NimBLE**: :example:`bluetooth/nimble`
+
+Step-by-step tutorials for developing with the Bluedroid stack:
 
 * :example_file:`GATT Client Example Walkthrough <bluetooth/bluedroid/ble/gatt_client/tutorial/Gatt_Client_Example_Walkthrough.md>`
 * :example_file:`GATT Server Service Table Example Walkthrough <bluetooth/bluedroid/ble/gatt_server_service_table/tutorial/Gatt_Server_Service_Table_Example_Walkthrough.md>`
@@ -34,3 +83,9 @@ The following examples contain detailed walkthroughs:
 * :example_file:`GATT Security Client Example Walkthrough <bluetooth/bluedroid/ble/gatt_security_client/tutorial/Gatt_Security_Client_Example_Walkthrough.md>`
 * :example_file:`GATT Security Server Example Walkthrough <bluetooth/bluedroid/ble/gatt_security_server/tutorial/Gatt_Security_Server_Example_Walkthrough.md>`
 * :example_file:`GATT Client Multi-connection Example Walkthrough <bluetooth/bluedroid/ble/gattc_multi_connect/tutorial/Gatt_Client_Multi_Connection_Example_Walkthrough.md>`
+
+Step-by-step tutorials for developing with the NimBLE stack:
+
+* :example_file:`Bluetooth LE Central Example Walkthrough <bluetooth/nimble/blecent/tutorial/blecent_walkthrough.md>`
+* :example_file:`Bluetooth LE Heart Rate Example Walkthrough <bluetooth/nimble/blehr/tutorial/blehr_walkthrough.md>`
+* :example_file:`Bluetooth LE Peripheral Example Walkthrough <bluetooth/nimble/bleprph/tutorial/bleprph_walkthrough.md>`
