@@ -185,7 +185,6 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
-    uint8_t verified_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
     uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
@@ -203,7 +202,7 @@ esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
         return ESP_FAIL;
     }
 
-    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, verified_digest);
+    err = esp_secure_boot_verify_sbv2_signature_block(sig_block, digest, NULL);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Secure Boot V2 verification failed.");
     }
@@ -218,9 +217,11 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
 {
     bool any_trusted_key = false;
 
-    /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
-        during boot-time verification. */
-    memset(verified_digest, 0, ESP_SECURE_BOOT_DIGEST_LEN);
+    if (verified_digest != NULL) {
+        /* Note: in IDF verification we don't add any fault injection resistance, as we don't expect this to be called
+            during boot-time verification. */
+        memset(verified_digest, 0, ESP_SECURE_BOOT_DIGEST_LEN);
+    }
 
     esp_image_sig_public_key_digests_t trusted = {0};
 
