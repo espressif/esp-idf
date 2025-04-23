@@ -35,10 +35,14 @@ extern "C" {
 
 #define ESP_SECURE_BOOT_DIGEST_LEN 32
 
+/* SHA-256 length of the public key digest */
+#define ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN 32
+
+/* Length of the public key digest that is stored in efuses */
 #if CONFIG_IDF_TARGET_ESP32C2
-#define ESP_SECURE_BOOT_KEY_DIGEST_LEN 16
+#define ESP_SECURE_BOOT_KEY_DIGEST_LEN ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN / 2
 #else
-#define ESP_SECURE_BOOT_KEY_DIGEST_LEN 32
+#define ESP_SECURE_BOOT_KEY_DIGEST_LEN ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN
 #endif
 
 #ifdef CONFIG_EFUSE_VIRTUAL_KEEP_IN_FLASH
@@ -255,7 +259,7 @@ esp_err_t esp_secure_boot_verify_sbv2_signature_block(const ets_secure_boot_sign
  * Each image can have one or more signature blocks (up to SECURE_BOOT_NUM_BLOCKS). Each signature block includes a public key.
  */
 typedef struct {
-    uint8_t key_digests[SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS][ESP_SECURE_BOOT_DIGEST_LEN];    /* SHA of the public key components in the signature block */
+    uint8_t key_digests[SOC_EFUSE_SECURE_BOOT_KEY_DIGESTS][ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN];    /* SHA of the public key components in the signature block */
     unsigned num_digests;                                       /* Number of valid digests, starting at index 0 */
 } esp_image_sig_public_key_digests_t;
 
