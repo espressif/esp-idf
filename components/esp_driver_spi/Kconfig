@@ -26,6 +26,7 @@ menu "ESP-Driver:SPI Configurations"
         select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         select ESP_SPI_BUS_LOCK_ISR_FUNCS_IN_IRAM
         select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Place the SPI master ISR in to IRAM to avoid possible cache miss.
 
@@ -54,6 +55,7 @@ menu "ESP-Driver:SPI Configurations"
         default y
         select ESP_PERIPH_CTRL_FUNC_IN_IRAM
         select GDMA_CTRL_FUNC_IN_IRAM if SOC_GDMA_SUPPORTED
+        select GDMA_ISR_HANDLER_IN_IRAM if SOC_GDMA_SUPPORTED
         help
             Place the SPI slave ISR in to IRAM to avoid possible cache miss.
 
