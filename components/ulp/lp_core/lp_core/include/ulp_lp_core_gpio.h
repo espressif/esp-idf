@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,6 +198,27 @@ static inline void ulp_lp_core_gpio_intr_enable(lp_io_num_t lp_io_num, gpio_int_
 static inline void ulp_lp_core_gpio_clear_intr_status(void)
 {
     rtcio_ll_clear_interrupt_status();
+}
+
+/**
+ * @brief Enable wake up for lp io pin
+ *
+ * @param lp_io_num The lp io pin to enable the wake up for
+ * @param intr_type The interrupt type to enable wake up for
+ */
+static inline void ulp_lp_core_gpio_wakeup_enable(lp_io_num_t lp_io_num, gpio_int_type_t intr_type)
+{
+    rtcio_ll_wakeup_enable(lp_io_num, intr_type);
+}
+
+/**
+ * @brief Disable wake up for lp io pin
+ *
+ * @param lp_io_num The lp io pin to disable the wake up for
+ */
+static inline void ulp_lp_core_gpio_wakeup_disable(lp_io_num_t lp_io_num)
+{
+    rtcio_ll_wakeup_disable(lp_io_num);
 }
 
 #ifdef __cplusplus
