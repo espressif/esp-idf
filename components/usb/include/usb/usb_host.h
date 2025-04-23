@@ -569,6 +569,7 @@ esp_err_t usb_host_endpoint_clear(usb_device_handle_t dev_hdl, uint8_t bEndpoint
  *
  * - This function allocates a transfer object
  * - Each transfer object has a fixed sized buffer specified on allocation
+ * - The resulting data_buffer_size can be bigger that the requested size. This is to ensure that the data buffer is cache aligned
  * - A transfer object can be re-used indefinitely
  * - A transfer can be submitted using usb_host_transfer_submit() or usb_host_transfer_submit_control()
  *
