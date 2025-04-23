@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -325,11 +325,11 @@ static inline esp_err_t sdio_slave_hw_init(sdio_slave_config_t *config)
 
 static void recover_pin(int pin, int sdio_func)
 {
-    uint32_t reg = GPIO_PIN_MUX_REG[pin];
-    assert(reg != UINT32_MAX);
+    gpio_io_config_t io_cfg = {};
+    esp_err_t ret = gpio_get_io_config(pin, &io_cfg);
+    assert(ret == ESP_OK);
 
-    int func = REG_GET_FIELD(reg, MCU_SEL);
-    if (func == sdio_func) {
+    if (io_cfg.fun_sel == sdio_func) {
         gpio_set_direction(pin, GPIO_MODE_INPUT);
         gpio_func_sel(pin, PIN_FUNC_GPIO);
     }

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,7 +10,7 @@
  * See readme.md in hal/include/hal/readme.md
  ******************************************************************************/
 
-// The LL layer for ESP32 SDIO slave register operations
+// The LL layer for SDIO slave register operations
 // It's strange but `tx_*` regs for host->slave transfers while `rx_*` regs for slave->host transfers
 // To reduce ambiguity, we call (host->slave, tx) transfers receiving and (slave->host, rx) transfers receiving
 
@@ -25,24 +25,24 @@
 #include "soc/sdio_slc_host_struct.h"
 #include "soc/sdio_slc_host_reg.h"
 #include "soc/sdio_hinf_struct.h"
-#include "soc/dport_reg.h"
+#include "soc/pcr_struct.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/// Get address of the only SLC registers for ESP32
+/// Get address of the only SLC registers
 #define sdio_slave_ll_get_slc(ID)   (&SLC)
-/// Get address of the only HOST registers for ESP32
+/// Get address of the only HOST registers
 #define sdio_slave_ll_get_host(ID)  (&HOST)
-/// Get address of the only HINF registers for ESP32
+/// Get address of the only HINF registers
 #define sdio_slave_ll_get_hinf(ID)  (&HINF)
 
 /*
  *  SLC2 DMA Desc struct, aka sdio_slave_ll_desc_t
  *
  * --------------------------------------------------------------
- * | own | EoF | sub_sof | 5'b0   | length [11:0] | size [11:0] |
+ * | own | EoF | sub_sof | 1'b0   | length [13:0] | size [13:0] |
  * --------------------------------------------------------------
  * |            buf_ptr [31:0]                                  |
  * --------------------------------------------------------------
@@ -52,9 +52,9 @@ extern "C" {
 
 /* this bitfield is start from the LSB!!! */
 typedef struct sdio_slave_ll_desc_s {
-    volatile uint32_t size  : 12,
-             length: 12,
-             offset: 5, /* starting from bit24, h/w reserved 5bit, s/w use it as offset in buffer */
+    volatile uint32_t size  : 14,
+             length: 14,
+             offset: 1, /* starting from bit28, h/w reserved 1bit, s/w use it as offset in buffer */
              sosf  : 1, /* start of sub-frame */
              eof   : 1, /* end of frame */
              owner : 1; /* hw or sw */
@@ -82,30 +82,19 @@ typedef enum {
  *
  * @param enable true to enable, false to disable
  */
-static inline void _sdio_slave_ll_enable_bus_clock(bool enable)
+static inline void sdio_slave_ll_enable_bus_clock(bool enable)
 {
-    uint32_t reg_val = DPORT_READ_PERI_REG(DPORT_WIFI_CLK_EN_REG);
-    reg_val &= ~DPORT_WIFI_CLK_SDIOSLAVE_EN;
-    reg_val |= enable << 4;
-    DPORT_WRITE_PERI_REG(DPORT_WIFI_CLK_EN_REG, reg_val);
+    PCR.sdio_slave_conf.sdio_slave_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdio_slave_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _sdio_slave_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the SDIO slave module
  */
-static inline void _sdio_slave_ll_reset_register(void)
+static inline void sdio_slave_ll_reset_register(void)
 {
-    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, DPORT_SDIO_RST);
-    DPORT_WRITE_PERI_REG(DPORT_CORE_RST_EN_REG, 0);
+    PCR.sdio_slave_conf.sdio_slave_rst_en = 1;
+    PCR.sdio_slave_conf.sdio_slave_rst_en = 0;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define sdio_slave_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _sdio_slave_ll_reset_register(__VA_ARGS__)
 
 /**
  * Initialize the hardware.
@@ -114,18 +103,18 @@ static inline void _sdio_slave_ll_reset_register(void)
  */
 static inline void sdio_slave_ll_init(slc_dev_t *slc)
 {
-    slc->slc0_int_ena.val = 0;
+    slc->slc_slc0int_ena.val = 0;
 
-    slc->conf0.slc0_rx_auto_wrback = 1;
-    slc->conf0.slc0_token_auto_clr = 0;
-    slc->conf0.slc0_rx_loop_test = 0;
-    slc->conf0.slc0_tx_loop_test = 0;
+    slc->slc_conf0.slc0_rx_auto_wrback = 1;
+    slc->slc_conf0.slc0_token_auto_clr = 0;
+    slc->slc_conf0.slc0_rx_loop_test = 0;
+    slc->slc_conf0.slc0_tx_loop_test = 0;
 
-    slc->conf1.slc0_rx_stitch_en = 0;
-    slc->conf1.slc0_tx_stitch_en = 0;
-    slc->conf1.slc0_len_auto_clr = 0;
+    slc->slc_conf1.slc0_rx_stitch_en = 0;
+    slc->slc_conf1.slc0_tx_stitch_en = 0;
+    slc->slc_conf1.slc0_len_auto_clr = 0;
 
-    slc->rx_dscr_conf.slc0_token_no_replace = 1;
+    slc->slc_rx_dscr_conf.slc0_token_no_replace = 1;
 }
 
 /**
@@ -209,8 +198,8 @@ static inline void sdio_slave_ll_set_ioready(hinf_dev_t *hinf, bool ready)
 static inline void sdio_slave_ll_send_reset(slc_dev_t *slc)
 {
     //reset to flush previous packets
-    slc->conf0.slc0_rx_rst = 1;
-    slc->conf0.slc0_rx_rst = 0;
+    slc->slc_conf0.slc0_rx_rst = 1;
+    slc->slc_conf0.slc0_rx_rst = 0;
 }
 
 /**
@@ -221,8 +210,8 @@ static inline void sdio_slave_ll_send_reset(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_send_start(slc_dev_t *slc, const sdio_slave_ll_desc_t *desc)
 {
-    slc->slc0_rx_link.addr = (uint32_t)desc;
-    slc->slc0_rx_link.start = 1;
+    slc->slc_slc0rx_link_addr.slc0_rxlink_addr = (uint32_t)desc;
+    slc->slc_slc0rx_link.slc0_rxlink_start = 1;
 }
 
 /**
@@ -233,7 +222,7 @@ static inline void sdio_slave_ll_send_start(slc_dev_t *slc, const sdio_slave_ll_
  */
 static inline void sdio_slave_ll_send_write_len(slc_dev_t *slc, uint32_t len)
 {
-    slc->slc0_len_conf.val = FIELD_TO_VALUE2(SLC_SLC0_LEN_WDATA, len) | FIELD_TO_VALUE2(SLC_SLC0_LEN_WR, 1);
+    slc->slc_slc0_len_conf.val = FIELD_TO_VALUE2(SDIO_SLC0_LEN_WDATA, len) | FIELD_TO_VALUE2(SDIO_SLC0_LEN_WR, 1);
 }
 
 /**
@@ -245,7 +234,7 @@ static inline void sdio_slave_ll_send_write_len(slc_dev_t *slc, uint32_t len)
  */
 static inline uint32_t sdio_slave_ll_send_read_len(host_dev_t *host)
 {
-    return host->pkt_len.reg_slc0_len;
+    return host->pkt_len.hostslchost_slc0_len;
 }
 
 /**
@@ -256,7 +245,7 @@ static inline uint32_t sdio_slave_ll_send_read_len(host_dev_t *host)
  */
 static inline void sdio_slave_ll_send_part_done_intr_ena(slc_dev_t *slc, bool ena)
 {
-    slc->slc0_int_ena.rx_done = (ena ? 1 : 0);
+    slc->slc_slc0int_ena.slc0_rx_done_int_ena = (ena ? 1 : 0);
 }
 
 /**
@@ -266,7 +255,7 @@ static inline void sdio_slave_ll_send_part_done_intr_ena(slc_dev_t *slc, bool en
  */
 static inline void sdio_slave_ll_send_part_done_clear(slc_dev_t *slc)
 {
-    slc->slc0_int_clr.rx_done = 1;
+    slc->slc_slc0int_clr.slc0_rx_done_int_clr = 1;
 }
 
 /**
@@ -278,7 +267,7 @@ static inline void sdio_slave_ll_send_part_done_clear(slc_dev_t *slc)
  */
 static inline bool sdio_slave_ll_send_invoker_ready(slc_dev_t *slc)
 {
-    return slc->slc0_int_raw.rx_done;
+    return slc->slc_slc0int_raw.slc0_rx_done_int_raw;
 }
 
 /**
@@ -288,7 +277,7 @@ static inline bool sdio_slave_ll_send_invoker_ready(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_send_stop(slc_dev_t *slc)
 {
-    slc->slc0_rx_link.stop = 1;
+    slc->slc_slc0rx_link.slc0_rxlink_stop = 1;
 }
 
 /**
@@ -299,7 +288,7 @@ static inline void sdio_slave_ll_send_stop(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_send_intr_ena(slc_dev_t *slc, bool ena)
 {
-    slc->slc0_int_ena.rx_eof = (ena ? 1 : 0);
+    slc->slc_slc0int_ena.slc0_rx_eof_int_ena = (ena ? 1 : 0);
 }
 
 /**
@@ -309,7 +298,7 @@ static inline void sdio_slave_ll_send_intr_ena(slc_dev_t *slc, bool ena)
  */
 static inline void sdio_slave_ll_send_intr_clr(slc_dev_t *slc)
 {
-    slc->slc0_int_clr.rx_eof = 1;
+    slc->slc_slc0int_clr.slc0_rx_eof_int_clr = 1;
 }
 
 /**
@@ -320,7 +309,7 @@ static inline void sdio_slave_ll_send_intr_clr(slc_dev_t *slc)
  */
 static inline bool sdio_slave_ll_send_done(slc_dev_t *slc)
 {
-    return slc->slc0_int_st.rx_eof != 0;
+    return slc->slc_slc0int_st.slc0_rx_eof_int_st != 0;
 }
 
 /**
@@ -330,7 +319,7 @@ static inline bool sdio_slave_ll_send_done(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_send_hostint_clr(host_dev_t *host)
 {
-    host->slc0_int_clr.rx_new_packet = 1;
+    host->slc0host_int_clr.slc0_rx_new_packet_int_clr = 1;
 }
 
 /*---------------------------------------------------------------------------
@@ -344,7 +333,7 @@ static inline void sdio_slave_ll_send_hostint_clr(host_dev_t *host)
  */
 static inline void sdio_slave_ll_recv_intr_ena(slc_dev_t *slc, bool ena)
 {
-    slc->slc0_int_ena.tx_done = (ena ? 1 : 0);
+    slc->slc_slc0int_ena.slc0_tx_done_int_ena = (ena ? 1 : 0);
 }
 
 /**
@@ -355,8 +344,8 @@ static inline void sdio_slave_ll_recv_intr_ena(slc_dev_t *slc, bool ena)
  */
 static inline void sdio_slave_ll_recv_start(slc_dev_t *slc, sdio_slave_ll_desc_t *desc)
 {
-    slc->slc0_tx_link.addr = (uint32_t)desc;
-    slc->slc0_tx_link.start = 1;
+    slc->slc_slc0tx_link_addr.slc0_txlink_addr = (uint32_t)desc;
+    slc->slc_slc0tx_link.slc0_txlink_start = 1;
 }
 
 /**
@@ -367,7 +356,7 @@ static inline void sdio_slave_ll_recv_start(slc_dev_t *slc, sdio_slave_ll_desc_t
 static inline void sdio_slave_ll_recv_size_inc(slc_dev_t *slc)
 {
     // fields wdata and inc_more should be written by the same instruction.
-    slc->slc0_token1.val = FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WDATA, 1) | FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_INC_MORE, 1);
+    slc->slc_slc0token1.val = FIELD_TO_VALUE2(SDIO_SLC0_TOKEN1_WDATA, 1) | FIELD_TO_VALUE2(SDIO_SLC0_TOKEN1_INC_MORE, 1);
 }
 
 /**
@@ -377,7 +366,7 @@ static inline void sdio_slave_ll_recv_size_inc(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_recv_size_reset(slc_dev_t *slc)
 {
-    slc->slc0_token1.val = FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WDATA, 0) | FIELD_TO_VALUE2(SLC_SLC0_TOKEN1_WR, 1);
+    slc->slc_slc0token1.val = FIELD_TO_VALUE2(SDIO_SLC0_TOKEN1_WDATA, 0) | FIELD_TO_VALUE2(SDIO_SLC0_TOKEN1_WR, 1);
 }
 
 /**
@@ -388,7 +377,7 @@ static inline void sdio_slave_ll_recv_size_reset(slc_dev_t *slc)
  */
 static inline bool sdio_slave_ll_recv_done(slc_dev_t *slc)
 {
-    return slc->slc0_int_raw.tx_done != 0;
+    return slc->slc_slc0int_raw.slc0_tx_done_int_raw != 0;
 }
 
 /**
@@ -398,7 +387,7 @@ static inline bool sdio_slave_ll_recv_done(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_recv_done_clear(slc_dev_t *slc)
 {
-    slc->slc0_int_clr.tx_done = 1;
+    slc->slc_slc0int_clr.slc0_tx_done_int_clr = 1;
 }
 
 /**
@@ -409,7 +398,7 @@ static inline void sdio_slave_ll_recv_done_clear(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_recv_restart(slc_dev_t *slc)
 {
-    slc->slc0_tx_link.restart = 1;
+    slc->slc_slc0tx_link.slc0_txlink_restart = 1;
 }
 
 /**
@@ -419,8 +408,8 @@ static inline void sdio_slave_ll_recv_restart(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_recv_reset(slc_dev_t *slc)
 {
-    slc->conf0.slc0_tx_rst = 1;
-    slc->conf0.slc0_tx_rst = 0;
+    slc->slc_conf0.slc0_tx_rst = 1;
+    slc->slc_conf0.slc0_tx_rst = 0;
 }
 
 /**
@@ -430,7 +419,7 @@ static inline void sdio_slave_ll_recv_reset(slc_dev_t *slc)
  */
 static inline void sdio_slave_ll_recv_stop(slc_dev_t *slc)
 {
-    slc->slc0_tx_link.stop = 1;
+    slc->slc_slc0tx_link.slc0_txlink_stop = 1;
 }
 
 /*---------------------------------------------------------------------------
@@ -483,7 +472,7 @@ static inline void sdio_slave_ll_host_set_reg(host_dev_t *host, int pos, uint8_t
  */
 static inline sdio_slave_hostint_t sdio_slave_ll_host_get_intena(host_dev_t *host)
 {
-    return (sdio_slave_hostint_t)host->slc0_func1_int_ena.val;
+    return (sdio_slave_hostint_t)host->slc0host_func1_int_ena.val;
 }
 
 /**
@@ -494,7 +483,7 @@ static inline sdio_slave_hostint_t sdio_slave_ll_host_get_intena(host_dev_t *hos
  */
 static inline void sdio_slave_ll_host_set_intena(host_dev_t *host, const sdio_slave_hostint_t *mask)
 {
-    host->slc0_func1_int_ena.val = (*mask);
+    host->slc0host_func1_int_ena.val = (*mask);
 }
 
 /**
@@ -504,7 +493,7 @@ static inline void sdio_slave_ll_host_set_intena(host_dev_t *host, const sdio_sl
  */
 static inline void sdio_slave_ll_host_intr_clear(host_dev_t *host, const sdio_slave_hostint_t *mask)
 {
-    host->slc0_int_clr.val = (*mask);
+    host->slc0host_int_clr.val = (*mask);
 }
 
 /**
@@ -516,7 +505,7 @@ static inline void sdio_slave_ll_host_send_int(slc_dev_t *slc, const sdio_slave_
 {
     //use registers in SLC to trigger, rather than write HOST registers directly
     //other interrupts than tohost interrupts are not supported yet
-    HAL_FORCE_MODIFY_U32_REG_FIELD(slc->intvec_tohost, slc0_intvec, *mask);
+    HAL_FORCE_MODIFY_U32_REG_FIELD(slc->slc_slcintvec_tohost, slc0_tohost_intvec, *mask);
 }
 
 /**
@@ -528,7 +517,7 @@ static inline void sdio_slave_ll_host_send_int(slc_dev_t *slc, const sdio_slave_
 static inline void sdio_slave_ll_slvint_set_ena(slc_dev_t *slc, const sdio_slave_ll_slvint_t *mask)
 {
     //other interrupts are not enabled
-    slc->slc0_int_ena.val = (slc->slc0_int_ena.val & (~0xff)) | ((*mask) & 0xff);
+    slc->slc_slc0int_ena.val = (slc->slc_slc0int_ena.val & (~0xff)) | ((*mask) & 0xff);
 }
 
 /**
@@ -539,9 +528,9 @@ static inline void sdio_slave_ll_slvint_set_ena(slc_dev_t *slc, const sdio_slave
  */
 static inline void sdio_slave_ll_slvint_fetch_clear(slc_dev_t *slc, sdio_slave_ll_slvint_t *out_slv_int)
 {
-    sdio_slave_ll_slvint_t slv_int = (sdio_slave_ll_slvint_t)(slc->slc0_int_st.val & 0xff);
+    sdio_slave_ll_slvint_t slv_int = (sdio_slave_ll_slvint_t)(slc->slc_slc0int_st.val & 0xff);
     *out_slv_int = slv_int;
-    slc->slc0_int_clr.val = slv_int;
+    slc->slc_slc0int_clr.val = slv_int;
 }
 
 #ifdef __cplusplus
