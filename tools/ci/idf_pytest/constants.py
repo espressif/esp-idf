@@ -3,6 +3,7 @@
 """
 Pytest Related Constants. Don't import third-party packages here.
 """
+
 import os
 import typing as t
 import warnings
@@ -56,6 +57,7 @@ SPECIAL_MARKERS = {
     'temp_skip': 'temp skip tests for specified targets both in ci and locally',
     'nightly_run': 'tests should be executed as part of the nightly trigger pipeline',
     'host_test': 'tests which should not be built at the build stage, and instead built in host_test stage',
+    'require_elf': 'tests which require elf file',
 }
 
 ENV_MARKERS = {
@@ -97,7 +99,7 @@ ENV_MARKERS = {
     'wifi_high_traffic': 'wifi high traffic runners',
     'wifi_wlan': 'wifi runner with a wireless NIC',
     'wifi_iperf': 'the AP and ESP dut were placed in a shielded box - for iperf test',
-    'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',
+    'Example_ShieldBox': 'multiple shielded APs connected to shielded ESP DUT via RF cable with programmable attenuator',  # noqa E501
     'xtal_26mhz': 'runner with 26MHz xtal on board',
     'xtal_40mhz': 'runner with 40MHz xtal on board',
     'external_flash': 'external flash memory connected via VSPI (FSPI)',
@@ -309,6 +311,8 @@ class PytestCase:
             return True
 
         cases_need_elf = ['panic', 'gdbstub_runtime']
+        if 'require_elf' in SPECIAL_MARKERS:
+            return True
 
         for case in cases_need_elf:
             if any(case in Path(app.path).parts for app in self.apps):

@@ -427,6 +427,7 @@ TEST_CASE("esp_log with formatting")
             .require_formatting = true,
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };
@@ -470,6 +471,7 @@ TEST_CASE("esp_log without formatting")
             .require_formatting = false, // print just text
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };
@@ -507,6 +509,7 @@ TEST_CASE("esp_log TAG can be NULL")
             .require_formatting = true,
             .dis_color = ESP_LOG_COLOR_DISABLED,
             .dis_timestamp = ESP_LOG_TIMESTAMP_DISABLED,
+            .binary_mode = false,
             .reserved = 0,
         }
     };

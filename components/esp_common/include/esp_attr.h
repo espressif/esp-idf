@@ -31,6 +31,9 @@ extern "C" {
 // Forces data into TCM instead of L2MEM
 #define TCM_DRAM_ATTR _SECTION_ATTR_IMPL(".tcm.data", __COUNTER__)
 
+// Forces data to be removed from the final binary but keeps it in the ELF file
+#define NOLOAD_ATTR _SECTION_ATTR_IMPL(".noload_keep_in_elf", __COUNTER__)
+
 // IRAM can only be accessed as an 8-bit memory on ESP32, when CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY is set
 #define IRAM_8BIT_ACCESSIBLE (CONFIG_IDF_TARGET_ESP32 && CONFIG_ESP32_IRAM_AS_8BIT_ACCESSIBLE_MEMORY)
 

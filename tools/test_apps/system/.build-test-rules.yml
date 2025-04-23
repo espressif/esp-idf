@@ -61,6 +61,12 @@ tools/test_apps/system/gdb_loadable_elf:
       temporary: true
       reason: target esp32c6, esp32h2 is not supported yet
 
+tools/test_apps/system/log:
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32c3"]
+      temporary: true
+      reason: test only on esp32 as other targets are similar
+
 tools/test_apps/system/longjmp_test:
   enable:
     - if: IDF_TARGET in ["esp32", "esp32s2", "esp32s3"]

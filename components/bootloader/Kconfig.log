@@ -50,6 +50,8 @@ menu "Log"
         default 4 if BOOTLOADER_LOG_LEVEL_DEBUG
         default 5 if BOOTLOADER_LOG_LEVEL_VERBOSE
 
-    orsource "Kconfig.log.format"
+    rsource "Kconfig.log.format"
+
+    rsource "Kconfig.log.settings"
 
 endmenu

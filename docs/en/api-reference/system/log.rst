@@ -232,6 +232,11 @@ The following options are applicable only for **Log V2** and are used alongside 
   - If global timestamping (:ref:`CONFIG_LOG_TIMESTAMP_SOURCE`) is disabled, define as ``0`` to enable tick timestamp output for the specified scope.
   - If global timestamping (:ref:`CONFIG_LOG_TIMESTAMP_SOURCE`) is enabled, define as ``1`` to disable tick timestamp output for the specified scope.
 
+- **ESP_LOG_MODE_BINARY_EN**: Requires ``CONFIG_LOG_MODE_BINARY`` or ``CONFIG_BOOTLOADER_LOG_MODE_BINARY`` to be enabled.
+
+  - Setting ``ESP_LOG_MODE_BINARY_EN`` to ``0`` does not make sense for regular use because logs will still be sent in binary mode. However, the format string will not be removed from flash, and argument analysis will be performed at runtime. This setting may be useful for specific scenarios such as debugging or testing.
+  - Setting ``ESP_LOG_MODE_BINARY_EN`` to ``1`` when text logging mode is enabled will have no effect. In this case, ``ESP_LOG_MODE_BINARY_EN`` will be suppressed and automatically defined as ``0``.
+
 Per-Log Formatting
 ^^^^^^^^^^^^^^^^^^
 
@@ -402,6 +407,114 @@ The logging system provides macros for logging buffer data. These macros can be 
 
 The number of lines in the output depends on the size of the buffer.
 
+Binary Logging
+--------------
+
+Binary logging is a feature available only in **Log V2**, enabling logs to be transmitted in binary format instead of text. This is configured separately for the **bootloader** (``CONFIG_BOOTLOADER_LOG_MODE_BINARY``) and **application** (``CONFIG_LOG_MODE_BINARY``) via Kconfig options.
+
+By default, when **Log V2** is enabled, the logging system uses **text mode**. Enabling binary logging reduces flash memory usage by removing log format strings from flash and sending only their addresses instead. Additionally, ``printf`` functions are not used, which reduces both stack usage and flash consumption.
+
+This feature introduces the :c:macro:`ESP_LOG_ATTR_STR` macro, which relocates format strings to a ``.noload`` section, effectively removing them from the final binary image. Developers can also use this mechanism for assertions or user-defined logging messages to further minimize flash usage.
+
+Summary of Benefits:
+
+- Reduces **flash size** by approximately **10% - 35%**, depending on the application. The more extensive the logging in a program, the greater the potential savings.
+- Minimizes **stack usage** by eliminating the need for the ``vprintf``-like function for log formatting.
+- Reduces **log transmission overhead** by transmitting compact binary data.
+
+Binary logging is especially beneficial in **resource-constrained** environments where flash size optimization and efficient logging are critical.
+
+Binary Logging Workflow
+-----------------------
+
+Binary logging consists of two main components:
+
+1. **Chip Side**: Encodes and transmits log data:
+
+   - Encoding process
+   - Argument type encoding
+   - Runtime argument type encoding
+
+2. **Host Side**: Receives and decodes data using the `esp-idf-monitor tool <https://github.com/espressif/esp-idf-monitor>`_. The ``idf.py monitor`` command automatically decodes binary logs.
+
+   - Detects binary log packets.
+   - Extracts packet fields (log level, format, tag, timestamp, arguments).
+   - Determines whether addresses reference:
+
+      - **ELF file** (requires lookup)
+      - **Embedded string** (contained in the packet)
+
+   - Decodes arguments using the format string and the given array of arguments.
+   - Reconstructs the final log message by coupling the format string with the decoded arguments.
+   - Applies terminal colorization.
+
+Chip Side
+^^^^^^^^^
+
+Encoding Process
+""""""""""""""""
+
+Binary logs are transmitted as structured packets. Strings are sent as addresses if they exist in the ELF file. For runtime-generated strings, an embedded string format is used to transmit the string to the host.
+
+Packet structure:
+
+.. code-block:: none
+
+    [0]  - Message Type (1: bootloader, 2: application, ...)
+    [1]  - Control Byte (log level, version, time_64bits flag)
+    [2]  - Length (10-bit, max 1023 bytes)
+    [3-6]  - Format Address (if present in ELF) or embedded string
+    [7-10] - Tag Address (if present in ELF) or embedded string
+    [11-14] - Timestamp (32-bit if timestamp does not exceed 32 bits. [11-18] - occupied if timestamp takes 64 bits, time_64bits flag is set in Control Byte)
+    [...] - Arguments (optional). It is an array of arguments: 32-bit, 64-bit, pointers, and embedded string/data.
+    [15] - CRC8 checksum
+
+The embedded string format is used if string is not present in ELF file, it follows this structure:
+
+.. code-block:: none
+
+    [0] - Embedded Identifier (0xFF - 0xFC)
+    [0,1] - (10-bit) Negative Length of the string = 1 - len(str)
+    [...] - String Content
+
+.. note::
+
+    All multi-byte fields in the packet structure use big-endian encoding.
+
+Argument Type Encoding
+""""""""""""""""""""""
+
+Since the format string is removed from the final binary, the chip must still identify argument types to correctly transmit them to the host. This is achieved using the :c:macro:`ESP_LOG_ARGS_TYPE` macro, which leverages the `_Generic` feature to classify user arguments at compile time into three categories: **32-bit**, **64-bit**, and **pointers**. This macro generates an **argument type array** at runtime, which is passed to ``esp_log`` before the user arguments. This ensures that:
+
+- The chip transmits data with the correct size and offset.
+- The host tool reconstructs the log message accurately.
+
+Runtime Behavior
+""""""""""""""""
+
+The ``esp_log`` function first checks if **binary logging** is enabled in the given configuration. If enabled, it extracts the **argument type array** from ``va_list``. However, if the binary log flag is **not** set, no preprocessed argument type array is available. In this case, the binary log handler **extracts argument types** from the format string at runtime.
+
+This runtime extraction is less efficient than explicitly using ``ESP_LOG_ATTR_STR(format) ESP_LOG_ARGS(__VA_ARGS__)``, which generates the argument type array at compile time and removes the format string from flash. Nevertheless, this mechanism ensures that even if a **third-party library does not support binary logging**, logs will still be output correctly.
+
+Special Handling for Buffer Logs
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Binary logging supports buffer log functions such as:
+
+- :c:macro:`ESP_LOG_BUFFER_HEX_LEVEL`
+- :c:macro:`ESP_LOG_BUFFER_CHAR_LEVEL`
+- :c:macro:`ESP_LOG_BUFFER_HEXDUMP`
+
+For these cases, binary log handlers check whether the format address matches predefined constants (e.g., ``ESP_BUFFER_HEX_FORMAT``). Instead of sending a format string, the handler **directly transmits raw buffer data**.
+
+Host Side (Monitor Tool)
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+On the **host side**, the `esp-idf-monitor tool <https://github.com/espressif/esp-idf-monitor>`_ decodes binary logs automatically. It is important that the monitor tool operates with the correct version of ELF files. The **bootloader** and **application** each have their own ELF files, which the tool automatically selects when ``idf.py monitor`` is calling.
+
+If an **ELF address** is received, the monitor tool **retrieves the string from the ELF file** using the corresponding ``message type`` byte. If the **address starts with 0xFF** (range: ``0xFF - 0xFC``), it indicates an **embedded string**, with its length encoded in **10 bits**.
+
+Once all components are retrieved, they are formatted and output to the terminal.
 
 Performance and Measurements
 ----------------------------

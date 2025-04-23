@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -285,6 +285,16 @@ SECTIONS
   .comment 0 : { *(.comment) }
   .note.GNU-stack 0: { *(.note.GNU-stack) }
 
+  /**
+   * This section is not included in the binary image; it is only present in the ELF file.
+   * It is used to keep certain symbols in the ELF file.
+   */
+  .noload 0 (INFO) :
+  {
+    _noload_keep_in_elf_start = ABSOLUTE(.);
+    KEEP(*(.noload_keep_in_elf .noload_keep_in_elf.*))
+    _noload_keep_in_elf_end = ABSOLUTE(.);
+  }
 }
 
 /**
