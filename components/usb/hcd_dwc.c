@@ -1623,6 +1623,7 @@ static void pipe_set_ep_char(const hcd_pipe_config_t *pipe_config, usb_transfer_
         ep_char->mps = USB_EP_DESC_GET_MPS(pipe_config->ep_desc);
     }
     ep_char->dev_addr = pipe_config->dev_addr;
+    ep_char->ls_via_fs_hub = 0;
     if (pipe_idx > 0) {
         // TODO: remove warning after IDF-15060
         if (port_speed == USB_SPEED_FULL && pipe_config->dev_speed == USB_SPEED_LOW) {
