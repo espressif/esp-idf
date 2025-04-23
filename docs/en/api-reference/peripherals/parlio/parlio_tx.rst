@@ -329,21 +329,17 @@ When the file system performs Flash read/write operations, the system temporaril
 
 .. note::
 
-    Note that after enabling this option, all interrupt callback functions and their context data **must be stored in internal memory**. Because when the Cache is disabled, the system cannot load data and instructions from Flash.
+    Note that after enabling this option, all interrupt callback functions and their context data **must reside in internal memory**. Because when the Cache is disabled, the system cannot load data and instructions from external memory.
 
 .. only:: SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND or SOC_SPIRAM_XIP_SUPPORTED
 
     .. note::
 
-        Enable the following options:
+        When the following options are enabled, the Cache will not be disabled automatically during Flash read/write operations. You don't have to enable the :ref:`CONFIG_PARLIO_TX_ISR_CACHE_SAFE`.
 
         .. list::
             :SOC_SPI_MEM_SUPPORT_AUTO_SUSPEND: - :ref:`CONFIG_SPI_FLASH_AUTO_SUSPEND`
             :SOC_SPIRAM_XIP_SUPPORTED: - :ref:`CONFIG_SPIRAM_XIP_FROM_PSRAM`
-
-        The Cache will not to be automatically disabled. And it is safe for the CPU to access the Cache while erasing the filesystem. :ref:`CONFIG_PARLIO_TX_ISR_CACHE_SAFE` option has no need to be enabled.
-
-This way, interrupts can run while the Cache is disabled, but it will also increase IRAM consumption.
 
 Performance
 ^^^^^^^^^^^

@@ -4,40 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/idf_additions.h"
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_attr.h"
-#include "esp_err.h"
 #include "esp_rom_gpio.h"
-#include "esp_pm.h"
-#include "soc/parlio_periph.h"
-#include "soc/soc_caps.h"
-#include "hal/parlio_ll.h"
 #include "hal/dma_types.h"
 #include "hal/hal_utils.h"
 #include "driver/gpio.h"
 #include "driver/parlio_rx.h"
 #include "parlio_priv.h"
-#include "esp_memory_utils.h"
-#include "esp_clk_tree.h"
-#include "esp_attr.h"
-#include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/gdma.h"
-#include "esp_cache.h"
-
-static const char *TAG = "parlio-rx";
 
 #define ALIGN_UP(num, align)    (((num) + ((align) - 1)) & ~((align) - 1))
 
@@ -46,6 +18,14 @@ static const char *TAG = "parlio-rx";
 #else
 #define PARLIO_MAX_ALIGNED_DMA_BUF_SIZE     DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED
 #endif
+
+#if defined(SOC_GDMA_BUS_AHB) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AHB)
+typedef dma_descriptor_align4_t     parlio_dma_desc_t;
+#elif defined(SOC_GDMA_BUS_AXI) && (SOC_GDMA_TRIG_PERIPH_PARLIO0_BUS == SOC_GDMA_BUS_AXI)
+typedef dma_descriptor_align8_t     parlio_dma_desc_t;
+#endif
+
+#define PARLIO_DMA_MEM_ALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT | MALLOC_CAP_DMA)
 
 /**
  * @brief Parlio RX transaction
@@ -622,9 +602,6 @@ static esp_err_t parlio_destroy_rx_unit(parlio_rx_unit_handle_t rx_unit)
 
 esp_err_t parlio_new_rx_unit(const parlio_rx_unit_config_t *config, parlio_rx_unit_handle_t *ret_unit)
 {
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     ESP_RETURN_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     /* Check the data width to be the the power of 2 */
     ESP_RETURN_ON_FALSE(__builtin_popcount(config->data_width) == 1, ESP_ERR_INVALID_ARG, TAG,

@@ -382,7 +382,7 @@ Use the :doc:`/api-guides/tools/idf-size` tool to check the code and data consum
 | driver           |       4251 |    12 |   12 |     0 |     0 |       4046 |  4046 |        193 |     193 |
 +------------------+------------+-------+------+-------+-------+------------+-------+------------+---------+
 
-Additionally, each GPTimer handle dynamically allocates about ``90`` bytes of memory from the heap. If the :cpp:member:`gptimer_config_t::flags::allow_pd` option is enabled, each timer will also consume approximately ``30`` extra bytes of memory during sleep to store the register context.
+Additionally, each GPTimer handle dynamically allocates about ``100`` bytes of memory from the heap. If the :cpp:member:`gptimer_config_t::flags::allow_pd` option is enabled, each timer will also consume approximately ``30`` extra bytes of memory during sleep to store the register context.
 
 Application Examples
 --------------------

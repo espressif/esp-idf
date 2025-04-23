@@ -4,43 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <stdlib.h>
-#include <string.h>
-#include <stdatomic.h>
-#include <sys/cdefs.h>
-#include <sys/param.h>
-#include "sdkconfig.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
-#include "freertos/queue.h"
-#include "freertos/idf_additions.h"
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-// The local log level must be defined before including esp_log.h
-// Set the maximum log level for this source file
-#define LOG_LOCAL_LEVEL ESP_LOG_DEBUG
-#endif
-#include "esp_log.h"
-#include "esp_check.h"
-#include "esp_attr.h"
-#include "esp_err.h"
 #include "esp_rom_gpio.h"
-#include "soc/gpio_sig_map.h"
 #include "esp_intr_alloc.h"
-#include "esp_pm.h"
-#include "soc/parlio_periph.h"
-#include "soc/soc_caps.h"
-#include "hal/parlio_ll.h"
 #include "driver/gpio.h"
 #include "driver/parlio_tx.h"
 #include "parlio_priv.h"
-#include "esp_memory_utils.h"
-#include "esp_clk_tree.h"
-#include "esp_private/esp_clk_tree_common.h"
-#include "esp_private/gdma.h"
-#include "esp_private/gdma_link.h"
-#include "esp_private/esp_dma_utils.h"
-
-static const char *TAG = "parlio-tx";
 
 typedef struct {
     uint32_t idle_value; // Parallel IO bus idle value
@@ -229,7 +197,7 @@ static esp_err_t parlio_tx_unit_init_dma(parlio_tx_unit_t *tx_unit, const parlio
 
     // create DMA link list
     size_t buffer_alignment = MAX(tx_unit->int_mem_align, tx_unit->ext_mem_align);
-    size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
+    size_t num_dma_nodes = esp_dma_calculate_node_count(config->max_transfer_size, buffer_alignment, PARLIO_DMA_DESCRIPTOR_BUFFER_MAX_SIZE);
     gdma_link_list_config_t dma_link_config = {
         .buffer_alignment = buffer_alignment,
         .item_alignment = PARLIO_DMA_DESC_ALIGNMENT,
@@ -320,9 +288,6 @@ static esp_err_t parlio_select_periph_clock(parlio_tx_unit_t *tx_unit, const par
 
 esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_unit_handle_t *ret_unit)
 {
-#if CONFIG_PARLIO_ENABLE_DEBUG_LOG
-    esp_log_level_set(TAG, ESP_LOG_DEBUG);
-#endif
     esp_err_t ret = ESP_OK;
     parlio_tx_unit_t *unit = NULL;
     ESP_RETURN_ON_FALSE(config && ret_unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
@@ -345,15 +310,14 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     ESP_RETURN_ON_FALSE(config->flags.allow_pd == 0, ESP_ERR_NOT_SUPPORTED, TAG, "register back up is not supported");
 #endif // SOC_PARLIO_SUPPORT_SLEEP_RETENTION
 
-    // malloc unit memory
-    uint32_t mem_caps = PARLIO_MEM_ALLOC_CAPS;
-    unit = heap_caps_calloc(1, sizeof(parlio_tx_unit_t) + sizeof(parlio_tx_trans_desc_t) * config->trans_queue_depth, mem_caps);
+    // allocate unit from internal memory because it contains atomic member
+    unit = heap_caps_calloc(1, sizeof(parlio_tx_unit_t) + sizeof(parlio_tx_trans_desc_t) * config->trans_queue_depth, MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(unit, ESP_ERR_NO_MEM, err, TAG, "no memory for tx unit");
 
     unit->max_transfer_bits = config->max_transfer_size * 8;
     unit->base.dir = PARLIO_DIR_TX;
     unit->data_width = data_width;
-    //create transaction queue
+    // create transaction queue
     ESP_GOTO_ON_ERROR(parlio_tx_create_trans_queue(unit, config), err, TAG, "create transaction queue failed");
 
     // register the unit to a group
