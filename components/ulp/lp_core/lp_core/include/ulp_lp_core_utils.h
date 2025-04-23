@@ -104,6 +104,20 @@ void ulp_lp_core_sw_intr_enable(bool enable);
  */
 void ulp_lp_core_sw_intr_clear(void);
 
+#if SOC_LP_TIMER_SUPPORTED
+/**
+ * @brief Enable the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_enable(bool enable);
+
+/**
+ * @brief Clear the interrupt status for the LP Timer interrupt
+ *
+ */
+void ulp_lp_core_lp_timer_intr_clear(void);
+#endif
+
 /**
  * @brief Puts the CPU into a wait state until an interrupt is triggered
  *
