@@ -1616,8 +1616,10 @@ PROVIDE ( TASK_DESC_LLD = 0x3ff98b58 );
 
 PROVIDE ( ld_acl_clk_isr = 0x40030cf8 );
 PROVIDE ( ld_acl_evt_canceled_cbk = 0x40033944 );
+PROVIDE ( ld_acl_rsw_evt_canceled_cbk = 0x40033364 );
 PROVIDE ( ld_acl_evt_stop_cbk = 0x40033870 );
 PROVIDE ( ld_acl_evt_start_cbk = 0x40030ab0 );
+PROVIDE ( ld_acl_sniff_evt_start_cbk = 0x40031360 );
 PROVIDE ( ld_acl_test_mode_update = 0x40032050 );
 PROVIDE ( ld_acl_resched = 0x40033814 );
 PROVIDE ( ld_acl_rx_isr = 0x40033aa8 );
