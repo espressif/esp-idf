@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 /**
- * TODO: IDF-8002
  * Simplified memory map for the bootloader.
  *  Make sure the bootloader can load into main memory without overwriting itself.
  *
