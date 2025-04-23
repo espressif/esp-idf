@@ -260,18 +260,27 @@ void test_hcd_pipe_free(hcd_pipe_handle_t pipe_hdl)
     vQueueDelete(pipe_evt_queue);
 }
 
+#include "esp_private/esp_cache_private.h"
+#define DATA_BUFFER_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED)
+#define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+
 urb_t *test_hcd_alloc_urb(int num_isoc_packets, size_t data_buffer_size)
 {
     // Allocate a URB and data buffer
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
-    void *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
+
+    size_t cache_align = 0;
+    esp_cache_get_alignment(DATA_BUFFER_CAPS, &cache_align);
+    data_buffer_size = ALIGN_UP(data_buffer_size, cache_align);
+    void *data_buffer = heap_caps_malloc(data_buffer_size, DATA_BUFFER_CAPS);
+
     TEST_ASSERT_NOT_NULL_MESSAGE(urb, "Failed to allocate URB");
     TEST_ASSERT_NOT_NULL_MESSAGE(data_buffer, "Failed to allocate transfer buffer");
 
     // Initialize URB and underlying transfer structure. Need to cast to dummy due to const fields
     usb_transfer_dummy_t *transfer_dummy = (usb_transfer_dummy_t *)&urb->transfer;
     transfer_dummy->data_buffer = data_buffer;
-    transfer_dummy->data_buffer_size = heap_caps_get_allocated_size(data_buffer);
+    transfer_dummy->data_buffer_size = data_buffer_size;
     transfer_dummy->num_isoc_packets = num_isoc_packets;
     return urb;
 }

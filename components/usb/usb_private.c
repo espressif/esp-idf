@@ -1,32 +1,40 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "sdkconfig.h"
 #include "esp_heap_caps.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 
+#if !CONFIG_IDF_TARGET_LINUX
+#include "esp_private/esp_cache_private.h"
+#define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+#endif
+#define DATA_BUFFER_CAPS        (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED)
+
 urb_t *urb_alloc(size_t data_buffer_size, int num_isoc_packets)
 {
     urb_t *urb = heap_caps_calloc(1, sizeof(urb_t) + (sizeof(usb_isoc_packet_desc_t) * num_isoc_packets), MALLOC_CAP_DEFAULT);
-    void *data_buffer = heap_caps_malloc(data_buffer_size, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED);
+
+#if !CONFIG_IDF_TARGET_LINUX
+    // Note for developers: We do not use heap_caps_get_allocated_size() because it is broken with HEAP_POISONING=COMPREHENSIVE
+    size_t cache_align = 0;
+    esp_cache_get_alignment(DATA_BUFFER_CAPS, &cache_align);
+    data_buffer_size = ALIGN_UP(data_buffer_size, cache_align);
+#endif
+
+    void *data_buffer = heap_caps_malloc(data_buffer_size, DATA_BUFFER_CAPS);
     if (urb == NULL || data_buffer == NULL)     {
         goto err;
     }
 
-#if CONFIG_IDF_TARGET_LINUX
-    // heap_caps_get_allocated_size() return 0 on Linux target
-    const size_t allocated_size = data_buffer_size;
-#else
-    const size_t allocated_size = heap_caps_get_allocated_size(data_buffer);
-#endif
-
     // Cast as dummy transfer so that we can assign to const fields
     usb_transfer_dummy_t *dummy_transfer = (usb_transfer_dummy_t *)&urb->transfer;
     dummy_transfer->data_buffer = data_buffer;
-    dummy_transfer->data_buffer_size = allocated_size;
+    dummy_transfer->data_buffer_size = data_buffer_size;
     dummy_transfer->num_isoc_packets = num_isoc_packets;
     return urb;
 err:
