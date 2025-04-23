@@ -45,6 +45,7 @@ static void make_dshot_frame(dshot_esc_frame_t *frame, uint16_t throttle, bool t
     frame->val = ((val & 0xFF) << 8) | ((val & 0xFF00) >> 8);
 }
 
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_dshot_esc(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
                                    const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {
@@ -97,6 +98,7 @@ static esp_err_t rmt_del_dshot_encoder(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_dshot_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_dshot_esc_encoder_t *dshot_encoder = __containerof(encoder, rmt_dshot_esc_encoder_t, base);

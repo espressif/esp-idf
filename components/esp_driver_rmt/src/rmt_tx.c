@@ -243,7 +243,13 @@ esp_err_t rmt_new_tx_channel(const rmt_tx_channel_config_t *config, rmt_channel_
     ESP_RETURN_ON_FALSE(GPIO_IS_VALID_OUTPUT_GPIO(config->gpio_num), ESP_ERR_INVALID_ARG, TAG, "invalid GPIO number %d", config->gpio_num);
     ESP_RETURN_ON_FALSE((config->mem_block_symbols & 0x01) == 0 && config->mem_block_symbols >= SOC_RMT_MEM_WORDS_PER_CHANNEL,
                         ESP_ERR_INVALID_ARG, TAG, "mem_block_symbols must be even and at least %d", SOC_RMT_MEM_WORDS_PER_CHANNEL);
-#if !SOC_RMT_SUPPORT_DMA
+#if SOC_RMT_SUPPORT_DMA
+    if (config->flags.with_dma) {
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE && (!CONFIG_GDMA_ISR_HANDLER_IN_IRAM || !CONFIG_GDMA_CTRL_FUNC_IN_IRAM)
+        ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "CONFIG_GDMA_ISR_HANDLER_IN_IRAM and CONFIG_GDMA_CTRL_FUNC_IN_IRAM must be enabled");
+#endif
+    }
+#else
     ESP_RETURN_ON_FALSE(config->flags.with_dma == 0, ESP_ERR_NOT_SUPPORTED, TAG, "DMA not supported");
 #endif
 

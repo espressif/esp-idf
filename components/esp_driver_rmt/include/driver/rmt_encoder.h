@@ -7,7 +7,9 @@
 #pragma once
 
 #include <stdint.h>
+#include "sdkconfig.h"
 #include "esp_err.h"
+#include "esp_attr.h"
 #include "hal/rmt_types.h"
 #include "driver/rmt_types.h"
 
@@ -68,6 +70,12 @@ struct rmt_encoder_t {
      */
     esp_err_t (*del)(rmt_encoder_t *encoder);
 };
+
+#if CONFIG_RMT_ENCODER_FUNC_IN_IRAM
+#define RMT_ENCODER_FUNC_ATTR IRAM_ATTR
+#else
+#define RMT_ENCODER_FUNC_ATTR
+#endif
 
 /**
  * @brief Callback for simple callback encoder

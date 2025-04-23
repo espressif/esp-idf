@@ -589,6 +589,8 @@ Cache 安全
 
 启用该选项可以保证 cache 禁用时的中断运行，但会相应增加 IRAM 占用。
 
+请注意，当 :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` 使能后，你必须将编码器函数 (主要是 :cpp:member:`rmt_encoder_t::encode` 和 :cpp:member:`rmt_encoder_t::reset`) 放进 IRAM 中。建议你使用 :c:macro:`RMT_ENCODER_FUNC_ATTR` 来装饰你的编码器函数。
+
 另外一个 Kconfig 选项 :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` 可以将 :cpp:func:`rmt_receive` 函数放进内部的 IRAM 中，从而当 flash cache 被关闭的时候，这个函数也能够被使用。
 
 .. _rmt-thread-safety:

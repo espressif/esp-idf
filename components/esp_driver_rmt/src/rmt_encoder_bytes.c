@@ -18,6 +18,7 @@ typedef struct rmt_bytes_encoder_t {
     } flags;
 } rmt_bytes_encoder_t;
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_bytes_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_bytes_encoder_t *bytes_encoder = __containerof(encoder, rmt_bytes_encoder_t, base);
@@ -27,6 +28,7 @@ static esp_err_t rmt_bytes_encoder_reset(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_bytes(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
                                const void *primary_data, size_t data_size, rmt_encode_state_t *ret_state)
 {

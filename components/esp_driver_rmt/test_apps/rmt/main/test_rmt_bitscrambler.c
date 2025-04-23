@@ -97,6 +97,13 @@ TEST_CASE("rmt TX with bitscrambler", "[rmt]")
     }, 5, &transmit_config));
     TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
 
+    TEST_ESP_OK(rmt_receive(rx_channel, symbols, sizeof(symbols), &receive_config));
+    printf("transmit again!\r\n");
+    TEST_ESP_OK(rmt_transmit(tx_channel, bs_encoder, (uint8_t[]) {
+        0x12, 0x34, 0x56, 0x78, 0x9a, // dummy test values, will be further processed by bitscrambler program
+    }, 5, &transmit_config));
+    TEST_ASSERT_NOT_EQUAL(0, ulTaskNotifyTake(pdFALSE, pdMS_TO_TICKS(1000)));
+
     printf("disable tx+rx channel\r\n");
     TEST_ESP_OK(rmt_disable(tx_channel));
     TEST_ESP_OK(rmt_disable(rx_channel));
