@@ -22,8 +22,8 @@ typedef struct {
     uart_port_t uart_port;                                /*!< UART port that connect to UHCI controller */
     size_t tx_trans_queue_depth;                          /*!< Depth of internal transfer queue, increase this value can support more transfers pending in the background */
     size_t max_transmit_size;                             /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
-    size_t max_receive_internal_mem;                      /*!< Maximum transfer size in one transaction, in bytes. Each DMA node can point to a maximum of 4096 bytes. This value determines the number of DMA nodes used for each transaction. When your transfer size is large enough, it is recommended to set this value greater than 4096 to facilitate efficient ping-pong operations, such as 10 * 1024. */
-    size_t dma_burst_size;                                /*!< DMA burst size, in bytes */
+    size_t max_receive_internal_mem;                      /*!< Internal DMA usage memory. Each DMA node can point to a maximum of x bytes (depends on chip). This value determines the number of DMA nodes used for each transaction. When your transfer size is large enough, it is recommended to set this value greater than x to facilitate efficient ping-pong operations, such as 2 * x. */
+    size_t dma_burst_size;                                /*!< DMA burst size, in bytes. Set to 0 to disable data burst. Otherwise, use a power of 2. */
     size_t max_packet_receive;                            /*!< Max receive size, auto stop receiving after reach this value, only valid when `length_eof` set true */
 
     struct {

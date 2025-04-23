@@ -203,7 +203,6 @@ static esp_err_t uhci_gdma_initialize(uhci_controller_handle_t uhci_ctrl, const 
     // Initialize DMA RX channel
     gdma_channel_alloc_config_t rx_alloc_config = {
         .direction = GDMA_CHANNEL_DIRECTION_RX,
-        .sibling_chan = uhci_ctrl->tx_dir.dma_chan,
 #if CONFIG_UHCI_ISR_CACHE_SAFE
         .flags.isr_cache_safe = true,
 #endif
