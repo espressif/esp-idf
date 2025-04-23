@@ -101,6 +101,13 @@ extern "C" {
 #define IEEE802154_FRAME_SE_HEAD_SIZE           1
 #define IEEE802154_FRAME_COMMAND_ID_LEN         1
 
+static inline bool ieee802154_is_supported_frame_type(uint8_t frame_type)
+{
+    // HW supports 4 kinds of frame type: Beacon, Ack, Data, Command.
+    return (frame_type == IEEE802154_FRAME_TYPE_BEACON || frame_type == IEEE802154_FRAME_TYPE_DATA ||
+            frame_type == IEEE802154_FRAME_TYPE_ACK || frame_type == IEEE802154_FRAME_TYPE_COMMAND);
+}
+
 /**
  * @brief  Get the frame type.
  *
