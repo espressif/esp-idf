@@ -426,6 +426,11 @@ void rtc_clk_cpu_set_to_default_config(void)
     rtc_clk_wait_for_slow_cycle();
 }
 
+void rtc_clk_cpu_freq_set_xtal_for_sleep(void)
+{
+    rtc_clk_cpu_freq_set_xtal();
+}
+
 bool rtc_clk_cpu_freq_mhz_to_config(uint32_t freq_mhz, rtc_cpu_freq_config_t* out_config)
 {
     uint32_t source_freq_mhz;

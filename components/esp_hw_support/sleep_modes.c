@@ -271,6 +271,7 @@ typedef struct {
 #if SOC_DCDC_SUPPORTED
     uint64_t rtc_ticks_at_ldo_prepare;
 #endif
+    bool overhead_out_need_remeasure;
 } sleep_config_t;
 
 
@@ -302,7 +303,8 @@ static sleep_config_t s_config = {
     .lock = portMUX_INITIALIZER_UNLOCKED,
     .ccount_ticks_record = 0,
     .sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US,
-    .wakeup_triggers = 0
+    .wakeup_triggers = 0,
+    .overhead_out_need_remeasure = true
 };
 
 /* Internal variable used to track if light sleep wakeup sources are to be
@@ -317,6 +319,12 @@ static const char *TAG = "sleep";
 static RTC_FAST_ATTR int32_t s_sleep_sub_mode_ref_cnt[ESP_SLEEP_MODE_MAX] = { 0 };
 //in this mode, 2uA is saved, but RTC memory can't use at high temperature, and RTCIO can't be used as INPUT.
 
+void esp_sleep_overhead_out_time_refresh(void)
+{
+    portENTER_CRITICAL(&s_config.lock);
+    s_config.overhead_out_need_remeasure = true;
+    portEXIT_CRITICAL(&s_config.lock);
+}
 
 static uint32_t get_power_down_flags(void);
 static uint32_t get_sleep_flags(uint32_t pd_flags, bool deepsleep);
@@ -983,16 +991,7 @@ static esp_err_t SLEEP_FN_ATTR esp_sleep_start(uint32_t sleep_flags, uint32_t cl
     // Save current frequency and switch to XTAL
     rtc_cpu_freq_config_t cpu_freq_config;
     rtc_clk_cpu_freq_get_config(&cpu_freq_config);
-#if SOC_PMU_SUPPORTED
-    // For PMU supported chips, CPU's PLL power can be turned off by PMU, so no need to disable the PLL at here.
-    // Leaving PLL on at this stage also helps USJ keep connection and retention operation (if they rely on this PLL).
-    rtc_clk_cpu_set_to_default_config();
-#else
-    // For earlier chips, there is no PMU module that can turn off the CPU's PLL, so it has to be disabled at here to save the power consumption.
-    // Though ESP32C3/S3 has USB CDC device, it can not function properly during sleep due to the lack of APB clock (before C6, USJ relies on APB clock to work).
-    // Therefore, we will always disable CPU's PLL (i.e. BBPLL).
-    rtc_clk_cpu_freq_set_xtal();
-#endif
+    rtc_clk_cpu_freq_set_xtal_for_sleep();
 
 #if SOC_PM_SUPPORT_EXT0_WAKEUP
     // Configure pins for external wakeup
@@ -1446,6 +1445,16 @@ esp_err_t esp_light_sleep_start(void)
     // Re-calibrate the RTC clock
     sleep_low_power_clock_calibration(false);
 
+    if (s_config.overhead_out_need_remeasure) {
+        uint32_t cur_cpu_freq = esp_clk_cpu_freq() / MHZ;
+        uint32_t xtal_freq = rtc_clk_xtal_freq_get();
+        if (cur_cpu_freq < xtal_freq) {
+            s_config.sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US * xtal_freq / cur_cpu_freq;
+        } else {
+            s_config.sleep_time_overhead_out = DEFAULT_SLEEP_OUT_OVERHEAD_US;
+        }
+    }
+
     /*
      * Adjustment time consists of parts below:
      * 1. Hardware time waiting for internal 8M oscillate clock and XTAL;
@@ -1610,6 +1619,7 @@ esp_err_t esp_light_sleep_start(void)
 
     if (s_light_sleep_wakeup) {
         s_config.sleep_time_overhead_out = (esp_cpu_get_cycle_count() - s_config.ccount_ticks_record) / (esp_clk_cpu_freq() / 1000000ULL);
+        s_config.overhead_out_need_remeasure = false;
     }
 
     portEXIT_CRITICAL(&s_config.lock);
@@ -1704,8 +1714,10 @@ esp_err_t esp_sleep_enable_timer_wakeup(uint64_t time_in_us)
         return ESP_ERR_INVALID_ARG;
     }
 #endif
+    portENTER_CRITICAL(&s_config.lock);
     s_config.wakeup_triggers |= RTC_TIMER_TRIG_EN;
     s_config.sleep_duration = time_in_us;
+    portEXIT_CRITICAL(&s_config.lock);
     return ESP_OK;
 }
 
@@ -1747,9 +1759,10 @@ static SLEEP_FN_ATTR esp_err_t timer_wakeup_prepare(int64_t sleep_duration)
 
 #if SOC_LP_TIMER_SUPPORTED
 #if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+    int64_t backup_cost_ticks = rtc_time_us_to_slowclk(((pmu_sleep_machine_constant_t *)PMU_instance()->mc)->hp.regdma_a2s_work_time_us, s_config.rtc_clk_cal_period);
     // Last timer wake-up validity check
     if ((sleep_duration == 0) || \
-        (target_wakeup_tick < rtc_time_get() + SLEEP_TIMER_ALARM_TO_SLEEP_TICKS)) {
+        (target_wakeup_tick < rtc_time_get() + SLEEP_TIMER_ALARM_TO_SLEEP_TICKS + backup_cost_ticks)) {
         // Treat too short sleep duration setting as timer reject
         return ESP_ERR_SLEEP_REJECT;
     }

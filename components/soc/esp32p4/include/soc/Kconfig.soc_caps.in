@@ -1551,6 +1551,10 @@ config SOC_SPI_SUPPORT_CLK_SPLL
     bool
     default y
 
+config SOC_MSPI_HAS_INDEPENT_IOMUX
+    bool
+    default y
+
 config SOC_MEMSPI_IS_INDEPENDENT
     bool
     default y
