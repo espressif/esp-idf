@@ -330,8 +330,9 @@ static void schedule_retransmit(struct seg_tx *tx)
      * the seg_pending of this segment.
      * See BLEMESH25-92 for details */
     if (tx->dst == BLE_MESH_ADDR_UNASSIGNED) {
-        assert(tx->seg_pending == 1);
-        tx->seg_pending = 0;
+        if (tx->seg_pending) {
+            tx->seg_pending--;
+        }
         return;
     }
 
