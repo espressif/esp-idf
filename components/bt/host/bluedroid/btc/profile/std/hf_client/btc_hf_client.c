@@ -114,6 +114,7 @@ static inline void btc_hf_client_cb_to_app(esp_hf_client_cb_event_t event, esp_h
 static void clear_state(void)
 {
     memset(&hf_client_local_param.btc_hf_client_cb, 0, sizeof(btc_hf_client_cb_t));
+    hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = ESP_INVALID_CONN_HANDLE;
 }
 
 static BOOLEAN is_connected(bt_bdaddr_t *bd_addr)
@@ -1118,7 +1119,7 @@ void btc_hf_client_cb_handler(btc_msg_t *msg)
                 param.audio_stat.state = ESP_HF_CLIENT_AUDIO_STATE_DISCONNECTED;
                 memcpy(param.audio_stat.remote_bda, &hf_client_local_param.btc_hf_client_cb.connected_bda,
                        sizeof(esp_bd_addr_t));
-                hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = 0;
+                hf_client_local_param.btc_hf_client_cb.sync_conn_hdl = ESP_INVALID_CONN_HANDLE;
                 param.audio_stat.sync_conn_handle = p_data->hdr.sync_conn_handle;
                 param.audio_stat.preferred_frame_size = 0;
                 btc_hf_client_cb_to_app(ESP_HF_CLIENT_AUDIO_STATE_EVT, &param);
@@ -1240,7 +1241,10 @@ void btc_hf_client_get_profile_status(esp_hf_client_profile_status_t *param)
         if (hf_client_local_param.btc_hf_client_cb.initialized) {
             param->hf_client_inited = true;
             if (hf_client_local_param.btc_hf_client_cb.state == ESP_HF_CLIENT_CONNECTION_STATE_SLC_CONNECTED) {
-                param->conn_num++;
+                param->slc_conn_num++;
+                if (hf_client_local_param.btc_hf_client_cb.sync_conn_hdl != ESP_INVALID_CONN_HANDLE) {
+                    param->sync_conn_num++;
+                }
             }
         }
     }
