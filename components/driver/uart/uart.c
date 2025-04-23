@@ -729,6 +729,9 @@ static void uart_release_pin(uart_port_t uart_num)
             rtc_gpio_deinit(uart_context[uart_num].tx_io_num);
         }
 #endif
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        gpio_sleep_sel_en(uart_context[uart_num].tx_io_num); // re-enable the switch to the sleep configuration to save power consumption
+#endif
     }
 
     if (uart_context[uart_num].rx_io_num >= 0) {
@@ -742,6 +745,9 @@ static void uart_release_pin(uart_port_t uart_num)
 #endif
             rtc_gpio_deinit(uart_context[uart_num].rx_io_num);
         }
+#endif
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        gpio_sleep_sel_en(uart_context[uart_num].rx_io_num); // re-enable the switch to the sleep configuration to save power consumption
 #endif
     }
 
@@ -815,6 +821,12 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
     /* In the following statements, if the io_num is negative, no need to configure anything. */
     if (tx_io_num >= 0) {
         uart_context[uart_num].tx_io_num = tx_io_num;
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        // In such case, IOs are going to switch to sleep configuration (isolate) when entering sleep for power saving reason
+        // But TX IO in isolate state could write garbled data to the other end
+        // Therefore, we should disable the switch of the TX pin to sleep configuration
+        gpio_sleep_sel_dis(tx_io_num);
+#endif
         if (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, tx_io_num, SOC_UART_TX_PIN_IDX)) {
             if (uart_num < SOC_UART_HP_NUM) {
                 gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[tx_io_num], PIN_FUNC_GPIO);
@@ -835,6 +847,12 @@ esp_err_t uart_set_pin(uart_port_t uart_num, int tx_io_num, int rx_io_num, int r
 
     if (rx_io_num >= 0) {
         uart_context[uart_num].rx_io_num = rx_io_num;
+#if CONFIG_ESP_SLEEP_GPIO_RESET_WORKAROUND || CONFIG_PM_SLP_DISABLE_GPIO
+        // In such case, IOs are going to switch to sleep configuration (isolate) when entering sleep for power saving reason
+        // But RX IO in isolate state could receive garbled data into FIFO, which is not desired
+        // Therefore, we should disable the switch of the RX pin to sleep configuration
+        gpio_sleep_sel_dis(rx_io_num);
+#endif
         if (tx_rx_same_io || !uart_try_set_iomux_pin(uart_num, rx_io_num, SOC_UART_RX_PIN_IDX)) {
             if (uart_num < SOC_UART_HP_NUM) {
                 gpio_hal_iomux_func_sel(GPIO_PIN_MUX_REG[rx_io_num], PIN_FUNC_GPIO);
