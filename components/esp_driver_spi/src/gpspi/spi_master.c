@@ -133,6 +133,12 @@ We have two bits to control the interrupt:
 #include "esp_cache.h"
 #endif
 
+#if CONFIG_SPI_MASTER_IN_IRAM || CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
+#endif
+
 typedef struct spi_device_t spi_device_t;
 
 /// struct to hold private transaction data (like tx and rx buffer for DMA).
@@ -481,7 +487,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     }
 
     //Allocate memory for device
-    dev = malloc(sizeof(spi_device_t));
+    dev = heap_caps_malloc(sizeof(spi_device_t), SPI_MASTER_MALLOC_CAPS);
     if (dev == NULL) {
         goto nomem;
     }

@@ -33,7 +33,7 @@
  * This lock is designed to solve the conflicts between SPI devices (used in tasks) and
  * the background operations (ISR or cache access).
  *
- * There are N (device/task) + 1 (BG) acquiring processer candidates that may touch the bus.
+ * There are N (device/task) + 1 (BG) acquiring processor candidates that may touch the bus.
  *
  * The core of the lock is a `status` atomic variable, which is always available. No intermediate
  * status is allowed. The atomic operations (mainly `atomic_fetch_and`, `atomic_fetch_or`)
@@ -49,7 +49,7 @@
  *   state of devices. Either one of REQ or PENDING being active indicates the device has pending BG
  *   requests. Reason of having two bits instead of one is in the appendix below.
  *
- * Acquiring processer means the current processor (task or ISR) allowed to touch the critical
+ * Acquiring processor means the current processor (task or ISR) allowed to touch the critical
  * resources, or the SPI bus.
  *
  * States of the lock:
@@ -168,7 +168,7 @@ typedef struct spi_bus_lock_t spi_bus_lock_t;
                                      * This flag is weak, will not prevent acquiring of devices. But will help the BG to be re-enabled again after the bus is release.
                                      */
 
-// get the bit mask wher bit [high-1, low] are all 1'b1 s.
+// get the bit mask where bit [high-1, low] are all 1'b1 s.
 #define BIT1_MASK(high, low)   ((UINT32_MAX << (high)) ^ (UINT32_MAX << (low)))
 
 #define LOCK_BIT(mask)      ((mask) << LOCK_SHIFT)
@@ -238,7 +238,7 @@ struct spi_bus_lock_dev_t {
  *    acquire_end_core():
  *    uint32_t status = lock_status_clear(lock, dev_handle->mask & LOCK_MASK);
  *
- *    Becuase this is the first `spi_hdl_1`, so after this , lock_bits == 0`b0. status == 0
+ *    Because this is the first `spi_hdl_1`, so after this , lock_bits == 0`b0. status == 0
  *
  * 2. spi_hdl_2:
  *    acquire_core:
@@ -254,7 +254,7 @@ struct spi_bus_lock_dev_t {
  *
  * 5. spi_hdl_1:
  *    acquire_end_core:
- *    status is 0, so it cleas the lock->acquiring_dev
+ *    status is 0, so it clears the lock->acquiring_dev
  *
  * 6. spi_hdl_2:
  *    spi_device_polling_end:
@@ -482,7 +482,7 @@ SPI_BUS_LOCK_ISR_ATTR static inline void update_pend_core(spi_bus_lock_t *lock, 
 }
 
 // Clear the PEND bit (not REQ bit!) of a device, return the suggestion whether we can try to quit the ISR.
-// Lost the acquiring processor immediately when the BG bits for active device are inactive, indiciating by the return value.
+// Lost the acquiring processor immediately when the BG bits for active device are inactive, indicating by the return value.
 // Can be called only when ISR is acting as the acquiring processor.
 SPI_BUS_LOCK_ISR_ATTR static inline bool clear_pend_core(spi_bus_lock_dev_t *dev_handle)
 {
@@ -585,7 +585,7 @@ SPI_BUS_LOCK_ISR_ATTR static inline esp_err_t dev_wait(spi_bus_lock_dev_t *dev_h
  ******************************************************************************/
 esp_err_t spi_bus_init_lock(spi_bus_lock_handle_t *out_lock, const spi_bus_lock_config_t *config)
 {
-    spi_bus_lock_t* lock = (spi_bus_lock_t*)calloc(sizeof(spi_bus_lock_t), 1);
+    spi_bus_lock_t* lock = (spi_bus_lock_t*)heap_caps_calloc(1, sizeof(spi_bus_lock_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (lock == NULL) {
         return ESP_ERR_NO_MEM;
     }
@@ -648,7 +648,7 @@ esp_err_t spi_bus_lock_register_dev(spi_bus_lock_handle_t lock, spi_bus_lock_dev
     if (dev_lock == NULL) {
         return ESP_ERR_NO_MEM;
     }
-    dev_lock->semphr = xSemaphoreCreateBinary();
+    dev_lock->semphr = xSemaphoreCreateBinaryWithCaps(MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (dev_lock->semphr == NULL) {
         free(dev_lock);
         atomic_store(&lock->dev[id], (intptr_t)NULL);
@@ -676,7 +676,7 @@ void spi_bus_lock_unregister_dev(spi_bus_lock_dev_handle_t dev_handle)
 
     atomic_store(&lock->dev[id], (intptr_t)NULL);
     if (dev_handle->semphr) {
-        vSemaphoreDelete(dev_handle->semphr);
+        vSemaphoreDeleteWithCaps(dev_handle->semphr);
     }
 
     free(dev_handle);
@@ -819,7 +819,7 @@ SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_clear_req(spi_bus_lock_dev_t *dev_han
 }
 
 SPI_BUS_LOCK_ISR_ATTR bool spi_bus_lock_bg_check_dev_acq(spi_bus_lock_t *lock,
-                                                       spi_bus_lock_dev_handle_t *out_dev_lock)
+                                                         spi_bus_lock_dev_handle_t *out_dev_lock)
 {
     BUS_LOCK_DEBUG_EXECUTE_CHECK(!lock->acquiring_dev);
     uint32_t status = lock_status_fetch(lock);
