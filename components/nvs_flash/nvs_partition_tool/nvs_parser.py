@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-from typing import Any, Dict, List, Optional
+from typing import Any
+from typing import Dict
+from typing import List
+from typing import Optional
 from zlib import crc32
 
 
@@ -61,8 +64,9 @@ class NVS_Partition:
                 f'Given partition data is not aligned to page size ({len(raw_data)} % {nvs_const.page_size} = {len(raw_data)%nvs_const.page_size})'
             )
 
-        # Divide partition into pages
         self.name = name
+        self.raw_data = raw_data
+        # Divide partition into pages
         self.pages = []
         for i in range(0, len(raw_data), nvs_const.page_size):
             self.pages.append(NVS_Page(raw_data[i: i + nvs_const.page_size], i))
@@ -216,6 +220,7 @@ class NVS_Entry:
         self.state = entry_state
         self.is_empty = self.raw == bytearray({0xFF}) * nvs_const.entry_size
         self.index = index
+        self.page = None
 
         namespace = self.raw[0]
         entry_type = self.raw[1]
