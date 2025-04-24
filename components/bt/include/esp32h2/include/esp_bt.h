@@ -444,6 +444,10 @@ modem_clock_lpclk_src_t esp_bt_get_lpclk_src(void);
 
 void esp_bt_set_lpclk_src(modem_clock_lpclk_src_t clk_src);
 
+uint32_t esp_bt_get_lpclk_freq(void);
+
+void esp_bt_set_lpclk_freq(uint32_t clk_freq);
+
 #ifdef __cplusplus
 }
 #endif
