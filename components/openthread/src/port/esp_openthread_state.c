@@ -21,7 +21,7 @@
 
 static void handle_ot_netif_state_change(otInstance* instance)
 {
-    if (otLinkIsEnabled(instance)) {
+    if (otIp6IsEnabled(instance)) {
         ESP_LOGI(TAG, "netif up");
         if (esp_event_post(OPENTHREAD_EVENT, OPENTHREAD_EVENT_IF_UP, NULL, 0, 0) != ESP_OK) {
             ESP_LOGE(TAG, "Failed to post OpenThread if up event");
@@ -32,6 +32,10 @@ static void handle_ot_netif_state_change(otInstance* instance)
             ESP_LOGE(TAG, "Failed to post OpenThread if down event");
         }
     }
+
+#if (CONFIG_OPENTHREAD_RADIO_SPINEL_UART || CONFIG_OPENTHREAD_RADIO_SPINEL_SPI)
+    esp_openthread_handle_netif_state_change(otIp6IsEnabled(instance));
+#endif
 }
 
 static void handle_ot_netdata_change(void)
