@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -51,6 +51,12 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
                             DPORT_SPI_DMA_RST | DPORT_UART_RST | DPORT_UART1_RST | DPORT_UART2_RST |
                             DPORT_UART_MEM_RST | DPORT_PWM0_RST | DPORT_PWM1_RST);
     DPORT_REG_WRITE(DPORT_PERIP_RST_EN_REG, 0);
+
+    // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart and hence
+    // avoiding any possibility with crypto failure in ROM security workflows.
+    DPORT_SET_PERI_REG_MASK(DPORT_PERI_RST_EN_REG, DPORT_PERI_EN_AES | DPORT_PERI_EN_RSA |
+                            DPORT_PERI_EN_SHA | DPORT_PERI_EN_DIGITAL_SIGNATURE);
+    DPORT_REG_WRITE(DPORT_PERI_RST_EN_REG, 0);
 }
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this

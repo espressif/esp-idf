@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,6 +56,23 @@ void IRAM_ATTR esp_system_reset_modules_on_exit(void)
     CLEAR_PERI_REG_MASK(PCR_GDMA_CONF_REG, PCR_GDMA_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_MODEM_CONF_REG, PCR_MODEM_RST_EN);
     CLEAR_PERI_REG_MASK(PCR_PWM_CONF_REG, PCR_PWM_RST_EN);
+
+    // Reset crypto peripherals. This ensures a clean state for the crypto peripherals after a CPU restart
+    // and hence avoiding any possibility with crypto failure in ROM security workflows.
+    SET_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
+    SET_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+    SET_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
+    SET_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+    SET_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
+    SET_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
+    SET_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_AES_CONF_REG, PCR_AES_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_DS_CONF_REG, PCR_DS_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_ECC_CONF_REG, PCR_ECC_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_ECDSA_CONF_REG, PCR_ECDSA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_HMAC_CONF_REG, PCR_HMAC_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_RSA_CONF_REG, PCR_RSA_RST_EN);
+    CLEAR_PERI_REG_MASK(PCR_SHA_CONF_REG, PCR_SHA_RST_EN);
 }
 
 /* "inner" restart function for after RTOS, interrupts & anything else on this
