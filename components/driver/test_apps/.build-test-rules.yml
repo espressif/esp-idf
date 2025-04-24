@@ -185,6 +185,10 @@ components/driver/test_apps/uart:
       temporary: true
       reason: target(s) is not supported yet # TODO: IDF-6511
 
+components/driver/test_apps/uhci:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+
 components/driver/test_apps/usb_serial_jtag:
   disable:
     - if: SOC_USB_SERIAL_JTAG_SUPPORTED != 1
