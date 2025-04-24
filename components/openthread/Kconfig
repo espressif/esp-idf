@@ -379,6 +379,12 @@ menu "OpenThread"
                 help
                     The device's XTAL accuracy, in ppm.
 
+            config OPENTHREAD_BUS_LATENCY
+                int "The bus latency between host and radio chip"
+                default 4000
+                help
+                    The device's bus latency, in us.
+
             config OPENTHREAD_MLE_MAX_CHILDREN
                 int "The size of max MLE children entries"
                 default 10
