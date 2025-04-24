@@ -16,6 +16,7 @@ CONFIGS = [
         pytest.mark.temp_skip_ci(targets=['esp32p4', 'esp32c5', 'esp32c61'],
                                  reason='test failed/TBD IDF-8113')
     ]),
+    pytest.param('tickless_idle', marks=[pytest.mark.supported_targets]),
 ]
 
 
