@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -43,27 +43,34 @@ extern "C" {
   *
   *************************************************************************************
   *     RTC store registers     usage
-  *     LP_AON_STORE0_REG       Reserved
+  *     LP_AON_STORE0_REG       RTC fix us, high 32 bits
   *     LP_AON_STORE1_REG       RTC_SLOW_CLK calibration value
   *     LP_AON_STORE2_REG       Boot time, low word
   *     LP_AON_STORE3_REG       Boot time, high word
-  *     LP_AON_STORE4_REG       External XTAL frequency
+  *     LP_AON_STORE4_REG       Status of whether to disable LOG from ROM at bit[0]
   *     LP_AON_STORE5_REG       FAST_RTC_MEMORY_LENGTH
   *     LP_AON_STORE6_REG       FAST_RTC_MEMORY_ENTRY
-  *     LP_AON_STORE7_REG       FAST_RTC_MEMORY_CRC
+  *     LP_AON_STORE7_REG       RTC fix us, low 32 bits
   *     LP_AON_STORE8_REG       Store light sleep wake stub addr
   *     LP_AON_STORE9_REG       Store the sleep mode at bit[0]  (0:light sleep 1:deep sleep)
   *************************************************************************************
+  *
+  * Since esp32c61 does not support RTC mem, so use LP_AON store regs to record rtc time:
+  *
+  * |------------------------|----------------------------------------|
+  * |   LP_AON_STORE0_REG    |   LP_AON_STORE7_REG                    |
+  * |   rtc_fix_us(MSB)      |   rtc_fix_us(LSB)                      |
+  * |------------------------|----------------------------------------|
   */
 
+#define RTC_FIX_US_HIGH_REG                 LP_AON_STORE0_REG
 #define RTC_SLOW_CLK_CAL_REG                LP_AON_STORE1_REG
 #define RTC_BOOT_TIME_LOW_REG               LP_AON_STORE2_REG
 #define RTC_BOOT_TIME_HIGH_REG              LP_AON_STORE3_REG
-#define RTC_XTAL_FREQ_REG                   LP_AON_STORE4_REG
 #define RTC_ENTRY_LENGTH_REG                LP_AON_STORE5_REG
 #define RTC_ENTRY_ADDR_REG                  LP_AON_STORE6_REG
 #define RTC_RESET_CAUSE_REG                 LP_AON_STORE6_REG
-#define RTC_MEMORY_CRC_REG                  LP_AON_STORE7_REG
+#define RTC_FIX_US_LOW_REG                  LP_AON_STORE7_REG
 #define RTC_SLEEP_WAKE_STUB_ADDR_REG        LP_AON_STORE8_REG
 #define RTC_SLEEP_MODE_REG                  LP_AON_STORE8_REG
 
