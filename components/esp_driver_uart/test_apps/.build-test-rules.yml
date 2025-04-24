@@ -28,3 +28,9 @@ components/esp_driver_uart/test_apps/uart_vfs:
   depends_components:
     - esp_driver_uart
     - vfs
+
+components/esp_driver_uart/test_apps/uhci:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+  depends_components:
+    - esp_driver_uart
