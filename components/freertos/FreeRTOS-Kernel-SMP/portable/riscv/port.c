@@ -481,7 +481,6 @@ StackType_t *pxPortInitialiseStack(StackType_t *pxTopOfStack, TaskFunction_t pxC
 
     // Return the task's current stack pointer address which should point to the starting interrupt stack frame
     return (StackType_t *)uxStackPointer;
-    //TODO: IDF-2393
 }
 
 // ------------------- Hook Functions ----------------------
