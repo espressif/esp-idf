@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -378,7 +378,12 @@ static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, con
 
     ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
     ESP_LOGD(TAG, "[sock=%d] Connecting to server. HOST: %s, Port: %d", fd, host, port);
-    if (connect(fd, (struct sockaddr *)&address, sizeof(struct sockaddr)) < 0) {
+#if IPV6_ENABLED
+    socklen_t addr_len = (address.ss_family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+#else
+    socklen_t addr_len = sizeof(struct sockaddr_in);
+#endif
+    if (connect(fd, (struct sockaddr *)&address, addr_len) < 0) {
         if (errno == EINPROGRESS) {
             fd_set fdset;
             struct timeval tv = { .tv_usec = 0, .tv_sec = ESP_TLS_DEFAULT_CONN_TIMEOUT }; // Default connection timeout is 10 s
