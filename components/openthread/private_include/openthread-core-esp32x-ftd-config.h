@@ -441,6 +441,15 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+ *
+ * Define to 1 to bind DNS-SD server to unspecified interface, 0 to bind to Thread interface.
+ */
+#ifndef OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF
+#define OPENTHREAD_CONFIG_DNSSD_SERVER_BIND_UNSPECIFIED_NETIF 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_DNS_UPSTREAM_QUERY_ENABLE
  *
  * Define to 1 to enable upstream forwarding support.
