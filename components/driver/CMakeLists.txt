@@ -189,6 +189,11 @@ if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "twai/twai.c")
 endif()
 
+# UHCI related source files
+if(CONFIG_SOC_UHCI_SUPPORTED)
+    list(APPEND srcs "uart/uhci.c")
+endif()
+
 # UART related source files
 if(CONFIG_SOC_UART_SUPPORTED)
     list(APPEND srcs "uart/uart.c")

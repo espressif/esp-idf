@@ -1,16 +1,8 @@
-// Copyright 2020 Espressif Systems (Shanghai) PTE LTD
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+/*
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // The LL layer for UHCI register operations.
 // Note that most of the register operations in this layer are non-atomic operations.
@@ -20,12 +12,15 @@
 #include <stdio.h>
 #include "hal/uhci_types.h"
 #include "soc/uhci_struct.h"
+#include "soc/system_struct.h"
+#include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI0) : (NULL))
+#define UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD  (8192)
 
 typedef enum {
     UHCI_RX_BREAK_CHR_EOF = 0x1,
@@ -33,6 +28,19 @@ typedef enum {
     UHCI_RX_LEN_EOF       = 0x4,
     UHCI_RX_EOF_MAX       = 0x7,
 } uhci_rxeof_cfg_t;
+
+static inline void uhci_ll_enable_bus_clock(int group_id, bool enable)
+{
+    (void)group_id;
+    SYSTEM.perip_clk_en0.reg_uhci0_clk_en = enable;
+}
+
+static inline void uhci_ll_reset_register(int group_id)
+{
+    (void)group_id;
+    SYSTEM.perip_rst_en0.reg_uhci0_rst = 1;
+    SYSTEM.perip_rst_en0.reg_uhci0_rst = 0;
+}
 
 static inline void uhci_ll_init(uhci_dev_t *hw)
 {
@@ -53,37 +61,37 @@ static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
 {
     if (seper_char->sub_chr_en) {
-        typeof(hw->esc_conf0) esc_conf0_reg = hw->esc_conf0;
-        esc_conf0_reg.seper_char = seper_char->seper_chr;
-        esc_conf0_reg.seper_esc_char0 = seper_char->sub_chr1;
-        esc_conf0_reg.seper_esc_char1 = seper_char->sub_chr2;
+        hw->conf0.seper_en = 1;
+        typeof(hw->esc_conf0) esc_conf0_reg;
+        esc_conf0_reg.val = hw->esc_conf0.val;
+
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf0_reg, seper_char, seper_char->seper_chr);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf0_reg, seper_esc_char0, seper_char->sub_chr1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf0_reg, seper_esc_char1, seper_char->sub_chr2);
         hw->esc_conf0.val = esc_conf0_reg.val;
         hw->escape_conf.tx_c0_esc_en = 1;
         hw->escape_conf.rx_c0_esc_en = 1;
     } else {
-        hw->escape_conf.tx_c0_esc_en = 0;
-        hw->escape_conf.rx_c0_esc_en = 0;
+        hw->conf0.seper_en = 0;
+        hw->escape_conf.val = 0;
     }
-}
-
-static inline void uhci_ll_get_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_chr)
-{
-    (void)hw;
-    (void)seper_chr;
 }
 
 static inline void uhci_ll_set_swflow_ctrl_sub_chr(uhci_dev_t *hw, uhci_swflow_ctrl_sub_chr_t *sub_ctr)
 {
     typeof(hw->escape_conf) escape_conf_reg = hw->escape_conf;
     if (sub_ctr->flow_en == 1) {
-        typeof(hw->esc_conf2) esc_conf2_reg = hw->esc_conf2;
-        typeof(hw->esc_conf3) esc_conf3_reg = hw->esc_conf3;
-        esc_conf2_reg.seq1 = sub_ctr->xon_chr;
-        esc_conf2_reg.seq1_char0 = sub_ctr->xon_sub1;
-        esc_conf2_reg.seq1_char1 = sub_ctr->xon_sub2;
-        esc_conf3_reg.seq2 = sub_ctr->xoff_chr;
-        esc_conf3_reg.seq2_char0 = sub_ctr->xoff_sub1;
-        esc_conf3_reg.seq2_char1 = sub_ctr->xoff_sub2;
+        typeof(hw->esc_conf2) esc_conf2_reg;
+        esc_conf2_reg.val = hw->esc_conf2.val;
+        typeof(hw->esc_conf3) esc_conf3_reg;
+        esc_conf3_reg.val = hw->esc_conf3.val;
+
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1, sub_ctr->xon_chr);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char0, sub_ctr->xon_sub1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char1, sub_ctr->xon_sub2);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2, sub_ctr->xoff_chr);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char0, sub_ctr->xoff_sub1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char1, sub_ctr->xoff_sub2);
         escape_conf_reg.tx_11_esc_en = 1;
         escape_conf_reg.tx_13_esc_en = 1;
         escape_conf_reg.rx_11_esc_en = 1;
@@ -119,8 +127,7 @@ static inline uint32_t uhci_ll_get_intr(uhci_dev_t *hw)
     return hw->int_st.val;
 }
 
-
-static inline void uhci_ll_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
+static inline void uhci_ll_rx_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
 {
     if (eof_mode & UHCI_RX_BREAK_CHR_EOF) {
         hw->conf0.uart_rx_brk_eof_en = 1;
@@ -131,6 +138,11 @@ static inline void uhci_ll_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
     if (eof_mode & UHCI_RX_LEN_EOF) {
         hw->conf0.len_eof_en = 1;
     }
+}
+
+static inline void uhci_ll_rx_set_packet_threshold(uhci_dev_t *hw, uint16_t length)
+{
+    hw->pkt_thres.thrs = length;
 }
 
 #ifdef __cplusplus
