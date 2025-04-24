@@ -162,6 +162,7 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
     req->data_len = len;
     req->rx_cb = s_action_rx_cb;
     req->channel = channel;
+    req->sec_channel = WIFI_SECOND_CHAN_NONE;
     req->wait_time_ms = wait_time_ms;
     req->type = WIFI_OFFCHAN_TX_REQ;
     os_memcpy(req->data, buf, req->data_len);
