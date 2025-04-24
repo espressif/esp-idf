@@ -301,7 +301,7 @@ esp_err_t temperature_sensor_get_celsius(temperature_sensor_handle_t tsens, floa
 
     if (*out_celsius < TEMPERATURE_SENSOR_LL_MEASURE_MIN || *out_celsius > TEMPERATURE_SENSOR_LL_MEASURE_MAX) {
         ESP_LOGE(TAG, "Exceeding temperature measure range.");
-        return ESP_ERR_INVALID_STATE;
+        return ESP_FAIL;
     }
     if (range_changed) {
         s_update_tsens_attribute(tsens);
