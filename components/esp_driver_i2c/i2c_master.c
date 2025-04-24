@@ -112,7 +112,7 @@ static esp_err_t s_i2c_master_clear_bus(i2c_bus_handle_t handle)
  *
  * @param[in] i2c_master I2C master handle
  */
-static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
+static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master, bool clear_bus)
 {
     esp_err_t ret = ESP_OK;
     i2c_hal_context_t *hal = &i2c_master->base->hal;
@@ -124,7 +124,9 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_master_get_filter(hal->dev, &filter_cfg);
 
     //to reset the I2C hw module, we need re-enable the hw
-    ret = s_i2c_master_clear_bus(i2c_master->base);
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
     I2C_RCC_ATOMIC() {
         i2c_ll_reset_register(i2c_master->base->port_num);
     }
@@ -141,7 +143,9 @@ static esp_err_t s_i2c_hw_fsm_reset(i2c_master_bus_handle_t i2c_master)
     i2c_ll_master_set_filter(hal->dev, filter_cfg);
 #else
     i2c_ll_master_fsm_rst(hal->dev);
-    ret = s_i2c_master_clear_bus(i2c_master->base);
+    if (clear_bus) {
+        ret = s_i2c_master_clear_bus(i2c_master->base);
+    }
 #endif
     return ret;
 }
@@ -492,7 +496,7 @@ static void s_i2c_send_commands(i2c_master_bus_handle_t i2c_master, TickType_t t
         }
 
         if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT) {
-            s_i2c_hw_fsm_reset(i2c_master);
+            s_i2c_hw_fsm_reset(i2c_master, true);
             i2c_master->cmd_idx = 0;
             i2c_master->trans_idx = 0;
             ESP_LOGE(TAG, "I2C hardware timeout detected");
@@ -608,7 +612,7 @@ static esp_err_t s_i2c_transaction_start(i2c_master_dev_handle_t i2c_dev, int xf
     // Sometimes when the FSM get stuck, the ACK_ERR interrupt will occur endlessly until we reset the FSM and clear bus.
     esp_err_t ret = ESP_OK;
     if (atomic_load(&i2c_master->status) == I2C_STATUS_TIMEOUT || i2c_ll_is_bus_busy(hal->dev)) {
-        ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master), TAG, "reset hardware failed");
+        ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(i2c_master, true), TAG, "reset hardware failed");
     }
 
     if (i2c_master->base->pm_lock) {
@@ -942,7 +946,7 @@ static esp_err_t s_i2c_synchronous_transaction(i2c_master_dev_handle_t i2c_dev, 
 
 err:
     // When error occurs, reset hardware fsm in case not influence following transactions.
-    s_i2c_hw_fsm_reset(i2c_dev->master_bus);
+    s_i2c_hw_fsm_reset(i2c_dev->master_bus, false);
     xSemaphoreGive(i2c_dev->master_bus->bus_lock_mux);
     return ret;
 }
@@ -1164,7 +1168,7 @@ esp_err_t i2c_master_bus_reset(i2c_master_bus_handle_t bus_handle)
 {
     ESP_RETURN_ON_FALSE((bus_handle != NULL), ESP_ERR_INVALID_ARG, TAG, "This bus is not initialized");
     // Reset I2C master bus
-    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(bus_handle), TAG, "I2C master bus reset failed");
+    ESP_RETURN_ON_ERROR(s_i2c_hw_fsm_reset(bus_handle, true), TAG, "I2C master bus reset failed");
     // Reset I2C status state
     atomic_store(&bus_handle->status, I2C_STATUS_IDLE);
     return ESP_OK;
@@ -1298,6 +1302,8 @@ esp_err_t i2c_master_probe(i2c_master_bus_handle_t bus_handle, uint16_t address,
         i2c_ll_set_source_clk(hal->dev, bus_handle->base->clk_src);
         i2c_hal_set_bus_timing(hal, 100000, bus_handle->base->clk_src, bus_handle->base->clk_src_freq_hz);
     }
+    i2c_ll_txfifo_rst(hal->dev);
+    i2c_ll_rxfifo_rst(hal->dev);
     i2c_ll_master_set_fractional_divider(hal->dev, 0, 0);
     i2c_ll_enable_intr_mask(hal->dev, I2C_LL_MASTER_EVENT_INTR);
     // 20ms is sufficient for stretch, since there is no device config on probe operation.
