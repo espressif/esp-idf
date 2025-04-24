@@ -30,6 +30,8 @@ typedef struct {
     gpio_num_t clk_out_gpio_num; /*!< GPIO number of the output clock signal, the clock is synced with TX data */
     gpio_num_t valid_gpio_num;   /*!< GPIO number of the valid signal, which stays high when transferring data.
                                       Note that, the valid signal will always occupy the MSB data bit */
+    uint16_t valid_start_delay; /*!< The clock cycles that the valid signal becomes active before data start */
+    uint16_t valid_stop_delay;  /*!< The clock cycles that the valid signal keeps active after data end */
     size_t trans_queue_depth; /*!< Depth of internal transaction queue */
     size_t max_transfer_size; /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
     size_t dma_burst_size;    /*!< DMA burst size, in bytes */

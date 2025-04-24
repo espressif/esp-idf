@@ -510,6 +510,23 @@ static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
 }
 
 /**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
+}
+
+/**
  * @brief Set the sample clock edge
  *
  * @param dev Parallel IO register base address

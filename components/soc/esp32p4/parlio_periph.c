@@ -35,6 +35,7 @@ const parlio_signal_conn_t parlio_periph_signals = {
                     },
                     .clk_out_sig = PARLIO_TX_CLK_PAD_OUT_IDX,
                     .clk_in_sig = PARLIO_TX_CLK_PAD_IN_IDX,
+                    .cs_sig = -1,
                 }
             },
             .rx_units = {

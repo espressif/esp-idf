@@ -50,8 +50,10 @@ TEST_CASE("parallel_tx_unit_install_uninstall", "[parlio_tx]")
     config.input_clk_src_freq_hz = 1000000;
 
     config.valid_gpio_num = 0;
+#if PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
     // failed because of data line conflict with valid signal
     TEST_ESP_ERR(ESP_ERR_INVALID_ARG, parlio_new_tx_unit(&config, &units[0]));
+#endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
 
     config.data_width = 4;
     TEST_ESP_OK(parlio_new_tx_unit(&config, &units[0]));
@@ -288,6 +290,73 @@ TEST_CASE("parallel_tx_clock_gating", "[paralio_tx]")
     TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
     TEST_ESP_OK(gpio_reset_pin(TEST_CLK_GPIO));
 }
+
+#if !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
+TEST_CASE("parallel_tx_clock_gating_and_msb_coexist", "[paralio_tx]")
+{
+    printf("init a gpio to read parlio_tx clk output\r\n");
+    gpio_config_t test_gpio_conf = {
+        .mode = GPIO_MODE_INPUT,
+        .pin_bit_mask = BIT64(TEST_CLK_GPIO) | BIT64(TEST_DATA7_GPIO),
+    };
+    TEST_ESP_OK(gpio_config(&test_gpio_conf));
+
+    printf("install parlio tx unit\r\n");
+    parlio_tx_unit_handle_t tx_unit = NULL;
+    parlio_tx_unit_config_t config = {
+        .clk_src = PARLIO_CLK_SRC_DEFAULT,
+        .data_width = 8,
+        .clk_in_gpio_num = -1,  // use internal clock source
+        .valid_gpio_num = TEST_VALID_GPIO, // generate the valid signal
+        .clk_out_gpio_num = TEST_CLK_GPIO,
+        .data_gpio_nums = {
+            TEST_DATA0_GPIO,
+            TEST_DATA1_GPIO,
+            TEST_DATA2_GPIO,
+            TEST_DATA3_GPIO,
+            TEST_DATA4_GPIO,
+            TEST_DATA5_GPIO,
+            TEST_DATA6_GPIO,
+            TEST_DATA7_GPIO,
+        },
+        .output_clk_freq_hz = 1 * 1000 * 1000,
+        .trans_queue_depth = 4,
+        .max_transfer_size = 256,
+        .bit_pack_order = PARLIO_BIT_PACK_ORDER_MSB,
+        .sample_edge = PARLIO_SAMPLE_EDGE_POS,
+        .valid_start_delay = 5,
+        .valid_stop_delay = 5,
+        .flags.clk_gate_en = true, // enable clock gating, controlled by the CS signal
+    };
+    TEST_ESP_OK(parlio_new_tx_unit(&config, &tx_unit));
+    TEST_ESP_OK(parlio_tx_unit_enable(tx_unit));
+
+    printf("send packets and see if the clock is gated when there's no transaction on line\r\n");
+    parlio_transmit_config_t transmit_config = {
+        // set the idle value to 0x80, so that the MSB is high when there's no transaction
+        .idle_value = 0x80,
+    };
+    uint32_t size = 256;
+    __attribute__((aligned(64))) uint8_t payload[size];
+    for (int i = 0; i < size; i++) {
+        payload[i] = i;
+    }
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, size * sizeof(uint8_t) * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
+    // check if the level on the clock line is low
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));
+    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_DATA7_GPIO));
+    TEST_ESP_OK(parlio_tx_unit_transmit(tx_unit, payload, size * sizeof(uint8_t) * 8, &transmit_config));
+    TEST_ESP_OK(parlio_tx_unit_wait_all_done(tx_unit, -1));
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));
+    TEST_ASSERT_EQUAL(0, gpio_get_level(TEST_CLK_GPIO));
+    TEST_ASSERT_EQUAL(1, gpio_get_level(TEST_DATA7_GPIO));
+
+    TEST_ESP_OK(parlio_tx_unit_disable(tx_unit));
+    TEST_ESP_OK(parlio_del_tx_unit(tx_unit));
+    TEST_ESP_OK(gpio_reset_pin(TEST_CLK_GPIO));
+}
+#endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
 #endif // SOC_PARLIO_TX_CLK_SUPPORT_GATING
 
 #if SOC_PSRAM_DMA_CAPABLE
