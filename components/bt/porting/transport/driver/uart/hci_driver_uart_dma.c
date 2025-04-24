@@ -119,7 +119,7 @@ STAILQ_HEAD(g_hci_rxinfo_list, hci_message);
 
 DRAM_ATTR struct g_hci_rxinfo_list g_hci_rxinfo_head;
 static DRAM_ATTR struct uart_env_tag uart_env;
-static volatile uhci_dev_t *s_uhci_hw = &UHCI0;
+static uhci_dev_t *s_uhci_hw = &UHCI0;
 static DRAM_ATTR gdma_channel_handle_t s_rx_channel;
 static DRAM_ATTR gdma_channel_handle_t s_tx_channel;
 
@@ -470,8 +470,8 @@ static void hci_driver_uart_dma_install(void)
     gdma_register_tx_event_callbacks(s_tx_channel, &tx_cbs, NULL);
     // configure UHCI
     uhci_ll_init((uhci_dev_t *)s_uhci_hw);
-    // uhci_ll_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF);
-    uhci_ll_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_IDLE_EOF);
+    // uhci_ll_rx_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_LEN_EOF);
+    uhci_ll_rx_set_eof_mode((uhci_dev_t *)s_uhci_hw, UHCI_RX_IDLE_EOF);
     // disable software flow control
     s_uhci_hw->escape_conf.val = 0;
     uhci_ll_attach_uart_port((uhci_dev_t *)s_uhci_hw, s_hci_driver_uart_dma_env.hci_uart_params->hci_uart_port);
