@@ -7,7 +7,7 @@ The Ultra Low Power (ULP) coprocessor is a simple finite state machine (FSM) whi
 
 .. only:: esp32s2 or esp32s3
 
-    {IDF_TARGET_NAME} provides a second type of ULP coprocessor which is based on a RISC-V instruction set architecture. For details regarding `ULP RISC-V` refer :doc:`ULP-RISC-V Coprocessor <../../../api-reference/system/ulp-risc-v>`.
+    {IDF_TARGET_NAME} provides a second type of ULP coprocessor which is based on a RISC-V instruction set architecture. For details regarding ``ULP RISC-V``, please refer to :doc:`ULP-RISC-V Coprocessor <../../../api-reference/system/ulp-risc-v>`.
 
 Installing the Toolchain
 ------------------------
@@ -69,23 +69,23 @@ The additional PREFIX argument can be a C style prefix (like ``ulp2_``) or a C++
 
 3. Build the application as usual (e.g., ``idf.py app``).
 
-   Inside, the build system will take the following steps to build ULP FSM program:
+    Inside, the build system takes the following steps to build an ULP FSM program:
 
-   1. **Run each assembly file (foo.S) through the C preprocessor.** This step generates the preprocessed assembly files (foo.ulp.S) in the component build directory. This step also generates dependency files (foo.ulp.d).
+    1. **Run each assembly file (foo.S) through the C preprocessor.** This step generates the preprocessed assembly files (foo.ulp.S) in the component build directory. This step also generates dependency files (foo.ulp.d).
 
-   2. **Run preprocessed assembly sources through the assembler.** This produces object (foo.ulp.o) and listing (foo.ulp.lst) files. Listing files are generated for debugging purposes and are not used at later stages of the build process.
+    2. **Run preprocessed assembly sources through the assembler.** This produces object (foo.ulp.o) and listing (foo.ulp.lst) files. Listing files are generated for debugging purposes and are not used at later stages of the build process.
 
-   3. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
+    3. **Run the linker script template through the C preprocessor.** The template is located in ``components/ulp/ld`` directory.
 
-   4. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
+    4. **Link the object files into an output ELF file** (``ulp_app_name.elf``). The Map file (``ulp_app_name.map``) generated at this stage may be useful for debugging purposes.
 
-   5. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
+    5. **Dump the contents of the ELF file into a binary** (``ulp_app_name.bin``) which can then be embedded into the application.
 
-   6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``esp32ulp-elf-nm``.
+    6. **Generate a list of global symbols** (``ulp_app_name.sym``) in the ELF file using ``esp32ulp-elf-nm``.
 
-   7. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
+    7. **Create an LD export script and a header file** (``ulp_app_name.ld`` and ``ulp_app_name.h``) containing the symbols from ``ulp_app_name.sym``. This is done using the ``esp32ulp_mapgen.py`` utility.
 
-   8. **Add the generated binary to the list of binary files** to be embedded into the application.
+    8. **Add the generated binary to the list of binary files** to be embedded into the application.
 
 Accessing the ULP FSM Program Variables
 ---------------------------------------
@@ -124,9 +124,11 @@ To access the ULP program variables from the main program, the generated header 
 
 .. only:: esp32
 
-    Note that the ULP FSM program can only use the lower 16 bits of each 32-bit word in RTC memory, because the registers are 16-bit, and there is no instruction to load from the high part of the word. Likewise, the ULP store instruction writes register values into the lower 16 bits of the 32-bit word in RTC memory. The upper 16 bits are written with a value which depends on the address of the store instruction, thus when reading variables written by the ULP coprocessor, the main application needs to mask the upper 16 bits, e.g.,::
+    Note that the ULP FSM program can only use the lower 16 bits of each 32-bit word in RTC memory, because the registers are 16-bit, and there is no instruction to load from the high part of the word. Likewise, the ULP store instruction writes register values into the lower 16 bits of the 32-bit word in RTC memory. The upper 16 bits are written with a value which depends on the address of the store instruction, thus when reading variables written by the ULP coprocessor, the main application needs to mask the upper 16 bits, for example:
 
-        printf("Last measurement value: %d\n", ulp_last_measurement & UINT16_MAX);
+::
+
+    printf("Last measurement value: %d\n", ulp_last_measurement & UINT16_MAX);
 
 Starting the ULP FSM Program
 ----------------------------
@@ -163,7 +165,7 @@ Declaration of the entry point symbol comes from the generated header file menti
     ESP32 ULP Program Flow
     -----------------------
 
-    ESP32 ULP coprocessor is started by a timer. The timer is started once :cpp:func:`ulp_run` is called. The timer counts a number of RTC_SLOW_CLK ticks (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using ``sleep`` instruction.
+    ESP32 ULP coprocessor is started by a timer. The timer is started once :cpp:func:`ulp_run` is called. The timer counts the number of RTC_SLOW_CLK ticks (by default, produced by an internal 150 kHz RC oscillator). The number of ticks is set using ``SENS_ULP_CP_SLEEP_CYCx_REG`` registers (x = 0..4). When starting the ULP for the first time, ``SENS_ULP_CP_SLEEP_CYC0_REG`` will be used to set the number of timer ticks. Later the ULP program can select another ``SENS_ULP_CP_SLEEP_CYCx_REG`` register using ``sleep`` instruction.
 
     The application can set ULP timer period values (SENS_ULP_CP_SLEEP_CYCx_REG, x = 0..4) using ``ulp_set_wakeup_period`` function.
 

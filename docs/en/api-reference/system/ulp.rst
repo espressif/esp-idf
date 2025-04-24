@@ -1,5 +1,5 @@
 Ultra Low Power (ULP) coprocessor
-*********************************
+===================================
 
 :link_to_translation:`zh_CN:[中文]`
 
