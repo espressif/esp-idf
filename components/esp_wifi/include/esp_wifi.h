@@ -1829,6 +1829,7 @@ esp_err_t esp_wifi_get_bandwidths(wifi_interface_t ifx, wifi_bandwidths_t *bw);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
   *    - ESP_FAIL: failed to send frame
   */
 esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
@@ -1841,6 +1842,7 @@ esp_err_t esp_wifi_action_tx_req(wifi_action_tx_req_t *req);
   * @return
   *    - ESP_OK: succeed
   *    - ESP_ERR_NO_MEM: failed to allocate memory
+  *    - ESP_ERR_INVALID_ARG: the <channel, sec_channel> pair is invalid
   *    - ESP_FAIL: failed to perform roc operation
   */
 esp_err_t esp_wifi_remain_on_channel(wifi_roc_req_t * req);
