@@ -76,7 +76,13 @@ When :cpp:func:`esp_now_deinit()` is called, all of the information of paired de
 Add Paired Device
 -----------------
 
-Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list before you send data to this device. If security is enabled, the LMK must be set. You can send ESP-NOW data via both the Station and the SoftAP interface. Make sure that the interface is enabled before sending ESP-NOW data.
+Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list before you send data to this device. If security is enabled, the LMK must be set. A device with a broadcast MAC address must be added before sending broadcast data.
+
+You can send ESP-NOW data via both the Station and the SoftAP interface. Make sure that the interface is enabled before sending ESP-NOW data.
+
+The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
+
+For the receiving device, calling :cpp:func:`esp_now_add_peer()` is not required. If no paired device is added, it can only receive broadcast packets and unencrypted unicast packets. To receive encrypted unicast packets, a paired device must be added, and the same LMK must be set.
 
 .. only:: esp32c2
 
@@ -85,8 +91,6 @@ Call :cpp:func:`esp_now_add_peer()` to add the device to the paired device list 
 .. only:: esp32 or esp32s2 or esp32s3 or esp32c3 or esp32c6
 
     The maximum number of paired devices is 20, and the paired encryption devices are no more than 17, the default is 7. If you want to change the number of paired encryption devices, set :ref:`CONFIG_ESP_WIFI_ESPNOW_MAX_ENCRYPT_NUM` in the Wi-Fi component configuration menu.
-
-A device with a broadcast MAC address must be added before sending broadcast data. The range of the channel of paired devices is from 0 to 14. If the channel is set to 0, data will be sent on the current channel. Otherwise, the channel must be set as the channel that the local device is on.
 
 Send ESP-NOW Data
 -----------------

@@ -192,7 +192,7 @@ typedef struct {
     unsigned : 15;                                /**< reserved */
     unsigned : 15;                                /**< reserved */
     unsigned : 2;                                 /**< reserved */
-    unsigned noise_floor: 8;                      /**< the noise floor of the reception frame */
+    signed noise_floor: 8;                        /**< the noise floor of the reception frame */
     signed : 8;                                   /**< reserved */
     signed : 8;                                   /**< reserved */
     unsigned : 8;                                 /**< reserved */
