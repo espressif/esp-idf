@@ -43,7 +43,6 @@ TEST_CASE("Test HCD isochronous pipe URBs", "[isoc][full_speed][high_speed]")
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_set_fifo_bias(port_hdl, HCD_PORT_FIFO_BIAS_PTX));
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
 
     // Enumerate and reset device
@@ -118,7 +117,6 @@ TEST_CASE("Test HCD isochronous pipe URBs all", "[isoc][full_speed][high_speed]"
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_set_fifo_bias(port_hdl, HCD_PORT_FIFO_BIAS_PTX));
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
 
     // Enumerate and reset device
@@ -230,7 +228,6 @@ TEST_CASE("Test HCD isochronous pipe sudden disconnect", "[isoc][full_speed][hig
 {
     usb_speed_t port_speed = test_hcd_wait_for_conn(port_hdl);  // Trigger a connection
     // The MPS of the ISOC OUT pipe is quite large, so we need to bias the FIFO sizing
-    TEST_ASSERT_EQUAL(ESP_OK, hcd_port_set_fifo_bias(port_hdl, HCD_PORT_FIFO_BIAS_PTX));
     vTaskDelay(pdMS_TO_TICKS(100)); // Short delay send of SOF (for FS) or EOPs (for LS)
 
     // Enumerate and reset device
