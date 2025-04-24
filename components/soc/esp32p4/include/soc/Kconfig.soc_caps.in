@@ -23,6 +23,10 @@ config SOC_GDMA_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_AHB_GDMA_SUPPORTED
     bool
     default y
@@ -1890,6 +1894,10 @@ config SOC_UART_SUPPORT_FSM_TX_WAIT_SEND
 config SOC_LP_I2S_SUPPORT_VAD
     bool
     default y
+
+config SOC_UHCI_NUM
+    int
+    default 1
 
 config SOC_COEX_HW_PTI
     bool

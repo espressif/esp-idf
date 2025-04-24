@@ -112,6 +112,10 @@ if(NOT BOOTLOADER_BUILD)
         list(APPEND srcs "mcpwm_hal.c")
     endif()
 
+    if(CONFIG_SOC_UHCI_SUPPORTED)
+        list(APPEND srcs "uhci_hal.c")
+    endif()
+
     if(CONFIG_SOC_TWAI_SUPPORTED)
         list(APPEND srcs "twai_hal.c" "twai_hal_iram.c")
     endif()

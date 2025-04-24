@@ -797,7 +797,7 @@ typedef union {
 } uhci_date_reg_t;
 
 
-typedef struct {
+typedef struct uhci_dev_t{
     volatile uhci_conf0_reg_t conf0;
     volatile uhci_int_raw_reg_t int_raw;
     volatile uhci_int_st_reg_t int_st;
@@ -833,6 +833,7 @@ typedef struct {
     volatile uhci_date_reg_t date;
 } uhci_dev_t;
 
+extern uhci_dev_t UHCI0;
 
 #ifndef __cplusplus
 _Static_assert(sizeof(uhci_dev_t) == 0x84, "Invalid size of uhci_dev_t structure");
