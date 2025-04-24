@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import pytest
 from pytest_embedded import Dut
@@ -10,6 +10,7 @@ CONFIGS = [
     pytest.param('release', marks=[pytest.mark.supported_targets]),
     pytest.param('single_core', marks=[pytest.mark.esp32, pytest.mark.esp32p4]),
     pytest.param('smp', marks=[pytest.mark.supported_targets, pytest.mark.temp_skip_ci(targets=['esp32h2', 'esp32p4'], reason='test failed/TBD IDF-8113')]),
+    pytest.param('tickless_idle', marks=[pytest.mark.supported_targets]),
 ]
 
 
