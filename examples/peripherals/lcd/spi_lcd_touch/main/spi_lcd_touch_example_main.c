@@ -162,9 +162,15 @@ static void example_lvgl_port_task(void *arg)
         _lock_acquire(&lvgl_api_lock);
         time_till_next_ms = lv_timer_handler();
         _lock_release(&lvgl_api_lock);
-        // in case of triggering a task watch dog time out
-        time_till_next_ms = MAX(time_till_next_ms, time_threshold_ms);
-        usleep(1000 * time_till_next_ms);
+        if ( time_till_next_ms == LV_NO_TIMER_READY ) {
+            //most probably lvgl display not ready yet
+            usleep( 1000 * 1000 );
+        }
+        else {
+            // in case of triggering a task watch dog time out
+            time_till_next_ms = MAX(time_till_next_ms, time_threshold_ms);
+            usleep(1000 * time_till_next_ms);
+        }
     }
 }
 
