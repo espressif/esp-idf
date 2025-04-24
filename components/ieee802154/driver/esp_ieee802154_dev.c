@@ -407,6 +407,15 @@ static IRAM_ATTR void next_operation(void)
 static IRAM_ATTR void isr_handle_tx_done(void)
 {
     event_end_process();
+#if !CONFIG_IEEE802154_TEST
+    if (!ieee802154_is_supported_frame_type(ieee802154_frame_get_type(s_tx_frame))) {
+        // For unsupported frames, return immediately without any further processing.
+        ieee802154_set_cmd(IEEE802154_CMD_STOP);
+        ieee802154_transmit_done(s_tx_frame, NULL, NULL);
+        NEEDS_NEXT_OPT(true);
+        return;
+    }
+#endif
     if (s_ieee802154_state == IEEE802154_STATE_TEST_TX) {
         ieee802154_transmit_done(s_tx_frame, NULL, NULL);
         NEEDS_NEXT_OPT(true);
@@ -430,6 +439,15 @@ static IRAM_ATTR void isr_handle_rx_done(void)
     event_end_process();
     ieee802154_rx_frame_info_update();
 
+#if !CONFIG_IEEE802154_TEST
+    if (!ieee802154_is_supported_frame_type(ieee802154_frame_get_type(s_rx_frame[s_rx_index]))) {
+        // For unsupported frames, return immediately without any further processing.
+        ieee802154_set_cmd(IEEE802154_CMD_STOP);
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
+        NEEDS_NEXT_OPT(true);
+        return;
+    }
+#endif
     if (s_ieee802154_state == IEEE802154_STATE_RX) {
         if (ieee802154_frame_is_ack_required(s_rx_frame[s_rx_index]) && ieee802154_frame_get_version(s_rx_frame[s_rx_index]) <= IEEE802154_FRAME_VERSION_1
                 && ieee802154_ll_get_tx_auto_ack()) {
@@ -543,19 +561,25 @@ static IRAM_ATTR void isr_handle_tx_ack_phase_rx_abort(ieee802154_ll_rx_abort_re
         return;
     case IEEE802154_RX_ABORT_BY_TX_ACK_TIMEOUT:
     case IEEE802154_RX_ABORT_BY_TX_ACK_COEX_BREAK:
+#if CONFIG_IEEE802154_DEBUG_ASSERT_MONITOR
+        // Jira TZ-1523
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ACK || s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
-#if !CONFIG_IEEE802154_TEST
-        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
-#else
+#endif
+#if CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_failed(rx_status);
+#else
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
 #endif
         break;
     case IEEE802154_RX_ABORT_BY_ENHACK_SECURITY_ERROR:
+#if CONFIG_IEEE802154_DEBUG_ASSERT_MONITOR
+        // Jira TZ-1523
         IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_TX_ENH_ACK);
-#if !CONFIG_IEEE802154_TEST
-        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
-#else
+#endif
+#if CONFIG_IEEE802154_TEST
         esp_ieee802154_receive_failed(rx_status);
+#else
+        ieee802154_receive_done((uint8_t *)s_rx_frame[s_rx_index], &s_rx_frame_info[s_rx_index]);
 #endif
         break;
     default:
@@ -732,11 +756,11 @@ IEEE802154_NOINLINE static void ieee802154_isr(void *arg)
     }
 
     if (events & IEEE802154_EVENT_TIMER0_OVERFLOW) {
-#if !CONFIG_IEEE802154_TEST
-        IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX_ACK);
-#else
+#if CONFIG_IEEE802154_TEST
         extern bool ieee802154_timer0_test;
         IEEE802154_ASSERT(ieee802154_timer0_test || s_ieee802154_state == IEEE802154_STATE_RX_ACK);
+#else
+        IEEE802154_ASSERT(s_ieee802154_state == IEEE802154_STATE_RX_ACK);
 #endif
         isr_handle_timer0_done();
 
