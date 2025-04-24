@@ -156,7 +156,8 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
     spi_chan_claimed = spicommon_periph_claim(host, "spi slave");
     SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
 
-    spihost[host] = malloc(sizeof(spi_slave_t));
+    // spi_slave_t contains atomic variable, memory must be allocated from internal memory
+    spihost[host] = heap_caps_malloc(sizeof(spi_slave_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (spihost[host] == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
