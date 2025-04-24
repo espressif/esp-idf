@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2022 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include "unity.h"
 #include "esp_system.h"
+#include "sdkconfig.h"
 
 /* similar to UNITY_PRINT_EOL */
 #define UNITY_PRINT_TAB() UNITY_OUTPUT_CHAR('\t')
@@ -24,11 +25,37 @@ void unity_testcase_register(test_desc_t *desc)
     if (!s_unity_tests_first) {
         s_unity_tests_first = desc;
         s_unity_tests_last = desc;
-    } else {
-        test_desc_t *temp = s_unity_tests_first;
-        s_unity_tests_first = desc;
-        s_unity_tests_first->next = temp;
+        return;
     }
+#if CONFIG_UNITY_TEST_ORDER_BY_FILE_PATH_AND_LINE
+    test_desc_t *prev = NULL;
+    test_desc_t *current = s_unity_tests_first;
+
+    while (current) {
+        int file_cmp = strcmp(desc->file, current->file);
+        if (file_cmp < 0 || (file_cmp == 0 && desc->line < current->line)) {
+            // Insert before current
+            if (prev) {
+                prev->next = desc;
+            } else {
+                // Inserting at the head
+                s_unity_tests_first = desc;
+            }
+            desc->next = current;
+            return;
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    // Insert at the end
+    prev->next = desc;
+    s_unity_tests_last = desc;
+#else
+    // Insert at head (original behavior)
+    desc->next = s_unity_tests_first;
+    s_unity_tests_first = desc;
+#endif
 }
 
 /* print the multiple function case name and its sub-menu
