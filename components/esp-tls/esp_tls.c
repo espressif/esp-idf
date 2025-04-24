@@ -378,9 +378,12 @@ static inline esp_err_t tcp_connect(const char *host, int hostlen, int port, con
 
     ret = ESP_ERR_ESP_TLS_FAILED_CONNECT_TO_HOST;
     ESP_LOGD(TAG, "[sock=%d] Connecting to server. HOST: %s, Port: %d", fd, host, port);
-#if IPV6_ENABLED
+#if IPV4_ENABLED && IPV6_ENABLED
     socklen_t addr_len = (address.ss_family == AF_INET) ? sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6);
+#elif IPV6_ENABLED
+    socklen_t addr_len = sizeof(struct sockaddr_in6);
 #else
+    /* IPv4 only */
     socklen_t addr_len = sizeof(struct sockaddr_in);
 #endif
     if (connect(fd, (struct sockaddr *)&address, addr_len) < 0) {

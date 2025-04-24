@@ -59,6 +59,8 @@ examples/protocols/http_server:
       reason: only test on these targets
   depends_components+:
     - esp_http_server
+    - esp-tls
+    - esp_netif
 
 examples/protocols/http_server/async_handlers:
   <<: *default_rules
