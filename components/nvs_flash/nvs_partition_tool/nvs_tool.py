@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 import argparse
 import os
@@ -90,12 +90,10 @@ def main() -> None:
     def cmd_not_implemented(_: nvs_parser.NVS_Partition) -> None:
         raise RuntimeError(f'{args.dump} is not implemented')
 
-    formats = {
-        'text': noop,
-        'json': nvs_logger.print_json,
-    }
-    formats.get(args.format, format_not_implemented)(nvs)
+    if args.format not in ['text', 'json']:
+        format_not_implemented(nvs)
 
+    cmds = {}
     if args.format == 'text':
         cmds = {
             'all': nvs_logger.dump_everything,
@@ -106,11 +104,19 @@ def main() -> None:
             'storage_info': nvs_logger.storage_stats,
             'none': noop,
         }
-        cmds.get(args.dump, cmd_not_implemented)(nvs)  # type: ignore
 
-        if args.integrity_check:
-            nvs_log.info()
-            nvs_check.integrity_check(nvs, nvs_log)
+    if args.format == 'json':
+        cmds = {
+            'all': nvs_logger.print_json,
+            'minimal': nvs_logger.print_minimal_json,
+            'none': noop,
+        }
+
+    cmds.get(args.dump, cmd_not_implemented)(nvs)
+
+    if args.integrity_check:
+        nvs_log.info()
+        nvs_check.integrity_check(nvs, nvs_log)
 
 
 if __name__ == '__main__':
