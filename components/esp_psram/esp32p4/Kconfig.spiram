@@ -63,6 +63,7 @@ menu "PSRAM config"
     config SPIRAM_XIP_FROM_PSRAM
         bool "Enable Executable in place from (XiP) from PSRAM feature (READ HELP)"
         default n
+        depends on SPIRAM_BOOT_INIT
         select SPIRAM_FETCH_INSTRUCTIONS
         select SPIRAM_RODATA
         select SPIRAM_FLASH_LOAD_TO_PSRAM
