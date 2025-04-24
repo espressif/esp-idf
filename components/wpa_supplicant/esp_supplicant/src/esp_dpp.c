@@ -19,6 +19,7 @@
 #include "esp_wps_i.h"
 #include "rsn_supp/wpa.h"
 #include "rsn_supp/pmksa_cache.h"
+#include <stdatomic.h>
 
 #ifdef CONFIG_DPP
 
@@ -32,7 +33,7 @@ struct action_rx_param {
 
 static void *s_dpp_api_lock = NULL;
 
-static bool s_dpp_listen_in_progress;
+static atomic_bool s_dpp_listen_in_progress;
 static struct esp_dpp_context_t s_dpp_ctx;
 static int esp_supp_rx_action(uint8_t *hdr, uint8_t *payload, size_t len, uint8_t channel);
 static wifi_action_rx_cb_t s_action_rx_cb = esp_supp_rx_action;
@@ -75,15 +76,17 @@ static uint8_t esp_dpp_deinit_auth(void)
     return ESP_OK;
 }
 
-static void listen_stop_handler(void *data, void *user_ctx)
+static int listen_stop_handler(void *data, void *user_ctx)
 {
     wifi_roc_req_t req = {0};
 
-    s_dpp_listen_in_progress = false;
+    atomic_store(&s_dpp_listen_in_progress, false);
     req.ifx = WIFI_IF_STA;
     req.type = WIFI_ROC_CANCEL;
 
     esp_wifi_remain_on_channel(&req);
+
+    return 0;
 }
 
 static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
@@ -292,7 +295,7 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
         wpa_printf(MSG_INFO, DPP_EVENT_CONNECTOR "%s",
                    conf->connector);
     }
-    if (s_dpp_listen_in_progress) {
+    if (atomic_load(&s_dpp_listen_in_progress)) {
         listen_stop_handler(NULL, NULL);
     }
     esp_dpp_call_cb(ESP_SUPP_DPP_CFG_RECVD, wifi_cfg);
@@ -548,7 +551,7 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
                                     (size_t)(public_action->v.pa_vendor_spec.vendor_data -
                                              (u8 *)rx_param->action_frm);
 
-        if (s_dpp_listen_in_progress) {
+        if (atomic_load(&s_dpp_listen_in_progress)) {
             listen_stop_handler(NULL, NULL);
         }
 
@@ -754,7 +757,7 @@ static void roc_status_handler(void *arg, esp_event_base_t event_base,
 {
     wifi_event_roc_done_t *evt = (wifi_event_roc_done_t *)event_data;
 
-    if (s_dpp_listen_in_progress && evt->context == (uint32_t)s_action_rx_cb) {
+    if (atomic_load(&s_dpp_listen_in_progress) && evt->context == (uint32_t)s_action_rx_cb) {
         eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
     }
 }
@@ -937,14 +940,18 @@ esp_err_t esp_supp_dpp_start_listen(void)
 
     /* cancel previous ROC if ongoing */
     esp_supp_dpp_stop_listen();
-    s_dpp_listen_in_progress = true;
+    atomic_store(&s_dpp_listen_in_progress, true);
     eloop_register_timeout(0, 0, esp_dpp_listen_next_channel, NULL, NULL);
     return 0;
 }
 
 esp_err_t esp_supp_dpp_stop_listen(void)
 {
-    eloop_register_timeout(0, 0, listen_stop_handler, NULL, NULL);
+    int ret = eloop_register_timeout_blocking(listen_stop_handler, NULL, NULL);
+
+    if (ret) {
+        return ESP_FAIL;
+    }
     return ESP_OK;
 }
 
@@ -980,7 +987,7 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
         goto init_fail;
     }
 
-    s_dpp_listen_in_progress = false;
+    atomic_store(&s_dpp_listen_in_progress, false);
     s_dpp_ctx.dpp_event_cb = cb;
 
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
