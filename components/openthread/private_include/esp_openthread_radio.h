@@ -45,6 +45,14 @@ void esp_openthread_radio_deinit(void);
 void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop);
 
 /**
+ * @brief This function handles netif change for radio spinel.
+ *
+ * @param[in]    state    The updated netif state.
+ *
+ */
+void esp_openthread_handle_netif_state_change(bool state);
+
+/**
  * @brief This function performs the OpenThread radio process.
  *
  * @param[in]    instance   The OpenThread instance.
