@@ -22,3 +22,10 @@ components/esp_driver_uart/test_apps/uart_vfs:
   depends_components:
     - esp_driver_uart
     - vfs
+
+components/esp_driver_uart/test_apps/uhci:
+  disable:
+    - if: SOC_UHCI_SUPPORTED != 1
+    - if: CONFIG_NAME == "psram" and SOC_AHB_GDMA_SUPPORT_PSRAM != 1
+  depends_components:
+    - esp_driver_uart
