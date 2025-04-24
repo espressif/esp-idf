@@ -202,6 +202,11 @@ void esp_openthread_radio_update(esp_openthread_mainloop_context_t *mainloop)
     s_spinel_interface.GetSpinelInterface().UpdateFdSet((void *)mainloop);
 }
 
+void esp_openthread_handle_netif_state_change(bool state)
+{
+    s_radio.SetTimeSyncState(state);
+}
+
 void otPlatRadioGetIeeeEui64(otInstance *instance, uint8_t *ieee_eui64)
 {
     SuccessOrDie(s_radio.GetIeeeEui64(ieee_eui64));
