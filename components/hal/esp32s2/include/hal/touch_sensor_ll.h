@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -194,7 +194,12 @@ static inline void touch_ll_get_slope(touch_pad_t touch_num, touch_cnt_slope_t *
  */
 static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_t opt)
 {
-    RTCIO.touch_pad[touch_num].tie_opt = opt;
+    if (opt == TOUCH_PAD_TIE_OPT_FLOAT) {
+        RTCIO.touch_pad[touch_num].xpd = 0;
+    } else {
+        RTCIO.touch_pad[touch_num].xpd = 1;
+        RTCIO.touch_pad[touch_num].tie_opt = opt;
+    }
 }
 
 /**
@@ -205,7 +210,11 @@ static inline void touch_ll_set_tie_option(touch_pad_t touch_num, touch_tie_opt_
  */
 static inline void touch_ll_get_tie_option(touch_pad_t touch_num, touch_tie_opt_t *opt)
 {
-    *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    if (RTCIO.touch_pad[touch_num].xpd) {
+        *opt = (touch_tie_opt_t)RTCIO.touch_pad[touch_num].tie_opt;
+    } else {
+        *opt = TOUCH_PAD_TIE_OPT_FLOAT;
+    }
 }
 
 /**
