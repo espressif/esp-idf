@@ -36,20 +36,23 @@ from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from artifacts_handler import ArtifactType
 from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
-from idf_ci.app import import_apps_from_txt
-from idf_ci.uploader import AppDownloader, AppUploader
-from idf_ci_utils import IDF_PATH, idf_relpath
-from idf_pytest.constants import (
-    DEFAULT_SDKCONFIG,
-    ENV_MARKERS,
-    SPECIAL_MARKERS,
-    TARGET_MARKERS,
-    PytestCase,
-    DEFAULT_LOGDIR,
-)
-from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY, ITEM_PYTEST_CASE_KEY, IdfPytestEmbedded
+from idf_ci_local.app import import_apps_from_txt
+from idf_ci_local.uploader import AppDownloader
+from idf_ci_local.uploader import AppUploader
+from idf_ci_utils import IDF_PATH
+from idf_ci_utils import idf_relpath
+from idf_pytest.constants import DEFAULT_LOGDIR
+from idf_pytest.constants import DEFAULT_SDKCONFIG
+from idf_pytest.constants import ENV_MARKERS
+from idf_pytest.constants import SPECIAL_MARKERS
+from idf_pytest.constants import TARGET_MARKERS
+from idf_pytest.constants import PytestCase
+from idf_pytest.plugin import IDF_PYTEST_EMBEDDED_KEY
+from idf_pytest.plugin import ITEM_PYTEST_CASE_KEY
+from idf_pytest.plugin import IdfPytestEmbedded
 from idf_pytest.utils import format_case_id
-from pytest_embedded.plugin import multi_dut_argument, multi_dut_fixture
+from pytest_embedded.plugin import multi_dut_argument
+from pytest_embedded.plugin import multi_dut_fixture
 from pytest_embedded_idf.dut import IdfDut
 from pytest_embedded_idf.unity_tester import CaseTester
 
@@ -426,8 +429,10 @@ def pytest_addoption(parser: pytest.Parser) -> None:
 
 
 def pytest_configure(config: Config) -> None:
-    from pytest_embedded_idf.utils import supported_targets, preview_targets
-    from idf_pytest.constants import SUPPORTED_TARGETS, PREVIEW_TARGETS
+    from idf_pytest.constants import PREVIEW_TARGETS
+    from idf_pytest.constants import SUPPORTED_TARGETS
+    from pytest_embedded_idf.utils import preview_targets
+    from pytest_embedded_idf.utils import supported_targets
 
     supported_targets.set(SUPPORTED_TARGETS)
     preview_targets.set(PREVIEW_TARGETS)

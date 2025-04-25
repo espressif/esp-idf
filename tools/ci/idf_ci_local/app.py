@@ -9,8 +9,9 @@ from dynamic_pipelines.constants import BINARY_SIZE_METRIC_NAME
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
 from idf_build_apps import json_to_app
-from idf_ci.uploader import AppUploader
-from idf_ci.uploader import get_app_uploader
+
+from idf_ci_local.uploader import AppUploader
+from idf_ci_local.uploader import get_app_uploader
 
 
 class IdfCMakeApp(CMakeApp):
@@ -34,6 +35,7 @@ class Metrics:
     """
     Represents a metric and its values for source, target, and the differences.
     """
+
     def __init__(
         self,
         source_value: t.Optional[float] = None,
@@ -65,10 +67,7 @@ class AppWithMetricsInfo(IdfCMakeApp):
     def __init__(self, **kwargs: t.Any) -> None:
         super().__init__(**kwargs)
 
-        self.metrics = {
-            metric_name: metric_data
-            for metric_name, metric_data in kwargs.get('metrics', {}).items()
-        }
+        self.metrics = {metric_name: metric_data for metric_name, metric_data in kwargs.get('metrics', {}).items()}
         self.is_new_app = kwargs.get('is_new_app', False)
 
     class Config:
@@ -96,8 +95,7 @@ def import_apps_from_txt(input_filepath: str) -> t.List[App]:
 
 
 def enrich_apps_with_metrics_info(
-    app_metrics_info_map: t.Dict[str, t.Dict[str, t.Any]],
-    apps: t.List[App]
+    app_metrics_info_map: t.Dict[str, t.Dict[str, t.Any]], apps: t.List[App]
 ) -> t.List[AppWithMetricsInfo]:
     def _get_full_attributes(obj: App) -> t.Dict[str, t.Any]:
         """
@@ -130,10 +128,7 @@ def enrich_apps_with_metrics_info(
         key = f'{app.app_dir}_{app.config_name}_{app.target}'
         app_attributes = _get_full_attributes(app)
 
-        metrics = {
-            metric_name: default_metric
-            for metric_name, default_metric in default_metrics_structure.items()
-        }
+        metrics = {metric_name: default_metric for metric_name, default_metric in default_metrics_structure.items()}
         is_new_app = False
 
         if key in app_metrics_info_map:

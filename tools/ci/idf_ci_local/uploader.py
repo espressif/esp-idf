@@ -141,7 +141,7 @@ class AppUploader(AppDownloader):
                     self._client.fget_object(getenv('IDF_S3_BUCKET'), obj_name, zip_filename)
                     print(f'Downloaded to {zip_filename}')
             except minio.error.S3Error as e:
-                raise RuntimeError('Shouldn\'t happen, please report this bug in the CI channel' + str(e))
+                raise RuntimeError("Shouldn't happen, please report this bug in the CI channel" + str(e))
 
             with ZipFile(zip_filename, 'r') as zr:
                 zr.extractall()
