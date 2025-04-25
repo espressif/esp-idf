@@ -55,6 +55,7 @@ typedef struct {
     bool app_registered;
     bool service_dereg_active;
     bool forced_disc;
+    bool in_use;
     tBTA_HD_APP_INFO app_info;
     tBTA_HD_QOS_INFO in_qos;
     tBTA_HD_QOS_INFO out_qos;
