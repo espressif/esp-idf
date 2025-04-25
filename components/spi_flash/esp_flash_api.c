@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -21,6 +21,9 @@
 #include "esp_rom_spiflash.h"
 #include "esp_private/esp_clk.h"
 #include "esp_spi_flash_counters.h"
+#include "esp_check.h"
+#include "hal/efuse_hal.h"
+#include "soc/chip_revision.h"
 
 #if CONFIG_IDF_TARGET_ESP32S2
 #include "esp_crypto_lock.h" // for locking flash encryption peripheral
@@ -1378,10 +1381,30 @@ esp_err_t IRAM_ATTR esp_flash_write_encrypted(esp_flash_t *chip, uint32_t addres
         COUNTER_ADD_BYTES(write, encrypt_byte);
 
 #if CONFIG_SPI_FLASH_VERIFY_WRITE
+
+        if (lock_once == true) {
+            err = s_encryption_write_unlock(chip);
+            if (err != ESP_OK) {
+                bus_acquired = false;
+                //Error happens, we end flash operation. Re-enable cache and flush it
+                goto restore_cache;
+            }
+            bus_acquired = false;
+        }
         err = s_verify_write(chip, row_addr, encrypt_byte, (uint32_t *)encrypt_buf, is_encrypted);
         if (err != ESP_OK) {
             //Error happens, we end flash operation. Re-enable cache and flush it
             goto restore_cache;
+        }
+
+        if (lock_once == true) {
+            err = s_encryption_write_lock(chip);
+            if (err != ESP_OK) {
+                bus_acquired = false;
+                //Error happens, we end flash operation. Re-enable cache and flush it
+                goto restore_cache;
+            }
+            bus_acquired = true;
         }
 #endif //CONFIG_SPI_FLASH_VERIFY_WRITE
     }
@@ -1419,13 +1442,29 @@ restore_cache:
 //init suspend mode cmd, uses internal.
 esp_err_t esp_flash_suspend_cmd_init(esp_flash_t* chip)
 {
+#if !CONFIG_SPI_FLASH_FORCE_ENABLE_C6_H2_SUSPEND
+#if CONFIG_IDF_TARGET_ESP32H2
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 102)) {
+        ESP_LOGE(TAG, "ESP32H2 chips lower than v1.2 are not recommended to suspend the Flash");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+#if CONFIG_IDF_TARGET_ESP32C6
+    if (!ESP_CHIP_REV_ABOVE(efuse_hal_chip_revision(), 2)) {
+        ESP_LOGE(TAG, "ESP32C6 chips lower than v0.2 are not recommended to suspend the Flash");
+        return ESP_ERR_NOT_SUPPORTED;
+    }
+#endif
+#endif
     ESP_EARLY_LOGW(TAG, "Flash suspend feature is enabled");
     if (chip->chip_drv->get_chip_caps == NULL) {
         // chip caps get failed, pass the flash capability check.
-        ESP_EARLY_LOGW(TAG, "get_chip_caps function pointer hasn't been initialized");
+        ESP_EARLY_LOGE(TAG, "get_chip_caps function pointer hasn't been initialized");
+        return ESP_ERR_INVALID_ARG;
     } else {
         if ((chip->chip_drv->get_chip_caps(chip) & SPI_FLASH_CHIP_CAP_SUSPEND) == 0) {
-            ESP_EARLY_LOGW(TAG, "Suspend and resume may not supported for this flash model yet.");
+            ESP_EARLY_LOGE(TAG, "Suspend and resume may not supported for this flash model yet.");
+            return ESP_ERR_NOT_SUPPORTED;
         }
     }
     return chip->chip_drv->sus_setup(chip);
