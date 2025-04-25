@@ -247,16 +247,22 @@ static void psram_gpio_config(void)
 }
 
 #if !SOC_SPI_MEM_SUPPORT_TIMING_TUNING
-static void s_config_psram_clock(void)
+static void s_config_psram_clock(bool init_state)
 {
-    // This function can be extended if we have other psram frequency
     uint32_t clock_conf = 0;
+    if (init_state) {
+        clock_conf = psram_ctrlr_ll_calculate_clock_reg(4);
+        psram_ctrlr_ll_set_spi1_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_1, clock_conf);
+    } else {
+        // This function can be extended if we have other psram frequency
+
 #if (CONFIG_SPIRAM_SPEED == 80)
-    clock_conf = psram_ctrlr_ll_calculate_clock_reg(1);
+        clock_conf = psram_ctrlr_ll_calculate_clock_reg(1);
 #elif (CONFIG_SPIRAM_SPEED == 40)
-    clock_conf = psram_ctrlr_ll_calculate_clock_reg(2);
+        clock_conf = psram_ctrlr_ll_calculate_clock_reg(2);
 #endif
-    psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_0, clock_conf);
+        psram_ctrlr_ll_set_bus_clock(PSRAM_CTRLR_LL_MSPI_ID_0, clock_conf);
+    }
 }
 #endif  //#if !SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
@@ -289,6 +295,8 @@ esp_err_t esp_psram_impl_enable(void)
 #if SOC_SPI_MEM_SUPPORT_TIMING_TUNING
     //enter MSPI slow mode to init PSRAM device registers
     mspi_timing_enter_low_speed_mode(true);
+#else
+    s_config_psram_clock(true);
 #endif // SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
     uint32_t psram_id = 0;
@@ -339,7 +347,7 @@ esp_err_t esp_psram_impl_enable(void)
     //Back to the high speed mode. Flash/PSRAM clocks are set to the clock that user selected. SPI0/1 registers are all set correctly
     mspi_timing_enter_high_speed_mode(true);
 #else
-    s_config_psram_clock();
+    s_config_psram_clock(false);
     //Configure SPI0 PSRAM related SPI Phases
     config_psram_spi_phases();
 #endif
