@@ -46,21 +46,21 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PD);
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PU);
+    // TODO: [ESP32H4] IDF-12368 IDF-12370
+    abort();
 }
 
 /**
  * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
-    CLEAR_PERI_REG_MASK(ANA_CONFIG_REG, ANA_I2C_SAR_FORCE_PU);
-    SET_PERI_REG_MASK(ANA_CONFIG2_REG, ANA_I2C_SAR_FORCE_PD);
+    // TODO: [ESP32H4] IDF-12368 IDF-12370
+    abort();
 }
 
 #ifdef __cplusplus

@@ -96,35 +96,17 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
-{
-    CLEAR_PERI_REG_MASK(I2C_MST_ANA_CONF1_REG, ANA_I2C_SAR_FORCE_PD);
-    SET_PERI_REG_MASK(I2C_MST_ANA_CONF2_REG, ANA_I2C_SAR_FORCE_PU);
-}
-
-/**
- * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
- */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
-{
-    CLEAR_PERI_REG_MASK(I2C_MST_ANA_CONF1_REG, ANA_I2C_SAR_FORCE_PU);
-    SET_PERI_REG_MASK(I2C_MST_ANA_CONF2_REG, ANA_I2C_SAR_FORCE_PD);
-}
-
-/**
- * @brief Enable regi2c controlled periph registers
- */
-static inline void regi2c_ctrl_ll_i2c_periph_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
     SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 }
 
 /**
- * @brief Disable regi2c controlled periph registers
+ * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
  */
-static inline void regi2c_ctrl_ll_i2c_periph_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
 }

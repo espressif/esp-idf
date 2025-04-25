@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2016-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2016-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -258,10 +258,6 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
     ESP_RETURN_ON_FALSE(handle->fsm == ADC_FSM_INIT, ESP_ERR_INVALID_STATE, ADC_TAG, "ADC continuous mode isn't in the init state, it's started already");
 
     ANALOG_CLOCK_ENABLE();
-#if SOC_ADC_CALIBRATION_V1_SUPPORTED
-    adc_hal_calibration_init(ADC_UNIT_1);
-    adc_hal_calibration_init(ADC_UNIT_2);
-#endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
 
     //reset ADC digital part to reset ADC sampling EOF counter
     ADC_BUS_CLK_ATOMIC() {
@@ -284,9 +280,11 @@ esp_err_t adc_continuous_start(adc_continuous_handle_t handle)
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
     if (handle->use_adc1) {
+        adc_hal_calibration_init(ADC_UNIT_1);
         adc_set_hw_calibration_code(ADC_UNIT_1, handle->adc1_atten);
     }
     if (handle->use_adc2) {
+        adc_hal_calibration_init(ADC_UNIT_2);
         adc_set_hw_calibration_code(ADC_UNIT_2, handle->adc2_atten);
     }
 #endif  //#if SOC_ADC_CALIBRATION_V1_SUPPORTED
