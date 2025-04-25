@@ -145,6 +145,12 @@ We have two bits to control the interrupt:
 #define SPI_MASTER_ATTR
 #endif
 
+#if CONFIG_SPI_MASTER_IN_IRAM || CONFIG_SPI_MASTER_ISR_IN_IRAM
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define SPI_MASTER_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
+#endif
+
 #if SOC_PERIPH_CLK_CTRL_SHARED
 #define SPI_MASTER_PERI_CLOCK_ATOMIC() PERIPH_RCC_ATOMIC()
 #else
@@ -493,7 +499,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
     }
 
     //Allocate memory for device
-    dev = malloc(sizeof(spi_device_t));
+    dev = heap_caps_malloc(sizeof(spi_device_t), SPI_MASTER_MALLOC_CAPS);
     if (dev == NULL) {
         goto nomem;
     }

@@ -5,8 +5,8 @@
  */
 
 #include <string.h>
+#include <stdatomic.h>
 #include "sdkconfig.h"
-#include "stdatomic.h"
 #include "esp_types.h"
 #include "esp_attr.h"
 #include "esp_check.h"
@@ -27,6 +27,12 @@
 #include "hal/gpio_hal.h"
 #if CONFIG_IDF_TARGET_ESP32
 #include "soc/dport_reg.h"
+#endif
+
+#if CONFIG_SPI_MASTER_ISR_IN_IRAM || CONFIG_SPI_SLAVE_ISR_IN_IRAM
+#define SPI_COMMON_MALLOC_CAPS    (MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT)
+#else
+#define SPI_COMMON_MALLOC_CAPS    (MALLOC_CAP_DEFAULT)
 #endif
 
 static const char *SPI_TAG = "spi";
@@ -270,7 +276,7 @@ esp_err_t spicommon_dma_chan_alloc(spi_host_device_t host_id, spi_dma_chan_t dma
 #endif
 
     esp_err_t ret = ESP_OK;
-    spi_dma_ctx_t *dma_ctx = (spi_dma_ctx_t *)calloc(1, sizeof(spi_dma_ctx_t));
+    spi_dma_ctx_t *dma_ctx = (spi_dma_ctx_t *)heap_caps_calloc(1, sizeof(spi_dma_ctx_t), SPI_COMMON_MALLOC_CAPS);
     if (!dma_ctx) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
@@ -825,7 +831,7 @@ esp_err_t spi_bus_initialize(spi_host_device_t host_id, const spi_bus_config_t *
     SPI_CHECK(spi_chan_claimed, "host_id already in use", ESP_ERR_INVALID_STATE);
 
     //clean and initialize the context
-    ctx = (spicommon_bus_context_t *)calloc(1, sizeof(spicommon_bus_context_t));
+    ctx = (spicommon_bus_context_t *)heap_caps_calloc(1, sizeof(spicommon_bus_context_t), SPI_COMMON_MALLOC_CAPS);
     if (!ctx) {
         err = ESP_ERR_NO_MEM;
         goto cleanup;
