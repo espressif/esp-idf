@@ -938,7 +938,7 @@ typedef struct {
     uint8_t ssid_len;         /**< SSID length of connected AP */
     uint8_t bssid[6];         /**< BSSID of connected AP*/
     uint8_t channel;          /**< Channel of connected AP*/
-    wifi_auth_mode_t authmode;/**< Authentication mode used by AP*/
+    wifi_auth_mode_t authmode;/**< Authentication mode used by the connection*/
     uint16_t aid;             /**< Authentication id assigned by the connected AP */
 } wifi_event_sta_connected_t;
 
