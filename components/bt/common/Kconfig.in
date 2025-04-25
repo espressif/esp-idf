@@ -93,3 +93,18 @@ config BT_BLE_LOG_SPI_OUT_SYNC_IO_NUM
     default 3
     help
         GPIO number of SYNC IO
+
+config BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
+    bool "Enable periodic buffer flush out"
+    depends on BT_BLE_LOG_SPI_OUT_ENABLED
+    default n
+    help
+        Enable periodic buffer flush out
+        Not recommended when SPI receiver is unavailable
+
+config BT_BLE_LOG_SPI_OUT_FLUSH_TIMEOUT
+    int "Buffer flush out period in unit of ms"
+    depends on BT_BLE_LOG_SPI_OUT_FLUSH_TIMER_ENABLED
+    default 1000
+    help
+        Buffer flush out period in unit of ms
