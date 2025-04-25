@@ -24,7 +24,8 @@
 #include "esp_private/esp_wifi_private.h"
 #include "esp_wifi.h"
 
-typedef time_t os_time_t;
+/* Modifying datatype for platform and compiler independence */
+typedef uint64_t os_time_t;
 
 /**
  * os_sleep - Sleep (sec, usec)
