@@ -8,7 +8,7 @@ from dynamic_pipelines.constants import TEST_RELATED_APPS_FILENAME
 from idf_build_apps import build_apps
 from idf_build_apps import setup_logging
 from idf_build_apps.utils import semicolon_separated_str_to_list
-from idf_ci.app import import_apps_from_txt
+from idf_ci_local.app import import_apps_from_txt
 from idf_pytest.constants import DEFAULT_IGNORE_WARNING_FILEPATH
 
 if __name__ == '__main__':

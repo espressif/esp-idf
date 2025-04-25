@@ -28,7 +28,7 @@ from dynamic_pipelines.models import Job
 from dynamic_pipelines.models import TargetTestJob
 from dynamic_pipelines.utils import dump_jobs_to_yaml
 from idf_build_apps import App
-from idf_ci.app import import_apps_from_txt
+from idf_ci_local.app import import_apps_from_txt
 from idf_pytest.script import get_pytest_cases
 
 

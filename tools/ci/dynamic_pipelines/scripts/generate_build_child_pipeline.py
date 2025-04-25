@@ -19,7 +19,7 @@ from dynamic_pipelines.models import BuildJob
 from dynamic_pipelines.models import EmptyJob
 from dynamic_pipelines.utils import dump_jobs_to_yaml
 from idf_build_apps.utils import semicolon_separated_str_to_list
-from idf_ci.app import dump_apps_to_txt
+from idf_ci_local.app import dump_apps_to_txt
 from idf_ci_utils import IDF_PATH
 from idf_pytest.constants import CollectMode
 from idf_pytest.constants import DEFAULT_CONFIG_RULES_STR
