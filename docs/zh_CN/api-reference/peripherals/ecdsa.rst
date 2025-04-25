@@ -80,7 +80,6 @@ ECDSA 密钥可以通过 ``idf.py`` 脚本在外部编程。以下是关于编�
 
     {IDF_TARGET_NAME} 的 ECDSA 外设还支持使用确定性推导参数 K 来生成确定性签名，详见 `RFC 6979 <https://tools.ietf.org/html/rfc6979>`_ 第 3.2 节。
 
-
 生成非确定性签名
 ----------------
 

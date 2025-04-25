@@ -318,7 +318,7 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
                 In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， to continue using :cpp:func:`gpio_wakeup_enable` for GPIO wakeup, you need to first call :cpp:func:`rtc_gpio_init` and :cpp:func:`rtc_gpio_set_direction`, setting the RTCIO to input mode.
 
-.. only:: not SOC_RTCIO_WAKE_SUPPORTED
+.. only:: not SOC_RTCIO_WAKE_SUPPORTED and not esp32h2
 
     GPIO Wakeup
     ^^^^^^^^^^^
@@ -329,11 +329,19 @@ RTC peripherals or RTC memories do not need to be powered on during sleep in thi
 
     .. only:: SOC_PM_SUPPORT_TOP_PD
 
-       .. note::
+        .. note::
 
             .. only::  SOC_GPIO_SUPPORT_DEEPSLEEP_WAKEUP
 
                 In Light-sleep mode, if you set Kconfig option :ref:`CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP`， you can use :cpp:func:`esp_deep_sleep_enable_gpio_wakeup` directly for GPIO wakeup, because the digital IO power domain is being powered off, where the situation is the same as entering Deep-sleep.
+
+.. only:: esp32h2
+
+    GPIO Wakeup
+    ^^^^^^^^^^^
+
+    Any IO can be used as the external input to wake up the chip from Light-sleep. Each pin can be individually configured to trigger wakeup on high or low level using the :cpp:func:`gpio_wakeup_enable` function. Then the :cpp:func:`esp_sleep_enable_gpio_wakeup` function should be called to enable this wakeup source.
+
 
 UART Wakeup (Light-sleep Only)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -475,7 +483,9 @@ Application Examples
     :SOC_WIFI_SUPPORTED: - :example:`wifi/power_save` demonstrates the usage of Wi-Fi Modem-sleep mode and automatic Light-sleep feature to maintain Wi-Fi connections.
     :SOC_BT_SUPPORTED: - :example:`bluetooth/nimble/power_save` demonstrates the usage of Bluetooth Modem-sleep mode and automatic Light-sleep feature to maintain Bluetooth connections.
     :SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of various Deep-sleep wakeup triggers and ULP coprocessor programming.
-    :not SOC_ULP_SUPPORTED: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, supported by {IDF_TARGET_NAME}.
+    :not SOC_ULP_SUPPORTED and not esp32c3 and not esp32h2: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, EXT0, EXT1, supported by {IDF_TARGET_NAME}.
+    :esp32c3: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, GPIOs, supported by ESP32-C3.
+    :esp32h2: - :example:`system/deep_sleep` demonstrates the usage of Deep-sleep wakeup triggered by various sources, such as the RTC timer, EXT0, EXT1, supported by ESP32-H2.
     - :example:`system/light_sleep` demonstrates the usage of Light-sleep wakeup triggered by various sources, such as the timer, GPIOs, supported by {IDF_TARGET_NAME}.
     :SOC_TOUCH_SENSOR_SUPPORTED and SOC_PM_SUPPORT_TOUCH_SENSOR_WAKEUP: - :example:`peripherals/touch_sensor/touch_sens_sleep` demonstrates the usage of Light-sleep and Deep-sleep wakeup triggered by the touch sensor.
 

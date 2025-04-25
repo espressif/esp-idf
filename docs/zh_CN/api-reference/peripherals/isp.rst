@@ -104,6 +104,11 @@ ISP 驱动程序需要由 :cpp:type:`esp_isp_processor_cfg_t` 指定配置。
 
 使用上述句柄，可以启用/禁用 ISP 驱动程序，也可以安装其他 ISP 模块。
 
+.. note::
+
+    如果将 MIPI CSI 或 ISP_DVP 用作摄像头控制器，则必须使用 ISP 外设。因此即便无需使用 ISP 功能，也要调用 :cpp:func:`esp_isp_new_processor` 函数安装 ISP 驱动程序。
+
+    如果无需使用 ISP 功能，也可以设置 :cpp:member:`esp_isp_processor_cfg_t::bypass_isp`，使 ISP 驱动程序绕过 ISP 流水线，仅启用必要的功能。
 
 安装 ISP 自动对焦 (AF) 驱动程序
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

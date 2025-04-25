@@ -629,7 +629,8 @@ ESP-IDF 集成了用于请求 :ref:`堆内存信息 <heap-information>`、:ref:`
 应用示例
 --------------------
 
-- :example:`system/heap_task_tracking` 演示了如何使用堆任务跟踪功能跟踪分配给每个任务的堆内存。
+- :example:`system/heap_task_tracking/basic` 演示了堆任务跟踪的概览功能，用于导出每个任务在堆内存使用方面的统计信息概要。
+- :example:`system/heap_task_tracking/advanced` 演示了堆任务跟踪中统计信息函数的用法，用于访问每个任务在堆内存使用方面的完整统计数据。
 
 API 参考 - 堆内存跟踪
 ----------------------------
