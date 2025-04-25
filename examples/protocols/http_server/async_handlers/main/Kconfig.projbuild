@@ -7,4 +7,10 @@ menu "Example Configuration"
             The maximum number of simultaneous async requests that the
             web server can handle.
 
+    config EXAMPLE_ASYNC_WORKER_TASK_STACK_SIZE
+        int "Async Worker Task Stack Size"
+        default 2560
+        help
+            The stack size allocated for each async worker task.
+
 endmenu
