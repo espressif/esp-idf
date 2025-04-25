@@ -32,7 +32,7 @@
  */
 
 #define ASYNC_WORKER_TASK_PRIORITY      5
-#define ASYNC_WORKER_TASK_STACK_SIZE    2048
+#define ASYNC_WORKER_TASK_STACK_SIZE    CONFIG_EXAMPLE_ASYNC_WORKER_TASK_STACK_SIZE
 
 static const char *TAG = "example";
 
@@ -133,7 +133,11 @@ static esp_err_t long_async_handler(httpd_req_t *req)
     // send a request count
     char s[100];
     snprintf(s, sizeof(s), "<div>req: %u</div>\n", req_count);
-    httpd_resp_sendstr_chunk(req, s);
+    esp_err_t err = httpd_resp_sendstr_chunk(req, s);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+        return err;
+    }
 
     // then every second, send a "tick"
     for (int i = 0; i < 60; i++) {
@@ -145,11 +149,19 @@ static esp_err_t long_async_handler(httpd_req_t *req)
 
         // send a tick
         snprintf(s, sizeof(s), "<div>%u</div>\n", i);
-        httpd_resp_sendstr_chunk(req, s);
+        err = httpd_resp_sendstr_chunk(req, s);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+            return err;
+        }
     }
 
     // send "complete"
-    httpd_resp_sendstr_chunk(req, NULL);
+    err = httpd_resp_sendstr_chunk(req, NULL);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to send string chunk: %s", esp_err_to_name(err));
+        return err;
+    }
 
     return ESP_OK;
 }
