@@ -527,7 +527,7 @@ esp_err_t spi_bus_add_device(spi_host_device_t host_id, const spi_device_interfa
 
     //Set CS pin, CS options
     if (dev_config->spics_io_num >= 0) {
-        spicommon_cs_initialize(host_id, dev_config->spics_io_num, freecs, use_gpio);
+        spicommon_cs_initialize(host_id, dev_config->spics_io_num, freecs, use_gpio, (uint64_t *)&bus_attr->gpio_reserve);
     }
 
     //save a pointer to device in spi_host_t
@@ -605,8 +605,9 @@ esp_err_t spi_bus_remove_device(spi_device_handle_t handle)
 
     //return
     int spics_io_num = handle->cfg.spics_io_num;
+    const spi_bus_attr_t* bus_attr = handle->host->bus_attr;
     if (spics_io_num >= 0) {
-        spicommon_cs_free_io(spics_io_num);
+        spicommon_cs_free_io(spics_io_num, (uint64_t *)&bus_attr->gpio_reserve);
     }
 
     //Kill queues

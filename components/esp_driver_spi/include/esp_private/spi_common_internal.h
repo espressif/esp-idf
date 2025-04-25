@@ -53,6 +53,7 @@ typedef enum {
 /// Attributes of an SPI bus
 typedef struct {
     spi_bus_config_t bus_cfg;           ///< Config used to initialize the bus
+    uint64_t gpio_reserve;              ///< reserved output gpio bit mask
     uint32_t flags;                     ///< Flags (attributes) of the bus
     int max_transfer_sz;                ///< Maximum length of bytes available to send
     bool dma_enabled;                   ///< To enable DMA or not
@@ -156,49 +157,44 @@ esp_err_t spicommon_dma_chan_free(spi_dma_ctx_t *dma_ctx);
  *              - ``SPICOMMON_BUSFLAG_QUAD``: Combination of ``SPICOMMON_BUSFLAG_DUAL`` and ``SPICOMMON_BUSFLAG_WPHD``.
  *              - ``SPICOMMON_BUSFLAG_IO4_IO7``: The bus has spi data4 ~ spi data7 connected.
  *              - ``SPICOMMON_BUSFLAG_OCTAL``: Combination of ``SPICOMMON_BUSFLAG_QUAL`` and ``SPICOMMON_BUSFLAG_IO4_IO7``.
+ * @param[out] io_reserved Output the reserved gpio map
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o);
+esp_err_t spicommon_bus_initialize_io(spi_host_device_t host, const spi_bus_config_t *bus_config, uint32_t flags, uint32_t *flags_o,  uint64_t *io_reserved);
 
 /**
  * @brief Free the IO used by a SPI peripheral
  *
  * @param bus_cfg Bus config struct which defines which pins to be used.
+ * @param io_reserved Bitmap indicate which pin is reserved
  *
  * @return
  *         - ESP_ERR_INVALID_ARG   if parameter is invalid
  *         - ESP_OK                on success
  */
-esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg);
+esp_err_t spicommon_bus_free_io_cfg(const spi_bus_config_t *bus_cfg, uint64_t *io_reserved);
 
 /**
  * @brief Initialize a Chip Select pin for a specific SPI peripheral
  *
  * @param host SPI peripheral
  * @param cs_io_num GPIO pin to route
- * @param cs_num CS id to route
+ * @param cs_id Hardware CS id to route
  * @param force_gpio_matrix If true, CS will always be routed through the GPIO matrix. If false,
  *                          if the GPIO number allows it, the routing will happen through the IO_mux.
+ * @param[out] io_reserved Output the reserved gpio map
  */
-void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_num, int force_gpio_matrix);
+void spicommon_cs_initialize(spi_host_device_t host, int cs_io_num, int cs_id, int force_gpio_matrix, uint64_t *io_reserved);
 
 /**
  * @brief Free a chip select line
  *
  * @param cs_gpio_num CS gpio num to free
+ * @param io_reserved Bitmap indicate which pin is reserved
  */
-void spicommon_cs_free_io(int cs_gpio_num);
-
-/**
- * @brief Check whether all pins used by a host are through IOMUX.
- *
- * @param host SPI peripheral
- *
- * @return false if any pins are through the GPIO matrix, otherwise true.
- */
-bool spicommon_bus_using_iomux(spi_host_device_t host);
+void spicommon_cs_free_io(int cs_gpio_num, uint64_t *io_reserved);
 
 /**
  * @brief Get the IRQ source for a specific SPI host
@@ -298,8 +294,7 @@ const spi_dma_ctx_t* spi_bus_get_dma_ctx(spi_host_device_t host_id);
  * @param arg       The argument to call the destructor
  * @return Always ESP_OK.
  */
-esp_err_t spi_bus_register_destroy_func(spi_host_device_t host_id,
-                                        spi_destroy_func_t f, void *arg);
+esp_err_t spi_bus_register_destroy_func(spi_host_device_t host_id, spi_destroy_func_t f, void *arg);
 
 #ifdef __cplusplus
 }

@@ -61,6 +61,7 @@ typedef struct {
 typedef struct {
     int id;
     _Atomic spi_bus_fsm_t fsm;
+    uint64_t gpio_reserve;
     spi_bus_config_t bus_config;
     spi_dma_ctx_t   *dma_ctx;
     spi_slave_interface_config_t cfg;
@@ -145,7 +146,6 @@ static esp_err_t s_spi_create_sleep_retention_cb(void *arg)
 
 esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *bus_config, const spi_slave_interface_config_t *slave_config, spi_dma_chan_t dma_chan)
 {
-    bool spi_chan_claimed;
     esp_err_t ret = ESP_OK;
     esp_err_t err;
     SPI_CHECK(is_valid_host(host), "invalid host", ESP_ERR_INVALID_ARG);
@@ -167,16 +167,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         SPI_CHECK(slave_config->post_trans_cb != NULL, "use feature flag 'SPI_SLAVE_NO_RETURN_RESULT' but no post_trans_cb function sets", ESP_ERR_INVALID_ARG);
     }
 
-    spi_chan_claimed = spicommon_periph_claim(host, "spi slave");
-    SPI_CHECK(spi_chan_claimed, "host already in use", ESP_ERR_INVALID_STATE);
-
+    SPI_CHECK(spicommon_periph_claim(host, "spi slave"), "host already in use", ESP_ERR_INVALID_STATE);
     // spi_slave_t contains atomic variable, memory must be allocated from internal memory
-    spihost[host] = heap_caps_malloc(sizeof(spi_slave_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
+    spihost[host] = heap_caps_calloc(1, sizeof(spi_slave_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     if (spihost[host] == NULL) {
         ret = ESP_ERR_NO_MEM;
         goto cleanup;
     }
-    memset(spihost[host], 0, sizeof(spi_slave_t));
     memcpy(&spihost[host]->cfg, slave_config, sizeof(spi_slave_interface_config_t));
     memcpy(&spihost[host]->bus_config, bus_config, sizeof(spi_bus_config_t));
     spihost[host]->id = host;
@@ -210,13 +207,13 @@ esp_err_t spi_slave_initialize(spi_host_device_t host, const spi_bus_config_t *b
         spihost[host]->max_transfer_sz = SOC_SPI_MAXIMUM_BUFFER_SIZE;
     }
 
-    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &spihost[host]->flags);
+    err = spicommon_bus_initialize_io(host, bus_config, SPICOMMON_BUSFLAG_SLAVE | bus_config->flags, &spihost[host]->flags, &spihost[host]->gpio_reserve);
     if (err != ESP_OK) {
         ret = err;
         goto cleanup;
     }
     if (slave_config->spics_io_num >= 0) {
-        spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]));
+        spicommon_cs_initialize(host, slave_config->spics_io_num, 0, !bus_is_iomux(spihost[host]), &spihost[host]->gpio_reserve);
         // check and save where cs line really route through
         spihost[host]->cs_iomux = (slave_config->spics_io_num == spi_periph_signal[host].spics0_iomux_pin) && bus_is_iomux(spihost[host]);
         spihost[host]->cs_in_signal = spi_periph_signal[host].spics_in;
@@ -334,7 +331,10 @@ esp_err_t spi_slave_free(spi_host_device_t host)
         free(spihost[host]->dma_ctx->dmadesc_rx);
         spicommon_dma_chan_free(spihost[host]->dma_ctx);
     }
-    spicommon_bus_free_io_cfg(&spihost[host]->bus_config);
+    spicommon_bus_free_io_cfg(&spihost[host]->bus_config, &spihost[host]->gpio_reserve);
+    if (spihost[host]->cfg.spics_io_num >= 0) {
+        spicommon_cs_free_io(spihost[host]->cfg.spics_io_num, &spihost[host]->gpio_reserve);
+    }
     esp_intr_free(spihost[host]->intr);
 
 #if SOC_SPI_SUPPORT_SLEEP_RETENTION && CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
