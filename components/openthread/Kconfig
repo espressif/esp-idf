@@ -263,6 +263,13 @@ menu "OpenThread"
             help
                 Select this option to enable link metrics feature
 
+        config OPENTHREAD_BORDER_AGENT_ENABLE
+            bool "Enable border agent feature"
+            default y if OPENTHREAD_BORDER_ROUTER
+            default n if !OPENTHREAD_BORDER_ROUTER
+            help
+                Select this option to enable border agent feature
+
         config OPENTHREAD_MACFILTER_ENABLE
             bool "Enable mac filter feature"
             default n
