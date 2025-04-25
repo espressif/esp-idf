@@ -899,6 +899,7 @@ void bta_jv_free_scn(tBTA_JV_MSG *p_data)
     }
     case BTA_JV_CONN_TYPE_L2CAP:
         bta_jv_set_free_psm(scn);
+        user_data = (tBTA_JV_FREE_SCN_USER_DATA *)fc->user_data;
         if (fc->p_cback) {
             fc->p_cback(BTA_JV_FREE_SCN_EVT, (tBTA_JV *)&evt_data, (void *)user_data);
         }
@@ -1389,6 +1390,7 @@ void bta_jv_l2cap_close(tBTA_JV_MSG *p_data)
     evt_data.handle = cc->handle;
     evt_data.status = bta_jv_free_l2c_cb(cc->p_cb);
     evt_data.async = FALSE;
+    evt_data.user_data = (void *)cc->user_data;
 
     if (cc->p_cback) {
         cc->p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
@@ -1542,19 +1544,13 @@ void bta_jv_l2cap_start_server(tBTA_JV_MSG *p_data)
 void bta_jv_l2cap_stop_server(tBTA_JV_MSG *p_data)
 {
     tBTA_JV_L2C_CB      *p_cb;
-    tBTA_JV_L2CAP_CLOSE  evt_data;
     tBTA_JV_API_L2CAP_SERVER *ls = &(p_data->l2cap_server);
-    tBTA_JV_L2CAP_CBACK *p_cback;
-    void *user_data;
+
     for (int i = 0; i < BTA_JV_MAX_L2C_CONN; i++) {
         if (bta_jv_cb.l2c_cb[i].psm == ls->local_psm) {
             p_cb = &bta_jv_cb.l2c_cb[i];
-            p_cback = p_cb->p_cback;
-            user_data = p_cb->user_data;
-            evt_data.handle = p_cb->handle;
-            evt_data.status = bta_jv_free_l2c_cb(p_cb);
-            evt_data.async = FALSE;
-            p_cback(BTA_JV_L2CAP_CLOSE_EVT, (tBTA_JV *)&evt_data, user_data);
+            bta_jv_free_l2c_cb(p_cb);
+            // Report event when free psm
             break;
         }
     }
