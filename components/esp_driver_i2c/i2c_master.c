@@ -386,6 +386,8 @@ static void s_i2c_start_end_command(i2c_master_bus_handle_t i2c_master, i2c_oper
     }
     uint8_t addr_write[addr_byte];
     uint8_t addr_read[addr_byte];
+    memset(addr_write, 0, sizeof(addr_write));
+    memset(addr_read, 0, sizeof(addr_read));
 
     if (addr_byte != 0) {
         addr_write[0] = I2C_ADDRESS_TRANS_WRITE(cmd_address);
@@ -1360,7 +1362,8 @@ esp_err_t i2c_master_execute_defined_operations(i2c_master_dev_handle_t i2c_dev,
     ESP_RETURN_ON_FALSE(i2c_operation != NULL, ESP_ERR_INVALID_ARG, TAG, "i2c operation pointer is invalid");
     ESP_RETURN_ON_FALSE(operation_list_num <= (SOC_I2C_CMD_REG_NUM), ESP_ERR_INVALID_ARG, TAG, "i2c command list cannot contain so many commands");
 
-    i2c_operation_t i2c_ops[operation_list_num] = {};
+    i2c_operation_t i2c_ops[operation_list_num];
+    memset(i2c_ops, 0, sizeof(i2c_ops));
     for (int i = 0; i < operation_list_num; i++) {
         switch (i2c_operation[i].command) {
         case I2C_MASTER_CMD_START:
