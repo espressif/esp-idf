@@ -267,17 +267,33 @@ static void s_config_psram_clock(bool init_state)
 #endif  //#if !SOC_SPI_MEM_SUPPORT_TIMING_TUNING
 
 /**
- * For certain wafer version and 8MB case, we consider it as 4MB mode as it uses 2T mode
+ * For mrj069000aa, this wafer version and 8MB case, we consider it as 4MB mode as it uses 2T mode
  */
-bool s_check_aps3204_2tmode(void)
+static bool s_check_mrj069000aa_2tmode(uint32_t eid_47_16)
+{
+    bool is_2t = false;
+    ESP_EARLY_LOGD(TAG, "(eid_47_16 >> 5) & 0xfffff: 0x%"PRIx32, (eid_47_16 >> 5) & 0xfffff);
+    if (((eid_47_16 >> 5) & 0xfffff) == 0x8a445) {
+        is_2t = true;
+    }
+
+    return is_2t;
+}
+
+static bool s_check_2tmode(void)
 {
     uint64_t full_eid = 0;
     psram_read_id(PSRAM_CTRLR_LL_MSPI_ID_1, (uint8_t *)&full_eid, PSRAM_QUAD_EID_BITS_NUM);
 
     bool is_2t = false;
     uint32_t eid_47_16 = __builtin_bswap32((full_eid >> 16) & UINT32_MAX);
-    ESP_EARLY_LOGD(TAG, "full_eid: 0x%" PRIx64", eid_47_16: 0x%"PRIx32", (eid_47_16 >> 5) & 0xfffff: 0x%"PRIx32, full_eid, eid_47_16, (eid_47_16 >> 5) & 0xfffff);
-    if (((eid_47_16 >> 5) & 0xfffff) == 0x8a445) {
+    ESP_EARLY_LOGD(TAG, "full_eid: 0x%" PRIx64", eid_47_16: 0x%"PRIx32", (eid_47_16 >> 25) & 0x1: 0x%"PRIx32, full_eid, eid_47_16, (eid_47_16 >> 25) & 0x1);
+    //EID[41]: 0 for 2t mode; 1 for non-2t mode
+    if (((eid_47_16 >> 25) & 0x1) == 0) {
+        is_2t = true;
+    }
+
+    if (s_check_mrj069000aa_2tmode(eid_47_16)) {
         is_2t = true;
     }
 
@@ -328,10 +344,11 @@ esp_err_t esp_psram_impl_enable(void)
                         * that are 16MB or 32MB to be interpreted as QEMU PSRAM devices */
                        eid == PSRAM_QUAD_QEMU_16MB_ID ? PSRAM_SIZE_16MB :
                        eid == PSRAM_QUAD_QEMU_32MB_ID ? PSRAM_SIZE_32MB : 0;
-    }
 
-    if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_aps3204_2tmode()) {
-        s_psram_size = PSRAM_SIZE_4MB;
+        if ((s_psram_size == PSRAM_SIZE_8MB) && s_check_2tmode()) {
+            //2t mode is only valid for EID[47:45] == 0x10 chips
+            s_psram_size = s_psram_size / 2;
+        }
     }
 
     //SPI1: send psram reset command
