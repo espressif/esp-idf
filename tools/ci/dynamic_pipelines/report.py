@@ -12,7 +12,7 @@ from gitlab import GitlabUpdateError
 from gitlab_api import Gitlab
 from idf_build_apps import App
 from idf_build_apps.constants import BuildStatus
-from idf_ci.uploader import AppUploader
+from idf_ci_local.uploader import AppUploader
 from prettytable import PrettyTable
 
 from .constants import COMMENT_START_MARKER

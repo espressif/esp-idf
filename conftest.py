@@ -36,8 +36,8 @@ from _pytest.config import Config
 from _pytest.fixtures import FixtureRequest
 from artifacts_handler import ArtifactType
 from dynamic_pipelines.constants import TEST_RELATED_APPS_DOWNLOAD_URLS_FILENAME
-from idf_ci.app import import_apps_from_txt
-from idf_ci.uploader import AppDownloader, AppUploader
+from idf_ci_local.app import import_apps_from_txt
+from idf_ci_local.uploader import AppDownloader, AppUploader
 from idf_ci_utils import IDF_PATH, idf_relpath
 from idf_pytest.constants import DEFAULT_SDKCONFIG, ENV_MARKERS, SPECIAL_MARKERS, TARGET_MARKERS, PytestCase, \
     DEFAULT_LOGDIR

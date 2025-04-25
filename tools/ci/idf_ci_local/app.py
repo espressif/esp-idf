@@ -8,8 +8,8 @@ from typing import Literal
 from idf_build_apps import App
 from idf_build_apps import CMakeApp
 from idf_build_apps import json_to_app
-from idf_ci.uploader import AppUploader
-from idf_ci.uploader import get_app_uploader
+from idf_ci_local.uploader import AppUploader
+from idf_ci_local.uploader import get_app_uploader
 
 
 class IdfCMakeApp(CMakeApp):
