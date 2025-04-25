@@ -844,6 +844,7 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             // }
             // btc_storage_set_hidd((bt_bdaddr_t *)&p_data->conn.bda);
             btc_hd_cb.status = BTC_HD_CONNECTED;
+            btc_hd_cb.in_use = TRUE;
         } else if (p_data->conn.conn_status == BTA_HD_CONN_STATE_DISCONNECTED) {
             btc_hd_cb.status = BTC_HD_DISCONNECTED;
         }
@@ -920,6 +921,8 @@ void btc_hd_cb_handler(btc_msg_t *msg)
             btc_hd_cb_to_app(ESP_HIDD_CLOSE_EVT, &param);
         }
 
+        btc_hd_cb.in_use = FALSE;
+
         param.vc_unplug.status = p_data->conn.status;
         param.vc_unplug.conn_status = p_data->conn.conn_status;
         btc_hd_cb_to_app(ESP_HIDD_VC_UNPLUG_EVT, &param);
@@ -969,6 +972,12 @@ void btc_hd_get_profile_status(esp_hidd_profile_status_t *param)
         param->hidd_inited = true;
         if (btc_hd_cb.status == BTC_HD_CONNECTED) {
             param->conn_num++;
+        }
+        if (btc_hd_cb.in_use) {
+            param->plug_vc_dev_num++;
+        }
+        if (btc_hd_cb.app_registered) {
+            param->reg_app_num++;
         }
     } else {
         param->hidd_inited = false;

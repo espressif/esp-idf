@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -155,7 +155,7 @@ typedef enum {
     ESP_AVRC_MD_ATTR_TRACK_NUM = 0x8,             /*!< track position on the album */
     ESP_AVRC_MD_ATTR_NUM_TRACKS = 0x10,           /*!< number of tracks on the album */
     ESP_AVRC_MD_ATTR_GENRE = 0x20,                /*!< track genre */
-    ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40          /*!< total album playing time in miliseconds */
+    ESP_AVRC_MD_ATTR_PLAYING_TIME = 0x40          /*!< total album playing time in milliseconds */
 } esp_avrc_md_attr_mask_t;
 
 /// AVRC event notification ids
@@ -276,6 +276,14 @@ typedef struct {
     uint8_t   attr_id;                       /*!< player application attribute id */
     uint8_t   attr_val;                      /*!< player application attribute value */
 } esp_avrc_set_app_value_param_t;
+
+/**
+ * @brief AVRCP profile status parameters
+ */
+typedef struct {
+    bool avrc_ct_inited;                   /*!< AVRCP CT initialization */
+    bool avrc_tg_inited;                   /*!< AVRCP TG initialization */
+} esp_avrc_profile_status_t;
 
 /// AVRC controller callback parameters
 typedef union {
@@ -656,11 +664,11 @@ bool esp_avrc_psth_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_psth_b
 
 /**
  *
- * @brief           Get the requested event notification capabilies on local AVRC target. The capability is returned
+ * @brief           Get the requested event notification capabilities on local AVRC target. The capability is returned
  *                  in a bit mask representation in evt_set. This function should be called after esp_avrc_tg_init().
  *
  *                  For capability type "ESP_AVRC_RN_CAP_ALLOWED_EVT, the retrieved event set is constant and
- *                  it covers all of the notifcation events that can possibly be supported with current
+ *                  it covers all of the notification events that can possibly be supported with current
  *                  implementation.
  *
  *                  For capability type ESP_AVRC_RN_CAP_SUPPORTED_EVT, the event set covers the notification
@@ -728,6 +736,17 @@ bool esp_avrc_rn_evt_bit_mask_operation(esp_avrc_bit_mask_op_t op, esp_avrc_rn_e
  */
 esp_err_t esp_avrc_tg_send_rn_rsp(esp_avrc_rn_event_ids_t event_id, esp_avrc_rn_rsp_t rsp,
                                   esp_avrc_rn_param_t *param);
+
+/**
+ * @brief       This function is used to get the status of AVRCP
+ *
+ * @param[out]  profile_status - AVRCP status
+ *
+ * @return
+ *              - ESP_OK: success
+ *              - other: failed
+ */
+esp_err_t esp_avrc_get_profile_status(esp_avrc_profile_status_t *profile_status);
 
 #ifdef __cplusplus
 }

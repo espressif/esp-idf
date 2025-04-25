@@ -78,7 +78,8 @@ typedef enum
 /// HFP AG profile status parameters
 typedef struct {
     bool hfp_ag_inited;                        /*!< hfp ag initialization */
-    uint8_t conn_num;                          /*!< Number of connections */
+    uint8_t slc_conn_num;                      /*!< Number of Service Level Connections */
+    uint8_t sync_conn_num;                     /*!< Number of (e)SCO Connections */
 } esp_hf_profile_status_t;
 
 /// HFP AG callback parameters
