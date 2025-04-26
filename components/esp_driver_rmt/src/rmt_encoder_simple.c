@@ -19,6 +19,7 @@ typedef struct rmt_simple_encoder_t {
     bool callback_done;      //true if we can't call the callback for more data anymore.
 } rmt_simple_encoder_t;
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_simple_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_simple_encoder_t *simple_encoder = __containerof(encoder, rmt_simple_encoder_t, base);
@@ -29,6 +30,7 @@ static esp_err_t rmt_simple_encoder_reset(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_simple(rmt_encoder_t *encoder, rmt_channel_handle_t channel,
                                 const void *data, size_t data_size, rmt_encode_state_t *ret_state)
 {

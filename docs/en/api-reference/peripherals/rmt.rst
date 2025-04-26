@@ -589,6 +589,8 @@ There is a Kconfig option :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` and :ref:`CONFIG_R
 
 This Kconfig option allows the interrupt handler to run while the cache is disabled but comes at the cost of increased IRAM consumption.
 
+Please note, when :ref:`CONFIG_RMT_TX_ISR_CACHE_SAFE` is enabled, you must also place the encoder functions (mainly the :cpp:member:`rmt_encoder_t::encode` and :cpp:member:`rmt_encoder_t::reset`) into IRAM. You can use :c:macro:`RMT_ENCODER_FUNC_ATTR` to decorate your encoder functions.
+
 Another Kconfig option :ref:`CONFIG_RMT_RECV_FUNC_IN_IRAM` can place :cpp:func:`rmt_receive` into the IRAM as well. So that the receive function can be used even when the flash cache is disabled.
 
 .. _rmt-thread-safety:

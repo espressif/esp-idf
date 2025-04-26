@@ -8,13 +8,6 @@ entries:
         rmt_tx: rmt_tx_do_transaction (noflash)
         rmt_tx: rmt_encode_check_result (noflash)
         rmt_tx: rmt_tx_mark_eof (noflash)
-        rmt_encoder: rmt_encoder_reset (noflash)
-        rmt_encoder_bytes: rmt_encode_bytes (noflash)
-        rmt_encoder_bytes: rmt_bytes_encoder_reset (noflash)
-        rmt_encoder_copy: rmt_encode_copy (noflash)
-        rmt_encoder_copy: rmt_copy_encoder_reset (noflash)
-        rmt_encoder_simple: rmt_encode_simple (noflash)
-        rmt_encoder_simple: rmt_simple_encoder_reset (noflash)
 
         if SOC_RMT_SUPPORT_TX_LOOP_COUNT = y:
             rmt_tx: rmt_isr_handle_tx_loop_end (noflash)
@@ -22,9 +15,8 @@ entries:
         if SOC_RMT_SUPPORT_DMA = y:
             rmt_tx: rmt_dma_tx_eof_cb (noflash)
 
-            if SOC_BITSCRAMBLER_SUPPORTED = y:
-                rmt_encoder_bs: rmt_encode_bs (noflash)
-                rmt_encoder_bs: rmt_bs_encoder_reset (noflash)
+    if RMT_ENCODER_FUNC_IN_IRAM = y:
+        rmt_encoder: rmt_encoder_reset (noflash)
 
     if RMT_RX_ISR_HANDLER_IN_IRAM = y:
         rmt_rx: rmt_rx_default_isr (noflash)

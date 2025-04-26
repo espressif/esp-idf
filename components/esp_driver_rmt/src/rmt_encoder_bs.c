@@ -14,6 +14,7 @@ typedef struct rmt_bs_encoder_t {
     bitscrambler_handle_t bs; // BitScrambler handle
 } rmt_bs_encoder_t;
 
+RMT_ENCODER_FUNC_ATTR
 static esp_err_t rmt_bs_encoder_reset(rmt_encoder_t *encoder)
 {
     rmt_bs_encoder_t *bs_encoder = __containerof(encoder, rmt_bs_encoder_t, base);
@@ -23,14 +24,7 @@ static esp_err_t rmt_bs_encoder_reset(rmt_encoder_t *encoder)
     return ESP_OK;
 }
 
-static esp_err_t rmt_del_bs_encoder(rmt_encoder_t *encoder)
-{
-    rmt_bs_encoder_t *bs_encoder = __containerof(encoder, rmt_bs_encoder_t, base);
-    bitscrambler_free(bs_encoder->bs);
-    free(bs_encoder);
-    return ESP_OK;
-}
-
+RMT_ENCODER_FUNC_ATTR
 static size_t rmt_encode_bs(rmt_encoder_t *encoder, rmt_channel_handle_t channel, const void *input_raw,
                             size_t data_size, rmt_encode_state_t *ret_state)
 {
@@ -109,11 +103,24 @@ static size_t rmt_encode_bs(rmt_encoder_t *encoder, rmt_channel_handle_t channel
     return copy_len;
 }
 
+static esp_err_t rmt_del_bs_encoder(rmt_encoder_t *encoder)
+{
+    rmt_bs_encoder_t *bs_encoder = __containerof(encoder, rmt_bs_encoder_t, base);
+    bitscrambler_free(bs_encoder->bs);
+    free(bs_encoder);
+    return ESP_OK;
+}
+
 esp_err_t rmt_new_bitscrambler_encoder(const rmt_bs_encoder_config_t *config, rmt_encoder_handle_t *ret_encoder)
 {
     esp_err_t ret = ESP_OK;
     rmt_bs_encoder_t *encoder = NULL;
-    ESP_GOTO_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, err, TAG, "invalid argument");
+    ESP_RETURN_ON_FALSE(config && ret_encoder, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
+    // bitscrambler function is used under RMT TX ISR context
+    // if the cache is disabled, all functions called by ISR must be in IRAM
+#if CONFIG_RMT_TX_ISR_CACHE_SAFE && !CONFIG_BITSCRAMBLER_CTRL_FUNC_IN_IRAM
+    ESP_RETURN_ON_FALSE(false, ESP_ERR_INVALID_STATE, TAG, "CONFIG_BITSCRAMBLER_CTRL_FUNC_IN_IRAM must be enabled");
+#endif
     encoder = rmt_alloc_encoder_mem(sizeof(rmt_bs_encoder_t));
     ESP_GOTO_ON_FALSE(encoder, ESP_ERR_NO_MEM, err, TAG, "no mem for bitscrambler encoder");
 
