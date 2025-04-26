@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
 #include "hal/adc_ll.h"
 
@@ -51,7 +52,7 @@ void sar_periph_ctrl_power_disable(void)
 /**
  * This gets incremented when s_sar_power_acquire() is called,
  * and decremented when s_sar_power_release() is called.
- * PWDET is powered down when the value reaches zero.
+ * PWDET and REG_I2C are powered down when the value reaches zero.
  * Should be modified within critical section.
  */
 static int s_sar_power_on_cnt;
@@ -59,6 +60,7 @@ static int s_sar_power_on_cnt;
 static void s_sar_power_acquire(void)
 {
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
+    regi2c_saradc_enable();
     s_sar_power_on_cnt++;
     if (s_sar_power_on_cnt == 1) {
         sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_ON);
@@ -77,6 +79,7 @@ static void s_sar_power_release(void)
     } else if (s_sar_power_on_cnt == 0) {
         sar_ctrl_ll_set_power_mode(SAR_CTRL_LL_POWER_FSM);
     }
+    regi2c_saradc_disable();
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
 }
 

@@ -8,6 +8,7 @@
 #include "hal/regi2c_ctrl_ll.h"
 #include "hal/adc_ll.h"
 #include "hal/adc_types.h"
+#include "esp_private/regi2c_ctrl.h"
 
 void bootloader_random_enable(void)
 {
@@ -18,7 +19,12 @@ void bootloader_random_enable(void)
     adc_ll_digi_controller_clk_div(0, 0, 0);
 
     // some ADC sensor registers are in power group PERIF_I2C and need to be enabled via PMU
-    regi2c_ctrl_ll_i2c_periph_enable();
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_enable();
+#else
+    regi2c_ctrl_ll_i2c_sar_periph_enable();
+#endif
+
     // enable analog i2c master clock for RNG runtime
     ANALOG_CLOCK_ENABLE();
 
@@ -47,6 +53,9 @@ void bootloader_random_disable(void)
     adc_ll_set_calibration_param(ADC_UNIT_1, 0x0);
     adc_ll_set_calibration_param(ADC_UNIT_2, 0x0);
     adc_ll_regi2c_adc_deinit();
+#ifndef BOOTLOADER_BUILD
+    regi2c_saradc_disable();
+#endif
 
     // disable analog i2c master clock
     ANALOG_CLOCK_DISABLE();

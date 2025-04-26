@@ -100,7 +100,7 @@ void regi2c_saradc_enable(void)
     regi2c_enter_critical();
     s_i2c_saradc_enable_cnt++;
     if (s_i2c_saradc_enable_cnt == 1) {
-        regi2c_ctrl_ll_i2c_saradc_enable();
+        regi2c_ctrl_ll_i2c_sar_periph_enable();
     }
     regi2c_exit_critical();
 }
@@ -113,7 +113,7 @@ void regi2c_saradc_disable(void)
         regi2c_exit_critical();
         ESP_HW_LOGE(TAG, "REGI2C_SARADC is already disabled");
     } else if (s_i2c_saradc_enable_cnt == 0) {
-        regi2c_ctrl_ll_i2c_saradc_disable();
+        regi2c_ctrl_ll_i2c_sar_periph_disable();
     }
     regi2c_exit_critical();
 

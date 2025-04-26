@@ -97,51 +97,24 @@ static inline __attribute__((always_inline)) bool regi2c_ctrl_ll_bbpll_calibrati
 }
 
 /**
- * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
+ * @brief Enable the I2C internal bus to do I2C read/write operation to the SAR_ADC and TSENS registers
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_enable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_enable(void)
 {
-    // TODO: IDF-9322
+    //Enter regi2c reset mode
+    CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
+    //Enable REGI2C for SAR_ADC and TSENS
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
+    //Release regi2c reset mode, enter work mode
+    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
 }
 
 /**
  * @brief Disable the I2C internal bus to do I2C read/write operation to the SAR_ADC register
  */
-static inline void regi2c_ctrl_ll_i2c_saradc_disable(void)
-{
-    // TODO: IDF-9322
-}
-
-/**
- * @brief Enable regi2c controlled periph registers
- */
-static inline void regi2c_ctrl_ll_i2c_periph_enable(void)
-{
-    SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
-}
-
-/**
- * @brief Disable regi2c controlled periph registers
- */
-static inline void regi2c_ctrl_ll_i2c_periph_disable(void)
+static inline void regi2c_ctrl_ll_i2c_sar_periph_disable(void)
 {
     CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_XPD_PERIF_I2C);
-}
-
-/**
- * @brief Enter / Exit reset state
- *
- * @param enter True to reset mode, false to normal working mode
- */
-static inline void regi2c_ctrl_ll_reset(bool enter)
-{
-    if (enter) {
-        // Reset mode
-        CLEAR_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-    } else {
-        // Normal working mode
-        SET_PERI_REG_MASK(PMU_RF_PWC_REG, PMU_PERIF_I2C_RSTB);
-    }
 }
 
 #ifdef __cplusplus

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +19,7 @@
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_private/sar_periph_ctrl.h"
+#include "esp_private/regi2c_ctrl.h"
 #include "hal/sar_ctrl_ll.h"
 #include "hal/adc_ll.h"
 
@@ -52,33 +53,47 @@ void sar_periph_ctrl_power_disable(void)
 /*------------------------------------------------------------------------------
 * PWDET Power
 *----------------------------------------------------------------------------*/
-static int s_pwdet_power_on_cnt;
+static int s_sar_power_on_cnt;
 
-void sar_periph_ctrl_pwdet_power_acquire(void)
+void s_sar_power_acquire(void)
 {
     portENTER_CRITICAL_SAFE(&rtc_spinlock);
-    s_pwdet_power_on_cnt++;
-    if (s_pwdet_power_on_cnt == 1) {
+    s_sar_power_on_cnt++;
+    if (s_sar_power_on_cnt == 1) {
         sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_ON);
+        regi2c_saradc_enable();
     }
     portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+}
+
+void s_sar_power_release(void)
+{
+    portENTER_CRITICAL_SAFE(&rtc_spinlock);
+    s_sar_power_on_cnt--;
+    /* Sanity check */
+    if (s_sar_power_on_cnt < 0) {
+        portEXIT_CRITICAL(&rtc_spinlock);
+        ESP_LOGE(TAG, "%s called, but s_sar_power_on_cnt == 0", __func__);
+        abort();
+    } else if (s_sar_power_on_cnt == 0) {
+        sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_FSM);
+    }
+    regi2c_saradc_disable();
+    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+}
+
+/*------------------------------------------------------------------------------
+* PWDET Power
+*----------------------------------------------------------------------------*/
+void sar_periph_ctrl_pwdet_power_acquire(void)
+{
+    s_sar_power_acquire();
 }
 
 void sar_periph_ctrl_pwdet_power_release(void)
 {
-    portENTER_CRITICAL_SAFE(&rtc_spinlock);
-    s_pwdet_power_on_cnt--;
-    /* Sanity check */
-    if (s_pwdet_power_on_cnt < 0) {
-        portEXIT_CRITICAL(&rtc_spinlock);
-        ESP_LOGE(TAG, "%s called, but s_pwdet_power_on_cnt == 0", __func__);
-        abort();
-    } else if (s_pwdet_power_on_cnt == 0) {
-        sar_ctrl_ll_set_power_mode_from_pwdet(SAR_CTRL_LL_POWER_FSM);
-    }
-    portEXIT_CRITICAL_SAFE(&rtc_spinlock);
+    s_sar_power_release();
 }
-
 
 /*------------------------------------------------------------------------------
 * ADC Power
