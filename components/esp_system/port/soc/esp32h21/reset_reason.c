@@ -10,8 +10,6 @@
 #include "soc/rtc_periph.h"
 #include "esp32h21/rom/rtc.h"
 
-// TODO: [ESP32H21] IDF-11900, IDF-11910
-
 static void esp_reset_reason_clear_hint(void);
 
 static esp_reset_reason_t s_reset_reason;
@@ -43,7 +41,6 @@ static esp_reset_reason_t get_reset_reason(soc_reset_reason_t rtc_reset_reason, 
 
     case RESET_REASON_CORE_RTC_WDT:
     case RESET_REASON_SYS_RTC_WDT:
-    case RESET_REASON_SYS_SUPER_WDT:
     case RESET_REASON_CPU0_RTC_WDT:
     case RESET_REASON_CPU0_MWDT0:
     case RESET_REASON_CPU0_MWDT1:
