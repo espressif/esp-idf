@@ -1,0 +1,15 @@
+menu "Example 'SPP CLIENT' Config"
+
+    choice EXAMPLE_SPP_CLIENT
+        prompt "SPP TRANSPORT mode"
+        default EXAMPLE_SPP_THROUGHPUT
+        help
+            Define SPP TRANSPORT mode
+
+        config EXAMPLE_SPP_THROUGHPUT
+            bool "Throughput"
+        config EXAMPLE_SPP_RELIABLE
+            bool "Reliable"
+    endchoice
+
+endmenu
