@@ -194,6 +194,11 @@ ESP-IDF 的 I/O 函数（ ``printf()`` 和 ``scanf()`` 等）默认使用 Newlib
 
 .. _Newlib README 文件: https://sourceware.org/newlib/README
 
+libstdc++
+@@@@@@@@@
+
+- 启用 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD_CONSTEXPR>` 或 :ref:`CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD<CONFIG_COMPILER_CXX_GLIBCXX_CONSTEXPR_COLD>` 观察对应用程序二进制大小的影响。
+
 .. _minimizing_binary_mbedtls:
 
 MbedTLS 功能
