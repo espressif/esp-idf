@@ -68,7 +68,9 @@
     -  :cpp:member:`parlio_tx_unit_config_t::clk_out_gpio_num` 输出时钟信号的 GPIO 编号。
     -  :cpp:member:`parlio_tx_unit_config_t::data_width`  TX 单元数据总线宽度，必须为 2 的幂次方，且不能大于 {IDF_TARGET_SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH}。
     -  :cpp:member:`parlio_tx_unit_config_t::data_gpio_nums`  TX 数据 GPIO 编号，未使用的 GPIO 设置为 -1。
-    -  :cpp:member:`parlio_tx_unit_config_t::valid_gpio_num` 有效信号的 GPIO 编号，未使用则设置为 -1。有效信号会在 TX 传输数据时保持高电平。注意，启用有效信号会占用 MSB 数据位，导致 TX 单元的最大数据宽度减少 1 位，此时数据总线宽度的最大可配置为 :c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` / 2。
+    -  :cpp:member:`parlio_tx_unit_config_t::valid_gpio_num` 有效信号的 GPIO 编号，未使用则设置为 -1。有效信号会在 TX 传输数据时保持高电平。注意，在部分芯片上启用有效信号会占用 MSB 数据位，导致 TX 单元的最大数据宽度减少 1 位，此时数据总线宽度的最大可配置为 :c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` / 2， 因此请检查 :cpp:func:`parlio_new_tx_unit` 的返回值。
+    -  :cpp:member:`parlio_tx_unit_config_t::valid_start_delay` 有效信号将在数据发送之前保持“有效”状态的时钟周期。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，或配置了无效的值，你将看到类似 ``invalid valid delay`` 的错误消息。
+    -  :cpp:member:`parlio_tx_unit_config_t::valid_stop_delay` 有效信号将在数据发送完成之后保持“有效”状态的时钟周期。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，或配置了无效的值，你将看到类似 ``invalid valid delay`` 的错误消息。
     -  :cpp:member:`parlio_tx_unit_config_t::trans_queue_depth` 内部事务队列深度。队列越深，在待处理队列中可以准备的事务越多。
     -  :cpp:member:`parlio_tx_unit_config_t::max_transfer_size` 一次传输的最大传输大小（以字节为单位）。
     -  :cpp:member:`parlio_tx_unit_config_t::dma_burst_size` DMA 突发传输大小（以字节为单位），必须为 2 的幂次方。
@@ -76,7 +78,7 @@
     -  :cpp:member:`parlio_tx_unit_config_t::bit_pack_order` 设置字节内数据位出现的顺序（仅当数据宽度 < 8 时有效）。
     -  :cpp:member:`parlio_tx_unit_config_t::flags` 通常用来微调驱动的一些行为，包括以下选项
     -  :cpp:member:`parlio_tx_unit_config_t::flags::invert_valid_out` 决定是否在将 TX 单元有效信号发送到 GPIO 管脚前反转信号。
-    :SOC_PARLIO_TX_CLK_SUPPORT_GATING: -  :cpp:member:`parlio_tx_unit_config_t::flags::clk_gate_en` 启用 TX 单元时钟门控，输出时钟将由数据总线的 MSB 位控制，即通过向 :cpp:member:`parlio_tx_unit_config_t::data_gpio_nums` [:c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` - 1] 写入高电平使能时钟输出，低电平禁用。注意，若有效信号输出和时钟门控同时启用，时钟门控可以来自占用 MSB 数据位的有效信号，此时数据总线宽只要不大于:c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` / 2 即可，否则需要配置数据总线宽度为 :c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH`。
+    :SOC_PARLIO_TX_CLK_SUPPORT_GATING: -  :cpp:member:`parlio_tx_unit_config_t::flags::clk_gate_en` 启用 TX 单元时钟门控，输出时钟默认由数据总线的 MSB 位控制，即通过向 :cpp:member:`parlio_tx_unit_config_t::data_gpio_nums` [:c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` - 1] 写入高电平使能时钟输出，低电平禁用，此时需要配置数据总线宽度为 :c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH`。注意，若有效信号输出和时钟门控同时启用，时钟门控则来自有效信号，对数据总线宽度没有额外要求（部分芯片上有效信号会占用 MSB 数据位，总线宽度的最大可配置为 :c:macro:`SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH` / 2）。
     :SOC_PARLIO_SUPPORT_SLEEP_RETENTION: -  :cpp:member:`parlio_tx_unit_config_t::flags::allow_pd` 配置驱动程序是否允许系统在睡眠模式下关闭外设电源。在进入睡眠之前，系统将备份 TX 单元寄存器上下文，当系统退出睡眠模式时，这些上下文将被恢复。关闭外设可以节省更多功耗，但代价是消耗更多内存来保存寄存器上下文。你需要在功耗和内存消耗之间做权衡。此配置选项依赖于特定的硬件功能，如果在不支持的芯片上启用它，你将看到类似 ``register back up is not supported`` 的错误消息。
 
 .. note::

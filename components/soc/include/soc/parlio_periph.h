@@ -29,6 +29,7 @@ typedef struct {
             const int data_sigs[SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH];
             const int clk_out_sig;
             const int clk_in_sig;
+            const int cs_sig;
         } tx_units[SOC_PARLIO_TX_UNITS_PER_GROUP];
         struct {
             const int data_sigs[SOC_PARLIO_RX_UNIT_MAX_DATA_WIDTH];

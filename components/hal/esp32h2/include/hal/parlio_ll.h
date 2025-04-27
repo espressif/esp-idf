@@ -37,8 +37,6 @@
 #define PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG 7 // TXD[7] can be used a valid signal
 #define PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE  7 // TXD[7] can be used as clock gate signal
 
-#define PARLIO_LL_CLK_DIVIDER_MAX        (0)    // Not support fractional divider
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -534,7 +532,7 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 /**
  * @brief Whether to treat the MSB of TXD as the valid signal
  *
- * @note If enabled, TXD[15] will work as valid signal, which stay high during data transmission.
+ * @note If enabled, TXD[7] will work as valid signal, which stay high during data transmission.
  *
  * @param dev Parallel IO register base address
  * @param en True to enable, False to disable
@@ -542,6 +540,23 @@ static inline void parlio_ll_tx_start(parl_io_dev_t *dev, bool en)
 static inline void parlio_ll_tx_treat_msb_as_valid(parl_io_dev_t *dev, bool en)
 {
     dev->tx_genrl_cfg.tx_valid_output_en = en;
+}
+
+/**
+ * @brief Set TX valid signal delay
+ *
+ * @param dev Parallel IO register base address
+ * @param start_delay Number of clock cycles to delay
+ * @param stop_delay Number of clock cycles to delay
+ * @return true: success, false: valid delay is not supported
+ */
+static inline bool parlio_ll_tx_set_valid_delay(parl_io_dev_t *dev, uint32_t start_delay, uint32_t stop_delay)
+{
+    (void)dev;
+    if (start_delay == 0 && stop_delay == 0) {
+        return true;
+    }
+    return false;
 }
 
 /**

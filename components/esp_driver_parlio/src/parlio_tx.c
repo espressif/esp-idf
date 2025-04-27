@@ -130,7 +130,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
         }
     }
-    // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
+
     if (config->valid_gpio_num >= 0) {
         gpio_func_sel(config->valid_gpio_num, PIN_FUNC_GPIO);
 
@@ -138,11 +138,20 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
         if (config->flags.io_loop_back) {
             gpio_input_enable(config->valid_gpio_num);
         }
-
+#if !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
+        // Configure CS signal if supported
+        // Note: the default value of CS signal is low, so we need to invert the CS to keep compatible with the default value
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
+        esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
+                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].cs_sig,
+                                        !config->flags.invert_valid_out, false);
+#else
+        // connect the signal to the GPIO by matrix, it will also enable the output path properly
+        // Note: the valid signal will override TXD[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG]
         esp_rom_gpio_connect_out_signal(config->valid_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
                                         config->flags.invert_valid_out, false);
+#endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
     }
     if (config->clk_out_gpio_num >= 0) {
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
@@ -295,11 +304,16 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // data_width must be power of 2 and less than or equal to SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH
     ESP_RETURN_ON_FALSE(data_width && (data_width <= SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH) && ((data_width & (data_width - 1)) == 0),
                         ESP_ERR_INVALID_ARG, TAG, "invalid data width");
+
+    // No need to check data width conflict with valid signal when CS is supported
+#if PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
     // data_width must not conflict with the valid signal
     ESP_RETURN_ON_FALSE(!(config->valid_gpio_num >= 0 && data_width > PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG),
                         ESP_ERR_INVALID_ARG, TAG, "valid signal conflicts with data signal");
+#endif // PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
+
 #if SOC_PARLIO_TX_CLK_SUPPORT_GATING
-    // clock gating is controlled by either the MSB bit of data bus or the valid signal
+    // clock gating is controlled by either the MSB bit of data bus or the valid signal(or CS signal when supported)
     ESP_RETURN_ON_FALSE(!(config->flags.clk_gate_en && config->valid_gpio_num < 0 && config->data_width <= PARLIO_LL_TX_DATA_LINE_AS_CLK_GATE),
                         ESP_ERR_INVALID_ARG, TAG, "no gpio can control the clock gating");
 #else
@@ -351,13 +365,25 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // set data width
     parlio_ll_tx_set_bus_width(hal->regs, data_width);
     unit->idle_value_mask = (1 << data_width) - 1;
+    // set valid delay
+    ESP_GOTO_ON_FALSE(parlio_ll_tx_set_valid_delay(hal->regs, config->valid_start_delay, config->valid_stop_delay), ESP_ERR_INVALID_ARG, err, TAG, "invalid valid delay");
     // whether to use the valid signal
+#if !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
+    // the clock gating source is actual selectable, it doesn't rely on the available of valid GPIO.
+    // but there is no use case that valid signal is used, but clocking gating is still controlled by data.
+    if (config->valid_gpio_num >= 0) {
+        parlio_ll_tx_clock_gating_from_valid(hal->regs, true);
+    } else {
+        parlio_ll_tx_clock_gating_from_valid(hal->regs, false);
+    }
+#else
     if (config->valid_gpio_num >= 0) {
         parlio_ll_tx_treat_msb_as_valid(hal->regs, true);
         unit->idle_value_mask &= ~(1 << PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG);
     } else {
         parlio_ll_tx_treat_msb_as_valid(hal->regs, false);
     }
+#endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
     // set data byte packing order
     if (data_width < 8) {
         parlio_ll_tx_set_bit_pack_order(hal->regs, config->bit_pack_order);

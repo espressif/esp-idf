@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -34,12 +34,20 @@ extern "C" {
 #define TEST_LCD_PCLK_GPIO     (5)
 #define TEST_LCD_DATA0_GPIO    (4)
 #elif CONFIG_IDF_TARGET_ESP32C5
-#define TEST_LCD_BK_LIGHT_GPIO (1)
-#define TEST_LCD_RST_GPIO      (7)
-#define TEST_LCD_CS_GPIO       (27)
-#define TEST_LCD_DC_GPIO       (6)
-#define TEST_LCD_PCLK_GPIO     (25)
-#define TEST_LCD_DATA0_GPIO    (26)
+#define TEST_LCD_BK_LIGHT_GPIO (5)
+#define TEST_LCD_RST_GPIO      (2)
+#define TEST_LCD_CS_GPIO       (0)
+#define TEST_LCD_DC_GPIO       (3)
+#define TEST_LCD_PCLK_GPIO     (1)
+#define TEST_LCD_DATA0_GPIO    (4)
+#define TEST_LCD_DATA1_GPIO    (9)
+#define TEST_LCD_DATA2_GPIO    (28)
+#define TEST_LCD_DATA3_GPIO    (24)
+#define TEST_LCD_DATA4_GPIO    (14)
+#define TEST_LCD_DATA5_GPIO    (23)
+#define TEST_LCD_DATA6_GPIO    (13)
+#define TEST_LCD_DATA7_GPIO    (27)
+
 #endif
 
 #define TEST_LCD_PIXEL_CLOCK_HZ (10 * 1000 * 1000)
