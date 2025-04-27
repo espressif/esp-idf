@@ -1030,7 +1030,7 @@ BOOLEAN btsnd_hcic_ble_create_ext_conn(tHCI_CreatExtConn *p_conn);
 
 BOOLEAN btsnd_hcic_ble_periodic_adv_create_sync(UINT8 filter_policy, UINT8 adv_sid,
                                                                        UINT8 adv_addr_type, BD_ADDR adv_addr,
-                                                                       UINT16 sync_timeout, UINT8 unused);
+                                                                       UINT16 sync_timeout, UINT8 sync_cte_type);
 
 UINT8 btsnd_hcic_ble_periodic_adv_create_sync_cancel(void);
 

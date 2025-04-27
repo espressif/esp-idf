@@ -1585,15 +1585,16 @@ typedef struct {
 
 typedef struct {
     UINT8 filter_policy;
-    #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+#if (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
     UINT8 reports_disabled;
     UINT8 filter_duplicates;
-    #endif
+#endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
     UINT8 sid;
     tBLE_ADDR_TYPE addr_type;
     BD_ADDR addr;
     UINT16 skip;
     UINT16 sync_timeout;
+    UINT8 sync_cte_type;
 } tBTA_DM_BLE_Periodic_Sync_Params;
 
 typedef struct {
