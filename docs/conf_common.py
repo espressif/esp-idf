@@ -171,7 +171,7 @@ USB_SERIAL_JTAG_DOCS = [
 ]
 
 ULP_FSM_DOCS = [
-    'api-reference/system/ulp.rst',
+    'api-reference/system/ulp-fsm.rst',
     'api-reference/system/ulp_macros.rst',
     'api-reference/system/ulp_instruction_set.rst',
 ]
