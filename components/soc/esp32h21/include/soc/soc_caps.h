@@ -34,14 +34,14 @@
 // #define SOC_ULP_SUPPORTED               1
 #define SOC_EFUSE_KEY_PURPOSE_FIELD     1
 #define SOC_EFUSE_SUPPORTED             1       //TODO: [ESP32H21] IDF-11507
-// #define SOC_RTC_FAST_MEM_SUPPORTED      1
+#define SOC_RTC_FAST_MEM_SUPPORTED      1
 #define SOC_RTC_MEM_SUPPORTED           1       //TODO: [ESP32H21] IDF-11548
 // #define SOC_I2S_SUPPORTED               1    //TODO: [ESP32H21] IDF-11606, IDF-11608
 // #define SOC_SDM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11573
 #define SOC_GPSPI_SUPPORTED             1
 // #define SOC_LEDC_SUPPORTED              1    //TODO: [ESP32H21] IDF-11568
 #define SOC_I2C_SUPPORTED               1
-#define SOC_SYSTIMER_SUPPORTED          1       //TODO: [ESP32H21] IDF-11596, IDF-11598
+#define SOC_SYSTIMER_SUPPORTED          1
 // #define SOC_SUPPORT_COEXISTENCE         1    //TODO: [ESP32H21] IDF-11658, IDF-11659, IDF-11660
 #define SOC_MPI_SUPPORTED               1
 #define SOC_SHA_SUPPORTED               1
@@ -59,8 +59,8 @@
 // #define SOC_LP_AON_SUPPORTED            1
 // #define SOC_LP_PERIPHERALS_SUPPORTED    1
 // #define SOC_CLK_TREE_SUPPORTED          1    //TODO: [ESP32H21] IDF-11521
-// #define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32H21] IDF-11545
-// #define SOC_WDT_SUPPORTED               1    //TODO: [ESP32H21] IDF-11528
+// #define SOC_ASSIST_DEBUG_SUPPORTED      1    //TODO: [ESP32H21] IDF-11544
+#define SOC_WDT_SUPPORTED               1
 #define SOC_SPI_FLASH_SUPPORTED         1       //TODO: [ESP32H21] IDF-11526
 // #define SOC_RNG_SUPPORTED               1    //TODO: [ESP32H21] IDF-11503
 #define SOC_MODEM_CLOCK_SUPPORTED       1
@@ -447,7 +447,7 @@
 
 /*--------------------------- WATCHDOG CAPS ---------------------------------------*/
 #define SOC_MWDT_SUPPORT_XTAL              (1)
-// #define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
+#define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
 // #define SOC_TWAI_CONTROLLER_NUM         1UL

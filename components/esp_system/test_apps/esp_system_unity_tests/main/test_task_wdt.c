@@ -49,7 +49,7 @@ TEST_CASE("Task WDT task timeout", "[task_wdt]")
     TEST_ASSERT_EQUAL(ESP_OK, esp_task_wdt_deinit());
 }
 
-#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION
+#if CONFIG_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP && SOC_MWDT_SUPPORT_SLEEP_RETENTION && SOC_LIGHT_SLEEP_SUPPORTED
 TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_wdt]")
 {
     timeout_flag = false;
@@ -89,7 +89,7 @@ TEST_CASE("Task WDT task timeout after peripheral powerdown lightsleep", "[task_
 
 #if SOC_MWDT_SUPPORT_XTAL
 
-#if CONFIG_IDF_TARGET_ESP32H2
+#if CONFIG_IDF_TARGET_ESP32H2 || CONFIG_IDF_TARGET_ESP32H21
 #define TEST_CPU_FREQUENCY_MHZ 48
 #else
 #define TEST_CPU_FREQUENCY_MHZ 40

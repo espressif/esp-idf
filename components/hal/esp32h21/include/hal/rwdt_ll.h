@@ -14,8 +14,6 @@ extern "C" {
 
 #include "hal/lpwdt_ll.h"
 
-//TODO: [ESP32H21] IDF-11511, inherit from h2
-
 typedef lp_wdt_dev_t rwdt_dev_t;
 
 #define RWDT_DEV_GET() &LP_WDT
