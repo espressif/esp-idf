@@ -247,6 +247,7 @@ esp_err_t i2s_channel_register_event_callback(i2s_chan_handle_t handle, const i2
  * @param[out]  bytes_loaded    The bytes that successfully been loaded into the TX DMA buffer
  * @return
  *      - ESP_OK    Load data successful
+ *      - ESP_FAIL  Failed to push the message queue
  *      - ESP_ERR_INVALID_ARG   NULL pointer or not TX direction
  *      - ESP_ERR_INVALID_STATE This channel has not stated
  */
