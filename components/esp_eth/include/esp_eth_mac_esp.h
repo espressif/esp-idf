@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -253,14 +253,6 @@ typedef enum {
                 .clock_gpio = (emac_rmii_clock_gpio_t) 50                     \
             }                                                                 \
         },                                                                    \
-        .clock_config_out_in =                                                \
-        {                                                                     \
-            .rmii =                                                           \
-            {                                                                 \
-                .clock_mode = EMAC_CLK_EXT_IN,                                \
-                .clock_gpio = (emac_rmii_clock_gpio_t) -1                     \
-            }                                                                 \
-        },                                                                    \
         .dma_burst_len = ETH_DMA_BURST_LEN_32,                                \
         .intr_priority = 0,                                                   \
         .emac_dataif_gpio =                                                   \
@@ -273,6 +265,14 @@ typedef enum {
                 .crs_dv_num = 28,                                             \
                 .rxd0_num = 29,                                               \
                 .rxd1_num = 30                                                \
+            }                                                                 \
+        },                                                                    \
+        .clock_config_out_in =                                                \
+        {                                                                     \
+            .rmii =                                                           \
+            {                                                                 \
+                .clock_mode = EMAC_CLK_EXT_IN,                                \
+                .clock_gpio = (emac_rmii_clock_gpio_t) -1                     \
             }                                                                 \
         },                                                                    \
     }
