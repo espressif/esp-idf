@@ -418,7 +418,7 @@ const wifi_regulatory_t regulatory_data[] = {
             { 36, 48, 3, 23, 0, 0 },  /* chan:36~48, max_bw:80M, max_power:23(dBm), dfs:0, reserved.*/
             { 52, 64, 3, 24, 1, 0 },  /* chan:52~64, max_bw:80M, max_power:24(dBm), dfs:1, reserved.*/
             { 100, 144, 4, 24, 1, 0 },  /* chan:100~144, max_bw:160M, max_power:24(dBm), dfs:1, reserved.*/
-            { 149, 165, 3, 30, 0, 0 },  /* chan:149~165, max_bw:80M, max_power:30(dBm), dfs:0, reserved.*/
+            { 149, 169, 3, 27, 0, 0 },  /* chan:149~169, max_bw:80M, max_power:27(dBm), dfs:0, reserved.*/
             { 173, 177, 2, 27, 0, 0 },  /* chan:173~177, max_bw:40M, max_power:27(dBm), dfs:0, reserved.*/
         }
     },

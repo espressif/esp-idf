@@ -1966,10 +1966,14 @@ country US: DFS-FCC
 	# requirements, we can extend the range by 5 MHz to make the kernel
 	# happy and be able to use channel 144.
 	(5470 - 5730 @ 160), (24), DFS
-	(5730 - 5850 @ 80), (30), AUTO-BW
+	# This range ends at 5850 MHz, but channel 169 extends to 5855 MHz.
+	# Since 5850 ~ 5855 MHz belongs to the next range which has looser
+	# requirements, we extend the range by 5 MHz to make the driver
+	# happy and be able to use channel 169.
+	(5730 - 5855 @ 80), (27), AUTO-BW
 	# https://www.federalregister.gov/documents/2021/05/03/2021-08802/use-of-the-5850-5925-ghz-band
 	# max. 33 dBm AP @ 20MHz, 36 dBm AP @ 40Mhz+, 6 dB less for clients
-	(5850 - 5895 @ 40), (27), NO-OUTDOOR, AUTO-BW, NO-IR
+	(5855 - 5895 @ 40), (27), NO-OUTDOOR, AUTO-BW, NO-IR
 	# 6g band
 	# https://www.federalregister.gov/documents/2020/05/26/2020-11236/unlicensed-use-of-the-6ghz-band
 	(5925 - 7125 @ 320), (12), NO-OUTDOOR, NO-IR
