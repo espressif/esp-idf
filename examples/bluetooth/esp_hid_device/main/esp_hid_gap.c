@@ -766,6 +766,9 @@ esp_err_t esp_hid_ble_gap_adv_init(uint16_t appearance, const char *device_name)
     fields.flags = BLE_HS_ADV_F_DISC_GEN |
                    BLE_HS_ADV_F_BREDR_UNSUP;
 
+    fields.appearance = ESP_HID_APPEARANCE_GENERIC;
+    fields.appearance_is_present = 1;
+
     /* Indicate that the TX power level field should be included; have the
      * stack fill this value automatically.  This is done by assigning the
      * special value BLE_HS_ADV_TX_PWR_LVL_AUTO.
