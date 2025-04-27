@@ -333,15 +333,6 @@ bool pmu_sleep_finish(bool dslp);
 void pmu_init(void);
 
 /**
- * @brief Enable or disable system clock in PMU HP sleep state
- *
- * This API only used for fix BLE 40 MHz low power clock source issue
- *
- * @param enable  true to enable, false to disable
- */
-void pmu_sleep_enable_hp_sleep_sysclk(bool enable);
-
-/**
  * Get the time overhead used by regdma to work on the retention link during the hardware wake-up process
  * @return  regdma time cost during hardware wake-up stage in microseconds
  */
