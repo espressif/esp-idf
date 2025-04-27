@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
@@ -50,11 +50,6 @@ static void light_sleep_task(void *args)
                  * Otherwise the chip may fall sleep again before running uart task */
                 vTaskDelay(1);
                 break;
-#if TOUCH_LSLEEP_SUPPORTED
-            case ESP_SLEEP_WAKEUP_TOUCHPAD:
-                wakeup_reason = "touch";
-                break;
-#endif
             default:
                 wakeup_reason = "other";
                 break;
@@ -83,10 +78,6 @@ void app_main(void)
     example_register_timer_wakeup();
     /* Enable wakeup from light sleep by uart */
     example_register_uart_wakeup();
-#if TOUCH_LSLEEP_SUPPORTED
-    /* Enable wakeup from light sleep by touch element */
-    example_register_touch_wakeup();
-#endif
 
     xTaskCreate(light_sleep_task, "light_sleep_task", 4096, NULL, 6, NULL);
 }

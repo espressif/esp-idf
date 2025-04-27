@@ -13,7 +13,6 @@ The following wake up sources are demonstrated in this example (refer to the [Wa
 - **EXT0:** External wake up 0 can trigger wakeup when one predefined RTC GPIO is at a predefined logic level. This example uses GPIO25 in ESP32 or GPIO3 in ESP32-S2/S3 to trigger a wake up when the pin is HIGH. (This wake up source is only available on ESP32, ESP32-S2, and ESP32-S3.)
 - **EXT1:** External wake up 1 which is tied to multiple RTC GPIOs. This example uses GPIO2 and GPIO4 to trigger a wake up with any one of the two pins are HIGH. (This wake up source is available on ESP32, ESP32-S2, ESP32-S3, ESP32-C6 and ESP32-H2.)
 - **GPIO:** Pads powered by VDD3P3_RTC can be used to trigger a wake up from deep sleep. You may choose the pin and trigger level in menuconfig. (This wake up source is unavailable on ESP32, ESP32-S2, ESP32-S3 and ESP32-H2.)
-- **Touch:** Touch pad sensor interrupt. This example uses touch pads connected to GPIO32, GPIO33 in ESP32 or GPIO9 in ESP32-S2/S3 to trigger a wake up when any of the pads are pressed.
 
 Note: Some wake up sources can be disabled via configuration (see section on [project configuration](#Configure-the-project))
 
@@ -33,15 +32,12 @@ This example should be able to run on any commonly available ESP32 series develo
 
 - **GPIO:** If `EXAMPLE_GPIO_WAKEUP_HIGH_LEVEL` is selected in menuconfig, then connect `EXAMPLE_GPIO_WAKEUP_PIN` to HIGH to trigger a wake up; Otherwise, connect `EXAMPLE_GPIO_WAKEUP_PIN` to LOW to trigger a wake up.
 
-- **Touch:** GPIO32, GPIO33 in ESP32 or GPIO9 in ESP32-S2/S3 should be connected to touch sensors (see [Touch Sensor Application Note](https://github.com/espressif/esp-iot-solution/blob/release/v1.0/documents/touch_pad_solution/touch_sensor_design_en.md)).
-
 ### Configure the project
 
 ```
 idf.py menuconfig
 ```
 
-* **Touch wake up** can be enabled/disabled via `Example configuration > Enable touch wake up`
 * **EXT0 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext0)`
 * **EXT1 wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO (ext1)`
 * **GPIO wake up** can be enabled/disabled via `Example configuration > Enable wakeup from GPIO`
@@ -75,9 +71,6 @@ I (0) cpu_start: Starting scheduler on APP CPU.
 Not a deep sleep reset
 Enabling timer wakeup, 20s
 Enabling EXT1 wakeup on pins GPIO2, GPIO4
-Touch pad #8 average: 2148, wakeup threshold set to 2048.
-Touch pad #9 average: 2148, wakeup threshold set to 2048.
-Enabling touch pad wakeup
 Entering deep sleep
 ```
 
@@ -91,8 +84,5 @@ Wake up from timer. Time spent in deep sleep: 20313ms
 Initial T=87, latest T=87
 Enabling timer wakeup, 20s
 Enabling EXT1 wakeup on pins GPIO2, GPIO4
-Touch pad #8 average: 2149, wakeup threshold set to 2049.
-Touch pad #9 average: 2146, wakeup threshold set to 2046.
-Enabling touch pad wakeup
 Entering deep sleep
 ```

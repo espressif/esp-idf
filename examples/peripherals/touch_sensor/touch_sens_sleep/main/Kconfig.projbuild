@@ -1,0 +1,27 @@
+menu "Example Configuration"
+
+    choice EXAMPLE_TOUCH_SLP_WAKEUP
+        prompt "Touch Sensor wakeup level"
+        default EXAMPLE_TOUCH_LIGHT_SLEEP_WAKEUP
+        help
+            Select the touch sensor can wakeup from light sleep or deep sleep.
+
+        config EXAMPLE_TOUCH_LIGHT_SLEEP_WAKEUP
+            bool "Light sleep wakeup"
+        config EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP
+            bool "Deep sleep wakeup"
+    endchoice
+
+    config EXAMPLE_TOUCH_DEEP_SLEEP_PD
+        prompt "Allow touch sensor power down during the deep sleep"
+        bool
+        depends on EXAMPLE_TOUCH_DEEP_SLEEP_WAKEUP && !IDF_TARGET_ESP32
+        default "n"
+        help
+            Whether to allow the touch sensor power down during the deep sleep.
+            If enabled, the touch sensor will be powered down during the deep sleep,
+            only one specified touch channel can wakeup the chip from deep sleep.
+            If disabled, the touch sensor will keep working during the deep sleep,
+            any enabled touch channel can wakeup the chip from deep sleep.
+
+endmenu

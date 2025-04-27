@@ -476,6 +476,7 @@
 --------
 
     - :example:`peripherals/touch_sensor/touch_sens_basic` 演示了如何注册触摸通道并读取数据，并说明了硬件要求及项目配置。
+    - :example:`peripherals/touch_sensor/touch_sens_sleep` 演示了如何通过触摸传感器将芯片从 Light Sleep 或 Deep Sleep 状态唤醒。
 
 应用注意事项
 ------------
