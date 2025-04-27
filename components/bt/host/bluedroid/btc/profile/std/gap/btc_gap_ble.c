@@ -2493,10 +2493,13 @@ void btc_gap_ble_call_handler(btc_msg_t *msg)
         params.addr_type = arg_5->periodic_adv_create_sync.params.addr_type;
         params.skip = arg_5->periodic_adv_create_sync.params.skip;
         params.sync_timeout = arg_5->periodic_adv_create_sync.params.sync_timeout;
-        #if (CONFIG_BT_BLE_FEAT_CREATE_SYNC_ENH)
+#if (BLE_FEAT_CTE_EN == TRUE)
+        params.sync_cte_type = arg_5->periodic_adv_create_sync.params.sync_cte_type;
+#endif // #if (BLE_FEAT_CTE_EN == TRUE)
+#if (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
         params.reports_disabled = arg_5->periodic_adv_create_sync.params.reports_disabled;
         params.filter_duplicates = arg_5->periodic_adv_create_sync.params.filter_duplicates;
-        #endif
+#endif // (BLE_FEAT_CREATE_SYNC_ENH == TRUE)
 
         memcpy(params.addr, arg_5->periodic_adv_create_sync.params.addr, sizeof(BD_ADDR));
         BTC_TRACE_DEBUG("BTC_GAP_BLE_PERIODIC_ADV_CREATE_SYNC");
