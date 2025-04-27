@@ -53,6 +53,20 @@ menu "esp_eth TEST_APPS Configuration"
                 default 18
         endif
 
+        config TARGET_RMII_CLK_OUT
+            bool "REF RMII CLK output"
+            default n
+
+        if TARGET_RMII_CLK_OUT
+            config TARGET_RMII_CLK_OUT_GPIO
+                int "REF RMII CLK Output GPIO"
+                default 23
+
+            config TARGET_RMII_CLK_IN_GPIO
+                int "REF RMII CLK Input GPIO"
+                default 32
+        endif # TARGET_RMII_CLK_OUT
+
     endif # TARGET_USE_INTERNAL_ETHERNET
 
     if TARGET_USE_SPI_ETHERNET
