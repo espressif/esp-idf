@@ -695,7 +695,7 @@ typedef union {
 } twai_data_12_reg_t;
 
 
-typedef struct {
+typedef struct twai_dev_t {
     volatile twai_mode_reg_t mode;
     volatile twai_cmd_reg_t cmd;
     volatile twai_status_reg_t status;

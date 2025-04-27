@@ -1755,7 +1755,7 @@ typedef struct {
 /**
  * @brief TWAI frame buffer register types
  */
-typedef union {
+typedef union twaifd_frame_buffer_t {
     struct {
         union {
             struct {
@@ -1796,7 +1796,7 @@ typedef struct {
     uint32_t reserved_50[44];
 } twaifd_frame_mem_t;
 
-typedef struct {
+typedef struct twaifd_dev_t {
     volatile twaifd_device_id_version_reg_t device_id_version;
     volatile twaifd_mode_settings_reg_t mode_settings;
     volatile twaifd_status_reg_t status;

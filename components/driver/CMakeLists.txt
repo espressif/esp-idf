@@ -109,6 +109,7 @@ else()
                                     esp_driver_ana_cmpr esp_driver_i2s esp_driver_sdmmc esp_driver_sdspi esp_driver_sdio
                                     esp_driver_dac esp_driver_rmt esp_driver_tsens esp_driver_sdm esp_driver_i2c
                                     esp_driver_uart esp_driver_ledc esp_driver_parlio esp_driver_usb_serial_jtag
+                                    esp_driver_twai
                            LDFRAGMENTS ${ldfragments}
                           )
     if(CONFIG_SOC_ADC_SUPPORTED AND

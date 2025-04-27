@@ -486,7 +486,8 @@
 #define SOC_MWDT_SUPPORT_SLEEP_RETENTION   (1)
 
 /*-------------------------- TWAI CAPS ---------------------------------------*/
-#define SOC_TWAI_CONTROLLER_NUM             1UL
+#define SOC_TWAI_CONTROLLER_NUM             1U
+#define SOC_TWAI_MASK_FILTER_NUM            1U
 #define SOC_TWAI_CLK_SUPPORT_XTAL           1
 #define SOC_TWAI_BRP_MIN                    2
 #define SOC_TWAI_BRP_MAX                    32768

@@ -871,6 +871,10 @@ config SOC_TWAI_CONTROLLER_NUM
     int
     default 1
 
+config SOC_TWAI_MASK_FILTER_NUM
+    int
+    default 1
+
 config SOC_TWAI_CLK_SUPPORT_APB
     bool
     default y

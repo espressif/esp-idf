@@ -9,7 +9,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/cdefs.h>
-#include <sys/param.h>
 #include <sys/lock.h>
 #include <stdatomic.h>
 #include "sdkconfig.h"
@@ -32,6 +31,7 @@
 #include "esp_intr_alloc.h"
 #include "esp_heap_caps.h"
 #include "esp_clk_tree.h"
+#include "esp_memory_utils.h"
 #include "esp_pm.h"
 #include "esp_attr.h"
 #include "esp_private/esp_gpio_reserve.h"

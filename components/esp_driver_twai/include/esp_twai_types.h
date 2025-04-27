@@ -21,9 +21,9 @@ typedef struct twai_node_base *twai_node_handle_t;
  * @brief TWAI bitrate timing config basic (simple) mode
  */
 typedef struct {
-    uint32_t bitrate;     /**< Expected TWAI bus baud_rate/bitrate in bits/second */
-    uint16_t sp_permill;  /**< Optional, sampling point in permill (1/1000) of the entire bit time */
-    uint16_t ssp_permill; /**< Optional, secondary sample point(ssp) in permill (1/1000) of the entire bit time */
+    uint32_t bitrate;               /**< Expected TWAI bus baud_rate/bitrate in bits/second */
+    uint16_t sp_permill;            /**< Optional, sampling point in permill (1/1000) of the entire bit time */
+    uint16_t ssp_permill;           /**< Optional, secondary sample point(ssp) in permill (1/1000) of the entire bit time */
 } twai_timing_basic_config_t;
 
 /**
@@ -34,34 +34,6 @@ typedef struct twai_frame_t {
     uint8_t *buffer;                /**< buffer address for tx and rx message data*/
     size_t buffer_len;              /**< buffer length of provided data buffer pointer, in bytes.*/
 } twai_frame_t;
-
-/**
- * @brief Configuration for TWAI mask filter
- *
- * @note Set both id and mask to `0` to receive ALL frames, both `0xFFFFFFFF` to receive NONE frames
- */
-typedef struct {
-    uint32_t id;                    /**< Base ID for filtering */
-    uint32_t mask;                  /**< Mask to determine the matching bits (1 = match bit, 0 = any bit) */
-    struct {
-        uint32_t is_ext: 1;         /**< True for extended ID filtering, false for standard ID */
-        uint32_t no_classic: 1;     /**< If true, Classic CAN frames are excluded (only CAN FD allowed) */
-        uint32_t no_fd: 1;          /**< If true, CAN FD frames are excluded (only Classic CAN allowed) */
-    };
-} twai_mask_filter_config_t;
-
-/**
- * @brief Range-based filter configuration structure
- */
-typedef struct {
-    uint32_t range_low;             /**< Lower bound of the filtering range */
-    uint32_t range_high;            /**< Upper bound of the filtering range */
-    struct {
-        uint32_t is_ext: 1;         /**< True for extended ID filtering, false for standard ID */
-        uint32_t no_classic: 1;     /**< If true, Classic CAN frames are excluded (only CAN FD allowed) */
-        uint32_t no_fd: 1;          /**< If true, CAN FD frames are excluded (only Classic CAN allowed) */
-    };
-} twai_range_filter_config_t;
 
 /**
  * @brief TWAI node's status
@@ -98,29 +70,15 @@ typedef struct {
  * @brief TWAI "state change" event data
  */
 typedef struct {
-    twai_error_state_t old_sta;     // Previous error state
-    twai_error_state_t new_sta;     // New error state after the change
+    twai_error_state_t old_sta;     /**< Previous error state */
+    twai_error_state_t new_sta;     /**< New error state after the change */
 } twai_state_change_event_data_t;
-
-/**
- * @brief TWAI Error Type Structure
- */
-typedef union {
-    struct {
-        uint32_t arb_lost: 1;       /**< Arbitration lost error (lost arbitration during transmission) */
-        uint32_t bit_err: 1;        /**< Bit error detected (dominant/recessive mismatch during arbitration or transmission) */
-        uint32_t form_err: 1;       /**< Form error detected (frame fixed-form bit violation) */
-        uint32_t stuff_err: 1;      /**< Stuff error detected (e.g. dominant error frame received) */
-        uint32_t reserved: 28;      /**< Reserved bits for future use, must be set to zero */
-    };
-    uint32_t val;                   /**< Integrated error code */
-} twai_error_code_t;
 
 /**
  * @brief TWAI "error" event data
  */
 typedef struct {
-    twai_error_code_t err_code; /**< Error code indicating the type of the error */
+    twai_error_flags_t err_flags;   /**< Error flags indicating the type of the error */
 } twai_error_event_data_t;
 
 /**

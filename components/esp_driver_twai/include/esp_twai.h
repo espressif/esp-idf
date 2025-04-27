@@ -115,15 +115,14 @@ esp_err_t twai_node_transmit(twai_node_handle_t node, const twai_frame_t *frame,
  * @brief Receive a TWAI frame from 'rx_done_cb'
  *
  * @note This function can only be called from the `rx_done_cb` callback, you can't call it from a task.
+ * @note Please also provide `buffer` and `buffer_len` inside the rx_frame
+ * @note Can get original data length from `twaifd_dlc2len(rx_frame.header.dlc)`
  *
  * @param[in] node Handle to the TWAI node
- * @param[out] header Where to store frame header
- * @param[out] rx_buffer Where to store frame data
- * @param[in] buf_sz Bytes length of rx_buffer
- * @param[out] received_len Optional, the real data length of rx frame comes from 'header->dlc', null if don't care
+ * @param[out] rx_frame Pointer to the frame store rx content
  * @return ESP_OK on success, error code otherwise
  */
-esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_header_t *header, uint8_t *rx_buffer, size_t buf_sz, size_t *received_len);
+esp_err_t twai_node_receive_from_isr(twai_node_handle_t node, twai_frame_t *rx_frame);
 
 #ifdef __cplusplus
 }

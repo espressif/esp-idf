@@ -95,15 +95,12 @@ struct twai_node_base {
      * @brief Receive a TWAI frame through the ISR callback
      *
      * @param[in] node Pointer to the TWAI node base
-     * @param[out] header Where to store frame header
-     * @param[out] rx_buffer Where to store frame data
-     * @param[in] buf_sz Bytes length of rx_buffer
-     * @param[out] received_len Optional, the real data length of rx frame comes from 'header->dlc'
+     * @param[out] rx_frame Pointer to the frame store rx content
      * @return esp_err_t
      *      - ESP_OK: Success
      *      - ESP_ERR_TIMEOUT: Reception timeout
      */
-    esp_err_t (*receive_isr)(struct twai_node_base *node, twai_frame_header_t *header, uint8_t *rx_buffer, size_t buf_sz, size_t *received_len);
+    esp_err_t (*receive_isr)(struct twai_node_base *node, twai_frame_t *rx_frame);
 
     /**
      * @brief Recover the TWAI node from a bus-off state

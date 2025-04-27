@@ -26,6 +26,8 @@ extern "C" {
 
 #define TWAIFD_LL_GET_HW(num) (((num) == 0) ? (&TWAI0) : (&TWAI1))
 
+#define TWAI_LL_BRP_MIN                 1
+#define TWAI_LL_BRP_MAX                 255
 #define TWAI_LL_TSEG1_MIN               0
 #define TWAI_LL_TSEG2_MIN               1
 #define TWAI_LL_TSEG1_MAX               TWAIFD_PH1
@@ -61,6 +63,10 @@ extern "C" {
 #define TWAIFD_LL_INTR_FSM_CHANGE       TWAIFD_FCSI_INT_ST  // Fault confinement state changed interrupt
 #define TWAIFD_LL_INTR_ARBI_LOST        TWAIFD_ALI_INT_ST   // Arbitration Lost Interrupt
 #define TWAIFD_LL_INTR_DATA_OVERRUN     TWAIFD_DOI_INT_ST   // Data Overrun Interrupt
+
+#define TWAI_LL_DRIVER_INTERRUPTS   (TWAIFD_LL_INTR_TX_DONE | TWAIFD_LL_INTR_RX_NOT_EMPTY | TWAIFD_LL_INTR_RX_FULL | \
+                                    TWAIFD_LL_INTR_ERR_WARN | TWAIFD_LL_INTR_BUS_ERR | TWAIFD_LL_INTR_FSM_CHANGE | \
+                                    TWAIFD_LL_INTR_ARBI_LOST | TWAIFD_LL_INTR_DATA_OVERRUN)
 
 /**
  * @brief Enable the bus clock and module clock for twai module
@@ -285,6 +291,17 @@ static inline void twaifd_ll_clr_intr_status(twaifd_dev_t *hw, uint32_t intr_mas
 
 /* ------------------------ Bus Timing Registers --------------------------- */
 /**
+ * @brief Check if the brp value valid
+ *
+ * @param brp Bit rate prescaler value
+ * @return true or False
+ */
+static inline bool twaifd_ll_check_brp_validation(uint32_t brp)
+{
+    return (brp >= TWAI_LL_BRP_MIN) && (brp <= TWAI_LL_BRP_MAX);
+}
+
+/**
  * @brief Set bus timing nominal bit rate
  *
  * @param hw Start address of the TWAI registers
@@ -333,39 +350,25 @@ static inline void twaifd_ll_config_secondary_sample_point(twaifd_dev_t *hw, uin
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->trv_delay_ssp_cfg, ssp_offset, offset_val);
 }
 
-/* ----------------------------- ALC Register ------------------------------- */
+/* ----------------------------- ERR Capt Register ------------------------------- */
 
 /**
- * @brief Get the arbitration lost field from the TWAI-FD peripheral.
+ * @brief Get the error reason flags from the TWAI-FD peripheral.
  *
  * @param hw Pointer to the TWAI-FD device hardware.
- * @return The arbitration lost ID field.
+ * @return The error reasons, see `twai_error_flags_t`
  */
-static inline uint32_t twaifd_ll_get_arb_lost_field(twaifd_dev_t *hw)
+__attribute__((always_inline))
+static inline twai_error_flags_t twaifd_ll_get_err_reason(twaifd_dev_t *hw)
 {
-    return hw->err_capt_retr_ctr_alc_ts_info.alc_id_field;
-}
-
-/**
- * @brief Get the bit where arbitration was lost from the TWAI-FD peripheral.
- *
- * @param hw Pointer to the TWAI-FD device hardware.
- * @return The bit position where arbitration was lost.
- */
-static inline uint32_t twaifd_ll_get_arb_lost_bit(twaifd_dev_t *hw)
-{
-    return hw->err_capt_retr_ctr_alc_ts_info.alc_bit;
-}
-
-/**
- * @brief Get the error code reason from the TWAI-FD peripheral.
- *
- * @param hw Pointer to the TWAI-FD device hardware.
- * @return The error code, see `TWAIFD_LL_ERR_`
- */
-static inline uint32_t twaifd_ll_get_err_reason_code(twaifd_dev_t *hw)
-{
-    return hw->err_capt_retr_ctr_alc_ts_info.err_type;
+    uint8_t error_code = hw->err_capt_retr_ctr_alc_ts_info.err_type;
+    twai_error_flags_t errors = {
+        .bit_err = error_code == TWAIFD_LL_ERR_BIT_ERR,
+        .form_err = error_code == TWAIFD_LL_ERR_FRM_ERR,
+        .stuff_err = error_code == TWAIFD_LL_ERR_STUF_ERR,
+        .ack_err = error_code == TWAIFD_LL_ERR_ACK_ERR
+    };
+    return errors;
 }
 
 /* ----------------------------- EWL Register ------------------------------- */
@@ -383,6 +386,7 @@ static inline void twaifd_ll_set_err_warn_limit(twaifd_dev_t *hw, uint32_t ewl)
  * @param hw Start address of the TWAI registers
  * @return Error Warning Limit
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_err_warn_limit(twaifd_dev_t *hw)
 {
     return HAL_FORCE_READ_U32_REG_FIELD(hw->ewl_erp_fault_state, ew_limit);
@@ -394,6 +398,7 @@ static inline uint32_t twaifd_ll_get_err_warn_limit(twaifd_dev_t *hw)
  * @param hw Pointer to the TWAI-FD device hardware.
  * @return Fault state (bus-off, error passive, or active state).
  */
+__attribute__((always_inline))
 static inline twai_error_state_t twaifd_ll_get_fault_state(twaifd_dev_t *hw)
 {
     if (hw->ewl_erp_fault_state.bof) {
@@ -434,6 +439,7 @@ static inline uint32_t twaifd_ll_get_err_count_fd(twaifd_dev_t *hw)
  * @param hw Start address of the TWAI registers
  * @return REC value
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_rec(twaifd_dev_t *hw)
 {
     return hw->rec_tec.rec_val;
@@ -446,6 +452,7 @@ static inline uint32_t twaifd_ll_get_rec(twaifd_dev_t *hw)
  * @param hw Start address of the TWAI registers
  * @return TEC value
  */
+__attribute__((always_inline))
 static inline uint32_t twaifd_ll_get_tec(twaifd_dev_t *hw)
 {
     return hw->rec_tec.tec_val;
