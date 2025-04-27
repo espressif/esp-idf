@@ -8,7 +8,7 @@ from pytest_embedded_idf.utils import soc_filtered_targets
 
 
 @pytest.mark.generic
-@pytest.mark.parametrize('config', ['release'], indirect=True)
-@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORT_FD == 1'), indirect=['target'])
+@pytest.mark.parametrize('config', ['release', 'cache_safe'], indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_TWAI_SUPPORTED == 1'), indirect=['target'])
 def test_driver_twai_loopbk(dut: Dut) -> None:
     dut.run_all_single_board_cases(reset=True)
