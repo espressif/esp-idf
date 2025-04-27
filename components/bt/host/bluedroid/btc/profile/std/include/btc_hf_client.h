@@ -134,6 +134,7 @@ typedef struct
 {
     bool                               initialized;
     UINT16                             handle;
+    UINT16                             sync_conn_hdl;
     bt_bdaddr_t                        connected_bda;
     esp_hf_client_connection_state_t   state;
     esp_hf_vr_state_t                  vr_state;

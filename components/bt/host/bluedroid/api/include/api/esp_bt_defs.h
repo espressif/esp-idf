@@ -306,6 +306,8 @@ typedef uint8_t esp_ble_key_mask_t;            /* the key mask type */
 
 #define ESP_BLE_ADV_NAME_LEN_MAX 29
 
+#define ESP_INVALID_CONN_HANDLE  0xfff
+
 #ifdef __cplusplus
 }
 #endif
