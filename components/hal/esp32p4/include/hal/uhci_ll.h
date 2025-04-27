@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include "hal/uhci_types.h"
 #include "soc/uhci_struct.h"
-#include "soc/system_struct.h"
+#include "soc/hp_sys_clkrst_struct.h"
 #include "hal/misc.h"
 
 #ifdef __cplusplus
@@ -36,7 +36,8 @@ typedef enum {
 static inline void _uhci_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    SYSTEM.perip_clk_en0.uhci0_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl2.reg_uhci_apb_clk_en = enable;
+    HP_SYS_CLKRST.soc_clk_ctrl1.reg_uhci_sys_clk_en = enable;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -51,8 +52,8 @@ static inline void _uhci_ll_enable_bus_clock(int group_id, bool enable)
 static inline void _uhci_ll_reset_register(int group_id)
 {
     (void)group_id;
-    SYSTEM.perip_rst_en0.uhci0_rst = 1;
-    SYSTEM.perip_rst_en0.uhci0_rst = 0;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uhci = 1;
+    HP_SYS_CLKRST.hp_rst_en1.reg_rst_en_uhci = 0;
 }
 
 /// use a macro to wrap the function, force the caller to use it in a critical section
@@ -71,9 +72,7 @@ static inline void uhci_ll_init(uhci_dev_t *hw)
 
 static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 {
-    hw->conf0.uart0_ce = (uart_num == 0) ? 1 : 0;
-    hw->conf0.uart1_ce = (uart_num == 1) ? 1 : 0;
-    hw->conf0.uart2_ce = (uart_num == 2) ? 1 : 0;
+    hw->conf0.uart_sel = uart_num;
 }
 
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
@@ -93,58 +92,6 @@ static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper
         hw->conf0.seper_en = 0;
         hw->escape_conf.val = 0;
     }
-}
-
-static inline void uhci_ll_set_swflow_ctrl_sub_chr(uhci_dev_t *hw, uhci_swflow_ctrl_sub_chr_t *sub_ctr)
-{
-    typeof(hw->escape_conf) escape_conf_reg;
-    escape_conf_reg.val = hw->escape_conf.val;
-
-    if (sub_ctr->flow_en == 1) {
-        typeof(hw->esc_conf2) esc_conf2_reg;
-        esc_conf2_reg.val = hw->esc_conf2.val;
-        typeof(hw->esc_conf3) esc_conf3_reg;
-        esc_conf3_reg.val = hw->esc_conf3.val;
-
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1, sub_ctr->xon_chr);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char0, sub_ctr->xon_sub1);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char1, sub_ctr->xon_sub2);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2, sub_ctr->xoff_chr);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char0, sub_ctr->xoff_sub1);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char1, sub_ctr->xoff_sub2);
-        escape_conf_reg.tx_11_esc_en = 1;
-        escape_conf_reg.tx_13_esc_en = 1;
-        escape_conf_reg.rx_11_esc_en = 1;
-        escape_conf_reg.rx_13_esc_en = 1;
-        hw->esc_conf2.val = esc_conf2_reg.val;
-        hw->esc_conf3.val = esc_conf3_reg.val;
-    } else {
-        escape_conf_reg.tx_11_esc_en = 0;
-        escape_conf_reg.tx_13_esc_en = 0;
-        escape_conf_reg.rx_11_esc_en = 0;
-        escape_conf_reg.rx_13_esc_en = 0;
-    }
-    hw->escape_conf.val = escape_conf_reg.val;
-}
-
-static inline void uhci_ll_enable_intr(uhci_dev_t *hw, uint32_t intr_mask)
-{
-    hw->int_ena.val |= intr_mask;
-}
-
-static inline void uhci_ll_disable_intr(uhci_dev_t *hw, uint32_t intr_mask)
-{
-    hw->int_ena.val &= (~intr_mask);
-}
-
-static inline void uhci_ll_clear_intr(uhci_dev_t *hw, uint32_t intr_mask)
-{
-    hw->int_clr.val = intr_mask;
-}
-
-static inline uint32_t uhci_ll_get_intr(uhci_dev_t *hw)
-{
-    return hw->int_st.val;
 }
 
 static inline void uhci_ll_rx_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)

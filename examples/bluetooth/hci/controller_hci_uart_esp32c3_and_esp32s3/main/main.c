@@ -51,7 +51,7 @@ struct uart_env_tag {
 
 struct uart_env_tag uart_env;
 
-static volatile uhci_dev_t *s_uhci_hw = &UHCI0;
+static uhci_dev_t *s_uhci_hw = &UHCI0;
 static gdma_channel_handle_t s_rx_channel;
 static gdma_channel_handle_t s_tx_channel;
 
@@ -247,7 +247,7 @@ void uhci_uart_install(void)
 
     // configure UHCI
     uhci_ll_init(s_uhci_hw);
-    uhci_ll_set_eof_mode(s_uhci_hw, UHCI_RX_LEN_EOF);
+    uhci_ll_rx_set_eof_mode(s_uhci_hw, UHCI_RX_LEN_EOF);
     // disable software flow control
     s_uhci_hw->escape_conf.val = 0;
     uhci_ll_attach_uart_port(s_uhci_hw, 1);
