@@ -195,8 +195,12 @@ void heap_caps_dump_all(void)
     heap_caps_dump(MALLOC_CAP_INVALID);
 }
 
-size_t heap_caps_get_allocated_size( void *ptr )
+size_t heap_caps_get_allocated_size(void *ptr)
 {
+    return 0;
+}
+
+size_t heap_caps_get_containing_block_size(void *ptr) {
     return 0;
 }
 

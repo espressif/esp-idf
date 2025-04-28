@@ -450,6 +450,15 @@ void multi_heap_internal_poison_fill_region(void *start, size_t size, bool is_fr
     memset(start, is_free ? FREE_FILL_PATTERN : MALLOC_FILL_PATTERN, size);
 }
 
+void *multi_heap_find_containing_block(multi_heap_handle_t heap, void *ptr)
+{
+    void * block_ptr = multi_heap_find_containing_block_impl(heap, ptr);
+    // add the poison_head_t size to the pointer returned since all other
+    // functions expect the pointer to point to the first usable byte and not
+    // to the first allocated byte.
+    return block_ptr + sizeof(poison_head_t);
+}
+
 #else // !MULTI_HEAP_POISONING
 
 #ifdef MULTI_HEAP_POISONING_SLOW

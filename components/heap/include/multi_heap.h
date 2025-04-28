@@ -239,6 +239,20 @@ void multi_heap_walk(multi_heap_handle_t heap, multi_heap_walker_cb_t walker_fun
  */
 size_t multi_heap_get_full_block_size(multi_heap_handle_t heap, void *p);
 
+/**
+ * @brief Function walking through a given heap and returning the pointer to the
+ * allocated block containing the pointer passed as parameter.
+ *
+ * @note The heap parameter must be valid and the pointer parameter must
+ * belong to a block of allocated memory. The app will crash with an
+ * assertion failure if at least one of the parameter is invalid.
+ *
+ * @param heap The heap to walk through
+ * @param ptr The pointer to find the allocated block of
+ * @return Pointer to the allocated block containing the pointer ptr
+ */
+void *multi_heap_find_containing_block(multi_heap_handle_t heap, void *ptr);
+
 #ifdef __cplusplus
 }
 #endif
