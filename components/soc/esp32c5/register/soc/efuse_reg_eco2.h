@@ -14,7 +14,7 @@ extern "C" {
 /** EFUSE_PGM_DATA0_REG register
  *  Represents pgm_data0
  */
-#define EFUSE_PGM_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x0)
+#define EFUSE_PGM_DATA0_REG (DR_REG_EFUSE_BASE + 0x0)
 /** EFUSE_PGM_DATA_0 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 0th 32-bit data to be programmed.
  */
@@ -26,7 +26,7 @@ extern "C" {
 /** EFUSE_PGM_DATA1_REG register
  *  Represents pgm_data1
  */
-#define EFUSE_PGM_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x4)
+#define EFUSE_PGM_DATA1_REG (DR_REG_EFUSE_BASE + 0x4)
 /** EFUSE_PGM_DATA_1 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 1th 32-bit data to be programmed.
  */
@@ -38,7 +38,7 @@ extern "C" {
 /** EFUSE_PGM_DATA2_REG register
  *  Represents pgm_data2
  */
-#define EFUSE_PGM_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x8)
+#define EFUSE_PGM_DATA2_REG (DR_REG_EFUSE_BASE + 0x8)
 /** EFUSE_PGM_DATA_2 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 2th 32-bit data to be programmed.
  */
@@ -50,7 +50,7 @@ extern "C" {
 /** EFUSE_PGM_DATA3_REG register
  *  Represents pgm_data3
  */
-#define EFUSE_PGM_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0xc)
+#define EFUSE_PGM_DATA3_REG (DR_REG_EFUSE_BASE + 0xc)
 /** EFUSE_PGM_DATA_3 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 3th 32-bit data to be programmed.
  */
@@ -62,7 +62,7 @@ extern "C" {
 /** EFUSE_PGM_DATA4_REG register
  *  Represents pgm_data4
  */
-#define EFUSE_PGM_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x10)
+#define EFUSE_PGM_DATA4_REG (DR_REG_EFUSE_BASE + 0x10)
 /** EFUSE_PGM_DATA_4 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 4th 32-bit data to be programmed.
  */
@@ -74,7 +74,7 @@ extern "C" {
 /** EFUSE_PGM_DATA5_REG register
  *  Represents pgm_data5
  */
-#define EFUSE_PGM_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x14)
+#define EFUSE_PGM_DATA5_REG (DR_REG_EFUSE_BASE + 0x14)
 /** EFUSE_PGM_DATA_5 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 5th 32-bit data to be programmed.
  */
@@ -86,7 +86,7 @@ extern "C" {
 /** EFUSE_PGM_DATA6_REG register
  *  Represents pgm_data6
  */
-#define EFUSE_PGM_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x18)
+#define EFUSE_PGM_DATA6_REG (DR_REG_EFUSE_BASE + 0x18)
 /** EFUSE_PGM_DATA_6 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 6th 32-bit data to be programmed.
  */
@@ -98,7 +98,7 @@ extern "C" {
 /** EFUSE_PGM_DATA7_REG register
  *  Represents pgm_data7
  */
-#define EFUSE_PGM_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1c)
+#define EFUSE_PGM_DATA7_REG (DR_REG_EFUSE_BASE + 0x1c)
 /** EFUSE_PGM_DATA_7 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 7th 32-bit data to be programmed.
  */
@@ -110,7 +110,7 @@ extern "C" {
 /** EFUSE_PGM_CHECK_VALUE0_REG register
  *  Represents pgm_check_value0
  */
-#define EFUSE_PGM_CHECK_VALUE0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x20)
+#define EFUSE_PGM_CHECK_VALUE0_REG (DR_REG_EFUSE_BASE + 0x20)
 /** EFUSE_PGM_RS_DATA_0 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 0th RS code to be programmed.
  */
@@ -122,7 +122,7 @@ extern "C" {
 /** EFUSE_PGM_CHECK_VALUE1_REG register
  *  Represents pgm_check_value1
  */
-#define EFUSE_PGM_CHECK_VALUE1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x24)
+#define EFUSE_PGM_CHECK_VALUE1_REG (DR_REG_EFUSE_BASE + 0x24)
 /** EFUSE_PGM_RS_DATA_1 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 1th RS code to be programmed.
  */
@@ -134,7 +134,7 @@ extern "C" {
 /** EFUSE_PGM_CHECK_VALUE2_REG register
  *  Represents pgm_check_value2
  */
-#define EFUSE_PGM_CHECK_VALUE2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x28)
+#define EFUSE_PGM_CHECK_VALUE2_REG (DR_REG_EFUSE_BASE + 0x28)
 /** EFUSE_PGM_RS_DATA_2 : R/W; bitpos: [31:0]; default: 0;
  *  Configures the 2th RS code to be programmed.
  */
@@ -146,7 +146,7 @@ extern "C" {
 /** EFUSE_RD_WR_DIS_REG register
  *  Represents rd_wr_dis
  */
-#define EFUSE_RD_WR_DIS_REG(i) (DR_REG_EFUSE_BASE(i) + 0x2c)
+#define EFUSE_RD_WR_DIS_REG (DR_REG_EFUSE_BASE + 0x2c)
 /** EFUSE_WR_DIS : RO; bitpos: [31:0]; default: 0;
  *  Represents whether programming of individual eFuse memory bit is disabled.  For
  *  mapping between the bits of this field and the eFuse memory bits, please refer to
@@ -162,7 +162,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA0_REG register
  *  Represents rd_repeat_data
  */
-#define EFUSE_RD_REPEAT_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x30)
+#define EFUSE_RD_REPEAT_DATA0_REG (DR_REG_EFUSE_BASE + 0x30)
 /** EFUSE_RD_DIS : RO; bitpos: [6:0]; default: 0;
  *  Represents whether reading of individual eFuse block (BLOCK4 \verb+~+ BLOCK10) is
  *  disabled. For mapping between the bits of this field and the eFuse blocks, please
@@ -351,7 +351,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA1_REG register
  *  Represents rd_repeat_data
  */
-#define EFUSE_RD_REPEAT_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x34)
+#define EFUSE_RD_REPEAT_DATA1_REG (DR_REG_EFUSE_BASE + 0x34)
 /** EFUSE_KM_DISABLE_DEPLOY_MODE : RO; bitpos: [3:0]; default: 0;
  *  Represents whether the new key deployment of key manager is disabled.
  *  Bit0: Represents whether the new ECDSA key deployment is disabled
@@ -499,7 +499,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA2_REG register
  *  Represents rd_repeat_data
  */
-#define EFUSE_RD_REPEAT_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x38)
+#define EFUSE_RD_REPEAT_DATA2_REG (DR_REG_EFUSE_BASE + 0x38)
 /** EFUSE_KEY_PURPOSE_2 : RO; bitpos: [4:0]; default: 0;
  *  Represents the purpose of Key2. See Table \ref{tab:efuse-key-purpose}.
  */
@@ -593,7 +593,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA3_REG register
  *  Represents rd_repeat_data
  */
-#define EFUSE_RD_REPEAT_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x3c)
+#define EFUSE_RD_REPEAT_DATA3_REG (DR_REG_EFUSE_BASE + 0x3c)
 /** EFUSE_DIS_DOWNLOAD_MODE : RO; bitpos: [0]; default: 0;
  *  Represents whether Download mode is disable or enable. 1. Disable
  *  0: Enable.
@@ -723,7 +723,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA4_REG register
  *  Represents rd_repeat_data
  */
-#define EFUSE_RD_REPEAT_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x40)
+#define EFUSE_RD_REPEAT_DATA4_REG (DR_REG_EFUSE_BASE + 0x40)
 /** EFUSE_HUK_GEN_STATE : RO; bitpos: [8:0]; default: 0;
  *  Represents whether the HUK generate mode is valid.
  *  Odd count of bits with a value of 1: Invalid
@@ -779,7 +779,7 @@ extern "C" {
 /** EFUSE_RD_MAC_SYS0_REG register
  *  Represents rd_mac_sys
  */
-#define EFUSE_RD_MAC_SYS0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x44)
+#define EFUSE_RD_MAC_SYS0_REG (DR_REG_EFUSE_BASE + 0x44)
 /** EFUSE_MAC_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents MAC address. Low 32-bit.
  */
@@ -791,7 +791,7 @@ extern "C" {
 /** EFUSE_RD_MAC_SYS1_REG register
  *  Represents rd_mac_sys
  */
-#define EFUSE_RD_MAC_SYS1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x48)
+#define EFUSE_RD_MAC_SYS1_REG (DR_REG_EFUSE_BASE + 0x48)
 /** EFUSE_MAC_1 : RO; bitpos: [15:0]; default: 0;
  *  Represents MAC address. High 16-bit.
  */
@@ -812,7 +812,7 @@ extern "C" {
  *  This register is only for internal debugging purposes. Do not use it in
  *  applications.
  */
-#define EFUSE_RD_MAC_SYS2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x4c)
+#define EFUSE_RD_MAC_SYS2_REG (DR_REG_EFUSE_BASE + 0x4c)
 /** EFUSE_MAC_RESERVED_0 : RO; bitpos: [13:0]; default: 0;
  *  Reserved.
  *  This field is only for internal debugging purposes. Do not use it in applications.
@@ -833,7 +833,7 @@ extern "C" {
 /** EFUSE_RD_MAC_SYS3_REG register
  *  Represents rd_mac_sys
  */
-#define EFUSE_RD_MAC_SYS3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x50)
+#define EFUSE_RD_MAC_SYS3_REG (DR_REG_EFUSE_BASE + 0x50)
 /** EFUSE_MAC_RESERVED_2 : RO; bitpos: [17:0]; default: 0;
  *  Reserved.
  *  This field is only for internal debugging purposes. Do not use it in applications.
@@ -853,7 +853,7 @@ extern "C" {
 /** EFUSE_RD_MAC_SYS4_REG register
  *  Represents rd_mac_sys
  */
-#define EFUSE_RD_MAC_SYS4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x54)
+#define EFUSE_RD_MAC_SYS4_REG (DR_REG_EFUSE_BASE + 0x54)
 /** EFUSE_SYS_DATA_PART0_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the second 32-bit of zeroth part of system data.
  */
@@ -865,7 +865,7 @@ extern "C" {
 /** EFUSE_RD_MAC_SYS5_REG register
  *  Represents rd_mac_sys
  */
-#define EFUSE_RD_MAC_SYS5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x58)
+#define EFUSE_RD_MAC_SYS5_REG (DR_REG_EFUSE_BASE + 0x58)
 /** EFUSE_SYS_DATA_PART0_2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the third 32-bit of zeroth part of system data.
  */
@@ -877,7 +877,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA0_REG register
  *  Represents rd_sys_part1_data0
  */
-#define EFUSE_RD_SYS_PART1_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5c)
+#define EFUSE_RD_SYS_PART1_DATA0_REG (DR_REG_EFUSE_BASE + 0x5c)
 /** EFUSE_SYS_DATA_PART1_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -889,7 +889,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA1_REG register
  *  Represents rd_sys_part1_data1
  */
-#define EFUSE_RD_SYS_PART1_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x60)
+#define EFUSE_RD_SYS_PART1_DATA1_REG (DR_REG_EFUSE_BASE + 0x60)
 /** EFUSE_SYS_DATA_PART1_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -901,7 +901,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA2_REG register
  *  Represents rd_sys_part1_data2
  */
-#define EFUSE_RD_SYS_PART1_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x64)
+#define EFUSE_RD_SYS_PART1_DATA2_REG (DR_REG_EFUSE_BASE + 0x64)
 /** EFUSE_SYS_DATA_PART1_2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -913,7 +913,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA3_REG register
  *  Represents rd_sys_part1_data3
  */
-#define EFUSE_RD_SYS_PART1_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x68)
+#define EFUSE_RD_SYS_PART1_DATA3_REG (DR_REG_EFUSE_BASE + 0x68)
 /** EFUSE_SYS_DATA_PART1_3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -925,7 +925,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA4_REG register
  *  Represents rd_sys_part1_data4
  */
-#define EFUSE_RD_SYS_PART1_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6c)
+#define EFUSE_RD_SYS_PART1_DATA4_REG (DR_REG_EFUSE_BASE + 0x6c)
 /** EFUSE_SYS_DATA_PART1_4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -937,7 +937,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA5_REG register
  *  Represents rd_sys_part1_data5
  */
-#define EFUSE_RD_SYS_PART1_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x70)
+#define EFUSE_RD_SYS_PART1_DATA5_REG (DR_REG_EFUSE_BASE + 0x70)
 /** EFUSE_SYS_DATA_PART1_5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -949,7 +949,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA6_REG register
  *  Represents rd_sys_part1_data6
  */
-#define EFUSE_RD_SYS_PART1_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x74)
+#define EFUSE_RD_SYS_PART1_DATA6_REG (DR_REG_EFUSE_BASE + 0x74)
 /** EFUSE_SYS_DATA_PART1_6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -961,7 +961,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART1_DATA7_REG register
  *  Represents rd_sys_part1_data7
  */
-#define EFUSE_RD_SYS_PART1_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x78)
+#define EFUSE_RD_SYS_PART1_DATA7_REG (DR_REG_EFUSE_BASE + 0x78)
 /** EFUSE_SYS_DATA_PART1_7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of first part of system data.
  */
@@ -973,7 +973,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA0_REG register
  *  Represents rd_usr_data0
  */
-#define EFUSE_RD_USR_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x7c)
+#define EFUSE_RD_USR_DATA0_REG (DR_REG_EFUSE_BASE + 0x7c)
 /** EFUSE_USR_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -985,7 +985,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA1_REG register
  *  Represents rd_usr_data1
  */
-#define EFUSE_RD_USR_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x80)
+#define EFUSE_RD_USR_DATA1_REG (DR_REG_EFUSE_BASE + 0x80)
 /** EFUSE_USR_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -997,7 +997,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA2_REG register
  *  Represents rd_usr_data2
  */
-#define EFUSE_RD_USR_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x84)
+#define EFUSE_RD_USR_DATA2_REG (DR_REG_EFUSE_BASE + 0x84)
 /** EFUSE_USR_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1009,7 +1009,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA3_REG register
  *  Represents rd_usr_data3
  */
-#define EFUSE_RD_USR_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x88)
+#define EFUSE_RD_USR_DATA3_REG (DR_REG_EFUSE_BASE + 0x88)
 /** EFUSE_USR_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1021,7 +1021,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA4_REG register
  *  Represents rd_usr_data4
  */
-#define EFUSE_RD_USR_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x8c)
+#define EFUSE_RD_USR_DATA4_REG (DR_REG_EFUSE_BASE + 0x8c)
 /** EFUSE_USR_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1033,7 +1033,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA5_REG register
  *  Represents rd_usr_data5
  */
-#define EFUSE_RD_USR_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x90)
+#define EFUSE_RD_USR_DATA5_REG (DR_REG_EFUSE_BASE + 0x90)
 /** EFUSE_USR_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1045,7 +1045,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA6_REG register
  *  Represents rd_usr_data6
  */
-#define EFUSE_RD_USR_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x94)
+#define EFUSE_RD_USR_DATA6_REG (DR_REG_EFUSE_BASE + 0x94)
 /** EFUSE_USR_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1057,7 +1057,7 @@ extern "C" {
 /** EFUSE_RD_USR_DATA7_REG register
  *  Represents rd_usr_data7
  */
-#define EFUSE_RD_USR_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x98)
+#define EFUSE_RD_USR_DATA7_REG (DR_REG_EFUSE_BASE + 0x98)
 /** EFUSE_USR_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of block3 (user).
  */
@@ -1069,7 +1069,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA0_REG register
  *  Represents rd_key0_data0
  */
-#define EFUSE_RD_KEY0_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x9c)
+#define EFUSE_RD_KEY0_DATA0_REG (DR_REG_EFUSE_BASE + 0x9c)
 /** EFUSE_KEY0_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1081,7 +1081,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA1_REG register
  *  Represents rd_key0_data1
  */
-#define EFUSE_RD_KEY0_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0xa0)
+#define EFUSE_RD_KEY0_DATA1_REG (DR_REG_EFUSE_BASE + 0xa0)
 /** EFUSE_KEY0_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1093,7 +1093,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA2_REG register
  *  Represents rd_key0_data2
  */
-#define EFUSE_RD_KEY0_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0xa4)
+#define EFUSE_RD_KEY0_DATA2_REG (DR_REG_EFUSE_BASE + 0xa4)
 /** EFUSE_KEY0_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1105,7 +1105,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA3_REG register
  *  Represents rd_key0_data3
  */
-#define EFUSE_RD_KEY0_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0xa8)
+#define EFUSE_RD_KEY0_DATA3_REG (DR_REG_EFUSE_BASE + 0xa8)
 /** EFUSE_KEY0_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1117,7 +1117,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA4_REG register
  *  Represents rd_key0_data4
  */
-#define EFUSE_RD_KEY0_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0xac)
+#define EFUSE_RD_KEY0_DATA4_REG (DR_REG_EFUSE_BASE + 0xac)
 /** EFUSE_KEY0_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1129,7 +1129,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA5_REG register
  *  Represents rd_key0_data5
  */
-#define EFUSE_RD_KEY0_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0xb0)
+#define EFUSE_RD_KEY0_DATA5_REG (DR_REG_EFUSE_BASE + 0xb0)
 /** EFUSE_KEY0_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1141,7 +1141,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA6_REG register
  *  Represents rd_key0_data6
  */
-#define EFUSE_RD_KEY0_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0xb4)
+#define EFUSE_RD_KEY0_DATA6_REG (DR_REG_EFUSE_BASE + 0xb4)
 /** EFUSE_KEY0_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1153,7 +1153,7 @@ extern "C" {
 /** EFUSE_RD_KEY0_DATA7_REG register
  *  Represents rd_key0_data7
  */
-#define EFUSE_RD_KEY0_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0xb8)
+#define EFUSE_RD_KEY0_DATA7_REG (DR_REG_EFUSE_BASE + 0xb8)
 /** EFUSE_KEY0_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key0.
  */
@@ -1165,7 +1165,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA0_REG register
  *  Represents rd_key1_data0
  */
-#define EFUSE_RD_KEY1_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0xbc)
+#define EFUSE_RD_KEY1_DATA0_REG (DR_REG_EFUSE_BASE + 0xbc)
 /** EFUSE_KEY1_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1177,7 +1177,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA1_REG register
  *  Represents rd_key1_data1
  */
-#define EFUSE_RD_KEY1_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0xc0)
+#define EFUSE_RD_KEY1_DATA1_REG (DR_REG_EFUSE_BASE + 0xc0)
 /** EFUSE_KEY1_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1189,7 +1189,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA2_REG register
  *  Represents rd_key1_data2
  */
-#define EFUSE_RD_KEY1_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0xc4)
+#define EFUSE_RD_KEY1_DATA2_REG (DR_REG_EFUSE_BASE + 0xc4)
 /** EFUSE_KEY1_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1201,7 +1201,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA3_REG register
  *  Represents rd_key1_data3
  */
-#define EFUSE_RD_KEY1_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0xc8)
+#define EFUSE_RD_KEY1_DATA3_REG (DR_REG_EFUSE_BASE + 0xc8)
 /** EFUSE_KEY1_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1213,7 +1213,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA4_REG register
  *  Represents rd_key1_data4
  */
-#define EFUSE_RD_KEY1_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0xcc)
+#define EFUSE_RD_KEY1_DATA4_REG (DR_REG_EFUSE_BASE + 0xcc)
 /** EFUSE_KEY1_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1225,7 +1225,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA5_REG register
  *  Represents rd_key1_data5
  */
-#define EFUSE_RD_KEY1_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0xd0)
+#define EFUSE_RD_KEY1_DATA5_REG (DR_REG_EFUSE_BASE + 0xd0)
 /** EFUSE_KEY1_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1237,7 +1237,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA6_REG register
  *  Represents rd_key1_data6
  */
-#define EFUSE_RD_KEY1_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0xd4)
+#define EFUSE_RD_KEY1_DATA6_REG (DR_REG_EFUSE_BASE + 0xd4)
 /** EFUSE_KEY1_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1249,7 +1249,7 @@ extern "C" {
 /** EFUSE_RD_KEY1_DATA7_REG register
  *  Represents rd_key1_data7
  */
-#define EFUSE_RD_KEY1_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0xd8)
+#define EFUSE_RD_KEY1_DATA7_REG (DR_REG_EFUSE_BASE + 0xd8)
 /** EFUSE_KEY1_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key1.
  */
@@ -1261,7 +1261,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA0_REG register
  *  Represents rd_key2_data0
  */
-#define EFUSE_RD_KEY2_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0xdc)
+#define EFUSE_RD_KEY2_DATA0_REG (DR_REG_EFUSE_BASE + 0xdc)
 /** EFUSE_KEY2_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1273,7 +1273,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA1_REG register
  *  Represents rd_key2_data1
  */
-#define EFUSE_RD_KEY2_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0xe0)
+#define EFUSE_RD_KEY2_DATA1_REG (DR_REG_EFUSE_BASE + 0xe0)
 /** EFUSE_KEY2_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1285,7 +1285,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA2_REG register
  *  Represents rd_key2_data2
  */
-#define EFUSE_RD_KEY2_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0xe4)
+#define EFUSE_RD_KEY2_DATA2_REG (DR_REG_EFUSE_BASE + 0xe4)
 /** EFUSE_KEY2_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1297,7 +1297,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA3_REG register
  *  Represents rd_key2_data3
  */
-#define EFUSE_RD_KEY2_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0xe8)
+#define EFUSE_RD_KEY2_DATA3_REG (DR_REG_EFUSE_BASE + 0xe8)
 /** EFUSE_KEY2_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1309,7 +1309,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA4_REG register
  *  Represents rd_key2_data4
  */
-#define EFUSE_RD_KEY2_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0xec)
+#define EFUSE_RD_KEY2_DATA4_REG (DR_REG_EFUSE_BASE + 0xec)
 /** EFUSE_KEY2_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1321,7 +1321,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA5_REG register
  *  Represents rd_key2_data5
  */
-#define EFUSE_RD_KEY2_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0xf0)
+#define EFUSE_RD_KEY2_DATA5_REG (DR_REG_EFUSE_BASE + 0xf0)
 /** EFUSE_KEY2_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1333,7 +1333,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA6_REG register
  *  Represents rd_key2_data6
  */
-#define EFUSE_RD_KEY2_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0xf4)
+#define EFUSE_RD_KEY2_DATA6_REG (DR_REG_EFUSE_BASE + 0xf4)
 /** EFUSE_KEY2_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1345,7 +1345,7 @@ extern "C" {
 /** EFUSE_RD_KEY2_DATA7_REG register
  *  Represents rd_key2_data7
  */
-#define EFUSE_RD_KEY2_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0xf8)
+#define EFUSE_RD_KEY2_DATA7_REG (DR_REG_EFUSE_BASE + 0xf8)
 /** EFUSE_KEY2_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key2.
  */
@@ -1357,7 +1357,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA0_REG register
  *  Represents rd_key3_data0
  */
-#define EFUSE_RD_KEY3_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0xfc)
+#define EFUSE_RD_KEY3_DATA0_REG (DR_REG_EFUSE_BASE + 0xfc)
 /** EFUSE_KEY3_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1369,7 +1369,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA1_REG register
  *  Represents rd_key3_data1
  */
-#define EFUSE_RD_KEY3_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x100)
+#define EFUSE_RD_KEY3_DATA1_REG (DR_REG_EFUSE_BASE + 0x100)
 /** EFUSE_KEY3_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1381,7 +1381,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA2_REG register
  *  Represents rd_key3_data2
  */
-#define EFUSE_RD_KEY3_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x104)
+#define EFUSE_RD_KEY3_DATA2_REG (DR_REG_EFUSE_BASE + 0x104)
 /** EFUSE_KEY3_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1393,7 +1393,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA3_REG register
  *  Represents rd_key3_data3
  */
-#define EFUSE_RD_KEY3_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x108)
+#define EFUSE_RD_KEY3_DATA3_REG (DR_REG_EFUSE_BASE + 0x108)
 /** EFUSE_KEY3_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1405,7 +1405,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA4_REG register
  *  Represents rd_key3_data4
  */
-#define EFUSE_RD_KEY3_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x10c)
+#define EFUSE_RD_KEY3_DATA4_REG (DR_REG_EFUSE_BASE + 0x10c)
 /** EFUSE_KEY3_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1417,7 +1417,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA5_REG register
  *  Represents rd_key3_data5
  */
-#define EFUSE_RD_KEY3_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x110)
+#define EFUSE_RD_KEY3_DATA5_REG (DR_REG_EFUSE_BASE + 0x110)
 /** EFUSE_KEY3_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1429,7 +1429,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA6_REG register
  *  Represents rd_key3_data6
  */
-#define EFUSE_RD_KEY3_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x114)
+#define EFUSE_RD_KEY3_DATA6_REG (DR_REG_EFUSE_BASE + 0x114)
 /** EFUSE_KEY3_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1441,7 +1441,7 @@ extern "C" {
 /** EFUSE_RD_KEY3_DATA7_REG register
  *  Represents rd_key3_data7
  */
-#define EFUSE_RD_KEY3_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x118)
+#define EFUSE_RD_KEY3_DATA7_REG (DR_REG_EFUSE_BASE + 0x118)
 /** EFUSE_KEY3_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key3.
  */
@@ -1453,7 +1453,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA0_REG register
  *  Represents rd_key4_data0
  */
-#define EFUSE_RD_KEY4_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x11c)
+#define EFUSE_RD_KEY4_DATA0_REG (DR_REG_EFUSE_BASE + 0x11c)
 /** EFUSE_KEY4_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1465,7 +1465,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA1_REG register
  *  Represents rd_key4_data1
  */
-#define EFUSE_RD_KEY4_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x120)
+#define EFUSE_RD_KEY4_DATA1_REG (DR_REG_EFUSE_BASE + 0x120)
 /** EFUSE_KEY4_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1477,7 +1477,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA2_REG register
  *  Represents rd_key4_data2
  */
-#define EFUSE_RD_KEY4_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x124)
+#define EFUSE_RD_KEY4_DATA2_REG (DR_REG_EFUSE_BASE + 0x124)
 /** EFUSE_KEY4_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1489,7 +1489,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA3_REG register
  *  Represents rd_key4_data3
  */
-#define EFUSE_RD_KEY4_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x128)
+#define EFUSE_RD_KEY4_DATA3_REG (DR_REG_EFUSE_BASE + 0x128)
 /** EFUSE_KEY4_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1501,7 +1501,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA4_REG register
  *  Represents rd_key4_data4
  */
-#define EFUSE_RD_KEY4_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x12c)
+#define EFUSE_RD_KEY4_DATA4_REG (DR_REG_EFUSE_BASE + 0x12c)
 /** EFUSE_KEY4_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1513,7 +1513,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA5_REG register
  *  Represents rd_key4_data5
  */
-#define EFUSE_RD_KEY4_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x130)
+#define EFUSE_RD_KEY4_DATA5_REG (DR_REG_EFUSE_BASE + 0x130)
 /** EFUSE_KEY4_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1525,7 +1525,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA6_REG register
  *  Represents rd_key4_data6
  */
-#define EFUSE_RD_KEY4_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x134)
+#define EFUSE_RD_KEY4_DATA6_REG (DR_REG_EFUSE_BASE + 0x134)
 /** EFUSE_KEY4_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1537,7 +1537,7 @@ extern "C" {
 /** EFUSE_RD_KEY4_DATA7_REG register
  *  Represents rd_key4_data7
  */
-#define EFUSE_RD_KEY4_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x138)
+#define EFUSE_RD_KEY4_DATA7_REG (DR_REG_EFUSE_BASE + 0x138)
 /** EFUSE_KEY4_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key4.
  */
@@ -1549,7 +1549,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA0_REG register
  *  Represents rd_key5_data0
  */
-#define EFUSE_RD_KEY5_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x13c)
+#define EFUSE_RD_KEY5_DATA0_REG (DR_REG_EFUSE_BASE + 0x13c)
 /** EFUSE_KEY5_DATA0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1561,7 +1561,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA1_REG register
  *  Represents rd_key5_data1
  */
-#define EFUSE_RD_KEY5_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x140)
+#define EFUSE_RD_KEY5_DATA1_REG (DR_REG_EFUSE_BASE + 0x140)
 /** EFUSE_KEY5_DATA1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1573,7 +1573,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA2_REG register
  *  Represents rd_key5_data2
  */
-#define EFUSE_RD_KEY5_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x144)
+#define EFUSE_RD_KEY5_DATA2_REG (DR_REG_EFUSE_BASE + 0x144)
 /** EFUSE_KEY5_DATA2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1585,7 +1585,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA3_REG register
  *  Represents rd_key5_data3
  */
-#define EFUSE_RD_KEY5_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x148)
+#define EFUSE_RD_KEY5_DATA3_REG (DR_REG_EFUSE_BASE + 0x148)
 /** EFUSE_KEY5_DATA3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1597,7 +1597,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA4_REG register
  *  Represents rd_key5_data4
  */
-#define EFUSE_RD_KEY5_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x14c)
+#define EFUSE_RD_KEY5_DATA4_REG (DR_REG_EFUSE_BASE + 0x14c)
 /** EFUSE_KEY5_DATA4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1609,7 +1609,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA5_REG register
  *  Represents rd_key5_data5
  */
-#define EFUSE_RD_KEY5_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x150)
+#define EFUSE_RD_KEY5_DATA5_REG (DR_REG_EFUSE_BASE + 0x150)
 /** EFUSE_KEY5_DATA5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1621,7 +1621,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA6_REG register
  *  Represents rd_key5_data6
  */
-#define EFUSE_RD_KEY5_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x154)
+#define EFUSE_RD_KEY5_DATA6_REG (DR_REG_EFUSE_BASE + 0x154)
 /** EFUSE_KEY5_DATA6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1633,7 +1633,7 @@ extern "C" {
 /** EFUSE_RD_KEY5_DATA7_REG register
  *  Represents rd_key5_data7
  */
-#define EFUSE_RD_KEY5_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x158)
+#define EFUSE_RD_KEY5_DATA7_REG (DR_REG_EFUSE_BASE + 0x158)
 /** EFUSE_KEY5_DATA7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of key5.
  */
@@ -1645,7 +1645,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA0_REG register
  *  Represents rd_sys_part2_data0
  */
-#define EFUSE_RD_SYS_PART2_DATA0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x15c)
+#define EFUSE_RD_SYS_PART2_DATA0_REG (DR_REG_EFUSE_BASE + 0x15c)
 /** EFUSE_SYS_DATA_PART2_0 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1657,7 +1657,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA1_REG register
  *  Represents rd_sys_part2_data1
  */
-#define EFUSE_RD_SYS_PART2_DATA1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x160)
+#define EFUSE_RD_SYS_PART2_DATA1_REG (DR_REG_EFUSE_BASE + 0x160)
 /** EFUSE_SYS_DATA_PART2_1 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1669,7 +1669,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA2_REG register
  *  Represents rd_sys_part2_data2
  */
-#define EFUSE_RD_SYS_PART2_DATA2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x164)
+#define EFUSE_RD_SYS_PART2_DATA2_REG (DR_REG_EFUSE_BASE + 0x164)
 /** EFUSE_SYS_DATA_PART2_2 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1681,7 +1681,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA3_REG register
  *  Represents rd_sys_part2_data3
  */
-#define EFUSE_RD_SYS_PART2_DATA3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x168)
+#define EFUSE_RD_SYS_PART2_DATA3_REG (DR_REG_EFUSE_BASE + 0x168)
 /** EFUSE_SYS_DATA_PART2_3 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1693,7 +1693,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA4_REG register
  *  Represents rd_sys_part2_data4
  */
-#define EFUSE_RD_SYS_PART2_DATA4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x16c)
+#define EFUSE_RD_SYS_PART2_DATA4_REG (DR_REG_EFUSE_BASE + 0x16c)
 /** EFUSE_SYS_DATA_PART2_4 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1705,7 +1705,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA5_REG register
  *  Represents rd_sys_part2_data5
  */
-#define EFUSE_RD_SYS_PART2_DATA5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x170)
+#define EFUSE_RD_SYS_PART2_DATA5_REG (DR_REG_EFUSE_BASE + 0x170)
 /** EFUSE_SYS_DATA_PART2_5 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1717,7 +1717,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA6_REG register
  *  Represents rd_sys_part2_data6
  */
-#define EFUSE_RD_SYS_PART2_DATA6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x174)
+#define EFUSE_RD_SYS_PART2_DATA6_REG (DR_REG_EFUSE_BASE + 0x174)
 /** EFUSE_SYS_DATA_PART2_6 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1729,7 +1729,7 @@ extern "C" {
 /** EFUSE_RD_SYS_PART2_DATA7_REG register
  *  Represents rd_sys_part2_data7
  */
-#define EFUSE_RD_SYS_PART2_DATA7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x178)
+#define EFUSE_RD_SYS_PART2_DATA7_REG (DR_REG_EFUSE_BASE + 0x178)
 /** EFUSE_SYS_DATA_PART2_7 : RO; bitpos: [31:0]; default: 0;
  *  Represents the zeroth 32-bit of second part of system data.
  */
@@ -1741,7 +1741,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA_ERR0_REG register
  *  Represents rd_repeat_data_err
  */
-#define EFUSE_RD_REPEAT_DATA_ERR0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x17c)
+#define EFUSE_RD_REPEAT_DATA_ERR0_REG (DR_REG_EFUSE_BASE + 0x17c)
 /** EFUSE_RD_DIS_ERR : RO; bitpos: [6:0]; default: 0;
  *  Represents the programming error of EFUSE_RD_DIS
  */
@@ -1883,7 +1883,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA_ERR1_REG register
  *  Represents rd_repeat_data_err
  */
-#define EFUSE_RD_REPEAT_DATA_ERR1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x180)
+#define EFUSE_RD_REPEAT_DATA_ERR1_REG (DR_REG_EFUSE_BASE + 0x180)
 /** EFUSE_KM_DISABLE_DEPLOY_MODE_ERR : RO; bitpos: [3:0]; default: 0;
  *  Represents the programming error of EFUSE_KM_DISABLE_DEPLOY_MODE
  */
@@ -1972,7 +1972,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA_ERR2_REG register
  *  Represents rd_repeat_data_err
  */
-#define EFUSE_RD_REPEAT_DATA_ERR2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x184)
+#define EFUSE_RD_REPEAT_DATA_ERR2_REG (DR_REG_EFUSE_BASE + 0x184)
 /** EFUSE_KEY_PURPOSE_2_ERR : RO; bitpos: [4:0]; default: 0;
  *  Represents the programming error of EFUSE_KEY_PURPOSE_2
  */
@@ -2047,7 +2047,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA_ERR3_REG register
  *  Represents rd_repeat_data_err
  */
-#define EFUSE_RD_REPEAT_DATA_ERR3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x188)
+#define EFUSE_RD_REPEAT_DATA_ERR3_REG (DR_REG_EFUSE_BASE + 0x188)
 /** EFUSE_DIS_DOWNLOAD_MODE_ERR : RO; bitpos: [0]; default: 0;
  *  Represents the programming error of EFUSE_DIS_DOWNLOAD_MODE
  */
@@ -2150,7 +2150,7 @@ extern "C" {
 /** EFUSE_RD_REPEAT_DATA_ERR4_REG register
  *  Represents rd_repeat_data_err
  */
-#define EFUSE_RD_REPEAT_DATA_ERR4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x18c)
+#define EFUSE_RD_REPEAT_DATA_ERR4_REG (DR_REG_EFUSE_BASE + 0x18c)
 /** EFUSE_HUK_GEN_STATE_ERR : RO; bitpos: [8:0]; default: 0;
  *  Represents the programming error of EFUSE_HUK_GEN_STATE
  */
@@ -2190,7 +2190,7 @@ extern "C" {
 /** EFUSE_RD_RS_DATA_ERR0_REG register
  *  Represents rd_rs_data_err
  */
-#define EFUSE_RD_RS_DATA_ERR0_REG(i) (DR_REG_EFUSE_BASE(i) + 0x190)
+#define EFUSE_RD_RS_DATA_ERR0_REG (DR_REG_EFUSE_BASE + 0x190)
 /** EFUSE_RD_MAC_SYS_ERR_NUM : RO; bitpos: [2:0]; default: 0;
  *  Represents the error number of registers.
  *  The value of this signal means the number of error bytes in rd_mac_sys
@@ -2338,7 +2338,7 @@ extern "C" {
 /** EFUSE_RD_RS_DATA_ERR1_REG register
  *  Represents rd_rs_data_err
  */
-#define EFUSE_RD_RS_DATA_ERR1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x194)
+#define EFUSE_RD_RS_DATA_ERR1_REG (DR_REG_EFUSE_BASE + 0x194)
 /** EFUSE_RD_KEY5_DATA_ERR_NUM : RO; bitpos: [2:0]; default: 0;
  *  Represents the error number of registers.
  *  The value of this signal means the number of error bytes in rd_key5_data
@@ -2379,7 +2379,7 @@ extern "C" {
 /** EFUSE_DATE_REG register
  *  eFuse version register.
  */
-#define EFUSE_DATE_REG(i) (DR_REG_EFUSE_BASE(i) + 0x198)
+#define EFUSE_DATE_REG (DR_REG_EFUSE_BASE + 0x198)
 /** EFUSE_DATE : R/W; bitpos: [27:0]; default: 37818960;
  *  Represents eFuse version. Date:2024-12-19 16:08:23,
  *  ScriptRev:5b7d298cf2df9f93b161800aff1807aeadbb74f4
@@ -2392,7 +2392,7 @@ extern "C" {
 /** EFUSE_CLK_REG register
  *  eFuse clcok configuration register.
  */
-#define EFUSE_CLK_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1c8)
+#define EFUSE_CLK_REG (DR_REG_EFUSE_BASE + 0x1c8)
 /** EFUSE_MEM_FORCE_PD : R/W; bitpos: [0]; default: 0;
  *  Configures whether to force power down eFuse SRAM.
  *  1: Force
@@ -2433,7 +2433,7 @@ extern "C" {
 /** EFUSE_CONF_REG register
  *  eFuse operation mode configuration register
  */
-#define EFUSE_CONF_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1cc)
+#define EFUSE_CONF_REG (DR_REG_EFUSE_BASE + 0x1cc)
 /** EFUSE_OP_CODE : R/W; bitpos: [15:0]; default: 0;
  *  Configures operation command type.
  *  0x5A5A: Program operation command
@@ -2448,7 +2448,7 @@ extern "C" {
 /** EFUSE_ECDSA_REG register
  *  eFuse status register.
  */
-#define EFUSE_ECDSA_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1d0)
+#define EFUSE_ECDSA_REG (DR_REG_EFUSE_BASE + 0x1d0)
 /** EFUSE_CFG_ECDSA_P192_BLK : R/W; bitpos: [3:0]; default: 0;
  *  Configures which block to use for ECDSA P192 key output.
  */
@@ -2509,7 +2509,7 @@ extern "C" {
 /** EFUSE_STATUS_REG register
  *  eFuse status register.
  */
-#define EFUSE_STATUS_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1d4)
+#define EFUSE_STATUS_REG (DR_REG_EFUSE_BASE + 0x1d4)
 /** EFUSE_STATE : RO; bitpos: [3:0]; default: 0;
  *  Represents the state of the eFuse state machine.
  *  0: Reset state, the initial state after power-up
@@ -2579,7 +2579,7 @@ extern "C" {
 /** EFUSE_CMD_REG register
  *  eFuse command register.
  */
-#define EFUSE_CMD_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1d8)
+#define EFUSE_CMD_REG (DR_REG_EFUSE_BASE + 0x1d8)
 /** EFUSE_READ_CMD : R/W/SC; bitpos: [0]; default: 0;
  *  Configures whether to send read commands.
  *  1: Send
@@ -2610,7 +2610,7 @@ extern "C" {
 /** EFUSE_INT_RAW_REG register
  *  eFuse raw interrupt register.
  */
-#define EFUSE_INT_RAW_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1dc)
+#define EFUSE_INT_RAW_REG (DR_REG_EFUSE_BASE + 0x1dc)
 /** EFUSE_READ_DONE_INT_RAW : R/SS/WTC; bitpos: [0]; default: 0;
  *  The raw interrupt status of EFUSE_READ_DONE_INT.
  */
@@ -2629,7 +2629,7 @@ extern "C" {
 /** EFUSE_INT_ST_REG register
  *  eFuse interrupt status register.
  */
-#define EFUSE_INT_ST_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1e0)
+#define EFUSE_INT_ST_REG (DR_REG_EFUSE_BASE + 0x1e0)
 /** EFUSE_READ_DONE_INT_ST : RO; bitpos: [0]; default: 0;
  *  The masked interrupt status of EFUSE_READ_DONE_INT.
  */
@@ -2648,7 +2648,7 @@ extern "C" {
 /** EFUSE_INT_ENA_REG register
  *  eFuse interrupt enable register.
  */
-#define EFUSE_INT_ENA_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1e4)
+#define EFUSE_INT_ENA_REG (DR_REG_EFUSE_BASE + 0x1e4)
 /** EFUSE_READ_DONE_INT_ENA : R/W; bitpos: [0]; default: 0;
  *  Write 1 to enable EFUSE_READ_DONE_INT.
  */
@@ -2667,7 +2667,7 @@ extern "C" {
 /** EFUSE_INT_CLR_REG register
  *  eFuse interrupt clear register.
  */
-#define EFUSE_INT_CLR_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1e8)
+#define EFUSE_INT_CLR_REG (DR_REG_EFUSE_BASE + 0x1e8)
 /** EFUSE_READ_DONE_INT_CLR : WT; bitpos: [0]; default: 0;
  *  Write 1 to clear EFUSE_READ_DONE_INT.
  */
@@ -2686,7 +2686,7 @@ extern "C" {
 /** EFUSE_DAC_CONF_REG register
  *  Controls the eFuse programming voltage.
  */
-#define EFUSE_DAC_CONF_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1ec)
+#define EFUSE_DAC_CONF_REG (DR_REG_EFUSE_BASE + 0x1ec)
 /** EFUSE_DAC_CLK_DIV : R/W; bitpos: [7:0]; default: 19;
  *  Configures the division factor of the rising clock of the programming voltage.
  */
@@ -2722,7 +2722,7 @@ extern "C" {
 /** EFUSE_RD_TIM_CONF_REG register
  *  Configures read timing parameters.
  */
-#define EFUSE_RD_TIM_CONF_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1f0)
+#define EFUSE_RD_TIM_CONF_REG (DR_REG_EFUSE_BASE + 0x1f0)
 /** EFUSE_THR_A : R/W; bitpos: [7:0]; default: 1;
  *  Configures the read hold time. Measurement unit: One cycle of the eFuse core clock.
  */
@@ -2756,7 +2756,7 @@ extern "C" {
 /** EFUSE_WR_TIM_CONF1_REG register
  *  Configurarion register 1 of eFuse programming timing parameters.
  */
-#define EFUSE_WR_TIM_CONF1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1f4)
+#define EFUSE_WR_TIM_CONF1_REG (DR_REG_EFUSE_BASE + 0x1f4)
 /** EFUSE_TSUP_A : R/W; bitpos: [7:0]; default: 1;
  *  Configures the programming setup time. Measurement unit: One cycle of the eFuse
  *  core clock.
@@ -2785,7 +2785,7 @@ extern "C" {
 /** EFUSE_WR_TIM_CONF2_REG register
  *  Configurarion register 2 of eFuse programming timing parameters.
  */
-#define EFUSE_WR_TIM_CONF2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1f8)
+#define EFUSE_WR_TIM_CONF2_REG (DR_REG_EFUSE_BASE + 0x1f8)
 /** EFUSE_PWR_OFF_NUM : R/W; bitpos: [15:0]; default: 320;
  *  Configures the power outage time for VDDQ. Measurement unit: One cycle of the eFuse
  *  core clock.
@@ -2807,7 +2807,7 @@ extern "C" {
  *  Configurarion register0 of eFuse programming time parameters and rs bypass
  *  operation.
  */
-#define EFUSE_WR_TIM_CONF0_RS_BYPASS_REG(i) (DR_REG_EFUSE_BASE(i) + 0x1fc)
+#define EFUSE_WR_TIM_CONF0_RS_BYPASS_REG (DR_REG_EFUSE_BASE + 0x1fc)
 /** EFUSE_BYPASS_RS_CORRECTION : R/W; bitpos: [0]; default: 0;
  *  Configures whether to bypass the Reed-Solomon (RS) correction step.
  *  0: Not bypass
@@ -2845,7 +2845,7 @@ extern "C" {
 /** EFUSE_APB2OTP_WR_DIS_REG register
  *  eFuse apb2otp block0 data register1.
  */
-#define EFUSE_APB2OTP_WR_DIS_REG(i) (DR_REG_EFUSE_BASE(i) + 0x500)
+#define EFUSE_APB2OTP_WR_DIS_REG (DR_REG_EFUSE_BASE + 0x500)
 /** EFUSE_APB2OTP_BLOCK0_WR_DIS : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 write disable data.
  */
@@ -2857,7 +2857,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP1_W1_REG register
  *  eFuse apb2otp block0 data register2.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP1_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x504)
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W1_REG (DR_REG_EFUSE_BASE + 0x504)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP1_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup1 word1 data.
  */
@@ -2869,7 +2869,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP1_W2_REG register
  *  eFuse apb2otp block0 data register3.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP1_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x508)
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W2_REG (DR_REG_EFUSE_BASE + 0x508)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP1_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup1 word2 data.
  */
@@ -2881,7 +2881,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP1_W3_REG register
  *  eFuse apb2otp block0 data register4.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP1_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x50c)
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W3_REG (DR_REG_EFUSE_BASE + 0x50c)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP1_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup1 word3 data.
  */
@@ -2893,7 +2893,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP1_W4_REG register
  *  eFuse apb2otp block0 data register5.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP1_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x510)
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W4_REG (DR_REG_EFUSE_BASE + 0x510)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP1_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup1 word4 data.
  */
@@ -2905,7 +2905,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP1_W5_REG register
  *  eFuse apb2otp block0 data register6.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP1_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x514)
+#define EFUSE_APB2OTP_BLK0_BACKUP1_W5_REG (DR_REG_EFUSE_BASE + 0x514)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP1_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup1 word5 data.
  */
@@ -2917,7 +2917,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP2_W1_REG register
  *  eFuse apb2otp block0 data register7.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP2_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x518)
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W1_REG (DR_REG_EFUSE_BASE + 0x518)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP2_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup2 word1 data.
  */
@@ -2929,7 +2929,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP2_W2_REG register
  *  eFuse apb2otp block0 data register8.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP2_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x51c)
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W2_REG (DR_REG_EFUSE_BASE + 0x51c)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP2_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup2 word2 data.
  */
@@ -2941,7 +2941,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP2_W3_REG register
  *  eFuse apb2otp block0 data register9.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP2_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x520)
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W3_REG (DR_REG_EFUSE_BASE + 0x520)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP2_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup2 word3 data.
  */
@@ -2953,7 +2953,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP2_W4_REG register
  *  eFuse apb2otp block0 data register10.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP2_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x524)
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W4_REG (DR_REG_EFUSE_BASE + 0x524)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP2_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup2 word4 data.
  */
@@ -2965,7 +2965,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP2_W5_REG register
  *  eFuse apb2otp block0 data register11.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP2_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x528)
+#define EFUSE_APB2OTP_BLK0_BACKUP2_W5_REG (DR_REG_EFUSE_BASE + 0x528)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP2_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup2 word5 data.
  */
@@ -2977,7 +2977,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP3_W1_REG register
  *  eFuse apb2otp block0 data register12.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP3_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x52c)
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W1_REG (DR_REG_EFUSE_BASE + 0x52c)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP3_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup3 word1 data.
  */
@@ -2989,7 +2989,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP3_W2_REG register
  *  eFuse apb2otp block0 data register13.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP3_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x530)
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W2_REG (DR_REG_EFUSE_BASE + 0x530)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP3_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup3 word2 data.
  */
@@ -3001,7 +3001,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP3_W3_REG register
  *  eFuse apb2otp block0 data register14.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP3_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x534)
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W3_REG (DR_REG_EFUSE_BASE + 0x534)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP3_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup3 word3 data.
  */
@@ -3013,7 +3013,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP3_W4_REG register
  *  eFuse apb2otp block0 data register15.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP3_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x538)
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W4_REG (DR_REG_EFUSE_BASE + 0x538)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP3_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup3 word4 data.
  */
@@ -3025,7 +3025,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP3_W5_REG register
  *  eFuse apb2otp block0 data register16.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP3_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x53c)
+#define EFUSE_APB2OTP_BLK0_BACKUP3_W5_REG (DR_REG_EFUSE_BASE + 0x53c)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP3_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup3 word5 data.
  */
@@ -3037,7 +3037,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP4_W1_REG register
  *  eFuse apb2otp block0 data register17.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP4_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x540)
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W1_REG (DR_REG_EFUSE_BASE + 0x540)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP4_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup4 word1 data.
  */
@@ -3049,7 +3049,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP4_W2_REG register
  *  eFuse apb2otp block0 data register18.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP4_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x544)
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W2_REG (DR_REG_EFUSE_BASE + 0x544)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP4_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup4 word2 data.
  */
@@ -3061,7 +3061,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP4_W3_REG register
  *  eFuse apb2otp block0 data register19.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP4_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x548)
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W3_REG (DR_REG_EFUSE_BASE + 0x548)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP4_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup4 word3 data.
  */
@@ -3073,7 +3073,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP4_W4_REG register
  *  eFuse apb2otp block0 data register20.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP4_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x54c)
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W4_REG (DR_REG_EFUSE_BASE + 0x54c)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP4_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup4 word4 data.
  */
@@ -3085,7 +3085,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK0_BACKUP4_W5_REG register
  *  eFuse apb2otp block0 data register21.
  */
-#define EFUSE_APB2OTP_BLK0_BACKUP4_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x550)
+#define EFUSE_APB2OTP_BLK0_BACKUP4_W5_REG (DR_REG_EFUSE_BASE + 0x550)
 /** EFUSE_APB2OTP_BLOCK0_BACKUP4_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block0 backup4 word5 data.
  */
@@ -3097,7 +3097,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W1_REG register
  *  eFuse apb2otp block1 data register1.
  */
-#define EFUSE_APB2OTP_BLK1_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x554)
+#define EFUSE_APB2OTP_BLK1_W1_REG (DR_REG_EFUSE_BASE + 0x554)
 /** EFUSE_APB2OTP_BLOCK1_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word1 data.
  */
@@ -3109,7 +3109,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W2_REG register
  *  eFuse apb2otp block1 data register2.
  */
-#define EFUSE_APB2OTP_BLK1_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x558)
+#define EFUSE_APB2OTP_BLK1_W2_REG (DR_REG_EFUSE_BASE + 0x558)
 /** EFUSE_APB2OTP_BLOCK1_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word2 data.
  */
@@ -3121,7 +3121,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W3_REG register
  *  eFuse apb2otp block1 data register3.
  */
-#define EFUSE_APB2OTP_BLK1_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x55c)
+#define EFUSE_APB2OTP_BLK1_W3_REG (DR_REG_EFUSE_BASE + 0x55c)
 /** EFUSE_APB2OTP_BLOCK1_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word3 data.
  */
@@ -3133,7 +3133,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W4_REG register
  *  eFuse apb2otp block1 data register4.
  */
-#define EFUSE_APB2OTP_BLK1_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x560)
+#define EFUSE_APB2OTP_BLK1_W4_REG (DR_REG_EFUSE_BASE + 0x560)
 /** EFUSE_APB2OTP_BLOCK1_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word4 data.
  */
@@ -3145,7 +3145,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W5_REG register
  *  eFuse apb2otp block1 data register5.
  */
-#define EFUSE_APB2OTP_BLK1_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x564)
+#define EFUSE_APB2OTP_BLK1_W5_REG (DR_REG_EFUSE_BASE + 0x564)
 /** EFUSE_APB2OTP_BLOCK1_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word5 data.
  */
@@ -3157,7 +3157,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W6_REG register
  *  eFuse apb2otp block1 data register6.
  */
-#define EFUSE_APB2OTP_BLK1_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x568)
+#define EFUSE_APB2OTP_BLK1_W6_REG (DR_REG_EFUSE_BASE + 0x568)
 /** EFUSE_APB2OTP_BLOCK1_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word6 data.
  */
@@ -3169,7 +3169,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W7_REG register
  *  eFuse apb2otp block1 data register7.
  */
-#define EFUSE_APB2OTP_BLK1_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x56c)
+#define EFUSE_APB2OTP_BLK1_W7_REG (DR_REG_EFUSE_BASE + 0x56c)
 /** EFUSE_APB2OTP_BLOCK1_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word7 data.
  */
@@ -3181,7 +3181,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W8_REG register
  *  eFuse apb2otp block1 data register8.
  */
-#define EFUSE_APB2OTP_BLK1_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x570)
+#define EFUSE_APB2OTP_BLK1_W8_REG (DR_REG_EFUSE_BASE + 0x570)
 /** EFUSE_APB2OTP_BLOCK1_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word8 data.
  */
@@ -3193,7 +3193,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK1_W9_REG register
  *  eFuse apb2otp block1 data register9.
  */
-#define EFUSE_APB2OTP_BLK1_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x574)
+#define EFUSE_APB2OTP_BLK1_W9_REG (DR_REG_EFUSE_BASE + 0x574)
 /** EFUSE_APB2OTP_BLOCK1_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block1  word9 data.
  */
@@ -3205,7 +3205,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W1_REG register
  *  eFuse apb2otp block2 data register1.
  */
-#define EFUSE_APB2OTP_BLK2_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x578)
+#define EFUSE_APB2OTP_BLK2_W1_REG (DR_REG_EFUSE_BASE + 0x578)
 /** EFUSE_APB2OTP_BLOCK2_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word1 data.
  */
@@ -3217,7 +3217,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W2_REG register
  *  eFuse apb2otp block2 data register2.
  */
-#define EFUSE_APB2OTP_BLK2_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x57c)
+#define EFUSE_APB2OTP_BLK2_W2_REG (DR_REG_EFUSE_BASE + 0x57c)
 /** EFUSE_APB2OTP_BLOCK2_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word2 data.
  */
@@ -3229,7 +3229,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W3_REG register
  *  eFuse apb2otp block2 data register3.
  */
-#define EFUSE_APB2OTP_BLK2_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x580)
+#define EFUSE_APB2OTP_BLK2_W3_REG (DR_REG_EFUSE_BASE + 0x580)
 /** EFUSE_APB2OTP_BLOCK2_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word3 data.
  */
@@ -3241,7 +3241,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W4_REG register
  *  eFuse apb2otp block2 data register4.
  */
-#define EFUSE_APB2OTP_BLK2_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x584)
+#define EFUSE_APB2OTP_BLK2_W4_REG (DR_REG_EFUSE_BASE + 0x584)
 /** EFUSE_APB2OTP_BLOCK2_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word4 data.
  */
@@ -3253,7 +3253,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W5_REG register
  *  eFuse apb2otp block2 data register5.
  */
-#define EFUSE_APB2OTP_BLK2_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x588)
+#define EFUSE_APB2OTP_BLK2_W5_REG (DR_REG_EFUSE_BASE + 0x588)
 /** EFUSE_APB2OTP_BLOCK2_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word5 data.
  */
@@ -3265,7 +3265,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W6_REG register
  *  eFuse apb2otp block2 data register6.
  */
-#define EFUSE_APB2OTP_BLK2_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x58c)
+#define EFUSE_APB2OTP_BLK2_W6_REG (DR_REG_EFUSE_BASE + 0x58c)
 /** EFUSE_APB2OTP_BLOCK2_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word6 data.
  */
@@ -3277,7 +3277,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W7_REG register
  *  eFuse apb2otp block2 data register7.
  */
-#define EFUSE_APB2OTP_BLK2_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x590)
+#define EFUSE_APB2OTP_BLK2_W7_REG (DR_REG_EFUSE_BASE + 0x590)
 /** EFUSE_APB2OTP_BLOCK2_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word7 data.
  */
@@ -3289,7 +3289,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W8_REG register
  *  eFuse apb2otp block2 data register8.
  */
-#define EFUSE_APB2OTP_BLK2_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x594)
+#define EFUSE_APB2OTP_BLK2_W8_REG (DR_REG_EFUSE_BASE + 0x594)
 /** EFUSE_APB2OTP_BLOCK2_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word8 data.
  */
@@ -3301,7 +3301,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W9_REG register
  *  eFuse apb2otp block2 data register9.
  */
-#define EFUSE_APB2OTP_BLK2_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x598)
+#define EFUSE_APB2OTP_BLK2_W9_REG (DR_REG_EFUSE_BASE + 0x598)
 /** EFUSE_APB2OTP_BLOCK2_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word9 data.
  */
@@ -3313,7 +3313,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W10_REG register
  *  eFuse apb2otp block2 data register10.
  */
-#define EFUSE_APB2OTP_BLK2_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x59c)
+#define EFUSE_APB2OTP_BLK2_W10_REG (DR_REG_EFUSE_BASE + 0x59c)
 /** EFUSE_APB2OTP_BLOCK2_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word10 data.
  */
@@ -3325,7 +3325,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK2_W11_REG register
  *  eFuse apb2otp block2 data register11.
  */
-#define EFUSE_APB2OTP_BLK2_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5a0)
+#define EFUSE_APB2OTP_BLK2_W11_REG (DR_REG_EFUSE_BASE + 0x5a0)
 /** EFUSE_APB2OTP_BLOCK2_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block2 word11 data.
  */
@@ -3337,7 +3337,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W1_REG register
  *  eFuse apb2otp block3 data register1.
  */
-#define EFUSE_APB2OTP_BLK3_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5a4)
+#define EFUSE_APB2OTP_BLK3_W1_REG (DR_REG_EFUSE_BASE + 0x5a4)
 /** EFUSE_APB2OTP_BLOCK3_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word1 data.
  */
@@ -3349,7 +3349,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W2_REG register
  *  eFuse apb2otp block3 data register2.
  */
-#define EFUSE_APB2OTP_BLK3_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5a8)
+#define EFUSE_APB2OTP_BLK3_W2_REG (DR_REG_EFUSE_BASE + 0x5a8)
 /** EFUSE_APB2OTP_BLOCK3_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word2 data.
  */
@@ -3361,7 +3361,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W3_REG register
  *  eFuse apb2otp block3 data register3.
  */
-#define EFUSE_APB2OTP_BLK3_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5ac)
+#define EFUSE_APB2OTP_BLK3_W3_REG (DR_REG_EFUSE_BASE + 0x5ac)
 /** EFUSE_APB2OTP_BLOCK3_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word3 data.
  */
@@ -3373,7 +3373,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W4_REG register
  *  eFuse apb2otp block3 data register4.
  */
-#define EFUSE_APB2OTP_BLK3_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5b0)
+#define EFUSE_APB2OTP_BLK3_W4_REG (DR_REG_EFUSE_BASE + 0x5b0)
 /** EFUSE_APB2OTP_BLOCK3_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word4 data.
  */
@@ -3385,7 +3385,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W5_REG register
  *  eFuse apb2otp block3 data register5.
  */
-#define EFUSE_APB2OTP_BLK3_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5b4)
+#define EFUSE_APB2OTP_BLK3_W5_REG (DR_REG_EFUSE_BASE + 0x5b4)
 /** EFUSE_APB2OTP_BLOCK3_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word5 data.
  */
@@ -3397,7 +3397,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W6_REG register
  *  eFuse apb2otp block3 data register6.
  */
-#define EFUSE_APB2OTP_BLK3_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5b8)
+#define EFUSE_APB2OTP_BLK3_W6_REG (DR_REG_EFUSE_BASE + 0x5b8)
 /** EFUSE_APB2OTP_BLOCK3_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word6 data.
  */
@@ -3409,7 +3409,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W7_REG register
  *  eFuse apb2otp block3 data register7.
  */
-#define EFUSE_APB2OTP_BLK3_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5bc)
+#define EFUSE_APB2OTP_BLK3_W7_REG (DR_REG_EFUSE_BASE + 0x5bc)
 /** EFUSE_APB2OTP_BLOCK3_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word7 data.
  */
@@ -3421,7 +3421,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W8_REG register
  *  eFuse apb2otp block3 data register8.
  */
-#define EFUSE_APB2OTP_BLK3_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5c0)
+#define EFUSE_APB2OTP_BLK3_W8_REG (DR_REG_EFUSE_BASE + 0x5c0)
 /** EFUSE_APB2OTP_BLOCK3_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word8 data.
  */
@@ -3433,7 +3433,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W9_REG register
  *  eFuse apb2otp block3 data register9.
  */
-#define EFUSE_APB2OTP_BLK3_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5c4)
+#define EFUSE_APB2OTP_BLK3_W9_REG (DR_REG_EFUSE_BASE + 0x5c4)
 /** EFUSE_APB2OTP_BLOCK3_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word9 data.
  */
@@ -3445,7 +3445,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W10_REG register
  *  eFuse apb2otp block3 data register10.
  */
-#define EFUSE_APB2OTP_BLK3_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5c8)
+#define EFUSE_APB2OTP_BLK3_W10_REG (DR_REG_EFUSE_BASE + 0x5c8)
 /** EFUSE_APB2OTP_BLOCK3_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word10 data.
  */
@@ -3457,7 +3457,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK3_W11_REG register
  *  eFuse apb2otp block3 data register11.
  */
-#define EFUSE_APB2OTP_BLK3_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5cc)
+#define EFUSE_APB2OTP_BLK3_W11_REG (DR_REG_EFUSE_BASE + 0x5cc)
 /** EFUSE_APB2OTP_BLOCK3_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block3 word11 data.
  */
@@ -3469,7 +3469,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W1_REG register
  *  eFuse apb2otp BLOCK7 data register1.
  */
-#define EFUSE_APB2OTP_BLK4_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5d0)
+#define EFUSE_APB2OTP_BLK4_W1_REG (DR_REG_EFUSE_BASE + 0x5d0)
 /** EFUSE_APB2OTP_BLOCK4_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word1 data.
  */
@@ -3481,7 +3481,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W2_REG register
  *  eFuse apb2otp block4 data register2.
  */
-#define EFUSE_APB2OTP_BLK4_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5d4)
+#define EFUSE_APB2OTP_BLK4_W2_REG (DR_REG_EFUSE_BASE + 0x5d4)
 /** EFUSE_APB2OTP_BLOCK4_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word2 data.
  */
@@ -3493,7 +3493,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W3_REG register
  *  eFuse apb2otp block4 data register3.
  */
-#define EFUSE_APB2OTP_BLK4_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5d8)
+#define EFUSE_APB2OTP_BLK4_W3_REG (DR_REG_EFUSE_BASE + 0x5d8)
 /** EFUSE_APB2OTP_BLOCK4_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word3 data.
  */
@@ -3505,7 +3505,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W4_REG register
  *  eFuse apb2otp block4 data register4.
  */
-#define EFUSE_APB2OTP_BLK4_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5dc)
+#define EFUSE_APB2OTP_BLK4_W4_REG (DR_REG_EFUSE_BASE + 0x5dc)
 /** EFUSE_APB2OTP_BLOCK4_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word4 data.
  */
@@ -3517,7 +3517,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W5_REG register
  *  eFuse apb2otp block4 data register5.
  */
-#define EFUSE_APB2OTP_BLK4_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5e0)
+#define EFUSE_APB2OTP_BLK4_W5_REG (DR_REG_EFUSE_BASE + 0x5e0)
 /** EFUSE_APB2OTP_BLOCK4_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word5 data.
  */
@@ -3529,7 +3529,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W6_REG register
  *  eFuse apb2otp block4 data register6.
  */
-#define EFUSE_APB2OTP_BLK4_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5e4)
+#define EFUSE_APB2OTP_BLK4_W6_REG (DR_REG_EFUSE_BASE + 0x5e4)
 /** EFUSE_APB2OTP_BLOCK4_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word6 data.
  */
@@ -3541,7 +3541,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W7_REG register
  *  eFuse apb2otp block4 data register7.
  */
-#define EFUSE_APB2OTP_BLK4_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5e8)
+#define EFUSE_APB2OTP_BLK4_W7_REG (DR_REG_EFUSE_BASE + 0x5e8)
 /** EFUSE_APB2OTP_BLOCK4_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word7 data.
  */
@@ -3553,7 +3553,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W8_REG register
  *  eFuse apb2otp block4 data register8.
  */
-#define EFUSE_APB2OTP_BLK4_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5ec)
+#define EFUSE_APB2OTP_BLK4_W8_REG (DR_REG_EFUSE_BASE + 0x5ec)
 /** EFUSE_APB2OTP_BLOCK4_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word8 data.
  */
@@ -3565,7 +3565,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W9_REG register
  *  eFuse apb2otp block4 data register9.
  */
-#define EFUSE_APB2OTP_BLK4_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5f0)
+#define EFUSE_APB2OTP_BLK4_W9_REG (DR_REG_EFUSE_BASE + 0x5f0)
 /** EFUSE_APB2OTP_BLOCK4_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word9 data.
  */
@@ -3577,7 +3577,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W10_REG register
  *  eFuse apb2otp block4 data registe10.
  */
-#define EFUSE_APB2OTP_BLK4_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5f4)
+#define EFUSE_APB2OTP_BLK4_W10_REG (DR_REG_EFUSE_BASE + 0x5f4)
 /** EFUSE_APB2OTP_BLOCK4_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word10 data.
  */
@@ -3589,7 +3589,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK4_W11_REG register
  *  eFuse apb2otp block4 data register11.
  */
-#define EFUSE_APB2OTP_BLK4_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5f8)
+#define EFUSE_APB2OTP_BLK4_W11_REG (DR_REG_EFUSE_BASE + 0x5f8)
 /** EFUSE_APB2OTP_BLOCK4_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block4 word11 data.
  */
@@ -3601,7 +3601,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W1_REG register
  *  eFuse apb2otp block5 data register1.
  */
-#define EFUSE_APB2OTP_BLK5_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x5fc)
+#define EFUSE_APB2OTP_BLK5_W1_REG (DR_REG_EFUSE_BASE + 0x5fc)
 /** EFUSE_APB2OTP_BLOCK5_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word1 data.
  */
@@ -3613,7 +3613,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W2_REG register
  *  eFuse apb2otp block5 data register2.
  */
-#define EFUSE_APB2OTP_BLK5_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x600)
+#define EFUSE_APB2OTP_BLK5_W2_REG (DR_REG_EFUSE_BASE + 0x600)
 /** EFUSE_APB2OTP_BLOCK5_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word2 data.
  */
@@ -3625,7 +3625,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W3_REG register
  *  eFuse apb2otp block5 data register3.
  */
-#define EFUSE_APB2OTP_BLK5_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x604)
+#define EFUSE_APB2OTP_BLK5_W3_REG (DR_REG_EFUSE_BASE + 0x604)
 /** EFUSE_APB2OTP_BLOCK5_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word3 data.
  */
@@ -3637,7 +3637,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W4_REG register
  *  eFuse apb2otp block5 data register4.
  */
-#define EFUSE_APB2OTP_BLK5_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x608)
+#define EFUSE_APB2OTP_BLK5_W4_REG (DR_REG_EFUSE_BASE + 0x608)
 /** EFUSE_APB2OTP_BLOCK5_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word4 data.
  */
@@ -3649,7 +3649,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W5_REG register
  *  eFuse apb2otp block5 data register5.
  */
-#define EFUSE_APB2OTP_BLK5_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x60c)
+#define EFUSE_APB2OTP_BLK5_W5_REG (DR_REG_EFUSE_BASE + 0x60c)
 /** EFUSE_APB2OTP_BLOCK5_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word5 data.
  */
@@ -3661,7 +3661,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W6_REG register
  *  eFuse apb2otp block5 data register6.
  */
-#define EFUSE_APB2OTP_BLK5_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x610)
+#define EFUSE_APB2OTP_BLK5_W6_REG (DR_REG_EFUSE_BASE + 0x610)
 /** EFUSE_APB2OTP_BLOCK5_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word6 data.
  */
@@ -3673,7 +3673,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W7_REG register
  *  eFuse apb2otp block5 data register7.
  */
-#define EFUSE_APB2OTP_BLK5_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x614)
+#define EFUSE_APB2OTP_BLK5_W7_REG (DR_REG_EFUSE_BASE + 0x614)
 /** EFUSE_APB2OTP_BLOCK5_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word7 data.
  */
@@ -3685,7 +3685,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W8_REG register
  *  eFuse apb2otp block5 data register8.
  */
-#define EFUSE_APB2OTP_BLK5_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x618)
+#define EFUSE_APB2OTP_BLK5_W8_REG (DR_REG_EFUSE_BASE + 0x618)
 /** EFUSE_APB2OTP_BLOCK5_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word8 data.
  */
@@ -3697,7 +3697,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W9_REG register
  *  eFuse apb2otp block5 data register9.
  */
-#define EFUSE_APB2OTP_BLK5_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x61c)
+#define EFUSE_APB2OTP_BLK5_W9_REG (DR_REG_EFUSE_BASE + 0x61c)
 /** EFUSE_APB2OTP_BLOCK5_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word9 data.
  */
@@ -3709,7 +3709,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W10_REG register
  *  eFuse apb2otp block5 data register10.
  */
-#define EFUSE_APB2OTP_BLK5_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x620)
+#define EFUSE_APB2OTP_BLK5_W10_REG (DR_REG_EFUSE_BASE + 0x620)
 /** EFUSE_APB2OTP_BLOCK5_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word10 data.
  */
@@ -3721,7 +3721,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK5_W11_REG register
  *  eFuse apb2otp block5 data register11.
  */
-#define EFUSE_APB2OTP_BLK5_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x624)
+#define EFUSE_APB2OTP_BLK5_W11_REG (DR_REG_EFUSE_BASE + 0x624)
 /** EFUSE_APB2OTP_BLOCK5_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block5 word11 data.
  */
@@ -3733,7 +3733,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W1_REG register
  *  eFuse apb2otp block6 data register1.
  */
-#define EFUSE_APB2OTP_BLK6_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x628)
+#define EFUSE_APB2OTP_BLK6_W1_REG (DR_REG_EFUSE_BASE + 0x628)
 /** EFUSE_APB2OTP_BLOCK6_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word1 data.
  */
@@ -3745,7 +3745,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W2_REG register
  *  eFuse apb2otp block6 data register2.
  */
-#define EFUSE_APB2OTP_BLK6_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x62c)
+#define EFUSE_APB2OTP_BLK6_W2_REG (DR_REG_EFUSE_BASE + 0x62c)
 /** EFUSE_APB2OTP_BLOCK6_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word2 data.
  */
@@ -3757,7 +3757,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W3_REG register
  *  eFuse apb2otp block6 data register3.
  */
-#define EFUSE_APB2OTP_BLK6_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x630)
+#define EFUSE_APB2OTP_BLK6_W3_REG (DR_REG_EFUSE_BASE + 0x630)
 /** EFUSE_APB2OTP_BLOCK6_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word3 data.
  */
@@ -3769,7 +3769,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W4_REG register
  *  eFuse apb2otp block6 data register4.
  */
-#define EFUSE_APB2OTP_BLK6_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x634)
+#define EFUSE_APB2OTP_BLK6_W4_REG (DR_REG_EFUSE_BASE + 0x634)
 /** EFUSE_APB2OTP_BLOCK6_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word4 data.
  */
@@ -3781,7 +3781,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W5_REG register
  *  eFuse apb2otp block6 data register5.
  */
-#define EFUSE_APB2OTP_BLK6_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x638)
+#define EFUSE_APB2OTP_BLK6_W5_REG (DR_REG_EFUSE_BASE + 0x638)
 /** EFUSE_APB2OTP_BLOCK6_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word5 data.
  */
@@ -3793,7 +3793,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W6_REG register
  *  eFuse apb2otp block6 data register6.
  */
-#define EFUSE_APB2OTP_BLK6_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x63c)
+#define EFUSE_APB2OTP_BLK6_W6_REG (DR_REG_EFUSE_BASE + 0x63c)
 /** EFUSE_APB2OTP_BLOCK6_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word6 data.
  */
@@ -3805,7 +3805,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W7_REG register
  *  eFuse apb2otp block6 data register7.
  */
-#define EFUSE_APB2OTP_BLK6_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x640)
+#define EFUSE_APB2OTP_BLK6_W7_REG (DR_REG_EFUSE_BASE + 0x640)
 /** EFUSE_APB2OTP_BLOCK6_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word7 data.
  */
@@ -3817,7 +3817,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W8_REG register
  *  eFuse apb2otp block6 data register8.
  */
-#define EFUSE_APB2OTP_BLK6_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x644)
+#define EFUSE_APB2OTP_BLK6_W8_REG (DR_REG_EFUSE_BASE + 0x644)
 /** EFUSE_APB2OTP_BLOCK6_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word8 data.
  */
@@ -3829,7 +3829,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W9_REG register
  *  eFuse apb2otp block6 data register9.
  */
-#define EFUSE_APB2OTP_BLK6_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x648)
+#define EFUSE_APB2OTP_BLK6_W9_REG (DR_REG_EFUSE_BASE + 0x648)
 /** EFUSE_APB2OTP_BLOCK6_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word9 data.
  */
@@ -3841,7 +3841,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W10_REG register
  *  eFuse apb2otp block6 data register10.
  */
-#define EFUSE_APB2OTP_BLK6_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x64c)
+#define EFUSE_APB2OTP_BLK6_W10_REG (DR_REG_EFUSE_BASE + 0x64c)
 /** EFUSE_APB2OTP_BLOCK6_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word10 data.
  */
@@ -3853,7 +3853,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK6_W11_REG register
  *  eFuse apb2otp block6 data register11.
  */
-#define EFUSE_APB2OTP_BLK6_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x650)
+#define EFUSE_APB2OTP_BLK6_W11_REG (DR_REG_EFUSE_BASE + 0x650)
 /** EFUSE_APB2OTP_BLOCK6_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block6 word11 data.
  */
@@ -3865,7 +3865,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W1_REG register
  *  eFuse apb2otp block7 data register1.
  */
-#define EFUSE_APB2OTP_BLK7_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x654)
+#define EFUSE_APB2OTP_BLK7_W1_REG (DR_REG_EFUSE_BASE + 0x654)
 /** EFUSE_APB2OTP_BLOCK7_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word1 data.
  */
@@ -3877,7 +3877,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W2_REG register
  *  eFuse apb2otp block7 data register2.
  */
-#define EFUSE_APB2OTP_BLK7_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x658)
+#define EFUSE_APB2OTP_BLK7_W2_REG (DR_REG_EFUSE_BASE + 0x658)
 /** EFUSE_APB2OTP_BLOCK7_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word2 data.
  */
@@ -3889,7 +3889,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W3_REG register
  *  eFuse apb2otp block7 data register3.
  */
-#define EFUSE_APB2OTP_BLK7_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x65c)
+#define EFUSE_APB2OTP_BLK7_W3_REG (DR_REG_EFUSE_BASE + 0x65c)
 /** EFUSE_APB2OTP_BLOCK7_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word3 data.
  */
@@ -3901,7 +3901,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W4_REG register
  *  eFuse apb2otp block7 data register4.
  */
-#define EFUSE_APB2OTP_BLK7_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x660)
+#define EFUSE_APB2OTP_BLK7_W4_REG (DR_REG_EFUSE_BASE + 0x660)
 /** EFUSE_APB2OTP_BLOCK7_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word4 data.
  */
@@ -3913,7 +3913,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W5_REG register
  *  eFuse apb2otp block7 data register5.
  */
-#define EFUSE_APB2OTP_BLK7_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x664)
+#define EFUSE_APB2OTP_BLK7_W5_REG (DR_REG_EFUSE_BASE + 0x664)
 /** EFUSE_APB2OTP_BLOCK7_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word5 data.
  */
@@ -3925,7 +3925,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W6_REG register
  *  eFuse apb2otp block7 data register6.
  */
-#define EFUSE_APB2OTP_BLK7_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x668)
+#define EFUSE_APB2OTP_BLK7_W6_REG (DR_REG_EFUSE_BASE + 0x668)
 /** EFUSE_APB2OTP_BLOCK7_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word6 data.
  */
@@ -3937,7 +3937,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W7_REG register
  *  eFuse apb2otp block7 data register7.
  */
-#define EFUSE_APB2OTP_BLK7_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x66c)
+#define EFUSE_APB2OTP_BLK7_W7_REG (DR_REG_EFUSE_BASE + 0x66c)
 /** EFUSE_APB2OTP_BLOCK7_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word7 data.
  */
@@ -3949,7 +3949,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W8_REG register
  *  eFuse apb2otp block7 data register8.
  */
-#define EFUSE_APB2OTP_BLK7_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x670)
+#define EFUSE_APB2OTP_BLK7_W8_REG (DR_REG_EFUSE_BASE + 0x670)
 /** EFUSE_APB2OTP_BLOCK7_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word8 data.
  */
@@ -3961,7 +3961,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W9_REG register
  *  eFuse apb2otp block7 data register9.
  */
-#define EFUSE_APB2OTP_BLK7_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x674)
+#define EFUSE_APB2OTP_BLK7_W9_REG (DR_REG_EFUSE_BASE + 0x674)
 /** EFUSE_APB2OTP_BLOCK7_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word9 data.
  */
@@ -3973,7 +3973,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W10_REG register
  *  eFuse apb2otp block7 data register10.
  */
-#define EFUSE_APB2OTP_BLK7_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x678)
+#define EFUSE_APB2OTP_BLK7_W10_REG (DR_REG_EFUSE_BASE + 0x678)
 /** EFUSE_APB2OTP_BLOCK7_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word10 data.
  */
@@ -3985,7 +3985,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK7_W11_REG register
  *  eFuse apb2otp block7 data register11.
  */
-#define EFUSE_APB2OTP_BLK7_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x67c)
+#define EFUSE_APB2OTP_BLK7_W11_REG (DR_REG_EFUSE_BASE + 0x67c)
 /** EFUSE_APB2OTP_BLOCK7_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block7 word11 data.
  */
@@ -3997,7 +3997,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W1_REG register
  *  eFuse apb2otp block8 data register1.
  */
-#define EFUSE_APB2OTP_BLK8_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x680)
+#define EFUSE_APB2OTP_BLK8_W1_REG (DR_REG_EFUSE_BASE + 0x680)
 /** EFUSE_APB2OTP_BLOCK8_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word1 data.
  */
@@ -4009,7 +4009,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W2_REG register
  *  eFuse apb2otp block8 data register2.
  */
-#define EFUSE_APB2OTP_BLK8_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x684)
+#define EFUSE_APB2OTP_BLK8_W2_REG (DR_REG_EFUSE_BASE + 0x684)
 /** EFUSE_APB2OTP_BLOCK8_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word2 data.
  */
@@ -4021,7 +4021,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W3_REG register
  *  eFuse apb2otp block8 data register3.
  */
-#define EFUSE_APB2OTP_BLK8_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x688)
+#define EFUSE_APB2OTP_BLK8_W3_REG (DR_REG_EFUSE_BASE + 0x688)
 /** EFUSE_APB2OTP_BLOCK8_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word3 data.
  */
@@ -4033,7 +4033,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W4_REG register
  *  eFuse apb2otp block8 data register4.
  */
-#define EFUSE_APB2OTP_BLK8_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x68c)
+#define EFUSE_APB2OTP_BLK8_W4_REG (DR_REG_EFUSE_BASE + 0x68c)
 /** EFUSE_APB2OTP_BLOCK8_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word4 data.
  */
@@ -4045,7 +4045,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W5_REG register
  *  eFuse apb2otp block8 data register5.
  */
-#define EFUSE_APB2OTP_BLK8_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x690)
+#define EFUSE_APB2OTP_BLK8_W5_REG (DR_REG_EFUSE_BASE + 0x690)
 /** EFUSE_APB2OTP_BLOCK8_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word5 data.
  */
@@ -4057,7 +4057,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W6_REG register
  *  eFuse apb2otp block8 data register6.
  */
-#define EFUSE_APB2OTP_BLK8_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x694)
+#define EFUSE_APB2OTP_BLK8_W6_REG (DR_REG_EFUSE_BASE + 0x694)
 /** EFUSE_APB2OTP_BLOCK8_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word6 data.
  */
@@ -4069,7 +4069,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W7_REG register
  *  eFuse apb2otp block8 data register7.
  */
-#define EFUSE_APB2OTP_BLK8_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x698)
+#define EFUSE_APB2OTP_BLK8_W7_REG (DR_REG_EFUSE_BASE + 0x698)
 /** EFUSE_APB2OTP_BLOCK8_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word7 data.
  */
@@ -4081,7 +4081,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W8_REG register
  *  eFuse apb2otp block8 data register8.
  */
-#define EFUSE_APB2OTP_BLK8_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x69c)
+#define EFUSE_APB2OTP_BLK8_W8_REG (DR_REG_EFUSE_BASE + 0x69c)
 /** EFUSE_APB2OTP_BLOCK8_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word8 data.
  */
@@ -4093,7 +4093,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W9_REG register
  *  eFuse apb2otp block8 data register9.
  */
-#define EFUSE_APB2OTP_BLK8_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6a0)
+#define EFUSE_APB2OTP_BLK8_W9_REG (DR_REG_EFUSE_BASE + 0x6a0)
 /** EFUSE_APB2OTP_BLOCK8_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word9 data.
  */
@@ -4105,7 +4105,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W10_REG register
  *  eFuse apb2otp block8 data register10.
  */
-#define EFUSE_APB2OTP_BLK8_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6a4)
+#define EFUSE_APB2OTP_BLK8_W10_REG (DR_REG_EFUSE_BASE + 0x6a4)
 /** EFUSE_APB2OTP_BLOCK8_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word10 data.
  */
@@ -4117,7 +4117,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK8_W11_REG register
  *  eFuse apb2otp block8 data register11.
  */
-#define EFUSE_APB2OTP_BLK8_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6a8)
+#define EFUSE_APB2OTP_BLK8_W11_REG (DR_REG_EFUSE_BASE + 0x6a8)
 /** EFUSE_APB2OTP_BLOCK8_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block8 word11 data.
  */
@@ -4129,7 +4129,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W1_REG register
  *  eFuse apb2otp block9 data register1.
  */
-#define EFUSE_APB2OTP_BLK9_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6ac)
+#define EFUSE_APB2OTP_BLK9_W1_REG (DR_REG_EFUSE_BASE + 0x6ac)
 /** EFUSE_APB2OTP_BLOCK9_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word1 data.
  */
@@ -4141,7 +4141,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W2_REG register
  *  eFuse apb2otp block9 data register2.
  */
-#define EFUSE_APB2OTP_BLK9_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6b0)
+#define EFUSE_APB2OTP_BLK9_W2_REG (DR_REG_EFUSE_BASE + 0x6b0)
 /** EFUSE_APB2OTP_BLOCK9_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word2 data.
  */
@@ -4153,7 +4153,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W3_REG register
  *  eFuse apb2otp block9 data register3.
  */
-#define EFUSE_APB2OTP_BLK9_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6b4)
+#define EFUSE_APB2OTP_BLK9_W3_REG (DR_REG_EFUSE_BASE + 0x6b4)
 /** EFUSE_APB2OTP_BLOCK9_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word3 data.
  */
@@ -4165,7 +4165,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W4_REG register
  *  eFuse apb2otp block9 data register4.
  */
-#define EFUSE_APB2OTP_BLK9_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6b8)
+#define EFUSE_APB2OTP_BLK9_W4_REG (DR_REG_EFUSE_BASE + 0x6b8)
 /** EFUSE_APB2OTP_BLOCK9_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word4 data.
  */
@@ -4177,7 +4177,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W5_REG register
  *  eFuse apb2otp block9 data register5.
  */
-#define EFUSE_APB2OTP_BLK9_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6bc)
+#define EFUSE_APB2OTP_BLK9_W5_REG (DR_REG_EFUSE_BASE + 0x6bc)
 /** EFUSE_APB2OTP_BLOCK9_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word5 data.
  */
@@ -4189,7 +4189,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W6_REG register
  *  eFuse apb2otp block9 data register6.
  */
-#define EFUSE_APB2OTP_BLK9_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6c0)
+#define EFUSE_APB2OTP_BLK9_W6_REG (DR_REG_EFUSE_BASE + 0x6c0)
 /** EFUSE_APB2OTP_BLOCK9_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word6 data.
  */
@@ -4201,7 +4201,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W7_REG register
  *  eFuse apb2otp block9 data register7.
  */
-#define EFUSE_APB2OTP_BLK9_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6c4)
+#define EFUSE_APB2OTP_BLK9_W7_REG (DR_REG_EFUSE_BASE + 0x6c4)
 /** EFUSE_APB2OTP_BLOCK9_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word7 data.
  */
@@ -4213,7 +4213,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W8_REG register
  *  eFuse apb2otp block9 data register8.
  */
-#define EFUSE_APB2OTP_BLK9_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6c8)
+#define EFUSE_APB2OTP_BLK9_W8_REG (DR_REG_EFUSE_BASE + 0x6c8)
 /** EFUSE_APB2OTP_BLOCK9_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word8 data.
  */
@@ -4225,7 +4225,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W9_REG register
  *  eFuse apb2otp block9 data register9.
  */
-#define EFUSE_APB2OTP_BLK9_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6cc)
+#define EFUSE_APB2OTP_BLK9_W9_REG (DR_REG_EFUSE_BASE + 0x6cc)
 /** EFUSE_APB2OTP_BLOCK9_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word9 data.
  */
@@ -4237,7 +4237,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W10_REG register
  *  eFuse apb2otp block9 data register10.
  */
-#define EFUSE_APB2OTP_BLK9_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6d0)
+#define EFUSE_APB2OTP_BLK9_W10_REG (DR_REG_EFUSE_BASE + 0x6d0)
 /** EFUSE_APB2OTP_BLOCK9_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word10 data.
  */
@@ -4249,7 +4249,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK9_W11_REG register
  *  eFuse apb2otp block9 data register11.
  */
-#define EFUSE_APB2OTP_BLK9_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6d4)
+#define EFUSE_APB2OTP_BLK9_W11_REG (DR_REG_EFUSE_BASE + 0x6d4)
 /** EFUSE_APB2OTP_BLOCK9_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block9 word11 data.
  */
@@ -4261,7 +4261,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W1_REG register
  *  eFuse apb2otp block10 data register1.
  */
-#define EFUSE_APB2OTP_BLK10_W1_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6d8)
+#define EFUSE_APB2OTP_BLK10_W1_REG (DR_REG_EFUSE_BASE + 0x6d8)
 /** EFUSE_APB2OTP_BLOCK10_W1 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word1 data.
  */
@@ -4273,7 +4273,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W2_REG register
  *  eFuse apb2otp block10 data register2.
  */
-#define EFUSE_APB2OTP_BLK10_W2_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6dc)
+#define EFUSE_APB2OTP_BLK10_W2_REG (DR_REG_EFUSE_BASE + 0x6dc)
 /** EFUSE_APB2OTP_BLOCK10_W2 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word2 data.
  */
@@ -4285,7 +4285,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W3_REG register
  *  eFuse apb2otp block10 data register3.
  */
-#define EFUSE_APB2OTP_BLK10_W3_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6e0)
+#define EFUSE_APB2OTP_BLK10_W3_REG (DR_REG_EFUSE_BASE + 0x6e0)
 /** EFUSE_APB2OTP_BLOCK10_W3 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word3 data.
  */
@@ -4297,7 +4297,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W4_REG register
  *  eFuse apb2otp block10 data register4.
  */
-#define EFUSE_APB2OTP_BLK10_W4_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6e4)
+#define EFUSE_APB2OTP_BLK10_W4_REG (DR_REG_EFUSE_BASE + 0x6e4)
 /** EFUSE_APB2OTP_BLOCK10_W4 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word4 data.
  */
@@ -4309,7 +4309,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W5_REG register
  *  eFuse apb2otp block10 data register5.
  */
-#define EFUSE_APB2OTP_BLK10_W5_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6e8)
+#define EFUSE_APB2OTP_BLK10_W5_REG (DR_REG_EFUSE_BASE + 0x6e8)
 /** EFUSE_APB2OTP_BLOCK10_W5 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word5 data.
  */
@@ -4321,7 +4321,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W6_REG register
  *  eFuse apb2otp block10 data register6.
  */
-#define EFUSE_APB2OTP_BLK10_W6_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6ec)
+#define EFUSE_APB2OTP_BLK10_W6_REG (DR_REG_EFUSE_BASE + 0x6ec)
 /** EFUSE_APB2OTP_BLOCK10_W6 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word6 data.
  */
@@ -4333,7 +4333,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W7_REG register
  *  eFuse apb2otp block10 data register7.
  */
-#define EFUSE_APB2OTP_BLK10_W7_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6f0)
+#define EFUSE_APB2OTP_BLK10_W7_REG (DR_REG_EFUSE_BASE + 0x6f0)
 /** EFUSE_APB2OTP_BLOCK10_W7 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word7 data.
  */
@@ -4345,7 +4345,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W8_REG register
  *  eFuse apb2otp block10 data register8.
  */
-#define EFUSE_APB2OTP_BLK10_W8_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6f4)
+#define EFUSE_APB2OTP_BLK10_W8_REG (DR_REG_EFUSE_BASE + 0x6f4)
 /** EFUSE_APB2OTP_BLOCK10_W8 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word8 data.
  */
@@ -4357,7 +4357,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W9_REG register
  *  eFuse apb2otp block10 data register9.
  */
-#define EFUSE_APB2OTP_BLK10_W9_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6f8)
+#define EFUSE_APB2OTP_BLK10_W9_REG (DR_REG_EFUSE_BASE + 0x6f8)
 /** EFUSE_APB2OTP_BLOCK10_W9 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word9 data.
  */
@@ -4369,7 +4369,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W10_REG register
  *  eFuse apb2otp block10 data register10.
  */
-#define EFUSE_APB2OTP_BLK10_W10_REG(i) (DR_REG_EFUSE_BASE(i) + 0x6fc)
+#define EFUSE_APB2OTP_BLK10_W10_REG (DR_REG_EFUSE_BASE + 0x6fc)
 /** EFUSE_APB2OTP_BLOCK10_W10 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word10 data.
  */
@@ -4381,7 +4381,7 @@ extern "C" {
 /** EFUSE_APB2OTP_BLK10_W11_REG register
  *  eFuse apb2otp block10 data register11.
  */
-#define EFUSE_APB2OTP_BLK10_W11_REG(i) (DR_REG_EFUSE_BASE(i) + 0x700)
+#define EFUSE_APB2OTP_BLK10_W11_REG (DR_REG_EFUSE_BASE + 0x700)
 /** EFUSE_APB2OTP_BLOCK10_W11 : RO; bitpos: [31:0]; default: 0;
  *  Otp block10 word11 data.
  */
@@ -4393,7 +4393,7 @@ extern "C" {
 /** EFUSE_APB2OTP_EN_REG register
  *  eFuse apb2otp enable configuration register.
  */
-#define EFUSE_APB2OTP_EN_REG(i) (DR_REG_EFUSE_BASE(i) + 0x708)
+#define EFUSE_APB2OTP_EN_REG (DR_REG_EFUSE_BASE + 0x708)
 /** EFUSE_APB2OTP_APB2OTP_EN : R/W; bitpos: [0]; default: 0;
  *  Apb2otp mode enable signal.
  */
