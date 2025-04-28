@@ -106,6 +106,7 @@ static size_t rmt_encode_bs(rmt_encoder_t *encoder, rmt_channel_handle_t channel
 static esp_err_t rmt_del_bs_encoder(rmt_encoder_t *encoder)
 {
     rmt_bs_encoder_t *bs_encoder = __containerof(encoder, rmt_bs_encoder_t, base);
+    ESP_RETURN_ON_ERROR(bitscrambler_disable(bs_encoder->bs), TAG, "disable bitscrambler failed");
     bitscrambler_free(bs_encoder->bs);
     free(bs_encoder);
     return ESP_OK;
@@ -129,7 +130,7 @@ esp_err_t rmt_new_bitscrambler_encoder(const rmt_bs_encoder_config_t *config, rm
         .attach_to = SOC_BITSCRAMBLER_ATTACH_RMT,
     };
     ESP_GOTO_ON_ERROR(bitscrambler_new(&bs_config, &encoder->bs), err, TAG, "create bitscrambler failed");
-
+    ESP_GOTO_ON_ERROR(bitscrambler_enable(encoder->bs), err, TAG, "enable bitscrambler failed");
     // load the bitscrambler program
     ESP_GOTO_ON_ERROR(bitscrambler_load_program(encoder->bs, config->program_bin), err, TAG, "load bitscrambler program failed");
 

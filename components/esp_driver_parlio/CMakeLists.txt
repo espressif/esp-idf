@@ -8,10 +8,14 @@ if(CONFIG_SOC_PARLIO_SUPPORTED)
                      "src/parlio_rx.c")
 endif()
 
+if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
+    list(APPEND srcs "src/parlio_bitscrambler.c")
+endif()
+
 if(${target} STREQUAL "linux")
     set(priv_requires "")
 else()
-    set(priv_requires esp_pm esp_driver_gpio esp_mm)
+    set(priv_requires esp_pm esp_driver_gpio esp_mm esp_driver_bitscrambler)
 endif()
 
 idf_component_register(SRCS ${srcs}
