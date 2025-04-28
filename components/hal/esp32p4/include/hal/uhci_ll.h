@@ -19,6 +19,7 @@ extern "C" {
 #endif
 
 #define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI0) : (NULL))
+#define UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD  (8192)
 
 typedef enum {
     UHCI_RX_BREAK_CHR_EOF = 0x1,
@@ -105,6 +106,11 @@ static inline void uhci_ll_rx_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
     if (eof_mode & UHCI_RX_LEN_EOF) {
         hw->conf0.len_eof_en = 1;
     }
+}
+
+static inline void uhci_ll_rx_set_packet_threshold(uhci_dev_t *hw, uint16_t length)
+{
+    hw->pkt_thres.pkt_thrs = length;
 }
 
 #ifdef __cplusplus

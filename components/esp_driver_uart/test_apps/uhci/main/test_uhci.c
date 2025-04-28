@@ -143,7 +143,7 @@ static void uhci_receive_test(void *arg)
         if (xQueueReceive(ctx->uhci_queue, &evt, portMAX_DELAY) == pdTRUE) {
             if (evt == UHCI_EVT_EOF) {
                 disp_buf(receive_data, ctx->receive_size);
-                for (int i = 0; i < DATA_LENGTH; i++) {
+                for (int i = 0; i < ctx->receive_size; i++) {
                     TEST_ASSERT(receive_data[i] == (uint8_t)i);
                 }
                 printf("Received size: %d\n", ctx->receive_size);
@@ -160,7 +160,7 @@ static void uhci_receive_test(void *arg)
     vTaskDelete(NULL);
 }
 
-TEST_CASE("UHCI write and receive", "[uhci]")
+TEST_CASE("UHCI write and receive with idle eof", "[uhci]")
 {
     uart_config_t uart_config = {
         .baud_rate = 5 * 1000 * 1000,
@@ -181,6 +181,49 @@ TEST_CASE("UHCI write and receive", "[uhci]")
         .max_transmit_size = 10 * 1024,
         .dma_burst_size = 32,
         .rx_eof_flags.idle_eof = 1,
+    };
+
+    uhci_controller_handle_t uhci_ctrl;
+    SemaphoreHandle_t exit_sema = xSemaphoreCreateBinary();
+    TEST_ESP_OK(uhci_new_controller(&uhci_cfg, &uhci_ctrl));
+
+    void *args[] = { uhci_ctrl, exit_sema };
+    xTaskCreate(uhci_receive_test, "uhci_receive_test", 4096 * 2, args, 5, NULL);
+
+    uint8_t data_wr[DATA_LENGTH];
+    for (int i = 0; i < DATA_LENGTH; i++) {
+        data_wr[i] = i;
+    }
+    TEST_ESP_OK(uhci_transmit(uhci_ctrl, data_wr, DATA_LENGTH));
+    uhci_wait_all_tx_transaction_done(uhci_ctrl, portMAX_DELAY);
+    xSemaphoreTake(exit_sema, portMAX_DELAY);
+    vTaskDelay(2);
+    TEST_ESP_OK(uhci_del_controller(uhci_ctrl));
+    vSemaphoreDelete(exit_sema);
+}
+
+TEST_CASE("UHCI write and receive with length eof", "[uhci]")
+{
+    uart_config_t uart_config = {
+        .baud_rate = 5 * 1000 * 1000,
+        .data_bits = UART_DATA_8_BITS,
+        .parity = UART_PARITY_DISABLE,
+        .stop_bits = UART_STOP_BITS_1,
+        .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+        .source_clk = UART_SCLK_XTAL,
+    };
+    TEST_ESP_OK(uart_param_config(EX_UART_NUM, &uart_config));
+    // Connect TX and RX together for testing self send-receive
+    TEST_ESP_OK(uart_set_pin(EX_UART_NUM, UART_TX_IO, UART_TX_IO, -1, -1));
+
+    uhci_controller_config_t uhci_cfg = {
+        .uart_port = EX_UART_NUM,
+        .tx_trans_queue_depth = 30,
+        .max_receive_internal_mem = 10 * 1024,
+        .max_transmit_size = 10 * 1024,
+        .dma_burst_size = 32,
+        .max_packet_receive = 100,
+        .rx_eof_flags.length_eof = 1,
     };
 
     uhci_controller_handle_t uhci_ctrl;

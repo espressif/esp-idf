@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,14 +11,14 @@
 #include <stdio.h>
 #include "hal/uhci_types.h"
 #include "soc/uhci_struct.h"
-#include "soc/system_struct.h"
+#include "soc/pcr_struct.h"
 #include "hal/misc.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI0) : (NULL))
+#define UHCI_LL_GET_HW(num) (((num) == 0) ? (&UHCI) : (NULL))
 #define UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD  (8192)
 
 typedef enum {
@@ -34,31 +34,23 @@ typedef enum {
  * @param group_id Group ID
  * @param enable true to enable, false to disable
  */
-static inline void _uhci_ll_enable_bus_clock(int group_id, bool enable)
+static inline void uhci_ll_enable_bus_clock(int group_id, bool enable)
 {
     (void)group_id;
-    SYSTEM.perip_clk_en0.reg_uhci0_clk_en = enable;
+    PCR.uhci_conf.uhci_clk_en = enable;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define uhci_ll_enable_bus_clock(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uhci_ll_enable_bus_clock(__VA_ARGS__)
 
 /**
  * @brief Reset the UHCI module
  *
  * @param group_id Group ID
  */
-static inline void _uhci_ll_reset_register(int group_id)
+static inline void uhci_ll_reset_register(int group_id)
 {
     (void)group_id;
-    SYSTEM.perip_rst_en0.reg_uhci0_rst = 1;
-    SYSTEM.perip_rst_en0.reg_uhci0_rst = 0;
+    PCR.uhci_conf.uhci_rst_en = 1;
+    PCR.uhci_conf.uhci_rst_en = 0;
 }
-
-/// use a macro to wrap the function, force the caller to use it in a critical section
-/// the critical section needs to declare the __DECLARE_RCC_ATOMIC_ENV variable in advance
-#define uhci_ll_reset_register(...) (void)__DECLARE_RCC_ATOMIC_ENV; _uhci_ll_reset_register(__VA_ARGS__)
 
 static inline void uhci_ll_init(uhci_dev_t *hw)
 {
@@ -72,8 +64,7 @@ static inline void uhci_ll_init(uhci_dev_t *hw)
 
 static inline void uhci_ll_attach_uart_port(uhci_dev_t *hw, int uart_num)
 {
-    hw->conf0.uart0_ce = (uart_num == 0) ? 1 : 0;
-    hw->conf0.uart1_ce = (uart_num == 1) ? 1 : 0;
+    hw->conf0.uart_sel = uart_num;
 }
 
 static inline void uhci_ll_set_seper_chr(uhci_dev_t *hw, uhci_seper_chr_t *seper_char)
@@ -106,12 +97,12 @@ static inline void uhci_ll_set_swflow_ctrl_sub_chr(uhci_dev_t *hw, uhci_swflow_c
         typeof(hw->esc_conf3) esc_conf3_reg;
         esc_conf3_reg.val = hw->esc_conf3.val;
 
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1, sub_ctr->xon_chr);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char0, sub_ctr->xon_sub1);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, seq1_char1, sub_ctr->xon_sub2);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2, sub_ctr->xoff_chr);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char0, sub_ctr->xoff_sub1);
-        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, seq2_char1, sub_ctr->xoff_sub2);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, esc_seq1, sub_ctr->xon_chr);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, esc_seq1_char0, sub_ctr->xon_sub1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf2_reg, esc_seq1_char1, sub_ctr->xon_sub2);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, esc_seq2, sub_ctr->xoff_chr);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, esc_seq2_char0, sub_ctr->xoff_sub1);
+        HAL_FORCE_MODIFY_U32_REG_FIELD(esc_conf3_reg, esc_seq2_char1, sub_ctr->xoff_sub2);
         escape_conf_reg.tx_11_esc_en = 1;
         escape_conf_reg.tx_13_esc_en = 1;
         escape_conf_reg.rx_11_esc_en = 1;
@@ -162,7 +153,7 @@ static inline void uhci_ll_rx_set_eof_mode(uhci_dev_t *hw, uint32_t eof_mode)
 
 static inline void uhci_ll_rx_set_packet_threshold(uhci_dev_t *hw, uint16_t length)
 {
-    hw->pkt_thres.thrs = length;
+    hw->pkt_thres.pkt_thrs = length;
 }
 
 #ifdef __cplusplus
