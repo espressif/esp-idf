@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2022-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2022-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,7 +38,7 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_flash_crypt_c
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_wdt_delay_sel(void)
 {
-    return EFUSE.rd_repeat_data1.wdt_delay_sel;
+    return EFUSE.rd_repeat_data0.wdt_delay_sel;
 }
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_mac0(void)
@@ -100,7 +100,8 @@ __attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ocode(void)
 {
-    return EFUSE.rd_sys_part1_data4.ocode;
+    // TODO: IDF-13007
+    return 0;
 }
 
 /******************* eFuse control functions *************************/
