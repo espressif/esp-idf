@@ -487,11 +487,11 @@ typedef struct pmu_sleep_machine_constant {
         .reset_wait_time_us             = 1,    \
         .power_supply_wait_time_us      = 2,    \
         .power_up_wait_time_us          = 2,    \
-        .regdma_s2m_work_time_us        = 275,  \
-        .regdma_s2a_work_time_us        = 587,  \
-        .regdma_m2a_work_time_us        = 320,  \
-        .regdma_a2s_work_time_us        = 494,  \
-        .regdma_rf_on_work_time_us      = 60,   \
+        .regdma_s2m_work_time_us        = 287,  \
+        .regdma_s2a_work_time_us        = 568,  \
+        .regdma_m2a_work_time_us        = 248,  \
+        .regdma_a2s_work_time_us        = 433,  \
+        .regdma_rf_on_work_time_us      = 68,   \
         .regdma_rf_off_work_time_us     = 25,   \
         .xtal_wait_stable_time_us       = 250,  \
         .pll_wait_stable_time_us        = 50    \
