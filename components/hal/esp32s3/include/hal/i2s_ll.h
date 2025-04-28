@@ -30,6 +30,8 @@ extern "C" {
 #define I2S_LL_TDM_CH_MASK (0xffff)
 #define I2S_LL_PDM_BCK_FACTOR          (64)
 
+#define I2S_LL_CLK_FRAC_DIV_N_MAX  256 // I2S_MCLK = I2S_SRC_CLK / (N + b/a), the N register is 8 bit-width
+
 #define I2S_LL_MCLK_DIVIDER_BIT_WIDTH  (9)
 #define I2S_LL_MCLK_DIVIDER_MAX        ((1 << I2S_LL_MCLK_DIVIDER_BIT_WIDTH) - 1)
 #define I2S_LL_SLOT_FRAME_BIT_MAX  128 // Up-to 128 bits in one frame, determined by MAX(half_sample_bits) * 2
