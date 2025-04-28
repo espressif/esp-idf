@@ -647,6 +647,18 @@ esp_err_t httpd_req_async_handler_begin(httpd_req_t *r, httpd_req_t **out)
     struct httpd_req_aux *async_aux = (struct httpd_req_aux *) async->aux;
     struct httpd_req_aux *r_aux = (struct httpd_req_aux *) r->aux;
 
+    if (r_aux->scratch) {
+        async_aux->scratch = malloc(r_aux->scratch_cur_size);
+        if (async_aux->scratch == NULL) {
+            free(async_aux);
+            free(async);
+            return ESP_ERR_NO_MEM;
+        }
+        memcpy(async_aux->scratch, r_aux->scratch, r_aux->scratch_cur_size);
+    } else {
+        async_aux->scratch = NULL;
+    }
+
     async_aux->resp_hdrs = calloc(hd->config.max_resp_headers, sizeof(struct resp_hdr));
     if (async_aux->resp_hdrs == NULL) {
         free(async_aux);
