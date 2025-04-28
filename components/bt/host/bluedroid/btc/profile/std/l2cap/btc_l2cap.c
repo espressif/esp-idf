@@ -361,12 +361,20 @@ static void *btc_l2cap_inter_cb(tBTA_JV_EVT event, tBTA_JV *p_data, void *user_d
         // to do
         break;
     case BTA_JV_FREE_SCN_EVT:
-        slot = l2cap_find_slot_by_id(id);
-        if (slot) {
-            l2cap_free_slot(slot);
-        } else {
-            BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
-            p_data->free_scn.status = ESP_BT_L2CAP_NO_CONNECTION;
+        if (user_data) {
+            id = ((tBTA_JV_FREE_SCN_USER_DATA *)user_data)->slot_id;
+            slot = l2cap_find_slot_by_id(id);
+            if (slot) {
+                if (((tBTA_JV_FREE_SCN_USER_DATA *)user_data)->server_status != BTA_JV_SERVER_CONNECTED) {
+                    l2cap_free_slot(slot);
+                } else {
+                    // Currently running in btu task, free in btc task. It will be free when handling the disconnect event.
+                }
+            } else {
+                BTC_TRACE_ERROR("%s unable to find L2CAP slot, event:%d!", __func__, event);
+                p_data->free_scn.status = ESP_BT_L2CAP_NO_CONNECTION;
+            }
+            osi_free(user_data);
         }
         break;
     default:
@@ -464,6 +472,7 @@ static void btc_l2cap_init(void)
 static void btc_l2cap_uninit(void)
 {
     esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
+    tBTA_JV_SERVER_STATUS server_status = BTA_JV_SERVER_RUNNING;
 
     do {
         if (!is_l2cap_init()) {
@@ -474,7 +483,8 @@ static void btc_l2cap_uninit(void)
         osi_mutex_lock(&l2cap_local_param.l2cap_slot_mutex, OSI_MUTEX_MAX_TIMEOUT);
         // first, remove all connection
         for (size_t i = 1; i <= BTA_JV_MAX_L2C_CONN; i++) {
-            if (l2cap_local_param.l2cap_slots[i] != NULL && !l2cap_local_param.l2cap_slots[i]->is_server) {
+            if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected) {
+                server_status = BTA_JV_SERVER_CONNECTED;
                 BTA_JvL2capClose(l2cap_local_param.l2cap_slots[i]->handle, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb,
                                  (void *)l2cap_local_param.l2cap_slots[i]->id);
             }
@@ -487,8 +497,17 @@ static void btc_l2cap_uninit(void)
                                            (void *)l2cap_local_param.l2cap_slots[i]->id);
                 }
 
+                tBTA_JV_FREE_SCN_USER_DATA *user_data = osi_malloc(sizeof(tBTA_JV_FREE_SCN_USER_DATA));
+                if (user_data) {
+                    user_data->server_status = server_status;
+                    user_data->slot_id = l2cap_local_param.l2cap_slots[i]->id;
+                } else {
+                    BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                    assert(0);
+                }
+
                 BTA_JvFreeChannel(l2cap_local_param.l2cap_slots[i]->psm, BTA_JV_CONN_TYPE_L2CAP,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)l2cap_local_param.l2cap_slots[i]->id);
+                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)user_data);
             }
         }
         BTA_JvDisable((tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb);
@@ -553,7 +572,8 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
     esp_bt_l2cap_status_t ret = ESP_BT_L2CAP_SUCCESS;
     bool is_remove_all = false;
     uint8_t i, j, srv_cnt = 0;
-    uint8_t *srv_psm_arr = osi_malloc(BTA_JV_MAX_L2C_CONN);
+    uint16_t *srv_psm_arr = osi_malloc(BTA_JV_MAX_L2C_CONN);
+    tBTA_JV_SERVER_STATUS server_status = BTA_JV_SERVER_RUNNING;
 
     if (arg->stop_srv.psm == BTC_L2CAP_INVALID_PSM) {
         is_remove_all = true;
@@ -600,6 +620,7 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
                 if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->connected &&
                     l2cap_local_param.l2cap_slots[i]->handle != 0xffff &&
                     l2cap_local_param.l2cap_slots[i]->psm == srv_psm_arr[j]) {
+                    server_status = BTA_JV_SERVER_CONNECTED;
                     BTA_JvL2capClose(l2cap_local_param.l2cap_slots[i]->handle, (tBTA_JV_L2CAP_CBACK *)btc_l2cap_inter_cb,
                                      (void *)l2cap_local_param.l2cap_slots[i]->id);
                 }
@@ -612,14 +633,19 @@ static void btc_l2cap_stop_srv(btc_l2cap_args_t *arg)
                 if (l2cap_local_param.l2cap_slots[i] != NULL && l2cap_local_param.l2cap_slots[i]->is_server &&
                     l2cap_local_param.l2cap_slots[i]->handle != 0xffff &&
                     l2cap_local_param.l2cap_slots[i]->psm == srv_psm_arr[j]) {
+                    BTA_JvL2capStopServer(l2cap_local_param.l2cap_slots[i]->psm,
+                                        (void *)l2cap_local_param.l2cap_slots[i]->id);
 
-                    if (l2cap_local_param.l2cap_slots[i]->handle > 0) {
-                        BTA_JvL2capStopServer(l2cap_local_param.l2cap_slots[i]->psm,
-                                           (void *)l2cap_local_param.l2cap_slots[i]->id);
+                    tBTA_JV_FREE_SCN_USER_DATA *user_data = osi_malloc(sizeof(tBTA_JV_FREE_SCN_USER_DATA));
+                    if (user_data) {
+                        user_data->server_status = server_status;
+                        user_data->slot_id = l2cap_local_param.l2cap_slots[i]->id;
+                    } else {
+                        BTC_TRACE_ERROR("%s unable to malloc user data!", __func__);
+                        assert(0);
                     }
-
                     BTA_JvFreeChannel(l2cap_local_param.l2cap_slots[i]->psm, BTA_JV_CONN_TYPE_L2CAP,
-                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)l2cap_local_param.l2cap_slots[i]->id);
+                                      (tBTA_JV_RFCOMM_CBACK *)btc_l2cap_inter_cb, (void *)user_data);
                 }
             }
         }

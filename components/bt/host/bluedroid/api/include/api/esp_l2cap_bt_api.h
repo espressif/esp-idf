@@ -124,7 +124,7 @@ typedef union {
      */
     struct l2cap_srv_stop_evt_param {
         esp_bt_l2cap_status_t  status;         /*!< status */
-        uint8_t                psm;            /*!< local psm */
+        uint16_t               psm;            /*!< local psm */
     } srv_stop;                                /*!< L2CAP callback param of ESP_BT_L2CAP_SRV_STOP_EVT */
 
     /**
