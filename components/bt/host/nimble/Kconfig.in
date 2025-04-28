@@ -559,6 +559,16 @@ config BT_NIMBLE_MAX_CONN_REATTEMPT
     help
         Defines maximum number of connection reattempts.
 
+config BT_NIMBLE_HANDLE_REPEAT_PAIRING_DELETION
+    bool "Enable stack handling of repeat pairing"
+    default n
+    depends on BT_NIMBLE_ENABLED
+    help
+        Use this option to let stack internally handle the request for repeat pairing.
+        Enabling this option will delete the pairing of the device and stack will NOT post any event
+        to application. If this option is disabled, application will get BLE_GAP_EVENT_REPEAT_PAIRING
+        event.
+
 menuconfig BT_NIMBLE_50_FEATURE_SUPPORT
     bool "Enable BLE 5 feature"
     depends on BT_NIMBLE_ENABLED && (SOC_BLE_50_SUPPORTED || !BT_CONTROLLER_ENABLED)
