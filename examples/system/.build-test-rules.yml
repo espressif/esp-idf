@@ -83,9 +83,6 @@ examples/system/gcov:
     - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
-    - if: IDF_TARGET == "esp32s3"
-      temporary: true
-      reason: unstable, known data corruption issue #TODO: OCD-1048
 
 examples/system/gdbstub:
   disable:
@@ -243,7 +240,7 @@ examples/system/sysview_tracing:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
 
@@ -251,7 +248,7 @@ examples/system/sysview_tracing_heap_log:
   disable:
     - if: SOC_GPTIMER_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
 

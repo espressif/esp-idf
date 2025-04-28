@@ -188,6 +188,7 @@ def test_gcov(dut: IdfDut) -> None:
     _test_gcov(dut)
 
 
+@pytest.mark.esp32s3
 @pytest.mark.esp32c3
 @pytest.mark.esp32c6
 @pytest.mark.esp32h2
