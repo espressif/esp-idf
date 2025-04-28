@@ -18,7 +18,6 @@ r_lld_con_terminate_max_evt_update = 0x40001c5c;
 r_llc_pref_param_compute_eco = 0x40001ce8;
 r_llc_hci_con_upd_info_send_eco = 0x40001cec;
 r_llc_rem_encrypt_proc_continue_eco = 0x40001cf0;
-r_llc_start_eco = 0x40001cf8;
 r_lld_ext_adv_dynamic_aux_pti_process_eco = 0x40001cfc;
 r_lld_adv_start_eco = 0x40001d04;
 r_lld_con_evt_canceled_cbk_eco = 0x40001d08;
@@ -127,4 +126,5 @@ r_hci_register_vendor_desc_tab = 0x40000d9c;
 r_lld_scan_process_pkt_rx_adv_rep = 0x40001284;
 r_register_esp_vendor_cmd_handler = 0x40001400;
 r_llc_llcp_pdu_handler_get_overwrite = 0x40001d5c;
+r_llc_start_eco = 0x40001cf8;
 */
