@@ -642,6 +642,13 @@ const esp_phy_init_data_t* esp_phy_get_init_data(void)
         assert(memcmp(init_data_store + init_data_store_length - sizeof(phy_init_magic_post),
                       PHY_INIT_MAGIC, sizeof(phy_init_magic_post)) == 0);
 
+        err = esp_partition_erase_range(partition, 0, partition->size);
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "failed to erase partition (0x%x)!", err);
+            free(init_data_store);
+            return NULL;
+        }
+
         // write default data
         err = esp_partition_write(partition, 0, init_data_store, init_data_store_length);
         if (err != ESP_OK) {
