@@ -73,6 +73,8 @@ static void alloc_task(void *p)
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+
     const int num_allocers = 3;
     char task_name[20];
     // redirect log messages to the host using SystemView tracing module
