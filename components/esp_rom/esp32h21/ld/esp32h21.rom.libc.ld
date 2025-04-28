@@ -5,13 +5,6 @@
  */
 esp_rom_newlib_init_common_mutexes = 0x40000494;
 memset = 0x40000498;
-memcpy = 0x4000049c;
-memmove = 0x400004a0;
-memcmp = 0x400004a4;
-strcpy = 0x400004a8;
-strncpy = 0x400004ac;
-strcmp = 0x400004b0;
-strncmp = 0x400004b4;
 strlen = 0x400004b8;
 strstr = 0x400004bc;
 bzero = 0x400004c0;
