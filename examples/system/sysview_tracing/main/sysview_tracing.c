@@ -133,11 +133,13 @@ static void example_task(void *p)
 
 void app_main(void)
 {
+    ESP_LOGI(TAG, "Ready for OpenOCD connection");
+
     static example_event_data_t event_data[portNUM_PROCESSORS];
 
 #if CONFIG_APPTRACE_SV_ENABLE && CONFIG_USE_CUSTOM_EVENT_ID
     // Currently OpenOCD does not support requesting module info from target. So do the following...
-    // Wait untill SystemView module receives START command from host,
+    // Wait until SystemView module receives START command from host,
     // after that data can be sent to the host using onboard API,
     // so user module description does not need to be requested by OpenOCD itself.
     while (!SEGGER_SYSVIEW_Started()) {
