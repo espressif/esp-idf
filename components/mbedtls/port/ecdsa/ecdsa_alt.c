@@ -391,11 +391,11 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
         if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
             process_again |= !ecdsa_hal_det_signature_k_check();
         }
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
     } while (process_again);
 

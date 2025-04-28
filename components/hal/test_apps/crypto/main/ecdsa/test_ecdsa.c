@@ -198,11 +198,11 @@ void test_ecdsa_sign(bool is_p256, uint8_t* sha, uint8_t* r_le, uint8_t* s_le, b
                         || !memcmp(r_le, zeroes, len)
                         || !memcmp(s_le, zeroes, len);
 
-#ifdef SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE
+#if SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
         if (k_type == ECDSA_K_TYPE_DETERMINISITIC) {
             process_again |= !ecdsa_hal_det_signature_k_check();
         }
-#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE */
+#endif /* SOC_ECDSA_SUPPORT_DETERMINISTIC_MODE && !SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP */
 
     } while(process_again);
 
