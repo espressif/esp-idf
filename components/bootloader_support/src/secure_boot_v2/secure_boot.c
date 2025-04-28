@@ -69,7 +69,7 @@ static esp_err_t validate_signature_block(const ets_secure_boot_sig_block_t *blo
 */
 static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uint32_t flash_size, esp_image_sig_public_key_digests_t *public_key_digests)
 {
-    esp_err_t ret;
+    esp_err_t ret = ESP_FAIL;
     uint8_t image_digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
     uint8_t __attribute__((aligned(4))) key_digest[ESP_SECURE_BOOT_KEY_DIGEST_SHA_256_LEN] = {0};
     size_t sig_block_addr = flash_offset + ALIGN_UP(flash_size, FLASH_SECTOR_SIZE);
@@ -78,7 +78,12 @@ static esp_err_t s_calculate_image_public_key_digests(uint32_t flash_offset, uin
 
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    ret = bootloader_sha384_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#else
     ret = bootloader_sha256_flash_contents(flash_offset, sig_block_addr - flash_offset, image_digest);
+#endif
+
     if (ret != ESP_OK) {
         ESP_LOGE(TAG, "error generating image digest, %d", ret);
         return ret;

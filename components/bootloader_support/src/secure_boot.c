@@ -427,7 +427,19 @@ bool esp_secure_boot_cfg_verify_release_mode(void)
 #endif
         }
     }
+
+#if SOC_ECDSA_SUPPORT_CURVE_P384
+    /* When using Secure Boot with SHA-384, the efuse bit representing Secure Boot with SHA-384 would already be programmed.
+     * But in the case of the existing Secure Boot V2 schemes using SHA-256, the efuse bit representing
+     * Secure Boot with SHA-384 needs to be write-protected, so that an attacker cannot perform a denial-of-service
+     * attack by changing the existing secure boot mode using SHA-256 to SHA-384.
+     */
+    secure = esp_efuse_read_field_bit(ESP_EFUSE_WR_DIS_SECURE_BOOT_SHA384_EN);
     result &= secure;
+    if (!secure) {
+        ESP_LOGW(TAG, "Not write-protected secure boot using SHA-384 mode (set WR_DIS_SECURE_BOOT_SHA384_EN->1)");
+    }
+#endif
 
     secure = (num_keys != 0);
     result &= secure;

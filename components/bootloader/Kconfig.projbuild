@@ -559,12 +559,13 @@ menu "Security features"
         depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
         default SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
         help
-            Select the ECDSA key size. Two key sizes are supported
+            Select the ECDSA key size. Three key sizes are supported depending upon on the target:
 
             - 192 bit key using NISTP192 curve
             - 256 bit key using NISTP256 curve (Recommended)
+            - 384 bit key using NISTP384 curve (Recommended)
 
-            The advantage of using 256 bit key is the extra randomness which makes it difficult to be
+            The advantage of using 384 and 256 bit keys is the extra randomness which makes it difficult to be
             bruteforced compared to 192 bit key.
             At present, both key sizes are practically implausible to bruteforce.
 
@@ -575,6 +576,10 @@ menu "Security features"
         config SECURE_BOOT_ECDSA_KEY_LEN_256_BITS
             bool "Using ECC curve NISTP256 (Recommended)"
             depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME
+
+        config SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+            bool "Using ECC curve NISTP384 (Recommended)"
+            depends on SECURE_SIGNED_APPS_ECDSA_V2_SCHEME && SOC_ECDSA_SUPPORT_CURVE_P384
 
     endchoice
 

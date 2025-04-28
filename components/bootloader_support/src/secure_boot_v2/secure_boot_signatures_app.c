@@ -81,7 +81,11 @@ static esp_err_t calculate_image_public_key_digests(bool verify_image_digest, bo
     bzero(public_key_digests, sizeof(esp_image_sig_public_key_digests_t));
 
     if (verify_image_digest) {
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+        ret = bootloader_sha384_flash_contents(img_metadata.start_addr, sig_block_addr - img_metadata.start_addr, image_digest);
+#else
         ret = bootloader_sha256_flash_contents(img_metadata.start_addr, sig_block_addr - img_metadata.start_addr, image_digest);
+#endif
         if (ret != ESP_OK) {
             ESP_LOGE(TAG, "error generating image digest, %d", ret);
             return ret;
@@ -184,13 +188,19 @@ static esp_err_t get_secure_boot_key_digests(esp_image_sig_public_key_digests_t 
 
 esp_err_t esp_secure_boot_verify_signature(uint32_t src_addr, uint32_t length)
 {
+    esp_err_t err = ESP_FAIL;
     uint8_t digest[ESP_SECURE_BOOT_DIGEST_LEN] = {0};
 
     /* Rounding off length to the upper 4k boundary */
     uint32_t padded_length = ALIGN_UP(length, FLASH_SECTOR_SIZE);
     ESP_LOGD(TAG, "verifying signature src_addr 0x%"PRIx32" length 0x%"PRIx32, src_addr, length);
 
-    esp_err_t err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#if CONFIG_SECURE_BOOT_ECDSA_KEY_LEN_384_BITS
+    err = bootloader_sha384_flash_contents(src_addr, padded_length, digest);
+#else
+    err = bootloader_sha256_flash_contents(src_addr, padded_length, digest);
+#endif
+
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Digest calculation failed 0x%"PRIx32", 0x%"PRIx32, src_addr, padded_length);
         return err;

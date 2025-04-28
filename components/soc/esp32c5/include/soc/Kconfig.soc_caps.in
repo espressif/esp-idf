@@ -1119,6 +1119,10 @@ config SOC_ECDSA_SUPPORT_HW_DETERMINISTIC_LOOP
     bool
     default y
 
+config SOC_ECDSA_SUPPORT_CURVE_P384
+    bool
+    default y
+
 config SOC_SDM_GROUPS
     int
     default 1

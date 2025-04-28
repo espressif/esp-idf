@@ -813,9 +813,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             'secure-generate-signing-key': {
                 'callback': secure_generate_signing_key,
                 'help': (
-                    'Generate a private key for signing secure boot images as per the secure boot version. Key file is '
-                    'generated in PEM format, Secure Boot V1 - ECDSA NIST256p private key. Secure Boot V2 - RSA 3072, '
-                    'ECDSA NIST256p, ECDSA NIST192p private key.'
+                    'Generate a private key for signing secure boot images as per the secure boot version.'
+                    ' Key file is generated in PEM format, Secure Boot V1 - ECDSA NIST256p private key.'
+                    ' Secure Boot V2 - RSA 3072, ECDSA NIST384p, ECDSA NIST256p, ECDSA NIST192p private key.'
                 ),
                 'options': [
                     {
@@ -827,7 +827,7 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--scheme', '-s'],
                         'help': ('Scheme of secure boot signing.'),
-                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256']),
+                        'type': click.Choice(['rsa3072', 'ecdsa192', 'ecdsa256', 'ecdsa384']),
                     },
                 ],
                 'arguments': [
@@ -854,8 +854,8 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
             'secure-sign-data': {
                 'callback': secure_sign_data,
                 'help': (
-                    'Sign a data file for use with secure boot. Signing algorithm is deterministic ECDSA w/ SHA-512 '
-                    '(V1) or either RSA-PSS or ECDSA w/ SHA-256 (V2).'
+                    'Sign a data file for use with secure boot. Signing algorithm is deterministic'
+                    ' ECDSA w/ SHA-512 (V1) or either RSA-PSS or ECDSA w/ SHA-256 (V2) or ECDSA w/ SHA-384 (V2).'
                 ),
                 'options': [
                     {
@@ -871,7 +871,9 @@ def action_extensions(base_actions: Dict, project_path: str) -> Dict:
                     {
                         'names': ['--append-signatures', '-a'],
                         'is_flag': True,
-                        'help': ('Append signature block(s) to already signed image. Valid only for ESP32-S2.'),
+                        'help': (
+                            'Append signature block(s) to already signed image. Not valid for ESP32 and ESP32-C2.'
+                        ),
                     },
                     {
                         'names': ['--pub-key'],
