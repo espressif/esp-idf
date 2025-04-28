@@ -5,11 +5,11 @@ Secure Boot v2
 
 :link_to_translation:`zh_CN:[中文]`
 
-{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA", esp32h2="RSA-PSS or ECDSA", esp32p4="RSA-PSS or ECDSA", esp32c5="RSA-PSS or ECDSA", esp32c61="ECDSA"}
+{IDF_TARGET_SBV2_SCHEME:default="RSA-PSS", esp32c2="ECDSA", esp32c6="RSA-PSS or ECDSA", esp32h2="RSA-PSS or ECDSA", esp32p4="RSA-PSS or ECDSA", esp32c5="RSA-PSS or ECDSA", esp32c61="ECDSA", esp32h21="RSA-PSS or ECDSA"}
 
-{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192", esp32h2="RSA-3072, ECDSA-256, or ECDSA-192", esp32p4="RSA-3072, ECDSA-256, or ECDSA-192", esp32c5="RSA-3072, ECDSA-256, or ECDSA-192", esp32c61="ECDSA-256 or ECDSA-192"}
+{IDF_TARGET_SBV2_KEY:default="RSA-3072", esp32c2="ECDSA-256 or ECDSA-192", esp32c6="RSA-3072, ECDSA-256, or ECDSA-192", esp32h2="RSA-3072, ECDSA-256, or ECDSA-192", esp32p4="RSA-3072, ECDSA-256, or ECDSA-192", esp32c5="RSA-3072, ECDSA-256, or ECDSA-192", esp32c61="ECDSA-256 or ECDSA-192", esp32h21="RSA-3072, ECDSA-256, or ECDSA-192"}
 
-{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32h2="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32p4="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
+{IDF_TARGET_SECURE_BOOT_OPTION_TEXT:default="", esp32c6="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32h2="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32p4="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32c5="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu.", esp32h21="RSA is recommended for faster verification. You can choose either the RSA or ECDSA scheme from the menu."}
 
 {IDF_TARGET_ECO_VERSION:default="", esp32="(v3.0 onwards)", esp32c3="(v0.3 onwards)"}
 
@@ -69,6 +69,9 @@ The Secure Boot process on {IDF_TARGET_NAME} involves the following steps:
 
 2. When the second stage bootloader loads a particular application image, the application's {IDF_TARGET_SBV2_SCHEME} signature is verified. If the verification is successful, the application image is executed.
 
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    The ECDSA-P192 curve is disabled by default on {IDF_TARGET_NAME}. If the provided secure boot signing key uses the ECDSA-P192 curve, the system attempts to enable support for ECDSA-P192 curve mode to proceed with secure boot. However, if the curve mode has already been locked, enabling ECDSA-P192 is not possible. In such cases, secure boot cannot be configured using an ECDSA-P192 key. The user must instead provide a signing key based on the ECDSA-P256 curve or RSA based signing key.
 
 Advantages
 ----------
@@ -436,6 +439,10 @@ Restrictions After Secure Boot Is Enabled
 - Please note that enabling Secure Boot or flash encryption disables the USB-OTG USB stack in the ROM, disallowing updates via the serial emulation or Device Firmware Update (DFU) on that port.
 
 - After Secure Boot is enabled, further read-protection of eFuse keys is not possible. This is done to prevent an attacker from read-protecting the eFuse block that contains the Secure Boot public key digest, which could result in immediate denial of service and potentially enable a fault injection attack to bypass the signature verification. For further information on read-protected keys, see the details below.
+
+.. only:: SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED
+
+    When Secure Boot is enabled, the ECDSA curve mode becomes write-protected. This means that if the curve mode was not previously set to use the ECDSA-P192 key before enabling Secure Boot, it will no longer be possible to configure or use the ECDSA-P192 curve with the ECDSA peripheral afterward.
 
 Burning read-protected keys
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~

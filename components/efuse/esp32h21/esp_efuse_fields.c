@@ -65,12 +65,7 @@ esp_err_t esp_efuse_enable_ecdsa_p192_curve_mode(void)
     esp_err_t err;
     uint8_t current_curve, next_curve;
 
-    err = esp_efuse_read_field_blob(ESP_EFUSE_ECDSA_CURVE_MODE, &current_curve, ESP_EFUSE_ECDSA_CURVE_MODE[0]->bit_count);
-    if (err != ESP_OK) {
-        ESP_EARLY_LOGE(TAG, "Failed to read ECDSA curve mode");
-        return err;
-    }
-
+    current_curve = efuse_ll_get_ecdsa_curve_mode();
     // Check if already in desired state
     if (current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_BOTH_P192_P256_BIT || current_curve == ESP_EFUSE_ECDSA_CURVE_MODE_ALLOW_ONLY_P192_BIT) {
         ESP_EARLY_LOGD(TAG, "ECDSA P-192 curve mode is already enabled");

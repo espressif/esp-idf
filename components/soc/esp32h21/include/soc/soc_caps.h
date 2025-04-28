@@ -51,7 +51,7 @@
 #define SOC_ECC_EXTENDED_MODES_SUPPORTED   1
 #define SOC_ECDSA_SUPPORTED             1
 #define SOC_FLASH_ENC_SUPPORTED         1
-// #define SOC_SECURE_BOOT_SUPPORTED       1    //TODO: [ESP32H21] IDF-11500
+#define SOC_SECURE_BOOT_SUPPORTED       1
 // #define SOC_BOD_SUPPORTED               1    //TODO: [ESP32H21] IDF-11530
 // #define SOC_APM_SUPPORTED               1    //TODO: [ESP32H21] IDF-11494
 // #define SOC_PMU_SUPPORTED               1
