@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1448,6 +1448,24 @@ void btc_avrc_tg_call_handler(btc_msg_t *msg)
     }
 
     btc_avrc_tg_arg_deep_free(msg);
+}
+
+void btc_avrc_get_profile_status(esp_avrc_profile_status_t *param)
+{
+    param->avrc_ct_inited = false;
+    param->avrc_tg_inited = false;
+
+#if AVRC_DYNAMIC_MEMORY == TRUE
+    if (btc_rc_cb_ptr)
+#endif
+    {
+        if (btc_avrc_tg_init_p()) {
+            param->avrc_tg_inited = true;
+        }
+        if (btc_avrc_ct_init_p()) {
+            param->avrc_ct_inited = true;
+        }
+    }
 }
 
 #endif /* #if BTC_AV_INCLUDED */
