@@ -172,7 +172,7 @@ static uint32_t pcnt_get_pulse_number(pcnt_unit_handle_t pwm_pcnt_unit, int capt
     int count_value = 0;
     TEST_ESP_OK(pcnt_unit_clear_count(pwm_pcnt_unit));
     TEST_ESP_OK(pcnt_unit_start(pwm_pcnt_unit));
-    usleep(capture_window_ms * 1000);
+    vTaskDelay(pdMS_TO_TICKS(capture_window_ms));
     TEST_ESP_OK(pcnt_unit_stop(pwm_pcnt_unit));
     TEST_ESP_OK(pcnt_unit_get_count(pwm_pcnt_unit, &count_value));
     printf("count value: %d\r\n", count_value);
