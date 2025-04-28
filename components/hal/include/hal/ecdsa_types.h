@@ -26,6 +26,8 @@ typedef enum {
 typedef enum {
     ECDSA_CURVE_SECP192R1,
     ECDSA_CURVE_SECP256R1,
+    ECDSA_CURVE_SECP384R1,
+    ECDSA_CURVE_SM2,
 } ecdsa_curve_t;
 
 /**

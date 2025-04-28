@@ -11,6 +11,7 @@
 #include "soc/efuse_periph.h"
 #include "hal/assert.h"
 #include "rom/efuse.h"
+#include "hal/ecdsa_types.h"
 
 //TODO: [ESP32H4] IDF-12322 inherited from verification branch, need check
 
@@ -96,9 +97,10 @@ __attribute__((always_inline)) static inline uint32_t efuse_ll_get_ecdsa_key_blk
     return 0;
 }
 
-__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(int efuse_blk)
+__attribute__((always_inline)) static inline void efuse_ll_set_ecdsa_key_blk(ecdsa_curve_t curve, int efuse_blk)
 {
     //ESP32H4 TODO
+    (void)curve;
     (void)efuse_blk;
 }
 
