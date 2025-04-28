@@ -14,6 +14,7 @@ import pytest
 from pytest_embedded.utils import to_bytes
 from pytest_embedded.utils import to_str
 from pytest_embedded_idf import IdfDut
+from pytest_embedded_idf.utils import idf_parametrize
 
 MAX_RETRIES = 3
 RETRY_DELAY = 1
@@ -154,18 +155,13 @@ def _test_examples_app_trace_basic(dut: IdfDut) -> None:
         openocd.kill()
 
 
-@pytest.mark.esp32
-@pytest.mark.esp32c2
-@pytest.mark.esp32s2
 @pytest.mark.jtag
+@idf_parametrize('target', ['esp32', 'esp32c2', 'esp32s2'], indirect=['target'])
 def test_examples_app_trace_basic(dut: IdfDut) -> None:
     _test_examples_app_trace_basic(dut)
 
 
-@pytest.mark.esp32s3
-@pytest.mark.esp32c3
-@pytest.mark.esp32c6
-@pytest.mark.esp32h2
 @pytest.mark.usb_serial_jtag
+@idf_parametrize('target', ['esp32s3', 'esp32c3', 'esp32c6', 'esp32h2'], indirect=['target'])
 def test_examples_app_trace_basic_usj(dut: IdfDut) -> None:
     _test_examples_app_trace_basic(dut)
