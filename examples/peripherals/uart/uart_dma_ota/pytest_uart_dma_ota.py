@@ -42,7 +42,7 @@ def send_file_via_uart(port: str, baud_rate: int, file_path: str, packet_size: i
     ],
     indirect=True,
 )
-@idf_parametrize('target', ['esp32c6', 'esp32c3', 'esp32s3'], indirect=['target'])
+@idf_parametrize('target', ['esp32c6', 'esp32c3', 'esp32s3', 'esp32h2'], indirect=['target'])
 def test_uart_dma_ota(dut: Dut) -> None:
     dut.expect_exact('uhci-example: OTA process started')
     # We OTA the same binary to another partition and switch to there.

@@ -516,7 +516,7 @@ examples/peripherals/uart/uart_dma_ota:
   disable:
     - if: SOC_UHCI_SUPPORTED != 1
   disable_test:
-    - if: IDF_TARGET in ["esp32p4"]
+    - if: IDF_TARGET in ["esp32p4", "esp32c5"]
       temporary: true
       reason: Lack runners
 

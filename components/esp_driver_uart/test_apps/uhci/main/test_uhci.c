@@ -246,7 +246,7 @@ TEST_CASE("UHCI write and receive with length eof", "[uhci]")
 }
 
 #if CONFIG_SPIRAM
-#if CONFIG_IDF_TARGET_ESP32S3
+#if SOC_AHB_GDMA_SUPPORT_PSRAM
 static void uhci_receive_test_in_psram(void *arg)
 {
     uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];

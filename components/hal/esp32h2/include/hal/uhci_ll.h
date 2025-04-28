@@ -52,7 +52,6 @@ static inline void uhci_ll_reset_register(int group_id)
 static inline void uhci_ll_init(uhci_dev_t *hw)
 {
     typeof(hw->conf0) conf0_reg;
-    hw->conf0.clk_en = 1;
     conf0_reg.val = 0;
     conf0_reg.clk_en = 1;
     hw->conf0.val = conf0_reg.val;
