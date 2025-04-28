@@ -86,9 +86,18 @@ examples/system/freertos/real_time_stats:
 
 examples/system/gcov:
   disable_test:
-    - if: IDF_TARGET != "esp32"
+    - if: IDF_TARGET == "esp32p4"
       temporary: true
       reason: lack of runners
+    - if: IDF_TARGET == "esp32s3"
+      temporary: true
+      reason: unstable, known data corruption issue #TODO: OCD-1048
+    - if: IDF_TARGET == "esp32h21"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1079
+    - if: IDF_TARGET == "esp32h4"
+      temporary: true
+      reason: not supported yet #TODO: OCD-1138
 
 examples/system/gdbstub:
   disable:
