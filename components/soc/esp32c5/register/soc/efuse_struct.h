@@ -1345,10 +1345,10 @@ typedef union {
          */
         uint32_t xts_dpa_clk_enable_err:1;
         uint32_t reserved_30:1;
-        /** ecdsa_p384_enable_err : RO; bitpos: [31]; default: 0;
-         *  Represents the programming error of EFUSE_ECDSA_P384_ENABLE
+        /** secure_boot_sha384_en_err : RO; bitpos: [31]; default: 0;
+         *  Represents the programming error of EFUSE_SECURE_BOOT_SHA384_EN
          */
-        uint32_t ecdsa_p384_enable_err:1;
+        uint32_t secure_boot_sha384_en_err:1;
     };
     uint32_t val;
 } efuse_rd_repeat_data_err3_reg_t;
