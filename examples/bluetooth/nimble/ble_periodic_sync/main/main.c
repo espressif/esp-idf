@@ -110,8 +110,8 @@ periodic_sync_gap_event(struct ble_gap_event *event, void *arg)
     switch (event->type) {
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
-        /* An advertisment report was received during GAP discovery. */
-        struct ble_gap_ext_disc_desc *disc = ((struct ble_gap_ext_disc_desc *)(&event->disc));
+        /* An advertisement report was received during GAP discovery. */
+        struct ble_gap_ext_disc_desc *disc = ((struct ble_gap_ext_disc_desc *)(&event->ext_disc));
         if (disc->sid == 2 && synced == 0) {
             synced++;
             const ble_addr_t addr;
