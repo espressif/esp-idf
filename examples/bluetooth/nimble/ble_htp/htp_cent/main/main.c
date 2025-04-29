@@ -635,9 +635,9 @@ ble_htp_cent_gap_event(struct ble_gap_event *event, void *arg)
 #if CONFIG_EXAMPLE_EXTENDED_ADV
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisement report was received during GAP discovery. */
-        ext_print_adv_report(&event->disc);
+        ext_print_adv_report(&event->ext_disc);
 
-        ble_htp_cent_connect_if_interesting(&event->disc);
+        ble_htp_cent_connect_if_interesting(&event->ext_disc);
         return 0;
 #endif
 
