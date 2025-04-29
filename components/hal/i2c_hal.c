@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +13,9 @@
 
 void i2c_hal_slave_init(i2c_hal_context_t *hal)
 {
-    i2c_ll_slave_init(hal->dev);
+    i2c_ll_set_mode(hal->dev, I2C_BUS_MODE_SLAVE);
+    i2c_ll_enable_pins_open_drain(hal->dev, true);
+    i2c_ll_enable_arbitration(hal->dev, false);
     //MSB
     i2c_ll_set_data_mode(hal->dev, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST);
     //Reset fifo
@@ -36,7 +38,10 @@ void i2c_hal_master_fsm_rst(i2c_hal_context_t *hal)
 
 void i2c_hal_master_init(i2c_hal_context_t *hal)
 {
-    i2c_ll_master_init(hal->dev);
+    i2c_ll_set_mode(hal->dev, I2C_BUS_MODE_MASTER);
+    i2c_ll_enable_pins_open_drain(hal->dev, true);
+    i2c_ll_enable_arbitration(hal->dev, false);
+    i2c_ll_master_rx_full_ack_level(hal->dev, false);
     //MSB
     i2c_ll_set_data_mode(hal->dev, I2C_DATA_MODE_MSB_FIRST, I2C_DATA_MODE_MSB_FIRST);
     //Reset fifo
