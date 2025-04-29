@@ -47,7 +47,11 @@ examples/system/efuse:
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_flash_enc_release"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_and_fe"
     - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384"
+    - if: IDF_TARGET == "linux" and CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe"
       reason: Security features are not yet supported for Linux.
+    - if: SOC_ECDSA_SUPPORT_CURVE_P384 != 1 and (CONFIG_NAME == "virt_secure_boot_v2_ecdsa_p384" or CONFIG_NAME == "virt_sb_v2_ecdsa_p384_and_fe")
+      reason: Secure Boot V2 with ECDSA P384 is not supported.
   depends_components:
     - efuse
     - bootloader_support

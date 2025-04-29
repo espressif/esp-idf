@@ -6,6 +6,7 @@ import os
 import pytest
 from pytest_embedded import Dut
 from pytest_embedded_idf.utils import idf_parametrize
+from pytest_embedded_idf.utils import soc_filtered_targets
 from pytest_embedded_qemu.dut import QemuDut
 
 
@@ -588,15 +589,7 @@ def test_examples_efuse_with_virt_secure_boot_v2_pre_loaded(dut: Dut) -> None:
     dut.expect('example: Done')
 
 
-@pytest.mark.generic
-@pytest.mark.parametrize('config', ['virt_secure_boot_v2'], indirect=True)
-@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
-@idf_parametrize(
-    'target',
-    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
-    indirect=['target'],
-)
-def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
+def example_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
@@ -667,6 +660,26 @@ def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
     ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
     indirect=['target'],
 )
+def test_examples_efuse_with_virt_secure_boot_v2_esp32xx(dut: Dut) -> None:
+    example_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2_ecdsa_p384'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_ECDSA_SUPPORT_CURVE_P384 == 1'), indirect=['target'])
+def test_examples_efuse_with_virt_secure_boot_v2_ecdsa_p384_esp32xx(dut: Dut) -> None:
+    example_efuse_with_virt_secure_boot_v2_esp32xx(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('config', ['virt_secure_boot_v2'], indirect=True)
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@idf_parametrize(
+    'target',
+    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c6', 'esp32c61', 'esp32h2', 'esp32p4', 'esp32s2', 'esp32s3'],
+    indirect=['target'],
+)
 def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> None:
     print(' - Erase flash')
     dut.serial.erase_flash()
@@ -685,12 +698,14 @@ def test_example_efuse_with_virt_secure_boot_v2_esp32xx_pre_loaded(dut: Dut) -> 
     # Resets eFuse, which enables Secure boot feature
     # Resets eFuses, which control digest slots
     if dut.app.sdkconfig.get('SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS'):
-        dut.serial.erase_field_on_emul_efuse_by_name([
-            'SECURE_BOOT_EN',
-            'SECURE_BOOT_KEY_REVOKE0',
-            'SECURE_BOOT_KEY_REVOKE1',
-            'SECURE_BOOT_KEY_REVOKE2',
-        ])
+        dut.serial.erase_field_on_emul_efuse_by_name(
+            [
+                'SECURE_BOOT_EN',
+                'SECURE_BOOT_KEY_REVOKE0',
+                'SECURE_BOOT_KEY_REVOKE1',
+                'SECURE_BOOT_KEY_REVOKE2',
+            ]
+        )
     else:
         dut.serial.erase_field_on_emul_efuse_by_name(['SECURE_BOOT_EN'])
 
@@ -906,7 +921,8 @@ def test_examples_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
 @pytest.mark.parametrize(
     'qemu_extra_args',
     [
-        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32eco3_efuses.bin")},if=none,format=raw,id=efuse '
+        f'-drive file={os.path.join(os.path.dirname(__file__), "test", "esp32eco3_efuses.bin")},'
+        'if=none,format=raw,id=efuse '
         '-global driver=nvram.esp32.efuse,property=drive,value=efuse '
         '-global driver=timer.esp32.timg,property=wdt_disable,value=true',
     ],
@@ -983,15 +999,7 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_qemu(dut: QemuDut) -> None:
             efuse_file.write(bytearray.fromhex(esp32eco3_efuses))
 
 
-@pytest.mark.generic
-@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
-@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe'], indirect=True)
-@idf_parametrize(
-    'target',
-    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
-    indirect=['target'],
-)
-def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
+def example_efuse_with_virt_sb_v2_and_fe(dut: Dut) -> None:
     # check and log bin size
     binary_file = os.path.join(dut.app.binary_path, 'bootloader', 'bootloader.bin')
     bin_size = os.path.getsize(binary_file)
@@ -1082,3 +1090,23 @@ def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
     dut.expect('example: Flash Encryption is NOT in RELEASE mode')
     dut.expect('example: Secure Boot is in RELEASE mode')
     dut.expect('example: Done')
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@pytest.mark.parametrize('config', ['virt_sb_v2_and_fe'], indirect=True)
+@idf_parametrize(
+    'target',
+    ['esp32c3', 'esp32c2', 'esp32c5', 'esp32c61', 'esp32c6', 'esp32h2', 'esp32s2', 'esp32s3'],
+    indirect=['target'],
+)
+def test_examples_efuse_with_virt_sb_v2_and_fe_esp32xx(dut: Dut) -> None:
+    example_efuse_with_virt_sb_v2_and_fe(dut)
+
+
+@pytest.mark.generic
+@pytest.mark.parametrize('skip_autoflash', ['y'], indirect=True)
+@pytest.mark.parametrize('config', ['virt_sb_v2_ecdsa_p384_and_fe'], indirect=True)
+@idf_parametrize('target', soc_filtered_targets('SOC_ECDSA_SUPPORT_CURVE_P384 == 1'), indirect=['target'])
+def test_examples_efuse_with_virt_sb_v2_ecdsa_p384_and_fe_esp32xx(dut: Dut) -> None:
+    example_efuse_with_virt_sb_v2_and_fe(dut)
