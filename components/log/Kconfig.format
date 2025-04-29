@@ -7,6 +7,9 @@ menu "Format"
             Enable ANSI terminal color codes.
             In order to view these, your terminal program must support ANSI color codes.
 
+            This is disabled by default, as colors are added in IDF Monitor. If you want to use new lines
+            in the messages or you are using a different terminal program, you may want to enable this option.
+
     choice LOG_TIMESTAMP_SOURCE
         prompt "Timestamp"
         default LOG_TIMESTAMP_SOURCE_RTOS

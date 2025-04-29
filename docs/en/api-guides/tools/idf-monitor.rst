@@ -40,10 +40,10 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Resets the target board and re-starts the application via the RTS line (if connected).
    * - * Ctrl + F
      - Build and flash the project
-     - Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
+     - Pauses idf_monitor to run the project ``flash`` target, then resumes idf_monitor. Any changed source files are recompiled and then re-flashed. Target ``encrypted-flash`` is run if idf_monitor was started with argument ``-E``.
    * - * Ctrl + A (or A)
      - Build and flash the app only
-     - Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
+     - Pauses idf_monitor to run the ``app-flash`` target, then resumes idf_monitor. Similar to the ``flash`` target, but only the main app is built and re-flashed. Target ``encrypted-app-flash`` is run if idf_monitor was started with argument ``-E``.
    * - * Ctrl + Y
      - Stop/resume log output printing on screen
      - Discards all incoming serial data while activated. Allows to quickly pause and examine log output without quitting the monitor.
@@ -64,6 +64,21 @@ For easy interaction with IDF Monitor, use the keyboard shortcuts given in the t
      - Pauses IDF Monitor and runs GDB_ project debugger to debug the application at runtime. This requires :ref:`CONFIG_ESP_SYSTEM_GDBSTUB_RUNTIME` option to be enabled.
 
 Any keys pressed, other than ``Ctrl-]`` and ``Ctrl-T``, will be sent through the serial port.
+
+
+Automatic Coloring
+==================
+
+IDF Monitor automatically colors the output based on the log level. This feature reduces the number of bytes transferred over the serial console by avoiding redundant log formatting, which can improve performance by reducing latency in log transmission.
+Other benefits include adding colors to precompiled libraries (such as Wi-Fi) and reduced binary size of the application.
+The automatic coloring is enabled by default. To disable it, use the command line option ``--disable-auto-color``.
+
+The coloring is done based on the log level followed by optional timestamp and tag. For option to enable coloring on the {IDF_TARGET_NAME} side, see :ref:`CONFIG_LOG_COLORS`.
+For more details on the log, see :doc:`Logging <../../api-reference/system/log>`.
+
+.. note::
+
+    The automatic coloring will not work properly if the message contains new lines. In this case the IDF Monitor will only color the first line of the message.
 
 
 ESP-IDF-specific Features
@@ -349,7 +364,12 @@ For more details on the configuration file, see the `IDF Monitor documentation`_
 Known Issues with IDF Monitor
 =============================
 
-If you encounter any issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
+The following issues are currently known:
+
+- Autocoloring cannot detect the log level if the message contains new lines. In this case, the IDF Monitor will only color the first line of the message.
+  To work around this issue, enable :ref:`CONFIG_LOG_COLORS` in menuconfig. Please note that this might have some impact on binary size and performance.
+
+If you experience any other issues while using IDF Monitor, check our `GitHub repository <https://github.com/espressif/esp-idf-monitor/issues>`_ for a list of known issues and their current status. If you come across a problem that hasn't been documented yet, we encourage you to create a new issue report.
 
 .. _esp-idf-monitor: https://github.com/espressif/esp-idf-monitor
 .. _IDF Monitor documentation: https://github.com/espressif/esp-idf-monitor/blob/v1.5.0/README.md#documentation
