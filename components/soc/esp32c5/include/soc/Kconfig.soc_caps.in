@@ -1063,6 +1063,26 @@ config SOC_SHA_SUPPORT_SHA256
     bool
     default y
 
+config SOC_SHA_SUPPORT_SHA384
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_224
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_256
+    bool
+    default y
+
+config SOC_SHA_SUPPORT_SHA512_T
+    bool
+    default y
+
 config SOC_ECC_CONSTANT_TIME_POINT_MUL
     bool
     default y

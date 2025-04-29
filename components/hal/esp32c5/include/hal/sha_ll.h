@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -168,6 +168,25 @@ static inline void sha_ll_write_digest(esp_sha_type sha_type, void *digest_state
     }
 }
 
+/**
+ * @brief Sets SHA512_t T_string parameter
+ *
+ * @param t_string T_string parameter
+ */
+static inline void sha_ll_t_string_set(uint32_t t_string)
+{
+    REG_WRITE(SHA_T_STRING_REG, t_string);
+}
+
+/**
+ * @brief Sets SHA512_t T_string parameter's length
+ *
+ * @param t_len T_string parameter length
+ */
+static inline void sha_ll_t_len_set(uint8_t t_len)
+{
+    REG_WRITE(SHA_T_LENGTH_REG, t_len);
+}
 
 #ifdef __cplusplus
 }
