@@ -46,17 +46,19 @@ static esp_err_t wpa3_build_sae_commit(u8 *bssid, size_t *sae_msg_len)
         use_pt = 1;
     }
 
+#ifdef CONFIG_WPA3_COMPAT
     if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA)) {
         rsnxe = esp_wifi_sta_get_ie((u8*)bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
+        if (rsnxe) {
+            rsnxe_capa = rsnxe[2 + 4];
+        }
     }
+#endif
     if (!rsnxe) {
         rsnxe = esp_wifi_sta_get_ie((u8*)bssid, WLAN_EID_RSNX);
-    }
-    if (rsnxe && rsnxe[0] == WLAN_EID_VENDOR_SPECIFIC &&
-            rsnxe[1] >= 1 + 4) {
-        rsnxe_capa = rsnxe[2 + 4];
-    } else if (rsnxe && rsnxe[1] >= 1) {
-        rsnxe_capa = rsnxe[2];
+        if (rsnxe) {
+            rsnxe_capa = rsnxe[2];
+        }
     }
 #endif /* CONFIG_SAE_H2E */
 

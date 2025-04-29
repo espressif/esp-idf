@@ -70,12 +70,6 @@ struct ieee802_11_elems {
 	const u8 *sae_pk;
 	u8 sae_pk_len;
 #endif
-#ifdef CONFIG_WPA3_SAE
-	const u8 *rsne_override;
-	size_t rsne_override_len;
-	const u8 *rsn_selection;
-	size_t rsn_selection_len;
-#endif
 };
 
 typedef enum { ParseOK = 0, ParseUnknown = 1, ParseFailed = -1 } ParseRes;

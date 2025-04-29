@@ -191,7 +191,7 @@ int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 	return nei_pos - nei_rep;
 }
 
-#ifdef CONFIG_WPA3_SAE
+#ifdef CONFIG_SAE_PK
 static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 					    struct ieee802_11_elems *elems,
 					    int show_errors)
@@ -212,105 +212,20 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 
 	oui = WPA_GET_BE24(pos);
 	switch (oui) {
-	case OUI_MICROSOFT:
-		/* Microsoft/Wi-Fi information elements are further typed and
-		 * subtyped */
-		switch (pos[3]) {
-		case 1:
-			break;
-		case WMM_OUI_TYPE:
-			/* WMM information element */
-			if (elen < 5) {
-				wpa_printf(MSG_MSGDUMP, "short WMM "
-					   "information element ignored "
-					   "(len=%lu)",
-					   (unsigned long) elen);
-				return -1;
-			}
-			switch (pos[4]) {
-			case WMM_OUI_SUBTYPE_INFORMATION_ELEMENT:
-			case WMM_OUI_SUBTYPE_PARAMETER_ELEMENT:
-				/*
-				 * Share same pointer since only one of these
-				 * is used and they start with same data.
-				 * Length field can be used to distinguish the
-				 * IEs.
-				 */
-				break;
-			case WMM_OUI_SUBTYPE_TSPEC_ELEMENT:
-				break;
-			default:
-				wpa_printf(MSG_EXCESSIVE, "unknown WMM "
-					   "information element ignored "
-					   "(subtype=%d len=%lu)",
-					   pos[4], (unsigned long) elen);
-				return -1;
-			}
-			break;
-		case 4:
-			/* Wi-Fi Protected Setup (WPS) IE */
-			break;
-		default:
-			wpa_printf(MSG_EXCESSIVE, "Unknown Microsoft "
-				   "information element ignored "
-				   "(type=%d len=%lu)",
-				   pos[3], (unsigned long) elen);
-			return -1;
-		}
-		break;
 	case OUI_WFA:
 		switch (pos[3]) {
-#ifdef CONFIG_SAE_PK
 		case SAE_PK_OUI_TYPE:
 			elems->sae_pk = pos + 4;
 			elems->sae_pk_len = elen - 4;
-			break;
-#endif /* CONFIG_SAE_PK */
-		case P2P_OUI_TYPE:
-			/* Wi-Fi Alliance - P2P IE */
-			break;
-		case WFD_OUI_TYPE:
-			/* Wi-Fi Alliance - WFD IE */
-			break;
-		case HS20_INDICATION_OUI_TYPE:
-			/* Hotspot 2.0 */
-			break;
-		case HS20_OSEN_OUI_TYPE:
-			/* Hotspot 2.0 OSEN */
-			break;
-		case MBO_OUI_TYPE:
-			/* MBO-OCE */
-			break;
-		case HS20_ROAMING_CONS_SEL_OUI_TYPE:
-			/* Hotspot 2.0 Roaming Consortium Selection */
-			break;
-		case MULTI_AP_OUI_TYPE:
-			break;
-		case OWE_OUI_TYPE:
-			/* OWE Transition Mode element */
-			break;
-		case DPP_CC_OUI_TYPE:
-			/* DPP Configurator Connectivity element */
-			break;
-		case WFA_RSNE_OVERRIDE_OUI_TYPE:
-			elems->rsne_override = pos;
-			elems->rsne_override_len = elen;
-			break;
-		case WFA_RSN_SELECTION_OUI_TYPE:
-			if (elen < 4 + 1) {
-				wpa_printf(MSG_DEBUG,
-					   "Too short RSN Selection element ignored");
-				return -1;
-			}
-			elems->rsn_selection = pos + 4;
-			elems->rsn_selection_len = elen - 4;
 			break;
 		default:
 			wpa_printf(MSG_EXCESSIVE, "Unknown WFA "
 				"information element ignored "
 				"(type=%d len=%lu)",
 				pos[3], (unsigned long) elen);
-			return -1;
+			//TODO discuss if to ignore it
+			break;
+			//return -1;
 		}
 		break;
 	default:
@@ -318,12 +233,14 @@ static int ieee802_11_parse_vendor_specific(const u8 *pos, size_t elen,
 			"information element ignored (vendor OUI "
 			"%02x:%02x:%02x len=%lu)",
 			pos[0], pos[1], pos[2], (unsigned long) elen);
-		return -1;
+		//TODO discuss if to ignore it
+		break;
+		//return -1;
 	}
 
 	return 0;
 }
-#endif /* CONFIG_WPA3_SAE */
+#endif /* CONFIG_SAE_PK */
 
 #ifdef CONFIG_SAE_PK
 static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
@@ -357,13 +274,16 @@ static int ieee802_11_parse_extension(const u8 *pos, size_t elen,
 		wpa_printf(MSG_EXCESSIVE,
 			"IEEE 802.11 element parsing ignored unknown element extension (ext_id=%u elen=%u)",
 		   ext_id, (unsigned int) elen);
-		return -1;
+		//TODO discuss if to ignore it
+		break;
+		//return -1;
 	}
 
 	return 0;
 }
 #endif /* CONFIG_SAE_PK */
 
+#if defined(CONFIG_RRM) || defined(CONFIG_WMM) || defined(CONFIG_SAE_PK)
 static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 					 struct ieee802_11_elems *elems,
 					 int show_errors)
@@ -391,8 +311,6 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 				unknown++;
 			}
 			break;
-#endif /*CONFIG_SAE_PK*/
-#ifdef CONFIG_WPA3_SAE
 		case WLAN_EID_VENDOR_SPECIFIC:
 			if (ieee802_11_parse_vendor_specific(pos, elen,
 							     elems,
@@ -400,15 +318,7 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 				unknown++;
 			}
 			break;
-#endif /* CONFIG_WPA3_SAE */
-		case WLAN_EID_RSN:
-			elems->rsn_ie = pos;
-			elems->rsn_ie_len = elen;
-			break;
-		case WLAN_EID_RSNX:
-			elems->rsnxe = pos;
-			elems->rsnxe_len = elen;
-			break;
+#endif /*CONFIG_SAE_PK*/
 #ifdef CONFIG_WNM
 		case WLAN_EID_EXT_CAPAB:
 			/* extended caps can go beyond 8 octacts but we aren't using them now */
@@ -426,6 +336,8 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
 
 	return ParseOK;
 }
+#endif
+
 /**
  * ieee802_11_parse_elems - Parse information elements in management frames
  * @start: Pointer to the start of IEs
@@ -434,12 +346,14 @@ static ParseRes __ieee802_11_parse_elems(const u8 *start, size_t len,
  * @show_errors: Whether to show parsing errors in debug log
  * Returns: Parsing result
  */
+#if defined(CONFIG_RRM) || defined(CONFIG_WMM) || defined(CONFIG_SAE_PK)
 ParseRes ieee802_11_parse_elems(const u8 *start, size_t len, struct ieee802_11_elems *elems, int show_errors)
 {
 	os_memset(elems, 0, sizeof(*elems));
 
 	return __ieee802_11_parse_elems(start, len, elems, show_errors);
 }
+#endif
 
 struct wpabuf * ieee802_11_vendor_ie_concat(const u8 *ies, size_t ies_len,
 					    u32 oui_type)

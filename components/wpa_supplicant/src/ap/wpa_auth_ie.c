@@ -346,6 +346,7 @@ int wpa_write_rsn_ie(struct wpa_auth_config *conf, u8 *buf, size_t len,
 
 
 
+#ifdef CONFIG_WPA3_COMPAT
 static int wpa_write_rsne_override(struct wpa_auth_config *conf, u8 *buf,
 				   size_t len)
 {
@@ -374,6 +375,7 @@ static int wpa_write_rsne_override(struct wpa_auth_config *conf, u8 *buf,
 
 	return pos - buf;
 }
+#endif
 
 
 static u32 rsnxe_capab(struct wpa_auth_config *conf, int key_mgmt)
@@ -419,6 +421,7 @@ int wpa_write_rsnxe(struct wpa_auth_config *conf, u8 *buf, size_t len)
 	return pos - buf;
 }
 
+#ifdef CONFIG_WPA3_COMPAT
 static int wpa_write_rsnxe_override(struct wpa_auth_config *conf, u8 *buf,
 				    size_t len)
 {
@@ -428,7 +431,6 @@ static int wpa_write_rsnxe_override(struct wpa_auth_config *conf, u8 *buf,
 
 	capab = rsnxe_capab(conf, conf->rsn_override_key_mgmt);
 
-	flen = (capab & 0xff00) ? 2 : 1;
 	if (!capab)
 		return 0; /* no supported extended RSN capabilities */
 	tmp = capab;
@@ -453,6 +455,7 @@ static int wpa_write_rsnxe_override(struct wpa_auth_config *conf, u8 *buf,
 
 	return pos - buf;
 }
+#endif
 
 
 int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
@@ -469,9 +472,11 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 			return res;
 		pos += res;
 
+#ifdef CONFIG_WPA3_COMPAT
 		if (wpa_auth->conf.rsn_override_omit_rsnxe)
 			res = 0;
 		else
+#endif
 			res = wpa_write_rsnxe(&wpa_auth->conf, pos,
 						buf + sizeof(buf) - pos);
 
@@ -496,6 +501,7 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 		pos += res;
 	}
 
+#ifdef CONFIG_WPA3_COMPAT
 	if ((wpa_auth->conf.wpa & WPA_PROTO_RSN) &&
 	    wpa_auth->conf.rsn_override_key_mgmt) {
 		res = wpa_write_rsne_override(&wpa_auth->conf,
@@ -513,6 +519,7 @@ int wpa_auth_gen_wpa_ie(struct wpa_authenticator *wpa_auth)
 			return res;
 		pos += res;
 	}
+#endif
 
 	os_free(wpa_auth->wpa_ie);
 	wpa_auth->wpa_ie = os_malloc(pos - buf);
@@ -649,9 +656,11 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 		return WPA_INVALID_GROUP;
 	}
 
+#ifdef CONFIG_WPA3_COMPAT
 	if (sm->rsn_override)
 		key_mgmt = data.key_mgmt & wpa_auth->conf.rsn_override_key_mgmt;
 	else
+#endif
 		key_mgmt = data.key_mgmt & wpa_auth->conf.wpa_key_mgmt;
 	if (!key_mgmt) {
 		wpa_printf(MSG_DEBUG, "Invalid WPA key mgmt (0x%x) from "
@@ -686,10 +695,13 @@ wpa_validate_wpa_ie(struct wpa_authenticator *wpa_auth,
 	else
 		sm->wpa_key_mgmt = WPA_KEY_MGMT_PSK;
 
+#ifdef CONFIG_WPA3_COMPAT
 	if (version == WPA_PROTO_RSN && sm->rsn_override)
 		ciphers = data.pairwise_cipher &
 			wpa_auth->conf.rsn_override_pairwise;
-	else if (version == WPA_PROTO_RSN)
+	else
+#endif
+	if (version == WPA_PROTO_RSN)
 		ciphers = data.pairwise_cipher & wpa_auth->conf.rsn_pairwise;
 	else
 		ciphers = data.pairwise_cipher & wpa_auth->conf.wpa_pairwise;

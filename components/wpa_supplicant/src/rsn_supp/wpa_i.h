@@ -22,12 +22,13 @@ struct install_key {
     u8 key[32];
 };
 
+#ifdef CONFIG_WPA3_COMPAT
 enum wpa_rsn_override {
     RSN_OVERRIDE_NOT_USED,
     RSN_OVERRIDE_RSNE,
     RSN_OVERRIDE_RSNE_OVERRIDE,
 };
-
+#endif
 /**
  * struct wpa_sm - Internal WPA state machine data
  */
@@ -82,8 +83,10 @@ struct wpa_sm {
 
     u8 *ap_wpa_ie, *ap_rsn_ie, *ap_rsnxe;
     size_t ap_wpa_ie_len, ap_rsn_ie_len, ap_rsnxe_len;
+#ifdef CONFIG_WPA3_COMPAT
     u8 *ap_rsne_override, *ap_rsnxe_override;
     size_t ap_rsne_override_len, ap_rsnxe_override_len;
+#endif
 
     bool key_install;
 
@@ -127,9 +130,10 @@ struct wpa_sm {
 #endif /* CONFIG_OWE_STA */
     int (*wpa_sm_wps_disable)(void);
     esp_err_t (*wpa_sm_eap_disable)(void);
-
+#ifdef CONFIG_WPA3_COMPAT
     bool rsn_override_support;
     enum wpa_rsn_override rsn_override;
+#endif
 };
 
 /**
@@ -215,12 +219,13 @@ void eapol_txcb(uint8_t *eapol_payload, size_t len, bool tx_failure);
 
 void wpa_set_profile(u32 wpa_proto, u8 auth_mode);
 
-int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len);
+int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_t group_cipher, char *passphrase, uint8_t *ssid, int ssid_len);
 
 int wpa_sm_rx_eapol(u8 *src_addr, u8 *buf, u32 len);
 
 int wpa_derive_ptk_ft(struct wpa_sm *sm, const unsigned char *src_addr,
                       const struct wpa_eapol_key *key, struct wpa_ptk *ptk);
-
+#ifdef CONFIG_WPA3_COMPAT
 bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm);
+#endif
 #endif /* WPA_I_H */

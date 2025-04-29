@@ -1659,6 +1659,7 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 		return 0;
 	}
 
+#ifdef CONFIG_WPA3_COMPAT
 	if (selector == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
 		ie->rsne_override = pos;
 		ie->rsne_override_len = dlen;
@@ -1685,6 +1686,7 @@ static int wpa_parse_generic(const u8 *pos, const u8 *end,
 			    ie->rsn_selection, ie->rsn_selection_len);
 		return 0;
 	}
+#endif
 	return 2;
 }
 

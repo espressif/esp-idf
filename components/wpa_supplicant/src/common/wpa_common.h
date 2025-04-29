@@ -472,13 +472,14 @@ struct wpa_eapol_ie_parse {
 	size_t transition_disable_len;
 	const u8 *rsnxe;
 	size_t rsnxe_len;
+#ifdef CONFIG_WPA3_COMPAT
 	const u8 *rsn_selection;
 	size_t rsn_selection_len;
 	const u8 *rsne_override;
 	size_t rsne_override_len;
 	const u8 *rsnxe_override;
 	size_t rsnxe_override_len;
-
+#endif
 };
 int wpa_parse_kde_ies(const u8 *buf, size_t len, struct wpa_eapol_ie_parse *ie);
 static inline int wpa_supplicant_parse_ies(const u8 *buf, size_t len,

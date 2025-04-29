@@ -536,7 +536,10 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     size_t mic_len, hdrlen, rlen;
     struct wpa_eapol_key *reply;
     struct wpa_eapol_key_192 *reply192;
-    u8 *rsn_ie_buf = NULL, *buf2 = NULL;
+    u8 *rsn_ie_buf = NULL;
+#ifdef CONFIG_WPA3_COMPAT
+    u8 *buf2 = NULL;
+#endif
     u8 *rbuf, *key_mic;
 
     if (wpa_ie == NULL) {
@@ -582,6 +585,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         wpa_ie = rsn_ie_buf;
     }
 #endif /* CONFIG_IEEE80211R */
+#ifdef CONFIG_WPA3_COMPAT
     if (sm->rsn_override != RSN_OVERRIDE_NOT_USED) {
         u8 *pos;
 
@@ -610,7 +614,7 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
         wpa_ie_len += 2 + 4 + 1;
 
     }
-
+#endif
     wpa_hexdump(MSG_MSGDUMP, "WPA: WPA IE for msg 2/4\n", wpa_ie, wpa_ie_len);
 
     mic_len = wpa_mic_len(sm->key_mgmt, sm->pmk_len);
@@ -620,7 +624,9 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
                   &rlen, (void *) &reply);
     if (rbuf == NULL) {
         os_free(rsn_ie_buf);
+#ifdef CONFIG_WPA3_COMPAT
         os_free(buf2);
+#endif
         return -1;
     }
     reply192 = (struct wpa_eapol_key_192 *) reply;
@@ -647,7 +653,9 @@ int   wpa_supplicant_send_2_of_4(struct wpa_sm *sm, const unsigned char *dst,
     }
 
     os_free(rsn_ie_buf);
+#ifdef CONFIG_WPA3_COMPAT
     os_free(buf2);
+#endif
     os_memcpy(reply->key_nonce, nonce, WPA_NONCE_LEN);
 
     wpa_printf(MSG_DEBUG, "WPA Send EAPOL-Key 2/4");
@@ -733,8 +741,10 @@ void wpa_supplicant_process_1_of_4(struct wpa_sm *sm,
             wpa_printf(MSG_DEBUG, "WPA: Failed to get random data for SNonce");
             goto failed;
         }
+#ifdef CONFIG_WPA3_COMPAT
         if (wpa_sm_rsn_overriding_supported(sm))
             rsn_set_snonce_cookie(sm->snonce);
+#endif
         sm->renew_snonce = 0;
         wpa_hexdump(MSG_DEBUG, "WPA: Renewed SNonce",
                 sm->snonce, WPA_NONCE_LEN);
@@ -1215,6 +1225,7 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
         return -1;
     }
 
+#ifdef CONFIG_WPA3_COMPAT
     if (sm->proto == WPA_PROTO_RSN && wpa_sm_rsn_overriding_supported(sm)) {
         if ((sm->ap_rsne_override && !ie->rsne_override) ||
                 (!sm->ap_rsne_override && ie->rsne_override) ||
@@ -1256,6 +1267,7 @@ static int wpa_supplicant_validate_ie(struct wpa_sm *sm,
             return -1;
         }
     }
+#endif
     return 0;
 }
 
@@ -1349,10 +1361,19 @@ static void wpa_supplicant_process_3_of_4(struct wpa_sm *sm,
 
     key_info = WPA_GET_BE16(key->key_info);
 
-    if (wpa_supplicant_parse_ies(key_data, key_data_len, &ie) < 0)
+    if (wpa_supplicant_parse_ies(key_data, key_data_len, &ie) < 0) {
         goto failed;
-    if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0)
+    }
+    if (wpa_supplicant_validate_ie(sm, sm->bssid, &ie) < 0) {
         goto failed;
+    }
+
+    if (os_memcmp(sm->anonce, key->key_nonce, WPA_NONCE_LEN) != 0) {
+        wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
+                "WPA: ANonce from message 1 of 4-Way Handshake differs from 3 of 4-Way Handshake - drop packet (src="
+                MACSTR ")", MAC2STR(sm->bssid));
+        goto failed;
+    }
 
     if (ie.gtk && !(key_info & WPA_KEY_INFO_ENCR_KEY_DATA)) {
         wpa_printf(MSG_DEBUG, "WPA: GTK IE in unencrypted key data");
@@ -2258,10 +2279,12 @@ void wpa_sm_deinit(void)
     sm->ap_rsn_ie = NULL;
     os_free(sm->ap_rsnxe);
     sm->ap_rsnxe = NULL;
+#ifdef CONFIG_WPA3_COMPAT
     os_free(sm->ap_rsne_override);
     sm->ap_rsne_override = NULL;
     os_free(sm->ap_rsnxe_override);
     sm->ap_rsnxe_override = NULL;
+#endif
     wpa_sm_drop_sa(sm);
     memset(sm, 0, sizeof(*sm));
 }
@@ -2273,6 +2296,7 @@ void wpa_sm_deinit(void)
  * @value: Parameter value
  * Returns: 0 on success, -1 on failure
  */
+#ifdef CONFIG_WPA3_COMPAT
 int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
         unsigned int value)
 {
@@ -2293,18 +2317,21 @@ int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
     }
     return ret;
 }
+#endif
 
+#ifdef CONFIG_WPA3_COMPAT
 static const u8 * wpa_sm_get_ap_rsne(struct wpa_sm *sm, size_t *len)
 {
     if (sm->rsn_override == RSN_OVERRIDE_RSNE_OVERRIDE) {
         *len = sm->ap_rsne_override_len;
         return sm->ap_rsne_override;
     }
-
     *len = sm->ap_rsn_ie_len;
     return sm->ap_rsn_ie;
 }
+#endif
 
+#ifdef CONFIG_WPA3_COMPAT
 bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm)
 {
     const u8 *rsne;
@@ -2314,6 +2341,7 @@ bool wpa_sm_rsn_overriding_supported(struct wpa_sm *sm)
 
     return sm->rsn_override_support && rsne;
 }
+#endif
 
 #ifdef ESP_SUPPLICANT
 /**
@@ -2446,13 +2474,13 @@ void wpa_set_pmk(uint8_t *pmk, size_t pmk_length, const u8 *pmkid, bool cache_pm
     }
 }
 
-int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_cipher, char *passphrase, u8 *ssid, size_t ssid_len)
+int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, uint8_t pairwise_cipher, uint8_t group_cipher, char *passphrase, uint8_t *ssid, int ssid_len)
 {
     int res = 0;
     struct wpa_sm *sm = &gWpaSm;
     bool use_pmk_cache = !esp_wifi_skip_supp_pmkcaching();
-    u8 assoc_ie[128];
-    uint8_t assoc_ie_len = sizeof(assoc_ie);
+    uint8_t assoc_ie[128];
+    uint16_t assoc_ie_len = sizeof(assoc_ie);
     bool reassoc_same_ess = false;
     int try_opportunistic = 0;
     const u8 *ie = NULL;
@@ -2579,12 +2607,13 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
     wpa_sm_set_ap_rsn_ie(sm, ie, ie ? (ie[1] + 2) : 0);
     ie = esp_wifi_sta_get_ie(bssid, WLAN_EID_RSNX);
     wpa_sm_set_ap_rsnxe(sm, ie, ie ? (ie[1] + 2) : 0);
-    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA)) {
-        ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
-        wpa_sm_set_ap_rsne_override(sm, ie, ie ? (ie[1] + 2) : 0);
-        ie = esp_wifi_sta_get_ie(bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
-        wpa_sm_set_ap_rsnxe_override(sm, ie, ie ? (ie[1] + 2) : 0);
-    }
+
+#ifdef CONFIG_WPA3_COMPAT
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
+    wpa_sm_set_ap_rsne_override(sm, ie, ie ? (ie[1] + 2) : 0);
+    ie = esp_wifi_sta_get_ie(bssid, WFA_RSNXE_OVERRIDE_OUI_TYPE);
+    wpa_sm_set_ap_rsnxe_override(sm, ie, ie ? (ie[1] + 2) : 0);
+#endif
 
     pos = assoc_ie;
     res = wpa_gen_rsnxe(sm, pos, assoc_ie_len);
@@ -2597,14 +2626,15 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         return -1;
     }
     pos += assoc_ie_len;
+
+#ifdef CONFIG_WPA3_COMPAT
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE_SUPPORT,
             esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA));
     wpa_sm_set_param(sm, WPA_PARAM_RSN_OVERRIDE,
             RSN_OVERRIDE_NOT_USED);
     ie = esp_wifi_sta_get_ie(bssid, WFA_RSNE_OVERRIDE_OUI_TYPE);
 
-    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) &&
-            ie && ie[0] != WLAN_EID_RSN) {
+    if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_STA) && ie) {
         enum rsn_selection_variant variant = RSN_SELECTION_RSNE;
 
         if (ie && ie[0] == WLAN_EID_VENDOR_SPECIFIC && ie[1] >= 4) {
@@ -2626,6 +2656,8 @@ int wpa_set_bss(uint8_t *macddr, uint8_t *bssid, u8 pairwise_cipher, u8 group_ci
         *pos = variant;
         assoc_ie_len += 2 + 4 + 1;
     }
+#endif
+
     wpa_hexdump(MSG_DEBUG, "WPA: ASSOC IE LEN", assoc_ie, assoc_ie_len);
     esp_set_assoc_ie(bssid, assoc_ie, assoc_ie_len, true);
 
@@ -2984,6 +3016,7 @@ int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)
 }
 
 
+#ifdef CONFIG_WPA3_COMPAT
 int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
     if (!sm)
@@ -3007,8 +3040,10 @@ int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 
     return 0;
 }
+#endif
 
 
+#ifdef CONFIG_WPA3_COMPAT
 int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 {
     if (!sm)
@@ -3032,6 +3067,7 @@ int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len)
 
     return 0;
 }
+#endif
 
 
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len)

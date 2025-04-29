@@ -35,10 +35,12 @@ struct l2_ethhdr {
     be16 h_proto;
 } STRUCT_PACKED;
 
+#ifdef CONFIG_WPA3_COMPAT
 enum wpa_sm_conf_params {
     WPA_PARAM_RSN_OVERRIDE,
     WPA_PARAM_RSN_OVERRIDE_SUPPORT,
 };
+#endif
 
 void wpa_sm_set_state(enum wpa_states state);
 
@@ -62,16 +64,20 @@ int wpa_sm_set_ap_rsn_ie(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 int wpa_sm_set_ap_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
+#ifdef CONFIG_WPA3_COMPAT
 int wpa_sm_set_ap_rsne_override(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 int wpa_sm_set_ap_rsnxe_override(struct wpa_sm *sm, const u8 *ie, size_t len);
+#endif
 
 int wpa_sm_set_assoc_rsnxe(struct wpa_sm *sm, const u8 *ie, size_t len);
 
 void wpa_sm_drop_sa(struct wpa_sm *sm);
 
+#ifdef CONFIG_WPA3_COMPAT
 int wpa_sm_set_param(struct wpa_sm *sm, enum wpa_sm_conf_params param,
 		     unsigned int value);
+#endif
 #ifdef CONFIG_IEEE80211R
 
 int wpa_sm_set_ft_params(struct wpa_sm *sm, const u8 *ies, size_t ies_len);

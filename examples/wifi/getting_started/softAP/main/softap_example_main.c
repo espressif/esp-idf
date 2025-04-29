@@ -78,7 +78,9 @@ void wifi_init_softap(void)
 #else /* CONFIG_ESP_WIFI_SOFTAP_SAE_SUPPORT */
             .authmode = WIFI_AUTH_WPA2_PSK,
 #endif
-            .wpa3_compatible_mode = 0,
+#ifdef CONFIG_ESP_WIFI_WPA3_COMPATIBLE_SUPPORT
+            .wpa3_compatible_mode = 1,
+#endif
             .pmf_cfg = {
                     .required = true,
             },

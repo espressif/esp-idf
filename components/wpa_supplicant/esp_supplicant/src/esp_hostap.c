@@ -110,15 +110,19 @@ void *hostap_init(void)
     }
 #endif /* CONFIG_IEEE80211W */
     if (esp_wifi_wpa3_compatible_mode_enabled(WIFI_IF_AP)) {
-        //TODO check sae_pwe
+#ifdef CONFIG_WPA3_COMPAT
         hapd->conf->sae_pwe = SAE_PWE_HASH_TO_ELEMENT;
         auth_conf->rsn_override_omit_rsnxe = 1;
+        hapd->conf->rsn_override_omit_rsnxe = 1;
         hapd->conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
         hapd->conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
         hapd->conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
         auth_conf->rsn_override_key_mgmt = WPA_KEY_MGMT_SAE;
         auth_conf->rsn_override_pairwise = WPA_CIPHER_CCMP;
         auth_conf->rsn_override_mfp = MGMT_FRAME_PROTECTION_REQUIRED;
+#else
+        wpa_printf(MSG_ERROR, "ESP_WIFI_WPA3_COMPATIBLE_SUPPORT disabled ignoring wpa3_compatible configuration");
+#endif
     }
     /* TKIP is compulsory in WPA Mode */
     if (auth_conf->wpa == WPA_PROTO_WPA && pairwise_cipher == WIFI_CIPHER_TYPE_CCMP) {
@@ -224,7 +228,6 @@ void *hostap_init(void)
 #ifdef CONFIG_SAE
     auth_conf->sae_require_mfp = 1;
 #endif /* CONFIG_SAE */
-    auth_conf->rsn_override_omit_rsnxe = 1;
 
     hapd->conf->ap_max_inactivity = 5 * 60;
     hostapd_setup_wpa_psk(hapd->conf);
@@ -409,15 +412,21 @@ uint8_t wpa_status_to_reason_code(int status)
     }
 }
 
-bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_11_elems elems,
-                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason)
+bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, u8 *wpa_ie,
+                          u8 wpa_ie_len, u8 *rsnxe, uint16_t rsnxe_len,
+                          bool *pmf_enable, int subtype, uint8_t *pairwise_cipher, uint8_t *reason, uint8_t *rsn_selection_ie)
 {
     struct hostapd_data *hapd = (struct hostapd_data*)esp_wifi_get_hostap_private_internal();
     enum wpa_validate_result res = WPA_IE_OK;
     int status = WLAN_STATUS_SUCCESS;
     bool omit_rsnxe = false;
 
-    if (!sta || !bssid || !elems.rsn_ie) {
+#ifdef CONFIG_WPA3_COMPAT
+    uint8_t rsn_selection_variant_len = 0;
+    uint8_t *rsn_selection_variant_ie = NULL;
+#endif
+
+    if (!sta || !bssid || !wpa_ie) {
         return false;
     }
     if (hapd) {
@@ -434,8 +443,16 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_1
                 goto send_resp;
             }
 
-            wpa_auth_set_rsn_selection(sta->wpa_sm, elems.rsn_selection, elems.rsn_selection_len);
-            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, elems.rsn_ie, elems.rsn_ie_len, elems.rsnxe, elems.rsnxe_len);
+#ifdef CONFIG_WPA3_COMPAT
+            if (rsn_selection_ie) {
+                rsn_selection_variant_len = rsn_selection_ie[1] - 4;
+                rsn_selection_variant_ie = &rsn_selection_ie[6];
+            }
+
+            wpa_auth_set_rsn_selection(sta->wpa_sm, rsn_selection_variant_ie, rsn_selection_variant_len);
+#endif
+
+            res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm, wpa_ie, wpa_ie_len, rsnxe, rsnxe_len);
 #ifdef CONFIG_SAE
             if (wpa_auth_uses_sae(sta->wpa_sm) && sta->sae &&
                     sta->sae->state == SAE_ACCEPTED) {
@@ -447,13 +464,15 @@ bool hostap_new_assoc_sta(struct sta_info *sta, uint8_t *bssid, struct ieee802_1
             status = wpa_res_to_status_code(res);
 
 send_resp:
-            if (!elems.rsnxe) {
+            if (!rsnxe) {
                 omit_rsnxe = true;
             }
 
+#ifdef CONFIG_WPA3_COMPAT
             if (hapd->conf->rsn_override_omit_rsnxe) {
-                omit_rsnxe = 1;
+                omit_rsnxe = false;
             }
+#endif
 
             if (esp_send_assoc_resp(hapd, bssid, status, omit_rsnxe, subtype) != WLAN_STATUS_SUCCESS) {
                 status = WLAN_STATUS_AP_UNABLE_TO_HANDLE_NEW_STA;

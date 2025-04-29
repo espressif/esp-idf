@@ -39,6 +39,7 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
     } else if (wpa_ie[0] == WLAN_EID_WAPI) {
         return 0;
+#ifdef CONFIG_WPA3_COMPAT
     } else if (wpa_ie_len >= 6 && wpa_ie[0] == WLAN_EID_VENDOR_SPECIFIC &&
                wpa_ie[1] >= 4 &&
                WPA_GET_BE32(&wpa_ie[2]) == RSNE_OVERRIDE_IE_VENDOR_TYPE) {
@@ -47,7 +48,9 @@ int  wpa_parse_wpa_ie(const u8 *wpa_ie, size_t wpa_ie_len,
                wpa_ie[1] >= 4 &&
                WPA_GET_BE32(&wpa_ie[2]) == RSNXE_OVERRIDE_IE_VENDOR_TYPE) {
         return wpa_parse_wpa_ie_rsnxe(wpa_ie, wpa_ie_len, data);
+#endif
     }
+
     return wpa_parse_wpa_ie_wpa(wpa_ie, wpa_ie_len, data);
 }
 
@@ -304,7 +307,7 @@ int  wpa_gen_wpa_ie(struct wpa_sm *sm, u8 *wpa_ie, size_t wpa_ie_len)
 int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
 {
     u8 *pos = rsnxe;
-    u16 capab = 0, tmp;
+    u32 capab = 0, tmp;
     size_t flen;
 
     if (wpa_key_mgmt_sae(sm->key_mgmt) &&
@@ -333,12 +336,11 @@ int wpa_gen_rsnxe(struct wpa_sm *sm, u8 *rsnxe, size_t rsnxe_len)
 
     *pos++ = WLAN_EID_RSNX;
     *pos++ = flen;
-    *pos++ = capab & 0x00ff;
-    capab >>= 8;
-    if (capab)
-        *pos++ = capab;
+    while (capab) {
+        *pos++ = capab & 0xff;
+        capab >>= 8;
+    }
 
     return pos - rsnxe;
 }
-
 #endif // ESP_SUPPLICANT

@@ -197,13 +197,16 @@ static inline int wpa_auth_get_seqnum(struct wpa_authenticator *wpa_auth,
     return -1;
 }
 
+#ifdef CONFIG_WPA3_COMPAT
 void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
         size_t len)
 {
     if (!sm)
         return;
-    os_free(sm->rsn_selection);
-    sm->rsn_selection = NULL;
+    if (sm->rsn_selection) {
+        os_free(sm->rsn_selection);
+        sm->rsn_selection = NULL;
+    }
     sm->rsn_selection_len = 0;
     sm->rsn_override = false;
     if (ie) {
@@ -216,6 +219,7 @@ void wpa_auth_set_rsn_selection(struct wpa_state_machine *sm, const u8 *ie,
             sm->rsn_selection_len = len;
     }
 }
+#endif
 
 /* fix buf for tx for now */
 #define WPA_TX_MSG_BUFF_MAXLEN 200
@@ -522,7 +526,9 @@ static void wpa_free_sta_sm(struct wpa_state_machine *sm)
     os_free(sm->last_rx_eapol_key);
     os_free(sm->wpa_ie);
     os_free(sm->rsnxe);
+#ifdef CONFIG_WPA3_COMPAT
     os_free(sm->rsn_selection);
+#endif
     os_free(sm);
 }
 
@@ -1764,6 +1770,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         return;
     }
 
+#ifdef CONFIG_WPA3_COMPAT
     /* Verify RSN Selection element for RSN overriding */
        if (sm->wpa_auth->conf.rsn_override_key_mgmt &&
            ((rsn_is_snonce_cookie(sm->SNonce) && !kde.rsn_selection) ||
@@ -1789,6 +1796,7 @@ SM_STATE(WPA_PTK, PTKCALCNEGOTIATING)
         return;
 
     }
+#endif
 
     sm->pending_1_of_4_timeout = 0;
     eloop_cancel_timeout(resend_eapol_handle, (void*)(sm->index), NULL);
@@ -1886,8 +1894,10 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
     struct wpa_group *gsm = sm->group;
     u8 *wpa_ie;
     int wpa_ie_len, secure, keyidx, encr = 0;
+#ifdef CONFIG_WPA3_COMPAT
     u8 *wpa_ie_buf3 = NULL;
     struct wpa_auth_config *conf = &sm->wpa_auth->conf;
+#endif
 
     SM_ENTRY_MA(WPA_PTK, PTKINITNEGOTIATING, wpa_ptk);
     sm->TimeoutEvt = FALSE;
@@ -1916,6 +1926,7 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
             wpa_ie = wpa_ie + wpa_ie[1] + 2;
         wpa_ie_len = wpa_ie[1] + 2;
     }
+#ifdef CONFIG_WPA3_COMPAT
     if (conf->rsn_override_key_mgmt &&
         !rsn_is_snonce_cookie(sm->SNonce)) {
         u8 *ie;
@@ -1948,6 +1959,7 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
         wpa_hexdump(MSG_DEBUG, "EAPOL-Key msg 3/4 IEs after edits",
                 wpa_ie, wpa_ie_len);
     }
+#endif
     if (sm->wpa == WPA_VERSION_WPA2) {
         /* WPA2 send GTK in the 4-way handshake */
         secure = 1;
@@ -1959,7 +1971,7 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
              * of GTK in the BSS.
              */
             if (os_get_random(dummy_gtk, gtk_len) < 0)
-                return;
+                goto done;
             gtk = dummy_gtk;
         }
         keyidx = gsm->GN;
@@ -1999,8 +2011,8 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
     }
 #endif /* CONFIG_IEEE80211R_AP */
     kde = (u8 *)os_malloc(kde_len);
-    if (kde == NULL)
-        return;
+    if (!kde)
+        goto done;
 
     pos = kde;
     memcpy(pos, wpa_ie, wpa_ie_len);
@@ -2011,8 +2023,7 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
         if (res < 0) {
             wpa_printf( MSG_ERROR, "FT: Failed to insert "
                    "PMKR1Name into RSN IE in EAPOL-Key data");
-            os_free(kde);
-            return;
+            goto done;
         }
         pos += res;
     }
@@ -2042,8 +2053,7 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
         if (res < 0) {
             wpa_printf( MSG_ERROR, "FT: Failed to insert FTIE "
                    "into EAPOL-Key Key Data");
-            os_free(kde);
-            return;
+            goto done;
         }
         pos += res;
 
@@ -2070,7 +2080,9 @@ SM_STATE(WPA_PTK, PTKINITNEGOTIATING)
                _rsc, sm->ANonce, kde, pos - kde, keyidx, encr);
 done:
     os_free(kde);
+#ifdef CONFIG_WPA3_COMPAT
     os_free(wpa_ie_buf3);
+#endif
 }
 
 
