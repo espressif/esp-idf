@@ -162,9 +162,7 @@ __attribute__((always_inline)) static inline void efuse_ll_rs_bypass_update(void
 
 __attribute__((always_inline)) static inline uint32_t efuse_ll_get_controller_state(void)
 {
-    // TODO: IDF-12854
-    //return EFUSE.status.state;
-    return EFUSE_CONTROLLER_STATE_IDLE;
+    return EFUSE.status.state;
 }
 
 #ifdef __cplusplus
