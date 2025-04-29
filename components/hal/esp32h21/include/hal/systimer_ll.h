@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,7 +12,6 @@
 #include "soc/pcr_struct.h"
 #include "hal/assert.h"
 
-//TODO: [ESP32H21] IDF-11596, inherit from h2
 
 #ifdef __cplusplus
 extern "C" {

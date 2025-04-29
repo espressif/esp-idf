@@ -12,7 +12,6 @@
 #include "heap_memory_layout.h"
 #include "esp_heap_caps.h"
 
-//TODO: [ESP32H21] IDF-11525
 
 /**
  * @brief Memory type descriptors. These describe the capabilities of a type of memory in the SoC.

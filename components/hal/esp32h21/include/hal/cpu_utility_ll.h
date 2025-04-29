@@ -10,8 +10,6 @@
 #include "soc/pcr_reg.h"
 #include "esp_attr.h"
 
-//TODO: [ESP32H21] IDF-11873, inherit from h2
-
 #ifdef __cplusplus
 extern "C" {
 #endif
