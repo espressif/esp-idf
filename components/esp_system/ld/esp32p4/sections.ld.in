@@ -293,6 +293,11 @@ SECTIONS
      */
     . += _esp_flash_mmap_prefetch_pad_size;
 
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+    /* Align the end of flash text region as per PMP granularity */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+
     _text_end = ABSOLUTE(.);
     /**
      * Mark the flash.text end.
@@ -440,6 +445,12 @@ SECTIONS
     *(.tdata .tdata.* .gnu.linkonce.td.*)
 
     . = ALIGN(ALIGNOF(.flash.tbss));
+
+#if CONFIG_SPIRAM_RODATA
+    /* Align the end of flash rodata region as per PMP granularity */
+    . = ALIGN(_esp_pmp_align_size);
+#endif // CONFIG_SPIRAM_RODATA
+
     _thread_local_data_end = ABSOLUTE(.);
   } > rodata_seg_low
   ASSERT_SECTIONS_GAP(.flash.tdata, .flash.tbss)
