@@ -1,0 +1,23 @@
+source "$IDF_PATH/components/usb/test_apps/common/Kconfig.common"
+
+menu "USB Host External Port test"
+
+    config USB_HOST_TEST_HUB_PORT_NUM_DEVICE_FSHS
+        int "Port number with Full-/High-speed device"
+        default 1
+        help
+            Configure the number of the port, with a Full-/High-speed USB device.
+
+    config USB_HOST_TEST_HUB_PORT_NUM_DEVICE_LS
+        int "Port number with Low-speed device"
+        default 2
+        help
+            Configure the number of the port, with a Low-speed USB device.
+
+    config USB_HOST_TEST_HUB_PORT_NUM_EMPTY
+        int "Empty Port number"
+        default 3
+        help
+            Configure the number of the port, without device.
+
+endmenu
