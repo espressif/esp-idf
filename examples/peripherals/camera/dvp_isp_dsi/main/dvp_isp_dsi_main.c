@@ -101,8 +101,11 @@ void app_main(void)
         .port = ESP_CAM_SENSOR_DVP,
         .format_name = EXAMPLE_CAM_FORMAT,
     };
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
-    example_sensor_init(&cam_sensor_config, &i2c_bus_handle);
+    example_sensor_handle_t sensor_handle = {
+        .sccb_handle = NULL,
+        .i2c_bus_handle = NULL,
+    };
+    example_sensor_init(&cam_sensor_config, &sensor_handle);
 
     //---------------ISP Init------------------//
     isp_proc_handle_t isp_proc = NULL;
