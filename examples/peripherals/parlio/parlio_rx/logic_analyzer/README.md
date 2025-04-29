@@ -1,5 +1,5 @@
-| Supported Targets | ESP32-C5 | ESP32-C6 | ESP32-H2 | ESP32-P4 |
-| ----------------- | -------- | -------- | -------- | -------- |
+| Supported Targets | ESP32-C6 | ESP32-H2 | ESP32-P4 |
+| ----------------- | -------- | -------- | -------- |
 
 # Logic Analyzer Example
 
@@ -27,7 +27,7 @@ Under the default configuration, this example will probe the signals on several 
 
 #### Extra Software on PC
 
-* [PulseView](https://sigrok.org/wiki/Downloads) for visualizing the captured signal
+* `PulseView` for visualizing the captured signal
 
 ### Step 1: Configure The Project
 
