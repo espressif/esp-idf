@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -97,6 +97,19 @@ typedef enum {
     I2C_SLAVE_STRETCH_CAUSE_RX_FULL = 2,         /*!< Stretching SCL low when RX FIFO is full in slave mode */
     I2C_SLAVE_STRETCH_CAUSE_SENDING_ACK = 3,     /*!< Stretching SCL low when slave sending ACK */
 } i2c_slave_stretch_cause_t;
+
+typedef enum {
+    I2C_SLAVE_WRITE_BY_MASTER = 0,
+    I2C_SLAVE_READ_BY_MASTER = 1,
+} i2c_slave_read_write_status_t;
+
+/**
+ * @brief Enum for i2c working modes.
+ */
+typedef enum {
+    I2C_BUS_MODE_MASTER = 0,                    /*!< I2C works under master mode */
+    I2C_BUS_MODE_SLAVE = 1,                     /*!< I2C works under slave mode */
+} i2c_bus_mode_t;
 
 #if SOC_I2C_SUPPORTED
 /**
