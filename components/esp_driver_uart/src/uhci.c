@@ -149,6 +149,10 @@ static bool uhci_gdma_rx_callback_done(gdma_channel_handle_t dma_chan, gdma_even
             need_yield |= uhci_ctrl->rx_dir.on_rx_trans_event(uhci_ctrl, &evt_data, uhci_ctrl->user_data);
         }
 
+        // Stop the transaction when EOF is detected. In case for length EOF, there is no further more callback to be invoked.
+        gdma_stop(uhci_ctrl->rx_dir.dma_chan);
+        gdma_reset(uhci_ctrl->rx_dir.dma_chan);
+
         uhci_ctrl->rx_dir.rx_fsm = UHCI_RX_FSM_ENABLE;
     }
 
@@ -330,6 +334,7 @@ esp_err_t uhci_receive(uhci_controller_handle_t uhci_ctrl, uint8_t *read_buffer,
             }
         };
         ESP_LOGD(TAG, "The DMA node %d has %d byte", i, uhci_ctrl->rx_dir.buffer_size_per_desc_node[i]);
+        ESP_RETURN_ON_FALSE(uhci_ctrl->rx_dir.buffer_size_per_desc_node[i] != 0, ESP_ERR_INVALID_STATE, TAG, "Allocate dma node length is 0, please reconfigure the buffer_size");
         read_buffer += uhci_ctrl->rx_dir.buffer_size_per_desc_node[i];
     }
 
@@ -451,6 +456,9 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
 
     uhci_controller_handle_t uhci_ctrl = (uhci_controller_handle_t)heap_caps_calloc(1, sizeof(uhci_controller_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_RETURN_ON_FALSE(uhci_ctrl, ESP_ERR_NO_MEM, TAG, "no mem for uhci controller handle");
+    if (config->rx_eof_flags.length_eof) {
+        ESP_RETURN_ON_FALSE(config->max_packet_receive < UHCI_LL_MAX_RECEIVE_PACKET_THRESHOLD, ESP_ERR_INVALID_ARG, TAG, "max receive packet is over threshold");
+    }
 
     atomic_init(&uhci_ctrl->tx_dir.tx_fsm, UHCI_TX_FSM_ENABLE);
     atomic_init(&uhci_ctrl->rx_dir.rx_fsm, UHCI_TX_FSM_ENABLE);
@@ -509,6 +517,7 @@ esp_err_t uhci_new_controller(const uhci_controller_config_t *config, uhci_contr
     }
     if (config->rx_eof_flags.length_eof) {
         uhci_ll_rx_set_eof_mode(uhci_ctrl->hal.dev, UHCI_RX_LEN_EOF);
+        uhci_ll_rx_set_packet_threshold(uhci_ctrl->hal.dev, config->max_packet_receive);
     }
     if (config->rx_eof_flags.rx_brk_eof) {
         uhci_ll_rx_set_eof_mode(uhci_ctrl->hal.dev, UHCI_RX_BREAK_CHR_EOF);

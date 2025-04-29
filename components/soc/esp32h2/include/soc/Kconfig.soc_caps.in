@@ -23,6 +23,10 @@ config SOC_UART_SUPPORTED
     bool
     default y
 
+config SOC_UHCI_SUPPORTED
+    bool
+    default y
+
 config SOC_GDMA_SUPPORTED
     bool
     default y
@@ -1378,6 +1382,10 @@ config SOC_UART_WAKEUP_SUPPORT_START_BIT_MODE
 config SOC_UART_WAKEUP_SUPPORT_CHAR_SEQ_MODE
     bool
     default y
+
+config SOC_UHCI_NUM
+    int
+    default 1
 
 config SOC_COEX_HW_PTI
     bool

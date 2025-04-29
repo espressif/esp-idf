@@ -24,6 +24,7 @@ typedef struct {
     size_t max_transmit_size;                             /*!< Maximum transfer size in one transaction, in bytes. This decides the number of DMA nodes will be used for each transaction */
     size_t max_receive_internal_mem;                      /*!< Maximum transfer size in one transaction, in bytes. Each DMA node can point to a maximum of 4096 bytes. This value determines the number of DMA nodes used for each transaction. When your transfer size is large enough, it is recommended to set this value greater than 4096 to facilitate efficient ping-pong operations, such as 10 * 1024. */
     size_t dma_burst_size;                                /*!< DMA burst size, in bytes */
+    size_t max_packet_receive;                            /*!< Max receive size, auto stop receiving after reach this value, only valid when `length_eof` set true */
 
     struct {
         uint16_t rx_brk_eof: 1;                           /*!< UHCI will end payload receive process when NULL frame is received by UART. */
