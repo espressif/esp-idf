@@ -2646,6 +2646,15 @@ static SLEEP_FN_ATTR uint32_t get_sleep_clock_icg_flags(void)
         clk_flags |= BIT(PMU_ICG_FUNC_ENA_UART2);
     }
 #endif
+#if SOC_BLE_USE_WIFI_PWR_CLK_WORKAROUND
+    /* Starting from C6ECO1 and later versions, when BLE RTC is configured to use
+     * MODEM_CLOCK_LPCLK_SRC_MAIN_XTAL,the actual slow clock source is the WiFi power clock.
+     * As all 32 bits of ICG_FUNC are occupied, the ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK
+     * has been remapped to PMU_ICG_FUNC_ENA_RETENTION.*/
+    if (s_config.clock_icg_refs[ESP_SLEEP_CLOCK_BT_USE_WIFI_PWR_CLK] > 0) {
+        clk_flags |= BIT(PMU_ICG_FUNC_ENA_RETENTION);
+    }
+#endif
 #endif /* SOC_PM_SUPPORT_PMU_CLK_ICG */
     return clk_flags;
 }
