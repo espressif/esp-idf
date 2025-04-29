@@ -127,6 +127,19 @@ static inline void psram_ctrlr_ll_set_bus_clock(uint32_t mspi_id, uint32_t clock
 }
 
 /**
+ * @brief Set SPI1 bus clock to initialise PSRAM
+ *
+ * @param mspi_id     mspi_id
+ * @param clock_conf  Configuration value for psram clock
+ */
+__attribute__((always_inline))
+static inline void psram_ctrlr_ll_set_spi1_bus_clock(uint32_t mspi_id, uint32_t clock_conf)
+{
+    HAL_ASSERT(mspi_id == PSRAM_CTRLR_LL_MSPI_ID_1);
+    SPIMEM1.clock.val = clock_conf;
+}
+
+/**
  * Calculate spi_flash clock frequency division parameters for register.
  *
  * @param clkdiv frequency division factor
