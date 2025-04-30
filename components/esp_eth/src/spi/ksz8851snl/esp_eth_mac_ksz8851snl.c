@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: MIT
  *
- * SPDX-FileContributor: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2021-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -21,9 +21,10 @@
 #include "freertos/semphr.h"
 #include "ksz8851.h"
 #include "esp_timer.h"
-
+#include "esp_rom_crc.h"
 
 #define KSZ8851_ETH_MAC_RX_BUF_SIZE_AUTO (0)
+#define KSZ8851_HASH_FILTER_TABLE_SIZE (64)
 
 typedef struct {
     spi_device_handle_t hdl;
@@ -49,6 +50,7 @@ typedef struct {
     uint32_t poll_period_ms;
     uint8_t *rx_buffer;
     uint8_t *tx_buffer;
+    uint8_t hash_filter_cnt[KSZ8851_HASH_FILTER_TABLE_SIZE];
 } emac_ksz8851snl_t;
 
 typedef struct {
@@ -309,7 +311,7 @@ static esp_err_t init_set_defaults(emac_ksz8851snl_t *emac)
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDTTR, RXDTTR_INIT_VALUE), err, TAG, "RXDTTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXDBCTR, RXDBCTR_INIT_VALUE), err, TAG, "RXDBCTR write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR1,
-                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXUE | RXCR1_RXME | RXCR1_RXMAFMA | RXCR1_RXAE), err, TAG, "RXCR1 write failed");
+                                       RXCR1_RXUDPFCC | RXCR1_RXTCPFCC | RXCR1_RXIPFCC | RXCR1_RXPAFMA | RXCR1_RXFCE | RXCR1_RXUE | RXCR1_RXME | RXCR1_RXAE | RXCR1_RXBE), err, TAG, "RXCR1 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXCR2,
                                        (4 << RXCR2_SRDBL_SHIFT) | RXCR2_IUFFP | RXCR2_RXIUFCEZ | RXCR2_UDPLFE | RXCR2_RXICMPFCC), err, TAG, "RXCR2 write failed");
     ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, KSZ8851_RXQCR, RXQCR_RXFCTE | RXQCR_ADRFE), err, TAG, "RXQCR write failed");
@@ -603,6 +605,52 @@ err:
     return ret;
 }
 
+static inline __attribute__((always_inline)) uint32_t ksz8851_reflect32(uint32_t x) {
+    x = ((x >> 1) & 0x55555555u) | ((x & 0x55555555u) << 1);
+    x = ((x >> 2) & 0x33333333u) | ((x & 0x33333333u) << 2);
+    x = ((x >> 4) & 0x0F0F0F0Fu) | ((x & 0x0F0F0F0Fu) << 4);
+    x = ((x >> 8) & 0x00FF00FFu) | ((x & 0x00FF00FFu) << 8);
+    x = (x >> 16) | (x << 16);
+    return x;
+}
+
+static esp_err_t ksz8851_hash_filter_modify(emac_ksz8851snl_t *emac, uint8_t *addr, bool add)
+{
+    esp_err_t ret = ESP_OK;
+
+    // calculate crc32 value of mac address
+    uint32_t crc = ksz8851_reflect32(~esp_rom_crc32_le(0, addr, ETH_ADDR_LEN));
+
+    uint8_t hash_value = (crc >> 26) & 0x3F;
+    uint8_t hash_group = hash_value / 16;
+    uint8_t hash_bit = hash_value % 16;
+
+    uint16_t mar_reg = KSZ8851_MAHTR0 + hash_group * 2;
+    if (add) {
+        // add address to hash table
+        ESP_GOTO_ON_ERROR(ksz8851_set_bits(emac, mar_reg, 1 << hash_bit), err, TAG, "hash table set bits failed");
+        emac->hash_filter_cnt[hash_value]++;
+    } else {
+        // remove address from hash table
+        ESP_GOTO_ON_ERROR(ksz8851_clear_bits(emac, mar_reg, 1 << hash_bit), err, TAG, "hash table clear bits failed");
+        emac->hash_filter_cnt[hash_value]--;
+    }
+err:
+    return ret;
+}
+
+static esp_err_t emac_ksz8851_add_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    return ksz8851_hash_filter_modify(emac, addr, true);
+}
+
+static esp_err_t emac_ksz8851_rm_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    return ksz8851_hash_filter_modify(emac, addr, false);
+}
+
 static esp_err_t emac_ksz8851_set_speed(esp_eth_mac_t *mac, eth_speed_t speed)
 {
     esp_err_t ret           = ESP_OK;
@@ -675,15 +723,33 @@ static esp_err_t emac_ksz8851_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     uint16_t rxcr1;
     ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, KSZ8851_RXCR1, &rxcr1), err, TAG, "RXCR1 read failed");
     if (enable) {
-        // NOTE(v.chistyakov): set promiscuous mode
         ESP_LOGD(TAG, "setting promiscuous mode");
         rxcr1 |= RXCR1_RXAE | RXCR1_RXINVF;
         rxcr1 &= ~(RXCR1_RXPAFMA | RXCR1_RXMAFMA);
     } else {
-        // NOTE(v.chistyakov): set hash perfect (default)
+        ESP_LOGD(TAG, "setting hash perfect");
+        rxcr1 |= RXCR1_RXPAFMA;
+        rxcr1 &= ~(RXCR1_RXAE | RXCR1_RXINVF | RXCR1_RXMAFMA);
+    }
+    ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, KSZ8851_RXCR1, rxcr1), err, TAG, "RXCR1 write failed");
+err:
+    return ret;
+}
+
+static esp_err_t emac_ksz8851_set_all_multicast(esp_eth_mac_t *mac, bool enable)
+{
+    esp_err_t ret           = ESP_OK;
+    emac_ksz8851snl_t *emac = __containerof(mac, emac_ksz8851snl_t, parent);
+    uint16_t rxcr1;
+    ESP_GOTO_ON_ERROR(ksz8851_read_reg(emac, KSZ8851_RXCR1, &rxcr1), err, TAG, "RXCR1 read failed");
+    if (enable) {
         ESP_LOGD(TAG, "setting perfect with multicast passed");
         rxcr1 |= RXCR1_RXAE| RXCR1_RXPAFMA | RXCR1_RXMAFMA;
         rxcr1 &= ~RXCR1_RXINVF;
+    } else {
+        ESP_LOGD(TAG, "setting hash perfect");
+        rxcr1 |= RXCR1_RXPAFMA;
+        rxcr1 &= ~(RXCR1_RXAE | RXCR1_RXINVF | RXCR1_RXMAFMA);
     }
     ESP_GOTO_ON_ERROR(ksz8851_write_reg(emac, KSZ8851_RXCR1, rxcr1), err, TAG, "RXCR1 write failed");
 err:
@@ -855,10 +921,13 @@ esp_eth_mac_t *esp_eth_mac_new_ksz8851snl(const eth_ksz8851snl_config_t *ksz8851
     emac->parent.write_phy_reg          = emac_ksz8851_write_phy_reg;
     emac->parent.set_addr               = emac_ksz8851_set_addr;
     emac->parent.get_addr               = emac_ksz8851_get_addr;
+    emac->parent.add_mac_filter         = emac_ksz8851_add_mac_filter;
+    emac->parent.rm_mac_filter          = emac_ksz8851_rm_mac_filter;
     emac->parent.set_speed              = emac_ksz8851_set_speed;
     emac->parent.set_duplex             = emac_ksz8851_set_duplex;
     emac->parent.set_link               = emac_ksz8851_set_link;
     emac->parent.set_promiscuous        = emac_ksz8851_set_promiscuous;
+    emac->parent.set_all_multicast      = emac_ksz8851_set_all_multicast;
     emac->parent.enable_flow_ctrl       = emac_ksz8851_enable_flow_ctrl;
     emac->parent.set_peer_pause_ability = emac_ksz8851_set_peer_pause_ability;
     emac->parent.del                    = emac_ksz8851_del;

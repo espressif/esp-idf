@@ -47,6 +47,8 @@ static const char *TAG = "esp.emac";
 #define RMII_10M_SPEED_RX_TX_CLK_DIV    (19)
 #define RMII_100M_SPEED_RX_TX_CLK_DIV   (1)
 
+#define EMAC_MULTI_REG_MUTEX_TIMEOUT_MS (100)
+
 #if CONFIG_IDF_TARGET_ESP32P4
 // ESP32P4 EMAC interface clock configuration is shared among other modules in registers
 #define EMAC_IF_RCC_ATOMIC() PERIPH_RCC_ATOMIC()
@@ -70,6 +72,7 @@ typedef struct {
     bool flow_ctrl_enabled; // indicates whether the user want to do flow control
     bool do_flow_ctrl;  // indicates whether we need to do software flow control
     bool use_pll;  // Only use (A/M)PLL in EMAC_DATA_INTERFACE_RMII && EMAC_CLK_OUT
+    SemaphoreHandle_t multi_reg_mutex; // lock for multiple register access
 #ifdef CONFIG_PM_ENABLE
     esp_pm_lock_handle_t pm_lock;
 #endif
@@ -88,6 +91,16 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
 static void emac_esp_free_driver_obj(emac_esp32_t *emac);
 static esp_err_t emac_esp32_start(esp_eth_mac_t *mac);
 static esp_err_t emac_esp32_stop(esp_eth_mac_t *mac);
+
+static esp_err_t emac_esp32_lock_multi_reg(emac_esp32_t *emac)
+{
+    return xSemaphoreTake(emac->multi_reg_mutex, pdMS_TO_TICKS(EMAC_MULTI_REG_MUTEX_TIMEOUT_MS)) == pdTRUE ? ESP_OK : ESP_ERR_TIMEOUT;
+}
+
+static esp_err_t emac_esp32_unlock_multi_reg(emac_esp32_t *emac)
+{
+    return xSemaphoreGive(emac->multi_reg_mutex) == pdTRUE ? ESP_OK : ESP_FAIL;
+}
 
 static esp_err_t emac_esp32_set_mediator(esp_eth_mac_t *mac, esp_eth_mediator_t *eth)
 {
@@ -167,6 +180,28 @@ err:
     return ret;
 }
 
+static esp_err_t emac_esp32_add_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    esp_err_t ret = ESP_OK;
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
+    ESP_GOTO_ON_ERROR(emac_hal_add_addr_da_filter_auto(&emac->hal, addr), err, TAG, "failed to add MAC filter");
+err:
+    emac_esp32_unlock_multi_reg(emac);
+    return ret;
+}
+
+static esp_err_t emac_esp32_rm_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    esp_err_t ret = ESP_OK;
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    ESP_RETURN_ON_ERROR(emac_esp32_lock_multi_reg(emac), TAG, "failed to lock multiple register access");
+    ESP_GOTO_ON_ERROR(emac_hal_rm_addr_da_filter_auto(&emac->hal, addr), err, TAG, "failed to remove MAC filter");
+err:
+    emac_esp32_unlock_multi_reg(emac);
+    return ret;
+}
+
 static esp_err_t emac_esp32_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
@@ -230,6 +265,13 @@ static esp_err_t emac_esp32_set_promiscuous(esp_eth_mac_t *mac, bool enable)
 {
     emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
     emac_hal_set_promiscuous(&emac->hal, enable);
+    return ESP_OK;
+}
+
+static esp_err_t emac_esp32_set_all_multicast(esp_eth_mac_t *mac, bool enable)
+{
+    emac_esp32_t *emac = __containerof(mac, emac_esp32_t, parent);
+    emac_hal_pass_all_multicast_enable(&emac->hal, enable);
     return ESP_OK;
 }
 
@@ -631,6 +673,10 @@ static void emac_esp_free_driver_obj(emac_esp32_t *emac)
         }
 #endif // CONFIG_IDF_TARGET_ESP32
 
+        if (emac->multi_reg_mutex) {
+            vSemaphoreDelete(emac->multi_reg_mutex);
+        }
+
 #ifdef CONFIG_PM_ENABLE
         if (emac->pm_lock) {
             esp_pm_lock_delete(emac->pm_lock);
@@ -660,6 +706,10 @@ static esp_err_t emac_esp_alloc_driver_obj(const eth_mac_config_t *config, emac_
 #ifdef CONFIG_PM_ENABLE
     ESP_GOTO_ON_ERROR(esp_pm_lock_create(ESP_PM_APB_FREQ_MAX, 0, "emac_esp32", &emac->pm_lock), err, TAG, "create pm lock failed");
 #endif
+
+    emac->multi_reg_mutex = xSemaphoreCreateMutex();
+    ESP_GOTO_ON_FALSE(emac->multi_reg_mutex, ESP_ERR_NO_MEM, err, TAG, "failed to create multiple register access mutex");
+
     /* create rx task */
     BaseType_t core_num = tskNO_AFFINITY;
     if (config->flags & ETH_MAC_FLAG_PIN_TO_CORE) {
@@ -805,10 +855,13 @@ esp_eth_mac_t *esp_eth_mac_new_esp32(const eth_esp32_emac_config_t *esp32_config
     emac->parent.read_phy_reg = emac_esp32_read_phy_reg;
     emac->parent.set_addr = emac_esp32_set_addr;
     emac->parent.get_addr = emac_esp32_get_addr;
+    emac->parent.add_mac_filter = emac_esp32_add_mac_filter;
+    emac->parent.rm_mac_filter = emac_esp32_rm_mac_filter;
     emac->parent.set_speed = emac_esp32_set_speed;
     emac->parent.set_duplex = emac_esp32_set_duplex;
     emac->parent.set_link = emac_esp32_set_link;
     emac->parent.set_promiscuous = emac_esp32_set_promiscuous;
+    emac->parent.set_all_multicast = emac_esp32_set_all_multicast;
     emac->parent.set_peer_pause_ability = emac_esp32_set_peer_pause_ability;
     emac->parent.enable_flow_ctrl = emac_esp32_enable_flow_ctrl;
     emac->parent.transmit = emac_esp32_transmit;

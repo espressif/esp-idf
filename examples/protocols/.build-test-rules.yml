@@ -252,6 +252,11 @@ examples/protocols/sockets/tcp_client:
     - if: SOC_WIFI_SUPPORTED != 1
   # linux target won't work with CONFIG_EXAMPLE_SOCKET_IP_INPUT_STDIN=y
 
+examples/protocols/sockets/udp_multicast:
+  <<: *default_rules
+  disable_test:
+    - if: IDF_TARGET not in ["esp32", "esp32p4"]
+
 examples/protocols/static_ip:
   <<: *default_rules
   disable_test:

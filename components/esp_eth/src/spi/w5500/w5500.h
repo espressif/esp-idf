@@ -61,6 +61,7 @@
 
 #define W5500_SMR_MAC_RAW    (1<<2) // MAC RAW mode
 #define W5500_SMR_MAC_FILTER (1<<7) // MAC filter
+#define W5500_SMR_MAC_BLOCK_MCAST (1<<5) // Block multicast
 
 #define W5500_SCR_OPEN  (0x01) // Open command
 #define W5500_SCR_CLOSE (0x10) // Close command

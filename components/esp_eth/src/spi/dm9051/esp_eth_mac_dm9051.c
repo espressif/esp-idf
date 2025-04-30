@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2019-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2019-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -28,6 +28,7 @@
 #include "esp_rom_sys.h"
 #include "esp_cpu.h"
 #include "esp_timer.h"
+#include "esp_rom_crc.h"
 
 static const char *TAG = "dm9051.mac";
 
@@ -38,6 +39,7 @@ static const char *TAG = "dm9051.mac";
 #define DM9051_RX_MEM_MAX_SIZE          (16384)
 #define DM9051_RX_HDR_SIZE              (4)
 
+#define DM9051_HASH_FILTER_TABLE_SIZE   (64)
 
 typedef struct {
     uint8_t flag;        // 0 = no frame, 1 = frame received, others = possible memory pointer error or tcpip_checksum_offload status flag if enabled
@@ -69,10 +71,11 @@ typedef struct {
     int int_gpio_num;
     esp_timer_handle_t poll_timer;
     uint32_t poll_period_ms;
-    uint8_t addr[6];
+    uint8_t addr[ETH_ADDR_LEN];
     bool packets_remain;
     bool flow_ctrl_enabled;
     uint8_t *rx_buffer;
+    uint8_t hash_filter_cnt[DM9051_HASH_FILTER_TABLE_SIZE];
 } emac_dm9051_t;
 
 static void *dm9051_spi_init(const void *spi_config)
@@ -232,7 +235,7 @@ static esp_err_t dm9051_memory_read(emac_dm9051_t *emac, uint8_t *buffer, uint32
 static esp_err_t dm9051_get_mac_addr(emac_dm9051_t *emac)
 {
     esp_err_t ret = ESP_OK;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < ETH_ADDR_LEN; i++) {
         ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_PAR + i, &emac->addr[i]), err, TAG, "read PAR failed");
     }
     return ESP_OK;
@@ -246,7 +249,7 @@ err:
 static esp_err_t dm9051_set_mac_addr(emac_dm9051_t *emac)
 {
     esp_err_t ret = ESP_OK;
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < ETH_ADDR_LEN; i++) {
         ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_PAR + i, emac->addr[i]), err, TAG, "write PAR failed");
     }
     return ESP_OK;
@@ -267,6 +270,50 @@ static esp_err_t dm9051_clear_multicast_table(emac_dm9051_t *emac)
     return ESP_OK;
 err:
     return ret;
+}
+
+static esp_err_t dm9051_hash_filter_modify(emac_dm9051_t *emac, uint8_t *addr, bool add)
+{
+    esp_err_t ret = ESP_OK;
+
+    // calculate crc32 value of mac address
+    uint32_t crc = ~esp_rom_crc32_le(0, addr, ETH_ADDR_LEN);
+
+    uint8_t hash_value = crc & 0x3F;
+    uint8_t hash_group = hash_value / 8;
+    uint8_t hash_bit = hash_value % 8;
+
+    uint8_t mar;
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, (DM9051_MAR + hash_group), &mar), err, TAG, "read MAR failed");
+    if (add) {
+        // add address to hash table
+        mar |= (1 << hash_bit);
+        emac->hash_filter_cnt[hash_value]++;
+    } else {
+        emac->hash_filter_cnt[hash_value]--;
+        if (emac->hash_filter_cnt[hash_value] == 0) {
+            // remove address from hash table
+            mar &= ~(1 << hash_bit);
+        }
+    }
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, (DM9051_MAR + hash_group), mar), err, TAG, "write MAR failed");
+
+err:
+    return ret;
+}
+
+static esp_err_t emac_dm9051_add_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    ESP_RETURN_ON_ERROR(dm9051_hash_filter_modify(emac, addr, true), TAG, "modify multicast table failed");
+    return ESP_OK;
+}
+
+static esp_err_t emac_dm9051_rm_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    ESP_RETURN_ON_ERROR(dm9051_hash_filter_modify(emac, addr, false), TAG, "modify multicast table failed");
+    return ESP_OK;
 }
 
 /**
@@ -327,9 +374,9 @@ static esp_err_t dm9051_setup_default(emac_dm9051_t *emac)
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_TCR, 0x00), err, TAG, "write TCR failed");
     /* Before enabling the RCR feature, make sure to set IMR_PAR in IMR */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_IMR, IMR_PAR), err, TAG, "write DM9051_IMR failed");
-    /* stop receiving, no promiscuous mode, no runt packet(size < 64bytes), receive all multicast packets */
+    /* stop receiving, no promiscuous mode, no runt packet(size < 64bytes) */
     /* discard long packet(size > 1522bytes) and crc error packet, enable watchdog */
-    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, RCR_DIS_LONG | RCR_DIS_CRC | RCR_ALL_MCAST), err, TAG, "write RCR failed");
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, RCR_DIS_LONG | RCR_DIS_CRC), err, TAG, "write RCR failed");
     /* retry late collision packet, at most two transmit command can be issued before transmit complete */
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_TCR2, TCR2_RLCP), err, TAG, "write TCR2 failed");
     /* enable auto transmit */
@@ -611,6 +658,22 @@ static esp_err_t emac_dm9051_set_promiscuous(esp_eth_mac_t *mac, bool enable)
     }
     ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, rcr), err, TAG, "write RCR failed");
     return ESP_OK;
+err:
+    return ret;
+}
+
+static esp_err_t emac_dm9051_set_all_multicast(esp_eth_mac_t *mac, bool enable)
+{
+    esp_err_t ret = ESP_OK;
+    emac_dm9051_t *emac = __containerof(mac, emac_dm9051_t, parent);
+    uint8_t rcr = 0;
+    ESP_GOTO_ON_ERROR(dm9051_register_read(emac, DM9051_RCR, &rcr), err, TAG, "read RCR failed");
+    if (enable) {
+        rcr |= RCR_ALL_MCAST;
+    } else {
+        rcr &= ~RCR_ALL_MCAST;
+    }
+    ESP_GOTO_ON_ERROR(dm9051_register_write(emac, DM9051_RCR, rcr), err, TAG, "write RCR failed");
 err:
     return ret;
 }
@@ -911,10 +974,13 @@ esp_eth_mac_t *esp_eth_mac_new_dm9051(const eth_dm9051_config_t *dm9051_config, 
     emac->parent.set_duplex = emac_dm9051_set_duplex;
     emac->parent.set_link = emac_dm9051_set_link;
     emac->parent.set_promiscuous = emac_dm9051_set_promiscuous;
+    emac->parent.set_all_multicast = emac_dm9051_set_all_multicast;
     emac->parent.set_peer_pause_ability = emac_dm9051_set_peer_pause_ability;
     emac->parent.enable_flow_ctrl = emac_dm9051_enable_flow_ctrl;
     emac->parent.transmit = emac_dm9051_transmit;
     emac->parent.receive = emac_dm9051_receive;
+    emac->parent.add_mac_filter = emac_dm9051_add_mac_filter;
+    emac->parent.rm_mac_filter = emac_dm9051_rm_mac_filter;
 
     if (dm9051_config->custom_spi_driver.init != NULL && dm9051_config->custom_spi_driver.deinit != NULL
             && dm9051_config->custom_spi_driver.read != NULL && dm9051_config->custom_spi_driver.write != NULL) {

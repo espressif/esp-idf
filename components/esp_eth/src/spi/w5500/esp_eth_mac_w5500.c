@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -62,9 +62,10 @@ typedef struct {
     int int_gpio_num;
     esp_timer_handle_t poll_timer;
     uint32_t poll_period_ms;
-    uint8_t addr[6];
+    uint8_t addr[ETH_ADDR_LEN];
     bool packets_remain;
     uint8_t *rx_buffer;
+    uint8_t mcast_cnt;
 } emac_w5500_t;
 
 static void *w5500_spi_init(const void *spi_config)
@@ -354,8 +355,8 @@ static esp_err_t w5500_setup_default(emac_w5500_t *emac)
     /* Disable interrupt for all sockets by default */
     reg_value = 0;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SIMR, &reg_value, sizeof(reg_value)), err, TAG, "write SIMR failed");
-    /* Enable MAC RAW mode for SOCK0, enable MAC filter, no blocking broadcast and multicast */
-    reg_value = W5500_SMR_MAC_RAW | W5500_SMR_MAC_FILTER;
+    /* Enable MAC RAW mode for SOCK0, enable MAC filter, no blocking broadcast and block multicast */
+    reg_value = W5500_SMR_MAC_RAW | W5500_SMR_MAC_FILTER | W5500_SMR_MAC_BLOCK_MCAST;
     ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_MR(0), &reg_value, sizeof(reg_value)), err, TAG, "write SMR failed");
     /* Enable receive event for SOCK0 */
     reg_value = W5500_SIR_RECV;
@@ -458,6 +459,60 @@ err:
     return ret;
 }
 
+static esp_err_t emac_w5500_set_block_ip4_mcast(esp_eth_mac_t *mac, bool block)
+{
+    esp_err_t ret = ESP_OK;
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+    uint8_t smr;
+    ESP_GOTO_ON_ERROR(w5500_read(emac, W5500_REG_SOCK_MR(0), &smr, sizeof(smr)), err, TAG, "read SMR failed");
+    if (block) {
+        smr |= W5500_SMR_MAC_BLOCK_MCAST;
+    } else {
+        smr &= ~W5500_SMR_MAC_BLOCK_MCAST;
+    }
+    ESP_GOTO_ON_ERROR(w5500_write(emac, W5500_REG_SOCK_MR(0), &smr, sizeof(smr)), err, TAG, "write SMR failed");
+err:
+    return ret;
+}
+
+static esp_err_t emac_w5500_add_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    esp_err_t ret = ESP_OK;
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+    // W5500 doesn't have specific MAC filter, so we just un-block multicast. W5500 filters out all multicast packets
+    // except for IP multicast. However, behavior is not consistent. IPv4 multicast can be blocked, but IPv6 is always
+    // accepted (this is not documented behavior, but it's observed on the real hardware).
+    if (addr[0] == 0x01 && addr[1] == 0x00 && addr[2] == 0x5e) {
+        ESP_GOTO_ON_ERROR(emac_w5500_set_block_ip4_mcast(mac, false), err, TAG, "set block multicast failed");
+        emac->mcast_cnt++;
+    } else if (addr[0] == 0x33 && addr[1] == 0x33) {
+        ESP_LOGW(TAG, "IPv6 multicast is always filtered in by W5500.");
+    } else {
+        ESP_LOGE(TAG, "W5500 filters in IP multicast frames only!");
+        ret = ESP_ERR_NOT_SUPPORTED;
+    }
+err:
+    return ret;
+}
+
+static esp_err_t emac_w5500_del_mac_filter(esp_eth_mac_t *mac, uint8_t *addr)
+{
+    esp_err_t ret = ESP_OK;
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+
+    ESP_GOTO_ON_FALSE(!(addr[0] == 0x33 && addr[1] == 0x33), ESP_FAIL, err, TAG, "IPv6 multicast is always filtered in by W5500.");
+
+    if (addr[0] == 0x01 && addr[1] == 0x00 && addr[2] == 0x5e && emac->mcast_cnt > 0) {
+        emac->mcast_cnt--;
+    }
+    if (emac->mcast_cnt == 0) {
+        // W5500 doesn't have specific MAC filter, so we just block multicast
+        ESP_GOTO_ON_ERROR(emac_w5500_set_block_ip4_mcast(mac, true), err, TAG, "set block multicast failed");
+    }
+err:
+    return ret;
+}
+
 static esp_err_t emac_w5500_set_link(esp_eth_mac_t *mac, eth_link_t link)
 {
     esp_err_t ret = ESP_OK;
@@ -541,6 +596,19 @@ static esp_err_t emac_w5500_set_promiscuous(esp_eth_mac_t *mac, bool enable)
 
 err:
     return ret;
+}
+
+static esp_err_t emac_w5500_set_all_multicast(esp_eth_mac_t *mac, bool enable)
+{
+    emac_w5500_t *emac = __containerof(mac, emac_w5500_t, parent);
+    ESP_RETURN_ON_ERROR(emac_w5500_set_block_ip4_mcast(mac, !enable), TAG, "set block multicast failed");
+    emac->mcast_cnt = 0;
+    if (enable) {
+        ESP_LOGW(TAG, "W5500 filters in IP multicast frames only!");
+    } else {
+        ESP_LOGW(TAG, "W5500 always filters in IPv6 multicast frames!");
+    }
+    return ESP_OK;
 }
 
 static esp_err_t emac_w5500_enable_flow_ctrl(esp_eth_mac_t *mac, bool enable)
@@ -888,10 +956,13 @@ esp_eth_mac_t *esp_eth_mac_new_w5500(const eth_w5500_config_t *w5500_config, con
     emac->parent.read_phy_reg = emac_w5500_read_phy_reg;
     emac->parent.set_addr = emac_w5500_set_addr;
     emac->parent.get_addr = emac_w5500_get_addr;
+    emac->parent.add_mac_filter = emac_w5500_add_mac_filter;
+    emac->parent.rm_mac_filter = emac_w5500_del_mac_filter;
     emac->parent.set_speed = emac_w5500_set_speed;
     emac->parent.set_duplex = emac_w5500_set_duplex;
     emac->parent.set_link = emac_w5500_set_link;
     emac->parent.set_promiscuous = emac_w5500_set_promiscuous;
+    emac->parent.set_all_multicast = emac_w5500_set_all_multicast;
     emac->parent.set_peer_pause_ability = emac_w5500_set_peer_pause_ability;
     emac->parent.enable_flow_ctrl = emac_w5500_enable_flow_ctrl;
     emac->parent.transmit = emac_w5500_transmit;

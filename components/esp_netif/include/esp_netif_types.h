@@ -244,6 +244,7 @@ struct esp_netif_driver_ifconfig {
     esp_err_t (*transmit)(void *h, void *buffer, size_t len); /*!< transmit function pointer */
     esp_err_t (*transmit_wrap)(void *h, void *buffer, size_t len, void *netstack_buffer); /*!< transmit wrap function pointer */
     void (*driver_free_rx_buffer)(void *h, void* buffer); /*!< free rx buffer function pointer */
+    esp_err_t (*driver_set_mac_filter)(void *h, const uint8_t *mac, size_t mac_len, bool add); /*!< set mac filter function pointer */
 };
 
 typedef struct esp_netif_driver_ifconfig esp_netif_driver_ifconfig_t;
