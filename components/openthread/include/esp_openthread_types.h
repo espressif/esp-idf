@@ -210,6 +210,12 @@ typedef void (*esp_openthread_rcp_failure_handler)(void);
  */
 typedef void (*esp_openthread_compatibility_error_callback)(void);
 
+/**
+ * @brief The OpenThread co-processor reset failure callback
+ *
+ */
+typedef void (*esp_openthread_coprocessor_reset_failure_callback)(void);
+
 #ifdef __cplusplus
 }
 #endif

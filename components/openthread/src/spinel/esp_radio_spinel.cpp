@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -42,6 +42,7 @@ static otRadioCaps s_radio_caps = (OT_RADIO_CAPS_ENERGY_SCAN       |
                                    OT_RADIO_CAPS_SLEEP_TO_TX);
 
 static esp_radio_spinel_compatibility_error_callback s_radio_spinel_compatibility_error_callback = NULL;
+static esp_radio_spinel_coprocessor_reset_failure_callback s_radio_spinel_coprocessor_reset_failure_callback = NULL;
 
 static esp_radio_spinel_idx_t get_index_from_instance(otInstance *instance)
 {
@@ -74,17 +75,25 @@ static void esp_radio_spinel_restore_vendor_properities(void *context)
 static void radio_spinel_compatibility_error_callback(void *context)
 {
     OT_UNUSED_VARIABLE(context);
-    if (s_radio_spinel_compatibility_error_callback) {
-        s_radio_spinel_compatibility_error_callback();
-    } else {
-        ESP_LOGE(ESP_SPINEL_LOG_TAG, "None callback to handle compatibility error of openthread spinel");
-        assert(false);
-    }
+    assert(s_radio_spinel_compatibility_error_callback);
+    s_radio_spinel_compatibility_error_callback();
+}
+
+static void radio_spinel_coprocessor_reset_failure_callback(void *context)
+{
+    OT_UNUSED_VARIABLE(context);
+    assert(s_radio_spinel_coprocessor_reset_failure_callback);
+    s_radio_spinel_coprocessor_reset_failure_callback();
 }
 
 void esp_radio_spinel_set_compatibility_error_callback(esp_radio_spinel_compatibility_error_callback callback)
 {
     s_radio_spinel_compatibility_error_callback = callback;
+}
+
+void esp_radio_spinel_set_coprocessor_reset_failure_callback(esp_radio_spinel_coprocessor_reset_failure_callback callback)
+{
+    s_radio_spinel_coprocessor_reset_failure_callback = callback;
 }
 
 void ReceiveDone(otInstance *aInstance, otRadioFrame *aFrame, otError aError)
@@ -232,6 +241,7 @@ void esp_radio_spinel_set_callbacks(const esp_radio_spinel_callbacks_t aCallback
 {
     s_esp_radio_spinel_callbacks[idx] = aCallbacks;
     RadioSpinelCallbacks Callbacks;
+    memset(&Callbacks, 0, sizeof(Callbacks));
     Callbacks.mReceiveDone = ReceiveDone;
     Callbacks.mTransmitDone = TransmitDone;
     Callbacks.mEnergyScanDone = EnergyScanDone;
@@ -266,6 +276,7 @@ void esp_radio_spinel_init(esp_radio_spinel_idx_t idx)
 
     // Multipan is not currently supported
     iidList[0] = 0;
+    s_spinel_driver[idx].SetCoprocessorResetFailureCallback(radio_spinel_coprocessor_reset_failure_callback, instance);
     s_spinel_driver[idx].Init(s_spinel_interface[idx].GetSpinelInterface(), true, iidList, ot::Spinel::kSpinelHeaderMaxNumIid);
     s_radio[idx].SetCompatibilityErrorCallback(radio_spinel_compatibility_error_callback, instance);
     s_radio[idx].Init(/*skip_rcp_compatibility_check=*/false, /*reset_radio=*/true, &s_spinel_driver[idx], s_radio_caps, false);
