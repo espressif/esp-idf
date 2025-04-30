@@ -12,12 +12,14 @@
 #include "hal/mmu_types.h"
 #include "hal/mmu_hal.h"
 #include "hal/wdt_hal.h"
+#include "rom/cache.h"
 
 #include "hal/spi_flash_hal.h"
 #include "hal/spi_flash_types.h"
 #include "spi_flash_chip_generic.h"
 #include "memspi_host_driver.h"
 #include "esp_flash.h"
+#include "riscv/rv_utils.h"
 
 #include "esp_tee.h"
 #include "esp_tee_memory_utils.h"
@@ -63,13 +65,49 @@ void _ss_rv_utils_intr_set_threshold(int priority_threshold)
 
 void _ss_rv_utils_intr_edge_ack(uint32_t intr_num)
 {
-    rv_utils_tee_intr_edge_ack(intr_num);
+    rv_utils_intr_edge_ack(intr_num);
 }
 
 void _ss_rv_utils_intr_global_enable(void)
 {
     rv_utils_tee_intr_global_enable();
 }
+
+uint32_t _ss_rv_utils_intr_get_enabled_mask(void)
+{
+    return rv_utils_intr_get_enabled_mask();
+}
+
+void _ss_rv_utils_set_cycle_count(uint32_t ccount)
+{
+    rv_utils_set_cycle_count(ccount);
+}
+
+#if SOC_BRANCH_PREDICTOR_SUPPORTED
+void _ss_rv_utils_en_branch_predictor(void)
+{
+    rv_utils_en_branch_predictor();
+}
+
+void _ss_rv_utils_dis_branch_predictor(void)
+{
+    rv_utils_dis_branch_predictor();
+}
+#endif
+
+#if SOC_CPU_SUPPORT_WFE
+void _ss_rv_utils_wfe_mode_enable(bool en)
+{
+    rv_utils_wfe_mode_enable(en);
+}
+#endif
+
+#if SOC_INT_CLIC_SUPPORTED
+void _ss_esprv_int_set_vectored(int rv_int_num, bool vectored)
+{
+    esprv_int_set_vectored(rv_int_num, vectored);
+}
+#endif
 
 /* ---------------------------------------------- RTC_WDT ------------------------------------------------- */
 
@@ -164,6 +202,7 @@ void _ss_mmu_hal_map_region(uint32_t mmu_id, mmu_target_t mem_type, uint32_t vad
     bool vaddr_chk = esp_tee_flash_check_vaddr_in_tee_region(vaddr);
     bool paddr_chk = esp_tee_flash_check_paddr_in_tee_region(paddr);
     if (vaddr_chk || paddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x | 0x%08x", __func__, vaddr, paddr);
         return;
     }
     ESP_FAULT_ASSERT(!vaddr_chk && !paddr_chk);
@@ -175,6 +214,7 @@ void _ss_mmu_hal_unmap_region(uint32_t mmu_id, uint32_t vaddr, uint32_t len)
 {
     bool vaddr_chk = esp_tee_flash_check_vaddr_in_tee_region(vaddr);
     if (vaddr_chk) {
+        ESP_LOGD(TAG, "[%s] Illegal flash access at 0x%08x", __func__, vaddr);
         return;
     }
     ESP_FAULT_ASSERT(!vaddr_chk);
@@ -201,6 +241,13 @@ bool _ss_mmu_hal_paddr_to_vaddr(uint32_t mmu_id, uint32_t paddr, mmu_target_t ta
     ESP_FAULT_ASSERT(!paddr_chk);
     return mmu_hal_paddr_to_vaddr(mmu_id, paddr, target, type, out_vaddr);
 }
+
+#if CONFIG_IDF_TARGET_ESP32C5
+void _ss_Cache_Set_IDROM_MMU_Size(uint32_t irom_size, uint32_t drom_size)
+{
+    Cache_Set_IDROM_MMU_Size(irom_size, drom_size);
+}
+#endif
 
 #if CONFIG_SECURE_TEE_EXT_FLASH_MEMPROT_SPI1
 /* ---------------------------------------------- SPI Flash HAL ------------------------------------------------- */

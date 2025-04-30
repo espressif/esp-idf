@@ -7,11 +7,12 @@
 #include "esp_attr.h"
 #include "esp_rom_sys.h"
 #include "esp_private/panic_reason.h"
+#include "esp_private/vectors_const.h"
 
 #include "riscv/csr.h"
 #include "riscv/encoding.h"
 #include "riscv/rvruntime-frames.h"
-
+#include "soc/tee_reg.h"
 #include "esp_tee.h"
 #include "panic_helper.h"
 #include "sdkconfig.h"
@@ -60,16 +61,26 @@ void panic_print_registers(const void *f, int core)
         const char *name;
         uint32_t value;
     } csr_regs[] = {
-        { "MIE     ", RV_READ_CSR(mie)      },
-        { "MIP     ", RV_READ_CSR(mip)      },
-        { "MSCRATCH", RV_READ_CSR(mscratch) },
-        { "UEPC    ", RV_READ_CSR(uepc)     },
-        { "USTATUS ", RV_READ_CSR(ustatus)  },
-        { "UTVEC   ", RV_READ_CSR(utvec)    },
-        { "UCAUSE  ", RV_READ_CSR(ucause)   },
-        { "UTVAL   ", RV_READ_CSR(utval)    },
-        { "UIE     ", RV_READ_CSR(uie)      },
-        { "UIP     ", RV_READ_CSR(uip)      },
+        { "MSCRATCH  ", RV_READ_CSR(mscratch) },
+        { "UEPC      ", RV_READ_CSR(uepc)     },
+        { "USTATUS   ", RV_READ_CSR(ustatus)  },
+        { "UTVEC     ", RV_READ_CSR(utvec)    },
+        { "UCAUSE    ", RV_READ_CSR(ucause)   },
+#if CONFIG_IDF_TARGET_ESP32C6
+        { "MIE       ", RV_READ_CSR(mie)      },
+        { "MIP       ", RV_READ_CSR(mip)      },
+        { "UTVAL     ", RV_READ_CSR(utval)    },
+        { "UIE       ", RV_READ_CSR(uie)      },
+        { "UIP       ", RV_READ_CSR(uip)      },
+#endif
+#if CONFIG_IDF_TARGET_ESP32C5
+        { "USCRATCH  ", RV_READ_CSR(0x040)  },
+        { "MEXSTATUS ", RV_READ_CSR(0x7E1)  },
+        { "MINTSTATUS", RV_READ_CSR(0xFB1)  },
+        { "MINTTHRESH", RV_READ_CSR(0x347)  },
+        { "UINTSTATUS", RV_READ_CSR(0xCB1)  },
+        { "UINTTHRESH", RV_READ_CSR(0x047)  },
+#endif
     };
 
     tee_panic_print("\n\n");
@@ -116,9 +127,10 @@ void panic_print_exccause(const void *f, int core)
     };
 
     const char *rsn = NULL;
-    if (regs->mcause < (sizeof(reason) / sizeof(reason[0]))) {
-        if (reason[regs->mcause] != NULL) {
-            rsn = (reason[regs->mcause]);
+    uint32_t mcause = regs->mcause & (VECTORS_MCAUSE_INTBIT_MASK | VECTORS_MCAUSE_REASON_MASK);
+    if (mcause < (sizeof(reason) / sizeof(reason[0]))) {
+        if (reason[mcause] != NULL) {
+            rsn = (reason[mcause]);
         }
     }
 

@@ -10,6 +10,9 @@
 #include "riscv/encoding.h"
 #include "esp_private/interrupt_plic.h"
 
+#include "soc/plic_reg.h"
+#include "soc/interrupts.h"
+
 #include "esp_cpu.h"
 #include "esp_log.h"
 #include "hal/apm_hal.h"
@@ -57,7 +60,13 @@ void esp_tee_soc_secure_sys_init(void)
 
     /* All interrupts except the TEE secure interrupt are delegated to the U-mode */
     RV_WRITE_CSR(mideleg, UINT32_MAX);
-    RV_CLEAR_CSR(mideleg, TEE_SECURE_INUM);
+    RV_CLEAR_CSR(mideleg, BIT(TEE_SECURE_INUM));
+
+    /* Clearing all interrupt configurations */
+    uint32_t core_id = esp_cpu_get_core_id();
+    for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
+        esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
+    }
 
     /* TODO: IDF-8958
      * The values for the secure interrupt number and priority and

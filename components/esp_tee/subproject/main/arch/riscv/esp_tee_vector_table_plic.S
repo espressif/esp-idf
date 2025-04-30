@@ -51,7 +51,7 @@ _vector_table:
     j _tee_ns_intr_handler      /* 11: Free interrupt number */
     j _tee_ns_intr_handler      /* 12: Free interrupt number */
     j _tee_ns_intr_handler      /* 13: Free interrupt number */
-    j _tee_s_intr_handler       /* 14: ESP-TEE: Secure interrupt handler entry */
+    j _tee_ns_intr_handler      /* 14: Free interrupt number */
     j _tee_ns_intr_handler      /* 15: Free interrupt number */
     j _tee_ns_intr_handler      /* 16: Free interrupt number */
     j _tee_ns_intr_handler      /* 17: Free interrupt number */
@@ -70,7 +70,7 @@ _vector_table:
     j _tee_ns_intr_handler      /* 28: Free interrupt number */
     j _tee_ns_intr_handler      /* 29: Free interrupt number */
     j _tee_ns_intr_handler      /* 30: Free interrupt number */
-    j _tee_ns_intr_handler      /* 31: Free interrupt number */
+    j _tee_s_intr_handler       /* 31: ESP-TEE: Secure interrupt handler entry */
     j _panic_handler            /* exception handler, entry 0 */
 
     .size _vector_table, .-_vector_table

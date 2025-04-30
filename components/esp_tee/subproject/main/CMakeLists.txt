@@ -14,8 +14,13 @@ set(srcs "core/esp_tee_init.c"
          "core/esp_secure_service_table.c")
 
 # Arch specific implementation for TEE
-list(APPEND srcs "arch/${arch}/esp_tee_vectors.S"
-                 "arch/${arch}/esp_tee_vector_table.S")
+if(CONFIG_SOC_INT_PLIC_SUPPORTED)
+    list(APPEND srcs "arch/${arch}/esp_tee_vectors_plic.S"
+                     "arch/${arch}/esp_tee_vector_table_plic.S")
+elseif(CONFIG_SOC_INT_CLIC_SUPPORTED)
+    list(APPEND srcs "arch/${arch}/esp_tee_vectors_clic.S"
+                     "arch/${arch}/esp_tee_vector_table_clic.S")
+endif()
 
 # SoC specific implementation for TEE
 list(APPEND srcs "soc/${target}/esp_tee_secure_sys_cfg.c"

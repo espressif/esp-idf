@@ -203,6 +203,13 @@ void _ss_esp_crypto_sha_enable_periph_clk(bool enable)
     esp_crypto_sha_enable_periph_clk(enable);
 }
 
+#if SOC_SHA_SUPPORT_SHA512_T
+int _ss_esp_sha_512_t_init_hash(uint16_t t)
+{
+    return esp_sha_512_t_init_hash(t);
+}
+#endif
+
 /* ---------------------------------------------- HMAC ------------------------------------------------- */
 
 esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size_t message_len, uint8_t *hmac)
