@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -66,7 +66,10 @@ void app_main(void)
     };
 
     //--------Camera Sensor and SCCB Init-----------//
-    i2c_master_bus_handle_t i2c_bus_handle = NULL;
+    example_sensor_handle_t sensor_handle = {
+        .sccb_handle = NULL,
+        .i2c_bus_handle = NULL,
+    };
     example_sensor_config_t cam_sensor_config = {
         .i2c_port_num = I2C_NUM_0,
         .i2c_sda_io_num = EXAMPLE_MIPI_CSI_CAM_SCCB_SDA_IO,
@@ -74,7 +77,7 @@ void app_main(void)
         .port = ESP_CAM_SENSOR_MIPI_CSI,
         .format_name = EXAMPLE_CAM_FORMAT,
     };
-    example_sensor_init(&cam_sensor_config, &i2c_bus_handle);
+    example_sensor_init(&cam_sensor_config, &sensor_handle);
 
     //---------------CSI Init------------------//
     esp_cam_ctlr_csi_config_t csi_config = {

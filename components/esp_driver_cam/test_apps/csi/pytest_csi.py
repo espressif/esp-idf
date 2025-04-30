@@ -6,6 +6,26 @@ from pytest_embedded_idf.utils import idf_parametrize
 
 
 @pytest.mark.generic
+@pytest.mark.parametrize(
+    'config',
+    ['cache_safe', 'release'],
+    indirect=True,
+)
 @idf_parametrize('target', ['esp32p4'], indirect=['target'])
-def test_csi(dut: Dut) -> None:
+def test_csi_driver(case_tester) -> None:  # type: ignore
+    for case in case_tester.test_menu:
+        if 'TEST esp_cam on ov5647' in case.name:
+            continue
+        case_tester.run_normal_case(case=case, reset=True)
+
+
+@pytest.mark.camera
+@pytest.mark.ov5647
+@pytest.mark.parametrize(
+    'config',
+    ['cache_safe', 'release'],
+    indirect=True,
+)
+@idf_parametrize('target', ['esp32p4'], indirect=['target'])
+def test_csi_camera(dut: Dut) -> None:
     dut.run_all_single_board_cases()
