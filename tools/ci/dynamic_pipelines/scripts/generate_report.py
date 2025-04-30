@@ -11,7 +11,7 @@ from dynamic_pipelines.report import JobReportGenerator
 from dynamic_pipelines.report import TargetTestReportGenerator
 from dynamic_pipelines.utils import fetch_failed_jobs
 from dynamic_pipelines.utils import parse_testcases_from_filepattern
-from idf_ci.app import import_apps_from_txt
+from idf_ci_local.app import import_apps_from_txt
 
 
 def main() -> None:

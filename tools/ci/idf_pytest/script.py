@@ -14,7 +14,7 @@ from idf_build_apps import App
 from idf_build_apps import find_apps
 from idf_build_apps.constants import BuildStatus
 from idf_build_apps.constants import SUPPORTED_TARGETS
-from idf_ci.app import IdfCMakeApp
+from idf_ci_local.app import IdfCMakeApp
 from idf_ci_utils import get_all_manifest_files
 from idf_ci_utils import IDF_PATH
 from idf_ci_utils import idf_relpath
