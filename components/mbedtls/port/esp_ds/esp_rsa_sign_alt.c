@@ -11,22 +11,8 @@
 #include "rsa_sign_alt.h"
 #include "esp_memory_utils.h"
 
-#ifdef CONFIG_IDF_TARGET_ESP32S2
-#include "esp32s2/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32C3
-#include "esp32c3/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32S3
-#include "esp32s3/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32C6
-#include "esp32c6/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32H2
-#include "esp32h2/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32P4
-#include "esp32p4/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32C5
-#include "esp32c5/rom/digital_signature.h"
-#elif CONFIG_IDF_TARGET_ESP32H21
-#include "esp32h21/rom/digital_signature.h"
+#ifdef SOC_DIG_SIGN_SUPPORTED
+#include "rom/digital_signature.h"
 #else
 #error   "Selected target does not support esp_rsa_sign_alt (for DS)"
 #endif

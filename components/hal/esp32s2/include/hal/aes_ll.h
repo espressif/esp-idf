@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,7 +166,7 @@ static inline esp_aes_state_t aes_ll_get_state(void)
  *
  * @note Only used for DMA transforms
  *
- * @param mode
+ * @param mode Mode of operation to set (e.g., ECB, CBC, CTR, etc.)
  */
 static inline void aes_ll_set_block_mode(esp_aes_mode_t mode)
 {
@@ -313,11 +313,11 @@ static inline void aes_ll_gcm_set_j0(const uint8_t *j0)
 }
 
 /**
- * @brief Sets the number of effective bits of incomplete blocks in plaintext/cipertext.
+ * @brief Sets the number of effective bits of incomplete blocks in plaintext/ciphertext.
  *
  * @note Only affects AES-GCM
  *
- * @param num_valid_bits the number of effective bits of incomplete blocks in plaintext/cipertext.
+ * @param num_valid_bits the number of effective bits of incomplete blocks in plaintext/ciphertext.
  */
 static inline void aes_ll_gcm_set_num_valid_bit(size_t num_valid_bits)
 {
