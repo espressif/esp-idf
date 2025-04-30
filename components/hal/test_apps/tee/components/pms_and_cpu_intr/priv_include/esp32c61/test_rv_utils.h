@@ -22,10 +22,6 @@
 
 #include "sdkconfig.h"
 
-#define UTVT_CSR            (0x007)
-#define UINTSTATUS_CSR      (0xCB1)
-#define UINTTHRESH_CSR      (0x047)
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -117,7 +117,7 @@ uint32_t esp_rom_get_bootloader_offset(void)
 }
 #endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 
-#if ESP_ROM_DELAY_US_PATCH && !NON_OS_BUILD
+#if ESP_ROM_DELAY_US_PATCH && CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
 #if CONFIG_ESP32C5_REV_MIN_FULL <= 100 || CONFIG_ESP32C61_REV_MIN_FULL <= 100
 
 #include "riscv/rv_utils.h"

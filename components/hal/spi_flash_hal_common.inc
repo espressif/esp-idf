@@ -131,7 +131,15 @@ esp_err_t spi_flash_hal_configure_host_io_mode(
         addr_bitlen += SPI_FLASH_LL_CONTINUOUS_MODE_BIT_NUMS;
 #endif
         spi_flash_ll_set_extra_address(dev, 0);
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    // TODO: [IDF-13582]
+    // Currently, REE and TEE use different sets of APIs for flash operations -
+    // REE uses the IDF SPI flash driver while TEE call the ROM APIs. This inconsistency
+    // leads to compatibility issues on ESP32-C5.
+    // One specific issue arises when esp_flash_read() is used in REE, which internally
+    // calls spi_flash_ll_wb_mode_enable(). This function enables the WB mode bit in
+    // the flash write operation. However, the ROM API does not support this
+    // feature, resulting in failures when TEE attempts to access flash after this call.
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL && !CONFIG_SECURE_ENABLE_TEE
         spi_flash_ll_wb_mode_enable(dev, true);
 #endif
     }
@@ -208,7 +216,8 @@ esp_err_t spi_flash_hal_common_command(spi_flash_host_inst_t *host, spi_flash_tr
     if (trans->miso_len > 0) {
         spi_flash_ll_get_buffer_data(dev, trans->miso_data, trans->miso_len);
     }
-#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL
+    // TODO: [IDF-13582]
+#if SOC_SPI_MEM_SUPPORT_WB_MODE_INDEPENDENT_CONTROL && !CONFIG_SECURE_ENABLE_TEE
     spi_flash_ll_wb_mode_enable(dev, false);
 #endif
     return ESP_OK;
