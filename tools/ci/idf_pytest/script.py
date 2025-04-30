@@ -12,20 +12,20 @@ import pytest
 from _pytest.config import ExitCode
 from idf_build_apps import App
 from idf_build_apps import find_apps
-from idf_build_apps.constants import BuildStatus
 from idf_build_apps.constants import SUPPORTED_TARGETS
-from idf_ci.app import IdfCMakeApp
-from idf_ci_utils import get_all_manifest_files
+from idf_build_apps.constants import BuildStatus
+from idf_ci_local.app import IdfCMakeApp
 from idf_ci_utils import IDF_PATH
+from idf_ci_utils import get_all_manifest_files
 from idf_ci_utils import idf_relpath
 from idf_ci_utils import to_list
 from idf_py_actions.constants import PREVIEW_TARGETS as TOOLS_PREVIEW_TARGETS
 from idf_py_actions.constants import SUPPORTED_TARGETS as TOOLS_SUPPORTED_TARGETS
 
-from .constants import CollectMode
 from .constants import DEFAULT_BUILD_LOG_FILENAME
 from .constants import DEFAULT_CONFIG_RULES_STR
 from .constants import DEFAULT_SIZE_JSON_FILENAME
+from .constants import CollectMode
 from .constants import PytestCase
 from .plugin import IdfPytestEmbedded
 
@@ -84,7 +84,9 @@ def get_pytest_cases(
         return cases
 
     def _get_pytest_cases(_target: str, _single_target_duplicate_mode: bool = False) -> t.List[PytestCase]:
-        collector = IdfPytestEmbedded(_target, config_name=config_name, single_target_duplicate_mode=_single_target_duplicate_mode, apps=apps)
+        collector = IdfPytestEmbedded(
+            _target, config_name=config_name, single_target_duplicate_mode=_single_target_duplicate_mode, apps=apps
+        )
 
         with io.StringIO() as buf:
             with redirect_stdout(buf):
@@ -100,9 +102,7 @@ def get_pytest_cases(
                     print(f'WARNING: no pytest app found for target {_target} under paths {", ".join(paths)}')
                 else:
                     print(buf.getvalue())
-                    raise RuntimeError(
-                        f'pytest collection failed at {", ".join(paths)} with command \"{" ".join(cmd)}\"'
-                    )
+                    raise RuntimeError(f'pytest collection failed at {", ".join(paths)} with command "{" ".join(cmd)}"')
 
         return collector.cases  # type: ignore
 
@@ -155,26 +155,28 @@ def get_all_apps(
     # target could be comma separated list
     all_apps: t.List[App] = []
     for _t in set(target.split(',')):
-        all_apps.extend(find_apps(
-            paths,
-            _t,
-            build_system=IdfCMakeApp,
-            recursive=True,
-            build_dir='build_@t_@w',
-            config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
-            build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
-            size_json_filename=DEFAULT_SIZE_JSON_FILENAME,
-            check_warnings=True,
-            manifest_rootpath=IDF_PATH,
-            compare_manifest_sha_filepath=compare_manifest_sha_filepath,
-            manifest_files=get_all_manifest_files(),
-            default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
-            modified_components=modified_components,
-            modified_files=modified_files,
-            ignore_app_dependencies_components=ignore_app_dependencies_components,
-            ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
-            include_skipped_apps=True,
-        ))
+        all_apps.extend(
+            find_apps(
+                paths,
+                _t,
+                build_system=IdfCMakeApp,
+                recursive=True,
+                build_dir='build_@t_@w',
+                config_rules_str=config_rules_str or DEFAULT_CONFIG_RULES_STR,
+                build_log_filename=DEFAULT_BUILD_LOG_FILENAME,
+                size_json_filename=DEFAULT_SIZE_JSON_FILENAME,
+                check_warnings=True,
+                manifest_rootpath=IDF_PATH,
+                compare_manifest_sha_filepath=compare_manifest_sha_filepath,
+                manifest_files=get_all_manifest_files(),
+                default_build_targets=SUPPORTED_TARGETS + (extra_default_build_targets or []),
+                modified_components=modified_components,
+                modified_files=modified_files,
+                ignore_app_dependencies_components=ignore_app_dependencies_components,
+                ignore_app_dependencies_filepatterns=ignore_app_dependencies_filepatterns,
+                include_skipped_apps=True,
+            )
+        )
 
     pytest_cases = get_pytest_cases(
         paths,

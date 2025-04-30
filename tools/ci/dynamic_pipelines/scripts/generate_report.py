@@ -6,14 +6,15 @@ import os
 import typing as t
 
 import __init__  # noqa: F401 # inject the system path
+from idf_ci_local.app import enrich_apps_with_metrics_info
+from idf_ci_local.app import import_apps_from_txt
+
 from dynamic_pipelines.report import BuildReportGenerator
 from dynamic_pipelines.report import JobReportGenerator
 from dynamic_pipelines.report import TargetTestReportGenerator
 from dynamic_pipelines.utils import fetch_app_metrics
 from dynamic_pipelines.utils import fetch_failed_jobs
 from dynamic_pipelines.utils import parse_testcases_from_filepattern
-from idf_ci.app import enrich_apps_with_metrics_info
-from idf_ci.app import import_apps_from_txt
 
 
 def main() -> None:
