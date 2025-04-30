@@ -158,7 +158,11 @@ It is recommended to remove the unused watch point by :cpp:func:`pcnt_unit_remov
 
     PCNT unit can be configured to watch a specific value increment (can be positive or negative) that you are interested in. The function of watching value increment is also called **Watch Step**. To install watch step requires enabling :cpp:member:`pcnt_unit_config_t::en_step_notify_up` or :cpp:member:`pcnt_unit_config_t::en_step_notify_down`. The step interval itself can not exceed the range set in :cpp:type:`pcnt_unit_config_t` by :cpp:member:`pcnt_unit_config_t::low_limit` and :cpp:member:`pcnt_unit_config_t::high_limit`.When the counter increment reaches step interval, a watch event will be triggered and notify you by interrupt if any watch event callback has ever registered in :cpp:func:`pcnt_unit_register_event_callbacks`. See :ref:`pcnt-register-event-callbacks` for how to register event callbacks.
 
-    The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. You can not add multiple watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`。
+    The watch step can be added and removed by :cpp:func:`pcnt_unit_add_watch_step` and :cpp:func:`pcnt_unit_remove_watch_step`. The parameter ``step_interval`` can be positive(step forward, e.g., [N]->[N+1]->[N+2]->...) or negative(step backward, e.g., [N]->[N-1]->[N-2]->...). The same direction can only add one watch step, otherwise it will return error :c:macro:`ESP_ERR_INVALID_STATE`.
+
+    .. note::
+
+        Due to hardware limitations, some chips may only support adding one direction of watch step. Please check the return value of :cpp:func:`pcnt_unit_add_watch_step` for more details.
 
     It is recommended to remove the unused watch step by :cpp:func:`pcnt_unit_remove_watch_step` to recycle the watch step resources.
 
@@ -318,8 +322,7 @@ The internal hardware counter will be cleared to zero automatically when it reac
 .. list::
 
     1. Enable :cpp:member:`pcnt_unit_config_t::accum_count` when installing the PCNT unit.
-    :SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points` or add watch step as the :ref:`pcnt-step-notify`.
-    :not SOC_PCNT_SUPPORT_STEP_NOTIFY: 2. Add the high/low limit as the :ref:`pcnt-watch-points`.
+    2. Add the high/low limit as the :ref:`pcnt-watch-points`.
     3. Now, the returned count value from the :cpp:func:`pcnt_unit_get_count` function not only reflects the hardware's count value, but also accumulates the high/low overflow loss to it.
 
 .. note::

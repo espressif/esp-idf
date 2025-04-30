@@ -167,10 +167,12 @@ static inline void pcnt_ll_enable_step_notify(pcnt_dev_t *hw, uint32_t unit, boo
  *
  * @param hw Peripheral PCNT hardware instance address.
  * @param unit PCNT unit number
+ * @param direction PCNT step direction
  * @param value PCNT step value
  */
-static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, int value)
+static inline void pcnt_ll_set_step_value(pcnt_dev_t *hw, uint32_t unit, pcnt_step_direction_t direction, int value)
 {
+    (void)direction;
     HAL_FORCE_MODIFY_U32_REG_FIELD(hw->change_conf_unit[3 - unit], cnt_step, value);
 }
 
