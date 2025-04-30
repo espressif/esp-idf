@@ -3,9 +3,9 @@
 #                        INCLUDE_DIRS ".")
 
 idf_component_register(
-    SRCS "main_client.c"
+    SRCS "main_mice.c"
     INCLUDE_DIRS "."
-    REQUIRES esp_http_client fatfs json esp_wifi driver audio_player wifi_manager
+    REQUIRES esp_http_client fatfs json esp_wifi driver audio_player 
 )
 
 # # 数学関数（sin関数など）を使うためにリンク

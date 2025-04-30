@@ -1,6 +1,9 @@
 #include <string.h>
 #include "esp_log.h"
 #include "audio_player.h"
+#include "esp_timer.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
 static const char *TAG = "audio-player";
 
