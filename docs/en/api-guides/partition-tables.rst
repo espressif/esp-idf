@@ -185,7 +185,6 @@ See enum :cpp:type:`esp_partition_subtype_t` for the full list of subtypes defin
     .. only:: esp32c6
 
             - ``tee_ota`` (0x90) is the :ref:`TEE OTA data partition <tee-ota-data-partition>` which stores information about the currently selected TEE OTA app slot. This partition should be 0x2000 bytes in size. Refer to the :doc:`TEE OTA documentation <../security/tee/tee-ota>` for more details.
-            - ``tee_sec_stg`` (0x91) is the TEE secure storage partition which stores encrypted data that can only be accessed by the TEE application. This partition is used by the :doc:`TEE Secure Storage <../security/tee/tee-sec-storage>` to store sensitive data like cryptographic keys. The size of this partition depends on the application requirements.
 
     - There are other predefined data subtypes for data storage supported by ESP-IDF. These include:
 

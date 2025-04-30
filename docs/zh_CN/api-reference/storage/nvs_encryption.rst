@@ -14,6 +14,7 @@ NVS 加密
 
     根据要使用的具体方案，可以选择启用 :ref:`CONFIG_NVS_ENCRYPTION` 和 :ref:`CONFIG_NVS_SEC_KEY_PROTECTION_SCHEME` > ``CONFIG_NVS_SEC_KEY_PROTECT_USING_FLASH_ENC`` 或 ``CONFIG_NVS_SEC_KEY_PROTECT_USING_HMAC`` 实现 NVS 加密。
 
+.. _nvs_encr_flash_enc_scheme:
 
 NVS 加密：基于 flash 加密的方案
 -------------------------------------
@@ -103,6 +104,8 @@ NVS 密钥分区
 一个应用程序可以使用不同的密钥对不同的 NVS 分区进行加密，从而拥有多个密钥分区。应用程序应为加密或解密操作提供正确的密钥分区和密钥信息。
 
 .. only:: SOC_HMAC_SUPPORTED
+
+    .. _nvs_encr_hmac_scheme:
 
     NVS 加密：基于 HMAC 外设的方案
     --------------------------------------------

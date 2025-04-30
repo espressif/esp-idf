@@ -88,7 +88,7 @@ EAT: Header
       - Currently, only ``ecdsa_secp256r1_sha256`` is supported
     * - Key ID
       - Identifies the key to be utilized by the device for encryption and signing
-      - TEE secure storage slot ID
+      - TEE secure storage key ID (string)
 
 EAT: Claim Table
 ^^^^^^^^^^^^^^^^
@@ -173,7 +173,7 @@ Sample EAT in JSON format
       "magic": "44fef7cc",
       "encr_alg": "",
       "sign_alg": "ecdsa_secp256r1_sha256",
-      "key_id": 0
+      "key_id": "tee_att_key0"
     },
     "eat": {
       "nonce": -1582119980,

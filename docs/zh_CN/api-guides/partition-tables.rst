@@ -185,7 +185,6 @@ SubType 字段长度为 8 bit，内容与具体分区 Type 有关。目前，ESP
 .. only:: esp32c6
 
     - ``tee-ota`` (0x90) 是 :ref:`TEE OTA 数据分区 <tee-ota-data-partition>`，用于存储所选 TEE OTA 应用分区的信息。此分区大小应为 0x2000 字节。详情请参阅 :doc:`TEE OTA <../security/tee/tee-ota>`。
-    - ``tee_sec_stg`` (0x91) 是 TEE 安全存储分区，用于存储仅能被 TEE 应用程序访问的加密数据。:doc:`TEE 安全存储 <../security/tee/tee-sec-storage>` 将使用此分区存储包括加密密钥在内的敏感数据。此分区大小取决于具体的应用需求。
 
     - ESP-IDF 还支持其他用于数据存储的预定义子类型，包括：
 

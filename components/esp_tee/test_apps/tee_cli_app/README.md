@@ -15,18 +15,21 @@ This example can be executed on any development board with a Espressif SOC chip 
 
 - Open the project configuration menu (`idf.py menuconfig`).
 
-- Configure the secure storage slot ID for generating/fetching the ECDSA keypair for attestation token signing at `(Top) → Security features → TEE: Secure Storage slot ID for EAT signing`. If this configuration is not set, the slot with ID **0** will be used as default.
+- Configure the secure storage key ID for generating/fetching the ECDSA keypair for attestation token signing at `ESP-TEE (Trusted Execution Environment) → Secure Services → Attestation: Secure Storage key ID for EAT signing`.
 
-- Configure the Secure Storage mode for determining which eFuse block stores the encryption key at `(Top) → Security features → Trusted Execution Environment → TEE: Secure Storage Mode`.
-  - **Development** Mode: The encryption key is statically embedded in the TEE firmware.
-  - **Release** Mode: The encryption key is stored in eFuse BLK4 - BLK9, depending on the `SECURE_TEE_SEC_STG_KEY_EFUSE_BLK` Kconfig option.
-    - Set the eFuse block ID to store the encryption key in `Security features → Trusted Execution Environment → TEE: Secure Storage encryption key eFuse block`.
+Configure the Secure Storage mode for determining how the NVS XTS encryption keys are derived at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: Mode`
+
+  - **Development** Mode: Encryption keys are embedded in the ESP-TEE firmware (identical across all instances).
+  - **Release** Mode: Encryption keys are derived via the HMAC peripheral using a key stored in eFuse.
+    - Set the eFuse key ID storing the HMAC key at `ESP-TEE (Trusted Execution Environment) → Secure Services → Secure Storage: eFuse HMAC key ID`.
     - Snippet for burning the secure storage key in eFuse is given below.
 
     ```shell
-    # Programming user key (256-bit) in eFuse
+    # Generate a random 32-byte HMAC key
+    openssl rand -out hmac_key_file.bin 32
+    # Programming the HMAC key (256-bit) in eFuse
     # Here, BLOCK_KEYx is a free eFuse key-block between BLOCK_KEY0 and BLOCK_KEY5
-    espefuse.py -p PORT burn_key BLOCK_KEYx user_key.bin USER
+    espefuse.py -p PORT burn_key BLOCK_KEYx hmac_key_file.bin HMAC_UP
     ```
 
 ### Build and Flash
@@ -121,7 +124,7 @@ help  [<string>] [-v <0|1>]
 esp32c6> tee_att_info
 I (8180) tee_attest: Attestation token - Length: 1455
 I (8180) tee_attest: Attestation token - Data:
-'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":0},"eat":{"nonce":-1582119980,"client_id":262974944,"device_ver":0,"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
+'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"nonce":-1582119980,"client_id":262974944,"device_ver":0,"device_id":"cd9c173cb3675c7adfae243f0cd9841e4bce003237cb5321927a85a86cb4b32e","instance_id":"9616ef0ecf02cdc89a3749f8fc16b3103d5100bd42d9312fcd04593baa7bac64","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"v0.3.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"94536998e1dcb2a036477cb2feb01ed4fff67ba6208f30482346c62bca64b280","digest_validated":true,"sign_verified":true}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.1.4-241-g7ff01fd46f-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"3d4c038fcec76852b4d07acb9e94afaf5fca69fc2eb212a32032d09ce5b4f2b3","digest_validated":true,"sign_verified":true,"secure_padding":true}},"bootloader":{"type":0,"ver":"","idf_ver":"","secure_ver":-1,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"1bef421beb1a4642c6fcefb3e37fd4afad60cb4074e538f42605b012c482b946","digest_validated":true,"sign_verified":true}}}},"public_key":{"compressed":"02039c4bfab0762af1aff2fe5596b037f629cf839da8c4a9c0018afedfccf519a6"},"sign":{"r":"915e749f5a780bc21a2b21821cfeb54286dc742e9f12f2387e3de9b8b1a70bc9","s":"1e583236f2630b0fe8e291645ffa35d429f14035182e19868508d4dac0e1a441"}}'
 
 ```
 
