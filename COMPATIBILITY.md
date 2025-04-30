@@ -119,9 +119,10 @@ Supported since ESP-IDF v5.1.
 
 | Release branch         | Recommended | Required |
 |------------------------|-------------|----------|
-| release/v5.1           | v5.1.4+     | v5.1     |
-| release/v5.2           | v5.2.2+     | v5.2     |
-| release/v5.3 and above | v5.3+       | v5.3     |
+| release/v5.1           | v5.1.5+     | v5.1     |
+| release/v5.2           | v5.2.4+     | v5.2     |
+| release/v5.3           | v5.3.2+     | v5.3     |
+| release/v5.4 and above | v5.4+       | v5.4     |
 
 ### ESP32-H2
 
