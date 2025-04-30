@@ -1147,7 +1147,7 @@ void bta_av_config_ind (tBTA_AV_SCB *p_scb, tBTA_AV_DATA *p_data)
         p_info->media_type = p_scb->media_type;
         p_info->seid = p_data->str_msg.msg.config_ind.int_seid;
 
-        /* Sep type of Peer will be oppsite role to our local sep */
+        /* Sep type of Peer will be opposite role to our local sep */
         if (local_sep == AVDT_TSEP_SRC) {
             p_info->tsep = AVDT_TSEP_SNK;
         } else if (local_sep == AVDT_TSEP_SNK) {

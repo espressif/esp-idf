@@ -245,7 +245,7 @@ esp_err_t esp_eth_start(esp_eth_handle_t hdl);
 /**
 * @brief Stop Ethernet driver
 *
-* @note This function does the oppsite operation of `esp_eth_start`.
+* @note This function does the opposite operation of `esp_eth_start`.
 *
 * @param[in] hdl handle of Ethernet driver
 * @return

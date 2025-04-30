@@ -580,7 +580,7 @@ menu "ESP System Settings"
         default y
         select FREERTOS_DEBUG_OCDAWARE
         help
-            The FreeRTOS panic and unhandled exception handers can detect a JTAG OCD debugger and
+            The FreeRTOS panic and unhandled exception handlers can detect a JTAG OCD debugger and
             instead of panicking, have the debugger stop on the offending instruction.
 
     choice ESP_SYSTEM_CHECK_INT_LEVEL

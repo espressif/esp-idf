@@ -5,6 +5,6 @@ menu "Example Configuration"
         default y
         help
             Linenoise line editing library provides functions to save and load
-            command history. If this option is enabled, initalizes a FAT filesystem
+            command history. If this option is enabled, initializes a FAT filesystem
             and uses it to store command history.
 endmenu

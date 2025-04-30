@@ -520,7 +520,7 @@ LCD
     2. Call :func:`i2s_channel_init_std_mode`, :func:`i2s_channel_init_pdm_rx_mode`, :func:`i2s_channel_init_pdm_tx_mode` or :func:`i2s_channel_init_tdm_mode` to initialize the channel to the specified mode. Corresponding slot, clock and GPIO configurations are needed in this step.
     3. (Optional) Call :cpp:func:`i2s_channel_register_event_callback` to register the ISR event callback functions. I2S events now can be received by the callback function synchronously, instead of from the event queue asynchronously.
     4. Call :cpp:func:`i2s_channel_enable` to start the hardware of I2S channel. In the new driver, I2S does not start automatically after installed, and users are supposed to know clearly whether the channel has started or not.
-    5. Read or write data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only the RX channel handle is suppoesd to be inputted in :cpp:func:`i2s_channel_read` and the TX channel handle in :cpp:func:`i2s_channel_write`.
+    5. Read or write data by :cpp:func:`i2s_channel_read` or :cpp:func:`i2s_channel_write`. Certainly, only the RX channel handle is supposed to be inputted in :cpp:func:`i2s_channel_read` and the TX channel handle in :cpp:func:`i2s_channel_write`.
     6. (Optional) The slot, clock and GPIO configurations can be changed by corresponding 'reconfig' functions, but :cpp:func:`i2s_channel_disable` must be called before updating the configurations.
     7. Call :cpp:func:`i2s_channel_disable` to stop the hardware of I2S channel.
     8. Call :cpp:func:`i2s_del_channel` to delete and release the resources of the channel if it is not needed any more, but the channel must be disabled before deleting it.

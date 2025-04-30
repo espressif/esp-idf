@@ -167,7 +167,7 @@ menu "Hardware Settings"
 
                 (!!! Please adjust this value according to the Data Sheet of SPI Flash used in your project.)
                 In Flash Data Sheet, the parameters that define the Flash ready timing after power-up (minimum
-                time from Vcc(min) to CS activeare) usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
+                time from Vcc(min) to CS active) are usually named tVSL in ELECTRICAL CHARACTERISTICS chapter,
                 and the configuration value here should be:
                 ESP_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY = tVSL - 900
 

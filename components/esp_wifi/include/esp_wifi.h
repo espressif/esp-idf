@@ -613,7 +613,7 @@ esp_err_t esp_wifi_scan_get_ap_records(uint16_t *number, wifi_ap_record_t *ap_re
  *
  * @attention  Different from esp_wifi_scan_get_ap_records(), this API only gets one AP record
  *             from the scanned AP list each time. This API will free the memory of one AP record,
- *             if the user doesn't get all records in the scannned AP list, then needs to call esp_wifi_clear_ap_list()
+ *             if the user doesn't get all records in the scanned AP list, then needs to call esp_wifi_clear_ap_list()
  *             to free the remaining memory.
  *
  * @param[out] ap_record  pointer to one AP record

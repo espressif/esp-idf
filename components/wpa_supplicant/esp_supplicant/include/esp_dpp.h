@@ -64,7 +64,7 @@ typedef void (*esp_supp_dpp_event_cb_t)(esp_supp_dpp_event_t evt, void *data);
 esp_err_t esp_supp_dpp_init(esp_supp_dpp_event_cb_t evt_cb);
 
 /**
-  * @brief De-initalize DPP Supplicant
+  * @brief De-initialize DPP Supplicant
   *
   *        Frees memory from DPP Supplicant Data Structures.
   *
