@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,7 +15,7 @@ namespace nvs {
 
 Page::Page() : mPartition(nullptr) { }
 
-const uint32_t nvs::Page::SEC_SIZE = esp_partition_get_main_flash_sector_size();
+const uint32_t nvs::Page::SEC_SIZE = 4096;
 
 uint32_t Page::Header::calculateCrc32()
 {
