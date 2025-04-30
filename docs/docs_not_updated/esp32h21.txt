@@ -139,7 +139,6 @@ api-reference/bluetooth/esp_hf_defs.rst
 api-reference/peripherals/cap_touch_sens.rst
 api-reference/peripherals/index.rst
 api-reference/peripherals/rmt.rst
-api-reference/peripherals/ds.rst
 api-reference/peripherals/sdio_slave.rst
 api-reference/peripherals/bitscrambler.rst
 api-reference/peripherals/temp_sensor.rst
@@ -156,7 +155,6 @@ api-reference/peripherals/sdspi_share.rst
 api-reference/peripherals/ana_cmpr.rst
 api-reference/peripherals/i2c_slave_v1.rst
 api-reference/peripherals/adc_continuous.rst
-api-reference/peripherals/hmac.rst
 api-reference/peripherals/sdspi_host.rst
 api-reference/peripherals/vad.rst
 api-reference/peripherals/i2s.rst
@@ -174,7 +172,6 @@ api-reference/peripherals/sd_pullup_requirements.rst
 api-reference/peripherals/parlio.rst
 api-reference/peripherals/adc_calibration.rst
 api-reference/peripherals/lp_i2s.rst
-api-reference/peripherals/ecdsa.rst
 api-reference/peripherals/dac.rst
 api-reference/peripherals/spi_flash/index.rst
 api-reference/peripherals/spi_flash/spi_flash_concurrency.rst
@@ -207,12 +204,6 @@ api-reference/system/inc/show-efuse-table_ESP32-H21.rst
 api-reference/system/inc/espefuse_summary_ESP32-H21.rst
 api-reference/system/inc/espefuse_summary_ESP32-H21_dump.rst
 api-reference/system/power_management.rst
-security/index.rst
-security/flash-encryption.rst
-security/secure-boot-v1.rst
-security/security.rst
-security/security-features-enablement-workflows.rst
-security/secure-boot-v2.rst
 security/vulnerabilities.rst
 security/tee/index.rst
 security/tee/tee-advanced.rst
