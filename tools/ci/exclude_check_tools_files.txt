@@ -41,7 +41,7 @@ tools/ci/get_known_failure_cases_file.py
 tools/unit-test-app/**/*
 tools/ci/gitlab_yaml_linter.py
 tools/ci/dynamic_pipelines/**/*
-tools/ci/idf_ci/**/*
+tools/ci/idf_ci_local/**/*
 tools/ci/get_supported_examples.sh
 tools/ci/python_packages/common_test_methods.py
 tools/ci/python_packages/gitlab_api.py

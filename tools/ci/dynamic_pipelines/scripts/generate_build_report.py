@@ -1,13 +1,12 @@
 # SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
-
 import argparse
 import glob
 import os
 
 import __init__  # noqa: F401 # inject the system path
 from dynamic_pipelines.report import BuildReportGenerator
-from idf_ci.app import import_apps_from_txt
+from idf_ci_local.app import import_apps_from_txt
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
