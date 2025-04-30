@@ -121,7 +121,7 @@ static void uhci_receive_test(void *arg)
     uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];
     SemaphoreHandle_t exit_sema = ((SemaphoreHandle_t *)arg)[1];
 
-    uhci_context_t *ctx = calloc(1, sizeof(uhci_context_t));
+    uhci_context_t *ctx = heap_caps_calloc(1, sizeof(uhci_context_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(ctx);
     ctx->uhci_queue = xQueueCreate(15, sizeof(uhci_event_t));
     assert(ctx->uhci_queue);
@@ -252,7 +252,7 @@ static void uhci_receive_test_in_psram(void *arg)
     uhci_controller_handle_t uhci_ctrl = ((uhci_controller_handle_t *)arg)[0];
     SemaphoreHandle_t exit_sema = ((SemaphoreHandle_t *)arg)[1];
 
-    uhci_context_t *ctx = calloc(1, sizeof(uhci_context_t));
+    uhci_context_t *ctx = heap_caps_calloc(1, sizeof(uhci_context_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     assert(ctx);
     ctx->uhci_queue = xQueueCreate(15, sizeof(uhci_event_t));
     assert(ctx->uhci_queue);
