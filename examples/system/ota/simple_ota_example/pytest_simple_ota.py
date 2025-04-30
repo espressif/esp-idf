@@ -391,6 +391,7 @@ def test_examples_protocol_simple_ota_example_with_verify_app_signature_on_updat
     'config',
     [
         'tls1_3',
+        'tls1_3_only_dynamic',
     ],
     indirect=True,
 )

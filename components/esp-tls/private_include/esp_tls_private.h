@@ -68,6 +68,10 @@ struct esp_tls {
     bool use_ecdsa_peripheral;                                                  /*!< Use the ECDSA peripheral for the private key operations. */
     uint8_t ecdsa_efuse_blk;                                                    /*!< The efuse block number where the ECDSA key is stored. */
 #endif
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    unsigned char *client_session;                                              /*!< Pointer for the serialized client session ticket context. */
+    size_t client_session_len;                                                  /*!< Length of the serialized client session ticket context. */
+#endif /* CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS */
 #elif CONFIG_ESP_TLS_USING_WOLFSSL
     void *priv_ctx;
     void *priv_ssl;

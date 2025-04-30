@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -346,6 +346,43 @@ int __wrap_mbedtls_ssl_read(mbedtls_ssl_context *ssl, unsigned char *buf, size_t
     ESP_LOGD(TAG, "end");
 
     ret = __real_mbedtls_ssl_read(ssl, buf, len);
+
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
+        /*
+         * As per RFC 8446, section 4.6.1 the server may send a NewSessionTicket message at any time after the
+         * client Finished message.
+         * If a post-handshake message is received, connection state is changed to `MBEDTLS_SSL_TLS1_3_NEW_SESSION_TICKET`
+         * and when the message is parsed, the return value is `MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET`.
+         * When the session ticket is parsed, reduce the ssl->in_msglen by the length of the
+         * NewSessionTicket message.
+        */
+        if (mbedtls_ssl_get_version_number(ssl) == MBEDTLS_SSL_VERSION_TLS1_3) {
+            if (ret == MBEDTLS_ERR_SSL_RECEIVED_NEW_SESSION_TICKET) {
+                ESP_LOGD(TAG, "got session ticket in TLS 1.3 connection, retry read");
+
+                /* At this stage, we have received a NewSessionTicket messages
+                 * We should decrement the ssl->in_msglen by the length of the
+                 * NewSessionTicket message.
+                 *
+                 * The NewSessionTicket message has been parsed internally by mbedTLS
+                 * and it is stored in the mbedTLS context. This msglen size update
+                 * is also handled by mbedTLS but in case of dynamic buffer,
+                 * we need to free the rx buffer if it is allocated
+                 * and prepare for the next read. So we have to update the msglen
+                 * by ourselves and free the rx buffer if no more data is available.
+                 */
+                if (ssl->MBEDTLS_PRIVATE(in_hslen) < ssl->MBEDTLS_PRIVATE(in_msglen)) {
+                    ssl->MBEDTLS_PRIVATE(in_msglen) -= ssl->MBEDTLS_PRIVATE(in_hslen);
+                    memmove(ssl->MBEDTLS_PRIVATE(in_msg), ssl->MBEDTLS_PRIVATE(in_msg) + ssl->MBEDTLS_PRIVATE(in_hslen),
+                        ssl->MBEDTLS_PRIVATE(in_msglen));
+                    MBEDTLS_PUT_UINT16_BE(ssl->MBEDTLS_PRIVATE(in_msglen), ssl->in_len, 0);
+                } else {
+                    ssl->MBEDTLS_PRIVATE(in_msglen) = 0;
+                }
+                ssl->MBEDTLS_PRIVATE(in_hslen) = 0;
+            }
+        }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3
 
     if (rx_done(ssl)) {
         CHECK_OK(esp_mbedtls_free_rx_buffer(ssl));

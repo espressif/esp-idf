@@ -351,6 +351,7 @@ if(CONFIG_MBEDTLS_DYNAMIC_BUFFER)
     set(WRAP_FUNCTIONS
         mbedtls_ssl_write_client_hello
         mbedtls_ssl_handshake_client_step
+        mbedtls_ssl_tls13_handshake_client_step
         mbedtls_ssl_handshake_server_step
         mbedtls_ssl_read
         mbedtls_ssl_write

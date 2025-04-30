@@ -160,6 +160,11 @@ int esp_tls_conn_destroy(esp_tls_t *tls)
             ret = close(tls->sockfd);
         }
         esp_tls_internal_event_tracker_destroy(tls->error_handle);
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+        if (tls->client_session) {
+            free(tls->client_session);
+        }
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
         free(tls);
         tls = NULL;
         return ret;
@@ -180,6 +185,10 @@ esp_tls_t *esp_tls_init(void)
     }
     _esp_tls_net_init(tls);
     tls->sockfd = -1;
+#if CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
+    tls->client_session = NULL;
+    tls->client_session_len = 0;
+#endif // CONFIG_MBEDTLS_SSL_PROTO_TLS1_3 && CONFIG_ESP_TLS_CLIENT_SESSION_TICKETS
     return tls;
 }
 

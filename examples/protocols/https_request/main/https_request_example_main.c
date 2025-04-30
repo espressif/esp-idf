@@ -10,7 +10,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * SPDX-FileContributor: 2015-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileContributor: 2015-2025 Espressif Systems (Shanghai) CO LTD
  */
 
 #include <string.h>
@@ -46,9 +46,15 @@
 #include "time_sync.h"
 
 /* Constants that aren't configurable in menuconfig */
-#define WEB_SERVER "www.howsmyssl.com"
+#ifdef CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT
+#define WEB_SERVER "tls13.browserleaks.com"
+#define WEB_PORT "443"
+#define WEB_URL "https://tls13.browserleaks.com/tls"
+#else
+#define WEB_SERVER "howsmyssl.com"
 #define WEB_PORT "443"
 #define WEB_URL "https://www.howsmyssl.com/a/check"
+#endif
 
 #define SERVER_URL_MAX_SZ 256
 
@@ -85,9 +91,15 @@ extern const uint8_t server_root_cert_pem_end[]   asm("_binary_server_root_cert_
 extern const uint8_t local_server_cert_pem_start[] asm("_binary_local_server_cert_pem_start");
 extern const uint8_t local_server_cert_pem_end[]   asm("_binary_local_server_cert_pem_end");
 #if CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
+#if defined(CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT)
+static const int server_supported_ciphersuites[] = {MBEDTLS_TLS1_3_AES_256_GCM_SHA384, MBEDTLS_TLS1_3_AES_128_CCM_SHA256, 0};
+static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
+#else
 static const int server_supported_ciphersuites[] = {MBEDTLS_TLS_RSA_WITH_AES_256_GCM_SHA384, MBEDTLS_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256, 0};
 static const int server_unsupported_ciphersuites[] = {MBEDTLS_TLS_ECDHE_RSA_WITH_ARIA_128_CBC_SHA256, 0};
-#endif
+#endif // CONFIG_EXAMPLE_SSL_PROTO_TLS1_3_CLIENT
+#endif // CONFIG_EXAMPLE_USING_ESP_TLS_MBEDTLS
+
 #ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
 static esp_tls_client_session_t *tls_client_session = NULL;
 static bool save_client_session = false;
@@ -118,14 +130,6 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
         }
         goto cleanup;
     }
-
-#ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
-    /* The TLS session is successfully established, now saving the session ctx for reuse */
-    if (save_client_session) {
-        esp_tls_free_client_session(tls_client_session);
-        tls_client_session = esp_tls_get_client_session(tls);
-    }
-#endif
 
     size_t written_bytes = 0;
     do {
@@ -165,6 +169,14 @@ static void https_get_request(esp_tls_cfg_t cfg, const char *WEB_SERVER_URL, con
         }
         putchar('\n'); // JSON output doesn't have a newline at end
     } while (1);
+
+#ifdef CONFIG_EXAMPLE_CLIENT_SESSION_TICKETS
+    /* The TLS session is successfully established, now saving the session ctx for reuse */
+    if (save_client_session) {
+        esp_tls_free_client_session(tls_client_session);
+        tls_client_session = esp_tls_get_client_session(tls);
+    }
+#endif
 
 cleanup:
     esp_tls_conn_destroy(tls);
@@ -251,6 +263,9 @@ static void https_get_request_using_already_saved_session(const char *url)
     ESP_LOGI(TAG, "https_request using saved client session");
     esp_tls_cfg_t cfg = {
         .client_session = tls_client_session,
+        .cacert_buf = (const unsigned char *) local_server_cert_pem_start,
+        .cacert_bytes = local_server_cert_pem_end - local_server_cert_pem_start,
+        .skip_common_name = true,
     };
     https_get_request(cfg, url, LOCAL_SRV_REQUEST);
     esp_tls_free_client_session(tls_client_session);
