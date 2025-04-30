@@ -16,20 +16,23 @@
 #include "esp_err.h"
 #include "esp_log.h"
 
+#include "soc/soc_caps.h"
 #include "soc/usb_dwc_periph.h"
 #include "hal/usb_dwc_hal.h"
 #include "hcd.h"
 #include "usb_private.h"
 #include "usb/usb_types_ch9.h"
 
-#include "soc/soc_caps.h"
-#if SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
 #include "esp_cache.h"
-#endif // SOC_CACHE_INTERNAL_MEM_VIA_L1CACHE
+#include "esp_private/esp_cache_private.h"
 
 // ----------------------------------------------------- Macros --------------------------------------------------------
 
+#define ALIGN_UP(num, align)    ((align) == 0 ? (num) : (((num) + ((align) - 1)) & ~((align) - 1)))
+
 // --------------------- Constants -------------------------
+
+#define XFER_DESC_LIST_CAPS                     (MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL)
 
 #define INIT_DELAY_MS                           30  // A delay of at least 25ms to enter Host mode. Make it 30ms to be safe
 #define DEBOUNCE_DELAY_MS                       CONFIG_USB_HOST_DEBOUNCE_DELAY_MS
@@ -1518,16 +1521,18 @@ static dma_buffer_block_t *buffer_block_alloc(usb_transfer_type_t type)
     }
 
     // Transfer descriptor list: Must be 512 aligned and DMA capable (USB-DWC requirement) and its size must be cache aligned
-    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, MALLOC_CAP_DMA | MALLOC_CAP_CACHE_ALIGNED | MALLOC_CAP_INTERNAL);
+    void *xfer_desc_list = heap_caps_aligned_calloc(USB_DWC_QTD_LIST_MEM_ALIGN, desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), 1, XFER_DESC_LIST_CAPS);
     if (xfer_desc_list == NULL) {
         free(buffer);
         heap_caps_free(xfer_desc_list);
         return NULL;
     }
     buffer->xfer_desc_list = xfer_desc_list;
-    // For targets with L1CACHE, the allocated size might be bigger than requested, this value is than used during memory sync
-    // We save this value here, so we don't have to call 'heap_caps_get_allocated_size()' during every memory sync
-    buffer->xfer_desc_list_len_bytes = heap_caps_get_allocated_size(xfer_desc_list);
+
+    // Note for developers: We do not use heap_caps_get_allocated_size() because it is broken with HEAP_POISONING=COMPREHENSIVE
+    size_t cache_align = 0;
+    esp_cache_get_alignment(XFER_DESC_LIST_CAPS, &cache_align);
+    buffer->xfer_desc_list_len_bytes = ALIGN_UP(desc_list_len * sizeof(usb_dwc_ll_dma_qtd_t), cache_align);
     return buffer;
 }
 

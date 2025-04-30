@@ -77,7 +77,8 @@ typedef bool (*usb_proc_req_cb_t)(usb_proc_req_source_t source, bool in_isr, voi
  *
  * - Data buffer is allocated in DMA capable memory
  * - The constant fields of the URB are also set
- * - The data_buffer field of the URB is set to point to start of the allocated data buffer.
+ * - The data_buffer field of the URB is set to point to start of the allocated data buffer
+ * - The resulting data_buffer_size can be bigger that the requested size. This is to ensure that the data buffer is cache aligned
  *
  * @param[in] data_buffer_size Size of the URB's data buffer
  * @param[in] num_isoc_packets Number of isochronous packet descriptors

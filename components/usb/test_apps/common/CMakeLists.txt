@@ -7,4 +7,6 @@ idf_component_register(SRCS "dev_hid.c"
                        INCLUDE_DIRS
                              "../../private_include" # hcd and urb
                              "."
-                       REQUIRES usb unity)
+                       REQUIRES usb unity
+                       PRIV_REQUIRES esp_mm
+                       )
