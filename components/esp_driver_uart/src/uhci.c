@@ -539,7 +539,7 @@ esp_err_t uhci_register_event_callbacks(uhci_controller_handle_t uhci_ctrl, cons
 {
     ESP_RETURN_ON_FALSE(uhci_ctrl && cbs, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
 
-#if CONFIG_UHCI_ISR_CACHE_SAFE
+#if CONFIG_UHCI_ISR_HANDLER_IN_IRAM
     if (cbs->on_rx_trans_event) {
         ESP_RETURN_ON_FALSE(esp_ptr_in_iram(cbs->on_rx_trans_event), ESP_ERR_INVALID_ARG, TAG, "on_rx_trans_event callback not in IRAM");
     }
