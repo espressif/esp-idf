@@ -169,8 +169,13 @@ static volatile bool s_resume_cores;
 
 static void core_intr_matrix_clear(void)
 {
-    uint32_t core_id = esp_cpu_get_core_id();
+    __attribute__((unused)) uint32_t core_id = esp_cpu_get_core_id();
 
+    /* NOTE: With ESP-TEE enabled, each iteration in this loop results in a service call.
+    * To accelerate the boot-up process, the interrupt configuration is pre-cleared in the TEE,
+    * allowing this step to be safely skipped here.
+    */
+#if !CONFIG_SECURE_ENABLE_TEE
     for (int i = 0; i < ETS_MAX_INTR_SOURCE; i++) {
 #if SOC_INT_CLIC_SUPPORTED
         interrupt_clic_ll_route(core_id, i, ETS_INVALID_INUM);
@@ -178,6 +183,7 @@ static void core_intr_matrix_clear(void)
         esp_rom_route_intr_matrix(core_id, i, ETS_INVALID_INUM);
 #endif  // SOC_INT_CLIC_SUPPORTED
     }
+#endif  // !CONFIG_SECURE_ENABLE_TEE
 
 #if SOC_INT_CLIC_SUPPORTED
     for (int i = 0; i < 32; i++) {
@@ -378,6 +384,15 @@ FORCE_INLINE_ATTR IRAM_ATTR void init_cpu(void)
     );
 #endif
 
+    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
+     * which redirects all the interrupt management for the REE (user app)
+     * to the TEE by raising the appropriate service calls.
+     */
+#if CONFIG_SECURE_ENABLE_TEE
+    extern uint32_t esp_tee_service_call(int argc, ...);
+    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+#endif
+
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
     esp_cpu_branch_prediction_enable();
 #endif
@@ -387,19 +402,12 @@ FORCE_INLINE_ATTR IRAM_ATTR void init_cpu(void)
     /* When hardware vectored interrupts are enabled in CLIC,
      * the CPU jumps to this base address + 4 * interrupt_id.
      */
-    esp_cpu_intr_set_mtvt_addr(&_mtvt_table);
+    /* NOTE: When ESP-TEE is enabled, this sets up the U-mode
+     * interrupt vector table (UTVT) */
+    esp_cpu_intr_set_xtvt_addr(&_mtvt_table);
 #endif
 #if SOC_CPU_SUPPORT_WFE
-    rv_utils_disable_wfe_mode();
-#endif
-
-    /* NOTE: When ESP-TEE is enabled, this sets up the callback function
-     * which redirects all the interrupt management for the REE (user app)
-     * to the TEE by raising the appropriate service calls.
-     */
-#if CONFIG_SECURE_ENABLE_TEE
-    extern uint32_t esp_tee_service_call(int argc, ...);
-    esprv_int_setup_mgmt_cb((void *)esp_tee_service_call);
+    esp_cpu_disable_wfe_mode();
 #endif
 }
 

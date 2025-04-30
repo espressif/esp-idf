@@ -149,7 +149,7 @@ void esprv_int_set_vectored(int rv_int_num, bool vectored);
 /*************************** ESP-TEE specific ***************************/
 
 /** Function prototype executing interrupt configuration APIs as service calls */
-typedef void (*esprv_int_mgmt_t)(int argc, ...);
+typedef uint32_t (*esprv_int_mgmt_t)(int argc, ...);
 
 /**
  * @brief Setup the callback function which executes the interrupt

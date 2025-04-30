@@ -75,6 +75,10 @@ if(CONFIG_ESP_ROM_NO_USB_SERIAL_OUTPUT_API)
     list(APPEND sources "patches/esp_rom_usb_serial.c")
 endif()
 
+if(CONFIG_SECURE_ENABLE_TEE AND CONFIG_IDF_TARGET_ESP32C5 AND NOT ESP_TEE_BUILD)
+    list(APPEND sources "patches/esp_rom_cache_esp32c5.c")
+endif()
+
 idf_component_register(SRCS ${sources}
                        INCLUDE_DIRS ${include_dirs}
                        PRIV_REQUIRES ${private_required_comp}
@@ -129,6 +133,9 @@ endif()
 if(ESP_TEE_BUILD)
     rom_linker_script("spiflash")
     rom_linker_script("heap")
+    if(CONFIG_ESP_ROM_HAS_NEWLIB_NANO_FORMAT)
+        rom_linker_script("newlib-nano")
+    endif()
 endif()
 
 if(BOOTLOADER_BUILD)
@@ -359,7 +366,7 @@ else() # Regular app build
         endif()
     endif()
 
-    if(CONFIG_ESP_ROM_DELAY_US_PATCH AND
+    if(CONFIG_ESP_ROM_DELAY_US_PATCH AND CONFIG_SECURE_ENABLE_TEE AND
         (CONFIG_ESP32C5_REV_MIN_FULL LESS_EQUAL 100 OR CONFIG_ESP32C61_REV_MIN_FULL LESS_EQUAL 100))
         # Force the linker to include esp_rom_sys.c for ets_ops_set_rom_patches constructor
         target_link_libraries(${COMPONENT_LIB} PRIVATE "-u ets_ops_set_rom_patches")

@@ -305,6 +305,7 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         assist_debug_ll_enable_bus_clock(false);
 #endif
         mpi_ll_enable_bus_clock(false);
+#if !CONFIG_SECURE_ENABLE_TEE
         aes_ll_enable_bus_clock(false);
         sha_ll_enable_bus_clock(false);
         ecc_ll_enable_bus_clock(false);
@@ -312,9 +313,10 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         ds_ll_enable_bus_clock(false);
         apm_ll_hp_tee_enable_clk_gating(true);
         apm_ll_lp_tee_enable_clk_gating(true);
-        uhci_ll_enable_bus_clock(0, false);
         apm_ll_hp_apm_enable_ctrl_clk_gating(true);
         apm_ll_cpu_apm_enable_ctrl_clk_gating(true);
+#endif
+        uhci_ll_enable_bus_clock(0, false);
 
         // TODO: Replace with hal implementation
         REG_CLR_BIT(PCR_TRACE_CONF_REG, PCR_TRACE_CLK_EN);
@@ -346,8 +348,10 @@ __attribute__((weak)) void esp_perip_clk_init(void)
         _lp_clkrst_ll_enable_lp_ana_i2c_clock(false);
         _lp_clkrst_ll_enable_lp_ext_i2c_clock(false);
 
+#if !CONFIG_SECURE_ENABLE_TEE
         apm_ll_lp_apm_enable_ctrl_clk_gating(true);
         apm_ll_lp_apm0_enable_ctrl_clk_gating(true);
+#endif
         WRITE_PERI_REG(LP_CLKRST_LP_CLK_PO_EN_REG, 0);
     }
 }

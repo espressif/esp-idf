@@ -117,7 +117,11 @@ FORCE_INLINE_ATTR uint32_t __attribute__((always_inline)) rv_utils_get_cycle_cou
 FORCE_INLINE_ATTR void __attribute__((always_inline)) rv_utils_set_cycle_count(uint32_t ccount)
 {
 #if !SOC_CPU_HAS_CSR_PC
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(2, SS_RV_UTILS_SET_CYCLE_COUNT, ccount);
+#else
     RV_WRITE_CSR(mcycle, ccount);
+#endif
 #else
     if (IS_PRV_M_MODE()) {
         RV_WRITE_CSR(CSR_PCCR_MACHINE, ccount);
@@ -383,8 +387,8 @@ FORCE_INLINE_ATTR void rv_utils_clear_breakpoint(int bp_num)
 {
     RV_WRITE_CSR(tselect, bp_num);
     /* tdata1 is a WARL(write any read legal) register
-     * We can just write 0 to it
-     */
+    * We can just write 0 to it
+    */
     RV_WRITE_CSR(tdata1, 0);
 }
 
@@ -460,12 +464,20 @@ FORCE_INLINE_ATTR bool rv_utils_compare_and_set(volatile uint32_t *addr, uint32_
 #if SOC_BRANCH_PREDICTOR_SUPPORTED
 FORCE_INLINE_ATTR void rv_utils_en_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_EN_BRANCH_PREDICTOR);
+#else
     RV_SET_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 
 FORCE_INLINE_ATTR void rv_utils_dis_branch_predictor(void)
 {
+#if CONFIG_SECURE_ENABLE_TEE && !NON_OS_BUILD
+    esp_tee_intr_sec_srv_cb(1, SS_RV_UTILS_DIS_BRANCH_PREDICTOR);
+#else
     RV_CLEAR_CSR(MHCR, MHCR_RS|MHCR_BFE|MHCR_BTB);
+#endif
 }
 #endif
 
