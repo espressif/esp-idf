@@ -1,5 +1,5 @@
 menu "ESP-TEE (Trusted Execution Environment)"
-    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2
+    depends on IDF_TARGET_ESP32C6 || IDF_TARGET_ESP32H2 || IDF_TARGET_ESP32C5
 
     config SECURE_ENABLE_TEE
         bool "Enable the ESP-TEE framework"
