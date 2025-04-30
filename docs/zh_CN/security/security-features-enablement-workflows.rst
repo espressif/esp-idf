@@ -482,9 +482,10 @@ flash 加密指南
         :SOC_EFUSE_SOFT_DIS_JTAG: - ``SOFT_DIS_JTAG``：禁止软件对 JTAG 外设的访问。
         :SOC_EFUSE_DIS_DIRECT_BOOT:- ``DIS_DIRECT_BOOT``: 禁用直接引导（旧版 SPI 引导模式）。
         :SOC_EFUSE_DIS_LEGACY_SPI_BOOT: - ``DIS_LEGACY_SPI_BOOT``：禁用旧版 SPI 引导模式。
-        :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``：禁止从 USB 切换到 JTAG
+        :SOC_EFUSE_DIS_USB_JTAG: - ``DIS_USB_JTAG``：禁止从 USB 切换到 JTAG。
         :SOC_EFUSE_DIS_PAD_JTAG: - ``DIS_PAD_JTAG``：永久禁用 JTAG。
         :SOC_EFUSE_REVOKE_BOOT_KEY_DIGESTS: - ``SECURE_BOOT_AGGRESSIVE_REVOKE``：主动吊销密钥摘要。详请请参阅 :ref:`secure-boot-v2-aggressive-key-revocation`。
+        :SOC_ECDSA_P192_CURVE_DEFAULT_DISABLED: - ``WR_DIS_ECDSA_CURVE_MODE``：禁用 ECDSA 曲线模式。
 
     运行以下命令烧录相应的 eFuse：
 
