@@ -205,7 +205,12 @@ repos:
     rev: v4.0.1
     hooks:
       - id: file-contents-sorter
-        files: 'tools\/ci\/(executable-list\.txt|mypy_ignore_list\.txt|check_copyright_ignore\.txt)'
+        files: "tools/ci/(\
+          executable-list\\.txt\
+          |mypy_ignore_list\\.txt\
+          |check_copyright_ignore\\.txt\
+          |exclude_check_tools_files\\.txt\
+        )"
   - repo: https://github.com/espressif/check-copyright/
     rev: v1.1.1
     hooks:
