@@ -205,6 +205,10 @@ esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size
     bool valid_addr = ((esp_tee_ptr_in_ree((void *)message) && esp_tee_ptr_in_ree((void *)hmac)) &&
                        esp_tee_ptr_in_ree((void *)((char *)message + message_len)));
 
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+#endif
+
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -216,6 +220,10 @@ esp_err_t _ss_esp_hmac_calculate(hmac_key_id_t key_id, const void *message, size
 esp_err_t _ss_esp_hmac_jtag_enable(hmac_key_id_t key_id, const uint8_t *token)
 {
     bool valid_addr = (esp_tee_ptr_in_ree((void *)token));
+
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+#endif
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -239,6 +247,10 @@ esp_err_t _ss_esp_ds_sign(const void *message,
                        esp_tee_ptr_in_ree((void *)data) &&
                        esp_tee_ptr_in_ree((void *)signature));
 
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+#endif
+
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
@@ -255,6 +267,10 @@ esp_err_t _ss_esp_ds_start_sign(const void *message,
     bool valid_addr = (esp_tee_ptr_in_ree((void *)message) &&
                        esp_tee_ptr_in_ree((void *)data) &&
                        esp_tee_ptr_in_ree((void *)esp_ds_ctx));
+
+#if CONFIG_SECURE_TEE_SEC_STG_MODE_RELEASE
+    valid_addr &= (key_id != (hmac_key_id_t)CONFIG_SECURE_TEE_SEC_STG_EFUSE_HMAC_KEY_ID);
+#endif
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
@@ -356,22 +372,12 @@ int _ss_esp_tee_ota_end(void)
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
-esp_err_t _ss_esp_tee_sec_storage_init(void)
+esp_err_t _ss_esp_tee_sec_storage_clear_key(const char *key_id)
 {
-    return esp_tee_sec_storage_init();
+    return esp_tee_sec_storage_clear_key(key_id);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_gen_key(uint16_t slot_id, uint8_t key_type)
+esp_err_t _ss_esp_tee_sec_storage_gen_key(const esp_tee_sec_storage_key_cfg_t *cfg)
 {
-    return esp_tee_sec_storage_gen_key(slot_id, key_type);
-}
-
-bool _ss_esp_tee_sec_storage_is_slot_empty(uint16_t slot_id)
-{
-    return esp_tee_sec_storage_is_slot_empty(slot_id);
-}
-
-esp_err_t _ss_esp_tee_sec_storage_clear_slot(uint16_t slot_id)
-{
-    return esp_tee_sec_storage_clear_slot(slot_id);
+    return esp_tee_sec_storage_gen_key(cfg);
 }
