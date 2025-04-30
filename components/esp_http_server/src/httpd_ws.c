@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2021 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,10 +13,12 @@
 #include <esp_err.h>
 #include <mbedtls/sha1.h>
 #include <mbedtls/base64.h>
+#include <mbedtls/error.h>
 
 #include <esp_http_server.h>
 #include "esp_httpd_priv.h"
 #include "freertos/event_groups.h"
+#include "sdkconfig.h"
 
 #ifdef CONFIG_HTTPD_WS_SUPPORT
 
@@ -51,23 +53,23 @@ static const char *TAG="httpd_ws";
  */
 static const char ws_magic_uuid[] = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
 
-/* Checks if any subprotocols from the comma seperated list matches the supported one
+/* Checks if any subprotocols from the comma separated list matches the supported one
  *
  * Returns true if the response should contain a protocol field
 */
 
 /**
- * @brief Checks if any subprotocols from the comma seperated list matches the supported one
+ * @brief Checks if any subprotocols from the comma separated list matches the supported one
  *
  * @param supported_subprotocol[in] The subprotocol supported by the URI
- * @param subprotocol[in],  [in]: A comma seperate list of subprotocols requested
+ * @param subprotocol[in],  [in]: A comma separate list of subprotocols requested
  * @param buf_len Length of the buffer
  * @return true: found a matching subprotocol
  * @return false
  */
 static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol, char *subprotocol, size_t buf_len)
 {
-    /* Request didnt contain any subprotocols */
+    /* Request didn't contain any subprotocols */
     if (strnlen(subprotocol, buf_len) == 0) {
         return false;
     }
@@ -77,7 +79,7 @@ static bool httpd_ws_get_response_subprotocol(const char *supported_subprotocol,
         return false;
     }
 
-    /* Get first subprotocol from comma seperated list */
+    /* Get first subprotocol from comma separated list */
     char *rest = NULL;
     char *s = strtok_r(subprotocol, ", ", &rest);
     do {
@@ -143,7 +145,34 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     /* Generate SHA-1 first and then encode to Base64 */
     size_t key_len = strlen(server_raw_text);
-    mbedtls_sha1((uint8_t *)server_raw_text, key_len, server_key_hash);
+
+#if CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA
+    int ret = MBEDTLS_ERR_ERROR_CORRUPTION_DETECTED;
+    mbedtls_sha1_context ctx;
+    mbedtls_sha1_init(&ctx);
+
+    if ((ret = mbedtls_sha1_starts(&ctx)) != 0) {
+        goto sha_end;
+    }
+
+    if ((ret = mbedtls_sha1_update(&ctx, (uint8_t *)server_raw_text, key_len)) != 0) {
+        goto sha_end;
+    }
+
+    if ((ret = mbedtls_sha1_finish(&ctx, server_key_hash)) != 0) {
+        goto sha_end;
+    }
+
+sha_end:
+    mbedtls_sha1_free(&ctx);
+    if (ret != 0) {
+        ESP_LOGE(TAG, "Error in calculating SHA1 sum , returned 0x%02X", ret);
+        return ESP_FAIL;
+    }
+#else
+    ESP_LOGE(TAG, "Please enable CONFIG_MBEDTLS_SHA1_C or CONFIG_MBEDTLS_HARDWARE_SHA to support SHA1 operations");
+    return ESP_FAIL;
+#endif /* CONFIG_MBEDTLS_SHA1_C || CONFIG_MBEDTLS_HARDWARE_SHA */
 
     size_t encoded_len = 0;
     mbedtls_base64_encode((uint8_t *)server_key_encoded, sizeof(server_key_encoded), &encoded_len,
@@ -153,7 +182,7 @@ esp_err_t httpd_ws_respond_server_handshake(httpd_req_t *req, const char *suppor
 
     char subprotocol[50] = { '\0' };
     if (httpd_req_get_hdr_value_str(req, "Sec-WebSocket-Protocol", subprotocol, sizeof(subprotocol) - 1) == ESP_ERR_HTTPD_RESULT_TRUNC) {
-        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %"NEWLIB_NANO_COMPAT_FORMAT", was trunctated", NEWLIB_NANO_COMPAT_CAST(sizeof(subprotocol)));
+        ESP_LOGW(TAG, "Sec-WebSocket-Protocol length exceeded buffer size of %"NEWLIB_NANO_COMPAT_FORMAT", was truncated", NEWLIB_NANO_COMPAT_CAST(sizeof(subprotocol)));
     }
 
 

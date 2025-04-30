@@ -698,6 +698,21 @@ menu "mbedTLS"
             Standard ECDSA is "fragile" in the sense that lack of entropy when signing
             may result in a compromise of the long-term signing key.
 
+    config MBEDTLS_SHA1_C
+        bool "Enable the SHA-1 cryptographic hash algorithm"
+        default y
+        help
+            Enabling MBEDTLS_SHA1_C adds support for SHA-1.
+            SHA-1 is considered a weak message digest and its use constitutes
+            a security risk.
+            Disabling this configuration option could impact TLS 1.2 / Wi-Fi Enterprise compatibility
+            with certain older certificates that rely on SHA-1 for digital signatures.
+            Before proceeding, ensure that all your certificates are using stronger hash algorithms,
+            such as SHA-256 (part of the SHA-2 family).
+            If you're using older certificates or if you're unsure about the impact on your product,
+            please consider testing the changes in a controlled environment for individual features
+            like OTA updates, cloud connectivity, secure local control, etc.
+
     config MBEDTLS_SHA512_C
         bool "Enable the SHA-384 and SHA-512 cryptographic hash algorithms"
         default y

@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -27,9 +27,13 @@
 TEST_CASE("mbedtls SHA self-tests", "[mbedtls]")
 {
     start_apb_access_loop();
+#if CONFIG_MBEDTLS_SHA1_C
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha1_self_test(1), "SHA1 self-tests should pass.");
+#endif
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha256_self_test(1), "SHA256 self-tests should pass.");
+#if CONFIG_MBEDTLS_SHA512_C
     TEST_ASSERT_FALSE_MESSAGE(mbedtls_sha512_self_test(1), "SHA512 self-tests should pass.");
+#endif
     verify_apb_access_loop();
 }
 
@@ -158,17 +162,19 @@ TEST_CASE("mbedtls SHA multithreading", "[mbedtls]")
 void tskRunSHASelftests(void *param)
 {
     for (int i = 0; i < 5; i++) {
+#if CONFIG_MBEDTLS_SHA1_C
         if (mbedtls_sha1_self_test(1)) {
             printf("SHA1 self-tests failed.\n");
             while (1) {}
         }
+#endif
 
         if (mbedtls_sha256_self_test(1)) {
             printf("SHA256 self-tests failed.\n");
             while (1) {}
         }
 
-#if SOC_SHA_SUPPORT_SHA512
+#if SOC_SHA_SUPPORT_SHA512 && CONFIG_MBEDTLS_SHA512_C
         if (mbedtls_sha512_self_test(1)) {
             printf("SHA512 self-tests failed.\n");
             while (1) {}
@@ -178,7 +184,7 @@ void tskRunSHASelftests(void *param)
             printf("SHA512 self-tests failed.\n");
             while (1) {}
         }
-#endif //SOC_SHA_SUPPORT_SHA512
+#endif //SOC_SHA_SUPPORT_SHA512 && CONFIG_MBEDTLS_SHA512_C
     }
     xSemaphoreGive(done_sem);
     vTaskDelete(NULL);
@@ -249,7 +255,7 @@ TEST_CASE("mbedtls SHA384 clone", "[mbedtls]")
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&ctx, one_hundred_bs, 100));
         TEST_ASSERT_EQUAL(0, mbedtls_sha512_update(&clone, one_hundred_bs, 100));
     }
-/* intended warning supression: is384 == true */
+/* intended warning suppression: is384 == true */
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wstringop-overflow"
     TEST_ASSERT_EQUAL(0, mbedtls_sha512_finish(&ctx, sha384));
