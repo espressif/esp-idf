@@ -171,6 +171,10 @@ config SOC_SECURE_BOOT_SUPPORTED
     bool
     default y
 
+config SOC_IEEE802154_SUPPORTED
+    bool
+    default y
+
 config SOC_BOD_SUPPORTED
     bool
     default y
@@ -248,6 +252,10 @@ config SOC_PM_SUPPORTED
     default y
 
 config SOC_SPIRAM_SUPPORTED
+    bool
+    default y
+
+config SOC_BT_SUPPORTED
     bool
     default y
 
@@ -1664,6 +1672,34 @@ config SOC_WIFI_MAC_VERSION_NUM
     default 3
 
 config SOC_WIFI_NAN_SUPPORT
+    bool
+    default y
+
+config SOC_BLE_SUPPORTED
+    bool
+    default y
+
+config SOC_ESP_NIMBLE_CONTROLLER
+    bool
+    default y
+
+config SOC_BLE_50_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_DEVICE_PRIVACY_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_POWER_CONTROL_SUPPORTED
+    bool
+    default y
+
+config SOC_BLE_MULTI_CONN_OPTIMIZATION
+    bool
+    default y
+
+config SOC_BLE_PERIODIC_ADV_ENH_SUPPORTED
     bool
     default y
 
