@@ -190,7 +190,7 @@ void app_main(void)
     // Attach esp netif bridge glue instance with added ports to bridge netif
     ESP_ERROR_CHECK(esp_netif_attach(br_netif, netif_br_glue));
 
-    // Register user defined event handers
+    // Register user defined event handlers
     ESP_ERROR_CHECK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, NULL));
 

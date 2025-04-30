@@ -508,11 +508,11 @@ static inline void touch_ll_get_sleep_time(uint16_t *sleep_time)
 }
 
 /**
- * Set touch sensor high voltage threshold of chanrge.
+ * Set touch sensor high voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_set_voltage_high(touch_high_volt_t refh)
 {
@@ -520,11 +520,11 @@ static inline void touch_ll_set_voltage_high(touch_high_volt_t refh)
 }
 
 /**
- * Get touch sensor high voltage threshold of chanrge.
+ * Get touch sensor high voltage threshold of charge.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_get_voltage_high(touch_high_volt_t *refh)
 {
@@ -554,11 +554,11 @@ static inline void touch_ll_get_voltage_low(touch_low_volt_t *refl)
 }
 
 /**
- * Set touch sensor high voltage attenuation of chanrge. The actual charge threshold is high voltage threshold minus attenuation value.
+ * Set touch sensor high voltage attenuation of charge. The actual charge threshold is high voltage threshold minus attenuation value.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_set_voltage_attenuation(touch_volt_atten_t atten)
 {
@@ -566,11 +566,11 @@ static inline void touch_ll_set_voltage_attenuation(touch_volt_atten_t atten)
 }
 
 /**
- * Get touch sensor high voltage attenuation of chanrge. The actual charge threshold is high voltage threshold minus attenuation value.
+ * Get touch sensor high voltage attenuation of charge. The actual charge threshold is high voltage threshold minus attenuation value.
  * The touch sensor measures the channel capacitance value by charging and discharging the channel.
  * So the high threshold should be less than the supply voltage.
  *
- * @param refh The high voltage threshold of chanrge.
+ * @param refh The high voltage threshold of charge.
  */
 static inline void touch_ll_get_voltage_attenuation(touch_volt_atten_t *atten)
 {

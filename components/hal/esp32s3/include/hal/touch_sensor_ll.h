@@ -1441,7 +1441,7 @@ static inline void IRAM_ATTR touch_ll_read_benchmark(touch_pad_t touch_num, uint
  *
  * @note If call this API, make sure enable clock gate(`touch_ll_clkgate`) first.
  * @param touch_num touch pad index
- *                  - TOUCH_PAD_MAX Reset basaline of all channels.
+ *                  - TOUCH_PAD_MAX Reset baseline of all channels.
  */
 static inline void touch_ll_reset_benchmark(touch_pad_t touch_num)
 {

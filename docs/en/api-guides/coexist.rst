@@ -204,14 +204,14 @@ Coexistence Policy
 
 .. only:: SOC_IEEE802154_SUPPORTED
 
-  The IEEE 802.15.4 module requests RF resources based on pre-assigned priorities. Normal receive operations are assigned the lowest priority, meaning Wi-Fi and BLE will take over the RF whenever needed, while 802.15.4 can only receive during the remaining time. Other 802.15.4 operations, such as transmitting or receiving ACKs and transmitting or receiving at given time, are assigned higher priorities. However, their access to RF ultimately depends on the priorities of Wi-Fi and BLE operations at that moment.
+    The IEEE 802.15.4 module requests RF resources based on pre-assigned priorities. Normal receive operations are assigned the lowest priority, meaning Wi-Fi and BLE will take over the RF whenever needed, while 802.15.4 can only receive during the remaining time. Other 802.15.4 operations, such as transmitting or receiving ACKs and transmitting or receiving at given time, are assigned higher priorities. However, their access to RF ultimately depends on the priorities of Wi-Fi and BLE operations at that moment.
 
 .. only:: SOC_WIFI_SUPPORTED and SOC_BT_SUPPORTED
 
-  Dynamic Priority
-  """"""""""""""""""""""""""""
+    Dynamic Priority
+    """"""""""""""""""""""""""""
 
-  The coexistence module assigns varying priorities to different statuses of each module, and these priorities are dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
+    The coexistence module assigns varying priorities to different statuses of each module, and these priorities are dynamic. For example, in every N BLE Advertising events, there is always one event with high priority. If a high-priority BLE Advertising event occurs within the Wi-Fi time slice, the right to use the RF may be preempted by BLE.
 
 .. only:: SOC_WIFI_SUPPORTED
 
@@ -249,7 +249,7 @@ Coexistence API Error Codes
 
 All coexistence APIs have custom return values, i.e., error codes. These error codes can be categorized as:
 
-  - No error. For example, the return value ESP_OK siginifies the API returned successfully.
+  - No error. For example, the return value ESP_OK signifies the API returned successfully.
   - Recoverable errors. For example, the return value ESP_ERR_INVALID_ARG signifies API parameter errors.
 
 

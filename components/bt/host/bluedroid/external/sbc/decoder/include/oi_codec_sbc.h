@@ -372,7 +372,7 @@ OI_STATUS OI_CODEC_SBC_DecodeFrame(OI_CODEC_SBC_DECODER_CONTEXT *context,
  *
  * @param frameData     Pointer to the SBC data.
  *
- * @param frameBytes    Number of bytes avaiable in the frameData buffer
+ * @param frameBytes    Number of bytes available in the frameData buffer
  *
  */
 OI_UINT8 OI_CODEC_SBC_FrameCount(OI_BYTE  *frameData,

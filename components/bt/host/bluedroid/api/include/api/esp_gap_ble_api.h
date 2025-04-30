@@ -1047,7 +1047,7 @@ typedef struct {
 } esp_ble_gap_periodic_adv_report_t;
 
 /**
-* @brief perodic adv sync establish parameters
+* @brief periodic adv sync establish parameters
 */
 typedef struct {
     uint8_t status;                               /*!< periodic advertising sync status */

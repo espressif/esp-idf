@@ -132,7 +132,7 @@ void esp_srp_free(esp_srp_handle_t *hd);
  * @param username  Username not expected NULL terminated
  * @param username_len  Username length
  * @param pass      Password not expected to be NULL terminated
- * @param pass_len  Pasword length
+ * @param pass_len  Password length
  * @param salt_len  Salt length
  * @param bytes_B   Public Key returned
  * @param len_B     Length of the public key
@@ -162,7 +162,7 @@ esp_err_t esp_srp_srv_pubkey(esp_srp_handle_t *hd, const char *username, int use
  * @note if API has returned ESP_OK, salt and verifier generated need to be freed by caller
  * @note Usually, username and password are not saved on the device. Rather salt and verifier are
  *      generated outside the device and are embedded.
- *      this covenience API can be used to generate salt and verifier on the fly for development use case.
+ *      this convenience API can be used to generate salt and verifier on the fly for development use case.
  *      OR for devices which intentionally want to generate different password each time and can send it
  *      to the client securely. e.g., a device has a display and it shows the pin
  */

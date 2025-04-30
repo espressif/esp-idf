@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2023 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2023-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -49,7 +49,7 @@ typedef void (*bg_ctrl_func_t)(void*);
  * Call this if your driver wants to manage a SPI peripheral.
  *
  * @param host Peripheral to claim
- * @param source The caller indentification string.
+ * @param source The caller identification string.
  *
  * @return True if peripheral is claimed successfully; false if peripheral already is claimed.
  */
@@ -237,7 +237,7 @@ esp_err_t spi_bus_init_lock(spi_bus_lock_handle_t *out_lock, const spi_bus_lock_
  * Free the resources used by an SPI bus lock.
  *
  * @note All attached devices should have been unregistered before calling this
- *       funciton.
+ *       function.
  *
  * @param lock Handle to the lock to free.
  */
@@ -447,7 +447,7 @@ bool spi_bus_lock_bg_exit(spi_bus_lock_handle_t lock, bool wip, BaseType_t* do_y
  *        there is no acquiring device.
  *
  * @param lock The SPI bus lock.
- * @param out_dev_lock The recommended device for hte next operation. It's the new
+ * @param out_dev_lock The recommended device for the next operation. It's the new
  *        acquiring device when found, otherwise a device that has active BG request.
  *
  * @return true if the ISR need to quit (new acquiring device has no active BG
@@ -487,7 +487,7 @@ bool spi_bus_lock_bg_clear_req(spi_bus_lock_dev_handle_t dev_lock);
  * Check if there is any active BG requests.
  *
  * @param lock The SPI bus lock.
- * @return true if any device has active BG requst, otherwise false.
+ * @return true if any device has active BG request, otherwise false.
  */
 bool spi_bus_lock_bg_req_exist(spi_bus_lock_handle_t lock);
 

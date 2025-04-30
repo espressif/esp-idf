@@ -175,7 +175,7 @@ The example project :example:`system/startup_time` is pre-configured to optimize
 Task Priorities
 ---------------
 
-As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-slatency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
+As ESP-IDF FreeRTOS is a real-time operating system, it is necessary to ensure that high-throughput or low-latency tasks are granted a high priority in order to run immediately. Priority is set when calling :cpp:func:`xTaskCreate` or :cpp:func:`xTaskCreatePinnedToCore` and can be changed at runtime by calling :cpp:func:`vTaskPrioritySet`.
 
 It is also necessary to ensure that tasks yield CPU (by calling :cpp:func:`vTaskDelay`, ``sleep()``, or by blocking on semaphores, queues, task notifications, etc) in order to not starve lower-priority tasks and cause problems for the overall system. The :ref:`task-watchdog-timer` provides a mechanism to automatically detect if task starvation happens. However, note that a TWDT timeout does not always indicate a problem, because sometimes the correct operation of the firmware requires some long-running computation. In these cases, tweaking the TWDT timeout or even disabling the TWDT may be necessary.
 

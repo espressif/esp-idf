@@ -202,7 +202,7 @@ See also
 
 - :doc:`../storage/sdmmc`: introduces the higher-level driver which implements the protocol layer.
 - :doc:`sdspi_host`: introduces a similar driver that uses the SPI controller and is limited to SD protocol's SPI mode.
-- :doc:`sd_pullup_requirements`: introduces pull-up support and compatibilities of modules and development kits.
+- :doc:`sd_pullup_requirements`: introduces pull-up support and compatibility of modules and development kits.
 
 
 API Reference

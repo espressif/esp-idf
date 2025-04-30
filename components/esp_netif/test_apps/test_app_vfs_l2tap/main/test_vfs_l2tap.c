@@ -203,7 +203,7 @@ static void ethernet_init(test_vfs_eth_network_t *network_hndls)
     // combine driver with netif
     network_hndls->glue = esp_eth_new_netif_glue(network_hndls->eth_handle);
     TEST_ESP_OK(esp_netif_attach(network_hndls->eth_netif, network_hndls->glue));
-    // register user defined event handers
+    // register user defined event handlers
     TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
     TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 

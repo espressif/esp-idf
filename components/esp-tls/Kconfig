@@ -84,7 +84,7 @@ menu "ESP-TLS"
     config ESP_TLS_INSECURE
         bool "Allow potentially insecure options"
         help
-            You can enable some potentially insecure options. These options should only be used for testing pusposes.
+            You can enable some potentially insecure options. These options should only be used for testing purposes.
             Only enable these options if you are very sure.
 
     config ESP_TLS_SKIP_SERVER_CERT_VERIFY

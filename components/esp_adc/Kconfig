@@ -58,7 +58,7 @@ menu "ADC and ADC Calibration"
 
     config ADC_CONTINUOUS_FORCE_USE_ADC2_ON_C3_S3
         depends on IDF_TARGET_ESP32C3 || IDF_TARGET_ESP32S3
-        bool "Force use ADC2 continumous mode on ESP32S3 or ESP32C3"
+        bool "Force use ADC2 continuous mode on ESP32S3 or ESP32C3"
         default n
         help
             On ESP32C3 and ESP32S3, ADC2 Digital Controller is not stable. Therefore,

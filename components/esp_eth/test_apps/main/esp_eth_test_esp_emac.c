@@ -377,7 +377,7 @@ TEST_CASE("internal emac interrupt priority", "[esp_emac]")
             // combine driver with netif
             esp_eth_netif_glue_handle_t glue = esp_eth_new_netif_glue(eth_handle);
             TEST_ESP_OK(esp_netif_attach(eth_netif, glue));
-            // register user defined event handers
+            // register user defined event handlers
             TEST_ESP_OK(esp_event_handler_register(ETH_EVENT, ESP_EVENT_ANY_ID, &eth_event_handler, eth_event_group));
             TEST_ESP_OK(esp_event_handler_register(IP_EVENT, IP_EVENT_ETH_GOT_IP, &got_ip_event_handler, eth_event_group));
 

@@ -207,7 +207,7 @@ menu "Application Level Tracing"
             depends on APPTRACE_ENABLE
             default n
             help
-                Enables supporrt for SEGGER SystemView tracing functionality.
+                Enables support for SEGGER SystemView tracing functionality.
 
         choice APPTRACE_SV_DEST
             prompt "SystemView destination"

@@ -73,7 +73,7 @@ typedef enum {
 typedef enum {
     MCPWM_TIMER_STOP_EMPTY,       /*!< MCPWM timer stops when next count reaches zero */
     MCPWM_TIMER_STOP_FULL,        /*!< MCPWM timer stops when next count reaches peak */
-    MCPWM_TIMER_START_NO_STOP,    /*!< MCPWM timer starts couting, and don't stop until received stop command */
+    MCPWM_TIMER_START_NO_STOP,    /*!< MCPWM timer starts counting, and don't stop until received stop command */
     MCPWM_TIMER_START_STOP_EMPTY, /*!< MCPWM timer starts counting and stops when next count reaches zero */
     MCPWM_TIMER_START_STOP_FULL,  /*!< MCPWM timer starts counting and stops when next count reaches peak */
 } mcpwm_timer_start_stop_cmd_t;

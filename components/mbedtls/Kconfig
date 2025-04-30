@@ -655,7 +655,7 @@ menu "mbedTLS"
             expiry of TLS session tickets or session cache entries.
 
             Disabling this option will save some firmware size, particularly if
-            the rest of the firmware doesn't call any standard timekeeeping
+            the rest of the firmware doesn't call any standard timekeeping
             functions.
 
     config MBEDTLS_PLATFORM_TIME_ALT
