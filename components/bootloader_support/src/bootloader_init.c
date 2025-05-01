@@ -29,7 +29,7 @@ esp_image_header_t WORD_ALIGNED_ATTR bootloader_image_hdr;
 
 void bootloader_clear_bss_section(void)
 {
-    memset(&_bss_start, 0, (&_bss_end - &_bss_start) * sizeof(_bss_start));
+    memset(&_bss_start, 0, (uintptr_t)&_bss_end - (uintptr_t)&_bss_start);
 }
 
 esp_err_t bootloader_read_bootloader_header(void)

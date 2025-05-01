@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2018-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2018-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25,8 +25,9 @@ extern soc_reserved_region_t soc_reserved_memory_region_end;
 
 static size_t s_get_num_reserved_regions(void)
 {
-    size_t result = ( &soc_reserved_memory_region_end
-             - &soc_reserved_memory_region_start );
+    size_t result = (uintptr_t)&soc_reserved_memory_region_end - (uintptr_t)&soc_reserved_memory_region_start;
+    result /= sizeof(soc_reserved_region_t);
+
 #if ESP_ROM_HAS_LAYOUT_TABLE
     return result + 1; // ROM table means one entry needs to be added at runtime
 #else
