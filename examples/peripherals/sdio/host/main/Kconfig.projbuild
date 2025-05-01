@@ -47,6 +47,13 @@ menu "Example Configuration"
 
             If the example does not work, please try disabling the HS mode.
 
+    config EXAMPLE_SDIO_HOST_DELAY
+        int "SDIO Host Delay"
+        range 0 5
+        default 0
+        help
+            SDIO Host delay phase
+
     config EXAMPLE_ADJUSTABLE_PIN
         bool
         default EXAMPLE_SDIO_OVER_SPI || SOC_SDMMC_USE_GPIO_MATRIX
@@ -55,36 +62,42 @@ menu "Example Configuration"
         int "CMD (MOSI) GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 4 if IDF_TARGET_ESP32P4
         default 15
 
     config EXAMPLE_PIN_CLK
         int "CLK GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 33 if IDF_TARGET_ESP32P4
         default 14
 
     config EXAMPLE_PIN_D0
         int "D0 (MISO) GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 32 if IDF_TARGET_ESP32P4
         default 2
 
     config EXAMPLE_PIN_D1
         int "D1 (INTR) GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 23 if IDF_TARGET_ESP32P4
         default 4
 
     config EXAMPLE_PIN_D2
         int "D2 GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 53 if IDF_TARGET_ESP32P4
         default 12
 
     config EXAMPLE_PIN_D3
         int "D3 (CS) GPIO number"
         depends on EXAMPLE_ADJUSTABLE_PIN
         range ENV_GPIO_RANGE_MIN ENV_GPIO_OUT_RANGE_MAX
+        default 5 if IDF_TARGET_ESP32P4
         default 13
 
     choice EXAMPLE_SLAVE
@@ -100,11 +113,11 @@ menu "Example Configuration"
     endchoice
 
     config EXAMPLE_SLAVE_PWR_NEGTIVE_ACTIVE
-        bool "Slave power control pin is negtive active, otherwise postive active"
+        bool "Slave power control pin is negative active, otherwise positive active"
         depends on !EXAMPLE_SLAVE_NONE
         default n
         help
-            Slave power control pin is negtive active, otherwise postive active
+            Slave power control pin is negative active, otherwise positive active
 
     config EXAMPLE_NO_INTR_LINE
         bool "The host is not connected to the interrupt line (DAT1) of slave"

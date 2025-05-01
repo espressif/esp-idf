@@ -29,8 +29,16 @@ esp32_c6_param = [
     ]
 ]
 
+esp32p4_c5_param = [
+    [
+        f'{os.path.join(os.path.dirname(__file__), "host_sdmmc")}|{os.path.join(os.path.dirname(__file__), "sdio")}',
+        'esp32p4|esp32c5',
+    ]
+]
+
 esp32_param_default = [pytest.param(*param) for param in parameter_expand(esp32_32_param, ['default|default'])]
 c6_param_default = [pytest.param(*param) for param in parameter_expand(esp32_c6_param, ['default|default'])]
+c5_param_default = [pytest.param(*param) for param in parameter_expand(esp32p4_c5_param, ['esp32p4_esp32c5|default'])]
 
 c6_param_retention = [pytest.param(*param) for param in parameter_expand(esp32_c6_param, ['default|sleep_retention'])]
 
@@ -71,6 +79,19 @@ def test_sdio_esp32_esp32c6(dut: Tuple[IdfDut, IdfDut]) -> None:
 )
 @pytest.mark.parametrize('app_path, target, config', esp32_param_default, indirect=True)
 def test_sdio_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
+    test_sdio_flow(dut)
+
+
+@pytest.mark.sdio_multidev_p4_c5
+@pytest.mark.parametrize(
+    'count',
+    [
+        2,
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
+def test_sdio_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_flow(dut)
 
 
@@ -120,6 +141,19 @@ def test_sdio_speed_frhost_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_speed_frhost_flow(dut, 12200, 4000)
 
 
+@pytest.mark.sdio_multidev_p4_c5
+@pytest.mark.parametrize(
+    'count',
+    [
+        2,
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
+def test_sdio_speed_frhost_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
+    test_sdio_speed_frhost_flow(dut, 10000, 4000)
+
+
 # To host speed tests
 def test_sdio_speed_tohost_flow(dut: Tuple[IdfDut, IdfDut], expected_4b_speed: int, expected_1b_speed: int) -> None:
     dut[1].expect('Press ENTER to see the list of tests')
@@ -164,6 +198,19 @@ def test_sdio_speed_tohost_esp32_esp32c6(dut: Tuple[IdfDut, IdfDut]) -> None:
 @pytest.mark.parametrize('app_path, target, config', esp32_param_default, indirect=True)
 def test_sdio_speed_tohost_esp32_esp32(dut: Tuple[IdfDut, IdfDut]) -> None:
     test_sdio_speed_tohost_flow(dut, 12200, 4000)
+
+
+@pytest.mark.sdio_multidev_p4_c5
+@pytest.mark.parametrize(
+    'count',
+    [
+        2,
+    ],
+    indirect=True,
+)
+@pytest.mark.parametrize('app_path, target, config', c5_param_default, indirect=True)
+def test_sdio_speed_tohost_esp32p4_esp32c5(dut: Tuple[IdfDut, IdfDut]) -> None:
+    test_sdio_speed_tohost_flow(dut, 9000, 4000)
 
 
 # Retention tests

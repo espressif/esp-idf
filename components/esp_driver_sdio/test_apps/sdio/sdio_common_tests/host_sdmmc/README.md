@@ -1,5 +1,5 @@
-| Supported Targets | ESP32 |
-| ----------------- | ----- |
+| Supported Targets | ESP32 | ESP32-P4 |
+| ----------------- | ----- | -------- |
 
 # SDIO Cross Chips Test Apps: SDMMC Host App
 
