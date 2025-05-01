@@ -10,6 +10,7 @@
 #include "esp_private/system_internal.h"
 #include "esp_attr.h"
 #include "esp_log.h"
+#include "esp_macros.h"
 #include "esp_rom_sys.h"
 #include "riscv/rv_utils.h"
 #include "esp_rom_uart.h"
@@ -135,7 +136,5 @@ void esp_restart_noos(void)
         esp_cpu_reset(1);
     }
 #endif
-    while (true) {
-        ;
-    }
+    ESP_INFINITE_LOOP();
 }
