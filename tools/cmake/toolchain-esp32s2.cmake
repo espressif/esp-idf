@@ -7,17 +7,16 @@ set(CMAKE_CXX_COMPILER xtensa-esp32s2-elf-g++)
 set(CMAKE_ASM_COMPILER xtensa-esp32s2-elf-gcc)
 set(_CMAKE_TOOLCHAIN_PREFIX xtensa-esp32s2-elf-)
 
-remove_duplicated_flags("-mlongcalls \
-                         -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero \
-                         -fno-builtin-stpcpy -fno-builtin-strncpy \
-                         ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
+set(_CMAKE_TOOLCHAIN_COMMON_FLAGS "-mlongcalls -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero")
+
+remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_C_FLAGS}" UNIQ_CMAKE_C_FLAGS)
 set(CMAKE_C_FLAGS "${UNIQ_CMAKE_C_FLAGS}" CACHE STRING "C Compiler Base Flags" FORCE)
-remove_duplicated_flags("-mlongcalls \
-                         -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero \
-                         -fno-builtin-stpcpy -fno-builtin-strncpy \
-                         ${CMAKE_CXX_FLAGS}" UNIQ_CMAKE_CXX_FLAGS)
+
+remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_CXX_FLAGS}" UNIQ_CMAKE_CXX_FLAGS)
 set(CMAKE_CXX_FLAGS "${UNIQ_CMAKE_CXX_FLAGS}" CACHE STRING "C++ Compiler Base Flags" FORCE)
-remove_duplicated_flags("-mlongcalls ${CMAKE_ASM_FLAGS}" UNIQ_CMAKE_ASM_FLAGS)
+
+remove_duplicated_flags("${_CMAKE_TOOLCHAIN_COMMON_FLAGS} ${CMAKE_ASM_FLAGS}" UNIQ_CMAKE_ASM_FLAGS)
 set(CMAKE_ASM_FLAGS "${UNIQ_CMAKE_ASM_FLAGS}" CACHE STRING "ASM Compiler Base Flags" FORCE)
+
 remove_duplicated_flags("-nostartfiles ${CMAKE_EXE_LINKER_FLAGS}" UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS)
 set(CMAKE_EXE_LINKER_FLAGS "${UNIQ_CMAKE_SAFE_EXE_LINKER_FLAGS}" CACHE STRING "Linker Base Flags" FORCE)
