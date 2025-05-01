@@ -14,6 +14,44 @@ extern "C" {
 #endif
 
 /**
+ * @brief Helper function to configure a dual 16-bit acceptance filter.
+ * @note  For 29bits Extended IDs, ONLY high 16bits id/mask is used for eache filter.
+ *
+ * @param id1     First ID to filter.
+ * @param mask1   Mask for first ID.
+ * @param id2     Second ID to filter.
+ * @param mask2   Mask for second ID.
+ * @param is_ext  True if using Extended (29-bit) IDs, false for Standard (11-bit) IDs.
+ * @return twai_mask_filter_config_t   A filled filter configuration structure for dual filtering.
+ */
+static inline twai_mask_filter_config_t twai_make_dual_filter(uint16_t id1, uint16_t mask1, uint16_t id2, uint16_t mask2, bool is_ext)
+{
+    /**
+     * Dual filter is a special mode in hardware,
+     * which allow split general 32bits filter register to 2 unit of 16 bits id/mask pairs then using as 2 filter
+     * below code do bit shifting to reach hardware requirement in this mode, for detail please refer to `Dual Filter Mode` of TRM
+     *
+     *  31            16 15             0
+     *  ▼              ▼ ▼              ▼
+     *  xxxxxxxxxxxxxxxx xxxxxxxxxxxxxxxx
+     *  ◄─11 bits─►      ◄─11 bits─►
+     *  std filter 2     std filter 1
+     *  ─────────────────────────────────
+     *  ◄───16─bits────► ◄───16─bits────►
+     *    ext filter 2     etx filter 1
+     */
+    twai_mask_filter_config_t dual_cfg = {
+        .id = is_ext ? (((id1 & TWAI_EXT_ID_MASK) >> 13) << 16) | ((id2 & TWAI_EXT_ID_MASK) >> 13) : \
+        ((id1 & TWAI_STD_ID_MASK) << 21) | ((id2 & TWAI_STD_ID_MASK) << 5),
+        .mask = is_ext ? (((mask1 & TWAI_EXT_ID_MASK) >> 13) << 16) | ((mask2 & TWAI_EXT_ID_MASK) >> 13) : \
+        ((mask1 & TWAI_STD_ID_MASK) << 21) | ((mask2 & TWAI_STD_ID_MASK) << 5),
+        .is_ext = is_ext,
+        .dual_filter = true,
+    };
+    return dual_cfg;
+}
+
+/**
  * @brief TWAI on-chip node initialization configuration structure
  */
 typedef struct {
@@ -24,8 +62,8 @@ typedef struct {
         gpio_num_t bus_off_indicator;       /**< GPIO pin for bus-off indicator, Set -1 to not use */
     } io_cfg;                               /**< I/O configuration */
     twai_clock_source_t clk_src;            /**< Optional, clock source, remain 0 to using TWAI_CLK_SRC_DEFAULT by default */
-    twai_timing_basic_config_t bit_timing; /**< Timing configuration for classic twai and FD arbitration stage */
-    twai_timing_basic_config_t data_timing;/**< Optional, timing configuration for FD data stage */
+    twai_timing_basic_config_t bit_timing;  /**< Timing configuration for classic twai and FD arbitration stage */
+    twai_timing_basic_config_t data_timing; /**< Optional, timing configuration for FD data stage */
     int8_t fail_retry_cnt;                  /**< Hardware retry limit if failed, range [-1:15], -1 for re-trans forever */
     uint32_t tx_queue_depth;                /**< Depth of the transmit queue */
     int intr_priority;                      /**< Interrupt priority, [0:3] */

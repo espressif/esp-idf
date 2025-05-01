@@ -19,6 +19,7 @@ void setUp(void)
 
 void tearDown(void)
 {
+    esp_reent_cleanup();
     unity_utils_evaluate_leaks_direct(LEAKS);
 }
 

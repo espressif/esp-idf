@@ -135,7 +135,11 @@ elseif(NOT BOOTLOADER_BUILD)
     endif()
 
     if(CONFIG_SOC_TWAI_SUPPORTED)
-        list(APPEND srcs "twai_hal.c" "twai_hal_iram.c")
+        if(CONFIG_SOC_TWAI_SUPPORT_FD)
+            list(APPEND srcs "twai_hal_ctufd.c")
+        else()
+            list(APPEND srcs "twai_hal_sja1000.c")
+        endif()
     endif()
 
     if(CONFIG_SOC_GDMA_SUPPORTED)

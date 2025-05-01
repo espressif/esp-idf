@@ -22,16 +22,8 @@
 #define TWAI_PERI_ATOMIC()
 #endif
 
-#define DRIVER_DEFAULT_INTERRUPTS   (TWAIFD_LL_INTR_TX_DONE |\
-                                     TWAIFD_LL_INTR_TX_SUCCESS |\
-                                     TWAIFD_LL_INTR_RX_NOT_EMPTY |\
-                                     TWAIFD_LL_INTR_RX_FULL |\
-                                     TWAIFD_LL_INTR_ERR_WARN |\
-                                     TWAIFD_LL_INTR_BUS_ERR |\
-                                     TWAIFD_LL_INTR_FSM_CHANGE |\
-                                     TWAIFD_LL_INTR_ARBI_LOST |\
-                                     TWAIFD_LL_INTR_DATA_OVERRUN)
-
+#if SOC_TWAI_SUPPORT_FD
+#include "hal/twaifd_ll.h"
 static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
 {
     TWAI_RCC_ATOMIC() {
@@ -42,12 +34,37 @@ static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
         twaifd_ll_enable_clock(ctrlr_id, enable);
     }
 }
+static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
+{
+    TWAI_PERI_ATOMIC() {
+        twaifd_ll_set_clock_source(ctrlr_id, clock);
+    }
+}
+#else
+#include "hal/twai_ll.h"
+static void _twai_rcc_clock_ctrl(uint8_t ctrlr_id, bool enable)
+{
+    TWAI_RCC_ATOMIC() {
+        twai_ll_enable_bus_clock(ctrlr_id, enable);
+        twai_ll_reset_register(ctrlr_id);
+    }
+    TWAI_PERI_ATOMIC() {
+        twai_ll_enable_clock(ctrlr_id, enable);
+    }
+}
+static void _twai_rcc_clock_sel(uint8_t ctrlr_id, twai_clock_source_t clock)
+{
+    TWAI_PERI_ATOMIC() {
+        twai_ll_set_clock_source(ctrlr_id, clock);
+    }
+}
+#endif //SOC_TWAI_SUPPORT_FD
 
 typedef struct {
     struct twai_node_base api_base;
     int ctrlr_id;
     uint64_t gpio_reserved;
-    twai_hal_context_t hal;
+    twai_hal_context_t *hal;
     intr_handle_t intr_hdl;
     QueueHandle_t tx_mount_queue;
     twai_clock_source_t curr_clk_src;
@@ -155,37 +172,47 @@ static void _node_release_io(twai_onchip_ctx_t *node)
 
 static void _node_start_trans(twai_onchip_ctx_t *node)
 {
-    const twai_frame_header_t *format = &node->p_curr_tx->header;
-    twai_hal_context_t *hal = &node->hal;
-    twai_hal_frame_t tx_frame = {};
+    const twai_frame_t *frame = node->p_curr_tx;
+    twai_hal_context_t *hal = node->hal;
 
-    int final_dlc = (format->dlc) ? format->dlc : twaifd_len2dlc(node->p_curr_tx->buffer_len);
-    int data_len = (format->dlc) ? twaifd_dlc2len(format->dlc) : node->p_curr_tx->buffer_len;
-    twaifd_ll_format_frame_header(format, final_dlc, &tx_frame);
-    twaifd_ll_format_frame_data(node->p_curr_tx->buffer, data_len, &tx_frame);
+    twai_hal_frame_t hal_buf = {};
+    twai_hal_trans_desc_t hal_trans = {
+        .frame = {
+            .header = (twai_frame_header_t *) &frame->header,
+            .buffer = frame->buffer,
+            .buffer_len = frame->buffer_len,
+        },
+        .config = {
+            .retry_cnt = hal->retry_cnt,
+            .loopback = hal->enable_loopback,
+        },
+    };
+    twai_hal_format_frame(&hal_trans, &hal_buf);
     //TODO: utilize all txt buffers
-    twaifd_ll_mount_tx_buffer(hal->dev, &tx_frame, 0);
-    twaifd_ll_set_tx_cmd(hal->dev, 0, TWAIFD_LL_TX_CMD_READY);
+    twai_hal_set_tx_buffer_and_transmit(hal, &hal_buf, 0);
 }
 
 static void _node_isr_main(void *arg)
 {
     BaseType_t do_yield = pdFALSE;
     twai_onchip_ctx_t *twai_ctx = arg;
-    uint32_t int_stat = twaifd_ll_get_intr_status(twai_ctx->hal.dev);
-    twai_ctx->tx_error_count = twaifd_ll_get_tec(twai_ctx->hal.dev);
-    twai_ctx->rx_error_count = twaifd_ll_get_rec(twai_ctx->hal.dev);
-    twaifd_ll_clr_intr_status(twai_ctx->hal.dev, int_stat);
+    uint32_t events = twai_hal_get_events(twai_ctx->hal);    //Get the events that triggered the interrupt
 
-    // deal ERR event
-    if (int_stat & (TWAIFD_LL_INTR_BUS_ERR | TWAIFD_LL_INTR_ARBI_LOST)) {
-        uint32_t err_reason = twaifd_ll_get_err_reason_code(twai_ctx->hal.dev);
-        twai_error_event_data_t e_data = {0};
-        e_data.err_code.arb_lost = !!(int_stat & TWAIFD_LL_INTR_ARBI_LOST);
-        e_data.err_code.bit_err = (err_reason == TWAIFD_LL_ERR_BIT_ERR);
-        e_data.err_code.form_err = (err_reason == TWAIFD_LL_ERR_FRM_ERR);
-        e_data.err_code.stuff_err = (err_reason == TWAIFD_LL_ERR_STUF_ERR);
+#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+    if (events & TWAI_HAL_EVENT_NEED_PERIPH_RESET) {
+        twai_hal_prepare_for_reset(twai_ctx->hal);
+        TWAI_RCC_ATOMIC() {
+            twai_ll_reset_register(twai_ctx->ctrlr_id);
+        }
+        twai_hal_recover_from_reset(twai_ctx->hal);
+    }
+#endif
 
+    // deal BUS ERR event
+    if (events & (TWAI_HAL_EVENT_BUS_ERR | TWAI_HAL_EVENT_ARB_LOST)) {
+        twai_error_event_data_t e_data = {
+            .err_flags = twai_hal_get_err_flags(twai_ctx->hal),
+        };
         twai_ctx->history.bus_err_num ++;
         if (twai_ctx->cbs.on_error) {
             do_yield |= twai_ctx->cbs.on_error(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
@@ -193,23 +220,49 @@ static void _node_isr_main(void *arg)
     }
 
     // deal FSM event
-    if (int_stat & (TWAIFD_LL_INTR_FSM_CHANGE | TWAIFD_LL_INTR_ERR_WARN)) {
-        twai_state_change_event_data_t e_data = {.old_sta = twai_ctx->state};
-        e_data.new_sta = twaifd_ll_get_fault_state(twai_ctx->hal.dev);
-        uint32_t limit = twaifd_ll_get_err_warn_limit(twai_ctx->hal.dev);
-        if ((e_data.new_sta == TWAI_ERROR_ACTIVE) && ((twai_ctx->tx_error_count >= limit) || (twai_ctx->rx_error_count >= limit))) {
-            e_data.new_sta = TWAI_ERROR_WARNING;
-        }
+    if (events & (TWAI_HAL_EVENT_ERROR_ACTIVE | TWAI_HAL_EVENT_ERROR_WARNING | TWAI_HAL_EVENT_ERROR_PASSIVE | TWAI_HAL_EVENT_BUS_OFF)) {
+        twai_error_state_t curr_sta = (events & TWAI_HAL_EVENT_BUS_OFF) ? TWAI_ERROR_BUS_OFF : \
+                                      (events & TWAI_HAL_EVENT_ERROR_PASSIVE) ? TWAI_ERROR_PASSIVE : \
+                                      (events & TWAI_HAL_EVENT_ERROR_WARNING) ? TWAI_ERROR_WARNING : TWAI_ERROR_ACTIVE;
+        twai_state_change_event_data_t e_data = {
+            .old_sta = twai_ctx->state,
+            .new_sta = curr_sta,
+        };
         atomic_store(&twai_ctx->state, e_data.new_sta);
         if (twai_ctx->cbs.on_state_change) {
             do_yield |= twai_ctx->cbs.on_state_change(&twai_ctx->api_base, &e_data, twai_ctx->user_data);
         }
     }
 
+    // deal RX event, then TX later, TODO: DIG-620
+    if (events & TWAI_HAL_EVENT_RX_BUFF_FRAME) {
+        while (twai_hal_get_rx_msg_count(twai_ctx->hal)) {
+            if (twai_hal_read_rx_fifo(twai_ctx->hal, &twai_ctx->rcv_buff)) {
+#if !SOC_TWAI_SUPPORT_FD
+                // the legacy hardware filter don't support split frame format std/ext in filter, check in software
+                if (!twai_hal_soft_filter_check_msg(twai_ctx->hal, &twai_ctx->rcv_buff)) {
+                    continue;   // soft filter to check if id type match the filter config
+                }
+#endif
+                if (twai_ctx->cbs.on_rx_done) {
+                    atomic_store(&twai_ctx->rx_isr, true);  //todo: using compare_exchange to avoid intr from 2nd core
+                    twai_rx_done_event_data_t rx_ev = {};
+                    do_yield |= twai_ctx->cbs.on_rx_done(&twai_ctx->api_base, &rx_ev, twai_ctx->user_data);
+                    atomic_store(&twai_ctx->rx_isr, false);
+                }
+            } else {    // failed to read from RX fifo because message is overrun
+#if !SOC_TWAI_SUPPORTS_RX_STATUS
+                twai_hal_clear_rx_fifo_overrun(twai_ctx->hal);
+                break;
+#endif
+            }
+        }
+    }
+
     // deal TX event
-    if (int_stat & (TWAIFD_LL_INTR_TX_DONE | TWAIFD_LL_INTR_TX_SUCCESS)) {
+    if (events & TWAI_HAL_EVENT_TX_BUFF_FREE) {
         // only call tx_done_cb when tx without error, otherwise on_error_cb should triggered if it is registered
-        if (twai_ctx->cbs.on_tx_done && (int_stat & TWAIFD_LL_INTR_TX_DONE)) {
+        if (twai_ctx->cbs.on_tx_done && (events & TWAI_HAL_EVENT_TX_SUCCESS)) {
             twai_tx_done_event_data_t tx_ev = {
                 .done_tx_frame = twai_ctx->p_curr_tx,
             };
@@ -223,22 +276,6 @@ static void _node_isr_main(void *arg)
         } else {
             atomic_store(&twai_ctx->hw_busy, false);
         }
-    }
-
-    // deal RX event
-    if (int_stat & TWAIFD_LL_INTR_RX_NOT_EMPTY) {
-        while (twaifd_ll_get_rx_frame_count(twai_ctx->hal.dev)) {
-            twaifd_ll_get_rx_frame(twai_ctx->hal.dev, &twai_ctx->rcv_buff);
-            if (twai_ctx->cbs.on_rx_done) {
-                atomic_store(&twai_ctx->rx_isr, true);
-                const twai_rx_done_event_data_t rx_ev = {
-                };
-                do_yield |= twai_ctx->cbs.on_rx_done(&twai_ctx->api_base, &rx_ev, twai_ctx->user_data);
-                atomic_store(&twai_ctx->rx_isr, false);
-            }
-        }
-        // rx flag can only cleared after read to empty
-        twaifd_ll_clr_intr_status(twai_ctx->hal.dev, TWAIFD_LL_INTR_RX_NOT_EMPTY);
     }
 
     if (do_yield) {
@@ -269,6 +306,7 @@ static esp_err_t _node_delete(twai_node_handle_t node)
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "delete node must when node stopped");
 
     _node_release_io(twai_ctx);
+    twai_hal_deinit(twai_ctx->hal);
     _twai_rcc_clock_ctrl(twai_ctx->ctrlr_id, false);
     _node_destroy(twai_ctx);
     return ESP_OK;
@@ -295,7 +333,7 @@ static esp_err_t _node_check_timing_valid(twai_onchip_ctx_t *twai_ctx, const twa
         return ESP_OK;
     }
     ESP_RETURN_ON_FALSE(!timing->quanta_resolution_hz, ESP_ERR_INVALID_ARG, TAG, "quanta_resolution_hz is not supported");  //TODO: IDF-12725
-    ESP_RETURN_ON_FALSE((timing->brp >= SOC_TWAI_BRP_MIN) && (timing->brp <= SOC_TWAI_BRP_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid brp");
+    ESP_RETURN_ON_FALSE(twai_hal_check_brp_validation(twai_ctx->hal, timing->brp), ESP_ERR_INVALID_ARG, TAG, "invalid brp");
     ESP_RETURN_ON_FALSE((timing->tseg_1 >= TWAI_LL_TSEG1_MIN) && (timing->tseg_1 <= TWAI_LL_TSEG1_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg1");
     ESP_RETURN_ON_FALSE((timing->tseg_2 >= TWAI_LL_TSEG2_MIN) && (timing->tseg_2 <= TWAI_LL_TSEG2_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid tseg_2");
     ESP_RETURN_ON_FALSE((timing->sjw >= 1) && (timing->sjw <= TWAI_LL_SJW_MAX), ESP_ERR_INVALID_ARG, TAG, "invalid swj");
@@ -312,6 +350,7 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
         new_clock_src = timing->clk_src ? timing->clk_src : TWAI_CLK_SRC_DEFAULT;
     } else {
         if (timing) {
+            ESP_RETURN_ON_FALSE(!twai_ctx->valid_fd_timing || !timing->clk_src || (timing->clk_src == TWAI_CLK_SRC_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "don't change clk_src in single config");
             new_clock_src = timing->clk_src ? timing->clk_src : TWAI_CLK_SRC_DEFAULT;
         } else {
             ESP_RETURN_ON_FALSE(!timing_fd->clk_src || (timing_fd->clk_src == TWAI_CLK_SRC_DEFAULT), ESP_ERR_INVALID_ARG, TAG, "don't change clk_src in single config");
@@ -322,33 +361,19 @@ static esp_err_t _node_set_bit_timing(twai_node_handle_t node, const twai_timing
     ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing, source_freq), TAG, "invalid param");
     ESP_RETURN_ON_ERROR(_node_check_timing_valid(twai_ctx, timing_fd, source_freq), TAG, "invalid fd param");
 
-    int ssp_offset = 0;
     if (timing) {
-        twaifd_ll_set_nominal_bitrate(twai_ctx->hal.dev, timing);
-        if (timing->ssp_offset) {
-            // the underlying hardware calculates the ssp in system clock cycles, not in quanta time
-            ssp_offset = timing->ssp_offset * timing->brp;
-        }
+        twai_hal_configure_timing(twai_ctx->hal, timing);
     }
 #if SOC_TWAI_SUPPORT_FD
     if (timing_fd) {
         twai_ctx->valid_fd_timing = true;
-        twaifd_ll_set_fd_bitrate(twai_ctx->hal.dev, timing_fd);
-        // Note, the ssp_offset set for the data phase can override the nominal phase, because ssp is more necessary for a high bitrate communication
-        if (timing_fd->ssp_offset) {
-            // the underlying hardware calculates the ssp in system clock cycles, not in quanta time
-            ssp_offset = timing_fd->ssp_offset * timing_fd->brp;
-        }
+        twai_hal_configure_timing_fd(twai_ctx->hal, timing_fd);
     }
 #endif
 
-    // config ssp, the hardware offset_val TWAIFD_LL_SSP_SRC_MEAS_OFFSET measured by clock_src freq
-    twaifd_ll_config_secondary_sample_point(twai_ctx->hal.dev, (ssp_offset ? TWAIFD_LL_SSP_SRC_MEAS_OFFSET : TWAIFD_LL_SSP_SRC_NO_SSP), ssp_offset);
     if (new_clock_src != twai_ctx->curr_clk_src) {
         twai_ctx->curr_clk_src = new_clock_src;
-        TWAI_PERI_ATOMIC() {
-            twaifd_ll_set_clock_source(twai_ctx->ctrlr_id, new_clock_src);
-        }
+        _twai_rcc_clock_sel(twai_ctx->ctrlr_id, new_clock_src);
     }
     return ESP_OK;
 }
@@ -364,10 +389,10 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
     ESP_RETURN_ON_ERROR(esp_clk_tree_src_get_freq_hz(root_clock_src, ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX, &source_freq), TAG, "can't get clock source freq");
 
     twai_timing_advanced_config_t timing_adv = { .clk_src = root_clock_src, };
-    twai_timing_advanced_config_t *fd_cfg_ptr = NULL, timing_adv_fd = { .clk_src = root_clock_src, };
+    twai_timing_advanced_config_t *fd_cfg_ptr = NULL;
     twai_timing_constraint_t hw_const = {
-        .brp_min = SOC_TWAI_BRP_MIN,
-        .brp_max = SOC_TWAI_BRP_MAX,
+        .brp_min = TWAI_LL_BRP_MIN,
+        .brp_max = TWAI_LL_BRP_MAX,
         .tseg1_min = TWAI_LL_TSEG1_MIN,
         .tseg1_max = TWAI_LL_TSEG1_MAX,
         .tseg2_min = TWAI_LL_TSEG2_MIN,
@@ -381,6 +406,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
         ESP_LOGW(TAG, "bitrate precision loss, adjust from %ld to %ld", timing->bitrate, real_baud);
     }
 #if SOC_TWAI_SUPPORT_FD
+    twai_timing_advanced_config_t timing_adv_fd = { .clk_src = root_clock_src, };
     if (timing_fd->bitrate) {
         real_baud = twai_node_timing_calc_param(source_freq, timing_fd, &hw_const, &timing_adv_fd);
         ESP_LOGD(TAG, "fd src %ld, param %ld %d %d %d %d %d", source_freq, timing_adv_fd.brp, timing_adv_fd.prop_seg, timing_adv_fd.tseg_1, timing_adv_fd.tseg_2, timing_adv_fd.sjw, timing_adv_fd.ssp_offset);
@@ -391,7 +417,7 @@ static esp_err_t _node_calc_set_bit_timing(twai_node_handle_t node, twai_clock_s
         fd_cfg_ptr = &timing_adv_fd;
     }
 #endif
-    ESP_RETURN_ON_ERROR(_node_set_bit_timing(node, &timing_adv, fd_cfg_ptr), TAG, "invalid timing param");
+    ESP_RETURN_ON_ERROR(_node_set_bit_timing(node, &timing_adv, fd_cfg_ptr), TAG, "invalid timing param, bitrate can't achieve!");
     return ESP_OK;
 }
 
@@ -408,14 +434,14 @@ static esp_err_t _node_enable(twai_node_handle_t node)
         ESP_RETURN_ON_ERROR(esp_pm_lock_acquire(twai_ctx->pm_lock), TAG, "acquire power manager failed");
     }
 #endif //CONFIG_PM_ENABLE
-    twaifd_ll_enable_hw(twai_ctx->hal.dev, true);
-    twaifd_ll_waiting_state_change(twai_ctx->hal.dev);  // waiting hardware ready before resume transaction
+    twai_hal_start(twai_ctx->hal);
 
+    twai_error_state_t hw_state = twai_hal_get_err_state(twai_ctx->hal);
+    atomic_store(&twai_ctx->state, hw_state);
     // continuing the transaction if there be
-    if (atomic_load(&twai_ctx->hw_busy) && twaifd_ll_get_fault_state(twai_ctx->hal.dev) != TWAI_ERROR_BUS_OFF) {
+    if (atomic_load(&twai_ctx->hw_busy) && hw_state != TWAI_ERROR_BUS_OFF) {
         _node_start_trans(twai_ctx);
     }
-    // once interrupt enabled, state_change_intr will fire at the moment and update the `twai_ctx->state`
     ESP_RETURN_ON_ERROR(esp_intr_enable(twai_ctx->intr_hdl), TAG, "enable interrupt failed");
     return ESP_OK;
 }
@@ -425,9 +451,19 @@ static esp_err_t _node_disable(twai_node_handle_t node)
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node already disabled");
 
-    esp_intr_disable(twai_ctx->intr_hdl);
+    ESP_RETURN_ON_ERROR(esp_intr_disable(twai_ctx->intr_hdl), TAG, "disable interrupt failed");
     atomic_store(&twai_ctx->state, TWAI_ERROR_BUS_OFF);
-    twaifd_ll_enable_hw(twai_ctx->hal.dev, false);
+    twai_hal_stop(twai_ctx->hal);
+#if CONFIG_IDF_TARGET_ESP32 // only esp32 have this errata, TODO: IDF-13002 check errata runtime
+    // when `disable` happens during hardware busy, the next RX frame is corrupted, a HW reset can fix it
+    if (twai_hal_is_hw_busy(twai_ctx->hal)) {
+        twai_hal_backup_config(twai_ctx->hal);
+        TWAI_RCC_ATOMIC() {
+            twai_ll_reset_register(twai_ctx->ctrlr_id);
+        }
+        twai_hal_restore_config(twai_ctx->hal);
+    }
+#endif
 
 #if CONFIG_PM_ENABLE
     if (twai_ctx->pm_lock) {
@@ -441,19 +477,14 @@ static esp_err_t _node_config_mask_filter(twai_node_handle_t node, uint8_t filte
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_MASK_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid mask filter id %d", filter_id);
+    ESP_RETURN_ON_FALSE(mask_cfg->num_of_ids <= 1, ESP_ERR_INVALID_ARG, TAG, "Invalid num_of_ids");
+#if SOC_TWAI_SUPPORT_FD
+    // FD targets don't support Dual filter
+    ESP_RETURN_ON_FALSE(!mask_cfg->dual_filter, ESP_ERR_NOT_SUPPORTED, TAG, "The target don't support Dual Filter");
+#endif
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
 
-    bool full_open = (mask_cfg->mask == 0) && (mask_cfg->id == 0);
-    bool full_close = (mask_cfg->mask == UINT32_MAX) && (mask_cfg->id == UINT32_MAX);
-    bool cc_ext = full_open || (!full_close && mask_cfg->is_ext && !mask_cfg->no_classic);
-    bool fd_ext = full_open || (!full_close && mask_cfg->is_ext && !mask_cfg->no_fd);
-    bool cc_std = full_open || (!full_close && !mask_cfg->is_ext && !mask_cfg->no_classic);
-    bool fd_std = full_open || (!full_close && !mask_cfg->is_ext && !mask_cfg->no_fd);
-    twaifd_ll_filter_enable_basic_ext(twai_ctx->hal.dev, filter_id, false, cc_ext);
-    twaifd_ll_filter_enable_fd_ext(twai_ctx->hal.dev, filter_id, false, fd_ext);
-    twaifd_ll_filter_enable_basic_std(twai_ctx->hal.dev, filter_id, false, cc_std);
-    twaifd_ll_filter_enable_fd_std(twai_ctx->hal.dev, filter_id, false, fd_std);
-    twaifd_ll_filter_set_id_mask(twai_ctx->hal.dev, filter_id, mask_cfg->is_ext, mask_cfg->id, mask_cfg->mask);
+    twai_hal_configure_filter(twai_ctx->hal, filter_id, mask_cfg);
     return ESP_OK;
 }
 
@@ -464,15 +495,7 @@ static esp_err_t _node_config_range_filter(twai_node_handle_t node, uint8_t filt
     ESP_RETURN_ON_FALSE(filter_id < SOC_TWAI_RANGE_FILTER_NUM, ESP_ERR_INVALID_ARG, TAG, "Invalid range filter id %d", filter_id);
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) == TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "config filter must when node stopped");
 
-    bool cc_ext = range_cfg->is_ext && !range_cfg->no_classic;
-    bool fd_ext = range_cfg->is_ext && !range_cfg->no_fd;
-    bool cc_std = !range_cfg->is_ext && !range_cfg->no_classic;
-    bool fd_std = !range_cfg->is_ext && !range_cfg->no_fd;
-    twaifd_ll_filter_enable_basic_ext(twai_ctx->hal.dev, filter_id, true, cc_ext);
-    twaifd_ll_filter_enable_fd_ext(twai_ctx->hal.dev, filter_id, true, fd_ext);
-    twaifd_ll_filter_enable_basic_std(twai_ctx->hal.dev, filter_id, true, cc_std);
-    twaifd_ll_filter_enable_fd_std(twai_ctx->hal.dev, filter_id, true, fd_std);
-    twaifd_ll_filter_set_range(twai_ctx->hal.dev, 0, range_cfg->is_ext, range_cfg->range_high, range_cfg->range_low);
+    twai_hal_configure_range_filter(twai_ctx->hal, filter_id, range_cfg);
     return ESP_OK;
 }
 #endif
@@ -484,7 +507,7 @@ static esp_err_t _node_recover(twai_node_handle_t node)
 
     // After recover command, the hardware require 128 consecutive occurrences of 11 recessive bits received, so that it can be active again!
     // Checking `twai_node_status_t::state` Or waiting `on_state_change` callback can know if recover is finish
-    twaifd_ll_set_operate_cmd(twai_ctx->hal.dev, TWAIFD_LL_HW_CMD_RST_ERR_CNT);
+    twai_hal_start_bus_recovery(twai_ctx->hal);
     twai_ctx->history.bus_err_num = 0;
     return ESP_OK;
 }
@@ -512,9 +535,12 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     if (frame->header.dlc && frame->buffer_len) {
         ESP_RETURN_ON_FALSE(frame->header.dlc == twaifd_len2dlc(frame->buffer_len), ESP_ERR_INVALID_ARG, TAG, "unmatched dlc and buffer_len");
     }
+#if !SOC_TWAI_SUPPORT_FD
+    ESP_RETURN_ON_FALSE(!frame->header.fdf || frame->buffer_len <= TWAI_FRAME_MAX_LEN, ESP_ERR_INVALID_ARG, TAG, "fdf flag or buffer_len not supported");
+#endif
     ESP_RETURN_ON_FALSE(frame->buffer_len <= (frame->header.fdf ? TWAIFD_FRAME_MAX_LEN : TWAI_FRAME_MAX_LEN), ESP_ERR_INVALID_ARG, TAG, "illegal transfer length (buffer_len %ld)", frame->buffer_len);
     ESP_RETURN_ON_FALSE((!frame->header.brs) || (twai_ctx->valid_fd_timing), ESP_ERR_INVALID_ARG, TAG, "brs can't be used without config data_timing");
-    ESP_RETURN_ON_FALSE(!twai_ctx->hal.enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
+    ESP_RETURN_ON_FALSE(!twai_ctx->hal->enable_listen_only, ESP_ERR_NOT_SUPPORTED, TAG, "node is config as listen only");
     ESP_RETURN_ON_FALSE(atomic_load(&twai_ctx->state) != TWAI_ERROR_BUS_OFF, ESP_ERR_INVALID_STATE, TAG, "node is bus off");
     TickType_t ticks_to_wait = (timeout == -1) ? portMAX_DELAY : pdMS_TO_TICKS(timeout);
 
@@ -537,18 +563,12 @@ static esp_err_t _node_queue_tx(twai_node_handle_t node, const twai_frame_t *fra
     return ESP_OK;
 }
 
-static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_header_t *header, uint8_t *rx_buffer, size_t buf_len, size_t *ret_len)
+static esp_err_t _node_parse_rx(twai_node_handle_t node, twai_frame_t *rx_frame)
 {
     twai_onchip_ctx_t *twai_ctx = __containerof(node, twai_onchip_ctx_t, api_base);
     ESP_RETURN_ON_FALSE_ISR(atomic_load(&twai_ctx->rx_isr), ESP_ERR_INVALID_STATE, TAG, "rx can only called in `rx_done` callback");
 
-    twaifd_ll_parse_frame_header(&twai_ctx->rcv_buff, header);
-    uint32_t frame_data_len = twaifd_dlc2len(header->dlc);
-    uint8_t final_len = (frame_data_len < buf_len) ? frame_data_len : buf_len;
-    twaifd_ll_parse_frame_data(&twai_ctx->rcv_buff, rx_buffer, final_len);
-    if (ret_len) {
-        *ret_len = frame_data_len;
-    }
+    twai_hal_parse_frame(&twai_ctx->rcv_buff, &rx_frame->header, rx_frame->buffer, rx_frame->buffer_len);
     return ESP_OK;
 }
 
@@ -560,24 +580,21 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     ESP_RETURN_ON_FALSE(!node_config->intr_priority || (BIT(node_config->intr_priority) & ESP_INTR_FLAG_LOWMED), ESP_ERR_INVALID_ARG, TAG, "Invalid intr_priority level");
 
     // Allocate TWAI node object memory
-    twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t), TWAI_MALLOC_CAPS);
+    twai_onchip_ctx_t *node = heap_caps_calloc(1, sizeof(twai_onchip_ctx_t) + twai_hal_get_mem_requirment(), TWAI_MALLOC_CAPS);
     ESP_RETURN_ON_FALSE(node, ESP_ERR_NO_MEM, TAG, "No mem");
     node->ctrlr_id = -1;
     // Acquire controller
     int ctrlr_id = _ctrlr_acquire(node);
     ESP_GOTO_ON_FALSE(ctrlr_id != -1, ESP_ERR_NOT_FOUND, err, TAG, "Controller not available");
     node->ctrlr_id = ctrlr_id;
+    node->hal = (twai_hal_context_t *)(node + 1);   //hal context is place at end of driver context
 
     // state is in bus_off before enabled
     atomic_store(&node->state, TWAI_ERROR_BUS_OFF);
     node->tx_mount_queue = xQueueCreateWithCaps(node_config->tx_queue_depth, sizeof(twai_frame_t *), TWAI_MALLOC_CAPS);
     ESP_GOTO_ON_FALSE(node->tx_mount_queue, ESP_ERR_NO_MEM, err, TAG, "no_mem");
     uint32_t intr_flags = TWAI_INTR_ALLOC_FLAGS;
-    if (node_config->intr_priority > 0) {
-        intr_flags |= BIT(node_config->intr_priority);
-    } else {
-        intr_flags |= ESP_INTR_FLAG_LOWMED;
-    }
+    intr_flags |= (node_config->intr_priority > 0) ? BIT(node_config->intr_priority) : ESP_INTR_FLAG_LOWMED;
     ESP_GOTO_ON_ERROR(esp_intr_alloc(twai_controller_periph_signals.controllers[ctrlr_id].irq_id, intr_flags, _node_isr_main, (void *)node, &node->intr_hdl),
                       err, TAG, "Alloc interrupt failed");
 
@@ -586,19 +603,16 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     // Initialize HAL and configure register defaults.
     twai_hal_config_t hal_config = {
         .controller_id = node->ctrlr_id,
-        .intr_mask = DRIVER_DEFAULT_INTERRUPTS,
+        .intr_mask = TWAI_LL_DRIVER_INTERRUPTS,
+        .retry_cnt = node_config->fail_retry_cnt,
+        .no_receive_rtr = node_config->flags.no_receive_rtr,
         .enable_listen_only = node_config->flags.enable_listen_only,
+        .enable_self_test = node_config->flags.enable_self_test,
+        .enable_loopback = node_config->flags.enable_loopback,
     };
-    ESP_GOTO_ON_FALSE(twai_hal_init(&node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
-    twaifd_ll_set_mode(node->hal.dev, node_config->flags.enable_listen_only, node_config->flags.enable_self_test, node_config->flags.enable_loopback);
-    twaifd_ll_set_tx_retrans_limit(node->hal.dev, node_config->fail_retry_cnt);
-    twaifd_ll_filter_block_rtr(node->hal.dev, node_config->flags.no_receive_rtr);
-    twaifd_ll_enable_filter_mode(node->hal.dev, true);  // each filter still has independent enable control
-    twaifd_ll_enable_fd_mode(node->hal.dev, true);      // fd frame still controlled by `header.fdf`
-
+    ESP_GOTO_ON_FALSE(twai_hal_init(node->hal, &hal_config), ESP_ERR_INVALID_STATE, err, TAG, "hardware not in reset state");
     // Configure bus timing
     ESP_GOTO_ON_ERROR(_node_calc_set_bit_timing(&node->api_base, node_config->clk_src, &node_config->bit_timing, &node_config->data_timing), err, TAG, "bitrate error");
-
     // Configure GPIO
     ESP_GOTO_ON_ERROR(_node_config_io(node, node_config), err, TAG, "gpio config failed");
 #if CONFIG_PM_ENABLE
@@ -610,7 +624,9 @@ esp_err_t twai_new_node_onchip(const twai_onchip_node_config_t *node_config, twa
     node->api_base.del = _node_delete;
     node->api_base.recover = _node_recover;
     node->api_base.config_mask_filter = _node_config_mask_filter;
+#if SOC_TWAI_RANGE_FILTER_NUM
     node->api_base.config_range_filter = _node_config_range_filter;
+#endif
     node->api_base.reconfig_timing = _node_set_bit_timing;
     node->api_base.register_cbs = _node_register_callbacks;
     node->api_base.transmit = _node_queue_tx;

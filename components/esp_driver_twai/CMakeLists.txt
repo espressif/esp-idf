@@ -8,8 +8,7 @@ set(srcs "esp_twai.c")
 set(public_include "include")
 set(priv_req esp_driver_gpio esp_pm)
 
-# Currently support only FD targets
-if(CONFIG_SOC_TWAI_SUPPORT_FD)
+if(CONFIG_SOC_TWAI_SUPPORTED)
     list(APPEND srcs "esp_twai_onchip.c")
 endif()
 

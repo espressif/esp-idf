@@ -755,6 +755,10 @@ config SOC_TWAI_CONTROLLER_NUM
     int
     default 1
 
+config SOC_TWAI_MASK_FILTER_NUM
+    int
+    default 1
+
 config SOC_TWAI_BRP_MIN
     int
     default 2
