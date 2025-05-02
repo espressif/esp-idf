@@ -9,6 +9,7 @@
 
 #include "esp_err.h"
 #include "esp_wifi.h"
+#include "esp_wifi_types_generic.h"
 
 #if CONFIG_NEWLIB_NANO_FORMAT
 #define TASK_STACK_SIZE_ADD 0
@@ -217,6 +218,8 @@ enum key_flag {
     KEY_FLAG_PMK                    = BIT(6),
 };
 
+typedef wifi_scan_channel_bitmap_t channel_bitmap_t;
+
 uint8_t *esp_wifi_ap_get_prof_pmk_internal(void);
 struct wifi_ssid *esp_wifi_ap_get_prof_ap_ssid_internal(void);
 uint8_t esp_wifi_ap_get_prof_authmode_internal(void);
@@ -306,5 +309,5 @@ uint8_t esp_wifi_ap_get_transition_disable_internal(void);
 int esp_wifi_softap_set_obss_overlap(bool overlap);
 void esp_wifi_set_sigma_internal(bool flag);
 void esp_wifi_ap_set_group_mgmt_cipher_internal(wifi_cipher_type_t cipher);
-
+uint8_t esp_wifi_op_class_supported_internal(uint8_t op_class, uint8_t min_chan, uint8_t max_chan, uint8_t inc, uint8_t bw, channel_bitmap_t *non_pref_channels);
 #endif /* _ESP_WIFI_DRIVER_H_ */
