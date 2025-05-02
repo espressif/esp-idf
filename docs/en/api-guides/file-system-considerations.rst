@@ -173,11 +173,18 @@ Points to keep in mind when developing NVS related code:
 * The NVS library cannot ensure data consistency in out-of-spec power environments, such as systems powered by batteries or solar panels. Misinterpretation of flash data in such situations can lead to corruption of the NVS flash partition. Developers should include data recovery code, e.g., based on a read-only data partition with factory settings.
 * An initialized NVS library leaves a RAM footprint, which scales linearly with the overall size of the flash partitions and the number of cached keys.
 
+**Read-only NVS partitions:**
+
+* Read-only partitions can be used to store data that should not be modified at runtime. This is useful for storing firmware or configuration data that should not be changed by the application.
+* NVS partitions can be flagged as ``readonly`` in the partition table CSV file. Size of read-only NVS partition can be as small as one page (4 KiB/``0x1000``), which is not possible for standard read-write NVS partitions.
+* Partitions of sizes ``0x1000`` and ``0x2000`` are always read-only and partitions of size ``0x3000`` and above are always read-write capable (still can be opened in read-only mode in the code).
+
 **Related documents:**
 
 - To learn more about the API and NVS library details, see the :doc:`NVS documentation page <../api-reference/storage/nvs_flash>`.
 - For mass production, you can use the :doc:`NVS Partition Generator Utility <../api-reference/storage/nvs_partition_gen>`.
 - For offline NVS partition analysis, you can use the :doc:`NVS Partition Parser Utility <../api-reference/storage/nvs_partition_parse>`.
+- For more information about read-only NVS partitions, see the :ref:`Read-only NVS <read-only-nvs>`.
 
 **Examples:**
 
