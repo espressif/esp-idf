@@ -34,6 +34,20 @@ struct element {
 
 struct wpa_supplicant;
 
+struct oper_class_map {
+        enum hostapd_hw_mode mode;
+        u8 op_class;
+        u8 min_chan;
+        u8 max_chan;
+        u8 inc;
+        enum { BW20, BW40PLUS, BW40MINUS, BW40, BW80, BW2160, BW160, BW80P80,
+               BW320, BW4320, BW6480, BW8640} bw;
+        enum { P2P_SUPP, NO_P2P_SUPP } p2p;
+};
+
+extern const struct oper_class_map global_op_class[];
+extern size_t global_op_class_size;
+
 int ieee802_11_parse_candidate_list(const char *pos, u8 *nei_rep,
 				    size_t nei_rep_len);
 const u8 * get_ie(const u8 *ies, size_t len, u8 eid);
