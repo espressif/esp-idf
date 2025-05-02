@@ -6,6 +6,16 @@
 
 #include "ext_port.h"
 
+typedef enum {
+    RECYCLE_PORT_PRESENT = 0,
+    RECYCLE_PORT_IS_GONE
+} test_recycle_flag_t;
+
+typedef enum {
+    GONE_DEVICE_PRESENT = 0,
+    GONE_DEVICE_NOT_PRESENT
+} test_gone_flag_t;
+
 /**
  * @brief External Port setup test
  * Create queues for events/callbacks and install External Port driver
@@ -88,9 +98,9 @@ void test_ext_port_disable(uint8_t port1, ext_port_hdl_t port_hdl);
  * @brief Test External Port recycle
  *
  * @param[in] port_hdl External Port handle
- * @param[in] has_device Device presence
+ * @param[in] flag Device presence
  */
-void test_ext_port_gone(ext_port_hdl_t port_hdl, bool has_device);
+void test_ext_port_gone(ext_port_hdl_t port_hdl, test_gone_flag_t flag);
 
 /**
  * @brief Test External Port delete
@@ -103,5 +113,6 @@ void test_ext_port_delete(ext_port_hdl_t port_hdl);
  * @brief Test External Port recycle
  *
  * @param[in] port_hdl External Port handle
+ * @param[in] flag Port recycle flag
  */
-void test_ext_port_recycle(ext_port_hdl_t port_hdl);
+void test_ext_port_recycle(ext_port_hdl_t port_hdl, test_recycle_flag_t flag);

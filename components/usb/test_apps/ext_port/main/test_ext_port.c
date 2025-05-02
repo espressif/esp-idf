@@ -92,7 +92,7 @@ TEST_CASE("Port: disconnected", "[low_speed][full_speed][high_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_EMPTY <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_EMPTY,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -105,7 +105,7 @@ TEST_CASE("Port: disconnected", "[low_speed][full_speed][high_speed]")
     // Detach parent hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 }
 
@@ -136,7 +136,7 @@ TEST_CASE("Port: enumerate child device Low-speed", "[ext_port][low_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_LS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_LS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -157,12 +157,12 @@ TEST_CASE("Port: enumerate child device Low-speed", "[ext_port][low_speed]")
     hub_child_pipe_free(ctrl_pipe);
     // Wait disconnection
     test_ext_port_imitate_disconnection(TEST_PORT_NUM_DEVICE_LS, port_hdl);
-    // Recycle the port
-    test_ext_port_recycle(port_hdl);
+    // Recylce the port
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_PRESENT);
     // Detach hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 }
 
@@ -193,7 +193,7 @@ TEST_CASE("Port: enumerate child device Full-speed", "[ext_port][full_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -214,12 +214,12 @@ TEST_CASE("Port: enumerate child device Full-speed", "[ext_port][full_speed]")
     hub_child_pipe_free(ctrl_pipe);
     // Wait disconnection
     test_ext_port_imitate_disconnection(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
-    // Recycle the port
-    test_ext_port_recycle(port_hdl);
+    // Recylce the port
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_PRESENT);
     // Detach hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 }
 
@@ -250,7 +250,7 @@ TEST_CASE("Port: enumerate child device High-speed", "[ext_port][high_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -271,12 +271,12 @@ TEST_CASE("Port: enumerate child device High-speed", "[ext_port][high_speed]")
     hub_child_pipe_free(ctrl_pipe);
     // Wait disconnection
     test_ext_port_imitate_disconnection(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
-    // Recycle the port
-    test_ext_port_recycle(port_hdl);
+    // Recylce the port
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_PRESENT);
     // Detach hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 }
 
@@ -307,7 +307,7 @@ TEST_CASE("Port: recycle", "[ext_port][full_speed][high_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -324,7 +324,7 @@ TEST_CASE("Port: recycle", "[ext_port][full_speed][high_speed]")
     test_ext_port_imitate_disconnection(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
     // Recylce the port
     printf("Recycle the port...\n");
-    test_ext_port_recycle(port_hdl);
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_PRESENT);
     // Repower the port as we use imitation for disconnection. Port state in the External Port Driver is not changed during that.
     hub_port_power_off(TEST_PORT_NUM_DEVICE_FSHS);
     hub_port_power_on(TEST_PORT_NUM_DEVICE_FSHS);
@@ -337,12 +337,42 @@ TEST_CASE("Port: recycle", "[ext_port][full_speed][high_speed]")
     // Wait disconnection
     test_ext_port_imitate_disconnection(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
     // Recylce the port
-    test_ext_port_recycle(port_hdl);
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_PRESENT);
     // Detach hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
+}
+
+TEST_CASE("Port: recycle when port is gone", "[ext_port][low_speed][full_speed][high_speed]")
+{
+    hub_attach();
+    uint8_t port_num = hub_get_port_num();
+    TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
+    // Create External Port
+    ext_port_config_t port_config = {
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
+        .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
+    };
+    ext_port_hdl_t port_hdl = test_ext_port_new(&port_config);
+    // After adding the port, it is in POWERED_OFF state
+    test_ext_port_power_on(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
+    // Wait connection
+    usb_speed_t port_speed = test_ext_port_connected(TEST_PORT_NUM_DEVICE_FSHS, port_hdl);
+    printf("Hub port: %s speed device \n", (char*[]) {
+        "Low", "Full", "High"
+    }[port_speed]);
+
+    // Detach hub
+    hub_detach();
+    // Notify port
+    test_ext_port_gone(port_hdl, GONE_DEVICE_PRESENT);
+    // Recylce the port
+    test_ext_port_recycle(port_hdl, RECYCLE_PORT_IS_GONE);
+    // test_ext_port_delete(port_hdl);
 }
 
 /*
@@ -367,7 +397,7 @@ TEST_CASE("Port: disable", "[ext_port][full_speed][high_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -385,7 +415,7 @@ TEST_CASE("Port: disable", "[ext_port][full_speed][high_speed]")
     // Detach hub
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 }
 
@@ -410,7 +440,7 @@ TEST_CASE("Port: gone in state - powered on", "[ext_port][full_speed][high_speed
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -422,7 +452,7 @@ TEST_CASE("Port: gone in state - powered on", "[ext_port][full_speed][high_speed
     printf("Port Gone...\n");
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, false);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_NOT_PRESENT);
     test_ext_port_delete(port_hdl);
 
 }
@@ -448,7 +478,7 @@ TEST_CASE("Port: gone in state - enabled", "[ext_port][full_speed][high_speed]")
     TEST_ASSERT_TRUE(TEST_PORT_NUM_DEVICE_FSHS <= port_num);
     // Create External Port
     ext_port_config_t port_config = {
-        .ext_hub_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
+        .context = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_dev_hdl = (void*) hub_get_context() /* use any before IDF-10023 */,
         .parent_port_num = TEST_PORT_NUM_DEVICE_FSHS,
         .port_power_delay_ms = hub_get_port_poweron_delay_ms(),
@@ -465,6 +495,6 @@ TEST_CASE("Port: gone in state - enabled", "[ext_port][full_speed][high_speed]")
     printf("Port Gone...\n");
     hub_detach();
     // Notify port
-    test_ext_port_gone(port_hdl, true);
+    test_ext_port_gone(port_hdl, GONE_DEVICE_PRESENT);
     test_ext_port_delete(port_hdl);
 }
