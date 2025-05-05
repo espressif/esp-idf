@@ -458,6 +458,7 @@ int esp_aes_crypt_ofb(esp_aes_context *ctx,
     return 0;
 }
 
+#ifdef CONFIG_MBEDTLS_CIPHER_MODE_CTR
 /*
  * AES-CTR buffer encryption/decryption
  */
@@ -529,3 +530,4 @@ int esp_aes_crypt_ctr(esp_aes_context *ctx,
 
     return 0;
 }
+#endif /* CONFIG_MBEDTLS_CIPHER_MODE_CTR */
