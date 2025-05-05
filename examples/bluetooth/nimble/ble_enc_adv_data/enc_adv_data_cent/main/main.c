@@ -544,7 +544,7 @@ enc_adv_data_cent_gap_event(struct ble_gap_event *event, void *arg)
 #if MYNEWT_VAL(BLE_EXT_ADV)
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisement report was received during GAP discovery. */
-        ext_print_adv_report(&event->disc);
+        ext_print_adv_report(&event->ext_disc);
         return 0;
 #endif
 
