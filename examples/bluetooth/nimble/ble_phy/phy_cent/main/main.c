@@ -450,9 +450,9 @@ blecent_gap_event(struct ble_gap_event *event, void *arg)
 
     case BLE_GAP_EVENT_EXT_DISC:
         /* An advertisement report was received during GAP discovery. */
-        ext_print_adv_report(&event->disc);
+        ext_print_adv_report(&event->ext_disc);
 
-        blecent_connect_if_interesting(&event->disc);
+        blecent_connect_if_interesting(&event->ext_disc);
         return 0;
 
     default:
