@@ -66,7 +66,30 @@ static esp_err_t dpp_api_unlock(void)
     return ESP_OK;
 }
 
-static uint8_t esp_dpp_deinit_auth(void)
+static void dpp_event_handler(void *arg, esp_event_base_t event_base,
+                              int32_t event_id, void *event_data)
+{
+    if (!s_dpp_ctx.dpp_event_cb) {
+        return;
+    }
+    switch (event_id) {
+    case WIFI_EVENT_DPP_URI_READY:
+        wifi_event_dpp_uri_ready_t *event = (wifi_event_dpp_uri_ready_t *) event_data;
+        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_URI_READY, (void *)(event->uri));
+        break;
+    case WIFI_EVENT_DPP_CFG_RECVD:
+        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_CFG_RECVD, (wifi_config_t *)event_data);
+        break;
+    case WIFI_EVENT_DPP_FAILED:
+        s_dpp_ctx.dpp_event_cb(ESP_SUPP_DPP_FAIL, (void *)event_data);
+        break;
+    default:
+        break;
+    }
+    return;
+}
+
+static uint8_t dpp_deinit_auth(void)
 {
     if (s_dpp_ctx.dpp_auth) {
         dpp_auth_deinit(s_dpp_ctx.dpp_auth);
@@ -89,13 +112,23 @@ static int listen_stop_handler(void *data, void *user_ctx)
     return 0;
 }
 
-static void esp_dpp_call_cb(esp_supp_dpp_event_t evt, void *data)
+static void dpp_stop(void)
 {
     if (s_dpp_ctx.dpp_auth) {
-        esp_dpp_deinit_auth();
+        dpp_deinit_auth();
         listen_stop_handler(NULL, NULL);
     }
-    s_dpp_ctx.dpp_event_cb(evt, data);
+}
+
+static void dpp_abort_with_failure(uint32_t failure_reason)
+{
+    /* Stop DPP*/
+    dpp_stop();
+
+    /* Send event to APP */
+    wifi_event_dpp_failed_t event = {0};
+    event.failure_reason = failure_reason;
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_FAILED, &event, sizeof(event), OS_BLOCK);
 }
 
 static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
@@ -106,7 +139,7 @@ static void esp_dpp_auth_conf_wait_timeout(void *eloop_ctx, void *timeout_ctx)
 
     wpa_printf(MSG_INFO,
                "DPP: Terminate authentication exchange due to Auth Confirm timeout");
-    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_AUTH_TIMEOUT);
+    dpp_abort_with_failure(ESP_ERR_DPP_AUTH_TIMEOUT);
 }
 
 esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint32_t len,
@@ -132,7 +165,7 @@ esp_err_t esp_dpp_send_action_frame(uint8_t *dest_mac, const uint8_t *buf, uint3
 
     if (ESP_OK != esp_wifi_action_tx_req(req)) {
         wpa_printf(MSG_ERROR, "DPP: Failed to perform offchannel operation");
-        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+        dpp_abort_with_failure(ESP_ERR_DPP_TX_FAILURE);
         os_free(req);
         return ESP_FAIL;
     }
@@ -234,7 +267,7 @@ static void gas_query_timeout(void *eloop_data, void *user_ctx)
         wpabuf_free(auth->conf_req);
         auth->conf_req = NULL;
     }
-    esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_CONF_TIMEOUT);
+    dpp_abort_with_failure(ESP_ERR_DPP_CONF_TIMEOUT);
 }
 
 static int gas_query_req_tx(struct dpp_authentication *auth)
@@ -247,7 +280,7 @@ static int gas_query_req_tx(struct dpp_authentication *auth)
                                     supp_op_classes);
     if (!buf) {
         wpa_printf(MSG_ERROR, "DPP: No configuration request data available");
-        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_FAILURE);
+        dpp_abort_with_failure(ESP_ERR_DPP_FAILURE);
         return ESP_FAIL;
     }
 
@@ -298,7 +331,12 @@ static int esp_dpp_handle_config_obj(struct dpp_authentication *auth,
     if (atomic_load(&s_dpp_listen_in_progress)) {
         listen_stop_handler(NULL, NULL);
     }
-    esp_dpp_call_cb(ESP_SUPP_DPP_CFG_RECVD, wifi_cfg);
+    /* deinit AUTH since authentication is done */
+    dpp_deinit_auth();
+
+    wifi_event_dpp_config_received_t event = {0};
+    event.wifi_cfg = s_dpp_ctx.wifi_cfg;
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD, &event, sizeof(event), OS_BLOCK);
 
     return 0;
 }
@@ -573,7 +611,7 @@ static void esp_dpp_rx_action(void *data, void *user_ctx)
     os_free(rx_param);
 
     if (ret != ESP_OK) {
-        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_FAILURE);
+        dpp_abort_with_failure(ESP_ERR_DPP_FAILURE);
     }
 }
 
@@ -609,6 +647,7 @@ static void esp_dpp_bootstrap_gen(void *data, void *user_ctx)
 {
     char *command = data;
     const char *uri;
+    uint32_t len;
 
     s_dpp_ctx.id = dpp_bootstrap_gen(s_dpp_ctx.dpp_global, command);
 
@@ -621,7 +660,17 @@ static void esp_dpp_bootstrap_gen(void *data, void *user_ctx)
     }
     uri = dpp_bootstrap_get_uri(s_dpp_ctx.dpp_global, s_dpp_ctx.id);
 
-    esp_dpp_call_cb(ESP_SUPP_DPP_URI_READY, (void *)uri);
+    wifi_event_dpp_uri_ready_t *event;
+    len = sizeof(*event) + os_strlen(uri) + 1;
+    event = os_malloc(len);
+    if (!event) {
+        return;
+    }
+    event->uri_len = os_strlen(uri);
+    os_memcpy(event->uri, uri, event->uri_len);
+    event->uri[event->uri_len++] = '\0';
+    esp_event_post(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY, event, len, OS_BLOCK);
+    os_free(event);
     os_free(command);
     dpp_api_lock();
     s_dpp_ctx.bootstrap_done = true;
@@ -641,6 +690,14 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
                                  &roc_status_handler);
 
+    if (s_dpp_ctx.dpp_event_cb) {
+        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
+                                     &dpp_event_handler);
+        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
+                                     &dpp_event_handler);
+        esp_event_handler_unregister(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
+                                     &dpp_event_handler);
+    }
     if (params->info) {
         os_free(params->info);
         params->info = NULL;
@@ -656,6 +713,7 @@ static int esp_dpp_deinit(void *data, void *user_ctx)
     }
     s_dpp_ctx.dpp_init_done = false;
     s_dpp_ctx.bootstrap_done = false;
+    s_dpp_ctx.dpp_event_cb = NULL;
 
     return 0;
 }
@@ -701,7 +759,7 @@ static void esp_dpp_auth_resp_retry(void *eloop_ctx, void *timeout_ctx)
     auth->auth_resp_tries++;
     if (auth->auth_resp_tries >= max_tries) {
         wpa_printf(MSG_INFO, "DPP: No confirm received from initiator - stopping exchange");
-        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+        dpp_abort_with_failure(ESP_ERR_DPP_TX_FAILURE);
         return;
     }
 
@@ -727,7 +785,7 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
         return;
     }
     if (!auth) {
-        esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_FAILURE);
+        dpp_abort_with_failure(ESP_ERR_DPP_FAILURE);
         return;
     }
     if (auth->waiting_auth_conf) {
@@ -744,7 +802,7 @@ static void tx_status_handler(void *arg, esp_event_base_t event_base,
         if (evt->status) {
             /* failed to send gas query frame, retry logic needed? */
             wpa_printf(MSG_WARNING, "DPP: failed to send GAS query frame");
-            esp_dpp_call_cb(ESP_SUPP_DPP_FAIL, (void *)ESP_ERR_DPP_TX_FAILURE);
+            dpp_abort_with_failure(ESP_ERR_DPP_TX_FAILURE);
         } else {
             eloop_cancel_timeout(gas_query_timeout, NULL, auth);
             eloop_register_timeout(ESP_GAS_TIMEOUT_SECS, 0, gas_query_timeout, NULL, auth);
@@ -990,6 +1048,14 @@ static int esp_dpp_init(void *eloop_data, void *user_ctx)
     atomic_store(&s_dpp_listen_in_progress, false);
     s_dpp_ctx.dpp_event_cb = cb;
 
+    if (cb) {
+        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_URI_READY,
+                                   &dpp_event_handler, NULL);
+        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_CFG_RECVD,
+                                   &dpp_event_handler, NULL);
+        esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_DPP_FAILED,
+                                   &dpp_event_handler, NULL);
+    }
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ACTION_TX_STATUS,
                                &tx_status_handler, NULL);
     esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_ROC_DONE,
