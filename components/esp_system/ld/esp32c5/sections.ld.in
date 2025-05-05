@@ -279,7 +279,9 @@ SECTIONS
     . += _esp_flash_mmap_prefetch_pad_size;
 
 #if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
-    /* Align the end of flash text region as per PMP granularity as PSRAM memory protection is enabled */
+    /* Align the end of flash text region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
     . = ALIGN(_esp_pmp_align_size);
 #endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 
@@ -425,7 +427,9 @@ SECTIONS
     . = ALIGN(ALIGNOF(.flash.tbss));
 
 #if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
-    /* Align the end of flash rodata region as per PMP granularity as PSRAM memory protection is enabled */
+    /* Align the end of flash rodata region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
     . = ALIGN(_esp_pmp_align_size);
 #endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 

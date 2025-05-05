@@ -136,10 +136,12 @@ SECTIONS
      */
     . += _esp_flash_mmap_prefetch_pad_size;
 
-#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS
-    /* Align the end of flash text region as per PMP granularity */
+#if CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* Align the end of flash text region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
     . = ALIGN(_esp_pmp_align_size);
-#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS
+#endif // CONFIG_SPIRAM_FETCH_INSTRUCTIONS && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 
     _text_end = ABSOLUTE(.);
     /**
@@ -282,10 +284,12 @@ SECTIONS
 
     . = ALIGN(ALIGNOF(.flash.tbss));
 
-#if CONFIG_SPIRAM_RODATA
-    /* Align the end of flash rodata region as per PMP granularity */
+#if CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
+    /* Align the end of flash rodata region as per PMP granularity to allow using the
+     * page alignment gap created while mapping the flash region into the PSRAM memory.
+     */
     . = ALIGN(_esp_pmp_align_size);
-#endif // CONFIG_SPIRAM_RODATA
+#endif // CONFIG_SPIRAM_RODATA && CONFIG_SPIRAM_PRE_CONFIGURE_MEMORY_PROTECTION
 
     _thread_local_data_end = ABSOLUTE(.);
   } > default_rodata_seg
