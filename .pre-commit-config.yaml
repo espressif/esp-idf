@@ -51,7 +51,8 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
-            .*COPYING.*
+            .*COPYING.*|
+            docs/sphinx-known-warnings\.txt
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
