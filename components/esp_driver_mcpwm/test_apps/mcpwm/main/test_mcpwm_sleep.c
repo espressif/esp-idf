@@ -57,7 +57,6 @@ static void test_mcpwm_timer_sleep_retention(bool allow_pd)
     printf("create generator\r\n");
     mcpwm_generator_config_t gen_config = {
         .gen_gpio_num = generator_gpio,
-        .flags.io_loop_back = true,
     };
     mcpwm_gen_handle_t gen = NULL;
     TEST_ESP_OK(mcpwm_new_generator(oper, &gen_config, &gen));

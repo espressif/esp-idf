@@ -283,7 +283,7 @@ esp_err_t mcpwm_new_capture_channel(mcpwm_cap_timer_handle_t cap_timer, const mc
     }
 
     // create instance firstly, then install onto platform
-    cap_chan = calloc(1, sizeof(mcpwm_cap_channel_t));
+    cap_chan = heap_caps_calloc(1, sizeof(mcpwm_cap_channel_t), MCPWM_MEM_ALLOC_CAPS);
     ESP_GOTO_ON_FALSE(cap_chan, ESP_ERR_NO_MEM, err, TAG, "no mem for capture channel");
 
     ESP_GOTO_ON_ERROR(mcpwm_capture_channel_register_to_timer(cap_chan, cap_timer), err, TAG, "register channel failed");

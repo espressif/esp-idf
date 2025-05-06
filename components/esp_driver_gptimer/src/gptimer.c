@@ -137,7 +137,8 @@ esp_err_t gptimer_new_timer(const gptimer_config_t *config, gptimer_handle_t *re
     ESP_RETURN_ON_FALSE(allow_pd == false, ESP_ERR_NOT_SUPPORTED, TAG, "not able to power down in light sleep");
 #endif // SOC_TIMER_SUPPORT_SLEEP_RETENTION
 
-    timer = heap_caps_calloc(1, sizeof(gptimer_t), GPTIMER_MEM_ALLOC_CAPS);
+    // always allocate memory from internal memory because the driver object contains atomic variable
+    timer = heap_caps_calloc(1, sizeof(gptimer_t), MALLOC_CAP_INTERNAL | MALLOC_CAP_8BIT);
     ESP_GOTO_ON_FALSE(timer, ESP_ERR_NO_MEM, err, TAG, "no mem for gptimer");
     // register timer to the group (because one group can have several timers)
     ESP_GOTO_ON_ERROR(gptimer_register_to_group(timer), err, TAG, "register timer failed");
@@ -392,7 +393,7 @@ esp_err_t gptimer_start(gptimer_handle_t timer)
     }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_ENABLE;
-    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_RUN_WAIT)) {
+    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_WAIT)) {
         // the register used by the following LL functions are shared with other API,
         // which is possible to run along with this function, so we need to protect
         portENTER_CRITICAL_SAFE(&timer->spinlock);
@@ -423,7 +424,7 @@ esp_err_t gptimer_stop(gptimer_handle_t timer)
     }
 
     gptimer_fsm_t expected_fsm = GPTIMER_FSM_RUN;
-    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_ENABLE_WAIT)) {
+    if (atomic_compare_exchange_strong(&timer->fsm, &expected_fsm, GPTIMER_FSM_WAIT)) {
         // disable counter, alarm, auto-reload
         portENTER_CRITICAL_SAFE(&timer->spinlock);
         timer_ll_enable_counter(timer->hal.dev, timer->timer_id, false);
