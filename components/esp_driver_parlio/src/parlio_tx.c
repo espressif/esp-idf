@@ -342,8 +342,13 @@ esp_err_t parlio_new_tx_unit(const parlio_tx_unit_config_t *config, parlio_tx_un
     // set sample clock edge
     parlio_ll_tx_set_sample_clock_edge(hal->regs, config->sample_edge);
 
+#if SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    // always use DMA EOF as the Parlio TX EOF if supported
+    parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
+#else
     // In default, use DATA LEN EOF as the Parlio TX EOF
     parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
+#endif // SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
 
     // clear any pending interrupt
     parlio_ll_clear_interrupt_status(hal->regs, PARLIO_LL_EVENT_TX_MASK);
@@ -460,6 +465,7 @@ static void parlio_tx_do_transaction(parlio_tx_unit_t *tx_unit, parlio_tx_trans_
 
     if (t->flags.loop_transmission) {
         // Once a loop transmission is started, it cannot be stopped until it is disabled
+        // If SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA is supported, setting the eof condition to PARLIO_LL_TX_EOF_COND_DMA_EOF again is harmless
         parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DMA_EOF);
     }
 
@@ -586,9 +592,11 @@ esp_err_t parlio_tx_unit_disable(parlio_tx_unit_handle_t tx_unit)
     parlio_ll_tx_start(hal->regs, false);
     parlio_ll_enable_interrupt(hal->regs, PARLIO_LL_EVENT_TX_MASK, false);
 
+#if !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
     // Once a loop teansmission transaction is started, it can only be stopped in disable function
-    // change the EOF condition to be the data length, so the EOF will be triggered normally
+    // change the EOF condition to be the data length, so the EOF will be triggered normally in the following transaction
     parlio_ll_tx_set_eof_condition(hal->regs, PARLIO_LL_TX_EOF_COND_DATA_LEN);
+#endif // !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
 
 #if CONFIG_PM_ENABLE
     // release power management lock
@@ -620,12 +628,13 @@ esp_err_t parlio_tx_unit_transmit(parlio_tx_unit_handle_t tx_unit, const void *p
     ESP_RETURN_ON_FALSE(config->flags.loop_transmission == false, ESP_ERR_NOT_SUPPORTED, TAG, "loop transmission is not supported on this chip");
 #endif
 
-    // check the max payload size if it's not a loop transmission
-    // workaround for EOF limitation, when DMA EOF issue is fixed, we can remove this check
+#if !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
+    // check the max payload size if it's not a loop transmission and the DMA EOF is not supported
     if (!config->flags.loop_transmission) {
         ESP_RETURN_ON_FALSE(tx_unit->max_transfer_bits <= PARLIO_LL_TX_MAX_BITS_PER_FRAME,
-                            ESP_ERR_INVALID_ARG, TAG, "invalid transfer size");
+                            ESP_ERR_INVALID_ARG, TAG, "invalid transfer size, max transfer size should be less than %d", PARLIO_LL_TX_MAX_BITS_PER_FRAME / 8);
     }
+#endif // !SOC_PARLIO_TX_SUPPORT_EOF_FROM_DMA
 
     size_t cache_line_size = 0;
     size_t alignment = 0;

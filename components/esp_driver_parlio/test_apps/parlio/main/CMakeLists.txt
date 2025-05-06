@@ -8,6 +8,7 @@ endif()
 
 if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
     list(APPEND srcs "test_parlio_bitscrambler.c")
+endif()
 
 if(CONFIG_PARLIO_TX_ISR_CACHE_SAFE)
     list(APPEND srcs "test_parlio_tx_cache_safe.c")
