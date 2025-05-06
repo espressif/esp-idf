@@ -165,6 +165,10 @@ typedef esp_err_t (*parlio_tx_bs_disable_fn_t)(parlio_tx_unit_handle_t tx_unit);
 typedef struct parlio_tx_unit_t {
     struct parlio_unit_t base; // base unit
     size_t data_width;     // data width
+    gpio_num_t data_gpio_nums[SOC_PARLIO_TX_UNIT_MAX_DATA_WIDTH]; // data GPIO numbers
+    gpio_num_t valid_gpio_num;   // valid signal GPIO number
+    gpio_num_t clk_out_gpio_num; // output clock GPIO number
+    gpio_num_t clk_in_gpio_num;  // input clock GPIO number
     intr_handle_t intr;    // allocated interrupt handle
     gdma_channel_handle_t dma_chan; // DMA channel
     gdma_link_list_handle_t dma_link[PARLIO_DMA_LINK_NUM]; // DMA link list handle

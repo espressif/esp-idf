@@ -93,6 +93,7 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
             // connect the signal to the GPIO by matrix, it will also enable the output path properly
             esp_rom_gpio_connect_out_signal(config->data_gpio_nums[i],
                                             parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[i], false, false);
+            tx_unit->data_gpio_nums[i] = config->data_gpio_nums[i];
         }
     }
 
@@ -113,17 +114,20 @@ static esp_err_t parlio_tx_unit_configure_gpio(parlio_tx_unit_t *tx_unit, const 
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].data_sigs[PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG],
                                         config->flags.invert_valid_out, false);
 #endif // !PARLIO_LL_TX_DATA_LINE_AS_VALID_SIG
+        tx_unit->valid_gpio_num = config->valid_gpio_num;
     }
     if (config->clk_out_gpio_num >= 0) {
         gpio_func_sel(config->clk_out_gpio_num, PIN_FUNC_GPIO);
         // connect the signal to the GPIO by matrix, it will also enable the output path properly
         esp_rom_gpio_connect_out_signal(config->clk_out_gpio_num,
                                         parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_out_sig, false, false);
+        tx_unit->clk_out_gpio_num = config->clk_out_gpio_num;
     }
     if (config->clk_in_gpio_num >= 0) {
         gpio_input_enable(config->clk_in_gpio_num);
         esp_rom_gpio_connect_in_signal(config->clk_in_gpio_num,
                                        parlio_periph_signals.groups[group_id].tx_units[unit_id].clk_in_sig, false);
+        tx_unit->clk_in_gpio_num = config->clk_in_gpio_num;
     }
     return ESP_OK;
 }
@@ -373,6 +377,22 @@ esp_err_t parlio_del_tx_unit(parlio_tx_unit_handle_t unit)
     ESP_RETURN_ON_FALSE(unit, ESP_ERR_INVALID_ARG, TAG, "invalid argument");
     ESP_RETURN_ON_FALSE(atomic_load(&unit->fsm) == PARLIO_TX_FSM_INIT, ESP_ERR_INVALID_STATE, TAG, "unit not in init state");
     ESP_LOGD(TAG, "del tx unit(%d,%d)", unit->base.group->group_id, unit->base.unit_id);
+    for (size_t i = 0; i < unit->data_width; i++) {
+        if (unit->data_gpio_nums[i] >= 0) {
+            gpio_output_disable(unit->data_gpio_nums[i]);
+        }
+    }
+    if (unit->valid_gpio_num >= 0) {
+        gpio_output_disable(unit->valid_gpio_num);
+    }
+    if (unit->clk_out_gpio_num >= 0) {
+        gpio_output_disable(unit->clk_out_gpio_num);
+    }
+    if (unit->clk_in_gpio_num >= 0) {
+        esp_rom_gpio_connect_in_signal(GPIO_MATRIX_CONST_ZERO_INPUT,
+                                       parlio_periph_signals.groups[unit->base.group->group_id].tx_units[unit->base.unit_id].clk_in_sig,
+                                       false);
+    }
     return parlio_destroy_tx_unit(unit);
 }
 
