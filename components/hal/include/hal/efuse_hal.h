@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2021-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2021-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -86,6 +86,37 @@ uint32_t efuse_hal_get_chip_ver_pkg(void);
  */
 void efuse_hal_set_ecdsa_key(ecdsa_curve_t curve, int efuse_key_blk);
 #endif
+
+#if SOC_RECOVERY_BOOTLOADER_SUPPORTED
+
+#define EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN (12)
+#define EFUSE_RECOVERY_BOOTLOADER_ENABLED(sector) ((sector) != 0 && (sector) != ((1 << EFUSE_RECOVERY_BOOTLOADER_FLASH_SECTOR_LEN) - 1))
+
+/**
+ * @brief Returns recovery bootloader flash address
+ *
+ * @return Recovery bootloader flash address.
+ */
+uint32_t efuse_hal_get_recovery_bootloader_address(void);
+
+/**
+ * @brief Converts a recovery bootloader address to the corresponding flash sector.
+ *
+ * This function translates a recovery bootloader address in bytes
+ * into the equivalent flash sector number.
+ *
+ * @param address The recovery bootloader address in bytes.
+ * @return The flash sector number corresponding to the given address.
+ */
+uint32_t efuse_hal_convert_recovery_bootloader_address_to_flash_sectors(uint32_t address);
+
+/**
+ * @brief Returns true if recovery bootloader address is configured
+ *
+ * @return True - Recovery bootloader address is configured.
+ */
+bool efuse_hal_recovery_bootloader_enabled(void);
+#endif // SOC_RECOVERY_BOOTLOADER_SUPPORTED
 
 #ifdef __cplusplus
 }
