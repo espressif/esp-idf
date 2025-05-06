@@ -52,7 +52,7 @@ extern const regdma_entries_config_t hp_system_regs_retention[HP_SYSTEM_RETENTIO
  * This is an internal function of the sleep retention driver, and is not
  * useful for external use.
  */
-#define IOMUX_RETENTION_LINK_LEN    3
+#define IOMUX_RETENTION_LINK_LEN    6
 extern const regdma_entries_config_t iomux_regs_retention[IOMUX_RETENTION_LINK_LEN];
 
 /**
