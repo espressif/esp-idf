@@ -1,6 +1,5 @@
 ## IDF Component Manager Manifest File
 dependencies:
-  idf: "^5.0"
   espressif/esp_codec_dev: ^1.3.4
   i2s_examples_common:
     path: ${IDF_PATH}/examples/peripherals/i2s/i2s_examples_common
