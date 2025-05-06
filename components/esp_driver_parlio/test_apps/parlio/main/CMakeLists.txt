@@ -8,6 +8,9 @@ endif()
 
 if(CONFIG_SOC_BITSCRAMBLER_SUPPORTED)
     list(APPEND srcs "test_parlio_bitscrambler.c")
+
+if(CONFIG_PARLIO_TX_ISR_CACHE_SAFE)
+    list(APPEND srcs "test_parlio_tx_cache_safe.c")
 endif()
 
 # In order for the cases defined by `TEST_CASE` to be linked into the final elf,
