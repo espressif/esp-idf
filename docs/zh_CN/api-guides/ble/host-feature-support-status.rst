@@ -93,15 +93,15 @@ ESP 主机主要功能支持状态
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - |unsupported|
-      - |developing202412|
+      - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
-      - |developing202412|
+      - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - |unsupported|
@@ -117,15 +117,15 @@ ESP 主机主要功能支持状态
     * -
       - Encrypted Advertising Data
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
       - |unsupported|
-      - |unsupported|
+      - |experimental|
 
 .. [1]
    如果想了解支持功能的 Bluetooth SIG 认证状态，
@@ -138,7 +138,7 @@ ESP 主机主要功能支持状态
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center

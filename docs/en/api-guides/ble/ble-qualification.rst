@@ -58,7 +58,6 @@ The table below shows the latest qualification for Espressif Bluetooth LE Host.
 .. |199258| replace:: `199258 <https://qualification.bluetooth.com/ListingDetails/166887>`__
 .. |198312| replace:: `198312 <https://qualification.bluetooth.com/ListingDetails/165785>`__
 .. |141499| replace:: `141499 <https://qualification.bluetooth.com/ListingDetails/97856>`__
-.. |Q331318| replace:: `Q331318 <https://qualification.bluetooth.com/ListingDetails/257081>`__
 
 
 .. [1]

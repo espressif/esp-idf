@@ -93,15 +93,15 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Enhanced Attribute Protocol
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - |unsupported|
-      - |developing202412|
+      - |supported|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - |supported|
-      - |developing202412|
+      - |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - |unsupported|
@@ -117,15 +117,15 @@ If none of our chip series meet your needs, please contact `customer support tea
     * -
       - Encrypted Advertising Data
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
       - |unsupported|
-      - |unsupported|
+      - |experimental|
 
 .. [1]
    If you would like to know the Bluetooth SIG certification information for supported features,
@@ -138,7 +138,7 @@ You are encouraged to consult with our `customer support team <https://www.espre
 
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
    :class: align-center

@@ -195,7 +195,7 @@
       - Enhanced Attribute Protocol
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE Power Control
       - .. only:: esp32 or esp32c2
@@ -210,7 +210,7 @@
             |unsupported|
         .. only:: esp32c6 or esp32h2 or esp32c3 or esp32s3 or esp32c5
 
-            |developing202412|
+            |experimental|
     * - .. centered:: |5.3|
       - AdvDataInfo in Periodic Advertising
       - .. only:: esp32 or esp32c3 or esp32s3
@@ -230,7 +230,7 @@
             |unsupported|
         .. only:: esp32c6 or esp32c2 or esp32h2 or esp32c5
 
-            |developing202412|
+            |supported|
     * -
       - LE Enhanced Connection Update (Connection Subrating)
       - .. only:: esp32 or esp32c6 or esp32c2 or esp32h2 or esp32c5
@@ -285,12 +285,12 @@
       - Encrypted Advertising Data
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - LE GATT Security Levels Characteristic
       - |NA|
       - |unsupported|
-      - |developing202412|
+      - |experimental|
     * -
       - Periodic Advertising with Responses
       - |unsupported|
@@ -313,7 +313,7 @@
 .. |supported| image:: ../../../_static/ble/feature_status/supported.svg
    :class: align-center
    :width: 65px
-.. |developing202412| image:: ../../../_static/ble/feature_status/developing202412.svg
+.. |developing202512| image:: ../../../_static/ble/feature_status/developing202512.svg
    :class: align-center
    :width: 120px
 .. |unsupported| image:: ../../../_static/ble/feature_status/unsupported.svg
