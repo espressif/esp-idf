@@ -600,6 +600,13 @@ if BT_NIMBLE_50_FEATURE_SUPPORT
             will be supported from BLE 5.0 onwards.
 
     if BT_NIMBLE_EXT_ADV
+        config BT_NIMBLE_EXT_ADV_V2
+            bool "Enable support for extended adv v2"
+            default n
+            depends on BT_NIMBLE_EXT_ADV
+            help
+                Enable this option to use Extended Adv V2 command instead of V1.
+
         config BT_NIMBLE_MAX_EXT_ADV_INSTANCES
             int "Maximum number of extended advertising instances."
             range 0 4
