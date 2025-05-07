@@ -474,11 +474,12 @@ static DRAM_ATTR esp_pm_lock_handle_t s_pm_lock = NULL;
 #endif // CONFIG_PM_ENABLE
 #ifdef CONFIG_XTAL_FREQ_26
 #define MAIN_XTAL_FREQ_HZ                 (26000000)
+static DRAM_ATTR uint32_t s_bt_lpclk_freq = 40000;
 #else
 #define MAIN_XTAL_FREQ_HZ                 (40000000)
+static DRAM_ATTR uint32_t s_bt_lpclk_freq = 32000;
 #endif
 static DRAM_ATTR modem_clock_lpclk_src_t s_bt_lpclk_src = MODEM_CLOCK_LPCLK_SRC_INVALID;
-static DRAM_ATTR uint32_t s_bt_lpclk_freq = 100000;
 
 #define BLE_RTC_DELAY_US                    (1800)
 
