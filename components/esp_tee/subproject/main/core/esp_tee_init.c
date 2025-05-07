@@ -14,6 +14,7 @@
 
 #include "esp_tee_brownout.h"
 #include "esp_tee_flash.h"
+#include "esp_tee_sec_storage.h"
 #include "bootloader_utility_tee.h"
 
 #if __has_include("esp_app_desc.h")
@@ -23,11 +24,8 @@
 
 /* TEE symbols */
 extern uint32_t _tee_stack;
-extern uint32_t _tee_intr_stack_bottom;
 extern uint32_t _tee_bss_start;
 extern uint32_t _tee_bss_end;
-
-extern uint32_t _sec_world_entry;
 extern uint32_t _tee_s_intr_handler;
 
 extern uint8_t _tee_heap_start[];
@@ -159,6 +157,14 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     }
     ESP_FAULT_ASSERT(err == ESP_OK);
 
+    /* Initializing the secure storage */
+    err = esp_tee_sec_storage_init();
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize the secure storage! (0x%08x)", err);
+        abort();
+    }
+    ESP_FAULT_ASSERT(err == ESP_OK);
+
     /* Setting up the running non-secure app partition as per the address provided by the bootloader */
     err = esp_tee_flash_set_running_ree_partition(ree_drom_addr);
     if (err != ESP_OK) {
@@ -181,19 +187,3 @@ void __attribute__((noreturn)) esp_tee_init(uint32_t ree_entry_addr, uint32_t re
     /* App entry function should not return here. */
     ESP_INFINITE_LOOP(); /* WDT will reset us */
 }
-
-// NOTE: Remove compile-time warnings for the below newlib-provided functions
-struct _reent *__getreent(void)
-{
-    return _GLOBAL_REENT;
-}
-
-void _fstat_r(void) {}
-
-void _close_r(void) {}
-
-void _lseek_r(void) {}
-
-void _read_r(void) {}
-
-void _write_r(void) {}

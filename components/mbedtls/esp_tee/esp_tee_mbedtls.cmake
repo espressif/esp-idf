@@ -52,6 +52,7 @@ target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/dma/esp_aes.c"
                                   "${COMPONENT_DIR}/port/aes/dma/esp_aes_dma_core.c")
 
 target_sources(mbedcrypto PRIVATE "${COMPONENT_DIR}/port/aes/esp_aes_common.c"
+                                  "${COMPONENT_DIR}/port/aes/esp_aes_xts.c"
                                   "${COMPONENT_DIR}/port/aes/esp_aes_gcm.c")
 
 # SHA implementation

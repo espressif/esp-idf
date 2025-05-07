@@ -96,7 +96,7 @@ Example partition table is given below: ::
   # ESP-IDF Partition Table
   # Name,         Type, SubType,     Offset,   Size, Flags
   tee_0,          app,  tee_0,       0x10000,  192K,
-  secure_storage, data, tee_sec_stg, 0x40000,  64K,
+  secure_storage, data, nvs,         0x40000,  64K,
   factory,        app,  factory,     0x50000,  1M,
   nvs,            data, nvs,         0x150000, 24K,
   phy_init,       data, phy,         0x156000, 4K,

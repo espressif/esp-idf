@@ -226,9 +226,6 @@ bool bootloader_utility_load_partition_table(bootloader_state_t *bs)
                 bs->tee_ota_info = partition->pos;
                 partition_usage = "TEE OTA data";
                 break;
-            case PART_SUBTYPE_DATA_TEE_SEC_STORAGE: /* TEE secure storage */
-                partition_usage = "TEE secure storage";
-                break;
 #endif
             default:
                 partition_usage = "Unknown data";

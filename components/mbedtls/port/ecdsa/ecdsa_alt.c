@@ -410,7 +410,7 @@ static int esp_ecdsa_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mpi* s
 
 
 #if CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
-int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, int slot_id)
+int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_id)
 {
     int ret = -1;
     uint16_t len;
@@ -426,8 +426,13 @@ int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, int slot_id)
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    esp_tee_sec_storage_pubkey_t pubkey = {};
-    if (esp_tee_sec_storage_get_pubkey(slot_id, key_type, &pubkey) != ESP_OK) {
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = tee_key_id,
+        .type = key_type
+    };
+
+    esp_tee_sec_storage_ecdsa_pubkey_t pubkey = {};
+    if (esp_tee_sec_storage_ecdsa_get_pubkey(&cfg, &pubkey) != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get public key from secure storage");
         goto cleanup;
     }
@@ -457,9 +462,9 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
         return ret;
     }
 
-    int slot_id = conf->tee_slot_id;
-    if (slot_id < MIN_SEC_STG_SLOT_ID || slot_id > MAX_SEC_STG_SLOT_ID) {
-        ESP_LOGE(TAG, "Invalid slot id");
+    const char *key_id = conf->tee_key_id;
+    if (!key_id) {
+        ESP_LOGE(TAG, "Invalid TEE key id");
         return ret;
     }
 
@@ -477,8 +482,14 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
 
     mbedtls_mpi_init(&(keypair->MBEDTLS_PRIVATE(d)));
     keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(s) = ECDSA_KEY_MAGIC_TEE;
-    keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(n) = slot_id;
-    keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(p) = NULL;
+    keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(n) = 1;
+
+    mbedtls_mpi_uint *key_id_mpi = malloc(sizeof(mbedtls_mpi_uint));
+    if (!key_id_mpi) {
+        return -1;
+    }
+    key_id_mpi[0] = (mbedtls_mpi_uint)(uintptr_t)key_id;
+    keypair->MBEDTLS_PRIVATE(d).MBEDTLS_PRIVATE(p) = key_id_mpi;
 
     if ((ret = mbedtls_ecp_group_load(&(keypair->MBEDTLS_PRIVATE(grp)), conf->grp_id)) != 0) {
         ESP_LOGE(TAG, "Loading ecp group failed, mbedtls_pk_ec() returned %d", ret);
@@ -486,7 +497,7 @@ int esp_ecdsa_tee_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_
     }
 
     if (conf->load_pubkey) {
-        if ((ret = esp_ecdsa_tee_load_pubkey(keypair, slot_id)) != 0) {
+        if ((ret = esp_ecdsa_tee_load_pubkey(keypair, key_id)) != 0) {
             ESP_LOGE(TAG, "Loading public key context failed, esp_ecdsa_load_pubkey() returned %d", ret);
             return ret;
         }
@@ -525,10 +536,15 @@ static int esp_ecdsa_tee_sign(mbedtls_ecp_group *grp, mbedtls_mpi* r, mbedtls_mp
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;
     }
 
-    int slot_id = d->MBEDTLS_PRIVATE(n);
+    const char *key_id = (const char *)(uintptr_t)(d->MBEDTLS_PRIVATE(p)[0]);
 
-    esp_tee_sec_storage_sign_t sign = {};
-    esp_err_t err = esp_tee_sec_storage_get_signature(slot_id, key_type, (uint8_t *)msg, msg_len, &sign);
+    esp_tee_sec_storage_key_cfg_t cfg = {
+        .id = key_id,
+        .type = key_type
+    };
+
+    esp_tee_sec_storage_ecdsa_sign_t sign = {};
+    esp_err_t err = esp_tee_sec_storage_ecdsa_sign(&cfg, (uint8_t *)msg, msg_len, &sign);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "Failed to get signature");
         return MBEDTLS_ERR_ECP_BAD_INPUT_DATA;

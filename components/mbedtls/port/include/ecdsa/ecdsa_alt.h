@@ -29,8 +29,8 @@ typedef struct {
     mbedtls_ecp_group_id grp_id;            /*!< MbedTLS ECP group identifier */
     union {
         uint8_t efuse_block;                /*!< EFuse block id for ECDSA private key */
-        uint8_t tee_slot_id;                /*!< TEE secure storage slot id for ECDSA private key */
-    };                                      /*!< Union to hold either EFuse block id or TEE secure storage slot id for ECDSA private key */
+        const char *tee_key_id;             /*!< TEE secure storage key id for ECDSA private key */
+    };                                      /*!< Union to hold either EFuse block id or TEE secure storage key id for ECDSA private key */
 #if SOC_ECDSA_SUPPORT_EXPORT_PUBKEY || CONFIG_MBEDTLS_TEE_SEC_STG_ECDSA_SIGN
     bool load_pubkey;                       /*!< Export ECDSA public key from the hardware */
 
@@ -120,11 +120,11 @@ int esp_ecdsa_set_pk_context(mbedtls_pk_context *key_ctx, esp_ecdsa_pk_conf_t *c
  *        the TEE secure storage.
  *
  * @param keypair The mbedtls ECP key-pair structure
- * @param slot_id The TEE secure storage slot id that holds the private key.
+ * @param tee_key_id The TEE secure storage key id of the private key
  *
  * @return - 0 if successful else MBEDTLS_ERR_ECP_BAD_INPUT_DATA
  */
-int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, int slot_id);
+int esp_ecdsa_tee_load_pubkey(mbedtls_ecp_keypair *keypair, const char *tee_key_id);
 
 /**
  * @brief Initialize PK context and fully populate the mbedtls_ecp_keypair context.

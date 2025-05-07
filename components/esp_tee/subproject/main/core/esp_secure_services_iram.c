@@ -85,46 +85,45 @@ void _ss_wdt_hal_deinit(wdt_hal_context_t *hal)
 
 /* ---------------------------------------------- Secure Storage ------------------------------------------------- */
 
-esp_err_t _ss_esp_tee_sec_storage_get_signature(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, uint8_t *hash, size_t hlen, esp_tee_sec_storage_sign_t *out_sign)
+esp_err_t _ss_esp_tee_sec_storage_ecdsa_sign(const esp_tee_sec_storage_key_cfg_t *cfg, const uint8_t *hash, size_t hlen, esp_tee_sec_storage_ecdsa_sign_t *out_sign)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)hash) && esp_tee_ptr_in_ree((void *)out_sign)) &&
                        (esp_tee_ptr_in_ree((void *)(hash + hlen)) &&
-                        esp_tee_ptr_in_ree((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_sign_t)))));
+                        esp_tee_ptr_in_ree((void *)((char *)out_sign + sizeof(esp_tee_sec_storage_ecdsa_sign_t)))));
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_get_signature(slot_id, key_type, hash, hlen, out_sign);
+    return esp_tee_sec_storage_ecdsa_sign(cfg, hash, hlen, out_sign);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_get_pubkey(uint16_t slot_id, esp_tee_sec_storage_type_t key_type, esp_tee_sec_storage_pubkey_t *pubkey)
+esp_err_t _ss_esp_tee_sec_storage_ecdsa_get_pubkey(const esp_tee_sec_storage_key_cfg_t *cfg, esp_tee_sec_storage_ecdsa_pubkey_t *out_pubkey)
 {
-    bool valid_addr = ((esp_tee_ptr_in_ree((void *)pubkey)) &
-                       (esp_tee_ptr_in_ree((void *)((char *)pubkey + sizeof(esp_tee_sec_storage_pubkey_t)))));
+    bool valid_addr = ((esp_tee_ptr_in_ree((void *)out_pubkey)) &&
+                       (esp_tee_ptr_in_ree((void *)((char *)out_pubkey + sizeof(esp_tee_sec_storage_ecdsa_pubkey_t)))));
 
     if (!valid_addr) {
         return ESP_ERR_INVALID_ARG;
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_get_pubkey(slot_id, key_type, pubkey);
+    return esp_tee_sec_storage_ecdsa_get_pubkey(cfg, out_pubkey);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
-                                          uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
+esp_err_t _ss_esp_tee_sec_storage_aead_encrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (esp_tee_ptr_in_ree((void *)input) &&
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)ctx->input) &&
                        esp_tee_ptr_in_ree((void *)tag) &&
                        esp_tee_ptr_in_ree((void *)output));
 
-    valid_addr &= (esp_tee_ptr_in_ree((void *)(input + len)) &&
+    valid_addr &= (esp_tee_ptr_in_ree((void *)(ctx->input + ctx->input_len)) &&
                    esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
-                   esp_tee_ptr_in_ree((void *)(output + len)));
+                   esp_tee_ptr_in_ree((void *)(output + ctx->input_len)));
 
-    if (aad) {
-        valid_addr &= (esp_tee_ptr_in_ree((void *)aad) && esp_tee_ptr_in_ree((void *)(aad + aad_len)));
+    if (ctx->aad) {
+        valid_addr &= (esp_tee_ptr_in_ree((void *)ctx->aad) && esp_tee_ptr_in_ree((void *)(ctx->aad + ctx->aad_len)));
     }
 
     if (!valid_addr) {
@@ -132,22 +131,21 @@ esp_err_t _ss_esp_tee_sec_storage_encrypt(uint16_t slot_id, uint8_t *input, uint
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_encrypt(slot_id, input, len, aad, aad_len, tag, tag_len, output);
+    return esp_tee_sec_storage_aead_encrypt(ctx, tag, tag_len, output);
 }
 
-esp_err_t _ss_esp_tee_sec_storage_decrypt(uint16_t slot_id, uint8_t *input, uint8_t len, uint8_t *aad,
-                                          uint16_t aad_len, uint8_t *tag, uint16_t tag_len, uint8_t *output)
+esp_err_t _ss_esp_tee_sec_storage_aead_decrypt(const esp_tee_sec_storage_aead_ctx_t *ctx, const uint8_t *tag, size_t tag_len, uint8_t *output)
 {
-    bool valid_addr = (esp_tee_ptr_in_ree((void *)input) &&
+    bool valid_addr = (esp_tee_ptr_in_ree((void *)ctx->input) &&
                        esp_tee_ptr_in_ree((void *)tag) &&
                        esp_tee_ptr_in_ree((void *)output));
 
-    valid_addr &= (esp_tee_ptr_in_ree((void *)(input + len)) &&
+    valid_addr &= (esp_tee_ptr_in_ree((void *)(ctx->input + ctx->input_len)) &&
                    esp_tee_ptr_in_ree((void *)(tag + tag_len)) &&
-                   esp_tee_ptr_in_ree((void *)(output + len)));
+                   esp_tee_ptr_in_ree((void *)(output + ctx->input_len)));
 
-    if (aad) {
-        valid_addr &= (esp_tee_ptr_in_ree((void *)aad) && esp_tee_ptr_in_ree((void *)(aad + aad_len)));
+    if (ctx->aad) {
+        valid_addr &= (esp_tee_ptr_in_ree((void *)ctx->aad) && esp_tee_ptr_in_ree((void *)(ctx->aad + ctx->aad_len)));
     }
 
     if (!valid_addr) {
@@ -155,7 +153,7 @@ esp_err_t _ss_esp_tee_sec_storage_decrypt(uint16_t slot_id, uint8_t *input, uint
     }
     ESP_FAULT_ASSERT(valid_addr);
 
-    return esp_tee_sec_storage_decrypt(slot_id, input, len, aad, aad_len, tag, tag_len, output);
+    return esp_tee_sec_storage_aead_decrypt(ctx, tag, tag_len, output);
 }
 
 /* ---------------------------------------------- MMU HAL ------------------------------------------------- */

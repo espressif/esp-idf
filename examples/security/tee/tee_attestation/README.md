@@ -12,7 +12,7 @@
       - Digest (SHA256)
   - Public key corresponding to the private key used for signing (in compressed format)
   - Signature (`r` and `s` components)
-- The token is signed using the ECDSA key stored in the designated slot ID of the TEE's Secure Storage. Subsequently, the resulting token is handed back to the REE in the output buffer specified in the secure service call.
+- The token is signed using the ECDSA key stored with the configured ID of the TEE's Secure Storage. Subsequently, the resulting token is handed back to the REE in the output buffer specified in the secure service call.
 
 <details>
   <summary><b>Attestation: Sample Token</b></summary>
@@ -23,7 +23,7 @@
     "magic": "44fef7cc",
     "encr_alg": "",
     "sign_alg": "ecdsa_secp256r1_sha256",
-    "key_id": 0
+    "key_id": "tee_att_key0",
   },
   "eat": {
     "nonce": -1582119980,
@@ -109,7 +109,7 @@ Before the project configuration and build, be sure to set the correct chip targ
 
 Open the project configuration menu (`idf.py menuconfig`).
 
-- Configure the secure storage slot ID for generating/fetching the ECDSA keypair for attestation token signing at `(Top) → Security features → TEE: Secure Storage slot ID for EAT signing`.
+- Configure the secure storage key ID for generating/fetching the ECDSA keypair for attestation token signing at `ESP-TEE (Trusted Execution Environment) → Secure Services → Attestation: Secure Storage key ID for EAT signing`.
 
 ### Build and Flash
 
@@ -123,10 +123,17 @@ idf.py -p PORT flash monitor
 
 See the Getting Started Guide for full steps to configure and use ESP-IDF to build projects.
 
-### Usage
+### Example Output
 
-- Use console commands to dump the attestation info: `tee_att_info`
-- The generated token's signature can be verified using the script given below.
+```log
+I (438) example_tee_attest: TEE Attestation Service
+I (1008) example_tee_attest: Attestation token - Length: 1538
+I (1018) example_tee_attest: Attestation token - Data:
+'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":"tee_att_key0"},"eat":{"nonce":-1582119980,"client_id":262974944,"device_ver":1,"device_id":"4ecc458ef4290329552b4dcdccb99d55e5ea7624f24c87b27b71515e1666f39c","instance_id":"66571b78918f4bb7ae2723f235a9e4fe1c7070ae6261ce5df7049b44b1f8a318","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"1.0.0","idf_ver":"v5.5-dev-2978-gd75a0105dac-dirt","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"5213904fd8ca7538776bdf372c08c13138f20b2fac3503bc878f19c6e36a710d","digest_validated":true,"sign_verified":false,"secure_padding":false}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.5-dev-2978-gd75a0105dac-dirt","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"65c905fc0fc135fdfa8def210d1c186627cb3a17ecb2e7f020b56411b2d2fc76","digest_validated":true,"sign_verified":false,"secure_padding":false}},"bootloader":{"type":0,"ver":"01000000","idf_ver":"v5.5-dev-2978-gd75a0105dac-dirt","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"9efd37d29266f3239f7c6a095df880f1e85e41505f154cfd3bbfad4b8a2b18dd","digest_validated":true,"sign_verified":false}}}},"public_key":{"compressed":"02ce0188c61b0118c86ca20af7e01185dd687c6698b2265a288fee845d083e9066"},"sign":{"r":"362e2053bab26c779559793b2eae89e96c1a058e5fffc49d544d07b934ce3b32","s":"fc5f0e4d329fc6e031cbf425ef62d4756b728392b2a77282baa1f15b554d2716"}}'
+I (1148) main_task: Returned from app_main()
+```
+
+**Note:** The generated token's signature can be verified using the script given below.
 
 <details>
   <summary><b>Attestation: Verifying the generated token</b></summary>
@@ -181,19 +188,3 @@ assert vk.verify_digest(signature, digest, sigdecode=sigdecode_der)
 print('Token signature verified!')
 ```
 </details>
-
-### Example Output
-
-```log
-I (416) main_task: Calling app_main()
-I (416) example_tee_attest: TEE Attestation Service
-
-Type 'help' to get the list of commands.
-Use UP/DOWN arrows to navigate through command history.
-Press TAB when typing command name to auto-complete.
-I (476) main_task: Returned from app_main()
-esp32c6> tee_att_info
-I (6206) cmd_tee_attest: Attestation token - Length: 1525
-I (6206) cmd_tee_attest: Attestation token - Data:
-'{"header":{"magic":"44fef7cc","encr_alg":"","sign_alg":"ecdsa_secp256r1_sha256","key_id":0},"eat":{"nonce":-1582119980,"client_id":262974944,"device_ver":1,"device_id":"4ecc458ef4290329552b4dcdccb99d55e5ea7624f24c87b27b71515e1666f39c","instance_id":"77eb3dfec7633302fe4bcf04ffe3be5e83c0513057aa070d387f1e8350271329","psa_cert_ref":"0716053550477-10100","device_status":165,"sw_claims":{"tee":{"type":1,"ver":"1.0.0","idf_ver":"v5.5-dev-727-g624f640f61d-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"6e6548a5d64cd3d6e2e6dc166384f32f73558fbd9c0c0985c6095d643f053eb5","digest_validated":true,"sign_verified":false,"secure_padding":false}},"app":{"type":2,"ver":"v0.1.0","idf_ver":"v5.5-dev-727-g624f640f61d-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"7f10992d4bb32c497184fd2da0e3a593b235d82bde24de868c8eb4636d4b7bdc","digest_validated":true,"sign_verified":false,"secure_padding":false}},"bootloader":{"type":0,"ver":"01000000","idf_ver":"v5.5-dev-727-g624f640f61d-dirty","secure_ver":0,"part_chip_rev":{"min":0,"max":99},"part_digest":{"type":0,"calc_digest":"2cdf1bac1792df04ad10d67287ef3ab7024e183dc32899a190668cbb7d21a5a8","digest_validated":true,"sign_verified":false}}}},"public_key":{"compressed":"030df5c5fd9a4096a58ba16dfc4f1d53781bab555fc307d71367f0afc663005174"},"sign":{"r":"c3a0fc8ce3cd1dec2a0e38c4a63c03bd1e044febd5847178fe304b06d48b3eaf","s":"c8e34bc5d854e728cffdfd701ea09deabc9a9a22c4b06f312a61a1448a56b8b1"}}'
-```

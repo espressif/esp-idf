@@ -148,6 +148,7 @@ SECTIONS
     *(.rodata_desc .rodata_desc.*)                /* Should be the first. TEE App version info. DO NOT PUT ANYTHING BEFORE IT! */
     *(.rodata .rodata.*)
     *(.srodata .srodata.*)
+    *(.gcc_except_table .gcc_except_table.*)
     _tee_xip_data_end = ABSOLUTE(.);
    } > flash_data_seg
 
@@ -213,6 +214,12 @@ SECTIONS
     *libmbedcrypto.a:*(.literal .text .literal.* .text.*)
     /* HMAC-DS layer */
     *libesp_security.a:*(.literal .text .literal.* .text.*)
+    /* NVS flash and related modules */
+    *libnvs_flash.a:*(.literal .text .literal.* .text.*)
+    *libstdc++.a:*(.literal .text .literal.* .text.*)
+    *libgcc.a:*(.literal .text .literal.* .text.*)
+    /* esp_partition API */
+    *libesp_partition.a:*(.literal .text .literal.* .text.*)
     /* TEE attestation module */
     *libattestation.a:*(.literal .text .literal.* .text.*)
     *json_generator.a:*(.literal .text .literal.* .text.*)

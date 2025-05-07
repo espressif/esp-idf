@@ -1,9 +1,17 @@
-# SPDX-FileCopyrightText: 2024 Espressif Systems (Shanghai) CO LTD
+# SPDX-FileCopyrightText: 2024-2025 Espressif Systems (Shanghai) CO LTD
 # SPDX-License-Identifier: Apache-2.0
 # pylint: disable=W0621  # redefined-outer-name
+import base64
+import csv
 import os
+import shutil
+import subprocess
+import sys
 import tempfile
+from pathlib import Path
 from typing import Any
+from typing import Dict
+from typing import List
 
 import espsecure
 import esptool
@@ -13,6 +21,7 @@ from _pytest.monkeypatch import MonkeyPatch
 from pytest_embedded_idf.serial import IdfSerial
 from pytest_embedded_serial_esp.serial import EspSerial
 
+# fmt: off
 esp_tee_empty_bin = {
     'esp32c6': [
         0xE9, 0x04, 0x02, 0x10, 0x00, 0x00, 0x80, 0x40, 0xEE, 0x00, 0x00, 0x00,
@@ -56,6 +65,7 @@ esp_tee_empty_bin = {
         0xFC, 0x74, 0xB2, 0xB9, 0x34, 0x72, 0xC3, 0x00
     ]
 }
+# fmt: on
 
 
 # This is a custom IdfSerial class to support custom functionality
@@ -70,10 +80,12 @@ class TEESerial(IdfSerial):
     @EspSerial.use_esptool()
     def bootloader_force_flash_if_req(self) -> None:
         # Forcefully flash the bootloader only if security features are enabled
-        if any((
-            self.app.sdkconfig.get('SECURE_BOOT', True),
-            self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True),
-        )):
+        if any(
+            (
+                self.app.sdkconfig.get('SECURE_BOOT', True),
+                self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', True),
+            )
+        ):
             offs = int(self.app.sdkconfig.get('BOOTLOADER_OFFSET_IN_FLASH', 0))
             bootloader_path = os.path.join(self.app.binary_path, 'bootloader', 'bootloader.bin')
             encrypt = '--encrypt' if self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED') else ''
@@ -81,7 +93,7 @@ class TEESerial(IdfSerial):
 
             esptool.main(
                 f'--no-stub write_flash {offs} {bootloader_path} --force {encrypt} --flash_size {flash_size}'.split(),
-                esp=self.esp
+                esp=self.esp,
             )
 
     @EspSerial.use_esptool()
@@ -97,20 +109,30 @@ class TEESerial(IdfSerial):
                 temp_file.flush()
 
                 esptool.main(
-                    f'--no-stub write_flash {offs} {temp_file.name} --flash_size {flash_size}'.split(),
-                    esp=self.esp
+                    f'--no-stub write_flash {offs} {temp_file.name} --flash_size {flash_size}'.split(), esp=self.esp
                 )
         else:
             self.erase_partition(partition)
 
     @EspSerial.use_esptool()
-    def copy_test_tee_img(self, partition: str, is_rollback: bool = False) -> None:
+    def custom_write_partition(self, partition: str, bin_path: str, encrypt: bool = False) -> None:
         offs = self.app.partition_table[partition]['offset']
         no_stub = '--no-stub' if self.app.sdkconfig.get('SECURE_ENABLE_SECURE_ROM_DL_MODE') else ''
-        encrypt = '--encrypt' if self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED') else ''
         flash_size = self._get_flash_size()
+        flash_file = bin_path
 
+        args = f'{no_stub} write_flash {offs} {flash_file}'.split()
+
+        if encrypt:
+            args.append('--encrypt')
+        args += f'--flash_size {flash_size}'.split()
+
+        esptool.main(args, esp=self.esp)
+
+    @EspSerial.use_esptool()
+    def copy_test_tee_img(self, partition: str, is_rollback: bool = False) -> None:
         flash_file = os.path.join(self.app.binary_path, 'esp_tee', 'esp_tee.bin')
+        encrypt = self.app.sdkconfig.get('SECURE_FLASH_ENC_ENABLED', False)
 
         if is_rollback:
             datafile = 'esp_tee_empty.bin'
@@ -125,22 +147,27 @@ class TEESerial(IdfSerial):
 
             if self.app.sdkconfig.get('SECURE_BOOT'):
                 keyfile = self.app.sdkconfig.get('SECURE_BOOT_SIGNING_KEY')
-                # Signing the image with espsecure
                 espsecure.main(
-                    f'sign_data --version 2 --append_signatures --keyfile {keyfile} --output {datafile_signed} {datafile}'.split()
+                    [
+                        'sign_data',
+                        '--version',
+                        '2',
+                        '--append_signatures',
+                        '--keyfile',
+                        keyfile,
+                        '--output',
+                        datafile_signed,
+                        datafile,
+                    ]
                 )
                 flash_file = datafile_signed
 
-        esptool.main(
-            f'{no_stub} write_flash {offs} {flash_file} {encrypt} --flash_size {flash_size}'.split(),
-            esp=self.esp
-        )
+        self.custom_write_partition(partition, flash_file, encrypt=encrypt)
 
         if is_rollback:
-            if os.path.exists(datafile):
-                os.remove(datafile)
-            if os.path.exists(datafile_signed):
-                os.remove(datafile_signed)
+            for file in [datafile, datafile_signed]:
+                if os.path.exists(file):
+                    os.remove(file)
 
     @EspSerial.use_esptool()
     def custom_flash(self) -> None:
@@ -164,6 +191,114 @@ class TEESerial(IdfSerial):
         self.bootloader_force_flash_if_req()
         self.flash()
         self.custom_erase_partition('secure_storage')
+
+    KEY_DEFS: List[Dict[str, Any]] = [
+        {'key': 'aes256_key0', 'type': 'aes256', 'input': None, 'write_once': True},
+        {
+            'key': 'aes256_key1',
+            'type': 'aes256',
+            'input': 'aes256_key.bin',
+            'write_once': False,
+            'b64': 'qZxftt2T8mOpLxALIfsDqI65srqPxrJtCVnDU8wrKXbFCJekDRzXqINlU5s=',
+        },
+        {'key': 'p256_key0', 'type': 'ecdsa_p256', 'input': None, 'write_once': False},
+        {
+            'key': 'attest_key',
+            'type': 'ecdsa_p256',
+            'input': 'ecdsa_p256_key.pem',
+            'write_once': True,
+            'b64': (
+                'LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUlNU1VpUktHaVZjSTIvbUZFekI3eXRIOVJj'
+                'd0wyUThkNDhONHNFUHFYc0RvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFSkYxYXRZQUxrdnB4cCt4N3c1dmVPQ1Vj'
+                'RUhFRTY5azkvcFB5eFdTbEZkbW5wMnBmbVJpZwp5NnRTMDNaM2tnN2hYcitTQmNLbmRCV2RlZW81Vm9XV29nPT0K'
+                'LS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo='
+            ),
+        },
+    ]
+
+    NVS_KEYS_B64 = 'MzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzPMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzA=='
+
+    TMP_DIR = Path('tmp')
+    NVS_KEYS_PATH = TMP_DIR / 'nvs_keys.bin'
+    NVS_CSV_PATH = TMP_DIR / 'tee_sec_stg_val.csv'
+    NVS_BIN_PATH = TMP_DIR / 'tee_sec_stg_nvs.bin'
+
+    def run_command(self, command: List[str]) -> None:
+        try:
+            subprocess.check_call(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        except subprocess.CalledProcessError:
+            print(f'Command failed: {" ".join(command)}')
+            raise
+
+    def write_keys_to_file(self, b64_data: str, path: Path) -> None:
+        path.write_bytes(base64.b64decode(b64_data))
+
+    def create_tee_sec_stg_csv(self, tmp_dir: Path) -> Path:
+        csv_path = self.NVS_CSV_PATH
+        rows: List[List[str]] = [
+            ['key', 'type', 'encoding', 'value'],
+            ['tee_sec_stg_ns', 'namespace', '', ''],
+        ]
+        rows += [[entry['key'], 'file', 'binary', str(tmp_dir / f'{entry["key"]}.bin')] for entry in self.KEY_DEFS]
+        with csv_path.open('w', newline='') as f:
+            csv.writer(f).writerows(rows)
+        return csv_path
+
+    def custom_flash_with_host_gen_sec_stg_img(self) -> None:
+        tmp_dir = self.TMP_DIR
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+
+        for entry in self.KEY_DEFS:
+            if entry['input']:
+                input_path = tmp_dir / entry['input']
+                self.write_keys_to_file(entry['b64'], input_path)
+                entry['input'] = str(input_path)
+        self.write_keys_to_file(self.NVS_KEYS_B64, self.NVS_KEYS_PATH)
+
+        idf_path = Path(os.environ['IDF_PATH'])
+        ESP_TEE_SEC_STG_KEYGEN = os.path.join(
+            idf_path, 'components', 'esp_tee', 'scripts', 'esp_tee_sec_stg_keygen', 'esp_tee_sec_stg_keygen.py'
+        )
+        NVS_PARTITION_GEN = os.path.join(
+            idf_path, 'components', 'nvs_flash', 'nvs_partition_generator', 'nvs_partition_gen.py'
+        )
+
+        cmds = [
+            [sys.executable, ESP_TEE_SEC_STG_KEYGEN, '-k', entry['type'], '-o', str(tmp_dir / f'{entry["key"]}.bin')]
+            + (['-i', entry['input']] if entry['input'] else [])
+            + (['--write-once'] if entry['write_once'] else [])
+            for entry in self.KEY_DEFS
+        ]
+
+        csv_path = self.create_tee_sec_stg_csv(tmp_dir)
+        nvs_bin = self.NVS_BIN_PATH
+        nvs_keys = self.NVS_KEYS_PATH
+        size = self.app.partition_table['secure_storage']['size']
+
+        cmds.append(
+            [
+                sys.executable,
+                NVS_PARTITION_GEN,
+                'encrypt',
+                str(csv_path),
+                str(nvs_bin),
+                str(size),
+                '--inputkey',
+                str(nvs_keys),
+            ]
+        )
+
+        try:
+            for cmd in cmds:
+                self.run_command(cmd)
+
+            self.bootloader_force_flash_if_req()
+            self.flash()
+            self.custom_erase_partition('secure_storage')
+            self.custom_write_partition('secure_storage', nvs_bin)
+
+        finally:
+            shutil.rmtree(tmp_dir)
 
 
 @pytest.fixture(scope='module')

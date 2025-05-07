@@ -42,7 +42,7 @@ uint32_t _ss_add_in_loop(uint32_t a, uint32_t b, uint32_t iter)
     for (int i = 0; i < iter; i++) {
         a += b;
         esp_rom_delay_us(1000000);
-        ESP_LOGD(TAG, "[mode: %d] val: %d", esp_cpu_get_curr_privilege_level(), a);
+        esp_rom_printf("[mode: %d] val: %d\n", esp_cpu_get_curr_privilege_level(), a);
     }
     return a;
 }

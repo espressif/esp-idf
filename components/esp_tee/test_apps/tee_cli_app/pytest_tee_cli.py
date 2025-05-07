@@ -53,13 +53,14 @@ def test_tee_cli_secure_storage(dut: Dut) -> None:
     time.sleep(1)
 
     # Test out the TEE secure storage workflow - Message signing and verification
-    iterations = 3
-    sec_stg_slots = {0: 0, 1: 14, 2: 7}
-    for i in range(iterations):
-        dut.write(f'tee_sec_stg_gen_key {sec_stg_slots.get(i)} 0')
-        dut.expect(r'Generated ECDSA_SECP256R1 key in slot (\d+)', timeout=30)
+    sec_stg_key_ids = {0: 'key0', 1: 'key1', 2: 'key2'}
+    iterations = len(sec_stg_key_ids)
 
-        dut.write(f'tee_sec_stg_sign {sec_stg_slots.get(i)} {test_msg_hash}')
+    for i in range(iterations):
+        dut.write(f'tee_sec_stg_gen_key {sec_stg_key_ids.get(i)} 1')
+        dut.expect(r'Generated ECDSA_SECP256R1 key with ID (\S+)', timeout=30)
+
+        dut.write(f'tee_sec_stg_sign {sec_stg_key_ids.get(i)} {test_msg_hash}')
         test_msg_sign = dut.expect(r'Generated signature -\s*([0-9a-fA-F]{128})', timeout=30)[1].decode()
         test_msg_pubkey = dut.expect(r'Public key \(Uncompressed\) -\s*([0-9a-fA-F]{130})', timeout=30)[1].decode()
         dut.expect('Signature verified successfully', timeout=30)
@@ -69,16 +70,15 @@ def test_tee_cli_secure_storage(dut: Dut) -> None:
         time.sleep(1)
 
     # Test out the TEE secure storage workflow - Encryption and decryption
-    sec_stg_slots = {0: 1, 1: 14, 2: 9}
     for i in range(iterations):
-        dut.write(f'tee_sec_stg_gen_key {sec_stg_slots.get(i)} 1')
-        dut.expect(r'Generated AES256 key in slot (\d+)', timeout=30)
+        dut.write(f'tee_sec_stg_gen_key {sec_stg_key_ids.get(i)} 0')
+        dut.expect(r'Generated AES256 key with ID (\S+)', timeout=30)
 
-        dut.write(f'tee_sec_stg_encrypt {sec_stg_slots.get(i)} {test_msg_hash}')
+        dut.write(f'tee_sec_stg_encrypt {sec_stg_key_ids.get(i)} {test_msg_hash}')
         test_msg_cipher = dut.expect(r'Ciphertext -\s*([0-9a-fA-F]{64})', timeout=30)[1].decode()
         test_msg_tag = dut.expect(r'Tag -\s*([0-9a-fA-F]{32})', timeout=30)[1].decode()
 
-        dut.write(f'tee_sec_stg_decrypt {sec_stg_slots.get(i)} {test_msg_cipher} {test_msg_tag}')
+        dut.write(f'tee_sec_stg_decrypt {sec_stg_key_ids.get(i)} {test_msg_cipher} {test_msg_tag}')
         test_msg_decipher = dut.expect(r'Decrypted plaintext -\s*([0-9a-fA-F]{64})', timeout=30)[1].decode()
 
         assert test_msg_decipher == test_msg_hash
@@ -133,9 +133,9 @@ def test_tee_cli_attestation(dut: Dut) -> None:
     dut.expect('ESP-TEE: Secure services demonstration', timeout=30)
     time.sleep(1)
 
-    att_key_slot = dut.app.sdkconfig.get('SECURE_TEE_ATT_KEY_SLOT_ID')
-    dut.write(f'tee_sec_stg_gen_key {att_key_slot} 0')
-    dut.expect(r'Generated ECDSA_SECP256R1 key in slot (\d+)', timeout=30)
+    att_key_id = dut.app.sdkconfig.get('SECURE_TEE_ATT_KEY_STR_ID')
+    dut.write(f'tee_sec_stg_gen_key {att_key_id} 1')
+    dut.expect(r'Generated ECDSA_SECP256R1 key with ID (\S+)', timeout=30)
 
     # Get the Entity Attestation token from TEE and verify its signature
     dut.write('tee_att_info')
