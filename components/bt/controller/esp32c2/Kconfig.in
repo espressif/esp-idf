@@ -693,6 +693,7 @@ config BT_CTRL_RUN_IN_FLASH_ONLY
         - For HCI_LE_Extended_Create_Connection command, only 1M phy's connection parameters will be applied.
           Other phys' will be ignored.
         - For extended scanning, we may be unable to receive the extended adv with 300us MAFS.
+        - To match performance, phy needs to be reduced, you need to disable ESP_PHY_IRAM_OPT.
 
 config BT_LE_PLACE_CONN_RELATED_INTO_IRAM
     bool "Place the connection-related code into IRAM"

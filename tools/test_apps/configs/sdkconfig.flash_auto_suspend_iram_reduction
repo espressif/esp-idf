@@ -60,7 +60,6 @@ CONFIG_LOG_IN_IRAM=n
 CONFIG_ESP_ROM_PRINT_IN_IRAM=n
 
 # Low power related options
-CONFIG_ESP_WIFI_SLP_IRAM_OPT=n
 CONFIG_PM_SLEEP_FUNC_IN_IRAM=n
 CONFIG_PM_RTOS_IDLE_OPT=n
 CONFIG_ESP_SLEEP_POWER_DOWN_FLASH=n
@@ -69,6 +68,15 @@ CONFIG_ESP_REGI2C_CTRL_FUNC_IN_IRAM=n
 
 # System common
 CONFIG_ESP_PERIPH_CTRL_FUNC_IN_IRAM=n
+
+# Phy related options
+CONFIG_ESP_PHY_IRAM_OPT=n
+
+# WiFi related options
+CONFIG_ESP_WIFI_SLP_IRAM_OPT=n
+CONFIG_ESP_WIFI_IRAM_OPT=n
+CONFIG_ESP_WIFI_EXTRA_IRAM_OPT=n
+CONFIG_ESP_WIFI_RX_IRAM_OPT=n
 
 #######################################################################################################################
 # Options that will enable IRAM reduction option that are not necessarily safe for all use-cases

@@ -177,5 +177,14 @@ menu "PHY"
             default n
             help
                 Select to support record and query phy used time.
+
+        config ESP_PHY_IRAM_OPT
+            bool "PHY IRAM speed optimization"
+            default y
+            help
+                Select this option to place frequently called PHY library functions in IRAM.
+                When this option is disabled, more than 1.1Kbytes of IRAM memory will be saved,
+                but PHY performance will be reduced. This config only affect esp32c2 now.
+
     endif
 endmenu  # PHY
