@@ -191,6 +191,7 @@
 /examples/ethernet/           @esp-idf-codeowners/network
 /examples/get-started/        @esp-idf-codeowners/system
 /examples/ieee802154/         @esp-idf-codeowners/ieee802154
+/examples/lowpower/           @esp-idf-codeowners/power-management @esp-idf-codeowners/system
 /examples/mesh/               @esp-idf-codeowners/wifi
 /examples/network/            @esp-idf-codeowners/network @esp-idf-codeowners/wifi
 /examples/openthread/         @esp-idf-codeowners/ieee802154
