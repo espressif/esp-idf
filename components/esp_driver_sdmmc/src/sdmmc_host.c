@@ -575,7 +575,12 @@ static void configure_pin_iomux(uint8_t gpio_num)
     gpio_pulldown_dis(gpio_num);
     gpio_input_enable(gpio_num);
     gpio_iomux_output(gpio_num, SDMMC_LL_IOMUX_FUNC);
+#if !CONFIG_IDF_TARGET_ESP32
+    /**
+     * On ESP32, the default pin drive value (2) works
+     */
     gpio_set_drive_capability(gpio_num, 3);
+#endif
 }
 
 static void configure_pin_gpio_matrix(uint8_t gpio_num, uint8_t gpio_matrix_sig, gpio_mode_t mode, const char *name)
