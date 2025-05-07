@@ -74,11 +74,10 @@ typedef struct gptimer_group_t {
 } gptimer_group_t;
 
 typedef enum {
-    GPTIMER_FSM_INIT,        // Timer is initialized, but not enabled
-    GPTIMER_FSM_ENABLE,      // Timer is enabled, but is not running
-    GPTIMER_FSM_ENABLE_WAIT, // Timer is in the middle of the enable process (Intermediate state)
-    GPTIMER_FSM_RUN,         // Timer is in running
-    GPTIMER_FSM_RUN_WAIT,    // Timer is in the middle of the run process (Intermediate state)
+    GPTIMER_FSM_INIT,    // Timer is initialized, but not enabled yet
+    GPTIMER_FSM_ENABLE,  // Timer is enabled, but is not running yet
+    GPTIMER_FSM_RUN,     // Timer is in running
+    GPTIMER_FSM_WAIT,    // Timer is in the middle of state change (Intermediate state)
 } gptimer_fsm_t;
 
 struct gptimer_t {
