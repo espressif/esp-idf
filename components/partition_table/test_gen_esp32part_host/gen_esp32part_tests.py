@@ -289,6 +289,56 @@ storage2,       data, undefined,       , 12k,
         self.assertEqual(t[7].subtype, 0x06)
 
 
+class UTFCodingTests(Py23TestCase):
+    def test_utf8_bom_csv_file(self):
+        with open('partitions-utf8-bom.csv', 'rb') as csv_txt:
+            t, _ = gen_esp32part.PartitionTable.from_file(csv_txt)
+            t.verify()
+            self.assertEqual(t[0].name, 'nvs')  # 3 BOM bytes are not part of the name
+            self.assertEqual(t[1].name, 'phy_инит_')  # UTF-8 name is preserved
+            self.assertEqual(t[2].name, 'factory')
+            with open('partitions.bin', 'rb') as bin_file:
+                binary_content = bin_file.read()
+                self.assertEqual(_strip_trailing_ffs(t.to_binary()), _strip_trailing_ffs(binary_content))
+
+    def test_utf8_without_bom_csv_file(self):
+        with open('partitions-utf8_without-bom.csv', 'rb') as csv_txt:
+            t, _ = gen_esp32part.PartitionTable.from_file(csv_txt)
+            t.verify()
+            self.assertEqual(t[0].name, 'nvs')
+            self.assertEqual(t[1].name, 'phy_инит_')  # UTF-8 name is preserved
+            self.assertEqual(t[2].name, 'factory')
+            with open('partitions.bin', 'rb') as bin_file:
+                binary_content = bin_file.read()
+                self.assertEqual(_strip_trailing_ffs(t.to_binary()), _strip_trailing_ffs(binary_content))
+
+    def test_utf8_bin_file(self):
+        with open('partitions.bin', 'rb') as bin_file:
+            t, _ = gen_esp32part.PartitionTable.from_file(bin_file)
+            t.verify()
+            self.assertEqual(t[0].name, 'nvs')
+            self.assertEqual(t[1].name, 'phy_инит_')  # UTF-8 name is preserved
+            self.assertEqual(t[2].name, 'factory')
+            gen = t.to_csv()
+            self.assertIn('\nnvs,', gen)
+            self.assertIn('\nphy_инит_,', gen)
+            self.assertIn('\nfactory,', gen)
+
+    def test_utf8_without_bom_bin_file(self):
+        with open('partitions-utf8-bom.bin', 'rb') as bin_file:
+            t, _ = gen_esp32part.PartitionTable.from_file(bin_file)
+            t.verify()
+            # If the old tool grabbed the BOM bytes for the first name then
+            # we do not change the name. User needs to fix the CSV file.
+            self.assertEqual(t[0].name, '\ufeffnvs')
+            self.assertEqual(t[1].name, 'phy_инит_')
+            self.assertEqual(t[2].name, 'factory')
+            gen = t.to_csv()
+            self.assertIn('\ufeffnvs,', gen)
+            self.assertIn('\nphy_инит_,', gen)
+            self.assertIn('\nfactory,', gen)
+
+
 class BinaryParserTests(Py23TestCase):
     def test_parse_one_entry(self):
         # type 0x30, subtype 0xee,
