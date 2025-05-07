@@ -485,7 +485,7 @@ esp_err_t esp_ble_gatts_stop_service(uint16_t service_handle);
  *
  * @note
  *       1. This function triggers `ESP_GATTS_CONF_EVT`.
- *       2. The size of indication or notification data must be less than or equal to MTU size, see `esp_ble_gattc_send_mtu_req`.
+ *       2. The size of indication or notification data must be less than or equal to min(512, MTU - 3), see `esp_ble_gattc_send_mtu_req`.
  *       3. This function should be called only after the connection has been established.
  *
  * @return
