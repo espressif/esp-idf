@@ -166,7 +166,7 @@ TEST_CASE("lcd_rgb_panel_bounce_buffer", "[lcd]")
     TaskHandle_t cur_task = xTaskGetCurrentTaskHandle();
 
     printf("initialize RGB panel with non-stream mode\r\n");
-    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 10 * TEST_LCD_H_RES, false, test_rgb_panel_trans_done, cur_task);
+    esp_lcd_panel_handle_t panel_handle = test_rgb_panel_initialization(16, 16, 20 * TEST_LCD_H_RES, false, test_rgb_panel_trans_done, cur_task);
     printf("flush random color block\r\n");
     for (int i = 0; i < 200; i++) {
         uint8_t color_byte = esp_random() & 0xFF;
