@@ -56,7 +56,7 @@ variables:
 
   # Docker images
   ESP_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-env-v5.5:3"
-  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.5:2-1"
+  ESP_IDF_DOC_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-doc-env-v5.5:3-1"
   TARGET_TEST_ENV_IMAGE: "${CI_DOCKER_REGISTRY}/target-test-env-v5.5:2"
   SONARQUBE_SCANNER_IMAGE: "${CI_DOCKER_REGISTRY}/sonarqube-scanner:5"
   PRE_COMMIT_IMAGE: "${CI_DOCKER_REGISTRY}/esp-idf-pre-commit:1"

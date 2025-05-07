@@ -51,7 +51,8 @@ repos:
             .*.pb-c.c|
             .*.yuv|
             .*.rgb|
-            .*COPYING.*
+            .*COPYING.*|
+            docs/sphinx-known-warnings\.txt
           )$
       - id: end-of-file-fixer
         exclude: *whitespace_excludes
@@ -69,6 +70,7 @@ repos:
     rev: v2.3.0
     hooks:
       - id: codespell
+        exclude: ^docs/sphinx-known-warnings\.txt$
   - repo: local
     hooks:
       - id: check-executables
