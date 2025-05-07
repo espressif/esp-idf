@@ -69,18 +69,17 @@ def test_wifi_getting_started_esp32c2_xtal_26mhz(dut: Tuple[IdfDut, IdfDut]) -> 
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
+@pytest.mark.esp32c2
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
-    'count, config, baud, app_path, target',
+    'count, config, baud, app_path,',
     [
         (
             2,
             'esp32c2eco4_xtal26m',
             '74880',
             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
-            'esp32c2|esp32c2',
         ),
     ],
     indirect=True,
@@ -101,16 +100,15 @@ def test_wifi_getting_started_esp32c2eco4_xtal_26mhz(dut: Tuple[IdfDut, IdfDut])
     softap.expect('station .+ join, AID=', timeout=60)
 
 
-@pytest.mark.wifi_two_dut
-@pytest.mark.esp32c3eco7
+@pytest.mark.esp32c3
+@pytest.mark.wifi_two_dut_eco
 @pytest.mark.parametrize(
-    'count, config, app_path, target',
+    'count, config, app_path',
     [
         (
             2,
             'esp32c3eco7',
             f'{os.path.join(os.path.dirname(__file__), "softAP")}|{os.path.join(os.path.dirname(__file__), "station")}',
-            'esp32c3|esp32c3',
         ),
     ],
     indirect=True,

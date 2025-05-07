@@ -77,9 +77,8 @@ def test_wifi_power_save_esp32c2_26mhz(dut: Dut) -> None:
 
 
 @pytest.mark.esp32c2
-@pytest.mark.wifi_ap
+@pytest.mark.wifi_ap_eco
 @pytest.mark.xtal_26mhz
-@pytest.mark.esp32c2eco4
 @pytest.mark.parametrize(
     'config, baud',
     [
@@ -91,12 +90,12 @@ def test_wifi_power_save_esp32c2eco4_26mhz(dut: Dut) -> None:
     _run_test(dut)
 
 
-@pytest.mark.wifi_ap
-@pytest.mark.esp32c3eco7
+@pytest.mark.wifi_ap_eco
+@pytest.mark.esp32c3
 @pytest.mark.parametrize(
-    'config, target',
+    'config',
     [
-        ('c3eco7','esp32c3')
+        ('c3eco7')
     ],
     indirect=True,
 )

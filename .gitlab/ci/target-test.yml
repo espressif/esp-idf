@@ -312,7 +312,7 @@ pytest_examples_esp32c2eco4_wifi_ap:
     - .rules:test:example_test-esp32c2-wifi
   needs:
     - build_pytest_examples_esp32c2
-  tags: [ esp32c2eco4, wifi_ap,  xtal_26mhz, esp32c2]
+  tags: [ wifi_ap_eco,  xtal_26mhz, esp32c2]
 
 pytest_examples_esp32c3_wifi_ap:
   extends:
@@ -329,7 +329,7 @@ pytest_examples_esp32c3eco7_wifi_ap:
     - .rules:test:example_test-esp32c3-wifi
   needs:
     - build_pytest_examples_esp32c3
-  tags: [ esp32c3eco7, wifi_ap , esp32c3]
+  tags: [ wifi_ap_eco , esp32c3]
 
 pytest_examples_esp32s3_wifi_ap:
   extends:
@@ -440,7 +440,7 @@ pytest_examples_esp32c2eco4_wifi_two_dut:
     - .rules:test:example_test-esp32c2-wifi
   needs:
     - build_pytest_examples_esp32c2
-  tags: [ esp32c2eco4, wifi_two_dut, xtal_26mhz, esp32c2]
+  tags: [wifi_two_dut_eco, xtal_26mhz, esp32c2]
 
 pytest_examples_esp32c3eco7_wifi_two_dut:
   extends:
@@ -448,7 +448,7 @@ pytest_examples_esp32c3eco7_wifi_two_dut:
     - .rules:test:example_test-esp32c3-wifi
   needs:
     - build_pytest_examples_esp32c3
-  tags: [ esp32c3eco7, wifi_two_dut , esp32c3]
+  tags: [ wifi_two_dut_eco , esp32c3]
 
 pytest_examples_esp32c3_flash_encryption:
   extends:
@@ -930,7 +930,7 @@ pytest_components_esp32c3eco7_wifi_two_dut:
     - .rules:test:component_ut-esp32c3-wifi
   needs:
     - build_pytest_components_esp32c3
-  tags: [ esp32c3eco7, wifi_two_dut , esp32c3]
+  tags: [ wifi_two_dut_eco , esp32c3]
 
 pytest_components_esp32c2eco4_wifi_two_dut:
   extends:
@@ -938,7 +938,7 @@ pytest_components_esp32c2eco4_wifi_two_dut:
     - .rules:test:component_ut-esp32c2-wifi
   needs:
     - build_pytest_components_esp32c2
-  tags: [ esp32c2eco4, wifi_two_dut, xtal_26mhz, esp32c2]
+  tags: [ wifi_two_dut_eco, xtal_26mhz, esp32c2]
 
 pytest_components_esp32c3_adc:
   extends:
@@ -1145,6 +1145,22 @@ pytest_test_apps_esp32c2_generic:
     - build_pytest_test_apps_esp32c2
   tags: [ esp32c2, generic, xtal_40mhz ]
 
+pytest_test_apps_esp32c2xtal26mhz_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2
+  needs:
+    - build_pytest_test_apps_esp32c2
+  tags: [ esp32c2, generic, xtal_26mhz ]
+
+pytest_test_apps_esp32c2eco4_xtal26mhz_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c2
+  needs:
+    - build_pytest_test_apps_esp32c2
+  tags: [ esp32c2, generic_eco, xtal_26mhz ]
+
 pytest_test_apps_esp32c3_generic:
   extends:
     - .pytest_test_apps_dir_template
@@ -1152,6 +1168,14 @@ pytest_test_apps_esp32c3_generic:
   needs:
     - build_pytest_test_apps_esp32c3
   tags: [ esp32c3, generic ]
+
+pytest_test_apps_esp32c3eco7_generic:
+  extends:
+    - .pytest_test_apps_dir_template
+    - .rules:test:custom_test-esp32c3
+  needs:
+    - build_pytest_test_apps_esp32c3
+  tags: [ esp32c3, generic_eco ]
 
 pytest_test_apps_esp32c6_generic:
   extends:
