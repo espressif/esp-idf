@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2020-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2020-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -22,8 +22,8 @@
  * x 0`, it's still a risk.)
  *
  * ECO & exceptions:
- * For ECO-ed booleans, `#define x "Not determined"` for them. This will cause error when used by
- * `#if x` and `#if !x`, making these missing definitions more obvious.
+ * For ECO-ed booleans, `#define x "Not determined" // [gen_soc_caps:ignore]` for them. This will cause error when used by
+ * `#if x` and `#if !x`, making these missing definitions more obvious. Ignore pragma ensures those values are not converted into config options.
  *
  * These defines are parsed and imported as kconfig variables via the script
  * `tools/gen_soc_caps_kconfig/gen_soc_caps_kconfig.py`
@@ -148,7 +148,7 @@
 
 #define SOC_CPU_BREAKPOINTS_NUM             2
 #define SOC_CPU_WATCHPOINTS_NUM             2
-#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  64 // bytes
+#define SOC_CPU_WATCHPOINT_MAX_REGION_SIZE  0x40 // bytes
 
 /*-------------------------- DAC CAPS ----------------------------------------*/
 #define SOC_DAC_CHAN_NUM      2
@@ -329,7 +329,7 @@
 #define SOC_MEMSPI_SRC_FREQ_20M_SUPPORTED         1
 
 /*-------------------------- SYSTIMER CAPS ----------------------------------*/
-#define SOC_SYSTIMER_COUNTER_NUM  1  // Number of counter units
+#define SOC_SYSTIMER_COUNTER_NUM  (1U)  // Number of counter units
 #define SOC_SYSTIMER_ALARM_NUM    3  // Number of alarm units
 #define SOC_SYSTIMER_BIT_WIDTH_LO 32 // Bit width of systimer low part
 #define SOC_SYSTIMER_BIT_WIDTH_HI 32 // Bit width of systimer high part
@@ -349,7 +349,7 @@
 /*-------------------------- TOUCH SENSOR CAPS -------------------------------*/
 #define SOC_TOUCH_SENSOR_VERSION            (2)     /*!< Hardware version of touch sensor */
 #define SOC_TOUCH_SENSOR_NUM                (15)    /*!< 15 Touch channels */
-#define SOC_TOUCH_MIN_CHAN_ID               (1)     /*!< Touch minimum channel number, (0 is internal denoise channel) */
+#define SOC_TOUCH_MIN_CHAN_ID               (1U)     /*!< Touch minimum channel number, (0 is internal denoise channel) */
 #define SOC_TOUCH_MAX_CHAN_ID               (14)    /*!< Touch maximum channel number */
 #define SOC_TOUCH_SUPPORT_BENCHMARK         (1)     /*!< Touch sensor supports benchmark configuration */
 #define SOC_TOUCH_SUPPORT_SLEEP_WAKEUP      (1)     /*!< Touch sensor supports sleep awake */
