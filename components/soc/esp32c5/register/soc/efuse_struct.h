@@ -614,15 +614,38 @@ typedef union {
  */
 typedef union {
     struct {
-        /** mac_reserved_2 : RO; bitpos: [17:0]; default: 0;
-         *  Reserved.
-         *  This field is only for internal debugging purposes. Do not use it in applications.
+        /** trim_n_bias : R; bitpos: [4:0]; default: 0;
+         *  PADC CAL N bias
          */
-        uint32_t mac_reserved_2:18;
-        /** sys_data_part0_0 : RO; bitpos: [31:18]; default: 0;
-         *  Represents the first 14-bit of zeroth part of system data.
+        uint32_t trim_n_bias:5;
+        /** trim_p_bias : R; bitpos: [9:5]; default: 0;
+         *  PADC CAL P bias
          */
-        uint32_t sys_data_part0_0:14;
+        uint32_t trim_p_bias:5;
+        /** active_hp_dbias : R; bitpos: [13:10]; default: 0;
+         *  Active HP DBIAS of fixed voltage
+         */
+        uint32_t active_hp_dbias:4;
+        /** active_lp_dbias : R; bitpos: [17:14]; default: 0;
+         *  Active LP DBIAS of fixed voltage
+         */
+        uint32_t active_lp_dbias:4;
+        /** lslp_hp_dbg : R; bitpos: [19:18]; default: 0;
+         *  LSLP HP DBG of fixed voltage
+         */
+        uint32_t lslp_hp_dbg:2;
+        /** lslp_hp_dbias : R; bitpos: [23:20]; default: 0;
+         *  LSLP HP DBIAS of fixed voltage
+         */
+        uint32_t lslp_hp_dbias:4;
+        /** dslp_lp_dbg : R; bitpos: [27:24]; default: 0;
+         *  DSLP LP DBG of fixed voltage
+         */
+        uint32_t dslp_lp_dbg:4;
+        /** dslp_lp_dbias : R; bitpos: [31:28]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
+         */
+        uint32_t dslp_lp_dbias:4;
     };
     uint32_t val;
 } efuse_rd_mac_sys3_reg_t;
@@ -632,10 +655,18 @@ typedef union {
  */
 typedef union {
     struct {
-        /** sys_data_part0_1 : RO; bitpos: [31:0]; default: 0;
-         *  Represents the second 32-bit of zeroth part of system data.
+        /** dslp_lp_dbias_1 : R; bitpos: [0]; default: 0;
+         *  DSLP LP DBIAS of fixed voltage
          */
-        uint32_t sys_data_part0_1:32;
+        uint32_t dslp_lp_dbias_1:1;
+        /** lp_hp_dbias_vol_gap : R; bitpos: [5:1]; default: 0;
+         *  DBIAS gap between LP and HP
+         */
+        uint32_t lp_hp_dbias_vol_gap:5;
+        /** reserved_1_134 : R; bitpos: [31:6]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_1_134:26;
     };
     uint32_t val;
 } efuse_rd_mac_sys4_reg_t;
@@ -655,19 +686,173 @@ typedef union {
 
 
 /** Group: block2 registers */
-/** Type of rd_sys_part1_datan register
- *  Represents rd_sys_part1_datan
+/** Type of rd_sys_part1_data0 register
+ *  Represents rd_sys_part1_data0
  */
 typedef union {
     struct {
-        /** sys_data_part1_n : RO; bitpos: [31:0]; default: 0;
-         *  Represents the zeroth 32-bit of first part of system data.
+        /** optional_unique_id : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
          */
-        uint32_t sys_data_part1_n:32;
+        uint32_t optional_unique_id:32;
     };
     uint32_t val;
-} efuse_rd_sys_part1_datan_reg_t;
+} efuse_rd_sys_part1_data0_reg_t;
 
+/** Type of rd_sys_part1_data1 register
+ *  Represents rd_sys_part1_data1
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_1 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_1:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data1_reg_t;
+
+/** Type of rd_sys_part1_data2 register
+ *  Represents rd_sys_part1_data2
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_2 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_2:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data2_reg_t;
+
+/** Type of rd_sys_part1_data3 register
+ *  Represents rd_sys_part1_data3
+ */
+typedef union {
+    struct {
+        /** optional_unique_id_3 : R; bitpos: [31:0]; default: 0;
+         *  Optional unique 128-bit ID
+         */
+        uint32_t optional_unique_id_3:32;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data3_reg_t;
+
+/** Type of rd_sys_part1_data4 register
+ *  Represents rd_sys_part1_data4
+ */
+typedef union {
+    struct {
+        /** temperature_sensor : R; bitpos: [8:0]; default: 0;
+         *  Temperature calibration data
+         */
+        uint32_t temperature_sensor:9;
+        /** ocode : R; bitpos: [16:9]; default: 0;
+         *  ADC OCode
+         */
+        uint32_t ocode:8;
+        /** adc1_ave_initcode_atten0 : R; bitpos: [26:17]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten0:10;
+        /** adc1_ave_initcode_atten1 : R; bitpos: [31:27]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten1:5;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data4_reg_t;
+
+/** Type of rd_sys_part1_data5 register
+ *  Represents rd_sys_part1_data5
+ */
+typedef union {
+    struct {
+        /** adc1_ave_initcode_atten1_1 : R; bitpos: [4:0]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten1_1:5;
+        /** adc1_ave_initcode_atten2 : R; bitpos: [14:5]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten2:10;
+        /** adc1_ave_initcode_atten3 : R; bitpos: [24:15]; default: 0;
+         *  Average initcode of ADC1 atten0
+         */
+        uint32_t adc1_ave_initcode_atten3:10;
+        /** adc1_hi_dout_atten0 : R; bitpos: [31:25]; default: 0;
+         *  HI DOUT of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0:7;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data5_reg_t;
+
+/** Type of rd_sys_part1_data6 register
+ *  Represents rd_sys_part1_data6
+ */
+typedef union {
+    struct {
+        /** adc1_hi_dout_atten0_1 : R; bitpos: [2:0]; default: 0;
+         *  HI DOUT of ADC1 atten0
+         */
+        uint32_t adc1_hi_dout_atten0_1:3;
+        /** adc1_hi_dout_atten1 : R; bitpos: [12:3]; default: 0;
+         *  HI DOUT of ADC1 atten1
+         */
+        uint32_t adc1_hi_dout_atten1:10;
+        /** adc1_hi_dout_atten2 : R; bitpos: [22:13]; default: 0;
+         *  HI DOUT of ADC1 atten2
+         */
+        uint32_t adc1_hi_dout_atten2:10;
+        /** adc1_hi_dout_atten3 : R; bitpos: [31:23]; default: 0;
+         *  HI DOUT of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3:9;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data6_reg_t;
+
+/** Type of rd_sys_part1_data7 register
+ *  Represents rd_sys_part1_data7
+ */
+typedef union {
+    struct {
+        /** adc1_hi_dout_atten3_1 : R; bitpos: [0]; default: 0;
+         *  HI DOUT of ADC1 atten3
+         */
+        uint32_t adc1_hi_dout_atten3_1:1;
+        /** adc1_ch0_atten0_initcode_diff : R; bitpos: [4:1]; default: 0;
+         *  Gap between ADC1 CH0 and average initcode
+         */
+        uint32_t adc1_ch0_atten0_initcode_diff:4;
+        /** adc1_ch1_atten0_initcode_diff : R; bitpos: [8:5]; default: 0;
+         *  Gap between ADC1 CH1 and average initcode
+         */
+        uint32_t adc1_ch1_atten0_initcode_diff:4;
+        /** adc1_ch2_atten0_initcode_diff : R; bitpos: [12:9]; default: 0;
+         *  Gap between ADC1 CH2 and average initcode
+         */
+        uint32_t adc1_ch2_atten0_initcode_diff:4;
+        /** adc1_ch3_atten0_initcode_diff : R; bitpos: [16:13]; default: 0;
+         *  Gap between ADC1 CH3 and average initcode
+         */
+        uint32_t adc1_ch3_atten0_initcode_diff:4;
+        /** adc1_ch4_atten0_initcode_diff : R; bitpos: [20:17]; default: 0;
+         *  Gap between ADC1 CH4 and average initcode
+         */
+        uint32_t adc1_ch4_atten0_initcode_diff:4;
+        /** adc1_ch5_atten0_initcode_diff : R; bitpos: [24:21]; default: 0;
+         *  Gap between ADC1 CH5 and average initcode
+         */
+        uint32_t adc1_ch5_atten0_initcode_diff:4;
+        /** reserved_2_249 : R; bitpos: [31:25]; default: 0;
+         *  reserved
+         */
+        uint32_t reserved_2_249:7;
+    };
+    uint32_t val;
+} efuse_rd_sys_part1_data7_reg_t;
 
 /** Group: block3 registers */
 /** Type of rd_usr_datan register
@@ -3588,7 +3773,14 @@ typedef struct {
     volatile efuse_rd_mac_sys3_reg_t rd_mac_sys3;
     volatile efuse_rd_mac_sys4_reg_t rd_mac_sys4;
     volatile efuse_rd_mac_sys5_reg_t rd_mac_sys5;
-    volatile efuse_rd_sys_part1_datan_reg_t rd_sys_part1_datan[8];
+    volatile efuse_rd_sys_part1_data0_reg_t rd_sys_part1_data0;
+    volatile efuse_rd_sys_part1_data1_reg_t rd_sys_part1_data1;
+    volatile efuse_rd_sys_part1_data2_reg_t rd_sys_part1_data2;
+    volatile efuse_rd_sys_part1_data3_reg_t rd_sys_part1_data3;
+    volatile efuse_rd_sys_part1_data4_reg_t rd_sys_part1_data4;
+    volatile efuse_rd_sys_part1_data5_reg_t rd_sys_part1_data5;
+    volatile efuse_rd_sys_part1_data6_reg_t rd_sys_part1_data6;
+    volatile efuse_rd_sys_part1_data7_reg_t rd_sys_part1_data7;
     volatile efuse_rd_usr_datan_reg_t rd_usr_datan[8];
     volatile efuse_rd_key0_datan_reg_t rd_key0_datan[8];
     volatile efuse_rd_key1_datan_reg_t rd_key1_datan[8];
