@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2015-2024 Espressif Systems (Shanghai) CO LTD
+ * SPDX-FileCopyrightText: 2015-2025 Espressif Systems (Shanghai) CO LTD
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -128,6 +128,21 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
         return ESP_ERR_INVALID_ARG;
     }
 
+    if (cfg->sc_en) {
+#if (SC_MODE_INCLUDED == FALSE)
+        LOG_ERROR("Secure Connections should not be enabled when target controller is ESP32.\n");
+        LOG_ERROR("It may trigger unresolved bugs in the controller.\n");
+        return ESP_ERR_INVALID_ARG;
+#endif // SC_MODE_INCLUDED
+
+        if (!cfg->ssp_en) {
+            LOG_ERROR("secure simple pairing should be enabled when secure connection host support is enabled\n");
+            return ESP_ERR_INVALID_ARG;
+        }
+
+        LOG_WARN("Please make sure to clear the bond list before enabling the secure connection host support\n");
+    }
+
 #if (BT_CONTROLLER_INCLUDED == TRUE)
     if (esp_bt_controller_get_status() != ESP_BT_CONTROLLER_STATUS_ENABLED) {
         LOG_ERROR("Controller not initialised\n");
@@ -144,7 +159,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     osi_mem_dbg_init();
 #endif
 
-    ret = bluedriod_config_init(cfg);
+    ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
         return ESP_FAIL;
@@ -228,7 +243,7 @@ esp_err_t esp_bluedroid_deinit(void)
 
     btc_deinit();
 
-    bluedriod_config_deinit();
+    bluedroid_config_deinit();
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_deinit();

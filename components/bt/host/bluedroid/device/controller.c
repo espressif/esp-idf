@@ -188,7 +188,7 @@ static void start_up(void)
     // dependent on what we configure from page 0 and host SSP configuration
     controller_param.simple_pairing_supported = HCI_SIMPLE_PAIRING_SUPPORTED(
                                                     controller_param.features_classic[0].as_array) &&
-                                                (bluedriod_config_get()->get_ssp_enabled());
+                                                (bluedroid_config_get()->get_ssp_enabled());
     if (controller_param.simple_pairing_supported) {
         response = AWAIT_COMMAND(controller_param.packet_factory->make_write_simple_pairing_mode(HCI_SP_MODE_ENABLED));
         controller_param.packet_parser->parse_generic_command_complete(response);
@@ -223,13 +223,13 @@ static void start_up(void)
     }
 #endif
 
-#if (SC_MODE_INCLUDED == TRUE)
+if ((bluedroid_config_get()->get_sc_enabled())) {
     controller_param.secure_connections_supported = HCI_SC_CTRLR_SUPPORTED(controller_param.features_classic[2].as_array);
     if (controller_param.secure_connections_supported) {
         response = AWAIT_COMMAND(controller_param.packet_factory->make_write_secure_connections_host_support(HCI_SC_MODE_ENABLED));
         controller_param.packet_parser->parse_generic_command_complete(response);
     }
-#endif
+}
 
 #if (BLE_INCLUDED == TRUE)
 #if (CLASSIC_BT_INCLUDED)
