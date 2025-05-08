@@ -144,7 +144,7 @@ esp_err_t esp_bluedroid_init_with_cfg(esp_bluedroid_config_t *cfg)
     osi_mem_dbg_init();
 #endif
 
-    ret = bluedriod_config_init(cfg);
+    ret = bluedroid_config_init(cfg);
     if (ret != BT_STATUS_SUCCESS) {
         LOG_ERROR("Bluedroid stack initialize fail, ret:%d", ret);
         return ESP_FAIL;
@@ -228,7 +228,7 @@ esp_err_t esp_bluedroid_deinit(void)
 
     btc_deinit();
 
-    bluedriod_config_deinit();
+    bluedroid_config_deinit();
 
 #if (BT_HCI_LOG_INCLUDED == TRUE)
     bt_hci_log_deinit();
