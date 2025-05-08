@@ -33,7 +33,7 @@ The Host Library has the following features:
     :esp32p4: - Supports High Speed (HS), Full Speed (FS) and Low Speed (LS) Devices.
     - Supports all four transfer types: Control, Bulk, Interrupt, and Isochronous.
     :esp32p4: - Supports High-Bandwidth Isochronous endpoints.
-    :esp32p4: - {IDF_TARGET_NAME} includes two USB 2.0 OTG peripherals: one High-Speed and one Full-Speed. Both support USB Host functionality; however, due to a current software limitation, only one can operate as a USB Host at a time. Support for dual USB Host operation is planned for a future update.
+    :esp32p4: - {IDF_TARGET_NAME} includes two USB 2.0 OTG peripherals: one High-Speed and one Full-Speed. Both support USB Host functionality. However, due to a current software limitation, only one can operate as a USB Host at a time. Support for dual USB Host operation is planned for a future update.
     - Allows multiple class drivers to run simultaneously, i.e., multiple clients of the Host Library.
     - A single device can be used by multiple clients simultaneously, e.g., composite devices.
     - The Host Library itself and the underlying Host Stack does not internally instantiate any OS tasks. The number of tasks is entirely controlled by how the Host Library interface is used. However, a general rule of thumb regarding the number of tasks is ``(the number of host class drivers running + 1)``.
