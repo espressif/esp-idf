@@ -221,14 +221,30 @@ static bool s_i2c_write_command(i2c_master_bus_handle_t i2c_master, i2c_operatio
             i2c_master->async_break = true;
         }
     } else {
-        i2c_master->cmd_idx++;
-        i2c_master->trans_idx++;
-        i2c_master->i2c_trans.cmd_count--;
-        if (i2c_master->async_trans == false) {
-            if (xPortInIsrContext()) {
-                xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+        // Handle consecutive i2c write operations
+        i2c_operation_t next_transaction = i2c_master->i2c_trans.ops[i2c_master->trans_idx + 1];
+        if (next_transaction.hw_cmd.op_code == I2C_LL_CMD_WRITE) {
+            portENTER_CRITICAL_SAFE(&handle->spinlock);
+            i2c_ll_master_write_cmd_reg(hal->dev, hw_end_cmd, i2c_master->cmd_idx + 1);
+            portEXIT_CRITICAL_SAFE(&handle->spinlock);
+            i2c_master->cmd_idx = 0;
+            i2c_master->trans_idx++;
+            i2c_master->i2c_trans.cmd_count--;
+            if (i2c_master->async_trans == false) {
+                i2c_hal_master_trans_start(hal);
             } else {
-                xSemaphoreGive(i2c_master->cmd_semphr);
+                i2c_master->async_break = true;
+            }
+        } else {
+            i2c_master->cmd_idx++;
+            i2c_master->trans_idx++;
+            i2c_master->i2c_trans.cmd_count--;
+            if (i2c_master->async_trans == false) {
+                if (xPortInIsrContext()) {
+                    xSemaphoreGiveFromISR(i2c_master->cmd_semphr, do_yield);
+                } else {
+                    xSemaphoreGive(i2c_master->cmd_semphr);
+                }
             }
         }
     }
